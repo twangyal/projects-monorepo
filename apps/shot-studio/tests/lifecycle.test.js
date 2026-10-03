@@ -41,6 +41,23 @@ test('cancelling async graphics setup ends VR immediately and schedules no views
 
 function replace(t,key,value){const old=Object.getOwnPropertyDescriptor(globalThis,key);Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});t.after(()=>{if(old)Object.defineProperty(globalThis,key,old);else delete globalThis[key];});}
 
+test('controller squeeze captures tracked headset camera and ignores ended sessions',async t=>{
+  const handlers={},captures=[],errors=[];
+  const session={addEventListener(name,fn){handlers[name]=fn;},async end(){handlers.end();},
+    updateRenderState(){},requestReferenceSpace:async()=>({}),requestAnimationFrame(){}};
+  replace(t,'isSecureContext',true);replace(t,'XRWebGLLayer',class{});
+  replace(t,'navigator',{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}});
+  await enterXR({gl:{makeXRCompatible:async()=>{}}},()=>{},()=>0,()=>{},()=>{},
+    {onCamera:c=>captures.push(c),onCameraError:e=>errors.push(e)});
+  assert.equal(typeof handlers.squeeze,'function');
+  handlers.squeeze({frame:{getViewerPose:()=>{throw Error('Event frames cannot read viewer poses');},getPose:()=>null}});assert.equal(captures.length,0);assert.match(errors[0],/tracking/i);
+  const matrix=[1,0,0,0,0,1,0,0,0,0,1,0,1,2,5,1];
+  const event={frame:{getViewerPose:()=>{throw Error('Event frames cannot read viewer poses');},getPose:()=>({transform:{matrix}})}};
+  handlers.squeeze(event);assert.deepEqual(captures,[{eye:[1,2,5],target:[1,2,2]}]);
+  matrix[12]=99;handlers.squeeze(event);assert.equal(captures.length,1);assert.equal(errors.length,2);
+  await session.end();matrix[12]=1;handlers.squeeze(event);assert.equal(captures.length,1);
+});
+
 test('video constructor failure stops capture tracks and rejects without hanging',async t=>{
   let stops=0;
   replace(t,'cancelAnimationFrame',()=>{});

@@ -1,11 +1,12 @@
 import {multiply,groundHit} from './math.js';
-export async function enterXR(renderer,getProject,getTime,onPlace,onEnd,{signal}={}){
+import {cameraFromPose} from './model.js';
+export async function enterXR(renderer,getProject,getTime,onPlace,onEnd,{signal,onCamera=()=>{},onCameraError=()=>{}}={}){
   const checkCancelled=()=>{if(signal?.aborted)throw Error('VR request cancelled.');};
   checkCancelled();
   if(!globalThis.isSecureContext||!navigator.xr||!await navigator.xr.isSessionSupported('immersive-vr'))throw Error('VR needs a compatible headset and a secure browser connection. Desktop remains available.');
   checkCancelled();
   const session=await navigator.xr.requestSession('immersive-vr',{requiredFeatures:['local-floor']});
-  let ended=false,space,closing;
+  let ended=false,space,viewerSpace,closing;
   const end=()=>{if(ended)return;ended=true;signal?.removeEventListener('abort',cancel);onEnd();};
   const close=()=>{
     if(closing)return closing;
@@ -24,10 +25,19 @@ export async function enterXR(renderer,getProject,getTime,onPlace,onEnd,{signal}
     space=await session.requestReferenceSpace('local-floor');
     checkCancelled();
     if(ended)throw Error('VR session ended during setup.');
+    viewerSpace=await session.requestReferenceSpace('viewer');
+    checkCancelled();
+    if(ended)throw Error('VR session ended during setup.');
     session.addEventListener('select',event=>{
+      if(ended)return;
       const pose=event.frame.getPose(event.inputSource.targetRaySpace,space);if(!pose)return;
       const m=pose.transform.matrix,hit=groundHit([m[12],m[13],m[14]],[-m[8],-m[9],-m[10]]);
       if(hit)onPlace(hit);
+    });
+    session.addEventListener('squeeze',event=>{
+      if(ended)return;
+      try{const pose=event.frame.getPose(viewerSpace,space);if(!pose)throw Error('Headset tracking is unavailable. Try again when tracking returns.');onCamera(cameraFromPose(pose.transform.matrix));}
+      catch(e){onCameraError(e.message);}
     });
     let started=null;
     const baseTime=getTime();
