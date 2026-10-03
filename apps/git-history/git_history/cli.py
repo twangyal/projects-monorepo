@@ -1,14 +1,16 @@
 """Command line entry point and safe report-file output."""
 
 import argparse
+from dataclasses import asdict
+import json
 import os
 from pathlib import Path
 import re
 import sys
 import tempfile
 
-from .reader import inspect_repository
-from .render import render_html, render_json
+from .reader import inspect_repository, list_functions
+from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
 
 
@@ -80,19 +82,41 @@ def write_report(output: Path, text: str, repo: str, force: bool = False) -> Non
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="git-history", description="Inspect committed source history using local Git evidence.")
     commands = parser.add_subparsers(dest="command", required=True)
-    explain = commands.add_parser("explain", help="Produce a portable evidence report for a line range.")
-    explain.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
-    explain.add_argument("--ref", default="HEAD", help="Committed revision (default: HEAD).")
-    explain.add_argument("--file", required=True, help="Exact repository-relative file path.")
-    explain.add_argument("--lines", type=_lines, required=True, metavar="START:END")
+    explain = commands.add_parser("explain", help="Produce an evidence report for a line range or Python function.")
+    functions = commands.add_parser("functions", help="List functions in a committed Python file.")
+    for command in (explain, functions):
+        command.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
+        command.add_argument("--ref", default="HEAD", help="Committed revision (default: HEAD).")
+        command.add_argument("--file", required=True, help="Exact repository-relative file path.")
+    selection = explain.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--lines", type=_lines, metavar="START:END")
+    selection.add_argument("--function", metavar="QUALIFIED_NAME", help="Exact Python function name from the functions command.")
     explain.add_argument("--max-commits", type=int, default=20, help="At most 1–50 range-changing commits (default: 20).")
     explain.add_argument("--format", choices=("html", "json"), default="html")
     explain.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
     explain.add_argument("--force", action="store_true", help="Replace an existing report output file.")
+    functions.add_argument("--format", choices=("text", "json"), default="text")
     args = parser.parse_args(argv)
     try:
-        report = inspect_repository(args.repo, args.file, *args.lines, ref=args.ref,
-                                    max_commits=args.max_commits)
+        if args.command == "functions":
+            catalog = list_functions(args.repo, args.file, ref=args.ref)
+            if args.format == "json":
+                text = json.dumps(asdict(catalog), ensure_ascii=True, indent=2) + "\n"
+            else:
+                rows = [f"{catalog.path} at {catalog.revision}"]
+                for function in catalog.functions:
+                    note = " (over 200 lines; select a smaller --lines range)" if function.end_line - function.start_line + 1 > 200 else ""
+                    rows.append(f"{function.start_line}:{function.end_line}\t{function.kind}\t{function.qualified_name}{note}")
+                if not catalog.functions:
+                    rows.append("No functions found. Use explain --lines START:END to inspect a source range.")
+                text = "\n".join(rows) + "\n"
+            if len(text.encode("utf-8")) > MAX_REPORT_BYTES:
+                raise ValueError("Function listing exceeds 8 MiB. Use explain --lines START:END instead.")
+            sys.stdout.write(text)
+            return 0
+        report = inspect_repository(args.repo, args.file, *(args.lines or (None, None)),
+                                    ref=args.ref, max_commits=args.max_commits,
+                                    function=args.function)
         text = render_html(report) if args.format == "html" else render_json(report)
         if args.output and args.output != "-":
             write_report(Path(args.output), text, args.repo, args.force)

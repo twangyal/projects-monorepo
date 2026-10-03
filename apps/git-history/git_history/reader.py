@@ -1,10 +1,12 @@
 """Read bounded, local Git evidence without checking out or changing a repository."""
+from dataclasses import dataclass
 import os
 from pathlib import Path, PurePosixPath
 import re
 from urllib.parse import urlsplit
 
-from .model import ChangeEvidence, LineEvidence, RenameEvidence, Report
+from .function_parser import FunctionParseError, parse_functions
+from .model import ChangeEvidence, FunctionCatalog, LineEvidence, RenameEvidence, Report
 from .runner import GitError, GitRunner
 
 
@@ -185,20 +187,21 @@ def _require_local_objects(git: GitRunner) -> None:
             raise ReaderError('A complete local clone is required; partial/promisor clones may fetch missing objects.')
 
 
-def inspect_repository(repo: str | Path, file: str, start: int, end: int,
-                       ref: str = 'HEAD', max_commits: int = 20) -> Report:
-    """Inspect a committed range. Optional history failures retain valid blame."""
+@dataclass(frozen=True)
+class _Snapshot:
+    git: GitRunner
+    repo_name: str
+    revision: str
+    source: str
+
+
+def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
+    """Resolve once and read bounded committed source for either selection route."""
     if not isinstance(file, str) or not file or '\x00' in file:
         raise ReaderError('Supply a nonempty repository-relative file path without NUL characters.')
     path = PurePosixPath(file)
     if path.is_absolute() or '..' in path.parts or file.startswith('\\') or re.match(r'^[A-Za-z]:[\\/]', file):
         raise ReaderError('File must be a repository-relative path without parent traversal.')
-    if any(type(value) is not int for value in (start, end, max_commits)):
-        raise ReaderError('Line numbers and max_commits must be integers.')
-    if start < 1 or end < start or end - start + 1 > 200:
-        raise ReaderError('Choose an ordered, 1-based range containing at most 200 lines.')
-    if not 1 <= max_commits <= 50:
-        raise ReaderError('max_commits must be between 1 and 50.')
     if not isinstance(ref, str) or not ref or '\x00' in ref:
         raise ReaderError('Supply a nonempty Git revision without NUL characters.')
     git = GitRunner(repo)
@@ -235,6 +238,52 @@ def inspect_repository(repo: str | Path, file: str, start: int, end: int,
         source = raw.decode('utf-8')
     except UnicodeDecodeError as exc:
         raise ReaderError('Committed source is not UTF-8 text; choose a UTF-8 file.') from exc
+    return _Snapshot(git, repository_root.name, revision, source)
+
+
+def _catalog(snapshot: _Snapshot, file: str, ref: str) -> FunctionCatalog:
+    try:
+        functions = parse_functions(snapshot.source, file)
+    except FunctionParseError as exc:
+        raise ReaderError(str(exc)) from exc
+    return FunctionCatalog(snapshot.repo_name, snapshot.revision, ref, file, functions)
+
+
+def list_functions(repo: str | Path, file: str, ref: str = 'HEAD') -> FunctionCatalog:
+    """List committed Python functions without importing or executing source."""
+    return _catalog(_load_snapshot(repo, file, ref), file, ref)
+
+
+def inspect_repository(repo: str | Path, file: str, start: int | None = None,
+                       end: int | None = None, ref: str = 'HEAD', max_commits: int = 20,
+                       *, function: str | None = None) -> Report:
+    """Inspect one committed range or named function from a single snapshot."""
+    if type(max_commits) is not int or not 1 <= max_commits <= 50:
+        raise ReaderError('max_commits must be an integer between 1 and 50.')
+    if function is not None:
+        if start is not None or end is not None:
+            raise ReaderError('Select exactly one function or one complete --lines range.')
+        if not isinstance(function, str) or not function or '\x00' in function:
+            raise ReaderError('Supply a nonempty qualified function name without NUL characters.')
+    else:
+        if type(start) is not int or type(end) is not int:
+            raise ReaderError('Select exactly one function or one complete integer --lines range.')
+        if start < 1 or end < start or end - start + 1 > 200:
+            raise ReaderError('Choose an ordered, 1-based range containing at most 200 lines.')
+    snapshot = _load_snapshot(repo, file, ref)
+    if function is not None:
+        matches = [item for item in _catalog(snapshot, file, ref).functions
+                   if item.qualified_name == function]
+        if not matches:
+            raise ReaderError('No function has that exact qualified name; list functions to choose a name or use --lines.')
+        if len(matches) > 1:
+            ranges = ', '.join(f'{item.start_line}:{item.end_line}' for item in matches[:5])
+            more = '; list functions to see all candidates' if len(matches) > 5 else ''
+            raise ReaderError(f'Ambiguous function name: choose a manual --lines range: {ranges}{more}.')
+        start, end = matches[0].start_line, matches[0].end_line
+        if end - start + 1 > 200:
+            raise ReaderError(f'The selected function spans {start}:{end}, exceeding 200 lines; choose a smaller manual --lines range.')
+    git, revision, source = snapshot.git, snapshot.revision, snapshot.source
     # Git counts LF-delimited lines; Python splitlines also treats other controls
     # as separators and would silently assign incorrect source line numbers.
     lines = source.split('\n')
@@ -260,7 +309,8 @@ def inspect_repository(repo: str | Path, file: str, start: int, end: int,
     if [line.final_line for line in blame] != list(range(start, end + 1)):
         raise ReaderError('Git returned incomplete attribution for the requested range.')
     _restore_raw_authors(git, blame)
-    report = Report(repository_root.name, revision, ref, file, start, end, selected, blame=blame)
+    report = Report(snapshot.repo_name, revision, ref, file, start, end, selected,
+                    blame=blame, selected_function=function)
     report.warnings.append('Git line tracing and rename detection are heuristic; this report does not establish full semantic lineage or author intent. PR and issue discussions were not fetched.')
     try:
         if git.run('rev-parse', '--is-shallow-repository').strip() == b'true':

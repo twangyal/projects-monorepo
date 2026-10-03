@@ -33,6 +33,23 @@ class RenameEvidence:
 
 
 @dataclass
+class FunctionDefinition:
+    qualified_name: str
+    start_line: int
+    end_line: int
+    kind: str
+
+
+@dataclass
+class FunctionCatalog:
+    repo_name: str
+    revision: str
+    requested_ref: str
+    path: str
+    functions: list[FunctionDefinition]
+
+
+@dataclass
 class Report:
     repo_name: str
     revision: str
@@ -47,3 +64,4 @@ class Report:
     warnings: list[str] = field(default_factory=list)
     remote_url: str | None = None
     schema_version: int = 1
+    selected_function: str | None = None
