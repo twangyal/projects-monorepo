@@ -1,4 +1,5 @@
 import { createDwellTracker } from './dwell.js';
+import { resolveTarget } from './resolver.js';
 
 const dwell = createDwellTracker();
 const CALIBRATION_CLICKS = 3;
@@ -42,11 +43,6 @@ function clearFocus() {
   dwellFill.style.width = '0%';
 }
 
-function resolveTarget(x, y) {
-  const element = document.elementFromPoint(x, y);
-  return element?.closest?.('[data-gaze-target]') ?? null;
-}
-
 function activate(target) {
   const label = target.textContent.trim();
   target.classList.add('activated');
@@ -63,8 +59,7 @@ function consumePoint(x, y, now = performance.now()) {
     return;
   }
   moveCursor(x, y);
-  const candidate = resolveTarget(x, y);
-  const target = candidate && !candidate.disabled && playground.contains(candidate) ? candidate : null;
+  const target = resolveTarget(document, playground, x, y);
   const selection = dwell.update(target, now);
   if (selection.target !== currentTarget) {
     clearFocus();

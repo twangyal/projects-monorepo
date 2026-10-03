@@ -23,7 +23,8 @@ Open `http://localhost:4173`.
 ## Architecture
 
 - `index.html` — demo UI and explicit gaze targets.
-- `src/app.js` — calibration, WebGazer adapter, target resolution, and animation-frame sampling for simulation.
+- `src/app.js` — calibration, WebGazer adapter and animation-frame sampling for simulation.
+- `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
 - `src/dwell.js` — shared, deterministic dwell state machine; prevents repeated confirmations and rejects sample gaps over 250 ms.
 - `tests/` — dependency-free unit and app integration tests.
 - `styles.css` — responsive presentation.
@@ -54,3 +55,8 @@ Next: measure webcam accuracy/latency and isolate target resolution before evalu
 ## Privacy and limitations
 
 Webcam frames are processed by the browser-side WebGazer dependency; this project does not upload or persist them. The demo loads WebGazer from a public CDN, so it needs network access on first load. Webcam gaze estimation varies significantly with lighting, camera placement, head movement, calibration quality, and individual users. This prototype is an experiment, not an assistive-device claim.
+
+
+### Resolver isolation — 2026-10-03
+
+Extracted target resolution into a separately tested module. Seven automated tests passed on Node.js 24, including nested target content, root confinement, disabled controls, invalid coordinates, and empty hits. Browser layout and webcam accuracy remain unverified.
