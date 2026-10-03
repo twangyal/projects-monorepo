@@ -123,7 +123,7 @@ Task 1 publishes `types.ts` before parallel tasks begin. Tasks 2/3/4 can then pr
 - [x] Run `npm run check`, `npm run typecheck`, and `npm run test:browser` against the production build; independently decode downloaded board and normalized photos.
 - [x] Review all changed app files for contract drift, unjustified model claims, stale async publication, data loss and unbounded input; fix findings and rerun affected checks.
 - [x] Root writes factual setup/limits/backup/ML docs and path-scoped Node 24 CI, updates only the allowed Style catalog entry/table row, and records actual verification counts without guessing.
-- [ ] Root commits/pushes coherent reviewed work, updates issue #24 only with measured results, and marks the core app maintenance once the complete flow passes. Reassess independent work instead of adding unverified vision or cosmetic extensions.
+- [x] Root commits/pushes coherent reviewed work, updates issue #24 only with measured results, and marks the core app maintenance once the complete flow passes. Reassess independent work instead of adding unverified vision or cosmetic extensions.
 
 ## Plan self-review
 
@@ -132,3 +132,5 @@ The shared types and signatures are defined once in the spec and consumed by exp
 ## Verified implementation
 
 The final combined `npm run check` and production `npm run test:browser` run passed: 51 unit tests, ESLint, TypeScript, Vite build and 29 Chromium checks. Independent reviews found and resolved EXIF orientation handling and replacement/recovery races. A separate 48-case JPEG/PNG/WebP orientation pixel oracle passed. Root visually inspected desktop/mobile views and an actual 1200 × 1000 exported board. Issue #24 records the durable commit and remote CI separately.
+
+Durable milestone: feature commit `f44c7b4`, pushed with concurrent Duet changes in `aa71c31900504beb4012e2e94d6d61182b97c2e2`. All eight GitHub workflows passed at that commit, including Style Studio run `37158917780`; issue #24 is closed.
