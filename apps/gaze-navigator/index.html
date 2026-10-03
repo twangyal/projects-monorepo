@@ -82,10 +82,14 @@
         <section id="textKeyboard" class="hidden" aria-labelledby="keyboardTitle">
           <h3 id="keyboardTitle">Gaze keyboard</h3>
           <p id="keyboardPreview" aria-live="polite"></p>
-          <p>Confirm a key, then look away before using it again. Your physical keyboard still works.</p>
+          <p class="keyboard-help">Confirm a key, then look away before using it again. Your physical keyboard still works.</p>
           <div id="keyboardKeys"></div>
-          <button id="keyboardCaps" data-gaze-target>Uppercase</button>
-          <button id="closeKeyboard" data-gaze-target>Close keyboard</button>
+          <div class="keyboard-controls" role="group" aria-label="Keyboard controls">
+            <button id="keyboardUp" data-gaze-target aria-controls="keyboardKeys">Earlier keys</button>
+            <button id="keyboardDown" data-gaze-target aria-controls="keyboardKeys">Later keys</button>
+            <button id="keyboardCaps" data-gaze-target>Uppercase</button>
+            <button id="closeKeyboard" data-gaze-target>Close keyboard</button>
+          </div>
         </section>
         <h3>Session drafts</h3>
         <p>Drafts clear when you refresh. Nothing is sent.</p>

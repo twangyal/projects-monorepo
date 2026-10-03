@@ -23,6 +23,7 @@ Open `http://localhost:4173`.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
 - Stop is available during camera startup and returns without waiting for the dependency. A pending browser permission request may still finish; its late stream is released. Simulation and camera retry remain available. Every camera restart uses a fresh estimator instance with separate video elements so old initialization or inference cannot interfere with the new session. Retired model resources are released after any active inference finishes.
 - A fixed toolbar supports gaze Pause/Resume/Stop, Recalibrate, Check accuracy, and Page up/down after calibration. While paused, only Resume and Stop accept gaze; looking away before reusing Pause prevents an accidental toggle. Escape pauses navigation. During an accuracy check, gaze Pause/Stop remain available and cancel the measurement; the completed report can be closed with gaze.
+- The gaze keyboard keeps Earlier keys, Later keys, case, and Close controls outside its scrolling grid. Use those controls to reach lower keys on short screens; opening another field returns to the first row.
 
 ## Architecture
 

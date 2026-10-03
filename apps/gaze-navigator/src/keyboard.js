@@ -13,6 +13,7 @@ export function setupKeyboard(document, onChange) {
     fieldId = id;
     field = node(id);
     panel.classList.remove('hidden');
+    keys.scrollTop = 0;
     node('keyboardTitle').textContent = `Typing into ${label}`;
     node('keyboardPreview').textContent = field.value || '(empty)';
     field.focus({ preventScroll: true });
@@ -32,6 +33,13 @@ export function setupKeyboard(document, onChange) {
     onChange();
   }
   node('closeKeyboard').addEventListener('click', close);
+  for (const [id, direction] of [['keyboardUp', -1], ['keyboardDown', 1]]) {
+    node(id).addEventListener('click', () => {
+      if (!field) return;
+      keys.scrollBy({ top: direction * Math.max(54, keys.clientHeight - 62), behavior: 'auto' });
+      onChange();
+    });
+  }
   node('keyboardCaps').addEventListener('click', () => {
     uppercase = !uppercase;
     node('keyboardCaps').textContent = uppercase ? 'Lowercase' : 'Uppercase';
