@@ -1,6 +1,32 @@
 import {test,expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 
+test('page teardown cancels pending VR and ends a subsequently accepted session',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(()=>{
+    window.xrRequests=0;window.xrEnds=0;
+    Object.defineProperty(navigator,'xr',{configurable:true,value:{
+      isSessionSupported:async()=>true,
+      requestSession:()=>{window.xrRequests++;return new Promise(resolve=>{
+        window.acceptXR=()=>{const session=new EventTarget();session.end=async()=>{window.xrEnds++;session.dispatchEvent(new Event('end'));};resolve(session);};
+      });}
+    }});
+  });
+  await page.goto('/');await page.getByRole('button',{name:'Enter VR',exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>window.xrRequests)).toBe(1);
+  await expect(page.getByRole('button',{name:'Rehearse',exact:true})).toBeDisabled();
+  await page.evaluate(()=>{
+    dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));
+    dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+    window.acceptXR();
+  });
+  await expect(page.locator('#status')).toContainText('cancelled');
+  await expect.poll(()=>page.evaluate(()=>window.xrEnds)).toBe(1);
+  await expect(page.getByRole('button',{name:'Rehearse',exact:true})).toBeEnabled();
+  await expect(page.getByRole('button',{name:'Enter VR',exact:true})).toBeEnabled();
+  expect(errors).toEqual([]);
+});
+
 test('real WebGL scene renders, edits survive reload, invalid import preserves film',async({page},info)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/');
@@ -104,3 +130,4 @@ test('scene undo and shot sequencing preserve camera snapshots and portable back
   await page.reload();await expect(page.locator('#shots button').first()).toContainText('Two-shot');
   await expect(page.getByRole('button',{name:'Undo scene',exact:true})).toBeDisabled();
 });
+
