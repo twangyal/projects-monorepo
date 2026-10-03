@@ -74,12 +74,17 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #75e5b4; outline-offset: 3px; }
 @media (max-width: 650px) { .inbox-layout { grid-template-columns: 1fr; } }
 
-#accuracyPanel { position: fixed; z-index: 5000; top: 5vh; left: 50%; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); max-height: 90vh; overflow: auto; background: #0a1b16; }
-#accuracyStage { position: relative; height: min(260px, 30vh); margin: 20px 0; background: #091914; border-radius: 16px; }
+#accuracyPanel { position: fixed; z-index: 5000; top: 150px; left: 50%; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); max-height: calc(100dvh - 166px); display: flex; flex-direction: column; overflow: hidden; background: #0a1b16; }
+.accuracy-content { min-height: 0; overflow: auto; }
+#accuracyTitle { font-size: clamp(1.3rem, 3vw, 2rem); }
+#accuracyResult { font-size: .9rem; }
+#accuracyStage { position: relative; height: min(260px, 30vh); margin: 12px 0; background: #091914; border-radius: 16px; }
+#accuracyPanel.report-complete #accuracyStage, #accuracyPanel.report-complete .accuracy-description { display: none; }
 #accuracyDot { display: grid; place-items: center; pointer-events: none; }
 #accuracyData { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
-#cancelAccuracy { min-height: 54px; padding: 16px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; }
+#cancelAccuracy { flex-shrink: 0; min-height: 54px; margin-top: 8px; padding: 16px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; }
 #cancelAccuracy.gaze-focus { outline: 3px solid #75e5b4; }
+@media (max-height: 650px) { #accuracyPanel { padding: 12px; } .accuracy-description { display: none; } }
 
 #textKeyboard { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(940px, calc(100% - 32px)); max-height: min(55vh, calc(100dvh - 180px)); overflow: hidden; display: flex; flex-direction: column; z-index: 4000; border: 1px solid #456b5c; border-radius: 20px; background: #0a1b16; padding: 18px; box-shadow: 0 10px 60px #0008; }
 #textKeyboard h3 { margin: 0; }

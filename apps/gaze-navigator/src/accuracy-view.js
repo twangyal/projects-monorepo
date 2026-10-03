@@ -21,6 +21,7 @@ export function setupAccuracyCheck(document, window, onReset) {
       node('accuracyData').textContent = JSON.stringify(report, null, 2);
       check = null;
       dot.classList.add('hidden');
+      node('accuracyPanel').classList.add('report-complete');
       onReset();
       return;
     }
@@ -54,7 +55,10 @@ export function setupAccuracyCheck(document, window, onReset) {
     start(trackingMode) {
       cancel();
       mode = trackingMode;
+      node('accuracyPanel').classList.remove('report-complete');
       node('accuracyPanel').classList.remove('hidden');
+      const content = node('accuracyContent');
+      if (content) content.scrollTop = 0;
       bounds = node('accuracyStage').getBoundingClientRect();
       const points = [[.25, .25], [.75, .25], [.5, .5], [.25, .75], [.75, .75]]
         .map(([x, y]) => ({ x: bounds.left + bounds.width * x, y: bounds.top + bounds.height * y }));

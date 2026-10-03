@@ -40,10 +40,24 @@ async function hit(locator) {
 }
 
 async function hold(page, locator, { scroll = true } = {}) {
-  if (scroll) await locator.scrollIntoViewIfNeeded();
+  if (scroll) await locator.evaluate(element => new Promise(resolve => {
+    const ancestors = [];
+    for (let node = element.parentElement; node; node = node.parentElement) ancestors.push(node);
+    const positions = () => [window.scrollX, window.scrollY, ...ancestors.flatMap(node => [node.scrollLeft, node.scrollTop])];
+    const before = positions();
+    const done = () => { document.removeEventListener('scrollend', done, true); resolve(); };
+    document.addEventListener('scrollend', done, true);
+    element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    if (positions().every((value, index) => value === before[index])) done();
+  }));
   await page.mouse.move(1, 1);
   await page.clock.runFor(32);
-  expect(await hit(locator), 'control center must be visible and unobstructed').toBe(true);
+  const geometry = await locator.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    const at = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    return { target: element.id || element.textContent, bounds: bounds.toJSON(), hit: at?.id || at?.className };
+  });
+  expect(await hit(locator), `control center must be visible and unobstructed: ${JSON.stringify(geometry)}`).toBe(true);
   const bounds = await locator.boundingBox();
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
   await page.clock.runFor(1100);
@@ -119,7 +133,15 @@ test('held-out report can be closed through gaze without manually scrolling its 
   await simulate(page);
   await hold(page, page.locator('#checkAccuracy'), { scroll: false });
   await expect(page.locator('#accuracyPanel')).toBeVisible();
-  await page.clock.runFor(10500);
+  for (let i = 0; i < 5; i++) {
+    const visible = await page.locator('#accuracyDot').evaluate(dot => {
+      const bounds = dot.getBoundingClientRect();
+      const at = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+      return at?.closest('#accuracyStage') !== null && at?.closest('#accuracyStage') !== undefined;
+    });
+    expect(visible, `measurement target ${i + 1} must be visible above the fixed footer`).toBe(true);
+    await page.clock.runFor(2100);
+  }
   await expect(page.locator('#accuracyResult')).toContainText('SIMULATION');
   await hold(page, page.locator('#cancelAccuracy'), { scroll: false });
   await expect(page.locator('#accuracyPanel')).toBeHidden();
