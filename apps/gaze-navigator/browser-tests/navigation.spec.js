@@ -79,6 +79,8 @@ test('real pointer dwell confirms once until looking away', async ({ page }) => 
   });
   await hold(page, compose);
   await expect(page.locator('#composer')).toBeVisible();
+  const held = await compose.boundingBox();
+  await page.mouse.move(held.x + held.width / 2 + 1, held.y + held.height / 2);
   await page.clock.runFor(3000);
   await expect(compose).toHaveAttribute('data-confirmations', '1');
   await hold(page, compose);
@@ -95,6 +97,8 @@ test('gaze safety controls stay reachable through pause, scrolling, and stop', a
   expect(await page.evaluate(() => window.scrollY)).toBeLessThan(lower);
   await hold(page, page.locator('#pauseTracking'), { scroll: false });
   await expect(page.locator('#pauseTracking')).toHaveText('Resume tracking');
+  const paused = await page.locator('#pauseTracking').boundingBox();
+  await page.mouse.move(paused.x + paused.width / 2 + 1, paused.y + paused.height / 2);
   await page.clock.runFor(2000);
   await expect(page.locator('#pauseTracking')).toHaveText('Resume tracking');
   await expect(page.locator('#pageDown')).toBeDisabled();
@@ -127,6 +131,36 @@ test('gaze keyboard reaches lower keys and saves a complete session draft', asyn
   await expect(page.locator('#draftList')).toHaveText('a: b');
   await expect(page.locator('#composer')).toBeHidden();
   await expect(page.locator('#result')).toContainText('Nothing was sent');
+});
+
+
+test('multiline keyboard preview preserves reachable controls and held-scroll confirmation', async ({ page }) => {
+  await simulate(page);
+  await hold(page, page.locator('#composeButton'));
+  const original = Array.from({ length: 12 }, (_, index) => `Line ${index + 1}: a longer practice message that wraps on a narrow screen.`).join('\n');
+  await page.locator('#draftBody').fill(original);
+  await hold(page, page.locator('#editBody'));
+  for (const id of ['keyboardUp', 'keyboardDown', 'keyboardCaps', 'closeKeyboard']) {
+    expect(await hit(page.locator(`#${id}`)), `${id} must stay visible with multiline text`).toBe(true);
+  }
+  await hold(page, page.locator('#keyboardCaps'), { scroll: false });
+  await expect(page.locator('#keyboardCaps')).toHaveText('Lowercase');
+  await hold(page, page.locator('#keyboardKeys').getByRole('button', { name: 'A', exact: true }), { scroll: false });
+  await expect(page.locator('#draftBody')).toHaveValue(original + 'A');
+  await hold(page, page.locator('#keyboardCaps'), { scroll: false });
+  await hold(page, page.locator('#keyboardKeys').getByRole('button', { name: 'b', exact: true }), { scroll: false });
+  await expect(page.locator('#draftBody')).toHaveValue(original + 'Ab');
+  const keys = page.locator('#keyboardKeys');
+  await hold(page, page.locator('#keyboardDown'), { scroll: false });
+  const once = await keys.evaluate(element => element.scrollTop);
+  expect(once).toBeGreaterThan(0);
+  const held = await page.locator('#keyboardDown').boundingBox();
+  await page.mouse.move(held.x + held.width / 2 + 1, held.y + held.height / 2);
+  await page.clock.runFor(2000);
+  expect(await keys.evaluate(element => element.scrollTop), 'fresh samples over a held scroll control must not repeat its action').toBe(once);
+  await hold(page, page.locator('#closeKeyboard'), { scroll: false });
+  await expect(page.locator('#textKeyboard')).toBeHidden();
+  await expect(page.locator('#draftBody')).toHaveValue(original + 'Ab');
 });
 
 test('held-out report can be closed through gaze without manually scrolling its overlay', async ({ page }) => {

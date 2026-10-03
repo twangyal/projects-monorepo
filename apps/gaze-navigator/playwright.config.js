@@ -12,6 +12,7 @@ export default defineConfig({
     { name: 'desktop', use: { viewport: { width: 1280, height: 900 } } },
     { name: 'narrow', use: { viewport: { width: 390, height: 740 } } },
     { name: 'short', use: { viewport: { width: 390, height: 480 } } },
+    { name: 'compact-boundary', use: { viewport: { width: 390, height: 651 } } },
   ],
   webServer: {
     command: 'python3 -m http.server 4173 --bind 127.0.0.1',
