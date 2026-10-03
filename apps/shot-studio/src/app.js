@@ -5,7 +5,7 @@ import {enterXR} from './xr.js';
 import {ProjectHistory,moveShot} from './history.js';
 
 const $=id=>document.getElementById(id),KEY='shot-studio-v1';
-let project=createProject(),selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,abort=null,frame=0;
+let project=createProject(),selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 const status=text=>$('status').textContent=text;
 try{const draft=localStorage.getItem(KEY);if(draft)project=importProject(draft);}catch{status('Could not load the saved draft. It has been preserved; save a backup before making changes.');}
 let renderer,graphicsLost=false;
@@ -69,8 +69,8 @@ $('export').onclick=async()=>{
 $('cancel').onclick=()=>abort?.abort();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();abort?.abort();}});
 $('vr').onclick=async()=>{
-  if(xr){await xr.end();return;}stop();xrPending=true;refresh();status('Requesting VR…');
-  try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status(graphicsLost?'Graphics context lost. Save a backup and reload.':'Left VR.');refresh();});status('VR active. Select the floor marker to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;refresh();}
+  if(xr){await xr.end();return;}stop();xrPending=true;xrAbort=new AbortController();refresh();status('Requesting VR…');
+  try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status(graphicsLost?'Graphics context lost. Save a backup and reload.':'Left VR.');refresh();},{signal:xrAbort.signal});status('VR active. Select the floor marker to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;if(!xr)xrAbort=null;refresh();}
 };
 function loop(now){
   frame=requestAnimationFrame(loop);if(xr||xrPending||exporting||graphicsLost)return;
@@ -78,7 +78,7 @@ function loop(now){
   renderer.draw(project,time,shotAt(project,time).shot);$('time').textContent=`${time.toFixed(2)} / ${totalDuration(project).toFixed(2)}s`;$('scrub').value=time;
   $('shotLabel').textContent=`CAMERA ${String(shotAt(project,time).index+1).padStart(2,'0')} · ${shotAt(project,time).shot.name}`;
 }
-window.addEventListener('pagehide',()=>{abort?.abort();stop();cancelAnimationFrame(frame);xr?.end();});
+window.addEventListener('pagehide',()=>{abort?.abort();xrAbort?.abort();stop();cancelAnimationFrame(frame);xr?.end();});
 window.addEventListener('pageshow',()=>{stop();cancelAnimationFrame(frame);frame=requestAnimationFrame(loop);});
-$('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();abort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});
+$('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();abort?.abort();xrAbort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});
 refresh();if($('status').textContent==='Starting the stage…')status('Ready. Rehearse the starter film or arrange your own scene.');frame=requestAnimationFrame(loop);
