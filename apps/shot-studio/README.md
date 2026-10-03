@@ -22,7 +22,11 @@ film, not the current playhead or selected camera/performer.
 
 Select a performer, edit position/costume/action, adjust lighting. Compose a shot
 with a preset or numeric camera/target controls. Name/time it, add/select/remove
-shots, then rehearse or scrub the cut. Export WebM in real time while keeping the
+shots, move the selected shot earlier/later, then rehearse or scrub the cut.
+Undo scene / Redo scene restores up to 30 prior valid scene states in this session,
+including edits, sequencing and imports. Invalid/identical edits preserve redo; a
+new edit after undo clears it. Reload keeps the draft but starts fresh history.
+History and sequencing controls are locked during recording and immersive sessions. Export WebM in real time while keeping the
 tab visible. Cancel stops the encoder and capture tracks. Unsupported encoders
 give guidance to save a project instead.
 
@@ -45,8 +49,7 @@ the headset/browser session control; desktop editing is available afterwards.
 Requires supported hardware/browser and a secure context (HTTPS or trusted local
 development); a LAN HTTP address is insufficient. No camera permission is requested.
 Rejected/unavailable sessions retain desktop access; setup failures end accepted
-sessions. Leaving the page or losing graphics cancels pending VR setup, including
-sessions accepted after teardown. Controlled tests **do not** establish device compatibility, comfort,
+sessions. Controlled tests **do not** establish device compatibility, comfort,
 tracking quality or controller accuracy. Physical headset verification is outstanding;
 desktop CI does not complete the intended VR directing experience. Reference:
 [WebXR startup/shutdown](https://developer.mozilla.org/en-US/docs/Web/API/WebXR_Device_API/Startup_and_shutdown).
@@ -71,14 +74,13 @@ npm run test:browser
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. Current evidence: 16 local unit tests and syntax checks pass; four Chromium browser checks passed
-on the desktop lifecycle fix, including independently decoded video timestamps
-and changing frames. The workflow repeats these checks for subsequent edits.
+requires a device. The suite contains 17 unit tests and five Chromium browser checks, including
+independently decoded video timestamps/changing frames, reversible edits, portable
+shot order and preview alignment after undo. The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
-covered using controlled page lifecycle events; the new pending-VR cancellation
-browser regression awaits CI. Physical headset tests remain outstanding.
+covered using controlled page lifecycle events; physical headset tests remain outstanding.
 
-`model.js` validates snapshots/cuts/performances; `math.js` owns column-major camera
+`history.js` owns bounded scene history and shot ordering; `model.js` validates snapshots/cuts/performances; `math.js` owns column-major camera
 transforms; `renderer.js` draws native WebGL; `xr.js` manages immersive views and
 controller floor hits; `export.js` owns recording/cleanup; `app.js` manages DOM
 state, local drafts and imports.
