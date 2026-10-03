@@ -86,6 +86,10 @@ test('scene undo and shot sequencing preserve camera snapshots and portable back
   await page.getByRole('button',{name:'Redo scene',exact:true}).click();
   await expect(page.getByLabel('Film title')).toHaveValue('Edited film');
   await page.locator('#shots button').nth(1).click();
+  await page.getByLabel('Camera X',{exact:true}).fill('1');await page.getByLabel('Camera X',{exact:true}).press('Tab');
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();
+  await expect(page.locator('#shotLabel')).toContainText('CAMERA 02');
+  await expect(page.locator('#shots button').nth(1)).toHaveAttribute('aria-pressed','true');
   await page.getByRole('button',{name:'Move earlier',exact:true}).click();
   await expect(page.locator('#shots button').first()).toContainText('Two-shot');
   await expect(page.locator('#shots button').first()).toHaveAttribute('aria-pressed','true');
