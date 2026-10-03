@@ -19,8 +19,8 @@ Description: A calendar-driven focus app that restricts access to apps during sc
 ## 3. DAW with AI and voice-based music creation
 
 Path: apps/melody-studio
-Status: ACTIVE
-Progress: Melody Studio provides a local browser MVP with bounded microphone/audio capture, single-voice pitch detection, editable notes and timing, three synthesized instruments, layered tracks, playback, local autosave, versioned project backups, and MIDI/WAV export. Synthetic audio, model/export, recorder lifecycle, storage, and Chromium browser tests cover the core flow. Real microphone/vocal accuracy evaluation, broader device/browser validation, and AI arrangement assistance remain outstanding.
+Status: MAINTENANCE
+Progress: Melody Studio's core music sketchbook works: bounded microphone/audio capture, single-voice pitch detection, editable notes and timing, three synthesized instruments, layered playback, local autosave, project backups, and MIDI/WAV export. Session undo/redo, track duplication, transposition, and phrase repetition support reversible arrangement. Synthetic audio, domain, recorder lifecycle, storage, and production Chromium tests cover the core flow. Real microphone/vocal accuracy evaluation, broader device/browser validation, and generative AI arrangement assistance remain future work; existing assistance is deterministic and manual. MVP and arrangement milestones are complete in issues #8 and #10.
 Description: A beginner-friendly digital audio workstation that turns hummed or sung musical ideas into editable notes played by different instruments. Users record a melody, review the detected pitch and timing, choose an instrument, and layer additional parts into a track. AI assistance helps develop the arrangement while preserving the user's control over individual notes and musical choices. The goal is to lower the barrier to music production for people who have ideas but do not play an instrument or know traditional production software. A first version would focus on capturing melodies, switching instruments, editing notes, and exporting a simple composition.
 
 ## 4. Git blame agent

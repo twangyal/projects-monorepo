@@ -4,6 +4,8 @@ import { createDemoMelody } from './audio.ts';
 import { encodeMidi } from './midi.ts';
 import { MelodyRecorder } from './recorder.ts';
 import { loadProject, saveProject } from './storage.ts';
+import { CompositionHistory } from './history.ts';
+import { duplicateTrack, transposeTrack, repeatTrack } from './arrangement.ts';
 import type { Composition, Note, Track } from './types.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -11,6 +13,7 @@ let storage: Storage | null = null;
 try { storage = window.localStorage; } catch { /* Recovery is shown in the interface. */ }
 const saved = loadProject(storage);
 let project = saved.project ?? createComposition();
+const history = new CompositionHistory(project);
 let activeTrackId = project.tracks[0].id;
 let selectedNoteId: string | null = null;
 let message = saved.error ?? 'Start with a melody. Your audio stays on this device.';
@@ -40,6 +43,7 @@ function announce(text: string) {
 function commit(next: Composition, text?: string, redraw = true) {
   try {
     const validated = validateComposition(next);
+    history.commit(validated);
     stopPlayback(false);
     project = validated;
     saveMessage = saveProject(storage, project) ?? 'Saved in this browser';
@@ -49,6 +53,7 @@ function commit(next: Composition, text?: string, redraw = true) {
       document.querySelector('#save-status')!.textContent = saveMessage;
       document.querySelector('#notice')!.textContent = message;
       refreshTrackLabels();
+      syncHistory();
     }
     return true;
   } catch (error) {
@@ -73,6 +78,39 @@ function refreshTrackLabels() {
   app.querySelector('label[for=volume] span')!.textContent = `${Math.round(track.volume * 100)}%`;
 }
 
+function syncHistory() {
+  const undo = app.querySelector<HTMLButtonElement>('[data-action=undo]');
+  const redo = app.querySelector<HTMLButtonElement>('[data-action=redo]');
+  if (undo) undo.disabled = !!busy || !history.canUndo;
+  if (redo) redo.disabled = !!busy || !history.canRedo;
+}
+
+function restoreHistory(direction: 'undo' | 'redo') {
+  if (busy) return;
+  const next = history[direction]();
+  if (!next) return;
+  stopPlayback(false);
+  project = next;
+  if (!project.tracks.some(track => track.id === activeTrackId)) activeTrackId = project.tracks[0].id;
+  if (!currentTrack().notes.some(note => note.id === selectedNoteId)) selectedNoteId = null;
+  saveMessage = saveProject(storage, project) ?? 'Saved in this browser';
+  message = direction === 'undo' ? 'Undid the last change.' : 'Restored the next change.';
+  render();
+}
+
+function arrange(action: string) {
+  try {
+    let next: Composition;
+    if (action === 'duplicate-track') {
+      next = duplicateTrack(project, currentTrack().id);
+      activeTrackId = next.tracks[project.tracks.findIndex(track => track.id === currentTrack().id) + 1].id;
+      selectedNoteId = null;
+    } else if (action === 'repeat-phrase') next = repeatTrack(project, currentTrack().id);
+    else next = transposeTrack(project, currentTrack().id, Number(action.slice('transpose:'.length)));
+    commit(next, action === 'duplicate-track' ? 'Track duplicated. Try changing its instrument or pitch.' : action === 'repeat-phrase' ? 'Phrase repeated. Undo restores its original length.' : 'Track transposed. Undo restores the original pitches.');
+  } catch (error) { announce(error instanceof Error ? error.message : 'Could not arrange this track.'); }
+}
+
 function render() {
   const focused = document.activeElement as HTMLElement | null;
   let focusSelector: string | null = null;
@@ -94,10 +132,10 @@ function render() {
   app.innerHTML = `
     <header class="site-header"><div class="brand"><span class="brand-mark" aria-hidden="true">m<span>♪</span></span><div><p class="eyebrow">FROM A HUM TO SOMETHING MORE</p><h1>Melody Studio</h1></div></div><span class="privacy-badge"><span aria-hidden="true">●</span> Made here. Stays here.</span></header>
     <main id="workspace">
-      <section class="project-bar" aria-label="Project settings"><div class="project-title"><label for="project-title">Project title</label><input id="project-title" value="${escape(project.title)}" maxlength="80" ${disabled()} /></div><div class="tempo-field"><label for="tempo">Tempo (BPM)</label><input id="tempo" type="number" min="40" max="240" step="1" value="${project.tempo}" ${disabled()} /></div><div class="transport"><button class="primary" data-action="play" ${busy || !totalNotes || playing ? 'disabled' : ''} aria-label="Play composition"><span aria-hidden="true">▶</span> Play</button><button data-action="stop" ${!playing ? 'disabled' : ''} aria-label="Stop playback">■ Stop</button></div><span class="project-stats">${project.tracks.length} ${project.tracks.length === 1 ? 'track' : 'tracks'} · ${totalNotes} notes</span></section>
+      <section class="project-bar" aria-label="Project settings"><div class="project-title"><label for="project-title">Project title</label><input id="project-title" value="${escape(project.title)}" maxlength="80" ${disabled()} /></div><div class="tempo-field"><label for="tempo">Tempo (BPM)</label><input id="tempo" type="number" min="40" max="240" step="1" value="${project.tempo}" ${disabled()} /></div><div class="transport"><button class="primary" data-action="play" ${busy || !totalNotes || playing ? 'disabled' : ''} aria-label="Play composition"><span aria-hidden="true">▶</span> Play</button><button data-action="stop" ${!playing ? 'disabled' : ''} aria-label="Stop playback">■ Stop</button></div><div class="history-controls"><button data-action="undo" title="Undo (Ctrl/Cmd+Z)" ${busy || !history.canUndo ? 'disabled' : ''}>Undo</button><button data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)" ${busy || !history.canRedo ? 'disabled' : ''}>Redo</button></div><span class="project-stats">${project.tracks.length} ${project.tracks.length === 1 ? 'track' : 'tracks'} · ${totalNotes} notes</span></section>
       <div id="notice" class="notice" role="status" aria-live="polite">${escape(message)}</div>
       <section class="capture-card" aria-labelledby="capture-heading"><div><p class="eyebrow">01 / CATCH AN IDEA</p><h2 id="capture-heading">Your next song starts with a hum.</h2><p>Sing one clear melody, then make it your own.<br />Record up to 20 seconds or bring in an audio file.</p></div><div class="capture-controls"><div class="button-row"><button class="record-button" data-action="record" ${disabled()}><span class="record-dot" aria-hidden="true"></span> Record melody</button><label class="file-button ${busy ? 'is-disabled' : ''}">Import audio<input id="audio-file" type="file" accept="audio/*" aria-label="Import audio file" ${disabled()} /></label></div><div class="button-row"><button class="quiet" data-action="demo" ${disabled()}>Try demo melody</button><span class="small">No microphone needed</span></div><div class="capture-progress" ${!busy ? 'hidden' : ''}><span id="capture-state">${busy === 'requesting' ? 'Waiting for microphone permission…' : busy === 'recording' ? 'Recording…' : busy === 'rendering' ? 'Rendering your composition…' : 'Finding the notes…'}</span><button data-action="finish-record" ${busy !== 'recording' ? 'hidden' : ''}>Finish recording</button><button data-action="cancel">Cancel</button></div></div></section>
-      <section class="studio" aria-label="Composition editor"><aside class="tracks-panel"><div class="section-heading"><div><p class="eyebrow">02 / BUILD YOUR SOUND</p><h2>Tracks</h2></div><button class="icon-button" data-action="add-track" aria-label="Add track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>+</button></div><div class="track-list">${project.tracks.map((item, index) => `<button class="track-card ${item.id === track.id ? 'is-selected' : ''}" data-track="${escape(item.id)}" aria-label="Select track: ${escape(item.name)}" aria-pressed="${item.id === track.id}" ${disabled()}><span class="track-icon" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><span><strong>${escape(item.name)}</strong><small>${item.notes.length} notes · ${item.muted ? 'muted' : item.instrument === 'sine' ? 'Soft keys' : item.instrument === 'triangle' ? 'Warm flute' : 'Bright synth'}</small></span></button>`).join('')}</div><div class="track-settings"><label for="track-name">Track name</label><input id="track-name" value="${escape(track.name)}" maxlength="80" ${disabled()} /><label for="instrument">Instrument</label><select id="instrument" ${disabled()}><option value="sine" ${track.instrument === 'sine' ? 'selected' : ''}>Soft keys</option><option value="triangle" ${track.instrument === 'triangle' ? 'selected' : ''}>Warm flute</option><option value="sawtooth" ${track.instrument === 'sawtooth' ? 'selected' : ''}>Bright synth</option></select><label for="volume">Track volume <span>${Math.round(track.volume * 100)}%</span></label><input id="volume" type="range" min="0" max="1" step="0.05" value="${track.volume}" ${disabled()} /><label class="checkbox-label"><input id="muted" type="checkbox" ${track.muted ? 'checked' : ''} ${disabled()} /> Mute track</label><button class="quiet danger" data-action="delete-track" ${busy || project.tracks.length <= 1 ? 'disabled' : ''}>Delete track</button></div></aside>
+      <section class="studio" aria-label="Composition editor"><aside class="tracks-panel"><div class="section-heading"><div><p class="eyebrow">02 / BUILD YOUR SOUND</p><h2>Tracks</h2></div><button class="icon-button" data-action="add-track" aria-label="Add track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>+</button></div><div class="track-list">${project.tracks.map((item, index) => `<button class="track-card ${item.id === track.id ? 'is-selected' : ''}" data-track="${escape(item.id)}" aria-label="Select track: ${escape(item.name)}" aria-pressed="${item.id === track.id}" ${disabled()}><span class="track-icon" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><span><strong>${escape(item.name)}</strong><small>${item.notes.length} notes · ${item.muted ? 'muted' : item.instrument === 'sine' ? 'Soft keys' : item.instrument === 'triangle' ? 'Warm flute' : 'Bright synth'}</small></span></button>`).join('')}</div><div class="track-settings"><label for="track-name">Track name</label><input id="track-name" value="${escape(track.name)}" maxlength="80" ${disabled()} /><label for="instrument">Instrument</label><select id="instrument" ${disabled()}><option value="sine" ${track.instrument === 'sine' ? 'selected' : ''}>Soft keys</option><option value="triangle" ${track.instrument === 'triangle' ? 'selected' : ''}>Warm flute</option><option value="sawtooth" ${track.instrument === 'sawtooth' ? 'selected' : ''}>Bright synth</option></select><label for="volume">Track volume <span>${Math.round(track.volume * 100)}%</span></label><input id="volume" type="range" min="0" max="1" step="0.05" value="${track.volume}" ${disabled()} /><label class="checkbox-label"><input id="muted" type="checkbox" ${track.muted ? 'checked' : ''} ${disabled()} /> Mute track</label><button class="quiet danger" data-action="delete-track" ${busy || project.tracks.length <= 1 ? 'disabled' : ''}>Delete track</button></div><div class="arrangement-tools"><p class="eyebrow">ARRANGE THIS TRACK</p><button data-action="duplicate-track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>Duplicate track</button><div class="transpose-controls" role="group" aria-label="Transpose track"><button data-action="transpose:-12" aria-label="Transpose down an octave" ${busy || !track.notes.length ? 'disabled' : ''}>−12</button><button data-action="transpose:-1" aria-label="Transpose down a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>−1</button><button data-action="transpose:1" aria-label="Transpose up a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>+1</button><button data-action="transpose:12" aria-label="Transpose up an octave" ${busy || !track.notes.length ? 'disabled' : ''}>+12</button></div><button data-action="repeat-phrase" ${busy || !track.notes.length ? 'disabled' : ''}>Repeat phrase</button><p class="small">Shift pitch by semitones. Notes stay within C2–C7 and 128 beats.</p></div></aside>
       <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''}" data-note="${escape(item.id)}" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span></button>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${note?.pitch ?? 60}" /></label><label>Start beat<input name="start" type="number" min="1" max="128.75" step="any" value="${(note?.start ?? 0) + 1}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${note?.duration ?? 1}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${note?.velocity ?? 0.8}" /></label><button type="submit">Apply note</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form></div></section>
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button></div></section>
@@ -319,6 +357,14 @@ app.addEventListener('click', event => {
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop') return;
   switch (action) {
+    case 'undo': restoreHistory('undo'); break;
+    case 'redo': restoreHistory('redo'); break;
+    case 'duplicate-track':
+    case 'repeat-phrase':
+    case 'transpose:-12':
+    case 'transpose:-1':
+    case 'transpose:1':
+    case 'transpose:12': arrange(action); break;
     case 'play': void play(); break;
     case 'stop': stopPlayback(); break;
     case 'record': void startRecording(); break;
@@ -429,4 +475,14 @@ app.addEventListener('submit', event => {
 });
 
 window.addEventListener('pagehide', () => { cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; });
+window.addEventListener('keydown', event => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || busy) return;
+  const target = event.target as HTMLElement;
+  if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
+  const key = event.key.toLowerCase();
+  const direction = key === 'z' ? (event.shiftKey ? 'redo' : 'undo') : key === 'y' && event.ctrlKey && !event.shiftKey ? 'redo' : null;
+  if (!direction) return;
+  event.preventDefault();
+  restoreHistory(direction);
+});
 render();

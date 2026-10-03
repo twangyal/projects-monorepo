@@ -26,6 +26,8 @@ main { max-width: 1325px; margin: auto; padding: 0 2rem; }
 .project-bar label { font-size: .63rem; text-transform: uppercase; letter-spacing: .07rem; margin-bottom: .2rem; }
 .tempo-field { width: 100px; }
 .transport { display: flex; gap: .5rem; align-self: end; }
+.history-controls { display: flex; gap: .35rem; align-self: end; }
+.history-controls button { padding: .65rem .7rem; }
 .primary, .record-button { color: white; background: var(--ink); border-color: var(--ink); }
 .primary:hover:not(:disabled), .record-button:hover:not(:disabled) { color: white; background: #414e69; }
 .project-stats { color: var(--muted); font-size: .74rem; margin-left: auto; align-self: end; margin-bottom: .65rem; }
@@ -62,6 +64,12 @@ input[type=range] { width: 100%; accent-color: var(--purple); }
 .checkbox-label { display: flex; align-items: center; gap: .5rem; }
 .checkbox-label input { accent-color: var(--purple); }
 .track-settings .danger { margin-top: .65rem; }
+.arrangement-tools { display: grid; gap: .6rem; border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 1rem; }
+.arrangement-tools .eyebrow { margin-bottom: 0; }
+.arrangement-tools > button { font-size: .75rem; padding: .6rem; }
+.arrangement-tools .small { font-size: .65rem; }
+.transpose-controls { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .3rem; }
+.transpose-controls button { padding: .6rem .2rem; font-size: .72rem; }
 .editor-panel { min-width: 0; padding: 1.5rem; }
 .editor-heading { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: 1.35rem; }
 .editor-heading h2 { overflow-wrap: anywhere; }

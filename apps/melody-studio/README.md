@@ -22,6 +22,12 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 4. Add tracks to layer parts. Each track has a name, volume, mute switch, and one of three synthesized instruments: **Soft keys** (sine), **Warm flute** (triangle), or **Bright synth** (sawtooth). These are simple waveform sounds, not sampled acoustic instruments. Play and stop the combined composition.
 5. Save a project backup or export MIDI/WAV. Recording, importing, or trying the demo on a populated track asks before replacing its notes. Opening a project, loading an example, or starting a new composition also asks before replacing existing notes.
 
+## Arrange and undo
+
+**Duplicate track** copies its notes and sound settings into a new independent track. Use the **−12 / −1 / +1 / +12** controls to move the selected track down or up an octave or semitone. **Repeat phrase** adds one copy after the last note, preserving internal rests and overlaps; leading silence occurs only before the first phrase. Out-of-range transformations leave the composition unchanged.
+
+**Undo** and **Redo** restore up to 50 committed edits during this session, including recording replacements, deleted tracks, and opened/new projects. Restored versions autosave just like edits. Editing after an undo replaces the redo branch. Reloading starts a fresh history from the saved composition. Use Ctrl/Cmd+Z to undo, Ctrl/Cmd+Shift+Z to redo, or Ctrl+Y on Windows/Linux. Inputs keep their normal text undo behavior; shortcuts outside inputs operate on the composition. Controls pause while audio is recording or processing. Keep project-file backups for changes older than the session history.
+
 **Cancel** discards an in-progress capture or analysis and preserves the existing notes. Microphone tracks are released on stop, cancellation, or recording failure. Cancelling while permission is pending also releases a stream that arrives afterward; it cannot close the browser's permission prompt. Leaving the page stops capture and playback.
 
 ## Timing and limits
