@@ -40,8 +40,14 @@ test('rehearsal scrubs and exports an actually playable bounded video',async({pa
   const file=await download,path=info.outputPath('film.webm');await file.saveAs(path);
   const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-show_format','-of','json',path],{encoding:'utf8'}));
   expect(probe.streams.some(s=>s.codec_type==='video'&&s.width===960&&s.height===540)).toBeTruthy();
-  expect(Number(probe.format.duration)).toBeGreaterThan(1.4);
-  expect(Number(probe.format.duration)).toBeLessThan(4);
+  // MediaRecorder WebM often lacks container duration; measure real decoded timestamps.
+  const timestamps=JSON.parse(execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_frames','-show_entries','frame=best_effort_timestamp_time','-of','json',path],{encoding:'utf8'})).frames.map(f=>Number(f.best_effort_timestamp_time));
+  expect(timestamps.length).toBeGreaterThan(10);
+  const span=Math.max(...timestamps)-Math.min(...timestamps);
+  expect(span).toBeGreaterThan(1.4);expect(span).toBeLessThan(4);
+  const frames=execFileSync('ffmpeg',['-v','error','-i',path,'-vf','fps=1','-frames:v','2','-f','rawvideo','-pix_fmt','rgb24','pipe:1'],{maxBuffer:8*1024*1024});
+  const frameBytes=960*540*3;expect(frames.length).toBe(frameBytes*2);
+  expect(frames.subarray(0,frameBytes).equals(frames.subarray(frameBytes))).toBeFalsy();
   await expect(page.getByRole('button',{name:'Rehearse',exact:true})).toBeEnabled();
 });
 test('desktop/mobile controls work and lack of headset has an honest message',async({page},info)=>{
@@ -53,8 +59,7 @@ test('desktop/mobile controls work and lack of headset has an honest message',as
   await page.getByRole('button',{name:'Save project',exact:true}).click();
   await page.getByRole('button',{name:'Remove shot',exact:true}).click();
   await expect(page.locator('#shots button')).toHaveCount(1);
-  await page.getByRole('button',{name:'Remove shot',exact:true}).click();
-  await expect(page.locator('#shots button')).toHaveCount(1);
+  await expect(page.getByRole('button',{name:'Remove shot',exact:true})).toBeDisabled();
 });
 
 test('page lifecycle restoration resumes rehearsal and context loss retains backups',async({page})=>{

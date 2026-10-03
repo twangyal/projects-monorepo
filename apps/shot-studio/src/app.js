@@ -7,7 +7,7 @@ const $=id=>document.getElementById(id),KEY='shot-studio-v1';
 let project=createProject(),selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,abort=null,frame=0;
 const status=text=>$('status').textContent=text;
 try{const draft=localStorage.getItem(KEY);if(draft)project=importProject(draft);}catch{status('Could not load the saved draft. It has been preserved; save a backup before making changes.');}
-let renderer;
+let renderer,graphicsLost=false;
 try{renderer=new StageRenderer($('stage'));}catch(e){status(e.message);for(const b of document.querySelectorAll('button'))b.disabled=true;throw e;}
 const busy=()=>exporting||xrPending||!!xr;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(project));status('Saved in this browser.');}catch{status('Browser storage is unavailable. Use Save project to keep a backup.');}}
@@ -22,7 +22,8 @@ function refresh(){
   project.shots.forEach((shot,i)=>{const b=document.createElement('button');b.type='button';b.textContent=`${String(i+1).padStart(2,'0')} · ${shot.name} / ${shot.duration}s`;b.setAttribute('aria-pressed',String(i===selected));b.disabled=busy();b.onclick=()=>{stop();selected=i;time=shotStart(i);refresh();};$('shots').append(b);});
   $('fields').disabled=busy();
   for(const id of ['play','stop','add','remove','save','export'])$(id).disabled=busy();
-  $('import').disabled=busy();$('scrub').disabled=busy();$('vr').disabled=exporting||xrPending;
+  for(const id of ['play','stop','export'])$(id).disabled=busy()||graphicsLost;
+  $('import').disabled=busy();$('scrub').disabled=busy();$('vr').disabled=exporting||xrPending||graphicsLost;
   $('vr').textContent=xr?'Exit VR':'Enter VR';$('cancel').hidden=!exporting;
   $('remove').disabled=busy()||project.shots.length===1;
 }
@@ -62,11 +63,12 @@ $('vr').onclick=async()=>{
   try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status('Left VR.');refresh();});status('VR active. Select the floor to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;refresh();}
 };
 function loop(now){
-  frame=requestAnimationFrame(loop);if(xr||xrPending||exporting)return;
+  frame=requestAnimationFrame(loop);if(xr||xrPending||exporting||graphicsLost)return;
   if(playing){time=Math.min(totalDuration(project),(now-start)/1000);if(time>=totalDuration(project))stop();}
   renderer.draw(project,time,shotAt(project,time).shot);$('time').textContent=`${time.toFixed(2)} / ${totalDuration(project).toFixed(2)}s`;$('scrub').value=time;
   $('shotLabel').textContent=`CAMERA ${String(shotAt(project,time).index+1).padStart(2,'0')} · ${shotAt(project,time).shot.name}`;
 }
 window.addEventListener('pagehide',()=>{abort?.abort();stop();cancelAnimationFrame(frame);xr?.end();});
-$('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();stop();abort?.abort();status('The graphics context was lost. Save your project backup, then reload.');});
+window.addEventListener('pageshow',()=>{stop();cancelAnimationFrame(frame);frame=requestAnimationFrame(loop);});
+$('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();abort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});
 refresh();if($('status').textContent==='Starting the stage…')status('Ready. Rehearse the starter film or arrange your own scene.');frame=requestAnimationFrame(loop);
