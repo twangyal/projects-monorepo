@@ -70,3 +70,7 @@ Compose opens a draft editor; Save draft stores text in memory for this session.
 Nine automated tests passed, including search/selection, draft validation and detached snapshots, and the complete simulated gaze-to-composer path. Lint/build validate syntax only. No browser visual or webcam check was performed. Layout-changing actions clear pending dwell and require fresh pointer movement in simulation.
 
 Next: provide a held-out accuracy check with local measurement results, then separate camera lifecycle controls and evaluate decision models. Project #1 remains ACTIVE: arbitrary browser control and AI decision-making are still absent.
+
+### Tracking lifecycle — 2026-10-03
+
+Pause clears dwell and suspends navigation; Resume starts fresh. Pause leaves the camera running. Stop tracking calls WebGazer's listener cleanup/end methods, cancels simulation frames, removes pointer listeners, and enables choosing another mode. Restart requires calibration again. Camera startup failure also cleans up before permitting retry; camera controls become available once startup resolves. Late camera callbacks are ignored in other modes. Ten automated tests passed; camera tests use an adapter harness and do not establish physical webcam release or accuracy.

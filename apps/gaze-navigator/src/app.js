@@ -20,6 +20,8 @@ const playground = document.querySelector('#playground');
 const result = document.querySelector('#result');
 const cursor = document.querySelector('#gazeCursor');
 const dwellFill = document.querySelector('#dwellFill');
+const pauseButton = document.querySelector('#pauseTracking');
+const stopButton = document.querySelector('#stopTracking');
 
 let currentTarget = null;
 let simulationPoint = null;
@@ -28,6 +30,10 @@ let trackingMode = null;
 let calibrationIndex = 0;
 let calibrationClicks = 0;
 let gazeHandler = null;
+let paused = false;
+const pointerHandler = event => {
+  if (!paused) simulationPoint = { x: event.clientX, y: event.clientY };
+};
 
 function setStatus(message) {
   status.textContent = message;
@@ -53,7 +59,7 @@ function activate(target) {
 }
 
 function consumePoint(x, y, now = performance.now()) {
-  if (document.hidden || playground.classList.contains('hidden') ||
+  if (paused || !trackingMode || document.hidden || playground.classList.contains('hidden') ||
       !Number.isFinite(x) || !Number.isFinite(y)) {
     dwell.reset();
     clearFocus();
@@ -120,10 +126,10 @@ function finishCalibration() {
 }
 
 function enableSimulation() {
+  if (trackingMode) return;
   trackingMode = 'simulation';
-  document.addEventListener('pointermove', event => {
-    simulationPoint = { x: event.clientX, y: event.clientY };
-  });
+  paused = false;
+  document.addEventListener('pointermove', pointerHandler);
   document.documentElement.addEventListener('pointerleave', resetTracking);
   function sample(now) {
     if (simulationPoint) consumePoint(simulationPoint.x, simulationPoint.y, now);
@@ -132,10 +138,13 @@ function enableSimulation() {
   simulationFrame = window.requestAnimationFrame(sample);
   simulateButton.disabled = true;
   startButton.disabled = true;
+  pauseButton.disabled = false;
+  stopButton.disabled = false;
   beginCalibration();
 }
 
 async function enableCamera() {
+  if (trackingMode) return;
   if (!window.webgazer) {
     setStatus('WebGazer did not load. Try pointer simulation instead.');
     return;
@@ -145,16 +154,18 @@ async function enableCamera() {
     startButton.disabled = true;
     simulateButton.disabled = true;
     gazeHandler = data => {
+      if (trackingMode !== 'camera') return;
       if (data) consumePoint(data.x, data.y);
       else resetTracking();
     };
     window.webgazer.setGazeListener(gazeHandler);
     await window.webgazer.begin();
+    pauseButton.disabled = false;
+    stopButton.disabled = false;
     beginCalibration();
   } catch (error) {
     console.error(error);
-    startButton.disabled = false;
-    simulateButton.disabled = false;
+    stopTracking();
     setStatus('Camera tracking could not start. Check camera permission or use pointer simulation.');
   }
 }
@@ -165,6 +176,39 @@ function resetTracking() {
   simulationPoint = null;
   cursor.classList.remove('visible');
 }
+
+function stopTracking() {
+  const wasCamera = trackingMode === 'camera';
+  trackingMode = null;
+  paused = false;
+  resetTracking();
+  if (simulationFrame !== null) window.cancelAnimationFrame(simulationFrame);
+  simulationFrame = null;
+  document.removeEventListener('pointermove', pointerHandler);
+  document.documentElement.removeEventListener('pointerleave', resetTracking);
+  if (wasCamera && window.webgazer) {
+    window.webgazer.clearGazeListener();
+    window.webgazer.end();
+  }
+  gazeHandler = null;
+  startButton.disabled = false;
+  simulateButton.disabled = false;
+  recalibrateButton.disabled = true;
+  pauseButton.disabled = true;
+  pauseButton.textContent = 'Pause tracking';
+  stopButton.disabled = true;
+  calibration.classList.add('hidden');
+  setStatus('Tracking stopped. Choose a mode to start again.');
+}
+
+pauseButton.addEventListener('click', () => {
+  if (!trackingMode) return;
+  paused = !paused;
+  resetTracking();
+  pauseButton.textContent = paused ? 'Resume tracking' : 'Pause tracking';
+  setStatus(paused ? 'Navigation paused. Camera stays on until Stop tracking.' : 'Tracking resumed. Hold on a target to confirm.');
+});
+stopButton.addEventListener('click', stopTracking);
 
 document.addEventListener('visibilitychange', resetTracking);
 window.addEventListener('blur', resetTracking);
@@ -179,10 +223,4 @@ recalibrateButton.addEventListener('click', () => {
   beginCalibration();
 });
 
-window.addEventListener('beforeunload', () => {
-  if (simulationFrame !== null) window.cancelAnimationFrame(simulationFrame);
-  if (trackingMode === 'camera' && window.webgazer) {
-    if (gazeHandler) window.webgazer.clearGazeListener();
-    window.webgazer.end();
-  }
-});
+window.addEventListener('beforeunload', stopTracking);

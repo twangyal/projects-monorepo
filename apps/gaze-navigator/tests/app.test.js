@@ -11,6 +11,7 @@ function element() {
     scrollBy(options) { this.lastScroll = options.top; },
     classList: { add: value => classes.add(value), remove: value => classes.delete(value), contains: value => classes.has(value) },
     addEventListener: (name, callback) => listeners.set(name, callback),
+    removeEventListener: name => listeners.delete(name),
     emit: (name, event = {}) => listeners.get(name)?.(event),
     replaceChildren() { this.children = []; },
     append(child) { this.children.push(child); },
@@ -21,7 +22,7 @@ function element() {
 }
 
 test('stationary pointer confirms once, resets on leave, and ignores calibration', async () => {
-  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton'];
+  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking'];
   const nodes = Object.fromEntries(ids.map(id => [id, element()]));
   nodes.playground.classList.add('hidden');
   const target = nodes.composeButton;
@@ -81,6 +82,22 @@ test('stationary pointer confirms once, resets on leave, and ignores calibration
     doc.emit('visibilitychange');
     for (let now = 6200; now <= 7200; now += 100) frame(now);
     assert.equal(confirmations, 2);
+    doc.hidden = false;
+    nodes.pauseTracking.emit('click');
+    doc.emit('pointermove', { clientX: 100, clientY: 100 });
+    for (let now = 7300; now <= 8300; now += 100) frame(now);
+    assert.equal(confirmations, 2);
+    nodes.pauseTracking.emit('click');
+    doc.emit('pointermove', { clientX: 100, clientY: 100 });
+    for (let now = 8400; now <= 9300; now += 100) frame(now);
+    assert.equal(confirmations, 3);
+    nodes.stopTracking.emit('click');
+    assert.equal(nodes.simulate.disabled, false);
+    assert.equal(nodes.startCamera.disabled, false);
+    assert.equal(frame, null);
+    nodes.simulate.emit('click');
+    assert.notEqual(frame, null);
+    assert.equal(nodes.playground.classList.contains('hidden'), true);
     win.emit('beforeunload');
     assert.equal(frame, null);
   } finally {
