@@ -17,11 +17,12 @@ test.beforeEach(async ({ page }) => {
       return route.abort();
     }
     const request = route.request();
+    if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': BASE, 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
     const body = request.method() === 'POST' ? request.postDataJSON() : null;
     state.local.push({ path: url.pathname, body });
     const reply = value => route.fulfill({ json: value, headers: { 'access-control-allow-origin': BASE } });
     if (url.pathname === '/api/status') return reply({ cloud: { disabled: state.mode !== 'cloud' } });
-    if (url.pathname === '/api/tags') return reply({ models: [{ name: 'tev1:0.8b', digest: 'a'.repeat(64), size: 812000000, details: { format: 'gguf' } }] });
+    if (url.pathname === '/api/tags') return reply({ models: [{ name: 'tev1:0.8b-q8_0', digest: 'a'.repeat(64), size: 812000000, details: { format: 'gguf' } }] });
     if (url.pathname === '/api/show') return reply({ details: { format: 'gguf' }, capabilities: ['decision'] });
     if (url.pathname !== '/v1/systemone') return route.abort();
     if (state.mode === 'wait') { state.blocked = route; return; }
@@ -87,7 +88,7 @@ test('explicit local run uses typed local requests and records comparable proven
   expect(calls.filter(c => c.path === '/v1/systemone')).toHaveLength(11);
   expect(calls.slice(0, 3).map(c => c.path)).toEqual(['/api/status', '/api/tags', '/api/show']);
   for (const call of calls.filter(c => c.body)) {
-    expect(call.body.model).toBe('tev1:0.8b:local');
+    expect(call.body.model).toBe('tev1:0.8b-q8_0:local');
     expect(call.body.state?.expected).toBeUndefined();
     expect(call.body.state?.caseId).toBeUndefined();
   }

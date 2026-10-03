@@ -9,7 +9,7 @@ function service(overrides = {}) {
   const fetchImpl = async (url, options) => {
     calls.push({ url, options });
     if (url.endsWith('/api/status')) return json(overrides.status ?? { cloud: { disabled: true } });
-    if (url.endsWith('/api/tags')) return json({ models: [{ name: 'tev1:0.8b', digest: 'a'.repeat(64), size: 812000000, details: { format: 'gguf' }, ...overrides.tag }] });
+    if (url.endsWith('/api/tags')) return json({ models: [{ name: 'tev1:0.8b-q8_0', digest: 'a'.repeat(64), size: 812000000, details: { format: 'gguf' }, ...overrides.tag }] });
     if (url.endsWith('/api/show')) return json(overrides.show ?? { details: { format: 'gguf' }, capabilities: ['decision'] });
     if (url.endsWith('/v1/systemone')) {
       const request = JSON.parse(options.body);
@@ -38,7 +38,7 @@ test('local model preflight and choice use only fixed loopback and force local s
 });
 
 test('cloud names are rejected before any network operation', () => {
-  for (const model of ['tev1:cloud', 'tev1:4b-cloud', 'https://host/model', 'tev1:0.8b:cloud', 'tev1:0.8b:local', '../model']) {
+  for (const model of ['tev1:cloud', 'tev1:4b-cloud', 'https://host/model', 'tev1:0.8b-q8_0:cloud', 'tev1:0.8b-q8_0:local', '../model']) {
     assert.throws(() => createLocalDecisionModel({ model }));
   }
 });

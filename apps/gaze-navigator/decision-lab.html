@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Decision Lab — Gaze Navigator</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./decision-lab.css" />
+</head>
+<body>
+  <main class="decision-lab">
+    <header class="lab-header">
+      <a href="./index.html">← Gaze Navigator</a>
+      <p class="eyebrow">Decision lab</p>
+      <h1>Can context find the right control?</h1>
+      <p class="lede">Compare target decisions on 14 synthetic gaze tasks. Inspect ambiguity, try a local model, and keep a record of what worked.</p>
+      <p class="privacy">This lab uses sample tasks. It does not turn on a camera or activate navigation controls.</p>
+    </header>
+
+    <section class="panel lab-case" aria-labelledby="caseHeading">
+      <h2 id="caseHeading">Inspect a task</h2>
+      <label for="caseSelect">Synthetic task</label>
+      <select id="caseSelect"></select>
+      <dl class="case-context">
+        <div><dt>Goal</dt><dd id="caseGoal"></dd></div>
+        <div><dt>Expected decision</dt><dd id="expectedTarget"></dd></div>
+        <div><dt>Gaze sample</dt><dd id="gazeDescription"></dd></div>
+      </dl>
+      <div id="scenarioBoard" class="scenario-board" role="img" aria-label="Synthetic target geometry"></div>
+      <p class="board-legend">White dot: gaze. Green border: expected control. White outline: selected report's decision. Diagram scales a 1000 × 600 synthetic viewport.</p>
+      <ul id="targetDetails" class="target-details"></ul>
+    </section>
+
+    <section class="panel lab-run" aria-labelledby="runHeading">
+      <h2 id="runHeading">Compare decisions</h2>
+      <p>The geometric baseline uses proximity alone. A local decision model can also use the stated goal. Each can select a nearby enabled control or abstain.</p>
+      <div class="lab-actions">
+        <button id="runBaseline">Run baseline offline</button>
+        <button id="cancelRun" disabled>Cancel run</button>
+      </div>
+      <label for="localModel">Installed local decision model</label>
+      <input id="localModel" value="tev1:0.8b-q8_0" maxlength="80" autocomplete="off" spellcheck="false" aria-describedby="localAvailability" />
+      <div class="lab-actions"><button id="runLocal">Run local model</button></div>
+      <p id="localAvailability" class="privacy"></p>
+      <details class="local-setup">
+        <summary>Local model setup</summary>
+        <p>Use Ollama 0.35 or newer in local-only mode, with a GGUF decision model already installed. Tev1 and Nimble are candidates. This page never downloads models or connects to a hosted provider.</p>
+        <p>See the <a href="https://github.com/twangyal/projects-monorepo/blob/main/apps/gaze-navigator/README.md#decision-lab">setup and report instructions</a>.</p>
+      </details>
+      <p id="runStatus" role="status">Choose a run to begin. The baseline works offline.</p>
+    </section>
+
+    <section class="panel lab-results" aria-labelledby="resultsHeading">
+      <h2 id="resultsHeading">Results</h2>
+      <label for="reportSelect">Selected report</label>
+      <select id="reportSelect" disabled><option>No reports yet</option></select>
+      <p id="reportProvenance" class="report-provenance">Reports stay in this page until you export them.</p>
+      <p id="summary" class="summary">Run a comparison to see agreement with the task labels.</p>
+      <p class="privacy">Agreement on these synthetic tasks is not webcam accuracy or proof of model reliability. A model's confidence score describes its output distribution; it does not guarantee correctness. Imported reports are unverified file data.</p>
+      <div class="lab-actions"><button id="exportReport" disabled>Export selected report</button></div>
+      <label for="importReport">Load a comparison report (JSON, up to 256 KiB)</label>
+      <input id="importReport" type="file" accept=".json,application/json" />
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Per-case comparison, scroll horizontally if needed">
+        <table>
+          <caption>Expected decisions and observed results. Errors and untested cases stay in the overall denominator.</caption>
+          <thead><tr><th scope="col">Task</th><th scope="col">Expected</th><th scope="col">Latest baseline</th><th id="selectedColumn" scope="col">Selected report</th></tr></thead>
+          <tbody id="caseResults"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./src/decision-lab.js"></script>
+</body>
+</html>

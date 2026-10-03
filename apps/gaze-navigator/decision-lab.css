@@ -1,0 +1,41 @@
+.decision-lab { max-width: 1100px; padding: 48px 0 80px; }
+.lab-header { max-width: 800px; margin-bottom: 32px; }
+.lab-header h1 { max-width: none; font-size: clamp(2.4rem, 7vw, 4.5rem); line-height: 1.05; }
+.decision-lab a { color: #75e5b4; text-underline-offset: 3px; }
+.decision-lab .panel { margin-bottom: 24px; min-width: 0; }
+.decision-lab h2 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin-bottom: 18px; }
+.decision-lab p { line-height: 1.55; }
+.decision-lab label { display: block; font-weight: 700; margin: 18px 0 8px; }
+.decision-lab select, .decision-lab input { display: block; width: 100%; min-width: 0; max-width: 100%; font: inherit; color: #eef8f3; background: #091914; border: 1px solid #456b5c; border-radius: 10px; padding: 12px; }
+.decision-lab button { border: 1px solid #70e1af; border-radius: 12px; background: #102820; color: #eef8f3; padding: 14px 18px; min-height: 52px; font: inherit; font-weight: 700; cursor: pointer; }
+.lab-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+#runBaseline { background: #70e1af; color: #07110e; }
+.case-context { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin: 24px 0; }
+.case-context div { min-width: 0; }
+.case-context dt { font-size: .85rem; color: #8ea79c; margin-bottom: 6px; }
+.case-context dd { margin: 0; overflow-wrap: anywhere; }
+.scenario-board { position: relative; width: 100%; aspect-ratio: 5 / 3; border: 1px solid #31584a; border-radius: 16px; background: #07110e; overflow: hidden; }
+.scenario-target { position: absolute; display: grid; place-items: center; padding: 3px; border: 2px solid #456b5c; border-radius: 10px; background: #102820; color: #eef8f3; font-size: clamp(.65rem, 2vw, 1rem); text-align: center; overflow-wrap: anywhere; }
+.scenario-target.is-disabled { opacity: .4; border-style: dashed; }
+.scenario-target.is-expected { border-color: #75e5b4; }
+.scenario-target.is-selected { outline: 2px solid white; outline-offset: 2px; }
+.scenario-gaze { position: absolute; width: 14px; height: 14px; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid #07110e; background: white; box-shadow: 0 0 0 2px white; pointer-events: none; }
+.board-legend { font-size: .85rem; color: #b6c9c0; }
+.target-details { padding-left: 22px; color: #b6c9c0; line-height: 1.6; }
+.local-setup { border-top: 1px solid #31584a; padding-top: 16px; margin: 20px 0; }
+.local-setup summary { cursor: pointer; }
+.report-provenance { overflow-wrap: anywhere; font-size: .9rem; color: #b6c9c0; }
+.summary { padding: 16px; border: 1px solid #456b5c; border-radius: 12px; color: #c0f2db; }
+.table-scroll { overflow-x: auto; margin-top: 24px; border: 1px solid #31584a; border-radius: 12px; }
+.decision-lab table { border-collapse: collapse; width: 100%; min-width: 680px; text-align: left; font-size: .9rem; }
+.decision-lab caption { text-align: left; padding: 14px; color: #8ea79c; line-height: 1.5; }
+.decision-lab th, .decision-lab td { padding: 14px; vertical-align: top; border-top: 1px solid #31584a; overflow-wrap: anywhere; }
+.decision-lab thead th { color: #b6c9c0; }
+.decision-lab tbody th { width: 30%; font-weight: 500; }
+.decision-lab td { white-space: pre-line; }
+.decision-lab tr[data-outcome="mismatch"] td:last-child, .decision-lab tr[data-outcome="error"] td:last-child { color: #ffca91; }
+@media (max-width: 650px) {
+  .decision-lab { padding-top: 28px; }
+  .case-context { grid-template-columns: 1fr; }
+  .lab-actions button { flex: 1 1 100%; }
+}

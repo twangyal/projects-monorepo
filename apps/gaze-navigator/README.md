@@ -41,8 +41,54 @@ Open `http://localhost:4173`.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
 - `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.
 - `styles.css` — responsive presentation.
+- `src/decision-contract.js` / `src/decision-fixtures.js` — bounded nearby-target decisions and a versioned synthetic task suite.
+- `src/decision-evaluation.js` — cancellation-safe comparison runner, honest partial/error metrics, and strict report validation.
+- `src/local-decision-model.js` — explicit, fixed-loopback local System One inference with cloud-disabled/GGUF checks.
+- `decision-lab.html` / `src/decision-lab.js` / `decision-lab.css` — case inspection, model comparison, and JSON report import/export.
 
-The target resolver and a held-out accuracy check are now implemented. The next useful step is to collect physical webcam measurements before introducing an AI decision model. That keeps the eventual model comparison independent from webcam estimation and browser actions.
+The navigation prototype and held-out accuracy check remain separate from the decision lab. Synthetic model comparisons can now be developed without conflating them with webcam accuracy or live action execution. Physical webcam measurements and live contextual navigation remain separate milestones.
+
+## Decision lab
+
+Open `http://127.0.0.1:4173/decision-lab.html` or follow **Compare target decision models** from the navigator.
+
+The lab contains 14 author-labeled synthetic tasks: direct hits, small gaze errors, nearby ambiguity, goal context, disabled controls, missing gaze, and incompatible goals. The diagram scales a fixed 1000 × 600 task viewport. **Run baseline offline** chooses the uniquely closest enabled control within 64 task pixels, abstaining when the top distances differ by 4 pixels or less. It ignores the goal and gets 9/14 labels right; that exposes a useful context gap rather than pretending geometry is AI.
+
+**Run local model** is optional. Install [Ollama 0.35 or newer](https://docs.ollama.com/capabilities/decision) yourself and use local-only mode. If needed, stop its currently running service/app before starting a local-only server:
+
+```bash
+OLLAMA_NO_CLOUD=1 OLLAMA_HOST=127.0.0.1:11434 ollama serve
+```
+
+In another terminal, manually download an explicit GGUF decision model:
+
+```bash
+ollama pull tev1:0.8b-q8_0
+```
+
+[Tev1 0.8B GGUF](https://ollama.com/library/tev1/tags) is approximately 812 MB; larger Tev1 or Nimble decision models may also be selected if already installed. Use a GGUF tag: the generic tags can select different platform backends, while the current System One endpoint requires GGUF. The app installs/downloads nothing. Serve/open this page from loopback; no extra CORS origins or browser-security flags are needed. On GUI/service installations, follow [Ollama's configuration instructions](https://docs.ollama.com/faq) to enable local-only mode and restart.
+
+The adapter talks only to `http://127.0.0.1:11434`. Before inference it requires `/api/status` to report cloud disabled, verifies installed local GGUF/decision metadata and a model digest, and forces a `:local` model reference. Cloud names, remote metadata, redirects, credentials, and chat-only models are refused. Requests have a 60-second deadline and a 256-KiB response limit. Older servers without cloud status fail closed. Cancel retains completed cases and releases the interface even when a transport ignores cancellation.
+
+The [System One request](https://docs.ollama.com/api/systemone) uses the same typed choice shape as [Jev](https://docs.typesafe.ai/primitives/choice). Only nearby enabled candidate IDs plus an abstention option are supplied. Expected labels, case IDs/titles, camera frames, real drafts, and arbitrary page content are excluded. Confidence is the model's output-concentration score, not a measured chance of correctness on gaze tasks. Mean decision time includes adapter checks/transport and is not webcam latency.
+
+Results show every expected/observed choice alongside the latest baseline. Overall agreement uses all 14 cases as the denominator; failed and missing cases do not improve it. Up to eight reports stay in the page; export useful results before refreshing. JSON exports include the suite version, model ID/kind/digest, timestamp, cancellation state, and per-case decision/error/time. Import rejects wrong suites, unknown/duplicate cases, invalid IDs/confidence, disabled or distant selections, and oversized files. Imported results are unverified file data. A partial external report has this shape:
+
+```json
+{
+  "format": "gaze-decision-report",
+  "version": 1,
+  "suite": "gaze-targets-v1",
+  "model": { "id": "External candidate", "kind": "external", "digest": null },
+  "createdAt": "2026-10-03T00:00:00.000Z",
+  "cancelled": false,
+  "results": [
+    { "caseId": "compose-hit", "decision": { "targetId": "t1", "confidence": 0.8 }, "elapsedMs": 42, "error": null }
+  ]
+}
+```
+
+Actual local-model quality, a Jev comparison, and applying context decisions to live navigation remain unverified/unimplemented. CI's controlled local API responses test integration boundaries; they are not model-quality measurements.
 
 ## Verification
 

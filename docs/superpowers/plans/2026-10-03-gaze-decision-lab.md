@@ -37,10 +37,10 @@
 
 **Interfaces:** validateTask(task), eligibleTargets(task), validateDecision(task, decision), geometricDecision(task), buildChoiceRequest(task, model), parseChoiceResponse(task, response); CASES and SUITE_VERSION; runSuite(cases, adapter, options), validateReport(report, cases), summarize(cases, results).
 
-- [ ] Add tests for finite/bounded geometry, disabled/distant/ambiguous candidates, closed-set decisions, fixture validity, privacy of model inputs, partial/error metrics, strict imports, and cancellation.
-- [ ] Commit the tests with #6 and inspect CI for the expected missing implementation failure.
-- [ ] Implement bounded contracts, 14 frozen labeled synthetic cases, baseline and sequential runner.
-- [ ] Verify Node tests and lint in CI; commit useful progress.
+- [x] Add tests for finite/bounded geometry, disabled/distant/ambiguous candidates, closed-set decisions, fixture validity, privacy of model inputs, partial/error metrics, strict imports, and cancellation.
+- [x] Commit the tests with #6 and inspect CI for the expected missing implementation failure.
+- [x] Implement bounded contracts, 14 frozen labeled synthetic cases, baseline and sequential runner.
+- [x] Verify Node tests and lint in CI; commit useful progress.
 
 ### Task 2: Local decision-model adapter
 
@@ -48,10 +48,10 @@
 
 **Interfaces:** createLocalDecisionModel({model, fetchImpl, timeoutMs}) returns {id, kind, digest, decide(task, {signal})}. Preflight verifies local-only server and installed GGUF decision metadata; every output is validated against the same task.
 
-- [ ] Add tests for cloud names/status/metadata, known local requests, response validation, bounded body/time, and uncooperative cancellation.
-- [ ] Inspect expected red CI before implementing; do not claim mocked transport as actual model inference.
-- [ ] Implement fixed loopback, cloud-disabled/version-capable preflight, local-source references, bounded JSON responses, timeout/abort cleanup, and safe errors.
-- [ ] Verify all targeted/full existing unit checks in CI and commit.
+- [x] Add tests for cloud names/status/metadata, known local requests, response validation, bounded body/time, and uncooperative cancellation.
+- [x] Inspect expected red CI before implementing; do not claim mocked transport as actual model inference.
+- [x] Implement fixed loopback, cloud-disabled/version-capable preflight, local-source references, bounded JSON responses, timeout/abort cleanup, and safe errors.
+- [x] Verify all targeted/full existing unit checks in CI and commit.
 
 ### Task 3: Usable comparison interface and native regressions
 
@@ -59,9 +59,9 @@
 
 **Interfaces:** choose a fixture; view goal/geometry/gaze/expected target; Run baseline offline or explicitly run a local model; cancel; compare results; export/reload reports. Report format is versioned and validates all rows.
 
-- [ ] Add real Chromium tests for offline results, fixture selection, local mock integration/errors/cancel/retry, safe imported reports, and responsive controls.
-- [ ] Inspect red CI and implement the interface without external page-load requests.
-- [ ] Keep setup documentation honest about Ollama 0.35+ and local-only mode; no auto-install or hosted API keys.
+- [x] Add real Chromium tests for offline results, fixture selection, local mock integration/errors/cancel/retry, safe imported reports, and responsive controls.
+- [x] Inspect red CI and implement the interface without external page-load requests.
+- [x] Keep setup documentation honest about Ollama 0.35+ and local-only mode; no auto-install or hosted API keys.
 - [ ] Verify all Node/browser/lint/build checks at desktop, narrow, short, and compact-boundary viewports.
 - [ ] Request a fresh whole-change review, fix Important/Critical findings, record exact CI/head evidence and model/hardware limits.
 - [ ] Commit documentation, update/close #6 according to actual completion; reassess repository immediately.
@@ -80,3 +80,10 @@
 - User's explicit continuous autonomy supplies authorization for routine design/commit choices; no design-confirmation pause.
 - Runtime service outage prevents a fresh local worktree. Each atomic GitHub write checks main's current SHA and uses its current tree without force; concurrent changes require reconciliation.
 - CI runs against the exact committed source and is the verification authority. Public standard runner; existing workflow has no artifact/cache uploads.
+
+## Verification so far
+
+- Tests-first CI 37134890270 failed on the missing implementation modules; existing 37 tests passed.
+- Core CI 37135383261 at c3cf372: 55 Node tests, lint/build, and the existing 24 Chromium cases passed.
+- UI tests-first CI 37135623720 at 8c84229: 55 Node tests and existing 24 browser cases passed; all 24 new lab cases failed at the expected missing-page HTTP 404.
+- Platform research selected explicit tev1:0.8b-q8_0 as the default GGUF candidate, rather than a generic tag that can choose MLX/Safetensors. Actual model inference has not run.

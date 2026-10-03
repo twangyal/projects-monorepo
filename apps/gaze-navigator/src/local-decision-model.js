@@ -28,7 +28,7 @@ async function readJSON(response) {
   catch { throw new Error('Local response is not valid JSON'); }
 }
 
-export function createLocalDecisionModel({ model = 'tev1:0.8b', fetchImpl = globalThis.fetch, timeoutMs = 60000 } = {}) {
+export function createLocalDecisionModel({ model = 'tev1:0.8b-q8_0', fetchImpl = globalThis.fetch, timeoutMs = 60000 } = {}) {
   if (typeof model !== 'string' || model.length > 80 || !/^[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)?(?::[a-z0-9][a-z0-9._-]*)?$/i.test(model) ||
       /(?:cloud|local)$/i.test(model.split(':').at(-1))) throw new Error('Choose a local model name without a cloud/local source suffix');
   if (!Number.isFinite(timeoutMs) || timeoutMs < 1 || timeoutMs > 120000 || typeof fetchImpl !== 'function') throw new Error('Invalid local adapter options');
