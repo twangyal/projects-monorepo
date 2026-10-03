@@ -1,0 +1,40 @@
+name: Melody Studio
+
+on:
+  push:
+    paths:
+      - 'apps/melody-studio/**'
+      - '.github/workflows/melody-studio.yml'
+  pull_request:
+    paths:
+      - 'apps/melody-studio/**'
+      - '.github/workflows/melody-studio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/melody-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/melody-studio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: melody-studio-test-results
+          path: apps/melody-studio/test-results
+          retention-days: 7

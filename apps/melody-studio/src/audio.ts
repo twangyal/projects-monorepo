@@ -4,6 +4,15 @@ const MIN_HZ = 440 * 2 ** ((36 - 69) / 12);
 const MAX_HZ = 440 * 2 ** ((96 - 69) / 12);
 const MAX_SECONDS = 20;
 const RELEASE = 0.08;
+const OSCILLATOR_TABLE_SIZE = 4096;
+const oscillatorTables = {
+  sine: Float64Array.from({ length: OSCILLATOR_TABLE_SIZE + 1 }, (_, i) => Math.sin(2 * Math.PI * i / OSCILLATOR_TABLE_SIZE)),
+  triangle: Float64Array.from({ length: OSCILLATOR_TABLE_SIZE + 1 }, (_, i) => {
+    const phase = i / OSCILLATOR_TABLE_SIZE;
+    return phase < 0.25 ? 4 * phase : phase < 0.75 ? 2 - 4 * phase : 4 * phase - 4;
+  }),
+  sawtooth: Float64Array.from({ length: OSCILLATOR_TABLE_SIZE + 1 }, (_, i) => 2 * i / OSCILLATOR_TABLE_SIZE - 1),
+};
 
 function checkSampleRate(sampleRate: number): void {
   if (!Number.isFinite(sampleRate) || sampleRate < 8000 || sampleRate > 192000) {
@@ -164,24 +173,51 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
   if (!Number.isFinite(endBeat) || endBeat < 0 || endBeat > 128) throw new RangeError('Composition exceeds 128 beats.');
   if (endBeat === 0) return new Float32Array();
   const result = new Float32Array(Math.ceil((endBeat * secondsPerBeat + RELEASE) * sampleRate));
+  const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; gain: number }>();
   for (const track of project.tracks) {
     if (track.muted || track.volume === 0) continue;
     for (const note of track.notes) {
-      const hz = 440 * 2 ** ((note.pitch - 69) / 12);
-      const start = Math.round(note.start * secondsPerBeat * sampleRate);
-      const duration = note.duration * secondsPerBeat;
-      const length = Math.ceil((duration + RELEASE) * sampleRate);
+      if (note.velocity === 0) continue;
+      const key = `${track.instrument}:${note.pitch}:${note.start}:${note.duration}`;
       const gain = track.volume * note.velocity * 0.4;
-      for (let i = 0; i < length && start + i < result.length; i++) {
-        const time = i / sampleRate;
-        const envelope = Math.min(1, time / 0.01) * (time <= duration ? 1 : Math.max(0, 1 - (time - duration) / RELEASE));
-        const cycle = (hz * time) % 1;
-        let wave: number;
-        if (track.instrument === 'triangle') wave = 2 / Math.PI * Math.asin(Math.sin(2 * Math.PI * cycle));
-        else if (track.instrument === 'sawtooth') wave = 2 * cycle - 1;
-        else wave = Math.sin(2 * Math.PI * cycle);
-        result[start + i] += wave * gain * envelope;
-      }
+      const existing = groups.get(key);
+      if (existing) existing.gain += gain;
+      else groups.set(key, { note, instrument: track.instrument, gain });
+    }
+  }
+  // Identical oscillators add linearly. Sum their gains once to avoid rendering
+  // duplicate sample streams and accumulating thousands of Float32 rounding errors.
+  const voices = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; placements: { start: number; gain: number }[] }>();
+  for (const { note, instrument, gain } of groups.values()) {
+    const key = `${instrument}:${note.pitch}:${note.duration}`;
+    const placement = { start: Math.round(note.start * secondsPerBeat * sampleRate), gain };
+    const existing = voices.get(key);
+    if (existing) existing.placements.push(placement);
+    else voices.set(key, { note, instrument, placements: [placement] });
+  }
+  // Render each distinct pitch/duration only once, then mix its placements.
+  // Keeping only the current waveform bounds extra memory to one note's length.
+  for (const { note, instrument, placements } of voices.values()) {
+    const hz = 440 * 2 ** ((note.pitch - 69) / 12);
+    const duration = note.duration * secondsPerBeat;
+    const durationSamples = duration * sampleRate;
+    const releaseSamples = RELEASE * sampleRate;
+    const attackSamples = 0.01 * sampleRate;
+    const length = Math.ceil((duration + RELEASE) * sampleRate);
+    const step = hz / sampleRate * OSCILLATOR_TABLE_SIZE;
+    const table = oscillatorTables[instrument];
+    const waveform = new Float64Array(length);
+    for (let i = 0; i < length; i++) {
+      const position = (i * step) % OSCILLATOR_TABLE_SIZE;
+      const index = Math.floor(position);
+      const fraction = position - index;
+      const wave = table[index] + (table[index + 1] - table[index]) * fraction;
+      const envelope = i < attackSamples ? i / attackSamples : i <= durationSamples ? 1 : Math.max(0, 1 - (i - durationSamples) / releaseSamples);
+      waveform[i] = wave * envelope;
+    }
+    for (const { start, gain } of placements) {
+      const mixLength = Math.min(length, result.length - start);
+      for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain;
     }
   }
   let peak = 0;

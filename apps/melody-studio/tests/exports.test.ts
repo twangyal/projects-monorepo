@@ -94,6 +94,44 @@ test('MIDI omits muted and zero-velocity notes, handles long gaps and validates 
   assert.throws(() => encodeMidi({ ...project, tempo: Infinity }));
 });
 
+test('MIDI merges contained, partially overlapping and chained same-pitch notes without premature note-offs', () => {
+  const cases = [
+    { name: 'contained', notes: [[1, 1, 0.9], [0, 4, 0.5]], end: 4, velocity: 114 },
+    { name: 'partial', notes: [[1, 2, 0.8], [0, 2, 0.5]], end: 3, velocity: 102 },
+    { name: 'chain', notes: [[3, 2, 0.4], [0, 2, 0.5], [1.5, 2, 1]], end: 5, velocity: 127 },
+  ];
+  for (const fixture of cases) {
+    const project = createComposition();
+    project.tracks[0].notes = fixture.notes.map(([start, duration, velocity]) => ({ ...createNote(60, start), duration, velocity }));
+    const before = JSON.stringify(project);
+    const bytes = encodeMidi(project);
+    const events = readMidi(bytes).tracks[1].filter(event => [128, 144].includes(event.status));
+    assert.deepEqual(events.map(event => [event.tick, event.status, ...event.data]), [[0, 144, 60, fixture.velocity], [fixture.end * 480, 128, 60, 0]], fixture.name);
+    assert.equal(JSON.stringify(project), before, 'export must not mutate note data');
+    project.tracks[0].notes.reverse();
+    assert.deepEqual(encodeMidi(project), bytes, 'input ordering must not change merged notes');
+  }
+});
+
+test('MIDI keeps adjacent same-pitch attacks and independent pitches and tracks distinct', () => {
+  const project = createComposition();
+  project.tracks[0].notes = [
+    { ...createNote(60, 0), duration: 2, velocity: 0.5 },
+    { ...createNote(60, 0.5), duration: 1, velocity: 0.75 },
+    { ...createNote(60, 2), duration: 1, velocity: 1 },
+    { ...createNote(64, 1), duration: 1, velocity: 0.5 },
+  ];
+  const separate = createTrack();
+  separate.notes = [{ ...createNote(60, 0.5), duration: 1 }];
+  project.tracks.push(separate);
+  const midi = readMidi(encodeMidi(project));
+  assert.deepEqual(midi.tracks[1].filter(event => [128, 144].includes(event.status) && event.data[0] === 60).map(event => [event.tick, event.status, ...event.data]), [
+    [0, 144, 60, 95], [960, 128, 60, 0], [960, 144, 60, 127], [1440, 128, 60, 0],
+  ]);
+  assert.deepEqual(midi.tracks[1].filter(event => [128, 144].includes(event.status) && event.data[0] === 64).map(event => [event.tick, event.status]), [[480, 144], [960, 128]]);
+  assert.deepEqual(midi.tracks[2].filter(event => [129, 145].includes(event.status)).map(event => [event.tick, event.status]), [[240, 145], [720, 129]]);
+});
+
 test('WAV encodes a deterministic mono 16-bit PCM RIFF with clamped samples', () => {
   const bytes = encodeWav(new Float32Array([-2, -1, -0.5, 0, 0.5, 1, 2]), 22_050);
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

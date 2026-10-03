@@ -338,3 +338,68 @@ test('an error callback exception is handled without an unhandled rejection', as
   assert.equal(delivered, 1);
   assert.equal(h.recorder.state, 'idle');
 });
+
+test('a spontaneous recorder stop delivers complete captured audio once through automatic completion', async () => {
+  const h = harness();
+  const delivered: Blob[] = [];
+  await h.start(blob => { delivered.push(blob); });
+  h.device.data('before disconnect');
+  h.device.stop();
+  h.device.data(' final chunk');
+  h.device.finish();
+  h.device.finish();
+  await Promise.resolve();
+  assert.equal(delivered.length, 1);
+  assert.equal(await delivered[0]?.text(), 'before disconnect final chunk');
+  assert.equal(delivered[0]?.type, 'audio/webm');
+  assert.equal(h.recorder.state, 'idle');
+  assert.equal(h.hasTimer(), false);
+  assert.equal(h.stopped(), 2);
+  assert.equal(await h.recorder.stop(), null);
+});
+
+test('a spontaneous stop without audio reports an error instead of an empty completion', async () => {
+  const h = harness();
+  const errors: Error[] = [];
+  await h.start(() => { assert.fail('Empty spontaneous audio delivered'); }, error => { errors.push(error); });
+  h.device.stop();
+  h.device.finish();
+  await Promise.resolve();
+  assert.equal(errors.length, 1);
+  assert.match(errors[0]?.message ?? '', /empty|audio/i);
+  assert.equal(h.recorder.state, 'idle');
+  assert.equal(h.stopped(), 2);
+  await assert.rejects(h.recorder.stop(), errors[0]);
+});
+
+test('manual stop returns its blob without also invoking automatic completion', async () => {
+  const h = harness();
+  await h.start(() => { assert.fail('Manual stop delivered twice'); });
+  h.device.data('manual');
+  const pending = h.recorder.stop();
+  h.device.finish();
+  assert.equal(await (await pending)?.text(), 'manual');
+  await Promise.resolve();
+});
+
+test('cancel suppresses a spontaneous completion awaiting delivery', async () => {
+  const h = harness();
+  await h.start(() => { assert.fail('Cancelled spontaneous audio delivered'); });
+  h.device.data('discard');
+  h.device.stop();
+  h.device.finish();
+  h.recorder.cancel();
+  await Promise.resolve();
+  assert.equal(h.recorder.state, 'idle');
+});
+
+test('a newer recording suppresses spontaneous completion from an earlier generation', async () => {
+  const h = harness();
+  await h.start(() => { assert.fail('Old spontaneous audio delivered'); });
+  h.device.data('older');
+  h.device.stop();
+  h.device.finish();
+  await h.recorder.start(() => {});
+  assert.equal(h.recorder.state, 'recording');
+  h.recorder.cancel();
+});

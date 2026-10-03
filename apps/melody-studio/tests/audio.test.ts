@@ -148,3 +148,48 @@ test('short low notes at the capture boundaries are retained', () => {
   assert.deepEqual(notes.map(n => n.pitch), [36, 48]);
   assert.deepEqual(notes.map(n => n.duration), [0.25, 0.25]);
 });
+
+test('identical overlapping notes across tracks produce the same normalized mix as their summed gain', () => {
+  const single = project([{ ...note, velocity: 1 }]);
+  single.tracks[0].volume = 1;
+  single.tracks[0].instrument = 'triangle';
+  const duplicate = structuredClone(single);
+  duplicate.tracks = Array.from({ length: 8 }, (_, trackIndex) => ({
+    ...single.tracks[0], id: `group-track-${trackIndex}`, volume: 0.5,
+    notes: Array.from({ length: 256 }, (_, noteIndex) => ({ ...note, id: `group-note-${trackIndex}-${noteIndex}`, velocity: 0.5 })),
+  }));
+  const reference = renderComposition(single);
+  const duplicated = renderComposition(duplicate);
+  const gainRatio = peak(duplicated) / peak(reference);
+  assert.equal(duplicated.length, reference.length);
+  for (let i = 0; i < reference.length; i++) assert.ok(Math.abs(duplicated[i] - reference[i] * gainRatio) < 0.00002);
+});
+
+test('all oscillator shapes remain deterministic and use their own note start time', () => {
+  for (const instrument of ['sine', 'triangle', 'sawtooth'] as const) {
+    const immediate = project([note]);
+    immediate.tracks[0].instrument = instrument;
+    const delayed = structuredClone(immediate);
+    delayed.tracks[0].notes[0].start = 1;
+    const first = renderComposition(immediate, 16000);
+    assert.deepEqual(first, renderComposition(immediate, 16000));
+    const second = renderComposition(delayed, 16000);
+    assert.ok(second.subarray(0, 8000).every(value => value === 0));
+    assert.deepEqual(second.subarray(8000), first);
+  }
+});
+
+test('reused waveforms preserve each placement gain, duration, and instrument', () => {
+  const layers = ['triangle', 'triangle', 'sine', 'sawtooth'].map((instrument, i) => ({
+    ...project([{ ...note, id: `placed-${i}`, start: i / 2, duration: i === 3 ? 0.5 : 1, velocity: 0.2 + i / 10 }]).tracks[0],
+    id: `placement-${i}`, instrument: instrument as 'triangle' | 'sine' | 'sawtooth', volume: 0.2,
+  }));
+  const combined = project([]);
+  combined.tracks = layers;
+  const mixed = renderComposition(combined);
+  const parts = layers.map(track => renderComposition({ ...combined, tracks: [track] }));
+  for (let i = 0; i < mixed.length; i++) {
+    const expected = parts.reduce((sum, part) => sum + (part[i] ?? 0), 0);
+    assert.ok(Math.abs(mixed[i] - expected) < 0.000001);
+  }
+});

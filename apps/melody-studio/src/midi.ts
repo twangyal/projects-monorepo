@@ -1,4 +1,4 @@
-import type { Composition } from './types.ts';
+import type { Composition, Note } from './types.ts';
 import { compositionDurationBeats, validateComposition } from './model.ts';
 
 const TICKS_PER_BEAT = 480;
@@ -6,6 +6,30 @@ const TICKS_PER_BEAT = 480;
 const PROGRAMS = { sine: 73, triangle: 80, sawtooth: 81 };
 
 interface Event { tick: number; order: number; bytes: number[] }
+interface MidiNote { pitch: number; start: number; end: number; velocity: number }
+
+function mergeOverlappingNotes(notes: Note[]): MidiNote[] {
+  const sorted = notes.filter(note => note.velocity > 0).map(note => ({
+    pitch: note.pitch,
+    start: Math.round(note.start * TICKS_PER_BEAT),
+    end: Math.round((note.start + note.duration) * TICKS_PER_BEAT),
+    velocity: note.velocity,
+  })).sort((a, b) => a.pitch - b.pitch || a.start - b.start || a.end - b.end);
+  const merged: MidiNote[] = [];
+  for (const note of sorted) {
+    const previous = merged.at(-1);
+    // MIDI note-offs identify pitch/channel, so an overlapping note can cut off
+    // another. Merge same-pitch overlaps at tick precision, using maximum
+    // velocity throughout; touching intervals keep their separate attacks.
+    if (previous && previous.pitch === note.pitch && note.start < previous.end) {
+      previous.end = Math.max(previous.end, note.end);
+      previous.velocity = Math.max(previous.velocity, note.velocity);
+    } else {
+      merged.push(note);
+    }
+  }
+  return merged;
+}
 
 function variableLength(value: number): number[] {
   const bytes = [value & 127];
@@ -49,11 +73,10 @@ export function encodeMidi(project: Composition): Uint8Array {
       { tick: 0, order: 2, bytes: [176 | channel, 7, Math.round(part.volume * 127)] },
     ];
     if (!part.muted) {
-      for (const note of part.notes) {
-        if (note.velocity === 0) continue;
+      for (const note of mergeOverlappingNotes(part.notes)) {
         events.push(
-          { tick: Math.round(note.start * TICKS_PER_BEAT), order: 4, bytes: [144 | channel, note.pitch, Math.max(1, Math.round(note.velocity * 127))] },
-          { tick: Math.round((note.start + note.duration) * TICKS_PER_BEAT), order: 3, bytes: [128 | channel, note.pitch, 0] },
+          { tick: note.start, order: 4, bytes: [144 | channel, note.pitch, Math.max(1, Math.round(note.velocity * 127))] },
+          { tick: note.end, order: 3, bytes: [128 | channel, note.pitch, 0] },
         );
       }
     }

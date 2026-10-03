@@ -71,6 +71,7 @@ export class MelodyRecorder {
 
   get state(): RecorderState { return this.#state; }
 
+  /** onLimit receives automatic completions, including an unexpected input-stream stop. */
   async start(onLimit: (blob: Blob) => void, onError?: (error: Error) => void): Promise<void> {
     if (this.#state !== 'idle') throw new Error('A microphone recording is already in progress.');
     const generation = ++this.#generation;
@@ -110,7 +111,18 @@ export class MelodyRecorder {
       };
       recorder.onstop = () => {
         if (!active.finished) {
-          this.#finish(active, new Blob(active.chunks, { type: recorder.mimeType || 'audio/webm' }));
+          const automatic = this.#session === active && this.#state === 'recording';
+          const blob = new Blob(active.chunks, { type: recorder.mimeType || 'audio/webm' });
+          if (automatic && blob.size === 0) {
+            this.#fail(active, new Error('The microphone stopped before any audio was captured.'));
+            return;
+          }
+          this.#finish(active, blob);
+          if (automatic) {
+            void Promise.resolve().then(() => {
+              if (generation === this.#generation) return onLimit(blob);
+            }).catch(() => {});
+          }
         }
       };
       recorder.onerror = event => {

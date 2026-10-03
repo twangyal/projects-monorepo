@@ -12,13 +12,15 @@ Description: A hands-free navigation assistant that uses an ordinary webcam to e
 ## 2. Schedule app that bricks your phone
 
 Path: N/A
-Status: IDEA
+Status: BLOCKED
+Progress: iPhone restriction enforcement is blocked in the current Linux environment: native Apple tooling (macOS/Xcode) and iPhone device verification are unavailable, and Family Controls entitlement approval is required for distribution. Blockers and native platform validation are tracked in GitHub issue #9; a browser scheduling prototype would not restrict phone apps.
 Description: A calendar-driven focus app that restricts access to apps during scheduled activities while keeping necessary apps and a user-selected allowlist available. Users retain control by editing their calendar: changing or ending an event updates the corresponding restrictions. The project would start on iPhone and expand to Android, potentially sharing its calendar and settings interface through Flutter or React Native while using native components for phone restrictions. The portfolio version would demonstrate the complete flow from scheduling an activity to activating restrictions and restoring access. iPhone distribution would require Apple's Family Controls entitlement approval.[^ios]
 
 ## 3. DAW with AI and voice-based music creation
 
-Path: N/A
-Status: IDEA
+Path: apps/melody-studio
+Status: ACTIVE
+Progress: Melody Studio provides a local browser MVP with bounded microphone/audio capture, single-voice pitch detection, editable notes and timing, three synthesized instruments, layered tracks, playback, local autosave, versioned project backups, and MIDI/WAV export. Synthetic audio, model/export, recorder lifecycle, storage, and Chromium browser tests cover the core flow. Real microphone/vocal accuracy evaluation, broader device/browser validation, and AI arrangement assistance remain outstanding.
 Description: A beginner-friendly digital audio workstation that turns hummed or sung musical ideas into editable notes played by different instruments. Users record a melody, review the detected pitch and timing, choose an instrument, and layer additional parts into a track. AI assistance helps develop the arrangement while preserving the user's control over individual notes and musical choices. The goal is to lower the barrier to music production for people who have ideas but do not play an instrument or know traditional production software. A first version would focus on capturing melodies, switching instruments, editing notes, and exporting a simple composition.
 
 ## 4. Git blame agent
