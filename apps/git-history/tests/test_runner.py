@@ -43,6 +43,24 @@ class GitRunnerTests(unittest.TestCase):
     def test_reads_committed_object_from_repository_with_spaces(self) -> None:
         self.assertEqual(GitRunner(self.repo).run("show", "HEAD:source.txt"), b"committed source\n")
 
+    def test_unicode_metadata_is_utf8_despite_repository_output_encoding(self) -> None:
+        source = "café source\n".encode("utf-8")
+        message = "café evidence"
+        (self.repo / "source.txt").write_bytes(source)
+        self.git("add", "source.txt")
+        self.git("commit", "--quiet", "-m", message)
+        self.git("config", "i18n.logOutputEncoding", "ISO-8859-1")
+        configuration = (self.repo / ".git" / "config").read_bytes()
+        self.assertEqual(self.git("log", "-1", "--format=%s"), message.encode("latin-1") + b"\n")
+
+        runner = GitRunner(self.repo)
+        self.assertEqual(runner.run("log", "-1", "--format=%s"), message.encode("utf-8") + b"\n")
+        blame = runner.run("blame", "--line-porcelain", "HEAD", "--", "source.txt")
+        self.assertIn(f"summary {message}\n", blame.decode("utf-8"))
+        blob = runner.run("rev-parse", "HEAD:source.txt").decode().strip()
+        self.assertEqual(runner.run("cat-file", "blob", blob), source)
+        self.assertEqual((self.repo / ".git" / "config").read_bytes(), configuration)
+
     def test_arguments_are_never_interpreted_by_a_shell(self) -> None:
         marker = Path(self.temp.name) / "shell-was-run"
         value = f"$(touch '{marker}'); echo expanded"
@@ -150,6 +168,24 @@ class GitRunnerTests(unittest.TestCase):
             self.assertEqual(GitRunner(self.repo).run("show", "HEAD:source.txt"),
                              b"committed source\n")
 
+    def test_reads_original_objects_even_when_git_replace_is_configured(self) -> None:
+        original = self.git("rev-parse", "HEAD").decode().strip()
+        (self.repo / "source.txt").write_text("replacement source\n", encoding="utf-8")
+        self.git("add", "source.txt")
+        self.git("commit", "--quiet", "-m", "Replacement evidence")
+        replacement = self.git("rev-parse", "HEAD").decode().strip()
+        self.git("replace", original, replacement)
+        self.assertEqual(self.git("show", f"{original}:source.txt"), b"replacement source\n")
+
+        with patch.dict(os.environ):
+            os.environ.pop("GIT_NO_REPLACE_OBJECTS", None)
+            runner = GitRunner(self.repo)
+            self.assertEqual(runner.run("rev-parse", "--verify", f"{original}^{{commit}}"),
+                             original.encode() + b"\n")
+            self.assertEqual(runner.run("show", f"{original}:source.txt"), b"committed source\n")
+            blob = runner.run("rev-parse", f"{original}:source.txt").decode().strip()
+            self.assertEqual(runner.run("cat-file", "blob", blob), b"committed source\n")
+
     def test_disables_inherited_config_injection_and_fsmonitor(self) -> None:
         poisoned = {
             "GIT_CONFIG_COUNT": "1",
@@ -168,12 +204,16 @@ class GitRunnerTests(unittest.TestCase):
             environments.append(kwargs["env"])
             return original_popen(*args, **kwargs)
 
-        inherited = {"HTTPS_PROXY": "http://proxy.example.test:8080", "GIT_TRACE": "1"}
+        inherited = {
+            "HTTPS_PROXY": "http://proxy.example.test:8080", "GIT_TRACE": "1",
+            "GIT_NO_REPLACE_OBJECTS": "0",
+        }
         with patch.dict(os.environ, inherited):
             with patch("git_history.runner.subprocess.Popen", side_effect=capture_environment):
                 GitRunner(self.repo).run("rev-parse", "HEAD")
         self.assertEqual(environments[0]["HTTPS_PROXY"], inherited["HTTPS_PROXY"])
         self.assertEqual(environments[0]["GIT_NO_LAZY_FETCH"], "1")
+        self.assertEqual(environments[0]["GIT_NO_REPLACE_OBJECTS"], "1")
         self.assertEqual(environments[0]["GIT_OPTIONAL_LOCKS"], "0")
         self.assertNotIn("GIT_TRACE", environments[0])
 

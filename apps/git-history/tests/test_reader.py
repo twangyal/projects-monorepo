@@ -35,6 +35,81 @@ class ReaderTests(unittest.TestCase):
         self.assertEqual([x.original_line for x in report.blame], [1, 3, 3])
         self.assertEqual([x.commit for x in report.changes], [edited, initial])
 
+    def test_configured_ignore_revisions_do_not_change_committed_attribution(self):
+        self.repo.write('sample.txt', 'value=1\n')
+        self.repo.commit('Original formatting')
+        self.repo.git('config', 'user.name', 'Formatting Author')
+        self.repo.write('sample.txt', 'value = 1\n')
+        formatted = self.repo.commit('Format assignment')
+        baseline = self.inspect()
+        self.repo.write('ignored-revisions', formatted + '\n')
+        self.repo.git('config', 'blame.ignoreRevsFile', 'ignored-revisions')
+        report = self.inspect()
+        self.assertEqual(report.blame, baseline.blame)
+        self.assertEqual(report.blame[0].commit, formatted)
+        self.assertEqual(report.blame[0].author, 'Formatting Author')
+
+    def test_missing_configured_ignore_revisions_file_fails_without_false_evidence(self):
+        self.repo.write('sample.txt', 'one\n')
+        self.repo.commit()
+        self.repo.git('config', 'blame.ignoreRevsFile', 'missing-ignore-file')
+        with self.assertRaisesRegex(reader.ReaderError, 'blame.ignoreRevsFile'):
+            self.inspect()
+
+    def test_blame_error_does_not_disclose_external_ignore_file_contents(self):
+        self.repo.write('sample.txt', 'one\n')
+        self.repo.commit()
+        sentinel = 'PRIVATE_TEST_SENTINEL_NOT_A_REVISION'
+        with tempfile.TemporaryDirectory() as tmp:
+            ignored = Path(tmp) / 'private-ignore-revisions'
+            ignored.write_text(sentinel + '\n')
+            self.repo.git('config', 'blame.ignoreRevsFile', str(ignored))
+            with self.assertRaises((reader.ReaderError, reader.GitError)) as caught:
+                self.inspect()
+        self.assertNotIn(sentinel, str(caught.exception))
+        self.assertNotIn(str(ignored), str(caught.exception))
+        self.assertIsInstance(caught.exception, reader.ReaderError)
+        self.assertIn('blame.ignoreRevsFile', str(caught.exception))
+
+    def test_uncommitted_mailmap_does_not_change_raw_commit_authors(self):
+        self.repo.write('sample.txt', 'one\n')
+        self.repo.commit()
+        baseline = self.inspect()
+        self.repo.write('.mailmap', 'Fake Author <fake@example.invalid> Fixture Author <fixture@example.invalid>\n')
+        report = self.inspect()
+        self.assertEqual(report.blame, baseline.blame)
+        self.assertEqual(report.blame[0].author, 'Fixture Author')
+        self.assertEqual(report.blame[0].author, report.changes[0].author)
+        self.repo.git('config', 'mailmap.file', str(self.repo.path / '.mailmap'))
+        self.assertEqual(self.inspect().blame, baseline.blame)
+
+    def test_repository_subdirectory_uses_root_relative_source_and_history(self):
+        self.repo.write('sample.txt', 'ROOT TEXT\n')
+        root_commit = self.repo.commit('Root source')
+        self.repo.write('nested/sample.txt', 'NESTED TEXT\n')
+        self.repo.commit('Nested source')
+        report = reader.inspect_repository(self.repo.path / 'nested', 'sample.txt', 1, 1)
+        self.assertEqual(report.repo_name, self.repo.path.name)
+        self.assertEqual(report.source, 'ROOT TEXT\n')
+        self.assertEqual(report.blame[0].content, 'ROOT TEXT')
+        self.assertEqual(report.blame[0].commit, root_commit)
+        self.assertEqual([change.commit for change in report.changes], [root_commit])
+        self.assertIn('+ROOT TEXT', report.changes[0].patch)
+        self.assertNotIn('NESTED TEXT', report.changes[0].patch)
+
+    def test_bare_repository_source_and_history(self):
+        self.repo.write('sample.txt', 'bare source\n')
+        sha = self.repo.commit('Bare fixture')
+        with tempfile.TemporaryDirectory() as tmp:
+            bare = Path(tmp) / 'bare.git'
+            self.repo.git('clone', '--bare', '-q', str(self.repo.path), str(bare))
+            report = reader.inspect_repository(bare, 'sample.txt', 1, 1)
+        self.assertEqual(report.repo_name, 'bare.git')
+        self.assertEqual(report.source, 'bare source\n')
+        self.assertEqual(report.blame[0].commit, sha)
+        self.assertEqual(report.changes[0].commit, sha)
+        self.assertIn('+bare source', report.changes[0].patch)
+
     def test_rename_and_edit(self):
         self.repo.write('old.txt', ''.join(f'line {n}\n' for n in range(20)))
         initial = self.repo.commit('Original')

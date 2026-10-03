@@ -1,4 +1,5 @@
 """Read bounded, local Git evidence without checking out or changing a repository."""
+import os
 from pathlib import Path, PurePosixPath
 import re
 from urllib.parse import urlsplit
@@ -74,6 +75,26 @@ def _records(raw: bytes):
     for index, match in enumerate(matches):
         stop = matches[index + 1].start() if index + 1 < len(matches) else len(raw)
         yield match[1].decode('ascii'), raw[match.end():stop]
+
+
+def _restore_raw_authors(git: GitRunner, blame: list[LineEvidence]) -> None:
+    # Blame automatically reads worktree/configured mailmaps. Lowercase %an in
+    # pretty-format is the original commit identity, so retrieve all unique
+    # identities in one bounded command instead of trusting mapped porcelain.
+    commits = list(dict.fromkeys(line.commit for line in blame))
+    raw = git.run('show', '--no-patch', '--no-notes', '--no-show-signature',
+                  '--format=%x00%H%x00%an%x00%at%x00', *commits)
+    identities = {}
+    for commit, data in _records(raw):
+        fields = data.split(b'\x00', 2)
+        if len(fields) != 3:
+            raise ReaderError('Git returned incomplete raw author metadata.')
+        identities[commit] = (fields[0].decode('utf-8', errors='replace'),
+                              fields[1].decode('ascii'))
+    if set(identities) != set(commits):
+        raise ReaderError('Git did not return all blamed commit identities.')
+    for line in blame:
+        line.author, line.timestamp = identities[line.commit]
 
 
 def _remote(raw: bytes) -> str | None:
@@ -182,6 +203,10 @@ def inspect_repository(repo: str | Path, file: str, start: int, end: int,
         raise ReaderError('Supply a nonempty Git revision without NUL characters.')
     git = GitRunner(repo)
     _require_local_objects(git)
+    location_flag = ('--absolute-git-dir' if git.run('rev-parse', '--is-bare-repository').strip() == b'true'
+                     else '--show-toplevel')
+    repository_root = Path(os.fsdecode(git.run('rev-parse', location_flag)).removesuffix('\n'))
+    git = GitRunner(repository_root)
     try:
         revision = git.run('rev-parse', '--verify', '--end-of-options', ref + '^{commit}').decode('ascii').strip()
     except GitError as exc:
@@ -220,11 +245,22 @@ def inspect_repository(repo: str | Path, file: str, start: int, end: int,
     selected = '\n'.join(lines[start - 1:end])
     if end < len(lines) or source.endswith('\n'):
         selected += '\n'
-    blame = _blame(git.run('--literal-pathspecs', 'blame', '--root', '--line-porcelain',
-                          '--no-textconv', '-L', f'{start},{end}', revision, '--', file))
+    try:
+        raw_blame = git.run('--literal-pathspecs', 'blame', '--root', '--line-porcelain',
+                            '--no-textconv', '--ignore-revs-file', '', '-L',
+                            f'{start},{end}', revision, '--', file)
+    except GitError as exc:
+        # Git may quote arbitrary contents of configured ignore files in stderr.
+        # Keep those contents out of the public error while identifying a remedy.
+        raise ReaderError(
+            'Cannot attribute the requested range. Check blame.ignoreRevsFile for '
+            'missing files or invalid revisions; Git command limits may also apply.'
+        ) from exc
+    blame = _blame(raw_blame)
     if [line.final_line for line in blame] != list(range(start, end + 1)):
         raise ReaderError('Git returned incomplete attribution for the requested range.')
-    report = Report(Path(repo).resolve().name, revision, ref, file, start, end, selected, blame=blame)
+    _restore_raw_authors(git, blame)
+    report = Report(repository_root.name, revision, ref, file, start, end, selected, blame=blame)
     report.warnings.append('Git line tracing and rename detection are heuristic; this report does not establish full semantic lineage or author intent. PR and issue discussions were not fetched.')
     try:
         if git.run('rev-parse', '--is-shallow-repository').strip() == b'true':

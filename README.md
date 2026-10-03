@@ -8,5 +8,6 @@ An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized
 | --- | --- | --- |
 | Eye detector with agentic AI | Active | `apps/gaze-navigator` |
 | Melody Studio | Maintenance | `apps/melody-studio` |
+| Git History | Active | `apps/git-history` |
 
 Each project is intentionally self-contained under `apps/`; see its README for run and verification instructions.

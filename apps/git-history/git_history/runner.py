@@ -62,7 +62,7 @@ def _git_environment() -> dict[str, str]:
     }
     env.update(
         GIT_PAGER="cat", PAGER="cat", GIT_OPTIONAL_LOCKS="0",
-        GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1",
+        GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1", GIT_NO_REPLACE_OBJECTS="1",
     )
     return env
 
@@ -164,6 +164,8 @@ class GitRunner:
     Callers use read-only Git commands and disable external diff/textconv with
     their command-specific flags. This runner disables pagers, fsmonitor,
     external-diff environment overrides, interactive prompts and optional locks.
+    Replacement objects are disabled so evidence matches the resolved object ID.
+    Formatted metadata uses UTF-8; raw object reads retain their original bytes.
     """
 
     def __init__(
@@ -182,7 +184,8 @@ class GitRunner:
             raise ValueError("Git arguments must be strings without NUL bytes")
         argv = [
             "git", "--no-pager", "-c", "core.fsmonitor=false",
-            "-c", "core.pager=cat", "-C", str(self.repo), *args,
+            "-c", "core.pager=cat", "-c", "i18n.logOutputEncoding=UTF-8",
+            "-C", str(self.repo), *args,
         ]
         return _run_bounded(
             argv, cwd=self.repo, env=_git_environment(), timeout=self.timeout, max_bytes=limit,

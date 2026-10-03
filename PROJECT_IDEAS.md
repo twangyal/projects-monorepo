@@ -25,8 +25,9 @@ Description: A beginner-friendly digital audio workstation that turns hummed or 
 
 ## 4. Git blame agent
 
-Path: N/A
-Status: IDEA
+Path: apps/git-history
+Status: ACTIVE
+Progress: A local Python CLI produces portable HTML/JSON reports for committed source ranges, with per-line blame, range patches, quoted commit messages, and rename evidence. Reads are bounded and repository configuration cannot silently replace objects, remap author names, or execute external evidence helpers. Reports disclose shallow/merge/truncation limits and never infer intent from diffs. Optional PR/discussion evidence and semantic synthesis remain future milestones; initial MVP is tracked in issue #11.
 Description: A developer assistant that explains how and why code evolved by tracing lines and functions through commits, diffs, pull requests, and available discussions. Users select a piece of code and receive a readable history of its introduction and subsequent changes, with links to supporting evidence. The assistant distinguishes documented reasoning from its own inference when the original intent is missing. The main purpose is to help developers understand unfamiliar code and the decisions behind it. A portfolio version would investigate selected code in one repository and produce a source-linked explanation of its history. (Maybe make it an extension)
 
 ## 5. Clothing designer
