@@ -92,8 +92,9 @@ Description: A stock research assistant that translates natural-language screeni
 
 ## 14. Casual betting social media
 
-Path: N/A
-Status: IDEA
+Path: `apps/friendly-challenges`
+Status: MAINTENANCE
+Progress: Friendly Challenges provides a real local two-party agreement, append-only evidence/activity, mutual settlement or voiding, and mutually approved third-party arbitration. SQLite transactions, exact-revision consent, one-use invitations, separate private seats, token-free exports and recovery controls preserve the shared record. Verified with 43 Python, 22 TypeScript and 12 production Chromium tests, including independent participant contexts and process restart. Stakes are nonmonetary; local browser roles and supplied evidence do not establish real-world identity or truth.
 Description: A social app for friendly challenges such as "Joe bets Terry that he can finish the race," with favors and bragging rights as the stakes. Users agree on the terms, deadline, evidence, and outcome criteria before accepting a bet. Progress and results can appear in a social feed, creating a record of friendly competition. Money is excluded from the project. If an outcome is disputed, the bet can be voided or settled by a mutually chosen third party. A portfolio version would support proposing, accepting, documenting, and resolving a bet.
 
 ## 15. Personal handwriting detector

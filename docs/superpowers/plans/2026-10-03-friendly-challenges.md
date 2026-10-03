@@ -46,60 +46,64 @@
 
 **Interfaces:** `Store(data_dir:Path, clock:Callable[[],float]=time.time)` supplies `create(payload)`, `join(challenge_id,payload)`, `join_arbiter(challenge_id,payload)`, `get(challenge_id,token)`, `command(challenge_id,token,action,payload)`, `export(challenge_id,token)` and `close()`. `DomainError(code,message,status)` supplies bounded public errors. Implement the exact snapshot and command contracts in the spec. The HTTP owner calls these methods without implementing separate state rules. The client consumes only serialized public snapshots.
 
-- [ ] Write failing tests for strict input shapes, nonmonetary stake kinds, string/count/date limits, invitation-versus-seat distinctions, opaque token hashing and token-free snapshots/exports.
-- [ ] Run `python -m unittest tests.test_domain tests.test_store -v` (or discovery when the tests package has no initializer); confirm the failures exercise absent validation/state behavior.
-- [ ] Implement validation and transactional creation/claim/read commands with detached JSON snapshots; claim races must have exactly one successful winner and leave no raw secret in the database.
-- [ ] Write failing tests for stale terms acceptance, exact deadline equality, frozen accepted terms, late evidence marking, append-only history and participant permission checks.
-- [ ] Implement proposal/agreement/evidence transitions and pass the targeted tests with an injectable server clock.
-- [ ] Write failing tests for self-confirmation, obsolete proposal IDs, conflicting terminal commands, mutually approved arbiter nomination/claim, invite invalidation and final decision permissions.
-- [ ] Implement settlement/dispute/void/arbitration according to the spec, including bounds and the quota-safe resolution path.
-- [ ] Verify actual SQLite reopen durability and multi-connection conflicting commands. Run scoped unittest/Ruff and report counts/limits to root; do not commit independently.
+- [x] Write failing tests for strict input shapes, nonmonetary stake kinds, string/count/date limits, invitation-versus-seat distinctions, opaque token hashing and token-free snapshots/exports.
+- [x] Run `python -m unittest tests.test_domain tests.test_store -v` (or discovery when the tests package has no initializer); confirm the failures exercise absent validation/state behavior.
+- [x] Implement validation and transactional creation/claim/read commands with detached JSON snapshots; claim races must have exactly one successful winner and leave no raw secret in the database.
+- [x] Write failing tests for stale terms acceptance, exact deadline equality, frozen accepted terms, late evidence marking, append-only history and participant permission checks.
+- [x] Implement proposal/agreement/evidence transitions and pass the targeted tests with an injectable server clock.
+- [x] Write failing tests for self-confirmation, obsolete proposal IDs, conflicting terminal commands, mutually approved arbiter nomination/claim, invite invalidation and final decision permissions.
+- [x] Implement settlement/dispute/void/arbitration according to the spec, including bounds and the quota-safe resolution path.
+- [x] Verify actual SQLite reopen durability and multi-connection conflicting commands. Run scoped unittest/Ruff and report counts/limits to root; do not commit independently.
 
 ### Task 2: production loopback service — git_reader
 
 **Interfaces:** Import Task 1's `Store` and `DomainError`; expose `create_server(data_dir:Path, port:int=8767, *, dist_dir:Path|None=None, now=None)` and `python -m challenges --data-dir ... --port ...` CLI. Serve root's built `dist` and exact documented API routes.
 
-- [ ] Write failing real HTTP tests for allowed loopback Host/Origin, forbidden remote/cross-origin requests, malformed/duplicate/trailing JSON, transfer encodings, oversized bodies and missing/invalid Bearer credentials.
-- [ ] Implement bounded request handling and exact route-to-Store dispatch, with stable JSON errors, no reflected secrets, no permissive CORS and no API caching.
-- [ ] Write failing tests for traversal/symlink/non-asset static requests, CSP/referrer headers, unknown routes, methods and credential-free health checks.
-- [ ] Implement production static delivery and CLI shutdown, safe data-directory ownership and the specified single-service lifetime guarantee.
-- [ ] Test a real process restart with a persisted accepted challenge, evidence, roles and outcome; no test-only state machine may substitute for production service behavior.
-- [ ] Run scoped HTTP tests, compileall and Ruff; coordinate any shared API mismatch with the Store owner before reporting complete.
+- [x] Write failing real HTTP tests for allowed loopback Host/Origin, forbidden remote/cross-origin requests, malformed/duplicate/trailing JSON, transfer encodings, oversized bodies and missing/invalid Bearer credentials.
+- [x] Implement bounded request handling and exact route-to-Store dispatch, with stable JSON errors, no reflected secrets, no permissive CORS and no API caching.
+- [x] Write failing tests for traversal/symlink/non-asset static requests, CSP/referrer headers, unknown routes, methods and credential-free health checks.
+- [x] Implement production static delivery and CLI shutdown, safe data-directory ownership and the specified single-service lifetime guarantee.
+- [x] Test a real process restart with a persisted accepted challenge, evidence, roles and outcome; no test-only state machine may substitute for production service behavior.
+- [x] Run scoped HTTP tests, compileall and Ruff; coordinate any shared API mismatch with the Store owner before reporting complete.
 
 ### Task 3: typed transport and private role recovery — recorder
 
 **Interfaces:** Publish `src/types.ts` first from the frozen wire contract. Provide `request<T>(method,path,body?,token?,signal?):Promise<T>`, `ApiError` with status/code, `readLink(location)`, `loadSessions()`, `saveSession(challengeId,token)`, and `removeSession(challengeId)` exactly as specified; commands send displayed revisions and explicit proposal identities rather than replaying stale actions.
 
-- [ ] Write failing Node tests for fragment parsing/consumption, malformed capabilities, private storage failure, membership separation and recovery URLs without query-token leakage.
-- [ ] Implement bounded session records with explicit recoverable links, sanitized URL consumption and no automatic invitation claim on page load.
-- [ ] Write failing client tests for exact headers/body/route shapes, abort propagation, structured stale/authorization errors and failed responses that must not be treated as success.
-- [ ] Implement typed create/claim/read/command/export helpers; no automatic retries of mutations and no credentials in challenge JSON export.
-- [ ] Run scoped Node tests, ESLint and TypeScript; coordinate the stable public API with the UI and browser owners.
+- [x] Write failing Node tests for fragment parsing/consumption, malformed capabilities, private storage failure, membership separation and recovery URLs without query-token leakage.
+- [x] Implement bounded session records with explicit recoverable links, sanitized URL consumption and no automatic invitation claim on page load.
+- [x] Write failing client tests for exact headers/body/route shapes, abort propagation, structured stale/authorization errors and failed responses that must not be treated as success.
+- [x] Implement typed create/claim/read/command/export helpers; no automatic retries of mutations and no credentials in challenge JSON export.
+- [x] Run scoped Node tests, ESLint and TypeScript; coordinate the stable public API with the UI and browser owners.
 
 ### Task 4: usable challenge workspace — next_project_assessment + root
 
 **Interfaces:** Consume Task 3's stable types/API/session functions and the spec's role/status actions. Root establishes actual build/check scripts and self-only index policy.
 
-- [ ] Root creates isolated Node/Python tooling and installs the pinned, existing repository-compatible development dependencies.
-- [ ] Implement readable empty/create/invitation screens, explicit name claim, private recovery links and a complete frozen-terms agreement view.
-- [ ] Implement role/status-specific evidence, activity, settlement, dispute, mutual void and approved arbiter controls; clearly state deadline/late evidence and unverified identity semantics.
-- [ ] Implement polling with generation/cancellation guards, preserve draft fields and focus, and show request conflict/disconnection errors without discarding draft content or replaying commands.
-- [ ] Implement token-free JSON download and a usable local dashboard of this browser's private challenges; storage failure retains current in-memory access and exposes explicit recovery guidance.
-- [ ] Verify desktop/mobile keyboard/labels/layout, literal text rendering and safe reference links; run lint/typecheck/build and resolve integration mismatches.
+- [x] Root creates isolated Node/Python tooling and installs the pinned, existing repository-compatible development dependencies.
+- [x] Implement readable empty/create/invitation screens, explicit name claim, private recovery links and a complete frozen-terms agreement view.
+- [x] Implement role/status-specific evidence, activity, settlement, dispute, mutual void and approved arbiter controls; clearly state deadline/late evidence and unverified identity semantics.
+- [x] Implement polling with generation/cancellation guards, preserve draft fields and focus, and show request conflict/disconnection errors without discarding draft content or replaying commands.
+- [x] Implement token-free JSON download and a usable local dashboard of this browser's private challenges; storage failure retains current in-memory access and exposes explicit recovery guidance.
+- [x] Verify desktop/mobile keyboard/labels/layout, literal text rendering and safe reference links; run lint/typecheck/build and resolve integration mismatches.
 
 ### Task 5: independent full-flow verification — git_runner + root
 
 **Interfaces:** The browser fixture runs the real production server against a fresh temporary database and root's production `dist`; separate contexts hold the three real roles. Use stable accessible labels from the UI, not implementation-only state injection for primary acceptance.
 
-- [ ] Test create → private invite → opponent claim → accept exact terms → shared progress/evidence → mutually agreed result with separate contexts, actual downloaded export and reload.
-- [ ] Test disagreement → matching mutual arbiter nomination → separate arbiter claim → final ruling and immutable final activity; prove participants cannot impersonate the arbiter.
-- [ ] Test preaccept edit/stale acceptance, decline/withdraw, mutual voiding, old/used invite rejection and late evidence with real server behavior.
-- [ ] Test draft preservation across polls/conflicts/disconnection, same-page role switching, malformed/stale recovery, storage unavailable, export without tokens, hostile text, desktop/mobile layout and no external network requests.
-- [ ] Root runs the combined Python/unit/lint/typecheck/build/production-browser gate once owners pass; independent reviewer checks actual state/permission/race behavior and owners fix concrete findings.
-- [ ] Root writes factual setup, private-link/backups, deadlines/evidence and limitations documentation plus path-scoped CI; inspect actual multi-browser output and record verification evidence.
+- [x] Test create → private invite → opponent claim → accept exact terms → shared progress/evidence → mutually agreed result with separate contexts, actual downloaded export and reload.
+- [x] Test disagreement → matching mutual arbiter nomination → separate arbiter claim → final ruling and immutable final activity; prove participants cannot impersonate the arbiter.
+- [x] Test preaccept edit/stale acceptance, decline/withdraw, mutual voiding, old/used invite rejection and late evidence with real server behavior.
+- [x] Test draft preservation across polls/conflicts/disconnection, same-page role switching, malformed/stale recovery, storage unavailable, export without tokens, hostile text, desktop/mobile layout and no external network requests.
+- [x] Root runs the combined Python/unit/lint/typecheck/build/production-browser gate once owners pass; independent reviewer checks actual state/permission/race behavior and owners fix concrete findings.
+- [x] Root writes factual setup, private-link/backups, deadlines/evidence and limitations documentation plus path-scoped CI; inspect actual multi-browser output and record verification evidence.
 - [ ] Root reviews scoped diff, commits and pushes; preserve concurrent Astra commits through normal merges, never force-push. Update #30 and catalog only to the completion state verified by real evidence.
 - [ ] Check remote CI, fix regressions, and immediately reassess the next unblocked work outside the exclusions.
 
 ## Plan self-review
 
 Tasks map the complete agreement, evidence, settlement and arbitration flow to one state owner, one HTTP owner and one typed browser contract. Each review focus has specific unit/HTTP/browser coverage. Test harnesses run the production implementation and do not create a fake shared backend. Exact schema/method/limit values remain in the authoritative reviewed spec; owners must not invent competing contracts. No external service, hardware or deployment approval is required for this local milestone.
+
+## Verified local milestone
+
+43 Python tests, 22 TypeScript tests and all 12 production Chromium tests pass. The final persistent access-warning/retry extension passed a separate focused production check. Ruff, compileall, ESLint, TypeScript and the Vite build pass. Independent review findings in HTTP framing, impossible arbiter-claim audit replay, same-document link handling, stale invitation display and pending-response draft/credential retention were fixed and verified. Desktop/mobile screenshots and an actual created challenge were inspected. Durable commit and remote CI follow in issue #30.
