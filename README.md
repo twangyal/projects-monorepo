@@ -10,5 +10,6 @@ An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized
 | Melody Studio | Maintenance | `apps/melody-studio` |
 | Git History | Maintenance | `apps/git-history` |
 | Clothing Studio | Maintenance | `apps/clothing-studio` |
+| Karaoke Studio | Maintenance | `apps/karaoke-studio` |
 
 Each project is intentionally self-contained under `apps/`; see its README for run and verification instructions.
