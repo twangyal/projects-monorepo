@@ -1,0 +1,41 @@
+name: Style Studio
+
+on:
+  push:
+    paths:
+      - 'apps/style-studio/**'
+      - '.github/workflows/style-studio.yml'
+  pull_request:
+    paths:
+      - 'apps/style-studio/**'
+      - '.github/workflows/style-studio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/style-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/style-studio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - name: Production browser, local storage, and decoded image exports
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: style-studio-browser-results
+          path: apps/style-studio/test-results
+          retention-days: 7

@@ -13,6 +13,7 @@ An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized
 | Karaoke Studio | Maintenance | `apps/karaoke-studio` |
 | Motion Studio | Maintenance | `apps/motion-studio` |
 | Duet | Maintenance | `apps/duet` |
+| Style Studio | Maintenance | `apps/style-studio` |
 | Shot Studio | Active | `apps/shot-studio` |
 
 Each project is intentionally self-contained under `apps/`; see its README for run and verification instructions.

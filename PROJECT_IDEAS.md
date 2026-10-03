@@ -79,8 +79,9 @@ Description: An account-free browser drawing and animation studio where users dr
 
 ## 12. Outfit rating based on your taste
 
-Path: N/A
-Status: IDEA
+Path: `apps/style-studio`
+Status: MAINTENANCE
+Progress: Style Studio learns from explicit Like/Pass outfit tags with a fitted personal logistic model, explains alignment, and suggests occasion-filtered owned-piece combinations in Match or Explore mode. Wardrobe photos, immutable saved looks, corrected ratings, bounded undo/redo, IndexedDB recovery, validated JSON backups and real PNG outfit boards complete the local flow. Verified with 51 unit tests and 29 production Chromium tests; photos remain manually tagged references, and scores are uncalibrated taste alignment rather than automatic recognition or fit prediction.
 Description: A personal style assistant that learns from outfits a user likes, dislikes, and wears, then evaluates new looks against those preferences. It suggests combinations for particular occasions, explains how individual pieces work together, and helps users explore styles beyond their usual choices. Recommendations can draw from clothing the user already owns. The app supports all three goals: matching existing taste, developing a new style, and dressing for a specific occasion. A portfolio version would demonstrate preference learning, outfit feedback, and a few personalized alternatives.
 
 ## 13. AI-based stock screener
