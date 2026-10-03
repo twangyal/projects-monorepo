@@ -1,0 +1,42 @@
+name: Motion Studio
+
+on:
+  push:
+    paths:
+      - 'apps/motion-studio/**'
+      - '.github/workflows/motion-studio.yml'
+  pull_request:
+    paths:
+      - 'apps/motion-studio/**'
+      - '.github/workflows/motion-studio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/motion-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/motion-studio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run typecheck
+      - run: npx playwright install --with-deps chromium
+      - name: Production Chromium workflow and real GIF verification
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: motion-studio-browser-results
+          path: apps/motion-studio/test-results
+          retention-days: 7

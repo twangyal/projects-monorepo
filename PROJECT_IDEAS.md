@@ -70,8 +70,9 @@ Description: A research project exploring whether changes to color and surroundi
 
 ## 11. Online drawing board
 
-Path: N/A
-Status: IDEA
+Path: `apps/motion-studio`
+Status: MAINTENANCE
+Progress: Motion Studio provides local freehand and normalized image layers, editable transform keyframes, linear/hold/ease interpolation, preview/scrubbing, bounded undo/redo, IndexedDB autosave, validated project backups, PNG stills and worker-rendered animated GIFs. The drawing-to-animation flow is verified in production Chromium with independently decoded GIF frames and timing. AI in-between artwork and private online saving/sharing remain future extensions.
 Description: An account-free browser drawing and animation studio where users draw or upload artwork, set keyframes to define movement, and preview or export animations. Projects autosave in browser storage, with optional online saving through a private project link. Users teach motion by defining poses and timing at keyframes. AI could assist with generating or refining intermediate frames, while completed and corrected sequences provide examples for later motion learning. The first portfolio version would focus on a complete drawing-to-keyframes-to-animation workflow, followed by AI assistance.
 
 ## 12. Outfit rating based on your taste
