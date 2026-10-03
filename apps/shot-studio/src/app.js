@@ -31,7 +31,7 @@ function refresh(){
   $('undo').disabled=busy()||!history.canUndo;$('redo').disabled=busy()||!history.canRedo;
   $('earlier').disabled=busy()||selected===0;$('later').disabled=busy()||selected===project.shots.length-1;
 }
-function restoreHistory(state){stop();project=state;selected=Math.min(selected,project.shots.length-1);time=0;revision++;persist();refresh();}
+function restoreHistory(state){stop();project=state;selected=Math.min(selected,project.shots.length-1);time=shotStart(selected);revision++;persist();refresh();}
 $('undo').onclick=()=>{if(!busy())restoreHistory(history.undo());};
 $('redo').onclick=()=>{if(!busy())restoreHistory(history.redo());};
 for(const [id,direction] of [['earlier',-1],['later',1]])$(id).onclick=()=>{
@@ -53,7 +53,7 @@ $('settings').addEventListener('change',e=>{
 $('play').onclick=()=>{if(playing){stop();return;}if(time>=totalDuration(project))time=0;playing=true;start=performance.now()-time*1000;$('play').textContent='Pause rehearsal';};
 $('stop').onclick=()=>{stop();time=0;};$('scrub').oninput=()=>{stop();time=Number($('scrub').value);};
 $('add').onclick=()=>{const p=structuredClone(project);p.shots.push({...structuredClone(p.shots[selected]),name:`Shot ${p.shots.length+1}`,duration:2});try{validateProject(p);selected=p.shots.length-1;time=shotStart(project.shots.length);apply(p);}catch(e){status(e.message);}};
-$('remove').onclick=()=>{if(project.shots.length===1)return;const p=structuredClone(project);p.shots.splice(selected,1);selected=Math.min(selected,p.shots.length-1);time=0;apply(p);};
+$('remove').onclick=()=>{if(project.shots.length===1||busy())return;stop();const p=structuredClone(project);p.shots.splice(selected,1);selected=Math.min(selected,p.shots.length-1);apply(p);time=shotStart(selected);};
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 $('save').onclick=()=>download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),'shot-studio.json');
 let importEpoch=0;
@@ -78,7 +78,7 @@ function loop(now){
   renderer.draw(project,time,shotAt(project,time).shot);$('time').textContent=`${time.toFixed(2)} / ${totalDuration(project).toFixed(2)}s`;$('scrub').value=time;
   $('shotLabel').textContent=`CAMERA ${String(shotAt(project,time).index+1).padStart(2,'0')} · ${shotAt(project,time).shot.name}`;
 }
-window.addEventListener('pagehide',()=>{abort?.abort();xrAbort?.abort();stop();cancelAnimationFrame(frame);});
+window.addEventListener('pagehide',()=>{abort?.abort();xrAbort?.abort();stop();cancelAnimationFrame(frame);xr?.end();});
 window.addEventListener('pageshow',()=>{stop();cancelAnimationFrame(frame);frame=requestAnimationFrame(loop);});
 $('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();abort?.abort();xrAbort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});
 refresh();if($('status').textContent==='Starting the stage…')status('Ready. Rehearse the starter film or arrange your own scene.');frame=requestAnimationFrame(loop);
