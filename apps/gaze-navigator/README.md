@@ -21,6 +21,7 @@ Open `http://localhost:4173`.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
 - In camera mode, only physical pointer clicks on the dot add samples. Keyboard/synthetic clicks and clicks without a recorded eye sample do not advance calibration. Simulation permits ordinary keyboard activation.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
+- Stop is available during camera startup. A pending browser permission request may still finish; any stream acquired afterward is released. Simulation remains available while canceled startup settles. Camera retry waits for that startup to settle to avoid overlapping requests.
 
 ## Architecture
 
@@ -32,6 +33,7 @@ Open `http://localhost:4173`.
 - `src/text-entry.js` / `src/keyboard.js` — explicit-field gaze typing, selection replacement, backspace, case toggle, and field limits.
 - `src/camera-loader.js` — camera-only CDN loading with a 15-second timeout and retry.
 - `src/camera-calibration.js` — explicit dot training and in-memory estimator reset; implicit mouse training and saved calibration are disabled.
+- `src/camera-cleanup.js` — explicit media-track release plus resilient dependency cleanup, including partial/late startup.
 - `src/accuracy.js` / `src/accuracy-view.js` — timed held-out measurement and local result display.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
 - `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.

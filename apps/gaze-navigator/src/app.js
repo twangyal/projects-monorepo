@@ -5,6 +5,7 @@ import { setupAccuracyCheck } from './accuracy-view.js';
 import { createCameraLoader } from './camera-loader.js';
 import { setupKeyboard } from './keyboard.js';
 import { resetCameraCalibration, recordCalibrationClick } from './camera-calibration.js';
+import { releaseCamera } from './camera-cleanup.js';
 
 const dwell = createDwellTracker();
 const loadCamera = createCameraLoader(document, window);
@@ -38,6 +39,8 @@ let calibrationIndex = 0;
 let calibrationClicks = 0;
 let gazeHandler = null;
 let cameraReady = false;
+let cameraStarting = false;
+let cameraSession = 0;
 let paused = false;
 const pointerHandler = event => {
   if (!paused) simulationPoint = { x: event.clientX, y: event.clientY };
@@ -166,13 +169,17 @@ function enableSimulation() {
 }
 
 async function enableCamera() {
-  if (trackingMode) return;
+  if (trackingMode || cameraStarting) return;
+  const session = ++cameraSession;
+  cameraStarting = true;
   try {
     trackingMode = 'camera';
     startButton.disabled = true;
     simulateButton.disabled = true;
+    stopButton.disabled = false;
     setStatus('Loading camera tracking. You may be asked for webcam permission.');
     await loadCamera();
+    if (session !== cameraSession) return;
     window.webgazer.saveDataAcrossSessions(false);
     window.webgazer.showPredictionPoints(false);
     const handler = data => {
@@ -183,15 +190,24 @@ async function enableCamera() {
     gazeHandler = handler;
     window.webgazer.setGazeListener(gazeHandler);
     await window.webgazer.begin();
+    if (session !== cameraSession) {
+      releaseCamera(window.webgazer, document);
+      return;
+    }
     window.webgazer.removeMouseEventListeners();
     cameraReady = true;
     pauseButton.disabled = false;
     stopButton.disabled = false;
     beginCalibration();
   } catch (error) {
-    console.error(error);
-    stopTracking();
-    setStatus('Camera tracking could not start. Check camera permission or use pointer simulation.');
+    if (session === cameraSession) {
+      console.error(error);
+      stopTracking();
+      setStatus('Camera tracking could not start. Check camera permission or use pointer simulation.');
+    } else if (window.webgazer) releaseCamera(window.webgazer, document);
+  } finally {
+    cameraStarting = false;
+    startButton.disabled = trackingMode !== null;
   }
 }
 
@@ -205,6 +221,7 @@ function resetTracking(preserveConfirmation = false) {
 
 function stopTracking() {
   const wasCamera = trackingMode === 'camera';
+  cameraSession++;
   trackingMode = null;
   cameraReady = false;
   paused = false;
@@ -214,11 +231,10 @@ function stopTracking() {
   document.removeEventListener('pointermove', pointerHandler);
   document.documentElement.removeEventListener('pointerleave', resetTracking);
   if (wasCamera && window.webgazer) {
-    window.webgazer.clearGazeListener();
-    window.webgazer.end();
+    releaseCamera(window.webgazer, document);
   }
   gazeHandler = null;
-  startButton.disabled = false;
+  startButton.disabled = cameraStarting;
   simulateButton.disabled = false;
   recalibrateButton.disabled = true;
   accuracyButton.disabled = true;
