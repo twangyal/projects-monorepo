@@ -58,6 +58,7 @@ test('eligible-case timing excludes policy shortcuts and failed requests', () =>
     { ...abstain(CASES.find(c => c.id === 'off-target')), elapsedMs: 99999 },
     { caseId: 'compose-near', decision: null, elapsedMs: 90000, error: 'Timeout' },
   ]));
+  assert.equal(value.timing.firstSuccessfulEligibleElapsedMs, 100);
   assert.equal(value.timing.eligibleMedianElapsedMs, 60);
   assert.equal(value.timing.eligibleP95ElapsedMs, 100);
   assert.equal(value.modelEligible.meanElapsedMs, 60);
@@ -91,15 +92,33 @@ test('real benchmark pipeline uses the existing local adapter and emits a lab-im
   assert.equal(attempted, false);
 });
 
-test('whole-run cancellation returns an honest partial JSON report even for an uncooperative transport', async () => {
+test('whole-run cancellation retains completed rows after an entered uncooperative transport and ignores its late response', async () => {
   const controller = new AbortController();
-  const pending = runLocalBenchmark({ signal: controller.signal, fetchImpl: () => new Promise(() => {}) });
+  let entered, finishLate, inferenceCalls = 0;
+  const fetchEntered = new Promise(resolve => { entered = resolve; });
+  const json = value => new Response(JSON.stringify(value));
+  const fetchImpl = async url => {
+    if (url.endsWith('/api/status')) return json({ cloud: { disabled: true } });
+    if (url.endsWith('/api/tags')) return json({ models: [{ name: 'tev1:0.8b-q8_0', digest: 'a'.repeat(64), size: 812000000, details: { format: 'gguf' } }] });
+    if (url.endsWith('/api/show')) return json({ details: { format: 'gguf' }, capabilities: ['decision'] });
+    inferenceCalls++;
+    if (inferenceCalls === 1) return json({ answers: { selection: { type: 'choice', choice: 't1', confidence: 1, probabilities: { t1: 1, none: 0 } } } });
+    return new Promise(resolve => { finishLate = resolve; entered(); });
+  };
+  const pending = runLocalBenchmark({ signal: controller.signal, fetchImpl });
+  await fetchEntered;
+  assert.equal(inferenceCalls, 2);
   controller.abort();
   const output = await pending;
   assert.equal(output.cancelled, true);
-  assert.equal(output.results.length, 0);
+  assert.equal(output.results.length, 1);
+  assert.equal(output.results[0].caseId, 'compose-hit');
   assert.equal(output.benchmark.summary.complete, false);
-  assert.equal(output.benchmark.summary.overall.missing, 14);
+  assert.equal(output.benchmark.summary.overall.missing, 13);
+  finishLate(json({ answers: { selection: { type: 'choice', choice: 't2', confidence: 1, probabilities: { t2: 1, none: 0 } } } }));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(output.results.length, 1);
+  assert.equal(inferenceCalls, 2);
 });
 
 test('CLI help and invalid/cloud arguments finish without contacting a local server', () => {
