@@ -1,6 +1,6 @@
 # Headset Camera Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Capture the headset view into the selected shot with a controller squeeze.
 
@@ -33,7 +33,7 @@
 - [x] Write failing native tests for identity/rotated/pitched poses, invalid bounds/tracking, squeeze callback and ignored ended events. Browser fixture captures second camera, exits, saves and undoes.
 - [x] Run npm test and confirm failures before implementation.
 - [x] Implement conversion with normalized negative Z direction and a three-unit target; validate through the existing project validator. Wire squeeze with error reporting and ended guard; apply through history in app.js.
-- [ ] Run npm test, npm run check and exact-source CI; expect all native and Chromium tests passing.
-- [ ] Review changes, document gesture/limitations, update catalog and #21 hardware checklist, commit coherent implementation referencing #26 and close only after verification.
+- [x] Run npm test, npm run check and exact-source CI; expect all native and Chromium tests passing.
+- [x] Review changes, document gesture/limitations, update catalog and #21 hardware checklist, commit coherent implementation referencing #26 and close only after verification.
 
-Review fix: event-frame getViewerPose is forbidden by WebXR. A failing native regression now enforces this; squeeze uses getPose(viewerSpace, localFloorSpace), with cancellation checks after acquiring viewer space. Full native suite: 24/24 pass. Browser integration failed before app callback wiring; corrected exact-source CI pending.
+Review fix: event-frame getViewerPose is forbidden by WebXR. A failing native regression now enforces this; squeeze uses getPose(viewerSpace, localFloorSpace), with cancellation checks after acquiring viewer space. Full native suite: 24/24 pass. Browser integration failed before app callback wiring; corrected exact-source CI passed 24 native tests, syntax checks and seven Chromium checks in run 37157090209 at ffab5e5. Independent review found no additional important issues. Issue #26 closed; physical headset checklist remains in #21.
