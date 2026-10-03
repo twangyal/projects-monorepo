@@ -33,6 +33,15 @@ export function importProject(text){
   if(typeof text!=='string'||new TextEncoder().encode(text).length>MAX_BYTES) throw Error('Project backup exceeds 64 KiB.');
   try{return validateProject(JSON.parse(text));}catch{throw Error('Invalid project backup. Check version, camera and limits.');}
 }
+export function cameraFromPose(matrix){
+  if(!matrix||matrix.length!==16||!Array.from(matrix).every(Number.isFinite))throw Error('Headset tracking is unavailable.');
+  const eye=[matrix[12],matrix[13],matrix[14]],direction=[-matrix[8],-matrix[9],-matrix[10]],length=Math.hypot(...direction);
+  if(length<.001)throw Error('Invalid headset camera direction.');
+  const target=eye.map((v,i)=>v+3*direction[i]/length),p=createProject();
+  Object.assign(p.shots[0],{eye,target});
+  try{const shot=validateProject(p).shots[0];return {eye:shot.eye,target:shot.target};}
+  catch{throw Error('Headset camera exceeds the scene limits. Stay above the floor, within the set bounds, and look away from straight up/down.');}
+}
 export const totalDuration=p=>p.shots.reduce((sum,s)=>sum+s.duration,0);
 export function shotAt(p,time){
   let local=Math.max(0,Math.min(totalDuration(p),time));

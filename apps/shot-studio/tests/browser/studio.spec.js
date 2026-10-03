@@ -1,6 +1,35 @@
 import {test,expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 
+test('immersive camera capture persists selected shot and can be undone after exit',async({page},info)=>{
+  await page.addInitScript(()=>{
+    WebGLRenderingContext.prototype.makeXRCompatible=async()=>{};
+    window.XRWebGLLayer=class{};
+    Object.defineProperty(navigator,'xr',{configurable:true,value:{isSessionSupported:async()=>true,requestSession:async()=>{
+      const s=new EventTarget();s.end=async()=>s.dispatchEvent(new Event('end'));
+      s.updateRenderState=()=>{};s.requestReferenceSpace=async()=>({});s.requestAnimationFrame=()=>{};
+      window.testXR=s;return s;
+    }}});
+    window.captureView=(matrix)=>{const event=new Event('squeeze');event.frame={getViewerPose:()=>matrix?{transform:{matrix}}:null};window.testXR.dispatchEvent(event);};
+  });
+  await page.goto('/');await page.locator('#shots button').nth(1).click();
+  await page.getByRole('button',{name:'Enter VR',exact:true}).click();await expect(page.locator('#status')).toContainText('VR active');
+  await page.evaluate(()=>window.captureView(null));await expect(page.locator('#status')).toContainText('tracking');
+  await page.evaluate(()=>window.captureView([1,0,0,0,0,1,0,0,0,0,1,0,99,2,5,1]));
+  await expect(page.locator('#status')).toContainText('limits');await expect(page.getByLabel('Camera X',{exact:true})).toHaveValue('0');
+  await page.evaluate(()=>window.captureView([1,0,0,0,0,1,0,0,0,0,1,0,1,2,5,1]));
+  await expect(page.getByLabel('Camera X',{exact:true})).toHaveValue('1');
+  await page.getByRole('button',{name:'Exit VR',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Rehearse',exact:true})).toBeEnabled();
+  const downloading=page.waitForEvent('download');await page.getByRole('button',{name:'Save project',exact:true}).click();
+  const file=await downloading,path=info.outputPath('headset-camera.json');await file.saveAs(path);
+  const film=JSON.parse(execFileSync('cat',[path],{encoding:'utf8'}));
+  expect(film.shots[1]).toMatchObject({name:'Two-shot',duration:4,fov:40,eye:[1,2,5],target:[1,2,2]});
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();await expect(page.getByLabel('Camera X',{exact:true})).toHaveValue('0');
+  await page.reload();await expect(page.getByLabel('Camera X',{exact:true})).toHaveValue('5');
+  await page.locator('#shots button').nth(1).click();await expect(page.getByLabel('Camera X',{exact:true})).toHaveValue('0');
+});
+
 test('page teardown cancels pending VR and ends a subsequently accepted session',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{
