@@ -91,3 +91,11 @@ class TransportRevisionTests(unittest.TestCase):
         self.assertEqual(self.view(), {'trackId': self.tracks[0], 'playing': True, 'position': 3, 'revision': 1})
         self.store.set_playback(self.room, self.token, self.tracks[0], False, 3, 1)
         self.assertEqual(self.view()['revision'], 2)
+
+    def test_rejected_command_materializes_observed_transition_before_clock_reversal(self):
+        self.play()
+        self.clock[0] += 12
+        self.stale(self.tracks[0], 1)
+        self.clock[0] -= 5
+        self.stale(self.tracks[0], 1)
+        self.assertEqual(self.view(), {'trackId': self.tracks[1], 'playing': True, 'position': 2, 'revision': 2})
