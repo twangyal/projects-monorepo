@@ -27,11 +27,12 @@ Open `http://localhost:4173`.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
 - `src/dwell.js` — shared, deterministic dwell state machine; prevents repeated confirmations and rejects sample gaps over 250 ms.
 - `tests/` — dependency-free unit and app integration tests.
+- `src/accuracy.js` / `src/accuracy-view.js` — timed held-out measurement and local result display.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
 - `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.
 - `styles.css` — responsive presentation.
 
-The next useful step is to collect basic accuracy/latency measurements and separate the target resolver into a testable module before introducing an AI decision model. That keeps the eventual model comparison independent from webcam estimation and browser actions.
+The target resolver and a held-out accuracy check are now implemented. The next useful step is to collect physical webcam measurements before introducing an AI decision model. That keeps the eventual model comparison independent from webcam estimation and browser actions.
 
 ## Verification
 
@@ -74,3 +75,9 @@ Next: provide a held-out accuracy check with local measurement results, then sep
 ### Tracking lifecycle — 2026-10-03
 
 Pause clears dwell and suspends navigation; Resume starts fresh. Pause leaves the camera running. Stop tracking calls WebGazer's listener cleanup/end methods, cancels simulation frames, removes pointer listeners, and enables choosing another mode. Restart requires calibration again. Camera startup failure also cleans up before permitting retry; camera controls become available once startup resolves. Late camera callbacks are ignored in other modes. Ten automated tests passed; camera tests use an adapter harness and do not establish physical webcam release or accuracy.
+
+### Held-out measurement — 2026-10-03
+
+After calibration, choose Check accuracy. Look at each of five numbered targets without clicking; each stays for two seconds and samples from its first 500 ms are discarded. Navigation is suspended, the gaze cursor is hidden, and these targets do not intentionally train the estimator. The result shows mean/median/90th-percentile pixel error, per-target sample counts, and mean within-target sample interval. Local JSON can be copied from the results. Simulation is explicitly labeled and cannot establish webcam accuracy. Sample interval is not end-to-end latency. Missing samples produce unavailable metrics rather than a perfect score. Scrolling, resizing, pausing, stopping, tab changes, and missing camera data cancel an active check; close the result panel to return to the inbox.
+
+Fourteen automated tests and syntax checks passed on Node.js 24, covering known distances, settling exclusion, empty samples, invalid clocks, completion/cancellation, and existing navigation flows. No physical webcam measurement or browser visual check was run. The current check covers its visible panel, not the whole screen; pixel errors depend on viewport and setup. Next: collect real measurements and evaluate a decision-model adapter against the deterministic resolver.

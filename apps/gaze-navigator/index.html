@@ -19,6 +19,7 @@
         <button id="recalibrate" class="secondary" disabled>Recalibrate</button>
         <button id="pauseTracking" class="secondary" disabled>Pause tracking</button>
         <button id="stopTracking" class="secondary" disabled>Stop tracking</button>
+        <button id="checkAccuracy" class="secondary" disabled>Check accuracy</button>
       </div>
       <p id="status" role="status">Choose a tracking mode to begin.</p>
     </header>
@@ -32,6 +33,14 @@
       <div id="calibrationStage" aria-label="Calibration area"></div>
     </section>
 
+    <section id="accuracyPanel" class="panel hidden" aria-labelledby="accuracyTitle">
+      <h2 id="accuracyTitle">Held-out accuracy check</h2>
+      <p>Look at each dot for two seconds without clicking. The first half-second lets your gaze settle. Keep this area visible; scrolling or resizing cancels the check.</p>
+      <div id="accuracyStage"><span id="accuracyDot" class="calibration-dot hidden" aria-hidden="true"></span></div>
+      <p id="accuracyResult" role="status"></p>
+      <button id="cancelAccuracy">Close / cancel check</button>
+      <details><summary>Local measurement JSON</summary><pre id="accuracyData"></pre></details>
+    </section>
     <section id="playground" class="panel hidden" aria-labelledby="playgroundTitle">
       <div class="section-heading">
         <div>

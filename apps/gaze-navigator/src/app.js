@@ -1,6 +1,7 @@
 import { createDwellTracker } from './dwell.js';
 import { resolveTarget } from './resolver.js';
 import { setupWorkspace } from './workspace-view.js';
+import { setupAccuracyCheck } from './accuracy-view.js';
 
 const dwell = createDwellTracker();
 const CALIBRATION_CLICKS = 3;
@@ -22,6 +23,8 @@ const cursor = document.querySelector('#gazeCursor');
 const dwellFill = document.querySelector('#dwellFill');
 const pauseButton = document.querySelector('#pauseTracking');
 const stopButton = document.querySelector('#stopTracking');
+const accuracyButton = document.querySelector('#checkAccuracy');
+const accuracy = setupAccuracyCheck(document, window, resetTracking);
 
 let currentTarget = null;
 let simulationPoint = null;
@@ -59,6 +62,10 @@ function activate(target) {
 }
 
 function consumePoint(x, y, now = performance.now()) {
+  if (accuracy.active && !paused && trackingMode && !document.hidden) {
+    accuracy.sample({ x, y }, now);
+    return;
+  }
   if (paused || !trackingMode || document.hidden || playground.classList.contains('hidden') ||
       !Number.isFinite(x) || !Number.isFinite(y)) {
     dwell.reset();
@@ -122,6 +129,7 @@ function finishCalibration() {
   calibration.classList.add('hidden');
   playground.classList.remove('hidden');
   recalibrateButton.disabled = false;
+  accuracyButton.disabled = false;
   setStatus(trackingMode === 'camera' ? 'Gaze tracking active. Look at a target and hold.' : 'Simulation active. Move the pointer over a target and hold.');
 }
 
@@ -171,6 +179,7 @@ async function enableCamera() {
 }
 
 function resetTracking() {
+  accuracy.cancel();
   dwell.reset();
   clearFocus();
   simulationPoint = null;
@@ -194,6 +203,7 @@ function stopTracking() {
   startButton.disabled = false;
   simulateButton.disabled = false;
   recalibrateButton.disabled = true;
+  accuracyButton.disabled = true;
   pauseButton.disabled = true;
   pauseButton.textContent = 'Pause tracking';
   stopButton.disabled = true;
@@ -209,6 +219,11 @@ pauseButton.addEventListener('click', () => {
   setStatus(paused ? 'Navigation paused. Camera stays on until Stop tracking.' : 'Tracking resumed. Hold on a target to confirm.');
 });
 stopButton.addEventListener('click', stopTracking);
+accuracyButton.addEventListener('click', () => {
+  if (!trackingMode || paused || playground.classList.contains('hidden')) return;
+  resetTracking();
+  accuracy.start(trackingMode);
+});
 
 document.addEventListener('visibilitychange', resetTracking);
 window.addEventListener('blur', resetTracking);
@@ -219,6 +234,8 @@ startButton.addEventListener('click', enableCamera);
 setupWorkspace(document, resetTracking);
 simulateButton.addEventListener('click', enableSimulation);
 recalibrateButton.addEventListener('click', () => {
+  accuracyButton.disabled = true;
+  accuracy.cancel();
   clearFocus();
   beginCalibration();
 });

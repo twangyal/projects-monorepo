@@ -69,3 +69,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .workspace button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #75e5b4; outline-offset: 3px; }
 @media (max-width: 650px) { .inbox-layout { grid-template-columns: 1fr; } }
+
+#accuracyPanel { position: fixed; z-index: 5000; top: 5vh; left: 50%; transform: translateX(-50%); width: min(760px, calc(100% - 32px)); max-height: 90vh; overflow: auto; background: #0a1b16; }
+#accuracyStage { position: relative; height: min(260px, 30vh); margin: 20px 0; background: #091914; border-radius: 16px; }
+#accuracyDot { display: grid; place-items: center; pointer-events: none; }
+#accuracyData { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
