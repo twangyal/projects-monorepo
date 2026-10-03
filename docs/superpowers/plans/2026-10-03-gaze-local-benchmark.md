@@ -14,10 +14,10 @@
 
 Files: src/decision-benchmark.js; scripts/benchmark-local.js; tests/decision-benchmark.test.js; package.json.
 
-- [ ] Add tests separating eleven eligible cases from three deterministic policy cases, fixed denominators, failures/missing rows/cancellation, timing, real-adapter routing, and CLI validation.
-- [ ] Commit tests first and verify the expected missing implementation failure in exact-source CI.
-- [ ] Implement complete/partial metrics, baseline comparison, median/p95 adapter timing, and the optional CLI using the existing strict adapter.
-- [ ] Bound the CLI to five minutes, handle SIGINT/SIGTERM, keep stdout importable JSON, and fail exit status for infrastructure/incomplete reports rather than ordinary incorrect labels.
+- [x] Add tests separating eleven eligible cases from three deterministic policy cases, fixed denominators, failures/missing rows/cancellation, timing, real-adapter routing, and CLI validation.
+- [x] Commit tests first and verify the expected missing implementation failure in exact-source CI.
+- [x] Implement complete/partial metrics, baseline comparison, median/p95 adapter timing, and the optional CLI using the existing strict adapter.
+- [x] Bound the CLI to five minutes, handle SIGINT/SIGTERM, keep stdout importable JSON, and fail exit status for infrastructure/incomplete reports rather than ordinary incorrect labels.
 - [ ] Verify all existing unit, lint/build, and native browser checks; commit useful progress.
 
 ## Task 2: Actual free-runner inference
@@ -53,4 +53,4 @@ The user's continuous autonomous instruction authorizes design and main-branch c
 
 ## Verification
 
-Pending tests-first CI and actual model inference.
+Tests-first CI 37137825462 at ea057e0 failed on the missing decision-benchmark.js module, as intended. Actual model inference remains pending.
