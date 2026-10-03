@@ -42,6 +42,130 @@ async function openClip(page: Page, project: Project): Promise<void> {
   await expect(page.getByLabel('Paste lyrics, one line per cue', { exact: true })).toBeEnabled();
 }
 
+async function savedLyrics(request: APIRequestContext, name: string): Promise<Project> {
+  const project = await completedClip(request, name);
+  const session = await (await request.get('/api/session')).json() as { token: string };
+  const response = await request.put(`/api/projects/${project.id}`, {
+    headers: { 'X-Karaoke-Token': session.token },
+    data: { title: project.title, revision: project.revision, cues: [
+      { start: 0, end: .5, text: 'First saved line' },
+      { start: .75, end: 1.5, text: 'Second saved line' },
+    ] },
+  });
+  expect(response.status()).toBe(200);
+  return await response.json() as Project;
+}
+
+test('draft history restores removed lines, invalid timings and regenerated pasted words', async ({ page, request }) => {
+  const project = await savedLyrics(request, 'history-draft.wav');
+  await openClip(page, project);
+  const undo = page.getByRole('button', { name: 'Undo lyric edit', exact: true });
+  const redo = page.getByRole('button', { name: 'Redo lyric edit', exact: true });
+  const save = page.getByRole('button', { name: 'Save lyrics', exact: true });
+  await expect(undo).toBeDisabled(); await expect(redo).toBeDisabled();
+  await page.getByRole('button', { name: 'Remove line 2', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveCount(0);
+  await undo.click();
+  await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveValue('Second saved line');
+  await expect(save).toBeDisabled();
+  await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+  await redo.click(); await undo.click();
+  await page.getByLabel('Start line 1', { exact: true }).fill('');
+  await expect(page.locator('#cue-validation')).toContainText('within the clip');
+  await undo.click();
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('0');
+  await redo.click();
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('');
+  await expect(save).toBeDisabled();
+  await undo.click();
+  const paste = page.getByLabel('Paste lyrics, one line per cue', { exact: true });
+  await paste.fill('Replacement chorus');
+  await expect(redo).toBeDisabled();
+  await page.getByRole('button', { name: 'Create draft timings', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 1', { exact: true })).toHaveValue('Replacement chorus');
+  await undo.click();
+  await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveValue('Second saved line');
+  await expect(paste).toHaveValue('Replacement chorus');
+  await expect(page.locator('#save-state')).toContainText('Unsaved pasted words');
+  await expect(save).toBeDisabled();
+  await undo.click();
+  await expect(paste).toHaveValue('First saved line\nSecond saved line');
+  await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+  const title = page.getByLabel('Clip title', { exact: true });
+  await title.fill(''); await title.pressSequentially('New title');
+  await undo.click();
+  await expect(title).toHaveValue(project.title);
+  expect(await (await request.get(`/api/projects/${project.id}`)).json()).toEqual(project);
+});
+
+test('failed saves keep draft history and successful saves establish the latest revision baseline', async ({ page, request }) => {
+  const project = await savedLyrics(request, 'history-save.wav');
+  await openClip(page, project);
+  const undo = page.getByRole('button', { name: 'Undo lyric edit', exact: true });
+  const redo = page.getByRole('button', { name: 'Redo lyric edit', exact: true });
+  const save = page.getByRole('button', { name: 'Save lyrics', exact: true });
+  await page.getByLabel('Clip title', { exact: true }).fill('Saved new title');
+  await page.route(`**/api/projects/${project.id}`, async route => {
+    if (route.request().method() === 'PUT') await route.fulfill({ status: 409, json: { error: 'Fixture revision conflict.' } });
+    else await route.continue();
+  }, { times: 1 });
+  await save.click();
+  await expect(page.locator('#message')).toContainText('revision conflict');
+  await undo.click();
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue(project.title);
+  await redo.click();
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(`**/api/projects/${project.id}`, async route => {
+    if (route.request().method() === 'PUT') await gate;
+    await route.continue();
+  }, { times: 1 });
+  await save.click();
+  try { await expect(page.locator('#save-state')).toHaveText('Saving lyrics…'); await expect(undo).toBeDisabled(); await expect(redo).toBeDisabled(); }
+  finally { release(); }
+  await expect(page.locator('#message')).toContainText('saved locally');
+  await expect(undo).toBeDisabled(); await expect(redo).toBeDisabled();
+  await page.getByLabel('Lyric line 1', { exact: true }).fill('Fresh draft');
+  await undo.click();
+  await expect(page.getByLabel('Lyric line 1', { exact: true })).toHaveValue('First saved line');
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue('Saved new title');
+  await redo.click(); await save.click();
+  await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+  const saved = await (await request.get(`/api/projects/${project.id}`)).json() as Project;
+  expect(saved.revision).toBe(project.revision + 2);
+  expect(saved.cues[0].text).toBe('Fresh draft');
+  await expect(undo).toBeDisabled();
+});
+
+test('failed clip switches retain history, while successful switches and deletion reset it', async ({ page, request }) => {
+  const current = await savedLyrics(request, 'history-current.wav');
+  const next = await savedLyrics(request, 'history-next.wav');
+  await openClip(page, current);
+  const undo = page.getByRole('button', { name: 'Undo lyric edit', exact: true });
+  const redo = page.getByRole('button', { name: 'Redo lyric edit', exact: true });
+  await page.getByLabel('Clip title', { exact: true }).fill('Keep this draft');
+  await page.route(`**/api/projects/${next.id}`, async route => { await route.fulfill({ status: 503, json: { error: 'Fixture clip temporarily unavailable.' } }); }, { times: 1 });
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('combobox', { name: 'Saved clips', exact: true }).selectOption(next.id);
+  await expect(page.locator('#message')).toContainText('temporarily unavailable');
+  await undo.click();
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue(current.title);
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(`**/api/projects/${next.id}`, async route => { await gate; await route.continue(); }, { times: 1 });
+  await page.getByRole('combobox', { name: 'Saved clips', exact: true }).selectOption(next.id);
+  try { await expect(undo).toBeDisabled(); await expect(redo).toBeDisabled(); }
+  finally { release(); }
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue(next.title);
+  await expect(undo).toBeDisabled(); await expect(redo).toBeDisabled();
+  await page.getByLabel('Clip title', { exact: true }).fill('Delete this draft');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Delete selected clip', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('selected clip was deleted');
+  await expect(undo).toBeDisabled(); await expect(redo).toBeDisabled();
+  expect(await (await request.get(`/api/projects/${current.id}`)).json()).toEqual(current);
+});
+
 test('dismissing a project switch preserves raw pasted words that have no draft timings yet', async ({ page, request }) => {
   const current = await completedClip(request, 'raw-draft-current.wav');
   const other = await completedClip(request, 'raw-draft-other.wav');
