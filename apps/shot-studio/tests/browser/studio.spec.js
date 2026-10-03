@@ -129,5 +129,9 @@ test('scene undo and shot sequencing preserve camera snapshots and portable back
   await expect(page.locator('#shots button').first()).toContainText('Two-shot');
   await page.reload();await expect(page.locator('#shots button').first()).toContainText('Two-shot');
   await expect(page.getByRole('button',{name:'Undo scene',exact:true})).toBeDisabled();
+  await page.locator('#shots button').nth(1).click();
+  await page.getByRole('button',{name:'Add shot',exact:true}).click();
+  await page.getByRole('button',{name:'Remove shot',exact:true}).click();
+  await expect(page.locator('#shotLabel')).toContainText('CAMERA 02');
+  await expect(page.locator('#shots button').nth(1)).toHaveAttribute('aria-pressed','true');
 });
-
