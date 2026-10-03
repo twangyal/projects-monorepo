@@ -2,8 +2,10 @@ import { createDwellTracker } from './dwell.js';
 import { resolveTarget } from './resolver.js';
 import { setupWorkspace } from './workspace-view.js';
 import { setupAccuracyCheck } from './accuracy-view.js';
+import { createCameraLoader } from './camera-loader.js';
 
 const dwell = createDwellTracker();
+const loadCamera = createCameraLoader(document, window);
 const CALIBRATION_CLICKS = 3;
 const CALIBRATION_POINTS = [
   [10, 12], [50, 12], [90, 12],
@@ -153,14 +155,12 @@ function enableSimulation() {
 
 async function enableCamera() {
   if (trackingMode) return;
-  if (!window.webgazer) {
-    setStatus('WebGazer did not load. Try pointer simulation instead.');
-    return;
-  }
   try {
     trackingMode = 'camera';
     startButton.disabled = true;
     simulateButton.disabled = true;
+    setStatus('Loading camera tracking. You may be asked for webcam permission.');
+    await loadCamera();
     gazeHandler = data => {
       if (trackingMode !== 'camera') return;
       if (data) consumePoint(data.x, data.y);

@@ -15,7 +15,7 @@ python3 -m http.server 4173
 
 Open `http://localhost:4173`.
 
-- **Start camera** requests webcam access and uses WebGazer from jsDelivr.
+- **Start camera** requests webcam access and loads WebGazer from jsDelivr on demand.
 - **Pointer simulation** runs the same target resolver/dwell logic with pointer coordinates, making the interaction testable without a webcam.
 - Hold a pointer still for 0.9 seconds to confirm. A control confirms once until you leave it and return.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
@@ -27,6 +27,7 @@ Open `http://localhost:4173`.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
 - `src/dwell.js` — shared, deterministic dwell state machine; prevents repeated confirmations and rejects sample gaps over 250 ms.
 - `tests/` — dependency-free unit and app integration tests.
+- `src/camera-loader.js` — camera-only CDN loading with a 15-second timeout and retry.
 - `src/accuracy.js` / `src/accuracy-view.js` — timed held-out measurement and local result display.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
 - `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.
@@ -81,3 +82,7 @@ Pause clears dwell and suspends navigation; Resume starts fresh. Pause leaves th
 After calibration, choose Check accuracy. Look at each of five numbered targets without clicking; each stays for two seconds and samples from its first 500 ms are discarded. Navigation is suspended, the gaze cursor is hidden, and these targets do not intentionally train the estimator. The result shows mean/median/90th-percentile pixel error, per-target sample counts, and mean within-target sample interval. Local JSON can be copied from the results. Simulation is explicitly labeled and cannot establish webcam accuracy. Sample interval is not end-to-end latency. Missing samples produce unavailable metrics rather than a perfect score. Scrolling, resizing, pausing, stopping, tab changes, and missing camera data cancel an active check; close the result panel to return to the inbox.
 
 Fourteen automated tests and syntax checks passed on Node.js 24, covering known distances, settling exclusion, empty samples, invalid clocks, completion/cancellation, and existing navigation flows. No physical webcam measurement or browser visual check was run. The current check covers its visible panel, not the whole screen; pixel errors depend on viewport and setup. Next: collect real measurements and evaluate a decision-model adapter against the deterministic resolver.
+
+### Camera dependency isolation — 2026-10-03
+
+Pointer simulation no longer waits for WebGazer or contacts its CDN. Start camera loads the pinned library on demand; load failure or a 15-second timeout restores the mode controls for retry/simulation. Sixteen automated tests and syntax checks passed, including deferred loading, shared pending requests, failures, timeouts, and retry. Webcam permission prompts are browser-managed and are not subject to the library-loading timeout.
