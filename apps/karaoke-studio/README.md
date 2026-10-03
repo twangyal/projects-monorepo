@@ -4,7 +4,7 @@ A local karaoke clip maker: import a song excerpt, estimate vocals and backing w
 
 ## Install and run
 
-Use **Python 3.11**, **Node.js 22.18+** (CI uses Node 24), and **FFmpeg/ffprobe** on your PATH. FFmpeg needs H.264/libx264 and AAC encoders. Linux is the verified platform; other platforms need separate evaluation. The worker uses POSIX process/resource controls.
+Use **Linux with procfs available**, **Python 3.11**, **Node.js 22.18+** (CI uses Node 24), and **FFmpeg/ffprobe** on your PATH. FFmpeg needs H.264/libx264 and AAC encoders. Media jobs use Linux directory handles and POSIX process/resource controls; other platforms are unsupported by this storage implementation.
 
 From the repository root:
 
@@ -55,8 +55,10 @@ running service retains handles to its owned directories and rejects changed
 library/project paths with recovery guidance. Restore the original directories
 before restarting; existing projects are preserved. Temporary-job and selected
 deletion cleanup stay anchored to owned storage even when a parent path moves.
-This protects against directory replacement; it does not sandbox other programs
-running as the same user while media tools are writing their files.
+Media children inherit only their job's open directory handles; procfs paths keep
+their reads/writes in those directories while processing. This protects against
+parent-directory replacement; it does not sandbox arbitrary same-user changes
+to individual files inside owned storage.
 
 Jobs stay **running** through temporary cleanup. A terminal job status means the
 single worker has been released, so a new job can start immediately. Cancellation

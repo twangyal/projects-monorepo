@@ -23,6 +23,7 @@ from urllib.parse import unquote, urlsplit
 import uuid
 
 from .jobs import JobBusy, JobManager
+from .media_io import inherit_media_handles
 from .model import MAX_DURATION, ValidationError, create_project, render_srt, update_project, validate_project
 
 MAX_UPLOAD = 20 * 1024 * 1024
@@ -203,6 +204,14 @@ class KaraokeServer(ThreadingHTTPServer):
             raise RequestError(409, "Temporary work changed before publication.")
         return fd
 
+    @staticmethod
+    def _descriptor_path(fd):
+        # Media children inherit only the handles bound to this worker call.
+        path = Path(f"/proc/self/fd/{fd}")
+        if not path.is_dir():
+            raise RuntimeError("Karaoke Studio media jobs require Linux with accessible procfs directory handles.")
+        return path
+
     def cleanup_work(self, path):
         # Parent descriptors remain bound to owned storage even after a rename.
         parent_fd = self._directory_fds[self.work_dir]
@@ -270,25 +279,30 @@ class KaraokeServer(ThreadingHTTPServer):
         project_id = uuid.uuid4().hex
 
         def work(cancel, stage):
-            self.check_storage()
-            media = work_dir / "media"
-            media.mkdir()
-            duration = self.separate(upload, media, self.model_dir, cancel, stage)
-            self.check_storage()
-            project = create_project(project_id, title, duration)
-            complete = work_dir / "completed"
-            complete.mkdir()
-            for name in _AUDIO_FILES.values():
-                source = media / name
-                if source.is_symlink() or not source.is_file():
-                    raise RuntimeError("Audio processing did not produce all three WAV files.")
-                shutil.copyfile(source, complete / name)
-            metadata = media / "processing.json"
-            if metadata.exists():
-                if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
-                    raise RuntimeError("Audio processing provenance is invalid or oversized.")
-                shutil.copyfile(metadata, complete / "processing.json")
-            _atomic_json(complete / "project.json", project)
+            work_fd = self._open_work(work_dir)
+            try:
+                owned = self._descriptor_path(work_fd)
+                media = owned / "media"
+                media.mkdir()
+                with inherit_media_handles(work_fd):
+                    duration = self.separate(owned / upload.name, media, self.model_dir, cancel, stage)
+                self.check_storage()
+                project = create_project(project_id, title, duration)
+                complete = owned / "completed"
+                complete.mkdir()
+                for name in _AUDIO_FILES.values():
+                    source = media / name
+                    if source.is_symlink() or not source.is_file():
+                        raise RuntimeError("Audio processing did not produce all three WAV files.")
+                    shutil.copyfile(source, complete / name)
+                metadata = media / "processing.json"
+                if metadata.exists():
+                    if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
+                        raise RuntimeError("Audio processing provenance is invalid or oversized.")
+                    shutil.copyfile(metadata, complete / "processing.json")
+                _atomic_json(complete / "project.json", project)
+            finally:
+                os.close(work_fd)
 
             def publish():
                 self.check_storage()
@@ -318,13 +332,24 @@ class KaraokeServer(ThreadingHTTPServer):
         project_dir = self.projects_dir / project["id"]
 
         def work(cancel, stage):
-            self.check_storage()
-            stage("Rendering lyric video")
-            output = work_dir / "video.mp4"
-            self.export(project, project_dir / "backing.wav", output, work_dir, self.font_path, cancel)
-            self.check_storage()
-            if output.is_symlink() or not output.is_file() or not output.stat().st_size:
-                raise RuntimeError("Video export did not produce a complete output.")
+            work_fd = self._open_work(work_dir)
+            try:
+                project_fd = self._open_project(project["id"])
+                try:
+                    owned_work = self._descriptor_path(work_fd)
+                    owned_project = self._descriptor_path(project_fd)
+                    stage("Rendering lyric video")
+                    output = owned_work / "video.mp4"
+                    with inherit_media_handles(work_fd, project_fd):
+                        self.export(project, owned_project / "backing.wav", output,
+                                    owned_work, self.font_path, cancel)
+                    self.check_storage()
+                    if output.is_symlink() or not output.is_file() or not output.stat().st_size:
+                        raise RuntimeError("Video export did not produce a complete output.")
+                finally:
+                    os.close(project_fd)
+            finally:
+                os.close(work_fd)
 
             def publish():
                 if self.project(project["id"])["revision"] != project["revision"]:
@@ -601,9 +626,11 @@ class Handler(BaseHTTPRequestHandler):
             server.check_storage()
             if read:
                 with server.lock:
-                    projects = sorted(server.projects.values(),
-                                      key=lambda project: (server.projects_dir / project["id"] / "project.json").stat().st_mtime_ns,
-                                      reverse=True)
+                    dated = []
+                    for project in server.projects.values():
+                        with server.project_file(project["id"], "project.json") as source:
+                            dated.append((os.fstat(source.fileno()).st_mtime_ns, project))
+                    projects = [project for _, project in sorted(dated, key=lambda item: item[0], reverse=True)]
                 self._json({"projects": projects})
                 return
             if self.command == "POST":

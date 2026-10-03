@@ -13,6 +13,7 @@ import wave
 from PIL import Image, ImageDraw, ImageFont
 
 from .model import ValidationError, validate_project
+from .media_io import media_handles
 
 WIDTH, HEIGHT, FPS = 1280, 720, 24
 BACKGROUND = '#14232f'
@@ -99,7 +100,8 @@ def _run_ffmpeg(arguments: list[str], cancel: threading.Event, output: Path,
     started = time.monotonic()
     try:
         process = subprocess.Popen(arguments, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, shell=False, start_new_session=os.name == 'posix')
+                                   stderr=subprocess.PIPE, shell=False, start_new_session=os.name == 'posix',
+                                   pass_fds=media_handles())
     except OSError as exc:
         raise RuntimeError('Could not start FFmpeg; check that it is installed.') from exc
     selector = selectors.DefaultSelector()
@@ -165,7 +167,7 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event) -> None:
     project = validate_project(project)
     _cancelled(cancel)
-    backing, output, work_dir = Path(backing).resolve(), Path(output), Path(work_dir)
+    backing, output, work_dir = Path(backing).absolute(), Path(output), Path(work_dir)
     _validate_backing(backing, project['duration'])
     work_dir.mkdir(parents=True, exist_ok=True)
     temporary_output = None

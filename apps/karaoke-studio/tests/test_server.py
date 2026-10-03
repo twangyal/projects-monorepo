@@ -404,6 +404,71 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(list(retained.iterdir()), [])
         self.assertNotIn(project_id, self.server.projects)
 
+    def test_late_export_refuses_replaced_project_and_preserves_prior_video(self):
+        project_id = self.upload()["projectId"]
+        endpoint = f"/api/projects/{project_id}"
+        self.request("PUT", endpoint, {"title": "saved", "revision": 0,
+                                       "cues": [{"start": 0, "end": 1, "text": "lyrics"}]})
+        first = self.request("POST", endpoint + "/export", {})[2]
+        self.assertEqual(self.wait_job(first["job"]["id"])["status"], "complete")
+        started, finish = threading.Event(), threading.Event()
+        def deferred(project, backing, output, work_dir, font, cancel):
+            started.set()
+            self.assertTrue(finish.wait(3))
+            output.write_bytes(b"replacement export")
+        self.server.export = deferred
+        status, _, second = self.request("POST", endpoint + "/export", {})
+        self.assertEqual(status, 202)
+        self.assertTrue(started.wait(1))
+        original = self.server.projects_dir / project_id
+        retained = self.server.projects_dir / ("retained-" + project_id)
+        original.rename(retained)
+        replacement = self.root / "outside-project"
+        replacement.mkdir()
+        marker = replacement / "unrelated.txt"
+        marker.write_text("keep")
+        original.symlink_to(replacement, target_is_directory=True)
+        finish.set()
+        self.assertEqual(self.wait_job(second["job"]["id"])["status"], "failed")
+        self.assertEqual((retained / "video.mp4").read_bytes(), b"test-only MP4")
+        self.assertEqual(set(p.name for p in replacement.iterdir()), {"unrelated.txt"})
+        self.assertEqual(marker.read_text(), "keep")
+        self.assertEqual(self.request("GET", endpoint)[0], 409)
+
+    def test_running_separator_writes_through_owned_work_handle_after_parent_replacement(self):
+        started, finish = threading.Event(), threading.Event()
+        def deferred(*args):
+            started.set()
+            self.assertTrue(finish.wait(3))
+            return fake_separate(*args)
+        self.server.separate = deferred
+        status, _, result = self.request("POST", "/api/projects", b"audio")
+        self.assertEqual(status, 202)
+        self.assertTrue(started.wait(1))
+        name = next(self.server.work_dir.iterdir()).name
+        retained = self.server.work_dir.with_name("retained-jobs")
+        self.server.work_dir.rename(retained)
+        replacement = self.root / "outside-jobs"
+        (replacement / name / "media").mkdir(parents=True)
+        marker = replacement / name / "media" / "unrelated.txt"
+        marker.write_text("keep")
+        self.server.work_dir.symlink_to(replacement, target_is_directory=True)
+        finish.set()
+        self.assertEqual(self.wait_job(result["job"]["id"])["status"], "failed")
+        self.assertEqual(set(p.name for p in marker.parent.iterdir()), {"unrelated.txt"})
+        self.assertEqual(marker.read_text(), "keep")
+        self.assertEqual(list(retained.iterdir()), [])
+
+    def test_project_list_rejects_replaced_individual_project_directory(self):
+        project_id = self.upload()["projectId"]
+        original = self.server.projects_dir / project_id
+        original.rename(self.server.projects_dir / ("retained-" + project_id))
+        original.mkdir()
+        (original / "project.json").write_text(json.dumps(self.server.projects[project_id]))
+        status, _, result = self.request("GET", "/api/projects")
+        self.assertEqual(status, 409)
+        self.assertIn("Restore", result["error"])
+
     def test_data_dir_lock_precedes_cleanup_and_failed_bind_releases_resources(self):
         live = self.server.work_dir / ("a" * 32)
         live.mkdir()
