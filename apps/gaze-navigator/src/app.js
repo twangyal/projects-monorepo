@@ -6,6 +6,7 @@ import { createCameraLoader } from './camera-loader.js';
 import { setupKeyboard } from './keyboard.js';
 import { resetCameraCalibration, recordCalibrationClick } from './camera-calibration.js';
 import { releaseCamera } from './camera-cleanup.js';
+import { identifyCamera, retireCamera, retireCameraModel } from './camera-retirement.js';
 
 const dwell = createDwellTracker();
 const loadCamera = createCameraLoader(document, window);
@@ -45,6 +46,9 @@ let gazeHandler = null;
 let cameraReady = false;
 let cameraStarting = false;
 let cameraSession = 0;
+let cameraApi = null;
+let cameraStartup = null;
+let needsFreshCamera = false;
 let paused = false;
 const pointerHandler = event => {
   simulationPoint = { x: event.clientX, y: event.clientY };
@@ -128,7 +132,7 @@ function renderCalibrationPoint() {
   dot.disabled = paused;
   dot.addEventListener('click', event => {
     if (paused) return;
-    if (trackingMode === 'camera' && !recordCalibrationClick(window.webgazer, event, dot)) {
+    if (trackingMode === 'camera' && !recordCalibrationClick(cameraApi, event, dot)) {
       setStatus('No eye sample recorded. Look at the dot with your face visible, then click it with a pointer.');
       return;
     }
@@ -148,7 +152,7 @@ function beginCalibration() {
   pageDownButton.disabled = true;
   accuracyButton.disabled = true;
   accuracy.cancel();
-  if (cameraReady) resetCameraCalibration(window.webgazer);
+  if (cameraReady) resetCameraCalibration(cameraApi);
   dwell.reset({ preserveConfirmation: paused });
   clearFocus();
   simulationPoint = null;
@@ -191,6 +195,11 @@ function enableSimulation() {
 async function enableCamera() {
   if (trackingMode || cameraStarting) return;
   const session = ++cameraSession;
+  const canceled = Symbol('canceled');
+  let cancel;
+  const cancellation = new Promise(resolve => { cancel = () => resolve(canceled); });
+  const startup = { cancel, settled: false, retire: null };
+  cameraStartup = startup;
   cameraStarting = true;
   try {
     trackingMode = 'camera';
@@ -198,23 +207,33 @@ async function enableCamera() {
     simulateButton.disabled = true;
     stopButton.disabled = false;
     setStatus('Loading camera tracking. You may be asked for webcam permission.');
-    await loadCamera();
-    if (session !== cameraSession) return;
-    window.webgazer.saveDataAcrossSessions(false);
-    window.webgazer.showPredictionPoints(false);
+    const fresh = needsFreshCamera;
+    needsFreshCamera = false;
+    const api = await Promise.race([loadCamera({ fresh }), cancellation]);
+    if (api === canceled || session !== cameraSession) return;
+    cameraApi = api;
+    identifyCamera(api, session);
+    api.saveDataAcrossSessions(false);
+    api.showPredictionPoints(false);
     const handler = data => {
       if (trackingMode !== 'camera' || gazeHandler !== handler) return;
       if (data) consumePoint(data.x, data.y);
       else resetTracking();
     };
     gazeHandler = handler;
-    window.webgazer.setGazeListener(gazeHandler);
-    await window.webgazer.begin();
-    if (session !== cameraSession) {
-      releaseCamera(window.webgazer, document);
-      return;
-    }
-    window.webgazer.removeMouseEventListeners();
+    api.setGazeListener(gazeHandler);
+    const beginning = Promise.resolve(api.begin());
+    const settled = () => {
+      startup.settled = true;
+      if (session !== cameraSession) {
+        if (startup.retire) startup.retire();
+        else releaseCamera(api, document);
+      }
+    };
+    beginning.then(settled, settled);
+    const ready = await Promise.race([beginning, cancellation]);
+    if (ready === canceled || session !== cameraSession) return;
+    api.removeMouseEventListeners();
     cameraReady = true;
     pauseButton.disabled = false;
     stopButton.disabled = false;
@@ -224,10 +243,13 @@ async function enableCamera() {
       console.error(error);
       stopTracking();
       setStatus('Camera tracking could not start. Check camera permission or use pointer simulation.');
-    } else if (window.webgazer) releaseCamera(window.webgazer, document);
+    }
   } finally {
-    cameraStarting = false;
-    startButton.disabled = trackingMode !== null;
+    if (cameraStartup === startup) {
+      cameraStartup = null;
+      cameraStarting = false;
+      startButton.disabled = trackingMode !== null;
+    }
   }
 }
 
@@ -241,6 +263,7 @@ function resetTracking(preserveConfirmation = false) {
 
 function stopTracking() {
   const wasCamera = trackingMode === 'camera';
+  cameraStartup?.cancel();
   cameraSession++;
   trackingMode = null;
   cameraReady = false;
@@ -250,9 +273,15 @@ function stopTracking() {
   simulationFrame = null;
   document.removeEventListener('pointermove', pointerHandler);
   document.documentElement.removeEventListener('pointerleave', resetTracking);
-  if (wasCamera && window.webgazer) {
-    releaseCamera(window.webgazer, document);
+  if (wasCamera && cameraApi) {
+    // end() cannot cancel an inference already awaiting; its API must not be reused.
+    needsFreshCamera = true;
+    retireCameraModel(cameraApi);
+    if (cameraStartup && !cameraStartup.settled) {
+      cameraStartup.retire = retireCamera(cameraApi, document, window);
+    } else releaseCamera(cameraApi, document);
   }
+  cameraApi = null;
   gazeHandler = null;
   startButton.disabled = cameraStarting;
   simulateButton.disabled = false;

@@ -16,6 +16,7 @@ function element() {
     emit: (name, event = {}) => listeners.get(name)?.(event),
     replaceChildren() { this.children = []; },
     append(child) { this.children.push(child); },
+    remove() {},
     setAttribute() {},
     contains(target) { return this.children.includes(target); },
     closest() { return this; },
@@ -60,6 +61,9 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     clearGazeListener: () => { cleared++; },
     end: () => { ended++; },
   };
+  const initialApi = win.webgazer;
+  doc.head = { append(script) { win.webgazer = { ...initialApi, params: {} }; script.onload(); } };
+  win.clearTimeout = () => {};
   let confirmations = 0;
   let now = 0;
   win.setTimeout = () => { confirmations++; };

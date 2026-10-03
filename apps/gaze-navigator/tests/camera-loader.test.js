@@ -2,6 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCameraLoader } from '../src/camera-loader.js';
 
+test('fresh loading replaces a retired estimator instance', async () => {
+  const oldApi = { retired: true };
+  const scripts = [];
+  const doc = { createElement: () => ({ remove() {} }), head: { append: script => scripts.push(script) } };
+  const win = { webgazer: oldApi, setTimeout: () => 1, clearTimeout() {} };
+  const load = createCameraLoader(doc, win);
+  const pending = load({ fresh: true });
+  assert.equal(scripts.length, 1, 'fresh startup must execute a new library instance');
+  const newApi = { retired: false };
+  win.webgazer = newApi;
+  scripts[0].onload();
+  assert.equal(await pending, newApi);
+  assert.equal(await load(), newApi);
+});
+
 function harness() {
   let script;
   let timeout;

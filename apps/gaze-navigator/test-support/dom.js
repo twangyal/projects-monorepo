@@ -29,7 +29,14 @@ export async function appHarness(api) {
   document.documentElement = element();
   document.head = element();
   document.querySelector = selector => nodes[selector.slice(1)];
-  document.getElementById = id => nodes[id];
+  let firstVideoId = null;
+  document.getElementById = id => {
+    if (id.endsWith('-videoElementId') && !nodes[id]) {
+      nodes[id] = firstVideoId ? element() : nodes.webgazerVideoFeed;
+      firstVideoId ??= id;
+    }
+    return nodes[id];
+  };
   document.createElement = element;
   document.elementFromPoint = () => nodes.composeButton;
   nodes.navigationRoot.append(nodes.composeButton);
