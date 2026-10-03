@@ -37,6 +37,7 @@ test('rehearsal scrubs and exports an actually playable bounded video',async({pa
   await expect(page.locator('#time')).toContainText('2.00', {timeout:10000});
   const download=page.waitForEvent('download');
   await page.getByRole('button',{name:'Export WebM',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Undo scene',exact:true})).toBeDisabled();
   const file=await download,path=info.outputPath('film.webm');await file.saveAs(path);
   const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-show_format','-of','json',path],{encoding:'utf8'}));
   expect(probe.streams.some(s=>s.codec_type==='video'&&s.width===960&&s.height===540)).toBeTruthy();
@@ -74,4 +75,28 @@ test('page lifecycle restoration resumes rehearsal and context loss retains back
   await expect(page.getByRole('button',{name:'Export WebM',exact:true})).toBeDisabled();
   await expect(page.getByRole('button',{name:'Enter VR',exact:true})).toBeDisabled();
   await expect(page.getByRole('button',{name:'Save project',exact:true})).toBeEnabled();
+});
+
+test('scene undo and shot sequencing preserve camera snapshots and portable backups',async({page},info)=>{
+  await page.goto('/');
+  await expect(page.getByRole('button',{name:'Undo scene',exact:true})).toBeDisabled();
+  await page.getByLabel('Film title').fill('Edited film');await page.getByLabel('Film title').press('Tab');
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();
+  await expect(page.getByLabel('Film title')).toHaveValue('The arrival');
+  await page.getByRole('button',{name:'Redo scene',exact:true}).click();
+  await expect(page.getByLabel('Film title')).toHaveValue('Edited film');
+  await page.locator('#shots button').nth(1).click();
+  await page.getByRole('button',{name:'Move earlier',exact:true}).click();
+  await expect(page.locator('#shots button').first()).toContainText('Two-shot');
+  await expect(page.locator('#shots button').first()).toHaveAttribute('aria-pressed','true');
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();
+  await expect(page.locator('#shots button').first()).toContainText('Establishing');
+  await page.getByRole('button',{name:'Redo scene',exact:true}).click();
+  const downloading=page.waitForEvent('download');await page.getByRole('button',{name:'Save project',exact:true}).click();
+  const file=await downloading,path=info.outputPath('film.json');await file.saveAs(path);
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();
+  await page.locator('#import').setInputFiles(path);
+  await expect(page.locator('#shots button').first()).toContainText('Two-shot');
+  await page.reload();await expect(page.locator('#shots button').first()).toContainText('Two-shot');
+  await expect(page.getByRole('button',{name:'Undo scene',exact:true})).toBeDisabled();
 });
