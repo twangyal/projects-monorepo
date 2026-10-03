@@ -2,7 +2,7 @@
 
 A small browser-first vertical slice for project #1, **Eye detector with agentic AI**.
 
-The current milestone deliberately isolates gaze estimation from action execution. WebGazer provides webcam-based gaze coordinates; a tiny resolver maps those coordinates only to explicit `[data-gaze-target]` controls; a dwell timer confirms the selection. No arbitrary browser clicking is implemented yet.
+The current milestone deliberately isolates gaze estimation from action execution. WebGazer provides webcam-based gaze coordinates; a tiny resolver maps those coordinates only to explicit `[data-gaze-target]` controls; a dwell timer confirms the selection and invokes the same local action as a normal click. No arbitrary browser clicking is implemented yet.
 
 ## Run
 
@@ -27,6 +27,8 @@ Open `http://localhost:4173`.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
 - `src/dwell.js` — shared, deterministic dwell state machine; prevents repeated confirmations and rejects sample gaps over 250 ms.
 - `tests/` — dependency-free unit and app integration tests.
+- `src/workspace.js` — local sample inbox, search, selection, and session drafts.
+- `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.
 - `styles.css` — responsive presentation.
 
 The next useful step is to collect basic accuracy/latency measurements and separate the target resolver into a testable module before introducing an AI decision model. That keeps the eventual model comparison independent from webcam estimation and browser actions.
@@ -60,3 +62,11 @@ Webcam frames are processed by the browser-side WebGazer dependency; this projec
 ### Resolver isolation — 2026-10-03
 
 Extracted target resolution into a separately tested module. Seven automated tests passed on Node.js 24, including nested target content, root confinement, disabled controls, invalid coordinates, and empty hits. Browser layout and webcam accuracy remain unverified.
+
+### Working practice inbox — 2026-10-03
+
+Compose opens a draft editor; Save draft stores text in memory for this session. Search filters sample messages by subject/body, Select cycles through results, and Scroll moves the message list. Each message and composer control supports click, keyboard activation, and gaze confirmation. Text entry still requires a keyboard or the user's existing dictation/input tools. No messages are sent and no drafts survive refresh.
+
+Nine automated tests passed, including search/selection, draft validation and detached snapshots, and the complete simulated gaze-to-composer path. Lint/build validate syntax only. No browser visual or webcam check was performed. Layout-changing actions clear pending dwell and require fresh pointer movement in simulation.
+
+Next: provide a held-out accuracy check with local measurement results, then separate camera lifecycle controls and evaluate decision models. Project #1 remains ACTIVE: arbitrary browser control and AI decision-making are still absent.

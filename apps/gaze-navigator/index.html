@@ -39,12 +39,32 @@
         <div class="dwell-meter" aria-label="Dwell progress"><span id="dwellFill"></span></div>
       </div>
       <div class="target-grid">
-        <button class="demo-target" data-gaze-target data-action="compose">Compose</button>
-        <button class="demo-target" data-gaze-target data-action="search">Search</button>
-        <button class="demo-target" data-gaze-target data-action="scroll">Scroll</button>
-        <button class="demo-target" data-gaze-target data-action="select">Select</button>
+        <button id="composeButton" class="demo-target" data-gaze-target data-action="compose">Compose</button>
+        <button id="searchButton" class="demo-target" data-gaze-target data-action="search">Search</button>
+        <button id="scrollButton" class="demo-target" data-gaze-target data-action="scroll">Scroll</button>
+        <button id="selectButton" class="demo-target" data-gaze-target data-action="select">Select</button>
       </div>
-      <p id="result" class="result">Hold your gaze on a control for 0.9 seconds.</p>
+      <div class="workspace">
+        <label for="searchInput">Search practice messages</label>
+        <input id="searchInput" type="search" placeholder="Try calibration" />
+        <p>Type a query, then confirm Search. Select cycles through the results.</p>
+        <div class="inbox-layout">
+          <div id="messageList" aria-label="Practice messages" tabindex="0"></div>
+          <article id="messageDetail" aria-live="polite">Select a message to read it.</article>
+        </div>
+        <section id="composer" class="hidden" aria-label="Practice draft">
+          <label for="draftSubject">Subject</label>
+          <input id="draftSubject" maxlength="200" />
+          <label for="draftBody">Message</label>
+          <textarea id="draftBody" rows="4" maxlength="10000"></textarea>
+          <button id="saveDraft" data-gaze-target>Save draft</button>
+          <button id="cancelDraft" data-gaze-target>Close composer</button>
+        </section>
+        <h3>Session drafts</h3>
+        <p>Drafts clear when you refresh. Nothing is sent.</p>
+        <div id="draftList"></div>
+      </div>
+      <p id="result" role="status" class="result">Hold your gaze on a control for 0.9 seconds.</p>
       <p class="privacy">Only controls marked as gaze targets can activate. This prototype does not click arbitrary page elements.</p>
     </section>
   </main>
@@ -53,3 +73,4 @@
   <script type="module" src="./src/app.js"></script>
 </body>
 </html>
+

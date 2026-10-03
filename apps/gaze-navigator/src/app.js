@@ -1,5 +1,6 @@
 import { createDwellTracker } from './dwell.js';
 import { resolveTarget } from './resolver.js';
+import { setupWorkspace } from './workspace-view.js';
 
 const dwell = createDwellTracker();
 const CALIBRATION_CLICKS = 3;
@@ -47,7 +48,8 @@ function activate(target) {
   const label = target.textContent.trim();
   target.classList.add('activated');
   window.setTimeout(() => target.classList.remove('activated'), 420);
-  result.textContent = `${label} confirmed. In a real integration this would hand off a typed action to the browser controller.`;
+  result.textContent = `${label} confirmed.`;
+  target.click();
 }
 
 function consumePoint(x, y, now = performance.now()) {
@@ -170,6 +172,7 @@ window.addEventListener('resize', resetTracking);
 window.addEventListener('scroll', resetTracking, true);
 
 startButton.addEventListener('click', enableCamera);
+setupWorkspace(document, resetTracking);
 simulateButton.addEventListener('click', enableSimulation);
 recalibrateButton.addEventListener('click', () => {
   clearFocus();

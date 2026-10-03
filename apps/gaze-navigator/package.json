@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "lint": "node --check src/app.js && node --check src/dwell.js && node --check src/resolver.js",
+    "lint": "node --check src/app.js && node --check src/dwell.js && node --check src/resolver.js && node --check src/workspace.js && node --check src/workspace-view.js",
     "build": "npm run lint"
   }
 }
