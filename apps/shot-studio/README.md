@@ -74,7 +74,7 @@ npm run test:browser
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains 17 unit tests and five Chromium browser checks, including
+requires a device. The suite contains 20 unit tests and six Chromium browser checks, including
 independently decoded video timestamps/changing frames, reversible edits, portable
 shot order and preview alignment after undo. The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
