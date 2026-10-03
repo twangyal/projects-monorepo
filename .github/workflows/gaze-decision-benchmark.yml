@@ -1,0 +1,94 @@
+name: Gaze decision model benchmark
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/gaze-decision-benchmark.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gaze-decision-benchmark
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/gaze-navigator
+    env:
+      OLLAMA_NO_CLOUD: '1'
+      OLLAMA_HOST: '127.0.0.1:11434'
+      OLLAMA_MODELS: ${{ runner.temp }}/gaze-ollama-models
+      GAZE_BENCHMARK_OLLAMA_RELEASE: 'v0.35.1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify benchmark and existing unit contracts
+        run: |
+          npm test
+          npm run lint
+      - name: Install checksum-verified local runtime
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          if ! command -v zstd >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends zstd
+          fi
+          curl --fail --location --proto '=https' --tlsv1.2 --retry 2 --connect-timeout 15 --max-time 240 \
+            --output "$RUNNER_TEMP/gaze-ollama.tar.zst" \
+            'https://github.com/ollama/ollama/releases/download/v0.35.1/ollama-linux-amd64.tar.zst'
+          printf '%s  %s\n' '9fcd79ac4575b2bd31b992eee18b1000c8ad126b451627c8f8cd091714cfbb10' "$RUNNER_TEMP/gaze-ollama.tar.zst" | sha256sum --check --strict -
+          mkdir -p "$RUNNER_TEMP/gaze-ollama"
+          tar --zstd -xf "$RUNNER_TEMP/gaze-ollama.tar.zst" -C "$RUNNER_TEMP/gaze-ollama"
+          echo "$RUNNER_TEMP/gaze-ollama/bin" >> "$GITHUB_PATH"
+      - name: Run real local GGUF decisions
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          GAZE_BENCHMARK_SERVER_PID=''
+          stop_server() {
+            if [ -n "$GAZE_BENCHMARK_SERVER_PID" ]; then
+              kill "$GAZE_BENCHMARK_SERVER_PID" 2>/dev/null || true
+              wait "$GAZE_BENCHMARK_SERVER_PID" 2>/dev/null || true
+            fi
+          }
+          trap stop_server EXIT
+          ollama serve > "$RUNNER_TEMP/gaze-ollama-server.log" 2>&1 &
+          GAZE_BENCHMARK_SERVER_PID=$!
+          for attempt in {1..30}; do
+            if curl --fail --silent --max-time 2 'http://127.0.0.1:11434/api/version' >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$GAZE_BENCHMARK_SERVER_PID" 2>/dev/null; then
+              echo 'Local Ollama server exited before readiness.'
+              exit 1
+            fi
+            sleep 1
+          done
+          node --input-type=module <<'NODE'
+          const options = { signal: AbortSignal.timeout(5000), redirect: 'error' };
+          const version = await (await fetch('http://127.0.0.1:11434/api/version', options)).json();
+          const status = await (await fetch('http://127.0.0.1:11434/api/status', options)).json();
+          if (version.version !== '0.35.1' || status.cloud?.disabled !== true) throw new Error('Pinned local-only runtime verification failed');
+          console.log(JSON.stringify({ runtime: version.version, cloudDisabled: status.cloud.disabled }));
+          NODE
+          timeout 180 ollama pull tev1:0.8b-q8_0
+          GAZE_BENCHMARK_EXIT=0
+          node scripts/benchmark-local.js --model tev1:0.8b-q8_0 > "$RUNNER_TEMP/gaze-decision-report.json" || GAZE_BENCHMARK_EXIT=$?
+          echo '::group::Importable decision benchmark JSON'
+          cat "$RUNNER_TEMP/gaze-decision-report.json"
+          echo '::endgroup::'
+          exit "$GAZE_BENCHMARK_EXIT"
+      # Standard public runner only; model files are temporary.
+      # Results stay in logs. No persistent artifacts or caches are uploaded.

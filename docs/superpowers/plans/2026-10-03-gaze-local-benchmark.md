@@ -24,8 +24,8 @@ Files: src/decision-benchmark.js; scripts/benchmark-local.js; tests/decision-ben
 
 File: .github/workflows/gaze-decision-benchmark.yml.
 
-- [ ] Add a read-only standard Ubuntu job with a 15-minute limit, pinned actions, no artifact/cache uploads, explicit cloud-disabled loopback server and temporary model storage.
-- [ ] Verify the official Ollama v0.35.1 Linux archive SHA-256 before extraction; do not curl-pipe an installer or execute unverified binaries.
+- [x] Add a read-only standard Ubuntu job with a 15-minute limit, pinned actions, no artifact/cache uploads, explicit cloud-disabled loopback server and temporary model storage.
+- [x] Verify the official Ollama v0.35.1 Linux archive SHA-256 before extraction; do not curl-pipe an installer or execute unverified binaries.
 - [ ] Pull exactly tev1:0.8b-q8_0, run the CLI once, log its bounded JSON and runtime/model provenance, and stop the server on exit.
 - [ ] Inspect actual CI evidence. Fix adapter/protocol/runtime failures, or record a concrete infrastructure blocker if unavoidable.
 - [ ] Preserve the actual report in git with exact source commit/run/runtime/model digest and a per-case comparison. Do not relabel fixtures or tune the prompt to make the score look better.
@@ -54,3 +54,5 @@ The user's continuous autonomous instruction authorizes design and main-branch c
 ## Verification
 
 Tests-first CI 37137825462 at ea057e0 failed on the missing decision-benchmark.js module, as intended. Actual model inference remains pending.
+
+- CLI implementation commit 6b36837: unit/lint/build steps are green; full native browser regression is in progress in CI 37138021748. Native model benchmark is about to run; no actual model quality is claimed yet.

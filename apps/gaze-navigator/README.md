@@ -90,6 +90,21 @@ Results show every expected/observed choice alongside the latest baseline. The o
 
 Actual local-model quality, a Jev comparison, and applying context decisions to live navigation remain unverified/unimplemented. CI's controlled local API responses test integration boundaries; they are not model-quality measurements.
 
+### Command-line local benchmark
+
+With the cloud-disabled loopback server and GGUF model already installed, run:
+
+```bash
+cd apps/gaze-navigator
+node scripts/benchmark-local.js --model tev1:0.8b-q8_0 > decision-report.json
+```
+
+The CLI prints only one importable report to stdout; case progress goes to stderr. Import `decision-report.json` in the lab. It downloads nothing, rejects hosted model names, handles SIGINT/SIGTERM, and limits the full run to five minutes. An incomplete/error/cancelled report still prints, with a failing exit status. Wrong choices are measured results, not infrastructure failures.
+
+The report's optional `benchmark` metadata separates all 14 cases from the eleven model-eligible cases and three policy-only cases, compares each result with geometry, and records median/p95 eligible-case adapter time. Errors and missing rows remain in their subset's denominator. Times include transport, first-call preflight and cold loading; they are not webcam latency or inference-only timing. The browser imports the ordinary report fields and does not authenticate extra benchmark metadata.
+
+The **Gaze decision model benchmark** workflow is repeatable through GitHub Actions' **Run workflow** button. It runs only on explicit dispatch or edits to its own workflow, rather than every app change. It uses a pinned, SHA-256-verified Ollama v0.35.1 archive, temporary model storage, a verified cloud-disabled loopback server, and one explicit `tev1:0.8b-q8_0` pull. The standard public runner has a 15-minute limit and uploads no artifacts/caches. The workflow logs contain the full JSON report and runtime verification; actual model results are still pending.
+
 ## Verification
 
 Unit and syntax checks require Node.js 20 or newer; no package installation is needed for those checks.
