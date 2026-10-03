@@ -60,6 +60,16 @@ class ContextEntry:
 
 
 @dataclass
+class SuppliedContext:
+    """A revision-bound, unverified discussion record supplied by the user."""
+    commit: str
+    url: str
+    title: str
+    author: str
+    excerpt: str
+
+
+@dataclass
 class Report:
     repo_name: str
     revision: str
@@ -75,3 +85,4 @@ class Report:
     remote_url: str | None = None
     schema_version: int = 1
     selected_function: str | None = None
+    supplied_context: list[SuppliedContext] | None = None

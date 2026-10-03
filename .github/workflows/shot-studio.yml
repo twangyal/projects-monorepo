@@ -1,0 +1,33 @@
+name: Shot Studio
+on:
+  push:
+    paths: ['apps/shot-studio/**', '.github/workflows/shot-studio.yml']
+  pull_request:
+    paths: ['apps/shot-studio/**', '.github/workflows/shot-studio.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-browser-review
+          path: apps/shot-studio/test-results/
+          retention-days: 1

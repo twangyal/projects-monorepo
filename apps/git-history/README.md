@@ -88,6 +88,30 @@ Here `N` is a numeric ID. Ports, user information, query strings, escaped paths,
 
 Context input is a regular UTF-8 JSON file of at most **256 KiB**, with at most **50 entries**. Source labels and author names are **1–200 characters** each, excerpts **1–4,000**, and URLs **1–2,048**. Duplicate/unknown fields, unsupported schema versions, invalid Unicode, NUL and unsupported control characters are rejected. Errors do not repeat excerpt contents or rejected credential-bearing URLs. HTML escapes supplied text; JSON preserves it as string data. The existing total report size limit still applies.
 
+For context tied to an exact report snapshot, the alternative **revision-bound records** format is also supported by the same `--context` flag:
+
+```json
+{
+  "schema_version": 1,
+  "revision": "<exact full revision from your JSON report>",
+  "records": [
+    {
+      "commit": "<full commit ID from blame, changes or renames>",
+      "url": "https://github.com/owner/repository/pull/42#issuecomment-123",
+      "title": "Review of the selected helper",
+      "author": "Example author",
+      "excerpt": "Paste the relevant source excerpt here, preserving its wording."
+    }
+  ]
+}
+```
+
+Replace the placeholders with exact IDs from an existing report, then run the command above with `--ref` set to that report's full revision. This envelope requires `revision` to equal the resolved report revision and every record's commit to appear in returned blame/change/rename evidence. The selected revision alone is insufficient if it has no displayed evidence. Changing revisions requires deliberately updating the envelope; changing selections or history limits may remove an accepted commit.
+
+Records render as **Supplied discussion context** in HTML. JSON preserves this format as a `supplied_context` array with a separate `supplied_context_note` provenance warning. Titles are **1–300 characters**, authors **1–200**, excerpts **1–4,000**, and URLs **1–2,000**. Text permits newlines/tabs; carriage returns and other unsupported controls are rejected. The same 256 KiB, 50-record, safe-link and atomic-publication rules apply, including for direct renderer callers. Empty `records` produces an explicitly empty array/section. Use exactly one envelope format per file; mixing `entries` and `records` is rejected. With neither supplied, both context fields and the HTML section are omitted.
+
+The Python API retains both `render_json(report, entries)` / `render_html(report, entries)` for `ContextEntry` values and `report.supplied_context` for `SuppliedContext` records. `load_context` returns a list of entries or a `ContextRecords` list for the revision-bound format, preserving the format even when empty. Its return value can also be passed directly as the renderer's second argument. Supplying both rendering arguments rejects the request rather than silently discarding context.
+
 ### Read the synopsis
 
 The report starts with a factual synopsis: which commits account for the current selected lines, up to three available range changes with quoted message excerpts, whole-file rename evidence, and completeness notes. Each observation links to the underlying report evidence. The oldest displayed change is not necessarily a function's introduction. Messages record author statements; the tool does not treat them as verified rationale or infer intent from a patch.

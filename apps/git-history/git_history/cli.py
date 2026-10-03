@@ -9,7 +9,7 @@ import re
 import sys
 import tempfile
 
-from .context import load_context
+from .context import ContextRecords, load_context
 from .reader import inspect_repository, list_functions
 from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
@@ -120,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
                                     ref=args.ref, max_commits=args.max_commits,
                                     function=args.function)
         context = load_context(args.context, report) if args.context is not None else None
+        if isinstance(context, ContextRecords):
+            report.supplied_context = context
+            context = None
         text = render_html(report, context) if args.format == "html" else render_json(report, context)
         if args.output and args.output != "-":
             write_report(Path(args.output), text, args.repo, args.force)

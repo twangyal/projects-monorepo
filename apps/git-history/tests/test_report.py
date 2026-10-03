@@ -101,6 +101,7 @@ class ReportTests(unittest.TestCase):
     def test_json_preserves_structured_evidence_and_unknowns(self):
         report = example_report()
         expected = asdict(report)
+        expected.pop('supplied_context')
         expected["synopsis"] = build_synopsis(report)
         self.assertEqual(json.loads(render_json(report)), expected)
 

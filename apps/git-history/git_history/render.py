@@ -6,8 +6,8 @@ import json
 import re
 from urllib.parse import urlsplit
 
-from .context import context_document
-from .model import ContextEntry, Report
+from .context import CONTEXT_NOTE, ContextRecords, context_document, validate_records
+from .model import ContextEntry, Report, SuppliedContext
 from .synopsis import build_synopsis, commit_anchor as _commit_anchor
 
 MAX_REPORT_BYTES = 8 * 1024 * 1024
@@ -19,11 +19,31 @@ def _bounded(text: str) -> str:
     return text
 
 
-def render_json(report: Report, context: list[ContextEntry] | None = None) -> str:
+def _contexts(report: Report, context: list[ContextEntry] | ContextRecords | None):
+    records = report.supplied_context
+    if isinstance(context, ContextRecords) or (
+        isinstance(context, list) and context and all(isinstance(item, SuppliedContext) for item in context)
+    ):
+        if records is not None:
+            raise ValueError('Context must be supplied through only one rendering argument.')
+        records, context = context, None
+    if context is not None and records is not None:
+        raise ValueError('Context entries and records cannot be combined in one report.')
+    supplied = context_document(report, context) if context is not None else None
+    records = validate_records(records, report) if records is not None else None
+    return supplied, records
+
+
+def render_json(report: Report, context: list[ContextEntry] | ContextRecords | None = None) -> str:
+    supplied, records = _contexts(report, context)
     data = asdict(report)
+    data.pop('supplied_context')
     data["synopsis"] = build_synopsis(report)
-    if context is not None:
-        data["supplied_context"] = context_document(report, context)
+    if supplied is not None:
+        data['supplied_context'] = supplied
+    elif records is not None:
+        data['supplied_context'] = [asdict(item) for item in records]
+        data['supplied_context_note'] = CONTEXT_NOTE
     return _bounded(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
 
@@ -106,6 +126,26 @@ def _render_context(document: dict) -> str:
 '''
 
 
+def _render_records(records: list[SuppliedContext]) -> str:
+    articles = []
+    for index, record in enumerate(records, 1):
+        articles.append(
+            f'<article class="change" id="context-{index}">'
+            f'<h3>{escape(record.title)}</h3><p class="muted">Supplied author: {escape(record.author)}</p>'
+            f'<p><a href="#{_commit_anchor(record.commit)}">Displayed commit '
+            f'<code>{escape(record.commit[:12])}</code></a> · '
+            f'<a href="{escape(record.url)}" rel="noreferrer noopener" target="_blank">'
+            'Open supplied source ↗</a></p>'
+            f'<pre class="message">{escape(record.excerpt)}</pre></article>'
+        )
+    content = ''.join(articles) or '<p class="empty">No discussion excerpts were supplied.</p>'
+    return (
+        '<section id="context"><div class="section-title"><span>05</span>'
+        '<h2>Supplied discussion context</h2></div>'
+        f'<p class="muted">{escape(CONTEXT_NOTE)}</p>{content}</section>'
+    )
+
+
 def _patch_counts(patch: str) -> tuple[int, int]:
     added = removed = 0
     in_hunk = False
@@ -120,8 +160,8 @@ def _patch_counts(patch: str) -> tuple[int, int]:
     return added, removed
 
 
-def render_html(report: Report, context: list[ContextEntry] | None = None) -> str:
-    supplied = context_document(report, context) if context is not None else None
+def render_html(report: Report, context: list[ContextEntry] | ContextRecords | None = None) -> str:
+    supplied, records = _contexts(report, context)
     synopsis = build_synopsis(report)
     remote = _remote_url(report.remote_url)
     changes = {change.commit: change for change in report.changes}
@@ -188,11 +228,14 @@ def render_html(report: Report, context: list[ContextEntry] | None = None) -> st
 
     context_html = _render_context(supplied) if supplied is not None else ''
     context_nav = '<a href="#supplied-context">Supplied context</a>' if supplied is not None else ''
+    if records is not None:
+        context_html = _render_records(records)
+        context_nav = '<a href="#context">Supplied context</a>'
     revision_id = ''
     if supplied is not None and report.revision not in anchored_commits:
         if any(item['commit'] == report.revision for item in supplied['entries']):
             revision_id = f' id="{escape(_commit_anchor(report.revision))}"'
-    limits_number = '06' if supplied is not None else '05'
+    limits_number = '06' if supplied is not None or records is not None else '05'
     warnings = ''.join(f'<li>{escape(warning)}</li>' for warning in synopsis["completeness_notes"])
     attribution_section = '<h3>Additional attributed commits</h3>' + ''.join(other_commits) if other_commits else ''
     rename_content = ('<div class="table-scroll"><table><thead><tr><th>Commit</th><th>Previous path</th><th>New path</th><th>Similarity</th></tr></thead><tbody>' + ''.join(rename_rows) + '</tbody></table></div>') if rename_rows else '<p class="empty">No whole-file rename evidence was returned within the history limit.</p>'

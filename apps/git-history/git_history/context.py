@@ -7,11 +7,18 @@ import re
 import stat
 from urllib.parse import urlsplit
 
-from .model import ContextEntry, Report
+from .model import ContextEntry, Report, SuppliedContext
 from .synopsis import commit_anchor
 
 MAX_CONTEXT_BYTES = 256 * 1024
 MAX_CONTEXT_ENTRIES = 50
+MAX_CONTEXT_RECORDS = MAX_CONTEXT_ENTRIES
+CONTEXT_NOTE = (
+    'Discussion excerpts, authors, URLs and their commit associations were supplied by the user '
+    'and are not verified. No sources were fetched. A matching displayed commit ID does not '
+    'prove that a discussion concerns this repository or explains the selected code. '
+    'Treat excerpts as attributed claims, not established author intent.'
+)
 PROVENANCE = (
     'Unverified supplied context. Authors, source labels, URLs and excerpts were provided '
     'locally; their authenticity, relevance and claims have not been verified. No discussion '
@@ -20,6 +27,10 @@ PROVENANCE = (
 _FIELDS = {'commit', 'source', 'url', 'author', 'excerpt'}
 _FULL_COMMIT = re.compile(r'(?:[0-9a-f]{40}|[0-9a-f]{64})\Z')
 _COMPONENT = re.compile(r'[A-Za-z0-9_.-]+\Z')
+
+
+class ContextRecords(list[SuppliedContext]):
+    """Distinguish the records envelope from entries, including an empty import."""
 
 
 def represented_commits(report: Report) -> set[str]:
@@ -76,6 +87,44 @@ def _text(value: object, maximum: int, field: str, index: int) -> str:
     return value
 
 
+def discussion_url(value: object) -> bool:
+    """Validate conservative discussion links without exposing rejected input."""
+    if not isinstance(value, str) or len(value) > 2000:
+        return False
+    try:
+        _discussion_url(value)
+    except ValueError:
+        return False
+    return True
+
+
+def validate_records(records: object, report: Report) -> list[SuppliedContext]:
+    """Revalidate revision-bound records at both import and rendering boundaries."""
+    if not isinstance(records, list) or len(records) > MAX_CONTEXT_RECORDS:
+        raise ValueError('Context records must be a list of at most 50 excerpts.')
+    displayed = {item.commit for item in [*report.blame, *report.changes, *report.renames]}
+    result = []
+    for index, record in enumerate(records, 1):
+        data = asdict(record) if isinstance(record, SuppliedContext) else record
+        if not isinstance(data, dict) or set(data) != {'commit', 'url', 'title', 'author', 'excerpt'}:
+            raise ValueError(f'Context record {index} requires commit, url, title, author and excerpt.')
+        commit = data['commit']
+        if not isinstance(commit, str) or not _FULL_COMMIT.fullmatch(commit) or commit not in displayed:
+            raise ValueError(f'Context record {index} must name an exact commit in displayed evidence.')
+        if not discussion_url(data['url']):
+            raise ValueError(f'Context record {index} requires a credential-free GitHub/GitLab discussion URL.')
+        for field, maximum in (('title', 300), ('author', 200), ('excerpt', 4000)):
+            value = _text(data[field], maximum, field, index)
+            if '\r' in value:
+                raise ValueError(f'Context record {index} {field} contains unsupported control characters.')
+        result.append(SuppliedContext(**data))
+    document = {'schema_version': 1, 'revision': report.revision,
+                'records': [asdict(item) for item in result]}
+    if len(json.dumps(document, ensure_ascii=False).encode('utf-8')) > MAX_CONTEXT_BYTES:
+        raise ValueError('Context exceeds 256 KiB; supply fewer or shorter excerpts.')
+    return result
+
+
 def _validate_document(value: object, report: Report) -> list[ContextEntry]:
     if not isinstance(value, dict) or set(value) != {'schema_version', 'entries'}:
         raise ValueError('Context JSON must contain exactly schema_version and entries.')
@@ -122,7 +171,7 @@ def _invalid_constant(value: str) -> None:
     raise ValueError('Context JSON must not contain nonstandard numeric constants.')
 
 
-def load_context(path: str | Path, report: Report) -> list[ContextEntry]:
+def load_context(path: str | Path, report: Report) -> list[ContextEntry] | ContextRecords:
     """Read one regular file with bounded allocation, without following URLs."""
     try:
         descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
@@ -134,7 +183,7 @@ def load_context(path: str | Path, report: Report) -> list[ContextEntry]:
                 raise ValueError('Context file exceeds 256 KiB; supply fewer or shorter excerpts.')
             raw = stream.read(MAX_CONTEXT_BYTES + 1)
     except OSError:
-        raise ValueError('Cannot read context file; choose an existing readable regular UTF-8 JSON file.') from None
+        raise ValueError('Context file cannot be read; choose an existing readable regular UTF-8 JSON file.') from None
     if len(raw) > MAX_CONTEXT_BYTES:
         raise ValueError('Context file exceeds 256 KiB; supply fewer or shorter excerpts.')
     try:
@@ -142,6 +191,13 @@ def load_context(path: str | Path, report: Report) -> list[ContextEntry]:
                               parse_constant=_invalid_constant)
     except (UnicodeError, ValueError, RecursionError):
         raise ValueError('Context file must contain valid UTF-8 JSON with unique fields and standard values.') from None
+    if isinstance(document, dict) and ('records' in document or 'revision' in document):
+        if (set(document) != {'schema_version', 'revision', 'records'}
+                or type(document['schema_version']) is not int or document['schema_version'] != 1):
+            raise ValueError('Context requires schema_version 1, revision and records.')
+        if document['revision'] != report.revision:
+            raise ValueError("Context revision must equal the report's exact resolved commit ID.")
+        return ContextRecords(validate_records(document['records'], report))
     return _validate_document(document, report)
 
 

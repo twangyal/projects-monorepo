@@ -27,7 +27,7 @@ Description: A beginner-friendly digital audio workstation that turns hummed or 
 
 Path: apps/git-history
 Status: MAINTENANCE
-Progress: A local Python CLI produces portable HTML/JSON reports for committed source ranges, with per-line blame, range patches, quoted commit messages, and rename evidence. Reads are bounded and repository configuration cannot silently replace objects, remap author names, or execute external evidence helpers. Reports disclose shallow/merge/truncation limits and never infer intent from diffs. Committed Python functions can be listed and selected by qualified name, including decorators and nested methods, and an evidence-linked synopsis makes attribution and available changes readable. The core offline portfolio workflow is complete in issues #11 and #13; optional PR/discussion evidence and semantic synthesis remain future milestones.
+Progress: A local Python CLI produces portable HTML/JSON reports for committed source ranges, with per-line blame, range patches, quoted commit messages, and rename evidence. Reads are bounded and repository configuration cannot silently replace objects, remap author names, or execute external evidence helpers. Reports disclose shallow/merge/truncation limits and never infer intent from diffs. Committed Python functions can be listed and selected by qualified name, including decorators and nested methods, and an evidence-linked synopsis makes attribution and available changes readable. The core offline portfolio workflow is complete in issues #11 and #13; bounded offline import of user-supplied discussion excerpts adds unverified source-linked context in issue #17 (104 tests). Source fetching and semantic synthesis remain future milestones.
 Description: A developer assistant that explains how and why code evolved by tracing lines and functions through commits, diffs, pull requests, and available discussions. Users select a piece of code and receive a readable history of its introduction and subsequent changes, with links to supporting evidence. The assistant distinguishes documented reasoning from its own inference when the original intent is missing. The main purpose is to help developers understand unfamiliar code and the decisions behind it. A portfolio version would investigate selected code in one repository and produce a source-linked explanation of its history. (Maybe make it an extension)
 
 ## 5. Clothing designer
@@ -46,8 +46,9 @@ Description: An app that transforms an uploaded song into a karaoke experience b
 
 ## 7. Direct a movie in VR
 
-Path: N/A
-Status: IDEA
+Path: apps/shot-studio
+Status: ACTIVE
+Progress: Native WebGL courtyard, two block performers, editable placement/actions/light, camera shot list, rehearsal/scrubbing, local drafts/JSON backups and silent WebM export. 13 local tests/syntax checks and four Chromium checks cover the desktop film flow, real decoded video frames/timing, persistence/imports, and controlled lifecycle restoration. Experimental immersive WebXR viewing includes animated performances and a controller floor marker; physical headset verification remains outstanding. Initial vertical slice tracked in issue #19.
 Description: A virtual filmmaking studio where users step onto a set, direct animated characters, arrange lighting, and operate cameras from inside the scene. Users can stage performances, rehearse action, record multiple takes, and assemble shots into a conventional video. An additional mode would support immersive VR experiences. The goal is to make directing and cinematography accessible through spatial interaction with a virtual production environment. A first portfolio version would include one set, a small cast of animated characters, basic performance controls, camera placement, and video export.
 
 ## 8. Paper-trading app (SKIP THIS ONE)
