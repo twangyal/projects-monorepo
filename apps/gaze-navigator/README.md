@@ -46,7 +46,7 @@ The target resolver and a held-out accuracy check are now implemented. The next 
 
 ## Verification
 
-Requires Node.js 20 or newer; no package installation is needed.
+Unit and syntax checks require Node.js 20 or newer; no package installation is needed for those checks.
 
 ```bash
 cd apps/gaze-navigator
@@ -54,6 +54,16 @@ npm test
 npm run lint
 npm run build
 ```
+
+Real-browser checks additionally require Python 3 and the development dependencies:
+
+```bash
+npm ci --ignore-scripts
+npx playwright install chromium
+npm run test:browser
+```
+
+Playwright starts the static server and tests pointer dwell, safety controls, keyboard draft entry, accuracy-report closing, and resize calibration at desktop, narrow, and short viewports. Its controlled clock advances actual animation frames; these are interface tests, not webcam accuracy/latency measurements. Tests reject external requests in simulation and page exceptions. The GitHub workflow runs the same checks on a standard Ubuntu runner with read-only repository access, no persistent artifact/cache uploads, and a 15-minute limit. Browser execution is pending the first CI result; local Chromium launch is blocked by this runtime's Unix-socket restriction.
 
 The static app has no compilation step; build validates JavaScript syntax, as does lint. Tests exercise continuous dwell, target changes, tracking gaps, reset, and the simulation/calibration flow using a small DOM/event harness. They do not verify browser layout or webcam estimation.
 
