@@ -6,7 +6,7 @@ These 17 projects are listed in my personal priority order. The descriptions ref
 
 Path: apps/gaze-navigator
 Status: ACTIVE
-Progress: Browser prototype includes calibrated camera/pointer tracking, confined target resolution, working practice inbox actions, pause/stop/restart, and a local held-out accuracy check. Physical webcam verification, AI decisions, and arbitrary browser control remain outstanding.
+Progress: Browser prototype includes calibrated camera/pointer tracking, confined target resolution, working practice inbox actions and gaze text entry, pause/stop/restart, and a local held-out accuracy check. Physical webcam verification, AI decisions, and arbitrary browser control remain outstanding.
 Description: A hands-free navigation assistant that uses an ordinary webcam to estimate where a user is looking and help them interact with technology. After calibration, the assistant highlights likely targets and lets the user confirm actions such as clicking, scrolling, or selecting controls. An AI decision model combines gaze information with interface context to resolve nearby elements and assist with navigation. The first portfolio version would focus on browser interfaces, with TypeSafe's Jev as a candidate decision model and an open-source alternative evaluated against the same tasks. Gaze tracking, decision-making, and browser control would remain separate components so each can be improved or replaced.
 
 ## 2. Schedule app that bricks your phone

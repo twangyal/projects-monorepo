@@ -97,3 +97,7 @@ Action-driven layout resets and scroll events now clear pending dwell while pres
 Choose Type search/subject/message with gaze to open the on-screen keyboard for that explicit field. Confirm letters, digits, punctuation, Space, or Backspace; Uppercase toggles letter case. A local preview shows the edited value. Close the keyboard to reach Search or Save draft. Each key follows the same dwell/leave/re-enter rule as other controls. Physical typing and selection replacement remain available. Closing/saving a composer also closes its keyboard. Field limits are enforced and backspace does not split a Unicode surrogate pair.
 
 Twenty automated tests and syntax checks passed, including caret insertion, selection replacement, backspace, field limits, keyboard-to-search editing, and composer keyboard cleanup. Physical webcam accuracy and small-screen keyboard usability still require browser/device checks. No browser binary was available in this execution environment.
+
+### Camera session isolation — 2026-10-03
+
+Camera callbacks now verify both the active mode and the exact registered handler. A regression test proved that an old callback could update the cursor after camera-to-camera restart; it is now ignored. Twenty tests and lint/build syntax checks passed. Remaining high-value work: physical browser/webcam verification, calibration quality across viewport sizes, and a decision-model/browser-controller integration.

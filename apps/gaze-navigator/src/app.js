@@ -162,11 +162,12 @@ async function enableCamera() {
     simulateButton.disabled = true;
     setStatus('Loading camera tracking. You may be asked for webcam permission.');
     await loadCamera();
-    gazeHandler = data => {
-      if (trackingMode !== 'camera') return;
+    const handler = data => {
+      if (trackingMode !== 'camera' || gazeHandler !== handler) return;
       if (data) consumePoint(data.x, data.y);
       else resetTracking();
     };
+    gazeHandler = handler;
     window.webgazer.setGazeListener(gazeHandler);
     await window.webgazer.begin();
     pauseButton.disabled = false;

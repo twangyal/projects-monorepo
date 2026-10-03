@@ -80,6 +80,7 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     listener({ x: 100, y: 100 });
     assert.equal(nodes.gazeCursor.classList.contains('visible'), false);
     nodes.stopTracking.emit('click');
+    const staleListener = listener;
     fail = true;
     await nodes.startCamera.emit('click');
     assert.equal(ended, 2);
@@ -89,6 +90,9 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     fail = false;
     await nodes.startCamera.emit('click');
     assert.equal(nodes.stopTracking.disabled, false);
+    for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
+    staleListener({ x: 100, y: 100 });
+    assert.equal(nodes.gazeCursor.classList.contains('visible'), false);
     win.emit('beforeunload');
     assert.equal(ended, 3);
   } finally {
