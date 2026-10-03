@@ -2,16 +2,18 @@ import {createProject,validateProject,importProject,totalDuration,shotAt,MAX_BYT
 import {StageRenderer} from './renderer.js';
 import {exportFilm} from './export.js';
 import {enterXR} from './xr.js';
+import {ProjectHistory,moveShot} from './history.js';
 
 const $=id=>document.getElementById(id),KEY='shot-studio-v1';
-let project=createProject(),selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,abort=null,frame=0;
+let project=createProject(),selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 const status=text=>$('status').textContent=text;
 try{const draft=localStorage.getItem(KEY);if(draft)project=importProject(draft);}catch{status('Could not load the saved draft. It has been preserved; save a backup before making changes.');}
 let renderer,graphicsLost=false;
+const history=new ProjectHistory(project);
 try{renderer=new StageRenderer($('stage'));}catch(e){status(e.message);for(const b of document.querySelectorAll('button'))b.disabled=true;throw e;}
 const busy=()=>exporting||xrPending||!!xr;
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(project));status('Saved in this browser.');}catch{status('Browser storage is unavailable. Use Save project to keep a backup.');}}
-function apply(candidate){try{project=validateProject(candidate);revision++;time=Math.min(time,totalDuration(project));persist();refresh();}catch(e){status(e.message);refresh();}}
+function apply(candidate){try{project=history.commit(candidate);revision++;time=Math.min(time,totalDuration(project));persist();refresh();}catch(e){status(e.message);refresh();}}
 function stop(){playing=false;$('play').textContent='Rehearse';}
 function shotStart(index){return project.shots.slice(0,index).reduce((s,x)=>s+x.duration,0);}
 function refresh(){
@@ -26,7 +28,15 @@ function refresh(){
   $('import').disabled=busy();$('scrub').disabled=busy();$('vr').disabled=exporting||xrPending||graphicsLost;
   $('vr').textContent=xr?'Exit VR':'Enter VR';$('cancel').hidden=!exporting;
   $('remove').disabled=busy()||project.shots.length===1;
+  $('undo').disabled=busy()||!history.canUndo;$('redo').disabled=busy()||!history.canRedo;
+  $('earlier').disabled=busy()||selected===0;$('later').disabled=busy()||selected===project.shots.length-1;
 }
+function restoreHistory(state){stop();project=state;selected=Math.min(selected,project.shots.length-1);time=0;revision++;persist();refresh();}
+$('undo').onclick=()=>{if(!busy())restoreHistory(history.undo());};
+$('redo').onclick=()=>{if(!busy())restoreHistory(history.redo());};
+for(const [id,direction] of [['earlier',-1],['later',1]])$(id).onclick=()=>{
+  if(busy())return;try{const next=moveShot(project,selected,direction);stop();selected+=direction;apply(next);time=shotStart(selected);}catch(e){status(e.message);}
+};
 $('settings').addEventListener('submit',e=>e.preventDefault());
 $('settings').addEventListener('change',e=>{
   if(busy())return;stop();
@@ -59,8 +69,8 @@ $('export').onclick=async()=>{
 $('cancel').onclick=()=>abort?.abort();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();abort?.abort();}});
 $('vr').onclick=async()=>{
-  if(xr){await xr.end();return;}stop();xrPending=true;refresh();status('Requesting VR…');
-  try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status(graphicsLost?'Graphics context lost. Save a backup and reload.':'Left VR.');refresh();});status('VR active. Select the floor marker to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;refresh();}
+  if(xr){await xr.end();return;}stop();xrPending=true;xrAbort=new AbortController();refresh();status('Requesting VR…');
+  try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status(graphicsLost?'Graphics context lost. Save a backup and reload.':'Left VR.');refresh();},{signal:xrAbort.signal});status('VR active. Select the floor marker to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;if(!xr)xrAbort=null;refresh();}
 };
 function loop(now){
   frame=requestAnimationFrame(loop);if(xr||xrPending||exporting||graphicsLost)return;
@@ -68,7 +78,7 @@ function loop(now){
   renderer.draw(project,time,shotAt(project,time).shot);$('time').textContent=`${time.toFixed(2)} / ${totalDuration(project).toFixed(2)}s`;$('scrub').value=time;
   $('shotLabel').textContent=`CAMERA ${String(shotAt(project,time).index+1).padStart(2,'0')} · ${shotAt(project,time).shot.name}`;
 }
-window.addEventListener('pagehide',()=>{abort?.abort();stop();cancelAnimationFrame(frame);xr?.end();});
+window.addEventListener('pagehide',()=>{abort?.abort();xrAbort?.abort();stop();cancelAnimationFrame(frame);});
 window.addEventListener('pageshow',()=>{stop();cancelAnimationFrame(frame);frame=requestAnimationFrame(loop);});
-$('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();abort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});
+$('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();abort?.abort();xrAbort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});
 refresh();if($('status').textContent==='Starting the stage…')status('Ready. Rehearse the starter film or arrange your own scene.');frame=requestAnimationFrame(loop);

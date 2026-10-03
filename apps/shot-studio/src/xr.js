@@ -1,14 +1,28 @@
 import {multiply,groundHit} from './math.js';
-export async function enterXR(renderer,getProject,getTime,onPlace,onEnd){
+export async function enterXR(renderer,getProject,getTime,onPlace,onEnd,{signal}={}){
+  const checkCancelled=()=>{if(signal?.aborted)throw Error('VR request cancelled.');};
+  checkCancelled();
   if(!globalThis.isSecureContext||!navigator.xr||!await navigator.xr.isSessionSupported('immersive-vr'))throw Error('VR needs a compatible headset and a secure browser connection. Desktop remains available.');
+  checkCancelled();
   const session=await navigator.xr.requestSession('immersive-vr',{requiredFeatures:['local-floor']});
-  let ended=false,space;
-  const end=()=>{if(ended)return;ended=true;onEnd();};session.addEventListener('end',end,{once:true});
+  let ended=false,space,closing;
+  const end=()=>{if(ended)return;ended=true;signal?.removeEventListener('abort',cancel);onEnd();};
+  const close=()=>{
+    if(closing)return closing;
+    try{closing=Promise.resolve(session.end()).catch(()=>{});}catch{closing=Promise.resolve();}
+    end();return closing;
+  };
+  const cancel=()=>{void close();};
+  session.addEventListener('end',end,{once:true});
+  signal?.addEventListener('abort',cancel,{once:true});
   try{
+    checkCancelled();
     const gl=renderer.gl;await gl.makeXRCompatible();
+    checkCancelled();
     if(ended)throw Error('VR session ended during setup.');
     session.updateRenderState({baseLayer:new XRWebGLLayer(session,gl)});
     space=await session.requestReferenceSpace('local-floor');
+    checkCancelled();
     if(ended)throw Error('VR session ended during setup.');
     session.addEventListener('select',event=>{
       const pose=event.frame.getPose(event.inputSource.targetRaySpace,space);if(!pose)return;
@@ -34,5 +48,5 @@ export async function enterXR(renderer,getProject,getTime,onPlace,onEnd){
         renderer.scene(getProject(),baseTime+(now-started)/1000,multiply(view.projectionMatrix,view.transform.inverse.matrix),marker);}
     };
     session.requestAnimationFrame(draw);return session;
-  }catch(e){try{await session.end();}finally{end();}throw e;}
+  }catch(e){await close();throw e;}
 }

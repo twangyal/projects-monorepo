@@ -3,6 +3,42 @@ import assert from 'node:assert/strict';
 import {exportFilm} from '../src/export.js';
 import {enterXR} from '../src/xr.js';
 
+test('VR cancelled during support probing never requests a session',async t=>{
+  let allowSupport,requests=0;
+  replace(t,'isSecureContext',true);
+  replace(t,'navigator',{xr:{isSessionSupported:()=>new Promise(resolve=>allowSupport=resolve),requestSession:()=>{requests++;throw Error('unexpected request');}}});
+  const controller=new AbortController();
+  const pending=enterXR({},()=>{},()=>{},()=>{},()=>{},{signal:controller.signal});
+  controller.abort();allowSupport(true);
+  await assert.rejects(pending,/cancelled/);assert.equal(requests,0);
+});
+test('a session accepted after cancellation is ended without setting up graphics',async t=>{
+  let accept,ended=0,restored=0,compatible=0,endHandler;
+  const session={addEventListener(name,fn){if(name==='end')endHandler=fn;},async end(){ended++;endHandler?.();},
+    updateRenderState(){},requestReferenceSpace:async()=>({}),requestAnimationFrame(){}};
+  replace(t,'XRWebGLLayer',class{});
+  replace(t,'isSecureContext',true);
+  replace(t,'navigator',{xr:{isSessionSupported:async()=>true,requestSession:()=>new Promise(resolve=>accept=resolve)}});
+  const controller=new AbortController();
+  const pending=enterXR({gl:{makeXRCompatible:async()=>compatible++}},()=>{},()=>{},()=>{},()=>restored++,{signal:controller.signal});
+  await Promise.resolve();controller.abort();accept(session);
+  await assert.rejects(pending,/cancelled/);
+  assert.equal(ended,1);assert.equal(restored,1);assert.equal(compatible,0);
+});
+test('cancelling async graphics setup ends VR immediately and schedules no views',async t=>{
+  let finishGraphics,endHandler,ended=0,restored=0,scheduled=0;
+  const session={addEventListener(name,fn){if(name==='end')endHandler=fn;},async end(){ended++;endHandler();},
+    updateRenderState(){},requestReferenceSpace:async()=>({}),requestAnimationFrame(){scheduled++;}};
+  replace(t,'isSecureContext',true);
+  replace(t,'navigator',{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}});
+  const controller=new AbortController();
+  const pending=enterXR({gl:{makeXRCompatible:()=>new Promise(resolve=>finishGraphics=resolve)}},()=>{},()=>{},()=>{},()=>restored++,{signal:controller.signal});
+  await Promise.resolve();await Promise.resolve();controller.abort();
+  assert.equal(ended,1);finishGraphics();
+  await assert.rejects(pending,/cancelled/);
+  assert.equal(ended,1);assert.equal(restored,1);assert.equal(scheduled,0);
+});
+
 function replace(t,key,value){const old=Object.getOwnPropertyDescriptor(globalThis,key);Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});t.after(()=>{if(old)Object.defineProperty(globalThis,key,old);else delete globalThis[key];});}
 
 test('video constructor failure stops capture tracks and rejects without hanging',async t=>{
