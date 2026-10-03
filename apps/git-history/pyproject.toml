@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-git-history"
+version = "0.1.0"
+description = "Read-only, evidence-linked reports for committed source history"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+git-history = "git_history.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["git_history*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
