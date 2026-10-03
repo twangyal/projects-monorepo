@@ -6,8 +6,10 @@ export async function enterXR(renderer,getProject,getTime,onPlace,onEnd){
   const end=()=>{if(ended)return;ended=true;onEnd();};session.addEventListener('end',end,{once:true});
   try{
     const gl=renderer.gl;await gl.makeXRCompatible();
+    if(ended)throw Error('VR session ended during setup.');
     session.updateRenderState({baseLayer:new XRWebGLLayer(session,gl)});
     space=await session.requestReferenceSpace('local-floor');
+    if(ended)throw Error('VR session ended during setup.');
     session.addEventListener('select',event=>{
       const pose=event.frame.getPose(event.inputSource.targetRaySpace,space);if(!pose)return;
       const m=pose.transform.matrix,hit=groundHit([m[12],m[13],m[14]],[-m[8],-m[9],-m[10]]);

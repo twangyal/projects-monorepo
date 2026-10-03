@@ -38,3 +38,13 @@ test('XR setup failure ends the accepted session and restores desktop once',asyn
   await assert.rejects(enterXR({gl:{makeXRCompatible:async()=>{throw Error('compatibility failed');}}},()=>{},()=>{},()=>{},()=>restored++),/compatibility failed/);
   assert.equal(ended,1);assert.equal(restored,1);
 });
+test('an XR session ended during async setup never returns an active session',async t=>{
+  let endHandler,restored=0,scheduled=0;
+  const session={addEventListener(name,fn){if(name==='end')endHandler=fn;},async end(){endHandler();},
+    updateRenderState(){},requestReferenceSpace:async()=>({}),requestAnimationFrame(){scheduled++;}};
+  replace(t,'isSecureContext',true);
+  replace(t,'navigator',{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}});
+  replace(t,'XRWebGLLayer',class{});
+  await assert.rejects(enterXR({gl:{makeXRCompatible:async()=>{endHandler();}}},()=>{},()=>{},()=>{},()=>restored++),/ended/);
+  assert.equal(restored,1);assert.equal(scheduled,0);
+});
