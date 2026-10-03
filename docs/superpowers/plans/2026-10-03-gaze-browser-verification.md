@@ -44,9 +44,17 @@
 
 **Interfaces:** npm run test:browser invokes Playwright; config serves the static app on localhost:4173. Browser helper moves the pointer onto an actual hit-tested control, advances animation frames through the 900-ms dwell, and confirms the resulting DOM state.
 
-- [ ] Add browser tests for once-per-look confirmation, pause/resume/stop/page navigation, gaze keyboard draft saving, accuracy report closing, and resize/partial calibration. Run at 1280x900, 390x740, and 390x480; assert no external requests or page errors.
-- [ ] Pin the development dependency and lockfile; validate npm run test:browser -- --list and existing checks. Do not report list/syntax checks as browser execution.
-- [ ] Add read-only, path-filtered CI on push/pull_request using standard Ubuntu, no uploads/cache. Run unit/syntax checks then install Chromium and run the browser suite.
-- [ ] Commit with issue #5 reference; inspect its GitHub workflow run and decoded job logs.
-- [ ] Fix actual failures with reproducing tests, rerun targeted/full relevant checks, and commit corrections. Record a tooling blocker if CI cannot execute.
-- [ ] Request a fresh whole-change review, record any fixes and limitations, then update/close issue #5 according to verified outcome.
+- [x] Add browser tests for once-per-look confirmation, pause/resume/stop/page navigation, gaze keyboard draft saving, accuracy report closing, and resize/partial calibration. Run at 1280x900, 390x740, 390x480, and 390x651; assert no external requests or page errors.
+- [x] Pin the development dependency and lockfile; validate native npm run test:browser execution and existing checks. Do not report list/syntax checks as browser execution.
+- [x] Add read-only, path-filtered CI on push/pull_request using standard Ubuntu, no uploads/cache. Run unit/syntax checks then install Chromium and run the browser suite.
+- [x] Commit with issue #5 reference; inspect its GitHub workflow run and decoded job logs.
+- [x] Fix actual failures with reproducing tests, rerun targeted/full relevant checks, and commit corrections. Record a tooling blocker if CI cannot execute.
+- [x] Request a fresh whole-change review, record any fixes and limitations, then update/close issue #5 according to verified outcome.
+
+## Verification and review record
+
+- Native CI run [37133828209](https://github.com/twangyal/projects-monorepo/actions/runs/37133828209), source commit `06bc3d1`: 37 Node tests, 24 Chromium cases, and lint/build syntax checks passed.
+- The first native run exposed short-screen overlay and scroll-settling failures; corrected in `46e592b` and verified in CI. Accuracy Close is outside its scroll content.
+- Independent review prompted 390×651 target visibility, multiline preview/case controls, and fresh held-pointer samples. The expanded native regression did not reproduce the inferred compact-breakpoint clipping; no speculative layout change was added.
+- The local execution service disconnected after initial successful CI. Remaining repository reads/writes and verification used connected GitHub tools; GitHub remains the durable source of progress.
+- Physical webcam accuracy, release indicators, and actual TensorFlow memory remain unverified. No paid/model service, deployment, secrets, or project #8 changes.
