@@ -225,7 +225,15 @@ test('Refresh discovers another tab separation job without overwriting the curre
     const session = await response.json();
     await route.fulfill({ response, json: { ...session, activeJob: otherJob } });
   }, { times: 1 });
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(`**/api/jobs/${otherJob.id}`, async route => { await gate; await route.continue(); }, { times: 1 });
   await page.getByRole('button', { name: 'Refresh projects', exact: true }).click();
+  try {
+    await expect(page.locator('#job-panel')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Undo lyric edit', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Redo lyric edit', exact: true })).toBeDisabled();
+  } finally { release(); }
   await expect(page.locator('#message')).toContainText('Your current lyric edits are still here', { timeout: 10000 });
   await expect(page.locator('#job-panel')).toBeHidden();
   await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue('My unsaved title');
@@ -233,6 +241,11 @@ test('Refresh discovers another tab separation job without overwriting the curre
   await expect(page.getByRole('combobox', { name: 'Saved clips', exact: true })).toHaveValue(current.id);
   await expect(page.getByRole('combobox', { name: 'Saved clips', exact: true }).locator(`option[value="${otherJob.projectId}"]`)).toHaveText('other-tab-new');
   await expect(page.locator('#save-state')).toContainText('Unsaved pasted words');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  await expect(page.getByLabel('Paste lyrics, one line per cue', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue('My unsaved title');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue(current.title);
 });
 
 test('cancelling an owned separation job preserves the previously completed clip', async ({ page, request }) => {
