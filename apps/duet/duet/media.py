@@ -28,6 +28,15 @@ LOG_LIMIT = 64 * 1024
 FORMATS = 'wav,mp3,flac,ogg'
 
 
+class _SubprocessError(RuntimeError):
+    """Bounded diagnostics for trusted tests; public string/repr stay generic."""
+
+    def __init__(self, returncode: int, stderr: bytes):
+        super().__init__('The audio could not be decoded or encoded. Check the file and FFmpeg installation.')
+        self.returncode = returncode
+        self.stderr = stderr[:LOG_LIMIT]
+
+
 def _check_cancel(cancel: threading.Event) -> None:
     if cancel.is_set():
         raise RuntimeError('Audio processing cancelled.')
@@ -79,9 +88,19 @@ def _run(command: list[str], cancel: threading.Event, *, timeout: float = TIME_L
                  'resource.setrlimit(resource.RLIMIT_CORE,(0,0)); '
                  'os.execvp(sys.argv[1],sys.argv[1:])')
     bounded = [sys.executable, '-I', '-c', bootstrap, *command]
+    # Codec flags do not govern linked math libraries or glibc's per-thread
+    # arenas. Bound both before exec without changing the service environment.
+    child_environment = os.environ.copy()
+    child_environment.update({key: '1' for key in (
+        'OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'OMP_THREAD_LIMIT',
+        'MKL_NUM_THREADS', 'BLIS_NUM_THREADS', 'VECLIB_MAXIMUM_THREADS',
+        'NUMEXPR_NUM_THREADS', 'GOTO_NUM_THREADS',
+    )})
+    child_environment['MALLOC_ARENA_MAX'] = '2'
     try:
         process = subprocess.Popen(bounded, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, start_new_session=True, close_fds=True)
+                                   stderr=subprocess.PIPE, start_new_session=True, close_fds=True,
+                                   env=child_environment)
     except FileNotFoundError as error:
         raise RuntimeError('FFmpeg and ffprobe must be installed for audio uploads.') from error
     buffers, counts = [bytearray(), bytearray()], [0, 0]
@@ -129,7 +148,7 @@ def _run(command: list[str], cancel: threading.Event, *, timeout: float = TIME_L
             raise RuntimeError('Audio subprocess left unfinished child processes.')
         check()
         if process.returncode != 0:
-            raise RuntimeError('The audio could not be decoded or encoded. Check the file and FFmpeg installation.')
+            raise _SubprocessError(process.returncode, bytes(buffers[1]))
         return counts[0] if count_stdout else bytes(buffers[0]), bytes(buffers[1])
     finally:
         _terminate(process)

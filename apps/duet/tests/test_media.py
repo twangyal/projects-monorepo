@@ -30,11 +30,20 @@ class MediaTests(unittest.TestCase):
     def tearDown(self):
         self.directory.cleanup()
 
+    def normalize_audio(self, *args):
+        """Only generated fixtures: disclose private diagnostics on test failure."""
+        try:
+            return media.normalize_audio(*args)
+        except media._SubprocessError as error:
+            diagnostic = error.stderr.decode('utf-8', errors='replace')
+            error.add_note(f'Synthetic fixture subprocess exit {error.returncode}: {diagnostic}')
+            raise
+
     def test_real_wav_normalizes_to_canonical_opus_and_preserves_source(self):
         fixture(self.source, 2.123)
         original = self.source.read_bytes()
         stages = []
-        duration = media.normalize_audio(self.source, self.output, self.cancel, stages.append)
+        duration = self.normalize_audio(self.source, self.output, self.cancel, stages.append)
         result = subprocess.run(['ffprobe', '-v', 'error', '-show_entries',
                                  'stream=codec_name,sample_rate,channels:format=format_name,duration',
                                  '-of', 'json', str(self.output)], check=True, capture_output=True)
@@ -55,7 +64,7 @@ class MediaTests(unittest.TestCase):
             with self.subTest(container=container):
                 self.source.unlink(missing_ok=True)
                 fixture(self.source, 1.5, codec, container)
-                duration = media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+                duration = self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
                 self.assertAlmostEqual(duration, 1.5, delta=0.001)
 
     def test_source_duration_bounds_and_existing_output_preserved(self):
@@ -64,14 +73,14 @@ class MediaTests(unittest.TestCase):
             self.source.unlink(missing_ok=True)
             fixture(self.source, duration, 'flac', 'flac', 8000)
             with self.assertRaisesRegex(ValueError, '1.*300|duration'):
-                media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+                self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
             self.assertEqual(self.output.read_bytes(), b'previous audio')
         self.assertEqual(sorted(p.name for p in self.root.iterdir()), ['audio.ogg', 'input.audio'])
 
     def test_five_minute_boundary_runs_real_complete_conversion(self):
         fixture(self.source, 300, 'flac', 'flac', 8000)
         started = time.monotonic()
-        duration = media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+        duration = self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
         self.assertEqual(duration, 300)
         self.assertLess(self.output.stat().st_size, 8 * 1024 * 1024)
         self.assertLess(time.monotonic() - started, 45)
@@ -81,18 +90,18 @@ class MediaTests(unittest.TestCase):
         for contents in [b'', b'#EXTM3U\nhttps://example.com/media.mp3', b'RIFF\0\0\0\0WAVEbroken', b'OggSbroken']:
             self.source.write_bytes(contents)
             with self.assertRaises((ValueError, RuntimeError)):
-                media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+                self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
             self.assertEqual(self.output.read_bytes(), b'previous audio')
         with self.source.open('wb') as oversized:
             oversized.write(b'RIFF\0\0\0\0WAVE')
             oversized.truncate(25 * 1024 * 1024 + 1)
         with self.assertRaisesRegex(ValueError, '25 MiB'):
-            media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+            self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
         self.source.unlink()
         subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-f', 'lavfi', '-i', 'color=size=64x64:rate=1:duration=2',
                         '-f', 'lavfi', '-i', 'sine=frequency=440:duration=2', '-threads', '1', '-c:v', 'libtheora', '-c:a', 'libvorbis', '-f', 'ogg', str(self.source)], check=True, capture_output=True)
         with self.assertRaisesRegex(ValueError, 'audio.only|stream'):
-            media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+            self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
         self.assertEqual(self.output.read_bytes(), b'previous audio')
 
     def test_cancel_before_work_and_before_publication_preserves_output(self):
@@ -100,24 +109,24 @@ class MediaTests(unittest.TestCase):
         self.output.write_bytes(b'previous audio')
         self.cancel.set()
         with self.assertRaisesRegex(RuntimeError, 'cancel'):
-            media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+            self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
         self.cancel.clear()
         def stage(message):
             if 'Checking normalized' in message:
                 self.cancel.set()
         with self.assertRaisesRegex(RuntimeError, 'cancel'):
-            media.normalize_audio(self.source, self.output, self.cancel, stage)
+            self.normalize_audio(self.source, self.output, self.cancel, stage)
         self.assertEqual(self.output.read_bytes(), b'previous audio')
         self.assertEqual(sorted(p.name for p in self.root.iterdir()), ['audio.ogg', 'input.audio'])
 
     def test_file_paths_cannot_alias_or_use_symlinks(self):
         fixture(self.source)
         with self.assertRaises(ValueError):
-            media.normalize_audio(self.source, self.source, self.cancel, lambda _: None)
+            self.normalize_audio(self.source, self.source, self.cancel, lambda _: None)
         linked = self.root / 'linked.audio'
         linked.symlink_to(self.source)
         with self.assertRaises(ValueError):
-            media.normalize_audio(linked, self.output, self.cancel, lambda _: None)
+            self.normalize_audio(linked, self.output, self.cancel, lambda _: None)
 
     def test_anchored_directory_remains_source_after_job_parent_replacement(self):
         jobs = self.root / '.jobs'
@@ -138,7 +147,7 @@ class MediaTests(unittest.TestCase):
                 jobs.symlink_to(outside, target_is_directory=True)
 
         try:
-            duration = media.normalize_audio(anchor / 'input.audio', anchor / 'audio.ogg',
+            duration = self.normalize_audio(anchor / 'input.audio', anchor / 'audio.ogg',
                                              self.cancel, replace_parent)
             self.assertEqual(duration, 2)
             self.assertTrue((anchor / 'audio.ogg').is_file())
@@ -170,6 +179,26 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(limits[1], [8 * 1024 * 1024] * 2)
         self.assertEqual(limits[2], [0, 0])
 
+    def test_child_environment_bounds_library_threads_and_allocator_arenas(self):
+        keys = ['OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'OMP_THREAD_LIMIT',
+                'MKL_NUM_THREADS', 'BLIS_NUM_THREADS', 'VECLIB_MAXIMUM_THREADS',
+                'NUMEXPR_NUM_THREADS', 'GOTO_NUM_THREADS', 'MALLOC_ARENA_MAX']
+        inherited = dict.fromkeys(keys, '64')
+        script = 'import json,os,sys; print(json.dumps({key:os.environ.get(key) for key in sys.argv[1:]}))'
+        with patch.dict(os.environ, inherited):
+            output, _ = media._run([sys.executable, '-c', script, *keys], self.cancel)
+            self.assertEqual(json.loads(output), {key: '2' if key == 'MALLOC_ARENA_MAX' else '1' for key in keys})
+            self.assertEqual({key: os.environ[key] for key in keys}, inherited)
+
+    def test_child_failure_retains_bounded_private_diagnostics_without_public_details(self):
+        script = "import sys; sys.stderr.write('original synthetic diagnostic'); sys.exit(9)"
+        with self.assertRaises(RuntimeError) as failure:
+            media._run([sys.executable, '-c', script], self.cancel)
+        self.assertEqual(getattr(failure.exception, 'returncode', None), 9)
+        self.assertEqual(getattr(failure.exception, 'stderr', None), b'original synthetic diagnostic')
+        self.assertNotIn('synthetic diagnostic', str(failure.exception))
+        self.assertNotIn('synthetic diagnostic', repr(failure.exception))
+
     def test_running_cancel_kills_process_group_and_waits_for_parent(self):
         marker = self.root / 'pid'
         script = "import os,subprocess,sys,time; from pathlib import Path; p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)']); Path(sys.argv[1]).write_text(str(os.getpid())+' '+str(p.pid)); time.sleep(30)"
@@ -198,7 +227,7 @@ class MediaTests(unittest.TestCase):
             return actual(command, cancel, **kwargs)
         with patch.object(media, '_run', side_effect=fail_encode):
             with self.assertRaisesRegex(RuntimeError, 'Encoder failed'):
-                media.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
+                self.normalize_audio(self.source, self.output, self.cancel, lambda _: None)
         self.assertEqual(self.output.read_bytes(), b'previous audio')
         self.assertEqual(sorted(p.name for p in self.root.iterdir()), ['audio.ogg', 'input.audio'])
 
