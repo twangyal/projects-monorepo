@@ -63,6 +63,11 @@ test('eligible-case timing excludes policy shortcuts and failed requests', () =>
   assert.equal(value.timing.eligibleP95ElapsedMs, 100);
   assert.equal(value.modelEligible.meanElapsedMs, 60);
   assert.equal(value.baseline.overall.meanElapsedMs, null);
+  const warm = summarizeBenchmark(report([
+    { caseId: 'compose-hit', decision: null, elapsedMs: 90000, error: 'Timeout' },
+    { ...abstain(CASES[1]), elapsedMs: 20 },
+  ]));
+  assert.equal(warm.timing.firstSuccessfulEligibleElapsedMs, 20);
 });
 
 test('real benchmark pipeline uses the existing local adapter and emits a lab-importable report', async () => {

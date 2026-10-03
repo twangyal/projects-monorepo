@@ -23,7 +23,6 @@ jobs:
     env:
       OLLAMA_NO_CLOUD: '1'
       OLLAMA_HOST: '127.0.0.1:11434'
-      OLLAMA_MODELS: ${{ runner.temp }}/gaze-ollama-models
       GAZE_BENCHMARK_OLLAMA_RELEASE: 'v0.35.1'
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -56,6 +55,7 @@ jobs:
         timeout-minutes: 9
         run: |
           set -euo pipefail
+          export OLLAMA_MODELS="$RUNNER_TEMP/gaze-ollama-models"
           GAZE_BENCHMARK_SERVER_PID=''
           stop_server() {
             if [ -n "$GAZE_BENCHMARK_SERVER_PID" ]; then

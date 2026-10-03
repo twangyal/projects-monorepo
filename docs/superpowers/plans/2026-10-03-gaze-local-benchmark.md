@@ -18,7 +18,7 @@ Files: src/decision-benchmark.js; scripts/benchmark-local.js; tests/decision-ben
 - [x] Commit tests first and verify the expected missing implementation failure in exact-source CI.
 - [x] Implement complete/partial metrics, baseline comparison, median/p95 adapter timing, and the optional CLI using the existing strict adapter.
 - [x] Bound the CLI to five minutes, handle SIGINT/SIGTERM, keep stdout importable JSON, and fail exit status for infrastructure/incomplete reports rather than ordinary incorrect labels.
-- [ ] Verify all existing unit, lint/build, and native browser checks; commit useful progress.
+- [x] Verify all existing unit, lint/build, and native browser checks; commit useful progress.
 
 ## Task 2: Actual free-runner inference
 
@@ -56,3 +56,7 @@ The user's continuous autonomous instruction authorizes design and main-branch c
 Tests-first CI 37137825462 at ea057e0 failed on the missing decision-benchmark.js module, as intended. Actual model inference remains pending.
 
 - CLI implementation commit 6b36837: unit/lint/build steps are green; full native browser regression is in progress in CI 37138021748. Native model benchmark is about to run; no actual model quality is claimed yet.
+
+- CLI CI 37138021748 at 6b36837 passed 61 Node tests, lint/build and all 48 Chromium cases. Workflow/docs CI 37138218360 at 044fa4f also passed.
+- Independent review identified a blocking workflow context error: job-level env cannot reference runner.temp. Model storage is now exported from the actual running step, using RUNNER_TEMP. Initial workflow 37138217608 was rejected with zero jobs; no inference occurred.
+- Review regression CI 37138506896 at d593d7f: entered-transport/late-response cancellation passed; first-success naming assertion failed as intended (undefined versus 100). Metric renamed firstSuccessfulEligibleElapsedMs; it does not promise the first attempt or a cold-start measurement when earlier attempts fail.

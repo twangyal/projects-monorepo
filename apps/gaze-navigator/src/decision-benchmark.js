@@ -48,7 +48,7 @@ export function summarizeBenchmark(input, cases = CASES) {
     baseline,
     comparison,
     timing: {
-      eligibleFirstElapsedMs: validTimes[0] ?? null,
+      firstSuccessfulEligibleElapsedMs: validTimes[0] ?? null,
       eligibleMedianElapsedMs: median,
       eligibleP95ElapsedMs: sorted.length ? sorted[Math.ceil(sorted.length * .95) - 1] : null,
     },
