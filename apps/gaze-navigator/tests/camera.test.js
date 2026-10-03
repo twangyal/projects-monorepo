@@ -41,12 +41,16 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     clearGazeListener: () => { cleared++; },
     end: () => { ended++; },
   };
-  win.setTimeout = () => {};
+  let confirmations = 0;
+  let now = 0;
+  win.setTimeout = () => { confirmations++; };
   win.requestAnimationFrame = () => 1;
   win.cancelAnimationFrame = () => {};
   const oldDocument = globalThis.document;
   const oldWindow = globalThis.window;
   const oldError = console.error;
+  const oldPerformance = globalThis.performance;
+  globalThis.performance = { now: () => now };
   globalThis.document = doc;
   globalThis.window = win;
   console.error = () => {};
@@ -55,7 +59,11 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     await nodes.startCamera.emit('click');
     assert.equal(nodes.stopTracking.disabled, false);
     for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
-    listener({ x: 100, y: 100 });
+    for (now = 0; now <= 3000; now += 100) listener({ x: 100, y: 100 });
+    assert.equal(confirmations, 1);
+    win.emit('scroll');
+    for (; now <= 5000; now += 100) listener({ x: 100, y: 100 });
+    assert.equal(confirmations, 1);
     assert.equal(nodes.gazeCursor.classList.contains('visible'), true);
     nodes.pauseTracking.emit('click');
     listener({ x: 100, y: 100 });
@@ -86,5 +94,6 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     globalThis.document = oldDocument;
     globalThis.window = oldWindow;
     console.error = oldError;
+    globalThis.performance = oldPerformance;
   }
 });

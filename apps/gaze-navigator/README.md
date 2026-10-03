@@ -86,3 +86,7 @@ Fourteen automated tests and syntax checks passed on Node.js 24, covering known 
 ### Camera dependency isolation — 2026-10-03
 
 Pointer simulation no longer waits for WebGazer or contacts its CDN. Start camera loads the pinned library on demand; load failure or a 15-second timeout restores the mode controls for retry/simulation. Sixteen automated tests and syntax checks passed, including deferred loading, shared pending requests, failures, timeouts, and retry. Webcam permission prompts are browser-managed and are not subject to the library-loading timeout.
+
+### Action confirmation regression — 2026-10-03
+
+Action-driven layout resets and scroll events now clear pending dwell while preserving an already confirmed target until gaze leaves it. This prevents continuously looking at Compose or Scroll from repeatedly invoking it after its own UI change. A camera-adapter regression reproduced three confirmations before the fix and one afterward; the scroll-event case also failed before the fix. Seventeen automated tests and syntax checks passed.

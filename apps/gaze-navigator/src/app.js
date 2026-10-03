@@ -178,9 +178,9 @@ async function enableCamera() {
   }
 }
 
-function resetTracking() {
+function resetTracking(preserveConfirmation = false) {
   accuracy.cancel();
-  dwell.reset();
+  dwell.reset({ preserveConfirmation: preserveConfirmation === true });
   clearFocus();
   simulationPoint = null;
   cursor.classList.remove('visible');
@@ -228,10 +228,10 @@ accuracyButton.addEventListener('click', () => {
 document.addEventListener('visibilitychange', resetTracking);
 window.addEventListener('blur', resetTracking);
 window.addEventListener('resize', resetTracking);
-window.addEventListener('scroll', resetTracking, true);
+window.addEventListener('scroll', () => resetTracking(true), true);
 
 startButton.addEventListener('click', enableCamera);
-setupWorkspace(document, resetTracking);
+setupWorkspace(document, () => resetTracking(true));
 simulateButton.addEventListener('click', enableSimulation);
 recalibrateButton.addEventListener('click', () => {
   accuracyButton.disabled = true;

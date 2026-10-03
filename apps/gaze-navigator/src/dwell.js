@@ -4,9 +4,11 @@ export function createDwellTracker({ dwellMs = 900, maxGapMs = 250 } = {}) {
   let previousAt = null;
   let confirmed = null;
 
-  function reset() {
-    current = null;
-    confirmed = null;
+  function reset({ preserveConfirmation = false } = {}) {
+    if (!preserveConfirmation || !confirmed) {
+      current = null;
+      confirmed = null;
+    }
     previousAt = null;
     startedAt = 0;
   }
