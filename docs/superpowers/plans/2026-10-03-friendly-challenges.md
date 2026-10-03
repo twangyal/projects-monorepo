@@ -97,8 +97,8 @@
 - [x] Test draft preservation across polls/conflicts/disconnection, same-page role switching, malformed/stale recovery, storage unavailable, export without tokens, hostile text, desktop/mobile layout and no external network requests.
 - [x] Root runs the combined Python/unit/lint/typecheck/build/production-browser gate once owners pass; independent reviewer checks actual state/permission/race behavior and owners fix concrete findings.
 - [x] Root writes factual setup, private-link/backups, deadlines/evidence and limitations documentation plus path-scoped CI; inspect actual multi-browser output and record verification evidence.
-- [ ] Root reviews scoped diff, commits and pushes; preserve concurrent Astra commits through normal merges, never force-push. Update #30 and catalog only to the completion state verified by real evidence.
-- [ ] Check remote CI, fix regressions, and immediately reassess the next unblocked work outside the exclusions.
+- [x] Root reviews scoped diff, commits and pushes; preserve concurrent Astra commits through normal merges, never force-push. Update #30 and catalog only to the completion state verified by real evidence.
+- [x] Check remote CI, fix regressions, and immediately reassess the next unblocked work outside the exclusions.
 
 ## Plan self-review
 
@@ -107,3 +107,5 @@ Tasks map the complete agreement, evidence, settlement and arbitration flow to o
 ## Verified local milestone
 
 43 Python tests, 22 TypeScript tests and all 12 production Chromium tests pass. The final persistent access-warning/retry extension passed a separate focused production check. Ruff, compileall, ESLint, TypeScript and the Vite build pass. Independent review findings in HTTP framing, impossible arbiter-claim audit replay, same-document link handling, stale invitation display and pending-response draft/credential retention were fixed and verified. Desktop/mobile screenshots and an actual created challenge were inspected. Durable commit and remote CI follow in issue #30.
+
+Durable milestone: `76f776eeaa9889dc5e3a093ed8f862820fdb1fc8` was pushed, all nine workflows passed (Friendly run `37161527325`), and #30 closed. Reassessment then integrated independently reviewed Karaoke PR #29 as `7e48fc1`, verified 12 TypeScript/13 browser tests and closed #27; already-integrated Duet #28 closed after confirming final successful CI.
