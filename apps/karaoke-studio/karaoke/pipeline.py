@@ -15,6 +15,8 @@ import threading
 import time
 import wave
 
+from .media_io import media_handles
+
 MODEL_FILES = {
     'checkpoint': '011c96b970c1f56137037924fe1a0f0851369b0ee6692e120aea798615326f48',
     'model.data-00000-of-00001': '7747f9fd2c782306dbec1504360fbb645a097a48446f23486c3ff9c89bc11788',
@@ -82,7 +84,8 @@ def _run(command: list[str], cancel: threading.Event, *, timeout: float = 10,
     _check_cancel(cancel)
     try:
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, start_new_session=os.name == 'posix')
+                                   stderr=subprocess.PIPE, start_new_session=os.name == 'posix',
+                                   pass_fds=media_handles())
     except FileNotFoundError as error:
         raise RuntimeError(f'Required executable {command[0]} is unavailable. Install FFmpeg and the documented Python environment.') from error
     buffers = [bytearray(), bytearray()]
@@ -219,7 +222,8 @@ def separate_clip(source: Path, output_dir: Path, model_root: Path, cancel: thre
     output_dir = Path(output_dir)
     model_root = Path(model_root).resolve()
     input_format = _input_format(source)
-    source = source.resolve()
+    # Keep a caller's owned-directory handle path intact across subprocesses.
+    source = source.absolute()
     stage('Checking audio format and duration')
     _probe(source, input_format, cancel)
     if not model_ready(model_root):

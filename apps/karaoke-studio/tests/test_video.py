@@ -1,6 +1,8 @@
 import json
+import os
 from pathlib import Path
 import subprocess
+import shutil
 import tempfile
 import threading
 import unittest
@@ -10,6 +12,7 @@ from unittest.mock import patch
 from PIL import Image, ImageChops, ImageStat
 from karaoke.model import create_project, update_project, ValidationError
 from karaoke import video
+from karaoke.media_io import inherit_media_handles
 
 FONT = Path(__file__).resolve().parents[1] / 'assets' / 'DejaVuSans.ttf'
 
@@ -39,6 +42,26 @@ class VideoTests(unittest.TestCase):
             self.assertEqual(image.getpixel((0, 0)), (20, 35, 47))
             self.assertGreater(sum(ImageStat.Stat(image.crop((100, 220, 1180, 430))).var), 100)
         self.assertFalse((self.root / 'nope').exists())
+
+    def test_real_video_export_preserves_owned_handle_paths_through_ffmpeg(self):
+        original = self.root / 'media'
+        original.mkdir()
+        shutil.copyfile(self.backing, original / 'backing.wav')
+        fd = os.open(original, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            retained = self.root / 'retained-media'
+            original.rename(retained)
+            original.mkdir()
+            owned = Path(f'/proc/self/fd/{fd}')
+            with inherit_media_handles(fd):
+                video.export_video(self.project, owned / 'backing.wav', owned / 'video.mp4',
+                                   owned / 'work', FONT, threading.Event())
+            metadata = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_streams',
+                                  '-of', 'json', str(retained / 'video.mp4')]))
+            self.assertEqual({item['codec_type'] for item in metadata['streams']}, {'audio', 'video'})
+            self.assertEqual(list(original.iterdir()), [])
+        finally:
+            os.close(fd)
 
     def test_long_lyric_preview_stays_inside_its_layout_region(self):
         project = update_project(self.project, 'Long lyrics',
