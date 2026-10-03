@@ -50,6 +50,18 @@ Videos contain the estimated backing and rendered lyric cards at **1280×720, 24
 
 Completed projects persist in the supplied data directory and reopen from **Saved clips** after a service restart. There is no account, cloud backup, browser-storage dependency, or external song upload. Only one service instance can use a data directory at a time; an exclusive lock prevents a second instance from interfering with its files.
 
+Stop the service before moving, replacing, or linking storage directories. The
+running service retains handles to its owned directories and rejects changed
+library/project paths with recovery guidance. Restore the original directories
+before restarting; existing projects are preserved. Temporary-job and selected
+deletion cleanup stay anchored to owned storage even when a parent path moves.
+This protects against directory replacement; it does not sandbox other programs
+running as the same user while media tools are writing their files.
+
+Jobs stay **running** through temporary cleanup. A terminal job status means the
+single worker has been released, so a new job can start immediately. Cancellation
+after result publication does not relabel an already saved project as cancelled.
+
 The library holds at most **20 completed projects**; reaching the limit preserves existing work and refuses new clips. **Delete selected clip** asks for explicit confirmation, removes only that selected project's media and metadata, and frees a library slot. Download or back up anything you want to keep first. Portable project archive import is not implemented.
 
 For a full backup, stop the service and copy the data directory, including project metadata and generated audio. Downloaded WAV/SRT/MP4 files are useful deliverables but do not replace that editable project backup. To start another library after reaching the cap, retain the backed-up directory and start the service with a different `--data-dir`.
