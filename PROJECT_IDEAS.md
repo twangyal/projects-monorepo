@@ -46,7 +46,7 @@ Path: N/A
 Status: IDEA
 Description: A virtual filmmaking studio where users step onto a set, direct animated characters, arrange lighting, and operate cameras from inside the scene. Users can stage performances, rehearse action, record multiple takes, and assemble shots into a conventional video. An additional mode would support immersive VR experiences. The goal is to make directing and cinematography accessible through spatial interaction with a virtual production environment. A first portfolio version would include one set, a small cast of animated characters, basic performance controls, camera placement, and video export.
 
-## 8. Paper-trading app
+## 8. Paper-trading app (SKIP THIS ONE)
 
 Path: N/A
 Status: IDEA
