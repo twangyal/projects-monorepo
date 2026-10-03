@@ -1,5 +1,6 @@
 import './style.css';
 import { activeCue, draftCues, formatTime, validateCues, type Project } from './lyrics.ts';
+import { LyricHistory, type LyricDraft } from './draft-history.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
 interface Session { token: string; modelReady: boolean; maxDuration: number; maxProjects: number; activeJob?: Job | null }
@@ -28,6 +29,7 @@ app.innerHTML = `
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">YOUR LYRICS, YOUR TIMING</span></div>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" maxlength="5000" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p></div></div>
+        <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
       </section>
     </div><footer><span>Built for your next kitchen concert.</span><span>AI estimates stems. You supply and synchronize the lyrics.</span></footer>
@@ -40,6 +42,7 @@ const context = stage.getContext('2d')!;
 let session: Session | null = null;
 let projects: Project[] = [];
 let working: Project | null = null;
+let lyricHistory: LyricHistory | null = null;
 let dirty = false;
 let draftDirty = false;
 let saving = false;
@@ -88,6 +91,8 @@ function controls() {
   element<HTMLInputElement>('title').disabled = busy || saving;
   element<HTMLButtonElement>('refresh').disabled = loading || saving || requestingJob;
   element<HTMLButtonElement>('discard-draft').disabled = busy || saving;
+  element<HTMLButtonElement>('undo-lyrics').disabled = !working || !lyricHistory?.canUndo || busy || saving;
+  element<HTMLButtonElement>('redo-lyrics').disabled = !working || !lyricHistory?.canRedo || busy || saving;
   element('discard-draft').hidden = !draftDirty;
   for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button')) control.disabled = busy || saving;
   for (const control of document.querySelectorAll<HTMLButtonElement>('[data-track]')) control.disabled = !working;
@@ -95,7 +100,29 @@ function controls() {
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy;
 }
-function changed() { dirty = true; videoUrl = null; controls(); draw(); }
+function draftSnapshot(): LyricDraft {
+  return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty };
+}
+function changed(group: string | null = null) {
+  if (!working) return;
+  lyricHistory?.record(draftSnapshot(), group);
+  dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
+}
+function restoreDraft(direction: 'undo' | 'redo') {
+  if (!working || !lyricHistory || currentJob || loading || requestingJob || saving) return;
+  const draft = lyricHistory[direction]();
+  if (!draft) return;
+  working.title = draft.title; working.cues = draft.cues;
+  element<HTMLInputElement>('title').value = draft.title;
+  element<HTMLTextAreaElement>('lyric-draft').value = draft.pastedText;
+  draftDirty = draft.pastedDirty; dirty = lyricHistory.dirty; videoUrl = null;
+  renderCues(); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
+}
+element('undo-lyrics').addEventListener('click', () => restoreDraft('undo'));
+element('redo-lyrics').addEventListener('click', () => restoreDraft('redo'));
+app.addEventListener('focusout', event => {
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) lyricHistory?.endGroup();
+});
 
 function wrap(text: string, size: number, maxWidth = 1000): string[] {
   context.font = `${size}px KaraokeSans`;
@@ -168,7 +195,7 @@ function cueInput(label: string, value: string, type: string, onInput: (value: s
   const control = document.createElement('input'); control.type = type; control.value = value;
   if (type === 'number') { control.min = '0'; control.max = String(working!.duration); control.step = 'any'; }
   else control.maxLength = 240;
-  control.addEventListener('input', () => { onInput(control.value); changed(); });
+  control.addEventListener('input', () => { onInput(control.value); changed(label); });
   wrapper.append(control); return wrapper;
 }
 function renderCues() {
@@ -178,8 +205,8 @@ function renderCues() {
     const row = document.createElement('div'); row.className = 'cue'; row.dataset.cue = String(index);
     const number = document.createElement('span'); number.className = 'cue-number'; number.textContent = String(index + 1).padStart(2, '0'); row.append(number);
     const text = cueInput(`Lyric line ${index + 1}`, cue.text, 'text', value => { cue.text = value; }); text.className = 'cue-text'; row.append(text);
-    const start = cueInput(`Start line ${index + 1}`, String(Number(cue.start.toFixed(3))), 'number', value => { cue.start = value === '' ? NaN : Number(value); }); row.append(start);
-    const end = cueInput(`End line ${index + 1}`, String(Number(cue.end.toFixed(3))), 'number', value => { cue.end = value === '' ? NaN : Number(value); }); row.append(end);
+    const start = cueInput(`Start line ${index + 1}`, Number.isFinite(cue.start) ? String(Number(cue.start.toFixed(3))) : '', 'number', value => { cue.start = value === '' ? NaN : Number(value); }); row.append(start);
+    const end = cueInput(`End line ${index + 1}`, Number.isFinite(cue.end) ? String(Number(cue.end.toFixed(3))) : '', 'number', value => { cue.end = value === '' ? NaN : Number(value); }); row.append(end);
     const actions = document.createElement('div'); actions.className = 'cue-actions';
     for (const [label, action] of [
       ['Mark start', () => { cue.start = Math.round(audio.currentTime * 1000) / 1000; renderCues(); changed(); }],
@@ -215,6 +242,7 @@ async function openProject(id: string) {
   element('duration').textContent = formatTime(project.duration);
   element('clip-details').hidden = false;
   element<HTMLTextAreaElement>('lyric-draft').value = project.cues.map(cue => cue.text).join('\n');
+  lyricHistory = new LyricHistory(draftSnapshot());
   history.replaceState(null, '', `?project=${project.id}`);
   renderCues(); controls(); track(currentTrack);
   } finally { if (generation === projectGeneration) { loading = false; controls(); } }
@@ -225,13 +253,13 @@ element<HTMLSelectElement>('projects').addEventListener('change', async event =>
   if (!select.value || !mayLeave()) { select.value = working?.id || ''; return; }
   try { await openProject(select.value); message(''); } catch (error) { message(String(error instanceof Error ? error.message : error), true); }
 });
-element<HTMLInputElement>('title').addEventListener('input', event => { if (working) { working.title = (event.target as HTMLInputElement).value; changed(); } });
+element<HTMLInputElement>('title').addEventListener('input', event => { if (working) { working.title = (event.target as HTMLInputElement).value; changed('title'); } });
 element<HTMLTextAreaElement>('lyric-draft').addEventListener('input', event => {
-  draftDirty = (event.target as HTMLTextAreaElement).value !== (working?.cues.map(cue => cue.text).join('\n') || ''); controls();
+  draftDirty = (event.target as HTMLTextAreaElement).value !== (working?.cues.map(cue => cue.text).join('\n') || ''); changed('paste');
 });
 element('discard-draft').addEventListener('click', () => {
   element<HTMLTextAreaElement>('lyric-draft').value = working?.cues.map(cue => cue.text).join('\n') || '';
-  draftDirty = false; controls();
+  draftDirty = false; changed();
 });
 element('draft-timings').addEventListener('click', () => {
   if (!working) return;
@@ -243,7 +271,8 @@ element('save').addEventListener('click', async () => {
   saving = true; controls();
   try {
     working = await request<Project>(`/api/projects/${working.id}`, json('PUT', { title: working.title, cues: working.cues, revision: working.revision }));
-    dirty = false; videoUrl = null; await refreshProjects(); renderCues(); message('Lyrics and timing saved locally.');
+    dirty = false; videoUrl = null; lyricHistory = new LyricHistory(draftSnapshot());
+    await refreshProjects(); renderCues(); message('Lyrics and timing saved locally.');
   } catch (error) { message(error instanceof Error ? error.message : 'Could not save. Your edits are still here.', true); }
   finally { saving = false; controls(); }
 });
@@ -262,7 +291,7 @@ element('delete-project').addEventListener('click', async () => {
   try {
     await request(`/api/projects/${working.id}`, json('DELETE', {}));
     ++projectGeneration; audio.pause(); audio.removeAttribute('src'); audio.load();
-    working = null; dirty = false; draftDirty = false; videoUrl = null;
+    working = null; lyricHistory = null; dirty = false; draftDirty = false; videoUrl = null;
     element('clip-details').hidden = true; element<HTMLInputElement>('title').value = '';
     element<HTMLTextAreaElement>('lyric-draft').value = ''; history.replaceState(null, '', location.pathname);
     renderCues(); draw(); await refreshProjects(); message('The selected clip was deleted. Other saved clips are unchanged.');

@@ -44,6 +44,16 @@ Startup never downloads models. Missing/corrupt weights disable new separation w
 
 Titles allow 1–100 characters. Projects support at most **40 cues**, **240 characters per cue**, and **5,000 lyric characters** overall. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
 
+**Undo lyric edit** and **Redo lyric edit** recover up to **30 unsaved edits**:
+title/text/timing corrections, removed lines, pasted words, draft generation, and
+discarded pastes. Typing in one field counts as one edit until you leave it.
+Empty/invalid timing values are preserved for correction, with save/export still
+blocked. Undoing back to the saved title and cues clears the lyric-edit warning;
+unapplied pasted words keep their separate unsaved warning. A new edit after undo
+clears redo. Saving successfully, opening another clip, deleting the selected clip,
+or reloading resets this session-only history. Failed requests retain it. History
+does not undo saved server revisions, media jobs, or permanent clip deletion.
+
 Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; this is line-level karaoke, not word-by-word highlighting. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
 
 ## Local projects and backups
