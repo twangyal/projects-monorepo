@@ -1,0 +1,1 @@
+{"name":"gaze-navigator","private":true,"type":"module","scripts":{"test":"node --test","lint":"node --check src/app.js && node --check src/dwell.js","build":"npm run lint"}}

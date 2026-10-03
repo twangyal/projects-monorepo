@@ -1,4 +1,6 @@
-const DWELL_MS = 900;
+import { createDwellTracker } from './dwell.js';
+
+const dwell = createDwellTracker();
 const CALIBRATION_CLICKS = 3;
 const CALIBRATION_POINTS = [
   [10, 12], [50, 12], [90, 12],
@@ -18,8 +20,8 @@ const cursor = document.querySelector('#gazeCursor');
 const dwellFill = document.querySelector('#dwellFill');
 
 let currentTarget = null;
-let targetStartedAt = 0;
-let lastActivatedTarget = null;
+let simulationPoint = null;
+let simulationFrame = null;
 let trackingMode = null;
 let calibrationIndex = 0;
 let calibrationClicks = 0;
@@ -37,7 +39,6 @@ function moveCursor(x, y) {
 function clearFocus() {
   currentTarget?.classList.remove('gaze-focus');
   currentTarget = null;
-  targetStartedAt = 0;
   dwellFill.style.width = '0%';
 }
 
@@ -51,31 +52,28 @@ function activate(target) {
   target.classList.add('activated');
   window.setTimeout(() => target.classList.remove('activated'), 420);
   result.textContent = `${label} confirmed. In a real integration this would hand off a typed action to the browser controller.`;
-  lastActivatedTarget = target;
-  window.setTimeout(() => {
-    if (lastActivatedTarget === target) lastActivatedTarget = null;
-  }, 700);
 }
 
 function consumePoint(x, y, now = performance.now()) {
-  moveCursor(x, y);
-  const target = resolveTarget(x, y);
-  if (!target || target === lastActivatedTarget) {
+  if (document.hidden || playground.classList.contains('hidden') ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+    dwell.reset();
     clearFocus();
+    cursor.classList.remove('visible');
     return;
   }
-
-  if (target !== currentTarget) {
+  moveCursor(x, y);
+  const candidate = resolveTarget(x, y);
+  const target = candidate && !candidate.disabled && playground.contains(candidate) ? candidate : null;
+  const selection = dwell.update(target, now);
+  if (selection.target !== currentTarget) {
     clearFocus();
-    currentTarget = target;
-    targetStartedAt = now;
-    target.classList.add('gaze-focus');
+    currentTarget = selection.target;
+    currentTarget?.classList.add('gaze-focus');
   }
-
-  const progress = Math.min(1, (now - targetStartedAt) / DWELL_MS);
-  dwellFill.style.width = `${progress * 100}%`;
-  if (progress >= 1) {
-    activate(target);
+  dwellFill.style.width = `${selection.progress * 100}%`;
+  if (selection.activated) {
+    activate(selection.activated);
     clearFocus();
   }
 }
@@ -106,6 +104,10 @@ function renderCalibrationPoint() {
 }
 
 function beginCalibration() {
+  dwell.reset();
+  clearFocus();
+  simulationPoint = null;
+  cursor.classList.remove('visible');
   calibrationIndex = 0;
   calibrationClicks = 0;
   playground.classList.add('hidden');
@@ -122,7 +124,15 @@ function finishCalibration() {
 
 function enableSimulation() {
   trackingMode = 'simulation';
-  document.addEventListener('pointermove', event => consumePoint(event.clientX, event.clientY));
+  document.addEventListener('pointermove', event => {
+    simulationPoint = { x: event.clientX, y: event.clientY };
+  });
+  document.documentElement.addEventListener('pointerleave', resetTracking);
+  function sample(now) {
+    if (simulationPoint) consumePoint(simulationPoint.x, simulationPoint.y, now);
+    simulationFrame = window.requestAnimationFrame(sample);
+  }
+  simulationFrame = window.requestAnimationFrame(sample);
   simulateButton.disabled = true;
   startButton.disabled = true;
   beginCalibration();
@@ -138,7 +148,8 @@ async function enableCamera() {
     startButton.disabled = true;
     simulateButton.disabled = true;
     gazeHandler = data => {
-      if (data && !playground.classList.contains('hidden')) consumePoint(data.x, data.y);
+      if (data) consumePoint(data.x, data.y);
+      else resetTracking();
     };
     window.webgazer.setGazeListener(gazeHandler);
     await window.webgazer.begin();
@@ -151,6 +162,18 @@ async function enableCamera() {
   }
 }
 
+function resetTracking() {
+  dwell.reset();
+  clearFocus();
+  simulationPoint = null;
+  cursor.classList.remove('visible');
+}
+
+document.addEventListener('visibilitychange', resetTracking);
+window.addEventListener('blur', resetTracking);
+window.addEventListener('resize', resetTracking);
+window.addEventListener('scroll', resetTracking, true);
+
 startButton.addEventListener('click', enableCamera);
 simulateButton.addEventListener('click', enableSimulation);
 recalibrateButton.addEventListener('click', () => {
@@ -159,6 +182,7 @@ recalibrateButton.addEventListener('click', () => {
 });
 
 window.addEventListener('beforeunload', () => {
+  if (simulationFrame !== null) window.cancelAnimationFrame(simulationFrame);
   if (trackingMode === 'camera' && window.webgazer) {
     if (gazeHandler) window.webgazer.clearGazeListener();
     window.webgazer.end();
