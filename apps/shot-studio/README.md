@@ -43,7 +43,13 @@ cuts, separate take library or immersive video export yet.
 **Enter VR** requests an `immersive-vr` WebXR session with a `local-floor` reference
 space and renders tracked stereo headset views of the actual 3D stage. Select the
 floor marker with a tracked controller to place the desktop-selected performer.
-Authored performances animate while viewing the set. Exit via
+Squeeze a controller to capture the headset position and forward direction into
+the desktop-selected shot. Its name, duration and lens stay unchanged; exit VR
+to undo or refine the camera. Captured shots use a level world-up camera, so
+headset roll is not reproduced and framing follows the existing lens rather
+than the headset field of view. Straight up/down or out-of-bounds views and
+missing tracking preserve the shot with guidance. Authored performances animate
+while viewing the set. Exit via
 the headset/browser session control; desktop editing is available afterwards.
 
 Requires supported hardware/browser and a secure context (HTTPS or trusted local
@@ -74,8 +80,8 @@ npm run test:browser
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains 20 unit tests and six Chromium browser checks, including
-independently decoded video timestamps/changing frames, reversible edits, portable
+requires a device. The suite contains 17 unit tests and five Chromium browser checks, including
+independently decoded video timestamps/changing frames, controlled immersive camera capture/undo, reversible edits, portable
 shot order and preview alignment after undo. The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
 covered using controlled page lifecycle events; physical headset tests remain outstanding.

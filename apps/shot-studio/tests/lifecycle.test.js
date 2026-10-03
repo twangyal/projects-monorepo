@@ -50,9 +50,9 @@ test('controller squeeze captures tracked headset camera and ignores ended sessi
   await enterXR({gl:{makeXRCompatible:async()=>{}}},()=>{},()=>0,()=>{},()=>{},
     {onCamera:c=>captures.push(c),onCameraError:e=>errors.push(e)});
   assert.equal(typeof handlers.squeeze,'function');
-  handlers.squeeze({frame:{getViewerPose:()=>null}});assert.equal(captures.length,0);assert.match(errors[0],/tracking/i);
+  handlers.squeeze({frame:{getViewerPose:()=>{throw Error('Event frames cannot read viewer poses');},getPose:()=>null}});assert.equal(captures.length,0);assert.match(errors[0],/tracking/i);
   const matrix=[1,0,0,0,0,1,0,0,0,0,1,0,1,2,5,1];
-  const event={frame:{getViewerPose:()=>({transform:{matrix}})}};
+  const event={frame:{getViewerPose:()=>{throw Error('Event frames cannot read viewer poses');},getPose:()=>({transform:{matrix}})}};
   handlers.squeeze(event);assert.deepEqual(captures,[{eye:[1,2,5],target:[1,2,2]}]);
   matrix[12]=99;handlers.squeeze(event);assert.equal(captures.length,1);assert.equal(errors.length,2);
   await session.end();matrix[12]=1;handlers.squeeze(event);assert.equal(captures.length,1);

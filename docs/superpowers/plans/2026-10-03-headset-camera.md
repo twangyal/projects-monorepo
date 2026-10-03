@@ -30,8 +30,10 @@
 
 **Interfaces:** cameraFromPose(matrix) returns validated {eye,target}; enterXR options add onCamera(camera) and onCameraError(message).
 
-- [ ] Write failing native tests for identity/rotated/pitched poses, invalid bounds/tracking, squeeze callback and ignored ended events. Browser fixture captures second camera, exits, saves and undoes.
-- [ ] Run npm test and confirm failures before implementation.
-- [ ] Implement conversion with normalized negative Z direction and a three-unit target; validate through the existing project validator. Wire squeeze with error reporting and ended guard; apply through history in app.js.
+- [x] Write failing native tests for identity/rotated/pitched poses, invalid bounds/tracking, squeeze callback and ignored ended events. Browser fixture captures second camera, exits, saves and undoes.
+- [x] Run npm test and confirm failures before implementation.
+- [x] Implement conversion with normalized negative Z direction and a three-unit target; validate through the existing project validator. Wire squeeze with error reporting and ended guard; apply through history in app.js.
 - [ ] Run npm test, npm run check and exact-source CI; expect all native and Chromium tests passing.
 - [ ] Review changes, document gesture/limitations, update catalog and #21 hardware checklist, commit coherent implementation referencing #26 and close only after verification.
+
+Review fix: event-frame getViewerPose is forbidden by WebXR. A failing native regression now enforces this; squeeze uses getPose(viewerSpace, localFloorSpace), with cancellation checks after acquiring viewer space. Full native suite: 24/24 pass. Browser integration failed before app callback wiring; corrected exact-source CI pending.

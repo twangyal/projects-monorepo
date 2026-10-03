@@ -7,10 +7,10 @@ test('immersive camera capture persists selected shot and can be undone after ex
     window.XRWebGLLayer=class{};
     Object.defineProperty(navigator,'xr',{configurable:true,value:{isSessionSupported:async()=>true,requestSession:async()=>{
       const s=new EventTarget();s.end=async()=>s.dispatchEvent(new Event('end'));
-      s.updateRenderState=()=>{};s.requestReferenceSpace=async()=>({});s.requestAnimationFrame=()=>{};
+      s.updateRenderState=()=>{};s.requestReferenceSpace=async type=>({type});s.requestAnimationFrame=()=>{};
       window.testXR=s;return s;
     }}});
-    window.captureView=(matrix)=>{const event=new Event('squeeze');event.frame={getViewerPose:()=>matrix?{transform:{matrix}}:null};window.testXR.dispatchEvent(event);};
+    window.captureView=(matrix)=>{const event=new Event('squeeze');event.frame={getViewerPose:()=>{throw new DOMException('Event frames cannot read viewer poses','InvalidStateError');},getPose:(viewer,floor)=>{if(viewer.type!=='viewer'||floor.type!=='local-floor')throw Error('Incorrect reference spaces');return matrix?{transform:{matrix}}:null;}};window.testXR.dispatchEvent(event);};
   });
   await page.goto('/');await page.locator('#shots button').nth(1).click();
   await page.getByRole('button',{name:'Enter VR',exact:true}).click();await expect(page.locator('#status')).toContainText('VR active');
