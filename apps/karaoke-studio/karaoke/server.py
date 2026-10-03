@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import stat
 import shutil
 import signal
 import socket
@@ -22,6 +23,7 @@ from urllib.parse import unquote, urlsplit
 import uuid
 
 from .jobs import JobBusy, JobManager
+from .media_io import inherit_media_handles
 from .model import MAX_DURATION, ValidationError, create_project, render_srt, update_project, validate_project
 
 MAX_UPLOAD = 20 * 1024 * 1024
@@ -39,8 +41,24 @@ class RequestError(Exception):
         super().__init__(message)
 
 
-def _atomic_json(path: Path, value: dict):
+def _atomic_json(path: Path, value: dict, *, directory_fd=None):
     data = json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+    if directory_fd is not None:
+        name = ".save-" + uuid.uuid4().hex
+        try:
+            fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         0o600, dir_fd=directory_fd)
+            with os.fdopen(fd, "wb") as output:
+                output.write(data)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(name, path.name, src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+        finally:
+            try:
+                os.unlink(name, dir_fd=directory_fd)
+            except FileNotFoundError:
+                pass
+        return
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(prefix=".save-", dir=path.parent, delete=False) as output:
@@ -72,6 +90,9 @@ class KaraokeServer(ThreadingHTTPServer):
         self.work_dir = self.data_dir / ".jobs"
         self.trash_dir = self.data_dir / ".trash"
         self._data_lock = None
+        self._directory_fds = {}
+        self._project_identities = {}
+        self._work_identities = {}
         self.data_dir.mkdir(parents=True, exist_ok=True)
         lock_path = self.data_dir / ".server.lock"
         if lock_path.is_symlink():
@@ -90,6 +111,7 @@ class KaraokeServer(ThreadingHTTPServer):
             self._initialize_data()
             super().__init__(("127.0.0.1", port), Handler)
         except BaseException:
+            self._close_directories()
             self._release_data_lock()
             raise
 
@@ -99,13 +121,15 @@ class KaraokeServer(ThreadingHTTPServer):
             if directory.is_symlink():
                 raise ValueError("Data directories must not be symbolic links")
             directory.mkdir(parents=True, exist_ok=True)
+        for directory in (self.data_dir, self.projects_dir, self.work_dir, self.trash_dir):
+            self._directory_fds[directory] = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         # Incomplete work is disposable; completed project directories are never
         # removed at startup or when the project quota has been reached.
         for child in self.work_dir.iterdir():
             if child.is_dir() and not child.is_symlink():
-                shutil.rmtree(child)
+                shutil.rmtree(child.name, dir_fd=self._directory_fds[self.work_dir])
             else:
-                child.unlink()
+                os.unlink(child.name, dir_fd=self._directory_fds[self.work_dir])
         self.projects: dict[str, dict] = {}
         for child in self.projects_dir.iterdir():
             if not re.fullmatch(_ID, child.name) or child.is_symlink():
@@ -117,8 +141,87 @@ class KaraokeServer(ThreadingHTTPServer):
                 project = validate_project(json.loads(path.read_text("utf-8")))
                 if project["id"] == child.name:
                     self.projects[child.name] = project
+                    self._project_identities[child.name] = self._identity(child.stat(follow_symlinks=False))
             except (OSError, ValueError, TypeError):
                 continue
+
+    @staticmethod
+    def _identity(value):
+        return value.st_dev, value.st_ino
+
+    def _close_directories(self):
+        for fd in self._directory_fds.values():
+            os.close(fd)
+        self._directory_fds.clear()
+
+    def check_storage(self):
+        for path, fd in self._directory_fds.items():
+            try:
+                current = path.stat(follow_symlinks=False)
+                valid = stat.S_ISDIR(current.st_mode) and self._identity(current) == self._identity(os.fstat(fd))
+            except OSError:
+                valid = False
+            if not valid:
+                raise RequestError(409, "The library directories changed. Stop the service, restore the original directories, then restart.")
+
+    def _open_project(self, project_id):
+        self.check_storage()
+        try:
+            fd = os.open(project_id, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                         dir_fd=self._directory_fds[self.projects_dir])
+        except OSError:
+            raise RequestError(409, "The saved project directory changed. Restore it before restarting.") from None
+        if self._identity(os.fstat(fd)) != self._project_identities.get(project_id):
+            os.close(fd)
+            raise RequestError(409, "The saved project directory changed. Restore it before restarting.")
+        return fd
+
+    def project_file(self, project_id, name):
+        directory_fd = self._open_project(project_id)
+        try:
+            fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
+        finally:
+            os.close(directory_fd)
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            os.close(fd)
+            raise RequestError(404, "Requested media file is not available.")
+        return os.fdopen(fd, "rb")
+
+    def new_work(self):
+        self.check_storage()
+        name = uuid.uuid4().hex
+        parent_fd = self._directory_fds[self.work_dir]
+        os.mkdir(name, dir_fd=parent_fd)
+        self._work_identities[name] = self._identity(os.stat(name, dir_fd=parent_fd, follow_symlinks=False))
+        return self.work_dir / name
+
+    def _open_work(self, path):
+        self.check_storage()
+        fd = os.open(path.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                     dir_fd=self._directory_fds[self.work_dir])
+        if self._identity(os.fstat(fd)) != self._work_identities.get(path.name):
+            os.close(fd)
+            raise RequestError(409, "Temporary work changed before publication.")
+        return fd
+
+    @staticmethod
+    def _descriptor_path(fd):
+        # Media children inherit only the handles bound to this worker call.
+        path = Path(f"/proc/self/fd/{fd}")
+        if not path.is_dir():
+            raise RuntimeError("Karaoke Studio media jobs require Linux with accessible procfs directory handles.")
+        return path
+
+    def cleanup_work(self, path):
+        # Parent descriptors remain bound to owned storage even after a rename.
+        parent_fd = self._directory_fds[self.work_dir]
+        expected = self._work_identities.pop(path.name, None)
+        try:
+            current = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+            if expected == self._identity(current) and stat.S_ISDIR(current.st_mode):
+                shutil.rmtree(path.name, dir_fd=parent_fd)
+        except OSError:
+            pass
 
     def _release_data_lock(self):
         if self._data_lock is not None:
@@ -140,13 +243,17 @@ class KaraokeServer(ThreadingHTTPServer):
                 if hasattr(self, "socket"):
                     super().server_close()
             finally:
+                self._close_directories()
                 self._release_data_lock()
 
     def project(self, project_id):
         try:
-            return self.projects[project_id]
+            project = self.projects[project_id]
         except KeyError:
             raise RequestError(404, "Project not found.") from None
+        fd = self._open_project(project_id)
+        os.close(fd)
+        return project
 
     def delete_project(self, project_id):
         with self.lock:
@@ -155,13 +262,15 @@ class KaraokeServer(ThreadingHTTPServer):
             if active and active["projectId"] == project_id:
                 raise RequestError(409, "This project has an active media job; wait or cancel it before deleting.")
             staged = self.trash_dir / uuid.uuid4().hex
-            os.replace(self.projects_dir / project_id, staged)
+            os.replace(project_id, staged.name, src_dir_fd=self._directory_fds[self.projects_dir],
+                       dst_dir_fd=self._directory_fds[self.trash_dir])
             del self.projects[project_id]
+            del self._project_identities[project_id]
         result = {"deleted": True, "projectId": project_id}
         try:
             # Only this explicitly selected project is removed. Cleanup cannot
             # hold the state lock or touch any completed sibling project.
-            shutil.rmtree(staged)
+            shutil.rmtree(staged.name, dir_fd=self._directory_fds[self.trash_dir])
         except OSError:
             result["cleanupPending"] = True
         return result
@@ -170,34 +279,48 @@ class KaraokeServer(ThreadingHTTPServer):
         project_id = uuid.uuid4().hex
 
         def work(cancel, stage):
-            media = work_dir / "media"
-            media.mkdir()
-            duration = self.separate(upload, media, self.model_dir, cancel, stage)
-            project = create_project(project_id, title, duration)
-            complete = work_dir / "completed"
-            complete.mkdir()
-            for name in _AUDIO_FILES.values():
-                source = media / name
-                if source.is_symlink() or not source.is_file():
-                    raise RuntimeError("Audio processing did not produce all three WAV files.")
-                shutil.copyfile(source, complete / name)
-            metadata = media / "processing.json"
-            if metadata.exists():
-                if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
-                    raise RuntimeError("Audio processing provenance is invalid or oversized.")
-                shutil.copyfile(metadata, complete / "processing.json")
-            _atomic_json(complete / "project.json", project)
+            work_fd = self._open_work(work_dir)
+            try:
+                owned = self._descriptor_path(work_fd)
+                media = owned / "media"
+                media.mkdir()
+                with inherit_media_handles(work_fd):
+                    duration = self.separate(owned / upload.name, media, self.model_dir, cancel, stage)
+                self.check_storage()
+                project = create_project(project_id, title, duration)
+                complete = owned / "completed"
+                complete.mkdir()
+                for name in _AUDIO_FILES.values():
+                    source = media / name
+                    if source.is_symlink() or not source.is_file():
+                        raise RuntimeError("Audio processing did not produce all three WAV files.")
+                    shutil.copyfile(source, complete / name)
+                metadata = media / "processing.json"
+                if metadata.exists():
+                    if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
+                        raise RuntimeError("Audio processing provenance is invalid or oversized.")
+                    shutil.copyfile(metadata, complete / "processing.json")
+                _atomic_json(complete / "project.json", project)
+            finally:
+                os.close(work_fd)
 
             def publish():
+                self.check_storage()
                 if len(self.projects) >= MAX_PROJECTS:
                     raise RuntimeError("Project storage is full; completed projects were preserved.")
-                os.replace(complete, self.projects_dir / project_id)
+                parent_fd = self._open_work(work_dir)
+                try:
+                    os.replace("completed", project_id, src_dir_fd=parent_fd,
+                               dst_dir_fd=self._directory_fds[self.projects_dir])
+                finally:
+                    os.close(parent_fd)
                 self.projects[project_id] = project
+                self._project_identities[project_id] = self._identity(os.stat(project_id, dir_fd=self._directory_fds[self.projects_dir], follow_symlinks=False))
                 return None
 
             return publish
 
-        return self.jobs.start(project_id, "separate", work, lambda: shutil.rmtree(work_dir, ignore_errors=True))
+        return self.jobs.start(project_id, "separate", work, lambda: self.cleanup_work(work_dir))
 
     def start_export(self, project: dict):
         if self.uploading:
@@ -205,53 +328,80 @@ class KaraokeServer(ThreadingHTTPServer):
         project = validate_project(project)
         if not project["cues"]:
             raise RequestError(400, "Add and timestamp lyric lines, then save before exporting a video.")
-        work_dir = self.work_dir / uuid.uuid4().hex
-        work_dir.mkdir()
+        work_dir = self.new_work()
         project_dir = self.projects_dir / project["id"]
 
         def work(cancel, stage):
-            stage("Rendering lyric video")
-            output = work_dir / "video.mp4"
-            self.export(project, project_dir / "backing.wav", output, work_dir, self.font_path, cancel)
-            if output.is_symlink() or not output.is_file() or not output.stat().st_size:
-                raise RuntimeError("Video export did not produce a complete output.")
+            work_fd = self._open_work(work_dir)
+            try:
+                project_fd = self._open_project(project["id"])
+                try:
+                    owned_work = self._descriptor_path(work_fd)
+                    owned_project = self._descriptor_path(project_fd)
+                    stage("Rendering lyric video")
+                    output = owned_work / "video.mp4"
+                    with inherit_media_handles(work_fd, project_fd):
+                        self.export(project, owned_project / "backing.wav", output,
+                                    owned_work, self.font_path, cancel)
+                    self.check_storage()
+                    if output.is_symlink() or not output.is_file() or not output.stat().st_size:
+                        raise RuntimeError("Video export did not produce a complete output.")
+                finally:
+                    os.close(project_fd)
+            finally:
+                os.close(work_fd)
 
             def publish():
                 if self.project(project["id"])["revision"] != project["revision"]:
                     raise RuntimeError("Saved project changed during export; export again.")
-                target = project_dir / "video.mp4"
-                backup = project_dir / ".previous-video.mp4"
-                if backup.exists():
-                    raise RuntimeError("A previous video backup requires recovery before exporting again.")
-                previous = target.exists()
-                if previous:
-                    os.replace(target, backup)
+                fd = self._open_project(project["id"])
                 try:
-                    os.replace(output, target)
-                    _atomic_json(project_dir / "video-revision.json", {"revision": project["revision"]})
-                except Exception:
-                    # Both files are published under the state lock. Restore an
-                    # existing completed video if its marker cannot be saved.
-                    # A recovery backup lives outside disposable job work.
+                    target, backup = "video.mp4", ".previous-video.mp4"
+                    def exists(name):
+                        try:
+                            os.stat(name, dir_fd=fd, follow_symlinks=False)
+                            return True
+                        except FileNotFoundError:
+                            return False
+                    if exists(backup):
+                        raise RuntimeError("A previous video backup requires recovery before exporting again.")
+                    previous = exists(target)
                     if previous:
-                        os.replace(backup, target)
-                    else:
-                        target.unlink(missing_ok=True)
-                    raise
-                if previous:
+                        os.replace(target, backup, src_dir_fd=fd, dst_dir_fd=fd)
                     try:
-                        backup.unlink()
-                    except OSError:
-                        pass
+                        work_fd = self._open_work(work_dir)
+                        try:
+                            os.replace(output.name, target, src_dir_fd=work_fd, dst_dir_fd=fd)
+                        finally:
+                            os.close(work_fd)
+                        _atomic_json(project_dir / "video-revision.json", {"revision": project["revision"]}, directory_fd=fd)
+                    except Exception:
+                        # Restore the prior completed video through the same
+                        # owned directory handle, even if its path was renamed.
+                        if previous:
+                            os.replace(backup, target, src_dir_fd=fd, dst_dir_fd=fd)
+                        else:
+                            try:
+                                os.unlink(target, dir_fd=fd)
+                            except FileNotFoundError:
+                                pass
+                        raise
+                    if previous:
+                        try:
+                            os.unlink(backup, dir_fd=fd)
+                        except OSError:
+                            pass
+                finally:
+                    os.close(fd)
                 return f'/api/projects/{project["id"]}/video'
 
             return publish
 
         try:
             return self.jobs.start(project["id"], "export", work,
-                                   lambda: shutil.rmtree(work_dir, ignore_errors=True))
+                                   lambda: self.cleanup_work(work_dir))
         except Exception:
-            shutil.rmtree(work_dir, ignore_errors=True)
+            self.cleanup_work(work_dir)
             raise
 
 
@@ -391,9 +541,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def _file(self, path: Path, content_type, *, disposition=None):
         with self.server.lock:
-            if path.is_symlink() or not path.is_file():
-                raise RequestError(404, "Requested media file is not available.")
-            source = path.open("rb")
+            if path.parent.parent == self.server.projects_dir:
+                try:
+                    source = self.server.project_file(path.parent.name, path.name)
+                except FileNotFoundError:
+                    raise RequestError(404, "Requested media file is not available.") from None
+            else:
+                if path.is_symlink() or not path.is_file():
+                    raise RequestError(404, "Requested media file is not available.")
+                source = path.open("rb")
         with source:
             total = os.fstat(source.fileno()).st_size
             start, end, status = 0, total - 1, 200
@@ -467,11 +623,14 @@ class Handler(BaseHTTPRequestHandler):
                             activeJob=server.jobs.active()))
             return
         if path == "/api/projects":
+            server.check_storage()
             if read:
                 with server.lock:
-                    projects = sorted(server.projects.values(),
-                                      key=lambda project: (server.projects_dir / project["id"] / "project.json").stat().st_mtime_ns,
-                                      reverse=True)
+                    dated = []
+                    for project in server.projects.values():
+                        with server.project_file(project["id"], "project.json") as source:
+                            dated.append((os.fstat(source.fileno()).st_mtime_ns, project))
+                    projects = [project for _, project in sorted(dated, key=lambda item: item[0], reverse=True)]
                 self._json({"projects": projects})
                 return
             if self.command == "POST":
@@ -520,7 +679,11 @@ class Handler(BaseHTTPRequestHandler):
                     if value["revision"] != project["revision"]:
                         raise RequestError(409, "Project revision is stale; reload before saving.")
                     updated = update_project(project, value["title"], value["cues"], value["revision"])
-                    _atomic_json(directory / "project.json", updated)
+                    fd = server._open_project(project_id)
+                    try:
+                        _atomic_json(directory / "project.json", updated, directory_fd=fd)
+                    finally:
+                        os.close(fd)
                     server.projects[project_id] = updated
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project)
@@ -529,7 +692,10 @@ class Handler(BaseHTTPRequestHandler):
                     if not (directory / "video.mp4").is_file() or not marker.is_file():
                         raise RequestError(404, "Export a lyric video before downloading it.")
                     try:
-                        current = json.loads(marker.read_text("utf-8"))["revision"]
+                        with server.project_file(project_id, marker.name) as source:
+                            if os.fstat(source.fileno()).st_size > MAX_JSON:
+                                raise ValueError("Oversized video revision")
+                            current = json.loads(source.read(MAX_JSON + 1))["revision"]
                     except (ValueError, KeyError, TypeError):
                         raise RequestError(409, "Export this saved revision before downloading video.") from None
                     if current != project["revision"]:
@@ -569,6 +735,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _upload(self):
         server = self.server
+        server.check_storage()
         length = self._length(MAX_UPLOAD)
         with server.lock:
             if not server.model_ready():
@@ -587,8 +754,7 @@ class Handler(BaseHTTPRequestHandler):
         title = Path(name).stem[:100].strip() or "Untitled clip"
         if "\0" in title:
             raise RequestError(400, "Audio name must not contain NUL bytes.")
-        work_dir = server.work_dir / uuid.uuid4().hex
-        work_dir.mkdir()
+        work_dir = server.new_work()
         upload = work_dir / "input.audio"
         submitted = False
         reserved = False
@@ -598,7 +764,13 @@ class Handler(BaseHTTPRequestHandler):
                     raise JobBusy("A media job or upload is already running.")
                 server.uploading = True
                 reserved = True
-            with upload.open("wb") as output:
+            work_fd = server._open_work(work_dir)
+            try:
+                upload_fd = os.open(upload.name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                                    0o600, dir_fd=work_fd)
+            finally:
+                os.close(work_fd)
+            with os.fdopen(upload_fd, "wb") as output:
                 remaining = length
                 while remaining:
                     chunk = self.rfile.read(min(remaining, 65536))
@@ -617,7 +789,7 @@ class Handler(BaseHTTPRequestHandler):
                 with server.lock:
                     server.uploading = False
             if not submitted:
-                shutil.rmtree(work_dir, ignore_errors=True)
+                server.cleanup_work(work_dir)
 
 
 def create_server(

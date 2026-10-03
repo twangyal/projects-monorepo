@@ -22,6 +22,7 @@ class _Job:
     stage: str = "Starting"
     error: str | None = None
     result_url: str | None = None
+    finalizing: bool = False
     cancel: threading.Event = field(default_factory=threading.Event)
     thread: threading.Thread | None = None
 
@@ -72,7 +73,7 @@ class JobManager:
     def cancel(self, job_id: str) -> dict:
         with self.lock:
             job = self._jobs[job_id]
-            if job.status == "running":
+            if job.status == "running" and not job.finalizing:
                 job.cancel.set()
                 job.stage = "Cancelling"
             return job.snapshot()
@@ -99,27 +100,30 @@ class JobManager:
                         job.stage = str(message)[:200]
 
             def run():
+                outcome, final_stage = "failed", "Failed"
                 try:
                     publish = work(job.cancel, stage)
                     with self.lock:
                         if job.cancel.is_set():
-                            job.status, job.stage = "cancelled", "Cancelled"
+                            outcome, final_stage = "cancelled", "Cancelled"
                         else:
                             job.result_url = publish()
-                            job.status, job.stage = "complete", "Complete"
+                            outcome, final_stage = "complete", "Complete"
+                        job.finalizing, job.stage = True, "Cleaning up"
                 except Exception as error:
                     with self.lock:
                         if job.cancel.is_set():
-                            job.status, job.stage = "cancelled", "Cancelled"
+                            outcome, final_stage = "cancelled", "Cancelled"
                         else:
-                            job.status, job.stage = "failed", "Failed"
                             job.error = str(error)[:500] or "Media processing failed."
+                        job.finalizing, job.stage = True, "Cleaning up"
                 finally:
                     try:
                         if cleanup:
                             cleanup()
                     finally:
                         with self.lock:
+                            job.status, job.stage = outcome, final_stage
                             self._active = None
 
             job.thread = threading.Thread(target=run, name=f"karaoke-{kind}-{job.id}", daemon=True)

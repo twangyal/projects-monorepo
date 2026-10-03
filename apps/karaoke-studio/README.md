@@ -4,7 +4,7 @@ A local karaoke clip maker: import a song excerpt, estimate vocals and backing w
 
 ## Install and run
 
-Use **Python 3.11**, **Node.js 22.18+** (CI uses Node 24), and **FFmpeg/ffprobe** on your PATH. FFmpeg needs H.264/libx264 and AAC encoders. Linux is the verified platform; other platforms need separate evaluation. The worker uses POSIX process/resource controls.
+Use **Linux with procfs available**, **Python 3.11**, **Node.js 22.18+** (CI uses Node 24), and **FFmpeg/ffprobe** on your PATH. FFmpeg needs H.264/libx264 and AAC encoders. Media jobs use Linux directory handles and POSIX process/resource controls; other platforms are unsupported by this storage implementation.
 
 From the repository root:
 
@@ -49,6 +49,20 @@ Videos contain the estimated backing and rendered lyric cards at **1280×720, 24
 ## Local projects and backups
 
 Completed projects persist in the supplied data directory and reopen from **Saved clips** after a service restart. There is no account, cloud backup, browser-storage dependency, or external song upload. Only one service instance can use a data directory at a time; an exclusive lock prevents a second instance from interfering with its files.
+
+Stop the service before moving, replacing, or linking storage directories. The
+running service retains handles to its owned directories and rejects changed
+library/project paths with recovery guidance. Restore the original directories
+before restarting; existing projects are preserved. Temporary-job and selected
+deletion cleanup stay anchored to owned storage even when a parent path moves.
+Media children inherit only their job's open directory handles; procfs paths keep
+their reads/writes in those directories while processing. This protects against
+parent-directory replacement; it does not sandbox arbitrary same-user changes
+to individual files inside owned storage.
+
+Jobs stay **running** through temporary cleanup. A terminal job status means the
+single worker has been released, so a new job can start immediately. Cancellation
+after result publication does not relabel an already saved project as cancelled.
 
 The library holds at most **20 completed projects**; reaching the limit preserves existing work and refuses new clips. **Delete selected clip** asks for explicit confirmation, removes only that selected project's media and metadata, and frees a library slot. Download or back up anything you want to keep first. Portable project archive import is not implemented.
 
