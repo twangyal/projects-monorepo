@@ -1,6 +1,6 @@
 # Git History
 
-A local evidence explorer for unfamiliar code. Select a committed file range or Python function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, and available rename evidence.
+A local evidence explorer for unfamiliar code. Select a committed file range or Python function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, available rename evidence, and optional supplied discussion excerpts.
 
 The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
 
@@ -42,6 +42,51 @@ python3 -m git_history explain --repo /path/to/repository \
 The listing supports `--format json` for automation and includes the resolved commit ID. Use that ID with `explain --ref` to keep the same snapshot if a branch moves between commands. An individual explanation resolves its revision only once, so function selection and Git evidence always describe the same commit.
 
 Python `.py` and `.pyi` files support ordinary and async functions, methods, and nested functions. Names include enclosing classes/functions (`Example.process`, `outer.inner`). Decorators are included in the selected range. Source is parsed with the running Python version's standard-library AST; nothing is imported or executed. Syntax errors and unsupported language versions produce guidance to use `--lines`. Repeated definitions with the same qualified name require a manual range. Functions over 200 lines are listed, but must be investigated with a smaller `--lines` selection. Other languages retain manual range support. Exactly one of `--lines` or `--function` is required.
+
+### Attach supplied PR, issue, or discussion excerpts
+
+`explain --context FILE` adds a separate **Unverified supplied context** section. It reads only your local file. It never fetches the linked discussion, verifies who wrote it, or treats the excerpt as established intent. The source label, author, URL and text are exactly what you supplied; matching a commit ID does not verify a claim or its relevance.
+
+This complete example creates `context.json` with the exact selected commit ID. Replace the repository/file paths and the example source, URL, author and excerpt with your own supplied material:
+
+```sh
+REPO=/path/to/repository
+COMMIT=$(git -C "$REPO" rev-parse --verify 'HEAD^{commit}')
+COMMIT="$COMMIT" python3 - <<'PYTHON'
+import json
+import os
+from pathlib import Path
+
+context = {
+    "schema_version": 1,
+    "entries": [
+        {
+            "commit": os.environ["COMMIT"],
+            "source": "Pull request #42 — supplied discussion excerpt",
+            "url": "https://github.com/owner/repository/pull/42#issuecomment-123",
+            "author": "Example author",
+            "excerpt": "Replace this text with an excerpt you want to inspect alongside the commit."
+        }
+    ]
+}
+Path("context.json").write_text(json.dumps(context, indent=2), encoding="utf-8")
+PYTHON
+python3 -m git_history explain --repo "$REPO" --ref "$COMMIT" \
+  --file src/example.py --lines 20:45 --context context.json --output report.html
+```
+
+The same flag works with `--function Example.process` and `--format json`. JSON adds `supplied_context`, containing `schema_version`, an explicit `provenance` warning, and `entries`. Each output entry retains the five supplied fields and adds `evidence_anchor`, linking to the corresponding embedded commit evidence. Omit `--context` to keep the existing report shape; there is no supplied-context section or JSON field. An empty `entries` array produces an explicitly empty section.
+
+Every entry requires all five fields shown above. `commit` must be an exact lowercase **40- or 64-character full ID** already represented by the selected revision, selected-line blame, returned range changes, or returned renames. Abbreviations, branch names and unrelated IDs are rejected. To choose another commit, inspect the IDs in an existing JSON report. A context file remains usable after a ref changes only if its IDs are still represented; use an immutable `--ref` to reproduce a report. One invalid/stale entry rejects the entire file without publishing any report, even with `--force`.
+
+Supported source links are credential-free HTTPS URLs on these public hosts:
+
+- GitHub: `https://github.com/OWNER/REPO/pull/N`, `/issues/N`, or `/discussions/N`. Pull requests may include `#issuecomment-N`, `#discussion_rN`, or `#pullrequestreview-N`; issues may include `#issuecomment-N`; discussions may include `#discussioncomment-N`.
+- GitLab: `https://gitlab.com/GROUP/PROJECT/-/merge_requests/N` or `/-/issues/N`, including nested groups and optional `#note_N`.
+
+Here `N` is a numeric ID. Ports, user information, query strings, escaped paths, other hosts/routes and unrecognized fragments are rejected; remove tracking parameters before supplying a URL. Link existence and repository ownership are not checked. Clicking a report's source link uses your browser's network access.
+
+Context input is a regular UTF-8 JSON file of at most **256 KiB**, with at most **50 entries**. Source labels and author names are **1–200 characters** each, excerpts **1–4,000**, and URLs **1–2,048**. Duplicate/unknown fields, unsupported schema versions, invalid Unicode, NUL and unsupported control characters are rejected. Errors do not repeat excerpt contents or rejected credential-bearing URLs. HTML escapes supplied text; JSON preserves it as string data. The existing total report size limit still applies.
 
 ### Read the synopsis
 
@@ -88,6 +133,6 @@ python3 -m pip install -r requirements-dev.txt
 ruff check .
 ```
 
-Tests create temporary repositories and cover roots, line edits and insertions, rename-plus-edit, merges, shallow and bare repositories, special filenames, invalid input, Git configuration side effects, output protection, HTML escaping/anchors, function selection from immutable snapshots, synopsis evidence, CLI behavior, subprocess timeouts and byte caps. No existing repository is modified by the tests.
+Tests create temporary repositories and cover roots, line edits and insertions, rename-plus-edit, merges, shallow and bare repositories, special filenames, invalid input, Git configuration side effects, output protection, HTML escaping/anchors, function selection from immutable snapshots, synopsis evidence, CLI behavior, subprocess timeouts and byte caps, and bounded supplied-context imports with exact commit matching, safe discussion links and escaped provenance. No existing repository is modified by the tests.
 
-Future work includes optional user-supplied PR/discussion evidence and evidence-grounded semantic summaries. The current report remains useful offline without either.
+Future work includes evidence-grounded semantic summaries. Supplied excerpts remain unverified context; this tool does not infer intent or automatically retrieve discussions.

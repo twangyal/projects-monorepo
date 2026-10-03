@@ -9,6 +9,7 @@ import re
 import sys
 import tempfile
 
+from .context import load_context
 from .reader import inspect_repository, list_functions
 from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
@@ -92,6 +93,7 @@ def main(argv: list[str] | None = None) -> int:
     selection.add_argument("--lines", type=_lines, metavar="START:END")
     selection.add_argument("--function", metavar="QUALIFIED_NAME", help="Exact Python function name from the functions command.")
     explain.add_argument("--max-commits", type=int, default=20, help="At most 1–50 range-changing commits (default: 20).")
+    explain.add_argument("--context", metavar="FILE", help="Optional local JSON of unverified discussion excerpts for represented commits.")
     explain.add_argument("--format", choices=("html", "json"), default="html")
     explain.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
     explain.add_argument("--force", action="store_true", help="Replace an existing report output file.")
@@ -117,7 +119,8 @@ def main(argv: list[str] | None = None) -> int:
         report = inspect_repository(args.repo, args.file, *(args.lines or (None, None)),
                                     ref=args.ref, max_commits=args.max_commits,
                                     function=args.function)
-        text = render_html(report) if args.format == "html" else render_json(report)
+        context = load_context(args.context, report) if args.context is not None else None
+        text = render_html(report, context) if args.format == "html" else render_json(report, context)
         if args.output and args.output != "-":
             write_report(Path(args.output), text, args.repo, args.force)
             print(f"Report saved to {Path(args.output).absolute()}", file=sys.stderr)

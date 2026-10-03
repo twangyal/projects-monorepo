@@ -50,6 +50,16 @@ class FunctionCatalog:
 
 
 @dataclass
+class ContextEntry:
+    """Unverified supplied text, associated only with an existing report commit."""
+    commit: str
+    source: str
+    url: str
+    author: str
+    excerpt: str
+
+
+@dataclass
 class Report:
     repo_name: str
     revision: str

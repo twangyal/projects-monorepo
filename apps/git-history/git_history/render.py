@@ -6,7 +6,8 @@ import json
 import re
 from urllib.parse import urlsplit
 
-from .model import Report
+from .context import context_document
+from .model import ContextEntry, Report
 from .synopsis import build_synopsis, commit_anchor as _commit_anchor
 
 MAX_REPORT_BYTES = 8 * 1024 * 1024
@@ -18,9 +19,11 @@ def _bounded(text: str) -> str:
     return text
 
 
-def render_json(report: Report) -> str:
+def render_json(report: Report, context: list[ContextEntry] | None = None) -> str:
     data = asdict(report)
     data["synopsis"] = build_synopsis(report)
+    if context is not None:
+        data["supplied_context"] = context_document(report, context)
     return _bounded(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
 
@@ -89,6 +92,20 @@ def _render_synopsis(synopsis: dict) -> str:
 <h3>Completeness notes</h3><ul class="warnings">{notes}</ul></section>'''
 
 
+def _render_context(document: dict) -> str:
+    articles = []
+    for index, item in enumerate(document['entries'], 1):
+        articles.append(f'''<article class="change" id="context-{index}">
+<div class="change-meta"><a href="#{escape(item['evidence_anchor'])}" style="max-width:100%;overflow-wrap:anywhere"><code>{escape(item['commit'])}</code></a><a class="external" href="{escape(item['url'])}" rel="noreferrer noopener" target="_blank">Open supplied discussion ↗</a></div>
+<h3>Supplied source label: {escape(item['source'])}</h3>
+<p class="muted" style="overflow-wrap:anywhere">Supplied author: {escape(item['author'])}</p>
+<p class="muted">Quoted supplied excerpt — unverified</p><pre class="message">{escape(item['excerpt'])}</pre></article>''')
+    content = ''.join(articles) if articles else '<p class="empty">No supplied excerpts were included in the context file.</p>'
+    return f'''<section id="supplied-context"><div class="section-title"><span>05</span><h2>Unverified supplied context</h2></div>
+<p class="muted">{escape(document['provenance'])}</p>{content}</section>
+'''
+
+
 def _patch_counts(patch: str) -> tuple[int, int]:
     added = removed = 0
     in_hunk = False
@@ -103,7 +120,8 @@ def _patch_counts(patch: str) -> tuple[int, int]:
     return added, removed
 
 
-def render_html(report: Report) -> str:
+def render_html(report: Report, context: list[ContextEntry] | None = None) -> str:
+    supplied = context_document(report, context) if context is not None else None
     synopsis = build_synopsis(report)
     remote = _remote_url(report.remote_url)
     changes = {change.commit: change for change in report.changes}
@@ -168,6 +186,13 @@ def render_html(report: Report) -> str:
             link += ' ' + external(rename.commit)
         rename_rows.append(f'<tr{row_id}><td>{link}</td><td><code>{escape(rename.old_path)}</code></td><td><code>{escape(rename.new_path)}</code></td><td>{rename.similarity}%</td></tr>')
 
+    context_html = _render_context(supplied) if supplied is not None else ''
+    context_nav = '<a href="#supplied-context">Supplied context</a>' if supplied is not None else ''
+    revision_id = ''
+    if supplied is not None and report.revision not in anchored_commits:
+        if any(item['commit'] == report.revision for item in supplied['entries']):
+            revision_id = f' id="{escape(_commit_anchor(report.revision))}"'
+    limits_number = '06' if supplied is not None else '05'
     warnings = ''.join(f'<li>{escape(warning)}</li>' for warning in synopsis["completeness_notes"])
     attribution_section = '<h3>Additional attributed commits</h3>' + ''.join(other_commits) if other_commits else ''
     rename_content = ('<div class="table-scroll"><table><thead><tr><th>Commit</th><th>Previous path</th><th>New path</th><th>Similarity</th></tr></thead><tbody>' + ''.join(rename_rows) + '</tbody></table></div>') if rename_rows else '<p class="empty">No whole-file rename evidence was returned within the history limit.</p>'
@@ -176,15 +201,15 @@ def render_html(report: Report) -> str:
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>{escape(report.path)} — Git History</title><style>{STYLE}</style></head><body>
 <a class="skip" href="#source">Skip to source</a><header><a class="brand" href="#overview"><span aria-hidden="true">↳</span> Git History</a><span class="badge">LOCAL EVIDENCE REPORT</span></header>
-<div class="layout"><nav aria-label="Report sections"><p class="eyebrow">IN THIS REPORT</p><a href="#overview">Overview</a><a href="#synopsis">Evidence synopsis</a><a href="#source">Selected source</a><a href="#blame">Line attribution</a><a href="#timeline">Change timeline</a><a href="#renames">File renames</a><a href="#limits">Evidence & limits</a></nav>
-<main><section id="overview" class="hero"><p class="eyebrow">UNDERSTAND THE HISTORY. INSPECT THE EVIDENCE.</p><h1>{escape(report.path)}</h1><p class="subtitle">{escape(report.repo_name)} · lines {report.start_line}–{report.end_line}</p><div class="revision"><span>COMMITTED SNAPSHOT</span><code>{escape(report.revision)}</code><span>requested as {escape(report.requested_ref)}</span></div><div class="metrics"><div><strong>{len(report.blame)}</strong><span>attributed lines</span></div><div><strong>{len(report.changes)}</strong><span>range changes</span></div><div><strong>{len(report.renames)}</strong><span>rename records</span></div></div></section>
+<div class="layout"><nav aria-label="Report sections"><p class="eyebrow">IN THIS REPORT</p><a href="#overview">Overview</a><a href="#synopsis">Evidence synopsis</a><a href="#source">Selected source</a><a href="#blame">Line attribution</a><a href="#timeline">Change timeline</a><a href="#renames">File renames</a>{context_nav}<a href="#limits">Evidence & limits</a></nav>
+<main><section id="overview" class="hero"><p class="eyebrow">UNDERSTAND THE HISTORY. INSPECT THE EVIDENCE.</p><h1>{escape(report.path)}</h1><p class="subtitle">{escape(report.repo_name)} · lines {report.start_line}–{report.end_line}</p><div class="revision"{revision_id}><span>COMMITTED SNAPSHOT</span><code>{escape(report.revision)}</code><span>requested as {escape(report.requested_ref)}</span></div><div class="metrics"><div><strong>{len(report.blame)}</strong><span>attributed lines</span></div><div><strong>{len(report.changes)}</strong><span>range changes</span></div><div><strong>{len(report.renames)}</strong><span>rename records</span></div></div></section>
 <aside class="evidence-note"><strong>What this report can tell you</strong><p>Source, diffs and attribution show observed changes. Commit messages quote what their authors recorded. <strong>Intent is not established</strong> by a diff alone; absent an explicit explanation, the reason remains unknown. PR discussions and issue conversations have not been fetched.</p></aside>
 {_render_synopsis(synopsis)}
 <section id="source"><div class="section-title"><span>01</span><h2>Selected source</h2></div><p class="muted">Working-tree edits are excluded. Line numbers refer to the resolved commit.</p><div class="table-scroll source"><table aria-label="Selected committed source"><tbody>{''.join(source_rows)}</tbody></table></div></section>
 <section id="blame"><div class="section-title"><span>02</span><h2>Line attribution</h2></div><p class="muted">Follow a commit to its embedded evidence. Original locations can differ after edits or renames.</p><div class="table-scroll"><table><thead><tr><th>Line</th><th>Commit</th><th>Author</th><th>Recorded summary</th><th>Original location</th></tr></thead><tbody>{''.join(blame_rows)}</tbody></table></div></section>
 <section id="timeline"><div class="section-title"><span>03</span><h2>Change timeline</h2></div><p class="muted">Newest first. Patches show the selected range as Git traces it backwards.</p>{''.join(timeline)}{attribution_section}</section>
 <section id="renames"><div class="section-title"><span>04</span><h2>File renames</h2></div><p class="muted">Git's similarity matching is heuristic. A rename is file-path evidence, not proof that a function kept the same meaning.</p>{rename_content}</section>
-<section id="limits"><div class="section-title"><span>05</span><h2>Evidence & limits</h2></div><ul class="warnings">{warnings}</ul><p class="muted">No network requests or model-generated explanations were used. Missing history, merges, moves and rewritten code can limit attribution. Review the actual evidence before drawing conclusions.</p></section>
+{context_html}<section id="limits"><div class="section-title"><span>{limits_number}</span><h2>Evidence & limits</h2></div><ul class="warnings">{warnings}</ul><p class="muted">No network requests or model-generated explanations were used. Missing history, merges, moves and rewritten code can limit attribution. Review the actual evidence before drawing conclusions.</p></section>
 <footer>Generated locally by Git History · report schema {report.schema_version} · no external resources</footer></main></div></body></html>'''
     return _bounded(html)
 
