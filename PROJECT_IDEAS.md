@@ -4,8 +4,8 @@ These 17 projects are listed in my personal priority order. The descriptions ref
 
 ## 1. Eye detector with agentic AI
 
-Path: N/A
-Status: IDEA
+Path: apps/gaze-navigator
+Status: ACTIVE
 Description: A hands-free navigation assistant that uses an ordinary webcam to estimate where a user is looking and help them interact with technology. After calibration, the assistant highlights likely targets and lets the user confirm actions such as clicking, scrolling, or selecting controls. An AI decision model combines gaze information with interface context to resolve nearby elements and assist with navigation. The first portfolio version would focus on browser interfaces, with TypeSafe's Jev as a candidate decision model and an open-source alternative evaluated against the same tasks. Gaze tracking, decision-making, and browser control would remain separate components so each can be improved or replaced.
 
 ## 2. Schedule app that bricks your phone
@@ -17,8 +17,6 @@ Description: A calendar-driven focus app that restricts access to apps during sc
 ## 3. DAW with AI and voice-based music creation
 
 Path: N/A
-Status: IDEA
-Description: Path: N/A
 Status: IDEA
 Description: A beginner-friendly digital audio workstation that turns hummed or sung musical ideas into editable notes played by different instruments. Users record a melody, review the detected pitch and timing, choose an instrument, and layer additional parts into a track. AI assistance helps develop the arrangement while preserving the user's control over individual notes and musical choices. The goal is to lower the barrier to music production for people who have ideas but do not play an instrument or know traditional production software. A first version would focus on capturing melodies, switching instruments, editing notes, and exporting a simple composition.
 

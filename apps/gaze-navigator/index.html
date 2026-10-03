@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Gaze Navigator</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <p class="eyebrow">Experimental accessibility interface</p>
+      <h1>Look. Hold. Confirm.</h1>
+      <p class="lede">A local browser prototype that turns webcam gaze estimates into deliberate interface choices.</p>
+      <div class="controls">
+        <button id="startCamera">Start camera</button>
+        <button id="simulate" class="secondary">Pointer simulation</button>
+        <button id="recalibrate" class="secondary" disabled>Recalibrate</button>
+      </div>
+      <p id="status" role="status">Choose a tracking mode to begin.</p>
+    </header>
+
+    <section id="calibration" class="panel hidden" aria-labelledby="calibrationTitle">
+      <div>
+        <p class="eyebrow">Calibration</p>
+        <h2 id="calibrationTitle">Follow the dot with your eyes, then click it.</h2>
+        <p>Three clicks per point. Keep your head comfortably still.</p>
+      </div>
+      <div id="calibrationStage" aria-label="Calibration area"></div>
+    </section>
+
+    <section id="playground" class="panel hidden" aria-labelledby="playgroundTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Target resolver</p>
+          <h2 id="playgroundTitle">Try the demo controls without touching the mouse.</h2>
+        </div>
+        <div class="dwell-meter" aria-label="Dwell progress"><span id="dwellFill"></span></div>
+      </div>
+      <div class="target-grid">
+        <button class="demo-target" data-gaze-target data-action="compose">Compose</button>
+        <button class="demo-target" data-gaze-target data-action="search">Search</button>
+        <button class="demo-target" data-gaze-target data-action="scroll">Scroll</button>
+        <button class="demo-target" data-gaze-target data-action="select">Select</button>
+      </div>
+      <p id="result" class="result">Hold your gaze on a control for 0.9 seconds.</p>
+      <p class="privacy">Only controls marked as gaze targets can activate. This prototype does not click arbitrary page elements.</p>
+    </section>
+  </main>
+  <div id="gazeCursor" aria-hidden="true"></div>
+  <script src="https://cdn.jsdelivr.net/npm/webgazer@3.3.0/dist/webgazer.js"></script>
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
