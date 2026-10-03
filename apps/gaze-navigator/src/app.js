@@ -4,6 +4,7 @@ import { setupWorkspace } from './workspace-view.js';
 import { setupAccuracyCheck } from './accuracy-view.js';
 import { createCameraLoader } from './camera-loader.js';
 import { setupKeyboard } from './keyboard.js';
+import { resetCameraCalibration, recordCalibrationClick } from './camera-calibration.js';
 
 const dwell = createDwellTracker();
 const loadCamera = createCameraLoader(document, window);
@@ -106,8 +107,12 @@ function renderCalibrationPoint() {
   dot.setAttribute('aria-label', `Calibration point ${calibrationIndex + 1}`);
   dot.textContent = `${calibrationClicks + 1}`;
   dot.disabled = paused;
-  dot.addEventListener('click', () => {
+  dot.addEventListener('click', event => {
     if (paused) return;
+    if (trackingMode === 'camera' && !recordCalibrationClick(window.webgazer, event, dot)) {
+      setStatus('No eye sample recorded. Look at the dot with your face visible, then click it with a pointer.');
+      return;
+    }
     calibrationClicks += 1;
     if (calibrationClicks >= CALIBRATION_CLICKS) {
       calibrationClicks = 0;
@@ -122,6 +127,7 @@ function renderCalibrationPoint() {
 function beginCalibration() {
   accuracyButton.disabled = true;
   accuracy.cancel();
+  if (cameraReady) resetCameraCalibration(window.webgazer);
   dwell.reset();
   clearFocus();
   simulationPoint = null;
@@ -167,6 +173,8 @@ async function enableCamera() {
     simulateButton.disabled = true;
     setStatus('Loading camera tracking. You may be asked for webcam permission.');
     await loadCamera();
+    window.webgazer.saveDataAcrossSessions(false);
+    window.webgazer.showPredictionPoints(false);
     const handler = data => {
       if (trackingMode !== 'camera' || gazeHandler !== handler) return;
       if (data) consumePoint(data.x, data.y);
@@ -175,6 +183,7 @@ async function enableCamera() {
     gazeHandler = handler;
     window.webgazer.setGazeListener(gazeHandler);
     await window.webgazer.begin();
+    window.webgazer.removeMouseEventListeners();
     cameraReady = true;
     pauseButton.disabled = false;
     stopButton.disabled = false;

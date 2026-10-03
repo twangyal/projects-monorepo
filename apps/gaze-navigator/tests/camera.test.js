@@ -36,9 +36,25 @@ test('camera stop releases tracking and failed startup permits retry', async () 
   let ended = 0;
   let cleared = 0;
   let fail = false;
+  let persistence = true;
+  let implicitTraining = true;
+  let predictionPoints = true;
+  let faceVisible = true;
+  let samples = [[1, 2]];
+  let training = [];
+  let resets = 0;
+  const physicalClick = { isTrusted: true, detail: 1 };
+  const regression = { getData: () => samples, init: () => { resets++; samples = []; } };
+  nodes.calibrationStage.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 400 });
+  nodes.accuracyStage.getBoundingClientRect = () => ({ left: 0, top: 0, width: 400, height: 400 });
   win.webgazer = {
     setGazeListener: callback => { listener = callback; },
-    begin: async () => { if (fail) throw new Error('denied'); },
+    begin: async () => { implicitTraining = true; if (fail) throw new Error('denied'); },
+    saveDataAcrossSessions: value => { persistence = value; },
+    showPredictionPoints: value => { predictionPoints = value; },
+    removeMouseEventListeners: () => { implicitTraining = false; },
+    getRegression: () => [regression],
+    recordScreenPosition: (x, y, type) => { if (faceVisible) { samples.push([x, y]); training.push([x, y, type]); } },
     clearGazeListener: () => { cleared++; },
     end: () => { ended++; },
   };
@@ -59,22 +75,52 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     await import('../src/app.js');
     await nodes.startCamera.emit('click');
     assert.equal(nodes.stopTracking.disabled, false);
-    for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
+    assert.equal(persistence, false, 'estimator data must stay in this session');
+    assert.equal(implicitTraining, false, 'pointer and synthetic clicks must not train');
+    assert.equal(predictionPoints, false, 'dependency overlay must not cue held-out measurements');
+    assert.equal(samples.length, 0, 'old estimator samples must be cleared');
+    nodes.calibrationStage.children[0].getBoundingClientRect = () => ({ left: 10, top: 20, width: 52, height: 52 });
+    nodes.calibrationStage.children[0].emit('click');
+    nodes.calibrationStage.children[0].emit('click', { isTrusted: true, detail: 0 });
+    faceVisible = false;
+    nodes.calibrationStage.children[0].emit('click', physicalClick);
+    assert.equal(nodes.calibrationStage.children[0].textContent, '1');
+    faceVisible = true;
+    nodes.calibrationStage.children[0].emit('click', physicalClick);
+    assert.deepEqual(training[0], [36, 46, 'click']);
+    for (let i = 1; i < 27; i++) {
+      nodes.calibrationStage.children[0].getBoundingClientRect = () => ({ left: 10, top: 20, width: 52, height: 52 });
+      nodes.calibrationStage.children[0].emit('click', physicalClick);
+    }
+    const trained = training.length;
     for (now = 0; now <= 3000; now += 100) listener({ x: 100, y: 100 });
     assert.equal(confirmations, 1);
+    assert.equal(training.length, trained, 'workspace actions must not train');
     win.emit('scroll');
     for (; now <= 5000; now += 100) listener({ x: 100, y: 100 });
     assert.equal(confirmations, 1);
     assert.equal(nodes.gazeCursor.classList.contains('visible'), true);
+    nodes.checkAccuracy.emit('click');
+    listener({ x: 100, y: 100 });
+    assert.equal(training.length, trained, 'held-out measurements must not train');
+    assert.equal(confirmations, 1, 'held-out measurements must not execute actions');
+    nodes.cancelAccuracy.emit('click');
     win.emit('resize');
+    assert.equal(samples.length, 0, 'resizing must remove old geometry from the estimator');
     assert.equal(nodes.playground.classList.contains('hidden'), true, 'resize must require fresh calibration');
     assert.equal(nodes.checkAccuracy.disabled, true);
     assert.equal(nodes.calibrationStage.children[0].textContent, '1');
-    for (let i = 0; i < 5; i++) nodes.calibrationStage.children[0].emit('click');
+    for (let i = 0; i < 5; i++) {
+      nodes.calibrationStage.children[0].getBoundingClientRect = () => ({ left: 10, top: 20, width: 52, height: 52 });
+      nodes.calibrationStage.children[0].emit('click', physicalClick);
+    }
     win.emit('resize');
     assert.equal(nodes.calibrationStage.children[0].textContent, '1', 'partial calibration must restart');
     assert.match(nodes.status.textContent, /point 1 of 9/);
-    for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
+    for (let i = 0; i < 27; i++) {
+      nodes.calibrationStage.children[0].getBoundingClientRect = () => ({ left: 10, top: 20, width: 52, height: 52 });
+      nodes.calibrationStage.children[0].emit('click', physicalClick);
+    }
     assert.equal(nodes.playground.classList.contains('hidden'), false);
     assert.equal(nodes.checkAccuracy.disabled, false);
     nodes.pauseTracking.emit('click');
@@ -87,7 +133,10 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     assert.equal(nodes.gazeCursor.classList.contains('visible'), false);
     assert.equal(nodes.startCamera.disabled, false);
     nodes.simulate.emit('click');
-    for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
+    for (let i = 0; i < 27; i++) {
+      nodes.calibrationStage.children[0].getBoundingClientRect = () => ({ left: 10, top: 20, width: 52, height: 52 });
+      nodes.calibrationStage.children[0].emit('click', physicalClick);
+    }
     listener({ x: 100, y: 100 });
     assert.equal(nodes.gazeCursor.classList.contains('visible'), false);
     nodes.stopTracking.emit('click');
@@ -101,7 +150,11 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     fail = false;
     await nodes.startCamera.emit('click');
     assert.equal(nodes.stopTracking.disabled, false);
-    for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
+    for (let i = 0; i < 27; i++) {
+      nodes.calibrationStage.children[0].getBoundingClientRect = () => ({ left: 10, top: 20, width: 52, height: 52 });
+      nodes.calibrationStage.children[0].emit('click', physicalClick);
+    }
+    assert.equal(nodes.playground.classList.contains('hidden'), false);
     staleListener({ x: 100, y: 100 });
     assert.equal(nodes.gazeCursor.classList.contains('visible'), false);
     win.emit('beforeunload');

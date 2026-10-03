@@ -19,6 +19,7 @@ Open `http://localhost:4173`.
 - **Pointer simulation** runs the same target resolver/dwell logic with pointer coordinates, making the interaction testable without a webcam.
 - Hold a pointer still for 0.9 seconds to confirm. A control confirms once until you leave it and return.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
+- In camera mode, only physical pointer clicks on the dot add samples. Keyboard/synthetic clicks and clicks without a recorded eye sample do not advance calibration. Simulation permits ordinary keyboard activation.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
 
 ## Architecture
@@ -30,6 +31,7 @@ Open `http://localhost:4173`.
 - `tests/` — dependency-free unit and app integration tests.
 - `src/text-entry.js` / `src/keyboard.js` — explicit-field gaze typing, selection replacement, backspace, case toggle, and field limits.
 - `src/camera-loader.js` — camera-only CDN loading with a 15-second timeout and retry.
+- `src/camera-calibration.js` — explicit dot training and in-memory estimator reset; implicit mouse training and saved calibration are disabled.
 - `src/accuracy.js` / `src/accuracy-view.js` — timed held-out measurement and local result display.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
 - `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.
@@ -60,7 +62,7 @@ Next: measure webcam accuracy/latency and isolate target resolution before evalu
 
 ## Privacy and limitations
 
-Webcam frames are processed by the browser-side WebGazer dependency; this project does not upload or persist them. The demo loads WebGazer from a public CDN, so it needs network access on first load. Webcam gaze estimation varies significantly with lighting, camera placement, head movement, calibration quality, and individual users. This prototype is an experiment, not an assistive-device claim.
+Webcam frames are processed by the browser-side WebGazer dependency; this project does not upload or persist them. Saved estimator data is disabled before camera startup, and each calibration resets only in-memory regression samples. Previous browser storage is left untouched. Pointer movement, ordinary workspace clicks, and held-out checks do not train the estimator. WebGazer's prediction overlay is hidden so it cannot cue the accuracy check. The demo loads WebGazer from a public CDN, so it needs network access on first load. Webcam gaze estimation varies significantly with lighting, camera placement, head movement, calibration quality, and individual users. This prototype is an experiment, not an assistive-device claim.
 
 
 ### Resolver isolation — 2026-10-03
