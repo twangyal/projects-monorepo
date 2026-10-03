@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <main>
+  <main id="navigationRoot">
     <header class="hero">
       <p class="eyebrow">Experimental accessibility interface</p>
       <h1>Look. Hold. Confirm.</h1>
@@ -16,13 +16,18 @@
       <div class="controls">
         <button id="startCamera">Start camera</button>
         <button id="simulate" class="secondary">Pointer simulation</button>
-        <button id="recalibrate" class="secondary" disabled>Recalibrate</button>
-        <button id="pauseTracking" class="secondary" disabled>Pause tracking</button>
-        <button id="stopTracking" class="secondary" disabled>Stop tracking</button>
-        <button id="checkAccuracy" class="secondary" disabled>Check accuracy</button>
       </div>
       <p id="status" role="status">Choose a tracking mode to begin.</p>
     </header>
+
+    <div id="trackingControls" class="tracking-controls" role="group" aria-label="Tracking and page controls">
+      <button id="pauseTracking" data-gaze-target aria-pressed="false" disabled>Pause tracking</button>
+      <button id="stopTracking" data-gaze-target disabled>Stop tracking</button>
+      <button id="recalibrate" data-gaze-target disabled>Recalibrate</button>
+      <button id="checkAccuracy" data-gaze-target disabled>Check accuracy</button>
+      <button id="pageUp" data-gaze-target disabled>Page up</button>
+      <button id="pageDown" data-gaze-target disabled>Page down</button>
+    </div>
 
     <section id="calibration" class="panel hidden" aria-labelledby="calibrationTitle">
       <div>
@@ -38,7 +43,7 @@
       <p>Look at each dot for two seconds without clicking. The first half-second lets your gaze settle. Keep this area visible; scrolling or resizing cancels the check.</p>
       <div id="accuracyStage"><span id="accuracyDot" class="calibration-dot hidden" aria-hidden="true"></span></div>
       <p id="accuracyResult" role="status"></p>
-      <button id="cancelAccuracy">Close / cancel check</button>
+      <button id="cancelAccuracy" data-gaze-target>Close / cancel check</button>
       <details><summary>Local measurement JSON</summary><pre id="accuracyData"></pre></details>
     </section>
     <section id="playground" class="panel hidden" aria-labelledby="playgroundTitle">

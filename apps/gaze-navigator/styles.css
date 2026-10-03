@@ -11,7 +11,7 @@ body {
   background: radial-gradient(circle at 75% 0%, #173c31 0, transparent 34rem), #07110e;
 }
 button { font: inherit; }
-main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 72px 0 120px; }
+main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 180px 0 120px; }
 .hero { max-width: 780px; margin-bottom: 48px; }
 .eyebrow { color: #75e5b4; font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 h1, h2 { letter-spacing: -.04em; margin: 0; }
@@ -33,6 +33,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 #status { color: #8ea79c; }
 .panel { border: 1px solid #23463a; background: rgba(10, 27, 22, .82); border-radius: 28px; padding: clamp(22px, 4vw, 42px); box-shadow: 0 28px 80px rgba(0,0,0,.25); }
 .hidden { display: none !important; }
+.tracking-controls { position: fixed; z-index: 6000; top: 10px; left: 50%; transform: translateX(-50%); width: min(800px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 10px; border: 1px solid #456b5c; border-radius: 16px; background: #0a1b16; box-shadow: 0 8px 32px #0006; }
+.tracking-controls button { min-height: 50px; padding: 10px 8px; border: 1px solid #456b5c; border-radius: 10px; background: #102820; color: #eef8f3; cursor: pointer; }
+.tracking-controls button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }
 #calibrationStage { height: min(62vh, 560px); min-height: 360px; position: relative; margin-top: 24px; border: 1px dashed #31584a; border-radius: 22px; background: #091914; overflow: hidden; }
 .calibration-dot { position: absolute; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; border: 8px solid rgba(117,229,180,.2); background: #75e5b4; color: #07110e; font-weight: 900; cursor: crosshair; box-shadow: 0 0 32px rgba(117,229,180,.38); }
 .section-heading { display: flex; justify-content: space-between; gap: 30px; align-items: end; }
@@ -47,7 +50,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 #gazeCursor { position: fixed; left: -14px; top: -14px; width: 28px; height: 28px; border: 2px solid #fff; border-radius: 50%; pointer-events: none; z-index: 9999; opacity: 0; transition: opacity 150ms ease; box-shadow: 0 0 0 6px rgba(117,229,180,.22); }
 #gazeCursor.visible { opacity: .9; }
 @media (max-width: 650px) {
-  main { padding-top: 42px; }
+  main { padding-top: 180px; }
+  .tracking-controls button { font-size: .85rem; }
   .section-heading { align-items: start; flex-direction: column; }
   .target-grid { grid-template-columns: 1fr; }
   .demo-target { min-height: 110px; }
@@ -74,10 +78,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 #accuracyStage { position: relative; height: min(260px, 30vh); margin: 20px 0; background: #091914; border-radius: 16px; }
 #accuracyDot { display: grid; place-items: center; pointer-events: none; }
 #accuracyData { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
+#cancelAccuracy { min-height: 54px; padding: 16px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; }
+#cancelAccuracy.gaze-focus { outline: 3px solid #75e5b4; }
 
-#textKeyboard { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(940px, calc(100% - 32px)); max-height: 55vh; overflow: auto; z-index: 4000; border: 1px solid #456b5c; border-radius: 20px; background: #0a1b16; padding: 18px; box-shadow: 0 10px 60px #0008; }
+#textKeyboard { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(940px, calc(100% - 32px)); max-height: min(55vh, calc(100dvh - 180px)); overflow: auto; z-index: 4000; border: 1px solid #456b5c; border-radius: 20px; background: #0a1b16; padding: 18px; box-shadow: 0 10px 60px #0008; }
 #textKeyboard h3 { margin: 0; }
 #keyboardPreview { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 4em; overflow: auto; padding: 10px; background: #07110e; }
 #keyboardKeys { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
 #keyboardKeys button { min-height: 54px; padding: 8px; }
-@media (max-width: 650px) { #keyboardKeys { grid-template-columns: repeat(5, minmax(0, 1fr)); } #textKeyboard { max-height: 60vh; } }
+@media (max-width: 650px) { #keyboardKeys { grid-template-columns: repeat(5, minmax(0, 1fr)); } }

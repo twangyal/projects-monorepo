@@ -22,6 +22,7 @@ Open `http://localhost:4173`.
 - In camera mode, only physical pointer clicks on the dot add samples. Keyboard/synthetic clicks and clicks without a recorded eye sample do not advance calibration. Simulation permits ordinary keyboard activation.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
 - Stop is available during camera startup. A pending browser permission request may still finish; any stream acquired afterward is released. Simulation remains available while canceled startup settles. Camera retry waits for that startup to settle to avoid overlapping requests.
+- A fixed toolbar supports gaze Pause/Resume/Stop, Recalibrate, Check accuracy, and Page up/down after calibration. While paused, only Resume and Stop accept gaze; looking away before reusing Pause prevents an accidental toggle. Escape pauses navigation. During an accuracy check, gaze Pause/Stop remain available and cancel the measurement; the completed report can be closed with gaze.
 
 ## Architecture
 

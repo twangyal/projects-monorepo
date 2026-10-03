@@ -25,10 +25,12 @@ function element() {
 test('stationary pointer confirms once, resets on leave, and ignores calibration', async () => {
   const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview'];
   const nodes = Object.fromEntries(ids.map(id => [id, element()]));
+  for (const id of ['navigationRoot', 'trackingControls', 'pageUp', 'pageDown']) nodes[id] = element();
   nodes.playground.classList.add('hidden');
   const target = nodes.composeButton;
   target.textContent = 'Compose';
   nodes.playground.append(target);
+  nodes.navigationRoot.append(target);
   const doc = element();
   doc.documentElement = element();
   doc.querySelector = selector => nodes[selector.slice(1)];
@@ -119,4 +121,3 @@ test('stationary pointer confirms once, resets on leave, and ignores calibration
     globalThis.window = oldWindow;
   }
 });
-

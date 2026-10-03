@@ -23,6 +23,10 @@ const status = document.querySelector('#status');
 const calibration = document.querySelector('#calibration');
 const stage = document.querySelector('#calibrationStage');
 const playground = document.querySelector('#playground');
+const navigationRoot = document.querySelector('#navigationRoot');
+const trackingControls = document.querySelector('#trackingControls');
+const pageUpButton = document.querySelector('#pageUp');
+const pageDownButton = document.querySelector('#pageDown');
 const result = document.querySelector('#result');
 const cursor = document.querySelector('#gazeCursor');
 const dwellFill = document.querySelector('#dwellFill');
@@ -43,7 +47,7 @@ let cameraStarting = false;
 let cameraSession = 0;
 let paused = false;
 const pointerHandler = event => {
-  if (!paused) simulationPoint = { x: event.clientX, y: event.clientY };
+  simulationPoint = { x: event.clientX, y: event.clientY };
 };
 
 function setStatus(message) {
@@ -72,17 +76,29 @@ function activate(target) {
 function consumePoint(x, y, now = performance.now()) {
   if (accuracy.active && !paused && trackingMode && !document.hidden) {
     accuracy.sample({ x, y }, now);
+    const safetyTarget = resolveTarget(document, trackingControls, x, y);
+    if (safetyTarget !== pauseButton && safetyTarget !== stopButton) {
+      dwell.update(null, now);
+      clearFocus();
+      cursor.classList.remove('visible');
+      return;
+    }
+  }
+  if (!trackingMode || document.hidden || (!paused && playground.classList.contains('hidden')) ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+    dwell.reset({ preserveConfirmation: paused });
+    clearFocus();
+    cursor.classList.remove('visible');
     return;
   }
-  if (paused || !trackingMode || document.hidden || playground.classList.contains('hidden') ||
-      !Number.isFinite(x) || !Number.isFinite(y)) {
-    dwell.reset();
+  const target = resolveTarget(document, paused ? trackingControls : navigationRoot, x, y);
+  if (paused && target !== pauseButton && target !== stopButton) {
+    dwell.update(null, now);
     clearFocus();
     cursor.classList.remove('visible');
     return;
   }
   moveCursor(x, y);
-  const target = resolveTarget(document, playground, x, y);
   const selection = dwell.update(target, now);
   if (selection.target !== currentTarget) {
     clearFocus();
@@ -128,10 +144,12 @@ function renderCalibrationPoint() {
 }
 
 function beginCalibration() {
+  pageUpButton.disabled = true;
+  pageDownButton.disabled = true;
   accuracyButton.disabled = true;
   accuracy.cancel();
   if (cameraReady) resetCameraCalibration(window.webgazer);
-  dwell.reset();
+  dwell.reset({ preserveConfirmation: paused });
   clearFocus();
   simulationPoint = null;
   cursor.classList.remove('visible');
@@ -147,6 +165,8 @@ function finishCalibration() {
   playground.classList.remove('hidden');
   recalibrateButton.disabled = false;
   accuracyButton.disabled = false;
+  pageUpButton.disabled = paused;
+  pageDownButton.disabled = paused;
   setStatus(trackingMode === 'camera' ? 'Gaze tracking active. Look at a target and hold.' : 'Simulation active. Move the pointer over a target and hold.');
 }
 
@@ -213,7 +233,7 @@ async function enableCamera() {
 
 function resetTracking(preserveConfirmation = false) {
   accuracy.cancel();
-  dwell.reset({ preserveConfirmation: preserveConfirmation === true });
+  dwell.reset({ preserveConfirmation: preserveConfirmation === true || paused });
   clearFocus();
   simulationPoint = null;
   cursor.classList.remove('visible');
@@ -240,7 +260,10 @@ function stopTracking() {
   accuracyButton.disabled = true;
   pauseButton.disabled = true;
   pauseButton.textContent = 'Pause tracking';
+  pauseButton.setAttribute('aria-pressed', 'false');
   stopButton.disabled = true;
+  pageUpButton.disabled = true;
+  pageDownButton.disabled = true;
   calibration.classList.add('hidden');
   setStatus('Tracking stopped. Choose a mode to start again.');
 }
@@ -248,8 +271,11 @@ function stopTracking() {
 pauseButton.addEventListener('click', () => {
   if (!trackingMode) return;
   paused = !paused;
-  resetTracking();
+  resetTracking(true);
   pauseButton.textContent = paused ? 'Resume tracking' : 'Pause tracking';
+  pauseButton.setAttribute('aria-pressed', String(paused));
+  pageUpButton.disabled = paused || playground.classList.contains('hidden');
+  pageDownButton.disabled = pageUpButton.disabled;
   setStatus(paused ? 'Navigation paused. Camera stays on until Stop tracking.' : 'Tracking resumed. Hold on a target to confirm.');
   if (!calibration.classList.contains('hidden')) {
     renderCalibrationPoint();
@@ -257,6 +283,16 @@ pauseButton.addEventListener('click', () => {
   }
 });
 stopButton.addEventListener('click', stopTracking);
+for (const [button, direction] of [[pageUpButton, -1], [pageDownButton, 1]]) {
+  button.addEventListener('click', () => {
+    if (!trackingMode || paused || playground.classList.contains('hidden')) return;
+    window.scrollBy({ top: direction * Math.max(200, (window.innerHeight ?? 800) * .65), behavior: 'auto' });
+    resetTracking(true);
+  });
+}
+window.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && trackingMode && !paused && !pauseButton.disabled) pauseButton.click();
+});
 accuracyButton.addEventListener('click', () => {
   if (!trackingMode || paused || playground.classList.contains('hidden')) return;
   resetTracking();
