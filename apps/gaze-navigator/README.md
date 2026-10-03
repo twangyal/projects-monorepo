@@ -27,6 +27,7 @@ Open `http://localhost:4173`.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
 - `src/dwell.js` — shared, deterministic dwell state machine; prevents repeated confirmations and rejects sample gaps over 250 ms.
 - `tests/` — dependency-free unit and app integration tests.
+- `src/text-entry.js` / `src/keyboard.js` — explicit-field gaze typing, selection replacement, backspace, case toggle, and field limits.
 - `src/camera-loader.js` — camera-only CDN loading with a 15-second timeout and retry.
 - `src/accuracy.js` / `src/accuracy-view.js` — timed held-out measurement and local result display.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
@@ -67,7 +68,7 @@ Extracted target resolution into a separately tested module. Seven automated tes
 
 ### Working practice inbox — 2026-10-03
 
-Compose opens a draft editor; Save draft stores text in memory for this session. Search filters sample messages by subject/body, Select cycles through results, and Scroll moves the message list. Each message and composer control supports click, keyboard activation, and gaze confirmation. Text entry still requires a keyboard or the user's existing dictation/input tools. No messages are sent and no drafts survive refresh.
+Compose opens a draft editor; Save draft stores text in memory for this session. Search filters sample messages by subject/body, Select cycles through results, and Scroll moves the message list. Each message and composer control supports click, keyboard activation, and gaze confirmation. Text entry supports the gaze keyboard or the user's physical keyboard/dictation tools. No messages are sent and no drafts survive refresh.
 
 Nine automated tests passed, including search/selection, draft validation and detached snapshots, and the complete simulated gaze-to-composer path. Lint/build validate syntax only. No browser visual or webcam check was performed. Layout-changing actions clear pending dwell and require fresh pointer movement in simulation.
 
@@ -90,3 +91,9 @@ Pointer simulation no longer waits for WebGazer or contacts its CDN. Start camer
 ### Action confirmation regression — 2026-10-03
 
 Action-driven layout resets and scroll events now clear pending dwell while preserving an already confirmed target until gaze leaves it. This prevents continuously looking at Compose or Scroll from repeatedly invoking it after its own UI change. A camera-adapter regression reproduced three confirmations before the fix and one afterward; the scroll-event case also failed before the fix. Seventeen automated tests and syntax checks passed.
+
+### Gaze text entry — 2026-10-03
+
+Choose Type search/subject/message with gaze to open the on-screen keyboard for that explicit field. Confirm letters, digits, punctuation, Space, or Backspace; Uppercase toggles letter case. A local preview shows the edited value. Close the keyboard to reach Search or Save draft. Each key follows the same dwell/leave/re-enter rule as other controls. Physical typing and selection replacement remain available. Closing/saving a composer also closes its keyboard. Field limits are enforced and backspace does not split a Unicode surrogate pair.
+
+Twenty automated tests and syntax checks passed, including caret insertion, selection replacement, backspace, field limits, keyboard-to-search editing, and composer keyboard cleanup. Physical webcam accuracy and small-screen keyboard usability still require browser/device checks. No browser binary was available in this execution environment.

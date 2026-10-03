@@ -7,6 +7,7 @@ function element() {
   return {
     style: {}, children: [], textContent: '', disabled: false, value: '', dataset: {},
     focus() { this.focused = true; },
+    setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; },
     click() { this.emit('click'); },
     scrollBy(options) { this.lastScroll = options.top; },
     classList: { add: value => classes.add(value), remove: value => classes.delete(value), contains: value => classes.has(value) },
@@ -22,7 +23,7 @@ function element() {
 }
 
 test('stationary pointer confirms once, resets on leave, and ignores calibration', async () => {
-  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'cancelAccuracy'];
+  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview'];
   const nodes = Object.fromEntries(ids.map(id => [id, element()]));
   nodes.playground.classList.add('hidden');
   const target = nodes.composeButton;
@@ -47,12 +48,25 @@ test('stationary pointer confirms once, resets on leave, and ignores calibration
   try {
     await import('../src/app.js');
     assert.equal(nodes.messageList.children.length, 4);
+    assert.equal(nodes.keyboardKeys.children.length, 42);
+    nodes.editSearch.emit('click');
+    nodes.keyboardKeys.children.find(key => key.textContent === 'c').emit('click');
+    nodes.keyboardKeys.children.find(key => key.textContent === 'a').emit('click');
+    assert.equal(nodes.searchInput.value, 'ca');
+    assert.equal(nodes.keyboardPreview.textContent, 'ca');
+    nodes.keyboardKeys.children.find(key => key.textContent === 'Backspace').emit('click');
+    assert.equal(nodes.searchInput.value, 'c');
+    nodes.closeKeyboard.emit('click');
+    assert.equal(nodes.textKeyboard.classList.contains('hidden'), true);
     nodes.composeButton.emit('click');
     assert.equal(nodes.composer.classList.contains('hidden'), false);
+    nodes.editSubject.emit('click');
+    assert.equal(nodes.textKeyboard.classList.contains('hidden'), false);
     nodes.draftSubject.value = 'Test subject';
     nodes.draftBody.value = 'Test body';
     nodes.saveDraft.emit('click');
     assert.equal(nodes.draftList.children.length, 1);
+    assert.equal(nodes.textKeyboard.classList.contains('hidden'), true);
     assert.match(nodes.draftList.children[0].textContent, /Test subject/);
     nodes.searchInput.value = 'calibration';
     nodes.searchButton.emit('click');

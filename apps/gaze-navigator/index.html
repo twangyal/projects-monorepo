@@ -57,7 +57,8 @@
       </div>
       <div class="workspace">
         <label for="searchInput">Search practice messages</label>
-        <input id="searchInput" type="search" placeholder="Try calibration" />
+        <input id="searchInput" type="search" maxlength="200" placeholder="Try calibration" />
+        <button id="editSearch" data-gaze-target>Type search with gaze</button>
         <p>Type a query, then confirm Search. Select cycles through the results.</p>
         <div class="inbox-layout">
           <div id="messageList" aria-label="Practice messages" tabindex="0"></div>
@@ -66,10 +67,20 @@
         <section id="composer" class="hidden" aria-label="Practice draft">
           <label for="draftSubject">Subject</label>
           <input id="draftSubject" maxlength="200" />
+          <button id="editSubject" data-gaze-target>Type subject with gaze</button>
           <label for="draftBody">Message</label>
           <textarea id="draftBody" rows="4" maxlength="10000"></textarea>
+          <button id="editBody" data-gaze-target>Type message with gaze</button>
           <button id="saveDraft" data-gaze-target>Save draft</button>
           <button id="cancelDraft" data-gaze-target>Close composer</button>
+        </section>
+        <section id="textKeyboard" class="hidden" aria-labelledby="keyboardTitle">
+          <h3 id="keyboardTitle">Gaze keyboard</h3>
+          <p id="keyboardPreview" aria-live="polite"></p>
+          <p>Confirm a key, then look away before using it again. Your physical keyboard still works.</p>
+          <div id="keyboardKeys"></div>
+          <button id="keyboardCaps" data-gaze-target>Uppercase</button>
+          <button id="closeKeyboard" data-gaze-target>Close keyboard</button>
         </section>
         <h3>Session drafts</h3>
         <p>Drafts clear when you refresh. Nothing is sent.</p>

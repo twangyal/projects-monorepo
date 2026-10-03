@@ -7,6 +7,7 @@ function element() {
   return {
     style: {}, children: [], textContent: '', disabled: false, value: '', dataset: {},
     focus() { this.focused = true; },
+    setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; },
     click() { this.emit('click'); },
     scrollBy(options) { this.lastScroll = options.top; },
     classList: { add: value => classes.add(value), remove: value => classes.delete(value), contains: value => classes.has(value) },
@@ -22,7 +23,7 @@ function element() {
 }
 
 test('camera stop releases tracking and failed startup permits retry', async () => {
-  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'cancelAccuracy'];
+  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview'];
   const nodes = Object.fromEntries(ids.map(id => [id, element()]));
   const doc = element();
   doc.documentElement = element();

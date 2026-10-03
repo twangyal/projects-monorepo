@@ -74,3 +74,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 #accuracyStage { position: relative; height: min(260px, 30vh); margin: 20px 0; background: #091914; border-radius: 16px; }
 #accuracyDot { display: grid; place-items: center; pointer-events: none; }
 #accuracyData { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
+
+#textKeyboard { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(940px, calc(100% - 32px)); max-height: 55vh; overflow: auto; z-index: 4000; border: 1px solid #456b5c; border-radius: 20px; background: #0a1b16; padding: 18px; box-shadow: 0 10px 60px #0008; }
+#textKeyboard h3 { margin: 0; }
+#keyboardPreview { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 4em; overflow: auto; padding: 10px; background: #07110e; }
+#keyboardKeys { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+#keyboardKeys button { min-height: 54px; padding: 8px; }
+@media (max-width: 650px) { #keyboardKeys { grid-template-columns: repeat(5, minmax(0, 1fr)); } #textKeyboard { max-height: 60vh; } }

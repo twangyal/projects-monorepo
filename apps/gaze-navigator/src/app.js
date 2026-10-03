@@ -3,6 +3,7 @@ import { resolveTarget } from './resolver.js';
 import { setupWorkspace } from './workspace-view.js';
 import { setupAccuracyCheck } from './accuracy-view.js';
 import { createCameraLoader } from './camera-loader.js';
+import { setupKeyboard } from './keyboard.js';
 
 const dwell = createDwellTracker();
 const loadCamera = createCameraLoader(document, window);
@@ -231,7 +232,11 @@ window.addEventListener('resize', resetTracking);
 window.addEventListener('scroll', () => resetTracking(true), true);
 
 startButton.addEventListener('click', enableCamera);
-setupWorkspace(document, () => resetTracking(true));
+const keyboard = setupKeyboard(document, () => resetTracking(true));
+setupWorkspace(document, () => {
+  keyboard.sync();
+  resetTracking(true);
+});
 simulateButton.addEventListener('click', enableSimulation);
 recalibrateButton.addEventListener('click', () => {
   accuracyButton.disabled = true;
