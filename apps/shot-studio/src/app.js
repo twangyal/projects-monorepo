@@ -53,7 +53,7 @@ $('settings').addEventListener('change',e=>{
 $('play').onclick=()=>{if(playing){stop();return;}if(time>=totalDuration(project))time=0;playing=true;start=performance.now()-time*1000;$('play').textContent='Pause rehearsal';};
 $('stop').onclick=()=>{stop();time=0;};$('scrub').oninput=()=>{stop();time=Number($('scrub').value);};
 $('add').onclick=()=>{const p=structuredClone(project);p.shots.push({...structuredClone(p.shots[selected]),name:`Shot ${p.shots.length+1}`,duration:2});try{validateProject(p);selected=p.shots.length-1;time=shotStart(project.shots.length);apply(p);}catch(e){status(e.message);}};
-$('remove').onclick=()=>{if(project.shots.length===1)return;const p=structuredClone(project);p.shots.splice(selected,1);selected=Math.min(selected,p.shots.length-1);time=0;apply(p);};
+$('remove').onclick=()=>{if(project.shots.length===1||busy())return;stop();const p=structuredClone(project);p.shots.splice(selected,1);selected=Math.min(selected,p.shots.length-1);apply(p);time=shotStart(selected);};
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 $('save').onclick=()=>download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),'shot-studio.json');
 let importEpoch=0;
