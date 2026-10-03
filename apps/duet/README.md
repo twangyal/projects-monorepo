@@ -63,6 +63,13 @@ For a full backup, stop the service and copy the **entire data directory**, incl
 
 The app polls shared state approximately once a second, estimates server clock offset, and corrects substantial playback drift. It uses actual native media playback and authenticated range-capable audio responses. Pauses and seeks apply to both seats; conflicting stale commands report an error instead of silently overwriting newer state.
 
+Playback revisions also advance when a song automatically changes, the final
+song stops, or the service pauses playing audio on restart. A delayed command
+from an earlier song or before that restart is rejected; refresh the latest
+state and retry. Ordinary elapsed playback and repeated polling keep the same
+revision. Observed song transitions are saved so other connections see the same
+transport generation.
+
 Automated verification targets Chromium with independent contexts and real normalized audio. Same-machine drift checks establish the local shared protocol; they do not establish synchronization on arbitrary networks, physical output-device latency, or support in every browser. Ogg/Opus playback and autoplay behavior require separate evaluation elsewhere.
 
 ## Verify

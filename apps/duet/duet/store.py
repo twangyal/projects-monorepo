@@ -200,7 +200,9 @@ def effective_playback(room, now):
     if playing:
         position += max(0.0, now * 1000 - anchor['updatedAt']) / 1000
     playlist = room['playlist']
+    revision = anchor['revision']
     while playing and position >= tracks[current]['duration']:
+        revision += 1
         index = playlist.index(current) if current in playlist else -1
         if index < 0 or index + 1 >= len(playlist):
             position = tracks[current]['duration']
@@ -209,7 +211,7 @@ def effective_playback(room, now):
         position -= tracks[current]['duration']
         current = playlist[index + 1]
     return {'trackId': current, 'playing': playing,
-            'position': min(position, tracks[current]['duration']), 'revision': anchor['revision']}
+            'position': min(position, tracks[current]['duration']), 'revision': revision}
 
 
 class Store:
@@ -310,11 +312,17 @@ class Store:
         return room, self._role(room, token)
 
     def _snapshot(self, room, role, now):
+        playback = effective_playback(room, now)
+        if playback['revision'] != room['playback']['revision']:
+            # Persist semantic transitions once, so later polls/connections and
+            # a backwards clock cannot return an earlier transport generation.
+            room['playback'] = {**playback, 'updatedAt': now * 1000}
+            self._write(room)
         # Round-trip the public fields so callers cannot mutate any shared value.
         result = {key: room[key] for key in ('id', 'title', 'createdAt', 'profiles', 'tracks',
                                             'ratings', 'playlist', 'playlistRevision', 'memories')}
         result.update(myRole=role, serverTime=now * 1000, blend=rank_tracks(room['tracks'], room['ratings']),
-                      playback=effective_playback(room, now))
+                      playback=playback)
         return json.loads(json.dumps(result, ensure_ascii=False, allow_nan=False))
 
     @staticmethod
@@ -423,20 +431,35 @@ class Store:
         return self._playlist(room_id, token, track_ids, revision, False)
 
     def set_playback(self, room_id, token, track_id, playing, position, revision):
+        conflict = None
         with self._transaction():
             room, role = self._authorized(room_id, token)
-            self._revision(revision, room['playback']['revision'])
-            if type(playing) is not bool:
-                raise DomainError(400, 'Playing must be a boolean.')
-            duration = self._track(room, track_id)['duration'] if track_id is not None else 0
-            position = _number(position, 0, duration, 'Playback position')
-            if track_id is None and playing:
-                raise DomainError(400, 'Playback without a selected track must be paused at position zero.')
             now = self._clock()
-            room['playback'] = {'trackId': track_id, 'playing': playing, 'position': position,
-                                'revision': revision + 1, 'updatedAt': now * 1000}
-            self._write(room)
-            return self._snapshot(room, role, now)
+            effective = effective_playback(room, now)
+            try:
+                self._revision(revision, effective['revision'])
+            except DomainError as error:
+                if error.status != 409:
+                    raise
+                # Commit only the observed automatic transition, never the
+                # rejected command. Raising inside this transaction would
+                # roll it back and allow a backwards clock to revive it.
+                if effective['revision'] != room['playback']['revision']:
+                    room['playback'] = {**effective, 'updatedAt': now * 1000}
+                    self._write(room)
+                conflict = error
+            else:
+                if type(playing) is not bool:
+                    raise DomainError(400, 'Playing must be a boolean.')
+                duration = self._track(room, track_id)['duration'] if track_id is not None else 0
+                position = _number(position, 0, duration, 'Playback position')
+                if track_id is None and playing:
+                    raise DomainError(400, 'Playback without a selected track must be paused at position zero.')
+                room['playback'] = {'trackId': track_id, 'playing': playing, 'position': position,
+                                    'revision': revision + 1, 'updatedAt': now * 1000}
+                self._write(room)
+                return self._snapshot(room, role, now)
+        raise conflict
 
     def add_track(self, room_id, token, track_id, title, artist, duration):
         _id(track_id, 'Track ID')
@@ -521,5 +544,7 @@ class Store:
             for (room_id,) in rows:
                 room = self._read(room_id)
                 self._anchor(room, now)
+                if room['playback']['playing']:
+                    room['playback']['revision'] += 1
                 room['playback']['playing'] = False
                 self._write(room)

@@ -88,6 +88,33 @@ class ServerTests(unittest.TestCase):
         self.guest_cookie = headers['Set-Cookie'].split(';', 1)[0]
         return joined
 
+    def test_http_rejects_stale_transport_after_advance_stop_and_restart_pause(self):
+        self.join()
+        clock = [1_700_000_000.0]
+        self.server.store.now = lambda: clock[0]
+        first, second = 'a' * 32, 'b' * 32
+        for track in (first, second):
+            self.server.store.add_track(self.room, self.host, track, 'Song', '', 10)
+        self.server.store.set_playlist(self.room, self.host, [first, second], 0)
+        endpoint = self.endpoint + '/playback'
+        stale = {'trackId': first, 'playing': True, 'position': 0, 'revision': 1}
+        self.assertEqual(self.request('PUT', endpoint, {**stale, 'revision': 0}, token=self.host)[0], 200)
+        clock[0] += 12
+        self.assertEqual(self.request('PUT', endpoint, stale, token=self.guest)[0], 409)
+        current = self.snapshot()['playback']
+        self.assertEqual(current, {'trackId': second, 'playing': True, 'position': 2, 'revision': 2})
+        self.assertEqual(self.request('PUT', endpoint, current, token=self.guest)[0], 200)
+        clock[0] += 8
+        self.assertEqual(self.request('PUT', endpoint, {**current, 'revision': 3}, token=self.host)[0], 409)
+        self.assertEqual(self.snapshot()['playback']['revision'], 4)
+        self.assertFalse(self.snapshot()['playback']['playing'])
+        restarted = {**stale, 'revision': 4}
+        self.assertEqual(self.request('PUT', endpoint, restarted, token=self.host)[0], 200)
+        self.server.store.pause_all()
+        self.assertEqual(self.request('PUT', endpoint, {**restarted, 'revision': 5}, token=self.guest)[0], 409)
+        self.assertEqual(self.snapshot()['playback']['revision'], 6)
+        self.assertFalse(self.snapshot()['playback']['playing'])
+
     def snapshot(self, token=None):
         status, _, room = self.request('GET', self.endpoint, token=token or self.host)
         self.assertEqual(status, 200, room)
@@ -575,7 +602,7 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(room['memories'], [memory])
             self.assertFalse(room['playback']['playing'])
             self.assertEqual(room['playback']['trackId'], track_id)
-            self.assertEqual(room['playback']['revision'], 1)
+            self.assertEqual(room['playback']['revision'], 2)
             self.assertGreaterEqual(room['playback']['position'], .25)
             self.assertLessEqual(room['playback']['position'], min(3, .25 + time.monotonic() - command_start + .1))
             native = endpoint + '/tracks/' + track_id + '/audio'
