@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "local-git-history"
-version = "0.2.0"
+version = "0.3.0"
 description = "Read-only, evidence-linked reports for committed source history"
 requires-python = ">=3.11"
 dependencies = []
@@ -21,3 +21,4 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
+

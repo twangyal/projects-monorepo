@@ -2,7 +2,7 @@
 
 A local evidence explorer for unfamiliar code. Select a committed file range or Python function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, and available rename evidence.
 
-The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
+The tool organizes Git evidence and optional user-supplied discussion excerpts. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, verify supplied excerpts, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
 
 ## Run
 
@@ -43,6 +43,62 @@ The listing supports `--format json` for automation and includes the resolved co
 
 Python `.py` and `.pyi` files support ordinary and async functions, methods, and nested functions. Names include enclosing classes/functions (`Example.process`, `outer.inner`). Decorators are included in the selected range. Source is parsed with the running Python version's standard-library AST; nothing is imported or executed. Syntax errors and unsupported language versions produce guidance to use `--lines`. Repeated definitions with the same qualified name require a manual range. Functions over 200 lines are listed, but must be investigated with a smaller `--lines` selection. Other languages retain manual range support. Exactly one of `--lines` or `--function` is required.
 
+### Attach documented discussion context
+
+Use `explain --context context.json` to include excerpts you have copied from a PR,
+issue or discussion. The command reads a local JSON file; it never fetches the URL.
+First produce a JSON report, then copy its exact `revision` and a full commit ID
+from `blame`, `changes` or `renames` into this envelope:
+
+```json
+{
+  "schema_version": 1,
+  "revision": "<exact report revision, 40 or 64 lowercase hex characters>",
+  "records": [
+    {
+      "commit": "<full commit ID from the displayed evidence>",
+      "url": "https://github.com/owner/repo/pull/12#issuecomment-42",
+      "title": "Review of the answer helper",
+      "author": "reviewer-name",
+      "excerpt": "Paste the relevant source excerpt here, preserving its wording."
+    }
+  ]
+}
+```
+
+Replace the placeholders with your report's IDs and the source's actual URL,
+author, title and excerpt. Regenerate the report at the same immutable revision:
+
+```sh
+python3 -m git_history explain --repo /path/to/repository \
+  --ref FULL_REVISION_FROM_REPORT --file src/example.py --lines 20:45 \
+  --context context.json --output report-with-context.html
+```
+
+HTML places imported excerpts in **Supplied discussion context**, separately from
+Git evidence and the derived synopsis. JSON adds `supplied_context` and
+`supplied_context_note`. These are user-supplied claims: the source, author,
+wording, repository relevance and commit association are **not verified**.
+A matching commit ID proves only that this commit appears in the displayed Git
+evidence; it does not establish rationale. Opening a source link uses your browser.
+
+The envelope's revision must match the report's resolved revision. Every record
+must reference a displayed blame/change/rename commit; even an existing repository
+commit is rejected if it is absent from this bounded report. Update the context
+file deliberately when changing revisions, selections or history limits.
+
+Input is a regular UTF-8 JSON file, at most **256 KiB**, containing at most **50**
+records. Unknown fields, duplicate keys and unsupported schema versions are
+rejected. Titles are limited to 300 characters, authors to 200, excerpts to 4,000,
+and URLs to 2,000. Nonempty text can contain newlines/tabs, but not other ASCII
+controls or lone surrogates. Links must be credential-free HTTPS GitHub
+`pull`, `issues`, or `discussions` URLs, or GitLab `-/merge_requests`/`-/issues`
+URLs (including nested groups), with numeric IDs. Queries, escaped paths, custom
+ports and unrelated hosts are rejected. Common comment anchors are supported:
+`issuecomment-42`, `discussioncomment-42`, `discussion_r42`, and GitLab `note_42`.
+No context is required for the original offline flow. Invalid imports fail before
+any output publication, preserving an existing report even with `--force`.
+
 ### Read the synopsis
 
 The report starts with a factual synopsis: which commits account for the current selected lines, up to three available range changes with quoted message excerpts, whole-file rename evidence, and completeness notes. Each observation links to the underlying report evidence. The oldest displayed change is not necessarily a function's introduction. Messages record author statements; the tool does not treat them as verified rationale or infer intent from a patch.
@@ -62,7 +118,7 @@ python3 -m venv .venv
 
 ## Output and limits
 
-- HTML is the default. Omit `--output` or use `--output -` for stdout. JSON uses report schema version 1 and the fields defined in `git_history/model.py`, plus a derived `synopsis` object. `selected_function` is null for manual ranges. These fields extend the original schema; consumers should allow additional fields.
+- HTML is the default. Omit `--output` or use `--output -` for stdout. JSON uses report schema version 1 and the fields defined in `git_history/model.py`, plus derived `synopsis` and `supplied_context_note` objects/text. `selected_function` is null for manual ranges. These fields extend the original schema; consumers should allow additional fields.
 - Existing output files are preserved unless `--force` is supplied. Git metadata is protected even with `--force`, including bare and separate Git directories. Output publication is atomic; missing parent directories are reported.
 - Select at most **200 lines** from a source blob no larger than **512 KiB**. Binary/NUL-containing, non-UTF-8, symbolic-link and submodule inputs are rejected.
 - Function catalogs are limited to **10,000 definitions**, **2 MiB** of total qualified-name text, and **8 MiB** of serialized output. Files exceeding these limits can still be investigated with manual ranges. CRLF and UTF-8 BOM are supported; bare CR newlines require manual ranges because Python and Git count them differently.
@@ -90,4 +146,5 @@ ruff check .
 
 Tests create temporary repositories and cover roots, line edits and insertions, rename-plus-edit, merges, shallow and bare repositories, special filenames, invalid input, Git configuration side effects, output protection, HTML escaping/anchors, function selection from immutable snapshots, synopsis evidence, CLI behavior, subprocess timeouts and byte caps. No existing repository is modified by the tests.
 
-Future work includes optional user-supplied PR/discussion evidence and evidence-grounded semantic summaries. The current report remains useful offline without either.
+Future work includes evidence-grounded semantic summaries and optional explicitly authorized source fetching. Supplied discussion imports are available offline today. The current report remains useful offline without either.
+

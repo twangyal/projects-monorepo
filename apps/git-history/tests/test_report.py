@@ -102,6 +102,8 @@ class ReportTests(unittest.TestCase):
         report = example_report()
         expected = asdict(report)
         expected["synopsis"] = build_synopsis(report)
+        from git_history.context import CONTEXT_NOTE
+        expected["supplied_context_note"] = CONTEXT_NOTE
         self.assertEqual(json.loads(render_json(report)), expected)
 
     def test_html_synopsis_shares_facts_and_links_all_commit_observations(self):

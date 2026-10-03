@@ -7,6 +7,7 @@ import re
 from urllib.parse import urlsplit
 
 from .model import Report
+from .context import CONTEXT_NOTE, validate_records
 from .synopsis import build_synopsis, commit_anchor as _commit_anchor
 
 MAX_REPORT_BYTES = 8 * 1024 * 1024
@@ -19,7 +20,9 @@ def _bounded(text: str) -> str:
 
 
 def render_json(report: Report) -> str:
+    validate_records(report.supplied_context, report)
     data = asdict(report)
+    data["supplied_context_note"] = CONTEXT_NOTE
     data["synopsis"] = build_synopsis(report)
     return _bounded(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
 
@@ -104,6 +107,7 @@ def _patch_counts(patch: str) -> tuple[int, int]:
 
 
 def render_html(report: Report) -> str:
+    context = validate_records(report.supplied_context, report)
     synopsis = build_synopsis(report)
     remote = _remote_url(report.remote_url)
     changes = {change.commit: change for change in report.changes}
@@ -168,6 +172,24 @@ def render_html(report: Report) -> str:
             link += ' ' + external(rename.commit)
         rename_rows.append(f'<tr{row_id}><td>{link}</td><td><code>{escape(rename.old_path)}</code></td><td><code>{escape(rename.new_path)}</code></td><td>{rename.similarity}%</td></tr>')
 
+    context_rows = []
+    for record in context:
+        context_rows.append(
+            '<article class="change">'
+            f'<h3>{escape(record.title)}</h3><p class="muted">Supplied author: {escape(record.author)}</p>'
+            f'<p><a href="#{_commit_anchor(record.commit)}">Displayed commit '
+            f'<code>{escape(record.commit[:12])}</code></a> · '
+            f'<a href="{escape(record.url)}" rel="noreferrer noopener" target="_blank">'
+            'Open supplied source ↗</a></p>'
+            f'<pre class="message">{escape(record.excerpt)}</pre></article>'
+        )
+    context_content = ''.join(context_rows) or '<p class="empty">No discussion excerpts were supplied.</p>'
+    context_section = (
+        '<section id="context"><div class="section-title"><span>06</span>'
+        '<h2>Supplied discussion context</h2></div>'
+        f'<p class="muted">{escape(CONTEXT_NOTE)}</p>{context_content}</section>'
+    )
+
     warnings = ''.join(f'<li>{escape(warning)}</li>' for warning in synopsis["completeness_notes"])
     attribution_section = '<h3>Additional attributed commits</h3>' + ''.join(other_commits) if other_commits else ''
     rename_content = ('<div class="table-scroll"><table><thead><tr><th>Commit</th><th>Previous path</th><th>New path</th><th>Similarity</th></tr></thead><tbody>' + ''.join(rename_rows) + '</tbody></table></div>') if rename_rows else '<p class="empty">No whole-file rename evidence was returned within the history limit.</p>'
@@ -176,7 +198,7 @@ def render_html(report: Report) -> str:
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <title>{escape(report.path)} — Git History</title><style>{STYLE}</style></head><body>
 <a class="skip" href="#source">Skip to source</a><header><a class="brand" href="#overview"><span aria-hidden="true">↳</span> Git History</a><span class="badge">LOCAL EVIDENCE REPORT</span></header>
-<div class="layout"><nav aria-label="Report sections"><p class="eyebrow">IN THIS REPORT</p><a href="#overview">Overview</a><a href="#synopsis">Evidence synopsis</a><a href="#source">Selected source</a><a href="#blame">Line attribution</a><a href="#timeline">Change timeline</a><a href="#renames">File renames</a><a href="#limits">Evidence & limits</a></nav>
+<div class="layout"><nav aria-label="Report sections"><p class="eyebrow">IN THIS REPORT</p><a href="#overview">Overview</a><a href="#synopsis">Evidence synopsis</a><a href="#source">Selected source</a><a href="#blame">Line attribution</a><a href="#timeline">Change timeline</a><a href="#renames">File renames</a><a href="#limits">Evidence & limits</a><a href="#context">Supplied context</a></nav>
 <main><section id="overview" class="hero"><p class="eyebrow">UNDERSTAND THE HISTORY. INSPECT THE EVIDENCE.</p><h1>{escape(report.path)}</h1><p class="subtitle">{escape(report.repo_name)} · lines {report.start_line}–{report.end_line}</p><div class="revision"><span>COMMITTED SNAPSHOT</span><code>{escape(report.revision)}</code><span>requested as {escape(report.requested_ref)}</span></div><div class="metrics"><div><strong>{len(report.blame)}</strong><span>attributed lines</span></div><div><strong>{len(report.changes)}</strong><span>range changes</span></div><div><strong>{len(report.renames)}</strong><span>rename records</span></div></div></section>
 <aside class="evidence-note"><strong>What this report can tell you</strong><p>Source, diffs and attribution show observed changes. Commit messages quote what their authors recorded. <strong>Intent is not established</strong> by a diff alone; absent an explicit explanation, the reason remains unknown. PR discussions and issue conversations have not been fetched.</p></aside>
 {_render_synopsis(synopsis)}
@@ -185,6 +207,7 @@ def render_html(report: Report) -> str:
 <section id="timeline"><div class="section-title"><span>03</span><h2>Change timeline</h2></div><p class="muted">Newest first. Patches show the selected range as Git traces it backwards.</p>{''.join(timeline)}{attribution_section}</section>
 <section id="renames"><div class="section-title"><span>04</span><h2>File renames</h2></div><p class="muted">Git's similarity matching is heuristic. A rename is file-path evidence, not proof that a function kept the same meaning.</p>{rename_content}</section>
 <section id="limits"><div class="section-title"><span>05</span><h2>Evidence & limits</h2></div><ul class="warnings">{warnings}</ul><p class="muted">No network requests or model-generated explanations were used. Missing history, merges, moves and rewritten code can limit attribution. Review the actual evidence before drawing conclusions.</p></section>
+{context_section}
 <footer>Generated locally by Git History · report schema {report.schema_version} · no external resources</footer></main></div></body></html>'''
     return _bounded(html)
 

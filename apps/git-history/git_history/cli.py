@@ -10,6 +10,7 @@ import sys
 import tempfile
 
 from .reader import inspect_repository, list_functions
+from .context import load_context
 from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
 
@@ -95,6 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     explain.add_argument("--format", choices=("html", "json"), default="html")
     explain.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
     explain.add_argument("--force", action="store_true", help="Replace an existing report output file.")
+    explain.add_argument("--context", metavar="FILE", help="Local JSON discussion excerpts; supplied claims, not verified intent.")
     functions.add_argument("--format", choices=("text", "json"), default="text")
     args = parser.parse_args(argv)
     try:
@@ -117,6 +119,8 @@ def main(argv: list[str] | None = None) -> int:
         report = inspect_repository(args.repo, args.file, *(args.lines or (None, None)),
                                     ref=args.ref, max_commits=args.max_commits,
                                     function=args.function)
+        if args.context is not None:
+            report.supplied_context = load_context(args.context, report)
         text = render_html(report) if args.format == "html" else render_json(report)
         if args.output and args.output != "-":
             write_report(Path(args.output), text, args.repo, args.force)
