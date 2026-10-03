@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "measuredDate": "2026-10-03",
+  "scope": "Generated synthetic-fixture subprocess memory observations and complete verification, not real-world sound-quality evaluation.",
+  "local": {
+    "pythonTests": 58,
+    "typescriptTests": 6,
+    "productionChromiumTests": 16,
+    "memoryProbe": {
+      "beforePeakVirtualKiB": 519064,
+      "afterPeakVirtualKiB": 419292,
+      "afterPeakResidentKiB": 33880,
+      "hardAddressSpaceLimitBytes": 536870912,
+      "residentMonitorLimitKiB": 524288,
+      "change": "Child numerical-library thread limits are one; MALLOC_ARENA_MAX is two. Parent environment and existing process bounds remain unchanged."
+    }
+  },
+  "ci": {
+    "commit": "f2838ecf49631c38415ac83051ebf3548f75de56",
+    "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37157285921",
+    "conclusion": "success",
+    "python": "3.11.16",
+    "ffmpeg": "6.1.1-3ubuntu5",
+    "platform": "ubuntu-latest"
+  }
+}

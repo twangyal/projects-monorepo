@@ -60,7 +60,7 @@ Description: A simulated trading environment where users describe strategies in 
 ## 9. Spotify for couples
 
 Path: apps/duet
-Status: ACTIVE
+Status: MAINTENANCE
 Progress: Duet pairs two private participant seats, normalizes supplied audio locally, collects independent ratings, builds an explainable shared mix, synchronizes native playback, and saves dated song memories. The Linux loopback MVP works with separate browser profiles, durable SQLite/media storage, private recovery links, and token-free metadata export. Production browser checks cover both seats, drift/seek/pause, failed imports, recovery, and preserved drafts; real service restart and five-minute media processing are verified. Secure multi-device deployment and streaming-catalog integration remain future milestones; no remote listening or musical-similarity claim is made. Initial milestone: issue #18.
 Description: A shared music experience that combines two people's tastes, supports listening together, and builds a musical history of their relationship. Couples can discover mutual favorites, create playlists for dates or trips, and attach songs to shared memories. Each person's preferences contribute to recommendations while leaving room to explore unfamiliar music together. Over time, the shared collection becomes a soundtrack to the relationship. A portfolio version would demonstrate pairing two profiles, creating a blended playlist, a shared listening session, and a timeline of songs linked to memories.
 
