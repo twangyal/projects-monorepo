@@ -27,7 +27,7 @@ Description: A beginner-friendly digital audio workstation that turns hummed or 
 
 Path: apps/git-history
 Status: MAINTENANCE
-Progress: A local Python CLI produces portable HTML/JSON reports for committed source ranges, with per-line blame, range patches, quoted commit messages, and rename evidence. Reads are bounded and repository configuration cannot silently replace objects, remap author names, or execute external evidence helpers. Reports disclose shallow/merge/truncation limits and never infer intent from diffs. Committed Python functions can be listed and selected by qualified name, including decorators and nested methods, and an evidence-linked synopsis makes attribution and available changes readable. The core offline portfolio workflow is complete in issues #11 and #13; bounded offline import of user-supplied discussion excerpts adds unverified source-linked context in issue #17 (104 tests). Source fetching and semantic synthesis remain future milestones.
+Progress: A local Python CLI produces portable HTML/JSON reports for committed source ranges, with per-line blame, range patches, quoted commit messages, and rename evidence. Reads are bounded and repository configuration cannot silently replace objects, remap author names, or execute external evidence helpers. Reports disclose shallow/merge/truncation limits and never infer intent from diffs. Committed Python functions can be listed and selected by qualified name, including decorators and nested methods, and an evidence-linked synopsis makes attribution and available changes readable. The core offline portfolio workflow is complete in issues #11 and #13; bounded offline import of user-supplied discussion excerpts adds unverified source-linked context in issue #17 (124 tests across both compatible import formats). Source fetching and semantic synthesis remain future milestones.
 Description: A developer assistant that explains how and why code evolved by tracing lines and functions through commits, diffs, pull requests, and available discussions. Users select a piece of code and receive a readable history of its introduction and subsequent changes, with links to supporting evidence. The assistant distinguishes documented reasoning from its own inference when the original intent is missing. The main purpose is to help developers understand unfamiliar code and the decisions behind it. A portfolio version would investigate selected code in one repository and produce a source-linked explanation of its history. (Maybe make it an extension)
 
 ## 5. Clothing designer
@@ -59,8 +59,9 @@ Description: A simulated trading environment where users describe strategies in 
 
 ## 9. Spotify for couples
 
-Path: N/A
-Status: IDEA
+Path: apps/duet
+Status: ACTIVE
+Progress: Duet pairs two private participant seats, normalizes supplied audio locally, collects independent ratings, builds an explainable shared mix, synchronizes native playback, and saves dated song memories. The Linux loopback MVP works with separate browser profiles, durable SQLite/media storage, private recovery links, and token-free metadata export. Production browser checks cover both seats, drift/seek/pause, failed imports, recovery, and preserved drafts; real service restart and five-minute media processing are verified. Secure multi-device deployment and streaming-catalog integration remain future milestones; no remote listening or musical-similarity claim is made. Initial milestone: issue #18.
 Description: A shared music experience that combines two people's tastes, supports listening together, and builds a musical history of their relationship. Couples can discover mutual favorites, create playlists for dates or trips, and attach songs to shared memories. Each person's preferences contribute to recommendations while leaving room to explore unfamiliar music together. Over time, the shared collection becomes a soundtrack to the relationship. A portfolio version would demonstrate pairing two profiles, creating a blended playlist, a shared listening session, and a timeline of songs linked to memories.
 
 ## 10. Art protection using color theory
