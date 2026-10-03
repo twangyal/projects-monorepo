@@ -62,8 +62,8 @@
 - [x] Add real Chromium tests for offline results, fixture selection, local mock integration/errors/cancel/retry, safe imported reports, and responsive controls.
 - [x] Inspect red CI and implement the interface without external page-load requests.
 - [x] Keep setup documentation honest about Ollama 0.35+ and local-only mode; no auto-install or hosted API keys.
-- [ ] Verify all Node/browser/lint/build checks at desktop, narrow, short, and compact-boundary viewports.
-- [ ] Request a fresh whole-change review, fix Important/Critical findings, record exact CI/head evidence and model/hardware limits.
+- [x] Verify all Node/browser/lint/build checks at desktop, narrow, short, and compact-boundary viewports.
+- [x] Request a fresh whole-change review, fix Important/Critical findings, record exact CI/head evidence and model/hardware limits.
 - [ ] Commit documentation, update/close #6 according to actual completion; reassess repository immediately.
 
 ## Sources checked 2026-10-03
@@ -87,3 +87,6 @@
 - Core CI 37135383261 at c3cf372: 55 Node tests, lint/build, and the existing 24 Chromium cases passed.
 - UI tests-first CI 37135623720 at 8c84229: 55 Node tests and existing 24 browser cases passed; all 24 new lab cases failed at the expected missing-page HTTP 404.
 - Platform research selected explicit tev1:0.8b-q8_0 as the default GGUF candidate, rather than a generic tag that can choose MLX/Safetensors. Actual model inference has not run.
+
+- Full native CI 37136513606 at f0a7b6d passed 55 Node tests, lint/build, and all 48 Chromium cases (24 existing navigation + 24 lab).
+- Fresh independent whole-change review: no Critical/Important findings. Minor clarification implemented: three no-eligible cases are deterministic boundary abstentions before inference/preflight, explicitly identified in UI/README; overall metrics measure the complete adapter.

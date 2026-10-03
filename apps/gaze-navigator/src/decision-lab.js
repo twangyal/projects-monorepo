@@ -69,6 +69,7 @@ function cellText(fixture, row) {
   if (!row) return 'Untested';
   if (row.error) return `Error: ${row.error}`;
   const label = targetLabel(fixture, row.decision.targetId);
+  if (row.decision.targetId === null && !eligibleTargets(fixture.task).length) return label + '\nNo eligible target';
   return row.decision.confidence === null ? label : `${label}\nConfidence score: ${row.decision.confidence.toFixed(2)}`;
 }
 
