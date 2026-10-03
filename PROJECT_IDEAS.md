@@ -32,8 +32,9 @@ Description: A developer assistant that explains how and why code evolved by tra
 
 ## 5. Clothing designer
 
-Path: N/A
-Status: IDEA
+Path: apps/clothing-studio
+Status: MAINTENANCE
+Progress: A local T-shirt concept studio provides adjustable silhouettes, colors/textures, clipped freehand sketches, an approximate photo overlay with direct/numeric placement, session undo/redo, validated local autosave/backups, and garment/preview PNG exports. The core concept-to-preview workflow is complete in issue #14, verified by 36 unit tests and 12 production Chromium tests, including import races, failed storage, startup draft preservation and PNG content/transparency. The overlay does not predict fit, drape, or body measurements; generated concepts and realistic virtual try-on remain future work.
 Description: A clothing design workspace where users turn sketches, descriptions, and visual references into garment concepts, then preview them on an approximate representation of themselves created from an uploaded body photo. Users can explore silhouettes, fabrics, colors, and combinations before refining a design. The initial focus is visual concept development and virtual try-on, with the preview presented as an approximation of appearance. Sewing patterns and manufacturing specifications are longer-term extensions. A first portfolio version would support one garment category and a complete concept-to-preview workflow.
 
 ## 6. AI karaoke generator
