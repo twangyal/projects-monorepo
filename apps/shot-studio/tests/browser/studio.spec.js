@@ -56,3 +56,17 @@ test('desktop/mobile controls work and lack of headset has an honest message',as
   await page.getByRole('button',{name:'Remove shot',exact:true}).click();
   await expect(page.locator('#shots button')).toHaveCount(1);
 });
+
+test('page lifecycle restoration resumes rehearsal and context loss retains backups',async({page})=>{
+  await page.goto('/');
+  await page.evaluate(()=>{
+    dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));
+    dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+  });
+  await page.getByRole('button',{name:'Rehearse',exact:true}).click();
+  await expect.poll(async()=>Number((await page.locator('#time').textContent()).split(' / ')[0])).toBeGreaterThan(.5);
+  await page.locator('#stage').evaluate(c=>c.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
+  await expect(page.getByRole('button',{name:'Export WebM',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Enter VR',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Save project',exact:true})).toBeEnabled();
+});
