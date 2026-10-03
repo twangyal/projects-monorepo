@@ -64,7 +64,7 @@
 - [x] Keep setup documentation honest about Ollama 0.35+ and local-only mode; no auto-install or hosted API keys.
 - [x] Verify all Node/browser/lint/build checks at desktop, narrow, short, and compact-boundary viewports.
 - [x] Request a fresh whole-change review, fix Important/Critical findings, record exact CI/head evidence and model/hardware limits.
-- [ ] Commit documentation, update/close #6 according to actual completion; reassess repository immediately.
+- [x] Commit documentation, update/close #6 according to actual completion; reassess repository immediately.
 
 ## Sources checked 2026-10-03
 
@@ -90,3 +90,5 @@
 
 - Full native CI 37136513606 at f0a7b6d passed 55 Node tests, lint/build, and all 48 Chromium cases (24 existing navigation + 24 lab).
 - Fresh independent whole-change review: no Critical/Important findings. Minor clarification implemented: three no-eligible cases are deterministic boundary abstentions before inference/preflight, explicitly identified in UI/README; overall metrics measure the complete adapter.
+
+- Final correction CI 37136868563 at 8c1910b passed 55 Node tests, lint/build, and all 48 Chromium cases. The fresh reviewer verified the boundary-abstention clarification and reported no remaining Critical/Important findings. Actual model inference and physical webcam measurements are separate follow-up work.
