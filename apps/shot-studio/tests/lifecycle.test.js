@@ -48,3 +48,20 @@ test('an XR session ended during async setup never returns an active session',as
   await assert.rejects(enterXR({gl:{makeXRCompatible:async()=>{endHandler();}}},()=>{},()=>{},()=>{},()=>restored++),/ended/);
   assert.equal(restored,1);assert.equal(scheduled,0);
 });
+test('tracked VR views animate performers and show controller floor placement',async t=>{
+  let draw,select;const scenes=[],places=[];
+  const session={addEventListener(name,fn){if(name==='select')select=fn;},async end(){},
+    inputSources:[{targetRaySpace:{}}],renderState:{},updateRenderState(state){this.renderState=state;},
+    requestReferenceSpace:async()=>({}),requestAnimationFrame(fn){draw=fn;}};
+  replace(t,'isSecureContext',true);
+  replace(t,'navigator',{xr:{isSessionSupported:async()=>true,requestSession:async()=>session}});
+  replace(t,'XRWebGLLayer',class{framebuffer={};getViewport(){return {x:0,y:0,width:100,height:100};}});
+  const I=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+  const ray=[...I];ray[9]=1;ray[13]=2;
+  const frame={getViewerPose:()=>({views:[{projectionMatrix:I,transform:{inverse:{matrix:I}}}]}),getPose:()=>({transform:{matrix:ray}})};
+  const gl={makeXRCompatible:async()=>{},bindFramebuffer(){},clear(){},viewport(){}};
+  await enterXR({gl,scene(...args){scenes.push(args);}},()=>({title:'film'}),()=>2,p=>places.push(p),()=>{});
+  draw(1000,frame);draw(2000,frame);
+  assert.equal(scenes[1][1]-scenes[0][1],1);assert.deepEqual(scenes[0][3],[0,-2]);
+  select({frame,inputSource:session.inputSources[0]});assert.deepEqual(places,[[0,-2]]);
+});

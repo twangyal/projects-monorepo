@@ -38,7 +38,8 @@ cuts, separate take library or immersive video export yet.
 
 **Enter VR** requests an `immersive-vr` WebXR session with a `local-floor` reference
 space and renders tracked stereo headset views of the actual 3D stage. Select the
-floor with a tracked controller to place the desktop-selected performer. Exit via
+floor marker with a tracked controller to place the desktop-selected performer.
+Authored performances animate while viewing the set. Exit via
 the headset/browser session control; desktop editing is available afterwards.
 
 Requires supported hardware/browser and a secure context (HTTPS or trusted local
@@ -69,8 +70,11 @@ npm run test:browser
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. Current evidence: 11 local unit tests and syntax checks pass;
-initial exact-source browser CI verification is pending.
+requires a device. Current evidence: 13 local unit tests and syntax checks pass; four Chromium browser checks passed
+on the desktop lifecycle fix, including independently decoded video timestamps
+and changing frames. The workflow repeats these checks for subsequent edits.
+CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
+covered using controlled page lifecycle events; physical headset tests remain outstanding.
 
 `model.js` validates snapshots/cuts/performances; `math.js` owns column-major camera
 transforms; `renderer.js` draws native WebGL; `xr.js` manages immersive views and

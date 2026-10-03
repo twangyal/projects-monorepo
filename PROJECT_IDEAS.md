@@ -48,7 +48,7 @@ Description: An app that transforms an uploaded song into a karaoke experience b
 
 Path: apps/shot-studio
 Status: ACTIVE
-Progress: Native WebGL courtyard, two block performers, editable placement/actions/light, camera shot list, rehearsal/scrubbing, local drafts/JSON backups and silent WebM export. 11 local tests and syntax checks pass; browser verification is pending. Experimental immersive WebXR stage/controller placement requires physical headset verification. Initial vertical slice tracked in issue #19.
+Progress: Native WebGL courtyard, two block performers, editable placement/actions/light, camera shot list, rehearsal/scrubbing, local drafts/JSON backups and silent WebM export. 13 local tests/syntax checks and four Chromium checks cover the desktop film flow, real decoded video frames/timing, persistence/imports, and controlled lifecycle restoration. Experimental immersive WebXR viewing includes animated performances and a controller floor marker; physical headset verification remains outstanding. Initial vertical slice tracked in issue #19.
 Description: A virtual filmmaking studio where users step onto a set, direct animated characters, arrange lighting, and operate cameras from inside the scene. Users can stage performances, rehearse action, record multiple takes, and assemble shots into a conventional video. An additional mode would support immersive VR experiences. The goal is to make directing and cinematography accessible through spatial interaction with a virtual production environment. A first portfolio version would include one set, a small cast of animated characters, basic performance controls, camera placement, and video export.
 
 ## 8. Paper-trading app (SKIP THIS ONE)

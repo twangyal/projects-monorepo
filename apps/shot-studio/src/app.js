@@ -60,7 +60,7 @@ $('cancel').onclick=()=>abort?.abort();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();abort?.abort();}});
 $('vr').onclick=async()=>{
   if(xr){await xr.end();return;}stop();xrPending=true;refresh();status('Requesting VR…');
-  try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status('Left VR.');refresh();});status('VR active. Select the floor to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;refresh();}
+  try{xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{const p=structuredClone(project);p.actors[actor].x=Math.round(x*10)/10;p.actors[actor].z=Math.round(z*10)/10;apply(p);},()=>{xr=null;status(graphicsLost?'Graphics context lost. Save a backup and reload.':'Left VR.');refresh();});status('VR active. Select the floor marker to place the chosen performer.');}catch(e){status(e.message);}finally{xrPending=false;refresh();}
 };
 function loop(now){
   frame=requestAnimationFrame(loop);if(xr||xrPending||exporting||graphicsLost)return;

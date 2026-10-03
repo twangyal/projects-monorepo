@@ -34,10 +34,11 @@ export class StageRenderer{
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     this.scene(project,time,multiply(perspective(shot.fov,this.canvas.width/this.canvas.height,.1,100),lookAt(shot.eye,shot.target)));
   }
-  scene(p,time,viewProjection){
+  scene(p,time,viewProjection,marker=null){
     const gl=this.gl,u=this.uniforms;gl.useProgram(this.program);gl.uniformMatrix4fv(u.viewProjection,false,viewProjection);gl.uniform1f(u.light,p.light);
     const box=(x,y,z,sx,sy,sz,color,roll=0)=>{gl.uniformMatrix4fv(u.model,false,modelMatrix(x,y,z,sx,sy,sz,roll));gl.uniform3fv(u.color,rgb(color));gl.drawArrays(gl.TRIANGLES,0,36);};
     box(0,-.15,0,10,.3,10,'#b6a18b');
+    if(marker)box(marker[0],.02,marker[1],.25,.04,.25,'#f9e0a1');
     box(0,1.8,-4.5,10,3.6,.3,'#63786d');
     for(const x of [-3.8,3.8]){box(x,1.2,-2.8,.55,2.4,.55,'#d3b392');box(x,2.5,-2.8,.85,.2,.85,'#e2ccac');}
     box(0,.4,-3,2.8,.8,.7,'#a07860');box(0,.9,-3,3,.15,.9,'#ccb49b');
