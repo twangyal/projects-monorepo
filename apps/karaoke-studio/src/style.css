@@ -429,6 +429,13 @@ audio {
   margin-top:.65rem;
   font-size:.61rem
 }
+.draft-history {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:.65rem;
+  padding:0 1.15rem 1rem
+}
 .validation {
   margin:0 1.15rem;
   color:#aa6949;
