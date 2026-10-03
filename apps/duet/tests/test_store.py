@@ -92,16 +92,16 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(mixed['playlistRevision'], 1)
         self.assertEqual(mixed['playback']['revision'], 0)
 
-    def test_playback_advances_clamps_and_keeps_command_revision(self):
+    def test_playback_advances_clamps_and_revises_semantic_transitions(self):
         first, second, third = [self.add(n) for n in range(1, 4)]
         self.store.set_playlist(self.room_id, self.host, [first, second, third], 0)
         playing = self.store.set_playback(self.room_id, self.host, first, True, 8, 0)
         self.assertEqual(playing['playback']['revision'], 1)
         self.clock[0] += 5
-        self.assertEqual(self.snap()['playback'], {'trackId': second, 'playing': True, 'position': 3.0, 'revision': 1})
+        self.assertEqual(self.snap()['playback'], {'trackId': second, 'playing': True, 'position': 3.0, 'revision': 2})
         self.clock[0] += 20
-        self.assertEqual(self.snap()['playback'], {'trackId': third, 'playing': False, 'position': 10.0, 'revision': 1})
-        self.store.set_playback(self.room_id, self.host, None, False, 0, 1)
+        self.assertEqual(self.snap()['playback'], {'trackId': third, 'playing': False, 'position': 10.0, 'revision': 4})
+        self.store.set_playback(self.room_id, self.host, None, False, 0, 4)
         self.assertIsNone(self.snap()['playback']['trackId'])
 
     def test_playlist_edits_preserve_elapsed_position_and_revisions_are_independent(self):
@@ -110,11 +110,11 @@ class StoreTests(unittest.TestCase):
         self.store.set_playback(self.room_id, self.host, first, True, 9, 0)
         self.clock[0] += 4
         updated = self.store.set_playlist(self.room_id, self.host, [second], 1)
-        self.assertEqual(updated['playback'], {'trackId': second, 'playing': True, 'position': 3.0, 'revision': 1})
+        self.assertEqual(updated['playback'], {'trackId': second, 'playing': True, 'position': 3.0, 'revision': 2})
         self.store.rate(self.room_id, self.host, first, 1)
         self.failure(409, self.store.set_playlist, self.room_id, self.host, [], 1)
         self.failure(409, self.store.set_playback, self.room_id, self.host, second, False, 3, 0)
-        self.store.set_playback(self.room_id, self.host, second, False, 3, 1)
+        self.store.set_playback(self.room_id, self.host, second, False, 3, 2)
         self.assertEqual(self.snap()['playlistRevision'], 2)
 
     def test_concurrent_playback_commands_reject_stale_revision(self):
@@ -137,7 +137,7 @@ class StoreTests(unittest.TestCase):
         self.store.set_playback(self.room_id, self.host, first, True, 9, 0)
         self.clock[0] += 3
         result = self.store.delete_track(self.room_id, guest, second)
-        self.assertEqual(result['playback'], {'trackId': None, 'playing': False, 'position': 0, 'revision': 2})
+        self.assertEqual(result['playback'], {'trackId': None, 'playing': False, 'position': 0, 'revision': 3})
         self.assertEqual(result['playlist'], [first])
         self.assertEqual(result['playlistRevision'], 2)
         self.assertNotIn(second, result['ratings'])
@@ -150,7 +150,7 @@ class StoreTests(unittest.TestCase):
         self.store.set_playback(self.room_id, self.host, first, True, 9, 0)
         self.clock[0] += 4
         result = self.store.delete_track(self.room_id, self.host, first)
-        self.assertEqual(result['playback'], {'trackId': second, 'playing': True, 'position': 3, 'revision': 1})
+        self.assertEqual(result['playback'], {'trackId': second, 'playing': True, 'position': 3, 'revision': 2})
         self.clock[0] += 2
         self.assertEqual(self.snap()['playback']['position'], 5)
 
@@ -178,7 +178,7 @@ class StoreTests(unittest.TestCase):
         self.store = Store(self.root, now=lambda: self.clock[0])
         self.store.pause_all()
         self.clock[0] += 100
-        self.assertEqual(self.snap()['playback'], {'trackId': track, 'playing': False, 'position': 5.0, 'revision': 1})
+        self.assertEqual(self.snap()['playback'], {'trackId': track, 'playing': False, 'position': 5.0, 'revision': 2})
 
     def test_room_quota_and_host_only_deletion(self):
         guest = self.join()
@@ -237,8 +237,8 @@ class StoreTests(unittest.TestCase):
         self.clock[0] -= 5
         self.assertEqual(self.snap()['playback']['position'], 8)
         self.clock[0] += 20
-        self.assertEqual(self.snap()['playback'], {'trackId': second, 'playing': False, 'position': 10, 'revision': 1})
-        self.store.set_playback(self.room_id, self.host, first, False, 2, 1)
+        self.assertEqual(self.snap()['playback'], {'trackId': second, 'playing': False, 'position': 10, 'revision': 2})
+        self.store.set_playback(self.room_id, self.host, first, False, 2, 2)
         self.clock[0] += 20
         self.assertEqual(self.snap()['playback']['position'], 2)
 
