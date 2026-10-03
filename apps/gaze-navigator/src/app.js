@@ -36,6 +36,7 @@ let trackingMode = null;
 let calibrationIndex = 0;
 let calibrationClicks = 0;
 let gazeHandler = null;
+let cameraReady = false;
 let paused = false;
 const pointerHandler = event => {
   if (!paused) simulationPoint = { x: event.clientX, y: event.clientY };
@@ -104,7 +105,9 @@ function renderCalibrationPoint() {
   dot.style.top = `${y}%`;
   dot.setAttribute('aria-label', `Calibration point ${calibrationIndex + 1}`);
   dot.textContent = `${calibrationClicks + 1}`;
+  dot.disabled = paused;
   dot.addEventListener('click', () => {
+    if (paused) return;
     calibrationClicks += 1;
     if (calibrationClicks >= CALIBRATION_CLICKS) {
       calibrationClicks = 0;
@@ -117,6 +120,8 @@ function renderCalibrationPoint() {
 }
 
 function beginCalibration() {
+  accuracyButton.disabled = true;
+  accuracy.cancel();
   dwell.reset();
   clearFocus();
   simulationPoint = null;
@@ -170,6 +175,7 @@ async function enableCamera() {
     gazeHandler = handler;
     window.webgazer.setGazeListener(gazeHandler);
     await window.webgazer.begin();
+    cameraReady = true;
     pauseButton.disabled = false;
     stopButton.disabled = false;
     beginCalibration();
@@ -191,6 +197,7 @@ function resetTracking(preserveConfirmation = false) {
 function stopTracking() {
   const wasCamera = trackingMode === 'camera';
   trackingMode = null;
+  cameraReady = false;
   paused = false;
   resetTracking();
   if (simulationFrame !== null) window.cancelAnimationFrame(simulationFrame);
@@ -219,6 +226,10 @@ pauseButton.addEventListener('click', () => {
   resetTracking();
   pauseButton.textContent = paused ? 'Resume tracking' : 'Pause tracking';
   setStatus(paused ? 'Navigation paused. Camera stays on until Stop tracking.' : 'Tracking resumed. Hold on a target to confirm.');
+  if (!calibration.classList.contains('hidden')) {
+    renderCalibrationPoint();
+    if (paused) setStatus('Calibration paused. Resume tracking to continue.');
+  }
 });
 stopButton.addEventListener('click', stopTracking);
 accuracyButton.addEventListener('click', () => {
@@ -229,7 +240,10 @@ accuracyButton.addEventListener('click', () => {
 
 document.addEventListener('visibilitychange', resetTracking);
 window.addEventListener('blur', resetTracking);
-window.addEventListener('resize', resetTracking);
+window.addEventListener('resize', () => {
+  resetTracking();
+  if (trackingMode === 'simulation' || cameraReady) beginCalibration();
+});
 window.addEventListener('scroll', () => resetTracking(true), true);
 
 startButton.addEventListener('click', enableCamera);

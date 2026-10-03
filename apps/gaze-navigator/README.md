@@ -19,6 +19,7 @@ Open `http://localhost:4173`.
 - **Pointer simulation** runs the same target resolver/dwell logic with pointer coordinates, making the interaction testable without a webcam.
 - Hold a pointer still for 0.9 seconds to confirm. A control confirms once until you leave it and return.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
+- Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
 
 ## Architecture
 

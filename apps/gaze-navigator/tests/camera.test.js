@@ -66,6 +66,17 @@ test('camera stop releases tracking and failed startup permits retry', async () 
     for (; now <= 5000; now += 100) listener({ x: 100, y: 100 });
     assert.equal(confirmations, 1);
     assert.equal(nodes.gazeCursor.classList.contains('visible'), true);
+    win.emit('resize');
+    assert.equal(nodes.playground.classList.contains('hidden'), true, 'resize must require fresh calibration');
+    assert.equal(nodes.checkAccuracy.disabled, true);
+    assert.equal(nodes.calibrationStage.children[0].textContent, '1');
+    for (let i = 0; i < 5; i++) nodes.calibrationStage.children[0].emit('click');
+    win.emit('resize');
+    assert.equal(nodes.calibrationStage.children[0].textContent, '1', 'partial calibration must restart');
+    assert.match(nodes.status.textContent, /point 1 of 9/);
+    for (let i = 0; i < 27; i++) nodes.calibrationStage.children[0].emit('click');
+    assert.equal(nodes.playground.classList.contains('hidden'), false);
+    assert.equal(nodes.checkAccuracy.disabled, false);
     nodes.pauseTracking.emit('click');
     listener({ x: 100, y: 100 });
     assert.equal(nodes.gazeCursor.classList.contains('visible'), false);
