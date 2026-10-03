@@ -1,0 +1,30 @@
+{
+  "name": "eye-detector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "assets": "node scripts/copy-vision-assets.mjs",
+    "dev": "npm run assets && vite --host 0.0.0.0",
+    "build": "npm run assets && tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "lint": "eslint . && tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "verify": "npm run lint && npm test && npm run build && npm run test:e2e"
+  },
+  "dependencies": {
+    "@mediapipe/face_mesh": "0.4.1633559619"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.12.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}

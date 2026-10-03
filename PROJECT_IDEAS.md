@@ -4,9 +4,11 @@ These 17 projects are listed in my personal priority order. The descriptions ref
 
 ## 1. Eye detector with agentic AI
 
-Path: N/A
-Status: IDEA
+Path: apps/eye-detector
+Status: ACTIVE
 Description: A hands-free navigation assistant that uses an ordinary webcam to estimate where a user is looking and help them interact with technology. After calibration, the assistant highlights likely targets and lets the user confirm actions such as clicking, scrolling, or selecting controls. An AI decision model combines gaze information with interface context to resolve nearby elements and assist with navigation. The first portfolio version would focus on browser interfaces, with TypeSafe's Jev as a candidate decision model and an open-source alternative evaluated against the same tasks. Gaze tracking, decision-making, and browser control would remain separate components so each can be improved or replaced.
+
+Initial version: [Look](apps/eye-detector/README.md) provides local webcam/iris tracking, nine-point calibration, explained target suggestions, explicit keyboard/button/optional voice confirmation, and a reading workspace with selection, saving, and scrolling. Pointer simulation works without a camera. Calibration/decision unit tests and Chromium workflow/model-loading tests are included. The decision component currently uses a deterministic baseline; physical webcam accuracy validation, Jev/open-source model comparisons, and control of real browser pages remain future work.
 
 ## 2. Schedule app that bricks your phone
 
