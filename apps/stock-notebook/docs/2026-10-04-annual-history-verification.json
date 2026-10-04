@@ -12,7 +12,14 @@
     "lint": "passed",
     "typecheck": "passed",
     "productionBuild": "passed",
-    "remoteCI": "pending"
+    "remoteCI": {
+      "commit": "236be2e17288b333320c782a95f096783c5f7cb6",
+      "workflowRun": 37169873039,
+      "conclusion": "success",
+      "unitTests": 105,
+      "browserCasesPassedTogether": 20,
+      "maximumSmoke": "passed"
+    }
   },
   "nodeMaximumSmoke": {
     "date": "2026-10-04",
