@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import array
 import hashlib
+import io
+import json
 import os
 from pathlib import Path
 import struct
@@ -67,7 +69,7 @@ class PipelineTests(unittest.TestCase):
             output.seek(pipeline.MAX_INPUT_BYTES)
             output.write(b'0')
         with patch.object(pipeline, '_run') as run:
-            with self.assertRaisesRegex(ValueError, '20 MiB'):
+            with self.assertRaisesRegex(ValueError, '64 MiB'):
                 pipeline.separate_clip(source, self.root / 'out', self.root / 'models', threading.Event(), lambda _: None)
             run.assert_not_called()
 
@@ -85,10 +87,10 @@ class PipelineTests(unittest.TestCase):
                 pipeline._write_source(array.array('f', [0, bad]), output)
 
     def test_real_ffprobe_rejects_clips_outside_duration_bounds_without_silent_truncation(self) -> None:
-        for duration in [0.8, 30.1]:
+        for duration in [0.8, 300.1]:
             source = self.root / 'input.audio'
             fixture_wav(source, duration)
-            with self.assertRaisesRegex(ValueError, '1.*30|30.*seconds'):
+            with self.assertRaisesRegex(ValueError, '1.*300|300.*seconds'):
                 pipeline.separate_clip(source, self.root / 'out', self.root / 'models', threading.Event(), lambda _: None)
         self.assertFalse((self.root / 'out' / 'source.wav').exists())
 
@@ -144,9 +146,14 @@ class PipelineTests(unittest.TestCase):
     def test_false_duration_metadata_cannot_hide_oversized_decoded_audio(self) -> None:
         source = self.root / 'input.audio'
         fixture_wav(source, 1)
-        with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_probe', return_value=1), patch.object(pipeline, '_run', return_value=(b'\0' * (pipeline.MAX_DECODE_BYTES + 8), b'')):
-            with self.assertRaisesRegex(ValueError, '30|duration'):
+        def run(command, cancel, **options):
+            if command[0] == 'ffmpeg':
+                options['stdout_sink'].truncate(pipeline.MAX_DECODE_BYTES + 8)
+            return b'', b''
+        with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_probe', return_value=1), patch.object(pipeline, '_run', side_effect=run):
+            with self.assertRaisesRegex(ValueError, '300|duration'):
                 pipeline.separate_clip(source, self.root / 'out', self.root / 'models', threading.Event(), lambda _: None)
+        self.assertEqual(list((self.root / 'out').iterdir()), [])
 
     def test_cancellation_during_worker_removes_partial_outputs_and_preserves_uploaded_source(self) -> None:
         source = self.root / 'input.audio'
@@ -232,6 +239,195 @@ class PipelineTests(unittest.TestCase):
             compressed = self.root / f'input.{format_name}'
             pipeline._run(['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-i', str(original), '-c:a', codec, str(compressed)], threading.Event(), timeout=10)
             self.assertGreaterEqual(pipeline._probe(compressed, format_name, threading.Event()), 30)
+
+    def test_shared_full_song_limits_are_exact_and_probe_padding_never_changes_decode_bound(self) -> None:
+        self.assertEqual(pipeline.MAX_INPUT_BYTES, 64 * 1024 * 1024)
+        self.assertEqual(pipeline.MAX_DECODE_BYTES, 300 * 44100 * 8)
+        value = {'format': {'format_name': 'mp3', 'duration': '300.15'}, 'streams': [
+            {'codec_type': 'audio', 'sample_rate': '44100', 'channels': 2}]}
+        with patch.object(pipeline, '_run', side_effect=lambda *_args, **_options: (json.dumps(value).encode(), b'')):
+            self.assertEqual(pipeline._probe(self.root / 'source.mp3', 'mp3', threading.Event()), 300.15)
+            value['format']['duration'] = '300.201'
+            with self.assertRaisesRegex(ValueError, '300'):
+                pipeline._probe(self.root / 'source.mp3', 'mp3', threading.Event())
+
+    def test_subprocess_stream_sink_does_not_duplicate_stdout_and_honors_byte_bound(self) -> None:
+        code = 'import sys; sys.stdout.buffer.write(b"x"*100000); sys.stdout.flush()'
+        with io.BytesIO() as sink:
+            output, _ = pipeline._run([sys.executable, '-c', code], threading.Event(),
+                                      stdout_sink=sink, stdout_limit=100000)
+            self.assertEqual(output, b'')
+            self.assertEqual(sink.getvalue(), b'x' * 100000)
+        with io.BytesIO() as sink:
+            with self.assertRaisesRegex(RuntimeError, 'output limit'):
+                pipeline._run([sys.executable, '-c', code], threading.Event(),
+                              stdout_sink=sink, stdout_limit=99999)
+            self.assertLessEqual(len(sink.getvalue()), 99999)
+
+    def test_bounded_stdout_records_arrive_during_process_and_callback_failure_reaps_it(self) -> None:
+        lines = []
+        code = 'import sys,time; print("first",flush=True);time.sleep(.1);print("second",flush=True)'
+        pipeline._run([sys.executable, '-c', code], threading.Event(), stdout_line_callback=lines.append)
+        self.assertEqual(lines, [b'first', b'second'])
+        def invalid(_line):
+            raise ValueError('Private fixture detail')
+        started = time.monotonic()
+        with self.assertRaisesRegex(RuntimeError, 'progress') as failure:
+            pipeline._run([sys.executable, '-c', 'import time;print("bad",flush=True);time.sleep(10)'],
+                          threading.Event(), stdout_line_callback=invalid)
+        self.assertLess(time.monotonic() - started, 2)
+        self.assertNotIn('Private fixture', str(failure.exception))
+
+    def test_cancelled_source_conversion_preserves_previous_output(self) -> None:
+        output = self.root / 'source.wav'
+        fixture_wav(output, 1)
+        previous = output.read_bytes()
+        cancel = threading.Event()
+        cancel.set()
+        with self.assertRaisesRegex(RuntimeError, 'cancel'):
+            pipeline._write_source(array.array('f', [0, .25]), output, cancel)
+        self.assertEqual(output.read_bytes(), previous)
+        self.assertFalse(output.with_suffix('.wav.part').exists())
+
+    def test_five_minute_complete_decode_is_streamed_and_exact_frames_survive_fake_inference(self) -> None:
+        source = self.root / 'input.audio'
+        fixture_wav(source, 300)
+        output_dir = self.root / 'out'
+        actual = pipeline._run
+        observed = {}
+        def run(command, cancel, **options):
+            if command[0] == sys.executable:
+                observed.update(options)
+                self.assertFalse((output_dir / 'decoded.f32').exists())
+                for name in ['vocals.wav', 'backing.wav']:
+                    shutil.copyfile(output_dir / 'source.wav', output_dir / name)
+                (output_dir / 'processing.json').write_text('{}')
+                return b'', b''
+            if command[0] == 'ffmpeg':
+                self.assertIn('stdout_sink', options)
+                self.assertEqual(options['timeout'], 60)
+            return actual(command, cancel, **options)
+        with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_run', side_effect=run):
+            duration = pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
+        self.assertEqual(duration, 300)
+        self.assertEqual(observed['timeout'], 600)
+        self.assertEqual(observed['rss_limit_kib'], 3 * 1024 * 1024)
+        for name in ['source.wav', 'vocals.wav', 'backing.wav']:
+            with wave.open(str(output_dir / name), 'rb') as audio:
+                self.assertEqual(audio.getnframes(), 13_230_000)
+
+    def test_reported_transient_rss_peak_and_oversized_metadata_cannot_publish_and_clean_scratch(self) -> None:
+        source = self.root / 'input.audio'
+        fixture_wav(source, 1)
+        output_dir = self.root / 'out'
+        actual = pipeline._run
+        for metadata in [json.dumps({'peakRssKiB': 3 * 1024 * 1024 + 1}), 'x' * 65537,
+                         '{"stemPeak":NaN}', '{"stemPeak":1e999}']:
+            def run(command, cancel, **options):
+                if command[0] == sys.executable:
+                    for name in ['vocals.wav', 'backing.wav']:
+                        shutil.copyfile(output_dir / 'source.wav', output_dir / name)
+                    for name in ['vocals.f32', 'backing.f32.part']:
+                        (output_dir / name).write_bytes(b'partial')
+                    (output_dir / 'processing.json').write_text(metadata)
+                    return b'', b''
+                return actual(command, cancel, **options)
+            with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_run', side_effect=run):
+                with self.assertRaisesRegex(RuntimeError, 'memory|metadata|provenance'):
+                    pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
+            self.assertEqual(list(output_dir.iterdir()), [])
+
+    def test_existing_scratch_or_dangling_partial_symlink_is_rejected_without_removal(self) -> None:
+        source = self.root / 'input.audio'
+        fixture_wav(source, 1)
+        output_dir = self.root / 'out'
+        output_dir.mkdir()
+        scratch = output_dir / 'decoded.f32'
+        scratch.write_bytes(b'Existing content')
+        with patch.object(pipeline, 'model_ready', return_value=True):
+            with self.assertRaisesRegex(ValueError, 'already contains'):
+                pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
+        self.assertEqual(scratch.read_bytes(), b'Existing content')
+        scratch.unlink()
+        partial = output_dir / 'backing.f32.part'
+        partial.symlink_to(self.root / 'missing-target')
+        with patch.object(pipeline, 'model_ready', return_value=True):
+            with self.assertRaisesRegex(ValueError, 'already contains'):
+                pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
+        self.assertTrue(partial.is_symlink())
+
+    def test_window_progress_is_sequential_bounded_and_later_window_cancellation_cleans_everything(self) -> None:
+        source = self.root / 'input.audio'
+        fixture_wav(source, 31)
+        output_dir = self.root / 'out'
+        actual = pipeline._run
+        for records, cancel_after in [([0, 1, 2], None), ([0, 2], None), ([0, 1, 2], 1)]:
+            cancel = threading.Event()
+            stages = []
+            def stage(value):
+                stages.append(value)
+                if cancel_after is not None and f'window {cancel_after} of' in value:
+                    cancel.set()
+            def run(command, event, **options):
+                if command[0] == sys.executable:
+                    for name in ['vocals.wav', 'backing.wav']:
+                        shutil.copyfile(output_dir / 'source.wav', output_dir / name)
+                    (output_dir / 'processing.json').write_text('{}')
+                    for value in records:
+                        options['stdout_line_callback'](json.dumps({'type': 'progress', 'completedWindows': value, 'windowCount': 2}).encode())
+                    return b'', b''
+                return actual(command, event, **options)
+            with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_run', side_effect=run):
+                if records == [0, 1, 2] and cancel_after is None:
+                    self.assertEqual(pipeline.separate_clip(source, output_dir, self.root / 'models', cancel, stage), 31)
+                    self.assertTrue(any('window 2 of 2' in value for value in stages))
+                    for path in output_dir.iterdir():
+                        path.unlink()
+                else:
+                    with self.assertRaisesRegex((ValueError, RuntimeError), 'progress|cancel'):
+                        pipeline.separate_clip(source, output_dir, self.root / 'models', cancel, stage)
+                    self.assertEqual(list(output_dir.iterdir()), [])
+
+    @unittest.skipUnless(Path('/proc/self/fd').exists(), 'Linux retained descriptors')
+    def test_output_directory_rebinding_cannot_redirect_decode_or_cleanup(self) -> None:
+        source = self.root / 'input.audio'
+        fixture_wav(source, 1)
+        output_dir = self.root / 'out'
+        held = self.root / 'held'
+        unrelated = self.root / 'unrelated'
+        unrelated.mkdir()
+        sentinel = unrelated / 'decoded.f32'
+        sentinel.write_bytes(b'Leave existing unrelated data intact')
+        actual = pipeline._run
+        def run(command, event, **options):
+            if command[0] == 'ffmpeg':
+                output_dir.rename(held)
+                output_dir.symlink_to(unrelated, target_is_directory=True)
+            if command[0] == sys.executable:
+                target = Path(command[command.index('--output-dir') + 1])
+                (target / 'vocals.f32').write_bytes(b'partial')
+                raise RuntimeError('Controlled worker failure')
+            return actual(command, event, **options)
+        with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_run', side_effect=run):
+            with self.assertRaisesRegex(RuntimeError, 'Controlled'):
+                pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
+        self.assertEqual(list(held.iterdir()), [])
+        self.assertEqual(sentinel.read_bytes(), b'Leave existing unrelated data intact')
+
+    def test_smoke_synthetic_is_original_exact_length_and_writes_bounded_blocks(self) -> None:
+        from scripts.smoke_model import synthetic
+        output = self.root / 'synthetic.wav'
+        writes = []
+        original = wave.Wave_write.writeframes
+        def write(audio, data):
+            writes.append(len(data))
+            return original(audio, data)
+        with patch.object(wave.Wave_write, 'writeframes', write):
+            synthetic(output, 1 + 1 / 44100)
+        self.assertLessEqual(max(writes), 65536)
+        with wave.open(str(output), 'rb') as audio:
+            self.assertEqual(audio.getnframes(), 44101)
+            self.assertTrue(any(audio.readframes(1000)))
 
 
 if __name__ == '__main__':

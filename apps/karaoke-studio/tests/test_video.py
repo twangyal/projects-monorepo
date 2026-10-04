@@ -140,6 +140,147 @@ class VideoTests(unittest.TestCase):
         self.assertEqual(list((self.root / 'work').iterdir()), [])
         self.assertEqual(list(self.root.glob('.video-*.mp4')), [])
 
+    def test_backing_validation_reads_bounded_blocks(self):
+        actual_read = wave.Wave_read.readframes
+        requests = []
+
+        def bounded_read(stream, count):
+            requests.append(count)
+            self.assertLessEqual(count, 65536)
+            return actual_read(stream, count)
+
+        def encoded(_arguments, _cancel, output, **_kwargs):
+            output.write_bytes(b'encoded fixture')
+
+        with patch.object(wave.Wave_read, 'readframes', bounded_read), \
+                patch.object(video, '_run_ffmpeg', side_effect=encoded):
+            video.export_video(self.project, self.backing, self.root / 'video.mp4',
+                               self.root / 'work', FONT, threading.Event())
+        self.assertGreater(len(requests), 1)
+
+    def test_backing_validation_observes_cancel_and_deadline_between_blocks(self):
+        actual_read = wave.Wave_read.readframes
+        for reason in ('cancel', 'time limit'):
+            with self.subTest(reason=reason):
+                cancel = threading.Event()
+                clock = [10.0]
+                reads = []
+                output = self.root / 'video.mp4'
+                output.write_bytes(b'previous export')
+
+                def interrupt_read(stream, count):
+                    reads.append(count)
+                    result = actual_read(stream, count)
+                    if reason == 'cancel':
+                        cancel.set()
+                    else:
+                        clock[0] += 601
+                    return result
+
+                with patch.object(wave.Wave_read, 'readframes', interrupt_read), \
+                        patch.object(video.time, 'monotonic', side_effect=lambda: clock[0]), \
+                        patch.object(video, 'render_card') as renderer:
+                    with self.assertRaisesRegex(RuntimeError, reason):
+                        video.export_video(self.project, self.backing, output,
+                                           self.root / 'work', FONT, cancel)
+                self.assertEqual(len(reads), 1)
+                renderer.assert_not_called()
+                self.assertEqual(output.read_bytes(), b'previous export')
+                self.assertEqual(list(self.root.glob('.video-*.mp4')), [])
+
+    def test_deadline_after_encoding_still_preserves_previous_export(self):
+        output = self.root / 'video.mp4'
+        output.write_bytes(b'previous export')
+        clock = [10.0]
+
+        def late_encode(_arguments, _cancel, path, **_kwargs):
+            path.write_bytes(b'late encoded video')
+            clock[0] += 601
+
+        with patch.object(video.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(video, '_run_ffmpeg', side_effect=late_encode):
+            with self.assertRaisesRegex(RuntimeError, 'time limit'):
+                video.export_video(self.project, self.backing, output,
+                                   self.root / 'work', FONT, threading.Event())
+        self.assertEqual(output.read_bytes(), b'previous export')
+        self.assertEqual(list((self.root / 'work').iterdir()), [])
+        self.assertEqual(list(self.root.glob('.video-*.mp4')), [])
+
+    def test_preparation_deadline_preserves_previous_export(self):
+        output = self.root / 'video.mp4'
+        output.write_bytes(b'previous export')
+        clock = [10.0]
+
+        def slow_card(_project, _active, path, _font):
+            path.write_bytes(b'card')
+            clock[0] += 601
+
+        with patch.object(video.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(video, 'render_card', side_effect=slow_card), \
+                patch.object(video, '_run_ffmpeg') as encoder:
+            with self.assertRaisesRegex(RuntimeError, 'time limit'):
+                video.export_video(self.project, self.backing, output,
+                                   self.root / 'work', FONT, threading.Event())
+        encoder.assert_not_called()
+        self.assertEqual(output.read_bytes(), b'previous export')
+        self.assertEqual(list((self.root / 'work').iterdir()), [])
+        self.assertEqual(list(self.root.glob('.video-*.mp4')), [])
+
+    def test_distinct_card_budget_preserves_previous_export(self):
+        output = self.root / 'video.mp4'
+        output.write_bytes(b'previous export')
+
+        def large_card(_project, _active, path, _font):
+            path.write_bytes(b'x' * 17)
+
+        with patch.object(video, 'MAX_CARD_BYTES', 16, create=True), \
+                patch.object(video, 'render_card', side_effect=large_card), \
+                patch.object(video, '_run_ffmpeg') as encoder:
+            with self.assertRaisesRegex(RuntimeError, 'card.*limit'):
+                video.export_video(self.project, self.backing, output,
+                                   self.root / 'work', FONT, threading.Event())
+        encoder.assert_not_called()
+        self.assertEqual(output.read_bytes(), b'previous export')
+        self.assertEqual(list((self.root / 'work').iterdir()), [])
+
+    def test_full_song_prepares_exact_frame_links_and_shares_remaining_deadline(self):
+        with wave.open(str(self.backing), 'wb') as stream:
+            stream.setnchannels(2)
+            stream.setsampwidth(2)
+            stream.setframerate(44100)
+            for _second in range(300):
+                stream.writeframesraw(b'\0' * 44100 * 4)
+        project = update_project(create_project('a' * 32, 'Full song', 300), 'Full song',
+                                 [dict(start=0.25 + index * 1.5, end=0.75 + index * 1.5,
+                                       text=f'Line {index}') for index in range(200)], 0)
+        clock = [10.0]
+        card_count = [0]
+
+        def card(_project, _active, path, _font):
+            path.write_text(str(card_count[0]))
+            card_count[0] += 1
+            clock[0] += 0.1
+
+        def encoded(arguments, _cancel, output, **kwargs):
+            directory = Path(arguments[arguments.index('-i') + 1]).parent
+            frames = sorted(directory.glob('frame*.png'))
+            self.assertEqual(len(frames), 7200)
+            self.assertEqual(len(list(directory.glob('card*.png'))), 401)
+            self.assertEqual(len({frame.stat().st_ino for frame in frames}), 401)
+            for frame, state in [(0, 0), (6, 1), (17, 1), (18, 2), (7170, 399), (7199, 400)]:
+                self.assertEqual(frames[frame].read_text(), str(state))
+            self.assertAlmostEqual(kwargs['timeout'], 559.9, places=6)
+            self.assertEqual(kwargs['max_output_bytes'], 128 * 1024 * 1024)
+            output.write_bytes(b'encoded fixture')
+
+        with patch.object(video.time, 'monotonic', side_effect=lambda: clock[0]), \
+                patch.object(video, 'render_card', side_effect=card), \
+                patch.object(video, '_run_ffmpeg', side_effect=encoded):
+            video.export_video(project, self.backing, self.root / 'video.mp4',
+                               self.root / 'work', FONT, threading.Event())
+        self.assertEqual(card_count[0], 401)
+        self.assertEqual(list((self.root / 'work').iterdir()), [])
+
     def test_ffmpeg_cancel_timeout_and_output_limits_kill_and_reap(self):
         command = ['ffmpeg', '-v', 'error', '-re', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-f', 'null', '-']
         processes = []

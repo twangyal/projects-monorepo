@@ -3,10 +3,7 @@ import html
 import math
 import re
 
-MAX_DURATION = 30
-MIN_DURATION = 1
-MAX_CUES = 40
-MAX_LYRIC_CHARS = 5000
+from .limits import MAX_DURATION, MIN_DURATION, MAX_CUES, MAX_LYRIC_CHARS
 
 
 class ValidationError(ValueError):
@@ -28,7 +25,7 @@ def _number(value: object, label: str) -> float:
 def _duration(value: object) -> float:
     duration = _number(value, 'Duration')
     if not MIN_DURATION <= duration <= MAX_DURATION:
-        raise ValidationError('Duration must be between 1 and 30 seconds.')
+        raise ValidationError(f'Duration must be between {MIN_DURATION} and {MAX_DURATION} seconds.')
     return duration
 
 
@@ -62,7 +59,7 @@ def validate_project(value: object) -> dict:
         raise ValidationError('Project revision must be a nonnegative integer.')
     incoming = value.get('cues')
     if not isinstance(incoming, list) or len(incoming) > MAX_CUES:
-        raise ValidationError('Provide at most 40 lyric cues.')
+        raise ValidationError(f'Provide at most {MAX_CUES} lyric cues.')
     cues = []
     previous_end = 0.0
     characters = 0
@@ -76,7 +73,7 @@ def validate_project(value: object) -> dict:
         text = _text(cue.get('text'), 240, f'Cue {index + 1} text')
         characters += len(text)
         if characters > MAX_LYRIC_CHARS:
-            raise ValidationError('Lyrics must contain at most 5000 characters.')
+            raise ValidationError(f'Lyrics must contain at most {MAX_LYRIC_CHARS} characters.')
         cues.append(dict(start=start, end=end, text=text))
         previous_end = end
     return dict(schemaVersion=1, id=project_id, title=title, duration=duration,
@@ -94,10 +91,10 @@ def update_project(project: dict, title: str, cues: list, expected_revision: int
 def draft_cues(text: str, duration: float) -> list[dict]:
     duration = _duration(duration)
     if not isinstance(text, str) or len(text) > MAX_LYRIC_CHARS:
-        raise ValidationError('Draft lyrics must be a string of at most 5000 characters.')
+        raise ValidationError(f'Draft lyrics must be a string of at most {MAX_LYRIC_CHARS} characters.')
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if len(lines) > MAX_CUES:
-        raise ValidationError('Draft lyrics must have at most 40 nonempty lines.')
+        raise ValidationError(f'Draft lyrics must have at most {MAX_CUES} nonempty lines.')
     for line in lines:
         _text(line, 240, 'Lyric line')
     if not lines:

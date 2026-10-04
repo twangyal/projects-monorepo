@@ -12,6 +12,8 @@ import wave
 
 from PIL import Image, ImageDraw, ImageFont
 
+from .limits import (MAX_CARD_BYTES, MAX_CARDS, MAX_VIDEO_BYTES, MAX_VIDEO_FRAMES,
+                     SAMPLE_RATE, VIDEO_TIMEOUT)
 from .model import ValidationError, validate_project
 from .media_io import media_handles
 
@@ -94,8 +96,8 @@ def _cancelled(cancel: threading.Event) -> None:
 
 
 def _run_ffmpeg(arguments: list[str], cancel: threading.Event, output: Path,
-                timeout: float = 120, max_log_bytes: int = 262144,
-                max_output_bytes: int = 128 * 1024 * 1024) -> None:
+                timeout: float = VIDEO_TIMEOUT, max_log_bytes: int = 262144,
+                max_output_bytes: int = MAX_VIDEO_BYTES) -> None:
     _cancelled(cancel)
     started = time.monotonic()
     try:
@@ -148,45 +150,73 @@ def _run_ffmpeg(arguments: list[str], cancel: threading.Event, output: Path,
                 stream.close()
 
 
-def _validate_backing(backing: Path, duration: float) -> None:
+def _remaining(cancel: threading.Event, deadline: float) -> float:
+    _cancelled(cancel)
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise RuntimeError('Video export exceeded its time limit.')
+    return remaining
+
+
+def _validate_backing(backing: Path, duration: float, cancel: threading.Event,
+                      deadline: float) -> None:
+    _remaining(cancel, deadline)
     try:
         with wave.open(str(backing), 'rb') as stream:
-            if (stream.getnchannels(), stream.getsampwidth(), stream.getframerate(), stream.getcomptype()) != (2, 2, 44100, 'NONE'):
+            if (stream.getnchannels(), stream.getsampwidth(), stream.getframerate(), stream.getcomptype()) != (2, 2, SAMPLE_RATE, 'NONE'):
                 raise ValidationError('Backing audio must be stereo 44.1 kHz PCM16 WAV.')
             frames = stream.getnframes()
-            if abs(frames / 44100 - duration) > 1 / 44100 + 1e-9:
+            if abs(frames / SAMPLE_RATE - duration) > 1 / SAMPLE_RATE + 1e-9:
                 raise ValidationError('Backing audio duration does not match the project.')
-            # Check decoded length as well as the header before publication.
-            if len(stream.readframes(frames)) != frames * 4:
-                raise ValidationError('Backing audio is truncated.')
+            # Bound memory and cancellation latency while checking actual data,
+            # including the end of a full five-minute backing track.
+            remaining = frames
+            while remaining:
+                _remaining(cancel, deadline)
+                count = min(65536, remaining)
+                if len(stream.readframes(count)) != count * 4:
+                    raise ValidationError('Backing audio is truncated.')
+                remaining -= count
+            _remaining(cancel, deadline)
     except (wave.Error, EOFError, OSError) as exc:
         raise ValidationError('Backing audio must be a readable canonical WAV file.') from exc
 
 
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                  font_path: Path, cancel: threading.Event) -> None:
+    deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
-    _cancelled(cancel)
+    _remaining(cancel, deadline)
     backing, output, work_dir = Path(backing).absolute(), Path(output), Path(work_dir)
-    _validate_backing(backing, project['duration'])
+    _validate_backing(backing, project['duration'], cancel, deadline)
+    frame_count = math.ceil(project['duration'] * FPS)
+    if frame_count > MAX_VIDEO_FRAMES:
+        raise ValidationError('Video exceeds its frame limit.')
     work_dir.mkdir(parents=True, exist_ok=True)
     temporary_output = None
     try:
         with tempfile.TemporaryDirectory(prefix='export-', dir=work_dir) as temporary:
             directory = Path(temporary)
             states = {}
+            card_bytes = 0
             cues = project['cues']
-            for frame in range(math.ceil(project['duration'] * FPS)):
-                _cancelled(cancel)
+            for frame in range(frame_count):
+                _remaining(cancel, deadline)
                 position = frame / FPS
                 active = next((index for index, cue in enumerate(cues)
                                if cue['start'] <= position < cue['end']), None)
                 upcoming = next((index for index, cue in enumerate(cues) if cue['start'] > position), len(cues))
                 state = (active, upcoming if active is None else None)
                 if state not in states:
+                    if len(states) >= MAX_CARDS:
+                        raise RuntimeError('Video preparation exceeded its card count limit.')
                     card = directory / f'card{len(states):03}.png'
                     view = project if active is not None else {**project, 'cues': cues[upcoming:]}
                     render_card(view, active, card, font_path)
+                    _remaining(cancel, deadline)
+                    card_bytes += card.stat().st_size
+                    if card_bytes > MAX_CARD_BYTES:
+                        raise RuntimeError('Video preparation exceeded its card storage limit.')
                     states[state] = card
                 # Fixed numbered local files give exact 24 fps timestamps, with
                 # no user text or paths placed into a filter/concat program.
@@ -202,8 +232,9 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
                          '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p',
                          '-c:a', 'aac', '-b:a', '192k', '-t', f'{project["duration"]:.9f}',
                          '-movflags', '+faststart', '-f', 'mp4', str(temporary_output)]
-            _run_ffmpeg(arguments, cancel, temporary_output)
-            _cancelled(cancel)
+            _run_ffmpeg(arguments, cancel, temporary_output,
+                        timeout=_remaining(cancel, deadline), max_output_bytes=MAX_VIDEO_BYTES)
+            _remaining(cancel, deadline)
             if not temporary_output.stat().st_size:
                 raise RuntimeError('FFmpeg did not produce a video.')
             os.replace(temporary_output, output)

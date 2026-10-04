@@ -1,0 +1,530 @@
+{
+  "date": "2026-10-04",
+  "environment": {
+    "os": "Debian 13 Linux x86_64",
+    "cpuQuota": 4,
+    "memoryGiB": 16,
+    "python": "3.11.16",
+    "chromium": "151.0.7922.173",
+    "ffmpeg": "7.1.5"
+  },
+  "scope": "Single local runtime and timeline samples with original synthetic audio; no subjective listening, reference-stem separation score or performance guarantee. The short-tail run overlapped part of the fast test suite. No media or model weights are bundled.",
+  "automated": {
+    "pythonTests": 114,
+    "typescriptTests": 18,
+    "browserTests": 17,
+    "browserLocalRuns": "15 original cases passed together; two later invalid-preview regressions passed after their targeted fix. Final combined CI pending.",
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "smokeReports": [
+    {
+      "source": "original synthetic waveform",
+      "licensedAttribution": null,
+      "python": "3.11.16",
+      "versions": {
+        "spleeter": "2.4.2",
+        "tensorflow": "2.12.1",
+        "numpy": "1.24.3",
+        "scipy": "1.15.3"
+      },
+      "pipelineSeconds": 13.336674651000067,
+      "duration": 30.00002267573696,
+      "frameCount": 1323001,
+      "pcmPeaks": {
+        "source": 16221,
+        "vocals": 8600,
+        "backing": 14520
+      },
+      "sampledPeakDiskBytes": 42287084,
+      "publishedMediaBytes": 15876144,
+      "stages": [
+        {
+          "stage": "Checking audio format and duration",
+          "elapsedSeconds": 0.0007546119995822664
+        },
+        {
+          "stage": "Decoding the complete audio clip",
+          "elapsedSeconds": 0.19133471199893393
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI",
+          "elapsedSeconds": 1.4719238129982841
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 0 of 2 complete",
+          "elapsedSeconds": 3.5715881129981426
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 1 of 2 complete",
+          "elapsedSeconds": 8.049236183000176
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 2 of 2 complete",
+          "elapsedSeconds": 10.294444938001106
+        },
+        {
+          "stage": "Checking matching stem durations and WAV exports",
+          "elapsedSeconds": 13.332576961998711
+        }
+      ],
+      "processing": {
+        "frameCount": 1323001,
+        "sampleRate": 44100,
+        "duration": 30.00002267573696,
+        "chunkScheme": "linear-sample-center-overlap",
+        "windowFrames": 1323000,
+        "overlapFrames": 88200,
+        "hopFrames": 1234800,
+        "windowCount": 2,
+        "windowRanges": [
+          {
+            "start": 0,
+            "frames": 1323000
+          },
+          {
+            "start": 1234800,
+            "frames": 88201
+          }
+        ],
+        "stemPeak": 0.4431180953979492,
+        "stemGain": 1.0,
+        "inferenceSeconds": 6.380362358995626,
+        "model": "spleeter:2stems",
+        "modelRelease": "v1.4.0",
+        "modelArchiveSha256": "f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692",
+        "spleeterVersion": "2.4.2",
+        "tensorflowVersion": "2.12.1",
+        "offlineNetworkAttempts": 0,
+        "workerSeconds": 10.890747517998534,
+        "peakRssKiB": 1233380,
+        "sourcePeak": 0.495025634765625,
+        "sourceGain": 1.0
+      }
+    },
+    {
+      "source": "original synthetic waveform",
+      "licensedAttribution": null,
+      "python": "3.11.16",
+      "versions": {
+        "spleeter": "2.4.2",
+        "tensorflow": "2.12.1",
+        "numpy": "1.24.3",
+        "scipy": "1.15.3"
+      },
+      "pipelineSeconds": 48.78884323899911,
+      "duration": 180.0,
+      "frameCount": 7938000,
+      "pcmPeaks": {
+        "source": 16715,
+        "vocals": 8600,
+        "backing": 15934
+      },
+      "sampledPeakDiskBytes": 253983600,
+      "publishedMediaBytes": 95256132,
+      "stages": [
+        {
+          "stage": "Checking audio format and duration",
+          "elapsedSeconds": 0.0009256299999833573
+        },
+        {
+          "stage": "Decoding the complete audio clip",
+          "elapsedSeconds": 0.15596917799848597
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI",
+          "elapsedSeconds": 6.983258403000946
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 0 of 7 complete",
+          "elapsedSeconds": 9.013928256001236
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 1 of 7 complete",
+          "elapsedSeconds": 13.372801744000753
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 2 of 7 complete",
+          "elapsedSeconds": 17.249119653999514
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 3 of 7 complete",
+          "elapsedSeconds": 21.450604294001096
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 4 of 7 complete",
+          "elapsedSeconds": 25.087021133000235
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 5 of 7 complete",
+          "elapsedSeconds": 28.80387439900005
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 6 of 7 complete",
+          "elapsedSeconds": 32.96821725300106
+        },
+        {
+          "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 7 of 7 complete",
+          "elapsedSeconds": 35.580895431998215
+        },
+        {
+          "stage": "Checking matching stem durations and WAV exports",
+          "elapsedSeconds": 48.76820541199777
+        }
+      ],
+      "processing": {
+        "frameCount": 7938000,
+        "sampleRate": 44100,
+        "duration": 180.0,
+        "chunkScheme": "linear-sample-center-overlap",
+        "windowFrames": 1323000,
+        "overlapFrames": 88200,
+        "hopFrames": 1234800,
+        "windowCount": 7,
+        "windowRanges": [
+          {
+            "start": 0,
+            "frames": 1323000
+          },
+          {
+            "start": 1234800,
+            "frames": 1323000
+          },
+          {
+            "start": 2469600,
+            "frames": 1323000
+          },
+          {
+            "start": 3704400,
+            "frames": 1323000
+          },
+          {
+            "start": 4939200,
+            "frames": 1323000
+          },
+          {
+            "start": 6174000,
+            "frames": 1323000
+          },
+          {
+            "start": 7408800,
+            "frames": 529200
+          }
+        ],
+        "stemPeak": 0.48626136779785156,
+        "stemGain": 1.0,
+        "inferenceSeconds": 24.461858883998502,
+        "model": "spleeter:2stems",
+        "modelRelease": "v1.4.0",
+        "modelArchiveSha256": "f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692",
+        "spleeterVersion": "2.4.2",
+        "tensorflowVersion": "2.12.1",
+        "offlineNetworkAttempts": 0,
+        "workerSeconds": 40.77712233299826,
+        "peakRssKiB": 1310108,
+        "sourcePeak": 0.510101318359375,
+        "sourceGain": 1.0
+      }
+    }
+  ],
+  "production300Seconds": {
+    "duration": 300,
+    "frameCount": 13230000,
+    "pcmPeaks": {
+      "source": 16715,
+      "vocals": 8600,
+      "backing": 15934
+    },
+    "processing": {
+      "frameCount": 13230000,
+      "sampleRate": 44100,
+      "duration": 300.0,
+      "chunkScheme": "linear-sample-center-overlap",
+      "windowFrames": 1323000,
+      "overlapFrames": 88200,
+      "hopFrames": 1234800,
+      "windowCount": 11,
+      "windowRanges": [
+        {
+          "start": 0,
+          "frames": 1323000
+        },
+        {
+          "start": 1234800,
+          "frames": 1323000
+        },
+        {
+          "start": 2469600,
+          "frames": 1323000
+        },
+        {
+          "start": 3704400,
+          "frames": 1323000
+        },
+        {
+          "start": 4939200,
+          "frames": 1323000
+        },
+        {
+          "start": 6174000,
+          "frames": 1323000
+        },
+        {
+          "start": 7408800,
+          "frames": 1323000
+        },
+        {
+          "start": 8643600,
+          "frames": 1323000
+        },
+        {
+          "start": 9878400,
+          "frames": 1323000
+        },
+        {
+          "start": 11113200,
+          "frames": 1323000
+        },
+        {
+          "start": 12348000,
+          "frames": 882000
+        }
+      ],
+      "stemPeak": 0.48626136779785156,
+      "stemGain": 1.0,
+      "inferenceSeconds": 38.21632739599954,
+      "model": "spleeter:2stems",
+      "modelRelease": "v1.4.0",
+      "modelArchiveSha256": "f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692",
+      "spleeterVersion": "2.4.2",
+      "tensorflowVersion": "2.12.1",
+      "offlineNetworkAttempts": 0,
+      "workerSeconds": 63.8038407669992,
+      "peakRssKiB": 1321172,
+      "sourcePeak": 0.510101318359375,
+      "sourceGain": 1.0
+    },
+    "publishedWavBytes": 158760132,
+    "verificationSeconds": 3.575484820001293,
+    "source": "Original synthetic waveform generated by the committed smoke runner; actual production service."
+  },
+  "productionBrowser": {
+    "checkedAt": "2026-10-04T01:11:45.596Z",
+    "browser": "151.0.7922.173",
+    "sourceKind": "Original synthetic audio; actual offline Spleeter production service",
+    "separationUiMs": 75481,
+    "cues": [
+      {
+        "start": 27.75,
+        "end": 30.25,
+        "text": "FIRST WINDOW CROSSING"
+      },
+      {
+        "start": 167.75,
+        "end": 170.25,
+        "text": "MIDDLE WINDOW CROSSING"
+      },
+      {
+        "start": 298,
+        "end": 299.5,
+        "text": "FINAL SONG LINE"
+      }
+    ],
+    "seeks": [
+      {
+        "position": 29,
+        "active": 0
+      },
+      {
+        "position": 31,
+        "active": -1
+      },
+      {
+        "position": 169,
+        "active": 1
+      },
+      {
+        "position": 171,
+        "active": -1
+      },
+      {
+        "position": 298.5,
+        "active": 2
+      },
+      {
+        "position": 299.75,
+        "active": -1
+      }
+    ],
+    "stemSwitchesPreservedLatePosition": true,
+    "savedProjectReopened": true,
+    "desktopOverflow": false,
+    "mobileOverflow": false,
+    "pageErrors": [],
+    "externalRequests": [],
+    "measurementNote": "Initial full flow completed separation, lyric save/reload, SRT and actual MP4 download. Its final reporting request failed because the harness omitted baseURL; corrected baseURL and verified the existing saved project without repeating inference/export. Export timing was not retained and is not reported.",
+    "limitation": "Actual runtime and timeline flow only; no subjective listening or reference-stem separation score.",
+    "realServiceRestartPreservedSavedProjectAndVideo": true
+  },
+  "decodedVideo": {
+    "checkedAtEpoch": 1791076248.7010179,
+    "videoBytes": 8216851,
+    "duration": 300.0,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "audioDuration": 300.0,
+    "decoded299SecondAudioTailFrames": 35280,
+    "decoded299SecondAudioTailPcmPeak": 10215,
+    "resolution": [
+      1280,
+      720
+    ],
+    "framesPerSecond": 24,
+    "declaredFrames": 7200,
+    "lastFrameActuallyDecoded": 7199,
+    "decodedBoundaryChecks": [
+      {
+        "frame": 665,
+        "seconds": 27.708333333333332,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 666,
+        "seconds": 27.75,
+        "expectedActive": true,
+        "warmPixels": 4159,
+        "passed": true
+      },
+      {
+        "frame": 725,
+        "seconds": 30.208333333333332,
+        "expectedActive": true,
+        "warmPixels": 4159,
+        "passed": true
+      },
+      {
+        "frame": 726,
+        "seconds": 30.25,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 4025,
+        "seconds": 167.70833333333334,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 4026,
+        "seconds": 167.75,
+        "expectedActive": true,
+        "warmPixels": 4614,
+        "passed": true
+      },
+      {
+        "frame": 4085,
+        "seconds": 170.20833333333334,
+        "expectedActive": true,
+        "warmPixels": 4621,
+        "passed": true
+      },
+      {
+        "frame": 4086,
+        "seconds": 170.25,
+        "expectedActive": false,
+        "warmPixels": 2,
+        "passed": true
+      },
+      {
+        "frame": 7151,
+        "seconds": 297.9583333333333,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 7152,
+        "seconds": 298.0,
+        "expectedActive": true,
+        "warmPixels": 2632,
+        "passed": true
+      },
+      {
+        "frame": 7187,
+        "seconds": 299.4583333333333,
+        "expectedActive": true,
+        "warmPixels": 2632,
+        "passed": true
+      },
+      {
+        "frame": 7188,
+        "seconds": 299.5,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 7199,
+        "seconds": 299.9583333333333,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      }
+    ],
+    "decodeCheckSeconds": 2.432954479001637,
+    "oracle": "Independent frame numbers and amber active-lyric versus white instrumental-gap pixels; no production renderer used.",
+    "limitations": "Timeline/codec evidence only; no subjective listening or reference-stem separation score."
+  },
+  "laterWindowCancellation": {
+    "checkedAtEpoch": 1791076326.2446494,
+    "sourceSeconds": 300,
+    "cancelledAfterCompletedWindow": 3,
+    "elapsedSeconds": 23.6210369060027,
+    "observedPeakRssKiB": 1314848,
+    "capturedChildCount": 3,
+    "allCapturedChildrenReaped": true,
+    "generatedOutputEmpty": true,
+    "sourceSha256Preserved": true,
+    "stages": [
+      {
+        "stage": "Checking audio format and duration",
+        "elapsedSeconds": 0.00019490500199026428
+      },
+      {
+        "stage": "Decoding the complete audio clip",
+        "elapsedSeconds": 0.1543117520013766
+      },
+      {
+        "stage": "Estimating vocals and backing locally with Spleeter AI",
+        "elapsedSeconds": 10.108613311000227
+      },
+      {
+        "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 0 of 11 complete",
+        "elapsedSeconds": 11.925207784999657
+      },
+      {
+        "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 1 of 11 complete",
+        "elapsedSeconds": 15.990384529002768
+      },
+      {
+        "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 2 of 11 complete",
+        "elapsedSeconds": 19.546634758000437
+      },
+      {
+        "stage": "Estimating vocals and backing locally with Spleeter AI \u2014 window 3 of 11 complete",
+        "elapsedSeconds": 23.511100711002655
+      }
+    ],
+    "cancellationToCleanupAndVerificationSeconds": 0.10991926999849966
+  },
+  "serviceStorageObservation": {
+    "sampledPeakReferencedFileBytes": 423000048,
+    "samplingIntervalSeconds": 0.1,
+    "note": "Logical file sizes sampled across the dedicated test library. Hardlinked video frame references are counted separately, so this is not filesystem allocated space. The peak occurred during separation; per-file/count limits and a 1 GiB free-space admission floor bound operational exposure."
+  }
+}

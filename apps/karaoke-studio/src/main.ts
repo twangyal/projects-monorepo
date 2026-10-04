@@ -1,24 +1,24 @@
 import './style.css';
-import { activeCue, draftCues, formatTime, validateCues, type Project } from './lyrics.ts';
+import { activeCue, draftCues, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft } from './draft-history.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
-interface Session { token: string; modelReady: boolean; maxDuration: number; maxProjects: number; activeJob?: Job | null }
+interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; activeJob?: Job | null }
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
   <a class="skip" href="#workspace">Skip to workspace</a>
   <header><div class="brand"><span aria-hidden="true">♫</span><div><h1>Karaoke Studio</h1><p>Your chorus. Your stage.</p></div></div><div class="session"><span class="dot"></span><span id="model-state">Connecting to local studio…</span><button id="refresh" class="quiet">Refresh projects</button></div></header>
-  <main id="workspace"><div class="intro"><div><p class="eyebrow">FROM SONG CLIP TO SING-ALONG</p><h2>Give your favorite verse the spotlight.</h2><p>Separate the backing, cue your words, and take the stage.</p></div><span class="privacy">LOCAL PROCESSING<br><small>No account. No song uploads to a service.</small></span></div>
+  <main id="workspace"><div class="intro"><div><p class="eyebrow">FROM SONG TO SING-ALONG</p><h2>Give your favorite song the spotlight.</h2><p>Separate the backing, cue your words, and take the stage.</p></div><span class="privacy">LOCAL PROCESSING<br><small>No account. No song uploads to a service.</small></span></div>
     <div id="message" role="status" aria-live="polite" hidden></div>
     <div id="job-panel" role="status" hidden><div class="job-copy"><span class="spinner" aria-hidden="true"></span><div><strong id="job-title"></strong><p id="job-stage"></p></div></div><button id="cancel-job">Cancel job</button></div>
     <div class="workspace-grid">
       <aside class="song-panel panel"><div class="panel-title"><span class="step">01</span><h3>Your song clip</h3></div>
-        <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br>1–30 seconds · up to 20 MiB</span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
+        <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br><span id="upload-limits">1–300 seconds · up to 64 MiB</span></span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
         <p id="model-help" class="model-help" hidden>Install the local separation model first. From the app directory, run <code>python scripts/setup_model.py --help</code> and follow the README setup steps, then refresh.</p>
         <p class="fine">The model estimates vocals and backing locally. Listen for remaining vocals or altered instruments before exporting.</p>
         <div class="divider"></div><label class="field">Saved clips<select id="projects"><option value="">Choose a saved clip</option></select></label><p id="library-count" class="fine">Projects are saved in your local studio folder.</p>
-        <div id="clip-details" hidden><label class="field">Clip title<input id="title" maxlength="100" type="text"></label><div class="clip-meta"><span id="duration">0:00</span><span>44.1 kHz · stereo</span></div><button id="backing-download" class="full">Download backing WAV <span aria-hidden="true">↓</span></button></div>
-        <button id="delete-project" class="text-button full" disabled>Delete selected clip</button><div class="local-note"><strong>A small clip, a complete idea.</strong><p>Trim a favorite verse to 30 seconds before importing. This first version focuses on short, local karaoke clips.</p></div>
+        <div id="clip-details" hidden><label class="field">Clip title<input id="title" type="text"></label><div class="clip-meta"><span id="duration">0:00</span><span>44.1 kHz · stereo</span></div><button id="backing-download" class="full">Download backing WAV <span aria-hidden="true">↓</span></button></div>
+        <button id="delete-project" class="text-button full" disabled>Delete selected clip</button><div class="local-note"><strong>Room for the complete song.</strong><p>Import complete songs up to 5 minutes. Local CPU separation and video export can take several minutes; cancellation remains available while processing.</p></div>
       </aside>
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><span class="step">02</span><h3 id="stage-heading">Listen & preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
@@ -28,7 +28,7 @@ app.innerHTML = `
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">YOUR LYRICS, YOUR TIMING</span></div>
-        <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" maxlength="5000" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p></div></div>
+        <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
       </section>
@@ -72,8 +72,9 @@ function json(method: string, body: unknown): RequestInit { return { method, hea
 function validateWorking(): string {
   if (!working) return '';
   try {
-    if (!working.title.trim() || working.title.length > 100) throw new Error('Enter a clip title of 1–100 characters.');
+    validateTitle(working.title);
     validateCues(working.cues, working.duration);
+    if (session && (working.duration > session.maxDuration || working.cues.length > session.maxCues || working.cues.reduce((total, cue) => total + Array.from(cue.text).length, 0) > session.maxLyricChars)) throw new Error('This edit exceeds the connected studio’s song or lyric limits. Your draft is kept.');
     return '';
   } catch (error) { return error instanceof Error ? error.message : 'Check the lyric timing.'; }
 }
@@ -158,6 +159,20 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
 function draw() {
   context.fillStyle = '#14232f'; context.fillRect(0, 0, 1280, 720);
   context.textAlign = 'center'; context.textBaseline = 'middle';
+  const invalid = validateWorking();
+  if (invalid) {
+    // Keep the complete invalid draft in its editor/history, but never send
+    // unbounded input to native canvas layout, including during playback.
+    drawBlock('Preview paused', 240, 44, 24, 100, '#e4b77d');
+    drawBlock('Correct the title or lyric draft to resume.', 330, 28, 22, 100, '#f7f5ed');
+    drawBlock(invalid, 430, 24, 18, 160, '#9dafbb');
+    stage.dataset.activeCue = '-1';
+    const paused = 'Preview paused — correct the title or lyric draft to resume.';
+    if (element('current-line').textContent !== paused) element('current-line').textContent = paused;
+    element('clock').textContent = `${formatTime(audio.currentTime || 0)} / ${formatTime(working?.duration || 0)}`;
+    for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.remove('active');
+    return;
+  }
   drawBlock((working?.title || 'Your next sing-along starts here').replace(/\s+/g, ' ').trim(), 80, 32, 22, 100, '#f7f5ed');
   const time = audio.currentTime || 0, index = working ? activeCue(working.cues, time) : -1;
   const current = index >= 0 ? working!.cues[index].text : 'Instrumental break';
@@ -194,7 +209,6 @@ function cueInput(label: string, value: string, type: string, onInput: (value: s
   const wrapper = document.createElement('label'); wrapper.textContent = label;
   const control = document.createElement('input'); control.type = type; control.value = value;
   if (type === 'number') { control.min = '0'; control.max = String(working!.duration); control.step = 'any'; }
-  else control.maxLength = 240;
   control.addEventListener('input', () => { onInput(control.value); changed(label); });
   wrapper.append(control); return wrapper;
 }
@@ -332,7 +346,8 @@ function startPolling(job: Job, follow = true) { if (currentJob?.id !== job.id) 
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
   if (!file || currentJob || requestingJob || !mayLeave()) return;
-  if (file.size < 1 || file.size > 20 * 1024 * 1024) { message('Choose a nonempty song clip no larger than 20 MiB.', true); return; }
+  const maxBytes = Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
+  if (file.size < 1 || file.size > maxBytes) { message(`Choose a nonempty song clip no larger than ${maxBytes / 1024 / 1024} MiB.`, true); return; }
   requestingJob = true; controls();
   try {
     const result = await request<{ job: Job }>('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-Audio-Name': encodeURIComponent(file.name) }, body: file });
@@ -355,6 +370,8 @@ element('export-video').addEventListener('click', async () => {
 async function refresh() {
   try {
     session = await request<Session>('/api/session');
+    element('upload-limits').textContent = `1–${session.maxDuration} seconds · up to ${session.maxUploadBytes / 1024 / 1024} MiB`;
+    element('lyric-limits').textContent = `Up to ${session.maxCues} cues · 240 characters per cue · ${session.maxLyricChars.toLocaleString('en-US')} lyric characters. Unicode characters count once; pasted whitespace also counts.`;
     element('model-state').textContent = session.modelReady ? 'Local CPU model ready' : 'Local model setup needed';
     element('model-help').hidden = session.modelReady;
     await refreshProjects(); controls();

@@ -1,7 +1,7 @@
 [project]
 name = "local-karaoke-studio"
 version = "0.1.0"
-description = "Local AI stem separation, lyric timing and karaoke clip export"
+description = "Local AI stem separation, lyric timing and karaoke song export"
 requires-python = ">=3.11,<3.12"
 dependencies = ["Pillow==11.3.0"]
 

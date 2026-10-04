@@ -1,3 +1,5 @@
+> Historical evidence for the initial 1–30-second milestone. Current supported bounds and newer full-song verification are described in the README. These original measurements remain unchanged.
+
 # Initial local verification
 
 Verified on Linux x86_64 with a four-CPU quota, 16 GiB memory, Python 3.11.16,

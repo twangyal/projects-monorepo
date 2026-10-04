@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import http.client
+import errno
+from types import SimpleNamespace
 import json
 from pathlib import Path
 import tempfile
@@ -104,14 +106,163 @@ class ServerTests(unittest.TestCase):
 
     def test_session_and_static_files_are_local_and_bounded(self):
         status, headers, session = self.request("GET", "/api/session")
-        self.assertEqual(session["maxDuration"], 30)
+        self.assertEqual(session["maxDuration"], 300)
         self.assertEqual(session["maxProjects"], 20)
+        self.assertEqual(session["maxUploadBytes"], 64 * 1024**2)
+        self.assertEqual(session["maxCues"], 200)
+        self.assertEqual(session["maxLyricChars"], 20000)
         self.assertTrue(session["modelReady"])
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
         self.assertNotIn("Access-Control-Allow-Origin", headers)
         self.assertEqual(self.request("GET", "/")[2], b"<h1>Karaoke test</h1>")
         for path in ("/../../etc/passwd", "/assets/%2e%2e/server.py", "/api/projects/nope"):
             self.assertNotEqual(self.request("GET", path)[0], 200)
+
+    def test_maximum_escaped_unicode_document_saves_and_reopens(self):
+        project_id = self.upload()['projectId']
+        endpoint = f'/api/projects/{project_id}'
+        changes = {'title': '🎵' * 100, 'revision': 0,
+                   'cues': [dict(start=i / 100, end=(i + 1) / 100, text='🎵' * 100)
+                            for i in range(200)]}
+        encoded = json.dumps(changes, ensure_ascii=True).encode('ascii')
+        self.assertGreater(len(encoded), 240000)
+        self.assertLess(len(encoded), 256 * 1024)
+        status, _, saved = self.request('PUT', endpoint, encoded, {'Content-Type': 'application/json'})
+        self.assertEqual(status, 200, saved)
+        self.assertEqual(len(saved['cues']), 200)
+        self.server.shutdown()
+        self.server.server_close()
+        self.server = self.start_server()
+        self.token = self.request('GET', '/api/session')[2]['token']
+        self.assertEqual(self.request('GET', endpoint)[2], saved)
+
+    def test_disk_admission_rejects_upload_and_export_preserving_saved_work(self):
+        project_id = self.upload()['projectId']
+        endpoint = f'/api/projects/{project_id}'
+        self.request('PUT', endpoint, {'title': 'Saved', 'revision': 0,
+                                      'cues': [dict(start=0, end=1, text='Line')]})
+        status, _, response = self.request('POST', endpoint + '/export', {})
+        self.assertEqual(status, 202)
+        self.assertEqual(self.wait_job(response['job']['id'])['status'], 'complete')
+        baseline = self.request('GET', endpoint)[2]
+        owned_fd = self.server._directory_fds[self.server.work_dir]
+        with patch.object(server_module.os, 'fstatvfs', return_value=SimpleNamespace(f_bavail=1, f_frsize=4096)) as check:
+            self.assertEqual(self.request('POST', '/api/projects', b'fake')[0], 507)
+            self.assertEqual(self.request('POST', endpoint + '/export', {})[0], 507)
+            self.assertTrue(check.call_args_list)
+            self.assertTrue(all(call.args == (owned_fd,) for call in check.call_args_list))
+        self.assertEqual(self.request('GET', endpoint)[2], baseline)
+        self.assertEqual(self.request('GET', endpoint + '/video')[2], b'test-only MP4')
+        self.assertEqual(list(self.server.work_dir.iterdir()), [])
+        self.assertFalse(self.server.uploading)
+        self.assertFalse(self.server.jobs.busy())
+
+    def test_absolute_upload_deadline_stops_continuous_trickle_and_releases_slot(self):
+        stop = threading.Event()
+        with patch.object(server_module, 'UPLOAD_TIMEOUT', .2):
+            with socket.create_connection(('127.0.0.1', self.server.server_port), timeout=1) as connection:
+                headers = (f'POST /api/projects HTTP/1.1\r\nHost: 127.0.0.1:{self.server.server_port}\r\n'
+                           f'X-Karaoke-Token: {self.token}\r\nContent-Length: 10000\r\n\r\n')
+                connection.sendall(headers.encode())
+                def trickle():
+                    while not stop.wait(.02):
+                        try:
+                            connection.sendall(b'x')
+                        except OSError:
+                            break
+                sender = threading.Thread(target=trickle)
+                sender.start()
+                try:
+                    response = http.client.HTTPResponse(connection)
+                    response.begin()
+                    self.assertEqual(response.status, 408)
+                    self.assertIn(b'timed out', response.read())
+                finally:
+                    stop.set()
+                    sender.join(1)
+        self.assertFalse(self.server.uploading)
+        self.assertEqual(list(self.server.work_dir.iterdir()), [])
+        self.assertFalse(self.server.jobs.busy())
+        self.assertEqual(self.upload()['status'], 'complete')
+
+    def test_oversized_worker_wav_cannot_publish(self):
+        def oversized(source, output, model, cancel, stage):
+            duration = fake_separate(source, output, model, cancel, stage)
+            with (output / 'source.wav').open('wb') as stream:
+                stream.truncate(300 * 44100 * 4 + 4097)
+            return duration
+        self.server.separate = oversized
+        job = self.upload()
+        self.assertEqual(job['status'], 'failed', job)
+        self.assertEqual(self.server.projects, {})
+        self.assertEqual(list(self.server.work_dir.iterdir()), [])
+
+    def test_cancel_during_staging_copy_cleans_partials_and_preserves_library(self):
+        previous_id = self.upload()['projectId']
+        entered, release = threading.Event(), threading.Event()
+        original_copy = server_module._copy_media
+        def gated_copy(source, target, limit, cancel):
+            entered.set()
+            if not release.wait(2):
+                raise RuntimeError('Test copy gate timed out')
+            return original_copy(source, target, limit, cancel)
+        with patch.object(server_module, '_copy_media', gated_copy):
+            status, _, payload = self.request('POST', '/api/projects', b'fixture')
+            self.assertEqual(status, 202)
+            self.assertTrue(entered.wait(1))
+            job_id = payload['job']['id']
+            try:
+                self.assertEqual(self.request('POST', f'/api/jobs/{job_id}/cancel', {})[0], 200)
+            finally:
+                release.set()
+            self.assertEqual(self.wait_job(job_id)['status'], 'cancelled')
+        self.assertEqual(list(self.server.projects), [previous_id])
+        self.assertEqual(list(self.server.work_dir.iterdir()), [])
+        self.assertFalse(self.server.jobs.busy())
+
+    def test_disk_exhaustion_after_admission_cleans_partial_copy(self):
+        previous_id = self.upload()['projectId']
+        def no_space(source, target, limit, cancel):
+            target.write_bytes(b'partial')
+            raise OSError(errno.ENOSPC, 'No space left on device')
+        with patch.object(server_module, '_copy_media', no_space):
+            job = self.upload()
+        self.assertEqual(job['status'], 'failed')
+        self.assertIn('No space', job['error'])
+        self.assertEqual(list(self.server.projects), [previous_id])
+        self.assertEqual(list(self.server.work_dir.iterdir()), [])
+        self.assertFalse(self.server.jobs.busy())
+
+    def test_copy_cancellation_is_checked_between_bounded_blocks(self):
+        source, target = self.root / 'source.bin', self.root / 'copy.bin'
+        source.write_bytes(b'01234567' * 32768)
+        class CancelAfterOneBlock:
+            checks = 0
+            def is_set(self):
+                self.checks += 1
+                return self.checks >= 4
+        with self.assertRaisesRegex(RuntimeError, 'cancelled'):
+            server_module._copy_media(source, target, 300000, CancelAfterOneBlock())
+        self.assertEqual(target.read_bytes(), source.read_bytes()[:65536])
+        target.unlink()
+        server_module._copy_media(source, target, 300000, threading.Event())
+        self.assertEqual(target.read_bytes(), source.read_bytes())
+
+    def test_oversized_export_preserves_previous_completed_video(self):
+        project_id = self.upload()['projectId']
+        endpoint = f'/api/projects/{project_id}'
+        self.request('PUT', endpoint, {'title': 'Saved', 'revision': 0,
+                                      'cues': [dict(start=0, end=1, text='Line')]})
+        first = self.request('POST', endpoint + '/export', {})[2]['job']
+        self.assertEqual(self.wait_job(first['id'])['status'], 'complete')
+        def oversized(project, backing, output, work_dir, font, cancel):
+            with output.open('wb') as stream:
+                stream.truncate(128 * 1024**2 + 1)
+        self.server.export = oversized
+        job = self.request('POST', endpoint + '/export', {})[2]['job']
+        self.assertEqual(self.wait_job(job['id'])['status'], 'failed')
+        self.assertEqual(self.request('GET', endpoint + '/video')[2], b'test-only MP4')
+        self.assertEqual(list(self.server.work_dir.iterdir()), [])
 
     def test_host_origin_and_write_token_are_enforced(self):
         self.assertEqual(self.request("GET", "/api/session", headers={"Host": "evil.test"})[0], 403)
@@ -220,7 +371,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/projects", b"audio")[0], 503)
         self.server.ready = lambda _: True
         self.assertEqual(self.request("POST", "/api/projects", b"",
-                                      {"Content-Length": str(20 * 1024 * 1024 + 1)})[0], 413)
+                                      {"Content-Length": str(64 * 1024 * 1024 + 1)})[0], 413)
         self.assertEqual(self.request("POST", "/api/projects", b"",
                                       {"Transfer-Encoding": "chunked"})[0], 400)
         self.assertEqual(self.request("POST", "/api/projects", b"")[0], 400)
@@ -235,7 +386,7 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(self.request("PUT", endpoint, body,
                                           {"Content-Type": "application/json"})[0], 400)
         self.assertEqual(self.request("PUT", endpoint, b"",
-                                      {"Content-Length": "65537"})[0], 413)
+                                      {"Content-Length": str(256 * 1024 + 1)})[0], 413)
         bad = {"title": "Bad", "revision": 0,
                "cues": [{"start": 1, "end": 3, "text": "too long"}]}
         self.assertEqual(self.request("PUT", endpoint, bad)[0], 400)

@@ -24,7 +24,7 @@ class ModelTests(unittest.TestCase):
     def test_invalid_fields_and_nonfinite_numbers_are_rejected(self):
         cases = [('id', '../unsafe'), ('id', 'A' * 32), ('schemaVersion', 2),
                  ('schemaVersion', True), ('title', ''), ('title', ' '),
-                 ('title', 'a' * 101), ('title', '\ud800'), ('duration', 0.9), ('duration', 30.1),
+                 ('title', 'a' * 101), ('title', '\ud800'), ('duration', 0.9), ('duration', 300.1),
                  ('duration', math.nan), ('duration', math.inf), ('duration', True),
                  ('revision', True), ('revision', -1), ('cues', 'not a list')]
         for key, value in cases:
@@ -66,12 +66,39 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(draft_cues('   ', 3), [])
 
     def test_draft_and_saved_lyrics_have_count_and_character_limits(self):
-        for text in ['x\n' * 41, 'x' * 241, '\n'.join(['x' * 200] * 26)]:
+        for text in ['x\n' * 201, 'x' * 241, '\n'.join(['x' * 200] * 100)]:
             with self.subTest(length=len(text)), self.assertRaises(ValidationError):
                 draft_cues(text, 3)
-        cues = [dict(start=i / 20, end=(i + 1) / 20, text='x') for i in range(41)]
+        cues = [dict(start=i / 20, end=(i + 1) / 20, text='x') for i in range(201)]
         with self.assertRaises(ValidationError):
             validate_project({**self.project(), 'cues': cues})
+
+    def test_full_song_maximum_unicode_document_and_detached_updates(self):
+        original = create_project('a' * 32, '🎵' * 100, 300)
+        cues = [dict(start=i, end=i + 1, text='🎵' * 100) for i in range(200)]
+        updated = update_project(original, original['title'], cues, 0)
+        self.assertEqual(len(updated['cues']), 200)
+        self.assertEqual(sum(len(cue['text']) for cue in updated['cues']), 20000)
+        self.assertEqual(original['cues'], [])
+        cues[0]['text'] = 'edited externally'
+        self.assertEqual(updated['cues'][0]['text'], '🎵' * 100)
+        updated['cues'][0]['text'] += 'x'
+        with self.assertRaisesRegex(ValidationError, '20000'):
+            validate_project(updated)
+        with self.assertRaises(ValidationError):
+            create_project('a' * 32, 'Too long', 300 + 1 / 44100)
+
+    def test_draft_unicode_and_raw_whitespace_limits(self):
+        self.assertEqual(draft_cues('\u0085One\u2028 Two \x1eThree\u0085', 300),
+                         [dict(start=0, end=100, text='One'),
+                          dict(start=100, end=200, text='Two'),
+                          dict(start=200, end=300, text='Three')])
+        self.assertEqual(draft_cues('\ufeff', 1)[0]['text'], '\ufeff')
+        self.assertEqual(draft_cues(' ' * 20000, 300), [])
+        for text in [' ' * 20001, '\ud800', '\x00', '🎵' * 241]:
+            with self.subTest(text=repr(text[:10])), self.assertRaises(ValidationError):
+                draft_cues(text, 300)
+        self.assertEqual(len(draft_cues('🎵' * 240, 300)[0]['text']), 240)
 
     def test_srt_escapes_markup_and_prevents_extra_subtitle_blocks(self):
         project = update_project(self.project(), 'Song', [dict(start=0.25, end=1.75,

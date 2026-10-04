@@ -19,15 +19,19 @@ import signal
 import socket
 import tempfile
 import threading
+import time
 from urllib.parse import unquote, urlsplit
 import uuid
 
 from .jobs import JobBusy, JobManager
 from .media_io import inherit_media_handles
+from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
+                     MAX_WAV_BYTES, MAX_VIDEO_BYTES, MIN_FREE_BYTES,
+                     UPLOAD_TIMEOUT, UPLOAD_IDLE_TIMEOUT)
 from .model import MAX_DURATION, ValidationError, create_project, render_srt, update_project, validate_project
 
-MAX_UPLOAD = 20 * 1024 * 1024
-MAX_JSON = 64 * 1024
+MAX_UPLOAD = MAX_INPUT_BYTES
+MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
 _PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export))?")
@@ -70,6 +74,36 @@ def _atomic_json(path: Path, value: dict, *, directory_fd=None):
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def _copy_media(source: Path, target: Path, limit: int, cancel):
+    """Copy bounded regular media in cancellable blocks through owned paths."""
+    def check():
+        if cancel.is_set():
+            raise RuntimeError("Media publication was cancelled.")
+
+    check()
+    source_fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(source_fd, "rb") as incoming:
+        info = os.fstat(incoming.fileno())
+        if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:
+            raise RuntimeError("Processed media is invalid or oversized.")
+        target_fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(target_fd, "wb") as outgoing:
+            copied = 0
+            while True:
+                check()
+                block = incoming.read(min(65536, info.st_size - copied + 1))
+                check()
+                if not block:
+                    break
+                copied += len(block)
+                if copied > info.st_size:
+                    raise RuntimeError("Processed media changed during publication.")
+                outgoing.write(block)
+            if copied != info.st_size:
+                raise RuntimeError("Processed media was truncated during publication.")
+        check()
 
 
 class KaraokeServer(ThreadingHTTPServer):
@@ -189,6 +223,9 @@ class KaraokeServer(ThreadingHTTPServer):
 
     def new_work(self):
         self.check_storage()
+        space = os.fstatvfs(self._directory_fds[self.work_dir])
+        if space.f_bavail * space.f_frsize < MIN_FREE_BYTES:
+            raise RequestError(507, "At least 1 GiB of free local disk space is required for a media job.")
         name = uuid.uuid4().hex
         parent_fd = self._directory_fds[self.work_dir]
         os.mkdir(name, dir_fd=parent_fd)
@@ -294,12 +331,12 @@ class KaraokeServer(ThreadingHTTPServer):
                     source = media / name
                     if source.is_symlink() or not source.is_file():
                         raise RuntimeError("Audio processing did not produce all three WAV files.")
-                    shutil.copyfile(source, complete / name)
+                    _copy_media(source, complete / name, MAX_WAV_BYTES, cancel)
                 metadata = media / "processing.json"
                 if metadata.exists():
                     if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
                         raise RuntimeError("Audio processing provenance is invalid or oversized.")
-                    shutil.copyfile(metadata, complete / "processing.json")
+                    _copy_media(metadata, complete / "processing.json", 16384, cancel)
                 _atomic_json(complete / "project.json", project)
             finally:
                 os.close(work_fd)
@@ -344,7 +381,8 @@ class KaraokeServer(ThreadingHTTPServer):
                         self.export(project, owned_project / "backing.wav", output,
                                     owned_work, self.font_path, cancel)
                     self.check_storage()
-                    if output.is_symlink() or not output.is_file() or not output.stat().st_size:
+                    if (output.is_symlink() or not output.is_file()
+                            or not 0 < output.stat().st_size <= MAX_VIDEO_BYTES):
                         raise RuntimeError("Video export did not produce a complete output.")
                 finally:
                     os.close(project_fd)
@@ -412,7 +450,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def setup(self):
         super().setup()
-        self.connection.settimeout(5)
+        self.connection.settimeout(UPLOAD_IDLE_TIMEOUT)
 
     def log_message(self, *_args):
         # URLs, local file names and user media must not become request logs.
@@ -620,6 +658,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/session" and read:
             self._json(dict(token=server.token, modelReady=server.model_ready(),
                             maxDuration=MAX_DURATION, maxProjects=MAX_PROJECTS,
+                            maxUploadBytes=MAX_UPLOAD, maxCues=MAX_CUES,
+                            maxLyricChars=MAX_LYRIC_CHARS,
                             activeJob=server.jobs.active()))
             return
         if path == "/api/projects":
@@ -772,12 +812,24 @@ class Handler(BaseHTTPRequestHandler):
                 os.close(work_fd)
             with os.fdopen(upload_fd, "wb") as output:
                 remaining = length
-                while remaining:
-                    chunk = self.rfile.read(min(remaining, 65536))
-                    if not chunk:
-                        raise RequestError(400, "Upload body was incomplete.")
-                    output.write(chunk)
-                    remaining -= len(chunk)
+                deadline = time.monotonic() + UPLOAD_TIMEOUT
+                try:
+                    while remaining:
+                        budget = deadline - time.monotonic()
+                        if budget <= 0:
+                            raise TimeoutError("Upload deadline exceeded")
+                        self.connection.settimeout(min(UPLOAD_IDLE_TIMEOUT, budget))
+                        # read1 performs at most one raw read, so a continuous
+                        # trickle cannot keep a large buffered read alive forever.
+                        chunk = self.rfile.read1(min(remaining, 65536))
+                        if time.monotonic() >= deadline:
+                            raise TimeoutError("Upload deadline exceeded")
+                        if not chunk:
+                            raise RequestError(400, "Upload body was incomplete.")
+                        output.write(chunk)
+                        remaining -= len(chunk)
+                finally:
+                    self.connection.settimeout(UPLOAD_IDLE_TIMEOUT)
             with server.lock:
                 if len(server.projects) >= MAX_PROJECTS:
                     raise RequestError(409, "Project storage is full; existing projects are preserved.")
