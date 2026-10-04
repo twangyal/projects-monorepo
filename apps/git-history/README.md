@@ -30,6 +30,33 @@ python3 -m git_history explain --repo /path/to/repository \
 
 ### Select a named function
 
+Start with committed file discovery when you do not know the exact path:
+
+```sh
+python3 -m git_history files --repo /path/to/repository
+python3 -m git_history files --repo /path/to/repository \
+  --directory src --language typescript --format json
+```
+
+`files` lists regular committed Python (`.py`, `.pyi`), JavaScript and TypeScript
+file candidates no larger than 512 KiB, with their exact paths, language and blob
+sizes. It reads only Git tree metadata: it does not open, parse or execute source,
+and does not require the optional parser. A matching suffix does not guarantee
+valid syntax, UTF-8 source, or any functions; use `functions` to inspect a candidate.
+Symlinks, submodules and larger blobs are omitted. Non-UTF-8 regular-file paths
+are omitted with a count because they cannot be used by the UTF-8 selection API.
+
+`--directory` is a literal repository-relative directory prefix; `src` includes
+`src/nested` but not `src-extra`. Missing directories produce an empty catalog.
+`--language` accepts `all` (default), `python`, `javascript`, or `typescript`
+(including TSX). The JSON catalog preserves exact paths and the resolved commit
+ID. Pass that ID to subsequent `functions` and `explain --ref` commands to keep
+the same snapshot. Text paths are JSON-quoted so newlines/control characters
+cannot alter terminal output; decode them or use the JSON format for automation.
+Discovery is bounded at 10,000 candidates and 2 MiB of combined Git output.
+Exceeding a limit fails without publishing a partial list; narrow the directory
+or language selection (directory filtering also reduces Git tree output).
+
 List qualified names and complete source ranges from the committed file, then select one:
 
 ```sh
