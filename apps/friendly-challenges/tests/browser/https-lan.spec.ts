@@ -20,7 +20,16 @@ test('three HTTPS seats explicitly agree, retain exact reviewed images and arbit
     await revision(owner); await owner.locator('#arbiter-form [name=name]').fill('Rowan'); await owner.locator('#arbiter-form [name=reason]').fill('Rowan can review our supplied studies.'); await owner.getByRole('button', { name: 'Nominate arbiter', exact: true }).click();
     const nomination = (await snapshot(owner)).arbiterNomination!; let current = await snapshot(owner); expect((await api(owner, '/invite', { revision: current.revision, seat: 'arbiter' })).status).toBe(409);
     await revision(opponent); opponent.once('dialog', dialog => dialog.accept()); await opponent.getByRole('button', { name: 'Approve arbiter', exact: true }).click(); await expect.poll(async () => (await snapshot(owner)).arbiterNomination?.status).toBe('approved'); expect((await snapshot(owner)).arbiterNomination?.id).toBe(nomination.id);
-    await revision(owner); await owner.getByRole('button', { name: 'Invite arbiter', exact: true }).click(); const arbiterInvitation = await owner.locator('#shared-link').inputValue(); await owner.getByRole('button', { name: 'Close link', exact: true }).click(); await claim(arbiter, arbiterInvitation, true);
+    await revision(owner); await owner.getByRole('button', { name: 'Invite arbiter', exact: true }).click();
+    // Clicking starts the request; the real invitation is available only after its response.
+    // Return a boolean so a failed readiness assertion never prints the private token.
+    await expect.poll(async () => {
+      const value = await owner.locator('#shared-link').inputValue();
+      if (!value) return false;
+      const link = new URL(value);
+      return link.origin === lan.origin && link.pathname === '/' && link.search === `?challenge=${id}` && /^#arbiter=[a-f0-9]{64}$/.test(link.hash);
+    }).toBe(true);
+    const arbiterInvitation = await owner.locator('#shared-link').inputValue(); await owner.getByRole('button', { name: 'Close link', exact: true }).click(); await claim(arbiter, arbiterInvitation, true);
     expect(await retained(arbiter, first.id)).toEqual(preview); expect(await retained(arbiter, second.id)).toEqual(secondPreview); current = await snapshot(owner); expect((await api(owner, '/arbiter/decide', { revision: current.revision, outcome: 'proposer', reason: 'Proposer has no arbiter authority.' })).status).toBe(403);
     await revision(arbiter); await arbiter.locator('#decision-form [name=outcome]').selectOption('opponent'); await arbiter.locator('#decision-form [name=reason]').fill(RESOLUTION.reason); arbiter.once('dialog', dialog => dialog.accept()); await arbiter.getByRole('button', { name: 'Record decision', exact: true }).click(); await expect.poll(async () => (await snapshot(owner)).status).toBe('resolved'); const final = await snapshot(arbiter); expect(final.resolution).toMatchObject(RESOLUTION); expect(final.events.map(event => event.kind)).toEqual(AUDIT);
     const privateSeats = await Promise.all([owner, opponent, arbiter].map(credentials)); const links = await Promise.all([owner, opponent, arbiter].map(privateLink)); expect(new Set(privateSeats.map(seat => seat.token)).size).toBe(3); expect(await contexts[0].cookies()).toEqual([]);

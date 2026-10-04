@@ -207,5 +207,16 @@
     "No archive/schema/domain or source-photo normalization changes; prior offline archive capacity remains separate evidence.",
     "Production has no trust bypass. Isolated Chromium uses only its original fixture SPKI; Python verifies normal CA and hostname rules.",
     "No deployment, system trust/network change, service charge or new Python runtime dependency."
-  ]
+  ],
+  "ci": {
+    "status": "failed-first-published-head",
+    "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792",
+    "receipt": "2026-10-04-https-lan-ci-first.json",
+    "pushRunId": 37234716493,
+    "prRunId": 37234719420,
+    "countsBoth": "194 Python and 42 TypeScript passed; 33 native passed, 1 failed; other 12 PR workflows passed.",
+    "failure": "Async arbiter invitation was read empty before completion; both original traces confirm the missing test readiness barrier.",
+    "finalPublishedCi": "pending corrected-head verification",
+    "repairReceipt": "2026-10-04-https-lan-invitation-readiness.json"
+  }
 }

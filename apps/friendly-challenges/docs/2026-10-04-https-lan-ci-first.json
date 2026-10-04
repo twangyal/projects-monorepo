@@ -1,0 +1,223 @@
+{
+  "issue": 108,
+  "checkedAtUtc": "2026-10-04T21:17:36.076Z",
+  "status": "failed-first-published-head",
+  "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792",
+  "expectedTree": "66459505428654cc7d06a6e99b78015ea7e335d8",
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37234716493,
+      "jobId": 111531420870,
+      "checkoutSha": "85a84bca8fd01a0ff5df1166102b59106f92c792",
+      "tree": "66459505428654cc7d06a6e99b78015ea7e335d8",
+      "treeVerified": true,
+      "conclusion": "failure",
+      "python": {
+        "passed": 194,
+        "seconds": 56.112
+      },
+      "typescript": {
+        "passed": 42,
+        "failed": 0,
+        "milliseconds": 563.14454
+      },
+      "native": {
+        "passed": 33,
+        "failed": 1,
+        "durationReported": "3.3m"
+      },
+      "log": {
+        "path": "/workspace/friendly108-ci-first-push-failure.log",
+        "bytes": 107493,
+        "sha256": "e854d30169b63edbd488bd761ce3a6e0522d09d999eed47c85911d51a7793410"
+      },
+      "artifact": {
+        "id": 11315490800,
+        "bytes": 862245,
+        "sha256": "091b72407b2cad7a33cc24eee4a834638c79c4d3b54e3c08a8132c718cd7beb0",
+        "localPath": "/workspace/attachments/9ef9f5ab-8a83-45f2-90e8-015265bceb5f/friendly108-37234716493-failure.zip"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37234719420,
+      "jobId": 111531429016,
+      "checkoutSha": "1f285937009150934b1cf3c8d3f4248dd155c7bb",
+      "tree": "66459505428654cc7d06a6e99b78015ea7e335d8",
+      "treeVerified": true,
+      "conclusion": "failure",
+      "python": {
+        "passed": 194,
+        "seconds": 56.277
+      },
+      "typescript": {
+        "passed": 42,
+        "failed": 0,
+        "milliseconds": 496.35185
+      },
+      "native": {
+        "passed": 33,
+        "failed": 1,
+        "durationReported": "3.3m"
+      },
+      "log": {
+        "path": "/workspace/friendly108-ci-first-pr-failure.log",
+        "bytes": 108628,
+        "sha256": "b4b1a766ae520a32b35030d2bf0f9f597fdbd491b85fe629e3c66552129d6ce5"
+      },
+      "artifact": {
+        "id": 11315516347,
+        "bytes": 866757,
+        "sha256": "f33f2e8201920af92e86f65c9fc7a21f013b71a403c981d9279950b79fe24db6",
+        "localPath": "/workspace/attachments/e503c3eb-4a2a-45db-b7ae-6ca627ba9a4f/friendly108-37234719420-failure.zip"
+      }
+    }
+  ],
+  "checks": {
+    "compileall": "passed-both",
+    "ruff": "passed-both",
+    "eslint": "passed-both",
+    "typecheck": "passed-both",
+    "productionBuild": "passed-both"
+  },
+  "environment": {
+    "python": "3.11.16",
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12",
+    "playwrightChromiumBuild": "1243"
+  },
+  "failure": {
+    "file": "tests/browser/https-lan.spec.ts",
+    "line": 8,
+    "test": "three HTTPS seats explicitly agree, retain exact reviewed images and arbitrate an immutable record across whole service restart",
+    "timeoutMilliseconds": 90000,
+    "secondaryCleanupError": "Target page, context or browser has been closed",
+    "pendingAction": {
+      "file": "tests/browser/https-lan-fixtures.ts",
+      "line": 49,
+      "action": "Fill arbiter name via #claim-form [name=name]",
+      "pushStartMilliseconds": 20888.612,
+      "pushEndMilliseconds": 101861.823,
+      "prStartMilliseconds": 21543.539,
+      "prEndMilliseconds": 102682.365
+    },
+    "traceEvidence": {
+      "precedingInviteClickMilliseconds": [
+        20700.794,
+        20750.857
+      ],
+      "immediateLinkGetterMilliseconds": [
+        20751.5,
+        20763.045
+      ],
+      "closeLinkMilliseconds": [
+        20763.78,
+        20812.278
+      ],
+      "navigationMilliseconds": [
+        20812.897,
+        20886.708
+      ],
+      "navigationUrl": "",
+      "sameEmptyNavigationBothRuns": true
+    },
+    "classification": "Test reads empty shared-link before asynchronous Invite arbiter result; next empty navigation does not open a claim page. Repair owner is tracing exact request completion; no production defect claimed.",
+    "retestsRun": 0
+  },
+  "allPrSnapshot": [
+    {
+      "name": "Style Studio",
+      "runId": 37234719361,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37234719397,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Clothing Studio",
+      "runId": 37234719358,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37234719368,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Git History",
+      "runId": 37234719366,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37234719467,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37234719507,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37234719403,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Composure",
+      "runId": 37234719398,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Duet",
+      "runId": 37234719374,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37234719456,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37234719430,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37234719420,
+      "status": "completed",
+      "conclusion": "failure",
+      "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792"
+    }
+  ],
+  "privacy": "Full logs and traces are local verification inputs and may contain private test capabilities; no signed artifact URLs or private keys are included in this receipt. Artifacts are not republished."
+}

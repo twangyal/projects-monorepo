@@ -273,3 +273,5 @@ and 28 browser tests**, Ruff, compilation, ESLint, type checking and build. The
 runs use CPython3.11.16, Node24.21.0 and Chromium153.0.8010.12. All thirteen
 project PR workflows pass. The [CI receipt](docs/2026-10-04-library-archive-ci.json)
 records exact branch/merge checkouts, counts, timing and log hashes.
+
+The first published HTTPS head passed all 194 Python and 42 TypeScript checks in both CI events, but each native run stopped at 33/34: the new three-seat test read an empty arbiter invitation before the actual request completed. The test now waits for the returned link with the expected origin, challenge and arbiter capability before navigating. Its full native flow passes locally with the unchanged 90-second timeout and original consent, image, audit and restart assertions. The [first CI receipt](docs/2026-10-04-https-lan-ci-first.json) and [focused readiness verification](docs/2026-10-04-https-lan-invitation-readiness.json) retain the evidence; corrected-head CI is pending.
