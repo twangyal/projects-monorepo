@@ -75,7 +75,7 @@
     "run": 37217535261,
     "job": 111481005573,
     "head": "7c06dac0685cf3ce5e7de4e6b0af8f79b98338b2",
-    "checkout": "c5909e7",
+    "checkout": "c5909e7e18bb73d63f93e6e47da4806c074fc51a",
     "merge": "47d067c52b7e085c13c82b54a507a7292ce996bf",
     "unitPassed": 91,
     "pythonPassed": 12,

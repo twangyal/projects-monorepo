@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "issue": 92,
+  "pullRequest": 94,
+  "date": "2026-10-04",
+  "status": "complete",
+  "implementation": "fc5de6a42de39279fb56ffc25807eb72f1adda1b",
+  "merge": "1f8d3ca091bab7641f197326002a7deb287f800e",
+  "scope": "Self-contained transparent garment SVG using the same validated vector renderer; no photo, placement, note or app-data embedding.",
+  "bounds": {
+    "width": 400,
+    "height": 440,
+    "maxBytes": 1048576,
+    "strokes": 100,
+    "totalPoints": 12000,
+    "geometryDecimalPlaces": 6
+  },
+  "local": {
+    "command": "npm ci && npm run check",
+    "node": "24.19.0",
+    "unitPassed": 39,
+    "lint": true,
+    "typecheck": true,
+    "build": true,
+    "maximumFixtureSvgBytes": 280872,
+    "maximumFixtureProjectBytes": 581675
+  },
+  "ci": {
+    "run": 37217988856,
+    "job": 111482333750,
+    "head": "fc5de6a42de39279fb56ffc25807eb72f1adda1b",
+    "checkout": "54d65f101d9052bc9de60cf1ce904a5a37b0ac5e",
+    "base": "51303686cf98bb463f82e19a694c66bb181dbbed",
+    "unitPassed": 39,
+    "browserPassed": 24,
+    "addedBrowserCases": 6,
+    "lintTypecheckBuild": "passed",
+    "browserDurationSeconds": 10.8
+  },
+  "review": {
+    "independent": true,
+    "blockingFindings": 0
+  },
+  "checks": [
+    "Real SVG download, MIME/filename and native XML parsing/title escaping/internal references.",
+    "Whole decoded raster SHA-256 equality against PNG for plain/stripe/weave plus separate literal red/green/transparent landmark expectations.",
+    "Maximum100-path/12000-point vector download and PNG raster equivalence, exact unchanged project backup.",
+    "Keyboard download cancels a live captured gesture and keeps redo plus exact committed backup.",
+    "390px viewport download without horizontal overflow, external requests or page errors."
+  ],
+  "limits": [
+    "Complete-image equality compares shared renderer outputs; independent artwork correctness is established at selected literal pixels, not independently for every pixel.",
+    "Native browser checks were run in GitHub CI; no local native Chromium result is claimed.",
+    "SVG is not an app backup, sewing pattern or physical-size/fit simulation. SVG import and arbitrary SVG editing are not added."
+  ]
+}
