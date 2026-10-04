@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 67,
   "version": "0.4.0",
-  "status": "local-verification-complete-ci-pending",
+  "status": "verified",
   "baseline": {
     "unitTests": 149,
     "browserTests": 34,
@@ -329,7 +329,99 @@
     "scripts/smoke_cited_briefs.mjs": "aa293e3f3be5b168ba99daacde59ae830268141731a636613fb1b87b37ddf792"
   },
   "ci": {
-    "status": "pending"
+    "status": "success",
+    "commit": "634c4668da4bf9e45a669bbd0a315abba983ab13",
+    "implementationCommit": "b0efe26",
+    "project": {
+      "runId": 37199016473,
+      "jobId": 111426670888,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37199016473",
+      "unitTests": 206,
+      "unitDurationMs": 19715.578296,
+      "browserTests": 49,
+      "browserDuration": "1.1m",
+      "chromium": "153.0.8010.12",
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true,
+      "existingMaximumSmokeChecks": true,
+      "frozenExperimentInvariantTests": 31
+    },
+    "repositorySnapshot": [
+      {
+        "name": "Karaoke Studio",
+        "runId": 37199016451,
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "name": "Clothing Studio",
+        "runId": 37199016453,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Style Studio",
+        "runId": 37199016450,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Motion Studio",
+        "runId": 37199016435,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Lens Studio",
+        "runId": 37199016463,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Melody Studio",
+        "runId": 37199016439,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Stock Notebook",
+        "runId": 37199016473,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Duet",
+        "runId": 37199016458,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Shot Studio",
+        "runId": 37199016441,
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "name": "Git History",
+        "runId": 37199016460,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Friendly Challenges",
+        "runId": 37199016470,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Composure",
+        "runId": 37199016454,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "repositoryNote": "Stock CI passed. At this snapshot Karaoke is running and the unchanged Shot project has a separate failure under investigation; this is not an all-workflows-green claim."
   },
   "limitations": [
     "Supplied statements, excerpts and links are not verified for authenticity, truth or support. Matching annual values do not establish issuer continuity.",

@@ -179,6 +179,8 @@ A separate persistent-profile run applied the same maximum refresh through the U
 
 ## Cited brief verification (2026-10-04)
 
+[Stock CI](https://github.com/twangyal/projects-monorepo/actions/runs/37199016473) passed the complete implementation at `634c4668da4bf9e45a669bbd0a315abba983ab13`, including 206 unit and 49 Chromium 153 browser cases, lint/typecheck/build and the existing maximum-data checks.
+
 The v0.4 milestone passes **206 unit tests and all 49 native Chromium cases**, including every previous authoring, annual-history, refresh and recovery flow, plus lint, type checking and the normal production build. Independent fixtures pin literal CRLF/Unicode, immutable snapshots, selected versus contextual financial drift, null/zero, source-only changes, missing captured periods, complete dropped-brief reports, real near-4 MiB legacy migration and exact 1 MiB graph/6 MiB notebook bounds. Native checks cover stable focus/caret during held real transactions, failed-write rollback/retry, delayed files, stale refreshes, explicit attachments and full process restart.
 
 To reproduce the separate artifact check, start the normal production preview, then run:
