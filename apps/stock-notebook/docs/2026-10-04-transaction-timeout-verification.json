@@ -1,0 +1,45 @@
+{
+  "issue": 77,
+  "base": "a69053954dafbf778cc9645a4c68a896910114ff",
+  "implementationCommit": "aeb9a749cf48a4e3cfa40836f9cdfe9e0dcd6a1a",
+  "deadline": {
+    "nativeTransactionMs": 10000,
+    "startsAt": "native transaction creation",
+    "queue": "ordered; each later operation starts its own deadline",
+    "terminalRace": "completed commit/abort event reports actual outcome after InvalidState on deadline abort",
+    "limit": "Browser scheduling may delay callbacks in background/suspended pages."
+  },
+  "red": {
+    "commit": "405238da79b8f0c7f12034379529af3a96fc0a99",
+    "run": 37200034757,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37200034757",
+    "browserPassed": 53,
+    "browserFailed": 2,
+    "observed": [
+      "Held write still waiting at 12-second guard",
+      "Blocked readonly load and queued clear still waiting at 23-second guard"
+    ]
+  },
+  "green": {
+    "commit": "aeb9a749cf48a4e3cfa40836f9cdfe9e0dcd6a1a",
+    "run": 37200300309,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37200300309",
+    "unitPassed": 231,
+    "browserPassed": 56,
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "maximumFixtures": [
+      "annual-history-smoke",
+      "refresh-smoke"
+    ],
+    "isolatedExperiment": "unchanged invariants and development diagnostics passed",
+    "browser": "Chromium153"
+  },
+  "review": "Independent lifecycle probes verified rollback-before-queue-release, completed commit race, timer/connection cleanup and existing close/failure semantics.",
+  "limitations": [
+    "Local browser download blocked; native verification ran in CI.",
+    "Timeout cancels this application's native transaction, not the other connection's blocker.",
+    "No backlog-wide time promise; operations remain ordered."
+  ]
+}
