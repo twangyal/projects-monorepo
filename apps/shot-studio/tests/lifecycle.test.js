@@ -63,7 +63,7 @@ test('video constructor failure stops capture tracks and rejects without hanging
   replace(t,'cancelAnimationFrame',()=>{});
   class Recorder{static isTypeSupported(){return true;}constructor(){throw Error('encoder broke');}}
   replace(t,'MediaRecorder',Recorder);
-  const canvas={captureStream:()=>({getTracks:()=>[{stop:()=>stops++}]})};
+  const canvas={captureStream:()=>{const track={stop:()=>stops++,requestFrame(){}};return{getTracks:()=>[track],getVideoTracks:()=>[track]};}};
   await assert.rejects(exportFilm(canvas,()=>{},2),/encoder broke/);assert.equal(stops,1);
 });
 test('export cancellation stops the recorder, tracks and scheduled frame',async t=>{
@@ -72,7 +72,7 @@ test('export cancellation stops the recorder, tracks and scheduled frame',async 
   replace(t,'requestAnimationFrame',()=>1);
   class Recorder{static isTypeSupported(){return true;}state='inactive';start(){this.state='recording';}stop(){recorderStops++;this.state='inactive';this.onstop();}}
   replace(t,'MediaRecorder',Recorder);
-  const canvas={captureStream:()=>({getTracks:()=>[{stop:()=>stops++}]})},controller=new AbortController();
+  const canvas={captureStream:()=>{const track={stop:()=>stops++,requestFrame(){}};return{getTracks:()=>[track],getVideoTracks:()=>[track]};}},controller=new AbortController();
   const result=exportFilm(canvas,()=>{},2,{signal:controller.signal});controller.abort();
   await assert.rejects(result,/cancelled/);assert.equal(stops,1);assert.equal(recorderStops,1);assert.equal(frames,1);
 });

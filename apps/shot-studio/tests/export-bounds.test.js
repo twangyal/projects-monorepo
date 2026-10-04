@@ -16,7 +16,7 @@ function harness(t,{capture,construct}={}){
   replace(t,'MediaRecorder',Recorder);
   replace(t,'requestAnimationFrame',()=>1);
   replace(t,'cancelAnimationFrame',()=>counters.frames++);
-  const canvas={captureStream(){counters.captures++;capture?.();return {getTracks:()=>[{stop:()=>counters.tracks++}]};}};
+  const canvas={captureStream(){counters.captures++;capture?.();const track={stop:()=>counters.tracks++,requestFrame(){}};return {getTracks:()=>[track],getVideoTracks:()=>[track]};}};
   return {canvas,counters,get recorder(){return recorder;}};
 }
 

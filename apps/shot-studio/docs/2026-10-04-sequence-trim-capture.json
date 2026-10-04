@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "issue": 114,
+  "scope": "Shared scene/take/sequence WebM canvas frame admission reliability; sequence trimming model unchanged",
+  "sourceSha256": {
+    "src/export.js": "491230f09ec710259b754a0ba21418c194971372265d77daf4afd4479200fc11",
+    "tests/export-capture.test.js": "dc71306fd9cc6bbb171a846e4ee0e162561e2dabf539602ddc2c1a2be06dc8fa",
+    "tests/export-bounds.test.js": "0d2fb8097b920855006cc981e3c6c406179c067b4e6e0bfe5470d2f726fcd5f6",
+    "tests/lifecycle.test.js": "06aad12798a42aeb6cab4f9dbffd7bfe24ba0cef33b003d4339222a1c6a25e5a"
+  },
+  "checks": [
+    {
+      "command": "node --test tests/export-capture.test.js tests/export-bounds.test.js tests/lifecycle.test.js",
+      "passed": 22,
+      "failed": 0,
+      "log": "/tmp/shot114-export-capture-final.log",
+      "durationMs": 99.388874
+    },
+    {
+      "command": "node --check src/export.js; node --check tests/export-capture.test.js; node --check tests/export-bounds.test.js; node --check tests/lifecycle.test.js",
+      "exitCode": 0
+    }
+  ],
+  "firstActualFailure": {
+    "passed": 0,
+    "failed": 6,
+    "durationMs": 22091.284099,
+    "log": "/tmp/shot114-export-capture-first.log",
+    "classification": "Existing automatic capture had no manual request lifecycle or two-stream fallback. Four assertions failed before awaited completion; two failures reached unchanged11s watchdog instead of expected manual failure. Two abandoned baseline test promises produced retained asynchronous timeout warnings; test cleanup now stops any still-owned fake recorder."
+  },
+  "capturePolicy": {
+    "initial": "draw0, admit manual stream, start native recorder, request initial frame",
+    "cadence": "On genuine RAF draws request only when elapsed since last request >=1000/30ms. Do not synthesize catch-up frames.",
+    "terminal": "If exact clamped End draw is too soon, keep native recording until the next genuine eligible RAF draw requests End, then stop. The duration+10s deadline remains.",
+    "time": "Draw evaluates Math.min(duration,(rafTimestamp-started)/1000); no changed source offset or frame clock.",
+    "fallback": "If requestFrame is unavailable, stop every probe track before one captureStream30 admission, rechecking abort between admissions. Request/encoder failures do not fallback."
+  },
+  "compatibilityEdits": {
+    "files": [
+      "tests/export-bounds.test.js",
+      "tests/lifecycle.test.js"
+    ],
+    "change": "Controlled streams now expose the same owned track through getTracks/getVideoTracks with a requestFrame method. All original cleanup counts and failure assertions retained."
+  },
+  "nativeEvidence": {
+    "status": "Root-coordinated final unmodified native acceptance pending; this producer did not launch browser tests.",
+    "priorRootReportedScratch": "Root reported same original60s maximum gate accepted1063 decodedframes,5016553bytes,40pixel samples/endpoints/restart. This scratch result motivates the repair and is not a claim of this exact final source gate."
+  },
+  "limitations": [
+    "Requested frame cadence is not a guarantee of encoded FPS or every authored cut being encoded.",
+    "Browser rendering/encoding can drop frames; maximum native decoding is a separate acceptance gate.",
+    "Automatic30Hz fallback preserves compatibility but has not acquired a new frame-density guarantee."
+  ],
+  "logSha256": {
+    "/tmp/shot114-export-capture-first.log": "187422b5df9a212c77b3a1cb013d9c69166bcf81d329752d993ee2d427d12d1e",
+    "/tmp/shot114-export-capture-green.log": "4e5edc8ee0ba969a37446bcda4961ce796a9d0ff0a3d4c449869a011213aa718",
+    "/tmp/shot114-export-capture-final.log": "283c96ed03b2959a2a1cf7d6e7e1f38e0f8848028c52d453bd683e61d91924c8"
+  }
+}

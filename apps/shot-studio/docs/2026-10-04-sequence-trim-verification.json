@@ -312,7 +312,7 @@
     }
   ],
   "maximumDiagnosis": {
-    "status": "ongoing; no confirmed source cause or product change",
+    "status": "Short controls did not reproduce the sustained maximum failure. Isolated explicit native frame-request candidate passes original maximum; production integration pending.",
     "probes": [
       {
         "kind": "viewport",
@@ -717,7 +717,236 @@
             ]
           }
         ]
+      },
+      {
+        "kind": "idle-capture",
+        "receipt": {
+          "path": "/workspace/shot114-idle-capture-diagnostic/receipt.json",
+          "bytes": 1717,
+          "sha256": "4035718bd260de9d269cf7807992286216c4a51ac217fa30ebf634a0ed404565"
+        },
+        "measurements": [
+          {
+            "reveal": false,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 486,
+            "frames": 182,
+            "span": 6.53,
+            "first": [
+              0,
+              0.044,
+              0.116,
+              0.164,
+              0.21,
+              0.246,
+              0.265,
+              0.308,
+              0.345,
+              0.373
+            ]
+          },
+          {
+            "reveal": true,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": 0.03125,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": 0.03125,
+                "right": 800.140625,
+                "bottom": 403.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 460,
+            "frames": 182,
+            "span": 6.658,
+            "first": [
+              0,
+              0.043,
+              0.116,
+              0.15,
+              0.183,
+              0.219,
+              0.239,
+              0.279,
+              0.317,
+              0.365
+            ]
+          }
+        ]
       }
+    ]
+  },
+  "captureCandidate": {
+    "scope": "Isolated scratch app copy; not the repository production build",
+    "source": {
+      "path": "/tmp/shot114-manual-capture-dist/src/export.js",
+      "bytes": 3761,
+      "sha256": "d8c8c4f93293a58ee8e51b388c1db7b5363e27bf947a7c150b5ca08ad130efcd"
+    },
+    "result": "passed",
+    "receipt": {
+      "path": "/workspace/shot114-manual-native-candidate/verification.json",
+      "bytes": 253850,
+      "sha256": "7eb0b35d6a930bf57cc31247df4ba21061eddc5c7a3bee4ee988207372d625cd"
+    },
+    "video": {
+      "bytes": 5016553,
+      "sha256": "b206dd2309da7507ffc776c02956fff98c4286d41ecc8c69fb4e27b12724bb2b",
+      "codec": "vp9",
+      "width": 960,
+      "height": 540,
+      "audioStreams": 0,
+      "decodedFrames": 1063,
+      "firstPts": 0,
+      "spanSeconds": 59.854,
+      "independentDecodeWallMs": 3218.1293259999948
+    },
+    "independentImageSamples": 40,
+    "endpointPreviews": 5,
+    "restart": {
+      "bytes": 36796,
+      "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9",
+      "byteExact": true
+    },
+    "captureStart": {
+      "canvasRect": {
+        "x": 83.59375,
+        "y": -140.96875,
+        "width": 716.546875,
+        "height": 403.046875,
+        "top": -140.96875,
+        "right": 800.140625,
+        "bottom": 262.078125,
+        "left": 83.59375
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "hidden": false,
+      "visibilityState": "visible"
+    },
+    "recordAndDownloadWallMs": 60260.350823999994,
+    "originalInputAndThresholdsUnchanged": true,
+    "productionVerification": "passed separately; see finalCaptureLocal and 2026-10-04-sequence-trim-maximum.json"
+  },
+  "finalCaptureLocal": {
+    "units": {
+      "passed": 261,
+      "failed": 0,
+      "durationMs": 917.458139,
+      "log": {
+        "path": "/tmp/shot114-capture-root-unit.log",
+        "bytes": 27195,
+        "sha256": "db215b125234a1e9c9d50726857c57a16d922c2423a6d707c9136f303a8811e6"
+      }
+    },
+    "syntax": {
+      "result": "passed",
+      "log": {
+        "path": "/tmp/shot114-capture-root-syntax.log",
+        "bytes": 769,
+        "sha256": "e54f688f3c55ab014bf89272d2005cc5092ed9ce218a1ca9b46759635e953d3e"
+      }
+    },
+    "fullNative": {
+      "stats": {
+        "startTime": "2026-10-04T23:32:42.790Z",
+        "duration": 252301.107,
+        "expected": 87,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/shot114-full-native-first.log",
+        "bytes": 166593,
+        "sha256": "cd97e95c9a5de968a36578b5af35bb02b5adb988e0e65f73b772ed3e86482069"
+      },
+      "results": {
+        "path": "/tmp/shot114-full-native-results-first.json",
+        "bytes": 101228,
+        "sha256": "ea51a91c7798cbcd23e6bb4fbc75451a6053cce869a70ca91f9554e2888a188e"
+      },
+      "preservedArtifacts": "/workspace/shot114-full-native-first-artifacts",
+      "firstFullInvocationPassed": true
+    },
+    "productionMaximum": {
+      "result": "passed",
+      "receipt": "2026-10-04-sequence-trim-maximum.json",
+      "video": {
+        "bytes": 4949079,
+        "sha256": "a445bc5a77504da28b51c4d1ac65fd6db3bded5782142c8cc0d6257e6f8b24e4",
+        "codec": "vp9",
+        "width": 960,
+        "height": 540,
+        "audioStreams": 0,
+        "decodedFrames": 1040,
+        "firstPts": 0,
+        "spanSeconds": 59.901,
+        "independentDecodeWallMs": 2327.3647950000013
+      },
+      "restart": {
+        "bytes": 36796,
+        "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9",
+        "byteExact": true
+      },
+      "originalInputAndThresholdsUnchanged": true
+    },
+    "source": {
+      "path": "apps/shot-studio/src/export.js",
+      "bytes": 4165,
+      "sha256": "491230f09ec710259b754a0ba21418c194971372265d77daf4afd4479200fc11"
+    },
+    "reviews": [
+      "2026-10-04-sequence-trim-capture.json",
+      "2026-10-04-sequence-trim-capture-review.json"
     ]
   }
 }

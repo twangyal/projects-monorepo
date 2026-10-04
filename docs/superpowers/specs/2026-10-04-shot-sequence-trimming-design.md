@@ -100,6 +100,32 @@ Native public UI acceptance:
 
 No new inference, model download, backend, dependency or physical headset acceptance is needed. Existing scene/camera/blocking/take/sequence tests remain meaningful; only schema/version expectations and genuine legacy fixtures receive minimal compatibility updates under a separate owner.
 
+## Native capture finding and shared exporter repair
+
+The first two actual maximum recordings through automatic `captureStream(30)`
+contained only 119 frames over about 59.6 seconds on this Chromium setup.
+Short controls did not reproduce the sustained failure, including actual
+cancellation, persistent restart, partial/full canvas visibility and an idle
+driver. Preserve those failures without claiming an established browser-internal
+root cause. An isolated `captureStream(0)`/`requestFrame()` candidate passed the
+unchanged full-minute input, frame and independent pixel checks.
+
+Use explicit requests after genuine wall-clock draws when the canvas track
+supports `requestFrame()`. Request an initial frame after the encoder starts,
+then at no more than 30 requests per second without catch-up bursts. At film end,
+keep the source evaluation clamped to the authored endpoint; if its next request
+is not yet due, wait for that eligible real animation frame before stopping.
+Requested endpoints do not promise that a browser encoder retains those exact
+frames. Keep the existing duration-plus-ten-second deadline and 32 MiB limit.
+
+If the probe stream lacks the native API, stop all of its owned tracks before
+opening the existing automatic 30-fps stream. Recheck cancellation between
+resource admissions and after drawing. A capture/encoder error fails the owned
+export; do not retry through another path or replace the source clock. This
+shared change covers ordinary films, retained takes and scene sequences. It
+requires separate lifecycle tests, full native regression and a new production
+maximum before the experimental result can count as final acceptance.
+
 ## Suggested ownership after review
 
 - Model/evaluator: `src/sequence.js`, new producer trimming tests. One owner for schema, span totals and prepared clocks avoids competing edits in the same file.

@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "issue": 114,
+  "status": "passed",
+  "scope": "Final production exporter, original frozen maximum fixture and thresholds unchanged.",
+  "source": {
+    "path": "/workspace/projects-monorepo/apps/shot-studio/src/export.js",
+    "bytes": 4165,
+    "sha256": "491230f09ec710259b754a0ba21418c194971372265d77daf4afd4479200fc11"
+  },
+  "rawReceipt": {
+    "path": "/workspace/shot114-production-maximum-final/verification.json",
+    "bytes": 253839,
+    "sha256": "1b1f7dd9aa9f131e718230374fd3c012d0586a97bf59021c281ca03816606fb9"
+  },
+  "log": {
+    "path": "/tmp/shot114-production-maximum-final.log",
+    "bytes": 275,
+    "sha256": "0e28814e66791142fc3f02c3fcc59a1e32d95eb1ca9c861104e2a0e7d7db2372"
+  },
+  "fixtures": [
+    {
+      "path": "/workspace/shot114-production-maximum-final/maximum-sequence.json",
+      "bytes": 36796,
+      "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9"
+    },
+    {
+      "path": "/workspace/shot114-production-maximum-final/exact-320KiB-file.json",
+      "bytes": 327680,
+      "sha256": "8ee5b17b3381c024bd105e5d4b29f89600f40f6f87e4b54e50a0a86482d950f9"
+    },
+    {
+      "path": "/workspace/shot114-production-maximum-final/oversize-file.json",
+      "bytes": 327681,
+      "sha256": "2b1e6855515bb27011c800613d4711d28d5b1e91c02aa34ead70be28f13e7183"
+    },
+    {
+      "path": "/workspace/shot114-production-maximum-final/original-source-1.json",
+      "bytes": 7763,
+      "sha256": "079777f0051c51eb2edfdd55946a0a7fb5e86b94bf202995bf4291d48bbce65d"
+    },
+    {
+      "path": "/workspace/shot114-production-maximum-final/original-source-2.json",
+      "bytes": 7763,
+      "sha256": "15d38f2354f174f9dc80bcf03792a2cc232f3fa8898f26f0b024fb1fe33e0ca1"
+    },
+    {
+      "path": "/workspace/shot114-production-maximum-final/original-source-3.json",
+      "bytes": 7763,
+      "sha256": "9bcfad39e1e17952ff5b8ce53f86b2901b5666363835c0e07f116815df3a6cf1"
+    },
+    {
+      "path": "/workspace/shot114-production-maximum-final/original-source-4.json",
+      "bytes": 7763,
+      "sha256": "0f11b78aec3deda6d586e45ca827d2a3cb9455c3b266378cce618b6e55955489"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "maximum-before-restart.shot-sequence.json",
+      "bytes": 36796,
+      "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9"
+    },
+    {
+      "name": "maximum-after-restart.shot-sequence.json",
+      "bytes": 36796,
+      "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9"
+    },
+    {
+      "name": "maximum-sequence-60s.webm",
+      "bytes": 4949079,
+      "sha256": "a445bc5a77504da28b51c4d1ac65fd6db3bded5782142c8cc0d6257e6f8b24e4"
+    },
+    {
+      "name": "desktop.png",
+      "bytes": 487225,
+      "sha256": "a1cd5054db1f34c30a5de9dd5ff850451d069e5494cb17365cff57c2d1cd19b2"
+    },
+    {
+      "name": "390px.png",
+      "bytes": 378821,
+      "sha256": "7b933d8943fe658869d91e85015f811e74a6cb05d524b6c2aa5448c1640e7035"
+    }
+  ],
+  "topology": {
+    "sources": 4,
+    "shotsPerSource": 20,
+    "performersPerSource": 2,
+    "cuesPerPerformer": 32,
+    "totalRetainedCues": 256,
+    "clips": 20,
+    "seconds": 60,
+    "sourceBytes": [
+      7763,
+      7763,
+      7763,
+      7763
+    ],
+    "canonicalSequenceBytes": 36796,
+    "rawFileCeiling": 327680,
+    "sourceIndices": [
+      5,
+      13,
+      9,
+      17
+    ],
+    "originalSourcePrefixes": [
+      15,
+      39,
+      27,
+      51
+    ],
+    "sourceShotDurations": [
+      4,
+      4,
+      4,
+      4
+    ],
+    "retainedRanges": [
+      0.5,
+      3.5
+    ],
+    "tolerances": {
+      "ptsSeconds": 0.2,
+      "codecChannelError": 24,
+      "visibleMatches": 23,
+      "patchSamples": 27,
+      "invisibleChannelError": 40,
+      "invisibleMatches": 1,
+      "minimumVideoFrames": 600,
+      "minVideoSpan": 59,
+      "maxVideoSpan": 62
+    },
+    "pinhole": {
+      "focalPixels": 579.0168685375809,
+      "torsoFrontDepth": 7.84,
+      "torsoWorldY": 1.15,
+      "frontFaceLightFactor": 0.630398269642447
+    }
+  },
+  "video": {
+    "bytes": 4949079,
+    "sha256": "a445bc5a77504da28b51c4d1ac65fd6db3bded5782142c8cc0d6257e6f8b24e4",
+    "codec": "vp9",
+    "width": 960,
+    "height": 540,
+    "audioStreams": 0,
+    "decodedFrames": 1040,
+    "firstPts": 0,
+    "spanSeconds": 59.901,
+    "independentDecodeWallMs": 2327.3647950000013
+  },
+  "independentPixelChecks": {
+    "samples": 40,
+    "allClips": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "maximumNearestPtsError": 0.08699999999999974,
+    "minimumMatchedPatchPixels": 27,
+    "maximumCodecChannelError": 6
+  },
+  "endpointPreviewCount": 5,
+  "restart": {
+    "bytes": 36796,
+    "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9",
+    "byteExact": true
+  },
+  "recordAndDownloadWallMs": 60151.430476,
+  "captureStart": {
+    "canvasRect": {
+      "x": 83.59375,
+      "y": -140.96875,
+      "width": 716.546875,
+      "height": 403.046875,
+      "top": -140.96875,
+      "right": 800.140625,
+      "bottom": 262.078125,
+      "left": 83.59375
+    },
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "hidden": false,
+    "visibilityState": "visible"
+  },
+  "browserVersion": "151.0.7922.173",
+  "browserProcesses": [
+    [
+      762527
+    ],
+    [
+      762683
+    ]
+  ],
+  "checks": [
+    "Actual whitespace-padded320KiB File imports exact original4-source/20-clip document; +1byte and21clips refuse without changing backup. One Undo/Redo restores exact prior/current documents; ordinary scene title unchanged.",
+    "Resetting one original3-second excerpt to its whole4-second shot refuses61-second output atomically; cancellation after actual renderer progress emits no WebM.",
+    "One actual full-minute silent WebM independently decoded; forty stable source-clock/light/costume/camera/visibility samples cover all20 clips and complete frame timestamps."
+  ],
+  "limits": [
+    "This is maximal source/shot/cue/name/clip/duration topology, not a claim of maximal canonical bytes or encoded video bytes.",
+    "The raw320KiB file boundary uses legal trailing JSON whitespace; all complete original sources remain intact.",
+    "Forty decoded video samples cover all20 clips at actual native PTS; not every frame is pixel-checked and no exact30fps assumption is made.",
+    "All20 output clips retain original local .5..3.5 of a4-second shot and render3 seconds without renormalizing camera or performer clocks.",
+    "All sources use32 authored blocking cues per performer. Looping phase has separate native/scalar coverage; this maximum does not claim simultaneous looping and blocking modes.",
+    "No producer model, evaluator, renderer, serializer or expected-output helper imports.",
+    "No server/build is started and no persistent browser storage is injected."
+  ],
+  "pageErrors": [],
+  "externalRequests": [],
+  "previousFailures": "Two original automatic-capture attempts returned only119frames over about59.6seconds and failed the unchanged minimum600-frame threshold. Scratch manual-capture candidate passed independently, then the final shared exporter passed this separate production run. No established browser root cause is claimed."
+}

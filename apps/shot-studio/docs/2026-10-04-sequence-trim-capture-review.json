@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "milestone": 114,
+  "reviewedAt": "2026-10-04T23:32:38.627799+00:00",
+  "status": "source review clear; production maximum native confirmation owned by root",
+  "scope": "Read-only independent review of shared canvas export manual-capture repair, lifecycle tests and sequence captured renderer consumption. No new test, browser, media encode or build was run by this reviewer.",
+  "inspectedFiles": [
+    {
+      "path": "src/export.js",
+      "bytes": 4165,
+      "sha256": "491230f09ec710259b754a0ba21418c194971372265d77daf4afd4479200fc11"
+    },
+    {
+      "path": "tests/export-capture.test.js",
+      "bytes": 5016,
+      "sha256": "dc71306fd9cc6bbb171a846e4ee0e162561e2dabf539602ddc2c1a2be06dc8fa"
+    },
+    {
+      "path": "src/sequence-ui.js",
+      "bytes": 24751,
+      "sha256": "c9a1d5768fa238cb0710c410855b35b12b209ea5657f7d47bef919366a9f2093"
+    }
+  ],
+  "producerEvidence": {
+    "log": {
+      "path": "/tmp/shot114-export-capture-green.log",
+      "bytes": 2236,
+      "sha256": "4e5edc8ee0ba969a37446bcda4961ce796a9d0ff0a3d4c449869a011213aa718"
+    },
+    "passed": 22,
+    "failed": 0,
+    "durationMs": 92.423578,
+    "scope": "Six new controlled manual-capture cases plus six existing byte/abort export bounds and ten existing lifecycle cases; lifecycle suite also contains WebXR cases. These are controlled Node tests, not native codec evidence."
+  },
+  "findings": [],
+  "reviewChecks": [
+    "The first actual draw occurs before capture, recorder starts before initial requestFrame, and no artificial timestamps or accelerated draw loop replace elapsed performance/RAF time.",
+    "captureStream(0) probe is owned immediately; absence of requestFrame stops every probe track and clears ownership before one captureStream(30) fallback. Cancellation is rechecked between probe release and fallback, and after each stream acquisition.",
+    "Recorder is created only from the selected live stream. Actual requestFrame failure rejects and cleans up; it does not silently restart recording or publish partial chunks.",
+    "A draw-triggered retirement is checked before requesting a frame. Initial-request and later-request exceptions reach the shared fail path; finished guards prevent late RAF/data/stop publication.",
+    "Manual requests use at least1000/30ms between actual RAF observations, without catch-up bursts. At the end, draw time remains clamped to exact duration and recording waits for the next eligible actual RAF before final request and stop.",
+    "Existing duration+10second watchdog and incremental/final32MiB bounds remain. Cleanup clears RAF/timer/listener/recorder callbacks, stops owned tracks, and discards chunks on failure.",
+    "Sequence export captures prepareSequence(documentState) before starting, uses its frozen frameAt/sourceFilm/sourceGlobal/camera, and checks operation ownership inside every draw. No live draft is re-read by the exporter."
+  ],
+  "limitations": [
+    "The default-capture low frame count observed in two maximum runs does not establish the full underlying browser cause.",
+    "The scratch manual-capture result reported by root is experimental evidence, not a claim that all browsers or automatic fallback paths are fixed.",
+    "Requesting initial/final frames is not proof that a codec retained exact endpoints; production native decode/PTS/pixel evidence remains a separate root-owned gate.",
+    "At most30Hz is a request cadence ceiling, not a guaranteed encoded30fps rate. Scheduling may produce fewer frames.",
+    "Waiting for an eligible final RAF can extend the recording by a scheduling interval; elapsed drawing remains clamped and the original watchdog bounds failure.",
+    "Fallback applies when requestFrame is unavailable on an acquired probe track. A thrown captureStream call or actual manual request error fails instead of promising universal compatibility."
+  ]
+}

@@ -430,12 +430,16 @@ also retains a separate Melody push test failure found by that run.
 Source-range trimming adds strict sequence schema3 migration, unchanged complete
 source films and one-edit range history. The [design](../../docs/superpowers/specs/2026-10-04-shot-sequence-trimming-design.md)
 fixes camera-local and performer-global clock semantics, exact endpoint previews,
-raw-field ownership and existing recovery/export bounds. Local verification passes 255 units and syntax checks, plus all 15 distinct new
-browser cases. The first native run passed 14/15; its remaining numeric-notice
+raw-field ownership and existing recovery/export bounds. Final local verification
+passes **261 units**, syntax checks and **all 87 native browser cases** in one
+full regression. The first new-case run passed 14/15; its remaining numeric-notice
 assertion ran after a backup intentionally replaced that notice. Moving the same
 assertion before download repaired the test. An independent source-hash fixture
 also required canonical property order, with values and hash assertions retained.
-Full regression and CI remain pending; see the [receipt](docs/2026-10-04-sequence-trim-verification.json).
+The published trim core passes 255 units and 87 browser cases in both push and PR
+CI, with all thirteen project PR workflows green. CI for the final shared capture
+repair is pending; see the [local receipt](docs/2026-10-04-sequence-trim-verification.json)
+and [core CI receipt](docs/2026-10-04-sequence-trim-ci.json).
 
 The independent maximum fixture contains four complete 20-shot films, 256 total
 blocking cues and twenty three-second excerpts. Each keeps seconds 0.5 through
@@ -444,9 +448,18 @@ JSON is 36,796 bytes; the separate 320 KiB raw input uses declared trailing
 whitespace. Both actual maximum attempts preserved exact full-process restart,
 capacity refusal and endpoint checks, but produced only 119 video frames over
 about 59.6 seconds, below the unchanged frame-rate acceptance threshold. These
-failures and short diagnostic comparisons remain preserved; maximum acceptance
-is under investigation. The ordinary six-second native export passed independent
-projection checks with 173 decoded frames.
+failures and short diagnostic comparisons remain preserved. The shared exporter
+now requests frames explicitly after real draws when native manual capture is
+available, with a bounded 30 Hz request cadence and the existing automatic-capture
+fallback. It retains cancellation, deadline and 32 MiB limits.
+
+A separate final production run passes the original unchanged maximum fixture:
+**1,040 decoded frames over 59.901 seconds**, a **4,949,079-byte VP9 WebM**, all
+forty independent source-clock/color/projection samples, five endpoint previews
+and byte-exact 36,796-byte backup recovery across two Chromium processes. This is
+measured acceptance on Chromium 151, not a guarantee of 30 encoded frames per
+second on every device. See the [maximum receipt](docs/2026-10-04-sequence-trim-maximum.json)
+and [capture review](docs/2026-10-04-sequence-trim-capture-review.json).
 
 To freeze inputs and run the maximum against a separately served app using fresh
 directories:

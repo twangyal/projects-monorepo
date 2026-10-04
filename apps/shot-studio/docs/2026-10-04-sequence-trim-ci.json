@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "issue": 114,
+  "status": "passed",
+  "milestone": "Published trimming core; full maximum capture acceptance remains separately pending at this head.",
+  "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+  "treeSha": "d08c3b4d7d0678b27e4b1acdede9fa225f6fdc43",
+  "collectedAtUtc": "2026-10-04T23:33:47.396Z",
+  "verificationScope": "Actual first-attempt Shot push and PR logs/checkouts plus all thirteen exact-head PR workflow conclusions. No reruns, local tests, builds, browsers, servers or Git mutations during collection.",
+  "checkouts": {
+    "push": {
+      "sha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "tree": "d08c3b4d7d0678b27e4b1acdede9fa225f6fdc43"
+    },
+    "pull_request": {
+      "sha": "92163bc37a415b5de1ed4d085c91ed216ef3940f",
+      "tree": "d08c3b4d7d0678b27e4b1acdede9fa225f6fdc43",
+      "parents": [
+        "d36b8970b28ff59e694341af772c6c2ee016ccea",
+        "9000082da42246eeab8bcf26b87bda8fc51aa1e4"
+      ],
+      "treeEqualsPublishedHead": true
+    }
+  },
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37243796407,
+      "runAttempt": 1,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243796407",
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T23:27:03Z",
+      "updatedAt": "2026-10-04T23:31:03Z",
+      "job": {
+        "id": 111557578239,
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm ci",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y ffmpeg",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run test:browser",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      "actualCheckoutShaFromLog": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "runtime": {
+        "node": "22.23.3",
+        "npm": "10.9.9",
+        "browser": "Chrome for Testing 153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "unit": {
+        "tests": 255,
+        "pass": 255,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 765.16147
+      },
+      "native": {
+        "tests": 87,
+        "passed": 87,
+        "workers": 1,
+        "reportedDuration": "3.1m",
+        "commandStartedAt": "2026-10-04T23:27:51.9959429Z",
+        "successOutputAt": "2026-10-04T23:31:00.0949043Z",
+        "commandToSuccessSeconds": 188.098962
+      },
+      "checks": {
+        "nodeTest": "success",
+        "npmRunCheck": "success",
+        "syntaxScope": "All seventeen product JS modules listed by the check script",
+        "eslint": "not a workflow step",
+        "typescript": "not a workflow step",
+        "productionBundling": "not a workflow step; product serves plain native modules"
+      },
+      "decodedLog": {
+        "path": "/tmp/shot114-ci-push.log",
+        "bytes": 407666,
+        "sha256": "2c649ac6520098ca1ff45773ea11ef444e289ac0f69f774031c475442a4e8df0"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37243799432,
+      "runAttempt": 1,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799432",
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T23:27:06Z",
+      "updatedAt": "2026-10-04T23:31:47Z",
+      "job": {
+        "id": 111557586961,
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm ci",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run sudo apt-get update && sudo apt-get install -y ffmpeg",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run test:browser",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      "actualCheckoutShaFromLog": "92163bc37a415b5de1ed4d085c91ed216ef3940f",
+      "runtime": {
+        "node": "22.23.3",
+        "npm": "10.9.9",
+        "browser": "Chrome for Testing 153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "unit": {
+        "tests": 255,
+        "pass": 255,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 1034.504666
+      },
+      "native": {
+        "tests": 87,
+        "passed": 87,
+        "workers": 1,
+        "reportedDuration": "3.8m",
+        "commandStartedAt": "2026-10-04T23:27:56.3180674Z",
+        "successOutputAt": "2026-10-04T23:31:42.3915152Z",
+        "commandToSuccessSeconds": 226.073448
+      },
+      "checks": {
+        "nodeTest": "success",
+        "npmRunCheck": "success",
+        "syntaxScope": "All seventeen product JS modules listed by the check script",
+        "eslint": "not a workflow step",
+        "typescript": "not a workflow step",
+        "productionBundling": "not a workflow step; product serves plain native modules"
+      },
+      "decodedLog": {
+        "path": "/tmp/shot114-ci-pull_request.log",
+        "bytes": 408732,
+        "sha256": "174f4329fde79e528759bb1b21f9ffa26322babbd1cb7a83c65e84b3dd25fe74"
+      }
+    }
+  ],
+  "allPrWorkflows": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37243799405,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799405"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37243799401,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799401"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37243799386,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799386"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37243799522,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799522"
+    },
+    {
+      "name": "Git History",
+      "runId": 37243799434,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799434"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37243799404,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799404"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37243799388,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799388"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37243799377,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799377"
+    },
+    {
+      "name": "Composure",
+      "runId": 37243799417,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799417"
+    },
+    {
+      "name": "Duet",
+      "runId": 37243799375,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799375"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37243799454,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799454"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37243799368,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799368"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37243799432,
+      "runAttempt": 1,
+      "headSha": "9000082da42246eeab8bcf26b87bda8fc51aa1e4",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37243799432"
+    }
+  ],
+  "allPrSnapshot": {
+    "completed": 13,
+    "success": 13,
+    "failure": 0,
+    "cancelled": 0,
+    "pending": 0
+  },
+  "limitations": [
+    "These CI jobs verify the published trimming core and native suite; they do not run the independent sixty-second maximum artifact runner. The maximum remained explicitly pending at this source publication.",
+    "Native duration is reported rounded to minutes; command timestamps are recorded independently.",
+    "No requested30fps guarantee or physical headset acceptance is inferred from these checks."
+  ]
+}

@@ -8,7 +8,7 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
   if(!mime)throw Error('This browser cannot encode WebM. Save a project backup instead.');
   if(signal?.aborted)throw Error('Export cancelled.');
   return new Promise((resolve,reject)=>{
-    let stream,recorder,frame=0,timeout,finished=false,started,bytes=0;
+    let stream,recorder,frame=0,timeout,finished=false,started,bytes=0,lastCapture=-Infinity,captureTrack;
     const chunks=[];
     const cleanup=()=>{
       cancelAnimationFrame(frame);clearTimeout(timeout);
@@ -27,14 +27,25 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
       try{
         const t=Math.min(duration,(now-started)/1000);draw(t);
         if(finished)return;
-        if(t>=duration)recorder.stop();else frame=requestAnimationFrame(tick);
+        const eligible=!captureTrack||now-lastCapture>=1000/30;
+        if(captureTrack&&eligible){captureTrack.requestFrame();lastCapture=now;}
+        if(finished)return;
+        if(t>=duration&&eligible)recorder.stop();else frame=requestAnimationFrame(tick);
       }catch(error){fail(error);}
     };
     try{
       draw(0);
       if(signal?.aborted)throw Error('Export cancelled.');
-      stream=canvas.captureStream(30);
+      stream=canvas.captureStream(0);
       if(signal?.aborted)throw Error('Export cancelled.');
+      captureTrack=stream.getVideoTracks?.()[0];
+      if(typeof captureTrack?.requestFrame!=='function'){
+        const probe=stream;stream=undefined;captureTrack=undefined;
+        for(const track of probe.getTracks()){try{track.stop();}catch{}}
+        if(signal?.aborted)throw Error('Export cancelled.');
+        stream=canvas.captureStream(30);
+        if(signal?.aborted)throw Error('Export cancelled.');
+      }
       recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2500000});
       recorder.ondataavailable=event=>{
         if(finished)return;
@@ -60,6 +71,8 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
       recorder.start(100);
       if(finished)return;
       started=performance.now();
+      if(captureTrack){captureTrack.requestFrame();lastCapture=started;}
+      if(finished)return;
       timeout=setTimeout(()=>fail(Error('Export timed out. Keep this tab visible while recording.')),(duration+10)*1000);
       frame=requestAnimationFrame(tick);
     }catch(error){fail(error);}
