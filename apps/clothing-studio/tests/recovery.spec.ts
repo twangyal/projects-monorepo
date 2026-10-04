@@ -28,3 +28,42 @@ test('edits during a pending explicit replacement save the latest concept afterw
   page.once('dialog',d=>d.accept());await page.locator('#replace-saved').click();await expect.poll(()=>page.evaluate(()=>typeof (window as unknown as Window&{releaseSave?:()=>void}).releaseSave)).toBe('function');await title(page,'Latest edit survives replacement');
   await page.evaluate(()=>(window as unknown as Window&{releaseSave:()=>void}).releaseSave());await expect(page.locator('#save-state')).toHaveText('Locally saved');expect((await stored(page) as {title:string}).title).toBe('Latest edit survives replacement');await page.reload();await expect(page.getByLabel('Concept name')).toHaveValue('Latest edit survives replacement');
 });
+
+for (const surface of ['sketch-surface', 'preview-surface']) test(`replacement saves committed edits without reviving canceled ${surface} gestures`, async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#save-state')).not.toContainText('Checking');
+  await stored(page, { schemaVersion: 99 }); await page.reload();
+  await expect(page.locator('#message')).toContainText('Could not restore');
+  await title(page, 'Confirmed replacement');
+  await page.evaluate(() => {
+    const original = indexedDB.open.bind(indexedDB); let first = true;
+    indexedDB.open = (name, version) => {
+      const request = original(name, version);
+      if (name !== 'clothing-studio' || !first) return request;
+      first = false; let callback: IDBOpenDBRequest['onsuccess'] = null;
+      Object.defineProperty(request, 'onsuccess', { get: () => callback, set: listener => {
+        callback = listener; request.addEventListener('success', event => {
+          Object.assign(window, { releaseGestureSave: () => callback?.call(request, event) });
+        }, { once: true });
+      } });
+      return request;
+    };
+  });
+  page.once('dialog', dialog => dialog.accept()); await page.locator('#replace-saved').click();
+  await expect.poll(() => page.evaluate(() => typeof (window as unknown as { releaseGestureSave: unknown }).releaseGestureSave)).toBe('function');
+  await title(page, 'Committed edit during replacement');
+  const committed = await backup(page);
+  await page.clock.install();
+  const target = page.locator(`#${surface}`), box = (await target.boundingBox())!;
+  await page.mouse.move(box.x + box.width * .4, box.y + box.height * .4); await page.mouse.down();
+  await page.mouse.move(box.x + box.width * .6, box.y + box.height * .6, { steps: 4 });
+  if (surface === 'sketch-surface') await expect(page.locator('#stroke-count')).toHaveText('1 stroke');
+  await page.evaluate(() => (window as unknown as { releaseGestureSave: () => void }).releaseGestureSave());
+  // Wait for replacement completion to schedule its follow-up snapshot while
+  // the native gesture still has transient state; cancel before the debounce.
+  await expect(page.locator('#message')).toContainText('explicitly replaced');
+  await target.dispatchEvent('pointercancel'); await page.mouse.up();
+  await page.clock.runFor(1000); await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  expect(await stored(page)).toEqual(committed);
+  await page.reload(); await expect(page.getByLabel('Concept name')).toHaveValue(committed.title);
+  expect(await backup(page)).toEqual(committed);
+});
