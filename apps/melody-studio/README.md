@@ -185,8 +185,12 @@ the original inputs without a browser. The runner starts no server and imports n
 producer expected-output helpers. [Integration evidence](docs/2026-10-04-direct-roll-verification.json),
 [native evidence](docs/2026-10-04-direct-roll-native.json) and
 [maximum evidence](docs/2026-10-04-direct-roll-maximum.json) preserve exact hashes,
-failed attempts, targeted reruns and limits. Published-head CI is recorded
-separately when available.
+failed attempts, targeted reruns and limits. Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37221137451)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37221140459) CI
+at `d582c0dd7286992bfb8fea47918cede209a34c44` pass all **252 units and 80 native
+browser cases**, lint, type checking and build on Chromium153. The [CI receipt](docs/2026-10-04-direct-roll-ci.json)
+records exact checkouts and the separate Shot import-readiness test failure found
+by the broader run; twelve of thirteen project workflows passed at that head.
 
 ### Learned-continuation verification
 

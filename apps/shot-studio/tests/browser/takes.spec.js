@@ -6,6 +6,9 @@ import {takeFilm,openTakeFilm,recordTake,downloadTake,parseTake,frameTake,sha,li
 
 const rows=page=>page.locator('#take-list [data-take-id]');
 async function importTake(page,bytes,name='original.shot-take'){
+  // File injection does not perform Playwright's enabled actionability check.
+  // Respect the app's actual initial-read and operation admission boundary.
+  await expect(page.locator('#import-take')).toBeEnabled();
   await page.locator('#import-take').setInputFiles({name,mimeType:'application/octet-stream',buffer:bytes});
 }
 async function sceneRaw(page){return page.evaluate(()=>localStorage.getItem('shot-studio-v1'));}
@@ -131,7 +134,7 @@ test('complete archives retain exact bytes across whole browser restart and fres
     page.on('close',()=>mark('page-close'));page.on('crash',()=>mark('page-crash'));
     page.on('download',download=>mark('download-start',{name:download.suggestedFilename()}));
     try{return await run(page);}
-    catch(error){entry.failure={message:String(error),pageClosed:page.isClosed(),browserConnected:browser?.isConnected()??null};throw error;}
+    catch(error){entry.failure={message:String(error),pageClosed:page.isClosed(),browserConnected:browser?.isConnected()??null,ui:page.isClosed()?null:await page.evaluate(()=>({status:document.querySelector('#take-status')?.textContent,importDisabled:document.querySelector('#import-take')?.disabled,selectedFiles:document.querySelector('#import-take')?.files?.length,rows:document.querySelectorAll('#take-list [data-take-id]').length})).catch(()=>null)};throw error;}
     finally{
       mark('explicit-context-close-request');
       await context.close();
@@ -163,4 +166,21 @@ test('complete archives retain exact bytes across whole browser restart and fres
     await imported.locator('#stop-take').click();await imported.screenshot({path:info.outputPath('narrow-imported-take.png'),fullPage:true});
     await writeFile(info.outputPath('restart-verification.json'),JSON.stringify({archiveBytes:bytes.length,archiveSha256:sha(bytes),receipt,importedReceipt:state},null,2));
   });
+});
+
+
+test('native archive import waits for the genuine initial library read before sending the file',async({page,browser},info)=>{
+  const bytes=await createArchive(page),original=parseTake(bytes);const context=await browser.newContext({baseURL:info.project.use.baseURL});
+  try{
+    await context.addInitScript(()=>{
+      const native=IDBFactory.prototype.open;let first=true;window.takeStartupGate={pending:false,release:null};
+      IDBFactory.prototype.open=function(...args){const request=native.apply(this,args);if(first&&args[0]==='shot-studio-takes'){first=false;let held=false;request.addEventListener('success',event=>{if(held)return;held=true;event.stopImmediatePropagation();window.takeStartupGate.pending=true;window.takeStartupGate.release=()=>{window.takeStartupGate.pending=false;request.dispatchEvent(new Event('success'));};},{capture:true});}return request;};
+    });
+    const incoming=await context.newPage();await incoming.goto('/');await expect.poll(()=>incoming.evaluate(()=>window.takeStartupGate.pending)).toBe(true);await expect(incoming.locator('#import-take')).toBeDisabled();await expect(incoming.locator('#take-status')).toContainText('Reading take library');
+    let supplied=false;const importing=importTake(incoming,bytes).then(()=>{supplied=true;});
+    // Allow the browser automation command to reach the blocked actionability
+    // boundary while the genuine IDB result is held, without faking any data.
+    await incoming.waitForTimeout(100);expect(supplied).toBe(false);await expect(incoming.locator('#import-take')).toBeDisabled();await incoming.evaluate(()=>window.takeStartupGate.release());await importing;await expect(rows(incoming)).toHaveCount(1);
+    const state=await libraryReceipt(incoming);expect(state.records[0].metadata.origin).toBe('imported-declared');expect(state.records[0].metadata.film).toEqual(original.manifest.film);expect(state.records[0].sha256).toBe(sha(original.video));await expect(incoming.locator('#take-status')).toContainText('Saved take');
+  }finally{await context.close();}
 });

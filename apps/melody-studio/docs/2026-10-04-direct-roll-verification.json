@@ -2,7 +2,7 @@
   "issue": 99,
   "date": "2026-10-04",
   "version": "0.5.0",
-  "status": "complete local verification passed; exact published-head CI pending",
+  "status": "complete; exact published-head Melody push and PR CI passed; separate Shot fixture repair follows",
   "contract": "docs/superpowers/specs/2026-10-04-melody-direct-piano-roll-design.md",
   "unit": {
     "passed": 252,
@@ -46,10 +46,11 @@
     "scripts/smoke_direct_roll.mjs": "e2ff7a84bd1f731216d220b417a1da03e9e7300520aef07bbf21934ee92568c2"
   },
   "limitations": [
-    "Local Chromium151; full published CI will run independently. Native80 distinct includes targeted fixture/environment corrections, not one all80 local run.",
+    "Local Chromium151 and independent CI Chromium153 pass. Local80 distinct includes targeted fixture/environment corrections; both CI runs pass all80 in one run.",
     "Maximum count/reference topology is9,580,720 canonical bytes, not the12MiB file ceiling or peak-memory measurement.",
     "WAV samples and MIDI are local deterministic synthesis/export acceptance, not real humming transcription accuracy or artistic-quality evidence.",
     "Controlled Chromium touch and390px layout are not physical mobile/browser compatibility.",
     "Concurrent stale-tab storage #98/PR100 remains separately in progress; direct editor delegates existing commit/history/storage authorities and does not change saved-row formats."
-  ]
+  ],
+  "ciReceipt": "2026-10-04-direct-roll-ci.json"
 }

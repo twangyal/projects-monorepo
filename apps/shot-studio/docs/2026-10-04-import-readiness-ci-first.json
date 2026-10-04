@@ -1,0 +1,36 @@
+{
+  "head": "d582c0dd7286992bfb8fea47918cede209a34c44",
+  "sourceReceipt": "/workspace/melody99-ci.json",
+  "failure": {
+    "runId": 37221140420,
+    "jobId": 111491551730,
+    "conclusion": "failure",
+    "checkoutSha": "f4f9cc7efa6fd2f0ce792779148ce9b09b089704",
+    "unitTests": 232,
+    "browserPassed": 70,
+    "browserFailed": 1,
+    "browserReportedDuration": "2.1m",
+    "test": "tests/browser/takes.spec.js:117 complete archives retain exact bytes across whole browser restart and fresh-profile declared import",
+    "assertionLine": 154,
+    "actual": "#take-list [data-take-id] expected1 received0 after5000ms on fresh-profile import",
+    "classification": "Actual test failure; not cancellation. Root/owners notified; cause unresolved by CI evidence alone.",
+    "log": {
+      "path": "/workspace/melody99-shot-failure.log",
+      "bytes": 360632,
+      "sha256": "0505be38c2b9aeefe5e67f2e2e3d2c5734ef0085b2aaa94250430b952c1c65fb"
+    },
+    "artifact": {
+      "id": 11309804962,
+      "zip": {
+        "path": "/workspace/attachments/1fd8afc5-e054-4b9d-b122-002ddb922ed7/shot99-failure.zip",
+        "bytes": 4076325,
+        "sha256": "2bd1cf1dde660fb24257b6eb22514207196b905ef5745ad79ecee4fc9f422af1"
+      },
+      "errorContext": "/workspace/melody99-shot-failure-artifact/error-context.md",
+      "lifecycle": "/workspace/melody99-shot-failure-artifact/restart-browser-lifecycle.json",
+      "evidenceLimit": "No trace or page snapshot in archive; fresh-profile page alive and browser connected at failure."
+    }
+  },
+  "status": "failed - preserved before diagnosis/repair",
+  "rerunPerformed": false
+}

@@ -392,3 +392,14 @@ workflows pass. The [CI receipt](docs/2026-10-04-scene-sequences-ci.json) record
 actual checkouts. Physical headset acceptance remains open.
 
 Retained-take CI at `6b2efeb3` passed all **146 unit tests, syntax checks and 53 browser tests** in both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37211773638) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37211776395) runs; all thirteen project PR workflows passed. The [CI receipt](docs/2026-10-04-retained-takes-ci.json) records exact checkouts. The [first CI failures](docs/2026-10-04-retained-takes-ci-first.json) remain documented: a test assumed native hashing finished after one event-loop turn, and a persistent-browser download closed for an unconfirmed reason. The corrected fixtures wait for the real database request and inherit the configured browser; all original archive/restart assertions remain.
+
+A subsequent all-project run exposed the fresh-profile archive test injecting a
+File before the library was ready. A deterministic probe confirms that native
+`setInputFiles` can bypass a disabled input while the genuine initial IndexedDB
+read is held. The helper now waits for the input to become enabled, and a new
+native regression verifies this ordering with an actual recorded archive. Both
+the affected portable flow and new case pass locally (2/2); no product guards or
+timeouts changed. The original CI artifact cannot prove its precise triggering
+interleaving. [Failure evidence](docs/2026-10-04-import-readiness-ci-first.json) and
+[repair evidence](docs/2026-10-04-import-readiness-verification.json) preserve that
+limit and the actual archive hashes.
