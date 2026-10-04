@@ -125,7 +125,17 @@
     "sha256": "e8a8b5d6d85fdbc7dd4e161164ef7b4e3483513463e4805324ce65fe6a65ea97"
   },
   "ci": {
-    "status": "pending"
+    "status": "passed",
+    "receipt": "2026-10-04-backed-recording-ci.json",
+    "head": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+    "tree": "d0f727608809aac27443eb049e652440d2b109dd",
+    "pushRun": 37241975731,
+    "pullRequestRun": 37241977979,
+    "unitTestsEach": 301,
+    "nativeTestsEach": 116,
+    "allProjectPullRequestWorkflows": 13,
+    "pullRequestMerge": "66a254f49ed62e094bbdc165f28cb9e1b2b7f859",
+    "mergeTreeMatchesHead": true
   },
   "limitations": [
     "Synthetic software audio graph only; no measured microphone/vocal accuracy, physical latency correction or actual device compatibility.",
