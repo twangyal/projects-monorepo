@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,chromium,type Page} from '@playwright/test';
 import {PRIVATE_IDENTITY,setup,connect,calibrate,startBle,emit,stats,releaseStage,holdStage,connectionEvent,report,move,interact,position,type Stage} from './bluetooth-fixtures.ts';
 
 const errors=new WeakMap<Page,string[]>();
@@ -135,4 +135,56 @@ test('missing Bluetooth provider leaves the genuine simulator available with cle
   await page.addInitScript(()=>Object.defineProperty(navigator,'bluetooth',{configurable:true,value:undefined}));await page.goto('/');await page.locator('#input-source').selectOption('bluetooth-hr');
   await expect(page.locator('#ble-connect')).toBeDisabled();await expect(page.locator('#ble-status')).toContainText(/unavailable|support|secure/i);
   await page.locator('#input-source').selectOption('simulated');await page.locator('#start').click();await expect(page.locator('#phase')).toHaveText('In the corridor');
+});
+
+for(const pending of [false,true]){
+  test(`cached page suspension preserves the run and ${pending?'draining connection ownership':'explicit reconnection'}`,async({page})=>{
+    await setup(page,pending?['connect']:[]);
+    if(pending){
+      await page.locator('#input-source').selectOption('simulated');await page.locator('#start').click();
+      await page.locator('#input-source').selectOption('bluetooth-hr');await page.locator('#ble-connect').click();
+      await expect.poll(async()=>(await stats(page)).pending).toContain('connect');
+    }else{await startBle(page);await page.clock.runFor(1);await emit(page,[2,80]);}
+    const before=(await report(page)).value;
+    await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
+    await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+    await expect(page.locator('#phase')).toHaveText('Paused');
+    expect((await report(page)).value.samples).toEqual(before.samples);
+    expect((await report(page)).value.source).toBe(before.source);
+    if(pending){
+      await expect(page.locator('#ble-connect')).toBeDisabled();
+      await page.locator('#ble-connect').evaluate(node=>(node as HTMLButtonElement).click());
+      expect((await stats(page)).options).toHaveLength(1);
+      await holdStage(page,'connect',false);await releaseStage(page,'connect');
+    }
+    await expect(page.locator('#ble-connect')).toBeEnabled();
+    await expect(page.locator('#start')).toBeDisabled();
+    expect((await stats(page)).options).toHaveLength(1);
+    expect((await stats(page)).listeners).toBe(0);
+    await connect(page);await expect(page.locator('#start')).toBeDisabled();
+    expect((await stats(page)).options).toHaveLength(2);
+    expect((await stats(page)).maxConcurrent).toBe(1);
+    expect((await stats(page)).identityReads).toBe(0);
+  });
+}
+
+test('real cached history return retains the heap and allows deliberate sensor connection',async()=>{
+  const browser=await chromium.launch({ignoreDefaultArgs:['--disable-back-forward-cache'],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
+  try{
+    const context=await browser.newContext();const page=await context.newPage();const pageErrors:string[]=[];
+    page.on('pageerror',error=>pageErrors.push(error.message));
+    // No native Bluetooth device is used: this tests Chromium page lifecycle,
+    // then the existing controlled provider's explicit chooser boundary.
+    await setup(page);await page.evaluate(()=>{
+      const state={shown:false};Object.defineProperty(window,'cachedVisit',{value:state});
+      window.addEventListener('pageshow',event=>{if(event.persisted)state.shown=true;});
+    });
+    await page.goto('http://127.0.0.1:4281/?away');await page.goBack();
+    await expect.poll(()=>page.evaluate(()=>(window as Window&{cachedVisit?:{shown:boolean}}).cachedVisit?.shown),{timeout:10000}).toBe(true);
+    await expect(page.locator('#input-source')).toHaveValue('bluetooth-hr');
+    expect((await stats(page)).options).toHaveLength(0);
+    await expect(page.locator('#ble-connect')).toBeEnabled();await connect(page);
+    expect((await stats(page)).options).toHaveLength(1);expect((await stats(page)).identityReads).toBe(0);
+    expect(pageErrors).toEqual([]);
+  }finally{await browser.close();}
 });
