@@ -1,0 +1,2056 @@
+{
+  "schemaVersion": 1,
+  "issue": 70,
+  "status": "verified",
+  "prefitCommit": "b2b782b50341b9279538437aafba7aa7ec387abf",
+  "publishedRun": "first-prescribed-run",
+  "publishedArtifact": "public/experiment-report.json",
+  "repeatArtifact": "experiments/results/repeat-report.json",
+  "firstCommand": {
+    "command": [
+      "/tmp/color70-experiment-env/bin/python",
+      "experiments/run.py",
+      "--fit",
+      "--manifest",
+      "experiments/frozen/manifest.json",
+      "--receipt",
+      "experiments/frozen/receipt.json",
+      "--output",
+      "/tmp/color70-fit-first-b2b782b"
+    ],
+    "elapsedSeconds": 126.98784587299451,
+    "exitCode": 0,
+    "output": "/tmp/color70-fit-first-b2b782b",
+    "log": "/tmp/color70-fit-first-b2b782b.log"
+  },
+  "repeatCommand": {
+    "command": [
+      "/tmp/color70-experiment-env/bin/python",
+      "experiments/run.py",
+      "--fit",
+      "--manifest",
+      "experiments/frozen/manifest.json",
+      "--receipt",
+      "experiments/frozen/receipt.json",
+      "--output",
+      "/tmp/color70-fit-repeat-b2b782b"
+    ],
+    "elapsedSeconds": 128.63450858500437,
+    "exitCode": 0,
+    "output": "/tmp/color70-fit-repeat-b2b782b",
+    "log": "/tmp/color70-fit-repeat-b2b782b.log"
+  },
+  "comparison": {
+    "status": "verified",
+    "first": {
+      "path": "/tmp/color70-fit-first-b2b782b/experiment-report.json",
+      "bytes": 216267,
+      "sha256": "9fe630c1e7376d688c13180539ed113d91b040c97ea03811e03637366e0e3c2e"
+    },
+    "repeat": {
+      "path": "/tmp/color70-fit-repeat-b2b782b/experiment-report.json",
+      "bytes": 216268,
+      "sha256": "ac0dc945039dc6ab340bb7ec249357dccbfc50ada696373b5418307c30487bfc"
+    },
+    "byteIdentical": false,
+    "byteDifferenceExplanation": "Per-model elapsed fitSeconds are measured separately; every other report field is exactly identical.",
+    "protocolHash": "da016f6fce82d9c9f5716345fbbd97fd98825a6873d89f0a1e5cebc622205ee6",
+    "generatorHash": "9464d917d62c2876223161ef327b30673d0b0fe1fbaf330ce0a7653e59fc8eb3",
+    "manifestHash": "a5f2ad0348b086409576d8689584f05d67e3ad0b3b7316a9508d7611dafea398",
+    "models": 18,
+    "evaluations": 108,
+    "testSamples": 640,
+    "coefficientsIdentical": true,
+    "developmentPredictionsIdentical": true,
+    "testPredictionsIdentical": true,
+    "metricMaximumAbsoluteDifference": 0,
+    "allOtherFieldsIdentical": true
+  },
+  "independentFirst": {
+    "elapsedSeconds": 0.5709975850040792,
+    "independentMathematics": {
+      "axisAlignedHistograms": [
+        {
+          "64": 64,
+          "192": 512
+        },
+        {
+          "64": 64,
+          "192": 512
+        },
+        {
+          "64": 112,
+          "192": 464
+        },
+        {
+          "64": 96,
+          "88": 16,
+          "136": 8,
+          "184": 4,
+          "192": 452
+        }
+      ],
+      "borderPixels": 448,
+      "diskCoveredSubsamples": 1804,
+      "fullImageRgbRmse": 9.16515138991168,
+      "fullImageSquaredDifference": 258048,
+      "paletteSquaredDistance": 576
+    },
+    "oracleNumpy": "2.3.5",
+    "passed": true,
+    "results": {
+      "aggregates": [
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "mask"
+        }
+      ],
+      "allDerivedMetricsIndependentlyRecomputed": true,
+      "discretePredictionsSha256": "49b75b6ba0de05e5154378adbb07ab6d44ff2a5ab8b4cc14487c898d5ab83f7e",
+      "evaluationsChecked": 108,
+      "modelsChecked": 18,
+      "neutralDevelopment": {
+        "1729": 1.0,
+        "2718": 1.0,
+        "3141": 1.0
+      },
+      "reportSha256": "9fe630c1e7376d688c13180539ed113d91b040c97ea03811e03637366e0e3c2e",
+      "status": "complete"
+    }
+  },
+  "independentRepeat": {
+    "elapsedSeconds": 0.5797196960047586,
+    "independentMathematics": {
+      "axisAlignedHistograms": [
+        {
+          "64": 64,
+          "192": 512
+        },
+        {
+          "64": 64,
+          "192": 512
+        },
+        {
+          "64": 112,
+          "192": 464
+        },
+        {
+          "64": 96,
+          "88": 16,
+          "136": 8,
+          "184": 4,
+          "192": 452
+        }
+      ],
+      "borderPixels": 448,
+      "diskCoveredSubsamples": 1804,
+      "fullImageRgbRmse": 9.16515138991168,
+      "fullImageSquaredDifference": 258048,
+      "paletteSquaredDistance": 576
+    },
+    "oracleNumpy": "2.3.5",
+    "passed": true,
+    "results": {
+      "aggregates": [
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "neutral",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "correlated",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "raw",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "raw"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "neutral",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "matched",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "shifted",
+          "training": "mask"
+        },
+        {
+          "accuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "arm": "independent",
+          "balancedAccuracy": {
+            "max": 1.0,
+            "mean": 1.0,
+            "min": 1.0
+          },
+          "baselineDifference": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "flipFraction": {
+            "max": 0.0,
+            "mean": 0.0,
+            "min": 0.0
+          },
+          "preprocessing": "mask",
+          "suite": "independent",
+          "training": "mask"
+        }
+      ],
+      "allDerivedMetricsIndependentlyRecomputed": true,
+      "discretePredictionsSha256": "49b75b6ba0de05e5154378adbb07ab6d44ff2a5ab8b4cc14487c898d5ab83f7e",
+      "evaluationsChecked": 108,
+      "modelsChecked": 18,
+      "neutralDevelopment": {
+        "1729": 1.0,
+        "2718": 1.0,
+        "3141": 1.0
+      },
+      "reportSha256": "ac0dc945039dc6ab340bb7ec249357dccbfc50ada696373b5418307c30487bfc",
+      "status": "complete"
+    }
+  },
+  "independentReproducibility": {
+    "all18CoefficientHashesIdentical": true,
+    "allDerivedMetricsIdentical": true,
+    "allDevelopmentAnd108EvaluationPredictionsIdentical": true,
+    "allFieldsIdenticalExceptMeasuredFitSeconds": true,
+    "discretePredictionsSha256": "49b75b6ba0de05e5154378adbb07ab6d44ff2a5ab8b4cc14487c898d5ab83f7e",
+    "firstReportSha256": "9fe630c1e7376d688c13180539ed113d91b040c97ea03811e03637366e0e3c2e",
+    "passed": true,
+    "repeatReportSha256": "ac0dc945039dc6ab340bb7ec249357dccbfc50ada696373b5418307c30487bfc",
+    "scientificOutcome": "Null effect in this fixed experiment: all conditions accuracy1, flip fraction0 and baseline difference0; no artwork-protection conclusion."
+  },
+  "interpretation": "Complete null effect: all 108 conditions have accuracy and balanced accuracy 1.0; every paired prediction-flip fraction and neutral-training baseline difference is 0.0. This fixed experiment did not demonstrate classification sensitivity to the tested surrounds.",
+  "limitations": [
+    "No artist artwork, pretrained model, generative model or human perception was evaluated.",
+    "The 640 test images are 320 paired geometry families, not 640 independent families.",
+    "Three fixed model seeds are descriptive; no statistical significance or general protection claim is made.",
+    "Exactly two prescribed complete runs occurred after the prefit commit; no outcome-driven tuning or protocol changes.",
+    "Report file hashes differ because actual elapsed fitSeconds differ; all other fields and coefficient hashes are exactly equal."
+  ]
+}

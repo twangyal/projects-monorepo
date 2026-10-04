@@ -2,7 +2,7 @@
 
 A local workspace for comparing the same artwork within different surrounding colors. Import a PNG, choose a solid or checker surround, inspect the neutral/result pair, and export lossless PNGs or a complete editable project. The retained artwork rectangle stays byte-identical; only pixels around it change.
 
-This first milestone is being implemented and verified in [issue #70](https://github.com/twangyal/projects-monorepo/issues/70). Its separate controlled shape experiment investigates a small classifier's sensitivity to context. It provides no protection score for uploaded artwork and no claim of resistance to generative-model training or preserved human appearance.
+This first milestone is tracked in [issue #70](https://github.com/twangyal/projects-monorepo/issues/70). Its separate controlled shape experiment investigates a small classifier's sensitivity to context. It provides no protection score for uploaded artwork and no claim of resistance to generative-model training or preserved human appearance.
 
 ## Run
 
@@ -59,7 +59,37 @@ The research panel is separate from uploaded artwork. It reports an original pro
 
 The fixed protocol uses three learner seeds, 18 real fits and 108 declared evaluation conditions. Neutral-development learnability must pass the predeclared gate before any test predictions are evaluated. Counterfactual surrounds, inference-only masking and separately retrained masking test context sensitivity and one obvious preprocessing bypass. Every declared result is retained, including null, negative or inconclusive outcomes. A shortcut in this deliberately constructed task is not evidence about artist styles, diffusion models or prevention of training.
 
-The protocol, generator fingerprint and complete ordered dataset manifest are committed before those fits are allowed. No protocol fit has been released yet. The current artifact is explicitly **not run**; it must not be interpreted as a successful experiment. Actual commands, measured results and reproducibility evidence will be documented after verification.
+The protocol, generator fingerprint, complete ordered dataset manifest and independent prefit receipt were committed in `b2b782b50341b9279538437aafba7aa7ec387abf` before fitting was released. The first prescribed run completed all 18 fits and 108 evaluations. Its actual result is a **null effect**: every condition reached accuracy and balanced accuracy 1.0, with paired prediction flips and neutral-training baseline differences 0.0. These fixed surrounds did not change any tested predicted labels. This does not demonstrate context sensitivity or artwork protection. The clean-process repeat matched every coefficient hash, prediction, metric and other result field exactly; only measured fit durations differed. Both independently verified reports are retained: the first is the published artifact, and the repeat is in `experiments/results/repeat-report.json`. The runs took 126.99 and 128.63 seconds in the recorded environment. See [the complete evidence](docs/2026-10-04-experiment-verification.json).
+
+Use Python 3.12 in a separate environment for experiment checks:
+
+```sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r experiments/requirements.txt
+.venv/bin/python -m unittest discover -s experiments/tests -v
+.venv/bin/python experiments/oracle/check_experiment.py \
+  --manifest experiments/frozen/manifest.json --producer-api --tiny-learner
+```
+
+These checks verify the original mathematical fixtures and use only unrelated tiny data to check learner plumbing. They do not fit the protocol models or evaluate their held-out predictions. The canonical manifest lists every family's actual unrounded parameters, palette assignments, sample IDs and center hashes. `experiments/frozen/receipt.json` binds the exact protocol, generator source and manifest.
+
+To reproduce the fixed experiment separately, use a new output directory:
+
+```sh
+.venv/bin/python experiments/run.py --fit \
+  --manifest experiments/frozen/manifest.json \
+  --receipt experiments/frozen/receipt.json --output /tmp/color-context-run
+```
+
+The runner refuses mismatched inputs and existing output directories, fixes numeric libraries to one thread, and supervises a ten-minute/32 MiB output budget. It preserves truthful partial or inconclusive results; it does not change parameters after viewing an outcome. Source changes require a new preregistered experiment rather than reusing the frozen receipt. The frozen artifact can be inspected without rerunning training. Check its complete metrics and identity with:
+
+```sh
+.venv/bin/python experiments/oracle/check_experiment.py \
+  --results public/experiment-report.json \
+  --receipt experiments/frozen/receipt.json --allow-authorized-results
+```
+
+This command validates already released results; it does not fit or tune models.
 
 ## Verify
 
@@ -71,4 +101,17 @@ npm run test:browser
 
 For system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The browser suite reserves port 4290 and exercises the production build, real files, native workers, IndexedDB and actual downloads. Storage/media harnesses are included only when tests request them. Python experiment verification is separate from the browser workspace and uses its own pinned requirements.
 
-The [frozen design](../../docs/superpowers/specs/2026-10-04-color-context-lab-design.md) and [implementation plan](../../docs/superpowers/plans/2026-10-04-color-context-lab.md) define the exact byte, numerical, lifetime and preregistration contracts. Final verification and measured limitations remain part of the open milestone.
+The initial milestone passes 69 TypeScript tests, 12 Python tests and 32 native browser cases. An independent oracle checks the frozen manifest, actual results and numerical invariants without rerunning protocol training. The browser checks include real decoding and worker termination, genuine transaction aborts/timeouts, exact exports, persistent process restart, maximum-size output and usable editing when experiment results are unavailable.
+
+For a separate maximum-size production acceptance run, start the normal production preview on port 4289 and use a new output directory:
+
+```sh
+COLOR_CONTEXT_BASE_URL=http://127.0.0.1:4289 \
+COLOR_CONTEXT_OUTPUT_DIR=/tmp/color-context-acceptance \
+CHROMIUM_PATH=/usr/bin/chromium \
+node --experimental-strip-types scripts/smoke_workspace.mjs
+```
+
+This imports all 2,073,600 raw bytes of a 720 × 720 image, independently decodes the 976 × 976 exports, checks every metric, and compares the complete JSON/PNG/HTML artifacts byte-for-byte through a full Chromium process restart. It preserves downloaded artifacts, desktop/mobile screenshots and a verification receipt.
+
+The [frozen design](../../docs/superpowers/specs/2026-10-04-color-context-lab-design.md) and [implementation plan](../../docs/superpowers/plans/2026-10-04-color-context-lab.md) define the exact byte, numerical, lifetime and preregistration contracts. Measured experiment evidence is retained in [the experiment record](docs/2026-10-04-experiment-verification.json); the [workspace record](docs/2026-10-04-workspace-verification.json) retains native maximum-size evidence, screenshots, corrections and CI status. Broader artwork protection remains an unproven hypothesis.

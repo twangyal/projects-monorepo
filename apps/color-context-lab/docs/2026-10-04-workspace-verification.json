@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "issue": 70,
+  "status": "local-verification-complete-ci-pending",
+  "unit": {
+    "passed": 69,
+    "durationMs": 1938.214825,
+    "lint": true,
+    "typecheck": true
+  },
+  "python": {
+    "passed": 12,
+    "durationSeconds": 3.721,
+    "protocolModelsFittedByTests": 0
+  },
+  "publishedOracle": {
+    "passed": true,
+    "durationSeconds": 12.130882976998691,
+    "all2240Centers": true,
+    "all20Datasets": true,
+    "all18Models": true,
+    "all108Evaluations": true,
+    "protocolModelsFittedByCheck": 0
+  },
+  "browser": {
+    "chromium": "151.0.7922.173",
+    "passed": 32,
+    "fullExistingSuite": {
+      "passed": 30,
+      "duration": "1.0m",
+      "log": "/tmp/color70-final-native30.log"
+    },
+    "newPublishedArtifactCases": {
+      "passed": 2,
+      "durationSeconds": 5.4,
+      "log": "/tmp/color70-experiment-native.log"
+    },
+    "nativeDescription": "Real files, native workers, genuine IndexedDB transactions/abort/timeout, exact PNG/HTML/JSON downloads, full process restart, maximum bounds and report availability. Public lifecycle-event coverage is software cleanup, not proof of an actual BFCache hit."
+  },
+  "productionBuild": {
+    "passed": true,
+    "durationMs": 282,
+    "entry": "main-B3PpQWiI.js",
+    "worker": "image.worker-CSi1O-H1.js",
+    "testHarnessesIncluded": false
+  },
+  "independentReproductions": [
+    {
+      "finding": "An older Retry loading replaced current work after a newer PNG normalization started.",
+      "red": {
+        "failed": 1,
+        "durationSeconds": 6.4
+      },
+      "green": {
+        "passed": 1,
+        "durationSeconds": 2.6
+      },
+      "correction": "Later import, confirmed save/clear and memory-only intent retire older read receipts; Retry loading symmetrically retires prior media work. Startup barriers and drafts remain intact."
+    },
+    {
+      "finding": "A settled storage operation temporarily retained a queue slot until a later finally microtask.",
+      "correction": "Queue slot is released before settling the public promise; regression passes."
+    },
+    {
+      "finding": "U+2028 and U+2029 were admitted in nominally single-line project labels.",
+      "correction": "Both title and source filename reject these separators; existing valid literal Unicode remains supported."
+    }
+  ],
+  "maximumNativeAcceptance": {
+    "schemaVersion": 1,
+    "status": "passed",
+    "baseUrl": "http://127.0.0.1:4290/",
+    "startedAt": "2026-10-04T12:24:46.149Z",
+    "assertions": [
+      "Workspace: all seven metrics match the independent oracle (absolute tolerance1e-10 for nonintegers)",
+      "Explicit Save completed and native readonly transaction proves exact current record",
+      "before source: every decoded RGBA byte matches the independent oracle",
+      "before result: every decoded RGBA byte matches the independent oracle",
+      "before embedded baseline: every decoded RGBA byte matches the independent oracle",
+      "before embedded result: every decoded RGBA byte matches the independent oracle",
+      "before HTML: all seven metrics match the independent oracle (absolute tolerance1e-10 for nonintegers)",
+      "Workspace: all seven metrics match the independent oracle (absolute tolerance1e-10 for nonintegers)",
+      "after source: every decoded RGBA byte matches the independent oracle",
+      "after result: every decoded RGBA byte matches the independent oracle",
+      "after embedded baseline: every decoded RGBA byte matches the independent oracle",
+      "after embedded result: every decoded RGBA byte matches the independent oracle",
+      "after HTML: all seven metrics match the independent oracle (absolute tolerance1e-10 for nonintegers)",
+      "Full persistent Chromium process restart preserves byte-identical project, source/result PNG and HTML report"
+    ],
+    "artifacts": {
+      "input-max-project.json": {
+        "bytes": 2765208,
+        "sha256": "bdf76090bb7dec223c8900c67377d08ff491a842faa21cb2f42dc46c0ba5d65b"
+      },
+      "before-source.png": {
+        "bytes": 2074556,
+        "sha256": "264b633e07491c4ab78f9f711e714fd78b846fa0301fb67158260c7807657284"
+      },
+      "before-result.png": {
+        "bytes": 3811651,
+        "sha256": "52400892763545911ce869b6d009c7e7164892041efc90081143980bbfc90e48"
+      },
+      "before-project.json": {
+        "bytes": 2765208,
+        "sha256": "bdf76090bb7dec223c8900c67377d08ff491a842faa21cb2f42dc46c0ba5d65b"
+      },
+      "before-report.html": {
+        "bytes": 10167245,
+        "sha256": "d5f385372c8cde41a7478fa9510f78346bc321bf4ec8dfbf7da6a7ff12f6d4ae"
+      },
+      "before-embedded-baseline.png": {
+        "bytes": 3811651,
+        "sha256": "f9582555af8d11cbcb0bb50cd5cb7687578252cda9a612dbd4602df26ef1297d"
+      },
+      "before-embedded-result.png": {
+        "bytes": 3811651,
+        "sha256": "52400892763545911ce869b6d009c7e7164892041efc90081143980bbfc90e48"
+      },
+      "workspace-desktop.png": {
+        "bytes": 1393361,
+        "sha256": "df0b3ef423791035abece3d261b29f021dea8ca3f2493a3afd43bec66d037112"
+      },
+      "workspace-mobile-390.png": {
+        "bytes": 898799,
+        "sha256": "7c774e707d9a0e1ed60abc75ad03f69b5bd4049a33ce6d774f65fcde2e1d3dcc"
+      },
+      "after-source.png": {
+        "bytes": 2074556,
+        "sha256": "264b633e07491c4ab78f9f711e714fd78b846fa0301fb67158260c7807657284"
+      },
+      "after-result.png": {
+        "bytes": 3811651,
+        "sha256": "52400892763545911ce869b6d009c7e7164892041efc90081143980bbfc90e48"
+      },
+      "after-project.json": {
+        "bytes": 2765208,
+        "sha256": "bdf76090bb7dec223c8900c67377d08ff491a842faa21cb2f42dc46c0ba5d65b"
+      },
+      "after-report.html": {
+        "bytes": 10167245,
+        "sha256": "d5f385372c8cde41a7478fa9510f78346bc321bf4ec8dfbf7da6a7ff12f6d4ae"
+      },
+      "after-embedded-baseline.png": {
+        "bytes": 3811651,
+        "sha256": "f9582555af8d11cbcb0bb50cd5cb7687578252cda9a612dbd4602df26ef1297d"
+      },
+      "after-embedded-result.png": {
+        "bytes": 3811651,
+        "sha256": "52400892763545911ce869b6d009c7e7164892041efc90081143980bbfc90e48"
+      }
+    },
+    "browserProcesses": [
+      {
+        "phase": "before-restart",
+        "processId": 504379,
+        "version": "151.0.7922.173"
+      },
+      {
+        "phase": "after-restart",
+        "processId": 504518,
+        "version": "151.0.7922.173"
+      }
+    ],
+    "observations": [
+      {
+        "phase": "before-restart",
+        "pageErrors": [],
+        "consoleErrors": [],
+        "externalRequests": [],
+        "truncated": false
+      },
+      {
+        "phase": "before HTML",
+        "pageErrors": [],
+        "consoleErrors": [],
+        "externalRequests": [],
+        "truncated": false
+      },
+      {
+        "phase": "after-restart",
+        "pageErrors": [],
+        "consoleErrors": [],
+        "externalRequests": [],
+        "truncated": false
+      },
+      {
+        "phase": "after HTML",
+        "pageErrors": [],
+        "consoleErrors": [],
+        "externalRequests": [],
+        "truncated": false
+      }
+    ],
+    "phases": {
+      "beforeRestartSeconds": 4.470824996999999,
+      "afterRestartSeconds": 8.750203703999999
+    },
+    "limitations": [
+      "The maximum fixture imports canonical normalized RGBA, not an original encoded PNG; native PNG normalization is a separate acceptance gate.",
+      "Screenshots exercise browser presentation, whose translucent pixels may be quantized. Artifact checks compare decoded PNG RGBA directly.",
+      "No human-perception, protection or uploaded-artwork model behavior is measured."
+    ],
+    "fixture": {
+      "imageWidth": 720,
+      "imageHeight": 720,
+      "outputWidth": 976,
+      "outputHeight": 976,
+      "rawBytes": 2073600,
+      "rawSha256": "4e8cc999b1b51ee00eca12139204e06e83815344ad1daf0a872ec862a83e108d",
+      "settings": {
+        "mode": "checker",
+        "border": 128,
+        "colorA": "#1858a0",
+        "colorB": "#e8b060",
+        "cellSize": 7
+      },
+      "expectedMetrics": {
+        "artworkChangedPixels": 0,
+        "artworkMaxChannelDelta": 0,
+        "surroundPixels": 434176,
+        "totalPixels": 952576,
+        "rgbRmse": 45.77581505675247,
+        "maxRgbDelta": 104,
+        "meanAbsoluteLuminanceDelta": 0.0896525808755923
+      }
+    },
+    "mobileGeometry": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "completedAt": "2026-10-04T12:24:59.787Z",
+    "durationSeconds": 13.638367683
+  },
+  "maximumProbeCorrections": [
+    {
+      "output": "/workspace/color70-workspace-native-final",
+      "reason": "Smoke runner shadowed imported process before browser launch; corrected local browserProcess name."
+    },
+    {
+      "output": "/workspace/color70-workspace-native-final2",
+      "reason": "All artifact/restart assertions passed, but strict console gate found the absent /favicon.ico. Added a local SVG icon; final3 passes without console errors."
+    }
+  ],
+  "visualReview": {
+    "desktopInspected": true,
+    "mobile390Inspected": true,
+    "mobilePageOverflow": false
+  },
+  "sourceSha256": {
+    "src/experiment.ts": "929469992b61b658f8df8e778ab1aaef98f312a45c17fbc0eac7fcfc4f21f2ea",
+    "src/history.ts": "10c82fd7ad5ebc84b3712c8c61b7cdd27014781dc813b741de36427dccd79d83",
+    "src/image.worker.ts": "26612a68adecb749535090515dacfeb0da491628a6a5659997c6d0a05743ee0e",
+    "src/images.ts": "70a55f500b48075c83f7f29a8e066d49bc45cf8147a81286af3908c2dd8b5e87",
+    "src/jobs.ts": "ec3b1408a4394d3ae41d5be3e40cb28e364f8f8356a72fe08e2799870c9f53a9",
+    "src/main.ts": "5573280bf05088f9c3d2dd3684b982f1626fbdb051f8e3b6de5b281ed13b6ee2",
+    "src/model.ts": "eeb48d146f8e6eb45ecaa9d5e241c68d6e7a7c6659ab85d068a405c09b032d45",
+    "src/png.ts": "f0027c4cfce376a55c65d5eff65cb4890612e5049d78d1a61b7f85967770af38",
+    "src/render.ts": "3147b0bb3dc7608b0e8ebb361975427dd637800657ef41efb6e0cef43857fc26",
+    "src/report.ts": "f45741727ebcf0d42efca5ee7aeb91bf4e9f75b654ef316663c10d97d7eb208f",
+    "src/storage.ts": "7a4d48221bd81b2dd4bf116082a16a90fabdb5d9f733fce4f9142b987c19a6be",
+    "src/style.css": "3895ba2679b99806f55ea19ba43e7e95c351900eccaee7110dda6e6abb307a45",
+    "src/types.ts": "1f3c90135fc0c91ba9f3d6f64b23f8f68c7dfb6a1d586160ebf25332632c7e32"
+  },
+  "ci": {
+    "status": "pending"
+  },
+  "limitations": [
+    "Supported PNG import defines a browser-normalized baseline; it does not retain the compressed original or guarantee pixel identity with the original encoded source.",
+    "Only the surrounding frame is changed. Raw artwork RGBA is preserved exactly after normalization, including transparent RGB.",
+    "Metrics and the separate null classifier result provide no human-perception, artwork-protection or generative-model-transfer claim."
+  ]
+}
