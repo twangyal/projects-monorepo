@@ -123,25 +123,38 @@ export async function loadProject(): Promise<Project | null> {
 // JSON.stringify alone silently drops undefined, invokes toJSON and changes
 // exotic values. Inspect descriptors first; never normalize a preserved record.
 export function serializeRawRecord(value: unknown): string {
-  const active = new Set<object>();
-  function inspect(item: unknown, depth: number): void {
-    if (item === null || typeof item === 'string' || typeof item === 'boolean') return;
-    if (typeof item === 'number' && Number.isFinite(item) && !Object.is(item, -0)) return;
+  const active = new Set<object>(), sizes = new Map<object, number>();
+  const encoder = new TextEncoder();
+  const oversized = () => new Error('Cannot download the saved record: its JSON exceeds 6 MiB.');
+  function bounded(bytes: number): number { if (bytes > MAX_STORED_BYTES) throw oversized(); return bytes; }
+  function quoted(text: string): number {
+    if (text.length > MAX_STORED_BYTES) throw oversized();
+    return bounded(encoder.encode(JSON.stringify(text)).byteLength);
+  }
+  function inspect(item: unknown, depth: number): number {
+    if (item === null) return 4;
+    if (typeof item === 'string') return quoted(item);
+    if (typeof item === 'boolean') return item ? 4 : 5;
+    if (typeof item === 'number' && Number.isFinite(item) && !Object.is(item, -0)) return String(item).length;
     if (typeof item !== 'object' || depth > 512) throw new Error('Cannot make a lossless JSON backup of this unsafe saved record.');
     if (active.has(item)) throw new Error('Cannot make a JSON backup of a cyclic saved record.');
+    // Count shared subtrees once, but charge their complete serialized size at
+    // every occurrence. A tiny native DAG must not expand into gigabytes first.
+    const known = sizes.get(item); if (known !== undefined) return known;
     const array = Array.isArray(item), prototype = Object.getPrototypeOf(item);
     if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) throw new Error('Cannot make a lossless JSON backup of this saved record type.');
     const keys = Reflect.ownKeys(item);
     if (array && keys.length !== item.length + 1) throw new Error('Cannot make a lossless JSON backup of a sparse or extended array.');
-    active.add(item);
+    active.add(item); let bytes = 2, count = 0;
     for (const key of keys) {
       if (array && key === 'length') continue;
       const descriptor = Object.getOwnPropertyDescriptor(item, key)!;
       if (typeof key !== 'string' || !descriptor.enumerable || !('value' in descriptor)) throw new Error('Cannot make a lossless JSON backup of hidden or computed values.');
       if (array && (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= item.length)) throw new Error('Cannot make a lossless JSON backup of an extended array.');
-      inspect(descriptor.value, depth + 1);
+      bytes = bounded(bytes + (count++ ? 1 : 0) + (array ? 0 : quoted(key) + 1));
+      bytes = bounded(bytes + inspect(descriptor.value, depth + 1));
     }
-    active.delete(item);
+    active.delete(item); sizes.set(item, bytes); return bytes;
   }
   inspect(value, 0);
   const json = JSON.stringify(value);

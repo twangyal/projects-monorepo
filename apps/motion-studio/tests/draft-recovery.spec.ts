@@ -182,6 +182,44 @@ test('a delayed retry cannot publish over a newer memory edit', async ({ page })
   await expect(page.locator('#project-title')).toHaveValue(saved.title);
 });
 
+test('late native image decode during retry releases bitmaps and preserves newer edits and history', async ({ page }) => {
+  await seed(page); await title(page, 'Before image retry');
+  const saved = await page.evaluate(project => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 10;
+    canvas.getContext('2d')!.fillRect(0, 0, 10, 10);
+    return { ...project, title: 'Saved image draft', layers: [{ id: 'image', kind: 'image', name: 'Image', keys: project.layers[0].keys,
+      image: { width: 10, height: 10, dataUrl: canvas.toDataURL('image/png') } }] };
+  }, createProject());
+  await record(page, saved, true);
+  await page.evaluate(() => {
+    const original = createImageBitmap; let first = true;
+    Object.assign(window, { recoveryBitmapClosed: 0, releaseRecoveryBitmap: null });
+    const close = ImageBitmap.prototype.close;
+    ImageBitmap.prototype.close = function () {
+      (window as unknown as { recoveryBitmapClosed: number }).recoveryBitmapClosed++;
+      close.call(this);
+    };
+    window.createImageBitmap = ((...args: Parameters<typeof createImageBitmap>) => {
+      const decoded = Reflect.apply(original, window, args) as Promise<ImageBitmap>;
+      if (!first) return decoded; first = false;
+      return decoded.then(bitmap => new Promise<ImageBitmap>(resolve => {
+        Object.assign(window, { releaseRecoveryBitmap: () => resolve(bitmap) });
+      }));
+    }) as typeof createImageBitmap;
+  });
+  page.once('dialog', dialog => dialog.accept()); await page.locator('#recovery-retry').click();
+  await expect.poll(() => page.evaluate(() => typeof (window as unknown as { releaseRecoveryBitmap: unknown }).releaseRecoveryBitmap)).toBe('function');
+  await title(page, 'Edited during decode');
+  await page.evaluate(() => (window as unknown as { releaseRecoveryBitmap: () => void }).releaseRecoveryBitmap());
+  await expect(page.locator('#recovery-detail')).toContainText('Newer work was kept');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { recoveryBitmapClosed: number }).recoveryBitmapClosed)).toBe(2);
+  await expect(page.locator('#project-title')).toHaveValue('Edited during decode');
+  await protectedRecord(page, saved);
+  await page.locator('#undo').click(); await expect(page.locator('#project-title')).toHaveValue('Before image retry');
+  await page.locator('#redo').click(); await expect(page.locator('#project-title')).toHaveValue('Edited during decode');
+  expect(JSON.parse(await downloaded(page, '#recovery-download'))).toEqual(saved);
+});
+
 test('genuine PNG decoding failure preserves the complete raw saved project', async ({ page }) => {
   await page.goto('/');
   const broken = await page.evaluate(project => {

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import * as recovery from '../src/storage.ts';
 
 // Guard the actual export boundary: neither unknown keys nor literal text may
@@ -28,4 +29,16 @@ test('raw backup measures UTF-8 and rejects oversize before a download', () => {
   assert.equal(new TextEncoder().encode(serialize('x'.repeat(6 * 1024 * 1024 - 2))).length, 6 * 1024 * 1024);
   assert.throws(() => serialize('x'.repeat(6 * 1024 * 1024 - 1)), /6 MiB/i);
   assert.throws(() => serialize('語'.repeat(2 * 1024 * 1024)), /6 MiB/i);
+});
+test('small shared graphs cannot expand past the budget or block recovery', () => {
+  // Timeout is enforced by the parent process, independent of the serializer's
+  // event loop. This DAG is tiny in IndexedDB but would expand to >1 GiB JSON.
+  const child = spawnSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '-e', `
+    import { serializeRawRecord } from ${JSON.stringify(new URL('../src/storage.ts', import.meta.url).href)};
+    import assert from 'node:assert/strict';
+    let value = {}; for (let i = 0; i < 28; i++) value = [value, value];
+    assert.throws(() => serializeRawRecord(value), /6 MiB/);
+  `], { timeout: 2000, encoding: 'utf8' });
+  assert.equal(child.error, undefined, 'raw-record budget must reject without hanging');
+  assert.equal(child.status, 0, child.stderr);
 });
