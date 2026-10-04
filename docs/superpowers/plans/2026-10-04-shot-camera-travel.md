@@ -1,6 +1,6 @@
 # Shot Studio Camera Travel Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Author, inspect, rehearse, save/reopen and export validated linear camera travel within the existing local Shot Studio cut.
 
@@ -36,10 +36,10 @@
 
 **Interfaces:** Export `SCHEMA_VERSION=2`, canonical static/linear shots, `cameraAt(shot,localSeconds)->{eye,target,fov}` and `frameAt(project,filmSeconds)->{shot,index,local,camera}` exactly as the spec. Preserve existing `MAX_BYTES`, create/import/validate/duration/shotAt/actorPose/cameraFromPose APIs; documented nonfinite-time rejection is explicit. Publish callable signatures for peers before implementation.
 
-- [ ] Write meaningful RED for v1 static migration, rejection of motion-bearing v1/unknown keys, missing/holey endpoints, valid endpoint-but-singular midpoint, distinct XYZ/XZ minimizing times, exact static/linear positions and nonfinite time. Observe failures with `node --test tests/model.test.js tests/camera.test.js tests/travel.test.js` (omit the optional file if unused).
-- [ ] Implement exact-key versioned validation and detached schema-2 normalization. Validate original v1 limits before static migration; preserve all existing original exported films.
-- [ ] Implement constant-relative-delta and independently minimized XYZ/XZ whole-path bounds. Implement exact endpoint returns and one componentwise interior formula in `cameraAt`; preserve `shotAt` cut shape/reference semantics with cumulative boundary comparison, including durations 1.1/1.2/1.3 exact prefix 2.3 selecting the next Start. Use it in detached `frameAt`.
-- [ ] Run focused engine tests and independently supplied Task 3 oracle. Report exact RED/GREEN; never modify oracle expectations to match implementation. Notify UI/schema peers when callable.
+- [x] Write meaningful RED for v1 static migration, rejection of motion-bearing v1/unknown keys, missing/holey endpoints, valid endpoint-but-singular midpoint, distinct XYZ/XZ minimizing times, exact static/linear positions and nonfinite time. Observe failures with `node --test tests/model.test.js tests/camera.test.js tests/travel.test.js` (omit the optional file if unused).
+- [x] Implement exact-key versioned validation and detached schema-2 normalization. Validate original v1 limits before static migration; preserve all existing original exported films.
+- [x] Implement constant-relative-delta and independently minimized XYZ/XZ whole-path bounds. Implement exact endpoint returns and one componentwise interior formula in `cameraAt`; preserve `shotAt` cut shape/reference semantics with cumulative boundary comparison, including durations 1.1/1.2/1.3 exact prefix 2.3 selecting the next Start. Use it in detached `frameAt`.
+- [x] Run focused engine tests and independently supplied Task 3 oracle. Report exact RED/GREEN; never modify oracle expectations to match implementation. Notify UI/schema peers when callable.
 
 ## Task 2: History, native drafts and XR candidate compatibility
 
@@ -47,10 +47,10 @@
 
 **Interfaces:** Existing `ProjectHistory` / `moveShot` and `DraftStore` names/shape remain. `DRAFT_KEY='shot-studio-v1'`. `cameraFromPose(matrix)->{eye,target}` unchanged; UI applies the pose only to the frozen selected endpoint and validates full candidate.
 
-- [ ] Write RED for raw v1 startup zero writes, canonical v2 save/reopen, motion preserved through history/order/cloning, unknown-schema/motion-bearing-v1 protected recovery and failed explicit replacement retaining raw bytes.
-- [ ] Preserve canonical full snapshots without stripping endpoint fields. No-op/invalid updates keep redo and original history cursor; reordering is one reversible whole-film edit.
-- [ ] Add controlled tracked-camera tests for updating Start/End with lens/other endpoint untouched and rejecting intermediate-path singularity. Make success/error reporting follow actual commit result; do not announce captured/saved after failure.
-- [ ] Run `node --test tests/history.test.js tests/draft.test.js tests/camera.test.js tests/lifecycle.test.js`; preserve existing cleanup/unavailable-encoder/XR checks. No physical headset claim.
+- [x] Add integration fixtures for raw v1 startup zero writes, canonical v2 save/reopen, motion preserved through history/order/cloning, unknown-schema/motion-bearing-v1 protected recovery and failed explicit replacement retaining raw bytes.
+- [x] Preserve canonical full snapshots without stripping endpoint fields. No-op/invalid updates keep redo and original history cursor; reordering is one reversible whole-film edit.
+- [x] Add controlled tracked-camera tests for updating Start/End with lens/other endpoint untouched and rejecting intermediate-path singularity. Make success/error reporting follow actual commit result; do not announce captured/saved after failure.
+- [x] Run `node --test tests/history.test.js tests/draft.test.js tests/camera.test.js tests/lifecycle.test.js`; preserve existing cleanup/unavailable-encoder/XR checks. No physical headset claim.
 
 ## Task 3: Independent math and projection oracle
 
@@ -58,10 +58,10 @@
 
 **Interfaces:** Import public model functions only as the system under test. Expected geometry comes from hand-worked paths or separately implemented math, not producer travel code. Fixed lens endpoints, [0,duration] clamping and exact cut contract are frozen in spec.
 
-- [ ] Before reading new producer implementation, author explicit expected endpoints/midpoints/off-center minima, zero relative delta, independent XYZ/XZ minima, invalid collision/vertical middle and direct threshold boundaries.
-- [ ] Observe RED against old/stub model. Implement checks for detached arrays, invalid/nonfinite time, static migration, global actor-time expectations and last-frame/internal-cut behavior.
-- [ ] Independently derive pinhole-projected landmark coordinates for the real export fixture, with idle actors/fixed light, substantial predictable displacement and visibility throughout. Share fixture/projection expectations with Task 5 without using renderer matrices or production camera evaluation.
-- [ ] Run `node --test tests/camera-oracle.test.js`; send exact gate evidence and any concrete defect to root/engine owner.
+- [x] Before reading new producer implementation, author explicit expected endpoints/midpoints/off-center minima, zero relative delta, independent XYZ/XZ minima, invalid collision/vertical middle and direct threshold boundaries.
+- [x] Observe RED against old/stub model. Implement checks for detached arrays, invalid/nonfinite time, static migration, global actor-time expectations and last-frame/internal-cut behavior.
+- [x] Independently derive pinhole-projected landmark coordinates for the real export fixture, with idle actors/fixed light, substantial predictable displacement and visibility throughout. Share fixture/projection expectations with Task 5 without using renderer matrices or production camera evaluation.
+- [x] Run `node --test tests/camera-oracle.test.js`; send exact gate evidence and any concrete defect to root/engine owner.
 
 ## Task 4: Complete desktop endpoint authoring and lifecycle
 
@@ -69,12 +69,12 @@
 
 **Interfaces:** Consume `cameraAt`/`frameAt`, canonical schema-2 project/history/draft. Keep original camera numeric IDs and all existing labels. Add selectors/labels exactly frozen in spec: `#cameraMode`, `#cameraEndpoint`, `#endpointLabel`, `#copyEndpoint`, `#previewEndpoint`, `#usePreview`, `#discardEdits`.
 
-- [ ] Coordinate meaningful RED browser cases with Task 5: currently no travel authoring/export; focused End/path rejection and late import safety; endpoint-End vs next-cut confusion; static conversion/history.
-- [ ] Implement mode/endpoint editing, explicit copy-other/preview/use-current actions, Start-retaining static conversion confirmation and distinct editing/active-camera labels. Use actual selected-shot current frame only; snapshot before applying.
-- [ ] Route film scrub/rehearsal/export through `frameAt`, endpoint preview through `cameraAt`, and actor performances through global time. Rehearse from endpoint mode starts selected shot; ordinary film resume behavior remains.
-- [ ] Preserve invalid nonempty/finite coordinate parsing and focused raw fields without using HTML `stepMismatch` as an extra gate (`6.250` remains valid). Confirmed Discard unsent edits restores committed controls without consuming history. Block destructive/encoding actions until drafts resolve; keep committed JSON/raw recovery exports available with explicit draft disclosure.
-- [ ] Preserve every-input import guard plus new selector/action intent; block performer selection and starting import with preexisting unsent drafts, and check no drafts remain before read publication. Keep new-read/status protection, export/XR locks, visibility/context-loss/page restoration and exact storage failure messages. Apply returns an explicit successful commit result; captured End is previewable after XR exit.
-- [ ] Run `npm run check` and source syntax checks for any newly touched model file omitted by the old command. Publish coherent UI readiness and selector confirmation; no competing shared server/build.
+- [x] Coordinate meaningful RED browser cases with Task 5: currently no travel authoring/export; focused End/path rejection and late import safety; endpoint-End vs next-cut confusion; static conversion/history.
+- [x] Implement mode/endpoint editing, explicit copy-other/preview/use-current actions, Start-retaining static conversion confirmation and distinct editing/active-camera labels. Use actual selected-shot current frame only; snapshot before applying.
+- [x] Route film scrub/rehearsal/export through `frameAt`, endpoint preview through `cameraAt`, and actor performances through global time. Rehearse from endpoint mode starts selected shot; ordinary film resume behavior remains.
+- [x] Preserve invalid nonempty/finite coordinate parsing and focused raw fields without using HTML `stepMismatch` as an extra gate (`6.250` remains valid). Confirmed Discard unsent edits restores committed controls without consuming history. Block destructive/encoding actions until drafts resolve; keep committed JSON/raw recovery exports available with explicit draft disclosure.
+- [x] Preserve every-input import guard plus new selector/action intent; block performer selection and starting import with preexisting unsent drafts, and check no drafts remain before read publication. Keep new-read/status protection, export/XR locks, visibility/context-loss/page restoration and exact storage failure messages. Apply returns an explicit successful commit result; captured End is previewable after XR exit.
+- [x] Run `npm run check` and source syntax checks for any newly touched model file omitted by the old command. Publish coherent UI readiness and selector confirmation; no competing shared server/build.
 
 ## Task 5: Native browser, real decoded video and final acceptance
 
@@ -82,10 +82,10 @@
 
 **Interfaces:** Real UI controls, native files/localStorage and downloaded JSON/WebM. No private state hooks; controlled native read/encoder/XR fixtures can test race/cleanup boundaries but do not replace real export acceptance.
 
-- [ ] Author production flows for linear start/end editing, exact endpoint vs film preview, copy/use-current, explicit static conversion cancel/undo, valid v1 migration without startup overwrite, motion roundtrip/native reload/history/order, invalid raw/path rejection, delayed native import retaining focused drafts, protected recovery and mobile operation.
-- [ ] Freeze the independent decoded-video fixture/projection/tolerance before acceptance: idle actors/fixed light, one 3–4 second valid path, separated original landmark visible throughout. Assert real codec/container dimensions/duration; decode actual PTS and early/middle/late frames; compare landmark centroid/bounds to independent expected displacement/coordinates. Static or identical-endpoint control must lack that motion. Do not substitute hashes or widen tolerances after failure.
-- [ ] Run focused `npm run test:browser -- tests/browser/travel.spec.js --output=/tmp/shot-travel-focused` only with root's server slot; inspect actual downloads/pixels and record RED/GREEN. Preserve existing pending-import #57 and draft-recovery acceptance.
-- [ ] Root runs all `npm test`, `npm run check`, and full `npm run test:browser -- --output=/tmp/shot-travel-full`, with fresh free production server and real Chromium/FFprobe. Exact returned counts/evidence replace old README counts only after verification.
-- [ ] Independent review checks analytic bounds, schema/motion retention, raw drafts/async intent, active vs editing preview and XR success reporting. Root documents physical/timing/collision limits and measured artifacts, reviews desktop/mobile screenshots, commits/pushes normally and closes #58 only after exact-source CI passes.
+- [x] Author production flows for linear start/end editing, exact endpoint vs film preview, copy/use-current, explicit static conversion cancel/undo, valid v1 migration without startup overwrite, motion roundtrip/native reload/history/order, invalid raw/path rejection, delayed native import retaining focused drafts, protected recovery and mobile operation.
+- [x] Freeze the independent decoded-video fixture/projection/tolerance before acceptance: idle actors/fixed light, one 3–4 second valid path, separated original landmark visible throughout. Assert real codec/container dimensions/duration; decode actual PTS and early/middle/late frames; compare landmark centroid/bounds to independent expected displacement/coordinates. Static or identical-endpoint control must lack that motion. Do not substitute hashes or widen tolerances after failure.
+- [x] Run focused `npm run test:browser -- tests/browser/travel.spec.js --output=/tmp/shot-travel-focused` only with root's server slot; inspect actual downloads/pixels and record RED/GREEN. Preserve existing pending-import #57 and draft-recovery acceptance.
+- [x] Run all `npm test`, `npm run check`, and full `npm run test:browser -- --output=/tmp/shot-travel-full`, with fresh free production server and real Chromium/FFprobe. Exact returned counts/evidence replace old README counts only after verification.
+- [x] Independent review checks analytic bounds, schema/motion retention, raw drafts/async intent, active vs editing preview and XR success reporting. Root documents physical/timing/collision limits and measured artifacts, reviews desktop/mobile screenshots, commits/pushes normally and closes #58 only after exact-source CI passes.
 
-This documentation does not start implementation until root releases the reviewed contract. Existing autonomous authorization governs execution; no additional user approval is requested.
+The reviewed contract was released by root and completed in #58. The observed RED-to-GREEN gates were 13 producer travel cases and 18 independent math cases; history/draft/XR integration fixtures were added after the model implementation. Root ran unit/syntax checks and independently inspected native artifacts; the browser owner ran the final combined suite once. Implementation is 1859702; native acceptance is afb52c9. All 65 unit tests, syntax checks and 29 Chromium cases pass locally and in CI run 37181949482. See apps/shot-studio/docs/2026-10-04-camera-travel-verification.json for measured evidence and limitations. Existing autonomous authorization governed execution.
