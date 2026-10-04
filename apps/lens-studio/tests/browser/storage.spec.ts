@@ -165,6 +165,24 @@ test('private storage failure gives backup guidance, does not expose errors and 
   expect(result.title).toBe('Captured study');
 });
 
+test('schema creation failure has no uncaught page error and native setup can retry', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const result = await page.evaluate(async () => {
+    const h = window.lensStorage, original = IDBDatabase.prototype.createObjectStore;
+    IDBDatabase.prototype.createObjectStore = () => { throw new DOMException('Private setup detail', 'QuotaExceededError'); };
+    let message = '';
+    try { await h.loadProject(); } catch (error) { message = (error as Error).message; }
+    finally { IDBDatabase.prototype.createObjectStore = original; }
+    const empty = await h.loadProject();
+    await h.saveProject(h.fixture('After setup retry'));
+    return { message, empty, title: (await h.loadProject())!.title };
+  });
+  expect(result.message).toMatch(/storage.*download.*project.*retry/i);
+  expect(result.message).not.toContain('Private setup detail');
+  expect(result.empty).toBeNull(); expect(result.title).toBe('After setup retry');
+  expect(errors).toEqual([]);
+});
+
 test('blocked native opening rejects visibly and closes the connection that opens late', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const blocker = await new Promise<IDBDatabase>((resolve, reject) => {
