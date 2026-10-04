@@ -162,5 +162,59 @@
       "bytes": 12425,
       "sha256": "286d293f86a77e022a46302a4924cdf30b56bca1a70214e790903e75e4ba51ad"
     }
-  ]
+  ],
+  "ci": {
+    "status": "mixed first head: push failed one stale-revision fixture; PR passed",
+    "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+    "receipt": "2026-10-04-https-lan-ci-first.json",
+    "push": {
+      "pythonPassed": 183,
+      "typescriptPassed": 6,
+      "nativePassed": 29,
+      "nativeFailed": 1
+    },
+    "pullRequest": {
+      "pythonPassed": 183,
+      "typescriptPassed": 6,
+      "nativePassed": 30,
+      "nativeFailed": 0
+    },
+    "allProjectPrSummary": {
+      "total": 13,
+      "success": 13,
+      "failure": 0,
+      "pending": 0
+    }
+  },
+  "ciReadinessRepair": {
+    "cause": "At head 6bc47b2, push guest naturally passed native position 2.8 before adopting the host seek revision 2; its pause used revision 1 and correctly returned 409. Same-head PR passed all 30.",
+    "firstCiReceipt": "2026-10-04-https-lan-ci-first.json",
+    "change": "Await actual completed partner GET carrying the successful seek revision, click the exact Pause together action, and additionally assert the outgoing pause uses that revision. No product source, fixture audio, time tolerance, timeout or original behavior assertion changed.",
+    "focused": {
+      "startTime": "2026-10-04T20:42:53.347Z",
+      "duration": 17517.688,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/duet107-ci-repair.log",
+      "bytes": 603,
+      "sha256": "66cde67a41cdfb9174a864c171de4af1da483efdf984ccb5bb1e9a8240a00ca1"
+    },
+    "results": {
+      "path": "/tmp/duet107-ci-repair-results.json",
+      "bytes": 3884,
+      "sha256": "deeec009f5ce62fe59cecf2a71b9f39155e05b25c30ea59b4a9bc6c3acc86311"
+    },
+    "testSource": {
+      "path": "apps/duet/tests/browser/https-lan.spec.ts",
+      "bytes": 16322,
+      "sha256": "968de7b756b1a70dd4646580cf916e014e9c072ca653cea3c56d4979f5e7715b"
+    },
+    "static": "Type checking and scoped ESLint passed.",
+    "normalBundleSha256": "f989c5a472c88537fb22d72636861919c77f32ea90f187842671442b5d23e3e4",
+    "finalPublishedCi": "pending"
+  }
 }

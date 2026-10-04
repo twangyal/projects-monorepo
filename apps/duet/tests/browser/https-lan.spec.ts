@@ -31,7 +31,24 @@ test('two HTTPS seats retain actual Opus, secure media, independent ratings, con
     await host.locator('#build-mix').click(); await expect(host.locator('#playlist .song-link')).toHaveText(['Amber orbit', 'Indigo river']); await host.getByRole('button', { name: 'Up Indigo river', exact: true }).click(); await expect(guest.locator('#playlist .song-link')).toHaveText(['Indigo river', 'Amber orbit']);
     await track(host, 'Amber orbit').getByRole('button', { name: 'Listen', exact: true }).click(); await expect.poll(async () => (await audioState(host)).paused).toBe(false); expect((await audioState(guest)).paused).toBe(true);
     await guest.locator('#enable-audio').click(); await expect.poll(async () => (await audioState(guest)).paused).toBe(false); await expect.poll(async () => Math.abs((await audioState(host)).position - (await audioState(guest)).position)).toBeLessThan(.5);
-    await host.locator('#seek').evaluate((input: HTMLInputElement) => { input.value = '3'; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); }); await expect.poll(async () => (await audioState(guest)).position).toBeGreaterThan(2.8); await guest.locator('#play').click(); await expect.poll(async () => (await audioState(host)).paused && (await audioState(guest)).paused).toBe(true);
+    const roomPath = `/api/rooms/${new URL(host.url()).searchParams.get('room')}`;
+    const seekReply = host.waitForResponse(response => new URL(response.url()).pathname === `${roomPath}/playback` && response.request().method() === 'PUT');
+    // Native time can already exceed 2.8 before this seek. The partner must
+    // receive the seek's new authoritative revision before consenting to pause.
+    const partnerSawSeek = guest.waitForResponse(async response => {
+      if (new URL(response.url()).pathname !== roomPath || response.request().method() !== 'GET' || response.status() !== 200) return false;
+      const [snapshot, seek] = await Promise.all([response.json(), seekReply.then(reply => reply.json())]);
+      return snapshot.playback.revision === seek.playback.revision;
+    });
+    await host.locator('#seek').evaluate((input: HTMLInputElement) => { input.value = '3'; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); });
+    const seekResponse = await seekReply; expect(seekResponse.status()).toBe(200);
+    const seekSnapshot = await seekResponse.json();
+    await (await partnerSawSeek).finished();
+    await expect.poll(async () => (await audioState(guest)).position).toBeGreaterThan(2.8);
+    const pauseRequest = guest.waitForRequest(request => new URL(request.url()).pathname === `${roomPath}/playback` && request.method() === 'PUT');
+    await guest.getByRole('button', { name: 'Pause together', exact: true }).click();
+    expect((await pauseRequest).postDataJSON().revision).toBe(seekSnapshot.playback.revision);
+    await expect.poll(async () => (await audioState(host)).paused && (await audioState(guest)).paused).toBe(true);
     const source = (await audioState(host)).source, own = await seat(host), other = await seat(guest); expect(own.room === other.room).toBe(true); expect(own.token === other.token).toBe(false);
     const fetchAudio = (page: typeof host) => page.evaluate(async url => { const full = await fetch(url); const bytes = [...new Uint8Array(await full.arrayBuffer())]; const range = await fetch(url, { headers: { Range: 'bytes=17-80' } }); return { status: full.status, bytes, rangeStatus: range.status, range: [...new Uint8Array(await range.arrayBuffer())], contentRange: range.headers.get('content-range') }; }, source);
     const a = await fetchAudio(host), b = await fetchAudio(guest); expect(a.status).toBe(200); expect(a.bytes).toEqual(b.bytes); expect(Buffer.from(a.bytes).subarray(0, 4).toString()).toBe('OggS'); expect(a.rangeStatus).toBe(206); expect(a.range).toEqual(a.bytes.slice(17, 81)); expect(a.contentRange).toBe(`bytes 17-80/${a.bytes.length}`);
