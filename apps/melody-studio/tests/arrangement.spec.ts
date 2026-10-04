@@ -1,7 +1,5 @@
-import { test, expect, type Page } from '@playwright/test';
-import type { Composition } from '../src/types.ts';
-
-const savedProject = (page: Page): Promise<Composition> => page.evaluate(() => JSON.parse(localStorage.getItem('melody-studio.project.v1')!));
+import { test, expect } from '@playwright/test';
+import { savedProject } from './browser/continuation-fixtures.ts';
 
 test('capture, duplicate, transpose, repeat, undo and export a layered idea', async ({ page }) => {
   await page.goto('/');

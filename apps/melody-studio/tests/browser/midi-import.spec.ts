@@ -72,7 +72,9 @@ test('selected off-grid phrase replaces once, edits and plays, and real JSON MID
   await action(page, 'Redo').click(); expect(await savedProject(page)).toEqual(imported); await expect(action(page, 'Redo')).toBeDisabled();
   await action(page, 'Play composition').click(); await expect.poll(async () => (await audioProbe(page)).starts.length).toBe(1);
   expect((await audioProbe(page)).starts[0].peak).toBeGreaterThan(.01); await action(page, 'Stop playback').click();
-  const json = JSON.parse((await download(page, 'Save project file')).toString()); expect(json).toEqual(imported);
+  const json = JSON.parse((await download(page, 'Save project file')).toString());
+  expect(json).toEqual({ format: 'melody-studio-project', version: 1,
+    document: { schemaVersion: 1, composition: imported, references: [] }, assets: [] });
   const events = channelEvents(await download(page, 'Export MIDI'));
   expect(events.filter(event => event.kind === 192)).toEqual([{ tick: 0, kind: 192, channel: 0, data: [73] }]);
   expect(events.filter(event => event.kind === 176)).toEqual([{ tick: 0, kind: 176, channel: 0, data: [7, 64] }]);
@@ -167,10 +169,17 @@ test('mobile keyboard review has explicit choices and storage failure keeps a us
   await lane(page).locator('[name=instrument]').selectOption('sine'); await page.locator('#midi-start').fill('3'); await page.locator('#midi-end').fill('7');
   await page.locator('#midi-review').focus(); await page.keyboard.press('Enter'); await expect(page.locator('#midi-apply')).toBeEnabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page.evaluate(() => { Storage.prototype.setItem = function () { throw new DOMException('Fixture quota exhausted', 'QuotaExceededError'); }; });
+  await page.evaluate(() => {
+    const nativePut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (...args: Parameters<IDBObjectStore['put']>) {
+      if (this.transaction.mode === 'readwrite') throw new DOMException('Fixture quota exhausted', 'QuotaExceededError');
+      return nativePut.apply(this, args);
+    };
+  });
   await replace(page); await expect(page.locator('#save-status')).toContainText(/not saved|failed|backup/i);
   expect(await savedProject(page)).toEqual(original);
-  const backup = JSON.parse((await download(page, 'Save project file')).toString()); expect(backup.title).toBe('Literal <phrase> 🎵'); expect(backup.tracks).toHaveLength(1);
+  const backup = JSON.parse((await download(page, 'Save project file')).toString()); expect(backup.format).toBe('melody-studio-project'); expect(backup.assets).toEqual([]);
+  expect(backup.document.composition.title).toBe('Literal <phrase> 🎵'); expect(backup.document.composition.tracks).toHaveLength(1);
   await expect(action(page, 'Undo')).toBeEnabled();
 });
 

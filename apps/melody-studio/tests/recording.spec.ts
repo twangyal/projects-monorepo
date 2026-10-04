@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { savedProject } from './browser/continuation-fixtures.ts';
 
 interface RecordingFixture {
   stream: MediaStream | null;
@@ -103,7 +104,8 @@ test('cancelling pending permission releases its late stream and preserves exist
   await page.goto('/');
   await page.getByRole('button', { name: 'Load example', exact: true }).click();
   const priorNotes = await page.locator('.note-event').evaluateAll(notes => notes.map(note => note.getAttribute('aria-label')));
-  const priorSavedProject = await page.evaluate(() => localStorage.getItem('melody-studio.project.v1'));
+  const priorSavedProject = await savedProject(page);
+  expect(priorSavedProject.tracks.some(track => track.notes.length > 0)).toBe(true);
   await page.getByRole('button', { name: 'Record melody', exact: true }).click();
   await expect(page.locator('#capture-state')).toContainText('Waiting for microphone permission');
   await expect.poll(() => page.evaluate(() => {
@@ -115,7 +117,7 @@ test('cancelling pending permission releases its late stream and preserves exist
   await expectReleasedStream(page);
   await expect(page.getByRole('button', { name: 'Record melody', exact: true })).toBeEnabled();
   expect(await page.locator('.note-event').evaluateAll(notes => notes.map(note => note.getAttribute('aria-label')))).toEqual(priorNotes);
-  expect(await page.evaluate(() => localStorage.getItem('melody-studio.project.v1'))).toBe(priorSavedProject);
+  expect(await savedProject(page)).toEqual(priorSavedProject);
   await expect(page.getByRole('status')).toContainText('Capture cancelled');
   expect(errors).toEqual([]);
 });

@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import type { Download, Page } from '@playwright/test';
+import { expect, type Download, type Page } from '@playwright/test';
 import type { Composition, Note } from '../../src/types.ts';
 
 export const STORAGE_KEY = 'melody-studio.project.v1';
@@ -27,7 +27,30 @@ export async function loadFixture(page: Page, project = phraseFixture()): Promis
 }
 
 export async function savedProject(page: Page): Promise<Composition> {
-  return page.evaluate(key => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+  // Observe the durable backend after the UI's asynchronous save/load settles.
+  // Reading the RAM export would conceal failed or prematurely reported saves.
+  await expect(page.locator('#save-status')).not.toContainText(/loading saved|saving (?:the latest )?complete/i);
+  return page.evaluate(async key => {
+    const stored = await new Promise<Composition | null>((resolve, reject) => {
+      const opening = indexedDB.open('melody-studio.projects', 1);
+      opening.onerror = () => reject(opening.error);
+      opening.onsuccess = () => {
+        const db = opening.result;
+        if (!db.objectStoreNames.contains('projects')) { db.close(); reject(new Error('Missing project store.')); return; }
+        const transaction = db.transaction('projects', 'readonly');
+        const request = transaction.objectStore('projects').get('current');
+        let composition: Composition | null = null;
+        request.onsuccess = () => { composition = request.result?.document.composition ?? null; };
+        transaction.oncomplete = () => { db.close(); resolve(composition); };
+        transaction.onabort = () => { db.close(); reject(transaction.error ?? new Error('Saved-project read aborted.')); };
+      };
+    });
+    // The legacy copy remains authoritative only before the first complete save.
+    if (stored) return stored;
+    const legacy = localStorage.getItem(key);
+    if (!legacy) throw new Error('No persisted project exists.');
+    return JSON.parse(legacy) as Composition;
+  }, STORAGE_KEY);
 }
 
 export async function downloadedBytes(download: Download): Promise<Buffer> {

@@ -1,10 +1,14 @@
 import './style.css';
-import { createComposition, createDemoComposition, createNote, createTrack, validateComposition, parseComposition, serializeComposition, compositionDurationBeats } from './model.ts';
+import { createComposition, createDemoComposition, createNote, createTrack, validateComposition, compositionDurationBeats } from './model.ts';
 import { createDemoMelody } from './audio.ts';
 import { encodeMidi } from './midi.ts';
 import { MelodyRecorder } from './recorder.ts';
-import { loadProject, saveProject } from './storage.ts';
-import { CompositionHistory } from './history.ts';
+import { loadProject } from './storage.ts';
+import { notesOnly, withComposition, ReferenceHistory } from './reference-project.ts';
+import { normalizeReference, referenceWindow, referenceSamples, comparisonComposition, cropComparison } from './reference-audio.ts';
+import { encodeProjectBackup, decodeProjectBackup } from './reference-backup.ts';
+import { ReferenceStorage } from './reference-storage.ts';
+import { REFERENCE_LIMITS, type MelodyDocument, type ReferenceAsset, type ReferenceBundle, type ReferenceKind } from './reference-types.ts';
 import { duplicateTrack, transposeTrack, repeatTrack } from './arrangement.ts';
 import { selectEnding, suggestEnding, applyContinuation, auditionComposition, type ContinuationProposal, type SeedSelection } from './continuation.ts';
 import { parseMidi, MIDI_IMPORT_LIMITS, type MidiPreview, type MidiName } from './midi-import.ts';
@@ -15,17 +19,32 @@ const root = document.querySelector<HTMLDivElement>('#app')!;
 const app = document.createElement('div');
 const midiHost = document.createElement('section');
 midiHost.id = 'midi-import'; midiHost.setAttribute('aria-labelledby', 'midi-heading');
-root.append(app, midiHost);
+const referenceHost = document.createElement('section');
+referenceHost.id = 'reference-panel'; referenceHost.setAttribute('aria-labelledby', 'reference-heading');
+root.append(app, referenceHost, midiHost);
 let storage: Storage | null = null;
 try { storage = window.localStorage; } catch { /* Recovery is shown in the interface. */ }
-const saved = loadProject(storage);
-let project = saved.project ?? createComposition();
-const history = new CompositionHistory(project);
+let project = createComposition();
+let history = new ReferenceHistory({ document: notesOnly(project), assets: [] });
+let completeStorage: ReferenceStorage | null = null;
+try { completeStorage = new ReferenceStorage(window.indexedDB); } catch { /* Protected recovery below. */ }
+let startup = true, recovery = false, unsaved = false, saving = false, saveFailed = false, hasSavedCopy = false;
+let savePending: { bundle: ReferenceBundle; generation: number } | null = null;
+let loadEpoch = 0, projectFileEpoch = 0, projectFileReading = false;
+let capture: Capture | null = null;
+let nativeAudioPending = false;
+let comparisonOwner: { key: string; generation: number; window: string } | null = null;
+const windowDrafts = new Map<string, { start: string; end: string }>();
+let referenceKey = '';
+let referenceMessage = '';
+let actionPointer: { button: HTMLButtonElement; id: number; rect: DOMRect; cancelClick: boolean } | null = null;
+let deferredRender = false;
+let pointerReleaseTimer: ReturnType<typeof setTimeout> | null = null;
 let activeTrackId = project.tracks[0].id;
 let selectedNoteId: string | null = null;
-let message = saved.error ?? 'Start with a melody. Your audio stays on this device.';
-let saveMessage = saved.project ? 'Restored from this browser' : 'Save locally as you compose';
-let busy: 'requesting' | 'recording' | 'processing' | 'rendering' | null = null;
+let message = 'Loading the complete saved project…';
+let saveMessage = 'Loading saved project…';
+let busy: 'loading' | 'requesting' | 'recording' | 'processing' | 'rendering' | null = 'loading';
 let operation = 0;
 let worker: Worker | null = null;
 let rejectWorker: ((reason: Error) => void) | null = null;
@@ -63,11 +82,15 @@ function numericDraft(value: string, label: string): number {
 function scratchExists(): boolean { return fieldDrafts.size > 0 || noteDrafts.size > 0 || proposal !== null; }
 function newEditorIntent() {
   editorIntent++;
+  const hadProjectRead = projectFileReading;
+  projectFileEpoch++; projectFileReading = false;
+  if (hadProjectRead) announce('The editor changed. The staged project import was cancelled; choose the file again.');
+  if (capture) retireCapture();
   const hadImport = midiReading || midiSource !== null || midiReview !== null;
   midiReading = false; midiReview = null;
   const ack = midiHost.querySelector<HTMLInputElement>('#midi-discard-ack'); if (ack) ack.checked = false;
   if (hadImport) midiStatus('The editor changed. Review this phrase again. If a file was still loading, choose it again.');
-  updateMidiControls();
+  updateMidiControls(); updateReference();
 }
 function commitField(id: string, action: () => boolean) {
   const key = fieldKey(id), raw = fieldDrafts.get(key);
@@ -84,32 +107,30 @@ function commitField(id: string, action: () => boolean) {
 const escape = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 const noteName = (pitch: number) => `${['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'][pitch % 12]}${Math.floor(pitch / 12) - 1}`;
 const currentTrack = (): Track => project.tracks.find(track => track.id === activeTrackId) ?? project.tracks[0];
-const disabled = () => busy ? 'disabled' : '';
+const disabled = () => busy || startup ? 'disabled' : '';
 
 function announce(text: string) {
   message = text;
   document.querySelector('#notice')!.textContent = message;
 }
 
-function commit(next: Composition, text?: string, redraw = true) {
+function commit(next: Composition, text?: string, redraw = true, document?: MelodyDocument, incoming: readonly ReferenceAsset[] = []) {
   try {
     const validated = validateComposition(next);
-    const changed = history.commit(validated);
+    const changed = history.commit(document ?? withComposition(history.current, validated), incoming);
     const hadProposal = proposal !== null;
-    const newTrack = !project.tracks.some(track => track.id === activeTrackId);
-    if (changed) { compositionGeneration++; newEditorIntent(); clearContinuation(); }
-    stopPlayback(false);
-    project = validated;
-    if (newTrack) defaultSeedCount();
+    if (changed) { compositionGeneration++; newEditorIntent(); clearContinuation(); stopPlayback(false); }
+    project = history.current.composition;
+    if (!project.tracks.some(track => track.id === activeTrackId)) { activeTrackId = project.tracks[0].id; defaultSeedCount(); }
     pruneNoteDrafts();
-    saveMessage = saveProject(storage, project) ?? 'Saved in this browser';
+    if (changed) queueSave();
     if (text) message = text;
-    if (redraw || changed && hadProposal) render();
+    const hasTrackControl = Array.from(app.querySelectorAll<HTMLButtonElement>('[data-track]')).some(button => button.dataset.track === currentTrack().id);
+    if (redraw || changed && hadProposal || !hasTrackControl) render();
     else {
-      document.querySelector('#save-status')!.textContent = saveMessage;
-      document.querySelector('#notice')!.textContent = message;
-      refreshTrackLabels();
-      syncHistory();
+      syncSaveStatus();
+      documentNode('#notice').textContent = message;
+      refreshTrackLabels(); syncHistory(); updateReference();
     }
     return true;
   } catch (error) {
@@ -147,11 +168,11 @@ function restoreHistory(direction: 'undo' | 'redo') {
   if (!next) return;
   compositionGeneration++; newEditorIntent(); clearContinuation();
   stopPlayback(false);
-  project = next;
+  project = next.composition;
   pruneNoteDrafts();
   if (!project.tracks.some(track => track.id === activeTrackId)) activeTrackId = project.tracks[0].id;
   if (!currentTrack().notes.some(note => note.id === selectedNoteId)) selectedNoteId = null;
-  saveMessage = saveProject(storage, project) ?? 'Saved in this browser';
+  queueSave();
   message = direction === 'undo' ? 'Undid the last change.' : 'Restored the next change.';
   render();
 }
@@ -159,13 +180,21 @@ function restoreHistory(direction: 'undo' | 'redo') {
 function arrange(action: string) {
   try {
     let next: Composition;
+    let duplicateId: string | null = null;
+    let document: MelodyDocument | undefined;
     if (action === 'duplicate-track') {
-      next = duplicateTrack(project, currentTrack().id);
-      activeTrackId = next.tracks[project.tracks.findIndex(track => track.id === currentTrack().id) + 1].id;
-      selectedNoteId = null;
+      const sourceId = currentTrack().id;
+      next = duplicateTrack(project, sourceId);
+      duplicateId = next.tracks[project.tracks.findIndex(track => track.id === sourceId) + 1].id;
+      document = withComposition(history.current, next);
+      const binding = history.current.references.find(item => item.trackId === sourceId);
+      if (binding) document.references.push({ trackId: duplicateId, assetId: binding.assetId });
     } else if (action === 'repeat-phrase') next = repeatTrack(project, currentTrack().id);
     else next = transposeTrack(project, currentTrack().id, Number(action.slice('transpose:'.length)));
-    commit(next, action === 'duplicate-track' ? 'Track duplicated. Try changing its instrument or pitch.' : action === 'repeat-phrase' ? 'Phrase repeated. Undo restores its original length.' : 'Track transposed. Undo restores the original pitches.');
+    if (commit(next, action === 'duplicate-track' ? 'Track duplicated, sharing its unchanged reference.' : action === 'repeat-phrase' ? 'Phrase repeated. Undo restores its original length.' : 'Track transposed. Undo restores the original pitches.', false, document)) {
+      if (duplicateId) { activeTrackId = duplicateId; selectedNoteId = null; defaultSeedCount(); }
+      render();
+    }
   } catch (error) { announce(error instanceof Error ? error.message : 'Could not arrange this track.'); }
 }
 
@@ -246,6 +275,8 @@ function continuationPanel(selection: SeedSelection | null, error: string): stri
 }
 
 function render() {
+  if (actionPointer) { deferredRender = true; return; }
+  deferredRender = false;
   const focused = document.activeElement as HTMLElement | null;
   const inputSelection = focused instanceof HTMLInputElement && app.contains(focused)
     ? { start: focused.selectionStart, end: focused.selectionEnd, direction: focused.selectionDirection } : null;
@@ -276,23 +307,29 @@ function render() {
     <main id="workspace">
       <section class="project-bar" aria-label="Project settings"><div class="project-title"><label for="project-title">Project title</label><input id="project-title" value="${escape(String(fieldValue('project-title', project.title)))}" maxlength="80" ${disabled()} /></div><div class="tempo-field"><label for="tempo">Tempo (BPM)</label><input id="tempo" type="number" min="40" max="240" step="any" value="${escape(String(fieldValue('tempo', project.tempo)))}" ${disabled()} /></div><div class="transport"><button class="primary" data-action="play" ${busy || !totalNotes || playing ? 'disabled' : ''} aria-label="Play composition"><span aria-hidden="true">▶</span> Play</button><button data-action="stop" ${!playing && !playbackJob ? 'disabled' : ''} aria-label="Stop playback">■ Stop</button></div><div class="history-controls"><button data-action="undo" title="Undo (Ctrl/Cmd+Z)" ${busy || !history.canUndo ? 'disabled' : ''}>Undo</button><button data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)" ${busy || !history.canRedo ? 'disabled' : ''}>Redo</button></div><span class="project-stats">${project.tracks.length} ${project.tracks.length === 1 ? 'track' : 'tracks'} · ${totalNotes} notes</span></section>
       <div id="notice" class="notice" role="status" aria-live="polite">${escape(message)}</div>
-      <section class="capture-card" aria-labelledby="capture-heading"><div><p class="eyebrow">01 / CATCH AN IDEA</p><h2 id="capture-heading">Your next song starts with a hum.</h2><p>Sing one clear melody, then make it your own.<br />Record up to 20 seconds or bring in an audio file.</p></div><div class="capture-controls"><div class="button-row"><button class="record-button" data-action="record" ${disabled()}><span class="record-dot" aria-hidden="true"></span> Record melody</button><label class="file-button ${busy ? 'is-disabled' : ''}">Import audio<input id="audio-file" type="file" accept="audio/*" aria-label="Import audio file" ${disabled()} /></label></div><div class="button-row"><button class="quiet" data-action="demo" ${disabled()}>Try demo melody</button><span class="small">No microphone needed</span></div><div class="capture-progress" ${!busy ? 'hidden' : ''}><span id="capture-state">${busy === 'requesting' ? 'Waiting for microphone permission…' : busy === 'recording' ? 'Recording…' : busy === 'rendering' ? 'Rendering your composition…' : 'Finding the notes…'}</span><button data-action="finish-record" ${busy !== 'recording' ? 'hidden' : ''}>Finish recording</button><button data-action="cancel">Cancel</button></div></div></section>
+      <section class="capture-card" aria-labelledby="capture-heading"><div><p class="eyebrow">01 / CATCH AN IDEA</p><h2 id="capture-heading">Your next song starts with a hum.</h2><p>Sing one clear melody, then make it your own.<br />Record up to 20 seconds or bring in an audio file.</p></div><div class="capture-controls"><div class="button-row"><button class="record-button" data-action="record" ${disabled()}><span class="record-dot" aria-hidden="true"></span> Record melody</button><label class="file-button ${busy ? 'is-disabled' : ''}">Import audio<input id="audio-file" type="file" accept="audio/*" aria-label="Import audio file" ${disabled()} /></label></div><div class="button-row"><button class="quiet" data-action="demo" ${disabled()}>Try demo melody</button><span class="small">No microphone needed</span></div><div class="capture-progress" ${!busy || busy === 'loading' ? 'hidden' : ''}><span id="capture-state">${busy === 'requesting' ? 'Waiting for microphone permission…' : busy === 'recording' ? 'Recording…' : busy === 'rendering' ? 'Rendering your composition…' : 'Finding the notes…'}</span><button data-action="finish-record" ${busy !== 'recording' ? 'hidden' : ''}>Finish recording</button><button data-action="cancel">Cancel</button></div></div></section>
       <section class="studio" aria-label="Composition editor"><aside class="tracks-panel"><div class="section-heading"><div><p class="eyebrow">02 / BUILD YOUR SOUND</p><h2>Tracks</h2></div><button class="icon-button" data-action="add-track" aria-label="Add track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>+</button></div><div class="track-list">${project.tracks.map((item, index) => `<button class="track-card ${item.id === track.id ? 'is-selected' : ''}" data-track="${escape(item.id)}" aria-label="Select track: ${escape(item.name)}" aria-pressed="${item.id === track.id}" ${disabled()}><span class="track-icon" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><span><strong>${escape(item.name)}</strong><small>${item.notes.length} notes · ${item.muted ? 'muted' : item.instrument === 'sine' ? 'Soft keys' : item.instrument === 'triangle' ? 'Warm flute' : 'Bright synth'}</small></span></button>`).join('')}</div><div class="track-settings"><label for="track-name">Track name</label><input id="track-name" value="${escape(String(fieldValue('track-name', track.name)))}" maxlength="80" ${disabled()} /><label for="instrument">Instrument</label><select id="instrument" ${disabled()}><option value="sine" ${fieldValue('instrument', track.instrument) === 'sine' ? 'selected' : ''}>Soft keys</option><option value="triangle" ${fieldValue('instrument', track.instrument) === 'triangle' ? 'selected' : ''}>Warm flute</option><option value="sawtooth" ${fieldValue('instrument', track.instrument) === 'sawtooth' ? 'selected' : ''}>Bright synth</option></select><label for="volume">Track volume <span>${Math.round(track.volume * 100)}%</span></label><input id="volume" type="range" min="0" max="1" step="0.05" value="${escape(String(fieldValue('volume', track.volume)))}" ${disabled()} /><label class="checkbox-label"><input id="muted" type="checkbox" ${fieldValue('muted', track.muted) ? 'checked' : ''} ${disabled()} /> Mute track</label><button class="quiet danger" data-action="delete-track" ${busy || project.tracks.length <= 1 ? 'disabled' : ''}>Delete track</button></div><div class="arrangement-tools"><p class="eyebrow">ARRANGE THIS TRACK</p><button data-action="duplicate-track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>Duplicate track</button><div class="transpose-controls" role="group" aria-label="Transpose track"><button data-action="transpose:-12" aria-label="Transpose down an octave" ${busy || !track.notes.length ? 'disabled' : ''}>−12</button><button data-action="transpose:-1" aria-label="Transpose down a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>−1</button><button data-action="transpose:1" aria-label="Transpose up a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>+1</button><button data-action="transpose:12" aria-label="Transpose up an octave" ${busy || !track.notes.length ? 'disabled' : ''}>+12</button></div><button data-action="repeat-phrase" ${busy || !track.notes.length ? 'disabled' : ''}>Repeat phrase</button><p class="small">Shift pitch by semitones. Notes stay within C2–C7 and 128 beats.</p></div></aside>
       <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''} ${seedIds.has(item.id) ? 'is-seed' : ''}" data-note="${escape(item.id)}" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span></button>`).join('')}${proposedNotes.map((item, index) => `<span class="note-event proposal-note" data-proposal-index="${index}" role="img" aria-label="Suggested ${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}; not saved" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px">${noteName(item.pitch)}</span>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${escape(draft?.pitch ?? '60')}" /></label><label>Start beat<input name="start" type="number" min="1" max="128.75" step="any" value="${escape(draft?.start ?? '1')}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${escape(draft?.duration ?? '1')}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${escape(draft?.velocity ?? '0.8')}" /></label><button type="submit">Apply note</button><button type="button" class="quiet" data-action="discard-note-edits">Discard note edits</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form>${continuationPanel(selection, seedError)}</div></section>
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button></div></section>
-      <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Audio is processed locally and discarded after transcription. Export a project backup before clearing browser data.</p></footer>
+      <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Successful takes retain a normalized listen-back copy on this device. Export a project backup before clearing browser data.</p></footer>
     </main>`;
   if (focusSelector) {
     const replacement = app.querySelector<HTMLElement>(focusSelector);
     replacement?.focus({ preventScroll: true });
     if (replacement instanceof HTMLInputElement && inputSelection?.start !== null && inputSelection?.start !== undefined && inputSelection.end !== null) replacement.setSelectionRange(inputSelection.start, inputSelection.end, inputSelection.direction ?? 'none');
   }
-  updateMidiControls();
+  updateMidiControls(); updateReference();
 }
 
 function confirmReplace() {
-  return !currentTrack().notes.length || window.confirm('Replace the notes in this track with a new melody? Save a project file first if you want to keep them.');
+  const target = currentTrack().id, generation = compositionGeneration, intent = editorIntent;
+  const accepted = (!currentTrack().notes.length && !selectedAsset()) || window.confirm('Replace the notes and reference take in this track? Undo restores the previous committed take. Unapplied editor fields are kept.');
+  if (!accepted) return false;
+  if (target !== currentTrack().id || generation !== compositionGeneration || intent !== editorIntent || startup || busy) {
+    announce('The editor changed during confirmation. Confirm the take replacement again.'); return false;
+  }
+  return true;
 }
 
 function clearRecordingTimer() {
@@ -303,6 +340,8 @@ function clearRecordingTimer() {
 function cancelCapture() {
   const playbackWasActive = playbackJob !== null || playing;
   stopPlayback(false);
+  retireCapture();
+  projectFileEpoch++; projectFileReading = false;
   operation++;
   recorder.cancel();
   clearRecordingTimer();
@@ -310,19 +349,19 @@ function cancelCapture() {
   worker = null;
   rejectWorker?.(new Error('Cancelled'));
   rejectWorker = null;
-  busy = null;
+  busy = startup ? 'loading' : null;
   message = playbackWasActive ? 'Playback cancelled. Your notes are unchanged.' : 'Capture cancelled. Your notes are unchanged.';
   render();
 }
 
-function runWorker<Result>(kind: 'transcribe' | 'render', payload: unknown, transfer: Transferable[] = []): Promise<Result> {
+function runWorker<Result>(kind: 'transcribe' | 'render', payload: unknown, transfer: Transferable[] = [], timeoutMs = 30000): Promise<Result> {
   return new Promise((resolve, reject) => {
     const pending = kind === 'render'
       ? new Worker(new URL('./render.worker.ts', import.meta.url), { type: 'module' })
       : new Worker(new URL('./transcribe.worker.ts', import.meta.url), { type: 'module' });
     worker = pending;
     let settled = false;
-    const timeout = setTimeout(() => finish(new Error('Processing took too long. Try fewer notes or a shorter melody.')), 30000);
+    const timeout = setTimeout(() => finish(new Error('Processing took too long. Try fewer notes or a shorter melody.')), timeoutMs);
     function finish(error?: Error, result?: Result) {
       if (settled) return;
       settled = true;
@@ -340,96 +379,138 @@ function runWorker<Result>(kind: 'transcribe' | 'render', payload: unknown, tran
   });
 }
 
-async function applyAudio(samples: Float32Array, sampleRate: number, token: number, targetId: string) {
-  if (token !== operation) return;
+interface Capture {
+  token: number; targetId: string; generation: number; intent: number; tempo: number;
+  kind: ReferenceKind; decoder: AudioContext | null; controller: AbortController; timer: ReturnType<typeof setTimeout> | null;
+}
+function captureCurrent(owner: Capture): boolean {
+  return capture === owner && owner.token === operation && !owner.controller.signal.aborted
+    && owner.generation === compositionGeneration && owner.intent === editorIntent && currentTrack().id === owner.targetId;
+}
+function retireCapture(): void {
+  const owner = capture;
+  if (!owner) return;
+  capture = null; owner.controller.abort();
+  if (owner.decoder) void owner.decoder.close().catch(() => {});
+  if (owner.timer) clearTimeout(owner.timer);
+  recorder.cancel(); clearRecordingTimer();
+  if (owner.token === operation) {
+    operation++; rejectWorker?.(new Error('Capture cancelled')); busy = null;
+  }
+}
+function beginCapture(kind: ReferenceKind): Capture | null {
+  if (nativeAudioPending) { announce('A cancelled audio decoder or normalizer is still finishing. Retry after it drains; reload if it never finishes.'); return null; }
+  stopPlayback(false);
+  const owner: Capture = { token: ++operation, targetId: currentTrack().id, generation: compositionGeneration,
+    intent: editorIntent, tempo: project.tempo, kind, decoder: null, controller: new AbortController(), timer: null };
+  capture = owner;
+  return owner;
+}
+function captureDeadline(owner: Capture, label: string): number {
+  if (owner.timer) clearTimeout(owner.timer);
+  const deadline = performance.now() + REFERENCE_LIMITS.operationMs;
+  owner.timer = setTimeout(() => {
+    if (!captureCurrent(owner)) return;
+    retireCapture(); message = `${label} took too long. Your notes, reference and drafts are unchanged. Native audio may still be draining.`; render();
+  }, REFERENCE_LIMITS.operationMs);
+  return deadline;
+}
+function checkCapture(owner: Capture, deadline?: number): void {
+  if (!captureCurrent(owner)) throw new Error('Capture no longer owns this editor.');
+  if (deadline !== undefined && performance.now() >= deadline) throw new Error('Audio processing took too long. Your prior take is unchanged.');
+}
+function captureError(owner: Capture, error: unknown, prefix = 'Could not process this take'): void {
+  if (captureCurrent(owner)) announce(`${prefix}: ${error instanceof Error ? error.message : 'Your prior take is unchanged.'}`);
+}
+function finishCapture(owner: Capture): void {
+  if (owner.timer) clearTimeout(owner.timer);
+  if (capture !== owner) return;
+  capture = null; busy = null; clearRecordingTimer(); render();
+}
+async function processSamples(samples: Float32Array, sampleRate: number, channels: number, owner: Capture): Promise<void> {
+  checkCapture(owner);
   if (samples.length / sampleRate > 20.1) throw new Error('Choose a melody no longer than 20 seconds.');
-  busy = 'processing';
-  clearRecordingTimer();
-  render();
-  const notes = await runWorker<Note[]>('transcribe', { samples, sampleRate, tempo: project.tempo }, [samples.buffer]);
-  if (token !== operation) return;
+  const decodedFrames = samples.length;
+  const analyzedFrames = Math.min(decodedFrames, Math.floor(sampleRate * REFERENCE_LIMITS.seconds));
+  const analyzed = new Float32Array(samples.subarray(0, analyzedFrames));
+  busy = 'processing'; clearRecordingTimer(); render();
+  const deadline = captureDeadline(owner, 'Audio normalization and transcription');
+  // The normalizer copies before returning; keep the original-rate analysis
+  // buffer intact until the completed PCM copy exists, then transfer it once.
+  const asset = await normalizeReference(analyzed, sampleRate, { kind: owner.kind, captureTempo: owner.tempo,
+    decodedChannels: channels, decodedFrames }, owner.controller.signal);
+  checkCapture(owner, deadline);
+  const remaining = deadline - performance.now();
+  const notes = await runWorker<Note[]>('transcribe', { samples: analyzed, sampleRate, tempo: owner.tempo }, [analyzed.buffer], remaining);
+  checkCapture(owner, deadline);
   if (!notes.length) throw new Error('No clear notes found. Try a louder, single-voice melody in a quiet room.');
   const next = structuredClone(project);
-  const target = next.tracks.find(track => track.id === targetId);
-  if (!target) return;
+  const target = next.tracks.find(track => track.id === owner.targetId);
+  if (!target) throw new Error('The target track changed. Your prior take is unchanged.');
   target.notes = notes;
-  selectedNoteId = notes[0].id;
-  busy = null;
-  commit(next, `Detected ${notes.length} notes. Listen back and adjust any pitch or timing below.`);
+  const document = withComposition(history.current, next);
+  document.references = document.references.filter(item => item.trackId !== owner.targetId);
+  document.references.push({ trackId: owner.targetId, assetId: asset.id });
+  // Atomic history admission happens before any selection/draft/proposal change.
+  if (commit(next, `Detected ${notes.length} notes and retained a normalized reference take.${decodedFrames > analyzedFrames ? ' Encoded padding beyond 20 seconds was cut.' : ''}`, false, document, [asset])) {
+    selectedNoteId = notes[0].id; render();
+  }
 }
-
-async function processBlob(blob: Blob, token: number, targetId: string) {
-  if (token !== operation) return;
-  busy = 'processing';
-  clearRecordingTimer();
-  render();
+async function processBlob(blob: Blob, owner: Capture): Promise<void> {
+  if (!captureCurrent(owner)) return;
+  if (nativeAudioPending) { captureError(owner, new Error('Audio work is still draining. Retry when it finishes.')); finishCapture(owner); return; }
+  nativeAudioPending = true;
+  busy = 'processing'; clearRecordingTimer(); render();
   let context: AudioContext | null = null;
+  const deadline = captureDeadline(owner, 'Audio file read and decode');
   try {
-    if (!blob.size || blob.size > 10 * 1024 * 1024) throw new Error('Choose an audio file smaller than 10 MiB.');
-    context = new AudioContext();
-    const decoded = await context.decodeAudioData(await blob.arrayBuffer());
-    if (decoded.duration > 20.1) throw new Error('Choose a melody no longer than 20 seconds.');
+    if (!blob.size || blob.size > REFERENCE_LIMITS.sourceBytes) throw new Error('Choose a nonempty audio file no larger than 10 MiB.');
+    const bytes = await blob.arrayBuffer(); checkCapture(owner, deadline);
+    context = new AudioContext(); owner.decoder = context;
+    const decoded = await context.decodeAudioData(bytes); checkCapture(owner, deadline);
+    if (!Number.isInteger(decoded.sampleRate) || decoded.sampleRate < 8000 || decoded.sampleRate > 192000
+      || !decoded.length || !Number.isInteger(decoded.numberOfChannels) || decoded.numberOfChannels < 1
+      || decoded.numberOfChannels > REFERENCE_LIMITS.decodedChannels || decoded.length / decoded.sampleRate > 20.1) {
+      throw new Error('Choose audio of at most 20 seconds with 1–32 decoded channels and an 8–192 kHz decoded rate.');
+    }
     const samples = new Float32Array(decoded.length);
     for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
       const data = decoded.getChannelData(channel);
-      for (let i = 0; i < samples.length; i++) samples[i] += data[i] / decoded.numberOfChannels;
+      for (let i = 0; i < samples.length; i++) {
+        if (!Number.isFinite(data[i])) throw new Error('Decoded audio contains invalid samples. Your prior take is unchanged.');
+        samples[i] += data[i] / decoded.numberOfChannels;
+      }
     }
-    await applyAudio(samples, decoded.sampleRate, token, targetId);
-  } catch (error) {
-    if (token === operation) announce(error instanceof Error ? error.message : 'Could not read this audio. Try a WAV file.');
-  } finally {
+    checkCapture(owner, deadline);
+    await processSamples(samples, decoded.sampleRate, decoded.numberOfChannels, owner);
+  } catch (error) { captureError(owner, error, 'Could not read this audio'); }
+  finally {
     if (context) await context.close().catch(() => {});
-    if (token === operation) { busy = null; render(); }
+    nativeAudioPending = false; finishCapture(owner);
   }
 }
-
 async function startRecording() {
+  if (nativeAudioPending) { announce('Audio work is still draining. Retry when it finishes; reload if it never finishes.'); return; }
   if (!confirmReplace()) return;
-  clearContinuation();
-  stopPlayback(false);
-  const token = ++operation;
-  const targetId = currentTrack().id;
-  busy = 'requesting';
-  message = 'Microphone access is used only while you record. You can cancel at any time.';
-  render();
+  const owner = beginCapture('microphone'); if (!owner) return;
+  busy = 'requesting'; message = 'Microphone access is used only while you record. You can cancel at any time.'; render();
   try {
-    await recorder.start(blob => { void processBlob(blob, token, targetId); }, error => {
-      if (token !== operation) return;
-      clearRecordingTimer();
-      busy = null;
-      message = `Recording failed: ${error.message}`;
-      render();
+    await recorder.start(blob => { void processBlob(blob, owner); }, error => {
+      captureError(owner, error, 'Recording failed'); finishCapture(owner);
     });
-    if (token !== operation) return;
-    busy = 'recording';
-    recordedAt = Date.now();
-    render();
+    if (!captureCurrent(owner)) return;
+    busy = 'recording'; recordedAt = Date.now(); render();
     recordingTimer = setInterval(() => {
       const label = document.querySelector('#capture-state');
       if (label) label.textContent = `Recording ${Math.min(20, Math.floor((Date.now() - recordedAt) / 1000))} / 20 seconds…`;
     }, 250);
-  } catch (error) {
-    if (token === operation) {
-      busy = null;
-      message = `Microphone unavailable: ${error instanceof Error ? error.message : 'Check permission and try again.'}`;
-      render();
-    }
-  }
+  } catch (error) { captureError(owner, error, 'Microphone unavailable'); finishCapture(owner); }
 }
-
 async function finishRecording() {
-  const token = operation;
-  const targetId = currentTrack().id;
-  busy = 'processing';
-  clearRecordingTimer();
-  render();
-  try {
-    const blob = await recorder.stop();
-    if (blob) await processBlob(blob, token, targetId);
-    else if (token === operation) { busy = null; render(); }
-  } catch (error) {
-    if (token === operation) { busy = null; message = `Recording failed: ${String(error)}`; render(); }
-  }
+  const owner = capture; if (!owner || !captureCurrent(owner)) return;
+  busy = 'processing'; clearRecordingTimer(); render();
+  try { const blob = await recorder.stop(); if (blob) await processBlob(blob, owner); else finishCapture(owner); }
+  catch (error) { captureError(owner, error); finishCapture(owner); }
 }
 
 function stopPlayback(redraw = true) {
@@ -439,11 +520,12 @@ function stopPlayback(redraw = true) {
     rejectWorker?.(new Error('Playback cancelled')); rejectWorker = null;
     playbackJob = null; busy = null;
   }
-  auditionOwner = null;
+  auditionOwner = null; comparisonOwner = null;
   if (source) { source.onended = null; try { source.stop(); } catch { /* Already stopped. */ } source.disconnect(); }
   source = null;
   playing = false;
   syncTransport();
+  updateReference();
   if (redraw) render();
 }
 
@@ -511,10 +593,50 @@ function download(data: BlobPart, suffix: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Blur may commit a field and move an action button between down and up.
+// Capture the real pointer on its original button, retaining that DOM node
+// until the trusted click has finished. Keyboard activation is unchanged.
+function releaseActionPointer(flush = true): void {
+  if (pointerReleaseTimer) clearTimeout(pointerReleaseTimer);
+  pointerReleaseTimer = null;
+  const held = actionPointer; actionPointer = null;
+  if (held) { try { held.button.releasePointerCapture(held.id); } catch { /* Already released. */ } }
+  if (flush && deferredRender) { deferredRender = false; render(); }
+}
+root.addEventListener('pointerdown', event => {
+  if (!event.isPrimary || event.button !== 0 || actionPointer) return;
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button || button.disabled || !root.contains(button)) return;
+  try {
+    button.setPointerCapture(event.pointerId);
+    actionPointer = { button, id: event.pointerId, rect: button.getBoundingClientRect(), cancelClick: false };
+  } catch { /* Keyboard and browsers without pointer capture use ordinary clicks. */ }
+}, true);
+window.addEventListener('pointerup', event => {
+  const held = actionPointer; if (!held || held.id !== event.pointerId) return;
+  const inside = (rect: DOMRect) => event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+  held.cancelClick = !inside(held.rect) && !inside(held.button.getBoundingClientRect());
+  pointerReleaseTimer = setTimeout(releaseActionPointer, 0);
+}, true);
+root.addEventListener('click', event => {
+  if (actionPointer?.cancelClick) {
+    event.preventDefault(); event.stopImmediatePropagation(); releaseActionPointer();
+  } else {
+    // The trusted click already has its captured target. Let its handler render
+    // and focus the new editor; flush unrelated pending redraw only afterward.
+    releaseActionPointer(false);
+  }
+}, true);
+window.addEventListener('click', () => releaseActionPointer());
+window.addEventListener('pointercancel', event => { if (actionPointer?.id === event.pointerId) releaseActionPointer(); });
+window.addEventListener('lostpointercapture', event => {
+  if (actionPointer?.id === event.pointerId && !pointerReleaseTimer) pointerReleaseTimer = setTimeout(releaseActionPointer, 0);
+});
+
 app.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
-  if (!button || button.disabled) return;
-  if (button.dataset.track && !busy) { newEditorIntent(); clearContinuation(); activeTrackId = button.dataset.track; selectedNoteId = null; defaultSeedCount(); render(); return; }
+  if (!button || button.disabled || startup) return;
+  if (button.dataset.track && !busy) { newEditorIntent(); clearContinuation(); if (comparisonOwner) stopPlayback(false); activeTrackId = button.dataset.track; selectedNoteId = null; defaultSeedCount(); render(); return; }
   if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
@@ -544,57 +666,49 @@ app.addEventListener('click', event => {
     case 'cancel': cancelCapture(); break;
     case 'demo': {
       if (!confirmReplace()) break;
-      clearContinuation();
-      stopPlayback(false);
-      const token = ++operation;
-      void applyAudio(createDemoMelody(), 22050, token, currentTrack().id).catch(error => {
-        if (token === operation) { busy = null; message = String(error.message); render(); }
-      });
+      const owner = beginCapture('demo');
+      if (!owner) break;
+      nativeAudioPending = true;
+      void processSamples(createDemoMelody(), 22050, 1, owner).catch(error => captureError(owner, error)).finally(() => { nativeAudioPending = false; finishCapture(owner); });
       break;
     }
     case 'add-track': {
       const next = structuredClone(project);
       const track = createTrack(`Track ${project.tracks.length + 1}`);
       next.tracks.push(track);
-      activeTrackId = track.id;
-      selectedNoteId = null;
-      commit(next, 'Track added. Record a melody or add notes.');
+      if (commit(next, 'Track added. Record a melody or add notes.', false)) { activeTrackId = track.id; selectedNoteId = null; render(); }
       break;
     }
     case 'delete-track': {
       if (!window.confirm(`Delete ${currentTrack().name} and its notes?`)) break;
       const next = structuredClone(project);
       next.tracks = next.tracks.filter(track => track.id !== activeTrackId);
-      activeTrackId = next.tracks[0].id;
-      selectedNoteId = null;
-      commit(next, 'Track deleted.');
+      if (commit(next, 'Track deleted.', false)) { activeTrackId = next.tracks[0].id; selectedNoteId = null; render(); }
       break;
     }
     case 'add-note': {
       const end = Math.max(0, ...currentTrack().notes.map(note => note.start + note.duration));
       if (end + 1 > 128) { announce('This track has reached 128 beats. Move or shorten a note before adding more.'); break; }
       const note = createNote(60, end);
-      selectedNoteId = note.id;
-      editTrack(track => track.notes.push(note), 'Note added. Adjust its pitch and timing below.');
+      if (editTrack(track => track.notes.push(note), 'Note added. Adjust its pitch and timing below.', false)) { selectedNoteId = note.id; render(); }
       break;
     }
     case 'delete-note': editTrack(track => { track.notes = track.notes.filter(note => note.id !== selectedNoteId); }, 'Note deleted.'); selectedNoteId = null; break;
-    case 'save': download(serializeComposition(project), '.melody.json', 'application/json'); announce('Project file saved. Keep it as a portable backup.'); break;
+    case 'save': void saveBackup(); break;
     case 'midi': download(new Uint8Array(encodeMidi(project)), '.mid', 'audio/midi'); announce('MIDI exported. Instruments may sound different in another music app.'); break;
     case 'wav': void exportWav(); break;
     case 'example':
     case 'new': {
-      if (project.tracks.some(track => track.notes.length) && !window.confirm('Replace this composition? Save a project file first to keep a backup.')) break;
+      if ((project.tracks.some(track => track.notes.length) || history.current.references.length) && !window.confirm('Replace this composition and its references? Save a project file first to keep a backup.')) break;
       const next = action === 'example' ? createDemoComposition() : createComposition();
-      activeTrackId = next.tracks[0].id;
-      selectedNoteId = null;
-      commit(next, action === 'example' ? 'Example loaded. Press Play, then try changing an instrument.' : 'A fresh start. Capture your next idea.');
+      if (commit(next, action === 'example' ? 'Example loaded. Press Play, then try changing an instrument.' : 'A fresh start. Capture your next idea.', false, notesOnly(next))) { activeTrackId = next.tracks[0].id; selectedNoteId = null; render(); }
       break;
     }
   }
 });
 
 app.addEventListener('input', event => {
+  if (startup) return;
   const input = event.target as HTMLInputElement;
   if (projectFields.has(input.id) || trackFields.has(input.id) || input.closest('#note-form') || ['continuation-count', 'continuation-length'].includes(input.id)) newEditorIntent();
   if (projectFields.has(input.id) || trackFields.has(input.id)) {
@@ -625,7 +739,7 @@ app.addEventListener('input', event => {
 
 app.addEventListener('change', event => {
   const input = event.target as HTMLInputElement;
-  if (busy) return;
+  if (busy || startup) return;
   if (projectFields.has(input.id) || trackFields.has(input.id) || ['continuation-length', 'audio-file', 'project-file'].includes(input.id)) newEditorIntent();
   try { switch (input.id) {
     case 'continuation-length': continuationLength = input.value === '8' ? 8 : 4; clearContinuation(); render(); break;
@@ -639,32 +753,13 @@ app.addEventListener('change', event => {
       const file = input.files?.[0];
       input.value = '';
       if (!file || !confirmReplace()) break;
-      clearContinuation();
-      stopPlayback(false);
-      void processBlob(file, ++operation, currentTrack().id);
+      const owner = beginCapture('audio-file');
+      if (owner) void processBlob(file, owner);
       break;
     }
     case 'project-file': {
-      const file = input.files?.[0];
-      input.value = '';
-      if (!file) break;
-      clearContinuation(); stopPlayback(false);
-      const token = ++operation;
-      busy = 'processing';
-      render();
-      void (async () => {
-        try {
-          if (file.size > 1024 * 1024) throw new Error('Project files must be at most 1 MiB.');
-          const next = parseComposition(await file.text());
-          if (token !== operation) return;
-          if (project.tracks.some(track => track.notes.length) && !window.confirm('Open this project and replace the current composition?')) return;
-          activeTrackId = next.tracks[0].id;
-          selectedNoteId = null;
-          busy = null;
-          commit(next, 'Project opened.');
-        } catch (error) { if (token === operation) message = `Could not open project: ${error instanceof Error ? error.message : 'Invalid file.'}`; }
-        finally { if (token === operation) { busy = null; render(); } }
-      })();
+      const file = input.files?.[0]; input.value = '';
+      if (file) void openBackup(file);
       break;
     }
   } } catch (error) { announce(error instanceof Error ? error.message : 'That edit is not valid. Your draft is kept.'); }
@@ -672,7 +767,7 @@ app.addEventListener('change', event => {
 
 app.addEventListener('submit', event => {
   event.preventDefault();
-  if (busy || !selectedNoteId) return;
+  if (busy || startup || !selectedNoteId) return;
   const data = new FormData(event.target as HTMLFormElement);
   const editedId = selectedNoteId;
   try {
@@ -685,9 +780,9 @@ app.addEventListener('submit', event => {
   } catch (error) { announce(error instanceof Error ? error.message : 'Check the note fields.'); }
 });
 
-window.addEventListener('pagehide', () => { cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; });
+window.addEventListener('pagehide', () => { cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; releaseActionPointer(); });
 window.addEventListener('keydown', event => {
-  if (!(event.ctrlKey || event.metaKey) || event.altKey || busy) return;
+  if (!(event.ctrlKey || event.metaKey) || event.altKey || busy || startup) return;
   const target = event.target as HTMLElement;
   if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
   const key = event.key.toLowerCase();
@@ -799,7 +894,7 @@ midiHost.addEventListener('change', event => {
   const node = event.target as HTMLInputElement;
   if (node.id !== 'midi-file') { if (node.id !== 'midi-discard-ack') invalidateMidiChoice(); else updateMidiControls(); return; }
   const file = node.files?.[0]; node.value = '';
-  if (!file || busy) return;
+  if (!file || busy || startup) return;
   const epoch = ++midiEpoch, intent = editorIntent, generation = compositionGeneration;
   midiReading = true; midiSource = null; midiReview = null;
   midiHost.querySelector<HTMLElement>('#midi-choices')!.replaceChildren();
@@ -821,7 +916,7 @@ midiHost.addEventListener('change', event => {
 });
 midiHost.querySelector('#midi-cancel')!.addEventListener('click', cancelMidi);
 midiHost.querySelector('#midi-review')!.addEventListener('click', () => {
-  if (busy || midiReading || !midiSource) return;
+  if (busy || startup || midiReading || !midiSource) return;
   const epoch = midiEpoch, intent = editorIntent, generation = compositionGeneration;
   midiReview = null; midiHost.querySelector<HTMLInputElement>('#midi-discard-ack')!.checked = false;
   try {
@@ -834,7 +929,7 @@ midiHost.querySelector('#midi-review')!.addEventListener('click', () => {
 });
 midiHost.querySelector('#midi-apply')!.addEventListener('click', () => {
   const review = midiReview;
-  const current = () => !busy && !midiReading && review !== null && review === midiReview && reviewedEpoch === midiEpoch
+  const current = () => !busy && !startup && !midiReading && review !== null && review === midiReview && reviewedEpoch === midiEpoch
     && reviewedIntent === editorIntent && reviewedGeneration === compositionGeneration
     && (!scratchExists() || midiHost.querySelector<HTMLInputElement>('#midi-discard-ack')!.checked);
   if (!review || !current()) return;
@@ -845,11 +940,257 @@ midiHost.querySelector('#midi-apply')!.addEventListener('click', () => {
     if (!current()) { midiStatus('The editor changed. Review this phrase again.'); return; }
     const next = applyMidiImport(project, review);
     if (!current()) return;
-    if (!commit(next, 'MIDI phrase imported. Undo restores the previous committed composition.')) return;
+    if (!commit(next, 'MIDI phrase imported. Undo restores the previous committed composition.', true, notesOnly(next))) return;
     fieldDrafts.clear(); noteDrafts.clear(); clearContinuation(); activeTrackId = project.tracks[0].id; selectedNoteId = null; defaultSeedCount();
     cancelMidi(); midiStatus('MIDI phrase replaced the composition. Review limits still apply: local instrument approximations, omitted metadata and trailing silence, and 480-tick MIDI re-export rounding.');
     render(); app.querySelector<HTMLInputElement>('#project-title')?.focus();
   } catch (error) { midiStatus(error instanceof Error ? error.message : 'Could not apply this review. Your editor is unchanged.'); }
 });
 
+function documentNode(selector: string): HTMLElement { return app.querySelector<HTMLElement>(selector)!; }
+function syncSaveStatus(): void {
+  const node = app.querySelector<HTMLElement>('#save-status'); if (node) node.textContent = saveMessage;
+  const retry = referenceHost.querySelector<HTMLButtonElement>('#retry-save');
+  if (retry) { retry.hidden = recovery || (!unsaved && hasSavedCopy); retry.disabled = startup || saving; }
+  const load = referenceHost.querySelector<HTMLButtonElement>('#retry-load');
+  if (load) { load.hidden = !recovery; load.disabled = startup || !!busy; }
+  const replace = referenceHost.querySelector<HTMLButtonElement>('#replace-saved-copy');
+  if (replace) { replace.hidden = !recovery; replace.disabled = startup || saving || !!busy; }
+}
+function queueSave(): void {
+  unsaved = true;
+  if (recovery) { saveMessage = 'Not saved in this browser — protected recovery. Retry load or explicitly Replace saved copy.'; syncSaveStatus(); return; }
+  savePending = { bundle: history.snapshot(), generation: compositionGeneration };
+  saveMessage = saveFailed ? 'Not saved in this browser — saving the latest complete project…' : 'Saving complete project…'; syncSaveStatus();
+  if (!saving) void pumpSave();
+}
+async function pumpSave(): Promise<void> {
+  saving = true; syncSaveStatus();
+  try {
+    while (savePending && !recovery) {
+      const job = savePending; savePending = null;
+      try {
+        if (!completeStorage) throw new Error('Browser storage unavailable.');
+        await completeStorage.save(job.bundle);
+        if (job.generation === compositionGeneration && !savePending) {
+          unsaved = false; saveFailed = false; hasSavedCopy = true; saveMessage = 'Saved in this browser';
+        }
+      } catch {
+        unsaved = true; saveFailed = true;
+        saveMessage = 'Not saved in this browser. Download a complete project file or Retry save.';
+      }
+      syncSaveStatus();
+    }
+  } finally { saving = false; syncSaveStatus(); }
+}
+async function loadComplete(initial = false): Promise<void> {
+  if (!initial) {
+    const beforeGeneration = compositionGeneration, beforeIntent = editorIntent;
+    if ((unsaved || scratchExists()) && !window.confirm('Retry loading the saved complete project and replace current in-memory work and unapplied fields? Download a backup first.')) return;
+    if (beforeGeneration !== compositionGeneration || beforeIntent !== editorIntent) { announce('The editor changed during confirmation. Retry load again.'); return; }
+  }
+  const epoch = ++loadEpoch, generation = compositionGeneration, intent = editorIntent;
+  startup = true; busy = 'loading'; saveMessage = 'Loading saved project…'; render();
+  const current = () => epoch === loadEpoch && generation === compositionGeneration && intent === editorIntent;
+  try {
+    if (!completeStorage) completeStorage = new ReferenceStorage(window.indexedDB);
+    const loaded = await completeStorage.load();
+    if (!current()) return;
+    let bundle = loaded;
+    if (bundle === null) {
+      const legacy = loadProject(storage);
+      if (legacy.error) throw new Error('The legacy saved project could not be read. It has not been changed.');
+      bundle = { document: notesOnly(legacy.project ?? createComposition()), assets: [] };
+    }
+    const restored = new ReferenceHistory(bundle);
+    if (!current()) return;
+    history = restored; project = history.current.composition;
+    activeTrackId = project.tracks[0].id; selectedNoteId = null;
+    compositionGeneration++; projectFileEpoch++; cancelMidi(); stopPlayback(false);
+    fieldDrafts.clear(); noteDrafts.clear(); clearContinuation(); defaultSeedCount();
+    recovery = false; unsaved = false; saveFailed = false; hasSavedCopy = loaded !== null;
+    saveMessage = loaded ? 'Restored from this browser' : 'No complete saved copy yet. Edit or Retry save to save this project.';
+    message = loaded ? 'Restored complete notes and reference takes. Auditions use applied notes.' : 'Start with a melody. Successful takes retain a normalized listen-back copy on this device.';
+  } catch {
+    if (current()) {
+      recovery = true; unsaved = true;
+      saveMessage = 'Not saved in this browser — protected recovery. Saved data has not been changed.';
+      message = 'The saved complete project could not be read. Retry load, download your current project, or explicitly Replace saved copy. Damaged data has not been deleted.';
+    }
+  } finally {
+    if (epoch === loadEpoch) { startup = false; busy = null; render(); }
+  }
+}
+function replaceSavedCopy(): void {
+  const generation = compositionGeneration, intent = editorIntent;
+  if (!window.confirm('Replace the unreadable saved copy with the current complete in-memory project? This overwrites the damaged saved descriptor and assets. Download backups first.')) return;
+  if (generation !== compositionGeneration || intent !== editorIntent || startup || busy) { announce('The editor changed. Confirm the saved-copy replacement again.'); return; }
+  recovery = false; queueSave();
+}
+async function saveBackup(): Promise<void> {
+  try {
+    const snapshot = history.snapshot();
+    const bytes = await encodeProjectBackup(snapshot);
+    download(new Uint8Array(bytes), '.melody.json', 'application/json');
+    announce('Complete project file saved, including committed notes and reference takes; unapplied fields and suggestions are excluded.');
+  } catch (error) { announce(error instanceof Error ? error.message : 'Could not create a complete backup. Your project is unchanged.'); }
+}
+async function openBackup(file: File): Promise<void> {
+  const epoch = ++projectFileEpoch, generation = compositionGeneration, intent = editorIntent;
+  projectFileReading = true; announce('Reading complete project locally…'); updateReference();
+  const current = () => epoch === projectFileEpoch && generation === compositionGeneration && intent === editorIntent && !startup && !busy;
+  let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+    if (epoch !== projectFileEpoch) return;
+    projectFileEpoch++; projectFileReading = false; announce('Project read took too long. Your current project and drafts are unchanged.'); updateReference();
+  }, REFERENCE_LIMITS.operationMs);
+  try {
+    if (!file.size || file.size > REFERENCE_LIMITS.backupBytes) throw new Error('Choose a nonempty complete project of at most 12 MiB (legacy notes-only files: 1 MiB).');
+    const bytes = await file.arrayBuffer(); if (!current()) return;
+    const bundle = await decodeProjectBackup(new Uint8Array(bytes)); if (!current()) return;
+    const scratch = scratchExists();
+    const text = `Open ${bundle.document.composition.tracks.length} tracks with ${bundle.document.references.length} reference takes and replace the current committed project? Undo restores the previous committed document, not discarded unapplied fields.${scratch ? ' This also discards your unapplied editor fields and unsaved suggestion.' : ''}`;
+    if (!window.confirm(text)) return;
+    if (!current()) { announce('The editor changed during confirmation. Choose the project file again.'); return; }
+    if (!commit(bundle.document.composition, 'Project opened. Complete notes and reference takes restored. Undo restores the previous committed project.', false, bundle.document, bundle.assets)) return;
+    fieldDrafts.clear(); noteDrafts.clear(); clearContinuation(); activeTrackId = project.tracks[0].id; selectedNoteId = null; defaultSeedCount();
+    render();
+  } catch (error) { if (current()) announce(`Could not open project: ${error instanceof Error ? error.message : 'Your editor is unchanged.'}`); }
+  finally {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (epoch === projectFileEpoch) { projectFileReading = false; updateReference(); }
+  }
+}
+function selectedAsset(): ReferenceAsset | null {
+  const binding = history.current.references.find(item => item.trackId === currentTrack().id);
+  return binding ? history.asset(binding.assetId) : null;
+}
+function selectedReferenceKey(asset = selectedAsset()): string { return asset ? `${currentTrack().id}:${asset.id}` : ''; }
+function referenceDraft(asset: ReferenceAsset): { start: string; end: string } {
+  const key = selectedReferenceKey(asset);
+  let draft = windowDrafts.get(key);
+  if (!draft) { draft = { start: '0', end: String(asset.frameCount / REFERENCE_LIMITS.sampleRate) }; windowDrafts.set(key, draft); }
+  return draft;
+}
+function readReferenceWindow(asset: ReferenceAsset) {
+  const draft = referenceDraft(asset);
+  const decimal = (text: string) => {
+    if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(text.trim())) throw new Error('Enter nonempty finite decimal comparison bounds. Your input is kept.');
+    return numericDraft(text, 'comparison bounds');
+  };
+  return referenceWindow(decimal(draft.start), decimal(draft.end), asset.frameCount);
+}
+function updateReference(): void {
+  if (!referenceHost.querySelector('#reference-summary')) return;
+  const asset = selectedAsset(), key = selectedReferenceKey(asset);
+  const start = referenceHost.querySelector<HTMLInputElement>('#reference-start')!;
+  const end = referenceHost.querySelector<HTMLInputElement>('#reference-end')!;
+  referenceHost.querySelector<HTMLElement>('#reference-empty')!.hidden = !!asset;
+  referenceHost.querySelector<HTMLElement>('#reference-controls')!.hidden = !asset;
+  if (asset) {
+    const draft = referenceDraft(asset);
+    if (key !== referenceKey) { start.value = draft.start; end.value = draft.end; referenceMessage = ''; }
+    referenceHost.querySelector<HTMLElement>('#reference-summary')!.textContent = `${asset.kind} supplied capture · captured ${asset.captureTempo} BPM · current ${project.tempo} BPM · ${asset.frameCount / 22050} seconds · decoded ${asset.decodedSampleRate} Hz / ${asset.decodedChannels} channels. Mono PCM16 normalized copy at 22050 Hz, with lossy quantization/resampling; not amplitude normalized.${asset.decodedFrames > asset.analyzedFrames ? ' Padding after 20 seconds was cut.' : ''}`;
+    try {
+      const window = readReferenceWindow(asset);
+      referenceHost.querySelector<HTMLElement>('#reference-effective')!.textContent = `Effective comparison: ${window.startFrame / 22050}–${window.endFrame / 22050} seconds, ${window.endFrame - window.startFrame} samples. Notes outside this window are not compared; use ordinary Play for the full arrangement.`;
+    } catch (error) { referenceHost.querySelector<HTMLElement>('#reference-effective')!.textContent = error instanceof Error ? error.message : 'Invalid comparison bounds.'; }
+  } else referenceHost.querySelector<HTMLElement>('#reference-summary')!.textContent = '';
+  referenceKey = key;
+  const disabled = startup || !!busy || !asset;
+  start.disabled = startup || (!!busy && busy !== 'rendering') || !asset; end.disabled = start.disabled;
+  referenceHost.querySelector<HTMLButtonElement>('#play-reference')!.disabled = disabled;
+  const inaudible = currentTrack().muted || currentTrack().volume === 0;
+  referenceHost.querySelector<HTMLButtonElement>('#play-reference-notes')!.disabled = disabled || inaudible;
+  referenceHost.querySelector<HTMLElement>('#reference-status')!.textContent = referenceMessage || (inaudible && asset ? 'Unmute or raise track volume to audition applied notes. Reference audio ignores track mute and volume.' : 'Auditions use applied notes. Reference audio ignores track mute and volume and plays at its retained level.');
+  referenceHost.querySelector<HTMLButtonElement>('#remove-reference')!.disabled = disabled;
+  const clear = referenceHost.querySelector<HTMLButtonElement>('#clear-history')!;
+  clear.hidden = !history.canUndo && !history.canRedo; clear.disabled = startup || !!busy;
+  referenceHost.querySelector<HTMLButtonElement>('#cancel-project-read')!.hidden = !projectFileReading;
+  const retained = new Set(history.current.references.map(item => `${item.trackId}:${item.assetId}`));
+  for (const windowKey of windowDrafts.keys()) if (!retained.has(windowKey)) windowDrafts.delete(windowKey);
+  syncSaveStatus();
+}
+async function playReference(notes: boolean): Promise<void> {
+  const asset = selectedAsset(); if (!asset || busy || startup) return;
+  let window;
+  try { window = readReferenceWindow(asset); }
+  catch (error) { referenceMessage = error instanceof Error ? error.message : 'Check comparison bounds.'; updateReference(); return; }
+  stopPlayback(false);
+  const generation = playbackGeneration, token = ++operation;
+  const owner = { key: selectedReferenceKey(asset), generation: compositionGeneration, window: JSON.stringify(window) };
+  comparisonOwner = owner; playbackJob = { token };
+  busy = 'rendering'; referenceMessage = notes ? 'Rendering applied notes at capture tempo…' : 'Preparing the retained reference window…'; render();
+  const current = () => generation === playbackGeneration && token === operation && comparisonOwner === owner
+    && compositionGeneration === owner.generation && selectedReferenceKey() === owner.key;
+  try {
+    audioContext ??= new AudioContext();
+    const context = audioContext;
+    await context.resume(); if (!current()) return;
+    const samples = notes
+      ? cropComparison(await runWorker<Float32Array>('render', { project: comparisonComposition(history.current, currentTrack().id, asset), wav: false }), window)
+      : referenceSamples(asset, window);
+    if (!current()) return;
+    const buffer = context.createBuffer(1, samples.length, 22050); buffer.copyToChannel(new Float32Array(samples), 0);
+    const playingSource = context.createBufferSource(); playingSource.buffer = buffer; playingSource.connect(context.destination);
+    playingSource.onended = () => {
+      playingSource.disconnect();
+      if (source !== playingSource) return;
+      source = null; playing = false; comparisonOwner = null; syncTransport(); updateReference();
+    };
+    source = playingSource; playingSource.start(); playing = true;
+    referenceMessage = notes ? 'Playing applied notes at captured BPM, solo, for this exact window.' : 'Playing retained reference at original speed and retained level.';
+  } catch (error) { if (current()) referenceMessage = error instanceof Error ? error.message : 'Comparison playback unavailable.'; }
+  finally {
+    if (current() && playbackJob?.token === token) { playbackJob = null; busy = null; if (!playing) comparisonOwner = null; render(); }
+  }
+}
+referenceHost.innerHTML = `<p class="eyebrow">LISTEN BACK AND CORRECT</p><h2 id="reference-heading">Reference take</h2>
+  <p id="reference-empty">This track has notes only, with no retained reference take. Successfully record, import audio or try the demo to keep a normalized listen-back copy.</p>
+  <p id="reference-summary"></p><div id="reference-controls" hidden>
+  <div class="reference-window"><label for="reference-start">Comparison start (seconds)<input id="reference-start" type="text" inputmode="decimal" /></label><label for="reference-end">Comparison end (seconds)<input id="reference-end" type="text" inputmode="decimal" /></label></div>
+  <p id="reference-effective" class="small"></p><div class="button-row"><button id="play-reference">Play reference</button><button id="play-reference-notes">Play edited notes at capture tempo</button><button id="remove-reference">Remove reference</button></div>
+  <p class="small">Reference audio ignores track mute and volume. Notes audition uses applied notes, current instrument/volume/velocity and captured BPM. No time stretching or automatic alignment; quantization/resampling is lossy.</p></div>
+  <p id="reference-status" aria-live="polite"></p><div class="button-row"><button id="clear-history" hidden>Clear undo history</button><button id="retry-save" hidden>Retry save</button><button id="retry-load" hidden>Retry load</button><button id="replace-saved-copy" hidden>Replace saved copy</button><button id="cancel-project-read" hidden>Cancel project import</button></div>
+  <p class="small">Save project file carries current notes and reference takes, not history or unapplied fields. Browser tabs do not merge edits: the last completed save wins. Download a complete backup before clearing browser data.</p>`;
+referenceHost.addEventListener('input', event => {
+  if (startup) return;
+  const input = event.target as HTMLInputElement;
+  if (!['reference-start', 'reference-end'].includes(input.id)) return;
+  const asset = selectedAsset(); if (!asset) return;
+  newEditorIntent();
+  const draft = referenceDraft(asset); if (input.id === 'reference-start') draft.start = input.value; else draft.end = input.value;
+  if (comparisonOwner) stopPlayback(false);
+  referenceMessage = ''; updateReference();
+});
+referenceHost.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button || button.disabled || startup) return;
+  switch (button.id) {
+    case 'play-reference': void playReference(false); break;
+    case 'play-reference-notes': void playReference(true); break;
+    case 'retry-save': queueSave(); break;
+    case 'retry-load': void loadComplete(); break;
+    case 'replace-saved-copy': replaceSavedCopy(); break;
+    case 'cancel-project-read': projectFileEpoch++; projectFileReading = false; announce('Project import cancelled. Current audio, drafts, notes and reference are unchanged.'); updateReference(); break;
+    case 'remove-reference': {
+      const asset = selectedAsset(); if (!asset) break;
+      const generation = compositionGeneration, intent = editorIntent;
+      if (!window.confirm('Remove this track’s reference take while keeping its notes? Undo restores the reference.')) break;
+      if (generation !== compositionGeneration || intent !== editorIntent || selectedAsset()?.id !== asset.id) break;
+      const document = history.current; document.references = document.references.filter(item => item.trackId !== activeTrackId);
+      commit(project, 'Reference removed; notes are unchanged.', true, document); break;
+    }
+    case 'clear-history': {
+      const generation = compositionGeneration, intent = editorIntent;
+      if (!window.confirm('Clear undo history? Current notes, reference takes and the saved copy stay unchanged, but earlier edits and takes cannot be restored. Download a complete project first.')) break;
+      if (generation !== compositionGeneration || intent !== editorIntent || busy) break;
+      history.clear(); projectFileEpoch++; projectFileReading = false; midiEpoch++; midiReading = false; midiReview = null;
+      message = 'Undo history cleared. Current project and saved copy are unchanged.'; syncHistory(); updateMidiControls(); announce(message); updateReference(); break;
+    }
+  }
+});
+window.addEventListener('beforeunload', event => { if (saving || unsaved) { event.preventDefault(); event.returnValue = ''; } });
+
 render();
+
+void loadComplete(true);

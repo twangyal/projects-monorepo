@@ -208,3 +208,13 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
 #midi-summary { background: #f3f9f4; border: 1px solid #c3dccc; padding: 1rem; margin: 1rem 0; border-radius: 8px; font-size: .83rem; }
 #midi-import button { min-height: 44px; white-space: normal; } #midi-import [hidden] { display: none !important; }
 @media(max-width:720px) { #midi-import { margin: 0 1rem 2rem; padding: 1rem; } .midi-lanes { grid-template-columns: minmax(0,1fr); } .midi-heading { align-items: start; } }
+
+#reference-panel { max-width: 1261px; margin: 0 auto 1.5rem; padding: 1.6rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; min-width: 0; }
+#reference-panel h2 { margin: .3rem 0 .8rem; }
+#reference-panel p { margin: .7rem 0; overflow-wrap: anywhere; }
+#reference-panel button { min-height: 44px; white-space: normal; }
+.reference-window { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin: 1rem 0; }
+.reference-window label { flex: 1 1 180px; min-width: 0; max-width: 320px; }
+.reference-window input { margin-top: .4rem; }
+#reference-panel [hidden] { display: none !important; }
+@media(max-width:720px) { #reference-panel { margin: 0 1rem 1.5rem; padding: 1rem; } .reference-window label { max-width: none; } }

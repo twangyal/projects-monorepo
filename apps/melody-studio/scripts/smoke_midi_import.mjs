@@ -8,6 +8,8 @@
  * temporary directory. All artifacts/profile remain available after success/failure.
  * CHROMIUM_PATH optionally selects an executable; otherwise Playwright's installed
  * Chromium is used. This script never installs, starts or rebuilds the application.
+ * Complete backups are independently unwrapped; persistence is read from real
+ * readonly IndexedDB transactions, including after a native browser restart.
  * --prepare-only writes the original 152-byte and exact 1 MiB SMF fixtures without
  * starting Chromium or requiring MELODY_MIDI_BASE_URL.
  */
@@ -19,7 +21,7 @@ import { Buffer } from 'node:buffer';
 import process from 'node:process';
 import console from 'node:console';
 import { performance } from 'node:perf_hooks';
-import { TextEncoder } from 'node:util';
+import { TextDecoder, TextEncoder } from 'node:util';
 import { URL } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -28,7 +30,6 @@ const root = process.env.MELODY_MIDI_OUTPUT
   ? resolve(process.env.MELODY_MIDI_OUTPUT)
   : await mkdtemp(join(tmpdir(), 'melody-midi-native-'));
 if (process.env.MELODY_MIDI_OUTPUT) await mkdir(root); // Refuse reused artifacts/profile.
-const storageKey = 'melody-studio.project.v1';
 const utf8 = text => [...new TextEncoder().encode(text)];
 const u16 = value => [Math.floor(value / 256), value % 256];
 const u32 = value => [Math.floor(value / 16777216), Math.floor(value / 65536) % 256, Math.floor(value / 256) % 256, value % 256];
@@ -160,6 +161,20 @@ function peakFrequency(samples, seconds) {
   let peak = 1; for (let i = 2; i < n / 2; i++) if (re[i] ** 2 + im[i] ** 2 > re[peak] ** 2 + im[peak] ** 2) peak = i;
   return peak * 22050 / n;
 }
+// Independent #66 complete-container admission; the MIDI path has no references.
+// This never invokes product serialization or substitutes a RAM export for IDB.
+function readBackup(bytes) {
+  const backup = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  assert.deepEqual(Object.keys(backup), ['format', 'version', 'document', 'assets']);
+  assert.equal(backup.format, 'melody-studio-project');
+  assert.equal(backup.version, 1);
+  assert.deepEqual(Object.keys(backup.document), ['schemaVersion', 'composition', 'references']);
+  assert.equal(backup.document.schemaVersion, 1);
+  assert.equal(backup.document.composition.version, 1);
+  assert.deepEqual(backup.document.references, []);
+  assert.deepEqual(backup.assets, []);
+  return backup;
+}
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const report = { schemaVersion: 1, success: false, fixturesOriginal: true, noStorageInjection: true, noProductParserImports: true,
   thresholds: { fftWindow: 4096, frequencyToleranceHz: 22050 / 4096, rmsRelativeTolerance: .02, silence: 'Exactly zero PCM samples' },
@@ -178,12 +193,49 @@ try {
   page.on('dialog', async dialog => { confirmations.push(dialog.message()); await dialog.accept(); });
   await page.goto(baseURL);
   const button = name => page.getByRole('button', { name, exact: true });
-  const saved = () => page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)), storageKey);
+  async function stored() {
+    return page.evaluate(async () => {
+      // Verify the app actually created its database; do not create one for it.
+      const databases = await globalThis.indexedDB.databases();
+      if (!databases.some(database => database.name === 'melody-studio.projects')) return null;
+      return new Promise((resolve, reject) => {
+        const opening = globalThis.indexedDB.open('melody-studio.projects');
+        opening.onerror = () => reject(new Error('Could not read actual saved IndexedDB.'));
+        opening.onupgradeneeded = () => { opening.transaction.abort(); reject(new Error('Unexpected missing IndexedDB schema.')); };
+        opening.onsuccess = () => {
+          const db = opening.result;
+          if (db.version !== 1 || !db.objectStoreNames.contains('projects') || !db.objectStoreNames.contains('assets')) {
+            db.close(); reject(new Error('Unexpected saved IndexedDB schema.')); return;
+          }
+          const transaction = db.transaction(['projects', 'assets'], 'readonly');
+          const record = transaction.objectStore('projects').get('current');
+          const count = transaction.objectStore('assets').count();
+          const keys = transaction.objectStore('assets').getAllKeys();
+          transaction.oncomplete = () => { db.close(); resolve({ record: record.result ?? null, assetCount: count.result, assetKeys: keys.result }); };
+          transaction.onabort = transaction.onerror = () => { db.close(); reject(new Error('Actual saved IndexedDB read failed.')); };
+        };
+      });
+    });
+  }
+  const saved = async () => {
+    const snapshot = await stored();
+    if (!snapshot?.record) return null;
+    assert.deepEqual(Object.keys(snapshot.record), ['schemaVersion', 'document']);
+    assert.equal(snapshot.record.schemaVersion, 1);
+    assert.deepEqual(snapshot.record.document.references, []);
+    assert.equal(snapshot.assetCount, 0);
+    assert.deepEqual(snapshot.assetKeys, []);
+    return snapshot.record.document.composition;
+  };
+  const savedStatus = () => expect(page.locator('#save-status')).toHaveText('Saved in this browser');
+  const ready = () => expect(button('Save project file')).toBeEnabled();
+  await ready();
+  const legacyBefore = await page.evaluate(() => globalThis.localStorage.getItem('melody-studio.project.v1'));
   async function download(name, file) {
     const pending = page.waitForEvent('download', { timeout: 90000 }); await button(name).click();
     const completed = await pending; await completed.saveAs(root + '/' + file); return readFile(root + '/' + file);
   }
-  const baseline = JSON.parse((await download('Save project file', 'before.json')).toString('utf8'));
+  const baseline = readBackup(await download('Save project file', 'before.json'));
   async function importFixture(path, lanes, start, end, title, names) {
     await page.locator('#midi-file').setInputFiles(path);
     for (const channel of lanes) {
@@ -196,6 +248,7 @@ try {
     await expect(page.locator('#midi-summary')).toBeVisible(); await expect(page.locator('#midi-apply')).toBeEnabled();
     await page.locator('#midi-apply').click();
     await expect.poll(async () => (await saved())?.title).toBe(title);
+    await savedStatus();
     return saved();
   }
   let start = performance.now();
@@ -205,10 +258,18 @@ try {
   assert.deepEqual(project.tracks[0].notes.map(({ pitch, start, duration, velocity }) => ({ pitch, start, duration, velocity })),
     [{ pitch: 69, start: .13, duration: 1, velocity: 96 / 127 }, { pitch: 72, start: 2.13, duration: 1, velocity: 32 / 127 }]);
   assert.equal(project.tracks[0].volume, 64 / 127); assert.equal(project.tracks[0].instrument, 'sine');
-  await button('Undo').click(); assert.deepEqual(JSON.parse((await download('Save project file', 'undone.json')).toString()), baseline);
-  await expect(button('Undo')).toBeDisabled(); await button('Redo').click(); assert.deepEqual(await saved(), project);
+  await button('Undo').click(); await savedStatus();
+  assert.deepEqual(await saved(), baseline.document.composition);
+  assert.deepEqual((await stored()).record.document, baseline.document);
+  assert.deepEqual(readBackup(await download('Save project file', 'undone.json')), baseline);
+  await expect(button('Undo')).toBeDisabled(); await button('Redo').click(); await savedStatus();
+  assert.deepEqual(await saved(), project);
   await button('Play composition').click(); await expect(button('Stop playback')).toBeEnabled(); await button('Stop playback').click();
-  const json = await download('Save project file', 'phrase.json'); assert.deepEqual(JSON.parse(json.toString()), project);
+  const json = await download('Save project file', 'phrase.json'), phraseBackup = readBackup(json);
+  assert.deepEqual(phraseBackup.document.composition, project);
+  const phraseStored = await stored();
+  assert.deepEqual(phraseStored.record.document, phraseBackup.document);
+  await writeFile(join(root, 'phrase-indexeddb.json'), JSON.stringify(phraseStored, null, 2) + '\n');
   const midiBytes = await download('Export MIDI', 'phrase.mid'), midi = readMidi(midiBytes);
   assert.equal(midi.ppqn, 480); assert.equal(midi.tracks.length, 2);
   assert.deepEqual(midi.tracks[0].events.find(e => e.type === 81).data, [7, 161, 32]);
@@ -229,9 +290,10 @@ try {
     return { time, expectedHz: hz, measuredHz, expectedRms, measuredRms };
   });
   assert(Math.abs(metrics[1].measuredRms / metrics[0].measuredRms - 1 / 3) < .01);
-  await page.reload(); assert.deepEqual(await saved(), project);
+  await page.reload(); await ready(); assert.deepEqual(await saved(), project);
+  assert.deepEqual(await stored(), phraseStored);
   await expect(button('Undo')).toBeDisabled();
-  report.phrase = { frames: wav.frames, midiNotes: midi.tracks[1].notes, metrics, jsonSha256: sha256(json), midiSha256: sha256(midiBytes), wavSha256: sha256(wavBytes), nativeReloadExact: true };
+  report.phrase = { frames: wav.frames, midiNotes: midi.tracks[1].notes, metrics, jsonSha256: sha256(json), midiSha256: sha256(midiBytes), wavSha256: sha256(wavBytes), nativeReloadExact: true, actualIndexedDBExact: true };
   start = performance.now();
   const maximumProject = await importFixture(root + '/maximum-original.mid', [0,1,2,3,4,5,6,7], 1, 129, 'Maximum imported phrase', channel => 'Maximum channel ' + channel);
   assert.equal(maximumProject.tracks.length, 8);
@@ -240,7 +302,11 @@ try {
     assert(track.notes.every((note,i) => note.pitch === 60 + channel && note.start === i * .5 && note.duration === .25 && note.velocity === 64 / 127));
   }
   const ids = maximumProject.tracks.flatMap(track => [track.id,...track.notes.map(note => note.id)]); assert.equal(new Set(ids).size, 2056);
-  const maxJson = await download('Save project file','maximum.json'); assert.deepEqual(JSON.parse(maxJson.toString()), maximumProject);
+  const maxJson = await download('Save project file','maximum.json'), maximumBackup = readBackup(maxJson);
+  assert.deepEqual(maximumBackup.document.composition, maximumProject);
+  const maximumStored = await stored();
+  assert.deepEqual(maximumStored.record.document, maximumBackup.document);
+  await writeFile(join(root, 'maximum-indexeddb.json'), JSON.stringify(maximumStored, null, 2) + '\n');
   const maxMidiBytes = await download('Export MIDI','maximum.mid'), maxMidi = readMidi(maxMidiBytes);
   assert.equal(maxMidi.tracks.length, 9);
   for (let channel = 0; channel < 8; channel++) {
@@ -253,20 +319,27 @@ try {
   assert.equal(maxWav.frames, 1410208);
   const peak = maxWav.samples.reduce((v,n) => Math.max(v, Math.abs(n)),0); assert(peak > .01 && peak <= .951);
   assert(maxWav.samples.subarray(Math.ceil(.215 * 22050),Math.floor(.235 * 22050)).every(n => n === 0));
-  await page.reload(); assert.deepEqual(await saved(),maximumProject);
+  await page.reload(); await ready(); assert.deepEqual(await saved(),maximumProject);
+  assert.deepEqual(await stored(), maximumStored);
   report.timingsSeconds.maximumImportArtifactsReload = (performance.now() - start) / 1000;
   await browser.close();
   browser = await chromium.launchPersistentContext(profile, options);
   page = browser.pages()[0] || await browser.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (isExternal(request.url())) requests.push(request.url()); });
-  await page.goto(baseURL);
+  await page.goto(baseURL); await ready();
   assert.deepEqual(await saved(), maximumProject);
+  const restartedStored = await stored();
+  assert.deepEqual(restartedStored, maximumStored);
+  await writeFile(join(root, 'maximum-after-process-restart-indexeddb.json'), JSON.stringify(restartedStored, null, 2) + '\n');
+  assert.equal(await page.evaluate(() => globalThis.localStorage.getItem('melody-studio.project.v1')), legacyBefore);
   await expect(button('Undo')).toBeDisabled();
   const restartedJson = await download('Save project file', 'maximum-after-process-restart.json');
-  assert.deepEqual(JSON.parse(restartedJson.toString()), maximumProject);
-  report.nativeProcessRestart = { persistentProfile: profile, exactJsonBytes: restartedJson.equals(maxJson), sameProjectId: true, all2048NotesExact: true };
+  assert.deepEqual(readBackup(restartedJson), maximumBackup);
+  assert.deepEqual(readBackup(restartedJson).document, restartedStored.record.document);
+  report.nativeProcessRestart = { persistentProfile: profile, exactJsonBytes: restartedJson.equals(maxJson), sameProjectId: true, all2048NotesExact: true, actualIndexedDBExact: true, legacyLocalStorageUnchanged: true };
   assert(restartedJson.equals(maxJson));
+  report.persistence = { database: 'melody-studio.projects', version: 1, readonlyInspection: true, midiImportsHaveNoReferences: true, phraseRecordSha256: sha256(Buffer.from(JSON.stringify(phraseStored))), maximumRecordSha256: sha256(Buffer.from(JSON.stringify(maximumStored))) };
   report.maximum = { bytes: maximum.length, tracks: 8, notes: 2048, jsonBytes: maxJson.length, midiBytes: maxMidiBytes.length, wavBytes: maxWavBytes.length, frames: maxWav.frames, peak, jsonSha256: sha256(maxJson), midiSha256: sha256(maxMidiBytes), wavSha256: sha256(maxWavBytes), nativeReloadExact: true };
   await page.evaluate(() => globalThis.scrollTo(0, 0));
   await page.screenshot({path:root+'/desktop.png',fullPage:false});

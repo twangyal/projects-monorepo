@@ -59,13 +59,14 @@ test('recording permission failures recover and unavailable storage is visible',
   await page.addInitScript(() => {
     Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { value: () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError')) });
     Object.defineProperty(window, 'localStorage', { get: () => { throw new Error('Disabled'); } });
+    Object.defineProperty(window, 'indexedDB', { get: () => { throw new Error('Disabled'); } });
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Record melody', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Microphone');
   await expect(page.getByRole('button', { name: 'Record melody', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Add note', exact: true }).click();
-  await expect(page.locator('#save-status')).toContainText('not saved');
+  await expect(page.locator('#save-status')).toContainText(/not saved/i);
 });
 
 test('mobile layout and keyboard note editing stay within the viewport', async ({ page }) => {

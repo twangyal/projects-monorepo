@@ -49,7 +49,10 @@ test('proposal is transient; real solo audition, apply once, history and decoded
   await expect(page.locator('.proposal-note')).toHaveCount(4);
   await expect(page.locator('#continuation-proposal')).toContainText('not saved');
   expect(await savedProject(page)).toEqual(original);
-  expect(JSON.parse((await download(page, 'Save project file')).toString('utf8'))).toEqual(original);
+  expect(JSON.parse((await download(page, 'Save project file')).toString('utf8'))).toEqual({
+    format: 'melody-studio-project', version: 1,
+    document: { schemaVersion: 1, composition: original, references: [] }, assets: [],
+  });
   const midiBefore = decodeMidi(await download(page, 'Export MIDI'));
   expect(midiBefore.tracks[1].notes).toEqual(expectedMidiNotes(original.tracks[0].notes));
   const wavBefore = decodeWav(await download(page, 'Export WAV'));
