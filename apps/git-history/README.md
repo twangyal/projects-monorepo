@@ -1,6 +1,6 @@
 # Git History
 
-A local evidence explorer for unfamiliar code. Select a committed file range or named Python, JavaScript or TypeScript function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, available rename evidence, and optional supplied discussion excerpts.
+A local evidence explorer for unfamiliar code, with a command line and browser workbench. Select a committed file range or named Python, JavaScript or TypeScript function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, available rename evidence, and optional supplied discussion excerpts.
 
 The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
 
@@ -27,6 +27,27 @@ For automation:
 python3 -m git_history explain --repo /path/to/repository \
   --file src/example.py --lines 20:45 --format json > report.json
 ```
+
+### Browse in the local workbench
+
+From this app directory, start the service for one local repository:
+
+```sh
+python3 -m git_history serve --repo /absolute/path/to/repository
+```
+
+Open the exact URL printed in the terminal. It uses an OS-assigned port on `127.0.0.1` and a fresh access capability in its fragment. The page removes that fragment immediately and keeps access only in memory. Reopening or reloading a page requires the original terminal URL; restarting the service creates a new capability. Keep that URL private. There are no accounts, cookies, browser storage, remote requests or repository writes. Stop the service with Ctrl-C. `--port N` can request a fixed local port; the service cannot bind a public interface.
+
+1. Enter a committed ref such as `HEAD`, optionally narrow the directory/language, and discover source files. The resulting full commit ID fixes this investigation even if the branch later moves. Explicitly rediscover to choose another snapshot.
+2. Open a candidate or enter an exact repository-relative path. Read the numbered committed source in pages; uncommitted edits are excluded. Choose a function or enter a 1–200-line range. Function discovery needs the optional parser for JavaScript/TypeScript; manual ranges work for other UTF-8 text too. Ambiguous/oversized functions require a manual range.
+3. Optionally select a supplied-context JSON file in either documented format below. Its authors, links and claims remain unverified, and commit associations must match the actual report evidence. The browser sends the bounded text, never a server-side file path.
+4. Generate the report, follow its local evidence links, and download portable HTML or structured JSON. Both downloads come from the same report and use the existing CLI renderers. Reports contain the selected repository's source and author metadata; share them only where that content belongs. External evidence links connect only when explicitly opened.
+
+The workbench keeps source, catalogs and reports in memory for the current session. It shows pending work and offers Stop; replacing a request waits for cancelled subprocess cleanup and cannot publish stale results over a newer selection. Recoverable errors preserve draft fields. Source is paginated at 100 physical Git lines and file/function catalogs at 50 entries, so large valid inputs do not create an unbounded page.
+
+Only one job runs at a time. Existing source/Git/parser limits still apply, with an additional 45-second aggregate subprocess deadline and 32 MiB combined subprocess-output budget per job. Python parsing runs in a standard-library worker with the same 5-second/512 MiB limits as optional native parsing. Bounded in-process validation/rendering observes cancellation between stages; Stop is cooperative during those stages. HTTP input is limited to 2 MiB with an absolute 5-second header/body deadline; supplied context is still at most 256 KiB. Each report is at most 8 MiB and each serialized response at most 32 MiB. Exceeding a limit fails that operation without changing the repository.
+
+The service accepts only its exact loopback Host, same-origin authenticated API requests and its packaged static assets. It serves one repository selected at startup; the browser cannot switch repository roots, read arbitrary local context files or write reports into server paths. It is a local developer tool, not a multi-user deployment or protection against other software running as your OS user.
 
 ### Select a named function
 
@@ -213,6 +234,17 @@ python3 -m pip install -r requirements-dev.txt
 ruff check .
 ```
 
+The browser workbench has a separate development-only verification toolchain; Node is not needed to run the installed app:
+
+```sh
+npm ci
+npm run lint
+npx playwright install chromium
+npm run test:browser
+```
+
+Set `CHROMIUM_PATH=/path/to/chromium` to use an installed browser and `GIT_HISTORY_PYTHON=/path/to/python` to choose the service/test interpreter. Browser cases create isolated temporary Git repositories and real services on ephemeral ports. CI runs them with the optional parser installed, alongside the existing Python 3.11–3.13 matrix. The Python wheel includes all static workbench assets.
+
 Tests create temporary repositories and cover roots, line edits and insertions, rename-plus-edit, merges, shallow and bare repositories, special filenames, invalid input, Git configuration side effects, output protection, HTML escaping/anchors, function selection from immutable snapshots, synopsis evidence, CLI behavior, subprocess timeouts and byte caps, and bounded supplied-context imports with exact commit matching, safe discussion links and escaped provenance. No existing repository is modified by the tests.
 
 The default suite explicitly skips native syntax cases when the extra is absent. To require and verify the entire optional feature:
@@ -232,3 +264,9 @@ Future work includes evidence-grounded semantic summaries. Supplied excerpts rem
 [Recorded evidence](docs/2026-10-04-javascript-verification.json) covers the 177-test suite on actual Linux Python 3.11.16, 3.12.14 and 3.13.5: 176 pass with the extra and one core-only case skips. Without the extra, 151 pass and 26 native cases explicitly skip. Ruff, compilation, wheel build and installed commands outside the source tree passed.
 
 An independently parsed TypeScript 5.9.3 reference matched all 20 top-level function declaration ranges across committed Stock, Lens and Melody sources. Real installed CLI HTML/JSON reports matched the selected source and 25/46/13 blame lines respectively. The installed worker accepted exactly 512 KiB of source and 10,000 definitions, rejected one-byte/one-definition excess and qualified-name amplification, and rejected a 512 KiB malformed-depth fixture. The 10,000-definition catalog took 0.17 seconds; maximum observed child RSS across this acceptance run was 138 MiB. These are bounded fixture measurements, not a semantic-correctness or throughput guarantee for arbitrary source.
+
+### Measured workbench verification
+
+Issue [#52](https://github.com/twangyal/projects-monorepo/issues/52) expands the suite to **239 discovered Python cases**: native-enabled runs on Python 3.11–3.13 pass with two expected skips, and the dependency-free run passes with 26 optional skips. Eight real Chromium flows cover immutable discovery/source/function/manual selection, rename evidence, supplied context, actual report anchors, byte-identical CLI downloads, cancellation, parser fallback, large-source pagination and same-tab session recovery. Seven enabled cases also pass using the installed wheel outside the source tree; the source suite separately verifies missing parser dependencies.
+
+Independent installed-package checks handled 10,000 candidate files, 10,000 Python functions, and an exact 512 KiB/8,192-line source with only 50 catalog/function rows and 100 source rows rendered. Actual HTML/JSON downloads matched independently invoked CLI bytes; a real report click reached the source target and scroll position inside the opaque sandbox. The 390-pixel layout had no page overflow, page errors or external requests. The browser suite also covers a 524,288-line source. These are fixture/runtime measurements, not latency guarantees or other-device compatibility. See [the workbench verification record](docs/2026-10-04-workbench-verification.json).

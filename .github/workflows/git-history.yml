@@ -48,3 +48,26 @@ jobs:
           cd "$RUNNER_TEMP"
           git-history --help
           python -I -c "from git_history.function_parser import parse_functions; result = parse_functions('export const square = (n: number) => n * n;', 'sample.ts'); assert [(f.qualified_name, f.start_line, f.end_line) for f in result] == [('square', 1, 1)]"
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/git-history
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/git-history/package-lock.json
+      - run: python -m pip install '.[javascript]'
+      - run: npm ci
+      - run: npm run lint
+      - run: npx playwright install --with-deps chromium
+      - name: Verify the local workbench against real Git repositories
+        run: npm run test:browser

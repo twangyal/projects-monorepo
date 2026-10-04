@@ -51,3 +51,5 @@ Root owns docs/catalog/package configuration/CI/Git/GitHub. Separate agents own 
 ## Independent design review
 
 2026-10-04: git_runner and git_history_review approved after the Python worker, absolute HTTP deadline, budget-exception propagation and iframe CSP amendments above. Public helper API: frozen SourceSnapshot and read_source(repo, file, ref); parse_context(data: bytes | str, report) retains both existing envelopes and load_context delegates after the same regular-file read. Service startup may use the internal safe resolver without running an unfiltered catalog. Existing dependency-free baseline: 188 tests, 26 optional skips, all remaining passed.
+
+Final browser evidence required preview-only internal anchor destinations to use explicit `about:srcdoc#…` URLs; DOMParser adjusts those anchors without changing downloaded HTML/JSON. Actual native clicks reach the report target/scroll inside the unchanged opaque sandbox.

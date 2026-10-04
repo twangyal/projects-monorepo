@@ -6,3 +6,6 @@ __pycache__/
 build/
 dist/
 reports/
+node_modules/
+test-results/
+playwright-report/

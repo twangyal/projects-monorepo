@@ -6,8 +6,10 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import sys
 import tempfile
+import threading
 
 from .context import ContextRecords, load_context
 from .reader import inspect_repository, list_files, list_functions
@@ -88,6 +90,9 @@ def main(argv: list[str] | None = None) -> int:
     functions = commands.add_parser("functions", help="List functions in committed Python, JavaScript or TypeScript source.",
                                     description="List committed Python functions or optional JavaScript/TypeScript functions. Install the javascript extra for JavaScript/TypeScript selection.")
     files = commands.add_parser("files", help="Discover committed source file candidates without parsing them.")
+    serve = commands.add_parser("serve", help="Open a read-only local browser workbench for one repository.")
+    serve.add_argument("--repo", required=True, help="Fixed local repository path.")
+    serve.add_argument("--port", type=int, default=0, help="Loopback port, 0–65535 (default: OS assigned).")
     for command in (explain, functions, files):
         command.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
         command.add_argument("--ref", default="HEAD", help="Committed revision (default: HEAD).")
@@ -107,6 +112,30 @@ def main(argv: list[str] | None = None) -> int:
     functions.add_argument("--format", choices=("text", "json"), default="text")
     args = parser.parse_args(argv)
     try:
+        if args.command == 'serve':
+            from .workbench import create_server
+            server = None
+            original_term = None
+
+            def terminate(_signal, _frame):
+                # Exit the serving thread into finally; shutdown() would wait
+                # for this very thread and deadlock here.
+                raise KeyboardInterrupt
+
+            try:
+                if threading.current_thread() is threading.main_thread():
+                    original_term = signal.signal(signal.SIGTERM, terminate)
+                server = create_server(args.repo, args.port)
+                print(server.url, flush=True)
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                if server is not None:
+                    server.server_close()
+                if original_term is not None:
+                    signal.signal(signal.SIGTERM, original_term)
+            return 0
         if args.command == "files":
             catalog = list_files(args.repo, ref=args.ref, directory=args.directory, language=args.language)
             if args.format == "json":

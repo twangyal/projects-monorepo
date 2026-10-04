@@ -97,6 +97,14 @@ class WorkBudgetTests(unittest.TestCase):
         self.assertEqual(calls[0][-1], 'python-ast')
         self.assertEqual(calls[0][1:3], ['-I', '-B'])
 
+    def test_isolated_python_rejects_oversize_invalid_source_before_starting_child(self):
+        from git_history.native_parser import NativeParserError, parse_python_functions_isolated
+        for source in ['x' * (512 * 1024 + 1), '\ud800', 'x\0y']:
+            with patch('git_history.native_parser.subprocess.Popen') as popen:
+                with self.assertRaises(NativeParserError):
+                    parse_python_functions_isolated(source)
+                popen.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

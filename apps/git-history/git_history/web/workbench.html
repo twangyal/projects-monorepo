@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Git History · Local workbench</title>
+  <link rel="stylesheet" href="/workbench.css">
+  <script src="/workbench.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to workbench</a>
+  <header class="site-header"><a class="brand" href="#workspace" aria-label="Git History"><span aria-hidden="true">⌘</span> Git History</a><span class="local-badge">Local evidence · no source uploads</span></header>
+  <main id="workspace">
+    <div class="intro"><p class="eyebrow">UNDERSTAND THE CHANGE</p><h1>A source line has a history.</h1><p>Inspect committed code, follow its attribution, and keep the evidence together. Git facts and supplied discussion are shown with their limits; author intent is never invented.</p></div>
+    <div class="service-strip"><div><strong id="repo-name">Opening your local repository…</strong><p id="status" role="status" aria-live="polite">Checking the session.</p></div><button id="stop-button" type="button" disabled>Stop</button></div>
+    <p id="error" class="error" role="alert" hidden></p>
+    <div class="workbench-grid">
+      <aside class="browse-panel panel" aria-labelledby="browse-heading">
+        <p class="eyebrow">01 / FIND A COMMITTED FILE</p><h2 id="browse-heading">Repository browser</h2>
+        <form id="discovery-form">
+          <label for="ref">Revision or ref<input id="ref" name="ref" value="HEAD" autocomplete="off" spellcheck="false"></label>
+          <label for="directory">Directory <span class="optional">optional</span><input id="directory" name="directory" placeholder="src or a JSON-quoted path" autocomplete="off" spellcheck="false"></label>
+          <label for="language">Candidate language<select id="language" name="language"><option value="all">All supported languages</option><option value="python">Python</option><option value="javascript">JavaScript</option><option value="typescript">TypeScript</option></select></label>
+          <button id="discover-button" class="primary" disabled>Discover files</button>
+        </form>
+        <p id="catalog-summary" class="hint">Discovery resolves the ref to one immutable commit.</p>
+        <p class="hint">Candidates are regular Python, JavaScript and TypeScript blobs up to 512 KiB. Other text files can be opened by exact path. Symlinks, submodules and larger blobs are omitted.</p>
+        <label for="file-filter">Filter listed paths<input id="file-filter" type="search" autocomplete="off" spellcheck="false" placeholder="Path contains…"></label>
+        <ul id="file-list" class="file-list" aria-label="Committed file candidates"></ul>
+        <nav class="pager" aria-label="File pages"><button id="file-prev" type="button" disabled>Previous files</button><span id="file-page">0 files</span><button id="file-next" type="button" disabled>Next files</button></nav>
+      </aside>
+      <div class="evidence-column">
+        <section class="panel source-panel" aria-labelledby="source-heading">
+          <p class="eyebrow">02 / CHOOSE THE EVIDENCE</p><h2 id="source-heading">Committed source</h2>
+          <dl class="snapshot"><dt>Immutable revision</dt><dd id="revision">Discover a revision first</dd><dt>Opened path</dt><dd id="selected-path">No source loaded</dd></dl>
+          <form id="source-form" class="path-form"><label for="path">Exact repository path<input id="path" name="path" placeholder="src/example.py" autocomplete="off" spellcheck="false" aria-describedby="path-help"></label><button id="open-source" disabled>Open source</button></form>
+          <p id="path-help" class="hint">Enter plain text or a JSON-quoted path. Candidate buttons preserve exact paths; control characters are shown as escapes.</p>
+          <div id="source-scroll" class="source-scroll" role="region" aria-label="Numbered committed source" tabindex="0"><table id="source-lines"><caption id="source-caption">No source loaded</caption><tbody></tbody></table></div>
+          <nav class="pager" aria-label="Source pages"><button id="source-prev" type="button" disabled>Previous lines</button><span id="source-page">0 lines</span><button id="source-next" type="button" disabled>Next lines</button></nav>
+          <p class="hint">Select a line number, then Shift-select an end line, or enter a range below. Source pages contain at most 100 physical lines.</p>
+          <div class="function-toolbar"><button id="functions-button" type="button" disabled>Discover functions</button><p id="function-status" class="hint">Manual ranges work without an optional language parser.</p></div>
+          <label for="function-filter">Filter listed functions<input id="function-filter" type="search" autocomplete="off" spellcheck="false" placeholder="Name contains…"></label>
+          <ul id="function-list" class="function-list" aria-label="Committed functions"></ul>
+          <nav class="pager" aria-label="Function pages"><button id="function-prev" type="button" disabled>Previous functions</button><span id="function-page">0 functions</span><button id="function-next" type="button" disabled>Next functions</button></nav>
+          <form id="report-form">
+            <div class="selection-grid"><label for="selection-mode">Selection<select id="selection-mode"><option value="lines">Manual line range</option><option value="function" disabled>Selected function</option></select></label><label for="start-line">Start line<input id="start-line" name="start" inputmode="numeric" value="1" autocomplete="off"></label><label for="end-line">End line<input id="end-line" name="end" inputmode="numeric" value="1" autocomplete="off"></label><label for="max-commits">Maximum commits<input id="max-commits" name="max_commits" inputmode="numeric" value="20" autocomplete="off"></label></div>
+            <p id="selected-function" class="hint">No named function selected</p>
+            <p class="hint">Select 1–200 lines and 1–50 commits. Long or ambiguous functions need an explicit smaller manual range.</p>
+            <details class="context-panel"><summary>Add supplied discussion context</summary><p class="hint">Optional bounded JSON, up to 256 KiB. Excerpts and authors are supplied and unverified; links are not fetched. The CLI README documents both supported formats.</p><label for="context-file">Supplied context JSON<input id="context-file" type="file" accept=".json,application/json"></label><div class="context-status"><p id="context-status" class="hint">No supplied context</p><button id="context-clear" type="button">Clear context</button></div></details>
+            <button id="generate-report" class="primary" disabled>Generate report</button>
+          </form>
+        </section>
+        <section id="report-panel" class="panel report-panel" aria-labelledby="report-heading">
+          <div class="report-heading"><div><p class="eyebrow">03 / FOLLOW THE HISTORY</p><h2 id="report-heading">Evidence report</h2></div><div class="downloads"><a id="download-html" class="button-link" aria-disabled="true">Download HTML</a><a id="download-json" class="button-link" aria-disabled="true">Download JSON</a></div></div>
+          <p id="report-description" class="hint">Generate a report from the committed selection above.</p><p id="report-stale" class="stale" hidden>Previous report — your current controls differ. Generate again before downloading.</p>
+          <p class="hint">Everything stays in this local session. Downloads can contain private source and author metadata; share them carefully. Opening an external evidence link uses your browser’s network access.</p>
+          <iframe id="report-frame" title="Git evidence report" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" hidden></iframe>
+          <div id="report-empty" class="report-empty"><span aria-hidden="true">↳</span><p>Source, attribution and patches<br>will appear here together.</p></div>
+        </section>
+      </div>
+    </div>
+    <footer>Read-only repository evidence. No checkout, hooks, source uploads or generated intent. Reopen the original terminal URL after a reload to restore access.</footer>
+  </main>
+</body>
+</html>
