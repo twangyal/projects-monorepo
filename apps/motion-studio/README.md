@@ -203,5 +203,12 @@ audit also strengthens identical-file reimport, ninth-file refusal and SVG
 refusal checks so they cannot pass on an earlier message or unchanged old data.
 All four affected native cases pass against the unchanged production bundle,
 with original artwork/error expectations intact. The [intermediate CI receipt](docs/2026-10-04-new-project-readiness-ci.json)
-retains that head’s separate push success and PR failure. Final acceptance of
-the broadened completion barriers remains pending fresh CI.
+retains that head’s separate push success and PR failure.
+
+Final [push CI](https://github.com/twangyal/projects-monorepo/actions/runs/37231292424)
+and [PR CI](https://github.com/twangyal/projects-monorepo/actions/runs/37231295040)
+at `50373f43bb9e401d049018ece8117060b00dbeaa` each pass **147 unit tests and
+all 121 browser cases**, plus lint, type checking and build. The PR's actual
+synthetic merge has the same source tree; both use Chromium 153.0.8010.12.
+All thirteen project PR workflows pass. The [final CI receipt](docs/2026-10-04-new-project-readiness-final-ci.json)
+preserves checkouts, log hashes and timings alongside the earlier failures.

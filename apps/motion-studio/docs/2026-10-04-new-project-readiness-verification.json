@@ -55,8 +55,7 @@
     "Affected test ran once locally; the full 121-browser suite was not rerun locally.",
     "No build, product-source edits, dependency updates or new service process.",
     "Previously successful 147-unit and 120 other-browser results belong to the preserved failing CI run, not this focused verification.",
-    "Exact-head push passed 121/121; PR passed 120/121 with a distinct unsaved-Redo reload fixture failure.",
-    "Four later operation-admission repairs ran once locally; a fresh full exact-head CI run after those repairs is not yet published. No fixed sleeps, retries of failing workflows, fabricated results, threshold relaxations or production changes."
+    "The preceding 6ec2f2c head push passed 121/121; its PR passed 120/121 with a distinct unsaved-Redo reload fixture failure."
   ],
   "remoteCi": {
     "receipt": "2026-10-04-new-project-readiness-ci.json",
@@ -168,5 +167,24 @@
   "staticValidation": {
     "typescript": "npx tsc --noEmit: passed",
     "scopedEslint": "npx eslint tests/recovery.spec.ts tests/browser/tween.spec.ts tests/browser/project-library.spec.ts tests/workflow.spec.ts: passed"
+  },
+  "finalRemoteCi": {
+    "receipt": "2026-10-04-new-project-readiness-final-ci.json",
+    "headSha": "50373f43bb9e401d049018ece8117060b00dbeaa",
+    "push": {
+      "unitPassed": 147,
+      "browserPassed": 121
+    },
+    "pullRequest": {
+      "unitPassed": 147,
+      "browserPassed": 121
+    },
+    "treeSha": "3d8e487db4d18e827d1265aef57b7a0008312fe3",
+    "allProjectPrSummary": {
+      "total": 13,
+      "success": 13,
+      "failure": 0,
+      "pending": 0
+    }
   }
 }
