@@ -1,8 +1,8 @@
 # Shot Studio
 
 A local 3D filmmaking sketchbook for idea #7. Stage two block characters in a
-courtyard, choose idle/wave/pace performances, adjust lighting, compose a bounded
-shot list, rehearse or scrub, and export a silent WebM film. Native browser
+courtyard, choose idle/wave/pace performances, adjust lighting, compose static or
+traveling cameras, rehearse or scrub the shot list, and export a silent WebM film. Native browser
 JavaScript/WebGL: no accounts, external assets, services or paid APIs.
 
 ## Run
@@ -22,18 +22,46 @@ this is not a normal project backup. When reading is denied, a recovery download
 unavailable. Save your current project before reload or replacement. **Replace browser
 draft** asks for confirmation and enables autosave only after a successful write;
 cancellation or failure preserves the old record. Reloading preserves the
-film, not the current playhead or selected camera/performer.
+film, not the current playhead, selected camera endpoint or performer.
+
+New saves use schema 2. Original schema-1 static films migrate without changing
+their composition. Loading an old draft does not write storage; the next valid
+edit or explicit draft replacement writes schema 2. Older readers reject this
+version rather than silently dropping camera travel. Unknown fields, unsupported
+versions and motion-bearing schema-1 films are rejected and retain raw recovery.
 
 Typing into scene settings while a project file is still opening cancels that
 pending replacement, even before blur commits the edit. The exact focused draft
 and existing saved film are retained; open the backup again when you intend to
-replace them. Typing alone does not commit an edit or create a history entry.
+replace them. Typing alone does not commit an edit or create a history entry. An unfinished or
+invalid form stays visible, including raw coordinates that would create an unsafe
+camera path. Correct it or confirm **Discard unsent edits** before changing the
+selected performer/shot/endpoint or using actions that would replace or encode it.
+Opening another project also waits for this choice. Scrubbing previews the committed
+film; **Save project** downloads that committed film, not unsent fields. Leaving the
+page warns about unsent edits and pending imports; raw form input is not autosaved.
 
 ## Workflow and limits
 
 Select a performer, edit position/costume/action, adjust lighting. Compose a shot
 with a preset or numeric camera/target controls. Name/time it, add/select/remove
 shots, move the selected shot earlier/later, then rehearse or scrub the cut.
+
+Choose **Linear travel** under **Camera motion**, then choose **Start** or **End**
+under **Editing endpoint** and edit its camera position and look target. Travel
+starts with identical endpoints, so selecting the mode preserves the picture. Eye
+and target move linearly over the shot duration; field of view stays fixed for the
+whole shot. Presets replace the selected endpoint and the shot-wide lens.
+**Copy other endpoint** copies its position/target, and **Use current preview**
+captures the evaluated view when it belongs to the selected shot.
+
+**Preview endpoint** explicitly shows the selected Start or End. At a hard cut, an
+End preview still shows that shot; scrubbing the same exact time shows the next
+shot in the film. The labels distinguish the editing endpoint from the displayed
+view. Choosing an editing endpoint alone does not move the preview. Rehearsing
+from an endpoint starts at that shot’s Start and continues through the film.
+Switching back to Static keeps Start; discarding a different End asks for
+confirmation and can be undone.
 Undo scene / Redo scene restores up to 30 prior valid scene states in this session,
 including edits, sequencing and imports. Invalid/identical edits preserve redo; a
 new edit after undo clears it. Reload keeps the draft but starts fresh history.
@@ -46,8 +74,13 @@ total**. Backups are limited to **64 KiB** with bounded names, positions, angles
 and enum values. Imports never execute code or fetch media. Hard cuts; performances
 use continuous film time. WebM is silent at 960 × 540, requested 30 fps, with a
 browser-selected VP9/VP8 encoder. Exact timing/dropped frames depend on hardware.
-No audio, skeletal assets, dialogue, generative animation, camera travel between
-cuts, separate take library or immersive video export yet.
+Travel validates the entire path against coincident or vertical look directions,
+not only its endpoints. Eye/target coordinates stay within ±15, Y is at least 0.3,
+eye–target separation is at least 0.3 and horizontal separation at least 0.1; FOV
+is 25–80 degrees. Boundary decisions use JavaScript’s represented numbers. These
+limits do not prevent moving through set geometry or performers. No easing, roll,
+animated lens, transitions between shots, audio, skeletal assets, dialogue,
+generative animation, separate take library or immersive video export yet.
 
 ## Experimental VR
 
@@ -55,12 +88,15 @@ cuts, separate take library or immersive video export yet.
 space and renders tracked stereo headset views of the actual 3D stage. Select the
 floor marker with a tracked controller to place the desktop-selected performer.
 Squeeze a controller to capture the headset position and forward direction into
-the desktop-selected shot. Its name, duration and lens stay unchanged; exit VR
-to undo or refine the camera. Captured shots use a level world-up camera, so
+the endpoint selected on desktop when entering VR. Its other endpoint, name,
+duration and lens stay unchanged. The whole resulting path must validate; a
+rejected capture preserves the film. Exit VR to inspect that endpoint, undo or
+refine the camera. Captured shots use a level world-up camera, so
 headset roll is not reproduced and framing follows the existing lens rather
 than the headset field of view. Straight up/down or out-of-bounds views and
-missing tracking preserve the shot with guidance. Authored performances animate
-while viewing the set. Exit via
+missing tracking preserve the shot with guidance. Performers animate continuously
+while viewing the live set, including beyond the authored film duration; headset
+views do not rehearse the authored camera travel. Exit via
 the headset/browser session control; desktop editing is available afterwards.
 
 Requires supported hardware/browser and a secure context (HTTPS or trusted local
@@ -88,16 +124,26 @@ npx playwright install --with-deps chromium
 npm run test:browser
 ```
 
+To use an installed Chromium or another free local test port:
+
+```sh
+CHROMIUM_PATH=/usr/bin/chromium SHOT_TEST_PORT=4282 npm run test:browser
+```
+
+Tests start their own server and refuse to reuse an occupied port.
+
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains 28 unit tests and twelve Chromium browser checks, including
-independently decoded video timestamps/changing frames, controlled immersive camera capture/undo, reversible edits, portable
-shot order and preview alignment after undo. The workflow repeats these checks for subsequent edits.
+requires a device. The suite contains 65 unit tests and 29 Chromium browser checks, including
+18 independently authored camera/geometry cases, decoded video landmarks against a
+separate pinhole projection, static/identical-endpoint controls, strict migration,
+raw draft/import races, controlled immersive endpoint capture/undo, reversible edits,
+portable shot order and exact End preview versus film cuts. The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
 covered using controlled page lifecycle events; physical headset tests remain outstanding.
 
-`history.js` owns bounded scene history and shot ordering; `model.js` validates snapshots/cuts/performances; `math.js` owns column-major camera
+`history.js` owns bounded scene history and shot ordering; `model.js` validates versioned snapshots/whole paths and evaluates cameras/cuts/performances; `math.js` owns column-major camera
 transforms; `renderer.js` draws native WebGL; `xr.js` manages immersive views and
 controller floor hits; `export.js` owns recording/cleanup; `app.js` manages DOM
 state, local drafts and imports.
