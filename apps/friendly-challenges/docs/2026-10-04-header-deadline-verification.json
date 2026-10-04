@@ -3,8 +3,15 @@
   "issue": 80,
   "status": "local-python-complete-ci-pending",
   "startingAstraCommit": "b2b782b50341b9279538437aafba7aa7ec387abf",
-  "environment": {"python": "3.12.14", "platform": "Linux"},
-  "baseline": {"command": "python -m unittest discover -s tests -p 'test_*.py' -q", "passed": 43, "seconds": 16.534},
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux"
+  },
+  "baseline": {
+    "command": "python -m unittest discover -s tests -p 'test_*.py' -q",
+    "passed": 43,
+    "seconds": 16.534
+  },
   "reproduction": {
     "command": "python -m unittest discover -s tests -p test_server.py -k total_header -v",
     "failed": 2,
@@ -14,7 +21,7 @@
   "corrected": {
     "command": "python -m unittest discover -s tests -p 'test_*.py' -v",
     "passed": 47,
-    "seconds": 19.359,
+    "seconds": 21.781,
     "compileCommand": "python -m compileall -q challenges tests",
     "compilePassed": true,
     "cases": [
@@ -24,10 +31,34 @@
       "test_finished_headers_leave_body_its_independent_deadline"
     ]
   },
-  "ci": {"status": "pending"},
+  "ci": {
+    "status": "passed-before-test-timing-followup",
+    "implementationCommit": "fdf01638d63b092bcd17ac26de6cdf57d6f6760e",
+    "runId": 37201797103,
+    "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37201797103",
+    "jobId": 111434833202,
+    "pythonPassed": 47,
+    "typescriptPassed": 22,
+    "browserPassed": 12,
+    "browserSeconds": 49.8,
+    "ruff": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "followup": "Timing-only test adjustment awaits exact-commit CI."
+  },
   "limitations": [
-    "Real socket regressions shorten the total header deadline to 0.1/0.2 seconds; production uses 15 seconds.",
+    "Real socket tests shorten the header deadline to 0.1\u20131 seconds; production uses 15 seconds.",
     "Ruff is unavailable locally; no local lint, TypeScript or production-browser checks are claimed. The existing project workflow will exercise those on the exact commit.",
     "This service remains loopback-only. No production deployment or general denial-of-service resistance is claimed."
-  ]
+  ],
+  "review": {
+    "status": "no-production-blockers",
+    "finding": "Sequential connection setup could outlive a 0.2-second test deadline. Saturation tests now use 1 second and continue dripping for 1.44 seconds.",
+    "slowerSetup": {
+      "additionalSecondsPerConnection": 0.02,
+      "passed": 2,
+      "seconds": 4.723
+    },
+    "performanceLimit": "Per-byte header reads preserve no-body-overread and total lifetime but add syscall overhead; independent reviewer measured about 24ms for a 16KiB line locally."
+  }
 }

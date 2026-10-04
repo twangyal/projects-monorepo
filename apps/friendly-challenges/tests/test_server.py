@@ -400,7 +400,7 @@ class ServerTests(unittest.TestCase):
 
     def _assert_slow_headers_release_all_slots(self, prefix):
         connections = []
-        with patch("challenges.server.HEADER_TIMEOUT", 0.2, create=True):
+        with patch("challenges.server.HEADER_TIMEOUT", 1.0, create=True):
             try:
                 for _ in range(16):
                     connection = socket.create_connection(
@@ -416,7 +416,7 @@ class ServerTests(unittest.TestCase):
                             connection.sendall(b"x")
                         except OSError:
                             pass
-                    time.sleep(0.04)
+                    time.sleep(0.12)
                 # Bytes arrive well inside the 5-second inactivity timeout.
                 # A total header deadline must nevertheless release capacity.
                 self.assertEqual(self.request("GET", "/api/status")[0], 200)
