@@ -169,8 +169,15 @@ test('editing endpoints stay separate from an exact film cut and real rehearsal 
   await filmPosition(page, 1);
   await page.getByRole('button', {name: 'Preview endpoint', exact: true}).click();
   await page.getByRole('button', {name: 'Rehearse', exact: true}).click();
-  await expect.poll(async () => Number((await page.locator('#time').innerText()).split('/')[0])).toBeGreaterThan(.1);
-  const moving = await sampleCanvas(page); expect(moving.time).toBeLessThan(1);
+  // The prior endpoint already displays 2s until the next real animation frame.
+  // Admit the actual PNG and its time together, then verify that same frame.
+  let moving;
+  await expect.poll(async () => {
+    const frame = await sampleCanvas(page);
+    if (frame.time > .1 && frame.time < 1) { moving = frame; return true; }
+    return false;
+  }).toBe(true);
+  expect(moving.time).toBeGreaterThan(.1); expect(moving.time).toBeLessThan(1);
   const x = -2 + 2 * moving.time;
   verifyProjection(landmark(moving.pixels, 960, 540, 'red', 4), {eye: [x, 2.2, 8], target: [x, 1.15, 0], fov: 50}, -1.25);
   await page.getByRole('button', {name: 'Stop', exact: true}).click(); await filmPositionFrame(page);
