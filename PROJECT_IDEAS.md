@@ -113,8 +113,9 @@ Milestone: Lens Studio delivers local PNG/JPEG/WebP import, fixed focal framing,
 
 ## 17. Track physiological state to create situations in a game
 
-Path: N/A
-Status: IDEA
+Path: `apps/composure`
+Status: ACTIVE
+Progress: Composure supplies an original playable observatory escape with declared simulated baseline/readings, fixed-step bounded tension, noisy movement, aim jitter and steadying, fuse/power/key/lock/exit objectives, optional authored scare, comfort settings, keyboard/pointer/touch controls, pause/restart and actual simulated-run JSON reports. Versioned preferences and best time persist locally; samples/events remain in memory. Eight unit and six production Chromium tests verify complete escape, loss, stale signal, lifecycle/input release, bounded reports, mobile layout and native preference recovery. Initial simulated milestone is complete in #39. A supported smartwatch connection and physical-device verification remain outstanding; no emotional or medical inference is made.
 Description: A horror game that uses heart-rate readings from a supported smartwatch to influence character composure. Changes from the player's baseline become a gameplay tension signal, affecting actions through shaky aim, louder breathing, or fumbling a key during an escape. Frightening encounters can make subsequent actions harder, making composure part of surviving. The signal is a deliberate game mechanic rather than a diagnosis of the player's emotional state. A first portfolio version would include one supported smartwatch, a short escape scenario, bounded effects on character performance, and simulated readings so people can try the demo without a watch.
 
 ## Technical references

@@ -1,0 +1,13 @@
+# Composure: first playable simulated-reading milestone
+
+Purpose: implement catalog #17's demo without a watch. This is an original top-down escape game, not a physiological diagnosis. Actual watch transport and measured hardware compatibility stay outside this milestone.
+
+The 1,200 by 320 corridor has a fuse, power panel, key, lock and exit. WASD/arrows move; E or a touch control interacts/holds the lock; Shift or a toggle steadies aim. Pointer aim is optional: keyboard mode aims at the nearest reachable object. Collect fuse and key, restore power, hold a steady lock for four seconds, then exit within 180 active seconds. High tension slows movement, increases noise and adds bounded deterministic aim jitter. Noise reaching 100 or timeout loses. Optional authored one-shot scares add a temporary bounded shock, without flashes or required audio. Replay resets all game state.
+
+Calibrate from five declared simulated readings between 40 and 120 BPM. Current readings support 35–220 BPM with monotone active-time timestamps; invalid, old or missing samples do not manufacture tension. After ten active seconds without a sample, the target returns to neutral with visible status. Relative increase divided by 75% of baseline is clamped to [0,1], combined with authored shock, and smoothed analytically. Inputs are game parameters, not emotion or medical measurements.
+
+The pure model uses 1/60-second fixed steps, a 0.25-second catch-up cap and inactive-time pause. Browser blur/visibility changes pause and release controls. No huge background jump advances simulation. Controls work on pointer/touch and keyboard; focus in settings never moves the player. Reduced motion suppresses visual jitter only; the visible steadiness meter continues to expose the gameplay rule. Audio is muted by default and optional, started only from a user gesture.
+
+Only versioned settings and a bounded best completed run are saved locally. Failure preserves current memory state and shows backup guidance. A literal JSON run report downloads the declared baseline, bounded accepted simulated samples and authored/game events, time and terminal outcome. It is not a replay engine or an emotional-state report. No images, sensor logs or remote data are automatically saved.
+
+Verification: unit oracles for calibration, stale/invalid samples, tension bounds, fixed-step outcomes, pause/reset, lock prerequisites and win/loss. Production browser tests complete a game using actual inputs, sample changes, paused/reset state, download parsing, native settings/reopen and mobile controls. CI installs the existing free local stack and tests its built output. All artwork is original canvas geometry; no remote assets or service.
