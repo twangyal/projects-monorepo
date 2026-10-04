@@ -40,6 +40,7 @@ test('later source shot starts at original 3s; camera and action phase use sourc
   assert.deepEqual(performerAt(v.film,0,v.sourceTime),performerAt(fixture(),0,4));
   assert.equal(performerAt(v.film,0,v.sourceTime).x,1);
   assert.equal(performerAt(v.film,0,v.sourceTime).visible,true);
+  assert.ok(Math.abs(performerAt(v.film,0,v.sourceTime).arm-(.8+.5*Math.sin(12)))<1e-12);
   assert.equal(api.sequenceFrameAt(p,2).sourceTime,5);
   assert.equal(performerAt(v.film,0,5).visible,false);
 });
@@ -107,6 +108,15 @@ test('import and all time APIs reject coercion and nonfinite values',()=>{
   assert.throws(()=>api.importSequence(' '.repeat(300*1024+1)));assert.throws(()=>api.importSequence({}));assert.throws(()=>api.importSequence('{broken'));
   const p=api.appendClip(prepared(),'amber',0);
   for(const time of [NaN,Infinity,-Infinity,'1',null,undefined])assert.throws(()=>api.sequenceFrameAt(p,time));
+});
+test('source film text rejects malformed Unicode instead of silently retaining replacement text',()=>{
+  for(const mutate of [f=>f.title='\ud800',f=>f.actors[0].name='\udfff',f=>f.shots[1].name='\ud800']){
+    const film=fixture();mutate(film);assert.throws(()=>api.captureSource(api.createSequence(),{id:'bad',name:'Valid',film}));
+  }
+});
+test('sequence import admits exact 300 KiB JSON input and rejects the next byte',()=>{
+  const text=JSON.stringify(prepared()),padded=text+' '.repeat(300*1024-Buffer.byteLength(text));
+  assert.equal(Buffer.byteLength(padded),300*1024);assert.deepEqual(api.importSequence(padded),prepared());assert.throws(()=>api.importSequence(padded+' '));
 });
 test('bounded history preserves redo after invalid or identical edits and detaches callers',()=>{
   const h=new api.SequenceHistory(prepared());h.commit(api.appendClip(h.current,'amber',0));h.undo();assert.equal(h.canRedo,true);

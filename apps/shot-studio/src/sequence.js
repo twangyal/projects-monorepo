@@ -31,6 +31,7 @@ export function validateSequence(value){
     const version=source.film&&typeof source.film==='object'?Object.getOwnPropertyDescriptor(source.film,'schemaVersion'):null;
     if(!version||!('value' in version)||version.value!==SCHEMA_VERSION)throw error();
     const film=validateProject(source.film);
+    name(film.title,80);for(const actor of film.actors)name(actor.name,30);for(const shot of film.shots)name(shot.name,40);
     if(size(JSON.stringify(film))>MAX_BYTES)throw error();
     return {id:source.id,name:source.name,film};
   });
