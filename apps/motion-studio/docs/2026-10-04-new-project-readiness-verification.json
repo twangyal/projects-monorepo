@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "issue": 106,
+  "verifiedAt": "2026-10-04T20:00:54.184515+00:00",
+  "scope": "Only readiness of the existing transformed-bounds recovery fixture; product source unchanged.",
+  "change": {
+    "file": "apps/motion-studio/tests/recovery.spec.ts",
+    "added": [
+      "Wait for exact New project saved. Your other projects were kept. status",
+      "Wait for enabled Scale control",
+      "Assert exact raw Scale value 0.1 before Set key"
+    ],
+    "preserved": [
+      "Original out-of-bounds stage coordinate",
+      "Original outside the artwork bounds error assertion",
+      "Rejected stroke count 0",
+      "Recovered centered stroke count 1",
+      "No pageerrors"
+    ]
+  },
+  "focusedNative": {
+    "command": "npx playwright test --config=/tmp/motion106-focused.config.mjs --grep='drawing outside transformed artwork bounds'",
+    "workingDirectory": "/workspace/projects-monorepo/apps/motion-studio",
+    "baseURL": "http://127.0.0.1:4294",
+    "serverOwnership": "Existing root-owned preview; no server created or stopped",
+    "productionBundle": "main-Cqx2Ujdw.js",
+    "node": "24.19.0",
+    "chromium": "151.0.7922.173",
+    "workers": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "startedAt": "2026-10-04T19:59:26.154Z",
+    "runMilliseconds": 2096.991,
+    "testMilliseconds": 993,
+    "exitCode": 0,
+    "log": {
+      "path": "/tmp/motion106-focused.log",
+      "bytes": 556,
+      "sha256": "e591a0bbae0d59b561f7bd48c0e6c50c585ecfd9f6299336cf7264f74849ea97"
+    },
+    "result": {
+      "path": "/tmp/motion106-focused-results.json",
+      "bytes": 3047,
+      "sha256": "02a7b4854d5b70169d102ca7b7c5539d4e99dc66cd05b43643e2ed70a5697844"
+    },
+    "temporaryConfig": {
+      "path": "/tmp/motion106-focused.config.mjs",
+      "bytes": 436,
+      "sha256": "3522a1eb1706304f2da3e7c58c40e41af4e21746d28bb87d761e443eb9345112"
+    }
+  },
+  "limitations": [
+    "Affected test ran once locally; the full 121-browser suite was not rerun locally.",
+    "No build, product-source edits, dependency updates or new service process.",
+    "Previously successful 147-unit and 120 other-browser results belong to the preserved failing CI run, not this focused verification.",
+    "Fresh exact-head CI is pending root publication."
+  ]
+}

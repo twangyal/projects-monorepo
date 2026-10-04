@@ -179,3 +179,17 @@ MOTION_LIBRARY_BASE_URL=http://127.0.0.1:4294 MOTION_LIBRARY_FIXTURES=/tmp/motio
 ```
 
 Existing fixture/output directories are refused. The runner owns a private browser profile and closes only its own Chromium processes; it never starts a build/server or reads an existing user library. `--fixtures-only` checks original inputs but does not verify the app.
+
+### New-project regression readiness (#106)
+
+A later PR run at `191018e5670fda48430a3da0da8c6f35341d6041` passed all 147
+units but exposed one browser-fixture race (120/121): the transformed-drawing
+case filled Scale before asynchronous **New project** admission completed.
+The retained trace showed Scale remaining at 1 during the disabled transition,
+so the later edge drawing was correctly in bounds. The test now waits for the
+actual new-project completion status and enabled Scale, then asserts its 0.1
+input before applying the key. All original geometry, stroke-count and page-error
+assertions remain intact. The affected native case passes against the unchanged
+production bundle; the [first-failure receipt](docs/2026-10-04-new-project-readiness-first.json)
+and [repair verification](docs/2026-10-04-new-project-readiness-verification.json)
+record the evidence. Final published-head CI is recorded separately.

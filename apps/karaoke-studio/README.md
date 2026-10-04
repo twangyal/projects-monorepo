@@ -299,5 +299,41 @@ SRT/ZIP downloads. The native four-second archive preserves all three WAV hashes
 The deadline test advances a controlled browser clock; lifecycle tests dispatch
 page events and do not establish physical BFCache admission. Existing Spleeter
 inference evidence remains separate. See the [local verification receipt](docs/2026-10-04-srt-import-verification.json)
-and [new native evidence](docs/2026-10-04-srt-import-native.json). Maximum artifact
-acceptance and published-head CI are recorded separately when complete.
+and [new native evidence](docs/2026-10-04-srt-import-native.json). Published-head CI
+is recorded separately after its workflows finish.
+
+The separate maximum run imports **200 cues / 20,000 Unicode code points** into
+an original 300-second clip from an exact **128 KiB** UTF-8 File. One extra byte
+is refused without changing the editor. Complete review, one Undo/Redo, manual
+Save and actual SRT export retain every supported literal text value and timing.
+The **158,790,486-byte archive** restores through a real browser File into a new
+clip, then survives a complete service and Chromium restart with exact cues,
+**30,691-byte SRT** and all three original **52,920,044-byte WAVs**.
+
+A separate original six-second clip produces a **193,273-byte H.264/AAC MP4**
+with 144 frames. Fourteen independently decoded cue/gap/boundary samples match
+original glyph and color masks, reject wrong/blank text controls and retain
+non-silent late audio. Minimum sampled glyph coverage is 99.632%; sampled spatial
+precision is 100%. This checks the declared samples, not every lyric in a
+five-minute video. No inference was run. The corrected full acceptance took
+17.533 seconds locally; this is not a speed or peak-memory guarantee.
+
+The first two attempts exposed runner errors: FFmpeg requires `0.5` rather than
+`.5` for the audio sample duration, and Playwright's in-memory upload buffers are
+limited to 50 MiB. The runner now passes the already-downloaded archive path to
+the same native File input. Original fixtures, pixel/text/timing expectations
+and product source stayed unchanged; both failures are retained in the
+[maximum receipt](docs/2026-10-04-srt-import-maximum.json). Source-byte capacity
+uses declared trailing empty lines; the decoded lyrics still reach both limits.
+
+To reproduce with new output directories after building the app:
+
+```sh
+KARAOKE_SRT_FIXTURES=/tmp/karaoke-srt-fixtures node scripts/smoke_srt_import.mjs --fixtures-only
+KARAOKE_SRT_FIXTURES=/tmp/karaoke-srt-fixtures KARAOKE_SRT_OUTPUT=/tmp/karaoke-srt-run CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_srt_import.mjs --run-existing
+```
+
+The runner starts and stops its own local no-model service and browser profile,
+using only its newly generated synthetic audio library. It never opens your
+normal library. Set `KARAOKE_PYTHON` if a different core-test Python executable is
+needed; omit `CHROMIUM_PATH` to use Playwright's installed browser.

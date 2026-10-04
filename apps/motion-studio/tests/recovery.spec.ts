@@ -72,7 +72,10 @@ test('drawing outside transformed artwork bounds fails cleanly and leaves drawin
   page.on('dialog', dialog => dialog.accept());
   await page.goto('/');
   await page.locator('#new-project').click();
+  await expect(page.locator('#message')).toHaveText('New project saved. Your other projects were kept.');
+  await expect(page.locator('#pose-scale')).toBeEnabled();
   await page.locator('#pose-scale').fill('0.1');
+  await expect(page.locator('#pose-scale')).toHaveValue('0.1');
   await page.locator('#set-key').click();
   const box = (await page.locator('#stage').boundingBox())!;
   await page.locator('#stage').click({ position: { x: 10, y: box.height / 2 } });

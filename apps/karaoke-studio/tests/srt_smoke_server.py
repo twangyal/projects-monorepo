@@ -130,7 +130,7 @@ def inspect_video(path, expectations):
         results.append(dict(frame=item['frame'], text=item['text'], active=item['active'], expected=actual,
                             wrongLineRejected=True, blankRejected=True))
     pcm = array.array('h')
-    pcm.frombytes(run(['ffmpeg', '-v', 'error', '-threads', '1', '-ss', '5', '-i', str(path), '-t', '.5', '-vn', '-ac', '1', '-ar', '44100', '-f', 's16le', 'pipe:1'], 44100))
+    pcm.frombytes(run(['ffmpeg', '-v', 'error', '-threads', '1', '-ss', '5', '-i', str(path), '-t', '0.5', '-vn', '-ac', '1', '-ar', '44100', '-f', 's16le', 'pipe:1'], 44100))
     assert len(pcm) > 10000 and max(abs(value) for value in pcm) > 500
     return dict(status='passed', frames=144, duration=6, codecs=['h264', 'aac'], samples=results,
                 lateAudioNonSilent=True, glyphThresholds=target['glyphThresholds'], bytes=path.stat().st_size,

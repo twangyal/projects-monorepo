@@ -3,7 +3,7 @@
   "milestone": "Karaoke Studio #105 reviewed timed SRT import",
   "version": "0.4.0",
   "date": "2026-10-04",
-  "status": "local static and 61 native cases passed; maximum and CI pending",
+  "status": "All local static, 61 native cases, maximum artifacts and initial own push/PR CI passed; final verification-tool corrections and Motion #106 readiness CI pending.",
   "localStatic": {
     "pythonTests": 166,
     "pythonPassed": 166,
@@ -75,14 +75,31 @@
     "parser": "Initial callable stub: 10 failed / 3 negative-only passed; all 13 final parser tests pass.",
     "history": "New raw-spelling case failed before implementation; all 11 history tests pass.",
     "baselineBrowser": "Existing production app completed real saved-clip flow, then failed missing SRT import control (2.9 seconds).",
-    "newNative": "All 17 passed first actual final-source run; no post-run assertion changes."
+    "newNative": "All 17 passed first actual final-source run; no post-run assertion changes.",
+    "maximum": "First run: FFmpeg CLI duration .5 refused; changed only to 0.5. Second: Playwright forbids in-memory File buffers over 50 MiB; changed only to already-downloaded file path. Third full run passed; frozen fixtures/oracles and production source unchanged."
   },
-  "maximumAcceptance": "Pending separate 200-cue/20,000-code-point, exact128KiB input, archive/restart and six-second video run.",
-  "publishedHeadCI": "Pending publication.",
+  "maximumAcceptance": {
+    "receipt": "2026-10-04-srt-import-maximum.json",
+    "passed": true,
+    "durationMs": 17532.688785,
+    "cues": 200,
+    "codePoints": 20000,
+    "inputBytes": 131072,
+    "refusedBytes": 131073,
+    "archiveBytes": 158790486,
+    "exactSrtBytes": 30691,
+    "videoBytes": 193273,
+    "videoFrames": 144,
+    "independentlyCheckedBoundaryFrames": 14,
+    "scope": "Original 300-second SRT/audio/archive persistence; separate six-second rendered video. Actual native File restore and full service/browser restart; no model inference.",
+    "helperStaticChecks": "Corrected runner ESLint, helper Ruff and Python compilation passed."
+  },
+  "publishedHeadCI": "Initial feature head 191018e5670fda48430a3da0da8c6f35341d6041 passes both Karaoke workflows. Twelve of thirteen PR workflows passed; Motion test readiness failure tracked and being repaired in #106. Final published verification-tool corrections pending.",
   "limits": [
     "UTF-8 strict numbered SRT subset, with declared CRLF/BOM/single-pass entity rules; no arbitrary subtitle markup.",
     "Existing exporter rounds to milliseconds and can make submillisecond intervals overlap or exceed fractional duration; strict import refuses those files.",
     "File deadline and page lifecycle cases use controlled clock/events, not physical BFCache or actual ten-second wall delay.",
     "No new inference or subjective model-quality claims; original synthetic PCM only for new media fixtures."
-  ]
+  ],
+  "initialPublishedCIReceipt": "2026-10-04-srt-import-ci-first.json"
 }

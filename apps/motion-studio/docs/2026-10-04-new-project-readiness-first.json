@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "issue": 106,
+  "observedAt": "2026-10-04T20:00:54.182450+00:00",
+  "repository": "twangyal/projects-monorepo",
+  "run": {
+    "id": 37229848335,
+    "jobId": 111517034949,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37229848335",
+    "event": "pull_request",
+    "headSha": "191018e5670fda48430a3da0da8c6f35341d6041",
+    "checkoutSha": "a71809f7124fb187e66add7603aa743185c0deef",
+    "checkoutKind": "synthetic PR merge",
+    "baseSha": "d36b8970b28ff59e694341af772c6c2ee016ccea",
+    "conclusion": "failure"
+  },
+  "checks": {
+    "unit": {
+      "passed": 147,
+      "failed": 0,
+      "milliseconds": 2054.945326
+    },
+    "eslint": "success",
+    "typecheck": "success",
+    "productionBuild": "success",
+    "bundle": "main-Cqx2Ujdw.js",
+    "browser": {
+      "passed": 120,
+      "failed": 1,
+      "total": 121,
+      "seconds": 58.4,
+      "workers": 2,
+      "chromium": "153.0.8010.12",
+      "playwrightChromiumBuild": 1243
+    }
+  },
+  "failure": {
+    "test": "drawing outside transformed artwork bounds fails cleanly and leaves drawing usable",
+    "file": "apps/motion-studio/tests/recovery.spec.ts",
+    "line": 69,
+    "assertionLine": 79,
+    "expected": "#message contains outside the artwork bounds",
+    "actual": "#message is empty; Scale remains 1",
+    "timeoutMilliseconds": 5000
+  },
+  "log": {
+    "path": "/workspace/motion105-ci-first-failure.log",
+    "bytes": 67322,
+    "sha256": "20fcb82de0d245343dd199aa65284724a4e65ae303c8fe38f4165f211db82a65"
+  },
+  "artifact": {
+    "path": "/workspace/attachments/4f0bbb0a-9da0-494b-8465-01d3486db514/motion105-first-failure.zip",
+    "bytes": 1355107,
+    "sha256": "893d47736e415cdeaed4e69bf345636750dca601de6193b9fa759a6a47a3917f",
+    "id": 11313064547,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37229848335/artifacts/11313064547"
+  },
+  "trace": {
+    "member": "recovery-drawing-outside-t-ba20f-y-and-leaves-drawing-usable/trace.zip",
+    "clock": "Playwright monotonic milliseconds",
+    "events": [
+      {
+        "time": 48270.055,
+        "event": "New click command finishes; asynchronous create has not published"
+      },
+      {
+        "time": 48272.056,
+        "event": "Scale fill(0.1) begins"
+      },
+      {
+        "time": 48281.574,
+        "event": "Scale snapshot value 1, enabled, fill target"
+      },
+      {
+        "time": 48287.531,
+        "event": "Scale fill command finishes"
+      },
+      {
+        "time": 48291.152,
+        "event": "Scale snapshot value 1, disabled during final library write"
+      },
+      {
+        "time": 48298.763,
+        "event": "Scale remains 1 and disabled; Set key command pending"
+      },
+      {
+        "time": 48333.322,
+        "event": "New completion snapshot: Untitled motion, Scale 1 enabled, exact New project saved status"
+      },
+      {
+        "time": 48341.954,
+        "event": "Set key completed; status cleared"
+      },
+      {
+        "time": 48427.754,
+        "event": "Stage click completed; no bounds error"
+      },
+      {
+        "time": 53434.782,
+        "event": "Failed assertion snapshot still shows Scale 1"
+      }
+    ]
+  },
+  "diagnosis": {
+    "classification": "test prerequisite/admission race",
+    "cause": "The test edits immediately after asynchronous New click without waiting for completed project creation. Its scale fill overlaps the final write control lock, then Set key acts on the newly published scale-1 project. The edge point is legitimately in bounds at scale 1.",
+    "productDefectEstablished": false,
+    "inputEvidence": "Every relevant recorded DOM snapshot has scale 1. No snapshot shows accepted 0.1 followed by loss; the trace does not include independent input-event instrumentation.",
+    "repair": "Wait for exact unique New completion status and enabled Scale; fill and assert exact raw 0.1 before Set key. Keep all geometry, rejected/recovered stroke-count and pageerror assertions."
+  },
+  "limitations": [
+    "One remote failure investigated; no CI rerun requested.",
+    "Trace evidence establishes missing completion admission and actual scale 1; it does not prove absence of every intermediate native input event.",
+    "No product-source change, browser-result fabrication, fixed sleep or tolerance change."
+  ]
+}
