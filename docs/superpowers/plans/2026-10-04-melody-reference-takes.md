@@ -14,7 +14,7 @@
 
 - Scope only `apps/melody-studio` and root-owned project documentation/tooling. No unrelated project changes.
 - Composition stays version1; complete backup `format:'melody-studio-project', version:1`; document `schemaVersion:1`.
-- Reference PCM mono22050 signed16LE, at most441000 frames/882000 bytes; <=8 active assets;50 prior history edits and64 MiB unique history PCM; complete file12 MiB, document1 MiB.
+- Reference PCM mono22050 signed16LE, at most441000 frames/882000 bytes; <=8 active assets;50 prior history edits and64 MiB unique history PCM; complete file12 MiB, document2 MiB; legacy input remains1 MiB. The reviewed document bound preserves accepted legacy numeric reserialization growth and wrapper overhead (actual RED before correction).
 - Keep existing MIDI review receipts, continuation learner, oscillator/transcription algorithms and current musical bounds. Existing source files may change only where the assigned task explicitly owns them.
 - Root owns updates to old fixture assumptions for the new backup/storage shape, README/catalog/package/workflow/docs/version/Git. Producers own their new tests only; changes to an old test require root coordination.
 - No false lossless, hardware, microphone accuracy or cross-browser sample identity claims. Chromium is the measured browser target.
@@ -38,12 +38,12 @@
 
 **Produces:** All spec types and `REFERENCE_LIMITS`; `notesOnly`, `validateDocument`, `validateAsset`, `validateBundle`, `withComposition`, `ReferenceHistory` with exact spec signatures.
 
-- [ ] Publish callable signatures/types first with deliberately failing placeholders, tell Tasks2–4 owners they may import them.
-- [ ] Write red fixtures for one reference per existing track, missing/extra/sparse/unknown objects, normalized strict Composition, decoded frame relationships, detached bytes and colliding IDs. Run `node --experimental-strip-types --test tests/reference-project.test.ts`; capture meaningful failure.
-- [ ] Implement bounded validators and detached canonicalization. Keep legacy engine validation callable and unchanged.
-- [ ] Add red history cases: notes+reference replacement, remove/delete/duplicate sharing, one undo/redo edit, no-op preserving redo and zero orphan registration,50 prior states, normal oldest eviction, proposed branch frees redo bytes, exact64MiB cap, rejected cap/collision preserving cursor/current/redo, getters cannot mutate stored PCM.
-- [ ] Implement private registry and projected reachability preflight, normal trimming/GC, current-only clear. Use small generated fixtures plus an actual near-limit byte case; no unbounded snapshot copying of asset data.
-- [ ] Run owned tests and scoped ESLint/typecheck. Send exact commands/results and stable API checkpoint; root schedules review.
+- [x] Publish callable signatures/types first with deliberately failing placeholders, tell Tasks2–4 owners they may import them.
+- [x] Write red fixtures for one reference per existing track, missing/extra/sparse/unknown objects, normalized strict Composition, decoded frame relationships, detached bytes and colliding IDs. Run `node --experimental-strip-types --test tests/reference-project.test.ts`; capture meaningful failure.
+- [x] Implement bounded validators and detached canonicalization. Keep legacy engine validation callable and unchanged.
+- [x] Add red history cases: notes+reference replacement, remove/delete/duplicate sharing, one undo/redo edit, no-op preserving redo and zero orphan registration,50 prior states, normal oldest eviction, proposed branch frees redo bytes, exact64MiB cap, rejected cap/collision preserving cursor/current/redo, getters cannot mutate stored PCM.
+- [x] Implement private registry and projected reachability preflight, normal trimming/GC, current-only clear. Use small generated fixtures plus an actual near-limit byte case; no unbounded snapshot copying of asset data.
+- [x] Run owned tests and scoped ESLint/typecheck. Send exact commands/results and stable API checkpoint; root schedules review.
 
 ## Task 2 — Native normalized references and exact comparison windows
 
@@ -53,11 +53,11 @@
 
 **Consumes:** Task1 types/validators. **Produces:** `normalizeReference`, `referenceWindow`, `referenceSamples`, `comparisonComposition`, `cropComparison` exactly as spec.
 
-- [ ] Publish signatures once Task1 types exist. Write red tests for PCM quantization using admitted equal-rate input, detached source/asset copies, exact [start,end) frame rounding, nonfinite/empty/range rejection and silence padding.
-- [ ] Implement native OfflineAudioContext normalization at22050, equal-rate copy, clipping/asymmetric PCM16 quantizer and completed-asset UUID. Preserve the original-rate analysis buffer. Capture metadata is decoded-rate provenance, not encoded/device-rate claims.
-- [ ] Add bounded dependency seams solely for unit lifecycle tests if necessary, without app test globals. Write red cases for pre-abort, abort during rendering, native rejection, deadline and cancelled-native drain refusing concurrent admission; implement owner cleanup.
-- [ ] Test notes comparison at captured tempo with all original notes retained; sustaining note begins before window, note/release ends inside/outside, empty/inaudible track, far later loud note affects peak-limited window, zero-pad beyond render. Compare with existing renderComposition independently of UI.
-- [ ] Run focused unit tests/scoped lint/typecheck. Native resampling tests belong to independent acceptance; give reviewer the exact harness entry and return source freeze before any coordinated browser build.
+- [x] Publish signatures once Task1 types exist. Write red tests for PCM quantization using admitted equal-rate input, detached source/asset copies, exact [start,end) frame rounding, nonfinite/empty/range rejection and silence padding.
+- [x] Implement native OfflineAudioContext normalization at22050, equal-rate copy, clipping/asymmetric PCM16 quantizer and completed-asset UUID. Preserve the original-rate analysis buffer. Capture metadata is decoded-rate provenance, not encoded/device-rate claims.
+- [x] Add bounded dependency seams solely for unit lifecycle tests if necessary, without app test globals. Write red cases for pre-abort, abort during rendering, native rejection, deadline and cancelled-native drain refusing concurrent admission; implement owner cleanup.
+- [x] Test notes comparison at captured tempo with all original notes retained; sustaining note begins before window, note/release ends inside/outside, empty/inaudible track, far later loud note affects peak-limited window, zero-pad beyond render. Compare with existing renderComposition independently of UI.
+- [x] Run focused unit tests/scoped lint/typecheck. Native resampling tests belong to independent acceptance; give reviewer the exact harness entry and return source freeze before any coordinated browser build.
 
 ## Task 3 — Complete backups and atomic durable storage
 
@@ -67,11 +67,11 @@
 
 **Consumes:** Task1 bundle types/validation. **Produces:** `encodeProjectBackup`, `decodeProjectBackup`, `ReferenceStorage`, `REFERENCE_DB_NAME/VERSION`.
 
-- [ ] Write meaningful red independently constructed JSON/PCM fixtures: canonical base64/SHA, one/full8-asset graph, original notes-only v1, strict unknown/duplicate keys, invalid raw UTF-8/depth/nonfinite rejection and exact escaped NUL/lone-surrogate engine-string preservation, invalid padding/size/hash, missing/extra/colliding data and12MiB admission. Do not use the production encoder to author every decoder test.
-- [ ] Implement bounded JSON preflight, detached async hashing, canonical exact key order and output bytes; rawPCM restore never invokes arbitrary audio decoding. Legacy conversion retains engine semantics and every accepted UTF-16 string value. Test literal legacy-to-complete encode/decode with NUL/lone-surrogate titles, names and IDs, including matching binding IDs; JSON escapes preserve these values without permitting malformed raw UTF-8.
-- [ ] Publish storage signatures; write red IDB tests for descriptor+asset all-or-nothing publication, absent vs corrupt/read-failed distinction, immutable invocation snapshot, transaction-complete semantics, serialization failures, close/versionchange/open timeout cleanup and ordered operations.
-- [ ] Implement load using one readonly bounded-key transaction with immutable Blob size admission before PCM arrayBuffer/hash, and save using one readwrite transaction across projects/assets, with all hashes prepared beforehand. Never perform separate asset-GC writes. Fail safely without deleting damaged data on load.
-- [ ] Run focused unit tests/scoped lint/typecheck. Request independent native abort/quota/process-restart gates; tell Task4 owner load null means proven absence and save failures leave memory policy to UI.
+- [x] Write meaningful red independently constructed JSON/PCM fixtures: canonical base64/SHA, one/full8-asset graph, original notes-only v1, strict unknown/duplicate keys, invalid raw UTF-8/depth/nonfinite rejection and exact escaped NUL/lone-surrogate engine-string preservation, invalid padding/size/hash, missing/extra/colliding data and12MiB admission. Do not use the production encoder to author every decoder test.
+- [x] Implement bounded JSON preflight, detached async hashing, canonical exact key order and output bytes; rawPCM restore never invokes arbitrary audio decoding. Legacy conversion retains engine semantics and every accepted UTF-16 string value. Test literal legacy-to-complete encode/decode with NUL/lone-surrogate titles, names and IDs, including matching binding IDs; JSON escapes preserve these values without permitting malformed raw UTF-8.
+- [x] Publish storage signatures; write red IDB tests for descriptor+asset all-or-nothing publication, absent vs corrupt/read-failed distinction, immutable invocation snapshot, transaction-complete semantics, serialization failures, close/versionchange/open timeout cleanup and ordered operations.
+- [x] Implement load using one readonly bounded-key transaction with immutable Blob size admission before PCM arrayBuffer/hash, and save using one readwrite transaction across projects/assets, with all hashes prepared beforehand. Never perform separate asset-GC writes. Fail safely without deleting damaged data on load.
+- [x] Run focused unit tests/scoped lint/typecheck. Request independent native abort/quota/process-restart gates; tell Task4 owner load null means proven absence and save failures leave memory policy to UI.
 
 ## Task 4 — Audible correction and complete-project UI lifecycle
 
@@ -114,3 +114,9 @@ Root assigns the four exclusive producer roles and two independent acceptance ro
 - Root owns legacy-test compatibility updates, shared builds/ports, docs/catalog/version, Git/issues/CI and final measured evidence.
 
 Unchanged baseline: **173 unit cases**, ESLint/typecheck/production build, **35 Chromium151 native cases** in27.6seconds. Test/config/package hashes unchanged; fresh ephemeral37253 server stopped. Evidence `/tmp/melody66-baseline-evidence.json`. Existing4173/4237/4239andother owned servers are preserved. No implementation was released before this reviewed contract.
+
+## Initial core checkpoint
+
+The four producer modules are callable. The root first combined check passed 232 tests, lint, type checking and the production build; an additional connection-lifetime regression was then added. The final focused core gate covers 60 cases (17 project/history, 16 audio, 13 backup/storage, 14 independent numerical cases). Native UI acceptance is still in progress: the first compatibility run passed 28 of 35, exposing a structural redraw error after project replacement and missing contextual error prefixes. The issue remains open; no complete workflow claim is made at this checkpoint.
+
+Two reviewed contract clarifications preserve correctness: cancelled OfflineAudioContext work retains admission until native rendering drains, and the document bound is 2 MiB while legacy raw imports remain 1 MiB. The latter follows a real RED accepted-legacy numeric serialization-growth fixture and a conservative 1,612,877-byte engine/document maximum. Strict duplicate-key/depth rejection applies to legacy file syntax too; compatibility preserves prior saved/exported engine values, not arbitrary ignored extension or duplicate-key syntax.
