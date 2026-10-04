@@ -5,12 +5,13 @@ import {enterXR} from './xr.js';
 import {ProjectHistory,moveShot} from './history.js';
 import {DraftStore} from './draft.js';
 import {createTakeUI} from './take-ui.js';
+import {createSequenceUI} from './sequence-ui.js';
 
 const $=id=>document.getElementById(id),draft=new DraftStore();
 let project=draft.project,selected=0,actor=0,time=0,playing=false,start=0,revision=0,editIntent=0;
 let exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 let endpoint='start',previewMode='film',previewEndpoint='start',storageWarning='';
-let importEpoch=0,pendingImport=false,takeRecording=false,takeUI;
+let importEpoch=0,pendingImport=false,takeRecording=false,takeUI,sequenceUI;
 const unsent=new Set();
 const cueSelection=[0,0];
 const selectors=new Set(['actor','cameraEndpoint','cameraMode','preset','performanceMode']);
@@ -100,6 +101,7 @@ function refresh(resetFields=false){
   $('undo').disabled=busy()||!history.canUndo;$('redo').disabled=busy()||!history.canRedo;
   $('earlier').disabled=busy()||selected===0;$('later').disabled=busy()||selected===project.shots.length-1;
   takeUI?.controls();
+  sequenceUI?.controls();
 }
 // Validate before changing any film, presentation, history or durable state.
 function apply(candidate,{selection=selected,reset=false,cueIndex=null}={}){
@@ -301,5 +303,9 @@ takeUI=createTakeUI({
     if(!owns()||base!==revision||intent!==editIntent||guarded()){status('The scene or take selection changed. The captured film was not opened.');return;}
     editIntent++;stop();apply(captured,{selection:0,reset:true});
   }
+});
+sequenceUI=createSequenceUI({
+  captureScene:()=>{if(guarded()||graphicsLost)return null;stop();return validateProject(project);},
+  captureTake:()=>takeUI.capturedFilm(),sceneBusy:()=>busy()||graphicsLost,download
 });
 refresh(true);if($('status').textContent==='Starting the stage…')status('Ready. Rehearse the starter film or arrange your own scene.');frame=requestAnimationFrame(loop);

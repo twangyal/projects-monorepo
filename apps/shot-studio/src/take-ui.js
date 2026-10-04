@@ -223,5 +223,6 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
   window.addEventListener('pagehide',suspend);window.addEventListener('pageshow',resume);
   controls();$('retry-library').click();
   return {controls,sceneIntentChanged,hasPendingWork:()=>!!unsaved,
+    capturedFilm:()=>{const record=savedRecord();return record?structuredClone(record.metadata.film):null;},
     cancelRecording(reason){if(operation?.kind==='record'){retire();say(reason);}}};
 }
