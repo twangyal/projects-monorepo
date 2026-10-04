@@ -223,3 +223,10 @@ test('a denied startup read remains protected after storage access returns',asyn
   await page.clock.install();await setTitle(page,'Replacement still requires consent');await page.clock.runFor(1000);expect(await readStored(page)).toEqual(original);expect((await backup(page)).title).toBe('Replacement still requires consent');
   page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#message')).toContainText('explicitly replaced');expect((await readStored(page) as {title:string}).title).toBe('Replacement still requires consent');
 });
+
+test('explicitly saving the untouched recovery demo reports a completed native save',async({page})=>{
+  await ready(page);
+  await page.evaluate(async()=>{const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('motion-studio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{await new Promise<void>((resolve,reject)=>{const t=db.transaction('project','readwrite');t.oncomplete=()=>resolve();t.onerror=()=>reject(t.error);t.objectStore('project').put({schemaVersion:99},'current');});}finally{db.close();}});
+  await page.reload();await expect(page.locator('#message')).toContainText('Existing browser data is protected');const current=await backup(page);
+  page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#save-status')).toHaveText('Saved in this browser');expect(await readStored(page)).toEqual(current);
+});

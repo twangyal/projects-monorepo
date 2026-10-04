@@ -302,7 +302,7 @@ el('replace-saved-project').addEventListener('click', async () => {
   if (!window.confirm('Replace the preserved browser record with the current project? Download your current project file first. This replaces the old saved artwork.')) return;
   pause(); busy = true; clearTimeout(saveTimer); saveRevision++; controls();
   const snapshot = structuredClone(project);
-  try { await saveProject(snapshot); recoveryBlocked = false; saveState = 'saved'; tell('Saved project explicitly replaced. Automatic saving is enabled.'); }
+  try { await saveProject(snapshot); recoveryBlocked = false; isDemo = false; saveState = 'saved'; tell('Saved project explicitly replaced. Automatic saving is enabled.'); }
   catch (error) { saveState = 'failed'; tell(`${errorMessage(error)} The original browser record remains protected.`, true); }
   finally { busy = false; updateSaveState(); controls(); }
 });
