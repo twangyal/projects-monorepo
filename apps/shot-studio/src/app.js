@@ -8,7 +8,7 @@ import {DraftStore} from './draft.js';
 const $=id=>document.getElementById(id),draft=new DraftStore();
 let project=draft.project,selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 const status=text=>$('status').textContent=text;
-if(draft.blocked)status('Could not load the saved draft. It has been preserved; automatic saving is blocked. Save your current project and download the unreadable draft before explicitly replacing it.');
+if(draft.blocked)status('Could not load the saved draft. It has been preserved; automatic saving is blocked. '+(draft.raw!==null?'Save your current project and download the unreadable draft before explicitly replacing it.':'No recovery download is available because the saved contents could not be read. Save your current project before explicitly replacing the browser draft.'));
 let renderer,graphicsLost=false;
 const history=new ProjectHistory(project);
 try{renderer=new StageRenderer($('stage'));}catch(e){status(e.message);for(const b of document.querySelectorAll('button'))b.disabled=true;throw e;}
@@ -61,7 +61,7 @@ function download(blob,name){const url=URL.createObjectURL(blob),a=document.crea
 $('rawDraft').onclick=()=>{if(busy()||draft.raw===null)return;download(new Blob([JSON.stringify({schemaVersion:1,kind:'unreadable-shot-studio-draft',storageKey:'shot-studio-v1',raw:draft.raw},null,2)],{type:'application/json'}),'shot-studio-unreadable-draft.json');};
 $('replaceDraft').onclick=()=>{
   if(busy()||!draft.blocked)return;
-  if(!confirm('Replace the saved browser draft with the current scene? Download the unreadable draft and save your current project first. This will replace the old browser draft.')){status('Saved draft was not replaced. Automatic saving remains blocked.');return;}
+  if(!confirm('Replace the saved browser draft with the current scene? '+(draft.raw!==null?'Download the unreadable draft and save your current project first.':'No recovery download is available because the saved contents could not be read. Save your current project first.')+' This will replace the old browser draft.')){status('Saved draft was not replaced. Automatic saving remains blocked.');return;}
   try{draft.replace(project);status('Browser draft explicitly replaced with the current scene. Automatic saving is enabled.');}catch{status('Could not replace the browser draft. The old contents remain protected; save a project backup.');}refresh();
 };
 $('save').onclick=()=>download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),'shot-studio.json');
