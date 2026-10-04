@@ -1,80 +1,58 @@
-import {validateProject,cameraAt,totalDuration,MAX_BYTES,SCHEMA_VERSION} from './model.js';
+import {cameraAt,validateProject} from './model.js';
 
-export const SEQUENCE_LIMITS=Object.freeze({sources:4,clips:20,seconds:60,bytes:300*1024});
-const size=value=>new TextEncoder().encode(value).length;
-const error=()=>Error('Invalid sequence format or limits. Use a complete Shot Studio sequence backup.');
-function shape(value,keys){
-  if(!value||typeof value!=='object'||Array.isArray(value)||![Object.prototype,null].includes(Object.getPrototypeOf(value)))throw error();
-  const own=Reflect.ownKeys(value);
-  if(own.length!==keys.length||own.some(key=>typeof key!=='string'||!keys.includes(key)||!Object.getOwnPropertyDescriptor(value,key).enumerable||!('value' in Object.getOwnPropertyDescriptor(value,key))))throw error();
+export const SEQUENCE_LIMITS = Object.freeze({sources:4,clips:20,seconds:60,sourceBytes:65536,sourceTotalBytes:262144,bytes:327680});
+const encoder=new TextEncoder();
+const bytes=value=>encoder.encode(JSON.stringify(value)).length;
+function fail(message){throw Error(message);}
+function record(value,keys,label){
+  if(!value||typeof value!=='object'||Array.isArray(value)||![Object.prototype,null].includes(Object.getPrototypeOf(value)))fail(`${label} must be a plain data record.`);
+  const descriptors=Object.getOwnPropertyDescriptors(value),own=Reflect.ownKeys(descriptors);
+  if(own.length!==keys.length||own.some(key=>typeof key!=='string'||!keys.includes(key)))fail(`${label} has missing or unsupported fields.`);
+  for(const key of keys){const field=descriptors[key];if(!field||!field.enumerable||!('value' in field))fail(`${label} cannot contain accessors.`);}
+  return value;
 }
-function array(value,max){
-  if(!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype||value.length>max||Reflect.ownKeys(value).length!==value.length+1)throw error();
-  for(let i=0;i<value.length;i++){const d=Object.getOwnPropertyDescriptor(value,i);if(!d?.enumerable||!('value' in d))throw error();}
+function list(value,maximum,label){
+  if(!Array.isArray(value)||Object.getPrototypeOf(value)!==Array.prototype||value.length>maximum||Reflect.ownKeys(value).length!==value.length+1)fail(`${label} must be a bounded dense array.`);
+  for(let i=0;i<value.length;i++){const field=Object.getOwnPropertyDescriptor(value,i);if(!field||!field.enumerable||!('value' in field))fail(`${label} must be a dense array without accessors.`);}
+  return value;
 }
-function name(value,max){
-  if(typeof value!=='string'||!value.trim()||value.length>max||/[\x00-\x1f\x7f]/.test(value)||!value.isWellFormed())throw error();
+function text(value,maximum,label){
+  if(typeof value!=='string'||!value.trim()||value.length>maximum||/[\x00-\x1f\x7f]/.test(value))fail(`${label} must be nonblank text of at most ${maximum} UTF-16 units without controls.`);
+  for(let i=0;i<value.length;i++){
+    const unit=value.charCodeAt(i);
+    if(unit>=0xd800&&unit<=0xdbff){const next=value.charCodeAt(++i);if(!(next>=0xdc00&&next<=0xdfff))fail(`${label} must contain well-formed Unicode.`);}
+    else if(unit>=0xdc00&&unit<=0xdfff)fail(`${label} must contain well-formed Unicode.`);
+  }
+  return value;
 }
-function sourceId(value){if(typeof value!=='string'||!/^[-a-zA-Z0-9_]{1,40}$/.test(value))throw error();}
-function index(value,length){if(!Number.isInteger(value)||value<0||value>=length)throw Error('Select an existing source shot or sequence clip.');}
-export function createSequence(){return {schemaVersion:1,kind:'shot-studio-sequence',title:'New sequence',sources:[],clips:[]};}
-export function validateSequence(value){
-  shape(value,['schemaVersion','kind','title','sources','clips']);
-  if(value.schemaVersion!==1||value.kind!=='shot-studio-sequence')throw error();
-  name(value.title,80);array(value.sources,SEQUENCE_LIMITS.sources);array(value.clips,SEQUENCE_LIMITS.clips);
-  const ids=new Set();
-  const sources=value.sources.map(source=>{
-    shape(source,['id','name','film']);sourceId(source.id);name(source.name,80);
-    if(ids.has(source.id))throw Error('Sequence source IDs must be unique.');ids.add(source.id);
-    // A sequence stores explicit canonical films. Migration belongs to scene import,
-    // never silently to a sequence document or its detached source snapshots.
-    const version=source.film&&typeof source.film==='object'?Object.getOwnPropertyDescriptor(source.film,'schemaVersion'):null;
-    if(!version||!('value' in version)||version.value!==SCHEMA_VERSION)throw error();
-    const film=validateProject(source.film);
-    if(size(JSON.stringify(film))>MAX_BYTES)throw error();
-    return {id:source.id,name:source.name,film};
-  });
-  const clips=value.clips.map(clip=>{
-    shape(clip,['sourceId','shotIndex']);sourceId(clip.sourceId);
-    const source=sources.find(s=>s.id===clip.sourceId);if(!source)throw Error('A clip references a missing sequence source.');
-    index(clip.shotIndex,source.film.shots.length);
-    return {sourceId:clip.sourceId,shotIndex:clip.shotIndex};
-  });
-  const result={schemaVersion:1,kind:'shot-studio-sequence',title:value.title,sources,clips};
-  if(duration(result)>SEQUENCE_LIMITS.seconds)throw Error('Sequences are limited to 60 seconds.');
-  if(size(JSON.stringify(result))>SEQUENCE_LIMITS.bytes)throw error();
-  return result;
+function id(value,label){if(typeof value!=='string'||!/^[-A-Za-z0-9_]{1,64}$/.test(value))fail(`${label} must be an existing ASCII identifier of 1–64 characters.`);return value;}
+function source(value,labelKey='label'){
+  record(value,['id',labelKey,'film'],'Sequence source');
+  const sourceId=id(value.id,'Source ID'),label=text(value[labelKey],80,'Source label');
+  // Embedded sources are already canonical films; migration belongs to importProject.
+  record(value.film,['schemaVersion','title','light','actors','shots'],'Source film');
+  if(value.film.schemaVersion!==3)fail('Copy a canonical schema-3 source film. Import an older scene through the scene importer first.');
+  const film=validateProject(value.film);
+  if(bytes(film)>SEQUENCE_LIMITS.sourceBytes)fail('A copied source film exceeds 64 KiB.');
+  return {id:sourceId,label,film};
 }
-export function importSequence(text){
-  if(typeof text!=='string'||!text.isWellFormed()||size(text)>SEQUENCE_LIMITS.bytes)throw Error('Sequence backup exceeds 300 KiB or contains invalid text.');
-  try{return validateSequence(JSON.parse(text));}catch{throw error();}
+function clip(value,sources){
+  record(value,['id','sourceId','shotIndex','label'],'Sequence clip');
+  const clipId=id(value.id,'Clip ID'),sourceId=id(value.sourceId,'Source ID'),label=text(value.label,40,'Clip label');
+  const target=sources.find(item=>item.id===sourceId);
+  if(!target)fail('Choose an existing source for this clip.');
+  if(!Number.isInteger(value.shotIndex)||value.shotIndex<0||value.shotIndex>=target.film.shots.length)fail('Choose an existing whole shot from the copied source.');
+  return {id:clipId,sourceId,shotIndex:value.shotIndex===0?0:value.shotIndex,label};
 }
-export function captureSource(sequence,source){
-  const next=validateSequence(sequence);next.sources.push(source);return validateSequence(next);
+function legacyClipLabel(shot,index){
+  // Legacy films can retain UTF-16 strings that new UI labels cannot admit.
+  // This generated label is display metadata, never a replacement film name.
+  try{return text(shot.name,40,'Clip label');}catch{return `Shot ${index+1}`;}
 }
-export function appendClip(sequence,sourceId,shotIndex){
-  const next=validateSequence(sequence);next.clips.push({sourceId,shotIndex});return validateSequence(next);
-}
-export function removeClip(sequence,clipIndex){
-  const next=validateSequence(sequence);index(clipIndex,next.clips.length);next.clips.splice(clipIndex,1);return next;
-}
-export function moveClip(sequence,clipIndex,direction){
-  const next=validateSequence(sequence);index(clipIndex,next.clips.length);
-  if(![-1,1].includes(direction))throw Error('Move a clip one place earlier or later.');
-  index(clipIndex+direction,next.clips.length);
-  [next.clips[clipIndex],next.clips[clipIndex+direction]]=[next.clips[clipIndex+direction],next.clips[clipIndex]];
-  return validateSequence(next);
-}
-export function removeSource(sequence,id){
-  const next=validateSequence(sequence),at=next.sources.findIndex(source=>source.id===id);index(at,next.sources.length);
-  if(next.clips.some(clip=>clip.sourceId===id))throw Error('Remove this source’s clips before removing the source.');
-  next.sources.splice(at,1);return next;
-}
+function unique(values,label){const seen=new Set();for(const item of values){if(seen.has(item.id))fail(`${label} IDs must be unique.`);seen.add(item.id);}}
 function duration(sequence){
-  // Admission depends on the durations, not clip order. Sum a canonical order
-  // with compensation so reordering cannot create or conceal a quota excess.
-  // This uses the represented total without rounding durations or an epsilon.
-  const values=sequence.clips.map(clip=>sequence.sources.find(s=>s.id===clip.sourceId).film.shots[clip.shotIndex].duration).sort((a,b)=>a-b);
+  const films=new Map(sequence.sources.map(item=>[item.id,item.film]));
+  const values=sequence.clips.map(item=>films.get(item.sourceId).shots[item.shotIndex].duration).sort((a,b)=>a-b);
   let sum=0,correction=0;
   for(const value of values){
     const next=sum+value;
@@ -83,38 +61,79 @@ function duration(sequence){
   }
   return sum+correction;
 }
-export function sequenceDuration(sequence){return duration(validateSequence(sequence));}
-export function sequenceFrameAt(sequence,seconds){
-  if(typeof seconds!=='number'||!Number.isFinite(seconds))throw Error('Sequence time must be a finite number.');
-  const valid=validateSequence(sequence),total=duration(valid);
-  if(!valid.clips.length)throw Error('Add a clip before previewing an empty sequence.');
-  const bounded=Math.max(0,Math.min(total,seconds));let start=0;
-  for(let i=0;i<valid.clips.length;i++){
-    const clip=valid.clips[i],source=valid.sources.find(s=>s.id===clip.sourceId),shot=source.film.shots[clip.shotIndex],end=start+shot.duration;
-    if(bounded<end||i===valid.clips.length-1){
-      // Explicit final endpoint avoids subtraction drift for fractional durations.
-      // Original source time is not the sequence clock: cues and action phase must
-      // stay on the source film timeline, including when a shot is repeated.
-      const local=bounded===total?shot.duration:Math.max(0,Math.min(shot.duration,bounded-start));
-      const originalStart=source.film.shots.slice(0,clip.shotIndex).reduce((sum,item)=>sum+item.duration,0);
-      const sourceTime=Math.min(totalDuration(source.film),originalStart+local);
-      return {index:i,sourceId:source.id,shotIndex:clip.shotIndex,film:source.film,local,sourceTime,sequenceTime:bounded,camera:cameraAt(shot,local)};
-    }
-    start=end;
-  }
+export function createSequence(){return {schemaVersion:2,kind:'shot-studio-sequence',title:'Scene sequence',sources:[],clips:[]};}
+export function validateSequence(value){
+  record(value,['schemaVersion','kind','title','sources','clips'],'Scene sequence');
+  if(![1,2].includes(value.schemaVersion)||value.kind!=='shot-studio-sequence')fail('Open a supported scene sequence backup.');
+  const title=text(value.title,80,'Sequence title');
+  const sourceInputs=list(value.sources,SEQUENCE_LIMITS.sources,'Sequence sources');
+  const firstSource=sourceInputs[0];
+  const remoteLegacy=value.schemaVersion===1&&firstSource&&typeof firstSource==='object'&&Object.getOwnPropertyDescriptor(firstSource,'name')!==undefined;
+  const sources=sourceInputs.map(value=>source(value,remoteLegacy?'name':'label'));unique(sources,'Source');
+  if(sources.reduce((sum,item)=>sum+bytes(item.film),0)>SEQUENCE_LIMITS.sourceTotalBytes)fail('Copied source films exceed 256 KiB in total.');
+  const clips=list(value.clips,SEQUENCE_LIMITS.clips,'Sequence clips').map((value,index)=>{
+    if(!remoteLegacy)return clip(value,sources);
+    record(value,['sourceId','shotIndex'],'Legacy sequence clip');
+    const target=sources.find(item=>item.id===value.sourceId);
+    if(!target||!Number.isInteger(value.shotIndex)||value.shotIndex<0||value.shotIndex>=target.film.shots.length)fail('Choose an existing whole shot from the copied source.');
+    return clip({id:`legacy-clip-${index+1}`,sourceId:value.sourceId,shotIndex:value.shotIndex,label:legacyClipLabel(target.film.shots[value.shotIndex],value.shotIndex)},sources);
+  });unique(clips,'Clip');
+  const canonical={schemaVersion:2,kind:'shot-studio-sequence',title,sources,clips};
+  if(duration(canonical)>SEQUENCE_LIMITS.seconds)fail('Scene sequences are limited to 60 seconds. Remove a clip first.');
+  if(bytes(canonical)>SEQUENCE_LIMITS.bytes)fail('The complete scene sequence exceeds 320 KiB.');
+  return canonical;
 }
-export class SequenceHistory{
-  #state;#past=[];#future=[];
-  constructor(sequence){this.#state=validateSequence(sequence);}
-  get current(){return structuredClone(this.#state);}
-  get canUndo(){return this.#past.length>0;}
-  get canRedo(){return this.#future.length>0;}
-  commit(sequence){
-    const next=validateSequence(sequence);
-    if(JSON.stringify(next)===JSON.stringify(this.#state))return this.current;
-    this.#past.push(this.#state);if(this.#past.length>30)this.#past.shift();
-    this.#state=next;this.#future=[];return this.current;
+export function importSequence(value){
+  if(typeof value!=='string'||value.length>SEQUENCE_LIMITS.bytes||encoder.encode(value).length>SEQUENCE_LIMITS.bytes)fail('A sequence backup must be text of at most 320 KiB.');
+  let parsed;try{parsed=JSON.parse(value);}catch{fail('The scene sequence backup is not valid JSON.');}
+  if(parsed?.schemaVersion===1&&Array.isArray(parsed.sources)&&parsed.sources.length>0&&Object.hasOwn(parsed.sources[0]??{},'name')&&encoder.encode(value).length>300*1024)fail('An original name-form schema-1 sequence backup exceeds 300 KiB.');
+  return validateSequence(parsed);
+}
+export function sequenceDuration(sequence){return duration(validateSequence(sequence));}
+export function addSequenceSource(sequence,incoming){const copy=validateSequence(sequence);copy.sources.push(source(incoming));return validateSequence(copy);}
+function sourceIndex(sequence,sourceId){id(sourceId,'Source ID');const index=sequence.sources.findIndex(value=>value.id===sourceId);if(index<0)fail('Select an existing sequence source.');return index;}
+export function removeSequenceSource(sequence,sourceId){
+  const copy=validateSequence(sequence),index=sourceIndex(copy,sourceId),used=copy.clips.filter(value=>value.sourceId===sourceId).length;
+  if(used)fail(`This source is used by ${used} clip${used===1?'':'s'}. Remove those clips before removing the source.`);
+  copy.sources.splice(index,1);return validateSequence(copy);
+}
+export function renameSequenceSource(sequence,sourceId,label){const copy=validateSequence(sequence);copy.sources[sourceIndex(copy,sourceId)].label=text(label,80,'Source label');return validateSequence(copy);}
+export function addSequenceClip(sequence,incoming){const copy=validateSequence(sequence);copy.clips.push(clip(incoming,copy.sources));return validateSequence(copy);}
+function clipIndex(sequence,clipId){id(clipId,'Clip ID');const index=sequence.clips.findIndex(value=>value.id===clipId);if(index<0)fail('Select an existing sequence clip.');return index;}
+export function removeSequenceClip(sequence,clipId){const copy=validateSequence(sequence);copy.clips.splice(clipIndex(copy,clipId),1);return validateSequence(copy);}
+export function renameSequenceClip(sequence,clipId,label){const copy=validateSequence(sequence);copy.clips[clipIndex(copy,clipId)].label=text(label,40,'Clip label');return validateSequence(copy);}
+export function moveSequenceClip(sequence,clipId,direction){
+  const copy=validateSequence(sequence),index=clipIndex(copy,clipId);
+  if(direction!==-1&&direction!==1)fail('Move a clip one place earlier or later.');
+  const next=index+direction;if(next<0||next>=copy.clips.length)fail('This clip is already at that end of the sequence.');
+  [copy.clips[index],copy.clips[next]]=[copy.clips[next],copy.clips[index]];return validateSequence(copy);
+}
+function freeze(value){if(value&&typeof value==='object'&&!Object.isFrozen(value)){for(const child of Object.values(value))freeze(child);Object.freeze(value);}return value;}
+function time(value){if(typeof value!=='number'||!Number.isFinite(value))fail('Sequence time must be a finite number.');}
+export function prepareSequence(sequence){
+  const document=freeze(validateSequence(sequence)),sources=new Map();
+  for(const item of document.sources){let prefix=0;const starts=item.film.shots.map(shot=>{const start=prefix;prefix+=shot.duration;return start;});sources.set(item.id,{...item,starts});}
+  const total=duration(document);let prefix=0;
+  const clips=freeze(document.clips.map(item=>{
+    const from=sources.get(item.sourceId),shot=from.film.shots[item.shotIndex],sequenceStart=prefix;prefix+=shot.duration;
+    return {id:item.id,label:item.label,sourceId:item.sourceId,sourceLabel:from.label,shotIndex:item.shotIndex,shotName:shot.name,sequenceStart,sourceStart:from.starts[item.shotIndex],duration:shot.duration};
+  }));
+  function clipFrame(index,localTime){
+    time(localTime);
+    if(!Number.isInteger(index)||index<0||index>=clips.length)fail('Add a shot to the sequence or select an existing clip.');
+    const selected=clips[index],from=sources.get(selected.sourceId),local=Math.max(0,Math.min(selected.duration,localTime));
+    const sequenceTime=index===clips.length-1&&local===selected.duration?total:selected.sequenceStart+local;
+    return freeze({clipIndex:index,clipId:selected.id,clipLocal:local,sequenceTime,sourceId:selected.sourceId,sourceGlobal:selected.sourceStart+local,shotIndex:selected.shotIndex,sourceFilm:from.film,camera:cameraAt(from.film.shots[selected.shotIndex],local)});
   }
-  undo(){if(this.canUndo){this.#future.push(this.#state);this.#state=this.#past.pop();}return this.current;}
-  redo(){if(this.canRedo){this.#past.push(this.#state);this.#state=this.#future.pop();}return this.current;}
+  function frameAt(value){
+    time(value);if(!clips.length)fail('Add a shot to the empty sequence before rehearsal or export.');
+    const bounded=Math.max(0,Math.min(total,value));
+    if(bounded===total||bounded>=prefix)return clipFrame(clips.length-1,clips.at(-1).duration);
+    for(let index=0;index<clips.length;index++){
+      const selected=clips[index],end=selected.sequenceStart+selected.duration;
+      if(bounded<end)return clipFrame(index,Math.max(0,Math.min(selected.duration,bounded-selected.sequenceStart)));
+    }
+    fail('Sequence time is outside its prepared clips.');
+  }
+  return Object.freeze({document,duration:total,clips,frameAt,clipFrame});
 }

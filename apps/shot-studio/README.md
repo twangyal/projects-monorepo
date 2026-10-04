@@ -2,7 +2,7 @@
 
 A local 3D filmmaking sketchbook for idea #7. Stage two block characters in a
 courtyard, choose looping actions or author timed movement, visibility and action cues, adjust lighting, compose static or
-traveling cameras, rehearse or scrub the shot list, retain alternate recorded takes, and export a silent WebM film. Native browser
+traveling cameras, rehearse or scrub the shot list, retain alternate recorded takes, assemble copied scenes into editable sequences, and export silent WebM films. Native browser
 JavaScript/WebGL: no accounts, external assets, services or paid APIs.
 
 ## Run
@@ -166,6 +166,59 @@ video URLs. Late reads, hashing, decoding or saves cannot replace newer fields
 or take selections. No upload, remote service, automatic eviction or destructive
 library reset is included.
 
+## Scene sequences
+
+Use **Scene sequence** to assemble whole shots from up to four complete copied
+films. **Add current scene** copies your committed scene; **Import scene source**
+opens an ordinary project backup. A saved take also offers **Copy editable scene
+to sequence**. These are detached copies: later scene edits, take renames or take
+deletion do not change them. Each source keeps both performers, costumes, light,
+every original shot and all movement cues.
+
+Choose a source shot, then **Add shot to sequence**. Select clips to rename,
+reorder, repeat or remove them. Rename sources without changing their films.
+Remove a source after removing all clips that refer to it. Sequence Undo/Redo
+retains up to 30 prior edits independently of scene history. Finish or explicitly
+discard unsent sequence fields before actions that replace their contents; typing
+alone does not save them. Correct invalid fields without losing their exact text.
+
+**Rehearse sequence**, scrubbing and **Preview clip start/end** use the separate
+sequence canvas. Every clip preserves its original source-film clock, including
+later blocking cues and looping phases. A repeated shot repeats that source clock.
+At a hard cut, scrubbing selects the next clip; explicit End preview still shows
+the selected shot's final camera. The interface displays both sequence and source
+time. The ordinary scene remains separately editable.
+
+**Save sequence** downloads a complete `.shot-sequence.json` with committed films
+and clip order. **Open sequence** and **New sequence** ask before replacing the
+current cut and remain reversible. New backups use sequence schema2; both genuine
+earlier schema1 formats migrate without changing their source films. Merely loading
+an older browser draft never rewrites its saved bytes. Ordinary scene schema3 and
+the take archive format remain independent. A sequence backup contains editable
+scenes, not recorded video.
+
+The separate localStorage draft protects unreadable or changed records. A change
+from another tab refuses the stale save and keeps current work in memory. Download
+the exact preserved record and your current sequence before deciding whether to
+**Replace saved sequence**. Replacement asks for fresh confirmation and checks
+again; failures retain protection. This compares the last observed record before
+writing, but localStorage does not provide an atomic cross-tab transaction. Keep
+portable backups; clearing browser data can remove drafts.
+
+Limits are **4 sources, 20 clips and 60 seconds**, with each complete source film
+at most 64 KiB and complete sequence input/output at most 320 KiB. The original
+name-based schema1 input retains its 300 KiB limit. Titles/source labels allow 80
+UTF-16 units; clip labels allow 40. Reordering uses an order-independent compensated
+duration total, without rounding authored durations or widening the 60-second cap.
+Original chronological cut/source boundaries retain represented-number arithmetic.
+
+**Export sequence WebM** freshly renders the complete cut in real time using the
+existing 960×540 encoder and 32 MiB recording limit. Keep the tab visible; Cancel,
+page departure, hiding the tab or graphics loss stops the owned export. Scene and
+sequence recording cannot run together. The result downloads directly and is not
+added to the ordinary take notebook. This is editable-scene rendering; recorded
+media splicing, trimming, retiming, transitions and audio are not included.
+
 ## Experimental VR
 
 **Enter VR** requests an `immersive-vr` WebXR session with a `local-floor` reference
@@ -302,5 +355,36 @@ The runner writes to a fresh temporary directory by default. Set
 `SHOT_TAKES_OUTPUT` to a new directory to retain artifacts at a chosen location.
 It needs Chromium and FFmpeg, records for a real minute and never builds, starts
 a server, imports producer oracles or uses a remote service.
+
+Scene sequences ([#90](https://github.com/twangyal/projects-monorepo/issues/90))
+pass **232 unit tests**, syntax checks and **71 distinct native browser cases**
+locally: 18 new sequence flows plus all 53 prior cases. Genuine legacy backups,
+unchanged startup records, two-tab protection, actual source-file/current-scene/take
+copying, editable history, raw-field ownership, cancellation and 390px keyboard
+flows are covered. Independent short-video samples have at most 3.408 pixels of
+projection error against the frozen 16-pixel limit; portable schema2 backups are
+byte-identical across three complete browser processes.
+
+A separate maximum probe uses four complete 20-shot films with 256 total authored
+cues, assembling 20 clips and exactly 60 seconds. Its 36,256-byte complete sequence
+survives a full browser-process restart byte-for-byte. The actual 6,386,568-byte
+VP9 video contains 1,395 decoded frames spanning 59.865 seconds; all 40 independent
+source-clock/costume/light/camera/visibility samples and five endpoint previews
+pass. An actual 320 KiB whitespace-padded input succeeds, while one extra byte and
+a 21st clip refuse atomically. This verifies maximum topology, not maximum encoded
+video bytes, peak memory or exact frame rate. Run it against a separately served app:
+
+```sh
+CHROMIUM_PATH=/usr/bin/chromium SHOT_SEQUENCES_BASE_URL=http://127.0.0.1:4173 \
+  node scripts/smoke_scene_sequences.mjs
+```
+
+Use `SHOT_SEQUENCES_OUTPUT` for a new output directory or `--fixtures-only` to
+prepare inputs without a browser. Chromium and FFmpeg are required for the actual
+full-minute recording. [Integration evidence](docs/2026-10-04-scene-sequences-verification.json),
+[native evidence](docs/2026-10-04-scene-sequences-native.json) and
+[maximum evidence](docs/2026-10-04-scene-sequences-maximum.json) retain exact
+hashes, failed attempts, independent thresholds and scope. Published-head CI is
+recorded separately when available. Physical headset acceptance remains open.
 
 Retained-take CI at `6b2efeb3` passed all **146 unit tests, syntax checks and 53 browser tests** in both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37211773638) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37211776395) runs; all thirteen project PR workflows passed. The [CI receipt](docs/2026-10-04-retained-takes-ci.json) records exact checkouts. The [first CI failures](docs/2026-10-04-retained-takes-ci-first.json) remain documented: a test assumed native hashing finished after one event-loop turn, and a persistent-browser download closed for an unconfirmed reason. The corrected fixtures wait for the real database request and inherit the configured browser; all original archive/restart assertions remain.

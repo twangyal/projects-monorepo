@@ -1,7 +1,7 @@
 {
   "issue": 88,
   "date": "2026-10-04",
-  "status": "reconciled local verification passed; exact combined-head CI pending",
+  "status": "reconciled local acceptance and exact published-head push/PR CI passed",
   "integration": {
     "local_repair_commit": "02bc4b0db460a30df4f0ea79ed2c2bf11f55f37d",
     "concurrent_remote_head": "d56778b7bff9667a4c746a2f0794fa095d2bfe61",
@@ -499,5 +499,7 @@
     "Maximum raster/persistence acceptance here is nativeChromium151; CI supplies Chromium153 compatibility evidence separately.",
     "Actual narrow desktop Chromium is not physical touch/browser compatibility.",
     "No peak RAM, general speed, semantic motion or artistic-quality claim."
-  ]
+  ],
+  "ciReceipt": "2026-10-04-drawing-tweens-ci.json",
+  "publishedHead": "f9e0a28457c3f04647b4a8d3bdbc0dfa1f0d57ff"
 }

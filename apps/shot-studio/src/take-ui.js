@@ -4,7 +4,7 @@ import {inspectTakeVideo} from './take-video.js';
 import {TakeStore} from './take-store.js';
 
 // The take notebook owns its controls and media, never scene fields or history.
-export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sceneBusy,recordingChanged,download}){
+export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sceneBusy,recordingChanged,download,copyToSequence}){
   const $=id=>document.getElementById(id);
   let store=new TakeStore(),library={schemaVersion:1,revision:0,records:[]};
   let loaded=false,protectedLibrary=true,selected=null,unsaved=null;
@@ -44,6 +44,7 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
     $('take-details').hidden=!record;
     for(const id of ['play-take','restart-take','stop-take','download-take'])$(id).disabled=!record||working;
     $('restore-take').disabled=!record||working||sceneBusy();
+    $('sequence-add-take').disabled=!saved||working||protectedLibrary||sceneBusy()||!copyToSequence;
     $('rename-take').disabled=!saved||working||protectedLibrary;
     $('delete-take').disabled=!saved||working||protectedLibrary;
     $('take-rename').disabled=!saved||working||protectedLibrary;
@@ -193,6 +194,11 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
     const record=selectedRecord();if(!record||operation||sceneBusy())return;
     const id=selected,token=epoch;
     restoreFilm(record.metadata.film,()=>!operation&&!suspended&&epoch===token&&selected===id&&selectedRecord()===record);
+  };
+  $('sequence-add-take').onclick=()=>{
+    const record=savedRecord();if(!record||operation||protectedLibrary||sceneBusy()||!copyToSequence)return;
+    const id=selected,token=epoch,film=structuredClone(record.metadata.film),label=record.metadata.name;
+    copyToSequence(film,label,()=>!operation&&!suspended&&epoch===token&&selected===id&&savedRecord()===record&&!protectedLibrary);
   };
   $('download-take').onclick=()=>{
     const record=selectedRecord();if(!record)return;
