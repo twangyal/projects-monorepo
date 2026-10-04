@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import ctypes
+import errno
+import sys
 from collections.abc import Callable
 import hmac
 import fcntl
@@ -23,6 +26,9 @@ import time
 from urllib.parse import unquote, urlsplit
 import uuid
 
+from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
+                      MAX_PROCESSING_BYTES, export_archive, import_archive,
+                      read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager
 from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
@@ -34,7 +40,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export|archive|archive-info))?")
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
 _AUDIO_FILES = {"original": "source.wav", "vocals": "vocals.wav", "backing": "backing.wav"}
 
@@ -43,6 +49,38 @@ class RequestError(Exception):
     def __init__(self, status: int, message: str):
         self.status, self.message = status, message
         super().__init__(message)
+
+
+def _rename_function():
+    if sys.platform != "linux":
+        raise RequestError(503, "Archive restore requires Linux atomic no-replace support.")
+    try:
+        function = ctypes.CDLL(None, use_errno=True).renameat2
+    except (AttributeError, OSError):
+        raise RequestError(503, "Archive restore requires Linux renameat2 support.") from None
+    function.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    function.restype = ctypes.c_int
+    return function
+
+
+def _require_archive_restore_support() -> None:
+    function = _rename_function()
+    # Invalid descriptors/names probe syscall availability without changing files.
+    if function(-1, b"", -1, b"", 1) != 0 and ctypes.get_errno() in {errno.ENOSYS, errno.EINVAL, errno.EOPNOTSUPP}:
+        raise RequestError(503, "Archive restore requires kernel atomic no-replace support.")
+
+
+def _rename_noreplace(source_fd: int, source_name: str, destination_fd: int, destination_name: str) -> None:
+    if source_name != "completed" or not re.fullmatch(_ID, destination_name):
+        raise ValueError("Invalid archive publication names")
+    function = _rename_function()
+    if function(source_fd, source_name.encode("ascii"), destination_fd, destination_name.encode("ascii"), 1) != 0:
+        code = ctypes.get_errno()
+        if code in {errno.EEXIST, errno.ENOTEMPTY}:
+            raise RuntimeError("Restore destination already exists; existing clips were preserved.")
+        if code in {errno.ENOSYS, errno.EINVAL, errno.EOPNOTSUPP}:
+            raise RuntimeError("This filesystem does not support atomic no-replace restore.")
+        raise RuntimeError("The restored clip could not be published; existing clips were preserved.")
 
 
 def _atomic_json(path: Path, value: dict, *, directory_fd=None):
@@ -120,6 +158,9 @@ class KaraokeServer(ThreadingHTTPServer):
         self.lock = threading.RLock()
         self.jobs = JobManager(self.lock)
         self.uploading = False
+        self._closing = False
+        self._upload_connection = None
+        self._upload_done = threading.Condition(self.lock)
         self.projects_dir = self.data_dir / "projects"
         self.work_dir = self.data_dir / ".jobs"
         self.trash_dir = self.data_dir / ".trash"
@@ -273,6 +314,18 @@ class KaraokeServer(ThreadingHTTPServer):
             return False
 
     def server_close(self):
+        with self.lock:
+            self._closing = True
+            connection = self._upload_connection
+        if connection is not None:
+            try:
+                connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+        # Wake a reserved body read and retain storage until its owned cleanup.
+        with self._upload_done:
+            while self.uploading:
+                self._upload_done.wait(1)
         try:
             self.jobs.shutdown()
         finally:
@@ -359,8 +412,145 @@ class KaraokeServer(ThreadingHTTPServer):
 
         return self.jobs.start(project_id, "separate", work, lambda: self.cleanup_work(work_dir))
 
+    def _archive_space(self):
+        self.check_storage()
+        space = os.fstatvfs(self._directory_fds[self.work_dir])
+        if space.f_bavail * space.f_frsize < MIN_FREE_BYTES:
+            raise RequestError(507, "At least 1 GiB of free local disk space is required for an archive job.")
+
+    def archive_info(self, project_id):
+        fd = self._open_project(project_id)
+        try:
+            origin = read_archive_origin(fd)
+            try:
+                metadata = os.open('processing.json', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fd)
+            except FileNotFoundError:
+                supplied = False
+            else:
+                try:
+                    info = os.fstat(metadata)
+                    if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= MAX_PROCESSING_BYTES:
+                        raise ArchiveError('Stored processing metadata is invalid or oversized.')
+                    supplied = True
+                finally:
+                    os.close(metadata)
+        except (ArchiveError, OSError):
+            raise RequestError(409, 'Saved provenance is unavailable. Restore valid metadata before backing up this clip.') from None
+        finally:
+            os.close(fd)
+        return dict(imported=origin is not None, processingSupplied=supplied,
+                    origin='imported-declared' if origin else 'local-library',
+                    sourceProjectId=origin['sourceProjectId'] if origin else None,
+                    sourceRevision=origin['sourceRevision'] if origin else None,
+                    archiveSha256=origin['archiveSha256'] if origin else None)
+
+    def _archive_output(self, parent_fd, name, identity, *, directory=False):
+        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+        if directory:
+            flags |= os.O_DIRECTORY
+        fd = os.open(name, flags, dir_fd=parent_fd)
+        try:
+            info = os.fstat(fd)
+            if ((not stat.S_ISDIR(info.st_mode) if directory else
+                 not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= MAX_ARCHIVE_BYTES)
+                    or self._identity(info) != identity):
+                raise RuntimeError('Completed archive output changed before publication.')
+            self._archive_entry(parent_fd, name, identity)
+            return fd
+        except BaseException:
+            os.close(fd)
+            raise
+
+    def _archive_entry(self, parent_fd, name, identity):
+        if self._identity(os.stat(name, dir_fd=parent_fd, follow_symlinks=False)) != identity:
+            raise RuntimeError('Completed archive output changed before publication.')
+
+    def start_archive_export(self, project):
+        if self._closing or self.jobs.busy() or self.uploading:
+            raise JobBusy('A media job or upload is already running.')
+        project = validate_project(project)
+        if not 0 <= project['revision'] <= MAX_PORTABLE_REVISION:
+            raise RequestError(400, 'Saved revision exceeds the portable archive limit.')
+        project_fd = self._open_project(project['id'])
+        work_dir = None
+        work_fd = None
+        output_fd = None
+        def cleanup():
+            nonlocal output_fd, work_fd, project_fd
+            for fd in (output_fd, work_fd, project_fd):
+                if fd is not None:
+                    os.close(fd)
+            output_fd = work_fd = project_fd = None
+            if work_dir is not None:
+                self.cleanup_work(work_dir)
+        try:
+            work_dir = self.new_work()
+            work_fd = self._open_work(work_dir)
+            def work(cancel, stage):
+                nonlocal output_fd
+                result = export_archive(project, project_fd, work_fd, cancel, stage)
+                output_fd = self._archive_output(work_fd, 'export.karaoke.zip', result.output_identity)
+                def publish():
+                    self._archive_space()
+                    if cancel.is_set():
+                        raise RuntimeError('Archive publication was cancelled.')
+                    if self.project(project['id'])['revision'] != project['revision']:
+                        raise RuntimeError('Saved project changed; back up the saved clip again.')
+                    current = self._open_work(work_dir)
+                    os.close(current)
+                    if self._identity(os.fstat(project_fd)) != self._project_identities.get(project['id']):
+                        raise RuntimeError('Saved project directory changed before publication.')
+                    self._archive_entry(work_fd, 'export.karaoke.zip', result.output_identity)
+                    os.replace('export.karaoke.zip', 'archive.karaoke.zip',
+                               src_dir_fd=work_fd, dst_dir_fd=project_fd)
+                    return f'/api/projects/{project["id"]}/archive'
+                return publish
+            return self.jobs.start(project['id'], 'archive-export', work, cleanup)
+        except BaseException:
+            cleanup()
+            raise
+
+    def start_archive_import(self, work_dir):
+        project_id = uuid.uuid4().hex
+        work_fd = self._open_work(work_dir)
+        completed_fd = None
+        def cleanup():
+            if completed_fd is not None:
+                os.close(completed_fd)
+            os.close(work_fd)
+            self.cleanup_work(work_dir)
+        def work(cancel, stage):
+            nonlocal completed_fd
+            result = import_archive(work_fd, project_id, cancel, stage)
+            project = validate_project(result.project)
+            if project['id'] != project_id:
+                raise RuntimeError('Restored project identity is invalid.')
+            completed_fd = self._archive_output(work_fd, 'completed', result.output_identity, directory=True)
+            identity = self._identity(os.fstat(completed_fd))
+            def publish():
+                self._archive_space()
+                if cancel.is_set():
+                    raise RuntimeError('Archive publication was cancelled.')
+                if len(self.projects) >= MAX_PROJECTS:
+                    raise RuntimeError('Project storage is full; existing clips were preserved.')
+                current = self._open_work(work_dir)
+                os.close(current)
+                parent = self._directory_fds[self.projects_dir]
+                self._archive_entry(work_fd, 'completed', identity)
+                _rename_noreplace(work_fd, 'completed', parent, project_id)
+                # All filesystem validation and acquisition precede publication.
+                self.projects[project_id] = project
+                self._project_identities[project_id] = identity
+                return f'/api/projects/{project_id}'
+            return publish
+        try:
+            return self.jobs.start(project_id, 'archive-import', work, cleanup)
+        except BaseException:
+            cleanup()
+            raise
+
     def start_export(self, project: dict):
-        if self.uploading:
+        if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before exporting.")
         project = validate_project(project)
         if not project["cues"]:
@@ -577,7 +767,12 @@ class Handler(BaseHTTPRequestHandler):
         stem = re.sub(r"[^A-Za-z0-9._ -]", "_", title).strip(" .")[:80] or "karaoke"
         return f'attachment; filename="{stem}{suffix}"'
 
-    def _file(self, path: Path, content_type, *, disposition=None):
+    def _file(self, path: Path, content_type, *, disposition=None, source=None):
+        if source is None:
+            source = self._open_file(path)
+        self._stream_file(source, content_type, disposition=disposition)
+
+    def _open_file(self, path):
         with self.server.lock:
             if path.parent.parent == self.server.projects_dir:
                 try:
@@ -588,6 +783,9 @@ class Handler(BaseHTTPRequestHandler):
                 if path.is_symlink() or not path.is_file():
                     raise RequestError(404, "Requested media file is not available.")
                 source = path.open("rb")
+        return source
+
+    def _stream_file(self, source, content_type, *, disposition=None):
         with source:
             total = os.fstat(source.fileno()).st_size
             start, end, status = 0, total - 1, 200
@@ -658,9 +856,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/session" and read:
             self._json(dict(token=server.token, modelReady=server.model_ready(),
                             maxDuration=MAX_DURATION, maxProjects=MAX_PROJECTS,
-                            maxUploadBytes=MAX_UPLOAD, maxCues=MAX_CUES,
+                            maxUploadBytes=MAX_UPLOAD, maxArchiveBytes=MAX_ARCHIVE_BYTES, maxCues=MAX_CUES,
                             maxLyricChars=MAX_LYRIC_CHARS,
                             activeJob=server.jobs.active()))
+            return
+        if path == "/api/archives" and self.command == "POST":
+            self._upload(archive=True)
             return
         if path == "/api/projects":
             server.check_storage()
@@ -703,6 +904,11 @@ class Handler(BaseHTTPRequestHandler):
             value = None
             if self.command == "PUT" and resource is None:
                 value = self._read_json()
+            elif self.command == "POST" and resource == "archive":
+                value = self._read_json()
+                if (set(value) != {"revision"} or type(value["revision"]) is not int
+                        or not 0 <= value["revision"] <= MAX_PORTABLE_REVISION):
+                    raise RequestError(400, "Provide one portable saved revision when backing up.")
             elif self.command == "POST" and resource == "export":
                 if self._read_json():
                     raise RequestError(400, "Export takes an empty JSON object.")
@@ -725,6 +931,27 @@ class Handler(BaseHTTPRequestHandler):
                     finally:
                         os.close(fd)
                     server.projects[project_id] = updated
+                if self.command == "POST" and resource == "archive":
+                    if value['revision'] != project['revision']:
+                        raise RequestError(409, 'Saved revision changed; back up the current saved clip.')
+                    job = server.start_archive_export(project)
+                if read and resource == 'archive-info':
+                    archive_info = server.archive_info(project_id)
+                if read and resource == 'archive':
+                    try:
+                        archive_source = server.project_file(project_id, 'archive.karaoke.zip')
+                    except FileNotFoundError:
+                        raise RequestError(404, 'Back up the saved clip before downloading an archive.') from None
+                    try:
+                        info = os.fstat(archive_source.fileno())
+                        if not 0 < info.st_size <= MAX_ARCHIVE_BYTES:
+                            raise ArchiveError('Cached archive size is invalid.')
+                        captured = read_archive_project(archive_source)
+                        if captured['id'] != project_id or captured['revision'] != project['revision']:
+                            raise ArchiveError('Cached saved revision is stale.')
+                    except (ArchiveError, OSError, ValueError):
+                        archive_source.close()
+                        raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project)
                 if read and resource == "video":
@@ -746,6 +973,16 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.command == "PUT" and resource is None:
                 self._json(updated)
+                return
+            if read and resource == 'archive-info':
+                self._json(archive_info)
+                return
+            if read and resource == 'archive':
+                self._file(directory / 'archive.karaoke.zip', 'application/zip',
+                           disposition=self._attachment(project['title'], '.karaoke.zip'), source=archive_source)
+                return
+            if self.command == 'POST' and resource == 'archive':
+                self._json({'job': job}, 202)
                 return
             if self.command == "POST" and resource == "export":
                 self._json({"job": job}, 202)
@@ -773,14 +1010,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         raise RequestError(404, "Endpoint not found.")
 
-    def _upload(self):
+    def _upload(self, *, archive=False):
         server = self.server
         server.check_storage()
-        length = self._length(MAX_UPLOAD)
+        if archive:
+            _require_archive_restore_support()
+            if self.headers.get('Content-Type', '').split(';', 1)[0].strip().lower() not in {'application/zip', 'application/octet-stream'}:
+                raise RequestError(400, 'Use application/zip or application/octet-stream for an archive.')
+        length = self._length(MAX_ARCHIVE_BYTES if archive else MAX_UPLOAD)
         with server.lock:
-            if not server.model_ready():
+            if not archive and not server.model_ready():
                 raise RequestError(503, "The separation model is unavailable. Run explicit model setup first.")
-            if server.jobs.busy() or server.uploading:
+            if server._closing or server.jobs.busy() or server.uploading:
                 raise JobBusy("A media job is already running. Wait or cancel it first.")
             if len(server.projects) >= MAX_PROJECTS:
                 raise RequestError(409, "The 20-project storage limit was reached; existing projects are preserved.")
@@ -794,16 +1035,18 @@ class Handler(BaseHTTPRequestHandler):
         title = Path(name).stem[:100].strip() or "Untitled clip"
         if "\0" in title:
             raise RequestError(400, "Audio name must not contain NUL bytes.")
-        work_dir = server.new_work()
-        upload = work_dir / "input.audio"
+        work_dir = None
         submitted = False
         reserved = False
         try:
             with server.lock:
-                if server.jobs.busy() or server.uploading:
+                if server._closing or server.jobs.busy() or server.uploading:
                     raise JobBusy("A media job or upload is already running.")
                 server.uploading = True
+                server._upload_connection = self.connection
                 reserved = True
+                work_dir = server.new_work()
+            upload = work_dir / ("input.karaoke.zip" if archive else "input.audio")
             work_fd = server._open_work(work_dir)
             try:
                 upload_fd = os.open(upload.name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
@@ -833,15 +1076,25 @@ class Handler(BaseHTTPRequestHandler):
             with server.lock:
                 if len(server.projects) >= MAX_PROJECTS:
                     raise RequestError(409, "Project storage is full; existing projects are preserved.")
-                job = server.upload(title, upload, work_dir)
+                if server._closing:
+                    raise JobBusy("The service is shutting down; no upload was published.")
+                if archive:
+                    server._archive_space()
+                else:
+                    server.check_storage()
+                job = server.start_archive_import(work_dir) if archive else server.upload(title, upload, work_dir)
                 submitted = True
             self._json({"job": job}, 202)
         finally:
-            if reserved:
-                with server.lock:
-                    server.uploading = False
-            if not submitted:
-                server.cleanup_work(work_dir)
+            try:
+                if not submitted and work_dir is not None:
+                    server.cleanup_work(work_dir)
+            finally:
+                if reserved:
+                    with server._upload_done:
+                        server.uploading = False
+                        server._upload_connection = None
+                        server._upload_done.notify_all()
 
 
 def create_server(

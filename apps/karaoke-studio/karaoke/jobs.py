@@ -59,7 +59,7 @@ class JobManager:
 
     def exporting(self, project_id: str) -> bool:
         with self.lock:
-            return bool(self._active and self._active.kind == "export"
+            return bool(self._active and self._active.kind in {"export", "archive-export"}
                         and self._active.project_id == project_id)
 
     def get(self, job_id: str) -> dict:
@@ -83,7 +83,7 @@ class JobManager:
         work: Callable[[threading.Event, Callable[[str], None]], Callable[[], str | None]],
         cleanup: Callable[[], None] | None = None,
     ) -> dict:
-        if kind not in {"separate", "export"}:
+        if kind not in {"separate", "export", "archive-export", "archive-import"}:
             raise ValueError("Unknown media job kind")
         with self.lock:
             if self.busy():

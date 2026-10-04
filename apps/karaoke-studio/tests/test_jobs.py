@@ -30,3 +30,29 @@ class JobLifecycleTests(unittest.TestCase):
         next_job = manager.start("b" * 32, "separate", lambda *_: lambda: None)
         manager._jobs[next_job["id"]].thread.join(2)
         self.assertEqual(manager.get(next_job["id"])["status"], "complete")
+
+
+class ArchiveJobTests(unittest.TestCase):
+    def test_archive_kinds_share_worker_and_export_edit_protection(self):
+        for kind in ('archive-export', 'archive-import'):
+            with self.subTest(kind=kind):
+                manager = JobManager()
+                ready, finish = threading.Event(), threading.Event()
+                def work(cancel, stage):
+                    ready.set()
+                    finish.wait(2)
+                    return lambda: '/api/projects/' + 'a' * 32
+                try:
+                    job = manager.start('a' * 32, kind, work)
+                    self.assertTrue(ready.wait(1))
+                    self.assertEqual(manager.exporting('a' * 32), kind == 'archive-export')
+                    with self.assertRaises(JobBusy):
+                        manager.start('b' * 32, 'export', lambda *_: lambda: None)
+                    manager.cancel(job['id'])
+                    finish.set()
+                    manager._jobs[job['id']].thread.join(2)
+                    self.assertEqual(manager.get(job['id'])['status'], 'cancelled')
+                    self.assertNotIn('resultUrl', manager.get(job['id']))
+                finally:
+                    finish.set()
+                    manager.shutdown()
