@@ -4,7 +4,7 @@ import {
   MAX_PROJECT_BYTES, MAX_STROKES, MAX_STROKE_POINTS, MAX_TOTAL_POINTS,
   type Project, type Point, type Stroke, type Placement,
 } from './model.ts';
-import { garmentSvg, previewSize, previewSvg, exportPng } from './graphics.ts';
+import { garmentSvg, previewSize, previewSvg, exportPng, exportGarmentSvg } from './graphics.ts';
 import { importPhoto, validatePhoto } from './media.ts';
 import { loadProject, saveProject } from './storage.ts';
 
@@ -37,6 +37,7 @@ app.innerHTML = `
         <div class="sketch-paper"><div id="sketch-surface" role="img" aria-label="Garment sketch canvas" aria-describedby="sketch-help" tabindex="0"></div><span class="paper-label">YOUR BLANK CANVAS</span></div>
         <div class="canvas-caption"><p id="sketch-help">Draw with a mouse, pen, or touch. Your marks stay inside the garment.</p><span id="stroke-count">0 strokes</span></div><p class="fine-print">Reshaping the tee keeps marks in the same canvas position; marks outside the new outline are clipped.</p>
         <button id="garment-png" class="export-button">Export garment PNG <span aria-hidden="true">↓</span></button><p class="export-detail">Transparent background · ready for your moodboard</p>
+        <button id="garment-svg" class="export-button">Export garment SVG <span aria-hidden="true">↓</span></button><p class="export-detail">Editable vector shapes · garment and sketch only</p>
       </section>
       <section class="preview-panel panel" aria-labelledby="preview-heading"><div class="panel-heading"><span class="step">03</span><h3 id="preview-heading">See it in context</h3></div>
         <div class="photo-toolbar"><label class="button quiet file-button">Choose a photo<input id="photo-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload body photo"></label><button id="sample" class="text-button">Use sample silhouette</button></div>
@@ -300,13 +301,19 @@ element('backup').addEventListener('click', () => {
   try { download(new Blob([serializeProject(project)], { type: 'application/json' }), '.json'); message('Project backup downloaded, including your local photo and sketch.'); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not create backup.', true); }
 });
+element('garment-svg').addEventListener('click', () => {
+  if (exportBusy) return;
+  cancelGesture();
+  try { download(exportGarmentSvg(project), '-garment.svg'); message('Garment SVG downloaded with editable vector shapes. Photos, placement and notes stay in the project backup.'); }
+  catch (error) { message(`Could not export SVG: ${error instanceof Error ? error.message : 'Invalid garment.'}`, true); }
+});
 for (const [id, kind] of [['garment-png', 'garment'], ['preview-png', 'preview']] as const) element(id).addEventListener('click', async () => {
   if (exportBusy) return;
   cancelGesture(); exportBusy = true; updateControls();
-  element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = true;
+  element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = element<HTMLButtonElement>('garment-svg').disabled = true;
   try { download(await exportPng(validateProject(project), kind), `-${kind}.png`); message(`${kind === 'garment' ? 'Garment' : 'Preview'} PNG downloaded.`); }
   catch (error) { message(`Could not export PNG: ${error instanceof Error ? error.message : 'Image rendering failed.'}`, true); }
-  finally { exportBusy = false; element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = false; updateControls(); }
+  finally { exportBusy = false; element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = element<HTMLButtonElement>('garment-svg').disabled = false; updateControls(); }
 });
 
 element('replace-saved').addEventListener('click', async () => {
