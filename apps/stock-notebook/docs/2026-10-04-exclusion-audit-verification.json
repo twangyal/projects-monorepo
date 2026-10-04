@@ -75,7 +75,8 @@
       "lint": "passed",
       "typecheck": "passed",
       "productionBuild": "passed",
-      "remoteCI": "pending"
+      "remoteCI": "success",
+      "workflow": "https://github.com/twangyal/projects-monorepo/actions/runs/37171297057"
     },
     "screeningDifferential": {
       "sourceBefore": "b0ecf950181eb048afd7bebb8f067ff1d1906205",
@@ -86,6 +87,7 @@
       "identicalRejections": 39,
       "auditedLatestDecisions": 23532,
       "node": "v24.19.0"
-    }
+    },
+    "sourceCommit": "66125d08001901f85a39310fe2d1854e7a2cf523"
   }
 }
