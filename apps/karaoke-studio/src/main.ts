@@ -4,8 +4,9 @@ import { LyricHistory, type LyricDraft } from './draft-history.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
-interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; activeJob?: Job | null }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
+interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
+interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
   <a class="skip" href="#workspace">Skip to workspace</a>
@@ -20,6 +21,14 @@ app.innerHTML = `
         <p class="fine">The model estimates vocals and backing locally. Listen for remaining vocals or altered instruments before exporting.</p>
         <div class="divider"></div><label class="field">Saved clips<select id="projects"><option value="">Choose a saved clip</option></select></label><p id="library-count" class="fine">Projects are saved in your local studio folder.</p>
         <div id="clip-details" hidden><label class="field">Clip title<input id="title" type="text"></label><div class="clip-meta"><span id="duration">0:00</span><span>44.1 kHz · stereo</span></div><button id="backing-download" class="full">Download backing WAV <span aria-hidden="true">↓</span></button></div>
+        <section class="archive-panel" aria-labelledby="archive-heading"><h4 id="archive-heading">Take your saved clip with you</h4>
+        <p id="archive-status" class="fine" role="status">Choose a saved clip to back it up. Unsaved lyric edits are not included.</p>
+        <div class="archive-actions"><button id="archive-backup" class="quiet" disabled>Back up saved clip</button><a id="archive-download" class="archive-download" download hidden>Download saved archive</a></div>
+        <label class="field archive-import">Import project archive<input id="archive-file" type="file" accept=".karaoke.zip,.zip,application/zip" disabled></label>
+        <p class="fine">A .karaoke.zip restores saved lyrics and all three audio tracks as a new clip. No model setup is needed. Archives contain private, unencrypted audio and lyrics.</p>
+        <button id="archive-upload-cancel" class="text-button" hidden>Cancel archive upload</button>
+        <button id="archive-recheck" class="text-button">Check restore status</button>
+        <p id="archive-result" class="fine" role="status" hidden></p><button id="open-imported" class="quiet" hidden>Open imported clip</button></section>
         <button id="delete-project" class="text-button full" disabled>Delete selected clip</button><div class="local-note"><strong>Room for the complete song.</strong><p>Import complete songs up to 5 minutes. Local CPU separation and video export can take several minutes; cancellation remains available while processing.</p></div>
       </aside>
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><span class="step">02</span><h3 id="stage-heading">Listen & preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
@@ -61,17 +70,65 @@ let projectGeneration = 0;
 let loadedProjectGeneration = 0;
 let editGeneration = 0;
 let mediaGeneration = 0;
+let archiveInfo: ArchiveInfo | null = null;
+let archiveInfoState: 'none' | 'loading' | 'ready' | 'error' = 'none';
+let archiveInfoEpoch = 0;
+let archiveChecking = false;
+let archiveOperation = 0;
+let archiveUpload: AbortController | null = null;
+let restoreUncertain = false;
+let importedResult: { id: string; title: string } | null = null;
+let completedImportId: string | null = null;
+const archiveCaches = new Map<string, number>();
+let pollEpoch = 0;
+let pollInFlight: string | null = null;
+let ownedJob = false;
+let archiveJobRevision: number | null = null;
+interface ArchiveFocus {
+  node: HTMLInputElement | HTMLTextAreaElement;
+  projectId: string;
+  generation: number;
+  start: number | null;
+  end: number | null;
+  direction: 'forward' | 'backward' | 'none' | null;
+}
+let archiveFocus: ArchiveFocus | null = null;
+function rememberArchiveFocus() {
+  const node = document.activeElement;
+  if (!working || !(node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)
+      || !(node.id === 'title' || node.id === 'lyric-draft' || element('cue-list').contains(node))) return;
+  archiveFocus = { node, projectId: working.id, generation: loadedProjectGeneration,
+    start: node.selectionStart, end: node.selectionEnd, direction: node.selectionDirection };
+}
+function restoreArchiveFocus() {
+  if (!archiveFocus || currentJob || requestingJob || loading || saving || archiveChecking) return;
+  const saved = archiveFocus; archiveFocus = null;
+  if (working?.id !== saved.projectId || loadedProjectGeneration !== saved.generation
+      || !saved.node.isConnected || saved.node.disabled
+      || (document.activeElement !== document.body && document.activeElement !== saved.node)) return;
+  saved.node.focus({ preventScroll: true });
+  if (saved.start !== null && saved.end !== null) saved.node.setSelectionRange(saved.start, saved.end, saved.direction ?? 'none');
+}
+// Disabling an editor can move focus to body. Restore only that involuntary
+// loss; a user's later focus or pointer choice always wins.
+document.addEventListener('focusin', event => {
+  if (archiveFocus && event.target !== archiveFocus.node && event.target !== document.body) archiveFocus = null;
+});
+document.addEventListener('pointerdown', event => {
+  if (archiveFocus && event.target !== archiveFocus.node) archiveFocus = null;
+});
+window.addEventListener('blur', () => { archiveFocus = null; });
 const timeline = mountTimeline(element('timing-workbench'), {
   onSeek(time) { if (working) { audio.currentTime = time; draw(); } },
   onSelectCue(index) {
     for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('timing-selected', Number(row.dataset.cue) === index);
   },
   onGestureStart() {
-    if (!working || currentJob || loading || requestingJob || saving || timingError(working.cues, working.duration)) return false;
+    if (!working || currentJob || loading || requestingJob || saving || archiveChecking || timingError(working.cues, working.duration)) return false;
     lyricHistory?.endGroup(); return true;
   },
   onCommitBoundary(change) {
-    if (!working || currentJob || loading || requestingJob || saving || change.projectId !== working.id || change.projectGeneration !== loadedProjectGeneration || change.editGeneration !== editGeneration) return false;
+    if (!working || currentJob || loading || requestingJob || saving || archiveChecking || change.projectId !== working.id || change.projectGeneration !== loadedProjectGeneration || change.editGeneration !== editGeneration) return false;
     const cue = working.cues[change.cueIndex];
     if (!cue || !Object.is(cue[change.boundary], change.before)) return false;
     proposeBoundary(working.cues, working.duration, change.cueIndex, change.boundary, change.after);
@@ -83,7 +140,7 @@ const timeline = mountTimeline(element('timing-workbench'), {
   },
 });
 function updateTimeline() {
-  timeline.setEditor(working ? { projectId: working.id, projectGeneration: loadedProjectGeneration, editGeneration, duration: working.duration, cues: working.cues, busy: !!currentJob || loading || requestingJob || saving } : null);
+  timeline.setEditor(working ? { projectId: working.id, projectGeneration: loadedProjectGeneration, editGeneration, duration: working.duration, cues: working.cues, busy: !!currentJob || loading || requestingJob || saving || archiveChecking } : null);
 }
 
 
@@ -110,7 +167,7 @@ function validateWorking(): string {
   } catch (error) { return error instanceof Error ? error.message : 'Check the lyric timing.'; }
 }
 function controls() {
-  const busy = currentJob !== null || loading || requestingJob, invalid = validateWorking();
+  const busy = currentJob !== null || loading || requestingJob || archiveChecking, invalid = validateWorking();
   element<HTMLInputElement>('audio-file').disabled = !session?.modelReady || busy || saving;
   element<HTMLSelectElement>('projects').disabled = busy || saving;
   element<HTMLButtonElement>('save').disabled = !working || !dirty || draftDirty || !!invalid || busy || saving;
@@ -121,7 +178,7 @@ function controls() {
   element<HTMLButtonElement>('draft-timings').disabled = !working || busy || saving;
   element<HTMLTextAreaElement>('lyric-draft').disabled = !working || busy || saving;
   element<HTMLInputElement>('title').disabled = busy || saving;
-  element<HTMLButtonElement>('refresh').disabled = loading || saving || requestingJob;
+  element<HTMLButtonElement>('refresh').disabled = loading || saving || requestingJob || archiveChecking;
   element<HTMLButtonElement>('discard-draft').disabled = busy || saving;
   element<HTMLButtonElement>('undo-lyrics').disabled = !working || !lyricHistory?.canUndo || busy || saving;
   element<HTMLButtonElement>('redo-lyrics').disabled = !working || !lyricHistory?.canRedo || busy || saving;
@@ -132,6 +189,8 @@ function controls() {
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy;
   updateTimeline();
+  archiveControls();
+  restoreArchiveFocus();
 }
 function draftSnapshot(): LyricDraft {
   return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty };
@@ -143,7 +202,7 @@ function changed(group: string | null = null) {
   dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
 }
 function restoreDraft(direction: 'undo' | 'redo') {
-  if (!working || !lyricHistory || currentJob || loading || requestingJob || saving) return;
+  if (!working || !lyricHistory || currentJob || loading || requestingJob || saving || archiveChecking) return;
   timeline.cancelGesture(); editGeneration++;
   const rawTimings = captureTimingDrafts();
   const draft = lyricHistory[direction]();
@@ -284,12 +343,16 @@ function renderCues(rawTimings: RawTiming[] = []) {
   controls(); draw();
 }
 
-async function refreshProjects() {
-  const result = await request<{ projects: Project[] }>('/api/projects'); projects = result.projects;
+async function refreshProjects(isCurrent: () => boolean = () => true): Promise<boolean> {
+  const result = await request<{ projects: Project[] }>('/api/projects');
+  if (!isCurrent()) return false;
+  projects = result.projects;
+  for (const id of archiveCaches.keys()) if (!projects.some(project => project.id === id)) archiveCaches.delete(id);
   const select = element<HTMLSelectElement>('projects'); select.replaceChildren(new Option('Choose a saved clip', ''));
   for (const project of projects) select.append(new Option(project.title, project.id));
   select.value = working?.id || '';
   element('library-count').textContent = `${projects.length} of ${session?.maxProjects || 20} local clip slots used.`;
+  return true;
 }
 async function openProject(id: string) {
   timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; mediaGeneration++;
@@ -301,6 +364,7 @@ async function openProject(id: string) {
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
+  archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
   element<HTMLInputElement>('title').value = project.title;
   element<HTMLSelectElement>('projects').value = project.id;
   element('duration').textContent = formatTime(project.duration);
@@ -332,7 +396,7 @@ element('draft-timings').addEventListener('click', () => {
 });
 element('save').addEventListener('click', async () => {
   timeline.cancelGesture();
-  if (!working || saving || draftDirty || validateWorking()) return;
+  if (!working || saving || archiveChecking || draftDirty || validateWorking()) return;
   timeline.cancelGesture(); editGeneration++;
   saving = true; controls();
   try {
@@ -352,7 +416,7 @@ element('lyrics-download').addEventListener('click', () => { if (working && !dir
 element('video-download').addEventListener('click', () => { if (videoUrl) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {
   timeline.cancelGesture();
-  if (!working || currentJob || saving || loading) return;
+  if (!working || currentJob || saving || loading || archiveChecking) return;
   if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
   saving = true; controls();
   try {
@@ -360,6 +424,7 @@ element('delete-project').addEventListener('click', async () => {
     timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; loadedProjectGeneration++; mediaGeneration++;
     ++projectGeneration; audio.pause(); audio.removeAttribute('src'); audio.load();
     working = null; lyricHistory = null; dirty = false; draftDirty = false; videoUrl = null;
+    archiveInfoEpoch++; archiveInfo = null; archiveInfoState = 'none';
     element('clip-details').hidden = true; element<HTMLInputElement>('title').value = '';
     element<HTMLTextAreaElement>('lyric-draft').value = ''; history.replaceState(null, '', location.pathname);
     renderCues(); draw(); await refreshProjects(); message('The selected clip was deleted. Other saved clips are unchanged.');
@@ -369,37 +434,66 @@ element('delete-project').addEventListener('click', async () => {
 
 function showJob(job: Job | null) {
   currentJob = job; element('job-panel').hidden = !job;
-  if (job) { element('job-title').textContent = job.kind === 'separate' ? 'Making space for your voice' : 'Preparing your karaoke video'; element('job-stage').textContent = job.stage; }
+  if (job) {
+    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'archive-import': 'Restoring a project archive' };
+    element('job-title').textContent = titles[job.kind];
+    element('job-stage').textContent = job.stage + (ownedJob ? '' : ' — observed studio work; cancellation belongs to its starting page.');
+  }
+  element<HTMLButtonElement>('cancel-job').disabled = !ownedJob;
   controls();
 }
-async function pollJob(id: string) {
+function ownsPoll(id: string, epoch: number): boolean { return currentJob?.id === id && pollEpoch === epoch; }
+async function pollJob(id: string, epoch = pollEpoch) {
+  const key = `${epoch}:${id}`;
+  if (!ownsPoll(id, epoch) || pollInFlight === key) return;
+  pollInFlight = key;
   let terminal = false;
   try {
     const { job } = await request<{ job: Job }>(`/api/jobs/${id}`);
-    if (currentJob?.id !== id) return;
-    if (job.status === 'running') { showJob(job); pollTimer = setTimeout(() => void pollJob(id), 600); return; }
+    if (!ownsPoll(id, epoch)) return;
+    if (job.status === 'running') { showJob(job); pollTimer = setTimeout(() => void pollJob(id, epoch), 600); return; }
     terminal = true;
     if (job.status === 'complete') {
-      await refreshProjects();
-      if (job.kind === 'separate') {
-        if (followJobProject || (!(dirty || draftDirty) && !working)) {
-          await openProject(job.projectId); message('Your stems are ready. Audition the estimates, then add and time your lyrics.');
+      if (job.kind === 'archive-import') completedImportId = job.projectId;
+      if (!await refreshProjects(() => ownsPoll(id, epoch))) return;
+      if (!ownsPoll(id, epoch)) return;
+      if (job.kind === 'archive-import') {
+        const restored = projects.find(project => project.id === job.projectId);
+        if (!restored) throw new Error('The restored clip is not currently listed. Check restore status to refresh the library.');
+        importedResult = { id: restored.id, title: restored.title }; completedImportId = null;
+        restoreUncertain = false;
+        message('Archive restored as a new saved clip. Your current editor is unchanged; use Open imported clip when ready.');
+      } else if (job.kind === 'archive-export') {
+        if (ownedJob && archiveJobRevision !== null) {
+          archiveCaches.set(job.projectId, archiveJobRevision);
+          message('Saved archive ready. Unsaved lyric edits are not included.');
+        } else message('The studio finished its archive backup. Back up the saved clip here to prepare its download.');
+      } else if (job.kind === 'separate') {
+        if (ownedJob && (followJobProject || (!(dirty || draftDirty) && !working))) {
+          await openProject(job.projectId);
+          if (!ownsPoll(id, epoch)) return;
+          message('Your stems are ready. Audition the estimates, then add and time your lyrics.');
         } else message('Your stems are ready in Saved clips. Your current lyric edits are still here.');
-      } else if (job.resultUrl && working?.id === job.projectId) { videoUrl = job.resultUrl; download(videoUrl, '.mp4'); message('Karaoke MP4 ready. Your saved lyric timings are included.'); }
+      } else if (ownedJob && job.resultUrl && working?.id === job.projectId) { videoUrl = job.resultUrl; download(videoUrl, '.mp4'); message('Karaoke MP4 ready. Your saved lyric timings are included.'); }
+      else if (!ownedJob) message('The studio finished a karaoke MP4. Your editor is unchanged. Open its saved clip and export from this page to download the saved timings.');
       else message('Karaoke MP4 ready. Open its saved clip to export or download it.');
     } else message(job.status === 'cancelled' ? 'Job cancelled. Completed clips are unchanged.' : job.error || 'The local media job failed.', job.status === 'failed');
-    showJob(null);
+    if (ownsPoll(id, epoch)) showJob(null);
   } catch (error) {
-    if (currentJob?.id !== id) return;
-    if (terminal) { showJob(null); message(`The job finished, but its project could not be loaded. Refresh projects to retry: ${error instanceof Error ? error.message : 'Connection lost.'}`, true); return; }
+    if (!ownsPoll(id, epoch)) return;
+    if (terminal) { const result = currentJob?.kind === 'separate' ? 'project' : 'result'; showJob(null); message(`The job finished, but its ${result} could not be loaded. Check restore status or Refresh projects to retry: ${error instanceof Error ? error.message : 'Connection lost.'}`, true); return; }
     message(`Cannot reach the job yet: ${error instanceof Error ? error.message : 'Connection lost.'} Retrying…`, true);
-    pollTimer = setTimeout(() => void pollJob(id), 2000);
-  }
+    pollTimer = setTimeout(() => void pollJob(id, epoch), 2000);
+  } finally { if (pollInFlight === key) pollInFlight = null; }
 }
-function startPolling(job: Job, follow = true) { if (currentJob?.id !== job.id) followJobProject = follow; clearTimeout(pollTimer); showJob(job); void pollJob(job.id); }
+function startPolling(job: Job, follow = true, owned = true, savedRevision: number | null = null) {
+  if (currentJob?.id === job.id) { void pollJob(job.id); return; }
+  pollEpoch++; followJobProject = follow; ownedJob = owned; archiveJobRevision = savedRevision;
+  clearTimeout(pollTimer); showJob(job); void pollJob(job.id, pollEpoch);
+}
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
-  if (!file || currentJob || requestingJob || !mayLeave()) return;
+  if (!file || currentJob || requestingJob || loading || saving || archiveChecking || !mayLeave()) return;
   const maxBytes = Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   if (file.size < 1 || file.size > maxBytes) { message(`Choose a nonempty song clip no larger than ${maxBytes / 1024 / 1024} MiB.`, true); return; }
   requestingJob = true; controls();
@@ -410,17 +504,134 @@ element<HTMLInputElement>('audio-file').addEventListener('change', async event =
   finally { requestingJob = false; controls(); }
 });
 element('cancel-job').addEventListener('click', async () => {
-  if (!currentJob) return;
-  try { await request(`/api/jobs/${currentJob.id}/cancel`, json('POST', {})); if (currentJob) void pollJob(currentJob.id); }
-  catch (error) { message(error instanceof Error ? error.message : 'Could not cancel this job.', true); }
+  if (!currentJob || !ownedJob) return;
+  const id = currentJob.id, epoch = pollEpoch;
+  try { await request(`/api/jobs/${id}/cancel`, json('POST', {})); if (ownsPoll(id, epoch)) void pollJob(id, epoch); }
+  catch (error) { if (ownsPoll(id, epoch)) message(error instanceof Error ? error.message : 'Could not cancel this job.', true); }
 });
 element('export-video').addEventListener('click', async () => {
-  if (!working || dirty || draftDirty || currentJob || requestingJob) return;
+  if (!working || dirty || draftDirty || currentJob || requestingJob || loading || saving || archiveChecking) return;
   requestingJob = true; controls();
   try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', {})); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
   finally { requestingJob = false; controls(); }
 });
+function archiveControls() {
+  const busy = !!currentJob || requestingJob || loading || saving || archiveChecking;
+  element<HTMLButtonElement>('archive-backup').disabled = !working || archiveInfoState !== 'ready' || !session || busy;
+  element<HTMLInputElement>('archive-file').disabled = !session || busy || restoreUncertain;
+  element<HTMLButtonElement>('archive-upload-cancel').hidden = !archiveUpload;
+  element<HTMLButtonElement>('archive-recheck').disabled = !session || requestingJob || loading || saving || archiveChecking;
+  element<HTMLButtonElement>('open-imported').hidden = !importedResult;
+  element<HTMLButtonElement>('open-imported').disabled = !importedResult || busy;
+  const result = element('archive-result'); result.hidden = !importedResult;
+  if (importedResult) result.textContent = `Restored “${importedResult.title}” as a new library clip. Imported audio and processing claims — unverified. Your current editor is unchanged.`;
+  const anchor = element<HTMLAnchorElement>('archive-download');
+  const ready = working && archiveCaches.get(working.id) === working.revision;
+  anchor.hidden = !ready || busy;
+  if (ready && working) anchor.href = `/api/projects/${working.id}/archive`;
+  else anchor.removeAttribute('href');
+  const provenance = !working ? 'Choose a saved clip to back it up.'
+    : archiveInfoState === 'loading' ? 'Checking saved clip provenance…'
+      : archiveInfoState !== 'ready' || !archiveInfo ? 'Provenance unavailable. Check restore status to retry; editing and ordinary exports remain available.'
+        : (archiveInfo.imported ? 'Imported audio and processing claims — unverified.' : 'Stored in this local library — not independently authenticated.')
+          + (archiveInfo.processingSupplied ? ' Processing metadata supplied; claims are not independently verified.' : ' Processing metadata not supplied.');
+  element('archive-status').textContent = `${provenance} Unsaved lyric edits are not included.`;
+}
+async function loadArchiveInfo(): Promise<void> {
+  if (!working) return;
+  const id = working.id, generation = loadedProjectGeneration, epoch = ++archiveInfoEpoch;
+  const current = () => working?.id === id && loadedProjectGeneration === generation && archiveInfoEpoch === epoch;
+  archiveInfoState = 'loading'; archiveControls();
+  try {
+    const info = await request<ArchiveInfo>(`/api/projects/${id}/archive-info`);
+    if (!current()) return;
+    archiveInfo = info; archiveInfoState = 'ready';
+  } catch {
+    if (!current()) return;
+    archiveInfo = null; archiveInfoState = 'error';
+  } finally { if (current()) archiveControls(); }
+}
+function archiveBusy(): boolean { return !!currentJob || requestingJob || loading || saving || archiveChecking; }
+element('archive-backup').addEventListener('click', async () => {
+  if (!working || !session || archiveInfoState !== 'ready' || archiveBusy()) return;
+  rememberArchiveFocus(); timeline.cancelGesture();
+  const id = working.id, revision = working.revision, generation = loadedProjectGeneration, operation = ++archiveOperation;
+  requestingJob = true; controls();
+  try {
+    const { job } = await request<{ job: Job }>(`/api/projects/${id}/archive`, json('POST', { revision }));
+    if (operation !== archiveOperation) return;
+    if (working?.id !== id || loadedProjectGeneration !== generation) {
+      message('The saved backup was accepted. Check restore status to monitor it; the current editor is unchanged.');
+      return;
+    }
+    message('Backing up the saved revision. Unsent lyrics and timing fields are kept here and are not included.');
+    startPolling(job, false, true, revision);
+  } catch (error) {
+    if (operation === archiveOperation) message(`Could not start the saved backup: ${error instanceof Error ? error.message : 'Connection lost.'} Your editor is unchanged. Check restore status before trying again if the connection was interrupted.`, true);
+  } finally { if (operation === archiveOperation) { requestingJob = false; controls(); } }
+});
+element<HTMLInputElement>('archive-file').addEventListener('change', async event => {
+  const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
+  if (!file || !session || archiveBusy() || restoreUncertain) return;
+  const limit = Math.min(160 * 1024 ** 2, session.maxArchiveBytes);
+  if (!Number.isFinite(limit) || file.size < 1 || file.size > limit) { message('Choose a nonempty Karaoke project archive no larger than 160 MiB.', true); return; }
+  rememberArchiveFocus(); timeline.cancelGesture();
+  const operation = ++archiveOperation, controller = new AbortController();
+  archiveUpload = controller; requestingJob = true; controls();
+  message('Uploading the project archive. The current editor and saved clips will not be replaced.');
+  try {
+    const { job } = await request<{ job: Job }>('/api/archives', { method: 'POST', headers: { 'Content-Type': 'application/zip' }, body: file, signal: controller.signal });
+    if (operation !== archiveOperation) return;
+    restoreUncertain = false;
+    message('Archive uploaded. Checking its contents before adding a new saved clip.');
+    startPolling(job, false, true);
+  } catch (error) {
+    if (operation !== archiveOperation) return;
+    // A lost/aborted response can hide a server-accepted job. Never repeat it automatically.
+    restoreUncertain = controller.signal.aborted || error instanceof TypeError;
+    message(restoreUncertain
+      ? 'Archive upload interrupted. It may have reached the studio. Check restore status and Saved clips before importing again. Your current editor is unchanged.'
+      : `Archive import was not accepted: ${error instanceof Error ? error.message : 'Unknown response.'} Your current editor is unchanged.`, true);
+  } finally {
+    if (operation === archiveOperation) { archiveUpload = null; requestingJob = false; controls(); }
+  }
+});
+element('archive-upload-cancel').addEventListener('click', () => archiveUpload?.abort());
+element('open-imported').addEventListener('click', async () => {
+  if (!importedResult || archiveBusy() || !mayLeave()) return;
+  const id = importedResult.id;
+  try { await openProject(id); message('Opened the restored clip. Imported audio and processing claims remain unverified.'); }
+  catch (error) { message(error instanceof Error ? error.message : 'Could not open the restored clip. Your previous editor is still here.', true); }
+});
+element('archive-recheck').addEventListener('click', async () => {
+  if (!session || requestingJob || loading || saving || archiveChecking) return;
+  rememberArchiveFocus();
+  const operation = ++archiveOperation, generation = projectGeneration;
+  const current = () => archiveOperation === operation && projectGeneration === generation;
+  archiveChecking = true; controls();
+  try {
+    const state = await request<Session>('/api/session');
+    if (!current()) return;
+    session = state;
+    if (!await refreshProjects(current)) return;
+    if (!current()) return;
+    await loadArchiveInfo();
+    if (!current()) return;
+    if (completedImportId) {
+      const restored = projects.find(project => project.id === completedImportId);
+      if (restored) { importedResult = { id: restored.id, title: restored.title }; completedImportId = null; }
+    }
+    restoreUncertain = false;
+    if (state.activeJob) {
+      if (!currentJob) startPolling(state.activeJob, false, false);
+      else if (currentJob.id === state.activeJob.id) void pollJob(currentJob.id);
+      message('The studio has active work. Its progress is shown without taking ownership or repeating an import. Your editor is unchanged.');
+    } else message('Saved clips refreshed. No active studio job was reported. Check the library for any completed restore; no upload was repeated.');
+  } catch (error) { if (current()) message(`Could not check restore status: ${error instanceof Error ? error.message : 'Connection lost.'} Your editor is unchanged.`, true); }
+  finally { if (archiveOperation === operation) { archiveChecking = false; controls(); } }
+});
+
 async function refresh() {
   try {
     session = await request<Session>('/api/session');
@@ -429,7 +640,7 @@ async function refresh() {
     element('model-state').textContent = session.modelReady ? 'Local CPU model ready' : 'Local model setup needed';
     element('model-help').hidden = session.modelReady;
     await refreshProjects(); controls();
-    if (session.activeJob) startPolling(session.activeJob, false);
+    if (session.activeJob && (!currentJob || currentJob.id === session.activeJob.id)) startPolling(session.activeJob, false, false);
     else if (!working) {
       const requested = new URL(location.href).searchParams.get('project');
       if (requested && projects.some(project => project.id === requested)) await openProject(requested);
@@ -437,10 +648,11 @@ async function refresh() {
   } catch (error) { message(`Local studio unavailable: ${error instanceof Error ? error.message : 'Start the Python service, then refresh.'}`, true); }
 }
 element('refresh').addEventListener('click', () => void refresh());
-window.addEventListener('beforeunload', event => { if (dirty || draftDirty) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (dirty || draftDirty || requestingJob || (currentJob && ownedJob)) { event.preventDefault(); event.returnValue = ''; } });
 controls(); draw(); void refresh();
 
 window.addEventListener('pagehide', event => {
+  archiveFocus = null;
   mediaGeneration++; audio.pause();
   if (event.persisted) timeline.stopWaveform(); else timeline.destroy();
 });

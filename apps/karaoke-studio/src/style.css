@@ -769,3 +769,12 @@ button {
 #waveform-edit-status { min-height:1.7em; margin-top:.5rem; color:#775b3e; overflow-wrap:anywhere }
 .cue.timing-selected { box-shadow:inset 3px 0 #5e8171 }
 @media(max-width:700px) { #timing-workbench { padding:1rem .8rem } .waveform-selection { grid-template-columns:minmax(0,1fr) } #waveform-window { flex-basis:100%; margin:0 } .waveform-toolbar button { flex:1; min-width:85px } }
+
+.archive-panel { margin: 24px 0; padding: 18px 0; border-top: 1px solid var(--line, #dcded8); border-bottom: 1px solid var(--line, #dcded8); }
+.archive-panel h4 { margin: 0 0 10px; font-size: 15px; }
+.archive-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 14px 0; }
+.archive-download { color: inherit; text-underline-offset: 3px; padding: 12px 0; overflow-wrap: anywhere; }
+.archive-import { margin-top: 16px; }
+.archive-import input { max-width: 100%; font: inherit; font-size: 12px; }
+#archive-result, #archive-status { overflow-wrap: anywhere; }
+#archive-recheck, #archive-upload-cancel, #open-imported { min-height: 44px; }
