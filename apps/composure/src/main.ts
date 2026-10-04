@@ -1,5 +1,5 @@
 import './style.css';
-import {calibrate,newRun,sample,advance,pause,resume,nearby,objects,aimPoint,runReport,WORLD,type Run,type Controls} from './model.ts';
+import {calibrate,newRun,sample,advance,pause,resume,nearby,objects,aimPoint,runReport,WORLD,type Run,type RunEvent,type Controls} from './model.ts';
 import {loadSettings,saveSettings,defaults,SETTINGS_KEY,type Settings} from './settings.ts';
 
 const root=document.querySelector<HTMLDivElement>('#app')!;
@@ -14,14 +14,14 @@ baseline.value=String(settings.baseline);reading.value=String(settings.baseline)
 function storageStatus(text:string):void {get('storage-status').textContent=text;get('reset-settings').hidden=!storageBlocked;get('best').textContent=settings.bestSeconds===null?'No completed best time.':`Best completed run: ${settings.bestSeconds.toFixed(1)} active seconds.`;}
 storageStatus(storageBlocked?'Saved preferences could not be read. The raw record is kept; automatic saving is disabled.':'Preferences stay in this browser; run samples are not autosaved.');
 let run:Run|null=null,lastFrame=0,lastSample=-1,steadyToggle=false,pointerAim:{x:number;y:number}|undefined;
-let audio:AudioContext|null=null;const keys=new Set<string>(),touch=new Map<number,string>();let interactPointer:number|null=null;let lastEvent=0;
+let audio:AudioContext|null=null;const keys=new Set<string>(),touch=new Map<number,string>();let interactPointer:number|null=null;let lastEvent:RunEvent|null=null;
 function release():void {keys.clear();touch.clear();interactPointer=null;}
 function controls():Controls {const values=new Set([...keys,...touch.values()]);return{x:Number(values.has('right')||values.has('d')||values.has('arrowright'))-Number(values.has('left')||values.has('a')||values.has('arrowleft')),y:Number(values.has('down')||values.has('s')||values.has('arrowdown'))-Number(values.has('up')||values.has('w')||values.has('arrowup')),interact:values.has('e')||interactPointer!==null,steady:steadyToggle||values.has('shift'),aim:pointerAim};}
 function announce(text:string):void {get('message').textContent=text;}
 function save():void {if(storageBlocked){storageStatus('Saved preferences are unreadable. Reset them explicitly before saving; current run stays in memory.');return;}try{settings={schemaVersion:1,baseline:calibrate(Array(5).fill(Number(baseline.value)) as number[]),scares:scares.checked,reducedMotion:reduced.checked,muted:muted.checked,bestSeconds:settings.bestSeconds};saveSettings(localStorage,settings);storageStatus('Preferences saved locally. No simulated sample log was stored.');}catch{storageStatus('Preferences could not be saved. Current game stays usable in memory.');}}
 function audioReady():void {if(muted.checked)return;try{audio??=new AudioContext();void audio.resume().catch(()=>{});}catch{announce('Optional sound is unavailable. The game remains playable.');}}
 function sound():void {if(!audio||muted.checked)return;const oscillator=audio.createOscillator(),gain=audio.createGain();oscillator.type='sine';oscillator.frequency.value=110;gain.gain.setValueAtTime(.035,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.15);oscillator.connect(gain);gain.connect(audio.destination);oscillator.start();oscillator.stop(audio.currentTime+.15);oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};}
-function start():void {try{const calibrated=calibrate(Array(5).fill(Number(baseline.value)) as number[]);run=newRun(calibrated,scares.checked);lastSample=-1;lastEvent=0;lastFrame=0;steadyToggle=false;pointerAim=undefined;release();sample(run,Number(reading.value));lastSample=0;get('calibration').textContent=`Five declared simulated values calibrated baseline ${calibrated} BPM. It remains fixed for this run.`;audioReady();canvas.focus();render();}catch{announce('Use a simulated resting baseline from 40 to 120 BPM. Current work was kept.');}}
+function start():void {try{const calibrated=calibrate(Array(5).fill(Number(baseline.value)) as number[]);run=newRun(calibrated,scares.checked);lastSample=-1;lastEvent=null;lastFrame=0;steadyToggle=false;pointerAim=undefined;release();sample(run,Number(reading.value));lastSample=0;get('calibration').textContent=`Five declared simulated values calibrated baseline ${calibrated} BPM. It remains fixed for this run.`;audioReady();canvas.focus();render();}catch{announce('Use a simulated resting baseline from 40 to 120 BPM. Current work was kept.');}}
 get('start').addEventListener('click',start);get('restart').addEventListener('click',start);
 get('pause').addEventListener('click',()=>{if(!run)return;release();lastFrame=0;if(run.phase==='paused'){resume(run);audioReady();canvas.focus();}else{pause(run);void audio?.suspend().catch(()=>{});}render();});
 get('steady').addEventListener('click',()=>{steadyToggle=!steadyToggle;render();});
@@ -32,6 +32,7 @@ get('save').addEventListener('click',save);muted.addEventListener('change',()=>{
 get('reset-settings').addEventListener('click',()=>{if(!confirm('Reset unreadable preferences and best time for this browser?'))return;try{localStorage.removeItem(SETTINGS_KEY);storageBlocked=false;settings=defaults();storageStatus('Unreadable preferences reset. Current in-memory run was kept.');}catch{storageStatus('Could not reset preferences. The saved record is kept.');}});
 get('report').addEventListener('click',()=>{if(!run)return;const url=URL.createObjectURL(new Blob([JSON.stringify(runReport(run),null,2)+'\n'],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='composure-simulated-run.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 function inputField(target:EventTarget|null):boolean {return target instanceof HTMLInputElement||target instanceof HTMLSelectElement||target instanceof HTMLTextAreaElement||target instanceof HTMLElement&&target.isContentEditable;}
+window.addEventListener('focusin',e=>{if(inputField(e.target))release();});
 window.addEventListener('keydown',e=>{if(inputField(e.target)||!run||run.phase!=='running')return;const key=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','e','shift'].includes(key)){e.preventDefault();keys.add(key);}});
 window.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());});
 function inactive():void {release();if(run?.phase==='running'){pause(run);lastFrame=0;void audio?.suspend().catch(()=>{});render();}}
@@ -60,6 +61,7 @@ function draw():void {
   if(state.scareSeen&&state.shock>.25){ctx.fillStyle='#11171b';ctx.beginPath();ctx.ellipse(520,47,15,21,0,0,Math.PI*2);ctx.fill();}
 }
 function render():void {
+  get('keyboard-aim').setAttribute('aria-pressed',String(pointerAim===undefined));
   draw();const active=run?.phase==='running';get<HTMLButtonElement>('pause').disabled=!run||run.phase==='won'||run.phase==='lost';get('pause').textContent=run?.phase==='paused'?'Resume':'Pause';
   for(const id of ['restart','report'])get<HTMLButtonElement>(id).disabled=!run;for(const id of ['interact','steady'])get<HTMLButtonElement>(id).disabled=!active;
   get('steady').textContent=`Steady: ${steadyToggle?'on':'off'}`;get('steady').setAttribute('aria-pressed',String(steadyToggle));
@@ -67,7 +69,7 @@ function render():void {
   if(!run)return;get('timer').textContent=`${Math.ceil(180-run.time)} s`;get('sensor').textContent=run.sensor==='fresh'?`${run.samples.at(-1)!.bpm} BPM · simulated`:`${run.sensor} sample · neutral fallback`;get('tension').textContent=`${Math.round(run.tension*100)}%`;get<HTMLMeterElement>('tension-meter').value=run.tension;get('noise').textContent=`${Math.round(run.noise)} / 100`;get<HTMLMeterElement>('noise-meter').value=run.noise;get('lock').textContent=`${Math.round(run.lock*100)}%`;get<HTMLProgressElement>('lock-meter').value=run.lock;get('position').textContent=`${Math.round(run.x)}, ${Math.round(run.y)}`;
   const target=nearby(run);get('nearby').textContent=target?`${target.label} · aim error ${aimPoint(run,controls()).error.toFixed(1)} / 18`: 'No object in reach';
   for(const [id,done] of [['fuse',run.fuse],['power',run.power],['key',run.key],['lock',run.unlocked]] as const)get(`goal-${id}`).classList.toggle('done',done);
-  if(run.events.length!==lastEvent){const latest=run.events.at(-1)!;announce(latest.text);if(latest.kind==='scare')sound();lastEvent=run.events.length;}
+  const latest=run.events.at(-1);if(latest&&latest!==lastEvent){announce(latest.text);if(latest.kind==='scare')sound();lastEvent=latest;}
 }
 function frame(timestamp:number):void {if(run?.phase==='running'){const elapsed=lastFrame?Math.max(0,(timestamp-lastFrame)/1000):0;if(sampling.checked&&run.time-lastSample>=1){sample(run,Number(reading.value));lastSample=run.time;}const before=run.phase;advance(run,elapsed,controls());if(before==='running'&&(run as Run).phase==='won'){if(settings.bestSeconds===null||run.time<settings.bestSeconds){settings.bestSeconds=run.time;if(!storageBlocked){try{saveSettings(localStorage,settings);storageStatus('Best completed time saved. No simulated samples were stored.');}catch{storageStatus('Best time is in memory; local save failed. Download the run report.');}}}}render();}lastFrame=timestamp;requestAnimationFrame(frame);}
 render();requestAnimationFrame(frame);

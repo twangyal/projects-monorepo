@@ -50,3 +50,20 @@ test('timer/noise can lose, reset is detached, and report streams are bounded', 
   report.samples[0]!.bpm=999;assert.notEqual(fresh.samples[0]!.bpm,999);
   assert.throws(()=>game.newRun(0,false));
 });
+
+test('steady has a real bounded aim and noise effect without altering the simulated source',()=>{
+  const run=game.newRun(70,false);run.x=1030;run.y=160;run.time=.15;run.tension=1;
+  const idle={x:0,y:0,interact:true,steady:false};const unstable=game.aimPoint(run,idle),stable=game.aimPoint(run,{...idle,steady:true});
+  assert.ok(unstable.error>18&&unstable.error<38);assert.ok(stable.error<10);assert.ok(game.aimPoint(run,{...idle,aim:{x:0,y:0}}).error>100);
+  const loud=game.newRun(70,false),quiet=game.newRun(70,false);game.sample(loud,220);game.sample(quiet,220);
+  for(let i=0;i<8;i++){game.advance(loud,.25,{x:1,y:0,interact:false,steady:false});game.advance(quiet,.25,{x:1,y:0,interact:false,steady:true});}
+  assert.ok(quiet.noise<loud.noise);assert.ok(quiet.x<loud.x);assert.equal(quiet.samples[0]!.bpm,220);
+});
+
+test('invalid frame inputs preserve the model and capped events keep the latest terminal report',()=>{
+  const run=game.newRun(70,false),before=JSON.stringify(run),idle={x:0,y:0,interact:false,steady:false};
+  for(const elapsed of [-1,NaN,Infinity])assert.throws(()=>game.advance(run,elapsed,idle));
+  assert.throws(()=>game.advance(run,.1,{...idle,x:NaN}));assert.throws(()=>game.advance(run,.1,{...idle,aim:{x:Infinity,y:0}}));assert.equal(JSON.stringify(run),before);
+  for(let i=0;i<140;i++){game.pause(run);game.resume(run);}
+  run.noise=100;game.advance(run,.1,idle);const report=game.runReport(run);assert.equal(report.events.length,256);assert.equal(report.events.at(-1)!.kind,'loss');assert.equal(report.truncatedEvents,true);assert.equal(report.source,'simulated');
+});
