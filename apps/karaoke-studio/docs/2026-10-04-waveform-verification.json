@@ -1,0 +1,317 @@
+{
+  "date": "2026-10-04",
+  "issue": 54,
+  "implementationCommit": "27bbc557bbabfe1f2a3f80a840e6a592e196a315",
+  "scope": "Waveform timing and exported timeline verification on a private copy of the existing original synthetic 300-second song, previously separated by actual offline Spleeter for issue #33. No new inference or model download during this milestone. Original source project and all generated files verified byte-identical after this run.",
+  "environment": {
+    "os": "Debian 13 Linux x86_64",
+    "cpuQuota": 4,
+    "memoryGiB": 16,
+    "node": "24.19.0",
+    "python": "3.12.14",
+    "localChromium": "151.0.7922.173",
+    "ciChromium": "153.0.8010.12",
+    "ffmpeg": "7.1.5"
+  },
+  "automated": {
+    "pythonTests": 114,
+    "typescriptTests": 51,
+    "productionBrowserTests": 31,
+    "ruff": "passed",
+    "eslint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "ciRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37178106328",
+    "allProjectWorkflowsAtImplementationCommit": 12,
+    "allProjectWorkflowsConclusion": "success",
+    "browserCoverage": "Streaming WAV/parser failures, independent stereo peak oracle, actual worker bounds/cancellation/retry, original-waveform identity, pointer and keyboard gesture transactions, exact history/raw draft preservation, late callbacks, held keys, resize and deferred geometry notification cancellation, mobile edge handles and controlled persisted page lifecycle."
+  },
+  "nativeBrowser": {
+    "checkedAt": "2026-10-04T04:50:30.906Z",
+    "browser": "151.0.7922.173",
+    "projectId": "b7d5a139228b45738b9b737fcdde7b53",
+    "sourceKind": "Copy of existing original synthetic300-second song separated offline by real Spleeter",
+    "loading": {
+      "started": 262.69999999552965,
+      "progressMessages": 2,
+      "animationFrames": 14,
+      "maxFrameGapMs": 16.80000000000001,
+      "finished": true,
+      "elapsedMs": 208,
+      "frameCount": 13230000,
+      "binCount": 30000,
+      "peakBytes": 120000,
+      "sha256": "764cfe7791506abbd0906466dbc6d7eaed7353136c4b2f141c4ea8efae0dab4c"
+    },
+    "independentReference": {
+      "reference": "Python stdlib wave, independent 441-frame min/max over both interleaved channels",
+      "frameCount": 13230000,
+      "binFrames": 441,
+      "binCount": 30000,
+      "bytes": 120000,
+      "sha256": "764cfe7791506abbd0906466dbc6d7eaed7353136c4b2f141c4ea8efae0dab4c",
+      "minimum": -16439,
+      "maximum": 16715,
+      "elapsedSeconds": 0.9014153820025967
+    },
+    "seeks": [
+      {
+        "via": "detail click",
+        "seconds": 299.2482
+      },
+      {
+        "via": "native keyboard seek End",
+        "seconds": 300
+      }
+    ],
+    "saved": {
+      "schemaVersion": 1,
+      "id": "b7d5a139228b45738b9b737fcdde7b53",
+      "title": "Five-minute original signal",
+      "duration": 300,
+      "revision": 2,
+      "cues": [
+        {
+          "start": 27.75,
+          "end": 30.25,
+          "text": "FIRST WINDOW CROSSING"
+        },
+        {
+          "start": 167.75,
+          "end": 170.25,
+          "text": "MIDDLE WINDOW CROSSING"
+        },
+        {
+          "start": 298.2,
+          "end": 300,
+          "text": "FINAL SONG LINE"
+        }
+      ]
+    },
+    "stemChangesRetainOriginalWaveform": true,
+    "pointerEditUndoRedo": true,
+    "heldKeyEditUndoRedo": true,
+    "reloadPreservesSavedCues": true,
+    "maximumDurationAndCues": {
+      "duration": 300,
+      "cues": 200,
+      "viewportWidth": 390,
+      "maximumCueUiMs": 592.5475029999998,
+      "unsavedPreviewUndone": true
+    },
+    "desktopOverflow": false,
+    "mobileOverflow": false,
+    "exportUiMs": 35591,
+    "pageErrors": [],
+    "externalRequests": []
+  },
+  "independentMediaDecode": {
+    "checkedAtEpoch": 1791089525.959633,
+    "videoBytes": 8213246,
+    "duration": 300.0,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "audioDuration": 300.0,
+    "decoded299SecondAudioTailFrames": 35280,
+    "decoded299SecondAudioTailPcmPeak": 10215,
+    "resolution": [
+      1280,
+      720
+    ],
+    "framesPerSecond": 24,
+    "declaredFrames": 7200,
+    "lastFrameActuallyDecoded": 7199,
+    "decodedBoundaryChecks": [
+      {
+        "frame": 665,
+        "seconds": 27.708333333333332,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 666,
+        "seconds": 27.75,
+        "expectedActive": true,
+        "warmPixels": 4159,
+        "passed": true
+      },
+      {
+        "frame": 725,
+        "seconds": 30.208333333333332,
+        "expectedActive": true,
+        "warmPixels": 4159,
+        "passed": true
+      },
+      {
+        "frame": 726,
+        "seconds": 30.25,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 4025,
+        "seconds": 167.70833333333334,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 4026,
+        "seconds": 167.75,
+        "expectedActive": true,
+        "warmPixels": 4614,
+        "passed": true
+      },
+      {
+        "frame": 4085,
+        "seconds": 170.20833333333334,
+        "expectedActive": true,
+        "warmPixels": 4621,
+        "passed": true
+      },
+      {
+        "frame": 4086,
+        "seconds": 170.25,
+        "expectedActive": false,
+        "warmPixels": 2,
+        "passed": true
+      },
+      {
+        "frame": 7151,
+        "seconds": 297.9583333333333,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 7152,
+        "seconds": 298.0,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 7156,
+        "seconds": 298.1666666666667,
+        "expectedActive": false,
+        "warmPixels": 0,
+        "passed": true
+      },
+      {
+        "frame": 7157,
+        "seconds": 298.2083333333333,
+        "expectedActive": true,
+        "warmPixels": 2632,
+        "passed": true
+      },
+      {
+        "frame": 7187,
+        "seconds": 299.4583333333333,
+        "expectedActive": true,
+        "warmPixels": 2632,
+        "passed": true
+      },
+      {
+        "frame": 7188,
+        "seconds": 299.5,
+        "expectedActive": true,
+        "warmPixels": 2632,
+        "passed": true
+      },
+      {
+        "frame": 7199,
+        "seconds": 299.9583333333333,
+        "expectedActive": true,
+        "warmPixels": 2632,
+        "passed": true
+      }
+    ],
+    "decodeCheckSeconds": 2.5845471659995383,
+    "oracle": "Independent 24fps frame numbers around saved waveform-edited half-open intervals, including before the new off-grid start, original obsolete start/end and final active frame; amber glyphs versus white gaps, no production renderer.",
+    "limitations": "Timeline/codec evidence only; no subjective listening or reference-stem separation score."
+  },
+  "actualProcessRestart": {
+    "checkedAt": "2026-10-04T04:53:36.511Z",
+    "serviceActuallyRestarted": true,
+    "currentProjectRevision": 2,
+    "finalCue": {
+      "start": 298.2,
+      "end": 300,
+      "text": "FINAL SONG LINE"
+    },
+    "nativeSeek": 299.75,
+    "activeCue": 2,
+    "waveformReady": true,
+    "completedStopControlHidden": true,
+    "savedVideoRangeStatus": 206,
+    "mobileOverflow": false,
+    "pageErrors": []
+  },
+  "originalFixtureHashesUnchanged": {
+    "video-revision.json": {
+      "bytes": 14,
+      "sha256": "d8560b7658c792bdded69837b055e2ed54708be6123b7bb4cc9fadf261ea091f"
+    },
+    "video.mp4": {
+      "bytes": 8216851,
+      "sha256": "e0d171b0cf0fbccb722fe3b6a4fe7a24132827872654b54a61378eff1784142b"
+    },
+    "project.json": {
+      "bytes": 310,
+      "sha256": "dbc079448c851eeea93462d8b821a4014dacd0a17c6dafe23a7eaed4456def89"
+    },
+    "processing.json": {
+      "bytes": 1367,
+      "sha256": "7c899c09b3b1c87b8739b3b54a0f58a58b6953ef9033513d06fdb2dc50b2c651"
+    },
+    "backing.wav": {
+      "bytes": 52920044,
+      "sha256": "1da3c55b58a6f4c3502b46de77942966baa1fd6ec0d6325c002c3d6551f5372b"
+    },
+    "vocals.wav": {
+      "bytes": 52920044,
+      "sha256": "7f1d868108a861ff34f09460c67503a06afcd35fe0d94eba87fe42e9d8a5a88a"
+    },
+    "source.wav": {
+      "bytes": 52920044,
+      "sha256": "45fcbbdd82e435e2776a06390088efbf143a9ed6eabdbaffc35cef82bacac4c9"
+    }
+  },
+  "artifacts": {
+    "karaoke-waveform.srt": {
+      "bytes": 159,
+      "sha256": "c4719f4728e1ce6144f593f01faa2bdd4a8e029a9f36405424f50dbac018802b"
+    },
+    "karaoke-waveform.mp4": {
+      "bytes": 8213246,
+      "sha256": "9467e3ed744dca5dcd8d8c4cf407396bda0c13a9f4f4196ad1c7577d764d5c0b"
+    },
+    "karaoke-waveform-desktop.png": {
+      "bytes": 238896,
+      "sha256": "4f5197d6fe1f60fba294d18e8d6b92f21f7c175089f2cd1dc004e8671bc19eca"
+    },
+    "karaoke-waveform-mobile.png": {
+      "bytes": 173394,
+      "sha256": "5326563150fb1edc6e29867adf5b5f7699b246d6137d2d1a8f3e24b5562af661"
+    },
+    "karaoke-waveform-detail.png": {
+      "bytes": 69707,
+      "sha256": "578f4c166ad20c141b22e741b3dc538ae5e781c03322d1b569d4cd039d9444a4"
+    },
+    "karaoke-waveform-mobile-detail.png": {
+      "bytes": 46966,
+      "sha256": "23acdccf114c09ccc73fc5ff89ed2b800181d76587e2aa8822604b8e96155f80"
+    }
+  },
+  "screenshots": "Native Chromium desktop and 390px mobile screenshots visually inspected; no horizontal overflow and complete boundary controls. Media and screenshots remain local verification artifacts, not bundled in the repository.",
+  "limitations": [
+    "One local performance observation, not a cross-device guarantee.",
+    "Signal peaks do not identify words or align lyrics automatically.",
+    "Controlled persisted PageTransitionEvent coverage does not establish native BFCache admission.",
+    "No subjective listening, reference-stem separation score, inaudible-seam claim or new model-quality measurement.",
+    "Fast browser separation remains explicitly fake; this additional native verification used the retained real-model outputs."
+  ],
+  "reproduction": "Run the documented Python, TypeScript, lint/typecheck/build and Chromium gates. For the full media gate, prepare an original 300-second project using the documented real-model smoke/service flow; retain a byte-exact backup, open a private copy in the production service, compare transferred 441-frame extrema against an independent stereo PCM16 reducer, adjust late boundaries using pointer/held keyboard gestures with undo/redo, save/reload/restart, export SRT/MP4 and independently decode the half-open cue boundaries and final audio/video frames."
+}
