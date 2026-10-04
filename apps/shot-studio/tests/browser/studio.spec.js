@@ -171,4 +171,25 @@ test('unreadable startup draft survives authoring and undo before explicit repla
   await page.getByLabel('Film title').fill('Recoverable new film');await page.getByLabel('Film title').press('Tab');
   expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe('{broken original\n☃');
   await page.getByRole('button',{name:'Undo scene',exact:true}).click();expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe('{broken original\n☃');
+  await page.getByRole('button',{name:'Redo scene',exact:true}).click();
+  const projectDownload=page.waitForEvent('download');await page.getByRole('button',{name:'Save project',exact:true}).click();const projectFile=await projectDownload;const projectPath=await projectFile.path();
+  const current=JSON.parse(execFileSync('cat',[projectPath],{encoding:'utf8'}));expect(current.title).toBe('Recoverable new film');
+  await page.locator('#import').setInputFiles(projectPath);await expect(page.getByLabel('Film title')).toHaveValue('Recoverable new film');expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe('{broken original\n☃');
+  const rawDownload=page.waitForEvent('download');await page.getByRole('button',{name:'Download unreadable draft',exact:true}).click();const rawFile=await rawDownload;const raw=JSON.parse(execFileSync('cat',[await rawFile.path()],{encoding:'utf8'}));expect(raw).toEqual({schemaVersion:1,kind:'unreadable-shot-studio-draft',storageKey:'shot-studio-v1',raw:'{broken original\n☃'});
+  page.once('dialog',d=>d.dismiss());await page.getByRole('button',{name:'Replace browser draft',exact:true}).click();expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe('{broken original\n☃');
+  await page.reload();await expect(page.getByLabel('Film title')).toHaveValue('The arrival');await expect(page.getByRole('button',{name:'Download unreadable draft',exact:true})).toBeVisible();
+  await page.locator('#import').setInputFiles(projectPath);await expect(page.getByLabel('Film title')).toHaveValue('Recoverable new film');
+  page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Replace browser draft',exact:true}).click();await expect(page.locator('#status')).toContainText('explicitly replaced');await expect(page.getByRole('button',{name:'Download unreadable draft',exact:true})).toBeHidden();
+  expect(JSON.parse(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).title).toBe('Recoverable new film');
+  await page.getByLabel('Film title').fill('Later saved edit');await page.getByLabel('Film title').press('Tab');await page.reload();await expect(page.getByLabel('Film title')).toHaveValue('Later saved edit');
+});
+
+test('failed startup read and replacement never silently overwrite an existing draft',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/');await page.evaluate(()=>localStorage.setItem('shot-studio-v1','{private original'));
+  await page.addInitScript(()=>{const get=Storage.prototype.getItem,set=Storage.prototype.setItem;window.readRawDraft=()=>get.call(localStorage,'shot-studio-v1');window.failReplacement=false;Storage.prototype.getItem=function(key){if(key==='shot-studio-v1')throw new DOMException('Read blocked','SecurityError');return get.call(this,key);};Storage.prototype.setItem=function(key,value){if(window.failReplacement&&key==='shot-studio-v1')throw new DOMException('Full','QuotaExceededError');return set.call(this,key,value);};});
+  await page.reload();await expect(page.locator('#status')).toContainText('preserved');await expect(page.getByRole('button',{name:'Download unreadable draft',exact:true})).toBeHidden();
+  await page.getByLabel('Film title').fill('New work in memory');await page.getByLabel('Film title').press('Tab');expect(await page.evaluate(()=>window.readRawDraft())).toBe('{private original');
+  await page.evaluate(()=>window.failReplacement=true);page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Replace browser draft',exact:true}).click();await expect(page.locator('#status')).toContainText('Could not replace');expect(await page.evaluate(()=>window.readRawDraft())).toBe('{private original');await expect(page.getByRole('button',{name:'Replace browser draft',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();expect(await page.evaluate(()=>window.readRawDraft())).toBe('{private original');await page.getByRole('button',{name:'Redo scene',exact:true}).click();
+  await page.evaluate(()=>window.failReplacement=false);page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Replace browser draft',exact:true}).click();expect(JSON.parse(await page.evaluate(()=>window.readRawDraft())).title).toBe('New work in memory');expect(errors).toEqual([]);
 });

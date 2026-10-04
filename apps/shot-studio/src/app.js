@@ -1,18 +1,19 @@
-import {createProject,validateProject,importProject,totalDuration,shotAt,MAX_BYTES} from './model.js';
+import {validateProject,importProject,totalDuration,shotAt,MAX_BYTES} from './model.js';
 import {StageRenderer} from './renderer.js';
 import {exportFilm} from './export.js';
 import {enterXR} from './xr.js';
 import {ProjectHistory,moveShot} from './history.js';
+import {DraftStore} from './draft.js';
 
-const $=id=>document.getElementById(id),KEY='shot-studio-v1';
-let project=createProject(),selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
+const $=id=>document.getElementById(id),draft=new DraftStore();
+let project=draft.project,selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 const status=text=>$('status').textContent=text;
-try{const draft=localStorage.getItem(KEY);if(draft)project=importProject(draft);}catch{status('Could not load the saved draft. It has been preserved; save a backup before making changes.');}
+if(draft.blocked)status('Could not load the saved draft. It has been preserved; automatic saving is blocked. Save your current project and download the unreadable draft before explicitly replacing it.');
 let renderer,graphicsLost=false;
 const history=new ProjectHistory(project);
 try{renderer=new StageRenderer($('stage'));}catch(e){status(e.message);for(const b of document.querySelectorAll('button'))b.disabled=true;throw e;}
 const busy=()=>exporting||xrPending||!!xr;
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(project));status('Saved in this browser.');}catch{status('Browser storage is unavailable. Use Save project to keep a backup.');}}
+function persist(){try{draft.save(project);status('Saved in this browser.');}catch(e){status(draft.blocked?e.message:'Browser storage is unavailable. Use Save project to keep a backup.');}}
 function apply(candidate){try{project=history.commit(candidate);revision++;time=Math.min(time,totalDuration(project));persist();refresh();}catch(e){status(e.message);refresh();}}
 function stop(){playing=false;$('play').textContent='Rehearse';}
 function shotStart(index){return project.shots.slice(0,index).reduce((s,x)=>s+x.duration,0);}
@@ -22,6 +23,8 @@ function refresh(){
   $('actor').value=actor;[...$('actor').options].forEach((o,i)=>o.textContent=project.actors[i].name);
   $('scrub').max=totalDuration(project);$('shots').replaceChildren();
   project.shots.forEach((shot,i)=>{const b=document.createElement('button');b.type='button';b.textContent=`${String(i+1).padStart(2,'0')} · ${shot.name} / ${shot.duration}s`;b.setAttribute('aria-pressed',String(i===selected));b.disabled=busy();b.onclick=()=>{stop();selected=i;time=shotStart(i);refresh();};$('shots').append(b);});
+  $('rawDraft').hidden=draft.raw===null;$('rawDraft').disabled=busy();
+  $('replaceDraft').hidden=!draft.blocked;$('replaceDraft').disabled=busy();
   $('fields').disabled=busy();
   for(const id of ['play','stop','add','remove','save','export'])$(id).disabled=busy();
   for(const id of ['play','stop','export'])$(id).disabled=busy()||graphicsLost;
@@ -55,6 +58,12 @@ $('stop').onclick=()=>{stop();time=0;};$('scrub').oninput=()=>{stop();time=Numbe
 $('add').onclick=()=>{const p=structuredClone(project);p.shots.push({...structuredClone(p.shots[selected]),name:`Shot ${p.shots.length+1}`,duration:2});try{validateProject(p);selected=p.shots.length-1;time=shotStart(project.shots.length);apply(p);}catch(e){status(e.message);}};
 $('remove').onclick=()=>{if(project.shots.length===1||busy())return;stop();const p=structuredClone(project);p.shots.splice(selected,1);selected=Math.min(selected,p.shots.length-1);apply(p);time=shotStart(selected);};
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+$('rawDraft').onclick=()=>{if(busy()||draft.raw===null)return;download(new Blob([JSON.stringify({schemaVersion:1,kind:'unreadable-shot-studio-draft',storageKey:'shot-studio-v1',raw:draft.raw},null,2)],{type:'application/json'}),'shot-studio-unreadable-draft.json');};
+$('replaceDraft').onclick=()=>{
+  if(busy()||!draft.blocked)return;
+  if(!confirm('Replace the saved browser draft with the current scene? Download the unreadable draft and save your current project first. This will replace the old browser draft.')){status('Saved draft was not replaced. Automatic saving remains blocked.');return;}
+  try{draft.replace(project);status('Browser draft explicitly replaced with the current scene. Automatic saving is enabled.');}catch{status('Could not replace the browser draft. The old contents remain protected; save a project backup.');}refresh();
+};
 $('save').onclick=()=>download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),'shot-studio.json');
 let importEpoch=0;
 $('import').onchange=async()=>{
