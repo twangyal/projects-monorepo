@@ -1,7 +1,7 @@
 {
   "date": "2026-10-04",
   "issue": 49,
-  "implementationCommit": "593f67aa880b7e84eb646bb26266d0955c2b5746",
+  "implementationCommit": "f83e1b6a465df5e3f44d06738eead0823f036e67",
   "startupRed": {
     "commit": "2d8f0121922d68d3f9b46c3334400125c53e1f7c",
     "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37173124846",
@@ -21,9 +21,9 @@
     ]
   },
   "green": {
-    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37197789513",
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37198211480",
     "unitPassed": 36,
-    "browserPassed": 17,
+    "browserPassed": 18,
     "browserFailed": 0,
     "checks": [
       "unit",
@@ -44,11 +44,19 @@
     "Current backup/import/history/PNG and narrow viewport",
     "Confirm/cancel/failed/successful replacement and queued latest edits",
     "Canceled sketch and placement never reappear in native saved record or reload",
-    "Schema creation errors reported without uncaught page error"
+    "Schema creation errors reported without uncaught page error",
+    "Present undefined key remains untouched through edits until confirmed replacement"
   ],
   "limits": [
     "Native Chromium acceptance ran in GitHub CI; local browser download failed.",
     "Single local saved concept, session history; no cross-tab arbitration or cloud synchronization.",
     "Approximate clothing overlays, no fit prediction."
-  ]
+  ],
+  "presenceRed": {
+    "commit": "40c8cf7059a5ab55cc78deebc5da5f3644843986",
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37198090506",
+    "browserPassed": 17,
+    "browserFailed": 1,
+    "reproduction": "Existing undefined record is treated as absent and loses save protection"
+  }
 }

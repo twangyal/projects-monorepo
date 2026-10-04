@@ -61,3 +61,5 @@ The app is independent of other monorepo projects. Source modules separate the v
 
 
 Startup recovery (#49) was verified on 2026-10-04 at `593f67aa880b7e84eb646bb26266d0955c2b5746` in [run 37197789513](https://github.com/twangyal/projects-monorepo/actions/runs/37197789513): 36 unit tests, lint/typecheck/build and all 17 production Chromium cases passed. Independent review found and reproduced a pending-replacement gesture race in two native cases before its committed-history correction. See [verification evidence](docs/2026-10-04-startup-recovery-verification.json).
+
+The final presence-boundary correction at `f83e1b6` distinguishes a stored `undefined` from an absent key, keeping invalid records protected until explicit replacement. The added native case failed before this fix, and [run 37198211480](https://github.com/twangyal/projects-monorepo/actions/runs/37198211480) passes all 36 unit and 18 browser cases with lint/typecheck/build.
