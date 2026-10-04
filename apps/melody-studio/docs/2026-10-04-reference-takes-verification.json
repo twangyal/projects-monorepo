@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 66,
   "version": "0.4.0",
-  "status": "local-verification-complete-ci-pending",
+  "status": "verified",
   "baseline": {
     "units": 173,
     "browser": 35,
@@ -388,7 +388,96 @@
     "scripts/smoke_reference_takes.mjs": "653d7672ce9e24eb9ed42b488f579802a370bfd225706010ecae57044bb6a775"
   },
   "ci": {
-    "status": "pending"
+    "status": "success",
+    "commit": "6169ade9a15fcb412223326e95fad3c565615392",
+    "allWorkflowCount": 12,
+    "workflows": [
+      {
+        "name": "Clothing Studio",
+        "runId": 37197627285,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Motion Studio",
+        "runId": 37197627271,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Stock Notebook",
+        "runId": 37197627211,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Friendly Challenges",
+        "runId": 37197627288,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Melody Studio",
+        "runId": 37197627280,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Shot Studio",
+        "runId": 37197627197,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Git History",
+        "runId": 37197627347,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Style Studio",
+        "runId": 37197627366,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Lens Studio",
+        "runId": 37197627201,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Composure",
+        "runId": 37197627324,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Duet",
+        "runId": 37197627196,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Karaoke Studio",
+        "runId": 37197627214,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "melody": {
+      "runId": 37197627280,
+      "jobId": 111422651512,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37197627280",
+      "unitTests": 233,
+      "unitDurationMs": 4745.733644,
+      "browserTests": 58,
+      "browserSeconds": 40.4,
+      "chromium": "153.0.8010.12",
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true
+    }
   },
   "limitations": [
     "Synthetic tones and a native synthetic MediaRecorder stream do not measure real vocal accuracy or physical device behavior.",
