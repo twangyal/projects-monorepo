@@ -94,3 +94,32 @@ test('another connection cannot hold readonly recovery and a queued clear indefi
   expect(result.title).toBe('Cross-tab original');
   expect(result.cleared).toBeNull();
 });
+
+test('a completed native commit wins over a deadline callback awaiting its completion event', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const h = window.stockStorage, name = 'completed-commit-deadline';
+    const store = new h.NotebookStore(name), timeout = window.setTimeout, transaction = IDBDatabase.prototype.transaction;
+    let expire: (() => void) | undefined, fired = false;
+    window.setTimeout = ((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
+      if (delay === 10000 && typeof handler === 'function') expire = () => handler(...args);
+      return timeout(handler, delay, ...args);
+    }) as typeof window.setTimeout;
+    IDBDatabase.prototype.transaction = function (...args: Parameters<typeof transaction>) {
+      const tx = transaction.apply(this, args);
+      if (args[1] === 'readwrite') tx.addEventListener('complete', () => {
+        // Native state is already committed. Deliver the real deadline callback
+        // before the app's completion listener; abort must report InvalidState.
+        if (expire) { fired = true; expire(); }
+      }, { once: true });
+      return tx;
+    };
+    try {
+      await store.save(h.fixture('Committed before deadline'), '2026-10-04');
+      window.setTimeout = timeout; IDBDatabase.prototype.transaction = transaction;
+      const title = (await store.load('2026-10-04'))!.title;
+      return { fired, title };
+    } finally { window.setTimeout = timeout; IDBDatabase.prototype.transaction = transaction; store.close(); }
+  });
+  expect(result.fired).toBe(true);
+  expect(result.title).toBe('Committed before deadline');
+});
