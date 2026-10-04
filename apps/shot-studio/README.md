@@ -403,3 +403,10 @@ timeouts changed. The original CI artifact cannot prove its precise triggering
 interleaving. [Failure evidence](docs/2026-10-04-import-readiness-ci-first.json) and
 [repair evidence](docs/2026-10-04-import-readiness-verification.json) preserve that
 limit and the actual archive hashes.
+
+The readiness repair passes **232 units and all 72 native cases** in both
+[push](https://github.com/twangyal/projects-monorepo/actions/runs/37222152746) and
+[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37222156547) CI at
+`9a4f08f6e3e415d29ca5c113979f91bb4d68711c`, with syntax checks and Chromium153.
+All thirteen project PR workflows pass. The [exact CI receipt](docs/2026-10-04-import-readiness-ci.json)
+also retains a separate Melody push test failure found by that run.

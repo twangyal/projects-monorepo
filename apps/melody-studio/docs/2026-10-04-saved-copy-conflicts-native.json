@@ -1,0 +1,273 @@
+{
+  "feature": "Melody #98 native saved-copy conflict protection",
+  "results": {
+    "baselineOriginal3": {
+      "passed": 0,
+      "failed": 3,
+      "log": "/tmp/melody98-original3-red.log",
+      "evidence": "Two stale edits falselyreported Saved; legacy firstwrite stayed schema1."
+    },
+    "firstIntegration8": {
+      "passed": 8,
+      "failed": 0,
+      "seconds": 15.5,
+      "log": "/tmp/melody98-ui-first.log",
+      "fixtureChangesAfterBaseline": false
+    },
+    "distinctFinal": 8,
+    "prior80": {
+      "passed": 79,
+      "failed": 1,
+      "displayDuration": "2.0m",
+      "log": "/tmp/melody98-prior80.log",
+      "finding": "Unchanged held-initial-IDB test detects Add note enabled after controlledpagehide while initialread stillpending (reference-takes.spec.ts483). New pagehide handler clears startup; real regression awaitingrepair."
+    },
+    "repair9": {
+      "passed": 9,
+      "failed": 0,
+      "seconds": 16.1,
+      "log": "/tmp/melody98-repair9.log",
+      "distinctness": "Eight repeated UIconflict cases plus one adapted startup case; not nine additional cases."
+    },
+    "prior80Final": "All80 distinct pass across original79 and repairedaffected1; full80 not repeated.",
+    "distinctOwnedFinal": 88
+  },
+  "originalPR100Prefix": {
+    "preservedByteForByte": true,
+    "file": "/workspace/melody98-original-save-conflicts.spec.ts",
+    "bytes": 7054,
+    "sha256": "4505747d6aca3a59fe1eca427d87fb7f9d9b548f041b1b6978870d79d9eb5a43"
+  },
+  "actualVerification": [
+    "Two real same-origin pages retain different committed bundles and actualPCM; stale writesabortwithoutassetloss.",
+    "Legacy schema1 native descriptor read/reload writesnothing; firstedit becomes schema2 and stalelegacytabconflicts.",
+    "Native readwrite transaction heldalive by real get(current) requests: newerlocaltitle andfocusedrawblanktempo survivecapturedreplacement; latestmemoryexplicitRetry required.",
+    "Native cancelled confirmation and realput-success transaction.abort keep protection,winnerbytes,localbackup,rawnote spelling.",
+    "Otherpage actualwrite while replacement nativeconfirmationopen invalidatesreviewedreceipt.",
+    "Directrollkeyboard edit/Undo/Redo remainlocal underconflict and retainlocalreference graph andforeignwinningPCM.",
+    "Actualreadonlyreview heldalive; changed-back rawinput retiresconfirmation and preservesnativefocus/caret."
+  ],
+  "instrumentationLimits": [
+    "Transactions are keptopen with real readonly requests, not fabricated results or injected storage revisions.",
+    "Native confirmation is real; foreignpage editing happensbefore accepting it.",
+    "Actualcompletebackupdownloads compared in nativecases but successfuldownloadfiles are notpromoted bythese tests; sourcefixtures andassertions are preserved.",
+    "No production source or timeout changes from this test owner."
+  ],
+  "browser": {
+    "executable": "/usr/bin/chromium",
+    "version": "151.0.7922.173",
+    "origin": "http://127.0.0.1:4298",
+    "closed": true
+  },
+  "checks": [
+    "Whole TypeScript passed before integration",
+    "Scoped ESLint of ownedtest passed before integration"
+  ],
+  "sourceHashes": {
+    "tests/browser/save-conflicts.spec.ts": {
+      "bytes": 15509,
+      "sha256": "4d39d95148177919dbdddf46ca1b7390978f9a3cd9ce52ec047c24f0b416fcf8"
+    },
+    "src/main.ts": {
+      "bytes": 97943,
+      "sha256": "fddcbd41f132b222a0fda30e03fda87ca0d00d9bc8d577cd9ebb36f1ae59ee74"
+    },
+    "src/reference-storage.ts": {
+      "bytes": 16541,
+      "sha256": "ff95c3be180518faed7b3c0afe0702aa52d5c85334fb46edf3a95e2b1473db7a"
+    },
+    "src/reference-project.ts": {
+      "bytes": 13032,
+      "sha256": "8924a56ffb19414f012f6287fd2c1b517769fb0e1e2a014ca1367844c6a4e430"
+    },
+    "src/roll-controller.ts": {
+      "bytes": 11226,
+      "sha256": "92a9f4b446607a6c1037ffda2c3a77e9f44b54d6f9d85e342dcd8607908c1bf6"
+    },
+    "src/roll-edit.ts": {
+      "bytes": 3925,
+      "sha256": "40d01db52104e5a29acf742c1de8facc70d70a21dffd3f715b108598b1cfeeb4"
+    }
+  },
+  "bundleHashes": {
+    "dist/index.html": {
+      "bytes": 670,
+      "sha256": "7711a6cbebdac79093e8dc6c67ae1de31f0eb8a8cce3720adb0aef860bb73649"
+    },
+    "dist/assets/main-CVItt_OF.js": {
+      "bytes": 129764,
+      "sha256": "45b370803cc83148cbf2ef1c74139daa23ea6b17f3a9f4946bed91da4238fe7a"
+    },
+    "dist/assets/render.worker-XQ4gxvXb.js": {
+      "bytes": 4883,
+      "sha256": "00266ba907dbf5e32d9216a4434d72b01d3a4ecc5d4ba5dce6ca1b3b919562e0"
+    },
+    "dist/assets/transcribe.worker-D27pcBxb.js": {
+      "bytes": 2860,
+      "sha256": "e6f43ee54c3c3fc29cf9c532fa70b3e4b3009afd2f1ef5fe6fb1f7b93503c38c"
+    },
+    "dist/assets/main-BhGR5Dnv.css": {
+      "bytes": 15984,
+      "sha256": "a2fff1d395506c1dd0214411360c24ed6c762bf11d800b9f3987345b6dd60919"
+    }
+  },
+  "logs": {
+    "/tmp/melody98-original3-red.log": {
+      "bytes": 8129,
+      "sha256": "3673e33d6cf8d1639eea3c76751c72281aa50f3e48e445644ee747557ce091ef"
+    },
+    "/tmp/melody98-ui-first.log": {
+      "bytes": 1483,
+      "sha256": "527fa6288848372b555a4090ce01ee2d79eb5cb6c5c56a050e8853e351afda1d"
+    },
+    "/tmp/melody98-prior80.log": {
+      "bytes": 14297,
+      "sha256": "7d4574ad19d5e01f4849f23ef42de39398c3be46d9f79314e8947dfe5c9fb85f"
+    },
+    "/tmp/melody98-repair9.log": {
+      "bytes": 1641,
+      "sha256": "e1f3eb0bdeadc0ed521a512e894751f1751f38cf7df3ac5034016d0005cd300d"
+    }
+  },
+  "artifacts": {
+    "/tmp/melody98-original3-red-results/.last-run.json": {
+      "bytes": 194,
+      "sha256": "5ac4b68b31548b033c61f887ecb6a6ea8a803738ff1eae2272f1890d1434ff03"
+    },
+    "/tmp/melody98-original3-red-results/browser-save-conflicts-gen-ae45b-conflict-on-first-migration/trace.zip": {
+      "bytes": 763521,
+      "sha256": "8feef706a99e49b1e52f3ec80ef09cc0d33539a2623efad21266f118955a2463"
+    },
+    "/tmp/melody98-original3-red-results/browser-save-conflicts-gen-ae45b-conflict-on-first-migration/error-context.md": {
+      "bytes": 21470,
+      "sha256": "5aa47ce304d23d587431a9221b01be007b70c9678707df72eb0c7475d2f95962"
+    },
+    "/tmp/melody98-original3-red-results/browser-save-conflicts-rep-4bcd5-ce-the-current-tab-identity/trace.zip": {
+      "bytes": 482260,
+      "sha256": "2d8a218dd8cd6cbaa12f2fbba47bde8f71e7e4efcb5b14ac24962fddd77b7822"
+    },
+    "/tmp/melody98-original3-red-results/browser-save-conflicts-rep-4bcd5-ce-the-current-tab-identity/error-context.md": {
+      "bytes": 8741,
+      "sha256": "558d65e779e9740b439b931cd5e960caf8ef155bb6d1fab853cacd95da19da20"
+    },
+    "/tmp/melody98-original3-red-results/browser-save-conflicts-a-s-293e4-notes-backup-and-raw-fields/trace.zip": {
+      "bytes": 497083,
+      "sha256": "20d9d796ac130839366a826f863044bb135d356b49e163fe45f37658e0c4688c"
+    },
+    "/tmp/melody98-original3-red-results/browser-save-conflicts-a-s-293e4-notes-backup-and-raw-fields/error-context.md": {
+      "bytes": 8914,
+      "sha256": "b3ec1d53e7fd1ef6b23090397352776269af929067cd811a018a582a281ff7e8"
+    },
+    "/tmp/melody98-ui-first-results/.last-run.json": {
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    "/tmp/melody98-prior80-results/.last-run.json": {
+      "bytes": 96,
+      "sha256": "2a71dd5f9474a32bc6e98f1f7b29b83f89c0485e71b6df577e7bbfc2afc606db"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-a-minimum-quarte-75fd6-native-body-and-resize-hits/minimum-note-hit.json": {
+      "bytes": 412,
+      "sha256": "76fc60dcc8f7f303f90627b854a6eed00974586249ccbb7939fe3b34a47d6d96"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-native-touch-mov-91974-nce-and-avoid-page-overflow/roll-390px.png": {
+      "bytes": 291177,
+      "sha256": "79dfcf9f70ca782b9763513b9aed70bb43b68d4229322facac839430a95531ae"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-native-touch-mov-91974-nce-and-avoid-page-overflow/touch-events.json": {
+      "bytes": 2838,
+      "sha256": "cbb892a327ffb729bda6930641b6b05d864fdd39b16a9dd8ce98986c01ae47ba"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-native-touch-mov-91974-nce-and-avoid-page-overflow/touch-geometry.json": {
+      "bytes": 378,
+      "sha256": "3e7fdd43b6da9d3a5d43bb7511a4655936553d7d48d9eac99dbc514d02d1a937"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-edited-notes-exp-53c02-etained-PCM-stays-immutable/roll-audio-oracle.json": {
+      "bytes": 56,
+      "sha256": "10b5f761461dd921c468539b7e68199a89134aa06dff1acaa1526e472de2fe63"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-edited-notes-exp-53c02-etained-PCM-stays-immutable/roll-complete.melody.json": {
+      "bytes": 59921,
+      "sha256": "040dcf13015c495811fe4f7e8f64997dd57de862068bd1cdb2143ec8a8b0ae9c"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-edited-notes-exp-53c02-etained-PCM-stays-immutable/roll-edited.wav": {
+      "bytes": 80748,
+      "sha256": "0155790a7295b125718e05e946e507db744a0efb48014caadf254ebe09e4730d"
+    },
+    "/tmp/melody98-prior80-results/roll-edit-edited-notes-exp-53c02-etained-PCM-stays-immutable/roll-edited.mid": {
+      "bytes": 178,
+      "sha256": "6c55932762e00cf337f83a0372e1c8b20cc0369be220c0a4e0b0e0aa6b0f004a"
+    },
+    "/tmp/melody98-prior80-results/browser-reference-takes-Ca-29951-itial-IndexedDB-transaction/trace.zip": {
+      "bytes": 341458,
+      "sha256": "93f83f7630739b9e085d25c056bcf0b7ddf06c4149474ba77754bca55872f8f6"
+    },
+    "/tmp/melody98-prior80-results/browser-reference-takes-Ca-29951-itial-IndexedDB-transaction/error-context.md": {
+      "bytes": 12841,
+      "sha256": "2cd9c440cee1bce3965b9f9d614ae4af811e033e525ec7ba3f344940aa7405fe"
+    },
+    "/tmp/melody98-repair9-results/.last-run.json": {
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    }
+  },
+  "prior80SourceAtFailure": {
+    "/workspace/projects-monorepo/apps/melody-studio/src/main.ts": {
+      "bytes": 97943,
+      "sha256": "fddcbd41f132b222a0fda30e03fda87ca0d00d9bc8d577cd9ebb36f1ae59ee74"
+    },
+    "/workspace/projects-monorepo/apps/melody-studio/tests/roll-edit.spec.ts": {
+      "bytes": 19766,
+      "sha256": "4856b51904cb1b41d1e429e706fffef523665b0e45b3e56a473e16dc9a114d2b"
+    }
+  },
+  "startupRepair": {
+    "production": "Retired read keeps startup/busy until actualterminal; then protectedrecovery without receiptaccept or visible publication.",
+    "test": "Originalbefore-release disabledboundaries andexactdurableIDB preserved; intentional #98 authority change replaces automaticpost-hide restore with protectedterminal then explicitRetryload restoring exactbackup/PCM.",
+    "changesAfterFirstIntegration": "Only root-authorized existing startup lifecycle expectation adapted; originalPR100three and allnew8 remain unchanged."
+  },
+  "finalSourceHashes": {
+    "tests/browser/save-conflicts.spec.ts": {
+      "bytes": 15509,
+      "sha256": "4d39d95148177919dbdddf46ca1b7390978f9a3cd9ce52ec047c24f0b416fcf8"
+    },
+    "tests/browser/reference-takes.spec.ts": {
+      "bytes": 43602,
+      "sha256": "02350a0d57ab3cfc64361ae98abfcbed44832f5dfaf630a5c74124b5c5b4b558"
+    },
+    "tests/roll-edit.spec.ts": {
+      "bytes": 19766,
+      "sha256": "4856b51904cb1b41d1e429e706fffef523665b0e45b3e56a473e16dc9a114d2b"
+    },
+    "src/main.ts": {
+      "bytes": 98596,
+      "sha256": "bf6e7357ee7fbae62b56773d60d60fb5d952181b85eda2ba0e392e16a3f59896"
+    },
+    "src/reference-storage.ts": {
+      "bytes": 16541,
+      "sha256": "ff95c3be180518faed7b3c0afe0702aa52d5c85334fb46edf3a95e2b1473db7a"
+    }
+  },
+  "finalBundleHashes": {
+    "dist/index.html": {
+      "bytes": 670,
+      "sha256": "3a077313718cf4eb7f28b280ebce4328ec28afb93aab5653c639ee48c65aedc6"
+    },
+    "dist/assets/render.worker-XQ4gxvXb.js": {
+      "bytes": 4883,
+      "sha256": "00266ba907dbf5e32d9216a4434d72b01d3a4ecc5d4ba5dce6ca1b3b919562e0"
+    },
+    "dist/assets/transcribe.worker-D27pcBxb.js": {
+      "bytes": 2860,
+      "sha256": "e6f43ee54c3c3fc29cf9c532fa70b3e4b3009afd2f1ef5fe6fb1f7b93503c38c"
+    },
+    "dist/assets/main-BhGR5Dnv.css": {
+      "bytes": 15984,
+      "sha256": "a2fff1d395506c1dd0214411360c24ed6c762bf11d800b9f3987345b6dd60919"
+    },
+    "dist/assets/main-jpNsQjvF.js": {
+      "bytes": 130171,
+      "sha256": "7a63584749ea7cd9b6e1dd940cfeccb0fc433ed035293ac719faf11a53f02680"
+    }
+  }
+}

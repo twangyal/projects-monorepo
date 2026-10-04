@@ -58,9 +58,9 @@ test('a genuine late project-file read cannot overwrite a newer committed roll g
 });
 
 test('a real aborted save preserves the complete durable reference and Retry save publishes the roll edit',async({page})=>{
-  await openRoll(page);await expect(page.locator('#save-status')).toContainText(/Saved/i);const original=await readRoll(page),durable=await storedRoll(page);await page.evaluate(()=>{
+  await openRoll(page);await expect(page.locator('#save-status')).toHaveText('Saved in this browser');const original=await readRoll(page),durable=await storedRoll(page);await page.evaluate(()=>{
     const native=IDBObjectStore.prototype.put;let armed=true;IDBObjectStore.prototype.put=function(value:unknown,key?:IDBValidKey){const request=key===undefined?native.call(this,value):native.call(this,value,key);if(armed&&this.transaction.db.name==='melody-studio.projects'&&this.name==='projects'){armed=false;request.addEventListener('success',()=>this.transaction.abort(),{once:true});}return request;};
-  });await dragNote(page,'fractional-low',.25,1);await expect(page.locator('#save-status')).toContainText(/not saved/i);expect(await storedRoll(page)).toEqual(durable);const memory=await readRoll(page);expect(memory.assets).toEqual(original.assets);expect(memory.document.composition.tracks[0].notes[0].pitch).toBe(61);await page.locator('#retry-save').click();await expect(page.locator('#save-status')).toContainText(/Saved/i);await page.reload();await expect(page.getByLabel('Project title')).toHaveValue(original.document.composition.title);expect(await readRoll(page)).toEqual(memory);
+  });await dragNote(page,'fractional-low',.25,1);await expect(page.locator('#save-status')).toContainText(/not saved/i);expect(await storedRoll(page)).toEqual(durable);const memory=await readRoll(page);expect(memory.assets).toEqual(original.assets);expect(memory.document.composition.tracks[0].notes[0].pitch).toBe(61);await page.locator('#retry-save').click();await expect(page.locator('#save-status')).toHaveText('Saved in this browser');await page.reload();await expect(page.getByLabel('Project title')).toHaveValue(original.document.composition.title);expect(await readRoll(page)).toEqual(memory);
 });
 
 test('successful roll publication stops actual playback and a retired native end callback cannot restart it',async({page})=>{
@@ -68,7 +68,7 @@ test('successful roll publication stops actual playback and a retired native end
 });
 
 test('protected corrupt native storage remains untouched by direct editing and Undo',async({page})=>{
-  await openRoll(page);await expect(page.locator('#save-status')).toContainText(/Saved/i);await page.evaluate(async()=>{
+  await openRoll(page);await expect(page.locator('#save-status')).toHaveText('Saved in this browser');await page.evaluate(async()=>{
     const db=await new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open('melody-studio.projects',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
     try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction('projects','readwrite');tx.objectStore('projects').put({schemaVersion:999,literal:'Retain original unsupported record'},'current');tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);});}finally{db.close();}
   });await page.reload();await expect(page.locator('#retry-load')).toBeVisible();const protectedState=await storedRoll(page);const fixture=rollBackup();page.once('dialog',dialog=>dialog.accept());await page.getByLabel('Open project file',{exact:true}).setInputFiles({name:'memory-recovery.melody.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))});await expect(page.getByLabel('Project title')).toHaveValue(fixture.document.composition.title);await dragNote(page,'fractional-low',.25,1);expect(await storedRoll(page)).toEqual(protectedState);await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await readRoll(page)).toEqual(fixture);expect(await storedRoll(page)).toEqual(protectedState);

@@ -481,7 +481,17 @@ test('Cancel and pagehide cannot unlock editing during a genuine held initial In
   // Dispatch only the public lifecycle event; no app/module state is injected.
   await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')));
   await expect(page.getByRole('button', { name: 'Add note', exact: true })).toBeDisabled();
-  await release(page); await expect(page.getByLabel('Project title')).toHaveValue(original.document.composition.title);
+  await release(page);
+  // #98 retires the hidden page's load publication authority. The initial read
+  // must drain behind its editing barrier, then expose protected recovery rather
+  // than automatically restoring (or accepting a storage receipt for) old work.
+  await expect(page.locator('#retry-load')).toBeVisible();
+  await expect(page.locator('#retry-load')).toBeEnabled();
+  await expect(page.locator('#save-status')).toContainText(/protected recovery/i);
+  await expect(page.getByLabel('Project title')).not.toHaveValue(original.document.composition.title);
+  expect(await idb(page)).toEqual(stored);
+  await page.locator('#retry-load').click();
+  await expect(page.getByLabel('Project title')).toHaveValue(original.document.composition.title);
   expect(await backup(page)).toEqual(original); expect(await idb(page)).toEqual(stored);
 });
 

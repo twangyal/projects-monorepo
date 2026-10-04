@@ -116,7 +116,9 @@ The interface counts beats from **1**. Saved project JSON uses zero-based note s
 
 The complete current project autosaves to IndexedDB in one transaction containing its notes, reference bindings and audio. **Saved in this browser** appears only after that transaction completes. Rapid edits keep the newest pending complete save. A failed save leaves the in-memory project and Undo history usable; **Retry save** and **Save project file** remain available. Closing while a save is pending or failed triggers the browser's unsaved-work protection where supported.
 
-Browser storage belongs to that profile and site address; it can be cleared or become unavailable. Multiple tabs use the last completed save. There is no account backup or cloud synchronization. A successful read of an absent new database can recover the old notes-only localStorage project; that legacy copy remains untouched, and the new format is written on the next edit or explicit save retry. A corrupt or unreadable complete project enters protected recovery, without silently falling back or overwriting it. **Retry load** rereads it; **Replace saved copy** explicitly confirms overwriting it with the current in-memory project. Download a backup before replacing or abandoning work.
+Browser storage belongs to that profile and site address; it can be cleared or become unavailable. Each tab saves only against the complete saved copy it last accepted or successfully wrote. If another tab saves first, the stale tab keeps its notes, reference audio, Undo history and unapplied fields, and pauses autosave. Download a complete backup before choosing **Retry load** to adopt the saved project or **Replace saved copy** to review and deliberately replace it. Replacement compares the reviewed copy again within its write transaction; another intervening save refuses the replacement. Cancelled or failed replacement keeps recovery protected. If you edit while replacement is pending, the newer local work stays unsaved until you explicitly choose **Retry save**.
+
+There is no account backup or cloud synchronization. A successful read of an absent new database can recover the old notes-only localStorage project. Legacy saved copies remain untouched by reads; the next successful edit or explicit save retry writes the current saved-row format. Portable backup formats remain unchanged. A corrupt or unreadable complete project enters protected recovery without silently falling back or overwriting it. **Retry load** rereads it; **Replace saved copy** reviews a safely comparable saved descriptor and explicitly confirms overwriting it with the committed in-memory project. If the damaged record cannot be safely compared, replacement refuses and project-file recovery remains available. Download a backup before replacing or abandoning work.
 
 **Save project file** downloads a complete `.melody.json` containing current committed notes and normalized reference PCM, with SHA-256 checksums. It excludes undo history, raw editor drafts, suggestions, comparison windows and original encoded recordings. Open it on another compatible browser with **Open project**; old Composition v1 notes-only files remain supported. Opening shows replacement counts and confirms discarding unapplied work. Canceled, invalid or stale file reads keep the current project and drafts. Checksums detect damaged bytes; they do not authenticate the supplied source metadata. Export complete backups regularly.
 
@@ -140,7 +142,7 @@ npm run build
 npm run test:browser
 ```
 
-`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Install Playwright's Chromium if needed:
+`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Their build enables a constructor-only storage test page through `MELODY_TEST_HARNESS=1`; ordinary `npm run build` omits that page. Install Playwright's Chromium if needed:
 
 ```sh
 npx playwright install chromium
@@ -191,6 +193,44 @@ at `d582c0dd7286992bfb8fea47918cede209a34c44` pass all **252 units and 80 native
 browser cases**, lint, type checking and build on Chromium153. The [CI receipt](docs/2026-10-04-direct-roll-ci.json)
 records exact checkouts and the separate Shot import-readiness test failure found
 by the broader run; twelve of thirteen project workflows passed at that head.
+
+### Saved-copy conflict verification
+
+Issue [#98](https://github.com/twangyal/projects-monorepo/issues/98) passes **255
+unit tests and 97 distinct native browser cases**, lint, type checking and build.
+The three original two-tab regressions failed on the published baseline and now
+pass unchanged. Five additional UI races and nine independent genuine IndexedDB
+cases cover competing complete writes, private receipt ownership, legacy read-only
+behavior, actual transaction abort after request success, deliberate replacement,
+newer raw/committed edits and exact PCM retention. The prior suite exposed a startup
+lifecycle regression; its targeted repair keeps editing blocked until the native
+read settles, then requires explicit Retry load for retired publication authority.
+
+A separate original maximum probe retains 2,048 notes and eight 20-second
+references (7,056,000 PCM bytes) in each of two distinct complete projects. A stale
+tab's direct roll edit cannot alter any of the other tab's eight newer PCM assets.
+Its complete local backup remains available; cancelling replacement preserves both
+copies. Reviewed replacement and a complete browser-process restart preserve the
+chosen **9,580,700-byte** backup exactly, including all notes and audio. This reaches
+maximum note/reference topology, not the 12 MiB input ceiling or peak memory. The
+actual first run passed in 10.323 seconds on Chromium151 without external requests
+or page errors. Reproduce against a separately running ordinary production app:
+
+```sh
+CHROMIUM_PATH=/usr/bin/chromium MELODY_CONFLICT_BASE_URL=http://127.0.0.1:4174 \
+  node scripts/smoke_save_conflicts.mjs
+```
+
+Use `MELODY_CONFLICT_OUTPUT` for a new output directory or `--fixtures-only` to
+freeze original inputs without launching a browser. The runner never builds,
+starts a server, writes IndexedDB directly, or imports product serializers.
+[Integration evidence](docs/2026-10-04-saved-copy-conflicts-verification.json),
+[UI evidence](docs/2026-10-04-saved-copy-conflicts-native.json),
+[transaction evidence](docs/2026-10-04-saved-copy-conflicts-storage.json) and
+[maximum evidence](docs/2026-10-04-saved-copy-conflicts-maximum.json) preserve exact
+hashes and failed attempts. The prior direct-editor CI's [premature save assertion](docs/2026-10-04-direct-roll-retry-ci-first.json)
+now requires exact successful status before reload; musical and PCM expectations
+are unchanged. Published-head CI is recorded separately when available.
 
 ### Learned-continuation verification
 

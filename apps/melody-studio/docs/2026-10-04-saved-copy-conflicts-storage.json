@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "issue": 98,
+  "date": "2026-10-04",
+  "scope": "Independent test-only native IndexedDB receipt oracle; no user-flow or browser/model quality claim.",
+  "run": {
+    "firstActualExecution": true,
+    "expected": 9,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "durationMs": 3065.469,
+    "startTime": "2026-10-04T17:55:45.598Z",
+    "workers": 1,
+    "origin": "http://127.0.0.1:4300",
+    "chromium": "151.0.7922.173 (Debian GNU/Linux 13)",
+    "playwright": "1.63.0",
+    "executable": "/usr/bin/chromium",
+    "expectationCorrections": 0,
+    "testCases": [
+      "native CAS: two accepted instances race, exactly one complete graph wins without losing PCM",
+      "native legacy load: complete descriptor and Blob bytes stay untouched until an accepted edit",
+      "native authority: an unaccepted newer load cannot silently authorize overwriting another writer",
+      "native failed hash read does not erase earlier authority or adopt the damaged snapshot",
+      "native presence: proven absence permits first save, present undefined remains protected",
+      "native private receipts: cloned, foreign and consumed replacement receipts never grant write authority",
+      "native replacement CAS: a winner written after review invalidates that exact reviewed receipt",
+      "native transaction rollback: abort after put success leaves graph and expected receipt unchanged for retry",
+      "native input atomicity: invalid bundle and save before acceptance cannot clear retained audio"
+    ]
+  },
+  "method": {
+    "database": "melody-studio.projects",
+    "version": 1,
+    "stores": [
+      "projects",
+      "assets"
+    ],
+    "key": "projects/current",
+    "fixtureSeeding": "Original literal descriptors and 16-byte PCM written through genuine browser IndexedDB; expectations authored before producer implementation inspection.",
+    "harness": "Gated test-only entry exposes only ReferenceStorage and SavedCopyConflict; no production globals or mocked database.",
+    "comparison": "Native readonly snapshot plus independent SHA-256 of all retained Blob bytes; assertions compare literal document/PCM expectations.",
+    "concurrency": "Two independent ReferenceStorage instances accept the same real saved snapshot and concurrently save different complete bundles; exactly one wins, loser is SavedCopyConflict, only winner PCM remains.",
+    "rollback": "Pass-through native IDBObjectStore.put returns the real request; its success listener aborts the real owning transaction before complete. Durable row/assets and authority remain unchanged, then retry succeeds.",
+    "covered": [
+      "Legacy v1 load/accept without writes",
+      "Unaccepted newer load cannot adopt authority",
+      "Failed PCM hash load preserves accepted authority",
+      "Absence versus present undefined",
+      "Cloned/foreign/consumed receipts rejected",
+      "Reviewed replacement stale after winner write",
+      "Invalid input and save before accepted load leave graph intact"
+    ],
+    "limitations": [
+      "Tiny original PCM fixtures test identity and atomic storage, not maximum media capacity or audible accuracy.",
+      "Controlled transaction abort is declared fault injection; requests, transactions, reads and stored Blob bytes remain native.",
+      "This nine-case harness does not replace the separate native UI conflict/lifecycle acceptance."
+    ]
+  },
+  "fixtures": {
+    "serializationForLiteralBundleHash": "UTF-8 compact JSON, recursively sorted keys; assets include numeric pcm arrays. Test-only representation, not a production encoder or portable-file hash.",
+    "values": [
+      {
+        "title": "Original saved A",
+        "assetId": "00000000-0000-4000-8000-000000000098",
+        "pcmBytes": [
+          0,
+          0,
+          255,
+          127,
+          0,
+          128,
+          1,
+          0,
+          255,
+          255,
+          52,
+          18,
+          204,
+          237,
+          0,
+          0
+        ],
+        "pcmSha256": "172769b7ec36c869271d47d7d373b3d5a9b75a9b9181ced0fa3c4bacb2d20693",
+        "literalBundleSha256": "a01609e2dac50a7d2958e86ad4bf4fd9350f989d9197770401a20d29fd42d003"
+      },
+      {
+        "title": "Independent winner B",
+        "assetId": "00000000-0000-4000-8000-000000000099",
+        "pcmBytes": [
+          1,
+          0,
+          2,
+          0,
+          3,
+          0,
+          4,
+          0,
+          5,
+          0,
+          6,
+          0,
+          7,
+          0,
+          8,
+          0
+        ],
+        "pcmSha256": "e3fd6a0a483c5b121ce5f2ca94a5a3b5115f6a02a4605cd7c903f9b76f3ec7db",
+        "literalBundleSha256": "317ab63e1422777ae1dfec2bbacd268b20f056e8bcf696d77ddd2664c55e77e5"
+      },
+      {
+        "title": "Newest memory C",
+        "assetId": "00000000-0000-4000-8000-000000000097",
+        "pcmBytes": [
+          0,
+          0,
+          237,
+          204,
+          18,
+          52,
+          255,
+          255,
+          0,
+          1,
+          128,
+          0,
+          127,
+          255,
+          0,
+          0
+        ],
+        "pcmSha256": "cc0158d9517cb6cfa7cbe1991101a7f7eabb833bd04889862457d6c64342abeb",
+        "literalBundleSha256": "5faf1594e7dadf043269abf57301c44f4d8dacf14eb463b8ba81801a363a43d2"
+      }
+    ]
+  },
+  "servedHarness": {
+    "htmlSha256": "745c8c0465242e81a3030ff2690d8f0547608a3471beed74173cb463e4db7e3f",
+    "assets": [
+      {
+        "path": "/assets/storageReceipts-E57hNgER.js",
+        "bytes": 315,
+        "sha256": "a218bd4a4f071f02e1f2f7752cf94c3906241c9fdf1e52f265ba563ccca4d534"
+      },
+      {
+        "path": "/assets/reference-storage-CpWxzn-3.js",
+        "bytes": 23039,
+        "sha256": "271341159d394b9ffe77966f08506de7c5d4c972cc6a607f4e6404d29ed68c00"
+      }
+    ]
+  },
+  "sourceHashes": {
+    "src/reference-storage.ts": "ff95c3be180518faed7b3c0afe0702aa52d5c85334fb46edf3a95e2b1473db7a",
+    "tests/browser/storage-receipts.spec.ts": "b247a6248e5482057b7e7c0030b451f3e362095952e563ace58a294cfb2d7c51",
+    "tests/storage-receipts-harness.html": "b55fa7e52e1cdd3cde28597b0cb6ba35858df04d9f84257af75c665da475b500",
+    "tests/storage-receipts-harness.ts": "f631d8b12f2dea3aee353de2a99f8b6e79cdb2334ca7b4749dce0e50bd6553d0"
+  },
+  "artifacts": {
+    "/tmp/melody98-receipts-first.log": {
+      "sha256": "01c4f929e04c4e87ddce6c84d362b6debc712bd3a5eba6a9b1ae3ed10b2ab297"
+    },
+    "/tmp/melody98-receipts-first-results.json": {
+      "sha256": "9d8cbb67b059ef250c14af0cca9f1034492fce95583daa8ef73aa058dabfe088"
+    },
+    "/tmp/melody98-receipts.config.mjs": {
+      "sha256": "7bae24155dea059222f481986f62b6b932a2dcbccf4e39f1d825de3483635ec5"
+    }
+  },
+  "cleanup": "Playwright runner and its browser exited; no owned server was started. Root-owned 4300 remained running and slot was released."
+}

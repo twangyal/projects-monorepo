@@ -1,0 +1,76 @@
+{
+  "issue": 98,
+  "date": "2026-10-04",
+  "version": "0.5.1",
+  "status": "complete local verification passed; exact published-head CI pending",
+  "contract": "docs/superpowers/specs/2026-10-04-melody-saved-copy-conflicts-design.md",
+  "unit": {
+    "passed": 255,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 5283.354358,
+    "log": {
+      "bytes": 26610,
+      "sha256": "b54e0d45c8be014673eac9dae4a03c7c1463eaadd3acbbaed8ccbc57826bb347"
+    }
+  },
+  "checks": {
+    "eslint": "passed",
+    "typecheck": "passed",
+    "normalProductionBuild": "passed",
+    "normalScript": "main-jpNsQjvF.js",
+    "normalBuildMs": 505,
+    "normalBuildLog": {
+      "bytes": 753,
+      "sha256": "83c9431c560b31440ddf4095e1cfe0ba05022bb3899d4521d0f906d833813de4"
+    },
+    "testHarness": "constructor-only separately gated build; ordinary build omits harness"
+  },
+  "nativeReceipt": "2026-10-04-saved-copy-conflicts-native.json",
+  "storageReceipt": "2026-10-04-saved-copy-conflicts-storage.json",
+  "repairs": [
+    "The unchanged prior browser suite exposed pagehide clearing startup before a genuine initial IndexedDB read completed. The repaired pending-load owner preserves the admission barrier through the real operation, retires automatic publication, and permits explicit Retry load afterward. The prior post-pagehide auto-restore assertion now reflects the new frozen authority contract; exact retained database/backup assertions remain.",
+    "Independent CI for the prior direct editor exposed /Saved/i also matching not saved before a reload. The fixture now requires exact Saved in this browser in all three positive assertions; no product timeout or musical/PCM expectation changed."
+  ],
+  "limits": [
+    "Saved-row revision2 is internal; database version1 and portable backup formats remain unchanged.",
+    "Actual complete native transactions protect against cooperating tab writes; checksums detect damage, not malicious source authenticity.",
+    "Chromium software checks do not establish cross-browser, physical device or vocal transcription accuracy."
+  ],
+  "native": {
+    "distinctPassed": 97,
+    "newUiCases": 8,
+    "newStorageCases": 9,
+    "priorCases": 80,
+    "runs": [
+      "Original PR100 three cases failed on published baseline, unchanged eight UI cases passed first integration in15.5s.",
+      "Nine independent real-IDB receipt cases passed first integration in3.1s.",
+      "Prior80 suite:79passed and1startup barrier regression. After repair the affected case plus all8UI cases passed in16.1s."
+    ]
+  },
+  "sourceSha256": {
+    "src/main.ts": "bf6e7357ee7fbae62b56773d60d60fb5d952181b85eda2ba0e392e16a3f59896",
+    "src/reference-storage.ts": "ff95c3be180518faed7b3c0afe0702aa52d5c85334fb46edf3a95e2b1473db7a",
+    "tests/reference-storage.test.ts": "89c2ceaf13806bc7bba04614769b056c51792f5ea5c5e8b1704e73501ff34cc5",
+    "tests/browser/save-conflicts.spec.ts": "4d39d95148177919dbdddf46ca1b7390978f9a3cd9ce52ec047c24f0b416fcf8",
+    "tests/browser/storage-receipts.spec.ts": "b247a6248e5482057b7e7c0030b451f3e362095952e563ace58a294cfb2d7c51",
+    "tests/browser/reference-takes.spec.ts": "02350a0d57ab3cfc64361ae98abfcbed44832f5dfaf630a5c74124b5c5b4b558",
+    "tests/roll-edit.spec.ts": "4856b51904cb1b41d1e429e706fffef523665b0e45b3e56a473e16dc9a114d2b",
+    "vite.config.ts": "bf792b890f442ac81e477024c83d5283d0315e70fff2c8a6cdc7bdedc47efcf8",
+    "playwright.config.ts": "1faaf9d7881331ac978c36d65913f4dc5a3d67ab5175e86f5d3eea7d5aab1011",
+    "scripts/smoke_save_conflicts.mjs": "602f395d112c698352dbeb82b805d180a5f6488a2e94239eefe1f764d5571dbc"
+  },
+  "maximumReceipt": "2026-10-04-saved-copy-conflicts-maximum.json",
+  "maximum": {
+    "tracks": 8,
+    "notes": 2048,
+    "references": 8,
+    "pcmBytesPerGraph": 7056000,
+    "distinctGraphs": 2,
+    "allEightPcmAssetsDistinct": true,
+    "restartBackupBytes": 9580700,
+    "restartSha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f",
+    "wallMs": 10323.409725,
+    "firstActualRun": "passed without expected-value or fixture changes"
+  }
+}

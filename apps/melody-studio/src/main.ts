@@ -7,7 +7,7 @@ import { loadProject } from './storage.ts';
 import { notesOnly, withComposition, ReferenceHistory } from './reference-project.ts';
 import { normalizeReference, referenceWindow, referenceSamples, comparisonComposition, cropComparison } from './reference-audio.ts';
 import { encodeProjectBackup, decodeProjectBackup } from './reference-backup.ts';
-import { ReferenceStorage } from './reference-storage.ts';
+import { ReferenceStorage, SavedCopyConflict } from './reference-storage.ts';
 import { REFERENCE_LIMITS, type MelodyDocument, type ReferenceAsset, type ReferenceBundle, type ReferenceKind } from './reference-types.ts';
 import { duplicateTrack, transposeTrack, repeatTrack } from './arrangement.ts';
 import { selectEnding, suggestEnding, applyContinuation, auditionComposition, type ContinuationProposal, type SeedSelection } from './continuation.ts';
@@ -32,7 +32,9 @@ let completeStorage: ReferenceStorage | null = null;
 try { completeStorage = new ReferenceStorage(window.indexedDB); } catch { /* Protected recovery below. */ }
 let startup = true, recovery = false, unsaved = false, saving = false, saveFailed = false, hasSavedCopy = false;
 let savePending: { bundle: ReferenceBundle; generation: number } | null = null;
+let replacing = false, replacementEpoch = 0, saveUiEpoch = 0, manualSaveRequired = false;
 let loadEpoch = 0, projectFileEpoch = 0, projectFileReading = false;
+let pendingLoad: { epoch: number; retired: boolean } | null = null;
 let capture: Capture | null = null;
 let nativeAudioPending = false;
 let comparisonOwner: { key: string; generation: number; window: string } | null = null;
@@ -805,7 +807,15 @@ app.addEventListener('submit', event => {
   } catch (error) { announce(error instanceof Error ? error.message : 'Check the note fields.'); }
 });
 
-window.addEventListener('pagehide', () => { cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; releaseActionPointer(); });
+window.addEventListener('pagehide', () => {
+  if (replacing) { unsaved = true; saveMessage = 'Saved-copy replacement ownership was retired. The browser copy stays protected; Retry load or review replacement again.'; }
+  if (saving && !recovery) { unsaved = true; manualSaveRequired = true; saveMessage = 'A pending save lost its page ownership. Your latest memory work remains unsaved until you explicitly Retry save.'; }
+  replacementEpoch++; replacing = false; saveUiEpoch++; savePending = null;
+  if (startup && pendingLoad) {
+    loadEpoch++; pendingLoad.retired = true; recovery = true; unsaved = true;
+    saveMessage = 'Load ownership was retired. The pending read must finish before editing or Retry load is available.';
+  }
+  cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; releaseActionPointer(); });
 window.addEventListener('keydown', event => {
   if (!(event.ctrlKey || event.metaKey) || event.altKey || busy || startup) return;
   const target = event.target as HTMLElement;
@@ -976,15 +986,16 @@ function documentNode(selector: string): HTMLElement { return app.querySelector<
 function syncSaveStatus(): void {
   const node = app.querySelector<HTMLElement>('#save-status'); if (node) node.textContent = saveMessage;
   const retry = referenceHost.querySelector<HTMLButtonElement>('#retry-save');
-  if (retry) { retry.hidden = recovery || (!unsaved && hasSavedCopy); retry.disabled = startup || saving; }
+  if (retry) { retry.hidden = recovery || (!unsaved && hasSavedCopy); retry.disabled = startup || saving || replacing; }
   const load = referenceHost.querySelector<HTMLButtonElement>('#retry-load');
-  if (load) { load.hidden = !recovery; load.disabled = startup || !!busy; }
+  if (load) { load.hidden = !recovery; load.disabled = startup || saving || replacing || !!busy; }
   const replace = referenceHost.querySelector<HTMLButtonElement>('#replace-saved-copy');
-  if (replace) { replace.hidden = !recovery; replace.disabled = startup || saving || !!busy; }
+  if (replace) { replace.hidden = !recovery; replace.disabled = startup || saving || replacing || !!busy; }
 }
 function queueSave(): void {
   unsaved = true;
   if (recovery) { saveMessage = 'Not saved in this browser — protected recovery. Retry load or explicitly Replace saved copy.'; syncSaveStatus(); return; }
+  if (manualSaveRequired) { saveMessage = 'Newer local work is not saved. Download a complete project file or explicitly Retry save.'; syncSaveStatus(); return; }
   savePending = { bundle: history.snapshot(), generation: compositionGeneration };
   saveMessage = saveFailed ? 'Not saved in this browser — saving the latest complete project…' : 'Saving complete project…'; syncSaveStatus();
   if (!saving) void pumpSave();
@@ -993,35 +1004,42 @@ async function pumpSave(): Promise<void> {
   saving = true; syncSaveStatus();
   try {
     while (savePending && !recovery) {
-      const job = savePending; savePending = null;
+      const job = savePending, uiEpoch = saveUiEpoch; savePending = null;
       try {
         if (!completeStorage) throw new Error('Browser storage unavailable.');
         await completeStorage.save(job.bundle);
-        if (job.generation === compositionGeneration && !savePending) {
+        if (uiEpoch === saveUiEpoch && job.generation === compositionGeneration && !savePending) {
           unsaved = false; saveFailed = false; hasSavedCopy = true; saveMessage = 'Saved in this browser';
         }
-      } catch {
+      } catch (error) {
         unsaved = true; saveFailed = true;
-        saveMessage = 'Not saved in this browser. Download a complete project file or Retry save.';
+        if (error instanceof SavedCopyConflict) {
+          recovery = true; savePending = null;
+          saveMessage = 'Saved-copy conflict with another tab. Your current notes, reference audio and drafts remain unsaved here. Download a complete project file, Retry load, or explicitly Replace saved copy.';
+          updateReference();
+        } else saveMessage = 'Not saved in this browser. Download a complete project file or Retry save.';
       }
       syncSaveStatus();
     }
   } finally { saving = false; syncSaveStatus(); }
 }
 async function loadComplete(initial = false): Promise<void> {
+  if (!initial && (startup || busy || saving || replacing)) return;
   if (!initial) {
     const beforeGeneration = compositionGeneration, beforeIntent = editorIntent;
     if ((unsaved || scratchExists()) && !window.confirm('Retry loading the saved complete project and replace current in-memory work and unapplied fields? Download a backup first.')) return;
     if (beforeGeneration !== compositionGeneration || beforeIntent !== editorIntent) { announce('The editor changed during confirmation. Retry load again.'); return; }
   }
+  newEditorIntent();
   const epoch = ++loadEpoch, generation = compositionGeneration, intent = editorIntent;
+  const owner = { epoch, retired: false }; pendingLoad = owner;
   startup = true; busy = 'loading'; saveMessage = 'Loading saved project…'; render();
   const current = () => epoch === loadEpoch && generation === compositionGeneration && intent === editorIntent;
   try {
     if (!completeStorage) completeStorage = new ReferenceStorage(window.indexedDB);
     const loaded = await completeStorage.load();
     if (!current()) return;
-    let bundle = loaded;
+    let bundle = loaded.bundle;
     if (bundle === null) {
       const legacy = loadProject(storage);
       if (legacy.error) throw new Error('The legacy saved project could not be read. It has not been changed.');
@@ -1029,13 +1047,14 @@ async function loadComplete(initial = false): Promise<void> {
     }
     const restored = new ReferenceHistory(bundle);
     if (!current()) return;
+    completeStorage.acceptLoad(loaded.receipt);
     history = restored; project = history.current.composition;
     activeTrackId = project.tracks[0].id; selectedNoteId = null;
     compositionGeneration++; projectFileEpoch++; cancelMidi(); stopPlayback(false);
     fieldDrafts.clear(); noteDrafts.clear(); clearContinuation(); defaultSeedCount();
-    recovery = false; unsaved = false; saveFailed = false; hasSavedCopy = loaded !== null;
-    saveMessage = loaded ? 'Restored from this browser' : 'No complete saved copy yet. Edit or Retry save to save this project.';
-    message = loaded ? 'Restored complete notes and reference takes. Auditions use applied notes.' : 'Start with a melody. Successful takes retain a normalized listen-back copy on this device.';
+    recovery = false; unsaved = false; saveFailed = false; manualSaveRequired = false; hasSavedCopy = loaded.bundle !== null;
+    saveMessage = loaded.bundle ? 'Restored from this browser' : 'No complete saved copy yet. Edit or Retry save to save this project.';
+    message = loaded.bundle ? 'Restored complete notes and reference takes. Auditions use applied notes.' : 'Start with a melody. Successful takes retain a normalized listen-back copy on this device.';
   } catch {
     if (current()) {
       recovery = true; unsaved = true;
@@ -1043,14 +1062,61 @@ async function loadComplete(initial = false): Promise<void> {
       message = 'The saved complete project could not be read. Retry load, download your current project, or explicitly Replace saved copy. Damaged data has not been deleted.';
     }
   } finally {
-    if (epoch === loadEpoch) { startup = false; busy = null; render(); }
+    if (pendingLoad === owner) {
+      pendingLoad = null; startup = false; busy = null;
+      if (owner.retired) {
+        recovery = true; unsaved = true; saveFailed = true;
+        saveMessage = 'Not saved in this browser — protected recovery. The retired read finished without restoring or accepting its saved copy. Retry load to review it again.';
+        message = 'The pending load finished after this page left. Its saved copy was not adopted; Retry load explicitly to restore it. Current memory and saved data are unchanged.';
+      }
+      render();
+    }
   }
 }
-function replaceSavedCopy(): void {
-  const generation = compositionGeneration, intent = editorIntent;
-  if (!window.confirm('Replace the unreadable saved copy with the current complete in-memory project? This overwrites the damaged saved descriptor and assets. Download backups first.')) return;
-  if (generation !== compositionGeneration || intent !== editorIntent || startup || busy) { announce('The editor changed. Confirm the saved-copy replacement again.'); return; }
-  recovery = false; queueSave();
+async function replaceSavedCopy(): Promise<void> {
+  if (startup || busy || saving || replacing) return;
+  newEditorIntent();
+  const epoch = ++replacementEpoch, generation = compositionGeneration, intent = editorIntent;
+  const snapshot = history.snapshot();
+  const owns = () => epoch === replacementEpoch;
+  const sameEditor = () => generation === compositionGeneration && intent === editorIntent;
+  const matches = () => owns() && sameEditor() && !startup && !busy;
+  replacing = true; recovery = true; savePending = null; unsaved = true;
+  saveMessage = 'Reviewing the current saved copy. Your local work remains protected and unsaved.'; syncSaveStatus();
+  try {
+    if (!completeStorage) completeStorage = new ReferenceStorage(window.indexedDB);
+    const review = await completeStorage.reviewReplacement();
+    if (!matches()) {
+      if (owns()) saveMessage = 'The editor changed while reviewing the saved copy. Your drafts are kept; explicitly Replace saved copy again.';
+      return;
+    }
+    const saved = review.summary.readable
+      ? `the saved project “${review.summary.title}” (${review.summary.tracks} tracks, ${review.summary.references} reference takes)`
+      : 'the unreadable saved copy';
+    if (!window.confirm(`Replace ${saved} with your current committed local notes and reference audio? Unapplied fields and suggestions are excluded. This overwrites the saved descriptor and assets; download backups first.`)) {
+      saveMessage = 'Saved-copy replacement cancelled. Both copies and your unapplied fields are unchanged.'; return;
+    }
+    if (!matches()) { saveMessage = 'The editor changed during confirmation. Review and confirm the saved-copy replacement again.'; return; }
+    saveMessage = 'Replacing the reviewed saved copy… It remains protected until the transaction completes.'; syncSaveStatus();
+    await completeStorage.replace(snapshot, review.receipt);
+    if (!owns()) return;
+    recovery = false; hasSavedCopy = true; savePending = null;
+    if (sameEditor()) {
+      unsaved = false; saveFailed = false; manualSaveRequired = false; saveMessage = 'Saved in this browser';
+    } else {
+      unsaved = true; saveFailed = true; manualSaveRequired = true;
+      saveMessage = 'The reviewed committed project was saved, but newer local work remains UNSAVED. Download a complete project file or explicitly Retry save.';
+    }
+  } catch (error) {
+    if (owns()) {
+      recovery = true; unsaved = true; saveFailed = true; savePending = null;
+      saveMessage = error instanceof SavedCopyConflict
+        ? 'Saved-copy conflict: another tab changed the copy after review. Your current work is kept. Explicitly Replace saved copy again to review it afresh.'
+        : 'The saved-copy replacement failed. Your local notes, reference audio and drafts are kept; the browser copy remains protected. Download a complete project file or review replacement again.';
+    }
+  } finally {
+    if (owns()) { replacing = false; syncSaveStatus(); updateReference(); }
+  }
 }
 async function saveBackup(): Promise<void> {
   try {
@@ -1193,9 +1259,9 @@ referenceHost.addEventListener('click', event => {
   switch (button.id) {
     case 'play-reference': void playReference(false); break;
     case 'play-reference-notes': void playReference(true); break;
-    case 'retry-save': queueSave(); break;
+    case 'retry-save': manualSaveRequired = false; queueSave(); break;
     case 'retry-load': void loadComplete(); break;
-    case 'replace-saved-copy': replaceSavedCopy(); break;
+    case 'replace-saved-copy': void replaceSavedCopy(); break;
     case 'cancel-project-read': projectFileEpoch++; projectFileReading = false; announce('Project import cancelled. Current audio, drafts, notes and reference are unchanged.'); updateReference(); break;
     case 'remove-reference': {
       const asset = selectedAsset(); if (!asset) break;

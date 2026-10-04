@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ReferenceStorage, REFERENCE_DB_NAME, REFERENCE_DB_VERSION } from '../src/reference-storage.ts';
+import { ReferenceStorage, SavedCopyConflict, type SavedCopyReceipt, REFERENCE_DB_NAME, REFERENCE_DB_VERSION } from '../src/reference-storage.ts';
+import { notesOnly } from '../src/reference-project.ts';
+import { createComposition } from '../src/model.ts';
 
 function failedFactory() {
   let opens = 0;
@@ -54,7 +56,7 @@ test('open timeout is bounded and a late connection is not retained', async cont
 
 function connectedFactory() {
   let closes = 0, aborts = 0;
-  const tx = { abort() { aborts++; }, objectStore() { return { get() { return {}; } }; } };
+  const tx = { abort() { aborts++; }, objectStore() { return { get() { return {}; }, getKey() { return {}; }, getAll() { return {}; }, getAllKeys() { return {}; } }; } };
   const db = { version: 1, objectStoreNames: { length: 2, contains: () => true },
     close() { closes++; }, transaction() { return tx; }, onversionchange: null as (() => void) | null };
   const factory = { open() {
@@ -85,4 +87,34 @@ test('a queued versionchange from an already released database cannot cancel a n
   first.db.onversionchange?.();
   assert.equal(second.closes(), 0); assert.equal(second.aborts(), 0);
   store.close(); await newRejected;
+});
+
+test('ordinary writes require accepted saved-copy authority before opening or clearing assets', async () => {
+  const fake = failedFactory(), store = new ReferenceStorage(fake.factory);
+  const bundle = { document: notesOnly(createComposition()), assets: [] };
+  await assert.rejects(store.save(bundle), SavedCopyConflict);
+  assert.equal(fake.opens(), 0);
+  await assert.rejects(store.load());
+  await assert.rejects(store.save(bundle), SavedCopyConflict);
+  assert.equal(fake.opens(), 1);
+  store.close();
+});
+
+test('forged load and replacement receipts never establish write authority', async () => {
+  const fake = failedFactory(), store = new ReferenceStorage(fake.factory);
+  const bundle = { document: notesOnly(createComposition()), assets: [] };
+  const forged = Object.freeze({}) as SavedCopyReceipt;
+  assert.throws(() => store.acceptLoad(forged), SavedCopyConflict);
+  await assert.rejects(store.replace(bundle, forged), SavedCopyConflict);
+  await assert.rejects(store.save(bundle), SavedCopyConflict);
+  assert.equal(fake.opens(), 0);
+  store.close();assert.throws(() => store.acceptLoad(forged), /clos/i);
+});
+
+test('failed replacement review cannot mint authority and leaves the queue usable', async () => {
+  const fake = failedFactory(), store = new ReferenceStorage(fake.factory);
+  for (let i = 0; i < 2; i++) await assert.rejects(store.reviewReplacement(), error => {
+    assert.ok(error instanceof Error);assert.doesNotMatch(error.message, /PRIVATE/);return true;
+  });
+  assert.equal(fake.opens(), 2);store.close();
 });
