@@ -39,7 +39,7 @@ export function serializeRawRecord(value: unknown): string {
     if (typeof item === 'boolean') return { bytes: item ? 4 : 5, height: 0 };
     if (typeof item === 'number' && Number.isFinite(item) && !Object.is(item, -0)) return { bytes: String(item).length, height: 0 };
     if (typeof item !== 'object') throw unsafe();
-    if (active.has(item)) throw new Error('Raw saved record is cyclic and cannot become a JSON backup. Stored data was kept.');
+    if (active.has(item)) throw new Error('Raw saved record is cyclic and cannot be serialized as a JSON backup. Stored data was kept.');
     // Reuse measurements of shared subtrees, charging their full JSON size at
     // each occurrence. Track height too, so reuse cannot bypass the depth cap.
     const known = measured.get(item);
