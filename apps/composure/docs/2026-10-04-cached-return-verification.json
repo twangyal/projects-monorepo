@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-04",
+  "issue": 71,
+  "commit": "71d009067172d1aadc908752f7594c2703966e7e",
+  "productionFixCommit": "c471bd89f2cff962d7e1a3cf326fcf2cff7c72b9",
+  "testOnlyCommit": "d11542371e038dc3b52d7b7f864910e1cc622521",
+  "redRun": 37199009457,
+  "redOutcome": "23 existing browser cases passed; both lifecycle regressions failed on permanently disabled connection. Initial headless-shell/controlled-clock real-history fixture did not retain the heap.",
+  "intermediateRun": 37199255332,
+  "intermediateOutcome": "97 unit and 25 browser cases passed; full-Chromium history probe timed out waiting for a new document load in page.goBack. Downloaded trace identified that call. Corrected wait to commit without changing production or acceptance assertions.",
+  "greenRun": 37199527045,
+  "greenJob": 111428159089,
+  "checks": {
+    "unitPassed": 97,
+    "browserPassed": 26,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "acceptance": [
+    "Cached event suspension preserves report source/samples and paused state",
+    "Pending native operation remains owned until settlement; maximum concurrency one",
+    "No automatic chooser/resume; explicit reconnection needs fresh calibration",
+    "Native full-Chromium back/forward cache retains original heap and emits persisted pageshow",
+    "Existing terminal navigation cleanup remains covered",
+    "Zero device identity reads and page errors"
+  ],
+  "review": "Independent preparation and implementation review found no substantive issue",
+  "limits": [
+    "Bluetooth provider is controlled; physical watch accuracy/compatibility remains unverified in #62",
+    "Broader browser/device history-cache policies remain unverified",
+    "Native browser acceptance executed in GitHub CI; local unit/lint/typecheck/build passed"
+  ]
+}
