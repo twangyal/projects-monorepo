@@ -17,8 +17,10 @@ function openDatabase(): Promise<IDBDatabase> {
     }
     let settled = false;
     const request = indexedDB.open(DATABASE_NAME, 1);
+    let upgradeError: DOMException | null = null;
     request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME);
+      try { if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME); }
+      catch (error) { upgradeError = error instanceof DOMException ? error : new DOMException('Could not create project storage.'); request.transaction?.abort(); }
     };
     request.onsuccess = () => {
       if (settled) { request.result.close(); return; }
@@ -26,7 +28,7 @@ function openDatabase(): Promise<IDBDatabase> {
       request.result.onversionchange = () => request.result.close();
       resolve(request.result);
     };
-    request.onerror = () => { settled = true; reject(storageError('open', request.error)); };
+    request.onerror = () => { settled = true; reject(storageError('open', upgradeError ?? request.error)); };
     request.onblocked = () => { settled = true; reject(new Error('Local project storage is blocked by another tab. Close other Clothing Studio tabs and try again.')); };
   });
 }
@@ -48,13 +50,18 @@ export async function loadProject(): Promise<Project | null> {
   try {
     const transaction = database.transaction(STORE_NAME, 'readonly');
     const completed = complete(transaction, 'read');
-    const request = transaction.objectStore(STORE_NAME).get(PROJECT_KEY);
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(PROJECT_KEY), presence = store.count(PROJECT_KEY);
     const requested = new Promise<unknown>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(storageError('read', request.error));
     });
-    const [value] = await Promise.all([requested, completed]);
-    if (value === undefined) return null;
+    const counted = new Promise<number>((resolve, reject) => {
+      presence.onsuccess = () => resolve(presence.result);
+      presence.onerror = () => reject(storageError('read', presence.error));
+    });
+    const [value, count] = await Promise.all([requested, counted, completed]);
+    if (count === 0) return null;
     const project = validateProject(value);
     await validatePhoto(project.photo);
     return project;

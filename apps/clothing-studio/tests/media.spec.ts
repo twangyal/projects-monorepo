@@ -150,12 +150,12 @@ test('unavailable IndexedDB reports unsaved edits while project backup remains u
     Object.defineProperty(window, 'indexedDB', { configurable: true, get: () => { throw new DOMException('Storage blocked', 'SecurityError'); } });
   });
   await page.goto('/');
-  await expect(page.locator('#save-state')).toHaveText('Local restore unavailable');
+  await expect(page.locator('#save-state')).toContainText('previous concept protected');
   await page.getByLabel('Concept name', { exact: true }).fill('Safe despite blocked storage');
   await page.getByLabel('Concept name', { exact: true }).press('Tab');
   await page.getByRole('button', { name: 'Ink blue', exact: true }).click();
-  await expect(page.locator('#save-state')).toHaveText('Not saved locally');
-  await expect(page.locator('#message')).toContainText('Your active concept is intact');
+  await expect(page.locator('#save-state')).toContainText('Not saved locally');
+  await expect(page.locator('#message')).toContainText('previous saved concept is protected');
   await expect(page.getByLabel('Concept name', { exact: true })).toHaveValue('Safe despite blocked storage');
   const saved = await backup(page);
   expect(saved.title).toBe('Safe despite blocked storage');
