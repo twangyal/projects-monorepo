@@ -119,7 +119,12 @@ export async function openProjectStore(): Promise<ProjectStore> {
     request.onerror = () => fail(new Error(UNAVAILABLE));
     request.onupgradeneeded = () => {
       if (settled) { request.transaction?.abort(); return; }
-      if (!request.result.objectStoreNames.contains('profiles')) request.result.createObjectStore('profiles');
+      try {
+        if (!request.result.objectStoreNames.contains('profiles')) request.result.createObjectStore('profiles');
+      } catch {
+        // Roll back schema creation without leaking browser exception details.
+        request.transaction?.abort();
+      }
     };
     request.onsuccess = () => {
       const database = request.result;

@@ -34,7 +34,12 @@ function openDatabase(): Promise<IDBDatabase> {
     } catch { fail(storageError('is unavailable in this browser')); return; }
     request.onupgradeneeded = () => {
       if (settled) { request.transaction?.abort(); return; }
-      if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
+      try {
+        if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
+      } catch {
+        // Roll back schema creation without leaking browser exception details.
+        request.transaction?.abort();
+      }
     };
     request.onblocked = () => fail(storageError('is blocked by another tab'));
     request.onerror = () => fail(storageError('could not be opened'));

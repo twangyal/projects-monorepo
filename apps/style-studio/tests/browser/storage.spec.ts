@@ -38,6 +38,26 @@ test('an existing incompatible database is reported without silently replacing i
   expect(result.stores).toEqual([]);
 });
 
+test('schema creation failure has no uncaught page error and native setup can retry', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  const result = await page.evaluate(async () => {
+    const h = window.storageHarness, original = IDBDatabase.prototype.createObjectStore;
+    IDBDatabase.prototype.createObjectStore = () => { throw new DOMException('Private setup detail', 'QuotaExceededError'); };
+    let message = '';
+    try { const store = await h.openProjectStore(); await store.close(); }
+    catch (error) { message = (error as Error).message; }
+    finally { IDBDatabase.prototype.createObjectStore = original; }
+    const retry = await h.openProjectStore(), empty = await retry.load();
+    await retry.save(h.createProject('After setup retry')); await retry.close();
+    const reopened = await h.openProjectStore(), loaded = await reopened.load(); await reopened.close();
+    return { message, empty, title: loaded?.title };
+  });
+  expect(result.message).toMatch(/storage.*unavailable.*memory.*backup/i);
+  expect(result.message).not.toContain('Private setup detail');
+  expect(result.empty).toBeNull(); expect(result.title).toBe('After setup retry');
+  expect(errors).toEqual([]);
+});
+
 test('queued saves capture nested data at call time before earlier transactions finish', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.storageHarness, store = await h.openProjectStore();
