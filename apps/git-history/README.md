@@ -51,7 +51,7 @@ are omitted with a count because they cannot be used by the UTF-8 selection API.
 `--language` accepts `all` (default), `python`, `javascript`, or `typescript`
 (including TSX). The JSON catalog preserves exact paths and the resolved commit
 ID. Pass that ID to subsequent `functions` and `explain --ref` commands to keep
-the same snapshot. Text paths are JSON-quoted so newlines/control characters
+the same snapshot. Text paths in `files` and `functions` are JSON-quoted so newlines/control characters
 cannot alter terminal output; decode them or use the JSON format for automation.
 Discovery is bounded at 10,000 candidates and 2 MiB of combined Git output.
 Exceeding a limit fails without publishing a partial list; narrow the directory

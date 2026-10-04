@@ -130,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.format == "json":
                 text = json.dumps(asdict(catalog), ensure_ascii=True, indent=2) + "\n"
             else:
-                rows = [f"{catalog.path} at {catalog.revision}"]
+                rows = [f"{json.dumps(catalog.path)} at {catalog.revision}"]
                 for function in catalog.functions:
                     note = " (over 200 lines; select a smaller --lines range)" if function.end_line - function.start_line + 1 > 200 else ""
                     rows.append(f"{function.start_line}:{function.end_line}\t{function.kind}\t{function.qualified_name}{note}")

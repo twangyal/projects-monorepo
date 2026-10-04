@@ -117,6 +117,18 @@ class FileDiscoveryTests(unittest.TestCase):
         self.assertEqual(out.getvalue(), '')
         self.assertNotIn('Traceback', err.getvalue())
 
+    def test_discovered_control_character_path_stays_safe_in_function_listing(self):
+        filename = 'line\n\x1b[31m.py'
+        self.repo.write(filename, 'def selected(): pass\n')
+        self.repo.commit()
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            status = main(['functions', '--repo', str(self.repo.path), '--file', filename])
+        self.assertEqual(status, 0, err.getvalue())
+        self.assertNotIn('\x1b', out.getvalue())
+        self.assertIn('\\n\\u001b[31m.py', out.getvalue())
+        self.assertIn('selected', out.getvalue())
+
     def test_catalog_count_limit_rejects_partial_results_and_can_be_narrowed(self):
         for index in range(10_000):
             self.repo.write(f'many/item{index:05}.py', 'x')
