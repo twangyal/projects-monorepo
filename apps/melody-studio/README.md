@@ -30,6 +30,24 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 
 **Cancel** discards an in-progress capture or analysis and preserves the existing notes. Microphone tracks are released on stop, cancellation, or recording failure. Cancelling while permission is pending also releases a stream that arrives afterward; it cannot close the browser's permission prompt. Leaving the page stops capture and playback.
 
+## Bring in a MIDI phrase
+
+Choose **Import MIDI file** to inspect a local `.mid` or `.midi` file without changing the current composition. Include the channels you want, choose a local instrument and name for each, and set **Source start beat** and **Source end beat (exclusive)**. These are whole-beat positions, not bars: displayed beats 9 to 17 select source beats 9–16 and move source beat 9 to destination beat 1.
+
+**Review MIDI phrase** shows the selected notes, excluded source note attacks, source settings and omitted metadata. A note crossing either window boundary prevents the review; change the window or deselect its channel. Included pitches, durations and counts must fit the normal composition limits. Note timing retains source ticks divided by its PPQN, without quarter-beat quantization. Leading and internal rests remain; the composition ends at its last note, so trailing window silence and MIDI end-of-track padding are not retained.
+
+**Replace composition** confirms the reviewed selection and creates one Undo/Redo edit. If any unsent editor fields or continuation suggestion remain, an additional explicit checkbox acknowledges discarding them on successful replacement. Undo restores the previous committed composition, not discarded scratch fields or a suggestion. Canceling, rejecting a file or declining replacement keeps the existing editor, history and proposal. Editing the composition or its raw fields invalidates an older review, even if the field is changed back; review again before replacing.
+
+The supported subset is deliberately bounded:
+
+- Standard MIDI formats 0/1, PPQN timing, one constant tempo of 40–240 BPM; absent tempo means 120 BPM. Maximum file size is 1 MiB, with 32 raw tracks, 32,768 events and 8,192 positive note attacks.
+- Up to sixteen source channel parts are shown; choose 1–8 supported parts with 1–256 included notes each in a window of at most 128 beats. Different-pitch polyphony is supported. Shared channels across raw tracks, ambiguous same-pitch pairing, percussion, pitch bend, pressure and unsupported controllers are visible but unselectable.
+- Static initial program and CC7 volume are shown separately from note velocity. Missing values use disclosed program 0 and CC7 100 defaults. Local instrument mapping is always explicit; it does not reproduce General MIDI sounds. CC7 zero remains silent.
+- Tempo changes, SMPTE timing, SysEx, ports and unknown global metadata reject the file. Supported but omitted text/time/key metadata and note-off release velocities are counted in the review; they do not become performance controls.
+- Names use strict UTF-8 and the existing 80-UTF-16-unit destination limit. Unusable or ambiguous source names need a visible name choice; they are never silently shortened. Safe fallback titles and part names are shown explicitly.
+
+Imported notes support ordinary editing, layering, playback, continuations, autosave and JSON/MIDI/WAV downloads. JSON retains their represented timing. MIDI re-export rounds to the existing 480-tick resolution, uses approximate programs and merges same-pitch overlaps; WAV contains the local synthesized mix and its release tail. Use the original MIDI file for source performance data and a Melody project backup for this edited composition.
+
 ## Continue your own phrase
 
 Select a track with a usable melody, then use **Continue this phrase** below the note editor:
@@ -57,7 +75,7 @@ The interface counts beats from **1**. Saved project JSON uses zero-based note s
 
 The current composition autosaves to this site's `localStorage`, when available. Browser storage belongs to that browser profile and site address; it can be cleared or become unavailable. There is no account backup or cloud synchronization. Storage errors appear in the interface, and **Save project file** remains available. Export `.melody.json` backups regularly and reopen them with **Open project**. Saved projects contain notes and settings, not the source recording; captured/imported audio is discarded after transcription.
 
-**Export MIDI** writes a standard format-1 `.mid` file with track names, tempo, note timing, velocity, volume, and approximate General MIDI instrument choices. Overlapping notes of the same pitch within one track merge into one sustained MIDI note at the highest velocity; adjacent notes retain separate attacks. This avoids ambiguous note-off behavior in MIDI players. The local WAV mix layers those notes independently. Another music app's instruments may sound different. **Export WAV** renders the current local instruments and mix as mono, 22,050 Hz, 16-bit PCM audio. Synthesis runs in a cancellable worker to keep large compositions responsive. Muted tracks are omitted from audible output. MIDI and WAV are exports; this MVP imports audio or its own project JSON, not MIDI compositions.
+**Export MIDI** writes a standard format-1 `.mid` file with track names, tempo, note timing, velocity, volume, and approximate General MIDI instrument choices. Overlapping notes of the same pitch within one track merge into one sustained MIDI note at the highest velocity; adjacent notes retain separate attacks. This avoids ambiguous note-off behavior in MIDI players. The local WAV mix layers those notes independently. Another music app's instruments may sound different. **Export WAV** renders the current local instruments and mix as mono, 22,050 Hz, 16-bit PCM audio. Synthesis runs in a cancellable worker to keep large compositions responsive. Muted tracks are omitted from audible output. Audio transcription, reviewed MIDI phrase import and complete Melody project backups have separate import flows and limits.
 
 ## Browser requirements and accuracy
 
@@ -97,3 +115,19 @@ Unit coverage includes bounded project validation, local storage errors, recorde
 Issue [#42](https://github.com/twangyal/projects-monorepo/issues/42) adds 19 engine cases and 11 independently derived numerical cases. The complete suite passes **113 unit tests and 20 production Chromium cases**, plus lint, type checking and build. Hand-worked token/count/backoff and PRNG boundary cases verify learned data dependence, exact constraints and atomic application. Real worker/Web Audio checks cover transient proposals, delayed replies/resume, stale source callbacks, preserved drafts, undo/redo, native reopen, mute/volume behavior and independently decoded downloaded MIDI/WAV.
 
 A separate Chromium 151 run selected a 16-beat original ending and generated an eight-note, 16-beat continuation at 40 BPM. The actual solo audition contained 1,060,164 frames at 22,050 Hz: **48.08 seconds including the release tail**. After Apply, a 2,649,572-byte WAV retained the original leading timing and unrelated track; independent Python PCM/FFT checks matched nine sampled note frequencies across audition and export within 0.053%. The original notes and unrelated track were unchanged, JSON/native reopen matched, and the 390-pixel layout had no page overflow or external requests/errors. These are fixture/runtime measurements, not subjective listening or musical-quality evidence. The [Melody workflow](https://github.com/twangyal/projects-monorepo/actions/runs/37173453233) passed at `e4472fb6e7ee891460f7649100c5b850ef301d7f`. See [the verification record](docs/2026-10-04-learned-continuation-verification.json).
+
+### Reviewed MIDI import verification
+
+Issue [#60](https://github.com/twangyal/projects-monorepo/issues/60) expands the suite to **173 unit tests and 35 production Chromium cases**, with lint, type checking and build passing. The new cases cover strict bytes and channel state, independent timing/count oracles, stale or mutated reviews, raw editor drafts, delayed native File reads, explicit replacement, Undo/Redo, storage failure and real downloaded artifacts. The existing 20 browser cases remain unchanged.
+
+An independent Chromium 151 probe imported an original off-grid phrase through the normal file chooser and review, then decoded its native JSON/MIDI/WAV downloads. Source starts became beats 0.13 and 2.13; the exported MIDI contained the expected 480-PPQN rounded ticks, CC7 volume and distinct velocities. The 36,273-frame WAV had exact leading/internal silence and independently measured note frequencies within one 5.383 Hz FFT bin, with RMS errors below 0.04%. This checks local synthesized output, not the source instrument's sound.
+
+A separate exact **1 MiB** source imported all **8 × 256 notes**. Its native downloads were 397,322-byte JSON, 16,766-byte MIDI and 2,820,460-byte WAV (1,410,208 frames). Closing and relaunching the entire persistent Chromium process preserved the same project ID and byte-identical JSON without storage injection. Desktop and 390-pixel views had no horizontal overflow; no page errors or external requests were observed. See the [measured verification record](docs/2026-10-04-midi-import-verification.json) for hashes, thresholds, test history and limitations.
+
+The complete implementation passed all twelve repository workflows at `e281bb869fef1ebb284709ca66952c4cabd748f0`; [Melody CI](https://github.com/twangyal/projects-monorepo/actions/runs/37186726359) passed 173 unit and 35 browser cases. To reproduce the separate independent artifact check, start a production preview and run:
+
+```sh
+MELODY_MIDI_BASE_URL=http://127.0.0.1:4239 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_midi_import.mjs
+```
+
+Use the origin of your running preview. Omit `CHROMIUM_PATH` to use Playwright's installed Chromium. The script creates its own original sources, browser profile and retained artifacts in a new temporary directory; optional `MELODY_MIDI_OUTPUT` must name a new directory. It never rebuilds or starts the server. `--prepare-only` writes the original source fixtures without a browser.
