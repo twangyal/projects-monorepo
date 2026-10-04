@@ -1,0 +1,329 @@
+{
+  "schemaVersion": 1,
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/65",
+  "date": "2026-10-04",
+  "projectVersion": "0.2.0",
+  "implementationCommit": "726a996c008e8da1b2e7143773f3c81b2cb67e96",
+  "scope": "Complete offline service-owner library create/inspect/restore preserving original private seat hashes and exact stored Opus, with separately retained raw links. No new HTTP/browser import, credential recovery, encryption or remote listening.",
+  "baseline": {
+    "pythonTests": 66,
+    "pythonSeconds": 24.299,
+    "pythonWallSeconds": 24.425,
+    "typescriptTests": 6,
+    "npmCheckWallSeconds": 3.759,
+    "normalBuildSeconds": 0.186,
+    "ruffPassed": true,
+    "eslintPassed": true,
+    "typecheckPassed": true,
+    "browserTests": 23,
+    "browserSeconds": 36.4,
+    "browserWallSeconds": 37.118,
+    "port": 4224,
+    "ownedPid": 436313,
+    "ownedPidState": "Z",
+    "ownedServiceAlive": false,
+    "freshDataDirectoryRemoved": true,
+    "cleanupNote": "Playwright default process-group SIGKILL left a zombie owned by PID1; verified no live service/listener and removed only the recorded fresh fixture data. No unrelated process was signalled.",
+    "portHasListener": false,
+    "portBindFreeWithReuse": true,
+    "portOrdinaryBindFree": true,
+    "trackedBaselineFilesUnchanged": true,
+    "python": "/tmp/karaoke-env/bin/python (3.11.16)",
+    "node": "24.19.0",
+    "chromium": "/usr/bin/chromium (151.0.7922.173)",
+    "ffmpeg": "7.1.5",
+    "manifestSha256": "537a68d9dcee62ce4b6c54a8bb73ffe9c35b26f187b42ba6f28bd7f82bf09f02",
+    "nativeCommand": "PYTHONDONTWRITEBYTECODE=1 CHROMIUM_PATH=/usr/bin/chromium npm run test:browser -- --config=/tmp/duet65-native-69pxo0o2/playwright.config.mjs --output=/tmp/duet65-native-69pxo0o2/artifacts",
+    "ownedPidKernelLockCount": 0,
+    "ownedPidFdInspection": "Not available: proc fd directory permission denied; recorded zombie state implies resources closed.",
+    "initialCleanupOrdinaryBindBlockedByTimeWait": true,
+    "initialCleanupTimeWaitCount": 98,
+    "nextHarnessRequirement": "SIGTERM handler plus webServer.gracefulShutdown signal SIGTERM timeout10000; no baseline repo config edit"
+  },
+  "verification": {
+    "python": {
+      "command": "/tmp/karaoke-env/bin/python -m unittest discover -s tests -v",
+      "version": "3.11.16",
+      "passed": 145,
+      "seconds": 34.985,
+      "log": "/tmp/duet65-root-python.log"
+    },
+    "typescript": {
+      "command": "npm run check",
+      "passed": 6,
+      "eslint": true,
+      "typecheck": true,
+      "normalBuild": true,
+      "log": "/tmp/duet65-root-check.log"
+    },
+    "ruff": {
+      "version": "0.14.3",
+      "command": "ruff check .",
+      "passed": true
+    },
+    "compileall": {
+      "command": "python -m compileall -q duet tests scripts",
+      "passed": true
+    },
+    "native": {
+      "command": "PYTHONDONTWRITEBYTECODE=1 PYTHON=/tmp/karaoke-env/bin/python CHROMIUM_PATH=/usr/bin/chromium npm run test:browser -- --config=/tmp/duet65-final-native-ai9doh3k/playwright.config.mjs --output=/tmp/duet65-final-native-ai9doh3k/artifacts",
+      "passed": 25,
+      "oldCases": 23,
+      "newCases": 2,
+      "seconds": 59.4,
+      "chromium": "151.0.7922.173",
+      "log": "/tmp/duet65-root-browser.log",
+      "manifest": "/tmp/duet65-final-native-ai9doh3k/manifest.json",
+      "manifestSHA256": "b7d0ee3a5152dfe2ddc01dd7e25547b6b87a9cf6029be8241e421687d069f648",
+      "deltas": "Temporary copies replace hardcoded4220 with owned4224 and resolve the synchronization fixture from the real app dist; reverse substitutions verify all test bodies. New archive cases use own port0 services. No4220 request/reuse/kill.",
+      "cleanup": {
+        "pid": 445700,
+        "directory": "/tmp/duet65-final-data-6ueeq1t3",
+        "port": 4224,
+        "processState": "State:\tZ (zombie)",
+        "dataDirectoryRemoved": true,
+        "portFree": true
+      },
+      "cleanupLimit": "SIGTERM closed the real service and removed its fresh data directory. The shell harness still left a PID1-owned zombie entry; no live service/listener remains. This is not a claim that all process entries were reaped.",
+      "productionBuildRestored": true
+    },
+    "sourceReview": "Root and independent owners reviewed record, container, audio, filesystem and publication seams. One concrete cleanup defect was fixed and rechecked before the complete145/25 gates.",
+    "ci": {
+      "state": "success",
+      "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37194799973",
+      "commit": "726a996c008e8da1b2e7143773f3c81b2cb67e96",
+      "jobId": 111414328167,
+      "python": "3.11.16",
+      "pythonCases": 145,
+      "pythonSeconds": 33.222,
+      "typescriptCases": 6,
+      "typescriptMilliseconds": 142.825726,
+      "nativeCases": 25,
+      "nativeSeconds": 54.5,
+      "chromium": "153.0.8010.12",
+      "allTwelveProjectWorkflowsPassed": true
+    }
+  },
+  "independentAcceptance": {
+    "oracleCases": 18,
+    "seconds": 3.441,
+    "log": "/tmp/duet-archive-oracle-first-integration.log",
+    "expectations": "Literal private records, independently struct-packed ZIP, original1.25-second real Opus and os.fsync race/cancellation injections authored without reading producer code/tests. Expectations remained unchanged through first coherent integration.",
+    "firstRun": "Eight state/container cases passed; ten cases were blocked by deliberate backup callable stubs (unittest1failure+11errors including subtests). Not all-red or import-failure evidence.",
+    "nativeFocusedCases": 2,
+    "nativeFocusedSeconds": 20.2,
+    "nativeFirstRun": "One passed, one failed due to test JSON.stringify key-order comparison of role fingerprints. Corrected only the test to compare each role; source capability hashes were preserved.",
+    "nativeCoverage": [
+      "Actual stopped-service CLI create/inspect/restore",
+      "Independent original host and guest browser contexts, wrong-credential rejection, used invitation rejection and original pending invitation claimed once",
+      "Opposing ratings, custom playlist, memories by both authors including deleted-track memory",
+      "Exact encoded Opus and independently counted/hashed decoded PCM; actual native playback and authenticated full/range responses",
+      "Original saved playing anchor restored paused with exactly one revision increment, no offline elapsed time, stale commands rejected",
+      "Ordinary editing and subsequent service restart preserve recovered data"
+    ],
+    "privacy": "Native private-seat cases disable trace/screenshots/video and keep raw credentials out of arguments, logs and assertion values."
+  },
+  "meaningfulDefectsRepaired": [
+    {
+      "problem": "Cleanup checked the owned directory receipt but then reopened its mutable name for shutil.rmtree, allowing replacement content to be deleted.",
+      "evidence": "Independent /tmp/duet-owned-cleanup-review.py reproduced foreignRootPreserved=false and foreignFilePreserved=false.",
+      "fix": "Traverse only the held owned-directory FD, with bounded depth/membership and child/root identity checks before removal.",
+      "recheck": "Same stat-receipt injection still fires: foreign root/file preserved; original owned contents cleared. Producer regression and final145-case suite pass."
+    },
+    {
+      "problem": "argparse error messages echoed invalid user-provided argument values.",
+      "fix": "Fixed bounded private parser diagnostics; ordinary summaries contain only counts/bytes/policy and separate-link guidance.",
+      "evidence": "Producer fault RED then GREEN, /tmp/duet65-backup-fault-red.log."
+    },
+    {
+      "problem": "One Ogg header read assumed pread returned its entire requested length.",
+      "fix": "Accumulate bounded partial reads with cancellation checks; EOF still rejects.",
+      "evidence": "Controlled3-byte pread actual RED then11media cases GREEN1.904s; /tmp/duet-archive-media-final11.log."
+    }
+  ],
+  "focusedGates": {
+    "state": 16,
+    "format": 18,
+    "media": 11,
+    "orchestrator": 16,
+    "oracle": 18,
+    "newPythonTotal": 79,
+    "formatBoundaryScope": "Actual8MiB format-only opaque member copy and exact32KiBmanifest/1311744Brooms boundaries; these do not independently claim playable audio. The separate maximum fixture below is fully decoded."
+  },
+  "maximum": {
+    "fixture": {
+      "kind": "Independently authored maximum fixture; portable probe generated fresh data after implementation.",
+      "rooms": 5,
+      "tracks": 60,
+      "memoriesPerRoom": 100,
+      "durationSecondsPerTrack": 300,
+      "audioBytesPerTrack": 8388608,
+      "totalMediaBytes": 503316480,
+      "normalizedSource": {
+        "bytes": 4838585,
+        "sha256": "447479dcb5d8a14bb4ac10fd4ea063c3da05c66e56ed1f434e68bd2639d4a50c"
+      },
+      "exactLimitFixture": {
+        "bytes": 8388608,
+        "sha256": "c9b850f634128e21a4d55ffb9b23dc1756b52baaba5ded6e00c3b88c26dca293",
+        "padding": "Legal OpusTags packet padding and rebuilt Ogg pages/CRC; not byte-identical normalizer output",
+        "decodedPCM": {
+          "bytes": 57600000,
+          "frames": 14400000,
+          "sha256": "7c0d2110e18531e6cd20d6d8d5a9b151e83b1dfa20449562a47420aa2ef4d1af"
+        },
+        "matchesOriginalNormalizerPCM": true
+      },
+      "preparationSeconds": 10.919949423005164
+    },
+    "startedAt": "2026-10-04T10:08:09.844860+00:00",
+    "operations": [
+      {
+        "name": "create",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "-m",
+          "duet.backup",
+          "create",
+          "--data-dir",
+          "/workspace/duet65-maximum-verified-20261004/original-library",
+          "--output",
+          "/workspace/duet65-maximum-verified-20261004/maximum-library.zip"
+        ],
+        "exitCode": 0,
+        "wallSeconds": 122.50743482999678,
+        "samplingIntervalMs": 25,
+        "output": "{\"archive_bytes\":503706257,\"media_bytes\":503316480,\"memories\":500,\"paired_rooms\":5,\"pending_invites\":0,\"playback_policy\":\"saved-anchor-paused\",\"rooms\":5,\"schema_version\":1,\"tracks\":60}\nKeep both participants' private access links separately; this archive does not recover lost credentials.\n",
+        "implementationSHA256": {
+          "duet/__init__.py": "678f78e915169a70e42b6b1bdbb9c790f937ae3f18dfad4b7781eac5629ebd8f",
+          "duet/__main__.py": "c359b7bbe6299c47f318d0fdf1dc579ed221d1b7f877987576e63306d91174f5",
+          "duet/archive_common.py": "2d735bf6e0ae440a4d4bbb2d57dbc7ab3b5cc13623447c1620fb6aedb210495e",
+          "duet/archive_format.py": "5d33a52661a0b850127a2840023dff050c70b5b0843a44f261b6fbb458a30fc7",
+          "duet/archive_media.py": "3e5a36e4a96ee836b60a8ec3824844b7207da2108fca5fe504bd770071f74116",
+          "duet/archive_state.py": "b4b43025f325a51bf80567c63b6edd05afa1d6172e35becf01c1f63988e22ff7",
+          "duet/backup.py": "f1da9b3519128ec56ff7789e92c61c6f6b7209916f307caace414fb69dd6126e",
+          "duet/jobs.py": "faf72999c123f9723a3e226dd59255e84c394bd23934fd088e36a4dfdd7c97db",
+          "duet/media.py": "d2a65cf50b475a0debfda9434e2fbd074940959120f3a777f6b89169f33d1a85",
+          "duet/server.py": "e30f5f5ccf5042fc6260b39502ae878cdd944678069dcce4e85959e8c85c0687",
+          "duet/store.py": "ce8acdf85e0568354e2a77e75ac260c2c7bb329f05c91c600b3160c438ecf394"
+        },
+        "sampledPeakCommandRSSKiB": 17164,
+        "childEnumerationUnavailable": true
+      },
+      {
+        "name": "inspect",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "-m",
+          "duet.backup",
+          "inspect",
+          "--archive",
+          "/workspace/duet65-maximum-verified-20261004/maximum-library.zip"
+        ],
+        "exitCode": 0,
+        "wallSeconds": 117.86769967999862,
+        "samplingIntervalMs": 25,
+        "output": "{\"archive_bytes\":503706257,\"media_bytes\":503316480,\"memories\":500,\"paired_rooms\":5,\"pending_invites\":0,\"playback_policy\":\"saved-anchor-paused\",\"rooms\":5,\"schema_version\":1,\"tracks\":60}\nKeep both participants' private access links separately; this archive does not recover lost credentials.\n",
+        "implementationSHA256": {
+          "duet/__init__.py": "678f78e915169a70e42b6b1bdbb9c790f937ae3f18dfad4b7781eac5629ebd8f",
+          "duet/__main__.py": "c359b7bbe6299c47f318d0fdf1dc579ed221d1b7f877987576e63306d91174f5",
+          "duet/archive_common.py": "2d735bf6e0ae440a4d4bbb2d57dbc7ab3b5cc13623447c1620fb6aedb210495e",
+          "duet/archive_format.py": "5d33a52661a0b850127a2840023dff050c70b5b0843a44f261b6fbb458a30fc7",
+          "duet/archive_media.py": "3e5a36e4a96ee836b60a8ec3824844b7207da2108fca5fe504bd770071f74116",
+          "duet/archive_state.py": "b4b43025f325a51bf80567c63b6edd05afa1d6172e35becf01c1f63988e22ff7",
+          "duet/backup.py": "f1da9b3519128ec56ff7789e92c61c6f6b7209916f307caace414fb69dd6126e",
+          "duet/jobs.py": "faf72999c123f9723a3e226dd59255e84c394bd23934fd088e36a4dfdd7c97db",
+          "duet/media.py": "d2a65cf50b475a0debfda9434e2fbd074940959120f3a777f6b89169f33d1a85",
+          "duet/server.py": "e30f5f5ccf5042fc6260b39502ae878cdd944678069dcce4e85959e8c85c0687",
+          "duet/store.py": "ce8acdf85e0568354e2a77e75ac260c2c7bb329f05c91c600b3160c438ecf394"
+        },
+        "sampledPeakCommandRSSKiB": 16156,
+        "childEnumerationUnavailable": true
+      },
+      {
+        "name": "restore",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "-m",
+          "duet.backup",
+          "restore",
+          "--archive",
+          "/workspace/duet65-maximum-verified-20261004/maximum-library.zip",
+          "--data-dir",
+          "/workspace/duet65-maximum-verified-20261004/restored-library"
+        ],
+        "exitCode": 0,
+        "wallSeconds": 125.46704414000124,
+        "samplingIntervalMs": 25,
+        "output": "{\"archive_bytes\":503706257,\"media_bytes\":503316480,\"memories\":500,\"paired_rooms\":5,\"pending_invites\":0,\"playback_policy\":\"saved-anchor-paused\",\"rooms\":5,\"schema_version\":1,\"tracks\":60}\nKeep both participants' private access links separately; this archive does not recover lost credentials.\n",
+        "implementationSHA256": {
+          "duet/__init__.py": "678f78e915169a70e42b6b1bdbb9c790f937ae3f18dfad4b7781eac5629ebd8f",
+          "duet/__main__.py": "c359b7bbe6299c47f318d0fdf1dc579ed221d1b7f877987576e63306d91174f5",
+          "duet/archive_common.py": "2d735bf6e0ae440a4d4bbb2d57dbc7ab3b5cc13623447c1620fb6aedb210495e",
+          "duet/archive_format.py": "5d33a52661a0b850127a2840023dff050c70b5b0843a44f261b6fbb458a30fc7",
+          "duet/archive_media.py": "3e5a36e4a96ee836b60a8ec3824844b7207da2108fca5fe504bd770071f74116",
+          "duet/archive_state.py": "b4b43025f325a51bf80567c63b6edd05afa1d6172e35becf01c1f63988e22ff7",
+          "duet/backup.py": "f1da9b3519128ec56ff7789e92c61c6f6b7209916f307caace414fb69dd6126e",
+          "duet/jobs.py": "faf72999c123f9723a3e226dd59255e84c394bd23934fd088e36a4dfdd7c97db",
+          "duet/media.py": "d2a65cf50b475a0debfda9434e2fbd074940959120f3a777f6b89169f33d1a85",
+          "duet/server.py": "e30f5f5ccf5042fc6260b39502ae878cdd944678069dcce4e85959e8c85c0687",
+          "duet/store.py": "ce8acdf85e0568354e2a77e75ac260c2c7bb329f05c91c600b3160c438ecf394"
+        },
+        "sampledPeakCommandRSSKiB": 17996,
+        "childEnumerationUnavailable": true
+      }
+    ],
+    "runtime": {
+      "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+      "sqlite": "3.53.1"
+    },
+    "archive": {
+      "bytes": 503706257,
+      "sha256": "61e5f9d02c33006e91efcaabcc761286d1608f1af5b2f6c06af699f484c1ffb3"
+    },
+    "assertions": {
+      "allOriginalFilesAndDirectoriesUnchanged": true,
+      "originalEntryCount": 69,
+      "archiveUnchangedByInspectAndRestore": true,
+      "everyRestoredAudioExactBytesAndHash": true,
+      "roomsAndAllPrivateRecordsPreservedExceptPausedCheckpoint": true,
+      "originalPlayingAnchorPausedExactlyOnce": true,
+      "noOfflineElapsedTimeApplied": true,
+      "normalServiceStartedAndClosedTwice": true,
+      "servicePorts": [
+        42215,
+        33421
+      ],
+      "restoredAudioFiles": 60,
+      "restoredMediaBytes": 503316480
+    },
+    "limits": [
+      "RSS values measure only the CLI process. This managed environment omits /proc/PID/task/PID/children even for a live owned child; no decoder-descendant or aggregate peak is claimed. Sampling every25ms can miss brief peaks.",
+      "Each operation invokes the actual CLI and complete archive/media validation. Normal service startup is real; native audible/browser acceptance is recorded separately.",
+      "8 MiB files use legal OpusTags padding, not exact bytes produced by the normalizer. Independent full decoded PCM equals the original 300-second normalized track.",
+      "The original fixture was created through the real service Store with independently assigned synthetic content; it is not a recording of human participants."
+    ],
+    "completedAt": "2026-10-04T10:14:18.174871+00:00",
+    "measurementCorrections": {
+      "rawRecordRetained": "/workspace/duet65-maximum-verified-20261004/verification.json",
+      "rawRecordSHA256": "1d5f4d5d83b169e46db7b69308f528c7d5c3e6b53e0ac5ad4cb4042d04d9e0cc",
+      "provenance": "The independent recipe and first exact8MiB fixture were prepared before producer completion at /workspace/duet65-maximum-20261004. The portable gate generated a fresh fixture after implementation; its copied before-implementation label was too broad and is corrected here.",
+      "rss": "The initial sampler added command VmRSS, then failed to enumerate children; maximumObservedProcesses remained0. This record labels the unchanged observed values command-only. The tracked reproduction script now samples only its command PID explicitly.",
+      "scope": "Only provenance/measurement labels changed; archive assertions, runtime values, expected PCM, output bytes and implementation hashes are unchanged. All three operation code-hash maps match the complete implementation commit."
+    }
+  },
+  "reproduction": {
+    "command": "python3 scripts/smoke_archive_maximum.py --directory /path/to/new-duet-archive-evidence",
+    "source": "scripts/smoke_archive_maximum.py",
+    "sourceSHA256": "851e9bd3d0498ffaaedf883940233f52349d9f294a63b34b0bd256043097fd0f",
+    "requirements": "Existing FFmpeg/ffprobe, Linux/Python, built app, absent owned directory and at least2GiBfree. Aboutsixminutes on this machine. Retains all evidence; never overwrites an existing directory."
+  },
+  "limits": [
+    "The archive contains private credential hashes and personal records, is unencrypted, and cannot recreate missing raw private links. Checksums are integrity checks, not participant-history authentication.",
+    "Restoration pauses the stored checkpoint, not necessarily the last audible position. A previously playing revision increments once; paused revisions remain unchanged.",
+    "Linux-only source locking, /proc pinned access and renameat2 no-replace; existing destinations are never merged or replaced. Nonempty WAL/journal and unreferenced media reject without repair.",
+    "Safe receipts and descriptor-based cleanup are not an arbitrary malicious same-UID filesystem sandbox. Complete published output is preserved and reported if final directory durability sync fails.",
+    "The five-minute command limit includes all media checks. This measured machine passed; slower machines may reject valid maximum libraries without partial publication.",
+    "No new transcription/separation/musical quality, original-upload losslessness, hardware audio timing, multi-device synchronization or remote deployment claim."
+  ]
+}

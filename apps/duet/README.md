@@ -129,3 +129,7 @@ python3 scripts/smoke_archive_maximum.py --directory /path/to/new-duet-archive-e
 ```
 
 The gate retains its original sources, complete archive, restored library and measurement JSON. Each 8 MiB fixture uses legal OpusTags padding; independently decoded PCM must equal the original normalized 300-second track. These are real playable byte-limit fixtures, not ordinary normalizer output. RSS measurements cover the CLI process, not decoder descendants; individual decoder bounds remain enforced by the production service.
+
+The measured full-capacity gate produced a **503,706,257-byte archive**. Create, inspect and restore passed in **122.51 s, 117.87 s and 125.47 s**, preserving all original source files and restoring all sixty audio files byte for byte. Both ordinary service restarts retained the paused 17.25-second checkpoints with a single revision increment. The [verification record](docs/2026-10-04-library-archive-verification.json) records hashes, original defect reproductions, CI status, native recovery and the scope of the resource measurements.
+
+All twelve project workflows passed the complete archive implementation `726a996c008e8da1b2e7143773f3c81b2cb67e96`; [Duet CI](https://github.com/twangyal/projects-monorepo/actions/runs/37194799973) passed the same 145 Python, 6 TypeScript and 25 browser cases with Chromium 153.

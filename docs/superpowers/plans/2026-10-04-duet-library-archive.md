@@ -64,14 +64,16 @@ Files: NEW tests/test_archive_oracle.py and tests/browser/archive.spec.ts plus s
 
 ## Task 6 — Root measured maximum and release
 
-- [ ] Root creates NEW owned /workspace maximum fixtures (preserve existing evidence; avoid scarce /tmp):5 rooms/60 audio files,100 memories per room, exact archive/media limits where actual Opus validation permits.
-- [ ] Verify real create/inspect/restore, hashes/full decoded media, original-tree unchanged and maximum disk/runtime/RSS evidence; separate pure byte-limit cases from actual playable audio.
+- [x] Root creates NEW owned /workspace maximum fixtures (preserve existing evidence; avoid scarce /tmp):5 rooms/60 audio files,100 memories per room, exact archive/media limits where actual Opus validation permits.
+- [x] Verify real create/inspect/restore, hashes/full decoded media, original-tree unchanged and maximum disk/runtime/RSS evidence; separate pure byte-limit cases from actual playable audio.
 - [x] Final read-only cross-module review: no source mutation, strict admission, hash/capability/invite preservation, paused checkpoint, acquired FDs/no-replace/durability/cancel semantics.
 - [x] Run full Duet Python/Ruff/compile/TS/lint/type/build/production browser suites after integration; no concurrent shared server/builds.
-- [ ] Root docs/evidence/catalog truth, commit/push/CI check and close65 only after exact accepted-source gates.
+- [x] Root docs/evidence/catalog truth, commit/push/CI check and close65 only after exact accepted-source gates.
 
 ## Progress evidence
 
 - Reviewed design frozen before implementation in `8ac920d`.
 - Archive record/container/audio foundation committed in `f81388c`: 16 state tests, 18 format tests, and the initial 10 audio tests passed their focused gates, plus Ruff and compilation. An independently prepared legal 8 MiB Opus fixture decoded to the exact original 300-second PCM. Full CLI/native/maximum acceptance remains pending.
-- Complete source gate: **145 Python** in 34.985s, **6 TypeScript**, Ruff/ESLint/typecheck/build, and **25 Chromium 151 browser cases** in 59.4s. A real stage-replacement cleanup defect and private argument echo were reproduced and repaired before these gates. Maximum CLI create/inspect/restore measurement is running; final evidence and CI closure remain pending.
+- Complete source gate: **145 Python** in 34.985s, **6 TypeScript**, Ruff/ESLint/typecheck/build, and **25 Chromium 151 browser cases** in 59.4s. A real stage-replacement cleanup defect and private argument echo were reproduced and repaired before these gates. Maximum CLI create/inspect/restore passed, and all twelve workflows passed complete implementation `726a996`. Final evidence is persisted; issue closure follows its push.
+- Full-capacity archive **503,706,257 bytes**, create/inspect/restore **122.507 / 117.868 / 125.467 seconds**, all original69file/directory entries unchanged,60restored exact8MiB tracks,500memories and paused17.25sanchors through two ordinary restarts. Recorded command-only RSS and corrected provenance/sampler labels explicitly; no aggregate decoder-memory claim.
+- Complete-source CI: [run37194799973](https://github.com/twangyal/projects-monorepo/actions/runs/37194799973),145Python/6TypeScript/25Chromium153cases; all twelve project workflows green on `726a996c008e8da1b2e7143773f3c81b2cb67e96`.
