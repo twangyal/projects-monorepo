@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 76,
-  "status": "local-verification-complete-ci-pending",
+  "status": "verified",
   "failedCi": {
     "commit": "313b20ccf11c3ff45f5927ced6c306a843fabaf5",
     "runId": 37199574148,
@@ -64,7 +64,20 @@
     "apps/melody-studio/tests/browser/reference-takes.spec.ts": "871e0a303c0be85d633806606bd16708243ef73d40eed14320723e70f3b47e0a"
   },
   "ci": {
-    "status": "pending"
+    "status": "passed",
+    "commit": "9be2b63deef42cbbbbead01de42a7cf6405c6ca9",
+    "runId": 37200286145,
+    "jobId": 111430395490,
+    "unitPassed": 233,
+    "unitDurationMs": 7164.125973,
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "browserPassed": 58,
+    "browserDurationSeconds": 56.6,
+    "chromium": "153.0.8010.12",
+    "repositoryWorkflowsPassed": 12,
+    "repositoryWorkflowsFailed": 0
   },
   "limitations": [
     "The reproduced race is test cleanup after actual native completion, not an audio or persistence defect.",
