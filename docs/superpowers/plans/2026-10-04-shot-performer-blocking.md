@@ -75,8 +75,15 @@ Owner: new tests/browser/blocking.spec.js and optional disjoint fixture helpers.
 - [x] Root (or a separate explicitly assigned compatibility-test owner) minimally updates existing model/travel/camera-oracle/history/draft and browser fixtures/assertions for canonical3, explicit loop actors and future4. Keep genuine original-key legacy1/2 inputs, old camera/oracle math and frozen pixel thresholds; never relabel createProject3 as legacy2.
 - [x] Independent read-only seam review: migration, shared pose time, raw draft ownership, exact cue index returns, XR target and actual export evidence.
 - [x] Root runs complete Node tests/syntax and fresh production Chromium suites; route demonstrated defects to owners.
-- [ ] Root updates README/evidence/catalog, preserving ACTIVE VR hardware limitation; reviews/commits/pushes and verifies CI before closing63.
+- [x] Root updates README/evidence/catalog, preserving ACTIVE VR hardware limitation; reviews/commits/pushes and verifies CI before closing63.
 
 ## Remaining review decisions
 
-Architecture/API choices above are proposed as the frozen contract pending root review. Independent media owner must publish exact fixture geometry, timestamps and pixel tolerances before recording; these numerical test choices intentionally remain that owner's independent work, not producer-designed expected outputs. No other product/schema decision is deferred.
+Architecture/API choices above were reviewed and released before production implementation. Independent media owner must publish exact fixture geometry, timestamps and pixel tolerances before recording; these numerical test choices intentionally remain that owner's independent work, not producer-designed expected outputs. No other product/schema decision is deferred.
+
+
+## Completion evidence — 2026-10-04
+
+Implementation `3624f7ebbf8d8e5211a742428d3fedd016ff612b` is pushed with107 unit and43 native browser cases passing plus syntax checks. All12 project workflows passed that exact commit; Shot CI independently passed107/43. Independent semantic expectations first ran GREEN14, not an invented RED. Producer model/evaluator/renderer cases observed meaningful RED; initial native UI lacked its new control. Firstfullbrowser40/3 exposed only remaining canonical-version expectations, thenaffected3 andfull43 passed. Existing literallegacyinputs/camera thresholds were preserved.
+
+Actual168645-byte VP9 contains173decodedframes/5.946secondPTSspan. Fresh independent FFmpeg/Pillow inspection matches retained color metrics exactly and confirms2.640px maximum projection error, zero hold drift, .0202px control drift,49.142/32.674px movement and zero hidden redpixels. Literalwave silhouettes differ24px. Permanent [verification](../../../apps/shot-studio/docs/2026-10-04-performer-blocking-verification.json) records original artifacts/hashes, frozen thresholds, observations and timing limits. Physical issue21 remains open/catalog7 ACTIVE. Software issue63 is ready to close after final evidence push.

@@ -190,3 +190,26 @@ Draft recovery was verified on 2026-10-04 in [run 37172319440](https://github.co
 Pending-import draft protection ([#57](https://github.com/twangyal/projects-monorepo/issues/57)) passed 28 unit tests, syntax checks and all twelve native browser cases locally on Chromium 151 and in [Chromium 153 CI](https://github.com/twangyal/projects-monorepo/actions/runs/37180331421) at `6eb2666`; all twelve project workflows passed. Two new regressions first reproduced lost text/numeric input, then passed without weakening the existing guards. They delay delivery of genuine native file bytes and verify focused raw spelling, unchanged saved film, later blur, ordinary import and Undo. This establishes the timing-dependent race, not its frequency on an ungated local file read. See [the measured repair evidence](docs/2026-10-04-import-draft-verification.json).
 
 Camera travel ([#58](https://github.com/twangyal/projects-monorepo/issues/58)) passed all 65 unit tests, syntax checks and 29 browser cases on local Chromium 151 and [Chromium 153 CI](https://github.com/twangyal/projects-monorepo/actions/runs/37181949482) at `afb52c9`; all twelve project workflows passed. Independent math cases first failed against the old/stub model and passed unchanged. Actual four-second camera-only WebMs were decoded against a separate pinhole projection: local moving landmarks traveled 229–232 pixels, maximum projection error was 3.213 pixels, and static/identical-endpoint controls drifted at most 0.081 pixels. The frozen bounds were 16 pixels, 4 pixels and at least 180 pixels of motion respectively; these single-run measurements do not guarantee encoder timing on other hardware. Root inspected decoded frames, desktop/mobile views, native JSON and reload. See [the measured camera-travel evidence](docs/2026-10-04-camera-travel-verification.json).
+
+
+Performer blocking ([#63](https://github.com/twangyal/projects-monorepo/issues/63))
+passed 107 unit tests, syntax checks and 43 native browser cases on Chromium 151
+and [Chromium 153 CI](https://github.com/twangyal/projects-monorepo/actions/runs/37190620562)
+at `3624f7ebbf8d8e5211a742428d3fedd016ff612b`; all twelve project workflows passed.
+The independent 14-case temporal oracle passed on its first actual run after
+expectations were authored. Producer tests observed meaningful RED→GREEN. Genuine
+legacy inputs and old camera thresholds remain intact; three initial old-browser
+failures required schema3 output expectations, then the full suite passed.
+
+An actual six-second performance exported to a 168,645-byte VP9 WebM with 173
+decoded frames spanning 5.946 seconds of actual presentation timestamps. Separate
+FFmpeg/Pillow inspection exactly reproduced the original color measurements:
+maximum independent projection error 2.640 pixels, held-position drift 0,
+stationary-control drift 0.0202, arrival 49.142 and departure 32.674 pixels, and
+zero red costume pixels during the hidden interval. Frozen limits were 16 pixels
+projection error, 4 pixels hold/control drift, at least 32/20 pixels of movement,
+and at most 20 hidden red pixels. Literal wave-angle WebGL silhouettes differed by
+24 pixels in width against a minimum16-pixel threshold. These are measured local
+software results, not hardware or universal encoder guarantees. The
+[blocking verification record](docs/2026-10-04-performer-blocking-verification.json)
+retains hashes, exact fixtures, measurements, test history and limitations.
