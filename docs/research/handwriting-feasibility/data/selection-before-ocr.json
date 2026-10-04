@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "selectedBeforeAnyOCR": true,
+  "selectionRule": "Fixed primary corpus folder lettre-boudreau-tessier; first five lexicographic page IDs 001..005 before inspecting recognition outputs. Select the first six ALTO manuscript-body lines in source reading order once region tags have been confirmed; never filter by OCR results.",
+  "writerId": "cremma19:lettre-boudreau-tessier",
+  "writerAttribution": "Dataset declares exactly one hand per folder; personal author name is not independently authenticated.",
+  "language": "fra",
+  "scope": "Historical French cursive manuscript scans; not modern English notes, phone-camera robustness, or writer-independent generalization.",
+  "splits": {
+    "correction": [
+      "01R_P1S3SS1P019_001",
+      "01R_P1S3SS1P019_002"
+    ],
+    "development": [
+      "01R_P1S3SS1P019_003"
+    ],
+    "evaluation": [
+      "01R_P1S3SS1P019_004",
+      "01R_P1S3SS1P019_005"
+    ]
+  },
+  "overlapPolicy": "All rows/crops of each source scan remain in its page-grouped split. No duplicate/cross-page augmentation.",
+  "commit": "d8f466de72561cd989f957d75a6743c5d8f0a262"
+}

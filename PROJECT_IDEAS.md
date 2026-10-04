@@ -102,7 +102,8 @@ Description: A social app for friendly challenges such as "Joe bets Terry that h
 ## 15. Personal handwriting detector
 
 Path: N/A
-Status: IDEA
+Status: BLOCKED
+Progress: Issue #82 preserves a verified, CC-BY 4.0 historical French corpus: five original page/annotation pairs and thirty fixed line crops with literal transcripts and page-grouped splits. Independent checks match all hashes and exact crop pixels. Genuine recognition remains blocked: no licensed/checksummed model weights are available through the admitted sources under the current environment network policy. Dependency imports alone do not establish inference, and no OCR, personalization fitting or application scaffold was produced. See [feasibility archive](docs/research/handwriting-feasibility/README.md) for attribution, reproducible data verification, precise limits and prerequisites to resume.
 Description: A note-reading app that adapts to an individual's handwriting using sample pages and user corrections. Users upload photographed or scanned notes and receive editable, searchable text, with uncertain words highlighted for review. Personalization focuses on recurring letter shapes, abbreviations, and vocabulary so the system becomes better suited to that person's writing. The goal is to make handwritten notes easier to read, find, and organize. A portfolio version would demonstrate initial personalization, note transcription, correction, and comparison with a general handwriting-recognition baseline.
 
 ## 16. Focal length converter

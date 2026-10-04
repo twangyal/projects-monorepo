@@ -1,0 +1,8 @@
+# Retain original evidence bytes, including upstream whitespace and CRLF.
+data/*.xml -text -whitespace
+data/README.md -text -whitespace
+data/LICENSE -text -whitespace
+data/htr-united.yml -text -whitespace
+runtime/*readme.md -text -whitespace
+runtime/unilm-code-license.txt -text -whitespace
+runtime/hf-model-card-response.headers -text -whitespace
