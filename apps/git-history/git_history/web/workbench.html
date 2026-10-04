@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <title>Git History · Local workbench</title>
   <link rel="stylesheet" href="/workbench.css">
-  <script src="/workbench.js" defer></script>
+  <script src="/workbench.js" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#workspace">Skip to workbench</a>
@@ -48,9 +48,35 @@
             <div class="selection-grid"><label for="selection-mode">Selection<select id="selection-mode"><option value="lines">Manual line range</option><option value="function" disabled>Selected function</option></select></label><label for="start-line">Start line<input id="start-line" name="start" inputmode="numeric" value="1" autocomplete="off"></label><label for="end-line">End line<input id="end-line" name="end" inputmode="numeric" value="1" autocomplete="off"></label><label for="max-commits">Maximum commits<input id="max-commits" name="max_commits" inputmode="numeric" value="20" autocomplete="off"></label></div>
             <p id="selected-function" class="hint">No named function selected</p>
             <p class="hint">Select 1–200 lines and 1–50 commits. Long or ambiguous functions need an explicit smaller manual range.</p>
-            <details class="context-panel"><summary>Add supplied discussion context</summary><p class="hint">Optional bounded JSON, up to 256 KiB. Excerpts and authors are supplied and unverified; links are not fetched. The CLI README documents both supported formats.</p><label for="context-file">Supplied context JSON<input id="context-file" type="file" accept=".json,application/json"></label><div class="context-status"><p id="context-status" class="hint">No supplied context</p><button id="context-clear" type="button">Clear context</button></div></details>
-            <button id="generate-report" class="primary" disabled>Generate report</button>
           </form>
+          <section class="context-authoring" aria-labelledby="context-heading">
+            <h3 id="context-heading">Supplied discussion</h3>
+            <p class="hint">Literal excerpts, titles and attributed authors are unverified input. Matching a displayed commit does not establish relevance, authenticity or intent. No links are fetched.</p>
+            <label for="context-mode">Discussion context mode<select id="context-mode"><option value="none">None — collect evidence without context</option><option value="uploaded">Uploaded JSON</option><option value="authored">Authored discussion draft</option></select></label>
+            <button id="author-context" type="button">Author supplied discussion</button>
+            <details class="context-panel"><summary>Add supplied discussion context</summary><p class="hint">Optional bounded JSON, up to 256 KiB. Excerpts and authors are supplied and unverified; links are not fetched. The CLI README documents both supported formats.</p><label for="context-file">Supplied context JSON<input id="context-file" type="file" accept=".json,application/json"></label><div class="context-status"><p id="context-status" class="hint">No supplied context</p><button id="context-clear" type="button">Clear context</button></div></details>
+            <section id="authored-context" hidden aria-label="Authored discussion draft">
+              <p id="context-evidence-status" class="hint">Generate a history report to choose commits actually displayed in its evidence.</p>
+              <p id="context-bound-revision" class="context-revision"></p>
+              <button id="context-rebind" type="button" disabled>Update bound revision</button>
+              <p id="context-draft-status" class="hint" role="status"></p>
+              <form id="discussion-form" novalidate>
+                <label for="discussion-commit">Commit in displayed evidence<select id="discussion-commit"><option value="">Choose a displayed commit</option></select></label>
+                <p class="hint">Picker order: blame, range changes, then renames; full IDs are deduplicated. The selected revision alone is not evidence.</p>
+                <label for="discussion-title">Discussion title<input id="discussion-title" autocomplete="off"></label>
+                <label for="discussion-author">Attributed author<input id="discussion-author" autocomplete="off"></label>
+                <label for="discussion-url">Source URL<input id="discussion-url" type="text" inputmode="url" autocomplete="off" spellcheck="false"></label>
+                <p class="hint">Credential-free HTTPS GitHub or GitLab discussion URL. A valid route does not verify the link or its contents.</p>
+                <label for="discussion-excerpt">Exact excerpt<textarea id="discussion-excerpt" rows="6" spellcheck="false"></textarea></label>
+                <div class="context-row-actions"><button id="context-add-record" type="submit">Add to context draft</button><button id="context-save-record" type="submit" hidden>Save record changes</button><button id="context-cancel-edit" type="button">Cancel record edit</button></div>
+              </form>
+              <ol id="authored-context-list" aria-label="Retained supplied discussion records"></ol>
+              <p class="hint">Up to 50 records and 256 KiB. Rows remain local drafts until a complete report request validates every record against actual Git evidence. Save or cancel an active form before generating with authored context.</p>
+              <a id="download-context" class="button-link" aria-disabled="true">Download validated context JSON</a>
+            </section>
+            <p class="hint">Mode changes retain other drafts. None can refresh evidence without deleting them. Authoring is kept only in this page; download validated context before leaving or reloading.</p>
+          </section>
+          <button id="generate-report" class="primary" form="report-form" disabled>Generate report</button>
         </section>
         <section id="report-panel" class="panel report-panel" aria-labelledby="report-heading">
           <div class="report-heading"><div><p class="eyebrow">03 / FOLLOW THE HISTORY</p><h2 id="report-heading">Evidence report</h2></div><div class="downloads"><a id="download-html" class="button-link" aria-disabled="true">Download HTML</a><a id="download-json" class="button-link" aria-disabled="true">Download JSON</a></div></div>

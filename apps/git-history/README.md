@@ -42,7 +42,7 @@ Open the exact URL printed in the terminal. It uses an OS-assigned port on `127.
 
 1. Enter a committed ref such as `HEAD`, optionally narrow the directory/language, and discover source files. The resulting full commit ID fixes this investigation even if the branch later moves. Explicitly rediscover to choose another snapshot.
 2. Open a candidate or enter an exact repository-relative path. Read the numbered committed source in pages; uncommitted edits are excluded. Choose a function or enter a 1–200-line range. Function discovery needs the optional parser for JavaScript/TypeScript; manual ranges work for other UTF-8 text too. Ambiguous/oversized functions require a manual range.
-3. Optionally select a supplied-context JSON file in either documented format below. Its authors, links and claims remain unverified, and commit associations must match the actual report evidence. The browser sends the bounded text, never a server-side file path.
+3. Optionally upload a supplied-context JSON file in either documented format below, or generate an initial report and choose **Author supplied discussion** to create literal records from its displayed evidence. Authors, links and claims remain unverified, and commit associations must match the actual report evidence. The browser sends bounded text, never a server-side file path.
 4. Generate the report, follow its local evidence links, and download portable HTML or structured JSON. Both downloads come from the same report and use the existing CLI renderers. Reports contain the selected repository's source and author metadata; share them only where that content belongs. External evidence links connect only when explicitly opened.
 
 The workbench keeps source, catalogs and reports in memory for the current session. It shows pending work and offers Stop; replacing a request waits for cancelled subprocess cleanup and cannot publish stale results over a newer selection. Recoverable errors preserve draft fields. Source is paginated at 100 physical Git lines and file/function catalogs at 50 entries, so large valid inputs do not create an unbounded page.
@@ -50,6 +50,18 @@ The workbench keeps source, catalogs and reports in memory for the current sessi
 Only one job runs at a time. Existing source/Git/parser limits still apply, with an additional 45-second aggregate subprocess deadline and 32 MiB combined subprocess-output budget per job. Python parsing runs in a standard-library worker with the same 5-second/512 MiB limits as optional native parsing. Bounded in-process validation/rendering observes cancellation between stages; Stop is cooperative during those stages. HTTP input is limited to 2 MiB with an absolute 5-second header/body deadline; supplied context is still at most 256 KiB. Each report is at most 8 MiB and each serialized response at most 32 MiB. Exceeding a limit fails that operation without changing the repository.
 
 The service accepts only its exact loopback Host, same-origin authenticated API requests and its packaged static assets. It serves one repository selected at startup; the browser cannot switch repository roots, read arbitrary local context files or write reports into server paths. It is a local developer tool, not a multi-user deployment or protection against other software running as your OS user.
+
+### Author supplied discussion context
+
+Generate a history report first, then choose **Author supplied discussion**. Select a full commit ID from the report's displayed blame, range changes or rename evidence. The selected revision is offered only when it also appears in that evidence. Enter the discussion title, attributed author, source URL and exact excerpt, then add it to the context draft. Edit, cancel an edit or remove individual records without rebuilding a JSON file by hand.
+
+Adding a row only updates the local draft. Generate the report with context to validate every record against the actual selected Git evidence. On success, **Download validated context JSON**, HTML and report JSON belong to the same completed request. The reusable context file uses the existing revision-bound `records` format and works with CLI `--context`; no private UI row identifiers are serialized. Titles, authors and excerpts retain accepted whitespace, spelling and Unicode. They render as text, and links are never fetched automatically. Matching a commit does not verify a claim, author, link or relevance.
+
+The context modes retain separate in-memory state. **None** generates fresh evidence without attaching context, **Uploaded** uses the selected JSON file, and **Authored** uses the local records. Both existing upload formats remain supported without conversion. Changing source selection, history limits or revision makes prior downloads stale while keeping the records and raw fields. Use None to inspect fresh evidence if needed. A changed revision additionally requires explicit rebinding of the authored envelope; each retained commit must still be accepted by the server. An out-of-scope record rejects the entire report until you deliberately edit or remove it.
+
+The same bounds apply: at most **50 records**, **256 KiB** of UTF-8 JSON, title 1–300, author 1–200, excerpt 1–4,000 and URL 1–2,000 characters, with the existing conservative HTTPS GitHub/GitLab discussion-link policy. Text limits count Unicode code points. Invalid or excessive input stays editable and cannot partially replace the accepted rows. Save or cancel an active row edit before generating authored context. Later input, mode changes, cancellation or page departure retire pending publication and downloads; previous reports remain visibly stale.
+
+Drafts are session-only. Download validated context to retain it; unaccepted form text is not included. The page warns before leaving with unsaved authoring. Reloading does not restore local records and requires the original private launch URL, as with the rest of the workbench. There is no browser storage or automatic discussion retrieval.
 
 ### Compare two committed selections
 
@@ -313,6 +325,7 @@ The browser workbench has a separate development-only verification toolchain; No
 
 ```sh
 npm ci
+npm test
 npm run lint
 npx playwright install chromium
 npm run test:browser
@@ -375,3 +388,31 @@ retains hashes, exact inputs/counts, package-source parity, observed test histor
 and limits. Review reproduced and fixed normalized path aliases falsely reported
 as missing; existing reader behavior stayed unchanged. The one full-suite test
 import failure was corrected before final304-case runs, without production changes.
+
+
+### Measured discussion-authoring verification
+
+Issue [#85](https://github.com/twangyal/projects-monorepo/issues/85) adds literal,
+revision-bound context editing and exact validated context downloads. All **311
+Python cases** are discovered on Python 3.11–3.13: 309 pass with the optional
+parsers and two expected skips; the dependency-free run passes 285 with 26 skips.
+Nine Node cases, full Ruff/JavaScript lint and compilation pass. All **35 source
+browser cases** pass (20 existing and 15 new). The same 35 cases pass against
+the installed wheel outside the checkout: 33 with optional parsers and two in an
+actually parser-free environment (4.3 seconds for that two-case gate). Running
+those two fixtures with installed parsers first failed; no product or test change
+was required once the documented split environment was used.
+
+Real native authoring covers 50 accepted records, refusal of the 51st, a
+261,196-byte multibyte envelope, literal hostile-looking text, both legacy upload
+formats, explicit revision rebinding, authoritative out-of-scope rejection, raw
+field/caret retention, genuine delayed report/file delivery, cancellation and
+390-pixel keyboard use. Exact 262,144-byte acceptance and one-byte excess are
+separate Node/Python checks. The installed 0.7.0 wheel contains byte-identical
+assets; all twelve actual context/HTML/JSON downloads match source-run bytes.
+Three flows match independent CLI HTML and JSON; the near-capacity flow checks
+CLI JSON only. These are measured fixtures, not arbitrary-input latency promises.
+
+The [verification record](docs/2026-10-04-context-authoring-verification.json)
+retains exact artifact/source hashes, actual failed attempts and corrections,
+independent domain checks, package details and verification limits.

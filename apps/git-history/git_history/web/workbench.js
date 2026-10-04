@@ -1,4 +1,5 @@
 'use strict';
+import { createContextDraft, addContextRecord, updateContextRecord, removeContextRecord, rebindContextDraft, serializeContextDraft, evidenceCommits } from './context-editor.js';
 // The capability never enters a request URL, DOM text, storage, or a log.
 const launch = new URLSearchParams(location.hash.slice(1));
 let capability = launch.getAll('session').length === 1 ? launch.get('session') : null;
@@ -13,6 +14,10 @@ let snapshot = null, source = null, files = [], functions = [], functionCounts =
 let filePage = 0, sourcePage = 0, functionPage = 0, selectedFunction = null;
 let context = null, contextName = '', contextGeneration = 0, contextLoading = false;
 let reportIdentity = null, htmlUrl = null, jsonUrl = null, connecting = false;
+let contextMode = 'none', evidence = null, authored = null, authoredEpoch = 0, inputEpoch = 0;
+let rowKeys = [], nextRowKey = 0, editingKey = null, rawDirty = false, downloadedEpoch = -1;
+let contextReceipt = null, contextUrl = null;
+const authoredRows = new Map();
 const visible = text => JSON.stringify(text).slice(1, -1);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 function node(tag, text, className) {
@@ -53,6 +58,7 @@ function controls() {
   $('stop-button').disabled = !pumping && !desired;
   $('start-line').disabled = $('selection-mode').value === 'function';
   $('end-line').disabled = $('selection-mode').value === 'function';
+  contextControls();
   comparisonControls();
 }
 function revokeDownloads() {
@@ -60,6 +66,9 @@ function revokeDownloads() {
   if (htmlUrl) URL.revokeObjectURL(htmlUrl);
   if (jsonUrl) URL.revokeObjectURL(jsonUrl);
   htmlUrl = null; jsonUrl = null;
+  if (contextUrl) URL.revokeObjectURL(contextUrl);
+  contextUrl = null; contextReceipt = null;
+  $('download-context').removeAttribute('href'); $('download-context').setAttribute('aria-disabled', 'true');
   for (const id of ['download-html', 'download-json']) { $(id).removeAttribute('href'); $(id).setAttribute('aria-disabled', 'true'); }
   if (reportIdentity) $('report-stale').hidden = false;
 }
@@ -244,57 +253,209 @@ $('functions-button').addEventListener('click', () => {
 });
 $('context-file').addEventListener('change', async () => {
   const file = $('context-file').files[0]; $('context-file').value = ''; if (!file) return;
-  const attempt = ++contextGeneration; contextLoading = true; invalidate(); controls();
-  $('context-status').textContent = 'Reading supplied JSON; existing context is kept until this read succeeds…';
+  const attempt = ++contextGeneration; contextLoading = true; contextMode = 'uploaded'; inputEpoch++; invalidate(); const readIntent = generation; controls();
   try {
     if (file.size > 256 * 1024) throw new Error('Supplied context exceeds 256 KiB. Existing context was kept.');
     const bytes = await file.arrayBuffer(); const text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
-    if (attempt !== contextGeneration) return;
+    if (attempt !== contextGeneration || readIntent !== generation) return;
     context = text; contextName = file.name; error('');
-  } catch (failure) { if (attempt === contextGeneration) error(failure instanceof TypeError ? 'Context must be valid UTF-8. Existing context was kept.' : failure.message); }
+  } catch (failure) { if (attempt === contextGeneration && readIntent === generation) error(failure instanceof TypeError ? 'Context must be valid UTF-8. Existing context was kept.' : failure.message); }
   finally {
-    if (attempt === contextGeneration) { contextLoading = false; $('context-status').textContent = context === null ? 'No supplied context' : `${visible(contextName)} · supplied and unverified · checked against the report when generated`; controls(); }
+    if (attempt === contextGeneration) { contextLoading = false; controls(); }
   }
 });
-$('context-clear').addEventListener('click', () => { contextGeneration++; contextLoading = false; context = null; contextName = ''; invalidate(); $('context-status').textContent = 'No supplied context'; controls(); });
+$('context-clear').addEventListener('click', () => { contextGeneration++; contextLoading = false; context = null; contextName = ''; if (contextMode === 'uploaded') contextMode = 'none'; inputEpoch++; invalidate(); controls(); });
 function integer(input, min, max, label) {
   if (!/^[0-9]+$/.test(input) || !Number.isSafeInteger(Number(input)) || Number(input) < min || Number(input) > max) throw new Error(`${label} must be an integer from ${min} to ${max}. Your input is kept.`);
   return Number(input);
 }
+const contextFields = ['commit', 'title', 'author', 'url', 'excerpt'];
+function selectionIdentity() {
+  if (!source) throw new Error('Open committed source before generating a report.');
+  let selection;
+  if ($('selection-mode').value === 'function') {
+    if (!selectedFunction) throw new Error('Choose a function or use a manual range.');
+    selection = { function: selectedFunction };
+  } else {
+    const start = integer($('start-line').value, 1, source.line_count, 'Start line');
+    const end = integer($('end-line').value, start, source.line_count, 'End line');
+    if (end - start + 1 > 200) throw new Error('Select at most 200 lines. Your range is kept.');
+    selection = { start, end };
+  }
+  return { revision: source.revision, path: source.path, selection, max_commits: integer($('max-commits').value, 1, 50, 'Maximum commits') };
+}
+function evidenceMatchesSelection() {
+  try { return evidence !== null && JSON.stringify(evidence.identity) === JSON.stringify(selectionIdentity()); }
+  catch { return false; }
+}
+function contextControls() {
+  $('context-status').textContent = contextLoading ? 'Reading supplied JSON; existing context is kept until this read succeeds…' : context === null ? 'No supplied context' : `${visible(contextName)} · supplied and unverified · checked against the report when generated`;
+  $('context-mode').value = contextMode;
+  $('authored-context').hidden = contextMode !== 'authored';
+  $('generate-report').textContent = contextMode === 'authored' ? 'Generate report with context' : 'Generate report';
+  $('author-context').disabled = !evidence;
+  const matched = evidenceMatchesSelection();
+  $('context-evidence-status').textContent = evidence ? `Picker from completed report: ${visible(evidence.identity.path)} · ${evidence.identity.revision} · ${evidence.commits.length} displayed commits. ${matched ? 'Selection matches this evidence.' : 'Selection changed; picker retains earlier evidence. Generate a fresh report in None mode to refresh it.'}` : 'Generate a history report to choose commits actually displayed in its evidence.';
+  $('context-bound-revision').textContent = authored ? `Draft bound revision: ${authored.revision}` : 'No authored envelope. Generate evidence, then choose Author supplied discussion.';
+  $('context-rebind').disabled = !authored || !evidence || authored.revision === evidence.identity.revision || !matched;
+  $('context-draft-status').textContent = authored ? `${authored.records.length} / 50 local unverified records.${editingKey !== null ? ' Editing a retained record; save or cancel before submission.' : rawDirty ? ' Unapplied form values; add or cancel before submission.' : ''}${contextReceipt?.mode === 'authored' ? ' This exact draft was accepted with the completed report.' : ' Validate the complete draft with a report before downloading context.'}` : 'No authored records yet.';
+  $('context-add-record').hidden = editingKey !== null;
+  $('context-save-record').hidden = editingKey === null;
+  $('context-add-record').disabled = !authored;
+  $('context-save-record').disabled = !authored;
+}
+function updateCommitPicker() {
+  // Evidence updates never replace the select node or silently change its raw choice.
+  const select = $('discussion-commit'), selected = select.value;
+  const options = [new Option('Choose a displayed commit', '')];
+  for (const item of evidence?.commits || []) options.push(new Option(`${item.label} · ${item.commit}`, item.commit));
+  if (selected && !options.some(option => option.value === selected)) { const retained = new Option(`Previously selected commit; absent from current picker · ${selected}`, selected); retained.disabled = true; options.push(retained); }
+  select.replaceChildren(...options); select.value = selected;
+}
+function formRecord() { return Object.fromEntries(contextFields.map(field => [field, $('discussion-' + field).value])); }
+function resetRecordForm() {
+  editingKey = null; rawDirty = false;
+  for (const field of contextFields) $('discussion-' + field).value = '';
+  updateCommitPicker(); contextControls();
+}
+function localContextIntent() { inputEpoch++; invalidate(); }
+function activateAuthoring() {
+  if (!evidence) { error('Generate a history report first. Only commits actually displayed in its evidence can be picked.'); return; }
+  if (!authored) { authored = createContextDraft(evidence.identity.revision); authoredEpoch++; }
+  contextGeneration++; contextLoading = false; contextMode = 'authored'; localContextIntent();
+  error(''); contextControls();
+}
+$('author-context').addEventListener('click', activateAuthoring);
+$('context-mode').addEventListener('change', () => {
+  contextGeneration++; contextLoading = false; contextMode = $('context-mode').value;
+  localContextIntent(); contextControls();
+});
+for (const field of contextFields) {
+  const input = $('discussion-' + field);
+  input.addEventListener('input', () => { rawDirty = true; localContextIntent(); });
+  if (field === 'commit') input.addEventListener('change', () => { rawDirty = true; localContextIntent(); });
+}
+function renderAuthoredRows() {
+  const host = $('authored-context-list');
+  for (const [key, row] of authoredRows) if (!rowKeys.includes(key)) { row.remove(); authoredRows.delete(key); }
+  for (let index = 0; index < rowKeys.length; index++) {
+    const key = rowKeys[index], record = authored.records[index];
+    let row = authoredRows.get(key);
+    if (!row) {
+      row = node('li'); row.dataset.contextRow = key;
+      for (const field of ['commit', 'title', 'author', 'url', 'excerpt']) {
+        const text = node(field === 'excerpt' ? 'pre' : field === 'url' ? 'a' : 'p'); text.dataset.contextField = field; row.append(text);
+      }
+      const actions = node('div', undefined, 'context-row-actions'), edit = node('button', 'Edit'), remove = node('button', 'Remove');
+      edit.type = remove.type = 'button'; edit.dataset.contextAction = 'edit'; remove.dataset.contextAction = 'remove';
+      edit.addEventListener('click', () => {
+        if (rawDirty || editingKey !== null) { error('Save or cancel the active record form before editing another record.'); return; }
+        const current = rowKeys.indexOf(key); if (current < 0) return;
+        editingKey = key; rawDirty = false; localContextIntent(); updateCommitPicker();
+        const retained = authored.records[current], select = $('discussion-commit');
+        if (![...select.options].some(option => option.value === retained.commit)) { const option = new Option(`Retained record commit; absent from current picker · ${retained.commit}`, retained.commit); option.disabled = true; select.add(option); }
+        for (const field of contextFields) $('discussion-' + field).value = retained[field];
+        error(''); contextControls(); $('discussion-title').focus();
+      });
+      remove.addEventListener('click', () => {
+        if (rawDirty || editingKey !== null) { error('Save or cancel the active record form before removing a record.'); return; }
+        const current = rowKeys.indexOf(key); if (current < 0) return;
+        try {
+          const candidate = removeContextRecord(authored, current);
+          authored = candidate; rowKeys.splice(current, 1); authoredEpoch++; localContextIntent(); renderAuthoredRows(); error('');
+          const following = authoredRows.get(rowKeys[Math.min(current, rowKeys.length - 1)]);
+          (following?.querySelector('button') || $('context-add-record')).focus();
+        } catch (failure) { error(failure.message); }
+      });
+      actions.append(edit, remove); row.append(actions); authoredRows.set(key, row);
+    }
+    row.dataset.contextIndex = String(index);
+    for (const field of ['commit', 'title', 'author', 'url', 'excerpt']) row.querySelector(`[data-context-field="${field}"]`).textContent = record[field];
+    const link = row.querySelector('[data-context-field="url"]'); link.href = record.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.referrerPolicy = 'no-referrer';
+    row.querySelector('[data-context-action="edit"]').setAttribute('aria-label', `Edit context record ${index + 1}`);
+    row.querySelector('[data-context-action="remove"]').setAttribute('aria-label', `Remove context record ${index + 1}`);
+    // Existing keyed rows are moved only when their order differs, never rebuilt on status updates.
+    if (host.children[index] !== row) host.insertBefore(row, host.children[index] || null);
+  }
+  contextControls();
+}
+$('discussion-form').addEventListener('submit', event => {
+  event.preventDefault(); if (!authored) { error('Choose Author supplied discussion after generating evidence.'); return; }
+  try {
+    const record = formRecord(), index = editingKey === null ? -1 : rowKeys.indexOf(editingKey);
+    if (editingKey !== null && index < 0) throw new Error('The edited record is no longer available. Cancel the form and choose a retained record.');
+    const candidate = editingKey === null ? addContextRecord(authored, record) : updateContextRecord(authored, index, record);
+    if (editingKey === null) rowKeys.push('record-' + ++nextRowKey);
+    authored = candidate; authoredEpoch++; localContextIntent(); resetRecordForm(); renderAuthoredRows(); error('');
+  } catch (failure) { error(failure.message); }
+});
+$('context-cancel-edit').addEventListener('click', () => {
+  localContextIntent(); resetRecordForm(); error('');
+  status('Active record form cancelled. Retained records and uploaded context are unchanged.');
+});
+$('context-rebind').addEventListener('click', () => {
+  if (!authored || !evidence || !evidenceMatchesSelection()) return;
+  if (rawDirty || editingKey !== null) { error('Save or cancel the active record form before updating its bound revision.'); return; }
+  const base = authored, target = evidence.identity.revision, token = generation, epoch = authoredEpoch;
+  try {
+    const candidate = rebindContextDraft(base, target);
+    if (!window.confirm(`Update the authored context revision from ${base.revision} to ${target}? All retained records stay unchanged and require real report revalidation; a commit may be absent from the new evidence.`)) return;
+    if (generation !== token || authored !== base || authoredEpoch !== epoch || rawDirty || editingKey !== null || !evidenceMatchesSelection()) { error('The selection or draft changed. Review the revision update again.'); return; }
+    authored = candidate; authoredEpoch++; localContextIntent(); renderAuthoredRows(); error('');
+  } catch (failure) { error(failure.message); }
+});
+$('download-context').addEventListener('click', event => {
+  if ($('download-context').getAttribute('aria-disabled') === 'true' || !contextReceipt || contextReceipt.mode !== 'authored') { event.preventDefault(); return; }
+  downloadedEpoch = contextReceipt.authoredEpoch;
+});
+window.addEventListener('beforeunload', event => {
+  if (rawDirty || editingKey !== null || authored && authoredEpoch !== downloadedEpoch) { event.preventDefault(); event.returnValue = ''; }
+});
 $('report-form').addEventListener('submit', event => {
   event.preventDefault(); if (!source || contextLoading) return;
   try {
-    let selection;
-    if ($('selection-mode').value === 'function') {
-      if (!selectedFunction) throw new Error('Choose a function or use a manual range.'); selection = { function: selectedFunction };
-    } else {
-      const start = integer($('start-line').value, 1, source.line_count, 'Start line');
-      const end = integer($('end-line').value, start, source.line_count, 'End line');
-      if (end - start + 1 > 200) throw new Error('Select at most 200 lines. Your range is kept.'); selection = { start, end };
+    const identity = selectionIdentity(), mode = contextMode;
+    let contextText = mode === 'uploaded' ? context : null;
+    if (mode === 'authored') {
+      if (!authored) throw new Error('Generate evidence, then choose Author supplied discussion to bind a draft.');
+      if (rawDirty || editingKey !== null) throw new Error('Add or save the active record form, or cancel it explicitly, before generating with authored context.');
+      if (authored.revision !== identity.revision) throw new Error('The authored revision differs from this selection. Refresh evidence in None mode, then explicitly update the bound revision before validating.');
+      contextText = serializeContextDraft(authored);
     }
-    const args = { revision: source.revision, path: source.path, selection, max_commits: integer($('max-commits').value, 1, 50, 'Maximum commits'), context };
-    const identity = `${visible(source.path)} · ${source.revision} · ${selection.function ? 'function ' + visible(selection.function) : 'lines ' + selection.start + ':' + selection.end} · up to ${args.max_commits} commits · ${context === null ? 'no supplied context' : 'unverified context: ' + visible(contextName)}`;
+    const args = { ...identity, context: contextText };
+    const captured = { mode, contextText, identity, authoredEpoch, inputEpoch, uploadEpoch: contextGeneration };
+    const description = `${visible(identity.path)} · ${identity.revision} · ${identity.selection.function ? 'function ' + visible(identity.selection.function) : 'lines ' + identity.selection.start + ':' + identity.selection.end} · up to ${identity.max_commits} commits · ${mode === 'authored' ? 'authored discussion, supplied and unverified' : contextText === null ? 'no supplied context' : 'unverified context: ' + visible(contextName)}`;
     queueJob('report', args, result => {
-      revokeDownloads(); reportIdentity = identity;
-      // srcdoc resolves relative anchors against the workbench URL. Give only
-      // preview anchors an explicit same-document destination; downloads retain
-      // the renderer's original bytes. The parsed document is never installed
-      // in the parent, and the preview remains a script-free opaque sandbox.
+      if (captured.mode !== contextMode || captured.authoredEpoch !== authoredEpoch || captured.inputEpoch !== inputEpoch || captured.uploadEpoch !== contextGeneration) throw new Error('Context intent changed.');
+      if (typeof result.html !== 'string' || typeof result.json !== 'string') throw new Error('Invalid history result.');
+      const report = JSON.parse(result.json);
+      if (report.revision !== identity.revision || report.path !== identity.path || (identity.selection.function ? report.selected_function !== identity.selection.function : report.start_line !== identity.selection.start || report.end_line !== identity.selection.end)) throw new Error('The result does not match the captured selection.');
+      const commits = evidenceCommits(report);
+      // Preview-only same-document links preserve the script-free opaque sandbox.
+      // Download HTML/JSON remain the exact server-rendered bytes from this receipt.
       const preview = new DOMParser().parseFromString(result.html, 'text/html');
-      for (const anchor of preview.querySelectorAll('a[href^="#"]')) {
-        anchor.setAttribute('href', 'about:srcdoc' + anchor.getAttribute('href'));
-      }
+      for (const anchor of preview.querySelectorAll('a[href^="#"]')) anchor.setAttribute('href', 'about:srcdoc' + anchor.getAttribute('href'));
+      const links = [];
+      try {
+        links.push(URL.createObjectURL(new Blob([result.html], { type: 'text/html;charset=utf-8' })));
+        links.push(URL.createObjectURL(new Blob([result.json], { type: 'application/json;charset=utf-8' })));
+        if (mode === 'authored') links.push(URL.createObjectURL(new Blob([contextText], { type: 'application/json;charset=utf-8' })));
+      } catch (failure) { for (const link of links) URL.revokeObjectURL(link); throw failure; }
+      revokeDownloads(); reportIdentity = description;
+      evidence = { report, identity, commits };
+      contextReceipt = { ...captured, html: result.html, json: result.json };
       $('report-frame').srcdoc = '<!doctype html>' + preview.documentElement.outerHTML;
       $('report-frame').hidden = false; $('report-empty').hidden = true;
-      $('report-description').textContent = identity; $('report-stale').hidden = true;
-      htmlUrl = URL.createObjectURL(new Blob([result.html], { type: 'text/html;charset=utf-8' }));
-      jsonUrl = URL.createObjectURL(new Blob([result.json], { type: 'application/json;charset=utf-8' }));
+      $('report-description').textContent = description; $('report-stale').hidden = true;
+      [htmlUrl, jsonUrl] = links;
       for (const [id, href, filename] of [['download-html', htmlUrl, 'git-history-report.html'], ['download-json', jsonUrl, 'git-history-report.json']]) { $(id).href = href; $(id).download = filename; $(id).setAttribute('aria-disabled', 'false'); }
+      if (mode === 'authored') { contextUrl = links[2]; $('download-context').href = contextUrl; $('download-context').download = 'git-supplied-discussion.json'; $('download-context').setAttribute('aria-disabled', 'false'); }
+      updateCommitPicker(); contextControls();
     }, 'Collecting Git evidence.');
   } catch (failure) { error(failure.message); }
 });
 window.addEventListener('pagehide', () => {
-  generation++; desired = null; ready = false; revokeDownloads();
+  generation++; contextGeneration++; contextLoading = false; desired = null; ready = false; revokeDownloads();
   if (active && capability) void fetch('/api/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Git-History-Token': capability }, body: JSON.stringify({ id: active.id }), credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true }).catch(() => {});
   capability = null;
 });
