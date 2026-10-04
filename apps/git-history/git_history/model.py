@@ -68,6 +68,14 @@ class FileCatalog:
 
 
 @dataclass(frozen=True)
+class RevisionSnapshot:
+    """One guarded committed revision and its original request label."""
+    repo_name: str
+    revision: str
+    requested_ref: str
+
+
+@dataclass(frozen=True)
 class SourceSnapshot:
     """Exact bounded committed text with Git's physical LF line count."""
     repo_name: str

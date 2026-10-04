@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 
 from .function_parser import FunctionParseError, parse_functions
 from .model import (ChangeEvidence, FileCatalog, FunctionCatalog, LineEvidence,
-                    RenameEvidence, Report, SourceFile, SourceSnapshot)
+                    RenameEvidence, Report, RevisionSnapshot, SourceFile, SourceSnapshot)
 from .native_protocol import SUFFIX_LANGUAGES
 from .runner import GitError, GitRunner
 from .work_budget import check_work_budget
@@ -269,7 +269,7 @@ def list_files(repo: str | Path, ref: str = 'HEAD', *, directory: str = '',
     return FileCatalog(root.name, revision, ref, directory, language, files, omitted)
 
 
-def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
+def _load_snapshot(repo: str | Path, file: str, ref: str, *, missing_ok: bool = False) -> _Snapshot | None:
     """Resolve once and read bounded committed source for either selection route."""
     check_work_budget()
     if not isinstance(file, str) or not file or '\x00' in file:
@@ -277,6 +277,8 @@ def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
     path = PurePosixPath(file)
     if path.is_absolute() or '..' in path.parts or file.startswith('\\') or re.match(r'^[A-Za-z]:[\\/]', file):
         raise ReaderError('File must be a repository-relative path without parent traversal.')
+    if missing_ok and (not path.parts or str(path) != file):
+        raise ReaderError('Use the exact canonical repository-relative path, without ./, repeated or trailing slashes.')
     git, repository_root, revision = _resolve_repository(repo, ref)
     listing = git.run('--literal-pathspecs', 'ls-tree', '--full-tree', '-z', revision, '--', file)
     entry = None
@@ -286,6 +288,9 @@ def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
             if name == file.encode('utf-8'):
                 entry = metadata.split()
     if entry is None:
+        if missing_ok:
+            check_work_budget()
+            return None
         raise ReaderError('File does not exist at the requested revision; use its exact repository-relative path.')
     if len(entry) != 3 or entry[1] != b'blob' or entry[0] not in (b'100644', b'100755'):
         raise ReaderError('Choose a regular committed text file, not a directory, submodule, or symbolic link.')
@@ -307,10 +312,29 @@ def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
 def read_source(repo: str | Path, file: str, ref: str = 'HEAD') -> SourceSnapshot:
     """Read exact committed UTF-8 source without parsing or importing it."""
     snapshot = _load_snapshot(repo, file, ref)
+    assert snapshot is not None
+    return _source_snapshot(snapshot, file, ref)
+
+
+def _source_snapshot(snapshot: _Snapshot, file: str, ref: str) -> SourceSnapshot:
     line_count = snapshot.source.count('\n') + int(bool(snapshot.source) and not snapshot.source.endswith('\n'))
     check_work_budget()
     return SourceSnapshot(snapshot.repo_name, snapshot.revision, ref, file,
                           snapshot.source, line_count)
+
+
+def resolve_revision(repo: str | Path, ref: str = 'HEAD') -> RevisionSnapshot:
+    """Resolve one guarded local commit without reading a source blob."""
+    check_work_budget()
+    _git, root, revision = _resolve_repository(repo, ref)
+    check_work_budget()
+    return RevisionSnapshot(root.name, revision, ref)
+
+
+def read_source_or_missing(repo: str | Path, file: str, ref: str = 'HEAD') -> SourceSnapshot | None:
+    """Only an exactly absent tree entry is None; every other error survives."""
+    snapshot = _load_snapshot(repo, file, ref, missing_ok=True)
+    return None if snapshot is None else _source_snapshot(snapshot, file, ref)
 
 
 def _catalog(snapshot: _Snapshot, file: str, ref: str) -> FunctionCatalog:
