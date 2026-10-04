@@ -1,0 +1,868 @@
+{
+  "issue": 88,
+  "date": "2026-10-04",
+  "status": "passed locally; exact published-head CI pending",
+  "version": "0.3.0",
+  "scope": "Reviewed geometric vector in-betweens; no AI, semantic correspondence or artistic-quality claim",
+  "commands": {
+    "check": "npm run check",
+    "newNative": "CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/motion88-native.config.mjs",
+    "existingNative": "CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/motion88-regression.config.mjs",
+    "maximum": "MOTION_TWEENS_OUTPUT=/workspace/motion88-maximum-final MOTION_TWEENS_BASE_URL=http://127.0.0.1:4294 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_drawing_tweens.mjs"
+  },
+  "unit": {
+    "passed": 105,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 1173.69265,
+    "lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed",
+    "log_sha256": "8503e70c8681e8f397a8b43b0a03902754d4af5b07e3505dba58d379d7ad0aea"
+  },
+  "browser": {
+    "distinct_total": 76,
+    "new": {
+      "feature": "Motion Studio #88 drawing in-betweens",
+      "final": {
+        "distinctCases": 15,
+        "passed": 15,
+        "failed": 0,
+        "seconds": 22.5,
+        "log": "/tmp/motion88-native-final.log"
+      },
+      "regressionRepeat": {
+        "passed": 2,
+        "seconds": 3.6,
+        "log": "/tmp/motion88-regression-green.log",
+        "includedInDistinctCases": true
+      },
+      "history": [
+        {
+          "log": "/tmp/motion88-initial-red.log",
+          "outcome": "Original schema2 endpoint fixture imported and saved; missing Make drawing in-betweens produced meaningful baseline RED."
+        },
+        {
+          "log": "/tmp/motion88-ui-red.log",
+          "outcome": "Undo removing scratch-owner layer reproduced missing consent. Topology case stopped at test-only wrapping-label lookup mismatch."
+        },
+        {
+          "log": "/tmp/motion88-topology-red.log",
+          "outcome": "Changed locator to exact accessible combobox role; original topology assertion then failed: two stale pairing rows after real pointer additions to both endpoints instead of three."
+        },
+        {
+          "outcome": "Both UI repairs then passed unchanged assertions; no expected pixel, numerical tolerance or budget adjustment."
+        }
+      ],
+      "fixture": {
+        "authoredBeforeProducerInspection": true,
+        "path": "/workspace/projects-monorepo/apps/motion-studio/tests/browser/tween-fixtures.ts",
+        "sha256": "5d197e21b8b754f51a09cfa01b170976ece2a9ad70cc778dfe0e70a19f613526",
+        "description": "Original red-to-blue line with explicit ending reversal and nonidentity pairing with green zero-length dot; independent linear pose plus fixed control. Source endpoints at0/8, generated2/4/6, twelve-frame timeline."
+      },
+      "pixelOracle": {
+        "pngFrames": [
+          0,
+          2,
+          3,
+          4,
+          6,
+          8,
+          11
+        ],
+        "gifFrames": 12,
+        "width": 640,
+        "height": 360,
+        "fps": 12,
+        "checks": "Native decoded downloaded PNG flat core RGBA; independent gifuct-js decoded GIF frames, exact3/3/2 palette at independently derived points and cumulative8/9centisecond delays. No producer evaluator or tween helper in expected values. Original endpoints retain literal points/colors/order; generated coordinates checked against closed-form scalar values to11decimal places.",
+        "limitations": "Small original endpoint fixtures, not maximum workload. Separate root-coordinated maximum runner owns quota,96-frame and persistent-process maximum evidence. Delayed File.text and controlled persisted page events are disclosed race instrumentation."
+      },
+      "sourceHashes": {
+        "tests/browser/tween.spec.ts": "bd0d467d4a1cdb2cadcfc88ac6a0572c2542ae4026e391cfde945ca0f79634fd",
+        "tests/browser/tween-fixtures.ts": "5d197e21b8b754f51a09cfa01b170976ece2a9ad70cc778dfe0e70a19f613526",
+        "src/main.ts": "4c3c7fd182c515c813fe257c88fc4f0f2046f079552a5e446dd1e3c5ab3adc7e",
+        "src/tween-view.ts": "7f5ade63c4732780e9c149495c08fa811ec1ba0d4a4cc7b4686b4112c1131dc2",
+        "src/tween.ts": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7",
+        "src/tween-preview.ts": "7f20fb3f743a506b4aae25005d679f295af3387a6ab074fd674ec73664648326",
+        "src/style.css": "feba188ee93b2b28dc4167a49abc9a75f878f431d5c6d2dff2778818d3e4cfef",
+        "dist/index.html": "82f476e032d240e68e061dd1422305f6cbe701a92a124ab0991d2ec46c4fa58f",
+        "dist/assets/gif.worker-BOpVV7Ww.js": "2cd371a67d4f927f9f8fc45de603d71a3f24f9ce04a7766265f7a6b2088a1c75",
+        "dist/assets/main-hNDAcNy1.js": "f336aaf7e48f63debfd745ff74ec074519e8ab1294b24ba491b1109ae6f28939"
+      },
+      "logs": {
+        "/tmp/motion88-initial-red.log": {
+          "bytes": 2647,
+          "sha256": "fe3d7f88ff668cab72155de324da27a070902a892e0fb04cd756b6c8b8067cf4"
+        },
+        "/tmp/motion88-ui-red.log": {
+          "bytes": 7952,
+          "sha256": "c739f882da8e381977d32b0ea6634f13635724d6099761d570d67c3b8cb14358"
+        },
+        "/tmp/motion88-topology-red.log": {
+          "bytes": 3530,
+          "sha256": "e55138e6c359402a5ebdbff0009efb420b59ac13067895fac4cf5975624be053"
+        },
+        "/tmp/motion88-regression-green.log": {
+          "bytes": 725,
+          "sha256": "8f277897f0acadb89fddf28889e16b710921a357d71dbabea7944baf6e1bae99"
+        },
+        "/tmp/motion88-native-final.log": {
+          "bytes": 2672,
+          "sha256": "0020bf4e43305636d5dd5deb762eaf5a55f9c841c6c00ea1ee03ebb0b5b5a0c5"
+        }
+      },
+      "artifacts": {
+        "/tmp/motion88-native-final-results/tween-390px-keyboard-corre-96c68-w-fit-without-page-overflow/review-390px.png": {
+          "bytes": 266219,
+          "sha256": "be876afb159368769e1ad0574901fe2ecce507674702b78c8f78885b41083f59"
+        },
+        "/tmp/motion88-native-final-results/tween-actual-PNG-and-all-G-f217d-dependent-simultaneous-pose/actual-geometric-tween.gif": {
+          "bytes": 15560,
+          "sha256": "04204d0e02eac38075d5d6138dcbdd591b11b75d1a4f0fd9712804dd952e5f3e"
+        },
+        "/tmp/motion88-native-final-results/tween-actual-PNG-and-all-G-f217d-dependent-simultaneous-pose/independent-interior.png": {
+          "bytes": 7409,
+          "sha256": "98a5d18f1c05ee8698dab73629e4db424c411e019c90632d188008690b9b8571"
+        }
+      },
+      "runtime": "Existing root-owned production preview4294; single nativeworker; all test Chromium contexts closed, no build/server modifications."
+    },
+    "existing": {
+      "passed": 61,
+      "failed": 0,
+      "duration": "43.7s",
+      "log_sha256": "8b5c22a38dd70268e9bb8b049e97603ea77540b59527db8af7bbf6ed8217134a",
+      "configuration": "Unchanged original test files, two native workers, isolated harness dist directory; same final source as normal production build."
+    }
+  },
+  "numerical": {
+    "schemaVersion": 1,
+    "scope": "Independent scalar/domain verification, no browser/media or artist-quality claim",
+    "originalOracle": {
+      "authoredBeforeProducerRead": true,
+      "firstCallableStubRun": {
+        "tests": 15,
+        "passedNegativeOnly": 4,
+        "failedSuccessfulPaths": 11,
+        "durationMs": 131.066765
+      },
+      "supplementalByteCase": "Negative-only first pass is not claimed as an algorithmic RED"
+    },
+    "boundaryRegression": {
+      "before": {
+        "resamples": 8,
+        "builds": 8930,
+        "failures": 8432,
+        "minimalCases": {
+          "firstOverflowSample": {
+            "index": 5,
+            "point": {
+              "x": 1280.0000000000002,
+              "y": 5
+            }
+          },
+          "overflowSamples": [
+            {
+              "k": 5,
+              "x": 1280.0000000000002,
+              "y": 5
+            },
+            {
+              "k": 9,
+              "x": 1280.0000000000002,
+              "y": 9
+            }
+          ],
+          "widthFailure": {
+            "gap": 7,
+            "frame": 1,
+            "t": 0.14285714285714285,
+            "weightedWidth": 40.00000000000001,
+            "message": "Stroke width must be a finite number from 1 to 40."
+          }
+        },
+        "permanentOracleRed": {
+          "tests": 2,
+          "failed": 2,
+          "durationMs": 114.508202
+        }
+      },
+      "after": {
+        "resamples": 8,
+        "builds": 8930,
+        "failures": 0,
+        "firstFailures": [],
+        "wallMs": 1388.7565180000001,
+        "negativeZeroOutput": {
+          "x": false,
+          "y": false
+        }
+      },
+      "repairMeaning": "Exact equal-scalar preservation; no clamping, bound widening or tolerance change",
+      "probe": "Original vertical paths, constant x=-1280/+1280 and width40, every interior frame fraction for gaps2..95; supplementary unequal vertical segments/repeated knots",
+      "postFixProbeStrength": "Checks exact constant identity as well as legal bounds",
+      "proofLimit": "Probe covers the declared constant-boundary concern, not exhaustive arbitrary floating-point geometry"
+    },
+    "finalOracle": {
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "durationMs": 534.467467,
+      "combinedMaximum": {
+        "selectedCels": 24,
+        "strokes": 100,
+        "points": 10000
+      },
+      "separatePairMaximum": {
+        "pairs": 8,
+        "selectedCels": 12,
+        "strokes": 100,
+        "points": 10000
+      },
+      "nativeMediaOrPerformanceClaims": false
+    },
+    "files": {
+      "producer": "apps/motion-studio/src/tween.ts",
+      "producerSha256": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7",
+      "oracle": "apps/motion-studio/tests/tween-oracle.test.ts",
+      "oracleSha256": "7a16e932b5184b7d920d5558023103eb5dc9da176008c107b4554301740077df",
+      "probePath": "/tmp/motion88-boundary-probe.mjs",
+      "probeSha256": "4d8c8773778fae5569d34cd377583b68f9d76475048f11ed688eee01fb4d8201"
+    },
+    "rawEvidence": [
+      "/tmp/motion88-scalar-oracle-first.log",
+      "/tmp/motion88-boundary-oracle-first.log",
+      "/tmp/motion88-boundary-probe-before.json",
+      "/tmp/motion88-boundary-minimal.json",
+      "/tmp/motion88-boundary-probe.json",
+      "/tmp/motion88-scalar-oracle-final-green.log"
+    ]
+  },
+  "maximum": {
+    "schemaVersion": 1,
+    "scope": "Independent original scalar and artifact oracle; no producer module imports. Normal native File, controls, downloads and persistent-profile restart.",
+    "status": "passed",
+    "outputDirectory": "/workspace/motion88-maximum-final",
+    "frozenExpectations": {
+      "topology": {
+        "selectedCels": 24,
+        "strokes": 100,
+        "points": 10000,
+        "images": 4,
+        "canonicalBytes": 5758316
+      },
+      "eightPairs": {
+        "selectedCels": 12,
+        "strokes": 100,
+        "points": 10000,
+        "images": 0,
+        "canonicalBytes": 378406
+      },
+      "topologyFrames": [
+        4,
+        8,
+        12,
+        16,
+        20,
+        24,
+        28,
+        33,
+        37,
+        41,
+        45,
+        49,
+        53,
+        57,
+        61,
+        66,
+        70,
+        74,
+        78,
+        82,
+        86,
+        90
+      ],
+      "pairFrames": [
+        8,
+        17,
+        25,
+        34,
+        43,
+        51,
+        60,
+        69,
+        77,
+        86
+      ],
+      "coordinateTolerance": 1e-09,
+      "widthTolerance": 1e-12,
+      "rasterCorePatch": "5x5 exact opaque color pixels away from antialias edges",
+      "gifDurationMs": 8000,
+      "gifFrames": 96,
+      "pixelFormula": "Held boundary h selects local x=105+200*h/95; independent pose adds40*f/95 at every output frame. y=row+10*h/95. Separate8-pair last path is stationary degenerate local(460,310).",
+      "images": {
+        "count": 4,
+        "width": 800,
+        "height": 800,
+        "eachPngBytes": 1004295,
+        "eachDataUrlCharacters": 1339082,
+        "ancillaryPaddingBytes": 1000000
+      },
+      "byteClaim": "Measured near-capacity fixture, not exact JSON byte ceiling. Four images are genuinely decoded original white PNGs with declared ancillary capacity padding."
+    },
+    "fixtures": [
+      {
+        "path": "/workspace/motion88-maximum-final/topology-source.json",
+        "bytes": 5491112,
+        "sha256": "a05039b4e0d8b29a516895d520552d33e91a36cf10aa57a89bc7686d65f775d9"
+      },
+      {
+        "path": "/workspace/motion88-maximum-final/eight-pair-source.json",
+        "bytes": 150637,
+        "sha256": "09d5cad262418fdfa7b76b1a25e66ed7a14391c781baa13c900206f849787719"
+      },
+      {
+        "path": "/workspace/motion88-maximum-final/topology-analytic-expected.json",
+        "bytes": 5758316,
+        "sha256": "2e1f31c9af16275fdb425c6f2a9ef37140a6898c3d5dd503f1b3e2df3db405a8"
+      },
+      {
+        "path": "/workspace/motion88-maximum-final/eight-pair-analytic-expected.json",
+        "bytes": 378406,
+        "sha256": "41d3fbbbec5164bc0c4ce427c6fe4006934217a229b500c4e7067f2124ed9a11"
+      }
+    ],
+    "artifacts": [
+      {
+        "kind": "png",
+        "label": "topology",
+        "frame": 0,
+        "bytes": 9229,
+        "sha256": "72f63b284f6ffdfa486f96252f711cd83ea42cd7a1fe5d4b68e0c4d8ec29fd24"
+      },
+      {
+        "kind": "png",
+        "label": "topology",
+        "frame": 4,
+        "bytes": 9493,
+        "sha256": "3447aa3ec594133935ba208a916b9d21d3c870f39fb55fb61929095a0fcf421c"
+      },
+      {
+        "kind": "png",
+        "label": "topology",
+        "frame": 47,
+        "bytes": 10125,
+        "sha256": "5fd070e036bc8cd90f085039c92376af7757e5ec5e56564efc7ec7967e266ad8"
+      },
+      {
+        "kind": "png",
+        "label": "topology",
+        "frame": 94,
+        "bytes": 10526,
+        "sha256": "68a369d8358b0864c0d6ae6ebef2d4b90b753249ea6ae90c23c8842614b61644"
+      },
+      {
+        "kind": "png",
+        "label": "topology",
+        "frame": 95,
+        "bytes": 10170,
+        "sha256": "87334bb5d5b09c179694eff09d9fee5fdda8d779db53f11ac50b8201cb4c98ad"
+      },
+      {
+        "kind": "png",
+        "label": "eight-pairs",
+        "frame": 0,
+        "bytes": 10986,
+        "sha256": "b9ece57bb48b552b19f390badbf5c46d071d7ee9800c528345ce605b62b5842e"
+      },
+      {
+        "kind": "png",
+        "label": "eight-pairs",
+        "frame": 8,
+        "bytes": 11856,
+        "sha256": "c56925f31069c34d36cd2e2aea5b68024e4cdedf2dac94eb6d57064dcada7168"
+      },
+      {
+        "kind": "png",
+        "label": "eight-pairs",
+        "frame": 47,
+        "bytes": 12300,
+        "sha256": "3ea6e91a7c55d29c12398f00a4a61d1db5956f5a041556d904e8521ce046fcf1"
+      },
+      {
+        "kind": "png",
+        "label": "eight-pairs",
+        "frame": 94,
+        "bytes": 13358,
+        "sha256": "d5f58c344fd986699e0da16e437c9a9e631be1d90b066e9614b3ab5413ba40ae"
+      },
+      {
+        "kind": "png",
+        "label": "eight-pairs",
+        "frame": 95,
+        "bytes": 12727,
+        "sha256": "4b4420765cf10c28d460311428a2c2b2fe932240938f56c17e6ef4d33c189d19"
+      }
+    ],
+    "cases": [
+      {
+        "label": "topology",
+        "usage": {
+          "selectedCels": 24,
+          "strokes": 100,
+          "points": 10000,
+          "images": 4,
+          "canonicalBytes": 5758348,
+          "maxCoordinateError": 1.1368683772161603e-13
+        },
+        "reviewWallMs": 264.19256499999983,
+        "applyAndSaveWallMs": 599.338256,
+        "gif": {
+          "frames": 96,
+          "durationMs": 8000,
+          "frameHashes": [
+            "d3b98b106910cc9c282e14bc906f40f1ac9e7147f252f720d009f9c259a84d8d",
+            "1878b42e88d384c6d2687fe8441f7b82d70c944173811efad0248489d5be70c8",
+            "c85f5920d4833042b4f9c945765838dbf1515e372ac1615732e226a0cb57e721",
+            "90286792ed09eccf83502881c112bd5d308ce121c6d3d90ead46e43d9c78bf8f",
+            "ead8a0244ac43309851fc5dc28e5a6d9e8641a391aa8d114d1f7dc4b19531ffd",
+            "37883c4f29e747918e96f6105d79f07a68c4e64086c0bbcba61cb0f3ae22e85f",
+            "bf83ba5cb7a0f38dd131963410d352d9127351aabfb5968516c10d0c38344470",
+            "dba1d1a425bc50e1801fb121371fc97677af43426681c9c7255b95f8dcad79c9",
+            "120b09741a691e184a4da1971c2dfc5b1f667ff44ffc36ff37caaf7fa64bd6f8",
+            "92badf904512f2b198caad8bfcfeb96d3ed1f023a149401101bd14eb4b5c9cd1",
+            "cde9ff6d6c1f2ec0bb91d3198500229a2950d1a95ab4b80b55541770ed588ac4",
+            "5be7dcca3cf56900d4897834abf8b1cbdc351289564931a394ee874e39d4bbbb",
+            "b77038acc7fe4de6110b415c2acf518b5b8907b297208597d6bde310ed361406",
+            "92b943c531df7b7d364c6754b8d8b47e1fbf0f0248ded4425f03abeb64eb660f",
+            "be532259bfe7504f14462722e5c88b91f0be02b47ecd748419353d36fb34a67f",
+            "0c8d96a6ed3aec9c74fd9bd929ba1d1a29c22b070afd37d3066a16304a72559a",
+            "7d2f88064583bb193c73954fc2651f5cd84830b0270b5b9bdd016c262b68fc87",
+            "066835ced29741830f1110384e32c607a5c99105f55dfd20265d69b9af7f7f97",
+            "52455a8c02eb304d51d686e287aa0583b6881768aa33f3e32224f2c3741338ca",
+            "2735e206f23d300ba95789948c6388a2a9b787a4d302513ed0c5c6e4075c6a0b",
+            "fd18645c9c1a3edf6b45d9b189b96f3948f8b1750f62b5905710717effc646aa",
+            "63d1508557107a480e98f5d7e83f02416d2de6eb045dce29b0f77d20e28fc750",
+            "1d72a99f35e902c5227e143f6efc56bf961dd4615cf41f523c588a2c80b416e8",
+            "1a21b1f8075dc141bec8d918f0b99569654b8bd9b819383c4caf92303363c6fd",
+            "ce1a1dce793b6455d949e317914cabb7ac9c2f273e475958d9a7b634c559862e",
+            "9d254b4054d9936095ed4a5a670967f9cb64534c77adc00a6d65870755df392f",
+            "7566ea3fe685e1ff288bedee82740a32eec698b20135e1aefb8a3eb9e6632f35",
+            "0ddc360f1d4073e99d66fff38be4f65d2938f379654fbc4692934a9d3313d235",
+            "f12853de8968fc339c9bd33bf5426f0ff436eb3df6e9f5bd512bd9555ad3088d",
+            "cad41e3c112926d146d8b89a9c0d865555bcd1b1083ed606814cb3e4576c2408",
+            "fc38195b23ded465850a93688124b35390b38433e2b3d0903f03e52c763b8239",
+            "51507132b9e381645191cb6f5e82b63c6cee5b6daf8b19c31d4cc00147841ffb",
+            "035f97bd84fe8e2e89638a4a2d817f9e2dd4ed60c1f8b7e6ac1505007d23b416",
+            "c521b873635a870ee2ad67cbaec5075510f68147f9538fdc2e58ae93a4346678",
+            "913e2dfd181480151fa9953d253282f4a40d66f03e8cf8ef95e5047889d32080",
+            "76563e900b12f83fb8cd47c770666dd738f4ca4fed0d84492bd38e961424318d",
+            "8cfb0852884dbec078a6995b01663fad3a2c506c7f328becb1f1dcb4d70b946c",
+            "959c9dc7f10cfa6edba939fe054343ac827167e49c220b4a253118bcf554a11d",
+            "fe63fc4285cdd26b030f925679a9de315267573815bd99c1ab8b263d628f98f1",
+            "73167c7304d9166a66845ee94c9eed9ea65a8845c2190a216718fbf01234959c",
+            "3ff1c90863c42c2b1532f5a3a9bf306aeab7eb6921b1c8205544e972ad570a38",
+            "3978211b386ebdf72bb8bf63aa3f27a82969f56bb5e68ccd528f4e16a606b725",
+            "c7eb4869a89d28cbb4168e3a8e75a60b8a1262d11277919a4aebfd5bcc859519",
+            "c5dc6d93730b20d13d9e48c7790242393ecf7acdf1a0de600b108184f1ea96f6",
+            "5da4d00a85c5f36935924ee96f21513eac1069ac36e6dbf8f8cf53692c06122a",
+            "b72cb955c1399b728d91be8ce29a595b348d67744ce21228a701210a7e906a45",
+            "0f5cbfe74ce94a968a2edfc5e6a0ef69f833fcf027dc9063a3b286f7887770b1",
+            "b8acbb95eefeeea18f561a2055f99597305c73097ddc8bc28589ccb1037156b6",
+            "17573efdf855d278cc720653e6a663565f278e224df6ffdbe383a47840dca125",
+            "a2ad53abe00c1fae2d7f5898f4acd3b0f03d16a69ad59e79ad5db268ce5ca4f6",
+            "fb12bd7937ad8791dc60cef9e4318ca6d541286ae179ecb27be3c66395579847",
+            "ec2f4b991d6e9f9a8bf97bafd80a6f0335a63eb5c2ab0a1dae3107875ae57464",
+            "35322862fe9f0b266e6ce74a1614ab8508aa4023a24f39538d8318e3757079a1",
+            "3eeb655912586ddebc438db4e26c8376b10c149d61d726b7d002acd6199c1a10",
+            "7321154029940e68d154320b16222886416d1a7d314f4f113c34568bf71c1d4b",
+            "0ae332351353ce670ddfcbb145e6148b3865eee8fa8b998fd3cb1a5c7dc79fdb",
+            "6cd4d6ec831c26cd9dc1e923718f4027271578daddeafdbde578c80bcecc42e4",
+            "bb0a32baf58c8a66f19909afc4ef4f0285560f10daba2a3ad4cd69f8e4aca2f4",
+            "b1ca32d78aca9e3bd5dd37f4d034e416e33286a7cae485f9cc37b3a121e89321",
+            "4e63c6bdb3ca6e5a27fc8e106376d0fdd128f2c4380c6c63fab1cb6b8ec67eae",
+            "82871d5b1a441a153f2de768841def420fe32c97507ef1af01a8a80141266ca1",
+            "68b246e15c8b5840baf506a3b4fc12ed4d66a620eecd5a70ad8e1f292083f0b2",
+            "35741c988197e7740f5129f96d2c5aef678be252d288755a3abfc73c707d2eb6",
+            "443fdd344b6a0dc4d796e99a77e3417c5aa1b64233b7f039defc47dfc4859e1c",
+            "c8593727ebd7d65c0b9344c18c5c4130dd3a7f659dad21569130d614f7e36ebb",
+            "d2b4a515229ea616cd23be95b441d4ec38a46bbc6914a6e92394791704f55fd9",
+            "023fc1fcf5e0e7cf020b5632dcd2f095d8b1960ae46257ab6056f514bf861310",
+            "177853bf72a65e8d9032c956ad14f3f84fd88a87555ef0b072b97bf9209336f3",
+            "ebbf83a6bbe1fc58a351a9f916b33a7651a12e86f7ad8c2bc8eb5b1916620e7b",
+            "97ca7aa683fb6125e97c7f886765b6de277069c68be6ea4078b3fceb93bb1ee9",
+            "0695b3b6e18a3f0fcf907b8ced34a7b0f04918c45fd8569975f4f20c3ce75f02",
+            "f754ec5eb54c4e9746bcc638383c32d1c2ce08f629d91f0c4697b9096bba0d5d",
+            "05baacdf346afdefbd6eab1ee0b558762cf52f40f970dfcf0a01e9afe77aedbd",
+            "f702d28e3a7f007dbf2e72adb5d82a8ea274d54e9cb70ebd3e418d5f6a3c1706",
+            "e225e7eb61053c5ab79869851158726023ee519b9aa1ddf159120513c9693d6b",
+            "055ee2ab6d96b30aa10144aa691146112f11f93e785cf1edce43238100e61517",
+            "b69608535f34b36b8fe35069cf22d46765292fcd89230789d56525372510c843",
+            "e5bb79ccb21e84e0b4d00e8378954e55f2a2342c621ea585a1b3d33fb55ac1bd",
+            "60ae1bfca69f8405e05e1016e937a21401e68d6f74499692a92d03c4792d5812",
+            "cf4663d79eedabc1ef55aee63bb974a4e3fcc366b84802ebf07e31c82e378245",
+            "d2b08e56b13450bd891c11dc8df6609dc9af516bdca048bca87e3cbc3b9613cb",
+            "1b319489a460021ecd4b8c876f55639386f2d6759a2af3b90ae8a2eacc88f0ba",
+            "867516f26566cde99fe6bbed1a81292cdcaafb1056aadf4441a3a368713fd2f4",
+            "ccbb22e6079b07a04006709fb455401d2d9a1270efb715f0c85d4bf39e61a211",
+            "83b39682d59a54dd699f6bee33f02e7a7799d084d6b24d02b1382b7ff245891e",
+            "ed9714a4393f76a3f53487d84f2615e31521782fa18794898b4dfa4a02a74a76",
+            "af1a661e5b9c02c00e6db05da7b3520d1e1550cdce0c0bbf02011da50c471516",
+            "bc090a6667fa7e749a3620672e96d35f7c9b6c401d9be8ef78dae62cda5f0d90",
+            "714231f6074eadb057a195391862da9b781f0cc875a8f307f35635833943c014",
+            "5107acec52a6a4e30c2d991958f0913ec60192d3ec07f2b1ee52a435243d2e44",
+            "85cfbf1efa727c427fd58a3702f48e20b7ff4264eed01b7ae46195f5491a1f35",
+            "665900f053b254833825a8562957c3cbe3d598464699495e25939acc9d61e719",
+            "8e2f4180f3707836148c1b1f1e770271504de44dd67810d897e0f02cfb851dc7",
+            "20db171f79b8c353ae7cdf0fc852755880e6b96bb819371bd022442fa243ae34",
+            "125d58e5dc6b224475515ecb056f0ff9a5637674905687e1e755d4f504ac9541",
+            "d6c4d63ffc4aa054ee5e03ead8d81adf776d1848b85e89fb168690e0da5d1345"
+          ],
+          "bytes": 191999,
+          "sha256": "a3547528bdef5d2e045efdb54188bf672299f4facce87fb6bc28a34db36420d8",
+          "encodeAndDownloadWallMs": 800.3160540000026,
+          "decodeWallMs": 464.886902000002
+        },
+        "oneUndoRestoresSource": true,
+        "redoByteExact": true
+      },
+      {
+        "label": "eight-pairs",
+        "usage": {
+          "selectedCels": 12,
+          "strokes": 100,
+          "points": 10000,
+          "images": 0,
+          "canonicalBytes": 378934,
+          "maxCoordinateError": 5.684341886080802e-14
+        },
+        "reviewWallMs": 2976.749606999998,
+        "applyAndSaveWallMs": 1899.4227699999974,
+        "gif": {
+          "frames": 96,
+          "durationMs": 8000,
+          "frameHashes": [
+            "fc4929812f6689629458a23910c3be2451a2a42657cd36bfbf93c6fb12074b1c",
+            "e1e25ec88157d9811d98222435a6e443e736aa9926ee85b0663b339e04736b1b",
+            "8d9417a8fd97502ca1f177665ccf4f1175595a747238d552813c0d2d6df1b2ee",
+            "9492053bf4979ea2813db472b668974bca07fbe4ed67ac97be65469ed149b3d4",
+            "22693e4516ab07d30ea7eee91da1b552682902c5689917b0f6d1c6a1c2443a3c",
+            "8edb695936e026f61404b8b7af8f1748e071b272557ca58ff7b62cab110de5c5",
+            "bf86abd47f8f0ea92b599e177d24cb2a25a2dcfe8f3ef1b101abe2ecddf7bf15",
+            "9655a66ed58d2941512b62cb771a717c05f9c7f2f034ede66ddb17e0ac8b0088",
+            "452b26eaff3099766d3ee273c8f7aca3f49f8e83896e5492866eacb2f9bfb90c",
+            "e6ce62a97bd8dfc090c631c3509a9fd811cbf2cdc41caecc4f94d02f7c448fa6",
+            "2ae38c88ae46e82b54966d88d163ccc86c1f840458a49bfccfed5a2d0eb1986e",
+            "1447923b62e3e2d344d9cc60258394ad5b6d5aceea3e5f2fcfa732e3069d2298",
+            "6550dd15213bf03167330be535a1dee044cbdb208669f93481077a8f488700ba",
+            "1f6fae9d3a264abe6821aa5edfc8b93b94fedad7f0bdb30952d28e9e1d9a8d33",
+            "ac483cd66b4e47a70484ebc15c49a1b2b55d67f6c6eecad4dae8bcf02383f0d5",
+            "d5d1af0683b13ab9a1546a57e900dc4e44dadd59c58aa04bb4ca79202985260b",
+            "f750c003ed85aa963353dc408c1576149b24771667911977f29da9f111217ed6",
+            "07f5acf6fef7c9cb8a7eaff5ee80b2fbbd1cc6e0bfdc0c89a87177edc1cffceb",
+            "4f0181608afea65d96a6faed4d28b488ee76c83f849461ce84b4236ccfd7f3b2",
+            "46bb36415e79185b116ef00310377ae02160e01f60fadb855d1c9e7e20ad1d5f",
+            "abebdfb6225bdc0026475841064c838a862ca12cd6c59842af56c9d5d4dd3a3f",
+            "b92a7f6359862b1af9b902d59113e0c4b6b7fbe2ebc9ad1cf7abc14d072c7c6e",
+            "a910284c4fe2bda88ffebeaa224b3f02f570885e57b6102fadfb39e893956e6f",
+            "f11e34c806761db62f2625dcaad7f50b19e99b7083370b5c7891cc2ec4b88fc4",
+            "ca616d2088e6ccde93acdcf64cfeea1c40e817c78c82f9ae6a02240c63c5ead1",
+            "a9c7e387766a0f5d4357886df583eef6255d6e8beaae54f80376996b8c82ee31",
+            "8f3fecd19d11bb95cd323242e090bdc30d60a6a4f970842d18bcbfeb3d5426f2",
+            "8a88b2538b3d347f5a90ac3f7cd54cbd11bc23b2866a4642bd540dad3fa598de",
+            "352360dad93c325c21251234c9be98c8cbfded1f116275c57e88efdb092fe4a8",
+            "814cb3e0bcb5800c469f5284e6b0bc19981a774699a9a08e81c01c87936a8349",
+            "d0166ad6b0753fa6000883fc1410f02de1e5c8ccbfd82b8de1f8faecc47bcc56",
+            "0839523f17f1ea7a216072c78f536d8007072148631138152e7c1e18ef23898d",
+            "285d5cf5106273f8504938d0142d59834e4bbc7fe49125afdb3c4d08b6263008",
+            "86ff620fa569e3bb63c1016732264cf1529cca3da448c9dc61390af3bbd8f090",
+            "ef23419b62413fb46237b9ee609df6df515dba3053ebaa5bdf33a3d2ed611a65",
+            "5661e40e0ce535d766390046649842d7835f2023840b9fa1930b8a1eee59c08b",
+            "9fe8686c36a2ff03764270bc92f031523fe94bd7bce78e7cb55b2b282be7f2a2",
+            "ae08a042304a171c2f8438781a4fd1c273b8c5eaf849104622e438f7eefaa854",
+            "b3b5e83efafa5b31897b46bd812c0561fd00b4ce145225c849883aec7c3f9cfd",
+            "ef842ba263fdd187062fd0ed2686d5873afb17e3d4518c9db3168fb4b35d4687",
+            "f42c6ece27fd3cc35720bc73afe94664c97544b9896b75e4777278d79f71a310",
+            "b1818910d1988dcba39cdf723fb9620fa568238ed9c5614ed3de301f06bea886",
+            "8a976a2b6bd6c4569a8edad5a06b516b5cd5be4172a4c6bb98ae07adb2aa0af2",
+            "f1d6b832dd3c0d851d822cfdc557afd17113c4b9514f2ca2a942b888e998a6cc",
+            "2c3f6b659bceb5aca57f5148d2b99f0d944b0a4a3667121c40c1c873b0c98b72",
+            "7cb73ce0adcfa6b29e7b6663e294d678161b3214e38a7a63e58917b1cdd2f310",
+            "b397c8a39ca7a86a35d28f490adc882423aee1daa77309f2e6370efca541e626",
+            "d3f2f77572253ee50e6eade42e58be54224df2449a6fc58271971346f5c764d5",
+            "2a07ad99b11da673f8b8ab0a30d63d22fabeecf49cc94a5c7f723dfe996a59e5",
+            "76b57e9f17dba68dbdda8a87d81f5f2c5c9f0aa6c70a173207fdc14ac6d9dec3",
+            "3af659b6496ce406b9e6559425c3ceb685710db9a55a54b2e4785ec416f29676",
+            "30ff45ddd5a96ab679710d0b6e7f162e568bffddd325daaf7b33d89ef59d830f",
+            "8c102474e0c53354ef536ac8552e8076ff08b9eab6f0cbb45834f3b7a188f56b",
+            "68860afa37bd6e435b0510365b7205cb3470ccecac4b63554580f4847b2d6885",
+            "1e7a18c90e1318e240719ec9ce706b3ec1b76ee340d4d00e8916c7eaa49968f1",
+            "1578f224b16b71a3f2b4363e0c8fb85ea57e623ee97d3a089d035ca542d51130",
+            "14afdd4673ef1873d7cf45c296ce0ac58a9950deea44cb2a312cda2c8bb8a0f9",
+            "83ac3f30ff70347be17681e57f4514557483c1e60bf0a396a3360511c6046d85",
+            "f2036c6d360b456c3b955bc68c053bbd54ca95cde100a415cdbfd33bb081c8dd",
+            "e2bf24543a1545b1eaf4f5c733f9fcd79e38124528847acd64dfc4c8281aa89f",
+            "b1fd8946bdf88897293a9198657c1eddac8c906781a27753b2c451caba231066",
+            "61b8816d5c78471787eec8c3789fe0644b513b096e47776781c1776ff64c97d2",
+            "4716cf2235650f1b87a6a744060cc030f74ac223ef3968912a656b8c32918f36",
+            "82bd35ff44fdbaf911c7f06634d1e367b6fd3014e8af1d46051dbacb09b64244",
+            "dca885ed8a94a1052b3b297cbb094e8f1409d5e301f7d611101968f105617516",
+            "3789a5185313e9d4bdf7babc1bac3afc674a752a46d894153151e62ad64f4415",
+            "3c56fd94a8846fa1e744fd5b3c415b512bf912fb0a72b090abbfac51faf27480",
+            "7dd714b0ff6841435ddfc815dc16701c09418aa3e086a5fc046010403445330e",
+            "1f7169a0bf560cea5977b8adb9703afe899b7d7b7336897234cb6bc1e3986e36",
+            "21fe9b5d8e36c366494a97f31655bdb32b8906338d358091fe4b19096ee2fe2d",
+            "40bcc9ea901c0f9976f9ba9d06fb48f9007e6280aa1a8288f6a8858e8cc63d7f",
+            "eaa1445c785e474860dcd5d2fb7c061c111cb4c7b6e9833ac4a8ba9fb8ab7ffe",
+            "566efb5a71ce228c0a3cec57995ab815b51b364e34b7f082b98f5ffb92d6a67c",
+            "5249147f5580ec764cf91b0902b12115208cbc9fa80017f656f13b0c030dfb98",
+            "37a8a942b2875ab0d0fb72363f3285f7874f0de6ada8e158e2b3884a7d15d446",
+            "c74d3e9227f033b309c5bd1cdcb85a98cbb4675dc057be732b88dda1965e566c",
+            "58dd198fab6ce6c7980fb7e15d6e738ffe30010b83f2ba24d711d234259d402e",
+            "94a91929acb026ae4930bdd8d8b66fc8ca97a490eae66af0b6728c5bc468b77a",
+            "5b4678b583f7accc4ac58c41752b77aa3eca02faee351416ce2e3cd76f12beea",
+            "c7df53bf9891d3bfa5440995a288df31652fd0bdaa859d616de0553f36bf1a88",
+            "6b9eb54d624eba6b0774246f726a168e07287e451b21f5d30defc490e1a914ec",
+            "78a70ac45e4f19fd03505aa1c83a646b31dc3ed1d53c9fbbf690668213eeb1c6",
+            "53ac739b65573316dfa9b19025593a5d288fa9d7a9228c651b4ec8b0f671e55c",
+            "662e31a18ec92b85ade9588f951bc0f207d5592a1231c0f005097e0742dc922d",
+            "c35f64be514a89959348397738fbdd890cef3eac1047e9f7f30c73c3283d0a4d",
+            "1bf0ed380b708f0ff5c193e00ae0f27cc17f763a11868c34bada36b171e23ce9",
+            "b3347500dd1277422a384efe1fcc26783b4eaca5c2bb82c2d5851ef31ed8135f",
+            "44c964b156da8a157e2d599ae9ad1f8ad7757fa2c77eddd2363961c7662a7d18",
+            "9625d807fb4086f7305215847d7decd987d77f81cdd846454c9ed067a35f8d3f",
+            "d36228343e26cf90ed25e7000a40b76e269a9d1fc85243afb6490fff2882e193",
+            "b6cf01a7ba737098084c2628ebc1df21d14b91db0d27251992f02c19eb1f1c36",
+            "6015fd22ae3066d3f2862f9c7d7d21d2b3b1d952c5af28a29f8f7fb30a9c7331",
+            "f41d4c01b51d117a6716b4a2292547165064718de53cc2acf19b61c4cf3623cd",
+            "bf34fac3f89db39dafc430721ddbc7111e82b13d3363a083f5a2e4b57ca8ad21",
+            "8925bcdaa62a44b06f59dad9f5c6a275e5c9633daed52171aa09732f9e878ce7",
+            "60c3259cd9fc7ffd416612477934c05d9fd19e7f82a1dd943d14e5dc0ac3438d"
+          ],
+          "bytes": 246571,
+          "sha256": "b931effff279d0095c72b4f3df2b3e1dd59de3b034ae58fe3e0cc4cbbb22c3ab",
+          "encodeAndDownloadWallMs": 1920.693223000002,
+          "decodeWallMs": 477.3281449999995
+        },
+        "oneUndoRestoresSource": true,
+        "redoByteExact": true
+      }
+    ],
+    "limitations": [
+      "Browser memory peak is not inferred from fixture size.",
+      "Wall times include native UI and download overhead; no isolated kernel timing or hardware-independent speed claim.",
+      "No producer implementation supplies expected geometry or export pixels."
+    ],
+    "fixtureImage": {
+      "path": "/workspace/motion88-maximum-final/original-white-ancillary.png",
+      "bytes": 1004295,
+      "sha256": "f646356931c3533ae15f109efd80a917dc70a83da55687d6848e56999bbe3677"
+    },
+    "browserVersion": "151.0.7922.173",
+    "restart": {
+      "firstBrowserProcess": [
+        614976
+      ],
+      "secondBrowserProcess": [
+        615131
+      ],
+      "bytes": 5758348,
+      "sha256": "44be5d88031edfdc69ba0f108d7533a1caf09cf4145661243483109d32e081e6",
+      "byteExact": true
+    },
+    "pageErrors": [],
+    "externalRequests": []
+  },
+  "maximum_summary": {
+    "issue": 88,
+    "observedAt": "2026-10-04T16:16:55.156038+00:00",
+    "status": "passed",
+    "origin": "http://127.0.0.1:4294",
+    "approvedBundle": "main-hNDAcNy1",
+    "browserVersion": "151.0.7922.173",
+    "verification": "/workspace/motion88-maximum-final/verification.json",
+    "log": {
+      "path": "/tmp/motion88-maximum-final.log",
+      "sha256": "452a9a3a05b35355c7503b1f3b347d1b94f61ccc98929d9774c20c30e148a103"
+    },
+    "scope": "Actual production File import, explicit native pairing/review/apply, committed-only scratch download, one Undo/Redo, PNG/GIF export, full persistent Chromium restart. No producer oracle imports or output-fitted tolerance changes.",
+    "cases": [
+      {
+        "label": "topology",
+        "usage": {
+          "selectedCels": 24,
+          "strokes": 100,
+          "points": 10000,
+          "images": 4,
+          "canonicalBytes": 5758348,
+          "maxCoordinateError": 1.1368683772161603e-13
+        },
+        "reviewWallMs": 264.19256499999983,
+        "applyAndSaveWallMs": 599.338256,
+        "oneUndoRestoresSource": true,
+        "redoByteExact": true,
+        "gif": {
+          "frames": 96,
+          "durationMs": 8000,
+          "bytes": 191999,
+          "sha256": "a3547528bdef5d2e045efdb54188bf672299f4facce87fb6bc28a34db36420d8",
+          "encodeAndDownloadWallMs": 800.3160540000026,
+          "decodeWallMs": 464.886902000002
+        },
+        "pngFrames": [
+          0,
+          4,
+          47,
+          94,
+          95
+        ]
+      },
+      {
+        "label": "eight-pairs",
+        "usage": {
+          "selectedCels": 12,
+          "strokes": 100,
+          "points": 10000,
+          "images": 0,
+          "canonicalBytes": 378934,
+          "maxCoordinateError": 5.684341886080802e-14
+        },
+        "reviewWallMs": 2976.749606999998,
+        "applyAndSaveWallMs": 1899.4227699999974,
+        "oneUndoRestoresSource": true,
+        "redoByteExact": true,
+        "gif": {
+          "frames": 96,
+          "durationMs": 8000,
+          "bytes": 246571,
+          "sha256": "b931effff279d0095c72b4f3df2b3e1dd59de3b034ae58fe3e0cc4cbbb22c3ab",
+          "encodeAndDownloadWallMs": 1920.693223000002,
+          "decodeWallMs": 477.3281449999995
+        },
+        "pngFrames": [
+          0,
+          8,
+          47,
+          94,
+          95
+        ]
+      }
+    ],
+    "restart": {
+      "firstBrowserProcess": [
+        614976
+      ],
+      "secondBrowserProcess": [
+        615131
+      ],
+      "bytes": 5758348,
+      "sha256": "44be5d88031edfdc69ba0f108d7533a1caf09cf4145661243483109d32e081e6",
+      "byteExact": true
+    },
+    "screenshots": [
+      {
+        "path": "/workspace/motion88-maximum-final/desktop.png",
+        "bytes": 211694,
+        "sha256": "32e1beaa300e98ed62493f70e5727906ba7303243a84aa559020f1038a971a37",
+        "visuallyReviewed": true,
+        "content": "Original synthetic artwork and ordinary product UI; no private data visible."
+      },
+      {
+        "path": "/workspace/motion88-maximum-final/390px.png",
+        "bytes": 174074,
+        "sha256": "4536e5afc76e7a0856fe7366c15cc3efa0e2ebcea27023df617f8b7626784225",
+        "visuallyReviewed": true,
+        "content": "Original synthetic artwork and ordinary product UI; no private data visible."
+      }
+    ],
+    "reviewedSources": [
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/tween.ts",
+        "sha256": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7"
+      },
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/tween-preview.ts",
+        "sha256": "7f20fb3f743a506b4aae25005d679f295af3387a6ab074fd674ec73664648326"
+      },
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/tween-view.ts",
+        "sha256": "7f5ade63c4732780e9c149495c08fa811ec1ba0d4a4cc7b4686b4112c1131dc2"
+      },
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/main.ts",
+        "sha256": "4c3c7fd182c515c813fe257c88fc4f0f2046f079552a5e446dd1e3c5ab3adc7e"
+      },
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/style.css",
+        "sha256": "feba188ee93b2b28dc4167a49abc9a75f878f431d5c6d2dff2778818d3e4cfef"
+      },
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/scripts/smoke_drawing_tweens.mjs",
+        "sha256": "ed5e25c3990479e71961a4cb50277f5833118483bfc259d5831d5b6806774569"
+      }
+    ],
+    "review": "No remaining actionable source finding; exact equal-input interpolation repair reviewed without widening/clamping. Full main consumer lifecycle also reviewed independently by git_runner.",
+    "limits": [
+      "Browser memory peak is not inferred from fixture size.",
+      "Wall times include native UI and download overhead; no isolated kernel timing or hardware-independent speed claim.",
+      "No producer implementation supplies expected geometry or export pixels.",
+      "Topology project is near byte cap, not exactly at byte ceiling. Separate eight-pair case does not claim24 selected cels.",
+      "Review/Apply timings include native UI, serialization, and save overhead; they are not isolated kernel benchmarks.",
+      "No backend, server, build or Git operation performed by the probe."
+    ],
+    "pageErrors": [],
+    "externalRequests": [],
+    "browserProcessesStopped": {
+      "614976": true,
+      "615131": true
+    }
+  },
+  "initial_integration": {
+    "unit": 103,
+    "lint": "passed",
+    "build": "TypeScript control-flow narrowing failed until fail became a declared never-returning function; no geometric semantics changed.",
+    "log_sha256": "3303e772d74aa6beda4ce356688474cab15742d50e629788bb046b85ef3a5d43"
+  },
+  "source_sha256": {
+    "apps/motion-studio/src/tween.ts": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7",
+    "apps/motion-studio/src/export.ts": "efcfbd1fb5dfbd5b5e57ad6e0b859d55801897785faa565f3f9b2099934f9c89",
+    "apps/motion-studio/src/tween-view.ts": "7f5ade63c4732780e9c149495c08fa811ec1ba0d4a4cc7b4686b4112c1131dc2",
+    "apps/motion-studio/src/render.ts": "75303e53fadf282acd775ae04dfad047f3c06232923d7ef9d95f7cef245f311b",
+    "apps/motion-studio/src/model.ts": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc",
+    "apps/motion-studio/src/images.ts": "7f4855569d2ac8d828d0b337876f44918244e0d35ffc3486f58a8ed123234d2e",
+    "apps/motion-studio/src/gif.worker.ts": "cc57713bfc6fdab2020bd82209b7d9bb1702ebfdeacda7f9fc4d32253a6ab401",
+    "apps/motion-studio/src/style.css": "feba188ee93b2b28dc4167a49abc9a75f878f431d5c6d2dff2778818d3e4cfef",
+    "apps/motion-studio/src/storage.ts": "2e20b405a87abc4b4eb68f4951dc3238aefe79fdf720dd05fd3030ef70003263",
+    "apps/motion-studio/src/tween-preview.ts": "7f20fb3f743a506b4aae25005d679f295af3387a6ab074fd674ec73664648326",
+    "apps/motion-studio/src/main.ts": "4c3c7fd182c515c813fe257c88fc4f0f2046f079552a5e446dd1e3c5ab3adc7e",
+    "apps/motion-studio/src/history.ts": "f9b8da39214d9196b92760a4fe889808dcd4e5204293ca690f2c7f6fe77b3004",
+    "apps/motion-studio/src/gifenc.d.ts": "075e339ba9b618ecac2b42fca7a9489e71feb40fef00c203a04b827fa05fc07c",
+    "apps/motion-studio/tests/tween.test.ts": "fe682cd34b916419de6fe1247cb8fee404b16ee48a8b7d3f8c433562bc3094bf",
+    "apps/motion-studio/tests/tween-oracle.test.ts": "7a16e932b5184b7d920d5558023103eb5dc9da176008c107b4554301740077df",
+    "apps/motion-studio/tests/tween-preview.test.ts": "4043bdb165e80c81f51207b07d2e6b250f49eb9716e990924ce6426d64bcb965",
+    "apps/motion-studio/tests/browser/tween.spec.ts": "bd0d467d4a1cdb2cadcfc88ac6a0572c2542ae4026e391cfde945ca0f79634fd",
+    "apps/motion-studio/tests/browser/tween-fixtures.ts": "5d197e21b8b754f51a09cfa01b170976ece2a9ad70cc778dfe0e70a19f613526",
+    "apps/motion-studio/scripts/smoke_drawing_tweens.mjs": "ed5e25c3990479e71961a4cb50277f5833118483bfc259d5831d5b6806774569"
+  },
+  "production_assets": {
+    "main-B8qFxE9D.css": "1514d1e3c964afa52de473f3dbe25cf7bf07d1c1055c43ab5f5c692568e649a2",
+    "gif.worker-BOpVV7Ww.js": "2cd371a67d4f927f9f8fc45de603d71a3f24f9ce04a7766265f7a6b2088a1c75",
+    "main-hNDAcNy1.js": "f336aaf7e48f63debfd745ff74ec074519e8ab1294b24ba491b1109ae6f28939"
+  },
+  "visual_review": {
+    "reviewer": "root and independent maximum owner",
+    "desktop": true,
+    "390px_maximum": true,
+    "390px_pairing_and_preview": true,
+    "scope": "Original generated artwork and ordinary product UI, no physical-device compatibility claim"
+  },
+  "limitations": [
+    "Geometric sampling can soften corners and create crossings; it does not infer artistic intention.",
+    "Independent scalar and flat-core pixel checks use original bounded fixtures, not arbitrary-art quality evaluation.",
+    "Controlled File.text/page lifecycle regressions are identified in native evidence.",
+    "Maximum output has 24 selected cels with four pairs; separate eight-pair output has 12 selected cels.",
+    "Maximum image fixture contains disclosed ancillary padding, not photographic complexity; its 5758348-byte canonical output is below the 6291624-byte cap.",
+    "Measured UI/export wall times are runtime observations, not isolated kernel or general latency guarantees.",
+    "No browser memory peak or non-Chromium/device compatibility is inferred."
+  ]
+}

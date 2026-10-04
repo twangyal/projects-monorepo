@@ -1,6 +1,7 @@
 import './style.css';
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
 import { History } from './history.ts';
+import { createTweenWorkspace } from './tween-view.ts';
 import { loadAssets, closeAssets, renderFrame, type Assets } from './render.ts';
 import { importImage, validateProjectImages } from './images.ts';
 import { exportGif } from './export.ts';
@@ -22,7 +23,7 @@ app.innerHTML = `
 </div></aside>
 <section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas></div>
 <div class="transport panel"><button id="play" class="primary">Play animation</button><button id="first-frame" title="Go to the first frame">Start</button><label class="loop"><input id="loop" type="checkbox" checked> Loop</label><span id="time" class="mono">0.00 s / 4.00 s</span></div>
-<div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button></div><p id="drawing-action-hint" class="hint"></p></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
+<div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button></div><p id="drawing-action-hint" class="hint"></p><button id="make-tween">Make drawing in-betweens</button><p id="tween-eligibility" class="hint"></p><div id="tween-workspace"></div></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
 <div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
 </section>
 <aside class="pose-panel panel"><div class="panel-heading"><h3>Strike a pose</h3><span>02</span></div><div class="tool-content"><label class="field">Layer name<input id="layer-name" maxlength="40"></label><p id="pose-state" class="pose-state">Frame 1 · saved pose</p><div class="pair"><label class="field">Position X<input id="pose-x" type="text" inputmode="decimal" min="-640" max="1280" step="1"></label><label class="field">Position Y<input id="pose-y" type="text" inputmode="decimal" min="-360" max="720" step="1"></label></div><label class="field">Scale<input id="pose-scale" type="text" inputmode="decimal" min="0.1" max="4" step="0.05"></label><label class="field">Rotation (degrees)<input id="pose-rotation" type="text" inputmode="decimal" min="-720" max="720" step="5"></label><label class="field">Opacity<input id="pose-opacity" type="text" inputmode="decimal" min="0" max="1" step="0.05"></label><label class="field">Motion to next pose<select id="easing"><option value="linear">Steady / linear</option><option value="ease">Ease in & out</option><option value="hold">Hold this pose</option></select></label><p id="pose-draft-status" role="status" hidden></p><button id="discard-pose-edits" class="full" hidden>Discard pose edits</button><button id="set-key" class="primary full">Set keyframe</button><button id="remove-key" class="text-button">Remove this keyframe</button><p class="hint">Changing pose values sets a key at this frame. The first key always stays. Drawing edits the active held drawing until its next boundary.</p><div class="note"><span aria-hidden="true">✦</span><strong>Start with two poses.</strong><p>Set a pose at the start. Scrub near the end, move your layer, then press play.</p></div></div></aside>
@@ -57,13 +58,25 @@ const downloadUrls = new Set<string>();
 type Geometry = { width: number; height: number; dpr: number; left: number; top: number; canvasWidth: number; canvasHeight: number };
 interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; moved: boolean; layerId: string; frame: number; celFrame: number | null; generation: number; operation: number; geometry: Geometry }
 let gesture: Gesture | null = null;
+const tweens = createTweenWorkspace(el('tween-workspace'), {
+  state: () => ({ project, assets, layerId: selected, frame, generation, operation, locked: busy || exporting || !!gesture || restorePending || retryPending }),
+  admitDrafts, pause,
+  apply(next, firstFrame) {
+    if (busy || exporting || gesture || !admitDrafts()) return false;
+    if (!commit(next)) return false;
+    frame = firstFrame; renderTimeline(); poseFields(); controls(); draw();
+    tell('In-between drawings applied as one edit. Undo restores the exact original drawings; older session history may be trimmed.');
+    return true;
+  },
+});
+el('make-tween').addEventListener('click', () => tweens.open());
 
 function tell(text: string, error = false) { el('message').textContent = text; el('message').hidden = !text; el('message').classList.toggle('error', error); }
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'This operation could not be completed.'; }
 function layer(): Layer | undefined { return project.layers.find(item => item.id === selected); }
 function value(id: string, next: string) { const node = el<HTMLInputElement>(id); if (!drafts.has(id) && node.value !== next) node.value = next; }
 function pause() { playing = false; cancelAnimationFrame(animation); el('play').textContent = 'Play animation'; }
-function intent() { generation++; operation++; }
+function intent() { tweens.retire(); generation++; operation++; }
 function draftControls() {
   const pending = drafts.size > 0;
   el('pose-draft-status').hidden = !pending;
@@ -117,7 +130,9 @@ function controls() {
   }
   el<HTMLButtonElement>('delete-cel').disabled = locked || !active || active.frame === 0;
   el<HTMLButtonElement>('discard-pose-edits').disabled = locked;
-  draftControls();
+  el<HTMLButtonElement>('make-tween').disabled = locked || restorePending || retryPending || !drawing;
+  el('tween-eligibility').textContent = drawing ? 'Pair adjacent nonblank drawings with the same 1–8 strokes. Review geometric in-betweens before committing.' : 'In-betweens need vector drawings; imported images animate through poses.';
+  draftControls(); tweens.update();
   canvas.setAttribute('aria-disabled', String(locked));
   el('cancel-export').hidden = !exporting; el('export-progress').hidden = !exporting;
 }
@@ -142,7 +157,7 @@ function refresh() {
   for (const item of [...project.layers].reverse()) {
     const button = document.createElement('button'); button.className = 'layer'; button.textContent = `${item.kind === 'drawing' ? '✎' : '▧'}  ${item.name}`;
     button.setAttribute('aria-pressed', String(item.id === selected)); button.dataset.layerId = item.id;
-    button.addEventListener('click', () => { if (!admitDrafts() || busy || exporting || gesture) return; pause(); intent(); selected = item.id; refresh(); }); list.append(button);
+    button.addEventListener('click', () => { if (!admitDrafts() || busy || exporting || gesture || (item.id !== selected && !tweens.confirmLeave())) return; pause(); intent(); if (item.id !== selected) tweens.close(); selected = item.id; refresh(); }); list.append(button);
   }
   renderTimeline(); poseFields(); controls(); draw(); updateSaveState();
 }
@@ -190,7 +205,7 @@ function commit(next: Project): boolean {
 }
 function edit(action: (next: Project) => void) {
   if (busy || exporting || gesture || !admitDrafts()) return;
-  pause(); const next = structuredClone(project);
+  pause(); tweens.retire(); const next = structuredClone(project);
   try { action(next); commit(next); } catch (error) { tell(errorMessage(error), true); refresh(); }
 }
 function changeLayer(action: (chosen: Layer) => Layer) {
@@ -215,6 +230,7 @@ el<HTMLInputElement>('frame').addEventListener('input', event => seek(Number((ev
 el<HTMLSelectElement>('duration').addEventListener('change', event => {
   const input = event.target as HTMLSelectElement;
   if (busy || exporting || gesture || !admitDrafts()) { input.value = String(project.frameCount); return; }
+  tweens.retire();
   const base = project, token = operation, revision = generation, selectedLayer = selected, selectedFrame = frame;
   try {
     const count = Number(input.value), loss = timelineResizeLoss(base, count);
@@ -254,7 +270,8 @@ el('delete-cel').addEventListener('click', () => changeCel('delete'));
 function selectMode(next: 'draw' | 'move') { mode = next; el('draw-mode').setAttribute('aria-pressed', String(mode === 'draw')); el('move-mode').setAttribute('aria-pressed', String(mode === 'move')); canvas.dataset.mode = mode; }
 el('draw-mode').addEventListener('click', () => { if (admitDrafts()) selectMode('draw'); });
 el('move-mode').addEventListener('click', () => { if (admitDrafts()) selectMode('move'); });
-el<HTMLInputElement>('brush').addEventListener('input', event => { el('brush-value').textContent = `${(event.target as HTMLInputElement).value} px`; });
+el<HTMLInputElement>('ink').addEventListener('input', () => tweens.retire());
+el<HTMLInputElement>('brush').addEventListener('input', event => { tweens.retire(); el('brush-value').textContent = `${(event.target as HTMLInputElement).value} px`; });
 function stagePoint(event: PointerEvent): Point { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * WIDTH / rect.width, y: (event.clientY - rect.top) * HEIGHT / rect.height }; }
 function checkedPoint(point: Point, pose: Pose): Point {
   const local = localPoint(point, pose);
@@ -387,8 +404,8 @@ el('discard-pose-edits').addEventListener('click', () => {
   intent(); drafts.clear(); refresh(); tell('Unapplied editor values discarded. Committed artwork and poses are unchanged.');
 });
 el<HTMLInputElement>('background').addEventListener('input', event => edit(next => { next.background = (event.target as HTMLInputElement).value; }));
-el('add-layer').addEventListener('click', () => edit(next => { const added = createDrawingLayer(`Drawing ${next.layers.length + 1}`); next.layers.push(added); selected = added.id; selectMode('draw'); }));
-el('delete-layer').addEventListener('click', () => edit(next => { next.layers = next.layers.filter(item => item.id !== selected); }));
+el('add-layer').addEventListener('click', () => { if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave()) return; edit(next => { const added = createDrawingLayer(`Drawing ${next.layers.length + 1}`); next.layers.push(added); selected = added.id; selectMode('draw'); }); });
+el('delete-layer').addEventListener('click', () => { if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave()) return; edit(next => { next.layers = next.layers.filter(item => item.id !== selected); }); });
 for (const [id, delta] of [['layer-down', -1], ['layer-up', 1]] as const) el(id).addEventListener('click', () => edit(next => {
   const index = next.layers.findIndex(item => item.id === selected), target = index + delta;
   if (index < 0 || target < 0 || target >= next.layers.length) return;
@@ -402,14 +419,16 @@ function matchingAssets(next: Project): boolean {
 async function travel(direction: 'undo' | 'redo') {
   if (busy || exporting || gesture || !admitDrafts()) return;
   if (direction === 'undo' ? !history.canUndo : !history.canRedo) return;
+  const next = history.peek(direction);
+  if (!next.layers.some(item => item.id === selected) && !tweens.confirmLeave()) return;
   pause(); intent(); const token = operation, revision = generation; busy = true; pendingKind = 'history'; controls();
-  const next = history.peek(direction); let prepared: Assets | null = null;
+  let prepared: Assets | null = null;
   try {
     if (!matchingAssets(next)) prepared = await loadAssets(next);
     if (token !== operation || revision !== generation || drafts.size || gesture) { if (prepared) closeAssets(prepared); return; }
     // Cursor movement and publication are synchronous and occur only after owned decode succeeds.
     const admitted = history[direction]();
-    if (prepared) { closeAssets(assets); assets = prepared; }
+    if (prepared) { tweens.retire(); closeAssets(assets); assets = prepared; }
     project = admitted; isDemo = false; initialDemo = false; refresh(); scheduleSave();
   } catch (error) { if (token === operation) tell(errorMessage(error), true); }
   finally { if (token === operation) { busy = false; pendingKind = null; controls(); } }
@@ -428,13 +447,13 @@ async function replaceProject(next: Project, token: number, reset: boolean) {
   if (token !== operation || drafts.size || gesture) return false;
   const prepared = await loadAssets(safe);
   if (token !== operation || drafts.size || gesture) { closeAssets(prepared); return false; }
-  closeAssets(assets); assets = prepared;
+  tweens.close(); closeAssets(assets); assets = prepared;
   if (reset) history.reset(safe); else history.commit(safe);
   project = history.current; selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = false; initialDemo = false;
   generation++; refresh(); scheduleSave(); return true;
 }
 async function importFile(input: HTMLInputElement, kind: 'image' | 'project') {
-  const file = input.files?.[0]; input.value = ''; if (!file || exporting || gesture || (busy && pendingKind !== 'import') || !admitDrafts()) return;
+  const file = input.files?.[0]; input.value = ''; if (!file || exporting || gesture || (busy && pendingKind !== 'import') || !admitDrafts() || !tweens.confirmLeave()) return;
   pause(); intent(); const token = operation; busy = true; pendingKind = 'import'; controls();
   try {
     let next: Project;
@@ -448,7 +467,7 @@ async function importFile(input: HTMLInputElement, kind: 'image' | 'project') {
 el<HTMLInputElement>('image-file').addEventListener('change', event => void importFile(event.target as HTMLInputElement, 'image'));
 el<HTMLInputElement>('project-file').addEventListener('change', event => void importFile(event.target as HTMLInputElement, 'project'));
 async function fresh(demo: boolean) {
-  if (busy || exporting || gesture || !admitDrafts() || !window.confirm('Replace the current project? Save a project file first if you want to keep it.')) return;
+  if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave() || !window.confirm('Replace the current project? Save a project file first if you want to keep it.')) return;
   pause(); intent(); const token = operation; busy = true; pendingKind = 'reset'; controls();
   try { if (await replaceProject(demo ? createDemo() : createProject(), token, true)) { isDemo = demo; selectMode('draw'); tell(demo ? 'Original orbit demo loaded. Try moving a pose or drawing a new layer.' : 'A fresh canvas. Draw something, then add a pose near the end.'); } }
   catch (error) { if (token === operation) tell(errorMessage(error), true); }
@@ -503,12 +522,13 @@ function download(blob: Blob, suffix: string, title = project.title) {
 }
 el('backup').addEventListener('click', () => {
   if (busy || exporting || gesture) return;
+  tweens.retire();
   download(new Blob([JSON.stringify(validateProject(project))], { type: 'application/json' }), '.motion.json');
   tell(`Editable project file downloaded. It includes every committed drawing and pose.${drafts.size ? ' Unapplied editor values are not included.' : ''}`);
 });
 el('png').addEventListener('click', () => {
   if (busy || exporting || gesture || !admitDrafts()) return;
-  pause(); const snapshot = validateProject(project), capturedFrame = frame, token = operation, revision = generation, request = ++pngRequest;
+  pause(); tweens.retire(); const snapshot = validateProject(project), capturedFrame = frame, token = operation, revision = generation, request = ++pngRequest;
   const output = document.createElement('canvas'); output.width = WIDTH; output.height = HEIGHT;
   try {
     renderFrame(output.getContext('2d')!, snapshot, capturedFrame, assets);
@@ -521,7 +541,7 @@ el('png').addEventListener('click', () => {
 });
 el('gif').addEventListener('click', async () => {
   if (busy || exporting || gesture || !admitDrafts()) return;
-  pause(); const snapshot = validateProject(project), token = operation, revision = generation, controller = new AbortController();
+  pause(); tweens.retire(); const snapshot = validateProject(project), token = operation, revision = generation, controller = new AbortController();
   exporting = true; exported = controller; controls(); el<HTMLProgressElement>('export-progress').value = 0; tell('Rendering your animation locally…');
   try {
     const blob = await exportGif(snapshot, progress => { if (exported === controller && token === operation) el<HTMLProgressElement>('export-progress').value = progress; }, controller.signal);
@@ -531,7 +551,7 @@ el('gif').addEventListener('click', async () => {
   finally { if (exported === controller) { exporting = false; exported = null; controls(); } }
 });
 el('cancel-export').addEventListener('click', () => exported?.abort());
-window.addEventListener('beforeunload', event => { if (saveState !== 'saved' || gesture || drafts.size) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (saveState !== 'saved' || gesture || drafts.size || tweens.unsaved) { event.preventDefault(); event.returnValue = ''; } });
 window.addEventListener('blur', cancelGesture);
 window.addEventListener('resize', cancelGesture);
 const stageObserver = new ResizeObserver(cancelGesture); stageObserver.observe(canvas);
@@ -563,7 +583,7 @@ async function restoreSaved(startup: boolean) {
     await validateProjectImages(saved);
     const loaded = await loadAssets(saved);
     if (!current()) { closeAssets(loaded); recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
-    pause(); closeAssets(assets); assets = loaded; history.reset(saved); project = history.current;
+    pause(); tweens.close(); closeAssets(assets); assets = loaded; history.reset(saved); project = history.current;
     selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = false; initialDemo = false;
     recoveryBlocked = false; rawRecord = null; saveState = 'saved'; refresh(); tell('Your saved local project is ready.');
   } catch (error) {
@@ -582,8 +602,8 @@ el('recovery-download').addEventListener('click', () => {
   } catch (error) { recoveryMessage(errorMessage(error)); }
 });
 el('recovery-retry').addEventListener('click', async () => {
-  if (busy || exporting || gesture || retryPending || !recoveryBlocked || !admitDrafts()) return;
-  retryPending = true; recoveryMessage('Reading the preserved saved draft…'); controls();
+  if (busy || exporting || gesture || retryPending || !recoveryBlocked || !admitDrafts() || !tweens.confirmLeave()) return;
+  pause(); intent(); retryPending = true; recoveryMessage('Reading the preserved saved draft…'); controls();
   try { await restoreSaved(false); }
   finally { retryPending = false; updateSaveState(); controls(); }
 });
