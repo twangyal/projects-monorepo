@@ -3,7 +3,7 @@
   "issue": 87,
   "date": "2026-10-04",
   "version": "0.2.0",
-  "status": "Local full implementation verified; final combined UI CI pending.",
+  "status": "Complete: exact branch push and PR merge CI passed 86 Python, 37 TypeScript and 24 browser tests; all13 project PR workflows green.",
   "backendCommit": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
   "scope": "Private append-only image evidence with exact retained normalized JPEG bytes and complete readable HTML exports.",
   "local": {
@@ -509,8 +509,13 @@
     "rootReviewed": [
       "/workspace/friendly87-source-maximum/source-maximum-390px.png",
       "/workspace/friendly87-native-artifacts/desktop-image-record.png",
-      "/workspace/friendly87-native-artifacts/eight-images-390px.png"
+      "/workspace/friendly87-native-artifacts/eight-images-390px.png",
+      "/workspace/friendly87-source-maximum/source-maximum-desktop.png"
     ],
     "observed": "Readable mobile controls and literal evidence text; resolved desktop image card and complete audit visible. No horizontal overflow or exposed private link in promoted screenshots."
+  },
+  "finalCi": {
+    "head": "68532bfcbd0a80cc42431dfb362c88c5517127c5",
+    "receipt": "2026-10-04-image-evidence-ci.json"
   }
 }
