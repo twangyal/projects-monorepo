@@ -82,16 +82,20 @@ test('applied exclusion audit survives drafts, history, native reopen and downlo
   expect(finalReport.text).not.toContain('Excluded: BRAVO;');
 });
 
-test('production maximum exclusion audit retains 500 companies and 8000 safe source-linked reasons', async ({ page, baseURL }) => {
+test('production maximum exclusion audit retains 500 companies and 8000 thresholds with bounded Unicode provenance', async ({ page, baseURL }) => {
   const errors: string[] = [], external: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => { if (new URL(request.url()).origin !== new URL(baseURL!).origin) external.push(request.url()); });
+  const literalMarkup = '<img src=x onerror=window.bad=true>';
   const data = fixtureDataset(Array.from({ length: 500 }, (_, index) => fixtureCompany({
     ticker: `T${String(index).padStart(3, '0')}`, fiscalDate: '2025-12-31',
-    name: index === 0 ? '<img src=x onerror=window.bad=true>' : `Original bounded company ${index}`,
+    name: index === 0 ? literalMarkup + '🏢'.repeat(100 - [...literalMarkup].length) : '🏢'.repeat(100),
+    sector: (index === 0 ? '🧪' : '🧾').repeat(60),
     filingUrl: 'https://example.com/' + 'p'.repeat(2000),
   })));
+  data.fileName = '📁'.repeat(120);
   const book = createNotebook(data, fixtureToday);
+  book.screen.sector = data.companies[0]!.sector;
   book.screen.filters = Array.from({ length: 16 }, (_, index) => ({ metric: 'growthPct', operator: 'gt', value: 1000 + index, currency: null }));
   await page.goto('/');
   const started = Date.now();
@@ -102,14 +106,17 @@ test('production maximum exclusion audit retains 500 companies and 8000 safe sou
   await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
   const audit = page.locator('#exclusion-content');
   await expect(audit.locator('[data-ticker]')).toHaveCount(500);
-  await expect(audit.locator('li')).toHaveCount(8000);
-  await expect(audit.locator('[data-ticker="T499"]')).toContainText('original-research.csv:501');
+  await expect(audit.locator('li')).toHaveCount(8499);
+  await expect(audit.locator('[data-ticker="T499"]')).toContainText(`${data.fileName}:501`);
   await expect(audit.locator('[data-ticker="T000"]')).toContainText('<img src=x onerror=window.bad=true>');
   await expect(audit.locator('img')).toHaveCount(0);
   const publishedMs = Date.now() - started;
   const exportedAt = Date.now(), report = await download(page, 'Download research report');
   expect((report.text.match(/^Excluded: /gm) ?? []).length).toBe(500);
   expect((report.text.match(/^\[threshold\]/gm) ?? []).length).toBe(8000);
+  expect((report.text.match(/^\[sector\]/gm) ?? []).length).toBe(499);
+  expect(report.text).toContain(`${data.fileName}:501`);
+  expect(report.text).toContain(data.companies[499]!.filingUrl!);
   expect(Buffer.byteLength(report.text)).toBeLessThanOrEqual(8 * 1024 * 1024);
   const reportMs = Date.now() - exportedAt;
   await expect(page.locator('#save-status')).toContainText('Saved locally');
@@ -118,7 +125,7 @@ test('production maximum exclusion audit retains 500 companies and 8000 safe sou
   await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(errors).toEqual([]); expect(external).toEqual([]);
-  console.log(JSON.stringify({ verification: 'maximum-exclusion-audit', companies: 500, reasons: 8000, publishedMs, reportMs, reportBytes: Buffer.byteLength(report.text), browser: await page.evaluate(() => navigator.userAgent) }));
+  console.log(JSON.stringify({ verification: 'maximum-unicode-exclusion-audit', companies: 500, reasons: 8499, thresholdReasons: 8000, filenameCodePoints: [...data.fileName].length, notebookBytes: Buffer.byteLength(JSON.stringify(book)), publishedMs, reportMs, reportBytes: Buffer.byteLength(report.text), browser: await page.evaluate(() => navigator.userAgent) }));
 });
 
 test('real original CSV becomes an inspected shortlist, source-linked comparison, notes and portable reports', async ({ page, baseURL }) => {

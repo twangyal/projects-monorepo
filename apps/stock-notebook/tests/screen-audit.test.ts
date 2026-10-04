@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as research from '../src/research.ts';
 import { company, dataset, screen, today } from './oracle/fixtures.ts';
-import { createNotebook } from '../src/model.ts';
+import { createNotebook, validateNotebook } from '../src/model.ts';
 import { buildReport } from '../src/exports.ts';
 
 test('every latest company has an explicit applied decision and all failed rules retain evidence', () => {
@@ -100,4 +100,38 @@ test('maximum 500-company and 16-filter audit retains every reason and bounded r
   audit[0]!.reasons[0]!.fields.push('filingUrl');
   assert.equal(data.companies[0]!.name, 'An original annual fixture');
   assert.deepEqual(research.auditScreen(data, book.screen, today)[0]!.reasons[0]!.fields, ['revenue', 'priorRevenue']);
+});
+
+test('maximum Unicode source provenance does not prevent a complete exclusion report', () => {
+  const data = dataset(Array.from({ length: 500 }, (_, index) => company({
+    ticker: `T${String(index).padStart(3, '0')}`, name: '😀'.repeat(100),
+    sector: index === 0 ? 'Chosen' : '😀'.repeat(60), fiscalDate: '2025-12-31',
+    revenue: 1_000_000_000, priorRevenue: 0.000001, netIncome: 1_000_000_000,
+    debt: 1_000_000_000, equity: 0.000001,
+    filingUrl: 'https://example.com/' + 'p'.repeat(2028),
+  })));
+  data.fileName = '😀'.repeat(120);
+  const candidate = createNotebook(data, today);
+  candidate.screen.sector = 'Chosen';
+  candidate.screen.filters = Array.from({ length: 16 }, (_, index) => ({
+    metric: 'growthPct', operator: 'lt', value: index, currency: null,
+  }));
+  const book = validateNotebook(candidate, today);
+  assert.equal(Buffer.byteLength(JSON.stringify(book)), 1_455_125);
+  assert.deepEqual([book.notes.length, book.watchlist.length, book.comparison.length], [0, 0, 0]);
+
+  const report = buildReport(book, today);
+  const audit = report.split('Screening exclusion audit (latest supplied period only)\n')[1]!
+    .split('\nSelected comparison\n')[0]!;
+  assert.equal((audit.match(/^Excluded: /gm) ?? []).length, 500);
+  assert.equal((audit.match(/^\[threshold\]/gm) ?? []).length, 8000);
+  assert.equal((audit.match(/^\[sector\]/gm) ?? []).length, 499);
+  assert.equal((audit.match(/\(fields: revenue, priorRevenue\)/g) ?? []).length, 8000);
+  assert.equal((audit.match(/\(fields: sector\)/g) ?? []).length, 499);
+  assert.equal(audit.split(data.fileName).length - 1, 500, 'Each exclusion block retains its source once.');
+  assert.ok(audit.includes(`Excluded: T499; fiscal 2025-12-31; source ${data.fileName}:501`));
+  assert.ok(audit.includes(`Supplied source link: ${data.companies[499]!.filingUrl}`));
+  assert.equal((report.match(/^Annual period: /gm) ?? []).length, 500);
+  assert.ok(report.includes('priorRevenue: 0.000001 million USD'));
+  assert.ok(Buffer.byteLength(report) <= 8 * 1024 * 1024);
 });

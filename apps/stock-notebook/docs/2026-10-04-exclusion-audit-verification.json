@@ -32,5 +32,60 @@
     "original fictional data, not verification of financial facts",
     "single-runtime measurements, not device-performance guarantees",
     "local browser download was invalid; browser claims come from linked exact-source remote CI"
-  ]
+  ],
+  "unicodeReportRegression": {
+    "date": "2026-10-04",
+    "baselineCommit": "8afe21372cedf3a1f9ed81d8546a34020a9ae84a",
+    "description": "Repeated UTF-8 source filenames made a valid notebook exceed the report cap. Source is now retained once per excluded company; all reason fields and raw history remain.",
+    "sourceFilesSha256": {
+      "apps/stock-notebook/src/exports.ts": "016581d05be8abc4201cd881d22de03a6b1cef0f3154b46a2dfd3d9309802ec0",
+      "apps/stock-notebook/tests/screen-audit.test.ts": "7d5e4b80ab8708007d86cb3f08952654788f7da7cfadd567bf35c3b8a3111297",
+      "apps/stock-notebook/tests/browser/workflow.spec.ts": "70042e0922ebb417eb4b14ae1d1083595d953427593bc2c449e1a4db8f532da9"
+    },
+    "unitFixture": {
+      "validatedNotebookBytes": 1455125,
+      "priorReportRequiredBytes": 8747577,
+      "correctedReportBytes": 4559370,
+      "failedBeforeFix": true,
+      "thresholdReasons": 8000,
+      "sectorReasons": 499,
+      "sourceHeaders": 500,
+      "annualRows": 500
+    },
+    "productionBrowser": {
+      "browser": "Chromium 151.0.7922.173",
+      "node": "24.19.0",
+      "companies": 500,
+      "thresholdReasons": 8000,
+      "sectorReasons": 499,
+      "sourceFilenameCodePoints": 120,
+      "notebookBytes": 1424530,
+      "reportBytes": 4495041,
+      "publishedMs": 3740,
+      "reportMs": 960,
+      "nativeReopenEqual": true,
+      "mobileWidth": 390,
+      "pageOverflow": false,
+      "externalRequests": 0,
+      "pageErrors": 0
+    },
+    "verification": {
+      "unitTests": 111,
+      "productionBrowserTests": 22,
+      "lint": "passed",
+      "typecheck": "passed",
+      "productionBuild": "passed",
+      "remoteCI": "pending"
+    },
+    "screeningDifferential": {
+      "sourceBefore": "b0ecf950181eb048afd7bebb8f067ff1d1906205",
+      "sourceAfter": "c9a9d15b8503a126ddd770b448376dc6bc6df2df",
+      "seed": 20261004,
+      "cases": 2000,
+      "identicalScreenResults": 1961,
+      "identicalRejections": 39,
+      "auditedLatestDecisions": 23532,
+      "node": "v24.19.0"
+    }
+  }
 }

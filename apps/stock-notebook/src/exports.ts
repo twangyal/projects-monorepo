@@ -96,7 +96,8 @@ export function buildReport(notebook: Notebook, today: string): string {
     const company = decision.row.company;
     append('', `Excluded: ${company.ticker}; fiscal ${company.fiscalDate}; source ${dataset.fileName}:${company.sourceLine}`,
       company.filingUrl ? `Supplied source link: ${company.filingUrl}` : 'No filing link supplied');
-    for (const reason of decision.reasons) append(`[${reason.kind}] ${reason.text} (fields: ${reason.fields.join(', ')}; source ${dataset.fileName}:${company.sourceLine})`);
+    // Every reason in this block refers to the source in its company header.
+    for (const reason of decision.reasons) append(`[${reason.kind}] ${reason.text} (fields: ${reason.fields.join(', ')})`);
   }
   append('', 'Selected comparison', `Comparison order: ${current.comparison.length ? current.comparison.join(', ') : '(none)'}`,
     `Monetary amounts directly comparable: ${comparison.monetaryComparable ? 'Yes; same supplied currency' : 'No'}`);
