@@ -29,8 +29,8 @@ def main() -> None:
     # -I deliberately excludes the script directory. Add exactly the fixed
     # installed package parent after isolation, never a repository/cwd path.
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from git_history.native_protocol import ERROR_CODES, LANGUAGES, MAX_SOURCE_BYTES
-    if len(sys.argv) != 2 or sys.argv[1] not in LANGUAGES:
+    from git_history.native_protocol import ERROR_CODES, WORKER_MODES, MAX_SOURCE_BYTES
+    if len(sys.argv) != 2 or sys.argv[1] not in WORKER_MODES:
         _emit({'error': 'unsupported'})
         return
     try:
@@ -42,13 +42,21 @@ def main() -> None:
         if '\0' in source:
             _emit({'error': 'syntax'})
             return
-        from git_history.native_syntax import NativeSyntaxError, parse_native
-        try:
-            functions = parse_native(source, sys.argv[1])
-        except NativeSyntaxError as error:
-            code = error.code if error.code in ERROR_CODES else 'unsupported'
-            _emit({'error': code})
-            return
+        if sys.argv[1] == 'python-ast':
+            from git_history.function_parser import FunctionParseError, parse_functions
+            try:
+                functions = parse_functions(source, 'committed.py')
+            except FunctionParseError:
+                _emit({'error': 'syntax'})
+                return
+        else:
+            from git_history.native_syntax import NativeSyntaxError, parse_native
+            try:
+                functions = parse_native(source, sys.argv[1])
+            except NativeSyntaxError as error:
+                code = error.code if error.code in ERROR_CODES else 'unsupported'
+                _emit({'error': code})
+                return
         _emit({'functions': [
             {'qualified_name': item.qualified_name, 'start_line': item.start_line,
              'end_line': item.end_line, 'kind': item.kind}

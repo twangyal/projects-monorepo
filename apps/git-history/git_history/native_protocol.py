@@ -9,6 +9,7 @@ ADDRESS_SPACE_BYTES = 512 * 1024 * 1024
 CPU_SECONDS = (3, 4)
 
 LANGUAGES = frozenset({'javascript', 'typescript', 'tsx'})
+WORKER_MODES = LANGUAGES | {'python-ast'}
 KINDS = frozenset({'function', 'async function', 'getter', 'setter'})
 ERROR_CODES = frozenset({'dependencies', 'syntax', 'complexity', 'unsupported'})
 SUFFIX_LANGUAGES = {

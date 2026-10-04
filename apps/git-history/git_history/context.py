@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 
 from .model import ContextEntry, Report, SuppliedContext
 from .synopsis import commit_anchor
+from .work_budget import check_work_budget
 
 MAX_CONTEXT_BYTES = 256 * 1024
 MAX_CONTEXT_ENTRIES = 50
@@ -171,19 +172,20 @@ def _invalid_constant(value: str) -> None:
     raise ValueError('Context JSON must not contain nonstandard numeric constants.')
 
 
-def load_context(path: str | Path, report: Report) -> list[ContextEntry] | ContextRecords:
-    """Read one regular file with bounded allocation, without following URLs."""
-    try:
-        descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
-        with os.fdopen(descriptor, 'rb') as stream:
-            metadata = os.fstat(stream.fileno())
-            if not stat.S_ISREG(metadata.st_mode):
-                raise ValueError('Context must be a regular UTF-8 JSON file.')
-            if metadata.st_size > MAX_CONTEXT_BYTES:
-                raise ValueError('Context file exceeds 256 KiB; supply fewer or shorter excerpts.')
-            raw = stream.read(MAX_CONTEXT_BYTES + 1)
-    except OSError:
-        raise ValueError('Context file cannot be read; choose an existing readable regular UTF-8 JSON file.') from None
+def parse_context(data: bytes | str, report: Report) -> list[ContextEntry] | ContextRecords:
+    """Parse bounded supplied JSON bytes/text, preserving both envelope formats."""
+    check_work_budget()
+    if isinstance(data, str):
+        if len(data) > MAX_CONTEXT_BYTES:
+            raise ValueError('Context file exceeds 256 KiB; supply fewer or shorter excerpts.')
+        try:
+            raw = data.encode('utf-8')
+        except UnicodeError:
+            raise ValueError('Context file must contain valid UTF-8 JSON with unique fields and standard values.') from None
+    elif isinstance(data, bytes):
+        raw = data
+    else:
+        raise ValueError('Context input must be UTF-8 JSON bytes or text.')
     if len(raw) > MAX_CONTEXT_BYTES:
         raise ValueError('Context file exceeds 256 KiB; supply fewer or shorter excerpts.')
     try:
@@ -197,8 +199,28 @@ def load_context(path: str | Path, report: Report) -> list[ContextEntry] | Conte
             raise ValueError('Context requires schema_version 1, revision and records.')
         if document['revision'] != report.revision:
             raise ValueError("Context revision must equal the report's exact resolved commit ID.")
-        return ContextRecords(validate_records(document['records'], report))
-    return _validate_document(document, report)
+        result = ContextRecords(validate_records(document['records'], report))
+    else:
+        result = _validate_document(document, report)
+    check_work_budget()
+    return result
+
+
+def load_context(path: str | Path, report: Report) -> list[ContextEntry] | ContextRecords:
+    """Read one regular file with bounded allocation, without following URLs."""
+    check_work_budget()
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        with os.fdopen(descriptor, 'rb') as stream:
+            metadata = os.fstat(stream.fileno())
+            if not stat.S_ISREG(metadata.st_mode):
+                raise ValueError('Context must be a regular UTF-8 JSON file.')
+            if metadata.st_size > MAX_CONTEXT_BYTES:
+                raise ValueError('Context file exceeds 256 KiB; supply fewer or shorter excerpts.')
+            raw = stream.read(MAX_CONTEXT_BYTES + 1)
+    except OSError:
+        raise ValueError('Context file cannot be read; choose an existing readable regular UTF-8 JSON file.') from None
+    return parse_context(raw, report)
 
 
 def context_document(report: Report, entries: list[ContextEntry]) -> dict:

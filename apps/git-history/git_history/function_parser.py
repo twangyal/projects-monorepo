@@ -9,6 +9,7 @@ import tokenize
 
 from .model import FunctionDefinition
 from .native_protocol import SUFFIX_LANGUAGES
+from .work_budget import current_work_budget
 
 
 MAX_FUNCTIONS = 10_000
@@ -32,6 +33,12 @@ def parse_functions(source: str, file: str) -> list[FunctionDefinition]:
             raise FunctionParseError(str(exc)) from exc
     if suffix not in ('.py', '.pyi'):
         raise FunctionParseError('Function selection supports .py/.pyi and optional JavaScript/TypeScript files; use --lines for other text files.')
+    if current_work_budget() is not None:
+        from .native_parser import NativeParserError, parse_python_functions_isolated
+        try:
+            return parse_python_functions_isolated(source)
+        except NativeParserError as exc:
+            raise FunctionParseError(str(exc)) from exc
     if re.search(r'\r(?!\n)', source):
         raise FunctionParseError('Bare CR newlines have different Python and Git line numbers; use manual --lines selection.')
     # A UTF-8 signature and CRLF do not change physical line coordinates.

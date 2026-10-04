@@ -67,6 +67,17 @@ class FileCatalog:
     omitted_non_utf8_paths: int = 0
 
 
+@dataclass(frozen=True)
+class SourceSnapshot:
+    """Exact bounded committed text with Git's physical LF line count."""
+    repo_name: str
+    revision: str
+    requested_ref: str
+    path: str
+    source: str
+    line_count: int
+
+
 @dataclass
 class ContextEntry:
     """Unverified supplied text, associated only with an existing report commit."""

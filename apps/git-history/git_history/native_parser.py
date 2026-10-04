@@ -15,6 +15,7 @@ from .native_protocol import (
     ERROR_CODES, KINDS, LANGUAGES, MAX_FUNCTIONS, MAX_OUTPUT_BYTES,
     MAX_QUALIFIED_NAME_BYTES, MAX_SOURCE_BYTES, WALL_SECONDS,
 )
+from .work_budget import charge_work_output, check_work_budget
 
 
 class NativeParserError(ValueError):
@@ -95,6 +96,7 @@ def _run_worker(source: bytes, language: str, line_count: int) -> list[FunctionD
     # These paths belong to the installed application, never to the inspected
     # repository. -I rejects PYTHONPATH, user-site and cwd import injection.
     package = Path(__file__).resolve().parent
+    check_work_budget()
     deadline = time.monotonic() + WALL_SECONDS
     try:
         process = subprocess.Popen(
@@ -121,6 +123,7 @@ def _run_worker(source: bytes, language: str, line_count: int) -> list[FunctionD
         total = 0
         stdout = bytearray()
         while selector.get_map():
+            check_work_budget()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise NativeParserError('The native parser exceeded its time deadline; use manual --lines selection.')
@@ -139,17 +142,24 @@ def _run_worker(source: bytes, language: str, line_count: int) -> list[FunctionD
                             key.fileobj.close()
                             continue
                         total += len(chunk)
+                        charge_work_output(len(chunk))
                         if total > MAX_OUTPUT_BYTES:
                             raise NativeParserError('The native parser exceeded its combined output limit; use manual --lines selection.')
                         if key.data == 'stdout':
                             stdout.extend(chunk)
                 except BlockingIOError:
                     continue
-        remaining = deadline - time.monotonic()
-        try:
-            status = process.wait(timeout=max(remaining, 0))
-        except subprocess.TimeoutExpired:
-            raise NativeParserError('The native parser exceeded its time deadline; use manual --lines selection.') from None
+        while process.poll() is None:
+            check_work_budget()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise NativeParserError('The native parser exceeded its time deadline; use manual --lines selection.')
+            try:
+                process.wait(timeout=min(remaining, .1))
+            except subprocess.TimeoutExpired:
+                continue
+        check_work_budget()
+        status = process.returncode
         if status:
             raise NativeParserError('The native parser failed within its isolation or resource limits; use manual --lines selection.')
         result = _reply(bytes(stdout), line_count)
@@ -187,3 +197,20 @@ def parse_native_functions(source: str, language: str) -> list[FunctionDefinitio
     # an extra selectable empty line. Unicode separators and CR do not count.
     lines = source.count('\n') + int(bool(source) and not source.endswith('\n'))
     return _run_worker(encoded, language, lines)
+
+
+def parse_python_functions_isolated(source: str) -> list[FunctionDefinition]:
+    """Resource-limit AST/tokenization without importing optional grammars."""
+    if os.name != 'posix' or type(source) is not str or '\0' in source:
+        raise NativeParserError('Bounded Python parsing requires POSIX isolation and valid source; use manual --lines selection.')
+    try:
+        encoded = source.encode('utf-8')
+    except UnicodeError:
+        raise NativeParserError('Invalid Python source; use manual --lines selection.') from None
+    if len(encoded) > MAX_SOURCE_BYTES:
+        raise NativeParserError(_ERRORS['complexity'])
+    lines = source.count('\n') + int(bool(source) and not source.endswith('\n'))
+    try:
+        return _run_worker(encoded, 'python-ast', lines)
+    except NativeParserError:
+        raise NativeParserError('Python source could not be parsed within the syntax/resource limits; use manual --lines selection.') from None

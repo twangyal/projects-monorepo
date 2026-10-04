@@ -11,6 +11,8 @@ import signal
 import subprocess
 import time
 
+from .work_budget import charge_work_output, check_work_budget
+
 
 class GitError(RuntimeError):
     """Git could not complete a requested read."""
@@ -95,6 +97,7 @@ def _run_bounded(
     never argv or the inherited environment.
     """
     _validate_limits(timeout, max_bytes)
+    check_work_budget()
     deadline = time.monotonic() + timeout
     try:
         process = subprocess.Popen(
@@ -115,27 +118,33 @@ def _run_bounded(
         selector.register(process.stdout, selectors.EVENT_READ, stdout)
         selector.register(process.stderr, selectors.EVENT_READ, stderr)
         while selector.get_map():
+            check_work_budget()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise GitTimeout(f"Git command exceeded {timeout:g} seconds")
             # A finite Python float may still exceed the OS poll time range.
-            for key, _ in selector.select(min(remaining, 1.0)):
+            for key, _ in selector.select(min(remaining, .1)):
                 chunk = os.read(key.fd, min(65536, max_bytes - total_bytes + 1))
                 if not chunk:
                     selector.unregister(key.fileobj)
                     continue
                 total_bytes += len(chunk)
+                charge_work_output(len(chunk))
                 if total_bytes > max_bytes:
                     raise GitOutputLimit(f"Git command exceeded {max_bytes} output bytes")
                 key.data.extend(chunk)
 
-        remaining = deadline - time.monotonic()
-        if remaining <= 0 and process.poll() is None:
-            raise GitTimeout(f"Git command exceeded {timeout:g} seconds")
-        try:
-            returncode = process.wait(timeout=max(remaining, 0))
-        except subprocess.TimeoutExpired as error:
-            raise GitTimeout(f"Git command exceeded {timeout:g} seconds") from error
+        while process.poll() is None:
+            check_work_budget()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise GitTimeout(f"Git command exceeded {timeout:g} seconds")
+            try:
+                process.wait(timeout=min(remaining, .1))
+            except subprocess.TimeoutExpired:
+                continue
+        check_work_budget()
+        returncode = process.returncode
         completed = True
         if returncode:
             detail = bytes(stderr[:4096]).decode("utf-8", errors="replace").strip()

@@ -7,9 +7,10 @@ from urllib.parse import urlsplit
 
 from .function_parser import FunctionParseError, parse_functions
 from .model import (ChangeEvidence, FileCatalog, FunctionCatalog, LineEvidence,
-                    RenameEvidence, Report, SourceFile)
+                    RenameEvidence, Report, SourceFile, SourceSnapshot)
 from .native_protocol import SUFFIX_LANGUAGES
 from .runner import GitError, GitRunner
+from .work_budget import check_work_budget
 
 
 MAX_BLOB_BYTES = 512 * 1024
@@ -219,6 +220,7 @@ def _resolve_repository(repo: str | Path, ref: str) -> tuple[GitRunner, Path, st
 def list_files(repo: str | Path, ref: str = 'HEAD', *, directory: str = '',
                language: str = 'all') -> FileCatalog:
     """Discover source candidates from tree entries and blob-size metadata."""
+    check_work_budget()
     if not isinstance(directory, str) or '\x00' in directory:
         raise ReaderError('Directory must be a repository-relative path without NUL characters.')
     path = PurePosixPath(directory)
@@ -233,6 +235,7 @@ def list_files(repo: str | Path, ref: str = 'HEAD', *, directory: str = '',
     files = []
     omitted = 0
     for record in raw.split(b'\x00'):
+        check_work_budget()
         if not record:
             continue
         metadata, separator, name = record.partition(b'\t')
@@ -262,11 +265,13 @@ def list_files(repo: str | Path, ref: str = 'HEAD', *, directory: str = '',
             raise ReaderError('Source catalog exceeds 10,000 files; narrow --directory or --language.')
         files.append(SourceFile(filename, detected, size_bytes))
     files.sort(key=lambda item: item.path)
+    check_work_budget()
     return FileCatalog(root.name, revision, ref, directory, language, files, omitted)
 
 
 def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
     """Resolve once and read bounded committed source for either selection route."""
+    check_work_budget()
     if not isinstance(file, str) or not file or '\x00' in file:
         raise ReaderError('Supply a nonempty repository-relative file path without NUL characters.')
     path = PurePosixPath(file)
@@ -295,14 +300,26 @@ def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
         source = raw.decode('utf-8')
     except UnicodeDecodeError as exc:
         raise ReaderError('Committed source is not UTF-8 text; choose a UTF-8 file.') from exc
+    check_work_budget()
     return _Snapshot(git, repository_root.name, revision, source)
 
 
+def read_source(repo: str | Path, file: str, ref: str = 'HEAD') -> SourceSnapshot:
+    """Read exact committed UTF-8 source without parsing or importing it."""
+    snapshot = _load_snapshot(repo, file, ref)
+    line_count = snapshot.source.count('\n') + int(bool(snapshot.source) and not snapshot.source.endswith('\n'))
+    check_work_budget()
+    return SourceSnapshot(snapshot.repo_name, snapshot.revision, ref, file,
+                          snapshot.source, line_count)
+
+
 def _catalog(snapshot: _Snapshot, file: str, ref: str) -> FunctionCatalog:
+    check_work_budget()
     try:
         functions = parse_functions(snapshot.source, file)
     except FunctionParseError as exc:
         raise ReaderError(str(exc)) from exc
+    check_work_budget()
     return FunctionCatalog(snapshot.repo_name, snapshot.revision, ref, file, functions)
 
 
@@ -315,6 +332,7 @@ def inspect_repository(repo: str | Path, file: str, start: int | None = None,
                        end: int | None = None, ref: str = 'HEAD', max_commits: int = 20,
                        *, function: str | None = None) -> Report:
     """Inspect one committed range or named function from a single snapshot."""
+    check_work_budget()
     if type(max_commits) is not int or not 1 <= max_commits <= 50:
         raise ReaderError('max_commits must be an integer between 1 and 50.')
     if function is not None:
@@ -351,6 +369,7 @@ def inspect_repository(repo: str | Path, file: str, start: int | None = None,
     selected = '\n'.join(lines[start - 1:end])
     if end < len(lines) or source.endswith('\n'):
         selected += '\n'
+    check_work_budget()
     try:
         raw_blame = git.run('--literal-pathspecs', 'blame', '--root', '--line-porcelain',
                             '--no-textconv', '--ignore-revs-file', '', '-L',
@@ -363,9 +382,11 @@ def inspect_repository(repo: str | Path, file: str, start: int | None = None,
             'missing files or invalid revisions; Git command limits may also apply.'
         ) from exc
     blame = _blame(raw_blame)
+    check_work_budget()
     if [line.final_line for line in blame] != list(range(start, end + 1)):
         raise ReaderError('Git returned incomplete attribution for the requested range.')
     _restore_raw_authors(git, blame)
+    check_work_budget()
     report = Report(snapshot.repo_name, revision, ref, file, start, end, selected,
                     blame=blame, selected_function=function)
     report.warnings.append('Git line tracing and rename detection are heuristic; this report does not establish full semantic lineage or author intent. PR and issue discussions were not fetched.')
@@ -376,16 +397,20 @@ def inspect_repository(repo: str | Path, file: str, start: int | None = None,
             report.warnings.append('The revision has merge ancestry; Git line tracing may omit merge changes or alternate-parent history.')
     except GitError:
         report.warnings.append('History completeness checks were unavailable; shallow or merge boundaries may be present.')
+    check_work_budget()
     try:
         report.changes = _changes(git, revision, file, start, end, max_commits, report.warnings)
     except (GitError, ReaderError):
         report.warnings.append('Range-change tracing was unavailable or exceeded command limits; blame remains available and the timeline is incomplete.')
+    check_work_budget()
     try:
         report.renames = _renames(git, revision, file, max_commits, report.warnings)
     except (GitError, ReaderError):
         report.warnings.append('Whole-file rename tracing was unavailable or exceeded command limits; rename evidence is incomplete.')
+    check_work_budget()
     try:
         report.remote_url = _remote(git.run('config', '--get', 'remote.origin.url'))
     except GitError:
         pass
+    check_work_budget()
     return report
