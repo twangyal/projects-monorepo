@@ -93,11 +93,12 @@ test('failed audio imports keep the current completed project and allow retry', 
   await expect(page.getByLabel('Clip title')).toHaveValue(title);
   await expect(page.getByLabel('Upload song clip')).toBeEnabled();
 });
-test('narrow layout is usable without external requests or page errors', async ({ page }) => {
+test('narrow layout is usable without external requests or page errors', async ({ page, baseURL }) => {
+  if (!baseURL) throw new Error('The local browser test origin is required.');
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [], external: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (/^https?:/.test(request.url()) && !request.url().startsWith('http://127.0.0.1:4188/')) external.push(request.url()); });
+  page.on('request', request => { if (/^https?:/.test(request.url()) && !request.url().startsWith(`${baseURL}/`)) external.push(request.url()); });
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Karaoke Studio', exact: true })).toBeVisible();
   await expect(page.getByLabel('Upload song clip')).toBeEnabled();

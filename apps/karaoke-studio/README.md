@@ -39,7 +39,7 @@ Startup never downloads models. Missing/corrupt weights disable new separation w
 1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
 2. Wait for separation, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
 3. Paste your lyrics, one line per cue, and press **Create draft timings**, or choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues. Even spacing is only a starting point; it does not detect singing or identify words.
-4. Listen and correct each line's start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** seeks to its start. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
+4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** seeks to its start. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
 5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
 
 Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
@@ -53,6 +53,32 @@ unapplied pasted words keep their separate unsaved warning. A new edit after und
 clears redo. Saving successfully, opening another clip, deleting the selected clip,
 or reloading resets this session-only history. Failed requests retain it. History
 does not undo saved server revisions, media jobs, or permanent clip deletion.
+
+### Time supplied lines while listening
+
+With valid supplied cue text and an audio track loaded, choose **Begin timing session**
+under **Time lines while listening**. Press Play in the audio player, then use
+**Mark line start** and **Mark line end** as you hear each line. The same button
+advances through every existing cue in order. Focus it and press Enter or Space
+for keyboard timing; release between marks. Holding a key records only one mark.
+Beginning a session does not start playback or move the playhead.
+
+Marks use the player's current position at normal speed, without rounding. Gaps
+and adjacent lines are allowed; each end must follow its start. Pause and resume
+retain staged marks. Seeking, switching tracks/clips, editing, changing playback
+speed, looping or leaving the page cancels the session to prevent stale timing.
+At the natural end of the song, an open final line offers **End final line at clip
+end**. This explicit action closes it at the exact project duration. Earlier
+unfinished lines cannot be applied as a partial result.
+
+The complete review pauses playback. **Apply captured timings** replaces only cue times
+as one unsaved Undo/Redo edit; **Cancel timing session** leaves the editor intact. Titles,
+literal multiline text and unapplied pasted words remain unchanged. Existing
+invalid numeric fields do not prevent timing valid cue text, and Undo restores
+their original spelling. Unapplied pasted words still need to be used or discarded
+before saving. Press **Save lyrics** explicitly when ready; staged marks and
+session history do not survive a reload. This is manual line timing, with no
+automatic speech recognition or compensation for physical playback/input latency.
 
 ### Import existing timed lyrics
 
@@ -341,3 +367,21 @@ The runner starts and stops its own local no-model service and browser profile,
 using only its newly generated synthetic audio library. It never opens your
 normal library. Set `KARAOKE_PYTHON` if a different core-test Python executable is
 needed; omit `CHROMIUM_PATH` to use Playwright's installed browser.
+
+### Sequential timing verification (#115)
+
+The supplied-line timing flow passes **86 TypeScript tests**, **166 Python tests**,
+lint/type/build and **all 75 native browser cases** in one local full regression.
+The fourteen original new cases also passed their first separate invocation.
+They use real player progression and trusted input, verify exact saved boundaries,
+raw draft Undo/Redo and stale-state rejection, and decode an actual 144-frame
+H.264/AAC video against observed cue/gap boundaries. The small clock-observation
+bound is test instrumentation, not a physical synchronization claim.
+
+The separate original five-minute/200-line/20,000-code-point maximum is still
+under verification: its first run stopped after 148 marks at a declared action
+scheduling bound. The original fixture and tolerance remain unchanged. See the
+[verification record](docs/2026-10-04-sequential-timing-verification.json),
+[independent native evidence](docs/2026-10-04-sequential-timing-native.json),
+[pure oracle](docs/2026-10-04-sequential-timing-oracle.json) and
+[UI review](docs/2026-10-04-sequential-timing-client-review.json).

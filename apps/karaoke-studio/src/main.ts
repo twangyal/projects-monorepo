@@ -2,6 +2,7 @@ import './style.css';
 import { activeCue, draftCues, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
+import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 
@@ -41,6 +42,7 @@ app.innerHTML = `
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">YOUR LYRICS, YOUR TIMING</span></div>
         <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
+        <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
@@ -126,13 +128,14 @@ document.addEventListener('pointerdown', event => {
 });
 window.addEventListener('blur', () => { archiveFocus = null; });
 const timeline = mountTimeline(element('timing-workbench'), {
-  onSeek(time) { if (working) { audio.currentTime = time; draw(); } },
+  onSeek(time) { retireTiming('Seeking cancelled the timing session. Staged times were not applied.'); if (working) { audio.currentTime = time; draw(); } },
   onSelectCue(index) {
     for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('timing-selected', Number(row.dataset.cue) === index);
   },
   onGestureStart() {
     if (!working || currentJob || loading || requestingJob || saving || archiveChecking || timingError(working.cues, working.duration)) return false;
     retireSrt('A timing gesture cancelled the lyric import review.');
+    retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
     lyricHistory?.endGroup(); return true;
   },
   onCommitBoundary(change) {
@@ -175,12 +178,13 @@ function validateWorking(): string {
   } catch (error) { return error instanceof Error ? error.message : 'Check the lyric timing.'; }
 }
 function controls() {
+  if (timingOwner && timingBusy()) retireTiming('Other studio work cancelled the timing session. Staged times were not applied.');
   const busy = currentJob !== null || loading || requestingJob || archiveChecking, invalid = validateWorking();
   element<HTMLInputElement>('audio-file').disabled = !session?.modelReady || busy || saving;
   element<HTMLSelectElement>('projects').disabled = busy || saving;
-  element<HTMLButtonElement>('save').disabled = !working || !dirty || draftDirty || !!invalid || busy || saving;
-  element<HTMLButtonElement>('export-video').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving;
-  element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving;
+  element<HTMLButtonElement>('save').disabled = !working || !dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
+  element<HTMLButtonElement>('export-video').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
+  element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('backing-download').disabled = !working;
   element<HTMLButtonElement>('delete-project').disabled = !working || busy || saving;
   element<HTMLButtonElement>('draft-timings').disabled = !working || busy || saving;
@@ -195,8 +199,8 @@ function controls() {
   for (const control of document.querySelectorAll<HTMLButtonElement>('[data-track]')) control.disabled = !working;
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
-  element('video-download').hidden = !videoUrl || dirty || draftDirty || busy;
-  srtControls();
+  element('video-download').hidden = !videoUrl || dirty || draftDirty || busy || !!timingOwner;
+  srtControls(); timingControls();
   updateTimeline();
   archiveControls();
   restoreArchiveFocus();
@@ -207,6 +211,7 @@ function draftSnapshot(): LyricDraft {
 function changed(group: string | null = null) {
   if (!working) return;
   retireSrt('The lyric editor changed. Choose the SRT file again to review current work.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   timeline.cancelGesture(); editGeneration++;
   lyricHistory?.record(draftSnapshot(), group);
   dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
@@ -214,6 +219,7 @@ function changed(group: string | null = null) {
 function restoreDraft(direction: 'undo' | 'redo') {
   if (!working || !lyricHistory || currentJob || loading || requestingJob || saving || archiveChecking) return;
   retireSrt('Undo or Redo cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   timeline.cancelGesture(); editGeneration++;
   const rawTimings = captureTimingDrafts();
   const draft = lyricHistory[direction]();
@@ -299,6 +305,7 @@ void document.fonts.ready.then(draw);
 
 function track(kind: string) {
   if (!working) return;
+  retireTiming('Changing track cancelled the timing session. Staged times were not applied.'); timingWaiting = false;
   timeline.cancelGesture();
   const position = audio.currentTime || 0, playing = !audio.paused;
   const id = working.id, project = loadedProjectGeneration, owner = ++mediaGeneration;
@@ -351,8 +358,10 @@ function srtTime(seconds: number): string {
 }
 element<HTMLInputElement>('srt-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
+  if (file) retireTiming('Selecting timed lyrics cancelled the timing session. Staged times were not applied.');
   if (!file || !srtAllowed()) return;
   retireSrt('');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   if (file.size < 1 || file.size > MAX_SRT_BYTES) { element('srt-status').textContent = 'Choose a nonempty UTF-8 SRT file no larger than 128 KiB.'; return; }
   const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working!.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
   const duration = working!.duration, title = working!.title, previousCount = working!.cues.length;
@@ -380,6 +389,7 @@ element<HTMLInputElement>('srt-file').addEventListener('change', async event => 
   } catch (error) {
     if (!srtCurrent(owner)) return;
     retireSrt(`${error instanceof Error ? error.message : 'The SRT file could not be read.'} Current lyrics and editor values were kept.`);
+    retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   }
 });
 element('srt-cancel').addEventListener('click', () => retireSrt('Lyric import cancelled. Current lyrics and editor values were kept.'));
@@ -391,6 +401,7 @@ element('srt-apply').addEventListener('click', () => {
   lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
   const cues = structuredClone(review.cues);
   retireSrt('Lyric cues replaced in memory. The title and pasted words were kept; use Save lyrics when ready.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   working.cues = cues; renderCues(); changed();
   message(draftDirty ? 'Timed lyrics imported. Your unapplied pasted words are kept; create draft timings or discard that paste before saving.' : 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.');
 });
@@ -412,7 +423,7 @@ function renderCues(rawTimings: RawTiming[] = []) {
       ['Remove', () => { working!.cues.splice(index, 1); renderCues(); changed(); }],
     ] as const) {
       const button = document.createElement('button'); button.className = 'text-button'; button.textContent = label;
-      button.setAttribute('aria-label', `${label} line ${index + 1}`); button.addEventListener('click', action); actions.append(button);
+      button.setAttribute('aria-label', `${label} line ${index + 1}`); button.addEventListener('click', () => { if (label !== 'Select timing') retireTiming('A lyric action cancelled the timing session. Staged times were not applied.'); action(); }); actions.append(button);
     }
     row.append(actions); list.append(row);
   }
@@ -432,6 +443,7 @@ async function refreshProjects(isCurrent: () => boolean = () => true): Promise<b
 }
 async function openProject(id: string) {
   retireSrt('Opening a clip cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; mediaGeneration++;
   const generation = ++projectGeneration;
   loading = true; controls();
@@ -454,6 +466,7 @@ async function openProject(id: string) {
 function mayLeave(): boolean { return !(dirty || draftDirty) || window.confirm('Discard unsaved lyric edits and open a different clip?'); }
 element<HTMLSelectElement>('projects').addEventListener('change', async event => {
   retireSrt('Choosing a clip cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const select = event.target as HTMLSelectElement;
   if (!select.value || !mayLeave()) { select.value = working?.id || ''; return; }
   try { await openProject(select.value); message(''); } catch (error) { message(String(error instanceof Error ? error.message : error), true); }
@@ -463,18 +476,21 @@ element<HTMLTextAreaElement>('lyric-draft').addEventListener('input', event => {
   draftDirty = (event.target as HTMLTextAreaElement).value !== (working?.cues.map(cue => cue.text).join('\n') || ''); changed('paste');
 });
 element('discard-draft').addEventListener('click', () => {
+  retireTiming('Discarding pasted words cancelled the timing session. Staged times were not applied.');
   element<HTMLTextAreaElement>('lyric-draft').value = working?.cues.map(cue => cue.text).join('\n') || '';
   draftDirty = false; changed();
 });
 element('draft-timings').addEventListener('click', () => {
+  retireTiming('Creating draft timings cancelled the timing session. Staged times were not applied.');
   if (!working) return;
   try { working.cues = draftCues(element<HTMLTextAreaElement>('lyric-draft').value, working.duration); draftDirty = false; renderCues(); changed(); message('Draft timings are evenly spaced. Listen and adjust each line before saving.'); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not create draft timings.', true); }
 });
 element('save').addEventListener('click', async () => {
   timeline.cancelGesture();
-  if (!working || saving || archiveChecking || draftDirty || validateWorking()) return;
+  if (!working || saving || archiveChecking || timingOwner || draftDirty || validateWorking()) return;
   retireSrt('Saving lyrics cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   timeline.cancelGesture(); editGeneration++;
   saving = true; controls();
   try {
@@ -491,12 +507,13 @@ function download(url: string, suffix: string) {
   anchor.download = `${working?.title.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 60) || 'karaoke'}${suffix}`; anchor.click();
 }
 element('backing-download').addEventListener('click', () => { if (working) download(`/api/projects/${working.id}/audio/backing`, '-backing.wav'); });
-element('lyrics-download').addEventListener('click', () => { if (working && !dirty) download(`/api/projects/${working.id}/lyrics`, '.srt'); });
-element('video-download').addEventListener('click', () => { if (videoUrl) download(videoUrl, '.mp4'); });
+element('lyrics-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/lyrics`, '.srt'); });
+element('video-download').addEventListener('click', () => { if (videoUrl && !timingOwner) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {
   timeline.cancelGesture();
   if (!working || currentJob || saving || loading || archiveChecking) return;
   retireSrt('Deleting a clip cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
   saving = true; controls();
   try {
@@ -568,14 +585,17 @@ async function pollJob(id: string, epoch = pollEpoch) {
 }
 function startPolling(job: Job, follow = true, owned = true, savedRevision: number | null = null) {
   retireSrt('Studio media work cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   if (currentJob?.id === job.id) { void pollJob(job.id); return; }
   pollEpoch++; followJobProject = follow; ownedJob = owned; archiveJobRevision = savedRevision;
   clearTimeout(pollTimer); showJob(job); void pollJob(job.id, pollEpoch);
 }
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
+  if (file) retireTiming('Choosing audio cancelled the timing session. Staged times were not applied.');
   if (!file || currentJob || requestingJob || loading || saving || archiveChecking || !mayLeave()) return;
   retireSrt('Importing audio cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const maxBytes = Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   if (file.size < 1 || file.size > maxBytes) { message(`Choose a nonempty song clip no larger than ${maxBytes / 1024 / 1024} MiB.`, true); return; }
   requestingJob = true; controls();
@@ -592,8 +612,9 @@ element('cancel-job').addEventListener('click', async () => {
   catch (error) { if (ownsPoll(id, epoch)) message(error instanceof Error ? error.message : 'Could not cancel this job.', true); }
 });
 element('export-video').addEventListener('click', async () => {
-  if (!working || dirty || draftDirty || currentJob || requestingJob || loading || saving || archiveChecking) return;
+  if (!working || timingOwner || dirty || draftDirty || currentJob || requestingJob || loading || saving || archiveChecking) return;
   retireSrt('Exporting video cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   requestingJob = true; controls();
   try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', {})); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
@@ -639,6 +660,7 @@ function archiveBusy(): boolean { return !!currentJob || requestingJob || loadin
 element('archive-backup').addEventListener('click', async () => {
   if (!working || !session || archiveInfoState !== 'ready' || archiveBusy()) return;
   retireSrt('Backing up the clip cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   rememberArchiveFocus(); timeline.cancelGesture();
   const id = working.id, revision = working.revision, generation = loadedProjectGeneration, operation = ++archiveOperation;
   requestingJob = true; controls();
@@ -659,6 +681,7 @@ element<HTMLInputElement>('archive-file').addEventListener('change', async event
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
   if (!file || !session || archiveBusy() || restoreUncertain) return;
   retireSrt('Importing an archive cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const limit = Math.min(160 * 1024 ** 2, session.maxArchiveBytes);
   if (!Number.isFinite(limit) || file.size < 1 || file.size > limit) { message('Choose a nonempty Karaoke project archive no larger than 160 MiB.', true); return; }
   rememberArchiveFocus(); timeline.cancelGesture();
@@ -686,12 +709,14 @@ element('archive-upload-cancel').addEventListener('click', () => archiveUpload?.
 element('open-imported').addEventListener('click', async () => {
   if (!importedResult || archiveBusy()) return;
   retireSrt('Opening an imported clip cancelled the lyric import review.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   if (!mayLeave()) return;
   const id = importedResult.id;
   try { await openProject(id); message('Opened the restored clip. Imported audio and processing claims remain unverified.'); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not open the restored clip. Your previous editor is still here.', true); }
 });
 element('archive-recheck').addEventListener('click', async () => {
+  retireTiming('Checking studio jobs cancelled the timing session. Staged times were not applied.');
   if (!session || requestingJob || loading || saving || archiveChecking) return;
   rememberArchiveFocus();
   const operation = ++archiveOperation, generation = projectGeneration;
@@ -734,12 +759,181 @@ async function refresh() {
     }
   } catch (error) { message(`Local studio unavailable: ${error instanceof Error ? error.message : 'Start the Python service, then refresh.'}`, true); }
 }
-element('refresh').addEventListener('click', () => void refresh());
+interface TimingOwner {
+  epoch: number; projectId: string; project: number; edit: number; media: number;
+  track: string; source: string; duration: number; floor: number; capture: TimingCapture;
+}
+let timingEpoch = 0;
+let timingOwner: TimingOwner | null = null;
+let timingWaiting = false;
+const timingHeldKeys = new Set<string>(), timingBlockedKeys = new Set<string>();
+function timingBusy(): boolean { return !!currentJob || loading || requestingJob || saving || archiveChecking; }
+function timingIdentity(owner: TimingOwner): boolean {
+  return timingOwner === owner && timingEpoch === owner.epoch && working?.id === owner.projectId
+    && loadedProjectGeneration === owner.project && editGeneration === owner.edit && mediaGeneration === owner.media
+    && currentTrack === owner.track && working.duration === owner.duration;
+}
+function timingPositionValid(owner: TimingOwner): boolean {
+  const time = audio.currentTime;
+  return Number.isFinite(time) && time >= 0 && (time <= owner.duration
+    || audio.ended && time === audio.duration && Math.abs(audio.duration - owner.duration) <= 1 / 44100);
+}
+function timingMediaError(owner: TimingOwner, availability = true, position = true): string {
+  if (!timingIdentity(owner)) return 'The clip, track or editor changed.';
+  if (document.hidden) return 'The page became hidden.';
+  if (audio.src !== owner.source || audio.currentSrc !== owner.source) return 'The playback source changed or is not loaded.';
+  if (audio.error) return 'The audio could not be played.';
+  if (availability && audio.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return 'Wait for loaded audio, then continue listening.';
+  if (!Number.isFinite(audio.duration) || Math.abs(audio.duration - owner.duration) > 1 / 44100) return 'The loaded audio duration does not match this clip.';
+  if (audio.seeking) return 'Seeking cancelled these staged timings.';
+  if (audio.loop || audio.playbackRate !== 1) return 'Use normal 1× playback without looping, then begin again.';
+  const validTime = timingPositionValid(owner);
+  if (position && !validTime) return 'The playback position is unavailable or outside this clip.';
+  if (validTime && audio.currentTime < owner.floor) return 'Playback moved backward. Position the player, then begin again.';
+  return '';
+}
+function timingText(id: string, text: string): void { if (element(id).textContent !== text) element(id).textContent = text; }
+function blockTimingKeys(): void { for (const key of timingHeldKeys) timingBlockedKeys.add(key); timingHeldKeys.clear(); }
+function retireTiming(text = 'Timing session cancelled. Staged times were not applied.'): void {
+  if (!timingOwner) return;
+  blockTimingKeys(); timingOwner.capture.cancel(); timingOwner = null; timingEpoch++;
+  element('timing-review').hidden = true; element('timing-review-list').replaceChildren();
+  timingText('timing-line', ''); timingText('timing-status', text); controls();
+}
+function timingControls(): void {
+  const owner = timingOwner, state = owner?.capture.state, busy = timingBusy();
+  element<HTMLButtonElement>('timing-begin').disabled = !working || !lyricHistory || busy || !!owner;
+  element<HTMLButtonElement>('timing-cancel').disabled = !owner; element('timing-cancel').hidden = !owner;
+  const mark = element<HTMLButtonElement>('timing-mark');
+  mark.hidden = !state || state.phase === 'review';
+  mark.disabled = !owner || busy || !!timingMediaError(owner) || audio.paused || audio.ended || timingWaiting;
+  if (state) timingText('timing-mark', state.phase === 'end' ? 'Mark line end' : 'Mark line start');
+  const final = !!owner && state?.phase === 'end' && state.lineIndex === state.texts.length - 1 && audio.ended && !timingMediaError(owner);
+  element('timing-end-final').hidden = !final; element<HTMLButtonElement>('timing-end-final').disabled = !final || busy;
+  element<HTMLButtonElement>('timing-apply').disabled = !owner || state?.phase !== 'review' || busy || !!timingMediaError(owner);
+  if (!owner || !state || state.phase === 'review') return;
+  timingText('timing-line', `Line ${state.lineIndex + 1} of ${state.texts.length}\n${state.texts[state.lineIndex]}`);
+  let text: string;
+  if (audio.ended) text = final ? 'Playback ended with the final line open. Choose End final line at clip end deliberately, or Cancel.' : `Playback ended with ${state.texts.length - state.completed.length} lines unfinished. Nothing was applied. Cancel and begin again after positioning the player.`;
+  else if (timingWaiting) text = 'Waiting for audio. Resume listening when playback is ready; no boundary is marked automatically.';
+  else if (audio.paused) text = 'Paused. Resume playback to continue; your pending start and completed lines are kept.';
+  else text = `Listening · ${state.completed.length}/${state.texts.length} lines completed. ${state.phase === 'start' ? 'Mark the next line’s start when you hear it.' : 'Mark this line’s end; leave gaps by waiting before the next start.'}`;
+  timingText('timing-status', text);
+}
+function observeTiming(): void {
+  const owner = timingOwner; if (!owner) { timingControls(); return; }
+  const error = timingMediaError(owner, false, false);
+  if (error) { retireTiming(`${error} Staged times were not applied; begin a new session when ready.`); return; }
+  if (timingPositionValid(owner)) owner.floor = audio.currentTime;
+  timingControls();
+}
+function reviewTiming(owner: TimingOwner): void {
+  const cues = owner.capture.review(), list = element('timing-review-list'); list.replaceChildren();
+  for (const [index, cue] of cues.entries()) {
+    const row = document.createElement('li'); row.dataset.timingCue = String(index);
+    const times = document.createElement('strong'); times.textContent = `${index + 1}. ${cue.start} → ${cue.end} seconds · gap before ${cue.start - (index ? cues[index - 1].end : 0)} seconds`;
+    const text = document.createElement('pre'); text.textContent = cue.text; row.append(times, text); list.append(row);
+  }
+  timingText('timing-summary', `${cues.length} captured intervals for ${working!.cues.length} current lines. First start ${cues[0].start}s; final end ${cues.at(-1)!.end}s. Title and pasted words stay unchanged; Apply changes cues once, then Save lyrics separately.`);
+  timingText('timing-line', 'All supplied lines are timed. Review every interval and instrumental gap.');
+  element('timing-review').hidden = false; blockTimingKeys(); audio.pause();
+  timingText('timing-status', 'Complete timing review — not applied or saved. Review all lines, then Apply captured timings or Cancel.');
+  timingControls();
+}
+function markTiming(final = false): void {
+  const owner = timingOwner; if (!owner || timingBusy()) return;
+  const fatal = timingMediaError(owner, false, false);
+  if (fatal) { retireTiming(`${fatal} Staged times were not applied.`); return; }
+  const error = timingMediaError(owner);
+  if (error) { timingControls(); timingText('timing-status', `${error} Your pending start and completed lines are kept.`); return; }
+  const state = owner.capture.state;
+  if (final) {
+    if (!audio.ended || state.phase !== 'end' || state.lineIndex !== state.texts.length - 1) return;
+  } else if (audio.paused || audio.ended || timingWaiting) { timingControls(); return; }
+  const time = final ? owner.duration : audio.currentTime; owner.floor = audio.currentTime;
+  try {
+    if (state.phase === 'start') owner.capture.markStart(time);
+    else if (state.phase === 'end') owner.capture.markEnd(time);
+    else return;
+    if (owner.capture.state.phase === 'review') reviewTiming(owner); else timingControls();
+  } catch (error) { timingControls(); timingText('timing-status', `${error instanceof Error ? error.message : 'This boundary is not valid.'} Your pending start and completed lines are kept.`); }
+}
+for (const id of ['timing-begin', 'timing-apply', 'timing-cancel']) element(id).addEventListener('pointerdown', event => {
+  if (event.isPrimary && event.button === 0) event.preventDefault();
+});
+element('timing-begin').addEventListener('click', () => {
+  if (!working || !lyricHistory || timingBusy() || timingOwner) return;
+  const source = new URL(`/api/projects/${working.id}/audio/${currentTrack}`, location.href).href;
+  const owner: TimingOwner = { epoch: ++timingEpoch, projectId: working.id, project: loadedProjectGeneration, edit: editGeneration,
+    media: mediaGeneration, track: currentTrack, source, duration: working.duration, floor: audio.currentTime, capture: null! };
+  // Build only transient state; invalid old numeric cue fields are independent.
+  try { owner.capture = new TimingCapture(working.cues, working.duration); }
+  catch (error) { timingText('timing-status', `${error instanceof Error ? error.message : 'Supply valid lyric lines first.'} Current editor values are kept.`); return; }
+  timingOwner = owner;
+  const error = timingMediaError(owner);
+  if (error || audio.ended || audio.currentTime >= owner.duration) {
+    timingOwner = null; owner.capture.cancel(); timingText('timing-status', `${error || 'Position the player before clip end.'} Play or load Original, Vocals or Backing, then begin. Current editor values are kept.`); timingControls(); return;
+  }
+  timeline.cancelGesture(); retireSrt('Beginning timing cancelled the SRT review. Current lyrics are unchanged.');
+  timingText('timing-summary', ''); element('timing-review').hidden = true;
+  timingText('timing-status', 'Timing only the existing lyric lines. Unapplied pasted words are kept and are not included.');
+  controls(); if (!element<HTMLButtonElement>('timing-mark').disabled) element('timing-mark').focus({ preventScroll: true });
+});
+app.addEventListener('input', event => {
+  const node = event.target;
+  if ((node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)
+      && (node.id === 'title' || node.id === 'lyric-draft' || element('cue-list').contains(node)))
+    retireTiming('The lyric editor changed. Staged times were not applied.');
+}, true);
+element('timing-mark').addEventListener('click', () => markTiming());
+element('timing-end-final').addEventListener('click', () => markTiming(true));
+element('timing-cancel').addEventListener('click', () => retireTiming());
+const timingKey = (event: KeyboardEvent): string | null => event.key === 'Enter' ? 'Enter' : event.key === ' ' ? 'Space' : null;
+element('timing-mark').addEventListener('keydown', event => {
+  const key = timingKey(event); if (!key) return;
+  event.preventDefault();
+  if (event.repeat || event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey
+    || timingHeldKeys.has(key) || timingBlockedKeys.has(key)) return;
+  timingHeldKeys.add(key); markTiming();
+});
+element('timing-mark').addEventListener('keyup', event => { if (timingKey(event)) event.preventDefault(); });
+element('timing-mark').addEventListener('blur', blockTimingKeys);
+window.addEventListener('keyup', event => { const key = timingKey(event); if (key) { timingHeldKeys.delete(key); timingBlockedKeys.delete(key); } });
+window.addEventListener('blur', blockTimingKeys);
+element('timing-apply').addEventListener('click', () => {
+  const owner = timingOwner; if (!owner || owner.capture.state.phase !== 'review' || timingBusy() || !working || !lyricHistory) return;
+  try {
+    const cues = owner.capture.review(); validateCues(cues, owner.duration);
+    if (session && (owner.duration > session.maxDuration || cues.length > session.maxCues || cues.reduce((sum, cue) => sum + Array.from(cue.text).length, 0) > session.maxLyricChars)) throw Error('The captured lyrics exceed the connected studio’s limits.');
+    const same = cues.length === working.cues.length && cues.every((cue, index) => cue.text === working!.cues[index].text && Object.is(cue.start, working!.cues[index].start) && Object.is(cue.end, working!.cues[index].end));
+    const before = draftSnapshot();
+    const error = timingMediaError(owner); // Native state may change before queued events.
+    if (error) {
+      if (timingMediaError(owner, false, false)) retireTiming(`${error} Captured timings were not applied.`);
+      else { timingControls(); timingText('timing-status', `${error} The complete review is kept; captured timings were not applied.`); }
+      return;
+    }
+    owner.floor = audio.currentTime;
+    if (same) { retireTiming('The captured timings already match. No edit or save was made; exact editor values and Redo are kept.'); return; }
+    lyricHistory.record(before); lyricHistory.endGroup();
+    retireTiming('Captured timings applied in memory. Title and pasted words were kept; Save lyrics when ready.');
+    working.cues = cues; renderCues(); changed();
+    message(draftDirty ? 'Captured timings applied as one edit. Your unapplied pasted words are kept; resolve that paste before saving.' : 'Captured timings applied as one edit. Review them, then use Save lyrics.');
+  } catch (error) { timingText('timing-status', `${error instanceof Error ? error.message : 'Could not apply these timings.'} Current lyrics and editor values are kept.`); }
+});
+for (const event of ['timeupdate', 'pause', 'play', 'playing', 'canplay', 'ended']) audio.addEventListener(event, observeTiming);
+audio.addEventListener('waiting', () => { timingWaiting = true; observeTiming(); });
+audio.addEventListener('playing', () => { timingWaiting = false; observeTiming(); });
+for (const event of ['seeking', 'emptied', 'error', 'ratechange', 'loadedmetadata']) audio.addEventListener(event, () => retireTiming('Playback changed. Staged times were not applied; position the player and begin again.'));
+document.addEventListener('visibilitychange', () => { if (document.hidden) { blockTimingKeys(); retireTiming('The page became hidden. Staged times were not applied.'); } });
+
+element('refresh').addEventListener('click', () => { retireTiming('Refreshing clips cancelled the timing session. Staged times were not applied.'); void refresh(); });
 window.addEventListener('beforeunload', event => { if (dirty || draftDirty || requestingJob || (currentJob && ownedJob)) { event.preventDefault(); event.returnValue = ''; } });
 controls(); draw(); void refresh();
 
 window.addEventListener('pagehide', event => {
   retireSrt('The page was suspended. Choose the SRT file again to review it.');
+  retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   archiveFocus = null;
   mediaGeneration++; audio.pause();
   if (event.persisted) timeline.stopWaveform(); else timeline.destroy();

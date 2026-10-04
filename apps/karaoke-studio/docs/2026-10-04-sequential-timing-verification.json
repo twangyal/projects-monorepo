@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "issue": 115,
+  "status": "Local complete regression passed; independent maximum scheduling failure under investigation.",
+  "scope": "Manual supplied-line timing on actual audio.currentTime. No new model inference or physical synchronization claim.",
+  "unit": {
+    "passed": 86,
+    "failed": 0,
+    "durationMs": 1033.53718,
+    "log": {
+      "path": "/tmp/karaoke115-root-check-first.log",
+      "bytes": 10172,
+      "sha256": "2998692e8e0262c36ae7b6f8265ffb90bdc5ef0b887f76cb3572e502abf615a0"
+    }
+  },
+  "python": {
+    "passed": 166,
+    "failed": 0,
+    "durationSeconds": 54.447,
+    "log": {
+      "path": "/tmp/karaoke115-root-python-first.log",
+      "bytes": 28037,
+      "sha256": "8c3f2b7ea036cc2c55989b40969f04b8100e7087363a4e304414e3f77dbc2dc2"
+    }
+  },
+  "pythonStatic": {
+    "result": "passed",
+    "log": {
+      "path": "/tmp/karaoke115-python-static.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    }
+  },
+  "nativeSubset": {
+    "stats": {
+      "startTime": "2026-10-04T23:48:02.380Z",
+      "duration": 46936.204,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "receipt": "2026-10-04-sequential-timing-native.json"
+  },
+  "source": [
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/src/main.ts",
+      "bytes": 75240,
+      "sha256": "6c312a471e2d35c8e2f8fc87ea39fb3ae7b597981296ad855ff6e53cea5a6172"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/src/style.css",
+      "bytes": 16958,
+      "sha256": "58f3ad92192f1d778876615264f45a9d0dfa2f157b2a9dc4ca3d3737f0b4804f"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/src/sequential-timing.ts",
+      "bytes": 3636,
+      "sha256": "f57fc02993062f8471cffc363eb32768c0fdf0f9eced66bd62bb4e472f53625e"
+    }
+  ],
+  "preNativeRepairs": [
+    "Independent source review found network stalled must not latch playback waiting; only actual waiting now does. No failed runtime claim.",
+    "Natural ended within admitted one-sample media duration permits only explicit final exact project endpoint; ordinary marks remain strict."
+  ],
+  "independentReviews": [
+    "2026-10-04-sequential-timing-oracle.json",
+    "2026-10-04-sequential-timing-client-review.json"
+  ],
+  "rootVisual": "Inspected original 390px complete review screenshot. Controls and full literal multiline review fit without horizontal overflow.",
+  "maximum": {
+    "status": "first attempt failed at trusted action scheduling bound after148 marks",
+    "receipt": {
+      "path": "/workspace/karaoke115-maximum-final/verification.json",
+      "bytes": 51287,
+      "sha256": "b896bf3173497d0f64084515e56522c935e6e30bd556acbe88af3342350298e4"
+    },
+    "log": {
+      "path": "/tmp/karaoke115-maximum-native-first.log",
+      "bytes": 603,
+      "sha256": "a553811d39d5fc70ddaec86bf149d4a14740961f7b542117aaadcec4cf8e5ddd"
+    },
+    "fixture": "/workspace/karaoke115-maximum-fixtures",
+    "tolerancesUnchanged": true,
+    "investigation": "Preserve original 150ms action-scheduling bound. Independent acceptance author reviewing trusted click actionability overhead; no product clock error established."
+  },
+  "ci": "pending",
+  "fullNative": {
+    "stats": {
+      "startTime": "2026-10-04T23:49:21.063Z",
+      "duration": 185215.982,
+      "expected": 75,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/karaoke115-full-native-first.log",
+      "bytes": 11001,
+      "sha256": "8c1a20bb9c1a28f0b816bccbb26daf08ff31eddd3c4e135867a891907daaccda"
+    },
+    "results": {
+      "path": "/tmp/karaoke115-full-native-results-first.json",
+      "bytes": 84678,
+      "sha256": "cde9e8bd61c9d52351cc02e0f47dfc2a5a504d5ec0a084a64ea1b897822834e2"
+    },
+    "preservedArtifacts": "/workspace/karaoke115-full-native-first-artifacts",
+    "firstFullInvocationPassed": true
+  },
+  "finalLint": {
+    "result": "passed",
+    "log": {
+      "path": "/tmp/karaoke115-final-lint.log",
+      "bytes": 249,
+      "sha256": "d88386961be6ce0ff88c59870789217b807c8710a965686d66dcf419a0422e84"
+    }
+  }
+}

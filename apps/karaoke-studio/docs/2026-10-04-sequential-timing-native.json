@@ -1,0 +1,214 @@
+{
+  "issue": 115,
+  "status": "First native invocation passed all14 original cases against final UI; full regression and maximum pending.",
+  "plannedDistinctCases": 14,
+  "originalFixture": {
+    "durationSeconds": 6,
+    "rate": 44100,
+    "channels": 2,
+    "encoding": "stereo signed PCM16 WAV",
+    "frames": 264600,
+    "bytes": 1058444,
+    "sha256": "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553",
+    "left": "round(3500*sin(2*pi*277*n/44100))",
+    "right": "round(2800*sin(2*pi*415*n/44100))",
+    "texts": [
+      "  First caf\u00e9 \ud83c\udf13\nsecond line  ",
+      "Final <literal> & line"
+    ],
+    "initialIntervals": [
+      [
+        0.3333333333333333,
+        1.125
+      ],
+      [
+        2.25,
+        3.5
+      ]
+    ],
+    "independence": "Original literal media, cue text, scalar export/clock tolerances authored before reading new sequential-timing implementation."
+  },
+  "oracle": {
+    "clockObservationSeconds": 0.025,
+    "mechanism": "Read-only native audio.currentTime on document capture-phase trusted click/keyboard events, compared with accepted exact editor boundaries. No clock getter replacement or fabricated timeupdate used.",
+    "intervals": "Playback advances naturally between explicit marks; gaps and Pause/Resume tested. Native currentTime writes appear only in separately labeled retirement tests, never to pretend recording a complete playback.",
+    "video": "Actual6s H264/AAC MP4,144frames24fps; decode frames immediately before/at each observed saved start/end plus first/final frame; warm lyric pixels>40 for active cues,<20 for gaps.",
+    "srt": "Independent millisecond formatting and one-pass ampersand/angle escaping of original literal multiline text.",
+    "limitations": [
+      "No physical acoustic/device synchronization or separation-quality claim. Test service copies supplied audio into the three stems.",
+      "Controlled visibility/pagehide and synchronous native media-property mutations are labeled lifecycle/race tests.",
+      "Native identical-value Apply is not fabricated by setting a fake clock; invalid/paused actions and Begin/Cancel no-op/redo preservation are covered.",
+      "Actual300s maximum/export/restart is a separate root-coordinated acceptance scope."
+    ]
+  },
+  "sources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/tests/sequential-timing.spec.ts",
+      "bytes": 16677,
+      "sha256": "444cadda0161ce70efe74062c01fe0d282f3adc0aad93537d893f0fb898f7c19"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/tests/sequential-timing-fixtures.ts",
+      "bytes": 9522,
+      "sha256": "189f7faa751f324e1f9e7505858ff4dd3764062e8a9bc38edfd8c5969254af88"
+    }
+  ],
+  "staticChecks": {
+    "fullTypeScript": "passed",
+    "scopedEslint": "passed"
+  },
+  "nativeRuns": [
+    {
+      "stats": {
+        "startTime": "2026-10-04T23:48:02.380Z",
+        "duration": 46936.204,
+        "expected": 14,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/karaoke115-new-native-first.log",
+        "bytes": 3359,
+        "sha256": "845622316c9fbc7fe88a656c12d29a0faa2bcb91d1103c024ebe0140af7f31d2"
+      },
+      "results": {
+        "path": "/tmp/karaoke115-new-native-results-first.json",
+        "bytes": 17491,
+        "sha256": "f295b810d2cd8f6a6a2d8add9c511adb6b8afdaa3b4aa6ea9254d5ea7ef42402"
+      },
+      "preservedArtifacts": "/workspace/karaoke115-new-native-first-artifacts",
+      "nativeArtifact": {
+        "fixtureWavSha256": "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553",
+        "clockObservationTolerance": 0.025,
+        "observations": [
+          {
+            "action": "Mark line start",
+            "kind": "click",
+            "time": 0.311429,
+            "paused": false,
+            "ended": false,
+            "repeat": false
+          },
+          {
+            "action": "Mark line end",
+            "kind": "click",
+            "time": 0.900878,
+            "paused": false,
+            "ended": false,
+            "repeat": false
+          },
+          {
+            "action": "Mark line start",
+            "kind": "click",
+            "time": 1.349154,
+            "paused": false,
+            "ended": false,
+            "repeat": false
+          },
+          {
+            "action": "Mark line end",
+            "kind": "click",
+            "time": 1.952904,
+            "paused": false,
+            "ended": false,
+            "repeat": false
+          }
+        ],
+        "cues": [
+          {
+            "text": "  First caf\u00e9 \ud83c\udf13\nsecond line  ",
+            "start": 0.311639,
+            "end": 0.900901
+          },
+          {
+            "text": "Final <literal> & line",
+            "start": 1.349178,
+            "end": 1.952926
+          }
+        ],
+        "savedRevision": 2,
+        "audioBefore": [
+          "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553",
+          "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553",
+          "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553"
+        ],
+        "audioAfter": [
+          "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553",
+          "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553",
+          "2efb4788564f2da2c60f4350a3863421cbd21c6cc357d838f005f022cf029553"
+        ],
+        "srtSha256": "2305315741b5cc92649342c0c913d09627ec0685db302e4fba5dd527afca9905",
+        "video": {
+          "bytes": 185927,
+          "sha256": "be3a5736b1589b6a5b1ebfcb588f29645bf3e855a3fb653ca4f2b42c2e2f825a",
+          "frames": 144,
+          "samples": [
+            {
+              "frame": 0,
+              "time": 0,
+              "active": false,
+              "warmPixels": 0
+            },
+            {
+              "frame": 7,
+              "time": 0.2916666666666667,
+              "active": false,
+              "warmPixels": 0
+            },
+            {
+              "frame": 8,
+              "time": 0.3333333333333333,
+              "active": true,
+              "warmPixels": 3808
+            },
+            {
+              "frame": 21,
+              "time": 0.875,
+              "active": true,
+              "warmPixels": 3816
+            },
+            {
+              "frame": 22,
+              "time": 0.9166666666666666,
+              "active": false,
+              "warmPixels": 0
+            },
+            {
+              "frame": 32,
+              "time": 1.3333333333333333,
+              "active": false,
+              "warmPixels": 0
+            },
+            {
+              "frame": 33,
+              "time": 1.375,
+              "active": true,
+              "warmPixels": 2937
+            },
+            {
+              "frame": 46,
+              "time": 1.9166666666666667,
+              "active": true,
+              "warmPixels": 2939
+            },
+            {
+              "frame": 47,
+              "time": 1.9583333333333333,
+              "active": false,
+              "warmPixels": 3
+            },
+            {
+              "frame": 143,
+              "time": 5.958333333333333,
+              "active": false,
+              "warmPixels": 3
+            }
+          ]
+        },
+        "physicalSynchronizationMeasured": false
+      },
+      "firstInvocation": true
+    }
+  ]
+}
