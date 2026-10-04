@@ -80,7 +80,16 @@ window.addEventListener('focusin',e=>{if(inputField(e.target))release();});
 window.addEventListener('keydown',e=>{if(inputField(e.target)||!run||run.phase!=='running')return;const key=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','e','shift'].includes(key)){e.preventDefault();keys.add(key);}});
 window.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());});
 function inactive():void {release();if(run?.phase==='running'){pause(run);lastFrame=0;void audio?.suspend().catch(()=>{});render();}}
-window.addEventListener('blur',inactive);document.addEventListener('visibilitychange',()=>{if(document.hidden){inactive();clearCalibration();if(run?.source==='bluetooth-hr')invalidateBluetooth(run,'hidden');transport?.disconnect();refreshBluetooth();}});window.addEventListener('pagehide',()=>{inactive();clearCalibration();disposed=true;transport?.dispose();void audio?.close().catch(()=>{});audio=null;refreshBluetooth();});
+window.addEventListener('blur',inactive);document.addEventListener('visibilitychange',()=>{if(document.hidden){inactive();clearCalibration();if(run?.source==='bluetooth-hr')invalidateBluetooth(run,'hidden');transport?.disconnect();refreshBluetooth();}});
+window.addEventListener('pagehide',event=>{
+  inactive();clearCalibration();
+  // A cached page keeps this heap. Retain pending cleanup ownership so an
+  // explicit connection after return cannot overlap an older native operation.
+  if(event.persisted)transport?.disconnect();
+  else{disposed=true;transport?.dispose();}
+  void audio?.close().catch(()=>{});audio=null;refreshBluetooth();
+});
+window.addEventListener('pageshow',event=>{if(event.persisted){lastFrame=0;release();refreshBluetooth();}});
 for(const button of document.querySelectorAll<HTMLButtonElement>('[data-move]')){
   button.addEventListener('pointerdown',e=>{if(run?.phase!=='running')return;e.preventDefault();button.setPointerCapture(e.pointerId);touch.set(e.pointerId,button.dataset.move!);});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(type,e=>touch.delete((e as PointerEvent).pointerId));
