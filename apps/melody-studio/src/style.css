@@ -162,3 +162,32 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
   footer { flex-direction: column; align-items: start; }
   footer p { text-align: left; }
 }
+
+.continuation-panel { margin-top: 1.7rem; padding-top: 1.4rem; border-top: 1px solid var(--line); min-width: 0; }
+.continuation-panel h2 { margin-bottom: .65rem; }
+.continuation-panel p { overflow-wrap: anywhere; }
+.continuation-panel > .small { margin: .65rem 0; }
+.continuation-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem; margin: 1rem 0; }
+.continuation-controls label { flex: 1 1 130px; max-width: 210px; }
+.continuation-controls input, .continuation-controls select { margin-top: .3rem; }
+.continuation-panel button { white-space: normal; }
+.continuation-error { color: #8a4c43; font-size: .78rem; }
+#continuation-proposal { margin-top: 1.1rem; border: 1px solid #c3dccc; border-radius: 9px; background: #f3f9f4; padding: 1rem; min-width: 0; }
+#continuation-proposal h3 { font-size: .95rem; margin: 0 0 .8rem; }
+#continuation-proposal > p { margin-top: .8rem; }
+.proposal-table-wrap { max-width: 100%; overflow-x: auto; margin: .7rem 0 1rem; border: 1px solid #d8e5da; border-radius: 6px; }
+#proposal-notes { border-collapse: collapse; min-width: 560px; width: 100%; font-size: .73rem; text-align: left; }
+#proposal-notes caption { padding: .6rem; text-align: left; color: #536959; font-size: .7rem; }
+#proposal-notes th, #proposal-notes td { padding: .55rem .65rem; border-bottom: 1px solid #dce7de; }
+#proposal-notes thead { background: #e5f0e6; }
+#continuation-proposal details { font-size: .75rem; margin-bottom: 1rem; }
+#continuation-proposal summary { cursor: pointer; font-weight: 650; }
+#continuation-proposal details p { margin-top: .6rem; }
+#continuation-proposal li { margin: .5rem 0; overflow-wrap: anywhere; }
+.note-event.is-seed { outline: 2px solid #49865d; outline-offset: -1px; }
+.note-event.proposal-note { background: #d9eedc; border: 2px dashed #477f56; color: #244a31; pointer-events: none; white-space: nowrap; }
+@media (max-width: 720px) {
+  .continuation-controls label { max-width: none; }
+  .continuation-controls > button { width: 100%; }
+  #continuation-proposal { padding: .8rem; }
+}

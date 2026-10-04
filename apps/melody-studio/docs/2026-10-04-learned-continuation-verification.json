@@ -1,0 +1,138 @@
+{
+  "date": "2026-10-04",
+  "issue": 42,
+  "version": "0.2.0",
+  "verification": {
+    "unitTests": 113,
+    "engineCases": 19,
+    "independentOracleCases": 11,
+    "productionBrowserTests": 20,
+    "newProductionCases": 7,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "remoteCI": "pending"
+  },
+  "maximumRuntime": {
+    "browser": "151.0.7922.173",
+    "node": "v24.19.0",
+    "seedNotes": 8,
+    "seedSpanBeats": 16,
+    "proposedNotes": 8,
+    "proposedSpanBeats": 16,
+    "tempo": 40,
+    "suggestionMs": 81.18862400000012,
+    "auditionMs": 190.05653499999994,
+    "auditionFrames": 1060164,
+    "auditionSeconds": 48.08,
+    "auditionPeak": 0.33328402042388916,
+    "exportedMidiNotes": 16,
+    "wavBytes": 2649572,
+    "sourceUnchanged": true,
+    "unrelatedTrackUnchanged": true,
+    "persistedEqual": true,
+    "mobileNoOverflow": true,
+    "externalRequests": 0,
+    "pageErrors": 0,
+    "independentSignalChecks": {
+      "method": "Python wave plus Hann-window FFT; no product audio/encoder imports",
+      "auditionProbes": 4,
+      "downloadedWavProbes": 5,
+      "maximumRelativeFrequencyError": 0.0005253125302364658,
+      "wavFrames": 1324764,
+      "wavSeconds": 60.08,
+      "leadingGapSilent": true,
+      "releaseTailPresent": true,
+      "checks": [
+        {
+          "source": "actual audition buffer",
+          "timeSeconds": 0.2,
+          "pitch": 60,
+          "expectedHz": 261.6255653005986,
+          "observedHz": 261.76300048828125
+        },
+        {
+          "source": "actual audition buffer",
+          "timeSeconds": 3.2,
+          "pitch": 64,
+          "expectedHz": 329.6275569128699,
+          "observedHz": 329.7271728515625
+        },
+        {
+          "source": "actual audition buffer",
+          "timeSeconds": 24.2,
+          "pitch": 60,
+          "expectedHz": 261.6255653005986,
+          "observedHz": 261.76300048828125
+        },
+        {
+          "source": "actual audition buffer",
+          "timeSeconds": 45.2,
+          "pitch": 64,
+          "expectedHz": 329.6275569128699,
+          "observedHz": 329.7271728515625
+        },
+        {
+          "source": "downloaded PCM WAV",
+          "timeSeconds": 0.2,
+          "pitch": 84,
+          "expectedHz": 1046.5022612023945,
+          "observedHz": 1046.3790893554688
+        },
+        {
+          "source": "downloaded PCM WAV",
+          "timeSeconds": 12.2,
+          "pitch": 60,
+          "expectedHz": 261.6255653005986,
+          "observedHz": 261.76300048828125
+        },
+        {
+          "source": "downloaded PCM WAV",
+          "timeSeconds": 15.2,
+          "pitch": 64,
+          "expectedHz": 329.6275569128699,
+          "observedHz": 329.7271728515625
+        },
+        {
+          "source": "downloaded PCM WAV",
+          "timeSeconds": 36.2,
+          "pitch": 60,
+          "expectedHz": 261.6255653005986,
+          "observedHz": 261.76300048828125
+        },
+        {
+          "source": "downloaded PCM WAV",
+          "timeSeconds": 57.2,
+          "pitch": 64,
+          "expectedHz": 329.6275569128699,
+          "observedHz": 329.7271728515625
+        }
+      ]
+    }
+  },
+  "engineMeasurement": {
+    "sourceNotes": 64,
+    "transitions": 63,
+    "contexts": 123,
+    "suggestedNotes": 8,
+    "runs": 100,
+    "medianMs": 0.356,
+    "maximumMs": 4.437,
+    "scope": "Node fixture measurement, not a latency guarantee"
+  },
+  "limits": [
+    "Personal joint-event counts from 7\u201363 transitions; repetition and backoff expected",
+    "No key/harmony inference, preference learning or general style model",
+    "No subjective listening, musical-quality or real-vocal accuracy claim",
+    "Chromium runtime and mobile viewport, not physical-device compatibility"
+  ],
+  "sha256": {
+    "src/continuation.ts": "eb2f75dea1b171264c996eeed8035a3bae9df36ebf5f282f8d5cff7413057761",
+    "src/main.ts": "1f99a77e06a128b10875dcdadd73b6a8727cb8b5b0f04d19c4a4387be10c960d",
+    "src/style.css": "e7ab5136e3e583c351dc99ba57b35a042fbd60401c9d4c048591fcee808b979b",
+    "tests/continuation.test.ts": "a55a573f10f194af447e6489e421bb1da87f395e315de97e4d5a03be78b86d6d",
+    "tests/continuation-oracle.test.ts": "7c38db7571bff791347afc5e42d68f0354c9967bba31859b94e97677a19e9378",
+    "tests/browser/continuation.spec.ts": "3a00ba1720c1d92aa1e476455a82683e9e08ad4d9509036e9cde850157eb562d",
+    "tests/browser/continuation-fixtures.ts": "50ced73b490f057efbdf674eaee7087f3dce8784736075b266ef9e2c1378fb58"
+  }
+}

@@ -1,6 +1,6 @@
 # Melody Studio
 
-A local browser music sketchbook: record or import a single hummed melody, turn it into editable notes, layer tracks, and export a composition. This MVP uses deterministic pitch detection and synthesized sound. Generative AI arrangement assistance is future work.
+A local browser music sketchbook: record or import a single hummed melody, turn it into editable notes, layer tracks, and export a composition. Pitch detection and synthesis remain deterministic. A small local statistical learner can continue an explicitly selected ending with inspectable, reversible note proposals; broader generative arrangement remains future work.
 
 ## Run locally
 
@@ -30,6 +30,19 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 
 **Cancel** discards an in-progress capture or analysis and preserves the existing notes. Microphone tracks are released on stop, cancellation, or recording failure. Cancelling while permission is pending also releases a stream that arrives afterward; it cannot close the browser's permission prompt. Leaving the page stops capture and playback.
 
+## Continue your own phrase
+
+Select a track with a usable melody, then use **Continue this phrase** below the note editor:
+
+1. Choose **Learn from last notes** (8–64) and request four or eight new notes. The highlighted ending must contain audible, nonoverlapping notes on exact quarter-beat timing and span at most 16 beats. A sustaining earlier note cannot overlap it. The app explains unsuitable input and never silently quantizes it.
+2. **Suggest continuation** fits interval, duration and preceding-rest counts only to that ending. The unsaved note overlay and table show every proposed pitch and timing. **Observed pattern support** exposes the available counts and backoff. Small phrases often repeat, and **Another suggestion** can produce the same result.
+3. **Audition ending + suggestion** plays that ending and its proposal solo, with the selected instrument and volume. Unmute or raise a zero-volume track, then regenerate if needed. Stop, Cancel or Discard prevents late rendering/resume callbacks from starting sound.
+4. **Apply continuation** appends ordinary editable notes as one undoable change. **Discard suggestion** leaves the project untouched. Only applied notes enter autosave, project backups, MIDI and WAV. Editing the source, changing tracks/options, undo/redo or starting project replacement invalidates the proposal.
+
+Unapplied note fields remain drafts through redraws. Apply or explicitly **Discard note edits** before acting on a proposal. Invalid source-count text also remains visible for correction. Playback and proposal rendering never save a scratch composition.
+
+The learner uses joint semitone-interval/duration/rest events with order-2, order-1 and unconditional occurrence-count backoff. Contextual orders need repeated observations; boundary filtering happens before weighted seeded sampling. It fits 7–63 transitions from your 8–64 selected notes, uses their median velocity, and adds at most 16 beats within the existing pitch, note-count and 128-beat bounds. If generation cannot complete the requested length, the whole request fails without source edits; it does not clamp pitches, invent notes or retry invisibly. It does not infer a key, harmony, preference or general personal style, and rejecting a suggestion does not train it. Musical novelty or quality has not been measured. There is no bundled music corpus, pretrained download or remote service.
+
 ## Timing and limits
 
 The interface counts beats from **1**. Saved project JSON uses zero-based note starts: displayed beat 1 is `start: 0`, and displayed beat 2.5 is `start: 1.5`. Durations are in beats. Changing tempo changes playback speed while preserving the edited musical positions.
@@ -52,7 +65,7 @@ Microphone capture requires a secure context (localhost or HTTPS), explicit brow
 
 Chromium is the browser verification target. Safari, Firefox, and mobile device recording/codec behavior need separate real-device evaluation; a narrow Chromium viewport does not establish mobile browser compatibility.
 
-Pitch detection is for a **single pitched voice or instrument**, not chords, full songs, or polyphonic separation. Background noise, breath, vibrato, harmonics, and unclear note boundaries can cause missed notes, octave mistakes, or inaccurate timing. Listen back and correct the result. Tests and the generated demo use synthetic audio; they demonstrate deterministic detection behavior and do **not** measure real humming/singing accuracy. Real microphone evaluation and generative arrangement assistance remain outstanding.
+Pitch detection is for a **single pitched voice or instrument**, not chords, full songs, or polyphonic separation. Background noise, breath, vibrato, harmonics, and unclear note boundaries can cause missed notes, octave mistakes, or inaccurate timing. Listen back and correct the result. Tests and the generated demo use synthetic audio; they demonstrate deterministic detection behavior and do **not** measure real humming/singing accuracy. Real microphone evaluation and broader generative arrangement assistance remain outstanding; the bounded continuation learner does not resolve those limits.
 
 ## Verification
 
@@ -78,3 +91,9 @@ CHROMIUM_PATH=/path/to/chromium npm run test:browser
 ```
 
 Unit coverage includes bounded project validation, local storage errors, recorder cleanup/cancellation, synthetic pitch and timing fixtures, synthesis, and MIDI/WAV structure. Browser coverage exercises composition editing, layering, playback, persistence, imports/exports, generated-audio transcription, permission failure, and a 390 px layout. These checks do not replace real vocal or device testing.
+
+### Learned-continuation verification
+
+Issue [#42](https://github.com/twangyal/projects-monorepo/issues/42) adds 19 engine cases and 11 independently derived numerical cases. The complete suite passes **113 unit tests and 20 production Chromium cases**, plus lint, type checking and build. Hand-worked token/count/backoff and PRNG boundary cases verify learned data dependence, exact constraints and atomic application. Real worker/Web Audio checks cover transient proposals, delayed replies/resume, stale source callbacks, preserved drafts, undo/redo, native reopen, mute/volume behavior and independently decoded downloaded MIDI/WAV.
+
+A separate Chromium 151 run selected a 16-beat original ending and generated an eight-note, 16-beat continuation at 40 BPM. The actual solo audition contained 1,060,164 frames at 22,050 Hz: **48.08 seconds including the release tail**. After Apply, a 2,649,572-byte WAV retained the original leading timing and unrelated track; independent Python PCM/FFT checks matched nine sampled note frequencies across audition and export within 0.053%. The original notes and unrelated track were unchanged, JSON/native reopen matched, and the 390-pixel layout had no page overflow or external requests/errors. These are fixture/runtime measurements, not subjective listening or musical-quality evidence. See [the verification record](docs/2026-10-04-learned-continuation-verification.json).
