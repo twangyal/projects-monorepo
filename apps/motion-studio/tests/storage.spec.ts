@@ -214,3 +214,12 @@ test('undecodable saved artwork remains protected after editor changes',async({p
   },project);
   await page.reload();await expect(page.locator('#message')).toContainText('Existing browser data is protected');await expect(page.locator('#project-title')).toBeEnabled();await page.clock.install();await setTitle(page,'Working around a bad image');await page.clock.runFor(1000);expect(await readStored(page)).toEqual(bad);expect((await backup(page)).title).toBe('Working around a bad image');
 });
+
+test('a denied startup read remains protected after storage access returns',async({page})=>{
+  await ready(page);await setTitle(page,'Original recoverable artwork');await expect(page.locator('#save-status')).toHaveText('Saved in this browser');const original=await readStored(page);
+  await page.addInitScript(()=>{const w=window as unknown as Window&{originalIndexedDB:IDBFactory};w.originalIndexedDB=indexedDB;Object.defineProperty(window,'indexedDB',{configurable:true,get:()=>{throw new DOMException('Read denied','SecurityError');}});});
+  await page.reload();await expect(page.locator('#message')).toContainText('Existing browser data is protected');await expect(page.locator('#project-title')).toBeEnabled();
+  await page.evaluate(()=>Object.defineProperty(window,'indexedDB',{configurable:true,value:(window as unknown as Window&{originalIndexedDB:IDBFactory}).originalIndexedDB}));
+  await page.clock.install();await setTitle(page,'Replacement still requires consent');await page.clock.runFor(1000);expect(await readStored(page)).toEqual(original);expect((await backup(page)).title).toBe('Replacement still requires consent');
+  page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#message')).toContainText('explicitly replaced');expect((await readStored(page) as {title:string}).title).toBe('Replacement still requires consent');
+});
