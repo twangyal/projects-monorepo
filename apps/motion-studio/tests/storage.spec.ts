@@ -152,7 +152,7 @@ test('an invalid stored record is reported and preserved instead of silently rep
   await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   page.once('dialog',d=>d.dismiss());await page.locator('#replace-saved-project').click();expect(await readStored(page)).toEqual(corrupt);
   await page.evaluate(()=>{const w=window as unknown as Window&{originalPut:IDBObjectStore['put']};w.originalPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=()=>{throw new DOMException('Quota full','QuotaExceededError');};});
-  page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#message')).toContainText('original browser record remains protected');expect(await readStored(page)).toEqual(corrupt);await expect(page.locator('#replace-saved-project')).toBeVisible();
+  page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#message')).toContainText('browser record remains protected');expect(await readStored(page)).toEqual(corrupt);await expect(page.locator('#replace-saved-project')).toBeVisible();
   await page.evaluate(()=>{IDBObjectStore.prototype.put=(window as unknown as Window&{originalPut:IDBObjectStore['put']}).originalPut;});
   page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#message')).toContainText('explicitly replaced');expect(await readStored(page)).toEqual(current);await expect(page.locator('#replace-saved-project')).toBeHidden();
   await page.reload();await expect(page.locator('#project-title')).toHaveValue('New work stays in memory');await expect(page.locator('#layer-name')).toBeEnabled();
@@ -170,7 +170,7 @@ test('blocked IndexedDB keeps the animation editable and JSON backup available',
   await expect(page.locator('#project-title')).toBeEnabled();
   const saved = await backup(page);
   expect(saved.title).toBe('Backup despite storage failure');
-  expect(saved.schemaVersion).toBe(1);
+  expect(saved.schemaVersion).toBe(2);
   expect(Array.isArray(saved.layers)).toBe(true);
   expect(errors).toEqual([]);
 });

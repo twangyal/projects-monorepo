@@ -3,11 +3,11 @@
 body { margin: 0; }
 button, input, select { font: inherit; }
 button, .file-button { color: inherit; background: #fff; border: 1px solid #d9d3df; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600; padding: 10px 12px; transition: background .15s, border-color .15s; }
-button:hover:not(:disabled), .file-button:hover { background: #f4eff8; border-color: #a58dbb; }
-button:disabled, input:disabled, select:disabled { opacity: .46; cursor: default; }
+button:hover:not(:disabled):not([aria-disabled=true]), .file-button:hover { background: #f4eff8; border-color: #a58dbb; }
+button:disabled, button[aria-disabled=true], input:disabled, select:disabled { opacity: .46; cursor: default; }
 button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible, .file-button:focus-within { outline: 3px solid #9573b5; outline-offset: 3px; }
 button.primary { background: #5d417a; border-color: #5d417a; color: white; }
-button.primary:hover:not(:disabled) { background: #493061; }
+button.primary:hover:not(:disabled):not([aria-disabled=true]) { background: #493061; }
 button.quiet { background: transparent; }
 button.text-button { border: 0; background: transparent; text-decoration: underline; padding-left: 0; font-weight: 400; }
 [hidden] { display: none !important; }
@@ -104,3 +104,20 @@ footer { display: flex; justify-content: space-between; gap: 20px; color: #a297a
 #recovery-panel p { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .recovery-actions button { max-width: 100%; white-space: normal; }
+
+/* Held drawings stay distinct from transform keyframes, including on narrow screens. */
+#drawing-timeline { border-top: 1px solid #ece7ed; margin-top: 15px; padding-top: 15px; }
+#drawing-status { font-size: 12px; color: #66516f; line-height: 1.6; margin: 10px 0; overflow-wrap: anywhere; }
+#drawing-cels, .cel-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cel { min-height: 44px; padding: 10px 12px; font-size: 11px; background: #f7f2ed; }
+.cel[aria-pressed=true] { border-color: #9779ad; background: #eadff1; color: #593d71; }
+.cel-actions { margin-top: 12px; }
+.cel-actions button { min-height: 44px; flex: 1 1 150px; white-space: normal; }
+.key-heading { margin: 20px 0 10px; }
+#pose-draft-status { font-size: 12px; line-height: 1.5; padding: 10px; background: #fff0e9; color: #924729; border: 1px solid #e8c6b6; border-radius: 6px; }
+#discard-pose-edits { margin-bottom: 12px; min-height: 44px; }
+@media (max-width: 700px) {
+  #drawing-status { font-size: 12px; }
+  .cel-actions button { flex-basis: 100%; }
+  #pose-draft-status, #discard-pose-edits { grid-column: 1 / -1; }
+}

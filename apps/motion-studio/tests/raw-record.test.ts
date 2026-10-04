@@ -26,9 +26,10 @@ test('raw backup accepts shared noncyclic values without mutating them', () => {
   assert.equal(serialize(raw), '[{"x":1},{"x":1}]');
 });
 test('raw backup measures UTF-8 and rejects oversize before a download', () => {
-  assert.equal(new TextEncoder().encode(serialize('x'.repeat(6 * 1024 * 1024 - 2))).length, 6 * 1024 * 1024);
-  assert.throws(() => serialize('x'.repeat(6 * 1024 * 1024 - 1)), /6 MiB/i);
-  assert.throws(() => serialize('語'.repeat(2 * 1024 * 1024)), /6 MiB/i);
+  const maximum = 6 * 1024 * 1024 + 168;
+  assert.equal(new TextEncoder().encode(serialize('x'.repeat(maximum - 2))).length, maximum);
+  assert.throws(() => serialize('x'.repeat(maximum - 1)), /6 MiB/i);
+  assert.throws(() => serialize('語'.repeat(2 * 1024 * 1024 + 56)), /6 MiB/i);
 });
 test('small shared graphs cannot expand past the budget or block recovery', () => {
   // Timeout is enforced by the parent process, independent of the serializer's

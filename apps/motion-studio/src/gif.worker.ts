@@ -1,6 +1,6 @@
 import { GIFEncoder } from 'gifenc';
 import { FPS, HEIGHT, WIDTH, validateProject } from './model.ts';
-import { closeAssets, loadAssets, renderFrame, type Assets } from './render.ts';
+import { closeAssets, loadAssets, createFrameRenderer, type Assets } from './render.ts';
 
 const MAX_BYTES = 32 * 1024 * 1024;
 const PALETTE = Array.from({ length: 256 }, (_, index) => [
@@ -35,10 +35,11 @@ async function encode(value: unknown): Promise<void> {
     canvas = new OffscreenCanvas(WIDTH, HEIGHT);
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('This browser does not support worker canvas rendering.');
+    const renderer = createFrameRenderer(project, assets);
     const encoder = GIFEncoder();
     const indexed = new Uint8Array(WIDTH * HEIGHT);
-    for (let frame = 0; frame < project.frameCount; frame++) {
-      renderFrame(context, project, frame, assets);
+    for (let frame = 0; frame < renderer.frameCount; frame++) {
+      renderer.render(context, frame);
       const rgba = context.getImageData(0, 0, WIDTH, HEIGHT).data;
       for (let pixel = 0, offset = 0; pixel < indexed.length; pixel++, offset += 4) {
         indexed[pixel] = (rgba[offset] & 224) | ((rgba[offset + 1] & 224) >> 3) | (rgba[offset + 2] >> 6);
@@ -50,7 +51,7 @@ async function encode(value: unknown): Promise<void> {
         palette: frame === 0 ? PALETTE : undefined, delay, repeat: 0, dispose: 1,
       });
       if (encoder.bytesView().byteLength > MAX_BYTES) throw new Error('GIF export exceeds the 32 MiB output limit.');
-      scope.postMessage({ type: 'progress', fraction: (frame + 1) / project.frameCount });
+      scope.postMessage({ type: 'progress', fraction: (frame + 1) / renderer.frameCount });
     }
     encoder.finish();
     const bytes = encoder.bytesView();

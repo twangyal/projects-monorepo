@@ -245,7 +245,7 @@ for (const kind of ['cycle', 'nonfinite', 'undefined', 'date', 'overbound'] as c
     if (kind === 'nonfinite') value = { number: Infinity };
     if (kind === 'undefined') value = undefined;
     if (kind === 'date') value = { date: new Date(0) };
-    if (kind === 'overbound') value = { data: 'x'.repeat(6 * 1024 * 1024) };
+    if (kind === 'overbound') value = { data: 'x'.repeat(6 * 1024 * 1024 + 168) };
     const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('motion-studio', 1); r.onsuccess = () => resolve(r.result); });
     await new Promise<void>((resolve, reject) => { const tx = db.transaction('project', 'readwrite'); tx.objectStore('project').put(value, 'current'); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); db.close();
   }, kind);
@@ -258,7 +258,7 @@ for (const kind of ['cycle', 'nonfinite', 'undefined', 'date', 'overbound'] as c
   expect(await page.evaluate(async kind => {
     const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('motion-studio', 1); r.onsuccess = () => resolve(r.result); });
     const result = await new Promise<boolean>(resolve => { const store = db.transaction('project').objectStore('project'); const r = store.get('current'); r.onsuccess = () => {
-      const v = r.result; resolve(kind === 'cycle' ? v.self === v : kind === 'nonfinite' ? v.number === Infinity : kind === 'undefined' ? v === undefined : kind === 'date' ? v.date instanceof Date : v.data.length === 6 * 1024 * 1024);
+      const v = r.result; resolve(kind === 'cycle' ? v.self === v : kind === 'nonfinite' ? v.number === Infinity : kind === 'undefined' ? v === undefined : kind === 'date' ? v.date instanceof Date : v.data.length === 6 * 1024 * 1024 + 168);
     }; }); db.close(); return result;
   }, kind)).toBe(true);
 });

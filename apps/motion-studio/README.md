@@ -1,6 +1,6 @@
 # Motion Studio
 
-A local drawing and animation workspace: make original freehand artwork or import an image, set layer poses on a timeline, preview the motion, and export an animated GIF. Projects stay in your browser or downloaded backup files. AI assistance and online saving/private sharing links are future work.
+A local drawing and animation workspace: make original freehand artwork, create independent held drawings, combine them with layer poses and imported images, preview the animation, and export a GIF. Projects stay in your browser or downloaded backup files. AI assistance and online saving/private sharing links are future work.
 
 ## Run
 
@@ -18,16 +18,19 @@ Open the localhost URL printed by Vite. No account, backend, API key, paid servi
 
 1. Explore **Try the orbit demo**, which uses original parametric artwork, or choose **New project** for a blank drawing layer. Both reset actions ask before replacing the current project.
 2. Select **Draw**, choose **Ink color** and **Brush width**, then draw on the selected drawing layer. Add another **Drawing layer** or **Import image**. Use **Raise**, **Lower**, and **Delete layer** to arrange the artwork; Undo can recover a deleted layer.
-3. Move the **Timeline frame** slider. In **Move** mode, drag the selected layer to place a pose at that frame. Releasing a gesture records one history entry; a cancelled gesture discards its preview.
-4. Adjust **Position X**, **Position Y**, **Scale**, **Rotation (degrees)**, or **Opacity**. Committing a numeric change creates or replaces a keyframe at the current frame. Changing **Motion to next pose** does the same; **Set keyframe** also records the current values explicitly. The first keyframe always remains; later keys can be removed with **Remove this keyframe**.
-5. Select a keyframe diamond to revisit its pose. Press **Play animation**, optionally enable **Loop**, and scrub to inspect the in-between frames. Choose **Duration** to change the timeline length.
-6. Download **Save project file**, **Save frame PNG**, or **Export animation**. GIF export reports progress; **Cancel export** discards that export and preserves the editable project.
+3. Move the **Timeline frame** slider. **Drawings** names the active drawing and the frames where it is held. Choose **Blank drawing at this frame** or **Duplicate held drawing at this frame** to start independent artwork at a new boundary; then draw. A duplicate starts with copied strokes. Drawing between boundaries edits the active held drawing throughout its displayed interval.
+4. Select a drawing button to revisit its boundary. **Delete active drawing** removes a later drawing and extends the preceding hold; the first drawing remains. Undo restores deleted artwork. Blank/duplicate refuse occupied boundaries. In **Move** mode, drag the selected layer to place a pose at the current frame. Releasing a gesture records one history entry; cancellation discards its preview.
+5. Adjust **Position X**, **Position Y**, **Scale**, **Rotation (degrees)**, or **Opacity**. Committing a numeric change creates or replaces a keyframe at the current frame. Changing **Motion to next pose** does the same; **Set keyframe** also records the current values explicitly. The first keyframe always remains; later keys can be removed with **Remove this keyframe**.
+6. Select a keyframe diamond to revisit its pose. Press **Play animation**, optionally enable **Loop**, and scrub to inspect the in-between frames. Choose **Duration** to change the timeline length.
+7. Download **Save project file**, **Save frame PNG**, or **Export animation**. GIF export reports progress; **Cancel export** discards that export and preserves the editable project.
 
 Undo/Redo retain up to 30 project snapshots within a 20 MiB history budget; large projects may retain fewer. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text fields. With the canvas focused, Space toggles playback. History is session-only and is not included in backups.
 
-## What keyframes change
+## Drawings and pose keyframes
 
-Each layer has its own position, uniform scale, rotation, opacity, and keyframes. Artwork itself is shared across the timeline: drawing another stroke changes that layer in every frame. This is **layer transform animation**, not frame-by-frame painting, shape morphing, or AI-generated in-between artwork.
+Drawing boundaries (cels) and pose keyframes are independent. Each drawing layer starts at frame 1 and holds its current strokes until the next drawing boundary. Blank drawings create visible empty intervals; duplicates are detached copies, so later edits do not change the original. Drawings switch exactly at their boundaries; strokes are not interpolated or morphed. Imported image layers keep fixed artwork.
+
+Each layer separately has position, uniform scale, rotation, opacity and pose keys. Held drawings can move through these poses, giving frame-by-frame artwork changes and continuous layer motion in the same animation. There is no AI-generated artwork or automatic in-between drawing.
 
 Between two keys, the starting key's **Motion to next pose** controls interpolation:
 
@@ -35,26 +38,28 @@ Between two keys, the starting key's **Motion to next pose** controls interpolat
 - **Ease in & out** uses smoothstep easing.
 - **Hold this pose** keeps the starting pose until the next key.
 
-Rotation interpolates the entered degrees directly, allowing complete spins; it does not automatically choose the shortest turn. After the last key, the layer retains that pose. Shortening a timeline preserves the evaluated pose at its new endpoint and removes later keys; Undo restores the previous timeline.
+Rotation interpolates the entered degrees directly, allowing complete spins; it does not automatically choose the shortest turn. After the last key, the layer retains that pose. Shortening a timeline first lists the exact later drawings and pose keys that would be removed and asks for confirmation. Cancel preserves everything. Accepted shortening preserves the evaluated endpoint pose and held drawing; one Undo restores the previous timeline. If retaining the endpoint would exceed the 24-key limit, shortening refuses before asking for consent. Extending holds the final artwork/pose without adding boundaries.
 
 The interface numbers frames from **1**. Project JSON stores frames from **0**: displayed frame 1 is `frame: 0`. Position values use the fixed 640×360 stage coordinates. Imported images initially fit within 320×240 without enlarging small images; pose scale then transforms that geometry.
+
+Unapplied pose/name text remains visible, including empty or invalid values. Apply valid values or use **Discard pose edits** before changing layers, drawings, frames or projects. Values need not align to a suggested increment. JSON downloads remain available for committed work and explicitly exclude raw drafts. Pointer cancellation, Escape, focus/visibility loss or changed canvas geometry discard an active gesture without a partial save.
 
 ## Bounds and image import
 
 - Stage: **640×360**, **12 fps**, **12–96 frames** (1–8 seconds). Blank projects start with 48 frames.
-- At most **8 layers**, **24 keys per layer**, and **4 image layers**.
-- At most **100 strokes**, **1,000 points per stroke**, and **10,000 points** across the project; brush width 1–40 stage pixels.
+- At most **8 layers**, **24 drawing boundaries per drawing layer**, **24 pose keys per layer**, and **4 image layers**.
+- At most **100 strokes**, **1,000 points per stroke**, and **10,000 points** across all stored drawings in the project; brush width 1–40 stage pixels. A held drawing is counted once; an explicit duplicate consumes its full copied stroke/point budget.
 - Pose position: X −640 to 1280, Y −360 to 720; scale 0.1–4; rotation −720° to 720°; opacity 0–1.
-- Project title: 1–80 characters; layer names: 1–40 characters; project JSON: **6 MiB** maximum.
+- Project title: 1–80 characters; layer names: 1–40 characters; project JSON: **6 MiB + 168 bytes** maximum (6,291,624 bytes).
 - Image input: actual **static PNG, JPEG, or static WebP**, at most **4 MiB** and **16 megapixels**. SVG, animated PNG/WebP, remote image URLs, and unsupported formats are rejected.
 
 Image headers and decoded dimensions are checked before publication. Imported images become embedded PNG assets with their longest side at most 800 pixels and each data URL at most 1.5 MiB; further downsizing may be needed to meet that limit. Backups include those normalized images rather than links to the originals. Invalid project imports or image decode failures preserve the current project.
 
 ## Save and export
 
-Edits autosave one current project in **IndexedDB**, after a short debounce. The initial demo is saved after your first edit only after startup restoration succeeds or confirms there is no saved record. Editor mutations wait until startup model/image restoration completes. A failed read, invalid record or undecodable saved image keeps the original IndexedDB record protected while you work in memory. Edits, undo/redo, imports and new-project actions cannot overwrite it. Download your current project before reload; **Replace saved project** asks for explicit confirmation and enables autosave only after its write completes. Cancelled or failed replacement leaves protection active. **Saved draft recovery** remains visible while saving is protected. **Download preserved record** exports the exact read record as JSON (including unknown fields), separately from your current project backup. Cycles, undefined, nonfinite or negative-zero numbers, dates, typed values, sparse arrays and other lossy shapes cannot be exported; neither can JSON over 6 MiB or nesting beyond 512 levels. Shared records are checked against the expanded byte budget before serialization. Failed reads have unknown contents until retry succeeds. **Retry saved draft** rereads and validates the saved model and images, asks before replacing edited memory work, and keeps newer edits if a read or decode finishes late. Cancel or failure retains the current work, history and saved record. No automatic deletion is provided. Browser data belongs to the current profile and site address and can be cleared or become unavailable. Watch the save status and regularly download **Save project file** (`.motion.json`) to keep an editable backup. **Open project file** validates the model and every embedded image before replacing the current project. There is no account backup or online synchronization.
+Edits autosave one current project in **IndexedDB**, after a short debounce. The initial demo is saved after your first edit only after startup restoration succeeds or confirms there is no saved record. Editor mutations wait until startup model/image restoration completes. A failed read, invalid record or undecodable saved image keeps the original IndexedDB record protected while you work in memory. Edits, undo/redo, imports and new-project actions cannot overwrite it. Download your current project before reload; **Replace saved project** asks for explicit confirmation and enables autosave only after its write completes. Cancelled or failed replacement leaves protection active. If an earlier replacement finishes after newer edits, those edits remain visibly unsaved and protected; the preserved-record download reflects the last completed write. A later failed queued replacement cannot erase that successful receipt. **Saved draft recovery** remains visible while saving is protected. **Download preserved record** exports the exact read record as JSON (including unknown fields), separately from your current project backup. Cycles, undefined, nonfinite or negative-zero numbers, dates, typed values, sparse arrays and other lossy shapes cannot be exported; neither can JSON over 6 MiB + 168 bytes or nesting beyond 512 levels. Shared records are checked against the expanded byte budget before serialization. Failed reads have unknown contents until retry succeeds. **Retry saved draft** rereads and validates the saved model and images, asks before replacing edited memory work, and keeps newer edits if a read or decode finishes late. Cancel or failure retains the current work, history and saved record. No automatic deletion is provided. Browser data belongs to the current profile and site address and can be cleared or become unavailable. Watch the save status and regularly download **Save project file** (`.motion.json`) to keep an editable backup. **Open project file** validates the model and every embedded image before replacing the current project. There is no account backup or online synchronization. Schema-2 backups contain every drawing boundary. Genuine schema-1 projects migrate into one first drawing per drawing layer while retaining their existing appearance and poses; loading alone does not rewrite the saved record. The 168-byte compatibility allowance covers the maximum eight legacy drawing wrappers. Older app versions reject schema 2 instead of silently losing later artwork.
 
-**Save frame PNG** exports the selected frame, including the opaque stage background. **Export animation** renders every frame through the same renderer as the preview, then encodes an infinitely looping GIF with a **fixed 256-color palette**. Colors and gradients can differ from the full-color PNG/preview; GIF is not a lossless archival format. Individual GIF delays alternate between 80 and 90 ms to approximate 12 fps, with total duration rounded to hundredths of a second. Export is limited to 30 seconds of processing and 32 MiB of encoded output.
+**Save frame PNG** exports the captured committed frame, including its held drawing and opaque stage background. A later edit, frame change or page departure retires a pending PNG download; it cannot acquire a new filename or frame from newer work. **Export animation** renders every frame through the same renderer as the preview, then encodes an infinitely looping GIF with a **fixed 256-color palette**. Colors and gradients can differ from the full-color PNG/preview; GIF is not a lossless archival format. Individual GIF delays alternate between 80 and 90 ms to approximate 12 fps, with total duration rounded to hundredths of a second. Export is limited to 30 seconds of processing and 32 MiB of encoded output.
 
 ## Browser requirements
 
@@ -83,3 +88,14 @@ Startup recovery was verified on 2026-10-04 in [run 37172863274](https://github.
 
 
 Raw-record recovery and retry (#48) were verified on 2026-10-04 at `b15b5db0ab5439505c16ed85ecaa38d17236f235` in [run 37197554658](https://github.com/twangyal/projects-monorepo/actions/runs/37197554658): 43 unit tests, lint/typecheck/build and all 44 production Chromium cases passed. The protected-baseline test-only run measured 12 failed recovery cases before implementation. Independent review also produced a shared-graph expansion regression, fixed with an early exact byte budget. See [raw recovery evidence](docs/2026-10-04-raw-recovery-verification.json).
+
+The separate maximum-size cel acceptance runner uses original generated fixtures and an independent PNG/GIF decoder. Build normally, start a preview in another terminal, then run:
+
+```sh
+npm run build
+npm run preview -- --port 4294 --strictPort
+# In another terminal, from this project directory:
+MOTION_CELS_BASE_URL=http://127.0.0.1:4294 CHROMIUM_PATH=/path/to/chromium node scripts/smoke_drawing_cels.mjs
+```
+
+The runner creates a fresh temporary directory for actual downloads, screenshots, verification metadata and a private browser profile. `MOTION_CELS_OUTPUT` can instead name a new directory; existing directories are refused. It tests legacy migration, the exact canonical byte cap, a complete Chromium process restart, held-frame PNG/GIF pixels, cancellation after rendering begins, aggregate artwork/history limits, and a separate eight-layer/192-drawing fixture. `--fixtures-only` generates and independently checks the inputs without launching Chromium. File sizes do not measure peak memory; the 192-drawing case has no image layers.

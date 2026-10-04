@@ -32,7 +32,7 @@ function nearLimitProject(): Project {
   const project = createProject();
   const drawing = project.layers[0];
   if (drawing.kind !== 'drawing') throw new Error('Expected a drawing layer.');
-  drawing.strokes = Array.from({ length: 10 }, () => ({
+  drawing.cels[0].strokes = Array.from({ length: 10 }, () => ({
     color: '#123456', width: 1,
     points: Array.from({ length: 1000 }, () => ({ x: 1.23456789, y: 1.23456789 })),
   }));
@@ -74,12 +74,12 @@ test('drawing outside transformed artwork bounds fails cleanly and leaves drawin
   await page.locator('#pose-scale').fill('0.1');
   await page.locator('#set-key').click();
   const box = (await page.locator('#stage').boundingBox())!;
-  await page.mouse.click(box.x + 10, box.y + box.height / 2);
+  await page.locator('#stage').click({ position: { x: 10, y: box.height / 2 } });
   await expect(page.locator('#message')).toContainText('outside the artwork bounds');
   const rejected: Project = JSON.parse((await backup(page)).toString());
-  expect(rejected.layers[0].kind === 'drawing' && rejected.layers[0].strokes.length).toBe(0);
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  expect(rejected.layers[0].kind === 'drawing' && rejected.layers[0].cels[0].strokes.length).toBe(0);
+  await page.locator('#stage').click({ position: { x: box.width / 2, y: box.height / 2 } });
   const recovered: Project = JSON.parse((await backup(page)).toString());
-  expect(recovered.layers[0].kind === 'drawing' && recovered.layers[0].strokes.length).toBe(1);
+  expect(recovered.layers[0].kind === 'drawing' && recovered.layers[0].cels[0].strokes.length).toBe(1);
   expect(errors).toEqual([]);
 });

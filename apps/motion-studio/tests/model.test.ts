@@ -20,26 +20,26 @@ test('blank and original demo projects are valid and independent', () => {
   assert.deepEqual(validateProject(blank), blank);
   const demo = createDemo();
   assert.deepEqual(validateProject(demo), demo);
-  assert.ok(demo.layers.some(item => item.kind === 'drawing' && item.strokes.length > 0));
+  assert.ok(demo.layers.some(item => item.kind === 'drawing' && item.cels[0].strokes.length > 0));
   assert.ok(demo.layers.some(item => JSON.stringify(evaluatePose(item, 0)) !== JSON.stringify(evaluatePose(item, 12))));
   assert.notEqual(createProject().layers[0].id, blank.layers[0].id);
 });
 
-test('validation reconstructs fields and independently copies nested artwork', () => {
+test('validation independently copies strict canonical nested artwork', () => {
   const project = createProject();
   const drawing = project.layers[0] as DrawingLayer;
-  drawing.strokes.push({ color: '#Ab12Cd', width: 4, points: [{ x: 1, y: 2 }] });
-  const result = validateProject({ ...project, ignored: 'not retained' });
+  drawing.cels[0].strokes.push({ color: '#Ab12Cd', width: 4, points: [{ x: 1, y: 2 }] });
+  const result = validateProject(project);
   assert.equal('ignored' in result, false);
-  (result.layers[0] as DrawingLayer).strokes[0].points[0].x = 99;
+  (result.layers[0] as DrawingLayer).cels[0].strokes[0].points[0].x = 99;
   result.layers[0].keys[0].x = 88;
-  assert.equal(drawing.strokes[0].points[0].x, 1);
+  assert.equal(drawing.cels[0].strokes[0].points[0].x, 1);
   assert.equal(drawing.keys[0].x, 320);
 });
 
 test('project, layer, key, pose and stroke bounds reject invalid data', () => {
   const good = createProject();
-  for (const change of [ { schemaVersion: 2 }, { frameCount: 11 }, { frameCount: 97 },
+  for (const change of [ { schemaVersion: 3 }, { frameCount: 11 }, { frameCount: 97 },
     { frameCount: 12.5 }, { title: '' }, { title: ' ' }, { title: 'x'.repeat(81) },
     { background: 'red' }, { layers: Array(9).fill(good.layers[0]) },
     { layers: [good.layers[0], good.layers[0]] } ]) {
@@ -51,17 +51,17 @@ test('project, layer, key, pose and stroke bounds reject invalid data', () => {
     { keys: [{ ...pose(), x: NaN, frame: 0, easing: 'linear' }] },
     { keys: [{ ...pose(), scale: 0, frame: 0, easing: 'linear' }] },
     { keys: [{ ...pose(), frame: 0, easing: 'linear' }, { ...pose(), frame: 0, easing: 'ease' }] },
-    { strokes: [{ color: '#000000', width: 41, points: [{ x: 0, y: 0 }] }] },
-    { strokes: [{ color: '#000000', width: 1, points: [] }] },
-    { strokes: [{ color: '#000000', width: 1, points: [{ x: 1281, y: 0 }] }] } ]) {
+    { cels: [{ frame: 0, strokes: [{ color: '#000000', width: 41, points: [{ x: 0, y: 0 }] }] }] },
+    { cels: [{ frame: 0, strokes: [{ color: '#000000', width: 1, points: [] }] }] },
+    { cels: [{ frame: 0, strokes: [{ color: '#000000', width: 1, points: [{ x: 1281, y: 0 }] }] }] } ]) {
     assert.throws(() => validateProject({ ...good, layers: [{ ...good.layers[0], ...change }] }));
   }
 });
 
 test('aggregate stroke and point limits apply across layers', () => {
   const make = (count: number, points: number): DrawingLayer => ({ ...createDrawingLayer(),
-    strokes: Array.from({ length: count }, () => ({ color: '#000000', width: 1,
-      points: Array.from({ length: points }, () => ({ x: 0, y: 0 })) })) });
+    cels: [{ frame: 0, strokes: Array.from({ length: count }, () => ({ color: '#000000', width: 1,
+      points: Array.from({ length: points }, () => ({ x: 0, y: 0 })) })) }] });
   const project = createProject();
   assert.doesNotThrow(() => validateProject({ ...project, layers: [make(10, 1000)] }));
   assert.throws(() => validateProject({ ...project, layers: [make(5, 1000), make(6, 1000)] }), /points/i);
@@ -71,7 +71,8 @@ test('aggregate stroke and point limits apply across layers', () => {
 
 test('image fields reject external URLs, excessive dimensions, bytes and counts', () => {
   const project = createProject();
-  const image = { ...createDrawingLayer(), kind: 'image', image: {
+  const base = createDrawingLayer();
+  const image = { id: base.id, name: base.name, keys: base.keys, kind: 'image', image: {
     dataUrl: 'data:image/png;base64,AAAA', width: 1, height: 1 } };
   assert.doesNotThrow(() => validateProject({ ...project, layers: [image] }));
   for (const change of [{ dataUrl: 'https://example.invalid/image.png' }, { dataUrl: 'data:image/svg+xml;base64,AAAA' },
@@ -127,7 +128,8 @@ test('keyframe cap permits replacement but prevents a 25th key', () => {
 test('shortening preserves each evaluated endpoint and removes inaccessible keys', () => {
   const project = { ...createProject(), layers: [layer()] };
   const expected = evaluatePose(project.layers[0], 11);
-  const short = resizeTimeline(project, 12);
+  assert.throws(() => resizeTimeline(project, 12), /discardLater/);
+  const short = resizeTimeline(project, 12, { discardLater: true });
   assert.equal(short.frameCount, 12);
   assert.deepEqual(short.layers[0].keys.map(key => key.frame), [0, 11]);
   assert.deepEqual(evaluatePose(short.layers[0], 11), expected);
@@ -168,7 +170,7 @@ test('sparse arrays cannot bypass validation of required entries', () => {
   const sparse = new Array(1);
   assert.throws(() => validateProject({ ...project, layers: sparse }));
   assert.throws(() => validateProject({ ...project, layers: [{ ...project.layers[0], keys: sparse }] }));
-  assert.throws(() => validateProject({ ...project, layers: [{ ...project.layers[0], strokes: sparse }] }));
+  assert.throws(() => validateProject({ ...project, layers: [{ ...project.layers[0], cels: [{ frame: 0, strokes: sparse }] }] }));
   assert.throws(() => validateProject({ ...project, layers: [{ ...project.layers[0],
-    strokes: [{ color: '#000000', width: 2, points: sparse }] }] }));
+    cels: [{ frame: 0, strokes: [{ color: '#000000', width: 2, points: sparse }] }] }] }));
 });

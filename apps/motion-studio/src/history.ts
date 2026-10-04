@@ -23,6 +23,12 @@ export class History {
   get canUndo(): boolean { return this.index > 0; }
   get canRedo(): boolean { return this.index + 1 < this.states.length; }
 
+  /** Prepare assets without moving the cursor; publish an owned transition later. */
+  peek(direction: 'undo' | 'redo'): Project {
+    const target = direction === 'undo' ? Math.max(0, this.index - 1) : Math.min(this.states.length - 1, this.index + 1);
+    return JSON.parse(this.states[target].json) as Project;
+  }
+
   commit(project: Project): boolean {
     const next = snapshot(project);
     if (next.json === this.states[this.index].json) return false;

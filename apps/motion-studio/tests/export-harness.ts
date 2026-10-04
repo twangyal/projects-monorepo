@@ -7,7 +7,7 @@ function fixture(frameCount = 12): Project {
   project.frameCount = frameCount;
   project.background = '#ffffff';
   const layer = project.layers[0] as DrawingLayer;
-  layer.strokes = [{ color: '#ff0000', width: 40, points: [{ x: 0, y: 0 }] }];
+  layer.cels[0].strokes = [{ color: '#ff0000', width: 40, points: [{ x: 0, y: 0 }] }];
   const pose = { scale: 1, rotation: 0, opacity: 1, y: 180 };
   layer.keys = [
     { ...pose, x: 100, frame: 0, easing: 'linear' },
