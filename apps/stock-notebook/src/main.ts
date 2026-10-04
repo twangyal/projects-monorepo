@@ -8,6 +8,9 @@ import { latestCompanies } from './periods.ts';
 import { analyzeCompanyHistory, type CompanyHistory, type PeriodComparison } from './annual-history.ts';
 import { NotebookStore } from './storage.ts';
 import { buildReport } from './exports.ts';
+import { reviewRefresh, applyRefresh, type RefreshReview } from './refresh.ts';
+import { buildRefreshReport } from './refresh-report.ts';
+import { mountRefreshView } from './refresh-view.ts';
 import { createDemoDataset } from './demo.ts';
 import { LIMITS } from './types.ts';
 import type { Company, CsvPreview, Dataset, Filter, Metric, Notebook, Operator, ResearchRow, Screen, ScreenResult } from './types.ts';
@@ -40,6 +43,9 @@ function announce(text: string, error = false): void { message.textContent = tex
 const intro = el('div', '', 'introduction'); intro.append(el('p', 'LOCAL RESEARCH DESK', 'eyebrow'), el('h1', 'From annual figures to a clear shortlist.'), el('p', 'Import your company universe, inspect the screening criteria, and trace each observation to its inputs. This notebook uses deterministic filters and formulas, with no live feeds or predictions.')); main.append(intro);
 const importBar = el('div', '', 'import-bar'); const csvInput = field(importBar, 'csv', 'Import CSV', false, 'file') as HTMLInputElement; csvInput.id = 'csv-import'; csvInput.accept = '.csv,text/csv'; const jsonInput = field(importBar, 'backup', 'Import notebook backup', false, 'file') as HTMLInputElement; jsonInput.id = 'notebook-import'; jsonInput.accept = '.json,application/json';
 importBar.append(button('Download blank template', () => { download(blankCsvTemplate(), 'stock-notebook-template.csv', 'text/csv;charset=utf-8'); }), button('Load synthetic demo', () => { void stageInput(async () => ({ kind: 'dataset', dataset: createDemoDataset(utcToday()) })); })); main.append(importBar);
+const refreshInput = field(importBar, 'refresh', 'Refresh financial data', false, 'file') as HTMLInputElement; refreshInput.id = 'refresh-csv'; refreshInput.accept = '.csv,text/csv'; refreshInput.disabled = true;
+const refreshPanel = el('section'); main.append(refreshPanel);
+const refreshView = mountRefreshView(refreshPanel, { apply: applyReviewedRefresh, rebuild: rebuildRefresh, cancel: cancelRefresh, previous: downloadPreviousNotebook, report: downloadProposedRefresh, discard: discardRefreshDrafts, change: () => { refreshError = ''; updateRefresh(); } });
 const recovery = panel('Saved-record recovery', 'An unreadable saved record is kept untouched until you explicitly reset it.'); recovery.id = 'recovery-panel'; recovery.hidden = true;
 recovery.append(button('Download raw saved record', () => { void downloadRaw(); }), button('Reset saved record', () => { void resetSaved(); })); main.append(recovery);
 const importReview = panel('Review the incoming universe', 'All money columns must be in currency millions. Rows must represent comparable 12-month annual periods; prior revenue must be the comparable preceding annual period.'); importReview.id = 'import-review'; importReview.hidden = true;
@@ -49,7 +55,7 @@ importReview.append(importSummary, el('p', 'Restatements, acquisitions, differen
 const empty = panel('Bring your own annual data', 'One CSV can contain up to 500 annual rows, five periods per ticker, and 2 MiB. Blank amounts remain missing. No source link is fetched.'); empty.append(el('p', 'No universe has been loaded. Download the blank template or stage the fictional demo to explore the workflow.', 'empty')); main.append(empty);
 const workspace = el('div', '', 'workspace'); workspace.hidden = true; main.append(workspace);
 const sourceHeader = el('div', '', 'source-header'); const sourceText = el('p'); sourceText.id = 'dataset-summary'; const syntheticLabel = el('p', 'Synthetic demonstration — not real companies or filings', 'synthetic'); syntheticLabel.id = 'synthetic-label'; sourceHeader.append(sourceText, syntheticLabel); workspace.append(sourceHeader);
-const titleForm = el('form', '', 'title-form'); titleForm.id = 'title-form'; const titleInput = field(titleForm, 'title', 'Notebook title') as HTMLInputElement; titleInput.maxLength = LIMITS.titleCharacters * 2; titleInput.required = true; const titleButton = button('Save title', () => {}); titleButton.type = 'submit'; titleForm.append(titleButton); titleInput.addEventListener('input', () => { titleDirty = true; draftIntent(); }); titleForm.addEventListener('submit', (e) => { e.preventDefault(); if (!notebook) return; try { const day = utcToday(); commit({ ...notebook, title: titleInput.value.trim() }, day); titleDirty = false; titleInput.value = notebook.title; } catch { announce('Use a notebook title with 1–80 characters. Your draft was kept.', true); } }); workspace.append(titleForm);
+const titleForm = el('form', '', 'title-form'); titleForm.id = 'title-form'; const titleInput = field(titleForm, 'title', 'Notebook title') as HTMLInputElement; titleInput.maxLength = LIMITS.titleCharacters * 2; titleInput.required = true; const titleButton = button('Save title', () => {}); titleButton.type = 'submit'; titleForm.append(titleButton); titleInput.addEventListener('input', () => { titleDirty = true; draftIntent(); }); titleForm.addEventListener('submit', (e) => { e.preventDefault(); if (!notebook) return; try { const day = utcToday(); commit({ ...notebook, title: titleInput.value.trim() }, day); titleDirty = false; titleInput.value = notebook.title; updateRefresh(); } catch { announce('Use a notebook title with 1–80 characters. Your draft was kept.', true); } }); workspace.append(titleForm);
 const toolbar = el('div', '', 'toolbar'); const undoButton = button('Undo', undo); const redoButton = button('Redo', redo); toolbar.append(undoButton, redoButton, button('Download notebook backup', downloadBackup), button('Download research report', downloadReport)); workspace.append(toolbar);
 const saveStrip = el('div', '', 'save-strip'); const saveStatus = el('p'); saveStatus.id = 'save-status'; saveStatus.setAttribute('role', 'status'); const retryButton = button('Retry saving', retrySaving); retryButton.hidden = true; saveStrip.append(saveStatus, retryButton); workspace.append(saveStrip);
 const researchLayout = el('div', '', 'research-layout'); const editor = el('aside', '', 'editor'); const research = el('div', '', 'research'); researchLayout.append(editor, research); workspace.append(researchLayout);
@@ -85,10 +91,109 @@ let titleDirty = false; let queryDirty = false; let screenDirty = false; let res
 let saveTimer: ReturnType<typeof setTimeout> | undefined; let saveQueue = Promise.resolve(); const store = new NotebookStore(); const noteDrafts = new Map<string, string>();
 type FilterEditor = { id: number; node: HTMLElement; metric: HTMLSelectElement; operator: HTMLSelectElement; value: HTMLInputElement; currency: HTMLSelectElement };
 let filterSequence = 0; const filterEditors: FilterEditor[] = [];
+interface RefreshSession { base: Notebook; incoming: Dataset; review: RefreshReview; generation: number; intent: number; stale: boolean }
+let refreshSession: RefreshSession | null = null;
+let refreshPending: { id: number; generation: number; intent: number } | null = null;
+let refreshActive = false; let refreshError = '';
+function editorDrafts(): boolean { return titleDirty || queryDirty || screenDirty || noteDrafts.size > 0; }
+function freshRefresh(session: RefreshSession, day: string): boolean {
+  return !session.stale && session.generation === generation && session.intent === intentGeneration && session.review.today === day
+    && session.review.incomingDatasetId === session.incoming.id && session.base.id === notebook?.id;
+}
+function updateRefresh(): void {
+  refreshInput.disabled = !notebook;
+  if (refreshSession && !freshRefresh(refreshSession, utcToday())) refreshSession.stale = true;
+  refreshView.setState({ active: refreshActive, loading: !!refreshPending, stale: !!refreshSession?.stale, drafts: editorDrafts(), error: refreshError });
+}
+function invalidateRefresh(): void {
+  refreshPending = null;
+  if (refreshSession) refreshSession.stale = true;
+  updateRefresh();
+}
+function clearRefresh(): void {
+  refreshSession = null; refreshPending = null; refreshActive = false; refreshError = ''; refreshView.clear(); updateRefresh();
+}
+function cancelRefresh(): void { clearRefresh(); announce('Refresh canceled. Current notebook, drafts, history and saved data were kept.'); }
+function prepareRefresh(incoming: Dataset, day: string): void {
+  if (!notebook) throw new Error('Open a notebook first.');
+  const base = structuredClone(notebook), review = reviewRefresh(base, incoming, day);
+  // Construct the complete review before replacing any previously staged review.
+  refreshSession = { base, incoming, review, generation, intent: intentGeneration, stale: false };
+  refreshActive = true; refreshError = ''; refreshView.setReview(base, incoming, review); updateRefresh();
+}
+async function readRefresh(file: File): Promise<void> {
+  if (!notebook) return;
+  // A single read owns the import UI. Superseded native File reads may finish,
+  // but their results cannot replace the newer review or committed notebook.
+  loading = null; staged = null; unitsConfirm.checked = false; renderImport();
+  refreshView.clear(); refreshSession = null; refreshError = ''; refreshActive = true;
+  const operation = { id: ++operationSequence, generation, intent: intentGeneration }; refreshPending = operation; updateRefresh();
+  try {
+    if (!file.size || file.size > LIMITS.csvBytes) throw new Error('CSV size');
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (refreshPending !== operation || operation.generation !== generation || operation.intent !== intentGeneration || !notebook) return;
+    const day = utcToday();
+    const incoming = createDataset(parseCsv(bytes, file.name, day), day, false);
+    prepareRefresh(incoming, day); refreshPending = null; updateRefresh();
+    announce('Refresh review prepared. Your current data and research remain unchanged.');
+  } catch {
+    if (refreshPending !== operation || operation.generation !== generation || operation.intent !== intentGeneration) return;
+    refreshPending = null;
+    refreshError = 'Refresh rejected in full. Check the complete CSV header, UTF-8, annual rows, dates, duplicates and 2 MiB limit. Current data, drafts, history and saved record were kept.';
+    updateRefresh();
+  }
+}
+refreshInput.addEventListener('change', () => { const file = refreshInput.files?.[0]; refreshInput.value = ''; if (file) void readRefresh(file); });
+function rebuildRefresh(): void {
+  if (!refreshSession || refreshPending || !notebook) return;
+  try { prepareRefresh(refreshSession.incoming, utcToday()); announce('Refresh review rebuilt against committed research. Decisions and confirmations have been reset.'); }
+  catch { refreshSession.stale = true; refreshError = 'Could not rebuild this refresh under today’s data rules. Current work and the incoming dataset were kept; check current criteria or choose a new CSV.'; updateRefresh(); }
+}
+function discardRefreshDrafts(): void {
+  if (!notebook || !refreshSession || !editorDrafts()) return;
+  if (!confirm('Discard all unsent title, screening, filter and note drafts for this refresh? Unsent drafts are absent from notebook backups. Committed research and saved notes will be kept.')) return;
+  titleDirty = false; queryDirty = false; screenDirty = false; noteDrafts.clear(); stagedQuery = null;
+  titleInput.value = notebook.title; queryInput.value = notebook.query; fillScreen(notebook.screen); interpretation.hidden = true;
+  noteInput.value = notebook.notes.find(item => item.ticker === selectedTicker)?.text ?? '';
+  draftIntent(); rebuildRefresh();
+}
+function downloadPreviousNotebook(): void {
+  const session = refreshSession; if (!session) return;
+  try { download(serializeNotebook(session.base, session.review.today), 'stock-notebook-previous.json', 'application/json'); announce('Previous notebook downloaded from the reviewed committed snapshot. Unsent editor drafts are not included.'); }
+  catch { refreshError = 'Could not create the previous-notebook backup. The reviewed snapshot and current work were kept.'; updateRefresh(); }
+}
+function downloadProposedRefresh(): void {
+  const session = refreshSession, day = utcToday(), choices = refreshView.choices();
+  if (!session || refreshPending || !freshRefresh(session, day) || !choices) { updateRefresh(); return; }
+  try { download(buildRefreshReport(session.base, session.incoming, choices, day), 'stock-notebook-refresh-review.txt', 'text/plain;charset=utf-8'); announce('Proposed refresh review downloaded. It is not an applied or saved transaction; unsent drafts are not included.'); }
+  catch { refreshError = 'The proposed review could not be exported. Check compatible criteria, complete research decisions and report size. No data was applied; both notebook backups remain available.'; updateRefresh(); }
+}
+function applyReviewedRefresh(): void {
+  const session = refreshSession, day = utcToday(), choices = refreshView.choices();
+  if (!session || refreshPending || !freshRefresh(session, day) || editorDrafts() || !choices || !refreshView.confirmed()) { updateRefresh(); return; }
+  const losses = refreshView.losses();
+  if (!confirm(`Replace the complete financial dataset with ${session.incoming.fileName}? ${losses.periods} annual periods and ${losses.annotations} research groups will be removed. Research is retained only as reviewed. A fresh undo history starts; Undo cannot restore the previous dataset. Download the previous notebook first if needed.`)) return;
+  // Native confirmation can remain open across midnight. Recheck after consent;
+  // never treat consent to a different day or notebook as current approval.
+  const confirmedDay = utcToday();
+  if (refreshSession !== session || confirmedDay !== day || !freshRefresh(session, confirmedDay) || editorDrafts()) { if (refreshSession) refreshSession.stale = true; updateRefresh(); return; }
+  try {
+    const candidate = applyRefresh(session.base, session.incoming, choices, confirmedDay);
+    publish(candidate, false, confirmedDay); clearRefresh();
+    announce('Reviewed refresh applied. Retained research uses the incoming evidence; undo history starts here. Local save status above confirms when browser storage completes.');
+  } catch { refreshError = 'Refresh could not be applied. Check the complete decisions, compatible criteria and notebook size. Current notebook, drafts, history and saved record were kept.'; updateRefresh(); }
+}
+// Clock changes while this tab is idle do not make old consent current. Every
+// action also checks synchronously, including after native confirmation.
+const refreshClock = setInterval(updateRefresh, 1000);
+window.addEventListener('focus', updateRefresh);
+document.addEventListener('visibilitychange', updateRefresh);
+window.addEventListener('pagehide', event => { if (!event.persisted) clearInterval(refreshClock); });
+
 function currentSectors(): string[] { if (!notebook) return []; const seen = new Map<string, string>(); for (const c of latestCompanies(notebook.dataset.companies)) if (!seen.has(c.sector.toLowerCase())) seen.set(c.sector.toLowerCase(), c.sector); return [...seen.values()].sort(); }
 function currentCurrencies(): string[] { return notebook ? [...new Set(latestCompanies(notebook.dataset.companies).map((c) => c.currency))].sort() : []; }
 function markScreenDraft(): void { screenDirty = true; screenError.hidden = true; draftIntent(); }
-function draftIntent(): void { intentGeneration += 1; if (loading) { loading = null; announce('Pending import or restore canceled because you edited the notebook. Your draft was kept.'); renderImport(); } }
+function draftIntent(): void { intentGeneration += 1; invalidateRefresh(); if (loading) { loading = null; announce('Pending import or restore canceled because you edited the notebook. Your draft was kept.'); renderImport(); } }
 function filterCaption(f: Filter): string { return `${metricNames[f.metric]} ${operators[f.operator]} ${String(f.value)}${moneyMetrics.has(f.metric) ? ` ${f.currency ?? 'any currency (zero sign test)'} million` : f.metric === 'debtEquity' ? '' : '%'}`; }
 function addFilter(f: Filter): void {
   const node = el('fieldset', '', 'filter-row'); const id = ++filterSequence; node.dataset.filterId = String(id); node.append(el('legend', `Filter ${filterEditors.length + 1}`)); const metric = select(node, 'metric', 'Metric', metricOptions); const operator = select(node, 'operator', 'Comparison', Object.entries(operators)); const val = field(node, 'value', 'Threshold') as HTMLInputElement; val.inputMode = 'decimal'; val.maxLength = 64; const currency = select(node, 'currency', 'Threshold currency', [['', 'No currency (ratio / zero sign)'], ...currentCurrencies().map((c) => [c, c] as [string, string])]);
@@ -104,33 +209,34 @@ function readScreen(): Screen {
   return { sector: sectorInput.value || null, currency: currencyInput.value || null, filters, includeStale: staleInput.checked, sortBy: sortInput.value as Screen['sortBy'], direction: directionInput.value as Screen['direction'] };
 }
 function interpretCriteria(): void {
-  if (!notebook) return; try { const parsed = parseQuery(queryInput.value, notebook.dataset); stagedQuery = { text: queryInput.value.trim(), interpretation: parsed.interpretation }; fillScreen(parsed.screen); screenDirty = true; interpretation.replaceChildren(el('h3', 'Staged interpretation — not applied'), ...parsed.interpretation.map((s) => el('p', s))); interpretation.hidden = false; announce('Interpretation staged. Inspect or edit the filters, then Apply filters.'); }
+  if (!notebook) return; try { const parsed = parseQuery(queryInput.value, notebook.dataset); draftIntent(); stagedQuery = { text: queryInput.value.trim(), interpretation: parsed.interpretation }; fillScreen(parsed.screen); screenDirty = true; interpretation.replaceChildren(el('h3', 'Staged interpretation — not applied'), ...parsed.interpretation.map((s) => el('p', s))); interpretation.hidden = false; updateRefresh(); announce('Interpretation staged. Inspect or edit the filters, then Apply filters.'); }
   catch { stagedQuery = null; interpretation.hidden = true; announce('Unsupported screening sentence. Nothing was applied. Try: companies with profitable and revenue growth at least 10% sorted by profit margin descending. Use quoted sectors, explicit million XXX for money, and no extra prose.', true); }
 }
 function applyFilters(): void {
-  if (!notebook) return; try { const day = utcToday(); const screen = readScreen(); const query = stagedQuery?.text ?? notebook.query; const candidate = validateNotebook({ ...notebook, screen, query }, day); const computed = screenDataset(candidate.dataset, candidate.screen, day); commit(candidate, day, computed); screenDirty = false; stagedQuery = null; interpretation.hidden = true; screenError.hidden = true; if (queryInput.value.trim() === candidate.query) queryDirty = false; announce('Criteria applied. The shortlist and exports use these effective filters.'); }
+  if (!notebook) return; try { const day = utcToday(); const screen = readScreen(); const query = stagedQuery?.text ?? notebook.query; const candidate = validateNotebook({ ...notebook, screen, query }, day); const computed = screenDataset(candidate.dataset, candidate.screen, day); commit(candidate, day, computed); screenDirty = false; stagedQuery = null; interpretation.hidden = true; screenError.hidden = true; if (queryInput.value.trim() === candidate.query) queryDirty = false; updateRefresh(); announce('Criteria applied. The shortlist and exports use these effective filters.'); }
   catch { screenError.textContent = 'Filters were not applied. Use valid thresholds (up to six decimals), valid sectors/currencies, and a single matched currency for money sorting. Try ticker or ratio sorting, or choose one currency. Your drafts and previous results were kept.'; screenError.hidden = false; }
 }
-function clearFilters(): void { if (!notebook) return; try { const day = utcToday(); const candidate = validateNotebook({ ...notebook, query: '', screen: { sector: null, currency: null, filters: [], includeStale: false, sortBy: 'ticker', direction: 'asc' } }, day); commit(candidate, day); queryInput.value = ''; queryDirty = false; stagedQuery = null; interpretation.hidden = true; fillScreen(candidate.screen); announce('Filters cleared. Stale companies remain excluded unless you include them.'); } catch { announce('Could not clear filters. Current work was kept.', true); } }
+function clearFilters(): void { if (!notebook) return; try { const day = utcToday(); const candidate = validateNotebook({ ...notebook, query: '', screen: { sector: null, currency: null, filters: [], includeStale: false, sortBy: 'ticker', direction: 'asc' } }, day); commit(candidate, day); queryInput.value = ''; queryDirty = false; stagedQuery = null; interpretation.hidden = true; fillScreen(candidate.screen); updateRefresh(); announce('Filters cleared. Stale companies remain excluded unless you include them.'); } catch { announce('Could not clear filters. Current work was kept.', true); } }
 function commit(candidate: Notebook, day: string, computed?: ScreenResult): void {
   if (!notebook || !notebookHistory) return; const next = validateNotebook(candidate, day); const nextResults = computed ?? screenDataset(next.dataset, next.screen, day); if (JSON.stringify(editState(next)) === JSON.stringify(editState(notebook))) { results = nextResults; renderNotebook(day); return; }
   notebookHistory.commit(next, day); notebook = notebookHistory.current; results = nextResults; generation += 1; draftIntent(); queueSave(); renderNotebook(day);
 }
 function undo(): void { if (!notebookHistory?.canUndo) return; const day = utcToday(); try { const next = notebookHistory.undo(day); notebook = next; results = screenDataset(next.dataset, next.screen, day); generation += 1; draftIntent(); if (!screenDirty) fillScreen(next.screen); if (!queryDirty) queryInput.value = next.query; queueSave(); renderNotebook(day); } catch { announce('Undo could not be applied with today’s data rules. Current work was kept.', true); } }
 function redo(): void { if (!notebookHistory?.canRedo) return; const day = utcToday(); try { const next = notebookHistory.redo(day); notebook = next; results = screenDataset(next.dataset, next.screen, day); generation += 1; draftIntent(); if (!screenDirty) fillScreen(next.screen); if (!queryDirty) queryInput.value = next.query; queueSave(); renderNotebook(day); } catch { announce('Redo could not be applied with today’s data rules. Current work was kept.', true); } }
-function publish(candidate: Notebook, restored = false): void {
-  const day = utcToday(); const next = validateNotebook(candidate, day); const computed = screenDataset(next.dataset, next.screen, day); const history = new NotebookHistory(next, day);
+function publish(candidate: Notebook, restored = false, day = utcToday()): void {
+  const next = validateNotebook(candidate, day); const computed = screenDataset(next.dataset, next.screen, day); const history = new NotebookHistory(next, day);
   notebook = next; notebookHistory = history; results = computed; generation += 1; intentGeneration += 1; selectedTicker = null; noteDrafts.clear(); titleDirty = false; queryDirty = false; screenDirty = false; stagedQuery = null; staged = null; loading = null; restoreFailed = false; saveFailed = false; recovery.hidden = true; titleInput.value = next.title; queryInput.value = next.query; fillScreen(next.screen); interpretation.hidden = true; activeTab = 'shortlist'; savedGeneration = restored ? generation : -1;
-  saveStatus.textContent = restored ? 'Saved locally · notebook restored' : 'Saving locally…'; renderImport(); renderNotebook(day); if (!restored) queueSave();
+  saveStatus.textContent = restored ? 'Saved locally · notebook restored' : 'Saving locally…'; invalidateRefresh(); renderImport(); renderNotebook(day); if (!restored) queueSave();
 }
 async function stageInput(task: () => Promise<Staged>): Promise<void> {
+  invalidateRefresh();
   const op = { id: ++operationSequence, intent: intentGeneration }; loading = op; staged = null; unitsConfirm.checked = false; renderImport(); announce('Reading and validating the complete input…');
   try { const next = await task(); if (loading !== op || op.intent !== intentGeneration) return; staged = next; loading = null; renderImport(); announce('Input validated. Review units, periods and replacement before applying.'); }
   catch (error) { if (loading === op && op.intent === intentGeneration) { loading = null; renderImport(); const diagnostic = error instanceof Error && /^(CSV row [0-9]{1,3}: |CSV must |CSV header |CSV source filename |Choose a nonempty CSV)/.test(error.message) && error.message.length <= 220 ? `${error.message} ` : ''; announce(`${diagnostic}Input rejected in full. Check UTF-8, the exact CSV header/values, dates, duplicates and size limits. Current notebook, drafts and saved record were kept.`, true); } }
 }
 csvInput.addEventListener('change', () => { const file = csvInput.files?.[0]; csvInput.value = ''; if (file) void stageInput(async () => { if (!file.size || file.size > LIMITS.csvBytes) throw new Error('CSV size'); return { kind: 'csv', preview: parseCsv(new Uint8Array(await file.arrayBuffer()), file.name, utcToday()) }; }); });
 jsonInput.addEventListener('change', () => { const file = jsonInput.files?.[0]; jsonInput.value = ''; if (file) void stageInput(async () => { if (!file.size || file.size > LIMITS.notebookBytes) throw new Error('JSON size'); const bytes = new Uint8Array(await file.arrayBuffer()); const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); return { kind: 'notebook', notebook: parseNotebookJson(text, utcToday()) }; }); });
-function cancelStaging(): void { loading = null; staged = null; operationSequence += 1; unitsConfirm.checked = false; renderImport(); announce('Import canceled. Current notebook and saved data were kept.'); }
+function cancelStaging(): void { invalidateRefresh(); loading = null; staged = null; operationSequence += 1; unitsConfirm.checked = false; renderImport(); announce('Import canceled. Current notebook and saved data were kept.'); }
 function renderImport(): void {
   importReview.hidden = !loading && !staged; replaceButton.disabled = !!loading || !staged || !unitsConfirm.checked; backupCurrent.hidden = !notebook; unitLabel.hidden = !!loading;
   if (loading) { importSummary.replaceChildren(el('p', 'Validating the complete incoming file…')); return; } if (!staged) return;
@@ -151,13 +257,13 @@ function downloadReport(): void { if (!notebook) return; try { download(buildRep
 async function downloadRaw(): Promise<void> { try { const raw = await store.exportRaw(); if (raw === null) { announce('No saved record was found.'); return; } download(raw, 'stock-notebook-raw-recovery.json', 'application/json'); announce('Raw saved record downloaded without changing it. It may need repair before import.'); } catch { announce('This saved record could not be exported safely. It was kept unchanged.', true); } }
 async function resetSaved(): Promise<void> {
   if (!confirm('Reset the saved record? This deletes only this browser’s saved notebook. Download its raw record first if needed. Current in-memory work and drafts will be kept.')) return;
-  const epoch = generation; const intent = ++intentGeneration; loading = null; clearTimeout(saveTimer);
+  const epoch = generation; const intent = ++intentGeneration; invalidateRefresh(); loading = null; clearTimeout(saveTimer);
   try { await saveQueue; await store.clear(); if (epoch !== generation || intent !== intentGeneration) return; restoreFailed = false; recovery.hidden = true; savedGeneration = -1; if (notebook) { saveFailed = true; saveStatus.textContent = 'Saved record reset · current notebook is in memory. Retry saving or download a backup.'; retryButton.hidden = false; } announce('Saved record reset. Current in-memory work was kept.'); }
   catch { if (epoch === generation && intent === intentGeneration) announce('Could not reset the saved record. Existing data and current work were kept.', true); }
 }
 function toggleWatch(ticker: string): void { if (!notebook) return; try { const current = notebook.watchlist; commit({ ...notebook, watchlist: current.includes(ticker) ? current.filter((t) => t !== ticker) : [...current, ticker] }, utcToday()); } catch { announce('Watchlist change rejected. Keep at most 100 known companies; current work was kept.', true); } }
 function toggleComparison(ticker: string): void { if (!notebook) return; try { const current = notebook.comparison; commit({ ...notebook, comparison: current.includes(ticker) ? current.filter((t) => t !== ticker) : [...current, ticker] }, utcToday()); } catch { announce('Comparison supports at most four known companies. Current selection was kept.', true); } }
-function saveNote(): void { if (!notebook || !selectedTicker) return; try { const text = noteInput.value; const notes = notebook.notes.filter((n) => n.ticker !== selectedTicker); if (text.trim()) notes.push({ ticker: selectedTicker, text }); commit({ ...notebook, notes }, utcToday()); noteDrafts.delete(selectedTicker); noteInput.value = notebook.notes.find((n) => n.ticker === selectedTicker)?.text ?? ''; announce('Research note saved in the notebook. Local save status is shown above.'); } catch { announce('Note was not applied. Use at most 4000 characters and 100 annotated companies. Your draft was kept.', true); } }
+function saveNote(): void { if (!notebook || !selectedTicker) return; try { const text = noteInput.value; const notes = notebook.notes.filter((n) => n.ticker !== selectedTicker); if (text.trim()) notes.push({ ticker: selectedTicker, text }); commit({ ...notebook, notes }, utcToday()); noteDrafts.delete(selectedTicker); noteInput.value = notebook.notes.find((n) => n.ticker === selectedTicker)?.text ?? ''; updateRefresh(); announce('Research note saved in the notebook. Local save status is shown above.'); } catch { announce('Note was not applied. Use at most 4000 characters and 100 annotated companies. Your draft was kept.', true); } }
 function openCompany(ticker: string): void { selectedTicker = ticker; renderDetail(utcToday()); detail.tabIndex = -1; detail.focus({ preventScroll: true }); detail.scrollIntoView({ behavior: 'auto', block: 'nearest' }); }
 function sourceLink(company: Company): HTMLElement { if (!company.filingUrl) return el('p', 'No filing link supplied', 'hint'); const n = el('a', 'Supplied source link (external; not verified)'); n.href = company.filingUrl; n.target = '_blank'; n.rel = 'noopener noreferrer'; return n; }
 function ageInDays(company: Company, day: string): number { return Math.floor((Date.parse(`${day}T00:00:00Z`) - Date.parse(`${company.fiscalDate}T00:00:00Z`)) / 86400000); }
@@ -291,7 +397,7 @@ function renderNotebook(day: string): void {
   watchlistContent.replaceChildren(...notebook.watchlist.map((ticker) => companyCard(analyzeCompany(currentByTicker.get(ticker)!, day), day))); if (!notebook.watchlist.length) watchlistContent.append(el('p', 'No watchlist companies yet. Add companies from the shortlist.', 'empty')); renderDetail(day); renderTabs();
   if (focusKey) { const candidate = document.getElementById(focusKey.panel)?.querySelector<HTMLButtonElement>(`[data-ticker="${focusKey.ticker}"] [data-action="${focusKey.action}"]`); (candidate ?? tabButtons.get(activeTab))?.focus({ preventScroll: true }); }
 }
-window.addEventListener('beforeunload', (e) => { if (loading || titleDirty || queryDirty || screenDirty || noteDrafts.size || notebook && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', (e) => { if (loading || refreshPending || titleDirty || queryDirty || screenDirty || noteDrafts.size || notebook && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });
 window.addEventListener('keydown', (e) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return; e.preventDefault(); if (e.shiftKey) redo(); else undo(); });
 async function start(): Promise<void> { const op = { id: ++operationSequence, intent: intentGeneration }; loading = op; try { const restored = await store.load(utcToday()); if (loading !== op || op.intent !== intentGeneration) return; loading = null; if (restored) publish(restored, true); } catch { if (loading === op && op.intent === intentGeneration) { loading = null; restoreFailed = true; recovery.hidden = false; announce('Saved notebook could not be restored. Its raw record is preserved. Download raw saved record or explicitly Reset saved record before starting over.', true); } } }
 renderTabs(); void start();

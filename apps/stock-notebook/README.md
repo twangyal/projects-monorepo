@@ -50,6 +50,22 @@ Import supports UTF-8, a leading BOM, LF/CRLF, quoted commas and escaped quotes.
 
 Choose **Load synthetic demo** to explore original fictional companies. Its synthetic label persists through views, backup and research report; its figures are not real company information.
 
+## Refresh data while keeping research
+
+With a notebook open, choose **Refresh financial data** to stage a complete replacement CSV. Your current data and research remain usable while you review the proposal. The incoming file must contain every annual row you want to retain; refresh does not merge it with older files. Missing old periods are removals, including when the company itself remains.
+
+The review separates reported-fact changes from filename, source-line and filing-link changes. It shows both supplied rows, added/removed companies and periods, and any latest fiscal date moving backward. All periods remain inspectable in pages of 50, with scrollable tables and expandable filing URLs. Sources are not fetched or verified.
+
+The notebook keeps its ID and title. Watchlist/comparison order and literal saved notes carry forward automatically when the ticker's latest name, sector, currency and synthetic status are unchanged. Changed company details require an explicit **Keep research** or **Drop research** decision for that ticker's complete research group. A matching ticker does not prove issuer continuity. Removed tickers cannot retain annotations; their research remains available in the previous notebook backup and proposed review. Retained notes are not rewritten to match new figures.
+
+Choose whether to keep applied criteria and the saved interpretation, keep the criteria but clear the interpretation, or reset both. Each choice is checked against the incoming latest periods. Missing sectors/currencies, unsupported saved text or mixed-currency monetary sorting require an explicit compatible choice; filters are never silently repaired. Draft editor values do not affect this preview.
+
+Unsent title, screening, filter or note drafts block Apply. Save/apply them with the existing controls and **Rebuild refresh review**, or explicitly **Discard editor drafts for refresh**. Discarding affects only unsent drafts; notebook backups contain committed work. Any later edit or changed UTC date makes the review stale. Rebuilding keeps the validated incoming file and resets decisions and confirmations.
+
+Before applying, **Download previous notebook** for an editable backup and optionally **Download refresh review** for the complete proposed change record, including old/new source references and full saved notes. The text review is bounded at 8 MiB and is explicitly a proposal, not proof of a saved transaction. It is not stored inside the notebook. An oversized report fails without a partial download or changing either dataset.
+
+Confirm the units and any removed periods/research, then choose **Apply reviewed refresh** and confirm the replacement. Successful application starts a **fresh undo history**: Undo cannot restore the previous dataset. The refreshed notebook becomes usable in memory, and the save status confirms when browser storage completes. If saving fails, download its notebook backup and use **Retry saving**; the last durable record stays intact. Reopened JSON and research reports contain the incoming data, accepted criteria and retained research. See [issue #56](https://github.com/twangyal/projects-monorepo/issues/56).
+
 ## Interpret, inspect, then apply
 
 The supported language has a small explicit grammar. These examples show valid forms when the named sector/currency exists in the imported universe:
@@ -96,7 +112,7 @@ Neutral direction summaries cover **all three to five supplied periods** only wh
 
 ## Keep and recover work
 
-One notebook is autosaved locally after committed edits. It includes the dataset, applied screen, watchlist, comparisons and notes. Up to 30 edit states fit within an 8 MiB history budget; the immutable dataset is held once. Replacing the universe starts a new history and clears its old annotations only after successful staging and confirmation.
+One notebook is autosaved locally after committed edits. It includes the dataset, applied screen, watchlist, comparisons and notes. Up to 30 edit states fit within an 8 MiB history budget; the immutable dataset is held once. **Replace universe** starts a new history and replaces its old annotations only after successful staging and confirmation. **Refresh financial data** instead retains the research accepted in its review, also starting a new history for the new dataset.
 
 JSON backups use schema v2, are bounded at 4 MiB and are validated atomically on import. Valid schema-v1 single-period notebooks migrate in memory with IDs, facts, controls and annotations retained; old records with duplicate tickers remain invalid. The existing browser database location is unchanged. Loading v1 does not rewrite its raw saved record; a subsequent successful save writes v2. A plain UTF-8 research report includes effective criteria, source provenance, facts, formulas, observations, comparisons and notes. A dedicated annual-history appendix retains every supplied period once, including companies excluded by the current screen, with source rows, formulas and comparison reasons. The report is a readable snapshot; use JSON to reopen an editable notebook.
 
