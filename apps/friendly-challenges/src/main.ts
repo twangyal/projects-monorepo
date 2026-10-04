@@ -1,11 +1,13 @@
 import './style.css';
-import { ApiError, request } from './api.ts';
+import { ApiError, request, postImageEvidence, fetchEvidenceImage, fetchImageExport } from './api.ts';
+import { normalizeEvidenceImage } from './evidence-image.ts';
 import { loadSessions, readLink, removeSession, saveSession } from './session.ts';
 import type { PrivateLink } from './session.ts';
 import { ID_PATTERN, STAKES } from './types.ts';
-import type { ChallengeEvent, ChallengeExport, Claim, Creation, Invitation, Snapshot, Terms } from './types.ts';
+import type { ChallengeEvent, ChallengeExport, Claim, Creation, Invitation, Snapshot, Terms, ImageDescriptor } from './types.ts';
 
 const originalLocation = { search: location.search, hash: location.hash };
+let editorInputIntent = 0;
 history.replaceState(null, '', `${location.pathname}${location.search}`);
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
@@ -18,7 +20,7 @@ function section(title: string, hint = ''): HTMLElement {
   const n = el('section', '', 'panel'); n.append(el('h2', title)); if (hint) n.append(el('p', hint, 'hint')); return n;
 }
 function form(id: string): HTMLFormElement {
-  const n = el('form'); n.id = id; n.addEventListener('input', () => { n.dataset.dirty = 'true'; }); return n;
+  const n = el('form'); n.id = id; n.addEventListener('input', () => { n.dataset.dirty = 'true'; editorInputIntent++; }); return n;
 }
 function field(f: HTMLFormElement, name: string, caption: string, max: number, multiline = false, required = true, type = 'text'): HTMLInputElement | HTMLTextAreaElement {
   const label = el('label', caption, 'field'); const n = multiline ? el('textarea') : el('input'); n.name = name; n.id = `${f.id}-${name}`; n.maxLength = max; n.required = required;
@@ -72,8 +74,9 @@ function reveal(id: string, kind: PrivateLink['kind'], token: string, nomination
 }
 async function copyLink(): Promise<void> { try { await navigator.clipboard.writeText(sharedLink.value); announce('Private link copied.'); } catch { sharedLink.focus(); sharedLink.select(); announce('Select and copy the private link. Clipboard access is unavailable.'); } }
 const workspace = el('div', '', 'workspace'); workspace.hidden = true; main.append(workspace);
-const toolbar = el('div', '', 'toolbar'); toolbar.append(button('Back to challenges', () => { if (leaveDrafts()) showDashboard(); }), button('My private access link', () => { if (selected) reveal(selected.id, 'access', selected.token); }), button('Refresh challenge', () => { void refreshSelected(); }));
-const exportButton = button('Export record', () => { void exportRecord(); }); toolbar.append(exportButton); workspace.append(toolbar);
+const toolbar = el('div', '', 'toolbar'); toolbar.append(button('Back to challenges', () => { if (leaveDrafts()) showDashboard(); }), button('My private access link', () => { if (selected) reveal(selected.id, 'access', selected.token); }), button('Refresh challenge', () => { void refreshSelected(true); }));
+const exportButton = button('Export record', () => { void exportRecord(); });
+const exportImagesButton = button('Export record with images', () => { void exportImages(); }); exportImagesButton.id = 'export-images'; toolbar.append(exportButton, exportImagesButton); workspace.append(toolbar);
 const challengeHeader = el('div', '', 'challenge-header'); const status = el('span', '', 'badge'); status.id = 'challenge-status'; const revision = el('span', '', 'hint'); revision.id = 'challenge-revision'; const title = el('h1'); const people = el('p'); const deadlineText = el('p', '', 'hint'); challengeHeader.append(status, revision, title, people, deadlineText); workspace.append(challengeHeader);
 const finalPanel = section('Final record'); const finalText = el('p'); finalPanel.append(finalText); finalPanel.hidden = true; workspace.append(finalPanel);
 const columns = el('div', '', 'workspace-grid'); const left = el('div', '', 'column'); const right = el('div', '', 'column'); columns.append(left, right); workspace.append(columns);
@@ -81,7 +84,19 @@ const agreement = section('The agreement'); const termsDisplay = el('div', '', '
 const reviewButton = button('Review updated terms', () => { if (snapshot) { reviewed = { version: snapshot.termsVersion, revision: snapshot.revision, terms: { ...snapshot.terms } }; render(); announce('Showing updated terms. Read them before accepting.'); } });
 const acceptButton = button('Accept these terms', () => { void acceptTerms(); }, 'primary'); const inviteOpponent = button('Invite opponent', () => { void issueInvite('opponent'); }); agreement.append(termsDisplay, reviewWarning, reviewButton, acceptButton, inviteOpponent); left.append(agreement);
 const editPanel = section('Edit proposed terms', 'Changes need a fresh review. Accepted terms are fixed.'); const termsForm = form('terms-form'); termsFields(termsForm); submit(termsForm, 'Save terms', () => { void command('/terms', { terms: readTerms(termsForm) }, termsForm, 'Terms updated.'); }); editPanel.append(termsForm); left.append(editPanel);
-const evidencePanel = section('Shared evidence', 'Text and optional public HTTPS links. Evidence stays in the record. Links are not fetched or verified.'); const evidenceList = el('div'); evidenceList.id = 'evidence-list'; const evidenceForm = form('evidence-form'); field(evidenceForm, 'text', 'Evidence', 1000, true); field(evidenceForm, 'url', 'Source link (optional)', 1024, false, false, 'url'); submit(evidenceForm, 'Add evidence', () => { void command('/evidence', { text: value(evidenceForm, 'text'), url: value(evidenceForm, 'url') || null }, evidenceForm, 'Evidence added.'); }); evidencePanel.append(evidenceList, evidenceForm); left.append(evidencePanel);
+const evidencePanel = section('Shared evidence', 'Supplied captions, optional HTTPS links and normalized images. These claims are not verified proof; links are not fetched.');
+const evidenceList = el('div'); evidenceList.id = 'evidence-list'; const evidenceForm = form('evidence-form');
+field(evidenceForm, 'text', 'Evidence', 1000, true); field(evidenceForm, 'url', 'Source link (optional)', 1024, false, false, 'url');
+const imageChoice = el('label', 'Choose evidence image', 'field'); const imageFile = el('input'); imageFile.type = 'file'; imageFile.id = 'evidence-image'; imageFile.name = 'image'; imageFile.accept = '.png,.jpg,.jpeg,image/png,image/jpeg'; imageChoice.append(imageFile);
+const imageStatus = el('p', 'No image selected.', 'hint'); imageStatus.id = 'evidence-image-status'; imageStatus.setAttribute('role', 'status'); imageStatus.setAttribute('aria-live', 'polite');
+const imagePreview = el('img', '', 'evidence-image'); imagePreview.id = 'evidence-image-preview'; imagePreview.alt = 'Normalized evidence image preview'; imagePreview.hidden = true;
+const imageDisclaimer = el('p', 'The reviewed copy is resized to fit 1024 × 1024 without upscaling, reencoded as JPEG and flattened onto white. The original and its filename/location/device metadata are not retained. Browser color conversion may change pixels. A photo is an unverified claim, not proof of capture time, identity or a winner.', 'hint image-disclaimer');
+const removeImageButton = button('Remove selected image', removeSelectedImage); removeImageButton.id = 'remove-evidence-image';
+const imageAddButton = button('Add evidence with image', () => { if (evidenceForm.reportValidity()) void addImageEvidence(); }, 'primary'); imageAddButton.id = 'add-image-evidence'; imageAddButton.hidden = true;
+const textEvidenceButton = submit(evidenceForm, 'Add evidence', () => { if (imageDraft || imageNormalizing) return; void command('/evidence', { text: value(evidenceForm, 'text'), url: value(evidenceForm, 'url') || null }, evidenceForm, 'Evidence added.'); });
+evidenceForm.append(imageChoice, imageStatus, imagePreview, imageDisclaimer, removeImageButton, imageAddButton);
+const imageQuota = el('p', 'Image evidence 0/8 · Total evidence 0/40', 'hint'); imageQuota.id = 'evidence-image-quota';
+evidencePanel.append(evidenceList, imageQuota, evidenceForm); left.append(evidencePanel);
 const resultPanel = section('Agree on a result', 'A winner becomes final only when the other party agrees. Disagreement opens a dispute.'); const resultSummary = el('p'); resultSummary.id = 'result-proposal'; const resultForm = form('result-form'); const resultOutcome = select(resultForm, 'outcome', 'Proposed winner', [['proposer', 'Proposer'], ['opponent', 'Opponent']]); field(resultForm, 'reason', 'Why this result?', 500, true); submit(resultForm, 'Propose result', () => { void command('/result', { outcome: value(resultForm, 'outcome'), reason: value(resultForm, 'reason') }, resultForm, 'Result proposed.'); });
 const resultResponse = form('result-response-form'); field(resultResponse, 'reason', 'Response reason (required to dispute)', 500, true, false); resultResponse.append(button('Agree with result', () => { void respondResult(true); }, 'primary'), button('Dispute result', () => { void respondResult(false); })); resultPanel.append(resultSummary, resultForm, resultResponse); right.append(resultPanel);
 const voidPanel = section('Void by mutual agreement', 'An offer to void stays open until the challenge ends. It cannot be withdrawn. Both parties must agree; there is no winner.'); const voidSummary = el('p'); voidSummary.id = 'void-proposal'; const voidForm = form('void-form'); field(voidForm, 'reason', 'Reason to void', 500, true);
@@ -104,11 +119,17 @@ let pendingLink: PrivateLink | null = null;
 let deferredLink: PrivateLink | null = null;
 let generation = 0; let readController: AbortController | null = null; let mutationController: AbortController | null = null; let pollTimer: ReturnType<typeof setTimeout> | undefined; let busy = false;
 const unsavedSeats = new Set<string>();
+type ImageDraft = { blob: Blob; width: number; height: number; url: string | null };
+type RetainedImageView = { card: HTMLElement; image: HTMLImageElement; status: HTMLParagraphElement; view: HTMLButtonElement; close: HTMLButtonElement; controller: AbortController | null; url: string | null; epoch: number };
+let imageDraft: ImageDraft | null = null; let imageEpoch = 0; let evidenceInputIntent = 0; let imageNormalizing = false;
+let imageNormalizeController: AbortController | null = null; let imageReviewRequired = false; let imageUploading = false; let pageSuspended = false;
+let imageExportEpoch = 0; let imageExportController: AbortController | null = null;
+const retainedImageViews = new Map<string, RetainedImageView>(); const imageDownloadUrls = new Set<string>();
 const records = new Map<string, Snapshot>(); const evidenceNodes = new Map<string, HTMLElement>(); const eventNodes = new Map<number, HTMLLIElement>();
-function hasDrafts(): boolean { return [...main.querySelectorAll<HTMLFormElement>('form')].some((f) => !f.closest('[hidden]') && f.dataset.dirty === 'true'); }
-function leaveDrafts(): boolean { if (busy) { announce('Wait for your current action to finish before changing seats or challenges.', true); return false; } return !hasDrafts() || confirm('Leave your unsent draft? It will not be saved in the shared record.'); }
+function hasDrafts(exclude?: HTMLFormElement): boolean { return !!imageDraft || imageNormalizing || [...main.querySelectorAll<HTMLFormElement>('form')].some((f) => f !== exclude && !f.closest('[hidden]') && f.dataset.dirty === 'true'); }
+function leaveDrafts(exclude?: HTMLFormElement): boolean { if (busy) { announce('Wait for your current action to finish before changing seats or challenges.', true); return false; } return !hasDrafts(exclude) || confirm('Leave your unsent draft? It will not be saved in the shared record.'); }
 window.addEventListener('beforeunload', (e) => { if (hasDrafts() || busy || unsavedSeats.size > 0) { e.preventDefault(); e.returnValue = ''; } });
-function clearEditors(): void { for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) reset(f); evidenceNodes.clear(); eventNodes.clear(); evidenceList.replaceChildren(); activityList.replaceChildren(); reviewed = null; }
+function clearEditors(): void { clearImageDraft(); closeRetainedImages(); imageReviewRequired = false; for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) reset(f); evidenceNodes.clear(); eventNodes.clear(); evidenceList.replaceChildren(); activityList.replaceChildren(); reviewed = null; }
 function updateAccessRecovery(): void {
   accessRecovery.hidden = unsavedSeats.size === 0;
   accessRecoveryText.textContent = `${unsavedSeats.size} ${unsavedSeats.size === 1 ? 'seat has' : 'seats have'} access held only in this page. Keep My private access link before closing or refreshing. You can retry saving access; if the browser has twenty saved seats, forget an obsolete saved seat first. Forgetting does not delete a shared challenge.`;
@@ -122,7 +143,7 @@ function retrySavingAccess(): void {
 function remember(id: string, token: string): void {
   sessions[id] = token; try { saveSession(id, token); unsavedSeats.delete(id); } catch { unsavedSeats.add(id); announce('Your seat works in this page, but browser access could not be saved. Keep My private access link before closing or refreshing.', true); } updateAccessRecovery();
 }
-function stopSelection(): void { generation += 1; readController?.abort(); mutationController?.abort(); clearTimeout(pollTimer); selected = null; snapshot = null; busy = false; closeLink(); updateAccessRecovery(); }
+function stopSelection(): void { generation += 1; retireImageWork(); readController?.abort(); mutationController?.abort(); clearTimeout(pollTimer); selected = null; snapshot = null; busy = false; closeLink(); updateAccessRecovery(); }
 function showDashboard(): void { stopSelection(); workspace.hidden = true; dashboard.hidden = false; clearEditors(); connection.textContent = 'Your private notebook'; history.replaceState(null, '', '/'); renderRecords(); void refreshRecords(); }
 function flushIncoming(): void { if (!busy && deferredLink) { const link = deferredLink; deferredLink = null; incoming(link); } }
 function captureIncoming(): void {
@@ -135,7 +156,7 @@ function captureIncoming(): void {
 }
 window.addEventListener('hashchange', captureIncoming);
 window.addEventListener('popstate', captureIncoming);
-function current(epoch: number, credential: { id: string; token: string }): boolean { return epoch === generation && selected?.id === credential.id && selected?.token === credential.token; }
+function current(epoch: number, credential: { id: string; token: string }): boolean { return !pageSuspended && epoch === generation && selected?.id === credential.id && selected?.token === credential.token; }
 async function selectChallenge(id: string, token: string, initial?: Snapshot): Promise<void> {
   stopSelection(); clearEditors(); selected = { id, token }; updateAccessRecovery(); dashboard.hidden = true; workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
 }
@@ -147,9 +168,9 @@ function apply(next: Snapshot): void {
   if (revealed?.id === next.id && ((revealed.kind === 'invite' && (next.profiles.opponent || next.status !== 'proposed')) || (revealed.kind === 'arbiter' && (next.profiles.arbiter || next.status !== 'disputed' || next.arbiterNomination?.status !== 'approved' || next.arbiterNomination.id !== revealed.nominationId)))) closeLink(); render();
 }
 function schedule(): void { clearTimeout(pollTimer); if (selected) pollTimer = setTimeout(() => { void refreshSelected(); }, 1100); }
-async function refreshSelected(): Promise<void> {
+async function refreshSelected(manual = false): Promise<void> {
   if (!selected || busy) { schedule(); return; } const credential = { ...selected }; const epoch = generation; clearTimeout(pollTimer); readController?.abort(); const controller = new AbortController(); readController = controller;
-  try { const next = await request<Snapshot>('GET', `/api/challenges/${credential.id}`, undefined, credential.token, controller.signal); if (!current(epoch, credential)) return; apply(next); connection.textContent = `Connected · updated ${new Date().toLocaleTimeString()}`; }
+  try { const next = await request<Snapshot>('GET', `/api/challenges/${credential.id}`, undefined, credential.token, controller.signal); if (!current(epoch, credential)) return; apply(next); connection.textContent = `Connected · updated ${new Date().toLocaleTimeString()}`; if (manual && imageReviewRequired) { imageReviewRequired = false; imageControls(); announce('Record refreshed. Review the evidence feed before explicitly trying another append. No image upload was replayed.'); } }
   catch (error) { if (!current(epoch, credential) || controller.signal.aborted) return; connection.textContent = 'Connection interrupted · drafts kept · reconnecting'; if (error instanceof ApiError && (error.status === 401 || error.status === 404)) announce('This seat could not open the challenge. Check your private link or connect to the correct notebook.', true); }
   finally { if (current(epoch, credential) && readController === controller) schedule(); }
 }
@@ -164,8 +185,8 @@ function errorText(error: unknown): string {
   } return 'Could not confirm whether the action arrived. Your draft is kept. Refresh the record before trying again.';
 }
 async function command(suffix: string, fields: Record<string, unknown>, f?: HTMLFormElement, success = 'Record updated.', captured?: Snapshot): Promise<void> {
-  const s = captured ?? snapshot; if (!s || !selected || busy) return; const sentDraft = f ? draft(f) : null; const credential = { ...selected }; const epoch = generation; busy = true; render(); clearTimeout(pollTimer); readController?.abort(); const controller = new AbortController(); mutationController = controller;
-  try { const next = await request<Snapshot>('POST', `/api/challenges/${credential.id}${suffix}`, { revision: s.revision, ...fields }, credential.token, controller.signal); if (!current(epoch, credential)) return; if (f && draft(f) === sentDraft) reset(f); apply(next); announce(success); }
+  const s = captured ?? snapshot; if (!s || !selected || busy) return; const sentDraft = f ? draft(f) : null; const sentEvidenceIntent = evidenceInputIntent; const credential = { ...selected }; const epoch = generation; busy = true; render(); clearTimeout(pollTimer); readController?.abort(); const controller = new AbortController(); mutationController = controller;
+  try { const next = await request<Snapshot>('POST', `/api/challenges/${credential.id}${suffix}`, { revision: s.revision, ...fields }, credential.token, controller.signal); if (!current(epoch, credential)) return; if (f && draft(f) === sentDraft && (f !== evidenceForm || evidenceInputIntent === sentEvidenceIntent)) reset(f); apply(next); announce(success); }
   catch (error) { if (current(epoch, credential) && !controller.signal.aborted) announce(errorText(error), true); }
   finally { if (current(epoch, credential)) { busy = false; render(); flushIncoming(); await refreshSelected(); } }
 }
@@ -202,16 +223,39 @@ function incoming(link: PrivateLink): void {
 async function useIncomingAccess(): Promise<void> {
   const link = pendingLink; if (!link || link.kind !== 'access' || busy || !leaveDrafts()) return;
   if (sessions[link.challengeId] && sessions[link.challengeId] !== link.token && !confirm('Replace the seat remembered for this challenge with this private access link? Keep your current private access link first, or use a separate browser profile.')) return;
-  busy = true; useAccess.disabled = true; const epoch = generation;
-  try { const next = await request<Snapshot>('GET', `/api/challenges/${link.challengeId}`, undefined, link.token); if (epoch !== generation || pendingLink !== link) return; remember(link.challengeId, link.token); pendingLink = null; intent.hidden = true; busy = false; void selectChallenge(link.challengeId, link.token, next); }
-  catch (error) { if (epoch === generation) announce(errorText(error), true); } finally { busy = false; useAccess.disabled = false; flushIncoming(); }
+  const epoch = generation, consentIntent = editorInputIntent, consentImage = imageEpoch;
+  const controller = new AbortController(); mutationController = controller; busy = true; useAccess.disabled = true; readController?.abort(); clearTimeout(pollTimer);
+  try {
+    const next = await request<Snapshot>('GET', `/api/challenges/${link.challengeId}`, undefined, link.token, controller.signal);
+    if (epoch !== generation || pendingLink !== link || mutationController !== controller || controller.signal.aborted) return;
+    if (editorInputIntent !== consentIntent || imageEpoch !== consentImage) {
+      announce('Your draft changed while opening this seat. The current seat and exact draft are kept. Handle the draft, then explicitly choose Use this private access link again.', true); return;
+    }
+    remember(link.challengeId, link.token); pendingLink = null; intent.hidden = true; busy = false; useAccess.disabled = false; mutationController = null;
+    void selectChallenge(link.challengeId, link.token, next);
+  } catch (error) { if (epoch === generation && mutationController === controller && !controller.signal.aborted) announce(errorText(error), true); }
+  finally { if (epoch === generation && mutationController === controller) { mutationController = null; busy = false; useAccess.disabled = false; render(); flushIncoming(); schedule(); } }
 }
 async function claimSeat(): Promise<void> {
-  const link = pendingLink; if (!link || link.kind === 'access' || busy) return;
+  const link = pendingLink; if (!link || link.kind === 'access' || busy || !leaveDrafts(claimForm)) return;
   if (sessions[link.challengeId] && !confirm('Claim a different seat and replace the seat remembered for this challenge? Keep your current private access link first, or use a separate browser profile.')) return;
-  busy = true; claimButton.disabled = true; const epoch = generation;
-  try { const next = await request<Claim>('POST', `/api/challenges/${link.challengeId}/${link.kind === 'arbiter' ? 'arbiter/join' : 'join'}`, { inviteToken: link.token, name: value(claimForm, 'name') }); remember(next.challengeId, next.token); if (epoch !== generation || pendingLink !== link) return; reset(claimForm); pendingLink = null; intent.hidden = true; busy = false; void selectChallenge(next.challengeId, next.token, next.challenge); if (!message.classList.contains('error')) announce(link.kind === 'arbiter' ? 'Arbiter seat claimed. Review the whole record before deciding.' : 'Opponent seat claimed. Review the terms before accepting.'); }
-  catch (error) { if (epoch === generation) announce(errorText(error), true); } finally { busy = false; claimButton.disabled = false; flushIncoming(); }
+  const epoch = generation, consentIntent = editorInputIntent, consentImage = imageEpoch;
+  const controller = new AbortController(); mutationController = controller; busy = true; claimButton.disabled = true; readController?.abort(); clearTimeout(pollTimer);
+  try {
+    const next = await request<Claim>('POST', `/api/challenges/${link.challengeId}/${link.kind === 'arbiter' ? 'arbiter/join' : 'join'}`, { inviteToken: link.token, name: value(claimForm, 'name') }, undefined, controller.signal);
+    // A successful claim is irreversible: retain its returned access even if new
+    // editor intent means it is no longer safe to activate that seat automatically.
+    remember(next.challengeId, next.token);
+    if (epoch !== generation || pendingLink !== link || mutationController !== controller || controller.signal.aborted) return;
+    if (editorInputIntent !== consentIntent || imageEpoch !== consentImage) {
+      records.set(next.challengeId, next.challenge); pendingLink = null; intent.hidden = true; reveal(next.challengeId, 'access', next.token);
+      announce('Seat claimed; its new private access link is shown and kept in this browser or memory. Your current seat and newer draft are unchanged. Keep this new link, then open it explicitly after handling the draft. No claim was replayed.'); return;
+    }
+    reset(claimForm); pendingLink = null; intent.hidden = true; busy = false; claimButton.disabled = false; mutationController = null;
+    void selectChallenge(next.challengeId, next.token, next.challenge);
+    if (!message.classList.contains('error')) announce(link.kind === 'arbiter' ? 'Arbiter seat claimed. Review the whole record before deciding.' : 'Opponent seat claimed. Review the terms before accepting.');
+  } catch (error) { if (epoch === generation && mutationController === controller && !controller.signal.aborted) announce(errorText(error), true); }
+  finally { if (epoch === generation && mutationController === controller) { mutationController = null; busy = false; claimButton.disabled = false; render(); flushIncoming(); schedule(); } }
 }
 async function exportRecord(): Promise<void> {
   if (!selected) return; const credential = { ...selected }; const epoch = generation;
@@ -243,6 +287,7 @@ function eventText(e: ChallengeEvent, s: Snapshot): string {
     case 'accepted': return `${actor} accepted terms version ${e.details.termsVersion}.`;
     case 'declined': return `${actor} declined: ${e.details.reason}`;
     case 'withdrawn': return `${actor} withdrew: ${e.details.reason}`;
+    case 'evidence_image_added': return `${actor} added ${e.details.evidence.late ? 'late ' : ''}image evidence: ${e.details.evidence.text} · normalized JPEG, supplied and unverified (${e.details.evidence.image.width} × ${e.details.evidence.image.height}, ${e.details.evidence.image.bytes} bytes).`;
     case 'evidence_added': return `${actor} added ${e.details.evidence.late ? 'late ' : ''}evidence: ${e.details.evidence.text}`;
     case 'result_proposed': return `${actor} proposed ${outcomeLabel(e.details.proposal.outcome, s)} as winner: ${e.details.proposal.reason}`;
     case 'result_responded': return `${actor} ${e.details.accept ? 'agreed with' : 'disputed'} the result. ${e.details.reason}`;
@@ -274,12 +319,156 @@ function render(): void {
   quotaText.textContent = `Terms edits ${s.limitsUsed.termsEdits}/10 · Evidence ${s.evidence.length}/40 · Result proposals ${s.limitsUsed.resultProposals}/10 · Arbiter nominations ${s.limitsUsed.arbiterNominations}/5 · Opponent invitations ${s.limitsUsed.opponentInvites}/10 · Arbiter invitations ${s.limitsUsed.arbiterInvites}/10. A single irrevocable offer to void remains available until used.`;
   for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) for (const b of f.querySelectorAll<HTMLButtonElement>('button')) b.disabled = busy;
   const disable = (f: HTMLFormElement, blocked: boolean): void => { for (const b of f.querySelectorAll<HTMLButtonElement>('button')) b.disabled = busy || blocked; };
-  disable(termsForm, s.limitsUsed.termsEdits >= 10); disable(evidenceForm, s.evidence.length >= 40); disable(resultForm, s.limitsUsed.resultProposals >= 10); disable(arbiterForm, s.limitsUsed.arbiterNominations >= 5); voidConfirm.disabled = busy; exportButton.disabled = busy;
+  disable(termsForm, s.limitsUsed.termsEdits >= 10); disable(evidenceForm, s.evidence.length >= 40); disable(resultForm, s.limitsUsed.resultProposals >= 10); disable(arbiterForm, s.limitsUsed.arbiterNominations >= 5); voidConfirm.disabled = busy; exportButton.disabled = busy; exportImagesButton.disabled = busy;
   for (const node of [resultOutcome, decisionOutcome]) for (const option of node.options) if (option.value !== 'void') option.textContent = outcomeLabel(option.value, s);
   if (!s.evidence.length && !evidenceList.children.length) evidenceList.append(el('p', 'No evidence yet.', 'empty')); if (s.evidence.length && evidenceNodes.size === 0) evidenceList.replaceChildren();
-  for (const evidence of s.evidence) { if (evidenceNodes.has(evidence.id)) continue; const node = el('article', '', 'evidence-card'); node.dataset.evidenceId = evidence.id; node.append(el('p', `${roleName(s, evidence.author)} · ${when(evidence.createdAt)}${evidence.late ? ' · Late evidence' : ''}`, 'hint'), el('p', evidence.text)); if (evidence.url) { const link = el('a', 'Supplied link; not fetched or verified.'); link.href = evidence.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; node.append(link); } evidenceNodes.set(evidence.id, node); evidenceList.append(node); }
+  for (const evidence of s.evidence) { if (evidenceNodes.has(evidence.id)) continue; const node = el('article', '', 'evidence-card'); node.dataset.evidenceId = evidence.id; node.append(el('p', `${roleName(s, evidence.author)} · ${when(evidence.createdAt)}${evidence.late ? ' · Late evidence' : ''}`, 'hint'), el('p', evidence.text)); if (evidence.url) { const link = el('a', 'Supplied link; not fetched or verified.'); link.href = evidence.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; node.append(link); } if ('image' in evidence) addRetainedImageControls(node, evidence.id, evidence.image); evidenceNodes.set(evidence.id, node); evidenceList.append(node); }
+  imageControls();
   for (const event of s.events) { if (eventNodes.has(event.seq)) continue; const node = el('li'); node.dataset.eventSeq = String(event.seq); node.append(el('p', eventText(event, s)), el('time', when(event.at), 'hint')); eventNodes.set(event.seq, node); activityList.append(node); }
 }
+function imageCount(): number { return snapshot?.evidence.filter((item) => 'image' in item).length ?? 0; }
+function mayAppendImage(): boolean { return !!snapshot && snapshot.myRole !== 'arbiter' && ['active', 'disputed'].includes(snapshot.status) && snapshot.evidence.length < 40 && imageCount() < 8; }
+function imageControls(): void {
+  const canAppend = mayAppendImage();
+  imageQuota.textContent = `Image evidence ${imageCount()}/8 · Total evidence ${snapshot?.evidence.length ?? 0}/40`;
+  imageFile.disabled = !canAppend; removeImageButton.disabled = !imageDraft && !imageNormalizing;
+  textEvidenceButton.hidden = !!imageDraft || imageNormalizing;
+  imageAddButton.hidden = !imageDraft || imageNormalizing;
+  imageAddButton.disabled = busy || !canAppend || imageReviewRequired;
+  if (imageDraft && !pageSuspended) {
+    imageDraft.url ??= URL.createObjectURL(imageDraft.blob);
+    if (imagePreview.getAttribute('src') !== imageDraft.url) imagePreview.src = imageDraft.url;
+    imagePreview.hidden = false;
+  } else { imagePreview.hidden = true; imagePreview.removeAttribute('src'); }
+}
+function clearImageDraft(): void {
+  imageEpoch++; imageNormalizeController?.abort(); imageNormalizeController = null; imageNormalizing = false;
+  if (imageDraft?.url) URL.revokeObjectURL(imageDraft.url);
+  imageDraft = null; imagePreview.removeAttribute('src'); imagePreview.hidden = true; imageFile.value = '';
+  imageStatus.textContent = 'No image selected.';
+}
+function removeSelectedImage(): void {
+  if (!imageDraft && !imageNormalizing) return;
+  evidenceInputIntent++; evidenceForm.dataset.dirty = 'true'; clearImageDraft(); imageControls();
+  imageStatus.textContent = 'Selected image removed from this draft. Caption and link are kept; nothing was posted.';
+}
+function abortNormalization(): void {
+  if (!imageNormalizing) return;
+  imageEpoch++; imageNormalizeController?.abort(); imageNormalizeController = null; imageNormalizing = false;
+  imageStatus.textContent = imageDraft ? 'The evidence fields changed during image preparation. The previous reviewed image is kept; choose the replacement again.' : 'The evidence fields changed during image preparation. Choose the image again when your draft is ready.';
+}
+evidenceForm.addEventListener('input', () => { evidenceInputIntent++; abortNormalization(); imageControls(); });
+imageFile.addEventListener('change', () => { void chooseEvidenceImage(); });
+async function chooseEvidenceImage(): Promise<void> {
+  const file = imageFile.files?.[0]; if (!file || !selected || !mayAppendImage()) return;
+  // Keep the captured File while allowing an intentional retry of the same path.
+  imageFile.value = '';
+  const credential = { ...selected }, owner = generation, intent = evidenceInputIntent, token = ++imageEpoch;
+  imageNormalizeController?.abort(); const controller = new AbortController(); imageNormalizeController = controller; imageNormalizing = true;
+  evidenceForm.dataset.dirty = 'true'; imageStatus.textContent = 'Preparing the normalized JPEG. Nothing is uploaded until you review it and choose Add evidence with image.'; imageControls();
+  const owns = (): boolean => current(owner, credential) && token === imageEpoch && imageNormalizeController === controller && !controller.signal.aborted && intent === evidenceInputIntent;
+  try {
+    const result = await normalizeEvidenceImage(file, controller.signal); if (!owns()) return;
+    const url = URL.createObjectURL(result.blob);
+    if (imageDraft?.url) URL.revokeObjectURL(imageDraft.url);
+    imageDraft = { ...result, url };
+    imageStatus.textContent = `Ready to review: normalized JPEG ${result.width} × ${result.height} · ${result.blob.size.toLocaleString()} bytes. These exact bytes will be posted; the original is not retained.`;
+  } catch (error) {
+    if (owns()) imageStatus.textContent = `${error instanceof Error ? error.message : 'The image could not be prepared.'} ${imageDraft ? 'The previous reviewed image and your caption are kept.' : 'Your caption and link are kept. Nothing was uploaded.'}`;
+  } finally { if (token === imageEpoch && imageNormalizeController === controller) { imageNormalizeController = null; imageNormalizing = false; imageControls(); } }
+}
+async function addImageEvidence(): Promise<void> {
+  const s = snapshot, sentImage = imageDraft; if (!s || !sentImage || !selected || busy || imageNormalizing || imageReviewRequired || !mayAppendImage()) return;
+  const credential = { ...selected }, owner = generation, sentEpoch = imageEpoch, sentIntent = evidenceInputIntent, sentDraft = draft(evidenceForm);
+  const payload = { revision: s.revision, text: value(evidenceForm, 'text'), url: value(evidenceForm, 'url') || null };
+  const controller = new AbortController(); mutationController = controller; busy = true; imageUploading = true; readController?.abort(); clearTimeout(pollTimer); render();
+  announce('Appending the reviewed image and caption once. Do not repeat this action if its response is interrupted; refresh and inspect the record first.');
+  try {
+    const next = await postImageEvidence(credential.id, credential.token, payload, sentImage.blob, controller.signal);
+    if (!current(owner, credential) || mutationController !== controller || controller.signal.aborted) return;
+    const unchanged = imageDraft === sentImage && imageEpoch === sentEpoch && evidenceInputIntent === sentIntent && draft(evidenceForm) === sentDraft;
+    if (unchanged) { clearImageDraft(); reset(evidenceForm); }
+    imageReviewRequired = false; apply(next); announce(unchanged ? 'Image evidence added. The shared record retains the exact reviewed JPEG.' : 'Image evidence added. Your newer unsent caption or image draft is kept.');
+  } catch (error) {
+    if (current(owner, credential) && mutationController === controller && !controller.signal.aborted) {
+      imageReviewRequired = true;
+      const uncertain = !(error instanceof ApiError) || error.status === 0 || error.code === 'internal_error' || error.code === 'timeout';
+      announce(`${uncertain ? 'Could not confirm whether the image append arrived.' : errorText(error)} Your raw caption and exact selected JPEG are kept. Use Refresh challenge, inspect the authoritative evidence feed, then explicitly decide whether to append. No upload is automatically replayed.`, true);
+    }
+  } finally {
+    if (current(owner, credential) && mutationController === controller) { mutationController = null; imageUploading = false; busy = false; render(); flushIncoming(); schedule(); }
+  }
+}
+function closeImageView(state: RetainedImageView): void {
+  state.epoch++; state.controller?.abort(); state.controller = null;
+  state.image.removeAttribute('src'); state.image.hidden = true;
+  if (state.url) URL.revokeObjectURL(state.url);
+  state.url = null; state.view.disabled = false; state.close.hidden = true;
+}
+function closeRetainedImages(): void { for (const state of retainedImageViews.values()) closeImageView(state); retainedImageViews.clear(); }
+function addRetainedImageControls(card: HTMLElement, evidenceId: string, descriptor: ImageDescriptor): void {
+  const image = el('img', '', 'evidence-image'); image.alt = 'Retained normalized evidence image'; image.hidden = true;
+  const imageNote = el('p', `Normalized unverified copy · ${descriptor.width} × ${descriptor.height} · ${descriptor.bytes.toLocaleString()} bytes. This is supplied evidence, not verified authenticity or capture time.`, 'hint');
+  const viewStatus = el('p', '', 'hint'); viewStatus.setAttribute('role', 'status');
+  const state: RetainedImageView = { card, image, status: viewStatus, view: button('View retained image'), close: button('Close retained image'), controller: null, url: null, epoch: 0 };
+  state.close.hidden = true;
+  state.close.addEventListener('click', () => { closeImageView(state); viewStatus.textContent = 'Retained image closed. The shared record is unchanged.'; });
+  state.view.addEventListener('click', () => { void openRetainedImage(evidenceId, descriptor, state); });
+  image.addEventListener('error', () => { if (state.url && retainedImageViews.get(evidenceId) === state) { closeImageView(state); viewStatus.textContent = 'The retained JPEG could not be displayed. Its bytes remain in the shared record and complete export.'; } });
+  card.append(imageNote, state.view, state.close, viewStatus, image); retainedImageViews.set(evidenceId, state);
+}
+async function openRetainedImage(evidenceId: string, descriptor: ImageDescriptor, state: RetainedImageView): Promise<void> {
+  if (!selected || pageSuspended || retainedImageViews.get(evidenceId) !== state || state.controller || state.url || !state.card.isConnected) return;
+  const credential = { ...selected }, owner = generation, token = ++state.epoch, controller = new AbortController();
+  state.controller = controller; state.view.disabled = true; state.close.hidden = false; state.status.textContent = 'Fetching and verifying the retained JPEG with your private seat…';
+  const owns = (): boolean => current(owner, credential) && state.epoch === token && retainedImageViews.get(evidenceId) === state && state.card.isConnected && !controller.signal.aborted;
+  try {
+    const blob = await fetchEvidenceImage(credential.id, evidenceId, credential.token, descriptor, controller.signal); if (!owns()) return;
+    state.url = URL.createObjectURL(blob); state.image.src = state.url; state.image.hidden = false;
+    state.status.textContent = 'Retained JPEG byte count and SHA-256 verified against this authenticated record. Pairing and authenticity remain unverified.';
+  } catch (error) { if (owns()) { state.close.hidden = true; state.view.disabled = false; state.status.textContent = `${error instanceof ApiError ? error.message : 'The retained image could not be fetched or verified.'} The record is kept; choose View retained image to try a fresh read.`; } }
+  finally { if (owns() && state.controller === controller) state.controller = null; }
+}
+async function exportImages(): Promise<void> {
+  if (!selected || busy) return;
+  const credential = { ...selected }, owner = generation, token = ++imageExportEpoch;
+  imageExportController?.abort(); const controller = new AbortController(); imageExportController = controller;
+  const owns = (): boolean => current(owner, credential) && imageExportEpoch === token && imageExportController === controller && !controller.signal.aborted;
+  try {
+    const blob = await fetchImageExport(credential.id, credential.token, controller.signal); if (!owns()) return;
+    const url = URL.createObjectURL(blob); imageDownloadUrls.add(url);
+    const link = el('a'); link.href = url; link.download = `friendly-challenge-${credential.id}-images.html`; link.click();
+    setTimeout(() => { URL.revokeObjectURL(url); imageDownloadUrls.delete(url); }, 1000);
+    announce('Complete readable record exported with retained JPEGs and audit history. Private credentials and source filenames are not included.');
+  } catch (error) { if (owns()) announce(`${error instanceof ApiError ? error.message : 'Could not fetch the complete image export.'} No image export was downloaded; keep your draft and try a fresh read.`, true); }
+  finally { if (imageExportController === controller) imageExportController = null; }
+}
+function retireImageWork(): void {
+  imageEpoch++; imageNormalizeController?.abort(); imageNormalizeController = null; imageNormalizing = false;
+  imageExportEpoch++; imageExportController?.abort(); imageExportController = null;
+  closeRetainedImages();
+  if (imageDraft?.url) { URL.revokeObjectURL(imageDraft.url); imageDraft.url = null; }
+  imagePreview.removeAttribute('src'); imagePreview.hidden = true;
+  for (const url of imageDownloadUrls) URL.revokeObjectURL(url); imageDownloadUrls.clear();
+}
+window.addEventListener('pagehide', () => {
+  pageSuspended = true; generation++; clearTimeout(pollTimer); readController?.abort(); mutationController?.abort();
+  if (imageUploading) { imageReviewRequired = true; announce('The image append was interrupted. Your draft is kept in this page. Refresh and inspect the shared record before explicitly choosing another append; no upload is replayed.', true); }
+  imageUploading = false; busy = false; useAccess.disabled = false; claimButton.disabled = false; retireImageWork();
+});
+window.addEventListener('pageshow', () => {
+  if (!pageSuspended) return;
+  pageSuspended = false;
+  // Existing cards keep their literal evidence. Recreate only their closed image controls.
+  if (snapshot) for (const item of snapshot.evidence) if ('image' in item) {
+    const card = evidenceNodes.get(item.id); if (card) {
+      for (const node of [...card.children].slice(2 + (item.url ? 1 : 0))) node.remove();
+      addRetainedImageControls(card, item.id, item.image);
+    }
+  }
+  imageControls(); render(); schedule();
+});
+
 async function start(): Promise<void> {
   const original = originalLocation; let link: PrivateLink | null = null;
   try { link = readLink(original); } catch { /* Never consume invalid private links. */ }

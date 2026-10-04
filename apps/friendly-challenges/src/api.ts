@@ -1,4 +1,4 @@
-import { ERROR_CODES, TOKEN_PATTERN, type ErrorCode } from './types.ts';
+import { ERROR_CODES, ID_PATTERN, TOKEN_PATTERN, type ErrorCode, type Snapshot } from './types.ts';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -132,4 +132,111 @@ export async function request<T>(method: string, path: string, body?: unknown, t
     throw new ApiError(message, response.status, parsed.code as ErrorCode);
   }
   return parsed as T;
+}
+
+export interface ImageEvidencePayload { revision: number; text: string; url: string | null }
+export interface EvidenceImageDescriptor { mime: 'image/jpeg'; bytes: number; width: number; height: number; sha256: string }
+
+function checkBinaryAbort(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new DOMException('Image request cancelled.', 'AbortError');
+}
+function binaryIdentity(id: string, token: string): void {
+  if (typeof id !== 'string' || !ID_PATTERN.test(id) || typeof token !== 'string' || !TOKEN_PATTERN.test(token)) throw invalidRequest();
+}
+function exactData(input: unknown, keys: string[]): Record<string, unknown> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw invalidRequest();
+  const prototype = Object.getPrototypeOf(input), descriptors = Object.getOwnPropertyDescriptors(input);
+  if ((prototype !== Object.prototype && prototype !== null) || Reflect.ownKeys(input).length !== keys.length
+    || keys.some(key => !descriptors[key] || !('value' in descriptors[key]) || !descriptors[key].enumerable)) throw invalidRequest();
+  return Object.fromEntries(keys.map(key => [key, descriptors[key].value as unknown]));
+}
+async function binaryFetch(path: string, token: string, accept: string, body?: Blob, signal?: AbortSignal): Promise<Response> {
+  checkBinaryAbort(signal);
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}`, Accept: accept };
+  if (body) headers['Content-Type'] = 'application/octet-stream';
+  try { return await fetch(path, { method: body ? 'POST' : 'GET', headers, body, signal, cache: 'no-store', credentials: 'omit', redirect: 'error' }); }
+  catch (error) {
+    if (aborted(error)) throw error;
+    throw new ApiError('Could not confirm the local image request. Keep your draft and review the record before trying again.', 0, 'internal_error');
+  }
+}
+async function checkedBinaryJSON(response: Response): Promise<Record<string, unknown>> {
+  let parsed: Record<string, unknown>;
+  try { parsed = await readJSON(response); }
+  catch (error) { if (aborted(error)) throw error; throw invalidResponse(response.status); }
+  const envelope = Object.hasOwn(parsed, 'error') || Object.hasOwn(parsed, 'code');
+  if (!response.ok || envelope) {
+    if (response.ok || Object.keys(parsed).length !== 2 || typeof parsed.error !== 'string'
+      || !parsed.error.trim() || /[0-9a-f]{64}/.test(parsed.error)
+      || typeof parsed.code !== 'string' || !ERROR_CODES.includes(parsed.code as ErrorCode)) throw invalidResponse(response.status);
+    let message = parsed.error.trim().slice(0, 500);
+    if (/[\ud800-\udbff]$/.test(message)) message = message.slice(0, -1);
+    throw new ApiError(message, response.status, parsed.code as ErrorCode);
+  }
+  return parsed;
+}
+async function readBinary(response: Response, mime: string, maximum: number, signal?: AbortSignal): Promise<Blob> {
+  checkBinaryAbort(signal);
+  if (!response.ok) { await checkedBinaryJSON(response); throw invalidResponse(response.status); }
+  const contentType = response.headers.get('Content-Type')?.toLowerCase() || '';
+  if ((mime === 'image/jpeg' ? contentType !== mime : !/^text\/html(?:\s*;\s*charset=utf-8)?$/.test(contentType))) throw invalidResponse(response.status);
+  const length = response.headers.get('Content-Length');
+  if (length !== null && (!/^(?:0|[1-9][0-9]*)$/.test(length) || !Number.isSafeInteger(Number(length)) || Number(length) > maximum)) throw invalidResponse(response.status);
+  const reader = response.body?.getReader(); if (!reader) throw invalidResponse(response.status);
+  const chunks: Uint8Array<ArrayBuffer>[] = []; let size = 0;
+  const cancel = (): void => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    for (;;) {
+      checkBinaryAbort(signal);
+      const chunk = await reader.read(); checkBinaryAbort(signal);
+      if (chunk.done) break;
+      size += chunk.value.byteLength;
+      if (size > maximum) { await reader.cancel(); throw invalidResponse(response.status); }
+      chunks.push(chunk.value.slice());
+    }
+    if (!size || (length !== null && Number(length) !== size)) throw invalidResponse(response.status);
+    return new Blob(chunks, { type: mime });
+  } catch (error) { if (aborted(error) || error instanceof ApiError) throw error; throw invalidResponse(response.status); }
+  finally { signal?.removeEventListener('abort', cancel); reader.releaseLock(); }
+}
+
+/** One attempted append only; uncertain delivery must be reviewed, never replayed. */
+export async function postImageEvidence(id: string, token: string, payload: ImageEvidencePayload, jpeg: Blob, signal?: AbortSignal): Promise<Snapshot> {
+  checkBinaryAbort(signal); binaryIdentity(id, token);
+  const input = exactData(payload, ['revision', 'text', 'url']);
+  if (!Number.isSafeInteger(input.revision) || (input.revision as number) < 1 || typeof input.text !== 'string'
+    || input.text.length > 2000 || !input.text.trim() || !validText(input.text) || [...input.text].length > 1000
+    || (input.url !== null && (typeof input.url !== 'string' || input.url.length > 2048 || !input.url.trim() || !validText(input.url) || [...input.url].length > 1024))
+    || !(jpeg instanceof Blob) || jpeg.type !== 'image/jpeg' || jpeg.size < 1 || jpeg.size > 524288) throw invalidRequest();
+  const metadata = new TextEncoder().encode(JSON.stringify(input)); if (metadata.length > MAX_REQUEST) throw invalidRequest();
+  const header = new Uint8Array(16), view = new DataView(header.buffer);
+  header.set(new TextEncoder().encode('FCEVID01')); view.setUint32(8, metadata.length, true); view.setUint32(12, jpeg.size, true);
+  const body = new Blob([header, metadata, jpeg], { type: 'application/octet-stream' });
+  const response = await binaryFetch(`/api/challenges/${id}/evidence/image`, token, 'application/json', body, signal);
+  const result = await checkedBinaryJSON(response); checkBinaryAbort(signal); return result as unknown as Snapshot;
+}
+
+/** Descriptor belongs to the authenticated snapshot; no unverified bytes are returned. */
+export async function fetchEvidenceImage(id: string, evidenceId: string, token: string, descriptor: EvidenceImageDescriptor, signal?: AbortSignal): Promise<Blob> {
+  checkBinaryAbort(signal); binaryIdentity(id, token);
+  if (typeof evidenceId !== 'string' || !ID_PATTERN.test(evidenceId)) throw invalidRequest();
+  const captured = exactData(descriptor, ['mime', 'bytes', 'width', 'height', 'sha256']);
+  if (captured.mime !== 'image/jpeg' || !Number.isInteger(captured.bytes) || (captured.bytes as number) < 1 || (captured.bytes as number) > 524288
+    || !Number.isInteger(captured.width) || (captured.width as number) < 1 || (captured.width as number) > 1024
+    || !Number.isInteger(captured.height) || (captured.height as number) < 1 || (captured.height as number) > 1024
+    || typeof captured.sha256 !== 'string' || !TOKEN_PATTERN.test(captured.sha256)) throw invalidRequest();
+  const response = await binaryFetch(`/api/challenges/${id}/evidence/${evidenceId}/image`, token, 'image/jpeg', undefined, signal);
+  const blob = await readBinary(response, 'image/jpeg', captured.bytes as number, signal);
+  if (blob.size !== captured.bytes) throw invalidResponse(response.status);
+  const bytes = await blob.arrayBuffer(); checkBinaryAbort(signal);
+  const hash = await crypto.subtle.digest('SHA-256', bytes); checkBinaryAbort(signal);
+  const hex = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
+  if (hex !== captured.sha256) throw invalidResponse(response.status);
+  return blob;
+}
+export async function fetchImageExport(id: string, token: string, signal?: AbortSignal): Promise<Blob> {
+  checkBinaryAbort(signal); binaryIdentity(id, token);
+  const response = await binaryFetch(`/api/challenges/${id}/export/images`, token, 'text/html', undefined, signal);
+  return readBinary(response, 'text/html', 12 * 1024 * 1024, signal);
 }

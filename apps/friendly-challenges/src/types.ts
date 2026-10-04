@@ -10,9 +10,14 @@ export interface Terms {
   evidenceRule: string; stake: Stake; deadline: number;
 }
 export interface Profile { name: string }
-export interface Evidence {
+export interface ImageDescriptor {
+  mime: 'image/jpeg'; bytes: number; width: number; height: number; sha256: string;
+}
+export interface TextEvidence {
   id: string; author: Party; text: string; url: string | null; createdAt: number; late: boolean;
 }
+export interface ImageEvidence extends TextEvidence { image: ImageDescriptor }
+export type Evidence = TextEvidence | ImageEvidence;
 export interface ResultProposal {
   id: string; proposedBy: Party; outcome: Party; reason: string;
   status: 'pending' | 'rejected'; createdAt: number; respondedAt: number | null;
@@ -39,7 +44,8 @@ type EventDetails = {
   accepted: { termsVersion: number };
   declined: { reason: string };
   withdrawn: { reason: string };
-  evidence_added: { evidence: Evidence };
+  evidence_added: { evidence: TextEvidence };
+  evidence_image_added: { evidence: ImageEvidence };
   result_proposed: { proposal: ResultProposal };
   result_responded: { proposalId: string; accept: boolean; reason: string };
   void_offered: { proposal: VoidProposal };
@@ -67,7 +73,7 @@ export interface Creation { challengeId: string; token: string; inviteToken: str
 export interface Claim { challengeId: string; token: string; challenge: Snapshot }
 export interface Invitation { inviteToken: string; challenge: Snapshot }
 export interface ChallengeExport {
-  schemaVersion: 1; exportedAt: number; challenge: Omit<Snapshot, 'myRole' | 'serverTime'>;
+  schemaVersion: 1 | 2; exportedAt: number; challenge: Omit<Snapshot, 'myRole' | 'serverTime'>;
 }
 
 export const STAKES = ['bragging-rights', 'make-a-drink', 'pick-a-movie', 'do-the-dishes'] as const;

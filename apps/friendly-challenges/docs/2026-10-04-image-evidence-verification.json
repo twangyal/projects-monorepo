@@ -1,0 +1,516 @@
+{
+  "schemaVersion": 1,
+  "issue": 87,
+  "date": "2026-10-04",
+  "version": "0.2.0",
+  "status": "Local full implementation verified; final combined UI CI pending.",
+  "backendCommit": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+  "scope": "Private append-only image evidence with exact retained normalized JPEG bytes and complete readable HTML exports.",
+  "local": {
+    "python": {
+      "passed": 86,
+      "failed": 0,
+      "seconds": 24.416,
+      "log": "/tmp/friendly87-root-python-first.log"
+    },
+    "typescript": {
+      "passed": 37,
+      "failed": 0,
+      "durationMs": 270.75799,
+      "log": "/tmp/friendly87-client-all-green.log",
+      "finalDurationMs": 258.107226,
+      "finalLog": "/tmp/friendly87-root-client-final.log"
+    },
+    "checks": "Ruff, Python compilation, ESLint, TypeScript and Vite production build passed.",
+    "browser": {
+      "distinctPassed": 24,
+      "existing": {
+        "passed": 12,
+        "seconds": 53.9,
+        "log": "/tmp/friendly87-existing12.log"
+      },
+      "new": {
+        "passed": 12,
+        "runs": "One complete three-seat case in7.5s and remaining11 in43.4s; detailed native receipt below."
+      }
+    }
+  },
+  "jpegAdmission": {
+    "initialStub": {
+      "tests": 6,
+      "errors": 3,
+      "log": "/tmp/friendly87-jpeg-red.log"
+    },
+    "firstImplementation": {
+      "tests": 6,
+      "failed": 1,
+      "log": "/tmp/friendly87-jpeg-green.log",
+      "cause": "Native Pillow accepted an empty entropy scan. Added bounded nonempty scan admission before Pillow decode."
+    },
+    "final": {
+      "passed": 6,
+      "seconds": 0.044,
+      "log": "/tmp/friendly87-jpeg-final.log"
+    },
+    "actualChromiumDialect": {
+      "browser": "151.0.7922.173",
+      "originalCanvasJpegBytes": 8608,
+      "originalResult": "Rejected generated APP2 ICC metadata by the frozen metadata-free admission policy.",
+      "reviewedMetadataFreeBytes": 8134,
+      "reviewedSha256": "d36e2a26d8df381318e1709a5e68e79e12d58a4886a3c0ca740d73b71b81859f",
+      "fix": "Client uses explicit sRGB canvas and strips metadata from generated JPEG before constructing preview. Server policy unchanged."
+    }
+  },
+  "maximumCapacity": {
+    "schemaVersion": 1,
+    "scope": "Actual HTTP, SQLite BLOBs and fresh service process; legal JPEG marker-fill byte limits, not complex photograph or source-dimension maxima.",
+    "jpeg": {
+      "bytes": 524288,
+      "sha256": "1b67307d9d74d10c06ee6a6fa200a6108cf2ceb4cee7eb1f30c8080ab2894669",
+      "width": 37,
+      "height": 23
+    },
+    "status": "passed",
+    "originalPid": 597448,
+    "reopenedPid": 597710,
+    "challenges": 20,
+    "images": 160,
+    "retainedBytes": 83886080,
+    "maximumChallengeBytes": 4194304,
+    "html": {
+      "bytes": 5605432,
+      "sha256": "d145fa4223633c1105c7181185448fb84b00673244b5f0ac5fa3cd193157a96d",
+      "embeddedImages": 8,
+      "exactJpegBytes": true,
+      "completePublicRecord": true
+    },
+    "restart": {
+      "exactAll160Media": true,
+      "exactAll20RecordsExcludingResponseClockAndViewer": true
+    },
+    "durationSeconds": 16.589
+  },
+  "limits": [
+    "The maximum capacity fixture is a real decodable 37 by 23 JPEG padded with legal marker fill to exact512KiB; this measures byte limits and retention, not high-complexity photograph decode.",
+    "Backend capacity run uses actual HTTP and SQLite and different service-process IDs; it does not substitute for native image editor verification.",
+    "Images and server receipt times are supplied claims, not verified authorship, capture times, real-world identity or truth.",
+    "A complete HTML export is readable data and exact JPEGs, not private-seat recovery or a restore archive.",
+    "No physical device, production hosting or memory bound is claimed."
+  ],
+  "uiFindingsBeforeRelease": [
+    {
+      "finding": "Fresh opponent claim treated its submitted claim form as an unrelated unsent draft and displayed an unexpected confirmation.",
+      "evidence": "All initial nine native cases stopped before image flow; no claim POST occurred.",
+      "correction": "Exclude only the submitted claim form from the leave-draft guard while still guarding existing seat drafts."
+    },
+    {
+      "finding": "The file input retained a selected path after normalization was cancelled; selecting the same physical PNG again did not trigger a new change.",
+      "evidence": "Actual same-file chooser regression failed with preview still hidden; /tmp/friendly87-lifecycle-red.log."
+    },
+    {
+      "finding": "Delayed incoming-seat GET discarded a newer changed-back caption and silently switched seats.",
+      "evidence": "A real successful GET response held after the active revision was displayed; /tmp/friendly87-access-red.log."
+    },
+    {
+      "finding": "The page meta CSP still permitted only same-origin images, intersecting the server CSP and blocking owned Blob previews.",
+      "evidence": "Actual Chromium console CSP violation and img.decode EncodingError; 7 image cases failed, 5 lifecycle cases passed in 36.9s; /tmp/friendly87-native-final.log.",
+      "correction": "Added only blob: to index.html img-src. Existing server policy and all image assertions retained."
+    }
+  ],
+  "uiLifecycleCorrection": {
+    "focusedPassed": 3,
+    "seconds": 9.3,
+    "log": "/tmp/friendly87-lifecycle-green.log",
+    "scope": "Same physical file retry, delayed changed-back caption activation protection, and successful delayed one-use arbiter claim credential recovery without discarding current draft."
+  },
+  "sourceReview": {
+    "issue": 87,
+    "review": "independent source review",
+    "reviewedAt": "2026-10-04T15:36:46.365003+00:00",
+    "conclusion": "No remaining actionable finding in reviewed source; native integration verification belongs to the root and browser owner.",
+    "files": [
+      {
+        "path": "apps/friendly-challenges/challenges/images.py",
+        "bytes": 3779,
+        "sha256": "1ce842cfd04749e03b26f603841f0ff3f139921f62e23468322c5a15ba069993"
+      },
+      {
+        "path": "apps/friendly-challenges/challenges/server.py",
+        "bytes": 21426,
+        "sha256": "183bd77188ad118c7345cd10086cedc94ac7e84e051cc7863d2bc80115915440"
+      },
+      {
+        "path": "apps/friendly-challenges/challenges/domain.py",
+        "bytes": 28365,
+        "sha256": "03d44e7df1e03d6da41758ad2e204ee95bbb5d47f909e3e1c987fa74fd5982ab"
+      },
+      {
+        "path": "apps/friendly-challenges/challenges/store.py",
+        "bytes": 17332,
+        "sha256": "fbc637db3c13377d4d48415d2b3e3a1c1921e98acd520f83b179435e19510275"
+      },
+      {
+        "path": "apps/friendly-challenges/challenges/image_export.py",
+        "bytes": 6683,
+        "sha256": "b82a15a02f3622cb189a0cd2b6a81445e4a2861a2d442e261a47e76505fba8ed"
+      },
+      {
+        "path": "apps/friendly-challenges/src/types.ts",
+        "bytes": 4346,
+        "sha256": "77f54120b99e1fb89e52c3a01b6afc89722a6ca39e0f19935c0b327e5d475763"
+      },
+      {
+        "path": "apps/friendly-challenges/src/photo-header.ts",
+        "bytes": 8179,
+        "sha256": "1a60ce3233e6f6579c644bd8e34a39bdec79a3a977b4299a38801cd64f77da5e"
+      },
+      {
+        "path": "apps/friendly-challenges/src/evidence-image.ts",
+        "bytes": 4595,
+        "sha256": "173c69fcbffb1bad040ac3415151cf4d31e25c18ee3c9987ed9a5dff98767199"
+      },
+      {
+        "path": "apps/friendly-challenges/src/api.ts",
+        "bytes": 14164,
+        "sha256": "298266ea9815d41b92ee082ecbc6d65d92881ddc9218b188c1d6296dbba3c9f2"
+      },
+      {
+        "path": "apps/friendly-challenges/src/main.ts",
+        "bytes": 65742,
+        "sha256": "32acc3741c63424970f911314be1dff6f6a7b97c9f0a477083cb6c455749098e"
+      },
+      {
+        "path": "apps/friendly-challenges/src/style.css",
+        "bytes": 6719,
+        "sha256": "f6c9d50ce9f351a7073e1cbbbb606572172fcea7f85abe9611cd59d8047d8881"
+      },
+      {
+        "path": "apps/friendly-challenges/src/session.ts",
+        "bytes": 3945,
+        "sha256": "863317aad5c97f9a3a8d77e17e5a0985a645e21c67e3b85b3d07dc41b8050162"
+      },
+      {
+        "path": "apps/friendly-challenges/index.html",
+        "bytes": 643,
+        "sha256": "fcb91b82ced0ff2aaee4d419966a54fb043646fd05795720df451b2db0b7eb1b"
+      }
+    ],
+    "scope": [
+      "Strict JPEG container and native-decoder admission; normalized client output and metadata removal",
+      "Authenticated bounded framed HTTP and deadlines",
+      "Legacy SQLite migration without record rewrite; atomic image/event insertion and correspondence",
+      "Schema replay, descriptor association, complete token-free escaped HTML exports",
+      "Draft, image, seat and async response ownership; object URL retirement; effective application CSP"
+    ],
+    "resolvedFindings": [
+      {
+        "finding": "JPEG header-only parsing accepted concatenated input",
+        "resolution": "Full bounded entropy/EOI extent scan rejects trailing or concatenated JPEGs and MPO. Independent original doubled-JPEG probe rejected after fix."
+      },
+      {
+        "finding": "Generated Chromium JPEG ICC metadata conflicted with strict server admission",
+        "resolution": "Explicit sRGB canvas and generated-output metadata stripping precede preview. Independent pure client-strip/server-admit probe accepted 8134 bytes, 1024x768, from actual 8608-byte root Chromium fixture.",
+        "normalizedSha256": "d36e2a26d8df381318e1709a5e68e79e12d58a4886a3c0ca740d73b71b81859f"
+      },
+      {
+        "finding": "Cancelled preparation prevented native same-file selection retry",
+        "resolution": "Captured File remains owned while picker value is cleared before await, allowing intentional reselection."
+      },
+      {
+        "finding": "Delayed incoming access/claim activation could discard newer draft intent",
+        "resolution": "Capture editorInputIntent and imageEpoch at consent; matching request ownership plus unchanged receipts required for activation. Successful returned claim credential is retained before stale-response checks."
+      },
+      {
+        "finding": "Fresh claim form prompted about leaving its own submitted name",
+        "resolution": "Only submitted claim form excluded from leave guard; all other visible drafts and image work remain guarded."
+      },
+      {
+        "finding": "Application meta CSP blocked image previews despite server header permission",
+        "resolution": "index.html now allows img-src self blob:; server and meta policies both admit owned blob previews. Other meta directives unchanged."
+      }
+    ],
+    "claimCredentialAssessment": {
+      "receivedSuccess": "remember executes before async retirement checks; persists via session store or retains in memory with unsaved-seat unload protection. Newer draft intent additionally exposes the returned private access link and does not switch current seat.",
+      "ownership": "Matching generation/controller finally prevents stale requests releasing a newer operation; pagehide aborts work and reenables claim/access controls for return.",
+      "limit": "A successful server claim whose response/token was never received cannot be recovered by this client flow. No automatic replay or recovery guarantee is asserted."
+    },
+    "verification": {
+      "thisFollowup": "Read-only source inspection; no test suite, browser, build or server launched.",
+      "priorIndependentProbes": [
+        "Concatenated actual JPEG rejection",
+        "Generated JPEG metadata stripping followed by strict Python admission"
+      ],
+      "reportedNativeRedEvidence": [
+        "/tmp/friendly87-lifecycle-red.log",
+        "/tmp/friendly87-access-red.log"
+      ],
+      "reportedNativeEvidenceOwnership": "RED runs and final native reruns belong to root/browser owner, not this reviewer."
+    },
+    "remainingFindings": []
+  },
+  "sourceReviewRootRehashed": true,
+  "native": {
+    "feature": "Friendly Challenges image evidence #87",
+    "nativeResults": {
+      "focusedLifecycle": {
+        "passed": 3,
+        "seconds": 9.3,
+        "log": "/tmp/friendly87-lifecycle-green.log"
+      },
+      "completeThreeSeatFlow": {
+        "passed": 1,
+        "seconds": 7.5,
+        "log": "/tmp/friendly87-byte-inspection.log"
+      },
+      "remaining": {
+        "passed": 11,
+        "seconds": 43.4,
+        "log": "/tmp/friendly87-native-remaining.log"
+      },
+      "uniqueFinalCases": 12,
+      "safeMobileRepeat": {
+        "passed": 1,
+        "seconds": 6.4,
+        "log": "/tmp/friendly87-safe-mobile.log",
+        "purpose": "Existing eight-image case repeated after closing private link before screenshot; all assertions unchanged."
+      }
+    },
+    "priorFailures": [
+      {
+        "kind": "actual regressions",
+        "description": "Fresh claim false confirmation; same-file chooser retry; delayed access activation losing newer input; page meta CSP blocked blob images. All resolved by owners."
+      },
+      {
+        "kind": "test byte inspection",
+        "description": "fetch(blob:) correctly blocked by connect-src; observer now reads genuine Blob published to native createObjectURL, with actual image.decode retained."
+      }
+    ],
+    "oracles": [
+      "Original procedural PNG alpha quadrants and EXIF6 JPEG; independent Pillow pixel decoding",
+      "Authenticated upload/GET bytes and SHA equality for both participants and arbiter",
+      "Complete script-free HTML data-image bytes match stored images; no bearer/invitation secrets",
+      "Production Python service process restart preserves images and events",
+      "Eight real native image uploads; ninth rejected without eviction"
+    ],
+    "limitations": [
+      "Native tests use small original images; maximum source-byte/pixel/normalized-output limits are covered by separately coordinated gates.",
+      "Targeted race instrumentation delays genuine native reads or HTTP responses; it does not substitute bytes or server state."
+    ],
+    "artifacts": {
+      "eight-actual-images.html": {
+        "bytes": 16868,
+        "sha256": "68fa717d3e4953ec98c16058a123b37558271b6ef07ee9411b8c38ce931f653a"
+      },
+      "desktop-image-record.png": {
+        "bytes": 333376,
+        "sha256": "2a82da129cbf9b7a9efeb745a42c48ac23702e4807700de3fa7cd28fd597f9e5"
+      },
+      "reviewed.jpg": {
+        "bytes": 380,
+        "sha256": "8064a7c93fc3fa20f0489450f398f15fef7683f2708036ef111a52c6519f367f"
+      },
+      "image-evidence-verification.json": {
+        "bytes": 509,
+        "sha256": "e0b3cc01a43a904d2dde9be4ec225bf642c6f4a9372884767572584a21d37956"
+      },
+      "complete-image-record.html": {
+        "bytes": 8567,
+        "sha256": "830b4eb2c56fe8f6d8945791aec91995496e97a4e9ce7118b15c08362d50ad01"
+      },
+      "eight-images-390px.png": {
+        "bytes": 470443,
+        "sha256": "62f30654a567644d7cd46e63cb2ff4185decc6ef230e95184e13fcd2f46bb830"
+      }
+    },
+    "verificationScope": "12 distinct new cases passed across one complete-flow case and the remaining eleven; no single final all12 pass claimed.",
+    "sourceHashes": {
+      "challenges/__init__.py": "c4e936a9050af8ff69c3c079711e077d66370ca02cc682f5cbfbceda7e4fd017",
+      "challenges/__main__.py": "1bb36640f71b2e7c865644d14ab0238b4bb415473d42b175c60a5f01e151b7db",
+      "challenges/domain.py": "03d44e7df1e03d6da41758ad2e204ee95bbb5d47f909e3e1c987fa74fd5982ab",
+      "challenges/image_export.py": "b82a15a02f3622cb189a0cd2b6a81445e4a2861a2d442e261a47e76505fba8ed",
+      "challenges/images.py": "1ce842cfd04749e03b26f603841f0ff3f139921f62e23468322c5a15ba069993",
+      "challenges/server.py": "183bd77188ad118c7345cd10086cedc94ac7e84e051cc7863d2bc80115915440",
+      "challenges/store.py": "fbc637db3c13377d4d48415d2b3e3a1c1921e98acd520f83b179435e19510275",
+      "dist/assets/index-CYuTaMrs.js": "c83d7afbc2c87c0991bf99728a063fe93bacd42274d6294d9d42e22e4fbf8610",
+      "dist/index.html": "7c38f1f21ba7c29431d21cb84d2fa22e206905b432189c0aa09a56c16d9c1863",
+      "index.html": "fcb91b82ced0ff2aaee4d419966a54fb043646fd05795720df451b2db0b7eb1b",
+      "src/api.ts": "298266ea9815d41b92ee082ecbc6d65d92881ddc9218b188c1d6296dbba3c9f2",
+      "src/evidence-image.ts": "173c69fcbffb1bad040ac3415151cf4d31e25c18ee3c9987ed9a5dff98767199",
+      "src/main.ts": "32acc3741c63424970f911314be1dff6f6a7b97c9f0a477083cb6c455749098e",
+      "src/photo-header.ts": "1a60ce3233e6f6579c644bd8e34a39bdec79a3a977b4299a38801cd64f77da5e",
+      "src/session.ts": "863317aad5c97f9a3a8d77e17e5a0985a645e21c67e3b85b3d07dc41b8050162",
+      "src/types.ts": "77f54120b99e1fb89e52c3a01b6afc89722a6ca39e0f19935c0b327e5d475763",
+      "tests/browser/image-evidence-fixtures.ts": "fda047a1592a412c13a7e966a9a38300aceb274d1bd9c43e7b7cc140a2ef5398",
+      "tests/browser/image-evidence.spec.ts": "7d950d12a0761ff9f7e952454f948d30b5e09ed460edfced14b085e18cbe6c71"
+    },
+    "failureRuns": [
+      {
+        "log": "/tmp/friendly87-initial-red.log",
+        "failed": 1,
+        "classification": "Meaningful missing Choose evidence image baseline RED."
+      },
+      {
+        "log": "/tmp/friendly87-native-first.log",
+        "failed": 9,
+        "classification": "Actual fresh claim submitted form wrongly triggered unsent-draft confirmation before join. Root/owner corrected guard."
+      },
+      {
+        "log": "/tmp/friendly87-lifecycle-red.log",
+        "failed": 2,
+        "classification": "One genuine same-physical-file retry failure; one late-access fixture had not awaited accepted revision."
+      },
+      {
+        "log": "/tmp/friendly87-access-red.log",
+        "failed": 1,
+        "classification": "Corrected fixture genuine late-access changed-back-input race RED."
+      },
+      {
+        "log": "/tmp/friendly87-native-final.log",
+        "failed": 7,
+        "passed": 5,
+        "seconds": 36.9,
+        "classification": "Actual meta CSP prohibited blob preview image decoding."
+      },
+      {
+        "log": "/tmp/friendly87-native-csp-green.log",
+        "failed": 7,
+        "passed": 5,
+        "seconds": 36.6,
+        "classification": "Test-only fetch(blob:) conflicted with legitimate connect-src self; corrected observation of native Blob publication without policy weakening."
+      }
+    ]
+  },
+  "maximumSource": {
+    "status": "passed",
+    "source": {
+      "bytes": 8388608,
+      "sha256": "c42f7cd5b985b98dca684af1239d76764bfb854aae744e5edccd49bd25a114d9",
+      "width": 4000,
+      "height": 4000,
+      "pixels": 16000000,
+      "format": "PNG RGBA8",
+      "ancillaryPadding": {
+        "type": "paDd",
+        "bytes": 8296444,
+        "meaning": "unknown private ancillary safe-to-copy chunk, ignored for pixels"
+      }
+    },
+    "rejectedSourceBytes": 8388609,
+    "fixtureOracleSha256": "65ab67148137608ade2ff71d7a05fe2c9aa27bdda890841e4829f8cb0cf6e25e",
+    "normalized": {
+      "bytes": 7245,
+      "height": 1024,
+      "mime": "image/jpeg",
+      "sha256": "9f5f48340930bfff74bd03ab6c9d3121091bbb220b18198b818c1a3733b3cdef",
+      "width": 1024,
+      "pixelSamples": [
+        {
+          "xy": [
+            256,
+            256
+          ],
+          "rgba": [
+            254,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "xy": [
+            768,
+            256
+          ],
+          "rgba": [
+            0,
+            255,
+            1,
+            255
+          ]
+        },
+        {
+          "xy": [
+            256,
+            768
+          ],
+          "rgba": [
+            0,
+            0,
+            254,
+            255
+          ]
+        },
+        {
+          "xy": [
+            768,
+            768
+          ],
+          "rgba": [
+            255,
+            255,
+            255,
+            255
+          ]
+        }
+      ],
+      "markerHex": [
+        "e0",
+        "db",
+        "db",
+        "c0",
+        "c4",
+        "c4",
+        "c4",
+        "c4",
+        "da",
+        "d9"
+      ],
+      "nativeNormalizeWallMs": 348.658363
+    },
+    "actualUpload": {
+      "bytes": 7377,
+      "metadataBytes": 116,
+      "jpegBytes": 7245,
+      "jpegSha256": "9f5f48340930bfff74bd03ab6c9d3121091bbb220b18198b818c1a3733b3cdef"
+    },
+    "claims": {
+      "choosePreviewUploadActualNative": true,
+      "exactRetainedPreviewBytes": true,
+      "plusOneKeepsPriorReadyDraft": true,
+      "noAppendDuringReviewOrRejectedReplacement": true,
+      "metadataFreeGeneratedPreview": true,
+      "physicalAuthenticityVerified": false,
+      "worstCaseDecodeOrMemoryProof": false
+    },
+    "limitations": "Exact source byte/pixel limits using low-complexity padded source, not worst-case compressed decoding or memory use.",
+    "artifacts": [
+      "source-exact-8MiB.png",
+      "source-plus-one.png",
+      "fixture-oracle.json",
+      "normalized-reviewed.jpg",
+      "retained-exact.jpg",
+      "source-maximum-desktop.png",
+      "source-maximum-390px.png"
+    ],
+    "generator": {
+      "formatVersion": 1,
+      "language": "Python",
+      "compressionLevel": 9,
+      "note": "Original fixture frozen before browser; exact original generation runtime was not recorded."
+    },
+    "runnerSha256": "8742141ab4b7dfc83e7ad090792cde3b4c8558ebc3230c87440d8797a5546448",
+    "firstHarnessFailure": {
+      "log": "/tmp/friendly87-source-maximum-first-attempt.log",
+      "cause": "Playwright request.postDataBuffer returned null for the actual native Blob upload; image normalization, over-limit replacement preservation, append and retained-byte equality had already passed.",
+      "fix": "Observe genuine Blob body passed to unchanged native fetch, then inspect those actual bytes."
+    }
+  },
+  "visualInspection": {
+    "rootReviewed": [
+      "/workspace/friendly87-source-maximum/source-maximum-390px.png",
+      "/workspace/friendly87-native-artifacts/desktop-image-record.png",
+      "/workspace/friendly87-native-artifacts/eight-images-390px.png"
+    ],
+    "observed": "Readable mobile controls and literal evidence text; resolved desktop image card and complete audit visible. No horizontal overflow or exposed private link in promoted screenshots."
+  }
+}
