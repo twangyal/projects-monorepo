@@ -180,7 +180,9 @@ test('real cached history return retains the heap and allows deliberate sensor c
       const state={shown:false};Object.defineProperty(window,'cachedVisit',{value:state});
       window.addEventListener('pageshow',event=>{if(event.persisted)state.shown=true;});
     });
-    await page.goto('http://127.0.0.1:4281/?away');await page.goBack();
+    await page.goto('http://127.0.0.1:4281/?away');
+    // Cached restoration does not fire a new document load event.
+    await page.goBack({waitUntil:'commit',timeout:10000});
     await expect.poll(()=>page.evaluate(()=>(window as Window&{cachedVisit?:{shown:boolean}}).cachedVisit?.shown),{timeout:10000}).toBe(true);
     await expect(page.locator('#input-source')).toHaveValue('bluetooth-hr');
     expect((await stats(page)).options).toHaveLength(0);
