@@ -1,6 +1,7 @@
 import './style.css';
 import { activeCue, draftCues, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
-import { LyricHistory, type LyricDraft } from './draft-history.ts';
+import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
+import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 
@@ -40,6 +41,7 @@ app.innerHTML = `
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">YOUR LYRICS, YOUR TIMING</span></div>
         <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
+        <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
@@ -69,6 +71,11 @@ let animation = 0;
 let projectGeneration = 0;
 let loadedProjectGeneration = 0;
 let editGeneration = 0;
+let srtEpoch = 0;
+interface SrtOwner { epoch: number; projectId: string; project: number; edit: number; deadline: number }
+let srtOwner: SrtOwner | null = null;
+let srtReview: { owner: SrtOwner; cues: Project['cues'] } | null = null;
+let srtTimer: ReturnType<typeof setTimeout> | undefined;
 let mediaGeneration = 0;
 let archiveInfo: ArchiveInfo | null = null;
 let archiveInfoState: 'none' | 'loading' | 'ready' | 'error' = 'none';
@@ -125,6 +132,7 @@ const timeline = mountTimeline(element('timing-workbench'), {
   },
   onGestureStart() {
     if (!working || currentJob || loading || requestingJob || saving || archiveChecking || timingError(working.cues, working.duration)) return false;
+    retireSrt('A timing gesture cancelled the lyric import review.');
     lyricHistory?.endGroup(); return true;
   },
   onCommitBoundary(change) {
@@ -183,26 +191,29 @@ function controls() {
   element<HTMLButtonElement>('undo-lyrics').disabled = !working || !lyricHistory?.canUndo || busy || saving;
   element<HTMLButtonElement>('redo-lyrics').disabled = !working || !lyricHistory?.canRedo || busy || saving;
   element('discard-draft').hidden = !draftDirty;
-  for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button')) control.disabled = busy || saving;
+  for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>('input,textarea,button')) control.disabled = busy || saving;
   for (const control of document.querySelectorAll<HTMLButtonElement>('[data-track]')) control.disabled = !working;
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy;
+  srtControls();
   updateTimeline();
   archiveControls();
   restoreArchiveFocus();
 }
 function draftSnapshot(): LyricDraft {
-  return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty };
+  return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty, rawTimings: captureTimingDrafts() };
 }
 function changed(group: string | null = null) {
   if (!working) return;
+  retireSrt('The lyric editor changed. Choose the SRT file again to review current work.');
   timeline.cancelGesture(); editGeneration++;
   lyricHistory?.record(draftSnapshot(), group);
   dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
 }
 function restoreDraft(direction: 'undo' | 'redo') {
   if (!working || !lyricHistory || currentJob || loading || requestingJob || saving || archiveChecking) return;
+  retireSrt('Undo or Redo cancelled the lyric import review.');
   timeline.cancelGesture(); editGeneration++;
   const rawTimings = captureTimingDrafts();
   const draft = lyricHistory[direction]();
@@ -211,7 +222,7 @@ function restoreDraft(direction: 'undo' | 'redo') {
   element<HTMLInputElement>('title').value = draft.title;
   element<HTMLTextAreaElement>('lyric-draft').value = draft.pastedText;
   draftDirty = draft.pastedDirty; dirty = lyricHistory.dirty; videoUrl = null;
-  renderCues(rawTimings); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
+  renderCues(draft.rawTimings ?? rawTimings); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
 }
 element('undo-lyrics').addEventListener('click', () => restoreDraft('undo'));
 element('redo-lyrics').addEventListener('click', () => restoreDraft('redo'));
@@ -306,18 +317,83 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('[data-track]'
 
 function cueInput(label: string, value: string, type: string, onInput: (value: string) => void): HTMLLabelElement {
   const wrapper = document.createElement('label'); wrapper.textContent = label;
-  const control = document.createElement('input'); control.type = type; control.value = value;
-  if (type === 'number') { control.min = '0'; control.max = String(working!.duration); control.step = 'any'; }
+  const control = type === 'text' ? document.createElement('textarea') : document.createElement('input'); control.value = value;
+  if (control instanceof HTMLTextAreaElement) control.rows = Math.max(1, Math.min(4, value.split('\n').length));
+  else { control.type = type; if (type === 'number') { control.min = '0'; control.max = String(working!.duration); control.step = 'any'; } }
   control.addEventListener('input', () => { onInput(control.value); changed(label); });
   wrapper.append(control); return wrapper;
 }
-interface RawTiming { start: number; end: number; startText: string; endText: string }
 function captureTimingDrafts(): RawTiming[] {
   return working?.cues.map((cue, index) => {
     const row = element('cue-list').querySelector(`[data-cue="${index}"]`);
     return { start: cue.start, end: cue.end, startText: row?.querySelector<HTMLInputElement>('[data-boundary="start"]')?.value ?? '', endText: row?.querySelector<HTMLInputElement>('[data-boundary="end"]')?.value ?? '' };
   }) || [];
 }
+function srtAllowed(): boolean { return !!working && !currentJob && !loading && !requestingJob && !saving && !archiveChecking; }
+function srtCurrent(owner: SrtOwner): boolean {
+  return srtOwner === owner && srtEpoch === owner.epoch && working?.id === owner.projectId && loadedProjectGeneration === owner.project && editGeneration === owner.edit;
+}
+function srtControls() {
+  const allowed = srtAllowed();
+  element<HTMLInputElement>('srt-file').disabled = !allowed;
+  element<HTMLButtonElement>('srt-apply').disabled = !allowed || !srtReview || !srtCurrent(srtReview.owner);
+  element<HTMLButtonElement>('srt-cancel').hidden = !srtOwner;
+}
+function retireSrt(text: string) {
+  if (!srtOwner && !srtReview) return;
+  srtEpoch++; clearTimeout(srtTimer); srtTimer = undefined; srtOwner = null; srtReview = null;
+  element('srt-review').hidden = true; element('srt-review-list').replaceChildren();
+  element('srt-status').textContent = text; srtControls();
+}
+function srtTime(seconds: number): string {
+  const milliseconds = Math.round(seconds * 1000), whole = Math.floor(milliseconds / 1000);
+  return `${String(Math.floor(whole / 3600)).padStart(2, '0')}:${String(Math.floor(whole / 60) % 60).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')},${String(milliseconds % 1000).padStart(3, '0')}`;
+}
+element<HTMLInputElement>('srt-file').addEventListener('change', async event => {
+  const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
+  if (!file || !srtAllowed()) return;
+  retireSrt('');
+  if (file.size < 1 || file.size > MAX_SRT_BYTES) { element('srt-status').textContent = 'Choose a nonempty UTF-8 SRT file no larger than 128 KiB.'; return; }
+  const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working!.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
+  const duration = working!.duration, title = working!.title, previousCount = working!.cues.length;
+  srtOwner = owner; element('srt-status').textContent = 'Reading and validating all timed lyric cues. Current editor values are kept.'; srtControls();
+  srtTimer = setTimeout(() => { if (srtCurrent(owner) && !srtReview) retireSrt('SRT reading took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); }, 10000);
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!srtCurrent(owner)) return;
+    if (performance.now() >= owner.deadline) { retireSrt('SRT reading took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
+    const cues = parseSrt(bytes, duration);
+    if (!srtCurrent(owner)) return;
+    if (!srtAllowed()) { retireSrt('Other studio work cancelled the lyric import. Current lyrics were kept.'); return; }
+    if (performance.now() >= owner.deadline) { retireSrt('SRT validation took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
+    clearTimeout(srtTimer); srtTimer = undefined;
+    srtReview = { owner, cues };
+    element('srt-summary').textContent = `${file.name} · ${cues.length} imported cues to replace ${previousCount} current cues for “${title}” (${formatTime(duration)}). First start ${srtTime(cues[0].start)}; last end ${srtTime(cues.at(-1)!.end)}.`;
+    const list = element('srt-review-list'); list.replaceChildren();
+    for (const [index, cue] of cues.entries()) {
+      const row = document.createElement('li'); row.dataset.srtCue = String(index);
+      const time = document.createElement('strong'); time.textContent = `${index + 1}. ${srtTime(cue.start)} --> ${srtTime(cue.end)}`;
+      const text = document.createElement('pre'); text.textContent = cue.text; row.append(time, text); list.append(row);
+    }
+    if (performance.now() >= owner.deadline) { retireSrt('SRT review took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
+    element('srt-review').hidden = false; element('srt-status').textContent = 'All cues validated. Review every cue, then replace lyric cues when ready. Nothing has been saved.'; srtControls();
+  } catch (error) {
+    if (!srtCurrent(owner)) return;
+    retireSrt(`${error instanceof Error ? error.message : 'The SRT file could not be read.'} Current lyrics and editor values were kept.`);
+  }
+});
+element('srt-cancel').addEventListener('click', () => retireSrt('Lyric import cancelled. Current lyrics and editor values were kept.'));
+element('srt-apply').addEventListener('click', () => {
+  const review = srtReview;
+  if (!review || !srtCurrent(review.owner) || !srtAllowed() || !working || !lyricHistory) return;
+  timeline.cancelGesture();
+  // Keep the exact pre-application native spelling, including blank invalid times.
+  lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
+  const cues = structuredClone(review.cues);
+  retireSrt('Lyric cues replaced in memory. The title and pasted words were kept; use Save lyrics when ready.');
+  working.cues = cues; renderCues(); changed();
+  message(draftDirty ? 'Timed lyrics imported. Your unapplied pasted words are kept; create draft timings or discard that paste before saving.' : 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.');
+});
 function renderCues(rawTimings: RawTiming[] = []) {
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Paste your words above, then create draft timings to begin.'; list.append(empty); return; }
@@ -355,6 +431,7 @@ async function refreshProjects(isCurrent: () => boolean = () => true): Promise<b
   return true;
 }
 async function openProject(id: string) {
+  retireSrt('Opening a clip cancelled the lyric import review.');
   timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; mediaGeneration++;
   const generation = ++projectGeneration;
   loading = true; controls();
@@ -370,13 +447,13 @@ async function openProject(id: string) {
   element('duration').textContent = formatTime(project.duration);
   element('clip-details').hidden = false;
   element<HTMLTextAreaElement>('lyric-draft').value = project.cues.map(cue => cue.text).join('\n');
-  lyricHistory = new LyricHistory(draftSnapshot());
   history.replaceState(null, '', `?project=${project.id}`);
-  renderCues(); controls(); track(currentTrack);
+  renderCues(); lyricHistory = new LyricHistory(draftSnapshot()); controls(); track(currentTrack);
   } finally { if (generation === projectGeneration) { loading = false; controls(); } }
 }
 function mayLeave(): boolean { return !(dirty || draftDirty) || window.confirm('Discard unsaved lyric edits and open a different clip?'); }
 element<HTMLSelectElement>('projects').addEventListener('change', async event => {
+  retireSrt('Choosing a clip cancelled the lyric import review.');
   const select = event.target as HTMLSelectElement;
   if (!select.value || !mayLeave()) { select.value = working?.id || ''; return; }
   try { await openProject(select.value); message(''); } catch (error) { message(String(error instanceof Error ? error.message : error), true); }
@@ -397,12 +474,14 @@ element('draft-timings').addEventListener('click', () => {
 element('save').addEventListener('click', async () => {
   timeline.cancelGesture();
   if (!working || saving || archiveChecking || draftDirty || validateWorking()) return;
+  retireSrt('Saving lyrics cancelled the lyric import review.');
   timeline.cancelGesture(); editGeneration++;
   saving = true; controls();
   try {
     working = await request<Project>(`/api/projects/${working.id}`, json('PUT', { title: working.title, cues: working.cues, revision: working.revision }));
-    dirty = false; videoUrl = null; lyricHistory = new LyricHistory(draftSnapshot());
-    await refreshProjects(); renderCues(); message('Lyrics and timing saved locally.');
+    dirty = false; videoUrl = null;
+    renderCues(); lyricHistory = new LyricHistory(draftSnapshot());
+    await refreshProjects(); message('Lyrics and timing saved locally.');
   } catch (error) { message(error instanceof Error ? error.message : 'Could not save. Your edits are still here.', true); }
   finally { saving = false; controls(); }
 });
@@ -417,6 +496,7 @@ element('video-download').addEventListener('click', () => { if (videoUrl) downlo
 element('delete-project').addEventListener('click', async () => {
   timeline.cancelGesture();
   if (!working || currentJob || saving || loading || archiveChecking) return;
+  retireSrt('Deleting a clip cancelled the lyric import review.');
   if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
   saving = true; controls();
   try {
@@ -487,6 +567,7 @@ async function pollJob(id: string, epoch = pollEpoch) {
   } finally { if (pollInFlight === key) pollInFlight = null; }
 }
 function startPolling(job: Job, follow = true, owned = true, savedRevision: number | null = null) {
+  retireSrt('Studio media work cancelled the lyric import review.');
   if (currentJob?.id === job.id) { void pollJob(job.id); return; }
   pollEpoch++; followJobProject = follow; ownedJob = owned; archiveJobRevision = savedRevision;
   clearTimeout(pollTimer); showJob(job); void pollJob(job.id, pollEpoch);
@@ -494,6 +575,7 @@ function startPolling(job: Job, follow = true, owned = true, savedRevision: numb
 element<HTMLInputElement>('audio-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
   if (!file || currentJob || requestingJob || loading || saving || archiveChecking || !mayLeave()) return;
+  retireSrt('Importing audio cancelled the lyric import review.');
   const maxBytes = Math.min(MAX_UPLOAD_BYTES, session?.maxUploadBytes ?? MAX_UPLOAD_BYTES);
   if (file.size < 1 || file.size > maxBytes) { message(`Choose a nonempty song clip no larger than ${maxBytes / 1024 / 1024} MiB.`, true); return; }
   requestingJob = true; controls();
@@ -511,6 +593,7 @@ element('cancel-job').addEventListener('click', async () => {
 });
 element('export-video').addEventListener('click', async () => {
   if (!working || dirty || draftDirty || currentJob || requestingJob || loading || saving || archiveChecking) return;
+  retireSrt('Exporting video cancelled the lyric import review.');
   requestingJob = true; controls();
   try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/export`, json('POST', {})); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not export video.', true); }
@@ -555,6 +638,7 @@ async function loadArchiveInfo(): Promise<void> {
 function archiveBusy(): boolean { return !!currentJob || requestingJob || loading || saving || archiveChecking; }
 element('archive-backup').addEventListener('click', async () => {
   if (!working || !session || archiveInfoState !== 'ready' || archiveBusy()) return;
+  retireSrt('Backing up the clip cancelled the lyric import review.');
   rememberArchiveFocus(); timeline.cancelGesture();
   const id = working.id, revision = working.revision, generation = loadedProjectGeneration, operation = ++archiveOperation;
   requestingJob = true; controls();
@@ -574,6 +658,7 @@ element('archive-backup').addEventListener('click', async () => {
 element<HTMLInputElement>('archive-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
   if (!file || !session || archiveBusy() || restoreUncertain) return;
+  retireSrt('Importing an archive cancelled the lyric import review.');
   const limit = Math.min(160 * 1024 ** 2, session.maxArchiveBytes);
   if (!Number.isFinite(limit) || file.size < 1 || file.size > limit) { message('Choose a nonempty Karaoke project archive no larger than 160 MiB.', true); return; }
   rememberArchiveFocus(); timeline.cancelGesture();
@@ -599,7 +684,9 @@ element<HTMLInputElement>('archive-file').addEventListener('change', async event
 });
 element('archive-upload-cancel').addEventListener('click', () => archiveUpload?.abort());
 element('open-imported').addEventListener('click', async () => {
-  if (!importedResult || archiveBusy() || !mayLeave()) return;
+  if (!importedResult || archiveBusy()) return;
+  retireSrt('Opening an imported clip cancelled the lyric import review.');
+  if (!mayLeave()) return;
   const id = importedResult.id;
   try { await openProject(id); message('Opened the restored clip. Imported audio and processing claims remain unverified.'); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not open the restored clip. Your previous editor is still here.', true); }
@@ -652,6 +739,7 @@ window.addEventListener('beforeunload', event => { if (dirty || draftDirty || re
 controls(); draw(); void refresh();
 
 window.addEventListener('pagehide', event => {
+  retireSrt('The page was suspended. Choose the SRT file again to review it.');
   archiveFocus = null;
   mediaGeneration++; audio.pause();
   if (event.persisted) timeline.stopWaveform(); else timeline.destroy();

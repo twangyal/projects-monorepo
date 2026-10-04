@@ -38,7 +38,7 @@ Startup never downloads models. Missing/corrupt weights disable new separation w
 
 1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
 2. Wait for separation, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
-3. Paste your lyrics, one line per cue, and press **Create draft timings**. Even spacing is only a starting point; it does not detect singing or identify words.
+3. Paste your lyrics, one line per cue, and press **Create draft timings**, or choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues. Even spacing is only a starting point; it does not detect singing or identify words.
 4. Listen and correct each line's start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** seeks to its start. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
 5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
 
@@ -53,6 +53,36 @@ unapplied pasted words keep their separate unsaved warning. A new edit after und
 clears redo. Saving successfully, opening another clip, deleting the selected clip,
 or reloading resets this session-only history. Failed requests retain it. History
 does not undo saved server revisions, media jobs, or permanent clip deletion.
+
+### Import existing timed lyrics
+
+With a clip open, choose **Import timed lyrics (SRT)** and review every cue before
+pressing **Replace lyric cues**. The replacement is one unsaved Undo/Redo edit.
+Your clip title, audio and unapplied pasted words stay intact; an unapplied paste
+still needs to be used or discarded before saving. Press **Save lyrics** when the
+result is ready. Cancel, invalid input and superseded reads keep the current
+editor and saved revision intact. Editing or changing clips invalidates an old
+review. Reading and reviewing the file sends no lyrics to a service.
+
+Supported files are **UTF-8, at most 128 KiB**, with an optional leading BOM,
+LF or CRLF line endings, consecutive cue numbers starting at 1 and exact
+`HH:MM:SS,mmm --> HH:MM:SS,mmm` timestamps. Every interval must fit the current
+clip. Gaps and adjacent cues are allowed; overlaps, zero-length cues, VTT,
+timestamp settings and unsupported formatting are rejected without partial
+import. The existing 200-cue, 240-character-per-cue and 20,000-character total
+limits apply, counting Unicode code points and preserved intra-cue newlines.
+
+Multiline cues remain editable as multiline text. Empty or space/tab-only lines
+separate subtitle blocks; other whitespace-only lines and unsupported control
+characters are rejected. Meaningful text retains its spacing. Raw `<` and `>`
+are rejected: escape literal brackets as `&lt;` and `&gt;`. Those two escapes and
+`&amp;` decode exactly once, matching this app's SRT exports; other ampersand
+sequences stay literal. Imported text is never evaluated as HTML or styling.
+SRT represents milliseconds: exported pre-existing fractional timings are
+rounded by the existing exporter. Submillisecond source intervals can round to
+overlapping cues, and a boundary can round beyond the clip's exact duration;
+such files need correction before import. Complete clip archives
+remain the way to preserve original timing precision and all audio together.
 
 ### Timing with the waveform
 
@@ -254,3 +284,20 @@ The first large-run metrics sampler raced normal temporary-directory cleanup aft
 A native Chromium 151 run downloaded the full archive and uploaded it as an actual browser File into the second library. Invalid draft fields, their DOM nodes, focus, redo history and audio position survived; accepting **Open imported clip** was a separate decision. The restored final cue moved from 298.50 to **298.51 seconds** with keyboard timing, Undo/Redo and Save, then survived another real service restart at revision 8. Its downloaded 200-cue SRT retained the edited interval and literal text. Desktop and 390-pixel screenshots were inspected with no overflow, page errors or external requests. The observed backup/download and upload/restore checks took 1.41 and 1.90 seconds respectively on this local warm-cache fixture; these are not performance guarantees.
 
 See [the complete portability evidence](docs/2026-10-04-portability-verification.json), including original validation-helper failures, recovered media facts and explicit measurement limits. No new inference, model download or separation-quality evaluation was performed.
+
+## Reviewed SRT import verification (2026-10-04)
+
+Issue [#105](https://github.com/twangyal/projects-monorepo/issues/105) adds the
+reviewed import flow in version 0.4.0. Local checks pass **166 Python tests,
+66 TypeScript tests and 61 production browser cases**, plus compilation, Ruff,
+ESLint, type checking and build. The 17 new browser cases and all 44 unchanged
+existing cases each pass their first final-source run. Literal independent
+fixtures verify complete review, exact text/times, raw-field Undo/Redo,
+superseded File reads, failed saves, waveform edits, manual persistence and real
+SRT/ZIP downloads. The native four-second archive preserves all three WAV hashes.
+
+The deadline test advances a controlled browser clock; lifecycle tests dispatch
+page events and do not establish physical BFCache admission. Existing Spleeter
+inference evidence remains separate. See the [local verification receipt](docs/2026-10-04-srt-import-verification.json)
+and [new native evidence](docs/2026-10-04-srt-import-native.json). Maximum artifact
+acceptance and published-head CI are recorded separately when complete.

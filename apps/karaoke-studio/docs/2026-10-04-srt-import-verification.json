@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Karaoke Studio #105 reviewed timed SRT import",
+  "version": "0.4.0",
+  "date": "2026-10-04",
+  "status": "local static and 61 native cases passed; maximum and CI pending",
+  "localStatic": {
+    "pythonTests": 166,
+    "pythonPassed": 166,
+    "pythonDurationSeconds": 55.303,
+    "pythonCompile": "passed",
+    "ruff": "passed",
+    "typescriptTests": 66,
+    "typescriptPassed": 66,
+    "typescriptDurationMs": 900.752683,
+    "eslint": "passed",
+    "typecheck": "passed",
+    "firstBuildMs": 318,
+    "finalBuildMs": 255,
+    "normalEntry": "index-Csg4_O27.js",
+    "css": "index-D91Q8Z6n.css",
+    "logs": [
+      {
+        "path": "/tmp/karaoke105-root-python.log",
+        "bytes": 28037,
+        "sha256": "bfd952fabb9bb5dc2304039b51758e31e25dbf5334024f35cd6b3ffd290dcad1"
+      },
+      {
+        "path": "/tmp/karaoke105-root-check-first.log",
+        "bytes": 8083,
+        "sha256": "2c436ddd0f8514158510bd1c62b6754574ea9c2dfc39680989a0d71a87d5000d"
+      },
+      {
+        "path": "/tmp/karaoke105-root-build-final.log",
+        "bytes": 688,
+        "sha256": "de77bcc2463677887c311f9d20a9f49ca282187a5ae3f6f1592723af3d5252af"
+      }
+    ]
+  },
+  "native": {
+    "newCases": 17,
+    "newPassed": 17,
+    "durationSeconds": 20.1,
+    "existingCases": 44,
+    "existingStatus": "44 passed first actual run; no assertion or fixture changes",
+    "receipt": "2026-10-04-srt-import-native.json",
+    "existingPassed": 44,
+    "existingDurationMs": 114312.917,
+    "totalDistinctPassed": 61,
+    "method": "Separate unchanged existing 44-case suite and new 17-case suite on the same final production bundle; not one local all-61 invocation.",
+    "existingArtifacts": [
+      {
+        "path": "/tmp/karaoke105-old-native-first.log",
+        "bytes": 6099,
+        "sha256": "8048d93a3dd8d25b488e81e8205fa80fa6ce5008a764aaceab438a021dcc2426"
+      },
+      {
+        "path": "/tmp/karaoke105-old-native-results.json",
+        "bytes": 50812,
+        "sha256": "029b1fc78cd0b48288a558f8622850ff3e1000c1861a7e8a465bdc8b87e3ba20"
+      }
+    ]
+  },
+  "review": {
+    "parser": "Independent source review clear; real exporter/parser probe documents existing submillisecond roundtrip limitations.",
+    "ui": "Independent final ownership/history review clear at main SHA256 2de1611d89fd815b7d1cf9b95a4ef49e14096adad014a87e552d3c421fd42c99.",
+    "repairedBeforeNative": [
+      "Raw history snapshots preserve numeric draft spelling separately from dirty numeric semantics.",
+      "Render canonical saved fields then initialize saved history immediately after successful PUT, before metadata refresh.",
+      "Clip intent cancels pending imports even when leaving is declined.",
+      "Reject Unicode-whitespace-only lines that the existing exporter would otherwise discard."
+    ]
+  },
+  "firstFailures": {
+    "parser": "Initial callable stub: 10 failed / 3 negative-only passed; all 13 final parser tests pass.",
+    "history": "New raw-spelling case failed before implementation; all 11 history tests pass.",
+    "baselineBrowser": "Existing production app completed real saved-clip flow, then failed missing SRT import control (2.9 seconds).",
+    "newNative": "All 17 passed first actual final-source run; no post-run assertion changes."
+  },
+  "maximumAcceptance": "Pending separate 200-cue/20,000-code-point, exact128KiB input, archive/restart and six-second video run.",
+  "publishedHeadCI": "Pending publication.",
+  "limits": [
+    "UTF-8 strict numbered SRT subset, with declared CRLF/BOM/single-pass entity rules; no arbitrary subtitle markup.",
+    "Existing exporter rounds to milliseconds and can make submillisecond intervals overlap or exceed fractional duration; strict import refuses those files.",
+    "File deadline and page lifecycle cases use controlled clock/events, not physical BFCache or actual ten-second wall delay.",
+    "No new inference or subjective model-quality claims; original synthetic PCM only for new media fixtures."
+  ]
+}

@@ -1,6 +1,7 @@
 import type { Cue } from './lyrics.ts';
 
-export interface LyricDraft { title: string; cues: Cue[]; pastedText: string; pastedDirty: boolean }
+export interface RawTiming { start: number; end: number; startText: string; endText: string }
+export interface LyricDraft { title: string; cues: Cue[]; pastedText: string; pastedDirty: boolean; rawTimings?: RawTiming[] }
 
 function sameLyrics(a: LyricDraft, b: LyricDraft): boolean {
   return a.title === b.title && a.cues.length === b.cues.length && a.cues.every((cue, index) => {
@@ -9,7 +10,12 @@ function sameLyrics(a: LyricDraft, b: LyricDraft): boolean {
   });
 }
 function sameDraft(a: LyricDraft, b: LyricDraft): boolean {
-  return sameLyrics(a, b) && a.pastedText === b.pastedText && a.pastedDirty === b.pastedDirty;
+  const spelling = (draft: LyricDraft, index: number, boundary: 'start' | 'end') => {
+    const value = draft.cues[index][boundary], raw = draft.rawTimings?.[index];
+    return raw && Object.is(raw[boundary], value) ? raw[`${boundary}Text`] : Number.isFinite(value) ? String(value) : '';
+  };
+  return sameLyrics(a, b) && a.pastedText === b.pastedText && a.pastedDirty === b.pastedDirty
+    && a.cues.every((_, index) => spelling(a, index, 'start') === spelling(b, index, 'start') && spelling(a, index, 'end') === spelling(b, index, 'end'));
 }
 
 export class LyricHistory {

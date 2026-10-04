@@ -108,3 +108,28 @@ test('a fresh saved baseline has no history, and identical drafts do not add edi
   assert.equal(history.canRedo, false);
   assert.equal(history.undo(), null);
 });
+
+test('raw timing spellings are reversible editor state without changing numeric saved equality', () => {
+  const original = { ...draft(), rawTimings: [{ start: 0, end: 1, startText: '00.000', endText: '001.0' }] };
+  const history = new LyricHistory(original);
+  history.record({ ...original, rawTimings: [{ start: 0, end: 1, startText: '0', endText: '1' }] });
+  assert.equal(history.canUndo, true);
+  assert.equal(history.dirty, false);
+  assert.deepEqual(history.undo(), original);
+  assert.equal(history.dirty, false);
+  const canonical = history.redo() as typeof original;
+  assert.equal(canonical.rawTimings[0].startText, '0');
+  canonical.rawTimings[0].startText = 'outside';
+  assert.equal((history.current as typeof original).rawTimings[0].startText, '0');
+});
+
+test('an unchanged raw timing snapshot preserves redo and exact fractional values', () => {
+  const original = { ...draft(), cues: [{ start: 1 / 3, end: 1, text: 'First' }], rawTimings: [{ start: 1 / 3, end: 1, startText: String(1 / 3), endText: '001.0' }] };
+  const history = new LyricHistory(original);
+  history.record({ ...original, cues: [{ start: .333, end: .875, text: 'Imported' }], rawTimings: [{ start: .333, end: .875, startText: '.333', endText: '.875' }] });
+  assert.deepEqual(history.undo(), original);
+  history.record(original);
+  assert.equal(history.canRedo, true);
+  assert.equal(history.current.cues[0].start, 1 / 3);
+  assert.equal(history.redo()!.cues[0].start, .333);
+});
