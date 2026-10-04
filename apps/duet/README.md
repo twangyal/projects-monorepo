@@ -63,6 +63,8 @@ For a full backup, stop the service and copy the **entire data directory**, incl
 
 The app polls shared state approximately once a second, estimates server clock offset, and corrects substantial playback drift. It uses actual native media playback and authenticated range-capable audio responses. Pauses and seeks apply to both seats; conflicting stale commands report an error instead of silently overwriting newer state.
 
+Each new enabled playback start aligns to the shared clock before native playback begins and reconciles the latest snapshot when startup completes. This also covers delayed decoder startup and seeks arriving while playback is starting. Ongoing drift correction retains its 350 ms threshold. A late start cannot override a newer pause, disabled audio, selected song or reached endpoint.
+
 Playback revisions also advance when a song automatically changes, the final
 song stops, or the service pauses playing audio on restart. A delayed command
 from an earlier song or before that restart is rejected; refresh the latest
@@ -96,3 +98,5 @@ CHROMIUM_PATH=/path/to/chromium npm run test:browser
 Playwright builds the production site with `DUET_TEST_HARNESS=1` and runs a fresh local service on port 4220. The flag adds isolated synchronization test pages; normal builds omit them. The browser server uses the real FFmpeg normalizer, and synchronization tests use native audio. Python media tests inspect actual codec, duration, and conversion boundaries; domain/HTTP tests exercise participant isolation, invitations, revisions, quotas, persistence, and cancellation. CI installs standard-library Python tooling, Ruff, FFmpeg, npm dependencies, and Chromium; no external music service is needed.
 
 [The measured five-minute media gate](docs/media-verification.json) records an original synthetic stereo FLAC converted to 300.000 seconds of decoded Opus audio in 5.77 seconds, with 39 MiB maximum child RSS on the test machine. It includes reproduction commands and measurement limits; this is not a quality assessment or a guarantee of runtime on other machines.
+
+The startup-alignment repair ([#55](https://github.com/twangyal/projects-monorepo/issues/55)) passed **66 Python, 6 TypeScript and 23 native production browser cases**, including seven new delayed-start/ownership regressions, plus Ruff, ESLint, type checking and the normal build. The original drift assertion remains unchanged. Both local Chromium 151 and [Chromium 153 CI](https://github.com/twangyal/projects-monorepo/actions/runs/37178669377) passed; all twelve project workflows passed implementation commit `4ebb8f1`. The scheduling regressions hold the first native play invocation, then release actual decoded playback; they do not synthesize a playing clock. See [startup verification evidence](docs/2026-10-04-startup-verification.json) for the reproduced defect, test scope and limits.
