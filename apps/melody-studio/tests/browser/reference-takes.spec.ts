@@ -219,14 +219,15 @@ test('fixed-speed reference and capture-tempo notes audition exact windows after
   await page.locator('#play-reference').click(); await expect.poll(async () => (await sources(page)).length).toBe(1);
   const played = (await sources(page))[0], start = Math.round(.333 * 22050), end = Math.round(.8123 * 22050);
   expect(played.sampleRate).toBe(22050); expect(played.samples).toEqual(pcmFloats(asset).slice(start, end));
-  await page.getByRole('button', { name: 'Stop playback' }).click();
+  // This exact crop is shorter than half a second; sample inspection may outlast it.
+  await expect(page.getByRole('button', { name: 'Stop playback' })).toBeDisabled();
   await page.locator('#play-reference-notes').click(); await expect.poll(async () => (await sources(page)).length).toBe(2);
   const notes = (await sources(page))[1]; expect(notes.samples.length).toBe(end - start);
   // The authored note starts at .125 s, ends at .625 s with .08 s release at captured120BPM.
   // At current60 BPM it would still sound until1.33 s; this exact late-window silence proves capture tempo.
   expect(notes.samples.slice(Math.ceil((.71 * 22050) - start)).every(value => value === 0)).toBe(true);
   expect(notes.samples.slice(0, 1000).some(value => Math.abs(value) > .01)).toBe(true);
-  await page.getByRole('button', { name: 'Stop playback' }).click();
+  await expect(page.getByRole('button', { name: 'Stop playback' })).toBeDisabled();
   const after = await backup(page); expect(after.assets).toEqual(original.assets); expect(after.document.composition.tempo).toBe(60);
   const windowHistory = await idb(page); await page.locator('#reference-start').fill(''); await expect(page.locator('#reference-start')).toHaveValue('');
   if (await page.locator('#play-reference').isEnabled()) await page.locator('#play-reference').click();

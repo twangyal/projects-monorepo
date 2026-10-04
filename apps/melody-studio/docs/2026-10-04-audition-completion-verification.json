@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "issue": 76,
+  "status": "local-verification-complete-ci-pending",
+  "failedCi": {
+    "commit": "313b20ccf11c3ff45f5927ced6c306a843fabaf5",
+    "runId": 37199574148,
+    "unitPassed": 233,
+    "browserPassed": 57,
+    "browserFailed": 1,
+    "chromium": "153.0.8010.12",
+    "observed": "The exact 0.4792743764172336-second audition completed naturally while samples were inspected; the test then clicked the correctly disabled Stop control and timed out."
+  },
+  "sourceComparison": "Melody source/tests/configuration are unchanged from green6169ade; only README/evidence changed before this failure.",
+  "nativeEndedReproduction": {
+    "timingOnlyDelayedInspection": true,
+    "originalTrustedEventsRed": [
+      {
+        "index": 1,
+        "isTrusted": true,
+        "duration": 0.4792743764172336,
+        "timeMs": 960.2999999970198
+      },
+      {
+        "index": 2,
+        "isTrusted": true,
+        "duration": 0.4792743764172336,
+        "timeMs": 1523.5
+      }
+    ],
+    "originalTrustedEventsGreen": [
+      {
+        "index": 1,
+        "isTrusted": true,
+        "duration": 0.4792743764172336,
+        "timeMs": 1184.2000000029802
+      },
+      {
+        "index": 2,
+        "isTrusted": true,
+        "duration": 0.4792743764172336,
+        "timeMs": 2231.10000000149
+      }
+    ],
+    "redFailed": 1,
+    "correctedPassed": 1,
+    "mockedAudioOrCompletion": false,
+    "evidence": "/tmp/melody-ci76-native-ended-{red,green}.log"
+  },
+  "correction": "Only the two short-window numerical-test cleanup clicks now await naturally disabled Stop. All exact PCM, capture/current tempo, crop, silence, persistence and separate explicit Stop/cancellation assertions remain unchanged. No production changes or fixed sleep.",
+  "verification": {
+    "unitPassed": 233,
+    "unitDurationMs": 5890.828328,
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "unchangedProductionEntry": "index-uXq5OLeU.js",
+    "browserPassed": 58,
+    "browserDuration": "1.5m",
+    "chromium": "151.0.7922.173",
+    "ownedPortClosed": 54103
+  },
+  "sourceSha256": {
+    "apps/melody-studio/tests/browser/reference-takes.spec.ts": "871e0a303c0be85d633806606bd16708243ef73d40eed14320723e70f3b47e0a"
+  },
+  "ci": {
+    "status": "pending"
+  },
+  "limitations": [
+    "The reproduced race is test cleanup after actual native completion, not an audio or persistence defect.",
+    "Controlled native audio and numerical checks do not establish real vocal accuracy or physical device compatibility."
+  ]
+}
