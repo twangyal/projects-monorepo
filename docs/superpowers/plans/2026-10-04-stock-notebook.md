@@ -60,10 +60,12 @@ Pure tests may run concurrently. Coordinate any shared production build/server t
 ## Durable milestone
 
 - [x] Final unit, lint, typecheck, build and production-browser gates pass; README/schema/example and runtime evidence match the delivered scope.
-- [ ] Review scoped diff, fetch concurrent Astra changes, commit and push without force; retain excluded projects untouched.
-- [ ] Check CI, update #32 to actual milestone completion and update draft PR #12. Keep catalog #13 ACTIVE for broad language/generated outlook/live coverage.
-- [ ] Reassess and immediately continue the highest-value unblocked work.
+- [x] Review scoped diff, fetch concurrent Astra changes, commit and push without force; retain excluded projects untouched.
+- [x] Check CI, update #32 to actual milestone completion and update draft PR #12. Keep catalog #13 ACTIVE for broad language/generated outlook/live coverage.
+- [x] Reassess and immediately continue the highest-value unblocked work.
 
 ## Review focus
 
 The main failure modes are missing values becoming zero, mixed currencies being numerically ranked, illegal period comparability claims, source facts turning into unsupported prose, partially accepted language, stale filters driving exports, and late reads/saves overwriting edits. The separate validation, research, UI and independent browser/numerical owners each verify these at their boundaries. Corrupt storage is a recovery case, not permission to overwrite user work.
+
+Completion: implementation `500b0c5` passed Stock Notebook CI (run37165582015), with 67 unit and 15 production browser checks. All eleven project workflows passed at that commit. Issue #32 is closed; catalog #13 remains ACTIVE. Next substantial unblocked milestone: Karaoke full-song processing, issue #33.
