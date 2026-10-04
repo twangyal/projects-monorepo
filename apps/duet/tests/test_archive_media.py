@@ -181,6 +181,15 @@ class ArchiveMediaTests(unittest.TestCase):
                                             deadline=time.monotonic() + 10), 101904)
         self.assertEqual(self.path.read_bytes(), b'bad replacement')
 
+    def test_short_regular_reads_are_accumulated_without_false_truncation(self):
+        original = os.pread
+
+        def short_read(fd, size, offset):
+            return original(fd, min(size, 3), offset)
+
+        with patch('duet.archive_media.os.pread', side_effect=short_read):
+            self.assertEqual(self.validate(), 101904)
+
     def test_decoder_counts_pcm_without_retaining_or_reencoding_and_remaining_deadline(self):
         from duet import archive_media
         original = archive_media.media._run

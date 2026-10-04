@@ -1,5 +1,6 @@
 """Fresh data directory, real production service and real media normalization."""
 from pathlib import Path
+import signal
 import sys
 import tempfile
 
@@ -9,9 +10,13 @@ from duet.server import create_server  # noqa: E402
 if __name__ == '__main__':
     with tempfile.TemporaryDirectory(prefix='duet-browser-') as directory:
         server = create_server(Path(directory), port=4220)
+        def terminate(signum, frame):
+            raise KeyboardInterrupt
+        previous = signal.signal(signal.SIGTERM, terminate)
         try:
             server.serve_forever(poll_interval=.05)
         except KeyboardInterrupt:
             pass
         finally:
             server.server_close()
+            signal.signal(signal.SIGTERM, previous)

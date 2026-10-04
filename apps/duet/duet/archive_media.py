@@ -35,11 +35,15 @@ def _invalid():
 
 
 def _read(fd, offset, size, cancel, deadline):
+    data = bytearray()
+    while len(data) < size:
+        check_archive(cancel, deadline)
+        part = os.pread(fd, size - len(data), offset + len(data))
+        if not part:
+            raise _invalid()
+        data.extend(part)
     check_archive(cancel, deadline)
-    data = os.pread(fd, size, offset)
-    if len(data) != size:
-        raise _invalid()
-    return data
+    return bytes(data)
 
 
 def _body(fd, page, start, offset, cancel, deadline):

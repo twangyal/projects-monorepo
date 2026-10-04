@@ -55,9 +55,28 @@ Room data lives in SQLite, with normalized media stored separately inside the su
 
 ## Backups and private access
 
-**Export room notes** downloads versioned JSON containing the room's tracks, votes, mix, playback metadata, and memories. It deliberately contains **no access credentials or audio**. It is a readable metadata export, not a complete editable-room backup; archive import is not implemented.
+**Export room notes** downloads readable JSON containing the room's tracks, votes, mix, playback metadata, and memories. It contains **no access credentials or audio** and cannot restore an editable room.
 
-For a full backup, stop the service and copy the **entire data directory**, including `rooms.sqlite3` and its media. Separately retain **each participant's private access link/credential**. The server stores credential hashes, so a data-directory copy or token-free JSON export cannot recover a lost raw access credential. Browser storage alone is not a backup. Restore the data directory and use the corresponding private link to recover a seat; use the restored service's origin if its address/port changed.
+For a complete library archive, first **stop the service gracefully** and retain **each participant's private access link** separately. Run these commands from `apps/duet`:
+
+```sh
+python3 -m duet.backup create \
+  --data-dir "$HOME/.local/share/duet" --output "$HOME/duet-library.zip"
+python3 -m duet.backup inspect --archive "$HOME/duet-library.zip"
+python3 -m duet.backup restore \
+  --archive "$HOME/duet-library.zip" --data-dir "$HOME/.local/share/duet-restored"
+python3 -m duet --data-dir "$HOME/.local/share/duet-restored" --port 8766
+```
+
+The output file and restore directory must **not already exist**; their parent directories must exist. The archive must be outside the source library. There is no overwrite or merge option. A running service, an unfinished database journal, invalid records, missing audio, or unexpected media files cause rejection without repairing or changing the source. Preserve database sidecars if recovery is needed; do not delete them to bypass a rejection.
+
+Create, inspect, and restore validate the complete library, including every audio file's checksum, Ogg structure, and full stereo 48 kHz Opus decode. The portable archive contains the original room IDs, private credential/invitation **hashes**, profiles, individual ratings, playlist order, dated memories (including removed songs), and exact stored Opus bytes. It excludes temporary uploads and runtime jobs. Stored Opus is lossy; the archive does not recover original uploads.
+
+Use the original private link to return to the corresponding host or guest seat; change only its origin if the service address/port changed. A used invitation stays used, and an unused invitation still requires its original link. The archive never recovers lost raw credentials or creates replacement seats. Browser storage alone is not a backup. Restored records form an independent library; edits do not synchronize back to the source, and archived ratings/memories are not new participant approvals.
+
+Playback resumes **paused at the last saved anchor**, which can precede the last audible position. Offline time is never replayed. An originally playing anchor advances its playback revision once, so an old playing command cannot resume it; originally paused revisions stay unchanged.
+
+Archives are **unencrypted private data**. Keep the file and separately saved access links private. Limits are five rooms, sixty tracks, 8 MiB per track, 256 KiB per room record, and 512 MiB per archive. Each command has a five-minute total deadline; each decoder retains its 45-second/512-MiB limits. Slow machines can reject a valid large library safely. Cancellation before publication removes only owned temporary output. If the final durability sync fails after publication, the command reports that the complete output exists; preserve and inspect it before retrying.
 
 ## Synchronization scope
 
@@ -100,3 +119,13 @@ Playwright builds the production site with `DUET_TEST_HARNESS=1` and runs a fres
 [The measured five-minute media gate](docs/media-verification.json) records an original synthetic stereo FLAC converted to 300.000 seconds of decoded Opus audio in 5.77 seconds, with 39 MiB maximum child RSS on the test machine. It includes reproduction commands and measurement limits; this is not a quality assessment or a guarantee of runtime on other machines.
 
 The startup-alignment repair ([#55](https://github.com/twangyal/projects-monorepo/issues/55)) passed **66 Python, 6 TypeScript and 23 native production browser cases**, including seven new delayed-start/ownership regressions, plus Ruff, ESLint, type checking and the normal build. The original drift assertion remains unchanged. Both local Chromium 151 and [Chromium 153 CI](https://github.com/twangyal/projects-monorepo/actions/runs/37178669377) passed; all twelve project workflows passed implementation commit `4ebb8f1`. The scheduling regressions hold the first native play invocation, then release actual decoded playback; they do not synthesize a playing clock. See [startup verification evidence](docs/2026-10-04-startup-verification.json) for the reproduced defect, test scope and limits.
+
+The complete archive workflow ([#65](https://github.com/twangyal/projects-monorepo/issues/65)) passes **145 Python, 6 TypeScript and 25 native browser cases**, plus Ruff, ESLint, type checking and build. Independent fixtures verify original private seats, pending/used invitations, deleted-song memories, exact audio, paused checkpoint revisions, source immutability, cancellation and raced destinations. Native tests recover both original seats, play restored audio and preserve subsequent edits across restart.
+
+An optional full-capacity gate creates five rooms, sixty three-minute tracks and 500 memories, then runs the real create/inspect/restore commands and starts the normal service twice. It requires a **new directory**, at least **2 GiB free**, and several minutes:
+
+```sh
+python3 scripts/smoke_archive_maximum.py --directory /path/to/new-duet-archive-evidence
+```
+
+The gate retains its original sources, complete archive, restored library and measurement JSON. Each 8 MiB fixture uses legal OpusTags padding; independently decoded PCM must equal the original normalized 300-second track. These are real playable byte-limit fixtures, not ordinary normalizer output. RSS measurements cover the CLI process, not decoder descendants; individual decoder bounds remain enforced by the production service.
