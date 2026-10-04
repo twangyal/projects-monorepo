@@ -33,6 +33,17 @@ function recording(failStroke = false) {
 }
 function colors(calls: unknown[][]) { return calls.filter(c => c[0] === 'set' && c[1] === 'strokeStyle').map(c => c[2]); }
 
+test('a coincident multipoint path renders a round dot like the original single-point drawing', () => {
+  const project = fixture(), drawing = project.layers[0];
+  if (drawing.kind !== 'drawing') throw new Error('Fixture must be vector artwork');
+  drawing.cels[0].strokes = [{ color: '#800080', width: 12,
+    points: Array.from({ length: 64 }, () => ({ x: 50, y: 0 })) }];
+  const trace = recording(); prepare(project).render(trace.ctx, 0);
+  assert.ok(trace.calls.some(call => JSON.stringify(call) === JSON.stringify(['arc', 50, 0, 6, 0, Math.PI * 2])));
+  assert.equal(trace.calls.filter(call => call[0] === 'fill').length, 1);
+  assert.equal(trace.calls.filter(call => call[0] === 'stroke').length, 0);
+});
+
 test('held drawing bounds use only the active cel including exact fractional cuts and blank intervals', () => {
   const layer = fixture().layers[0];
   assert.deepEqual(renderer.layerBounds(layer), { width: 70, height: 20 });

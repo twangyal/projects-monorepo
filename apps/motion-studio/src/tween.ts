@@ -15,7 +15,11 @@ const receipts = new WeakMap<TweenProposal, { source: string; proposal: string }
 const encoder = new TextEncoder();
 function fail(message: string): never { throw new Error(message); }
 const positiveZero = (value: number): number => value === 0 ? 0 : value;
-const interpolate = (a: number, b: number, t: number): number => positiveZero(a === b ? a : (1 - t) * a + t * b);
+// Evaluate the same affine interpolation from its nearer endpoint. Even
+// unequal legal values one ulp apart can overflow a bound in the weighted sum.
+// This changes no bounds and performs no clamping or coordinate quantization.
+const interpolate = (a: number, b: number, t: number): number =>
+  positiveZero(t <= .5 ? a + (b - a) * t : b + (a - b) * (1 - t));
 
 function object(value: unknown, keys: readonly string[], label: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)
