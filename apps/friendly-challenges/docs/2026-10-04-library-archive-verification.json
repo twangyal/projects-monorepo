@@ -2,7 +2,7 @@
   "issue": 103,
   "date": "2026-10-04",
   "version": "0.3.0",
-  "status": "complete local verification passed; published-head CI pending",
+  "status": "complete; exact published-head push and PR CI passed, all thirteen project PR workflows passed",
   "contract": "docs/superpowers/specs/2026-10-04-friendly-complete-library-archive-design.md",
   "checks": {
     "python": {
@@ -45,7 +45,7 @@
     "newCasesPassed": 4,
     "firstActualSeconds": 8.2,
     "finalCleanupRunSeconds": 8.6,
-    "existing24": "unchanged; full28 published-head gate pending"
+    "existing24": "unchanged; full28 passed independently in both exact-head CI events"
   },
   "repairs": [
     "Bound raw-record CRC/SHA work to64KiB cancellation blocks after actual test RED.",
@@ -94,5 +94,6 @@
     "Maximum uses genuine CLI/HTTP/services; small three-record fixture covers real browser downloads and private access.",
     "Live exportedAt/serverTime differ naturally. All other public data and exact original private TEXT/JPEG bytes are verified.",
     "No peak RSS, physical device, identity or evidence-truth claim. Private runtime archives/credentials/databases are retained locally and excluded from publication."
-  ]
+  ],
+  "ciReceipt": "2026-10-04-library-archive-ci.json"
 }

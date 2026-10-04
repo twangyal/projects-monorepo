@@ -169,7 +169,7 @@ pinned file descriptors, cancellation and competing destination creation. Four
 new real browser/CLI cases pass, including original proposer/opponent/arbiter
 access, pending invitations used exactly once, withdrawn/consumed refusal, native
 image/JSON/HTML downloads and real service restart. Existing 24 browser cases are
-unchanged; the full 28-case published-head CI gate is recorded separately.
+unchanged; both published-head CI runs pass all 28 browser cases.
 
 A frozen independent maximum uses 20 complete challenges and 160 original,
 decoded **512 KiB JPEGs (80 MiB)**. Its actual **84,198,426-byte** archive passes
@@ -201,3 +201,11 @@ publish them as CI artifacts or share them as public record exports.
 [native evidence](docs/2026-10-04-library-archive-native.json) and
 [maximum evidence](docs/2026-10-04-library-archive-maximum.json) preserve actual
 hashes, observed failures, repairs, timing and limits.
+
+Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37224780335)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37224783061) CI
+at `112fad9afe1487e0d7b4af26a4283636a9e99628` pass all **154 Python, 37 TypeScript
+and 28 browser tests**, Ruff, compilation, ESLint, type checking and build. The
+runs use CPython3.11.16, Node24.21.0 and Chromium153.0.8010.12. All thirteen
+project PR workflows pass. The [CI receipt](docs/2026-10-04-library-archive-ci.json)
+records exact branch/merge checkouts, counts, timing and log hashes.
