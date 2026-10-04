@@ -64,6 +64,16 @@ function garmentDocument(project: Project): string {
 
 export function garmentSvg(project: Project): string { return garmentDocument(validateProject(project)); }
 
+export function exportGarmentSvg(project: Project): Blob {
+  const safe = validateProject(project);
+  // Stable IDs keep portable bytes independent of workspace rendering.
+  const prefix = 'clothing-export';
+  const svg = svgDocument(safe.title, GARMENT_WIDTH, GARMENT_HEIGHT, prefix, garmentContent(safe, prefix));
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  if (blob.size > 1024 * 1024) throw new Error('Garment SVG exceeds the 1 MiB export limit.');
+  return blob;
+}
+
 function stageSize(project: Project): { width: number; height: number } {
   return project.photo ? { width: project.photo.width, height: project.photo.height } : { width: 600, height: 800 };
 }
