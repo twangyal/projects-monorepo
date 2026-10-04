@@ -191,3 +191,20 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
   .continuation-controls > button { width: 100%; }
   #continuation-proposal { padding: .8rem; }
 }
+
+#midi-import { max-width: 1261px; margin: 0 auto 3rem; padding: 1.6rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.midi-heading, .midi-window, .midi-mapping { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+.midi-heading { justify-content: space-between; margin-bottom: 1rem; }
+#midi-status { min-height: 1.5em; font-size: .85rem; margin-bottom: 1rem; }
+#midi-choices > p, #midi-choices > label, #midi-choices > details { margin: .8rem 0; }
+.midi-window > label, .midi-mapping > label { flex: 1 1 180px; }
+.midi-lanes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin: 1rem 0; }
+.midi-lane { border: 1px solid var(--line); border-radius: 8px; padding: 1rem; min-width: 0; }
+.midi-lane h3 { font-size: .9rem; margin: 0 0 .6rem; }.midi-lane p { margin-bottom: .6rem; }
+#midi-import p, #midi-import li, #midi-import label { overflow-wrap: anywhere; }
+#midi-import pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .75rem; max-height: 180px; overflow: auto; }
+.midi-include { display: flex; align-items: center; gap: .6rem; padding: .8rem 0; }
+.midi-error { color: #8a4c43; font-size: .78rem; }
+#midi-summary { background: #f3f9f4; border: 1px solid #c3dccc; padding: 1rem; margin: 1rem 0; border-radius: 8px; font-size: .83rem; }
+#midi-import button { min-height: 44px; white-space: normal; } #midi-import [hidden] { display: none !important; }
+@media(max-width:720px) { #midi-import { margin: 0 1rem 2rem; padding: 1rem; } .midi-lanes { grid-template-columns: minmax(0,1fr); } .midi-heading { align-items: start; } }
