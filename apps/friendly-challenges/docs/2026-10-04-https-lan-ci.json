@@ -1,0 +1,186 @@
+{
+  "issue": 108,
+  "checkedAtUtc": "2026-10-04T21:25:03.191Z",
+  "conclusion": "Both exact corrected-head events passed; all 13 PR workflows passed.",
+  "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+  "expectedTree": "dae7979bf547d48f33cfaf2751ba112708367a05",
+  "initialFailureReceipt": "2026-10-04-https-lan-ci-first.json",
+  "repair": {
+    "scope": "test-only",
+    "file": "tests/browser/https-lan.spec.ts",
+    "behavior": "Wait for the real async arbiter invitation to match current origin/challenge and exact arbiter capability grammar before capture/navigation.",
+    "unchanged": "90-second timeout and every original agreement/image/arbitration/restart/export expectation."
+  },
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37235642896,
+      "jobId": 111534068763,
+      "checkoutSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "tree": "dae7979bf547d48f33cfaf2751ba112708367a05",
+      "treeVerified": true,
+      "conclusion": "success",
+      "python": {
+        "passed": 194,
+        "seconds": 56.129
+      },
+      "typescript": {
+        "passed": 42,
+        "failed": 0,
+        "milliseconds": 574.040638
+      },
+      "native": {
+        "passed": 34,
+        "failed": 0,
+        "durationReported": "2.0m"
+      },
+      "log": {
+        "path": "/workspace/friendly108-final-ci-push.log",
+        "bytes": 102788,
+        "sha256": "acf892f53f84ead77313adcb0f6da534f486f4c9db792020fa5c6e6f0c621974"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37235646604,
+      "jobId": 111534079407,
+      "checkoutSha": "db9bda3f96fbcbd2364de23d9c0e8d84c8918776",
+      "tree": "dae7979bf547d48f33cfaf2751ba112708367a05",
+      "treeVerified": true,
+      "conclusion": "success",
+      "python": {
+        "passed": 194,
+        "seconds": 58.169
+      },
+      "typescript": {
+        "passed": 42,
+        "failed": 0,
+        "milliseconds": 570.764303
+      },
+      "native": {
+        "passed": 34,
+        "failed": 0,
+        "durationReported": "1.9m"
+      },
+      "log": {
+        "path": "/workspace/friendly108-final-ci-pr.log",
+        "bytes": 103835,
+        "sha256": "5d3df4604e5e6ed4f452bc24317d8ba8363e7728776e0a3c3b991d3f3cd6e3be"
+      }
+    }
+  ],
+  "checks": {
+    "compileall": "passed-both",
+    "ruff": "passed-both",
+    "eslint": "passed-both",
+    "typecheck": "passed-both",
+    "productionBuild": "passed-both"
+  },
+  "environment": {
+    "python": "3.11.16",
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12",
+    "playwrightChromiumBuild": "1243"
+  },
+  "allPrSnapshot": [
+    {
+      "name": "Style Studio",
+      "runId": 37235646542,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Clothing Studio",
+      "runId": 37235646638,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37235646583,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37235646580,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Git History",
+      "runId": 37235646512,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37235646630,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37235646530,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Composure",
+      "runId": 37235646535,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37235646554,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37235646498,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37235646613,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37235646604,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Duet",
+      "runId": 37235646579,
+      "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "collectorActions": {
+    "reruns": 0,
+    "localTests": 0,
+    "builds": 0,
+    "browserLaunches": 0
+  },
+  "privacy": "No private setup/seat capabilities, signed URLs or raw test records included."
+}

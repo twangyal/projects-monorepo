@@ -2,7 +2,7 @@
   "issue": 108,
   "version": "0.4.0",
   "checkedAtUtc": "2026-10-04T21:04:10.590210+00:00",
-  "conclusion": "Local gates and actual artifacts passed; exact published-head CI pending",
+  "conclusion": "Complete local/artifact gates and both exact corrected-head CI events passed; all 13 PR workflows passed.",
   "python": {
     "passed": 194,
     "seconds": 53.74,
@@ -209,14 +209,15 @@
     "No deployment, system trust/network change, service charge or new Python runtime dependency."
   ],
   "ci": {
-    "status": "failed-first-published-head",
-    "headSha": "85a84bca8fd01a0ff5df1166102b59106f92c792",
-    "receipt": "2026-10-04-https-lan-ci-first.json",
-    "pushRunId": 37234716493,
-    "prRunId": 37234719420,
-    "countsBoth": "194 Python and 42 TypeScript passed; 33 native passed, 1 failed; other 12 PR workflows passed.",
-    "failure": "Async arbiter invitation was read empty before completion; both original traces confirm the missing test readiness barrier.",
-    "finalPublishedCi": "pending corrected-head verification",
-    "repairReceipt": "2026-10-04-https-lan-invitation-readiness.json"
-  }
+    "status": "passed",
+    "headSha": "e4c71afde39b4934bee9311522708cda1d33f82c",
+    "tree": "dae7979bf547d48f33cfaf2751ba112708367a05",
+    "receipt": "2026-10-04-https-lan-ci.json",
+    "firstFailureReceipt": "2026-10-04-https-lan-ci-first.json",
+    "pushRunId": 37235642896,
+    "prRunId": 37235646604,
+    "countsBoth": "194 Python, 42 TypeScript and 34 native passed; all 13 PR workflows passed.",
+    "finalPublishedCi": "passed exact corrected-head push and PR"
+  },
+  "physicalFollowUp": "https://github.com/twangyal/projects-monorepo/issues/111"
 }
