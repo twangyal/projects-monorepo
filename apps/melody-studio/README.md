@@ -18,9 +18,40 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 
 1. Select a track, then **Record melody** or **Import audio**. Set the tempo before capture; transcription quantizes timing to quarter beats at that tempo. **Try demo melody** exercises audio detection without microphone access; **Load example** opens a prepared two-track composition.
 2. Sing or hum one clear melody in a quiet room. Recording stops automatically after 20 seconds; **Finish recording** stops sooner and transcribes it. Imports must be browser-decodable audio, at most 10 MiB and about 20 seconds long. WAV is a useful fallback if another format cannot be decoded.
-3. Select a note in the piano roll, edit its MIDI pitch, start beat, duration, or velocity, and press **Apply note**. You can also add or delete notes. Keyboard users can reach notes with Tab and edit through the labeled form fields.
+3. Drag a piano-roll note to move its pitch/time, or drag its right edge to resize. Use **Draw note** to add notes on empty grid space. For exact values, select a note, edit its MIDI pitch, start beat, duration or velocity, and press **Apply note**. Keyboard users can reach notes with Tab and use arrows or the labeled form fields.
 4. Add tracks to layer parts. Each track has a name, volume, mute switch, and one of three synthesized instruments: **Soft keys** (sine), **Warm flute** (triangle), or **Bright synth** (sawtooth). These are simple waveform sounds, not sampled acoustic instruments. Play and stop the combined composition.
 5. Save a project backup or export MIDI/WAV. Recording, importing, or trying the demo on a populated track asks before replacing its notes and reference take. Opening a project, loading an example, or starting a new composition also asks before replacing existing notes.
+
+## Edit directly in the piano roll
+
+Choose **Move notes** or **Draw note** with **Piano roll tool**. In Move mode,
+drag a note body to move it in time and pitch; its right-edge handle changes only
+duration. A normal click selects the note for numeric editing. Draw on empty
+space: click for a one-beat note at velocity 0.8, or drag right to choose its
+duration. Existing notes keep their velocity when moved or resized.
+
+**Snap movement** defaults to a quarter beat, with eighth-beat and Off choices.
+Move/resize snaps the change from the original value, preserving imported
+fractional offsets. Drawing snaps the absolute start and duration. Ties round
+away from zero. Off keeps the represented pointer-derived timing; use numeric
+fields for exact values. Untouched notes are never quantized.
+
+A dashed preview is unsaved. Release to apply one Undo edit; Escape cancels.
+Invalid pitch, duration, start, note-count or end bounds refuse the whole edit.
+Nothing is silently shortened or clamped. Scrolling, resizing, lost pointer
+capture, leaving/hiding the page or another editor action cancels the gesture.
+Exports contain committed notes only. Finish or explicitly discard unsent fields
+before dragging; their exact text remains available for correction.
+
+With a note focused, Left/Right moves by the chosen snap increment, Up/Down moves
+one semitone, and Shift+Left/Right resizes. Off uses an eighth beat for keyboard
+timing steps. Enter/Space opens the existing numeric editor; **Add note** remains
+available without dragging. Inputs retain normal text editing and Undo. Scroll
+the contained roll to reach distant notes; gestures do not automatically scroll.
+
+Committed edits use the same complete-project history and autosave as numeric
+edits, retain every reference sample unchanged, and stop old audition playback.
+Cancelled or zero-change gestures preserve the redo branch and suggestion.
 
 ## Arrange and undo
 
@@ -123,6 +154,39 @@ CHROMIUM_PATH=/path/to/chromium npm run test:browser
 ```
 
 Unit coverage includes bounded project validation, local storage errors, recorder cleanup/cancellation, synthetic pitch and timing fixtures, synthesis, and MIDI/WAV structure. Browser coverage exercises composition editing, layering, playback, persistence, imports/exports, generated-audio transcription, permission failure, and a 390 px layout. These checks do not replace real vocal or device testing.
+
+Direct piano-roll authoring ([#99](https://github.com/twangyal/projects-monorepo/issues/99))
+passes **252 unit tests**, lint/typecheck/build and **80 distinct native browser
+cases** locally, including 22 new gesture, keyboard, touch, recovery and export
+cases. Actual mobile feedback movement and minimum-note handle conflicts were
+reproduced and repaired without changing the frozen geometry checks. Independent
+fractional/polyphonic exports retain exact reference PCM, expected 480-PPQN MIDI
+events and synthesized WAV samples (zero measured error at 1,091 sampled positions
+against a fixed two-PCM16-unit tolerance).
+
+A separate original fixture retains **2,048 notes and eight 20-second references**
+(7,056,000 PCM bytes). Native move and resize each make one Undo/Redo edit; all
+unrelated notes and audio remain unchanged. Its **9,580,720-byte** final project
+survives closing and relaunching the full browser process byte-for-byte. Actual
+MIDI has the independently expected pitch72 attack/release at ticks302/542. The
+707,364-frame WAV has the exact expected silence/onset bounds; measured pitch is
+523.251144 Hz versus 523.251131 Hz expected, and RMS differs by 0.061%. This is
+maximum count/reference topology, not the file-size ceiling or a memory benchmark.
+
+With a normal production preview already running, reproduce the separate probe:
+
+```sh
+MELODY_ROLL_BASE_URL=http://127.0.0.1:4173 CHROMIUM_PATH=/usr/bin/chromium \
+  node scripts/smoke_direct_roll.mjs
+```
+
+`MELODY_ROLL_OUTPUT` can name a new output directory; `--fixtures-only` prepares
+the original inputs without a browser. The runner starts no server and imports no
+producer expected-output helpers. [Integration evidence](docs/2026-10-04-direct-roll-verification.json),
+[native evidence](docs/2026-10-04-direct-roll-native.json) and
+[maximum evidence](docs/2026-10-04-direct-roll-maximum.json) preserve exact hashes,
+failed attempts, targeted reruns and limits. Published-head CI is recorded
+separately when available.
 
 ### Learned-continuation verification
 

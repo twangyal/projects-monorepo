@@ -1,0 +1,244 @@
+{
+  "feature": "Melody Studio #99 direct piano-roll authoring",
+  "status": "80 distinct native cases passed across final repaired-source runs and targeted fixture/environment corrections; not one all80 run",
+  "browser": {
+    "executable": "/usr/bin/chromium",
+    "version": "151.0.7922.173",
+    "productionOrigin": "http://127.0.0.1:4298",
+    "allOwnedBrowserProcessesClosed": true,
+    "server": "Parent-owned; not started or stopped by native owner"
+  },
+  "runs": [
+    {
+      "log": "/tmp/melody99-initial-red.log",
+      "result": "Fixture failed before feature assertion because native import consent default-dismissed; corrected helper to accept explicit Open consent."
+    },
+    {
+      "log": "/tmp/melody99-control-red.log",
+      "failed": 1,
+      "caseSeconds": 2.6,
+      "result": "Meaningful absent-control RED after actual complete fractional/polyphonic reference file successfully opened."
+    },
+    {
+      "log": "/tmp/melody99-native-first.log",
+      "passed": 19,
+      "failed": 2,
+      "seconds": 25.3,
+      "result": "Wrapping native select exact getByLabel mismatch plus real mobile preview-layout defect."
+    },
+    {
+      "log": "/tmp/melody99-affected.log",
+      "passed": 1,
+      "failed": 1,
+      "seconds": 2.6,
+      "result": "Semantic combobox role locator corrected; original touch expectation still failed."
+    },
+    {
+      "log": "/tmp/melody99-touch-diagnostic.log",
+      "failed": 1,
+      "result": "Actual pointer telemetry proves preview status moved grid top by18.234375px without scrolling; pointerup refused stale geometry."
+    },
+    {
+      "log": "/tmp/melody99-minimum-note-red.log",
+      "failed": 1,
+      "caseSeconds": 0.844,
+      "result": "Original center of minimum-duration note hit resize; native center target frozen for repair."
+    },
+    {
+      "log": "/tmp/melody99-native-final.log",
+      "passed": 21,
+      "failed": 1,
+      "seconds": 22.2,
+      "result": "Both UI repairs passed; remaining test-only resize target offscreen after native backup button scrolled viewport."
+    },
+    {
+      "log": "/tmp/melody99-minimum-note-green.log",
+      "passed": 1,
+      "failed": 0,
+      "seconds": 2.5,
+      "result": "Only explicit scrollIntoView added before second resize hit; body center, exact arithmetic, reference bytes and twoUndo unchanged."
+    },
+    {
+      "log": "/tmp/melody99-prior58.log",
+      "passed": 57,
+      "failed": 1,
+      "displayDuration": "1.5m",
+      "result": "Existing persistent-process test bypassed config executablePath and attempted missing downloaded Chromium because command lacked CHROMIUM_PATH; no app executed in that one failure."
+    },
+    {
+      "log": "/tmp/melody99-prior-restart-green.log",
+      "passed": 1,
+      "failed": 0,
+      "seconds": 3.2,
+      "result": "Unchanged persistent-process test passed with CHROMIUM_PATH=/usr/bin/chromium."
+    }
+  ],
+  "counts": {
+    "distinctNew": 22,
+    "distinctPrior": 58,
+    "distinctTotal": 80,
+    "focusedRepeatsAreNotAdditionalCases": true
+  },
+  "originalOracle": {
+    "fixture": "tests/roll-edit-fixtures.ts",
+    "newProducerHelpersImported": false,
+    "composition": "Two tracks; selected quiet sine has original1/3 start,2/3 duration,pitch60 plus overlapping67 and later64; independent muted track retained. Edit+.25beat/+2pitch keeps fractional offset.",
+    "expectedEditedNote": {
+      "id": "fractional-low",
+      "pitch": 62,
+      "start": 0.5833333333333333,
+      "duration": 0.6666666666666666,
+      "velocity": 0.5
+    },
+    "midi": "Independent standard MIDI reader verifies480ticks/beat,500000us/beat, all note onset/end ticks rounded independently, velocity and muted track.",
+    "wav": {
+      "formula": "Direct sin(2*pi*frequency*i/rate),10ms attack,80ms release, volume*velocity*.4; quiet fixture never peaksums normalizes. Does not call product oscillator lookup or mixer.",
+      "sampleStride": 37,
+      "sampledPositions": 1091,
+      "maximumAllowedPcm16Error": 2,
+      "samples": 40352,
+      "sampleRate": 22050,
+      "maximumPcmError": 0
+    },
+    "reference": {
+      "frames": 22050,
+      "bytes": 44100,
+      "sha256": "8657febadbf31545998d6e1ddd08513378d0fa7289397b491771ea142543d858",
+      "unchangedAcrossMoveResizeUndoExports": true
+    }
+  },
+  "lifecycleEvidence": [
+    "Genuine File.arrayBuffer completion delayed; newer valid gesture and rejected pitch96 keyboard intent invalidate old read without replay/confirmation.",
+    "Native IDB request-success then transaction.abort preserves last complete durable project; Retry save and reload publish exact edit/reference.",
+    "Corrupt native record remains protected during direct edits and Undo.",
+    "Actual audio buffer playback stops on successful gesture publication; retired source callback cannot restart.",
+    "Actual CDP touch pointer events at390px; software-browser evidence, not a physical mobile device claim.",
+    "Pointercancel/lostcapture and persisted pagehide/pageshow are explicitly dispatched controlled lifecycle seams.",
+    "Prior unchanged reference test closes/relaunches whole persistent Chromium and verifies complete backup equality plus actual stored PCM digest."
+  ],
+  "sourceHashes": {
+    "tests/roll-edit.spec.ts": "80356139d1b459d83a0d74342df652d61a609bfb9d87048f44130ae7ed8614fa",
+    "tests/roll-edit-fixtures.ts": "caa6289f943ebadd6173f2485742da8db08543bad603ebf3533980937bf880e9",
+    "tests/browser/continuation-fixtures.ts": "e4e4f3168783854c7c9697922ddb73d6ab413f1f3ce998ea43ff469bccccec74",
+    "src/roll-edit.ts": "40d01db52104e5a29acf742c1de8facc70d70a21dffd3f715b108598b1cfeeb4",
+    "src/roll-controller.ts": "92a9f4b446607a6c1037ffda2c3a77e9f44b54d6f9d85e342dcd8607908c1bf6",
+    "src/main.ts": "c29e3ff67bf94c049030b91cf232b9bd7dab4b1f5d790a6abbcbd3abc6e3d390",
+    "src/style.css": "4fce5a9064a35cef88e28e8ba41750eff1012d7d7d2fcce06629fd71861714a4",
+    "src/audio.ts": "dc44b7f1d1ad9c95fe1a65fcff2659f26ed8da4552062791af2879f184ea3957",
+    "src/midi.ts": "36aa942085253047512b5605225b876a92bef5f40b92b668cdcb2e9c7f4ce84a",
+    "src/wav.ts": "eb6d81d84c53be5d2c6def7db023f77d4699c2aa9d1345f0a9f09966357b0ea9",
+    "src/reference-project.ts": "8924a56ffb19414f012f6287fd2c1b517769fb0e1e2a014ca1367844c6a4e430",
+    "src/reference-storage.ts": "de4f51a6cb35418538f3e1cbe55f0d3df17a06d2a82595bf11e89e1f7be7573b"
+  },
+  "bundleHashes": {
+    "dist/assets/index-BcyIN1-j.js": {
+      "bytes": 123951,
+      "sha256": "e1e84dbc4f43b8373f259571ea334529a5682a9a43442b4a7885678bbed1f797"
+    },
+    "dist/assets/index-BhGR5Dnv.css": {
+      "bytes": 15984,
+      "sha256": "a2fff1d395506c1dd0214411360c24ed6c762bf11d800b9f3987345b6dd60919"
+    },
+    "dist/assets/render.worker-XQ4gxvXb.js": {
+      "bytes": 4883,
+      "sha256": "00266ba907dbf5e32d9216a4434d72b01d3a4ecc5d4ba5dce6ca1b3b919562e0"
+    },
+    "dist/assets/transcribe.worker-D27pcBxb.js": {
+      "bytes": 2860,
+      "sha256": "e6f43ee54c3c3fc29cf9c532fa70b3e4b3009afd2f1ef5fe6fb1f7b93503c38c"
+    },
+    "dist/index.html": {
+      "bytes": 672,
+      "sha256": "4ee62ab2bba2d17d7209f337e7d7a5af4ec42d998269aeb8651146205fbadaf1"
+    }
+  },
+  "logs": {
+    "/tmp/melody99-initial-red.log": {
+      "bytes": 2872,
+      "sha256": "97499dabcc4e1aa39864ac546bfd2b869ff299b94248bf16e6cd65127c90ffd9"
+    },
+    "/tmp/melody99-control-red.log": {
+      "bytes": 2528,
+      "sha256": "48c8def80a0dea6a6d86485c2fe7c5a49edf3f6d9e0f26635ce539a4db9df2bb"
+    },
+    "/tmp/melody99-native-first.log": {
+      "bytes": 9596,
+      "sha256": "009ecd36c9d0923aa4dcc784575b7cbe01d86f258d877e8dd0526e6285233fc0"
+    },
+    "/tmp/melody99-affected.log": {
+      "bytes": 4938,
+      "sha256": "85e593d00fe94cc9a046481b18a66a95d73eb3a47d78cf2b50e8d4a3d7c0fc74"
+    },
+    "/tmp/melody99-touch-diagnostic.log": {
+      "bytes": 6494,
+      "sha256": "a3ba498d70af10e195fb64456dd84c158d8686c4d3a0da2ae7321bbb81698c8d"
+    },
+    "/tmp/melody99-minimum-note-red.log": {
+      "bytes": 5318,
+      "sha256": "2cebf82546cadad409209315a9972610d64d1b5fb95973384a85ce54522e0cbd"
+    },
+    "/tmp/melody99-native-final.log": {
+      "bytes": 7626,
+      "sha256": "a68e999a0b201023857e2c85475ca3a911cc5f1803db5e6dc64a29ec3a3344f9"
+    },
+    "/tmp/melody99-minimum-note-green.log": {
+      "bytes": 352,
+      "sha256": "2d5d58c0503a6b31503aeef4f77dba3fa0fbe753a9939d76c35d034bf7fad413"
+    },
+    "/tmp/melody99-prior58.log": {
+      "bytes": 11801,
+      "sha256": "97bfe678b72a01b929742a40913c86b44ad17197f3e422a74bf363da95c2d378"
+    },
+    "/tmp/melody99-prior-restart-green.log": {
+      "bytes": 358,
+      "sha256": "35832d9c7f764ff6b9353962a2a29c95945a93c217bef8b9d3bfb72724ab71d2"
+    }
+  },
+  "artifacts": {
+    "/workspace/melody99-native-artifacts/minimum-note-hit.json": {
+      "bytes": 412,
+      "sha256": "76fc60dcc8f7f303f90627b854a6eed00974586249ccbb7939fe3b34a47d6d96"
+    },
+    "/workspace/melody99-native-artifacts/red-minimum-note-hit.json": {
+      "bytes": 466,
+      "sha256": "02cc6149470045ccc1cc4ccb0aa417543429bbc60244e5983134c8fb7a7ab787"
+    },
+    "/workspace/melody99-native-artifacts/red-touch-events.json": {
+      "bytes": 2617,
+      "sha256": "4e0a78e52e16764f367da9d99b2b1710f0b85af00788a9ffacdc4f4c5fc2eb58"
+    },
+    "/workspace/melody99-native-artifacts/roll-390px.png": {
+      "bytes": 291177,
+      "sha256": "79dfcf9f70ca782b9763513b9aed70bb43b68d4229322facac839430a95531ae"
+    },
+    "/workspace/melody99-native-artifacts/roll-audio-oracle.json": {
+      "bytes": 56,
+      "sha256": "10b5f761461dd921c468539b7e68199a89134aa06dff1acaa1526e472de2fe63"
+    },
+    "/workspace/melody99-native-artifacts/roll-complete.melody.json": {
+      "bytes": 59921,
+      "sha256": "040dcf13015c495811fe4f7e8f64997dd57de862068bd1cdb2143ec8a8b0ae9c"
+    },
+    "/workspace/melody99-native-artifacts/roll-edited.mid": {
+      "bytes": 178,
+      "sha256": "6c55932762e00cf337f83a0372e1c8b20cc0369be220c0a4e0b0e0aa6b0f004a"
+    },
+    "/workspace/melody99-native-artifacts/roll-edited.wav": {
+      "bytes": 80748,
+      "sha256": "0155790a7295b125718e05e946e507db744a0efb48014caadf254ebe09e4730d"
+    },
+    "/workspace/melody99-native-artifacts/touch-events.json": {
+      "bytes": 2838,
+      "sha256": "cbb892a327ffb729bda6930641b6b05d864fdd39b16a9dd8ce98986c01ae47ba"
+    },
+    "/workspace/melody99-native-artifacts/touch-geometry.json": {
+      "bytes": 378,
+      "sha256": "3e7fdd43b6da9d3a5d43bb7511a4655936553d7d48d9eac99dbc514d02d1a937"
+    }
+  },
+  "limitations": [
+    "New fixture has4 notes and one normalized reference; parent-owned maximum8track2048note/eight-reference acceptance is separate.",
+    "Local Chromium151; final published-head CI may use another pinned browser.",
+    "New WAV comparison samples every37th decoded PCM sample (1091 positions), with exact container/frame length; not an assertion over every sample."
+  ]
+}
