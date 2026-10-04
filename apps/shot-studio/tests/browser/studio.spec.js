@@ -164,3 +164,11 @@ test('scene undo and shot sequencing preserve camera snapshots and portable back
   await expect(page.locator('#shotLabel')).toContainText('CAMERA 02');
   await expect(page.locator('#shots button').nth(1)).toHaveAttribute('aria-pressed','true');
 });
+
+test('unreadable startup draft survives authoring and undo before explicit replacement',async({page})=>{
+  await page.goto('/');await page.evaluate(()=>localStorage.setItem('shot-studio-v1','{broken original\n☃'));await page.reload();
+  await expect(page.locator('#status')).toContainText('preserved');
+  await page.getByLabel('Film title').fill('Recoverable new film');await page.getByLabel('Film title').press('Tab');
+  expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe('{broken original\n☃');
+  await page.getByRole('button',{name:'Undo scene',exact:true}).click();expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe('{broken original\n☃');
+});
