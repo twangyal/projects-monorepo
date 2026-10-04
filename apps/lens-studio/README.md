@@ -86,3 +86,9 @@ case passes locally with lint and type checking. No product code or timeout
 changed. The [verification receipt](docs/2026-10-04-storage-readiness-verification.json)
 preserves the actual CI failure and limits; its precise original interleaving was
 not captured.
+
+The repair at `f19cd6551699d5385de2434b000dc4fbe96826df` passes all **67 units
+and 32 browser cases**, lint, type checking and build in both
+[push](https://github.com/twangyal/projects-monorepo/actions/runs/37224210032) and
+[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37224213108) CI on
+Chromium153. All thirteen project PR workflows pass. See the [exact CI receipt](docs/2026-10-04-storage-readiness-ci.json).

@@ -61,7 +61,56 @@ The browser keeps up to 20 challenge access tokens in local storage for this ori
 
 Keep **My private access link** somewhere private before closing a browser that cannot save local storage. A storage failure does not invalidate the current in-memory session. A persistent warning, **Retry saving access** and a navigation warning keep unsaved access visible; losing that session without a recovery link still loses that browser's access. **Forget saved seat** removes only the selected browser credential after confirmation, preserving its server record and other remembered seats. Opening another seat's link in the same profile requires an explicit switch; one browser profile is intended to hold one seat per challenge.
 
-**JSON and complete HTML exports are readable records, not access recovery or server backups.** They contain no access tokens, invitation tokens or stored capability digests, and there is no record-import endpoint. To back up the complete notebook and its valid capabilities, stop the service cleanly and copy its entire data directory. Restore that directory while the service is stopped, then use the original private links. Browser storage alone is not a backup.
+**JSON and complete HTML exports are readable records.** They contain no access tokens, invitation tokens or stored capability digests and cannot restore private seats. Use the complete offline archive commands below to back up the notebook. Browser storage alone is not a backup; retain your original private links separately.
+
+### Complete private library archives
+
+Stop the service cleanly before creating an archive. Run these commands from the
+app directory with its Python environment active:
+
+```sh
+python -m challenges.backup create --data-dir ./data --output ./notebook.friendly.zip
+python -m challenges.backup inspect --archive ./notebook.friendly.zip
+python -m challenges.backup restore --archive ./notebook.friendly.zip --data-dir ./restored-data
+python -m challenges --data-dir ./restored-data --port 8767
+```
+
+The output archive and restored directory must not already exist; their parent
+directories must exist. Keep the archive outside the source data directory.
+The commands never merge, replace, rotate credentials, or delete existing records.
+Creation refuses a running service, symlinks, unsupported data, or unsafe SQLite
+sidecars. Inspection validates the complete contents and prints counts and byte
+sizes without private names, captions or digests. Ctrl+C cancels before publication;
+an incomplete result is not presented as a usable archive or restored notebook.
+
+Archives preserve every private record's exact text, IDs, revisions, historical
+activity, capability/invitation digests and original retained JPEG bytes. Restored
+libraries use the trusted current database schema. Existing private links work
+again, and still-unused invitations retain their single-use behavior. **An archive
+cannot recover a lost raw access link.** Current time still controls deadline
+checks; restore does not renew invitations, acceptance deadlines or agreements.
+
+The archive is private, unencrypted data. Keep it as carefully as the notebook;
+use the token-free JSON/HTML exports for a record you intend to share. Checksums
+detect damaged bytes and do not authenticate a supplied archive or evidence.
+No archive is uploaded, and there is no HTTP archive/import endpoint.
+
+Archive commands require Linux with `renameat2(RENAME_NOREPLACE)` and a Python
+SQLite build supporting `Connection.serialize()`. These capabilities permit
+atomic publication into an absent directory; unsupported systems refuse restore.
+The format is a strict stored ZIP, capped at **128 MiB**, containing at most 20
+private records of 1 MiB each and 160 JPEGs totalling **80 MiB**. Generic edited ZIPs,
+compressed members, unknown paths, missing images and inconsistent records refuse
+before publication. The stopped source database is also capped at 128 MiB; it is
+never vacuumed or migrated by archive creation. Operations have one five-minute
+budget, with cancellation checked between bounded reads, record replay and JPEG
+decodes. These bounds do not claim peak-memory limits.
+
+After a successful restore, use the new data directory as the service's ordinary
+`--data-dir`. Keep the old notebook and archive until you have verified access.
+If final filesystem synchronization fails after the complete result has already
+been published, the command reports that publication succeeded with durability
+unconfirmed; it preserves that complete result for inspection.
 
 The service takes a lifetime lock on its data directory. A second process cannot use it while the first service or its in-flight requests are still active. It rejects symlink data/lock/database paths at startup. It does not promise isolation from a malicious user who already controls the same operating-system account and database files. Corrupt stored records fail visibly instead of being replaced with an empty notebook.
 
@@ -109,3 +158,46 @@ FRIENDLY_SOURCE_OUTPUT=/tmp/friendly-source-new FRIENDLY_SOURCE_ORIGIN=http://12
 ```
 
 The source runner observes genuine native Blob arguments solely to verify the exact preview/upload bytes; it does not replace native decoding, upload or service state. Its timing is a single local observation, not a speed guarantee. Complete HTML and source artifacts stay local; no paid service or inference is used.
+
+## Complete archive verification (2026-10-04)
+
+Issue [#103](https://github.com/twangyal/projects-monorepo/issues/103) passes the
+complete **154 Python and 37 TypeScript tests**, Ruff, compilation, ESLint, type
+checking and build. Sixteen independent original fixture cases cover physical ZIP
+admission, private historical replay, exact legacy text, media associations,
+pinned file descriptors, cancellation and competing destination creation. Four
+new real browser/CLI cases pass, including original proposer/opponent/arbiter
+access, pending invitations used exactly once, withdrawn/consumed refusal, native
+image/JSON/HTML downloads and real service restart. Existing 24 browser cases are
+unchanged; the full 28-case published-head CI gate is recorded separately.
+
+A frozen independent maximum uses 20 complete challenges and 160 original,
+decoded **512 KiB JPEGs (80 MiB)**. Its actual **84,198,426-byte** archive passes
+create, inspect and restore; every original private record TEXT and JPEG hash
+survives a separate restored service and another complete process restart. Source
+database bytes remain unchanged. Original private seats work for every record,
+and all embedded image bytes/public history match the original expectations.
+Live export/server timestamps naturally differ. The full probe took 68.227 seconds;
+CLI create, inspect and restore took 5.630, 6.206 and 16.543 seconds respectively.
+
+The valid 37×23 RGB JPEGs use legal padding to reach the byte cap; this measures
+retained byte topology, not maximum-pixel decoding, complex compression, exact
+128 MiB container admission or peak memory. The large probe uses real CLI/HTTP;
+the separate smaller fixture covers browser rendering and actual downloads.
+Run against independent temporary data after building the ordinary web app:
+
+```sh
+python scripts/smoke_library_archive.py --output /tmp/friendly-archive-check
+```
+
+The output directory must be new. `--fixtures-only` freezes the original inputs;
+`--run-existing --output DIR` then verifies those same inputs without replacing
+them. The runner launches only its own short-lived loopback services. Its archive,
+databases and original private access links stay in private local files; never
+publish them as CI artifacts or share them as public record exports.
+
+[Integration evidence](docs/2026-10-04-library-archive-verification.json),
+[independent oracle evidence](docs/2026-10-04-library-archive-oracle.json),
+[native evidence](docs/2026-10-04-library-archive-native.json) and
+[maximum evidence](docs/2026-10-04-library-archive-maximum.json) preserve actual
+hashes, observed failures, repairs, timing and limits.

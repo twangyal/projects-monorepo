@@ -1,0 +1,117 @@
+{
+  "status": "passed",
+  "sourceHashes": {
+    "scripts/smoke_library_archive.py": "310a793ceaea1abda9e42b51305859090dd20648f7f0a8fce9e89a229c18b14d",
+    "tests/browser/archive.spec.ts": "1f105286dc148192d4ca0456f0dba86fedb3c3855f4d59629f4a57b6d5aa6e65",
+    "challenges/archive_common.py": "a2e08e0ec4bba1192c9ccd4b727892280575a421ba9ffc0749ef2f47ae97990c",
+    "challenges/archive_state.py": "9ae776ea0adad88a2a28e30bfcb7551ed3b3dd6eee5c715b8228098a2df7f61b",
+    "challenges/archive_format.py": "7551dd13a306b078dbb4575aeee1dd882db42808d115d959c20a364d5795896b",
+    "challenges/backup.py": "f565195b98137695613abedb90edf95ab7422db33f270fb0fc73858d9fd77799",
+    "challenges/domain.py": "03d44e7df1e03d6da41758ad2e204ee95bbb5d47f909e3e1c987fa74fd5982ab",
+    "challenges/store.py": "fbc637db3c13377d4d48415d2b3e3a1c1921e98acd520f83b179435e19510275",
+    "challenges/server.py": "183bd77188ad118c7345cd10086cedc94ac7e84e051cc7863d2bc80115915440",
+    "challenges/images.py": "1ce842cfd04749e03b26f603841f0ff3f139921f62e23468322c5a15ba069993",
+    "challenges/image_export.py": "b82a15a02f3622cb189a0cd2b6a81445e4a2861a2d442e261a47e76505fba8ed"
+  },
+  "browser": {
+    "firstActual": {
+      "passed": 4,
+      "failed": 0,
+      "seconds": 8.2,
+      "log": "/tmp/friendly103-native-first.log",
+      "logSha256": "5242fd811b3568e8e9165328da6d4b3cea5701771755c50463d4d4cd3e15de9e"
+    },
+    "finalPrivacyCleanupRerun": {
+      "passed": 4,
+      "failed": 0,
+      "seconds": 8.6,
+      "log": "/tmp/friendly103-native-final.log",
+      "logSha256": "099381511754f5143daee063b49bd8964cc95b4b532adb398cfa704ce12b97a1"
+    },
+    "version": "Chromium 151.0.7922.173 built on Debian GNU/Linux 13 (trixie)",
+    "productionBundle": "index-CYuTaMrs.js",
+    "mockedBoundaries": [],
+    "existing24Tests": "Unchanged; not rerun in this assigned gate.",
+    "allOwnedContextsAndServicesClosed": true
+  },
+  "maximum": {
+    "status": "passed",
+    "profile": "maximum",
+    "challengeCount": 20,
+    "imageCount": 160,
+    "mediaBytes": 83886080,
+    "archiveBytes": 84198426,
+    "archiveSha256": "006ffed4b997ff5209b021304a952a838aa870e48611454ac5d756b6fe3e842d",
+    "sourceDatabaseUnchanged": true,
+    "rawRecordAndJpegHashesPreserved": true,
+    "independentServicePids": [
+      661480,
+      661759,
+      662022
+    ],
+    "allServicesStopped": true,
+    "cli": [
+      {
+        "action": "create",
+        "seconds": 5.630413798993686,
+        "stdoutBytes": 288,
+        "stderrBytes": 0,
+        "outputSha256": "68ccb8803c826cd2ef9c6841969dd3a751b0f133a314d34ee9a44442a3f3820a"
+      },
+      {
+        "action": "inspect",
+        "seconds": 6.205725525011076,
+        "stdoutBytes": 288,
+        "stderrBytes": 0,
+        "outputSha256": "68ccb8803c826cd2ef9c6841969dd3a751b0f133a314d34ee9a44442a3f3820a"
+      },
+      {
+        "action": "restore",
+        "seconds": 16.543122052011313,
+        "stdoutBytes": 288,
+        "stderrBytes": 0,
+        "outputSha256": "68ccb8803c826cd2ef9c6841969dd3a751b0f133a314d34ee9a44442a3f3820a"
+      }
+    ],
+    "wallSeconds": 68.22744096899987,
+    "limitations": "Actual CLI and HTTP, no browser in this script. exportedAt and serverTime are live clocks; public payloads otherwise match literal expected states. Not an RSS or arbitrary same-UID security test."
+  },
+  "maximumReceipt": "/workspace/friendly103-maximum-fixtures/verification.json",
+  "maximumReceiptSha256": "9e62730a95ccec3f7fa6fd2de4419beb0bc4f5f0feeffd337f70bc4fe8cd2370",
+  "maximumLogSha256": "dd758b82223cc80ea56c2f06850b3567b7f9ff37bce2a9bc7f338ede65351a32",
+  "frozenExpectationsSha256": "ea86629906f663e971580e601118cf835f9e7a672d5960fafea40c8b6f7e7975",
+  "artifacts": {
+    "source-first-complete.html": {
+      "bytes": 5606673,
+      "sha256": "7ba36c5407f9a3c2e6e25261afd328f6c983529f9d6bab7ced667cd3991d3cc9"
+    },
+    "source-first-public.json": {
+      "bytes": 7655,
+      "sha256": "ac16f5aa0d75a033072ee4c8f0c2409a680e230e870722b9dae49ccfbc056785"
+    },
+    "restart-first-public.json": {
+      "bytes": 7655,
+      "sha256": "740852bfc27450dafd27b135ae39745c37908fc7f5e9aad5a77c0d548af9bca1"
+    },
+    "restart-first-complete.html": {
+      "bytes": 5606673,
+      "sha256": "70ba501843ea797f547fe101932cee8e0d55565521afa536133c8d3286599f91"
+    },
+    "restored-first-complete.html": {
+      "bytes": 5606673,
+      "sha256": "19642404b091cc7e2df601ae2324c07c783eb2d87200b8e5309f8aec2a65fa25"
+    },
+    "restored-first-public.json": {
+      "bytes": 7655,
+      "sha256": "d7b95701af1af5beb6e7352ad44756bdb15cf79701316b54408e6ad24b6e9413"
+    }
+  },
+  "limitations": [
+    "No placeholder RED was observed; all four first actual native cases and the maximum passed unchanged.",
+    "Original fixture preparation corrected a duplicate Python images keyword before freezing; no runtime expectation changed.",
+    "Native browser uses the original small three-ledger/two-image fixture;80MiB maximum is real CLI/HTTP, not80MiB browser rendering.",
+    "Live exportedAt/serverTime differ; every other public field and all embedded/retained image bytes match independently authored expectations.",
+    "No exact record/SQLite/archive ceiling or RSS claim.",
+    "Private fixture credentials and raw private archives remain local0600; never publish private-fixture.json or source/restored databases."
+  ]
+}
