@@ -384,7 +384,11 @@ prepare inputs without a browser. Chromium and FFmpeg are required for the actua
 full-minute recording. [Integration evidence](docs/2026-10-04-scene-sequences-verification.json),
 [native evidence](docs/2026-10-04-scene-sequences-native.json) and
 [maximum evidence](docs/2026-10-04-scene-sequences-maximum.json) retain exact
-hashes, failed attempts, independent thresholds and scope. Published-head CI is
-recorded separately when available. Physical headset acceptance remains open.
+hashes, failed attempts, independent thresholds and scope. Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37219616959)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37219620332) CI
+at `6eef208710871171e8fe78b9ffdf9a2d84aab9be` pass all **232 units and 71 native
+browser cases**, plus syntax checks, on Chromium153. All thirteen project PR
+workflows pass. The [CI receipt](docs/2026-10-04-scene-sequences-ci.json) records
+actual checkouts. Physical headset acceptance remains open.
 
 Retained-take CI at `6b2efeb3` passed all **146 unit tests, syntax checks and 53 browser tests** in both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37211773638) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37211776395) runs; all thirteen project PR workflows passed. The [CI receipt](docs/2026-10-04-retained-takes-ci.json) records exact checkouts. The [first CI failures](docs/2026-10-04-retained-takes-ci-first.json) remain documented: a test assumed native hashing finished after one event-loop turn, and a persistent-browser download closed for an unconfirmed reason. The corrected fixtures wait for the real database request and inherit the configured browser; all original archive/restart assertions remain.

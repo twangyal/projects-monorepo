@@ -1,0 +1,282 @@
+{
+  "issue": 90,
+  "status": "passed",
+  "head": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37219616959,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219616959",
+      "headSha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "checkoutSha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "checkoutKind": "branch head",
+      "jobId": 111487124237,
+      "conclusion": "success",
+      "startedAt": "2026-10-04T17:12:23Z",
+      "completedAt": "2026-10-04T17:15:50Z",
+      "jobWallSeconds": 207.0,
+      "units": {
+        "tests": 232,
+        "passed": 232,
+        "failed": 0,
+        "skipped": 0,
+        "durationMs": 982.759133
+      },
+      "nativeBrowser": {
+        "passed": 71,
+        "reportedDuration": "2.6m",
+        "reportedDurationSecondsRounded": 156.0,
+        "workers": 1,
+        "chromiumVersionInstalled": "153.0.8010.12",
+        "versionEvidence": "Playwright installation log for same job before successful native test command"
+      },
+      "syntaxCheck": "success",
+      "lintTypecheckBuild": "Not separate Shot workflow steps; npm run check is the logged node --check chain. No claim of unexecuted checks.",
+      "steps": [
+        {
+          "name": "Run npm test",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:12:29Z",
+          "completed_at": "2026-10-04T17:12:30Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:12:30Z",
+          "completed_at": "2026-10-04T17:12:30Z"
+        },
+        {
+          "name": "Run npm run test:browser",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:13:08Z",
+          "completed_at": "2026-10-04T17:15:45Z"
+        }
+      ],
+      "log": {
+        "path": "/workspace/shot90-ci-push.log",
+        "bytes": 359024,
+        "sha256": "86b6792e254d5fdb49d3b388d7db2d3fcd2ea7e518f0698cba7a07102f51aa1f"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37219620332,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620332",
+      "headSha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "checkoutSha": "e340f022986f5f5c4662142c0cdf91ef83afbe41",
+      "checkoutKind": "synthetic PR merge",
+      "jobId": 111487133885,
+      "conclusion": "success",
+      "startedAt": "2026-10-04T17:12:27Z",
+      "completedAt": "2026-10-04T17:15:14Z",
+      "jobWallSeconds": 167.0,
+      "units": {
+        "tests": 232,
+        "passed": 232,
+        "failed": 0,
+        "skipped": 0,
+        "durationMs": 711.744642
+      },
+      "nativeBrowser": {
+        "passed": 71,
+        "reportedDuration": "2.0m",
+        "reportedDurationSecondsRounded": 120.0,
+        "workers": 1,
+        "chromiumVersionInstalled": "153.0.8010.12",
+        "versionEvidence": "Playwright installation log for same job before successful native test command"
+      },
+      "syntaxCheck": "success",
+      "lintTypecheckBuild": "Not separate Shot workflow steps; npm run check is the logged node --check chain. No claim of unexecuted checks.",
+      "steps": [
+        {
+          "name": "Run npm test",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:12:31Z",
+          "completed_at": "2026-10-04T17:12:31Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:12:31Z",
+          "completed_at": "2026-10-04T17:12:32Z"
+        },
+        {
+          "name": "Run npm run test:browser",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:13:13Z",
+          "completed_at": "2026-10-04T17:15:12Z"
+        }
+      ],
+      "log": {
+        "path": "/workspace/shot90-ci-pull_request.log",
+        "bytes": 358017,
+        "sha256": "951dc7c478e96b0ee9448f005dd5e75088abbfb07e140d5aa5bbc7aea0927314"
+      }
+    }
+  ],
+  "all13ProjectPullRequests": [
+    {
+      "id": 37219620353,
+      "name": "Clothing Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620353",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:13:13Z"
+    },
+    {
+      "id": 37219620317,
+      "name": "Style Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620317",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:13:31Z"
+    },
+    {
+      "id": 37219620331,
+      "name": "Melody Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620331",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:14:16Z"
+    },
+    {
+      "id": 37219620330,
+      "name": "Lens Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620330",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:13:38Z"
+    },
+    {
+      "id": 37219620382,
+      "name": "Motion Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620382",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:13:43Z"
+    },
+    {
+      "id": 37219620314,
+      "name": "Git History",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620314",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:14:20Z"
+    },
+    {
+      "id": 37219620371,
+      "name": "Color Context Lab",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620371",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:14:36Z"
+    },
+    {
+      "id": 37219620341,
+      "name": "Stock Notebook",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620341",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:14:41Z"
+    },
+    {
+      "id": 37219620324,
+      "name": "Duet",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620324",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:14:43Z"
+    },
+    {
+      "id": 37219620338,
+      "name": "Friendly Challenges",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620338",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:15:03Z"
+    },
+    {
+      "id": 37219620332,
+      "name": "Shot Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620332",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:15:15Z"
+    },
+    {
+      "id": 37219620372,
+      "name": "Composure",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620372",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:15:25Z"
+    },
+    {
+      "id": 37219620327,
+      "name": "Karaoke Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219620327",
+      "created_at": "2026-10-04T17:12:24Z",
+      "updated_at": "2026-10-04T17:15:45Z"
+    }
+  ],
+  "all13Successful": true,
+  "additionalPushes": [
+    {
+      "id": 37219616978,
+      "name": "Motion Studio",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37219616978",
+      "created_at": "2026-10-04T17:12:21Z",
+      "updated_at": "2026-10-04T17:14:06Z"
+    }
+  ],
+  "scope": [
+    "Exact Shot push/PR counts and checkout IDs extracted from actual job logs; all-project conclusions are workflow API statuses only.",
+    "71 tests using one worker passed in each job. Rounded Playwright minute durations are preserved as reported, not represented as precise measurements.",
+    "No CI rerun, issue update, source edit, build or Git mutation performed.",
+    "Local maximum used native Chromium151.0.7922.173; these CI jobs installed153.0.8010.12."
+  ]
+}

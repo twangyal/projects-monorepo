@@ -1,7 +1,7 @@
 {
   "issue": 90,
   "date": "2026-10-04",
-  "status": "complete local implementation and acceptance; published-head CI pending",
+  "status": "complete local acceptance and exact published-head push/PR CI passed",
   "version": "0.5.0",
   "sequenceSchemaVersion": 2,
   "contract": "docs/superpowers/specs/2026-10-04-shot-scene-sequences-design.md",
@@ -53,10 +53,12 @@
     "Adapted legacy suite first16/17 and root231/232 failed only guessed default shot labels. Corrected test to literal existing Establishing/Two-shot; all232 then pass."
   ],
   "limits": [
-    "Local Chromium151; exact published-head CI remains separate. Schema2 native18 preceded final fractional-quota arithmetic repair; the unchanged complete maximum probe passed afterwards. Final CI will rerun all71 browser cases.",
+    "Local Chromium151 acceptance is separate from exact published-head Chromium153 CI. Both push and PR CI reran all232 units and71 native cases after the final fractional-quota repair.",
     "Optimistic localStorage compare-before-write is not atomic cross-tab CAS.",
     "Maximum topology and exact whitespace raw-file boundary are separate; no maximal canonical/video byte or peak-memory claim.",
     "40 actual decoded video samples cover all20 clips; no exact30fps/all-frame pixel/device guarantee.",
     "Physical WebXR headset acceptance remains open in21."
-  ]
+  ],
+  "publishedHead": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+  "ciReceipt": "2026-10-04-scene-sequences-ci.json"
 }
