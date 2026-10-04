@@ -1,0 +1,790 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "project": "Karaoke Studio",
+  "version": "0.3.0",
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/59",
+  "sourceCommits": {
+    "design": "64fed1d8c1958b083c594ae83949ccb7d1043a1d",
+    "archiveEngine": "bed0c1b0a4710c54d979ade3b7f33f63971aca9b",
+    "archiveService": "9743f5dd355a1980d1b74d1a0caacc9e5fed62eb",
+    "completeUi": "042218218f02b82a1082af485eb33ee06e08c67c"
+  },
+  "environment": {
+    "os": "Debian 13 x86_64",
+    "python": "3.11.16",
+    "node": "24.19.0",
+    "localChromium": "151.0.7922.173",
+    "cpuQuota": 4,
+    "memoryGiB": 16,
+    "ffmpeg": "7.1.5"
+  },
+  "checks": {
+    "python": {
+      "passed": 166,
+      "seconds": 56.461,
+      "includesIndependentArchiveOracle": 15
+    },
+    "typescript": {
+      "passed": 51
+    },
+    "productionBrowser": {
+      "passed": 44,
+      "newArchiveCases": 13,
+      "unchangedPreviousCases": 31,
+      "reportedElapsed": "2.0 minutes"
+    },
+    "noModelBrowser": {
+      "passed": 12,
+      "skipped": 1,
+      "skipReason": "Legacy separation-only observed-job case requires the normal fake-separator mode.",
+      "seconds": 54.6
+    },
+    "ruff": true,
+    "eslint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "compileall": true
+  },
+  "ci": {
+    "commit": "042218218f02b82a1082af485eb33ee06e08c67c",
+    "allProjectWorkflows": 12,
+    "allConclusions": "success",
+    "karaokeRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37184306831",
+    "jobId": 111382962687,
+    "chromium": "153.0.8010.12",
+    "pythonPassed": 166,
+    "pythonSeconds": 63.11,
+    "typescriptPassed": 51,
+    "browserPassed": 44,
+    "browserReportedElapsed": "2.0 minutes"
+  },
+  "contract": {
+    "archiveBytesLimit": 167772160,
+    "compression": "ZIP_STORED only",
+    "members": 5,
+    "membersWithProcessing": 6,
+    "metadataSchema": 1,
+    "wav": "Canonical 44-byte-header stereo PCM16 44100 Hz; exact byte preservation",
+    "durationSeconds": [
+      1,
+      300
+    ],
+    "bufferBytes": 65536,
+    "uploadDeadlineSeconds": 60,
+    "workerDeadlineSeconds": 180,
+    "maxProjects": 20,
+    "cacheFilesPerProject": 1,
+    "maximumAdditionalRetainedCacheMiB": 3200,
+    "restorePublication": "Linux renameat2(RENAME_NOREPLACE), no overwrite fallback; engine-created inode receipt rechecked before publication",
+    "provenance": "Imported claims remain unverified after restart and re-export; hashes provide integrity, not authentication.",
+    "modelRequired": false
+  },
+  "reviewAndRegressionEvidence": [
+    "Independent binary archive fixtures were derived without reading the producer implementation and passed unchanged after the engine was implemented.",
+    "A real native blank timing field lost focus when archive busy state disabled it; the same-node/project restoration fix passed with a control proving later user focus wins.",
+    "A separately started video export triggered an unwanted native download when observed through Check restore status; the new ownership regression failed before the guard and passed afterward.",
+    "An observed separation completion cannot automatically open another page's clip in an empty editor.",
+    "An existing separation recovery assertion caught changed error wording; legacy wording was retained for separation while archive guidance uses result terminology.",
+    "The smoke scratch sampler now handles concurrent removal of queued entries while preserving other IO failures, and service cleanup still reaps a child if sampling fails."
+  ],
+  "fastSmoke": {
+    "schemaVersion": 1,
+    "python": "3.11.16",
+    "modelReady": false,
+    "inferenceCalls": 0,
+    "fixture": "original synthetic PCM",
+    "separationQualityVerified": false,
+    "duration": 5.0,
+    "cues": 200,
+    "savedRevision": 7,
+    "audio": {
+      "source.wav": {
+        "bytes": 882044,
+        "frames": 220500,
+        "samples": {
+          "0": [
+            0,
+            0
+          ],
+          "440": [
+            10350,
+            7716
+          ],
+          "441": [
+            10462,
+            7608
+          ],
+          "110250": [
+            0,
+            0
+          ],
+          "220499": [
+            -345,
+            -376
+          ]
+        },
+        "sha256": "f2fe906bf39cf7b0bcebda2b704e5af5dc7b2736b7b63355c7420145374ba916"
+      },
+      "vocals.wav": {
+        "bytes": 882044,
+        "frames": 220500,
+        "samples": {
+          "0": [
+            0,
+            0
+          ],
+          "440": [
+            10610,
+            5099
+          ],
+          "441": [
+            10462,
+            4702
+          ],
+          "110250": [
+            0,
+            0
+          ],
+          "220499": [
+            -517,
+            -501
+          ]
+        },
+        "sha256": "705d3a96b0f4df314994f750ad96fbad99dc6022689a274cca5350354860d677"
+      },
+      "backing.wav": {
+        "bytes": 882044,
+        "frames": 220500,
+        "samples": {
+          "0": [
+            0,
+            0
+          ],
+          "440": [
+            7010,
+            626
+          ],
+          "441": [
+            6466,
+            0
+          ],
+          "110250": [
+            0,
+            0
+          ],
+          "220499": [
+            -689,
+            -626
+          ]
+        },
+        "sha256": "b941357b37898e3da318732ee3a721054f60edaa997ebad3975468a41994cc15"
+      }
+    },
+    "timingsSeconds": {
+      "exportAndDownload": 0.038319641003909055,
+      "uploadAndRestore": 0.03373695800109999,
+      "realProcessRestart": 0.0702866810024716,
+      "cancelAndCacheCheck": 0.04094442099449225,
+      "actualVideoExportDownloadAndDecode": 4.492879419005476,
+      "total": 5.226361546003318
+    },
+    "cancellation": {
+      "requested": true,
+      "observedStatus": "cancelled",
+      "oldCacheUnchanged": true,
+      "projectUnchanged": true,
+      "scratchClean": true
+    },
+    "archiveBytes": 2666656,
+    "archiveSha256": "6fc3b82d967b9857bc1c9554a3d8aabc823c5d42e5adcd24b0d41d993669675e",
+    "originalId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "restoredId": "e2177ea899614b0488cd495091f6a9b1",
+    "realRestart": true,
+    "restoredProcessPids": [
+      342989,
+      342997
+    ],
+    "provenance": {
+      "imported": true,
+      "processingSupplied": true,
+      "origin": "imported-declared",
+      "sourceProjectId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sourceRevision": 7,
+      "archiveSha256": "6fc3b82d967b9857bc1c9554a3d8aabc823c5d42e5adcd24b0d41d993669675e"
+    },
+    "video": {
+      "codec": "h264/aac",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "frames": 120,
+      "duration": 5.0,
+      "finalCuePts": 4.75,
+      "precedingGapPts": 4.375,
+      "activeAccentPixels": 5176,
+      "gapAccentPixels": 2,
+      "lateAudioPeak": 0.34535327553749084,
+      "glyphOracle": {
+        "kind": "Independent fixed instrumental-gap glyph geometry/color with yuv420p reference",
+        "exactFinalGlyphsValidated": true,
+        "scope": "Gap always checked; active gold count checked for arbitrary layout. Optional final glyph mask covers explicit short lines only, not automatic wrapping or font shaping.",
+        "thresholds": {
+          "coreMaskMin": 240,
+          "channelTolerance": 35,
+          "minCoreCoverage": 0.9,
+          "maskDilationPixels": 2,
+          "minSpatialPrecision": 0.95
+        },
+        "cases": {
+          "gapExpectedInstrumental": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2986,
+            "coreCoverage": 0.9989963198394112,
+            "actualForegroundPixels": 3846,
+            "expectedMaskForegroundPixels": 3846,
+            "spatialPrecision": 1.0,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "activeWrongInstrumental": {
+            "passed": false,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 6672,
+            "expectedMaskForegroundPixels": 159,
+            "spatialPrecision": 0.023830935251798562,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "activeWrongText": {
+            "passed": false,
+            "expectedCorePixels": 3672,
+            "matchingCorePixels": 36,
+            "coreCoverage": 0.00980392156862745,
+            "actualForegroundPixels": 6672,
+            "expectedMaskForegroundPixels": 223,
+            "spatialPrecision": 0.03342326139088729,
+            "expectedBounds": [
+              385,
+              302,
+              894,
+              344
+            ]
+          },
+          "gapWrongText": {
+            "passed": false,
+            "expectedCorePixels": 3672,
+            "matchingCorePixels": 819,
+            "coreCoverage": 0.22303921568627452,
+            "actualForegroundPixels": 3846,
+            "expectedMaskForegroundPixels": 2730,
+            "spatialPrecision": 0.7098283931357254,
+            "expectedBounds": [
+              385,
+              302,
+              894,
+              344
+            ]
+          },
+          "blankWrongInstrumental": {
+            "passed": false,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 0,
+            "expectedMaskForegroundPixels": 0,
+            "spatialPrecision": 0,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "activeExpectedFinalLine": {
+            "passed": true,
+            "expectedCorePixels": 4988,
+            "matchingCorePixels": 4987,
+            "coreCoverage": 0.9997995188452286,
+            "actualForegroundPixels": 6672,
+            "expectedMaskForegroundPixels": 6672,
+            "spatialPrecision": 1.0,
+            "expectedBounds": [
+              264,
+              272,
+              1015,
+              370
+            ]
+          },
+          "gapWrongFinalLine": {
+            "passed": false,
+            "expectedCorePixels": 4988,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 3846,
+            "expectedMaskForegroundPixels": 149,
+            "spatialPrecision": 0.03874154966198648,
+            "expectedBounds": [
+              264,
+              272,
+              1015,
+              370
+            ]
+          },
+          "blankWrongFinalLine": {
+            "passed": false,
+            "expectedCorePixels": 4988,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 0,
+            "expectedMaskForegroundPixels": 0,
+            "spatialPrecision": 0,
+            "expectedBounds": [
+              264,
+              272,
+              1015,
+              370
+            ]
+          }
+        }
+      },
+      "broadAccentDiagnostic": {
+        "activeCount": 5176,
+        "gapCount": 2,
+        "formerGapLimit": 20,
+        "formerPassed": true,
+        "limitation": "Broad hue counting can classify codec-tinted white-letter edges as gold; it is diagnostic only."
+      }
+    },
+    "srtSha256": "9b5f37e3fe2117d7c4e55b8b044aa7150ba4c73cf4e89679c80d1256c1b0beb1",
+    "retainedBytes": 19150507,
+    "observedScratchPeakBytes": 8202489,
+    "observedServicePeakRssKiB": 37960,
+    "scratchCleanupVerified": true,
+    "limitations": [
+      "Checksums detect corruption, not authenticity or model quality.",
+      "RSS/disk samples are observations, not continuous process-tree maxima.",
+      "Video pixels verify late cue activation/gap; they do not OCR every lyric. Bundled font lacks Tibetan glyphs: bytes remain exact, but raster checks compare available glyphs/missing-glyph boxes, not Tibetan shaping.",
+      "Native browser acceptance is a separate production test."
+    ],
+    "childPeakRssKiB": 193856
+  },
+  "fullSong": {
+    "schemaVersion": 1,
+    "python": "3.11.16",
+    "modelReady": false,
+    "inferenceCalls": 0,
+    "fixture": "Copied existing 300-second real-separated audio with original 200-cue portable record.",
+    "separationQualityVerified": false,
+    "duration": 300.0,
+    "cues": 200,
+    "savedRevision": 7,
+    "audio": {
+      "source.wav": {
+        "bytes": 52920044,
+        "frames": 13230000,
+        "samples": {
+          "0": [
+            0,
+            0
+          ],
+          "440": [
+            2024,
+            1729
+          ],
+          "441": [
+            2085,
+            1780
+          ],
+          "6615000": [
+            1262,
+            1073
+          ],
+          "13229999": [
+            -860,
+            -731
+          ]
+        },
+        "sha256": "45fcbbdd82e435e2776a06390088efbf143a9ed6eabdbaffc35cef82bacac4c9"
+      },
+      "vocals.wav": {
+        "bytes": 52920044,
+        "frames": 13230000,
+        "samples": {
+          "0": [
+            -1221,
+            -1037
+          ],
+          "440": [
+            189,
+            168
+          ],
+          "441": [
+            186,
+            166
+          ],
+          "6615000": [
+            15,
+            16
+          ],
+          "13229999": [
+            -29,
+            -25
+          ]
+        },
+        "sha256": "7f1d868108a861ff34f09460c67503a06afcd35fe0d94eba87fe42e9d8a5a88a"
+      },
+      "backing.wav": {
+        "bytes": 52920044,
+        "frames": 13230000,
+        "samples": {
+          "0": [
+            1264,
+            1074
+          ],
+          "440": [
+            1836,
+            1561
+          ],
+          "441": [
+            1899,
+            1614
+          ],
+          "6615000": [
+            1247,
+            1057
+          ],
+          "13229999": [
+            -610,
+            -519
+          ]
+        },
+        "sha256": "1da3c55b58a6f4c3502b46de77942966baa1fd6ec0d6325c002c3d6551f5372b"
+      }
+    },
+    "archiveBytes": 158779475,
+    "archiveSha256": "a61fbe8c610641202f71dcb23440b438b6b94093b7eb52bdca46255a68bb8813",
+    "originalId": "b7d5a139228b45738b9b737fcdde7b53",
+    "restoredId": "590bf3bf29e24a8baaf38be86e08a30a",
+    "realRestart": true,
+    "restoredProcessPids": [
+      341750,
+      341755
+    ],
+    "provenance": {
+      "imported": true,
+      "processingSupplied": true,
+      "origin": "imported-declared",
+      "sourceProjectId": "b7d5a139228b45738b9b737fcdde7b53",
+      "sourceRevision": 7,
+      "archiveSha256": "a61fbe8c610641202f71dcb23440b438b6b94093b7eb52bdca46255a68bb8813"
+    },
+    "video": {
+      "codec": "h264/aac",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "frames": 7200,
+      "duration": 300.0,
+      "finalCuePts": 299.25,
+      "precedingGapPts": 298.25,
+      "activeAccentPixels": 6287,
+      "gapAccentPixels": 40,
+      "lateAudioPeak": 0.3117332458496094,
+      "glyphOracle": {
+        "kind": "Independent fixed instrumental-gap glyph geometry/color with yuv420p reference",
+        "exactFinalGlyphsValidated": true,
+        "scope": "Gap always checked; active gold count checked for arbitrary layout. Optional final glyph mask covers explicit short lines only, not automatic wrapping or font shaping.",
+        "thresholds": {
+          "coreMaskMin": 240,
+          "channelTolerance": 35,
+          "minCoreCoverage": 0.9,
+          "maskDilationPixels": 2,
+          "minSpatialPrecision": 0.95
+        },
+        "cases": {
+          "gapExpectedInstrumental": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2980,
+            "coreCoverage": 0.9969889595182335,
+            "actualForegroundPixels": 3855,
+            "expectedMaskForegroundPixels": 3855,
+            "spatialPrecision": 1.0,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "activeWrongInstrumental": {
+            "passed": false,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 8152,
+            "expectedMaskForegroundPixels": 2075,
+            "spatialPrecision": 0.2545387634936212,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "activeWrongText": {
+            "passed": false,
+            "expectedCorePixels": 3672,
+            "matchingCorePixels": 538,
+            "coreCoverage": 0.14651416122004357,
+            "actualForegroundPixels": 8152,
+            "expectedMaskForegroundPixels": 2348,
+            "spatialPrecision": 0.28802747791952893,
+            "expectedBounds": [
+              385,
+              302,
+              894,
+              344
+            ]
+          },
+          "gapWrongText": {
+            "passed": false,
+            "expectedCorePixels": 3672,
+            "matchingCorePixels": 828,
+            "coreCoverage": 0.22549019607843138,
+            "actualForegroundPixels": 3855,
+            "expectedMaskForegroundPixels": 2742,
+            "spatialPrecision": 0.711284046692607,
+            "expectedBounds": [
+              385,
+              302,
+              894,
+              344
+            ]
+          },
+          "blankWrongInstrumental": {
+            "passed": false,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 0,
+            "expectedMaskForegroundPixels": 0,
+            "spatialPrecision": 0,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "activeExpectedFinalLine": {
+            "passed": true,
+            "expectedCorePixels": 5984,
+            "matchingCorePixels": 5982,
+            "coreCoverage": 0.9996657754010695,
+            "actualForegroundPixels": 8152,
+            "expectedMaskForegroundPixels": 8152,
+            "spatialPrecision": 1.0,
+            "expectedBounds": [
+              186,
+              302,
+              1094,
+              343
+            ]
+          },
+          "gapWrongFinalLine": {
+            "passed": false,
+            "expectedCorePixels": 5984,
+            "matchingCorePixels": 8,
+            "coreCoverage": 0.001336898395721925,
+            "actualForegroundPixels": 3855,
+            "expectedMaskForegroundPixels": 2078,
+            "spatialPrecision": 0.5390402075226978,
+            "expectedBounds": [
+              186,
+              302,
+              1094,
+              343
+            ]
+          },
+          "blankWrongFinalLine": {
+            "passed": false,
+            "expectedCorePixels": 5984,
+            "matchingCorePixels": 0,
+            "coreCoverage": 0.0,
+            "actualForegroundPixels": 0,
+            "expectedMaskForegroundPixels": 0,
+            "spatialPrecision": 0,
+            "expectedBounds": [
+              186,
+              302,
+              1094,
+              343
+            ]
+          }
+        }
+      },
+      "broadAccentDiagnostic": {
+        "activeCount": 6287,
+        "gapCount": 40,
+        "formerGapLimit": 20,
+        "formerPassed": false,
+        "limitation": "Broad hue counting can classify codec-tinted white-letter edges as gold; it is diagnostic only."
+      }
+    },
+    "videoBytes": 8491153,
+    "videoSha256": "cd06b761b1f09d9ffc16a64d31a8927c3415a9b90acce5e53cc5ea94f566a055",
+    "srtSha256": "e891d2916ac91c5ddeab3e52e86aa8e90425dff3777bd408dd071f31b41bb1ee",
+    "scratchCleanupVerified": true,
+    "privateFixtureFilesUnchanged": true,
+    "originalSourceFilesUnchanged": true,
+    "initialClassifierFailures": {
+      "broadHue": {
+        "activePixels": 6287,
+        "gapPixels": 40,
+        "gapLimit": 20,
+        "passed": false
+      },
+      "directRgbGlyphReference": {
+        "activeCoreCoverage": 0.8932152406417112,
+        "requiredCoverage": 0.9,
+        "passed": false
+      },
+      "explanation": "White-letter edges were codec-tinted; direct RGB reference did not model declared chroma subsampling. Independent yuv420p glyph reference retains35-channel/90%/95% thresholds and all negative controls."
+    },
+    "cancellation": {
+      "previousCacheUnchanged": true,
+      "projectUnchanged": true,
+      "scratchClean": true,
+      "observedStatus": null,
+      "explanation": "Original script passed its cancellation checks and cache comparison before later sampler failure; terminal status was not persisted."
+    },
+    "timingsSeconds": {
+      "exportAndDownload": null,
+      "uploadAndRestore": null,
+      "originalProcessRestart": null,
+      "originalVideoExport": null,
+      "recoveryRealProcessRestart": 0.16957453000213718,
+      "recoveryVideoDownload": 0.012022231996525079,
+      "independentRetainedVideoDecode": null,
+      "recoveryTotal": 1.5605592630017782
+    },
+    "observedScratchPeakBytes": null,
+    "observedServicePeakRssKiB": null,
+    "originalChildPeakRssKiB": null,
+    "recoveryChildPeakRssKiB": 30968,
+    "retainedBytes": 1137146280,
+    "recovery": {
+      "required": true,
+      "reason": "Harness scratch sampler raced normal deletion of its queued export temporary directory.",
+      "originalReportWritten": false,
+      "originalAttemptReached": "Polling video export job after archive/restore/restart/SRT/cancel assertions.",
+      "originalServicePidsUnavailable": true,
+      "originalTimingAndPeakMetricsUnavailable": true,
+      "originalAssertions": "Inferred from exception location/control flow; independently rechecked persisted byte facts during recovery.",
+      "noNewEncode": true,
+      "noModelCall": true,
+      "retainedCompletedVideo": "library-b/projects/590bf3bf29e24a8baaf38be86e08a30a/video.mp4",
+      "newRecoveryRestartPerformed": true
+    },
+    "limitations": [
+      "Original failed attempt did not persist timings, memory/scratch peaks, service PIDs or final cancellation status; these remain null.",
+      "Checksums verify integrity, not provenance authenticity or separation quality.",
+      "The recovery restarted the real no-model service twice and downloaded/decoded its already completed saved-revision video; no second encoding occurred.",
+      "Late decoded pixels verify cue activation/gap, not OCR of all 200 lyric strings. Exact final glyph mask is limited to known explicit-line layout.",
+      "Bundled font lacks Tibetan glyphs: archive/SRT Unicode bytes are exact, but raster verification compares available glyphs and missing-glyph boxes, not Tibetan shaping/support.",
+      "Final independent retained-video decode was not timed separately; its measured image/codec/PTS/audio facts are preserved.",
+      "Native browser acceptance is separate."
+    ]
+  },
+  "nativeBrowser": {
+    "schemaVersion": 1,
+    "success": true,
+    "modelReady": false,
+    "inferenceCalls": 0,
+    "fixture": "private smoke libraries; no original fixture access",
+    "timingsSeconds": {
+      "nativeBackupAndDownload": 1.4144179879999996,
+      "nativeFileUploadAndRestore": 1.8972001330000003,
+      "nativeServiceRestartAndReopen": 0.810167268000001,
+      "total": 10.774296459
+    },
+    "screenshots": [
+      "/tmp/karaoke-portability-native-results/source-dirty-saved-backup-desktop.png",
+      "/tmp/karaoke-portability-native-results/destination-restore-kept-drafts-desktop.png",
+      "/tmp/karaoke-portability-native-results/restored-waveform-late-cue-desktop.png",
+      "/tmp/karaoke-portability-native-results/restored-provenance-mobile.png",
+      "/tmp/karaoke-portability-native-results/restored-waveform-mobile.png",
+      "/tmp/karaoke-portability-native-results/restart-imported-provenance-mobile.png"
+    ],
+    "limitations": [
+      "Synthetic/cached PCM validates portability and timing, not separation quality.",
+      "No second MP4 encode: full-size independent MP4 decode is supplied by the smoke report."
+    ],
+    "archiveBytes": 158779475,
+    "archiveSha256": "a61fbe8c610641202f71dcb23440b438b6b94093b7eb52bdca46255a68bb8813",
+    "originalId": "b7d5a139228b45738b9b737fcdde7b53",
+    "existingRestoredId": "590bf3bf29e24a8baaf38be86e08a30a",
+    "audio": {
+      "source.wav": {
+        "bytes": 52920044,
+        "sha256": "45fcbbdd82e435e2776a06390088efbf143a9ed6eabdbaffc35cef82bacac4c9"
+      },
+      "vocals.wav": {
+        "bytes": 52920044,
+        "sha256": "7f1d868108a861ff34f09460c67503a06afcd35fe0d94eba87fe42e9d8a5a88a"
+      },
+      "backing.wav": {
+        "bytes": 52920044,
+        "sha256": "1da3c55b58a6f4c3502b46de77942966baa1fd6ec0d6325c002c3d6551f5372b"
+      }
+    },
+    "processes": {
+      "source": 342640,
+      "destinationBefore": 342641,
+      "destinationAfter": 342892
+    },
+    "freeBytesBeforeRestore": 2457468928,
+    "newRestoredId": "b078cee42a214e5caa7ffeebb8c64e6d",
+    "processingBytesUnchanged": true,
+    "srt": {
+      "path": "/tmp/karaoke-portability-native-results/native-restored.srt",
+      "bytes": 18094,
+      "sha256": "4d40b8bf005b033eeab0a268b9175b4bf3bf0a3cbf8eca0876727e6fe6852021",
+      "cues": 200,
+      "lateStart": 298.51
+    },
+    "restartedRevision": 8,
+    "realRestart": true,
+    "sourceFilesUnchanged": true,
+    "pageErrors": [],
+    "externalRequests": [],
+    "fullVideoEvidence": "See fullSong below; the native run did not encode a second full-duration video.",
+    "probeCorrections": [
+      "First attempt used an exact label selector that included nested option text; corrected to the actual combobox role/name.",
+      "Second attempt zoomed without centering the late playhead; corrected the probe to use the existing Center on playhead control. Neither correction changed product code."
+    ]
+  },
+  "limitations": [
+    "The full-song source is previously processed original synthetic audio from the real offline Spleeter milestone; this portability work performs no inference and establishes no separation-quality result.",
+    "Original full-song processing timings and memory/scratch peaks were lost when the first metrics sampler failed; missing values remain null. Retained bytes/media and fresh process restarts were checked independently without re-encoding.",
+    "The late card oracle models declared yuv420p chroma subsampling and covers its reported glyph scope. It does not OCR all cues or establish Tibetan font support.",
+    "Local timings are individual warm-cache observations, not cross-device speed or continuous resource guarantees.",
+    "Native browser checks target Chromium and 390-pixel layout, not physical mobile devices or other browser engines.",
+    "Media and screenshots remain local temporary acceptance artifacts; this record preserves measurements and hashes, not private audio archives."
+  ]
+}

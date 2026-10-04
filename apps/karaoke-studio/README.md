@@ -103,9 +103,23 @@ Jobs stay **running** through temporary cleanup. A terminal job status means the
 single worker has been released, so a new job can start immediately. Cancellation
 after result publication does not relabel an already saved project as cancelled.
 
-The library holds at most **20 completed projects**; reaching the limit preserves existing work and refuses new clips. **Delete selected clip** asks for explicit confirmation, removes only that selected project's media and metadata, and frees a library slot. Download or back up anything you want to keep first. Portable project archive import is not implemented.
+The library holds at most **20 completed projects**; reaching the limit preserves existing work and refuses new clips. **Delete selected clip** asks for explicit confirmation, removes only that selected project's media and metadata, and frees a library slot. Download or back up anything you want to keep first.
 
-For a full backup, stop the service and copy the data directory, including project metadata and generated audio. Downloaded WAV/SRT/MP4 files are useful deliverables but do not replace that editable project backup. To start another library after reaching the cap, retain the backed-up directory and start the service with a different `--data-dir`.
+### Portable editable clips
+
+Choose **Back up saved clip**, then **Download saved archive**, to keep a `.karaoke.zip` containing the saved title, lyric cues/revision, original audio, estimated vocals/backing and recognized processing metadata. Unsent title, pasted lyrics and numeric timing drafts are not included or implicitly saved. They stay available while the backup runs. An archive is tied to that saved revision; saving later edits makes an older cached download unavailable until you back up again.
+
+Use **Import project archive** to add a restored clip to the current library with a fresh ID. It preserves the saved revision, cue text/times and every WAV byte, without running separation or requiring model readiness. The current editor, waveform, audio position and unsaved drafts stay open. **Open imported clip** is a separate action and asks before leaving unsaved work. Failed or canceled imports do not replace existing clips. The normal 20-clip limit still applies.
+
+Cancel an accepted archive job with the existing job control. **Cancel archive upload** stops the browser request, but a lost response can leave acceptance uncertain. Use **Check restore status** to inspect the current library/job before retrying; it preserves the editor and does not repeat the import or cancel unrelated work. It also retries a failed provenance read. Ordinary editing/audio/video remain usable when provenance is unavailable, while archive backup waits for that check to recover.
+
+This is a versioned, uncompressed application format, limited to **160 MiB**, not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–300-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 180-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
+
+The archive is **unencrypted private audio and lyrics**. Checksums detect corruption, not authentic provenance, media rights or separation quality. Imported audio and processing claims remain visibly **unverified** after restart and re-export; they never change local model readiness. Missing metadata is identified separately. Unrecognized/private processing metadata or a malformed provenance sidecar blocks backup visibly without changing the project. Stored local metadata is also not independently authenticated.
+
+One completed archive cache per clip is retained, up to an additional 3,200 MiB across a full 20-clip library. Replacement publishes only a complete archive; failure preserves the previous cache. The existing free-space admission remains in force. Downloaded archives can be restored into a different `--data-dir` library. WAV/SRT/MP4 downloads alone do not preserve the whole editable clip.
+
+For a whole-library backup, stop the service and copy the data directory, including project metadata, audio and any imported-provenance sidecars. Retain the backed-up directory when starting a new library after reaching the clip cap.
 
 ## Model provenance and limitations
 
@@ -153,6 +167,20 @@ npm run test:browser
 For an existing Chromium executable, use `CHROMIUM_PATH=/path/to/chromium npm run test:browser`. Playwright builds the production UI and starts the test HTTP service on port 4188. Its separator is explicitly **fake** and copies fixture WAV audio; the resulting video export uses real Pillow/FFmpeg. HTTP unit tests also inject test callbacks. These tests verify workflow, persistence, request validation, cancellation, export structure, and lyric-frame boundaries; they do not demonstrate model separation quality.
 
 The path-scoped GitHub workflow uses Node 24, Python 3.11, FFmpeg, Pillow, and Ruff, then runs Python/TypeScript checks and production Chromium tests. Normal CI neither installs ML dependencies nor downloads the model.
+
+Run the archive cases with model readiness explicitly disabled:
+
+```sh
+KARAOKE_ARCHIVE_NO_MODEL=1 CHROMIUM_PATH=/path/to/chromium npm run test:browser -- tests/archive.spec.ts
+```
+
+The independent portability smoke starts two production service processes with separation forbidden, transfers an actual archive, restarts the destination service, and checks the saved record, WAV bytes, provenance, SRT and decoded MP4. Its default five-second fixture needs no weights; the work directory must be new or empty:
+
+```sh
+python scripts/smoke_archive.py --work-dir /tmp/karaoke-archive-smoke --report /tmp/karaoke-archive-report.json
+```
+
+To check an existing full-song project, add `--source-project /path/to/library/projects/PROJECT_ID`. It copies the supplied project into private smoke libraries and never modifies that source. The supplied final cue must have a preceding gap so the independent video check can distinguish active lyrics from a blank card. `--skip-video` is available for archive-only diagnosis and does not constitute complete media acceptance.
 
 ## Real-model verification
 
@@ -210,3 +238,19 @@ A separate native Chromium 151 run used a private copy of the existing **300-sec
 Actual pointer and held-key edits moved the last cue to **298.2–300 seconds**, with exact undo/redo, explicit save, reload and real process restart. A transient maximum 200-cue draft remained usable at 390 px and was undone without changing saved work. The production service exported an **8,213,246-byte, 300-second H.264/AAC MP4** in an observed 35.59 seconds. Independent decoding checked fifteen cue/gap frames, the changed late boundaries, frame 7,199 and non-silent AAC at 299 seconds. SRT retained the exact edited times; all seven original fixture files remained byte-identical.
 
 See [the measured waveform evidence](docs/2026-10-04-waveform-verification.json). No new inference was needed for this timing milestone. It establishes timeline and export behavior, not subjective separation quality. Controlled persisted-page lifecycle tests do not establish native BFCache admission.
+
+## Editable archive verification (2026-10-04)
+
+The portability milestone ([#59](https://github.com/twangyal/projects-monorepo/issues/59)) passes **166 Python tests, 51 TypeScript tests and 44 production browser cases**, plus Ruff, ESLint, type checking and the production build. The archive browser suite also passes with model readiness explicitly false: twelve cases pass and the legacy separation-only case is intentionally skipped. Independent binary fixtures verify the archive contract; real HTTP tests cover atomic publication, output replacement, stale revisions, cancellation, upload shutdown, quota and retained storage ownership.
+
+The native regressions keep invalid raw timings, Unicode title/cue/paste drafts, undo/redo, actual input nodes and audio state through backup and restore. They also cover uncertain upload acceptance without replay, delayed/duplicate terminal responses, provenance retry and explicit opening. Concrete focus-loss and unsolicited observed-job video-download failures were reproduced before their fixes. Existing separation, waveform and video flows remain covered by the unchanged preceding 31 browser cases.
+
+All twelve project workflows passed at `042218218f02b82a1082af485eb33ee06e08c67c`; the [Karaoke workflow](https://github.com/twangyal/projects-monorepo/actions/runs/37184306831) ran all 44 browser cases in Chromium 153. A separate production-service run moved a **158,779,475-byte archive** containing three exact 52,920,044-byte WAVs, 200 cues and saved revision 7 into a different library. The imported record survived actual process restarts and re-export with permanently unverified provenance; source files remained byte-identical and separation was forbidden.
+
+The restored five-minute clip produced an **8,491,153-byte H.264/AAC MP4** with 7,200 frames. Independent decoding verified the final cue at 299.25 seconds, the preceding instrumental gap at 298.25 seconds and non-silent late backing audio. A glyph/color oracle models the declared chroma subsampling, matches over 99.6% of sampled core pixels and rejects swapped, incorrect and blank text. It checks these late cards, not every lyric. The bundled font still lacks Tibetan glyphs; archive/SRT Unicode bytes are exact, while the video displays missing-glyph boxes for those characters.
+
+The first large-run metrics sampler raced normal temporary-directory cleanup after the video was published. The helper now tolerates disappearing scratch files and always reaps its services on sampling errors. Recovery independently checked the retained video and restarted the service without another encode. Original encode timing, memory/disk peaks and terminal cancellation status were not retained and are not claimed. The separate five-second smoke observed a canceled backup preserving the previous cache and project with no remaining job files.
+
+A native Chromium 151 run downloaded the full archive and uploaded it as an actual browser File into the second library. Invalid draft fields, their DOM nodes, focus, redo history and audio position survived; accepting **Open imported clip** was a separate decision. The restored final cue moved from 298.50 to **298.51 seconds** with keyboard timing, Undo/Redo and Save, then survived another real service restart at revision 8. Its downloaded 200-cue SRT retained the edited interval and literal text. Desktop and 390-pixel screenshots were inspected with no overflow, page errors or external requests. The observed backup/download and upload/restore checks took 1.41 and 1.90 seconds respectively on this local warm-cache fixture; these are not performance guarantees.
+
+See [the complete portability evidence](docs/2026-10-04-portability-verification.json), including original validation-helper failures, recovered media facts and explicit measurement limits. No new inference, model download or separation-quality evaluation was performed.
