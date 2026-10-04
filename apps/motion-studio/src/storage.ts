@@ -80,28 +80,86 @@ async function write(action: 'save' | 'clear', project?: Project): Promise<void>
   finally { database.close(); }
 }
 
-export async function loadProject(): Promise<Project | null> {
+export type RawRecord = { present: false } | { present: true; value: unknown };
+
+export async function readRawRecord(): Promise<RawRecord> {
   // Observe all mutations queued before this load, without requiring a prior save
   // to succeed. Image decoding is deliberately left to the editor's atomic restore.
   await mutations;
   const database = await openDatabase();
-  let value: unknown;
+  let value: unknown, count: number;
   try {
     const transaction = database.transaction(STORE, 'readonly');
     const done = completed(transaction, 'read');
-    const request = transaction.objectStore(STORE).get(KEY);
+    const store = transaction.objectStore(STORE);
+    const request = store.get(KEY);
+    const presence = store.count(KEY);
     const read = new Promise<unknown>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(storageError('read', request.error));
     });
-    [value] = await Promise.all([read, done]);
+    const counted = new Promise<number>((resolve, reject) => {
+      presence.onsuccess = () => resolve(presence.result);
+      presence.onerror = () => reject(storageError('read', presence.error));
+    });
+    [value, count] = await Promise.all([read, counted, done]);
   } catch (error) { throw storageError('read', error); }
   finally { database.close(); }
-  if (value === undefined) return null;
+  return count === 0 ? { present: false } : { present: true, value };
+}
+
+export function decodeSavedRecord(value: unknown): Project {
   try { return snapshot(value); }
   catch (error) {
     throw new Error(`The saved project is invalid and was preserved. Download your current work before explicitly replacing the saved project. ${error instanceof Error ? error.message : ''}`);
   }
+}
+
+export async function loadProject(): Promise<Project | null> {
+  const raw = await readRawRecord();
+  return raw.present ? decodeSavedRecord(raw.value) : null;
+}
+
+// JSON.stringify alone silently drops undefined, invokes toJSON and changes
+// exotic values. Inspect descriptors first; never normalize a preserved record.
+export function serializeRawRecord(value: unknown): string {
+  const active = new Set<object>(), sizes = new Map<object, number>();
+  const encoder = new TextEncoder();
+  const oversized = () => new Error('Cannot download the saved record: its JSON exceeds 6 MiB.');
+  function bounded(bytes: number): number { if (bytes > MAX_STORED_BYTES) throw oversized(); return bytes; }
+  function quoted(text: string): number {
+    if (text.length > MAX_STORED_BYTES) throw oversized();
+    return bounded(encoder.encode(JSON.stringify(text)).byteLength);
+  }
+  function inspect(item: unknown, depth: number): number {
+    if (item === null) return 4;
+    if (typeof item === 'string') return quoted(item);
+    if (typeof item === 'boolean') return item ? 4 : 5;
+    if (typeof item === 'number' && Number.isFinite(item) && !Object.is(item, -0)) return String(item).length;
+    if (typeof item !== 'object' || depth > 512) throw new Error('Cannot make a lossless JSON backup of this unsafe saved record.');
+    if (active.has(item)) throw new Error('Cannot make a JSON backup of a cyclic saved record.');
+    // Count shared subtrees once, but charge their complete serialized size at
+    // every occurrence. A tiny native DAG must not expand into gigabytes first.
+    const known = sizes.get(item); if (known !== undefined) return known;
+    const array = Array.isArray(item), prototype = Object.getPrototypeOf(item);
+    if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) throw new Error('Cannot make a lossless JSON backup of this saved record type.');
+    const keys = Reflect.ownKeys(item);
+    if (array && keys.length !== item.length + 1) throw new Error('Cannot make a lossless JSON backup of a sparse or extended array.');
+    active.add(item); let bytes = 2, count = 0;
+    for (const key of keys) {
+      if (array && key === 'length') continue;
+      const descriptor = Object.getOwnPropertyDescriptor(item, key)!;
+      if (typeof key !== 'string' || !descriptor.enumerable || !('value' in descriptor)) throw new Error('Cannot make a lossless JSON backup of hidden or computed values.');
+      if (array && (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= item.length)) throw new Error('Cannot make a lossless JSON backup of an extended array.');
+      bytes = bounded(bytes + (count++ ? 1 : 0) + (array ? 0 : quoted(key) + 1));
+      bytes = bounded(bytes + inspect(descriptor.value, depth + 1));
+    }
+    active.delete(item); sizes.set(item, bytes); return bytes;
+  }
+  inspect(value, 0);
+  const json = JSON.stringify(value);
+  if (new TextEncoder().encode(json).byteLength > MAX_STORED_BYTES) throw new Error('Cannot download the saved record: its JSON exceeds 6 MiB.');
+  return json;
 }
 
 export async function saveProject(project: Project): Promise<void> {
