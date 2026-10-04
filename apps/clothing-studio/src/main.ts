@@ -144,14 +144,14 @@ function commit(next: Project) {
 }
 
 function cancelLoad() {
-  loadGeneration++; loadBusy = false; element('load-state').hidden = true;
+  loadGeneration++; loadBusy = false; element('load-state').hidden = true; updateControls();
 }
 function beginLoad() {
-  cancelGesture(); loadBusy = true; element('load-state').hidden = false;
+  cancelGesture(); loadBusy = true; element('load-state').hidden = false; updateControls();
   return ++loadGeneration;
 }
 function finishLoad(generation: number) {
-  if (generation === loadGeneration) { loadBusy = false; element('load-state').hidden = true; }
+  if (generation === loadGeneration) { loadBusy = false; element('load-state').hidden = true; updateControls(); }
 }
 
 function edit(transform: (current: Project) => Project) {
@@ -300,11 +300,11 @@ element('backup').addEventListener('click', () => {
 });
 for (const [id, kind] of [['garment-png', 'garment'], ['preview-png', 'preview']] as const) element(id).addEventListener('click', async () => {
   if (exportBusy) return;
-  cancelGesture(); exportBusy = true;
+  cancelGesture(); exportBusy = true; updateControls();
   element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = true;
   try { download(await exportPng(validateProject(project), kind), `-${kind}.png`); message(`${kind === 'garment' ? 'Garment' : 'Preview'} PNG downloaded.`); }
   catch (error) { message(`Could not export PNG: ${error instanceof Error ? error.message : 'Image rendering failed.'}`, true); }
-  finally { exportBusy = false; element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = false; }
+  finally { exportBusy = false; element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = false; updateControls(); }
 });
 
 element('replace-saved').addEventListener('click', async () => {
