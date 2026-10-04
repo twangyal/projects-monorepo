@@ -4,14 +4,15 @@ import { History } from './history.ts';
 import { loadAssets, closeAssets, renderFrame, type Assets } from './render.ts';
 import { importImage, validateProjectImages } from './images.ts';
 import { exportGif } from './export.ts';
-import { loadProject, saveProject } from './storage.ts';
+import { readRawRecord, decodeSavedRecord, serializeRawRecord, saveProject, type RawRecord } from './storage.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
 <a class="skip" href="#stage-section">Skip to canvas</a>
-<header><a class="brand" href="#"><span aria-hidden="true">m<span>•</span></span><div><h1>Motion Studio</h1><p>Small drawings. Big personality.</p></div></a><div class="header-actions"><span id="save-status" role="status">Opening your local studio…</span><button id="undo" title="Undo (Ctrl/⌘ Z)">Undo</button><button id="redo" title="Redo (Ctrl/⌘ Shift Z)">Redo</button><button id="new-project">New project</button><button id="replace-saved-project" hidden>Replace saved project</button></div></header>
+<header><a class="brand" href="#"><span aria-hidden="true">m<span>•</span></span><div><h1>Motion Studio</h1><p>Small drawings. Big personality.</p></div></a><div class="header-actions"><span id="save-status" role="status">Opening your local studio…</span><button id="undo" title="Undo (Ctrl/⌘ Z)">Undo</button><button id="redo" title="Redo (Ctrl/⌘ Shift Z)">Redo</button><button id="new-project">New project</button></div></header>
 <main><div class="intro"><div><p class="eyebrow">A LITTLE MOTION GOES A LONG WAY</p><h2>Make something move.</h2><p>Draw a character, give it a few poses, and watch it find its rhythm.</p></div><button id="load-demo" class="quiet">Try the orbit demo</button></div>
 <div id="message" role="status" aria-live="polite" hidden></div>
+<section id="recovery-panel" class="panel" role="region" aria-label="Saved draft recovery" hidden><h3>Saved draft recovery</h3><p>Your saved browser record is protected. Current edits stay in memory; save a project file to keep them.</p><p id="recovery-detail" role="status" aria-live="polite"></p><div class="recovery-actions"><button id="recovery-download">Download preserved record</button><button id="recovery-retry">Retry saved draft</button><button id="replace-saved-project">Replace saved project</button></div><p>Preserved-record JSON keeps the read record exactly when it is safe to serialize. It may need repair before it can open. Save project file downloads your current editable work separately.</p></section>
 <div class="studio">
 <aside class="tools panel"><div class="panel-heading"><h3>Make your mark</h3><span>01</span></div><div class="tool-content">
 <div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button></div>
@@ -43,6 +44,9 @@ let saveState: 'pending' | 'saved' | 'failed' = 'saved';
 let exported: AbortController | null = null;
 let isDemo = true;
 let restorePending = true, recoveryBlocked = true;
+let rawRecord: RawRecord | null = null;
+let retryPending = false;
+let recoveryDetail = '';
 interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; moved: boolean }
 let gesture: Gesture | null = null;
 
@@ -52,7 +56,8 @@ function layer(): Layer | undefined { return project.layers.find(item => item.id
 function value(id: string, next: string) { const node = el<HTMLInputElement>(id); if (node.value !== next) node.value = next; }
 function pause() { playing = false; cancelAnimationFrame(animation); el('play').textContent = 'Play animation'; }
 function intent() { generation++; operation++; }
-function updateSaveState() { el('save-status').textContent = restorePending ? 'Opening your local studio…' : recoveryBlocked ? 'Local save unavailable · saved record protected; keep a project file' : saveState === 'pending' ? 'Saving locally…' : saveState === 'failed' ? 'Local save unavailable · keep a project file' : isDemo && generation === 0 ? 'Original demo · saved after your first edit' : 'Saved in this browser'; }
+function recoveryMessage(text: string) { recoveryDetail = text; el('recovery-detail').textContent = text; }
+function updateSaveState() { el('save-status').textContent = restorePending ? 'Opening your local studio…' : recoveryBlocked ? 'Local save unavailable · memory only; saved record protected' : saveState === 'pending' ? 'Saving locally…' : saveState === 'failed' ? 'Local save unavailable · keep a project file' : isDemo && generation === 0 ? 'Original demo · saved after your first edit' : 'Saved in this browser'; }
 function scheduleSave() {
   clearTimeout(saveTimer);
   if (recoveryBlocked) { saveState = 'failed'; updateSaveState(); tell('The saved browser record is protected. Work stays in this page; download a project file before explicitly replacing the saved project.', true); return; }
@@ -67,7 +72,8 @@ function scheduleSave() {
 function draw() { renderFrame(ctx, gesture?.preview || project, frame, assets); canvas.dataset.frame = String(frame); }
 function controls() {
   const locked = busy || exporting || !!gesture;
-  el('replace-saved-project').hidden = restorePending || !recoveryBlocked;
+  el('recovery-panel').hidden = restorePending || !recoveryBlocked;
+  for (const id of ['recovery-download', 'recovery-retry', 'replace-saved-project']) el<HTMLButtonElement>(id).disabled = locked || retryPending;
   for (const node of document.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement>('.studio input,.studio button,.studio select,header button,#load-demo')) node.disabled = locked;
   el<HTMLButtonElement>('cancel-export').disabled = false;
   el<HTMLButtonElement>('undo').disabled = locked || !history.canUndo;
@@ -298,12 +304,12 @@ async function fresh(demo: boolean) {
   finally { busy = false; pendingKind = null; refresh(); }
 }
 el('replace-saved-project').addEventListener('click', async () => {
-  if (busy || exporting || gesture || !recoveryBlocked || restorePending) return;
+  if (busy || exporting || gesture || !recoveryBlocked || restorePending || retryPending) return;
   if (!window.confirm('Replace the preserved browser record with the current project? Download your current project file first. This replaces the old saved artwork.')) return;
   pause(); busy = true; clearTimeout(saveTimer); saveRevision++; controls();
   const snapshot = structuredClone(project);
-  try { await saveProject(snapshot); recoveryBlocked = false; isDemo = false; saveState = 'saved'; tell('Saved project explicitly replaced. Automatic saving is enabled.'); }
-  catch (error) { saveState = 'failed'; tell(`${errorMessage(error)} The original browser record remains protected.`, true); }
+  try { await saveProject(snapshot); recoveryBlocked = false; rawRecord = null; isDemo = false; saveState = 'saved'; tell('Saved project explicitly replaced. Automatic saving is enabled.'); }
+  catch (error) { saveState = 'failed'; recoveryMessage(errorMessage(error)); tell(`${errorMessage(error)} The original browser record remains protected.`, true); }
   finally { busy = false; updateSaveState(); controls(); }
 });
 el('new-project').addEventListener('click', () => void fresh(false));
@@ -323,16 +329,55 @@ el('gif').addEventListener('click', async () => {
 });
 el('cancel-export').addEventListener('click', () => exported?.abort());
 window.addEventListener('beforeunload', event => { if (saveState !== 'saved' || gesture) { event.preventDefault(); event.returnValue = ''; } });
-window.addEventListener('pagehide', () => { pause(); exported?.abort(); });
+window.addEventListener('pagehide', () => { intent(); pause(); exported?.abort(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 
+// Retry reads and decoding deliberately leave current memory work editable.
+// Every input/commit/import/history/reset invalidates the publication token.
+async function restoreSaved(startup: boolean) {
+  const token = operation, revision = generation;
+  const current = () => token === operation && revision === generation && !gesture;
+  try {
+    const read = await readRawRecord(); rawRecord = read;
+    if (!current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    if (!read.present) {
+      recoveryBlocked = false; saveState = 'saved';
+      if (!startup && generation > 0) scheduleSave();
+      tell('No saved draft was found. Your current work is kept.'); return;
+    }
+    const saved = decodeSavedRecord(read.value);
+    if (!startup && generation > 0 && !window.confirm('Restore the saved draft and replace current in-memory work? Save a project file first to keep current edits.')) {
+      recoveryMessage('Restore cancelled. Current work and the preserved browser record were kept.'); return;
+    }
+    await validateProjectImages(saved);
+    const loaded = await loadAssets(saved);
+    if (!current()) { closeAssets(loaded); recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    pause(); closeAssets(assets); assets = loaded; history.reset(saved); project = history.current;
+    selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = false;
+    recoveryBlocked = false; rawRecord = null; saveState = 'saved'; refresh(); tell('Your saved local project is ready.');
+  } catch (error) {
+    saveState = 'failed'; recoveryMessage(errorMessage(error));
+    tell(`${errorMessage(error)} Existing browser data is protected. You can work in memory and download a project file; replacement requires explicit confirmation.`, true);
+  }
+}
+el('recovery-download').addEventListener('click', () => {
+  try {
+    if (!rawRecord) throw new Error('The saved record was not read. Its contents are unknown; raw download is unavailable. Retry when storage is accessible.');
+    if (!rawRecord.present) throw new Error('No saved record is available for download.');
+    const json = serializeRawRecord(rawRecord.value);
+    download(new Blob([json], { type: 'application/json' }), '.preserved-record.json');
+    recoveryMessage('Preserved record downloaded exactly as JSON. It is separate from the current project file and may require repair.');
+  } catch (error) { recoveryMessage(errorMessage(error)); }
+});
+el('recovery-retry').addEventListener('click', async () => {
+  if (busy || exporting || gesture || retryPending || !recoveryBlocked) return;
+  retryPending = true; recoveryMessage('Reading the preserved saved draft…'); controls();
+  try { await restoreSaved(false); }
+  finally { retryPending = false; updateSaveState(); controls(); }
+});
 refresh(); selectMode('draw');
-const initialGeneration = generation;
-void loadProject().then(async saved => {
-  if (!saved) { recoveryBlocked = false; return; }
-  // Editor mutations stay locked until model and all images restore atomically.
-  await validateProjectImages(saved); const loaded = await loadAssets(saved);
-  if (generation !== initialGeneration || gesture) { closeAssets(loaded); throw new Error('The editor changed during restore.'); }
-  closeAssets(assets); assets = loaded; history.reset(saved); project = history.current; selected = project.layers.at(-1)?.id || ''; isDemo = false; recoveryBlocked = false; refresh(); tell('Your saved local project is ready.');
-}).catch(error => { saveState = 'failed'; tell(`${errorMessage(error)} Existing browser data is protected. You can work in memory and download a project file; replacement requires explicit confirmation.`, true); })
-  .finally(() => { restorePending = false; busy = false; updateSaveState(); controls(); });
+void restoreSaved(true).finally(() => {
+  restorePending = false; busy = false;
+  if (recoveryBlocked && !recoveryDetail) recoveryMessage('Saved record unavailable. Current work stays in memory.');
+  updateSaveState(); controls();
+});
