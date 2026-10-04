@@ -40,7 +40,8 @@ python3 -m git_history files --repo /path/to/repository \
 
 `files` lists regular committed Python (`.py`, `.pyi`), JavaScript and TypeScript
 file candidates no larger than 512 KiB, with their exact paths, language and blob
-sizes. It reads only Git tree metadata: it does not open, parse or execute source,
+sizes. It reads committed tree entries and blob-size metadata, without reading,
+parsing or executing source contents,
 and does not require the optional parser. A matching suffix does not guarantee
 valid syntax, UTF-8 source, or any functions; use `functions` to inspect a candidate.
 Symlinks, submodules and larger blobs are omitted. Non-UTF-8 regular-file paths

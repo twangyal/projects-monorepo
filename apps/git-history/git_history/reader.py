@@ -218,7 +218,7 @@ def _resolve_repository(repo: str | Path, ref: str) -> tuple[GitRunner, Path, st
 
 def list_files(repo: str | Path, ref: str = 'HEAD', *, directory: str = '',
                language: str = 'all') -> FileCatalog:
-    """Discover bounded source candidates without reading or parsing any blob."""
+    """Discover source candidates from tree entries and blob-size metadata."""
     if not isinstance(directory, str) or '\x00' in directory:
         raise ReaderError('Directory must be a repository-relative path without NUL characters.')
     path = PurePosixPath(directory)
