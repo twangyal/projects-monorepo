@@ -87,6 +87,20 @@ test('legal extrema remain legal at every sample and nonbinary tween fraction', 
   }
 });
 
+test('unequal one-ulp boundary coordinates remain inside model bounds without clamping', () => {
+  for (const [a, b] of [[-1280, -1279.9999999999998], [1280, 1279.9999999999998]]) {
+    const project = source(); drawing(project).cels[1].frame = 95;
+    drawing(project).cels[0].strokes = [{ color: '#000000', width: 40, points: [{ x: a, y: 0 }] }];
+    drawing(project).cels[1].strokes = [{ color: '#000000', width: 39.99999999999999, points: [{ x: b, y: 0 }] }];
+    const proposal = buildDrawingTween(project, { ...selection(), endFrame: 95 }, { ...choices(), frames: [2] });
+    assert.equal(proposal.generated[0].strokes[0].points[0].x, a);
+    assert.equal(proposal.generated[0].strokes[0].width, 40);
+    const path = resampleStrokePoints([{ x: a, y: 0 }, { x: b, y: 63 }]);
+    assert.ok(path.every(p => p.x >= Math.min(a, b) && p.x <= Math.max(a, b)));
+    assert.equal(drawing(applyDrawingTween(project, proposal)).cels.at(-1)!.strokes[0].points[0].x, b);
+  }
+});
+
 test('exact proposal receipts reject negative-zero mutations in indices and frames', () => {
   for (const mutate of [
     (p: ReturnType<typeof buildDrawingTween>) => { p.selection.startFrame = -0; },
