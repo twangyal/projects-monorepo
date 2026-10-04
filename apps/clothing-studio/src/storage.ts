@@ -50,13 +50,18 @@ export async function loadProject(): Promise<Project | null> {
   try {
     const transaction = database.transaction(STORE_NAME, 'readonly');
     const completed = complete(transaction, 'read');
-    const request = transaction.objectStore(STORE_NAME).get(PROJECT_KEY);
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(PROJECT_KEY), presence = store.count(PROJECT_KEY);
     const requested = new Promise<unknown>((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(storageError('read', request.error));
     });
-    const [value] = await Promise.all([requested, completed]);
-    if (value === undefined) return null;
+    const counted = new Promise<number>((resolve, reject) => {
+      presence.onsuccess = () => resolve(presence.result);
+      presence.onerror = () => reject(storageError('read', presence.error));
+    });
+    const [value, count] = await Promise.all([requested, counted, completed]);
+    if (count === 0) return null;
     const project = validateProject(value);
     await validatePhoto(project.photo);
     return project;
