@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Motion Studio #104 named editable project library",
+  "repository": "twangyal/projects-monorepo",
+  "recordedAtUtc": "2026-10-04 19:37:13 UTC",
+  "implementationHeadSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+  "implementationTreeSha": "7959858c698d2527810d8295b93c97696463086c",
+  "method": "Read-only authorized GitHub run/job metadata, complete decoded job logs and Git commit metadata; no workflow rerun or local suite invocation.",
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37228372920,
+      "jobId": 111512658486,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228372920",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+      "actualCheckoutSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+      "actualTreeSha": "7959858c698d2527810d8295b93c97696463086c",
+      "parents": [
+        "19bead58ab8b68fde1b6c522a468d55b521ff3af"
+      ],
+      "runStartedAt": "2026-10-04T19:28:00Z",
+      "runUpdatedAt": "2026-10-04T19:29:52Z",
+      "node": "24.21.0",
+      "npm": "11.19.0",
+      "unitTests": {
+        "tests": 147,
+        "passed": 147,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "durationMs": 2493.101169
+      },
+      "eslint": "success",
+      "typecheck": "success",
+      "productionBuild": {
+        "status": "success",
+        "durationMs": 509,
+        "bundle": "main-Cqx2Ujdw.js"
+      },
+      "browser": {
+        "tests": 121,
+        "passed": 121,
+        "failed": 0,
+        "workers": 2,
+        "reportedDuration": "1.1m",
+        "chromiumVersion": "153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "decodedLog": {
+        "bytes": 60798,
+        "sha256": "0257690ad16b22dae8ce6a4f99dbfdb4f7df76bef0812c81d5639d49c07e9c07",
+        "hashMethod": "SHA-256 of connector-decoded UTF-8 log content"
+      },
+      "evidence": [
+        "2026-10-04T19:28:06.6285173Z [command]/usr/bin/git log -1 --format=%H",
+        "2026-10-04T19:28:06.6311745Z f6b633a349881b30072469e740d25f3cff7de74a",
+        "2026-10-04T19:28:12.9298784Z ℹ tests 147",
+        "2026-10-04T19:28:12.9299808Z ℹ pass 147",
+        "2026-10-04T19:28:12.9300154Z ℹ fail 0",
+        "2026-10-04T19:28:12.9300672Z ℹ skipped 0",
+        "2026-10-04T19:28:12.9301119Z ℹ duration_ms 2493.101169",
+        "2026-10-04T19:28:39.1588502Z Chrome for Testing 153.0.8010.12 (playwright chromium v1243) downloaded to /home/runner/.cache/ms-playwright/chromium-1243",
+        "2026-10-04T19:28:48.1783703Z Running 121 tests using 2 workers",
+        "2026-10-04T19:29:49.1934771Z   121 passed (1.1m)"
+      ]
+    },
+    {
+      "event": "pull_request",
+      "runId": 37228375087,
+      "jobId": 111512664630,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375087",
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+      "actualCheckoutSha": "8280a3154ff87d97593243221de5c2069a34c9af",
+      "actualTreeSha": "7959858c698d2527810d8295b93c97696463086c",
+      "parents": [
+        "d36b8970b28ff59e694341af772c6c2ee016ccea",
+        "f6b633a349881b30072469e740d25f3cff7de74a"
+      ],
+      "runStartedAt": "2026-10-04T19:28:02Z",
+      "runUpdatedAt": "2026-10-04T19:30:05Z",
+      "node": "24.21.0",
+      "npm": "11.19.0",
+      "unitTests": {
+        "tests": 147,
+        "passed": 147,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "durationMs": 2495.983161
+      },
+      "eslint": "success",
+      "typecheck": "success",
+      "productionBuild": {
+        "status": "success",
+        "durationMs": 519,
+        "bundle": "main-Cqx2Ujdw.js"
+      },
+      "browser": {
+        "tests": 121,
+        "passed": 121,
+        "failed": 0,
+        "workers": 2,
+        "reportedDuration": "1.1m",
+        "chromiumVersion": "153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "decodedLog": {
+        "bytes": 61848,
+        "sha256": "37a8447f19c70b31b4deb3f903fddfcf2c1e938bc046683b296ed547822d1e7c",
+        "hashMethod": "SHA-256 of connector-decoded UTF-8 log content"
+      },
+      "evidence": [
+        "2026-10-04T19:28:07.9418717Z [command]/usr/bin/git log -1 --format=%H",
+        "2026-10-04T19:28:07.9419314Z 8280a3154ff87d97593243221de5c2069a34c9af",
+        "2026-10-04T19:28:14.1255845Z ℹ tests 147",
+        "2026-10-04T19:28:14.1256961Z ℹ pass 147",
+        "2026-10-04T19:28:14.1257224Z ℹ fail 0",
+        "2026-10-04T19:28:14.1257783Z ℹ skipped 0",
+        "2026-10-04T19:28:14.1258217Z ℹ duration_ms 2495.983161",
+        "2026-10-04T19:28:54.8618431Z Chrome for Testing 153.0.8010.12 (playwright chromium v1243) downloaded to /home/runner/.cache/ms-playwright/chromium-1243",
+        "2026-10-04T19:29:05.1050686Z Running 121 tests using 2 workers",
+        "2026-10-04T19:30:03.1341798Z   121 passed (1.1m)"
+      ]
+    }
+  ],
+  "allProjectPullRequestWorkflows": {
+    "count": 13,
+    "passed": 13,
+    "headSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+    "workflows": [
+      {
+        "name": "Karaoke Studio",
+        "runId": 37228375516,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375516"
+      },
+      {
+        "name": "Clothing Studio",
+        "runId": 37228375070,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375070"
+      },
+      {
+        "name": "Style Studio",
+        "runId": 37228374993,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228374993"
+      },
+      {
+        "name": "Motion Studio",
+        "runId": 37228375087,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375087"
+      },
+      {
+        "name": "Git History",
+        "runId": 37228375144,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375144"
+      },
+      {
+        "name": "Lens Studio",
+        "runId": 37228375065,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375065"
+      },
+      {
+        "name": "Melody Studio",
+        "runId": 37228375024,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375024"
+      },
+      {
+        "name": "Duet",
+        "runId": 37228375014,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375014"
+      },
+      {
+        "name": "Color Context Lab",
+        "runId": 37228375044,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375044"
+      },
+      {
+        "name": "Composure",
+        "runId": 37228375059,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375059"
+      },
+      {
+        "name": "Friendly Challenges",
+        "runId": 37228374966,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228374966"
+      },
+      {
+        "name": "Stock Notebook",
+        "runId": 37228375136,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375136"
+      },
+      {
+        "name": "Shot Studio",
+        "runId": 37228375110,
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37228375110"
+      }
+    ]
+  },
+  "limitations": [
+    "CI log hashes identify decoded UTF-8 content, not the compressed GitHub log archive.",
+    "The PR checks out a synthetic merge; its tree is independently verified identical to the branch implementation tree.",
+    "Playwright reports browser suite durations rounded to 1.1m; maximum acceptance is a separate local production run."
+  ]
+}

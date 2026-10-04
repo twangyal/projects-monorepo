@@ -161,4 +161,21 @@ The local library gate passes **147 unit tests**, ESLint, type checking and the 
 
 The first editor gate exposed redundant writes during unchanged navigation. Removing those writes preserves exact native rows during cancelled imports, decode failure and full-capacity rejection, and prevents false cross-tab conflicts. Existing regressions also exposed duplicate tween-leave prompts and lost knowledge of already-read unsafe legacy records. Recovery now carries a non-authorizing exact read snapshot independently from replacement permission. Original artwork, raw-data, history and ownership assertions remain in place.
 
-Maximum eight-project acceptance and exact published-head CI are recorded separately when complete.
+Exact published-head [push CI](https://github.com/twangyal/projects-monorepo/actions/runs/37228372920) and [PR CI](https://github.com/twangyal/projects-monorepo/actions/runs/37228375087) each pass **147 unit tests and the complete 121-case Chromium suite**, plus lint/typecheck/build. The branch checks out `f6b633a349881b30072469e740d25f3cff7de74a`; the PR checks out `8280a3154ff87d97593243221de5c2069a34c9af`, whose tree is identical. CI uses Node 24.21.0 and Chromium 153.0.8010.12; each browser suite reports 1.1 minutes. All thirteen project PR workflows pass. The [CI receipt](docs/2026-10-04-project-library-ci.json) retains exact checkouts, counts, decoded-log hashes and run IDs.
+
+The independent first maximum run imports **eight original 6,291,624-byte projects**, totaling **50,332,992 canonical payload bytes**. Each has eight layers, four genuinely decoded 800×800 PNGs, 27 drawing boundaries, 100 strokes and 10,000 points across 96 frames. A full Chromium process restart preserves all eight IDs/order/active selection and byte-exact backups. Independent checks cover **64 actual PNG exports and all 768 frames of eight actual GIFs**, including held colors/blank intervals, moving artwork, stationary controls and embedded images. Each GIF has exactly 8,000 ms of delays; together they contain 1,451,678 encoded bytes. Rename/Undo/Redo remains isolated to its owner. Full-capacity duplication is disabled at the UI; a ninth real File import is actually attempted and refused without changing existing work.
+
+This Chromium 151.0.7922.173 run took 346.19 seconds, including native timeline navigation and downloads. Desktop and 390px views had no horizontal overflow, page errors or external requests. Large source PNGs contain declared ancillary padding to exercise byte capacity; this is not a claim of complex photographic content, available browser quota, peak RSS or general speed. See [maximum evidence](docs/2026-10-04-project-library-maximum.json) for original/export hashes, timings, screenshot receipts and limits.
+
+To repeat the maximum gate, use a normal production build and fresh output directories. From this project directory:
+
+```sh
+npm run build
+npm run preview -- --port 4294 --strictPort
+# In another terminal, generate independently checked original inputs:
+MOTION_LIBRARY_OUTPUT=/tmp/motion-library-fixtures node scripts/smoke_project_library.mjs --fixtures-only
+# Then run actual File imports, downloads and a complete Chromium restart:
+MOTION_LIBRARY_BASE_URL=http://127.0.0.1:4294 MOTION_LIBRARY_FIXTURES=/tmp/motion-library-fixtures MOTION_LIBRARY_OUTPUT=/tmp/motion-library-acceptance CHROMIUM_PATH=/path/to/chromium node scripts/smoke_project_library.mjs --run-existing
+```
+
+Existing fixture/output directories are refused. The runner owns a private browser profile and closes only its own Chromium processes; it never starts a build/server or reads an existing user library. `--fixtures-only` checks original inputs but does not verify the app.
