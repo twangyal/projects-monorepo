@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-04",
+  "issue": 49,
+  "implementationCommit": "f83e1b6a465df5e3f44d06738eead0823f036e67",
+  "startupRed": {
+    "commit": "2d8f0121922d68d3f9b46c3334400125c53e1f7c",
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37173124846",
+    "reproductions": [
+      "Invalid startup record overwritten after edit",
+      "Uncaught schema-creation exception"
+    ]
+  },
+  "reviewRed": {
+    "commit": "fdf8477d88a35a976f69c02ac6f38cb887a2e2a4",
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37197619886",
+    "browserPassed": 15,
+    "browserFailed": 2,
+    "reproductions": [
+      "Canceled sketch persisted after pending recovery replacement",
+      "Canceled placement persisted after pending recovery replacement"
+    ]
+  },
+  "green": {
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37198211480",
+    "unitPassed": 36,
+    "browserPassed": 18,
+    "browserFailed": 0,
+    "checks": [
+      "unit",
+      "eslint",
+      "typecheck",
+      "production build",
+      "production Chromium"
+    ]
+  },
+  "review": {
+    "independent": true,
+    "resolution": "Autosave snapshots use detached committed history; active gestures remain previews until commit.",
+    "reReview": "No remaining concrete findings in narrow correction."
+  },
+  "coverage": [
+    "Native preserved record after failure and superseded startup restore",
+    "Live typing and sketching during saved photo decode",
+    "Current backup/import/history/PNG and narrow viewport",
+    "Confirm/cancel/failed/successful replacement and queued latest edits",
+    "Canceled sketch and placement never reappear in native saved record or reload",
+    "Schema creation errors reported without uncaught page error",
+    "Present undefined key remains untouched through edits until confirmed replacement"
+  ],
+  "limits": [
+    "Native Chromium acceptance ran in GitHub CI; local browser download failed.",
+    "Single local saved concept, session history; no cross-tab arbitration or cloud synchronization.",
+    "Approximate clothing overlays, no fit prediction."
+  ],
+  "presenceRed": {
+    "commit": "40c8cf7059a5ab55cc78deebc5da5f3644843986",
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37198090506",
+    "browserPassed": 17,
+    "browserFailed": 1,
+    "reproduction": "Existing undefined record is treated as absent and loses save protection"
+  }
+}
