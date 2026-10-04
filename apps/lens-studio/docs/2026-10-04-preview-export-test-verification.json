@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-04",
+  "issue": 53,
+  "scope": "Test synchronization only; no product source changes",
+  "observedFailure": {
+    "commit": "9f0aa3bb5193a3691fcab1d6b6c8d5e92348e330",
+    "workflowRun": 37174434366,
+    "job": 111354002189,
+    "case": "authored imported planes retain transparency and independently computed perspective holes at both ratios",
+    "expectedPresentationError": 0,
+    "actualPresentationError": 255
+  },
+  "cause": "Photo normalization can leave the previous study ready; export can finish before its requeued replacement preview. The test read the Canvas before current preview completion.",
+  "controlledRegression": "Held actual worker replies reproduced error255; releasing the preview produced correct unchanged scalar/PNG/Canvas results. Updated helper performs zero premature result-Canvas reads.",
+  "verification": {
+    "targetedRepeatedCases": 6,
+    "unitTests": 67,
+    "browserTests": 31,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "remoteCI": "pending"
+  },
+  "unchangedOracles": {
+    "pngMaximumRgbaError": 1,
+    "canvasMaximumPresentationError": 0
+  },
+  "sha256": {
+    "tests/browser/workflow.spec.ts": "5c36114257daf2d315869c5a18c8e70b5c5c6f1da93a855ce7272820930aef60"
+  }
+}

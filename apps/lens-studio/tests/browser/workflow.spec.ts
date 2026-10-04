@@ -47,6 +47,9 @@ async function checkPng(page: Page, project: Project) {
   expect([actualPng.width, actualPng.height]).toEqual([source.width, source.height]);
   const actual: Rendered = { width: actualPng.width, height: actualPng.height, rgba: new Uint8ClampedArray(actualPng.data), missingFraction: expected.missingFraction };
   expect(errorBetween(actual, expected).rgba).toBeLessThanOrEqual(1);
+  // Export can cancel a pending preview and schedule its replacement. A
+  // finished download does not imply that the current Canvas is painted yet.
+  await rendered(page);
   // Compare presentations through Canvas for both paths. Straight low-alpha
   // kernel bytes have their separate independent PNG gate in the Node suite.
   const preview = await page.locator('#result-canvas').evaluate((canvas: HTMLCanvasElement) => [...canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data]);
@@ -159,6 +162,10 @@ test('authored imported planes retain transparency and independently computed pe
   const alpha = texture(17, 11);
   page.once('dialog', dialog => dialog.accept());
   await page.getByLabel('Import photo', { exact: true }).setInputFiles({ name: 'alpha.png', mimeType: 'image/png', buffer: independentPng(alpha) });
+  // The previous study remains ready during asynchronous image normalization.
+  // Confirm this replacement was published before waiting for its rendering.
+  await expect(page.locator('#source-canvas')).toHaveAttribute('width', String(alpha.width));
+  await expect(page.locator('#source-canvas')).toHaveAttribute('height', String(alpha.height));
   await rendered(page); await checkPng(page, await backup(page));
 });
 
@@ -257,6 +264,47 @@ for (const cancel of [false, true]) {
     await checkPng(page, project);
   });
 }
+
+test('PNG comparison waits for the current replacement preview after export interrupts rendering', async ({ page }) => {
+  await delayNativeMessages(page);
+  await page.addInitScript(() => {
+    const read = CanvasRenderingContext2D.prototype.getImageData;
+    const control = { reads: 0 };
+    Object.defineProperty(window, 'lensPresentationReads', { value: control });
+    CanvasRenderingContext2D.prototype.getImageData = function (...args: Parameters<typeof read>) {
+      if (this.canvas instanceof HTMLCanvasElement && this.canvas.id === 'result-canvas') control.reads++;
+      return read.apply(this, args);
+    };
+  });
+  await importPhoto(page, authoredScene().source);
+  await page.evaluate(() => { (window as unknown as { lensNativeMessages: { hold: boolean } }).lensNativeMessages.hold = true; });
+  const replacement = texture(17, 11);
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByLabel('Import photo', { exact: true }).setInputFiles({ name: 'replacement-alpha.png', mimeType: 'image/png', buffer: independentPng(replacement) });
+  await expect(page.locator('#source-canvas')).toHaveAttribute('width', '17');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { lensNativeMessages: { received: number } }).lensNativeMessages.received)).toBe(1);
+  const project = await backup(page);
+  const checking = checkPng(page, project).then(() => null, (error: unknown) => error);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { lensNativeMessages: { received: number } }).lensNativeMessages.received)).toBe(2);
+  // Release the real PNG response while keeping its requeued preview held.
+  await page.evaluate(() => {
+    const control = (window as unknown as { lensNativeMessages: { pending: (() => void)[] } }).lensNativeMessages;
+    for (const task of control.pending.splice(0)) task();
+  });
+  await expect.poll(() => page.evaluate(() => (window as unknown as { lensNativeMessages: { received: number } }).lensNativeMessages.received)).toBe(3);
+  await expect(page.locator('#render-status')).toContainText('Rendering projection');
+  const prematureReads = await page.evaluate(() => (window as unknown as { lensPresentationReads: { reads: number } }).lensPresentationReads.reads);
+  await page.evaluate(() => {
+    const control = (window as unknown as { lensNativeMessages: { hold: boolean; pending: (() => void)[] } }).lensNativeMessages;
+    control.hold = false; for (const task of control.pending.splice(0)) task();
+  });
+  // Independently prove the eventual application preview matches the PNG and
+  // scalar oracle even if the earlier comparison read it before completion.
+  await rendered(page);
+  await checkPng(page, project);
+  expect(await checking).toBeNull();
+  expect(prematureReads).toBe(0);
+});
 
 test('a canceled unfinished source stroke cannot roll back a competing settings edit', async ({ page }) => {
   await importPhoto(page, authoredScene().source);
