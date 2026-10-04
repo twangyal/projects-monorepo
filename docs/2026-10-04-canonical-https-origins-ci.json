@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "issue": 112,
+  "checkedAtUtc": "2026-10-04T22:15:12.980Z",
+  "status": "passed",
+  "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+  "expectedTree": "508895937795ad94b18ca222e3b129eb7eb5fdf4",
+  "treeVerification": "Authenticated GitHub Git-commit API confirms both the actual push SHA and common PR merge SHA have the expected tree; all four job logs supply their actual checkout SHAs.",
+  "runs": [
+    {
+      "application": "Duet",
+      "event": "push",
+      "runId": 37238832792,
+      "jobId": 111543238677,
+      "checkoutSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "python": {
+        "passed": 185,
+        "seconds": 60.737
+      },
+      "typescript": {
+        "passed": 6,
+        "failed": 0,
+        "milliseconds": 130.959883
+      },
+      "native": {
+        "passed": 30,
+        "failed": 0,
+        "durationReported": "1.2m"
+      },
+      "log": {
+        "path": "/workspace/canonical-origins112-duet-push.log",
+        "bytes": 149560,
+        "sha256": "165090b5d86143ae23660b1511f113db6e33b563041187dabc015a6b135cc802"
+      },
+      "tree": "508895937795ad94b18ca222e3b129eb7eb5fdf4",
+      "treeVerified": true,
+      "conclusion": "success",
+      "checks": {
+        "compileall": "passed",
+        "ruff": "passed",
+        "eslint": "passed",
+        "typecheck": "passed",
+        "productionBuild": "passed"
+      }
+    },
+    {
+      "application": "Duet",
+      "event": "pull_request",
+      "runId": 37238836315,
+      "jobId": 111543292015,
+      "checkoutSha": "7656bfa6c91f30eb26d3f8f5dbe5d8f417f43456",
+      "python": {
+        "passed": 185,
+        "seconds": 63.806
+      },
+      "typescript": {
+        "passed": 6,
+        "failed": 0,
+        "milliseconds": 96.959253
+      },
+      "native": {
+        "passed": 30,
+        "failed": 0,
+        "durationReported": "1.2m"
+      },
+      "log": {
+        "path": "/workspace/canonical-origins112-duet-pr.log",
+        "bytes": 150621,
+        "sha256": "a2985dcdcf85127f6e12a2e4691ed4c8534d3140babdac1c71669bace939d144"
+      },
+      "tree": "508895937795ad94b18ca222e3b129eb7eb5fdf4",
+      "treeVerified": true,
+      "conclusion": "success",
+      "checks": {
+        "compileall": "passed",
+        "ruff": "passed",
+        "eslint": "passed",
+        "typecheck": "passed",
+        "productionBuild": "passed"
+      }
+    },
+    {
+      "application": "Friendly Challenges",
+      "event": "push",
+      "runId": 37238832915,
+      "jobId": 111543238913,
+      "checkoutSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "python": {
+        "passed": 196,
+        "seconds": 56.976
+      },
+      "typescript": {
+        "passed": 42,
+        "failed": 0,
+        "milliseconds": 675.374261
+      },
+      "native": {
+        "passed": 34,
+        "failed": 0,
+        "durationReported": "1.9m"
+      },
+      "log": {
+        "path": "/workspace/canonical-origins112-friendly-push.log",
+        "bytes": 103165,
+        "sha256": "70de7e8e071d3daf3bc0c3a2c32591d35730cb49d95d2554dd8d991b06aaac4f"
+      },
+      "tree": "508895937795ad94b18ca222e3b129eb7eb5fdf4",
+      "treeVerified": true,
+      "conclusion": "success",
+      "checks": {
+        "compileall": "passed",
+        "ruff": "passed",
+        "eslint": "passed",
+        "typecheck": "passed",
+        "productionBuild": "passed"
+      }
+    },
+    {
+      "application": "Friendly Challenges",
+      "event": "pull_request",
+      "runId": 37238836309,
+      "jobId": 111543297124,
+      "checkoutSha": "7656bfa6c91f30eb26d3f8f5dbe5d8f417f43456",
+      "python": {
+        "passed": 196,
+        "seconds": 56.166
+      },
+      "typescript": {
+        "passed": 42,
+        "failed": 0,
+        "milliseconds": 615.284768
+      },
+      "native": {
+        "passed": 34,
+        "failed": 0,
+        "durationReported": "2.0m"
+      },
+      "log": {
+        "path": "/workspace/canonical-origins112-friendly-pr.log",
+        "bytes": 104213,
+        "sha256": "d46612b25a5c20b425e5002888b965c08a2235f367d2562c30f3a227fd39da8d"
+      },
+      "tree": "508895937795ad94b18ca222e3b129eb7eb5fdf4",
+      "treeVerified": true,
+      "conclusion": "success",
+      "checks": {
+        "compileall": "passed",
+        "ruff": "passed",
+        "eslint": "passed",
+        "typecheck": "passed",
+        "productionBuild": "passed"
+      }
+    }
+  ],
+  "environment": {
+    "python": "3.11.16",
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12",
+    "playwrightChromiumBuild": "1243"
+  },
+  "allPrSnapshot": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37238836272,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37238836343,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37238836308,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37238836271,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37238836274,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Git History",
+      "runId": 37238836287,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37238836348,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37238836275,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37238836318,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Composure",
+      "runId": 37238836280,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Duet",
+      "runId": 37238836315,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37238836309,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37238836363,
+      "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "collectorActions": {
+    "workflowReruns": 0,
+    "localTests": 0,
+    "builds": 0,
+    "browserLaunches": 0
+  },
+  "limitations": [
+    "Browser duration is the rounded duration printed by Playwright, not a reconstructed exact runner statistic.",
+    "Software TLS fixtures do not establish physical two-device trust or public deployment."
+  ],
+  "privacy": "No capabilities, private links, signed artifact URLs or raw private records included; full decoded job logs retained locally."
+}

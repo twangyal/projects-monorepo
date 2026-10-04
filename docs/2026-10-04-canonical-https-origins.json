@@ -193,20 +193,22 @@
     "No claim of physical LAN-device verification."
   ],
   "ci": {
-    "status": "pending publication",
-    "expectedPythonCounts": {
-      "duet": 185,
-      "friendly-challenges": 196
+    "status": "passed",
+    "headSha": "76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f",
+    "tree": "508895937795ad94b18ca222e3b129eb7eb5fdf4",
+    "receipt": "2026-10-04-canonical-https-origins-ci.json",
+    "duet": {
+      "pushRunId": 37238832792,
+      "prRunId": 37238836315,
+      "countsBoth": "185 Python, 6 TypeScript and 30 native tests passed"
     },
-    "unchangedTypeScriptAndNativeCounts": {
-      "duet": [
-        6,
-        30
-      ],
-      "friendly-challenges": [
-        42,
-        34
-      ]
-    }
+    "friendlyChallenges": {
+      "pushRunId": 37238832915,
+      "prRunId": 37238836309,
+      "countsBoth": "196 Python, 42 TypeScript and 34 native tests passed"
+    },
+    "all13PrWorkflows": "passed",
+    "lintTypeBuild": "passed in all four target runs",
+    "reruns": 0
   }
 }
