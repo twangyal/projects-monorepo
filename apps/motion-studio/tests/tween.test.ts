@@ -41,6 +41,16 @@ test('arc length samples a right-angle path by distance, with exact endpoints an
   samples[0].x = 100; assert.equal(points[0].x, 0);
 });
 
+test('unequal diagonal segments sample the independently calculated distance fraction', () => {
+  const samples = resampleStrokePoints([{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 101, y: 1 }]);
+  const firstLength = Math.sqrt(2), total = firstLength + 100;
+  for (let k = 1; k < 63; k++) {
+    const distance = total * k / 63;
+    if (distance < firstLength) { close(samples[k].x, distance / firstLength); close(samples[k].y, distance / firstLength); }
+    else { close(samples[k].x, 1 + distance - firstLength); close(samples[k].y, 1); }
+  }
+});
+
 test('single and coincident points yield independent dots and normalize negative zero', () => {
   for (const input of [[{ x: -0, y: 3 }], [{ x: 1, y: 2 }, { x: 1, y: 2 }]]) {
     const samples = resampleStrokePoints(input);
