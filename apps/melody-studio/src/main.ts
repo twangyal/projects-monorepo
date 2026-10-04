@@ -3,6 +3,8 @@ import { createComposition, createDemoComposition, createNote, createTrack, vali
 import { createDemoMelody } from './audio.ts';
 import { encodeMidi } from './midi.ts';
 import { MelodyRecorder } from './recorder.ts';
+import { BackedRecorder, type BackedProgress, type BackedCapture } from './backed-recorder.ts';
+import { backingComposition } from './backing.ts';
 import { loadProject } from './storage.ts';
 import { notesOnly, withComposition, ReferenceHistory } from './reference-project.ts';
 import { normalizeReference, referenceWindow, referenceSamples, comparisonComposition, cropComparison } from './reference-audio.ts';
@@ -48,13 +50,15 @@ let activeTrackId = project.tracks[0].id;
 let selectedNoteId: string | null = null;
 let message = 'Loading the complete saved project…';
 let saveMessage = 'Loading saved project…';
-let busy: 'loading' | 'requesting' | 'recording' | 'processing' | 'rendering' | null = 'loading';
+let busy: 'loading' | 'requesting' | 'counting-in' | 'recording' | 'processing' | 'rendering' | null = 'loading';
 let operation = 0;
 let worker: Worker | null = null;
 let rejectWorker: ((reason: Error) => void) | null = null;
 let recordingTimer: ReturnType<typeof setInterval> | null = null;
 let recordedAt = 0;
 const recorder = new MelodyRecorder();
+const backedRecorder = new BackedRecorder();
+let backedCaptureLabel = '';
 let audioContext: AudioContext | null = null;
 let source: AudioBufferSourceNode | null = null;
 let playbackGeneration = 0;
@@ -327,9 +331,9 @@ function render() {
   app.innerHTML = `
     <header class="site-header"><div class="brand"><span class="brand-mark" aria-hidden="true">m<span>♪</span></span><div><p class="eyebrow">FROM A HUM TO SOMETHING MORE</p><h1>Melody Studio</h1></div></div><span class="privacy-badge"><span aria-hidden="true">●</span> Made here. Stays here.</span></header>
     <main id="workspace">
-      <section class="project-bar" aria-label="Project settings"><div class="project-title"><label for="project-title">Project title</label><input id="project-title" value="${escape(String(fieldValue('project-title', project.title)))}" maxlength="80" ${disabled()} /></div><div class="tempo-field"><label for="tempo">Tempo (BPM)</label><input id="tempo" type="number" min="40" max="240" step="any" value="${escape(String(fieldValue('tempo', project.tempo)))}" ${disabled()} /></div><div class="transport"><button class="primary" data-action="play" ${busy || !totalNotes || playing ? 'disabled' : ''} aria-label="Play composition"><span aria-hidden="true">▶</span> Play</button><button data-action="stop" ${!playing && !playbackJob ? 'disabled' : ''} aria-label="Stop playback">■ Stop</button></div><div class="history-controls"><button data-action="undo" title="Undo (Ctrl/Cmd+Z)" ${busy || !history.canUndo ? 'disabled' : ''}>Undo</button><button data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)" ${busy || !history.canRedo ? 'disabled' : ''}>Redo</button></div><span class="project-stats">${project.tracks.length} ${project.tracks.length === 1 ? 'track' : 'tracks'} · ${totalNotes} notes</span></section>
+      <section class="project-bar" aria-label="Project settings"><div class="project-title"><label for="project-title">Project title</label><input id="project-title" value="${escape(String(fieldValue('project-title', project.title)))}" maxlength="80" ${disabled()} /></div><div class="tempo-field"><label for="tempo">Tempo (BPM)</label><input id="tempo" type="number" min="40" max="240" step="any" value="${escape(String(fieldValue('tempo', project.tempo)))}" ${disabled()} /></div><div class="transport"><button class="primary" data-action="play" ${busy || !totalNotes || playing ? 'disabled' : ''} aria-label="Play composition"><span aria-hidden="true">▶</span> Play</button><button data-action="stop" ${!playing && !playbackJob && !capture?.backed ? 'disabled' : ''} aria-label="Stop playback">■ Stop</button></div><div class="history-controls"><button data-action="undo" title="Undo (Ctrl/Cmd+Z)" ${busy || !history.canUndo ? 'disabled' : ''}>Undo</button><button data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)" ${busy || !history.canRedo ? 'disabled' : ''}>Redo</button></div><span class="project-stats">${project.tracks.length} ${project.tracks.length === 1 ? 'track' : 'tracks'} · ${totalNotes} notes</span></section>
       <div id="notice" class="notice" role="status" aria-live="polite">${escape(message)}</div>
-      <section class="capture-card" aria-labelledby="capture-heading"><div><p class="eyebrow">01 / CATCH AN IDEA</p><h2 id="capture-heading">Your next song starts with a hum.</h2><p>Sing one clear melody, then make it your own.<br />Record up to 20 seconds or bring in an audio file.</p></div><div class="capture-controls"><div class="button-row"><button class="record-button" data-action="record" ${disabled()}><span class="record-dot" aria-hidden="true"></span> Record melody</button><label class="file-button ${busy ? 'is-disabled' : ''}">Import audio<input id="audio-file" type="file" accept="audio/*" aria-label="Import audio file" ${disabled()} /></label></div><div class="button-row"><button class="quiet" data-action="demo" ${disabled()}>Try demo melody</button><span class="small">No microphone needed</span></div><div class="capture-progress" ${!busy || busy === 'loading' ? 'hidden' : ''}><span id="capture-state">${busy === 'requesting' ? 'Waiting for microphone permission…' : busy === 'recording' ? 'Recording…' : busy === 'rendering' ? 'Rendering your composition…' : 'Finding the notes…'}</span><button data-action="finish-record" ${busy !== 'recording' ? 'hidden' : ''}>Finish recording</button><button data-action="cancel">Cancel</button></div></div></section>
+      <section class="capture-card" aria-labelledby="capture-heading"><div><p class="eyebrow">01 / CATCH AN IDEA</p><h2 id="capture-heading">Your next song starts with a hum.</h2><p>Sing one clear melody, then make it your own.<br />Record up to 20 seconds or bring in an audio file.</p></div><div class="capture-controls"><div class="button-row"><button class="record-button" data-action="record" ${disabled()}><span class="record-dot" aria-hidden="true"></span> Record melody</button><button id="record-backed" data-action="record-backed" ${disabled()}>Record with backing</button><label class="file-button ${busy ? 'is-disabled' : ''}">Import audio<input id="audio-file" type="file" accept="audio/*" aria-label="Import audio file" ${disabled()} /></label></div><div class="button-row"><button class="quiet" data-action="demo" ${disabled()}>Try demo melody</button><span class="small">No microphone needed</span></div><p class="small backing-guidance">Record with backing uses the other committed tracks and a four-beat count-in. Apply or discard unapplied fields and suggestions first. Use headphones, then listen back and check the detected timing.</p><div class="capture-progress" ${!busy || busy === 'loading' ? 'hidden' : ''}><span id="capture-state">${capture?.backed ? escape(backedCaptureLabel) : busy === 'requesting' ? 'Waiting for microphone permission…' : busy === 'recording' ? 'Recording…' : busy === 'rendering' ? 'Rendering your composition…' : 'Finding the notes…'}</span><button data-action="finish-record" ${capture?.backed ? (busy !== 'recording' ? 'disabled' : '') : (busy !== 'recording' ? 'hidden' : '')}>Finish recording</button><button data-action="cancel">Cancel</button></div></div></section>
       <section class="studio" aria-label="Composition editor"><aside class="tracks-panel"><div class="section-heading"><div><p class="eyebrow">02 / BUILD YOUR SOUND</p><h2>Tracks</h2></div><button class="icon-button" data-action="add-track" aria-label="Add track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>+</button></div><div class="track-list">${project.tracks.map((item, index) => `<button class="track-card ${item.id === track.id ? 'is-selected' : ''}" data-track="${escape(item.id)}" aria-label="Select track: ${escape(item.name)}" aria-pressed="${item.id === track.id}" ${disabled()}><span class="track-icon" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><span><strong>${escape(item.name)}</strong><small>${item.notes.length} notes · ${item.muted ? 'muted' : item.instrument === 'sine' ? 'Soft keys' : item.instrument === 'triangle' ? 'Warm flute' : 'Bright synth'}</small></span></button>`).join('')}</div><div class="track-settings"><label for="track-name">Track name</label><input id="track-name" value="${escape(String(fieldValue('track-name', track.name)))}" maxlength="80" ${disabled()} /><label for="instrument">Instrument</label><select id="instrument" ${disabled()}><option value="sine" ${fieldValue('instrument', track.instrument) === 'sine' ? 'selected' : ''}>Soft keys</option><option value="triangle" ${fieldValue('instrument', track.instrument) === 'triangle' ? 'selected' : ''}>Warm flute</option><option value="sawtooth" ${fieldValue('instrument', track.instrument) === 'sawtooth' ? 'selected' : ''}>Bright synth</option></select><label for="volume">Track volume <span>${Math.round(track.volume * 100)}%</span></label><input id="volume" type="range" min="0" max="1" step="0.05" value="${escape(String(fieldValue('volume', track.volume)))}" ${disabled()} /><label class="checkbox-label"><input id="muted" type="checkbox" ${fieldValue('muted', track.muted) ? 'checked' : ''} ${disabled()} /> Mute track</label><button class="quiet danger" data-action="delete-track" ${busy || project.tracks.length <= 1 ? 'disabled' : ''}>Delete track</button></div><div class="arrangement-tools"><p class="eyebrow">ARRANGE THIS TRACK</p><button data-action="duplicate-track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>Duplicate track</button><div class="transpose-controls" role="group" aria-label="Transpose track"><button data-action="transpose:-12" aria-label="Transpose down an octave" ${busy || !track.notes.length ? 'disabled' : ''}>−12</button><button data-action="transpose:-1" aria-label="Transpose down a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>−1</button><button data-action="transpose:1" aria-label="Transpose up a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>+1</button><button data-action="transpose:12" aria-label="Transpose up an octave" ${busy || !track.notes.length ? 'disabled' : ''}>+12</button></div><button data-action="repeat-phrase" ${busy || !track.notes.length ? 'disabled' : ''}>Repeat phrase</button><p class="small">Shift pitch by semitones. Notes stay within C2–C7 and 128 beats.</p></div></aside>
       <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div><div class="roll-controls"><label for="roll-tool">Piano roll tool<select id="roll-tool" ${disabled()}><option value="move" ${rollTool === 'move' ? 'selected' : ''}>Move notes</option><option value="draw" ${rollTool === 'draw' ? 'selected' : ''}>Draw note</option></select></label><label for="roll-snap">Snap movement<select id="roll-snap" ${disabled()}><option value="0.25" ${rollSnap === .25 ? 'selected' : ''}>Quarter beat</option><option value="0.125" ${rollSnap === .125 ? 'selected' : ''}>Eighth beat</option><option value="0" ${rollSnap === 0 ? 'selected' : ''}>Off</option></select></label></div><p id="roll-help" class="small">Move or resize in increments from the original timing; fractional offsets stay intact. Drawing snaps the start and duration. Focus a note: arrows move; Shift+Left/Right resize; Enter opens its numeric fields. Draw on empty space, or use Add note.</p><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid ${rollTool === 'draw' ? 'is-draw' : ''}" data-beats="${beats}" data-top="${top}" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''} ${seedIds.has(item.id) ? 'is-seed' : ''}" data-note="${escape(item.id)}" aria-describedby="roll-help" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span><span data-roll-resize aria-hidden="true" title="Drag to resize"></span></button>`).join('')}${proposedNotes.map((item, index) => `<span class="note-event proposal-note" data-proposal-index="${index}" role="img" aria-label="Suggested ${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}; not saved" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px">${noteName(item.pitch)}</span>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
       <p id="roll-status" class="small" aria-live="polite">${escape(rollMessage)}</p>
@@ -406,7 +410,7 @@ function runWorker<Result>(kind: 'transcribe' | 'render', payload: unknown, tran
 
 interface Capture {
   token: number; targetId: string; generation: number; intent: number; tempo: number;
-  kind: ReferenceKind; decoder: AudioContext | null; controller: AbortController; timer: ReturnType<typeof setTimeout> | null;
+  kind: ReferenceKind; backed: boolean; finishing: boolean; decoder: AudioContext | null; controller: AbortController; timer: ReturnType<typeof setTimeout> | null;
 }
 function captureCurrent(owner: Capture): boolean {
   return capture === owner && owner.token === operation && !owner.controller.signal.aborted
@@ -418,16 +422,16 @@ function retireCapture(): void {
   capture = null; owner.controller.abort();
   if (owner.decoder) void owner.decoder.close().catch(() => {});
   if (owner.timer) clearTimeout(owner.timer);
-  recorder.cancel(); clearRecordingTimer();
+  recorder.cancel(); if (owner.backed) backedRecorder.cancel(); clearRecordingTimer();
   if (owner.token === operation) {
     operation++; rejectWorker?.(new Error('Capture cancelled')); busy = null;
   }
 }
-function beginCapture(kind: ReferenceKind): Capture | null {
+function beginCapture(kind: ReferenceKind, backed = false): Capture | null {
   if (nativeAudioPending) { announce('A cancelled audio decoder or normalizer is still finishing. Retry after it drains; reload if it never finishes.'); return null; }
   stopPlayback(false);
   const owner: Capture = { token: ++operation, targetId: currentTrack().id, generation: compositionGeneration,
-    intent: editorIntent, tempo: project.tempo, kind, decoder: null, controller: new AbortController(), timer: null };
+    intent: editorIntent, tempo: project.tempo, kind, backed, finishing: false, decoder: null, controller: new AbortController(), timer: null };
   capture = owner;
   return owner;
 }
@@ -477,7 +481,7 @@ async function processSamples(samples: Float32Array, sampleRate: number, channel
   document.references = document.references.filter(item => item.trackId !== owner.targetId);
   document.references.push({ trackId: owner.targetId, assetId: asset.id });
   // Atomic history admission happens before any selection/draft/proposal change.
-  if (commit(next, `Detected ${notes.length} notes and retained a normalized reference take.${decodedFrames > analyzedFrames ? ' Encoded padding beyond 20 seconds was cut.' : ''}`, false, document, [asset])) {
+  if (commit(next, `Detected ${notes.length} notes and retained a normalized reference take.${owner.backed ? ' The reference begins at backing beat zero. The count-in is excluded. Listen back and check the detected timing.' : ''}${decodedFrames > analyzedFrames ? ' Encoded padding beyond 20 seconds was cut.' : ''}`, false, document, [asset])) {
     selectedNoteId = notes[0].id; render();
   }
 }
@@ -531,8 +535,84 @@ async function startRecording() {
     }, 250);
   } catch (error) { captureError(owner, error, 'Microphone unavailable'); finishCapture(owner); }
 }
+function backedDraftGuard(): boolean {
+  if (scratchExists() || roll.active) {
+    announce('Apply or discard all unapplied fields and the continuation suggestion, and finish the piano roll edit before recording with backing. Your drafts are kept.');
+    return false;
+  }
+  return true;
+}
+function checkedBackedCapture(result: BackedCapture): void {
+  if (!(result.samples instanceof Float32Array) || !Number.isInteger(result.sampleRate)
+    || result.sampleRate < 8000 || result.sampleRate > 192000 || !Number.isInteger(result.channels)
+    || result.channels < 1 || result.channels > REFERENCE_LIMITS.decodedChannels
+    || !Number.isSafeInteger(result.startFrame) || result.startFrame < 0
+    || !Number.isSafeInteger(result.endFrame) || result.endFrame <= result.startFrame
+    || result.endFrame - result.startFrame !== result.samples.length
+    || result.samples.length > Math.floor(20 * result.sampleRate)
+    || !result.samples.every(Number.isFinite)) {
+    throw new Error('The microphone capture was incomplete or invalid. Your prior take is unchanged.');
+  }
+}
+async function startBackedRecording(): Promise<void> {
+  if (startup || busy || !backedDraftGuard()) return;
+  if (nativeAudioPending) { announce('Audio work is still draining. Retry when it finishes; reload if it never finishes.'); return; }
+  let snapshot: Composition;
+  try { snapshot = backingComposition(project, currentTrack().id); }
+  catch (error) { announce(error instanceof Error ? error.message : 'Add or unmute another part, or use Record melody.'); return; }
+  if (!confirmReplace() || !backedDraftGuard()) return;
+  newEditorIntent();
+  const owner = beginCapture('microphone', true); if (!owner) return;
+  nativeAudioPending = true;
+  busy = 'rendering'; backedCaptureLabel = 'Preparing the other committed tracks…';
+  message = 'Recording into the selected track. Use headphones to keep the backing out of your microphone.'; render();
+  const deadline = captureDeadline(owner, 'Backing preparation');
+  let armed = false;
+  const progress = (value: BackedProgress): void => {
+    if (!captureCurrent(owner) || owner.finishing) return;
+    if (document.hidden) { cancelCapture(); return; }
+    if (!armed && performance.now() >= deadline) {
+      retireCapture(); message = 'Backing preparation took too long. Your prior take and drafts are unchanged. Native audio may still be draining.'; render(); return;
+    }
+    const previous = busy;
+    switch (value.phase) {
+      case 'preparing': busy = 'rendering'; backedCaptureLabel = 'Preparing the microphone and backing…'; break;
+      case 'requesting': busy = 'requesting'; backedCaptureLabel = 'Waiting for microphone permission…'; break;
+      case 'counting-in':
+        armed = true; if (owner.timer) { clearTimeout(owner.timer); owner.timer = null; }
+        busy = 'counting-in'; backedCaptureLabel = `Count-in beat ${value.beat} / 4. Recording begins after four beats.`; break;
+      case 'recording':
+        armed = true; if (owner.timer) { clearTimeout(owner.timer); owner.timer = null; }
+        busy = 'recording'; backedCaptureLabel = `Recording ${(value.framesCaptured / value.sampleRate).toFixed(1)} / 20 seconds with backing…`; break;
+    }
+    if (busy !== previous) render();
+    else { const label = app.querySelector('#capture-state'); if (label) label.textContent = backedCaptureLabel; }
+  };
+  try {
+    audioContext ??= new AudioContext();
+    const context = audioContext;
+    const rendered = await runWorker<Float32Array>('render', { project: snapshot, wav: false }, [], deadline - performance.now());
+    checkCapture(owner, deadline);
+    if (!(rendered instanceof Float32Array) || !rendered.every(Number.isFinite)) throw new Error('Could not render valid backing audio.');
+    const backing = new Float32Array(441000);
+    backing.set(rendered.subarray(0, backing.length));
+    const result = await backedRecorder.start({ context, backing, tempo: owner.tempo, signal: owner.controller.signal, onProgress: progress, setupDeadline: deadline });
+    if (!captureCurrent(owner)) return;
+    if (!result) { message = 'Backing recording cancelled. Your prior take and drafts are unchanged.'; return; }
+    if (!armed) checkCapture(owner, deadline);
+    checkedBackedCapture(result);
+    backedCaptureLabel = 'Finding notes and retaining the microphone reference…';
+    await processSamples(result.samples, result.sampleRate, result.channels, owner);
+  } catch (error) { captureError(owner, error, 'Could not record with backing'); }
+  finally { nativeAudioPending = false; finishCapture(owner); }
+}
 async function finishRecording() {
   const owner = capture; if (!owner || !captureCurrent(owner)) return;
+  if (owner.backed) {
+    if (busy !== 'recording') { cancelCapture(); return; }
+    owner.finishing = true; busy = 'processing'; backedCaptureLabel = 'Finishing microphone capture…'; render();
+    backedRecorder.finish(); return;
+  }
   busy = 'processing'; clearRecordingTimer(); render();
   try { const blob = await recorder.stop(); if (blob) await processBlob(blob, owner); else finishCapture(owner); }
   catch (error) { captureError(owner, error); finishCapture(owner); }
@@ -558,7 +638,7 @@ function syncTransport() {
   const playButton = app.querySelector<HTMLButtonElement>('[data-action=play]');
   const stopButton = app.querySelector<HTMLButtonElement>('[data-action=stop]');
   if (playButton) playButton.disabled = !!busy || playing || !project.tracks.some(track => track.notes.length);
-  if (stopButton) stopButton.disabled = !playing && !playbackJob;
+  if (stopButton) stopButton.disabled = !playing && !playbackJob && !capture?.backed;
 }
 
 async function playSnapshot(snapshot: Composition, label: string, owner: ContinuationProposal | null = null) {
@@ -632,6 +712,10 @@ root.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0 || actionPointer) return;
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || button.hasAttribute('data-note') || !root.contains(button)) return;
+  if (button.dataset.action === 'record-backed') {
+    event.preventDefault();
+    if (!backedDraftGuard()) { event.stopImmediatePropagation(); return; }
+  }
   try {
     button.setPointerCapture(event.pointerId);
     actionPointer = { button, id: event.pointerId, rect: button.getBoundingClientRect(), cancelClick: false };
@@ -665,7 +749,7 @@ app.addEventListener('click', event => {
   if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
-  if (action && !['save', 'midi', 'wav', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
+  if (action && !['record-backed', 'save', 'midi', 'wav', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
   switch (action) {
     case 'suggest-continuation': suggestContinuation(); break;
     case 'audition-continuation': auditionProposal(); break;
@@ -685,8 +769,12 @@ app.addEventListener('click', event => {
     case 'transpose:1':
     case 'transpose:12': arrange(action); break;
     case 'play': void play(); break;
-    case 'stop': message = 'Playback stopped.'; stopPlayback(); break;
+    case 'stop':
+      if (capture?.backed) cancelCapture();
+      else { message = 'Playback stopped.'; stopPlayback(); }
+      break;
     case 'record': void startRecording(); break;
+    case 'record-backed': void startBackedRecording(); break;
     case 'finish-record': void finishRecording(); break;
     case 'cancel': cancelCapture(); break;
     case 'demo': {
@@ -816,6 +904,9 @@ window.addEventListener('pagehide', () => {
     saveMessage = 'Load ownership was retired. The pending read must finish before editing or Retry load is available.';
   }
   cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; releaseActionPointer(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && capture?.backed) cancelCapture();
+});
 window.addEventListener('keydown', event => {
   if (!(event.ctrlKey || event.metaKey) || event.altKey || busy || startup) return;
   const target = event.target as HTMLElement;
@@ -1240,9 +1331,9 @@ referenceHost.innerHTML = `<p class="eyebrow">LISTEN BACK AND CORRECT</p><h2 id=
   <p id="reference-summary"></p><div id="reference-controls" hidden>
   <div class="reference-window"><label for="reference-start">Comparison start (seconds)<input id="reference-start" type="text" inputmode="decimal" /></label><label for="reference-end">Comparison end (seconds)<input id="reference-end" type="text" inputmode="decimal" /></label></div>
   <p id="reference-effective" class="small"></p><div class="button-row"><button id="play-reference">Play reference</button><button id="play-reference-notes">Play edited notes at capture tempo</button><button id="remove-reference">Remove reference</button></div>
-  <p class="small">Reference audio ignores track mute and volume. Notes audition uses applied notes, current instrument/volume/velocity and captured BPM. No time stretching or automatic alignment; quantization/resampling is lossy.</p></div>
+  <p class="small">Reference audio ignores track mute and volume. Notes audition uses applied notes, current instrument/volume/velocity and captured BPM. No time stretching or device-delay correction; quantization/resampling is lossy.</p></div>
   <p id="reference-status" aria-live="polite"></p><div class="button-row"><button id="clear-history" hidden>Clear undo history</button><button id="retry-save" hidden>Retry save</button><button id="retry-load" hidden>Retry load</button><button id="replace-saved-copy" hidden>Replace saved copy</button><button id="cancel-project-read" hidden>Cancel project import</button></div>
-  <p class="small">Save project file carries current notes and reference takes, not history or unapplied fields. Browser tabs do not merge edits: the last completed save wins. Download a complete backup before clearing browser data.</p>`;
+  <p class="small">Save project file carries current notes and reference takes, not history or unapplied fields. Browser tabs do not merge edits. A changed saved copy pauses saving until you review it. Download a complete backup before clearing browser data.</p>`;
 referenceHost.addEventListener('input', event => {
   if (startup) return;
   const input = event.target as HTMLInputElement;

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "issue": 113,
+  "scope": "Backed microphone recorder lifecycle and production AudioWorklet adapter",
+  "sourceSha256": {
+    "src/backed-recorder.ts": "7fdeaebd8c37ec03a336a01be1eee2786feacf5a0311c6efcbebc44ae412dcab",
+    "src/backed-capture.worklet.ts": "ea9ab8b0cf6d43bca5eb53b6569cf0f8ac1b1f002395f83cd01a687c12f1aa2a",
+    "tests/backed-recorder.test.ts": "6433ebafa3493b803b663c62114fbfdf114f36de40a8ffcecf3e379213a9b20a"
+  },
+  "producerChecks": [
+    {
+      "command": "node --experimental-strip-types --test tests/backed-recorder.test.ts",
+      "passed": 17,
+      "failed": 0,
+      "durationMs": 269.816413,
+      "log": "/tmp/melody113-recorder-capability-green.log"
+    },
+    {
+      "command": "npx eslint src/backed-recorder.ts src/backed-capture.worklet.ts tests/backed-recorder.test.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit",
+      "exitCode": 0
+    }
+  ],
+  "failureHistory": [
+    {
+      "kind": "deliberate callable stub",
+      "passed": 1,
+      "failed": 10,
+      "durationMs": 104.094946,
+      "log": "/tmp/melody113-recorder-stub-red.log"
+    },
+    {
+      "kind": "first actual implementation",
+      "passed": 10,
+      "failed": 1,
+      "durationMs": 210.222641,
+      "log": "/tmp/melody113-recorder-first-actual.log",
+      "cause": "Test fixture used 52800 rather than literal Math.ceil((1+.1)*48000)=52801. Represented product is 52800.00000000001. Fixture corrected; clock kernel unchanged."
+    },
+    {
+      "kind": "actual controlled-clock final-publication deadline defect",
+      "passed": 0,
+      "failed": 1,
+      "durationMs": 141.511967,
+      "log": "/tmp/melody113-final-deadline-red.log",
+      "repair": "Recheck monotonic deadline and context immediately after result validation/copy, before successful settlement. Existing watchdog tasks cannot run during synchronous sample scanning."
+    }
+  ],
+  "logSha256": {
+    "/tmp/melody113-recorder-stub-red.log": "5e4ede451f7d7d02e3558ae3dab828f6f76a0b46628c8c98b8022503d646f2dc",
+    "/tmp/melody113-recorder-first-actual.log": "f0928fd161f75ac0fe43754e2a7e624c33b2d3d10f469246dd560944988f71ac",
+    "/tmp/melody113-recorder-green.log": "c3627bc85a4b7e49cea00aae6555b7c13ea29b7d69d41f3e87b60ed06fa00169",
+    "/tmp/melody113-final-deadline-red.log": "06dbd97ca2ce27975fa2f9d669569ec425eac24a37d67742fb6f3b9eb901bd6a",
+    "/tmp/melody113-recorder-deadline-green.log": "11d8e1a699e639aeaa88254a9b4d85cf8252ab09a0f8f766d34896e883793b4d",
+    "/tmp/melody113-recorder-capability-green.log": "8f8a466ac2392da07cdf103e767c9451b8f8fb2afcbdda1356588cd97799e755",
+    "/tmp/melody113-startup-diagnostic-receipt.json": "ea1b4d131b6d1d86c30841c06e4827dbf8d5a7ce827081b2cb96f9d35e032e53"
+  },
+  "verificationScope": [
+    "Node lifecycle tests use explicitly controlled browser dependency boundaries, not a simulated claim of native PCM timing.",
+    "Shared-context worklet bundle load, real audio frame intervals, acoustic/device latency, browser maximum acceptance and exported media remain independent native gates.",
+    "Backing synthesis and frame accumulator are separately owned and not claimed as this producer implementation.",
+    "No improved real-vocal transcription, physical input/output latency or acoustic isolation is claimed."
+  ],
+  "nativeStartupDiagnostic": {
+    "historicalIntegratedGate": "9 direct worklet cases passed; 5 of 10 editor cases failed before backing scheduled, owned by separate native agents.",
+    "receipt": "/tmp/melody113-startup-diagnostic-receipt.json",
+    "scratchAttempts": 3,
+    "failure": "Stable stereo topology with forward pre-arm graph-frame gaps; no captured samples or arm commands yet.",
+    "repairOwner": "Pure BackedFrames owner; forward nonoverlapping gaps allowed only before arm. Armed count-in/capture continuity stays strict.",
+    "unmodifiedRerun": "Pending root-coordinated fresh build/native gate."
+  }
+}

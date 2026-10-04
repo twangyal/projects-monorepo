@@ -1,0 +1,371 @@
+{
+  "schemaVersion": 1,
+  "issue": 113,
+  "status": "passed",
+  "kind": "independent maximum native software-graph acceptance",
+  "source": {
+    "immutableDist": "/tmp/melody113-normal-dist-repaired",
+    "main": "main-xA4YM7U0.js",
+    "worklet": "backed-capture.worklet-B97G01j7.js",
+    "baseUrl": "http://127.0.0.1:4308",
+    "browser": "151.0.7922.173"
+  },
+  "command": "MELODY_BACKED_BASE_URL=http://127.0.0.1:4308 MELODY_BACKED_OUTPUT_DIR=/workspace/melody113-maximum-native-second node scripts/smoke_backed_recording.mjs",
+  "input": {
+    "fixture": {
+      "bytes": 9562719,
+      "sha256": "45befaebf0cb4f2ebafb004036d7b3e41b6782290f59144c614bb359c3cafa69"
+    },
+    "tracks": 8,
+    "notes": 2048,
+    "retainedReferences": 8,
+    "referenceFramesEach": 441000,
+    "durationSecondsEach": 20,
+    "authoredInput": {
+      "channels": 1,
+      "rate": 48000,
+      "amplitude": 0.24,
+      "toneWindows": [
+        {
+          "hz": 440,
+          "start": 0.5,
+          "end": 1.5
+        },
+        {
+          "hz": 660,
+          "start": 2,
+          "end": 3
+        },
+        {
+          "hz": 880,
+          "start": 19,
+          "end": 20
+        }
+      ]
+    },
+    "independentExpectedNotes": [
+      {
+        "pitch": 69,
+        "start": 1,
+        "duration": 2
+      },
+      {
+        "pitch": 76,
+        "start": 4,
+        "duration": 2
+      },
+      {
+        "pitch": 81,
+        "start": 38,
+        "duration": 2
+      }
+    ]
+  },
+  "firstRun": {
+    "status": "failed",
+    "receipt": {
+      "path": "/workspace/melody113-maximum-native-first/verification.json",
+      "bytes": 4414,
+      "sha256": "79b1dce74c1bb45ec711cea653cd94dc2e9e075664c7803ead95e0cd2904dd43"
+    },
+    "log": {
+      "path": "/tmp/melody113-maximum-native-first.log",
+      "bytes": 48,
+      "sha256": "d5e2c4929f8f8da077343cb02aed3826723082c679e3b40f03432961a7b58597"
+    },
+    "milliseconds": 27614.387158,
+    "captureToSavedMilliseconds": 22927.001237,
+    "failure": {
+      "message": "Expected values to be strictly equal:\n\n2 !== 1\n",
+      "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n2 !== 1\n\n    at main (file:///workspace/projects-monorepo/apps/melody-studio/scripts/smoke_backed_recording.mjs:239:12)"
+    },
+    "classification": "Runner assumed authored mono buffer implied a mono MediaStream. Genuine Chromium track settings report stereo; product retained correct decoded metadata. All native downloads were preserved before the failure."
+  },
+  "fixtureCorrection": {
+    "productionChanged": false,
+    "audioChanged": false,
+    "amplitudeChanged": false,
+    "tolerancesChanged": false,
+    "change": "Observe genuine getSettings channelCount/sampleRate; require captured metadata to match the native stereo stream rather than authored buffer channel count.",
+    "topologyProbe": {
+      "path": "/workspace/melody113-native-stream-topology.json",
+      "bytes": 358,
+      "sha256": "7ec85fa350aa8994f53811e7377faef98c643df6781d5305140f3d29f16b0771"
+    },
+    "remainingFirstRunOfflineChecks": {
+      "path": "/workspace/melody113-offline-first.log",
+      "bytes": 532,
+      "sha256": "3b15633c5095f565fc1e59b820be6aa547bf1ac8582d051d5ffe769b6f109246"
+    }
+  },
+  "finalRun": {
+    "receipt": {
+      "path": "/workspace/melody113-maximum-native-second/verification.json",
+      "bytes": 11339,
+      "sha256": "81791751010c1e072b4502250aa5eec9ecaf6056936af6d44c19b29281eb496e"
+    },
+    "log": {
+      "path": "/tmp/melody113-maximum-native-second.log",
+      "bytes": 129,
+      "sha256": "c8a0014218213ff0896982e58258180b8cb6be25e9d8041d0b3e3d80b04cd3ee"
+    },
+    "milliseconds": 29837.624363,
+    "captureToSavedMilliseconds": 22904.038468000002,
+    "checks": [
+      "Original maximum graph and all eight PCM assets imported and durably saved.",
+      "Automatic complete 20-second take, three authored tones, four scheduled clicks, dry backing and untouched seven parts/references.",
+      "Exactly one Undo restores original graph and all bytes; Redo restores exact captured backup.",
+      "Genuine Chromium process restart restores exact saved complete backup."
+    ],
+    "reference": {
+      "frames": 441000,
+      "inputGraphRate": 44100,
+      "inputGraphChannels": 2,
+      "sha256": "cdf5eb47dd4c24bd70b9c35bd5f5434ba0314e4ab2c200550afea828e3bf7ad6",
+      "microphoneMeasurements": [
+        {
+          "hz": 440.00000550680386,
+          "rms": 0.1696586953746034
+        },
+        {
+          "hz": 659.9999429236002,
+          "rms": 0.16959847480665158
+        },
+        {
+          "hz": 880.0000346039193,
+          "rms": 0.16951820642411702
+        }
+      ]
+    },
+    "notes": [
+      {
+        "pitch": 69,
+        "start": 1,
+        "duration": 2,
+        "velocity": 0.328692788950739
+      },
+      {
+        "pitch": 76,
+        "start": 4,
+        "duration": 2,
+        "velocity": 0.32476323502862897
+      },
+      {
+        "pitch": 81,
+        "start": 38,
+        "duration": 2,
+        "velocity": 0.329825546216451
+      }
+    ],
+    "backing": {
+      "preLimitPeak": 40.95999993606892,
+      "gain": 0.023193359411200598,
+      "maximumErrorSigned16Units": 0.010798093549965415
+    },
+    "backingHz": 261.6255594170728,
+    "clickFrames": [
+      10170,
+      32220,
+      54270,
+      76320
+    ],
+    "backingStartFrame": 98370,
+    "wav": {
+      "frames": 442764,
+      "frequencies": [
+        440.0014660606949,
+        659.2523588778437,
+        880.0020116500779
+      ],
+      "preLimitPeak": 40.95999993606892,
+      "gain": 0.023193359411200598,
+      "maximumErrorSigned16Units": 1
+    },
+    "midi": {
+      "format": 1,
+      "ppqn": 480,
+      "tracks": 9,
+      "targetAttackTicks": [
+        480,
+        1920,
+        18240
+      ],
+      "targetReleaseTicks": [
+        1440,
+        2880,
+        19200
+      ]
+    },
+    "errors": [],
+    "externalRequests": []
+  },
+  "independentReference": {
+    "productionImports": false,
+    "sampleRate": 22050,
+    "oscillator": "Analytic sine at 440*2^((pitch-69)/12), rounded beat placement; .01s attack/.08s release; gain .4*volume*velocity.",
+    "limiter": "Sum whole mix, then scale by .95/peak only when peak>.95. Actual committed note velocities are admitted inputs for exported-wave reconstruction, not expected samples from production.",
+    "predeclaredMaximumErrorSigned16Units": 2,
+    "rmsRelativeTolerance": 0.03,
+    "frequencyHzTolerance": 3,
+    "quarterBeatTimingTolerance": 0.25,
+    "pcmShiftOrLatencyCompensation": false
+  },
+  "artifacts": [
+    {
+      "name": "original-reference-0.pcm",
+      "bytes": 882000,
+      "sha256": "73a7fa75042504912703a074223bda69aec35e5cce9c010319be8241c6ad87c8"
+    },
+    {
+      "name": "original-reference-1.pcm",
+      "bytes": 882000,
+      "sha256": "57adff2b3c38119ea32842eb66bd07d09c76770bc760cb9cf6deb5cc1a8ae04b"
+    },
+    {
+      "name": "original-reference-2.pcm",
+      "bytes": 882000,
+      "sha256": "c2f3b3efbbe7c68ff5dd0c01de99337de730859ef2e33357b44efc7701cc5d67"
+    },
+    {
+      "name": "original-reference-3.pcm",
+      "bytes": 882000,
+      "sha256": "8730c3636a3ae607525c8a26730ecc0b6e87a33f6fee544653bd0fb3649c6aea"
+    },
+    {
+      "name": "original-reference-4.pcm",
+      "bytes": 882000,
+      "sha256": "e70631abdb59e27251a03d1c5670052de2469a94af0a31db828880ae277666c4"
+    },
+    {
+      "name": "original-reference-5.pcm",
+      "bytes": 882000,
+      "sha256": "081b736c84661744255b013c69d4187672eed755db1866464fdd29ec99f7ad9d"
+    },
+    {
+      "name": "original-reference-6.pcm",
+      "bytes": 882000,
+      "sha256": "fbedbde8efc98804c0dd698b8ae4d5277a684886b9fa6ebef5b96d2488fd677a"
+    },
+    {
+      "name": "original-reference-7.pcm",
+      "bytes": 882000,
+      "sha256": "c8ca9235f9b66958ab362cccf9603c22da7fe46745d458924548c960eadcd019"
+    },
+    {
+      "name": "before-recording.melody.json",
+      "bytes": 9562719,
+      "sha256": "45befaebf0cb4f2ebafb004036d7b3e41b6782290f59144c614bb359c3cafa69"
+    },
+    {
+      "name": "captured.melody.json",
+      "bytes": 9544215,
+      "sha256": "93fba419ddb1d3858748c49c8ad5375b377c230f08fc73915e4dd607134fbfa1"
+    },
+    {
+      "name": "captured.mid",
+      "bytes": 438,
+      "sha256": "b11515234afd96231c12262de49a22f4cddf4641d64fb35c54b95890d6d25743"
+    },
+    {
+      "name": "captured.wav",
+      "bytes": 885572,
+      "sha256": "6ae94d52e185404ccf8287fd25d259318d9c047283ef5c26b52b0fe365da837a"
+    },
+    {
+      "name": "captured-reference.pcm",
+      "bytes": 882000,
+      "sha256": "cdf5eb47dd4c24bd70b9c35bd5f5434ba0314e4ab2c200550afea828e3bf7ad6"
+    },
+    {
+      "name": "observed-backing.f32",
+      "bytes": 1764000,
+      "sha256": "6b72eca957f2f126768daf230a0c5fd831273b3ea579836b2ee1a10dc4d2fdd5"
+    },
+    {
+      "name": "graph-observation.json",
+      "bytes": 23975,
+      "sha256": "8498dc4e871f4d1d9271134e869707f197223c00e8dad63eff06dca7a51b39a3"
+    },
+    {
+      "name": "undo.melody.json",
+      "bytes": 9562719,
+      "sha256": "45befaebf0cb4f2ebafb004036d7b3e41b6782290f59144c614bb359c3cafa69"
+    },
+    {
+      "name": "redo.melody.json",
+      "bytes": 9544215,
+      "sha256": "93fba419ddb1d3858748c49c8ad5375b377c230f08fc73915e4dd607134fbfa1"
+    },
+    {
+      "name": "after-process-restart.melody.json",
+      "bytes": 9544215,
+      "sha256": "93fba419ddb1d3858748c49c8ad5375b377c230f08fc73915e4dd607134fbfa1"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "/workspace/melody113-maximum-native-second/desktop.png",
+      "bytes": 132249,
+      "sha256": "e10ba17b2b048bfcdff7cec3e5790fc30804098f8355789e5b47b16493f7a72e"
+    },
+    {
+      "path": "/workspace/melody113-maximum-native-second/390px.png",
+      "bytes": 48947,
+      "sha256": "658934fe4b6b89e36d5689597a948b65c3e875b0999acd3812eecabbe0fab0af"
+    }
+  ],
+  "visualReview": {
+    "desktop": "Export/saved and complete reference-take controls rendered within the desktop viewport.",
+    "mobile390": "Piano-roll controls and grid remain contained; document scrollWidth<=390. Screenshots are viewport captures, not complete-page UI coverage."
+  },
+  "cleanup": {
+    "browserProcesses": [
+      {
+        "phase": "initial",
+        "pids": [
+          739714
+        ],
+        "afterClose": [
+          {
+            "pid": 739714,
+            "exists": false,
+            "code": "ESRCH"
+          }
+        ]
+      },
+      {
+        "phase": "restarted",
+        "pids": [
+          739905
+        ],
+        "afterClose": [
+          {
+            "pid": 739905,
+            "exists": false,
+            "code": "ESRCH"
+          }
+        ]
+      }
+    ],
+    "ownedServerPid": 739120,
+    "serverStoppedWith": "SIGTERM",
+    "serverProcessAbsent": true,
+    "connectionResultAfterClose": "ECONNREFUSED",
+    "port4308RebindableWithReuseAddr": true,
+    "ordinaryBindWithoutReuseAddr": "TIME_WAIT initially prevented immediate bind; no listener remained."
+  },
+  "limitations": [
+    "Original synthetic microphone is a real native AudioBufferSource \u2192 MediaStreamDestination \u2192 actual production AudioWorklet.",
+    "Only getUserMedia supplies a synthetic stream; backing starts and AudioContext construction are observed and forwarded unchanged.",
+    "Native MediaStream buffering and graph resampling are retained. No delay compensation, reference trimming or shifted expected PCM.",
+    "This is software graph timing, not physical latency, acoustic isolation or microphone recognition quality.",
+    "Exact worklet frame selection is gated separately by the production-worklet peer harness.",
+    "The runner owns only its persistent Chromium processes, profile and new output directory; it does not stop the supplied preview.",
+    "No physical microphone, acoustic backing-isolation or device latency claim. Native stream resampling/buffering remains visible and uncompensated. No maximum RSS guarantee."
+  ],
+  "runner": {
+    "path": "/workspace/projects-monorepo/apps/melody-studio/scripts/smoke_backed_recording.mjs",
+    "bytes": 27179,
+    "sha256": "b79a97e55121d19b1e7e0de02cbd82bcfe104d8d3b44797e08cf713553acb827"
+  }
+}

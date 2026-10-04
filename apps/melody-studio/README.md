@@ -22,6 +22,18 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 4. Add tracks to layer parts. Each track has a name, volume, mute switch, and one of three synthesized instruments: **Soft keys** (sine), **Warm flute** (triangle), or **Bright synth** (sawtooth). These are simple waveform sounds, not sampled acoustic instruments. Play and stop the combined composition.
 5. Save a project backup or export MIDI/WAV. Recording, importing, or trying the demo on a populated track asks before replacing its notes and reference take. Opening a project, loading an example, or starting a new composition also asks before replacing existing notes.
 
+## Record with backing
+
+Select the destination track, apply or discard unfinished editor fields and suggestions, then choose **Record with backing**. Confirm replacing that track when it already contains notes or a reference. Use headphones: speaker playback can leak into your microphone and confuse single-voice pitch detection.
+
+After preparation and microphone permission, listen to the four-beat count-in, then start your part at the beginning of the composition. The backing uses the other committed tracks at the captured tempo, preserving their instruments, volumes, mute settings and note timing. It excludes the destination track and all reference recordings. At least one other audible part must begin within the first 20 seconds. A short backing ends in silence while recording continues.
+
+**Finish recording** keeps the take so far after the count-in; recording finishes automatically at 20 seconds. **Cancel** or **Stop playback** discards it. Hiding or leaving the page also cancels this mode. A successful transcription replaces the destination notes and normalized reference together as one Undo edit. The other tracks and their reference samples stay unchanged. Empty/failed/cancelled takes preserve the previous complete project; a conflicting saved copy uses the existing explicit recovery flow.
+
+Backing playback and microphone capture share an audio-frame clock. The retained reference begins at composition beat zero and excludes the count-in. This aligns the browser graph; input/output devices and acoustic paths still add latency. There is no automatic latency correction or measured physical microphone accuracy. Captured note timing still uses the existing quarter-beat transcription. Backing rendering uses the ordinary whole-composition peak limiting before cropping/padding the first 20 seconds, so later loud notes can affect backing gain.
+
+This mode requires AudioWorklet in addition to secure-context microphone access and Web Audio. It requests disabled microphone processing as a best effort; browsers/devices may override those constraints. Ordinary **Record melody** and audio import remain available. The backed take's decoded metadata describes the browser audio graph, rather than a microphone hardware clock. Setup and processing each have a 30-second deadline; pending native permission/module/resume work must drain after cancellation before another capture starts. Save a project backup and reload if the browser never finishes that native work.
+
 ## Edit directly in the piano roll
 
 Choose **Move notes** or **Draw note** with **Piano roll tool**. In Move mode,
@@ -142,7 +154,7 @@ npm run build
 npm run test:browser
 ```
 
-`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Their build enables a constructor-only storage test page through `MELODY_TEST_HARNESS=1`; ordinary `npm run build` omits that page. Install Playwright's Chromium if needed:
+`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Set `MELODY_TEST_PORT` to use another free loopback port. Their build enables storage and real AudioWorklet test pages through `MELODY_TEST_HARNESS=1`; ordinary `npm run build` omits both pages. Install Playwright's Chromium if needed:
 
 ```sh
 npx playwright install chromium
@@ -276,3 +288,28 @@ MELODY_REFERENCE_BASE_URL=http://127.0.0.1:54083 CHROMIUM_PATH=/usr/bin/chromium
 ```
 
 The script creates original fixtures and retains native downloads, audio buffers, screenshots and its report in a fresh output directory. Set `MELODY_REFERENCE_OUTPUT_DIR` to a new directory if desired. It neither starts a server nor imports product serializers/renderers.
+
+## Record-with-backing acceptance (#113)
+
+The complete local check passes **301 unit tests**, ESLint, type checking and production build. Independent direct AudioWorklet cases verify actual 44.1/48 kHz frame intersections, delayed Finish trimming, silent output, cancellation, topology/missing-input refusal and bounded progress. Editor cases verify real microphone-stream capture, frozen target-excluded backing, raw drafts/suggestions, count-in cancellation, complete reference Undo/Redo, silence refusal, saved-copy conflict and actual MIDI/WAV exports. The [implementation receipt](docs/2026-10-04-backed-recording-verification.json) links producer, independent oracle, native and review evidence.
+
+The first combined native run passed 14/19 cases. Five editor cases exposed a real startup issue: Chromium can skip render quanta before arming the recorder, while channel topology remains unchanged. Preparation now accepts monotonic nonoverlapping forward gaps; armed count-in/capture still requires contiguous frames. All five original failing cases pass unchanged. A separate completion regression checks the deadline again after bounded sample validation/copy. The reviewed [design](../../docs/superpowers/specs/2026-10-04-melody-backed-recording-design.md) documents these ownership and timing boundaries.
+
+The independent maximum starts with **eight tracks, 2,048 notes and eight 20-second reference takes** in a frozen **9,562,719-byte** complete backup. An actual automatic 20-second take replaces only the selected track, producing three independently checked notes at the expected beats. Seven other tracks and reference assets remain exact. One Undo restores the complete original bytes; Redo and a complete Chromium process restart retain the exact captured backup. Independent checks cover four count-in clicks, the actual target-excluded backing, retained microphone PCM, all MIDI tracks/ticks and the synthesized WAV. Backing error is below 0.011 signed-16 units and WAV error is at most one unit against a separately authored sine/envelope/whole-mix oracle. Capture-to-saved took 22.904 seconds; the complete successful run took 29.838 seconds on this fixture and machine.
+
+The first maximum run correctly captured stereo browser-graph metadata from the authored mono input. Its runner incorrectly expected one graph channel; actual MediaStream settings establish two. Only that expectation was corrected, with the original failure and downloads retained. Original audio, timing, amplitude and numerical tolerances are unchanged. Synthetic MediaStream buffering/resampling and these measurements do not establish physical microphone latency, vocal accuracy, arbitrary browser compatibility or peak memory. See [maximum evidence](docs/2026-10-04-backed-recording-maximum.json).
+
+To reproduce the independent maximum using fresh directories and a normal production build:
+
+```sh
+npm run build
+npm run preview -- --port 4308 --strictPort
+# In another terminal, from this project directory:
+node scripts/create_backed_recording_fixtures.mjs /tmp/melody-backed-fixtures
+MELODY_BACKED_BASE_URL=http://127.0.0.1:4308 \
+  MELODY_BACKED_FIXTURE_DIR=/tmp/melody-backed-fixtures \
+  MELODY_BACKED_OUTPUT_DIR=/tmp/melody-backed-acceptance \
+  CHROMIUM_PATH=/path/to/chromium node scripts/smoke_backed_recording.mjs
+```
+
+The generator reproduces the original input hash without production imports. Existing output directories are refused. The runner uses its own browser profile and closes its own processes; it expects you to start and stop the preview server. Local acceptance covers all **116 distinct browser cases**: the first full invocation passed 115/116, including all 19 new cases. The remaining pre-existing stale-tab test set a File while startup still disabled importing. Its helper now waits for the actual enabled control; the original case then passes with every storage, reference, history assertion and timeout unchanged. This is staged passing coverage, not a claim of one final all-green local invocation. The [readiness receipt](docs/2026-10-04-backed-recording-readiness.json) retains exact first trace timestamps and the focused pass. Published-head CI is pending.

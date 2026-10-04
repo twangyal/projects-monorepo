@@ -1,0 +1,79 @@
+{
+  "issue": 113,
+  "date": "2026-10-04",
+  "scope": "Backing-recording UI integration only; no browser, physical microphone or completed recorder claims in this producer receipt.",
+  "contract": "docs/superpowers/specs/2026-10-04-melody-backed-recording-design.md",
+  "sources": {
+    "src/main.ts": {
+      "bytes": 104835,
+      "sha256": "1658de54ede1438d64b90ee2082472d8249f1ea52eb86edc837eac3d4195c8ff"
+    },
+    "src/style.css": {
+      "bytes": 18546,
+      "sha256": "c51973d9c4188a2826588ff94b1cb1c65a685adedd7bd2c84176dd299e8aee32"
+    }
+  },
+  "checks": [
+    {
+      "command": "npx tsc --noEmit",
+      "result": "initial fail: only not-yet-published backing.ts/backed-frames.ts imports",
+      "log": {
+        "bytes": 845,
+        "sha256": "4af3f5d3da408c801ba4e31b31eb81f71de3b2b537143975c2bccf3f171513b2"
+      }
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "result": "passed after peer type exports",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts",
+      "result": "passed",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts",
+      "result": "passed after plain-language copy-only change; no repeat typecheck/build/native",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    }
+  ],
+  "behavior": [
+    "Explicit Record with backing button preserves ordinary Record melody and Import audio.",
+    "Whole-editor unapplied fields, continuation suggestion and owned piano-roll gesture refuse before pointer focus/blur and before replacement confirmation; no raw editor rebuild on refusal.",
+    "Detached selected-target-excluded backing is rendered with the existing 22050 Hz worker then copied/padded to exactly441000 frames.",
+    "One Capture owner carries target ID, captured tempo, composition generation, editor intent, operation and signal through render, recorder and existing normalization/transcription.",
+    "Shared setup deadline begins before render; nativeAudioPending remains held until recorder permission/module/resume drainage and subsequent normalization terminal.",
+    "Count-in beat feedback and graph-time recording feedback share existing capture controls. Finish is disabled before beat zero; programmatic early finish cancels. Stop cancels full backing capture.",
+    "Pagehide and hidden retire the new recording; ordinary recorder visibility behavior remains unchanged.",
+    "Exact frame/rate/channel/sample validation precedes the existing atomic reference-history commit; one successful edit replaces only destination notes/reference.",
+    "Footer now describes saved-copy conflict protection instead of obsolete last-completed-save-wins behavior."
+  ],
+  "limits": {
+    "recordingSeconds": 20,
+    "backingSampleRate": 22050,
+    "backingFrames": 441000,
+    "countInBeats": 4,
+    "setupMs": 30000,
+    "processingMs": 30000
+  },
+  "native": "Pending independent owner and root production build/runtime; no native test run by this UI producer.",
+  "physicalLimit": "Browser graph timing does not establish acoustic isolation, physical input/output latency or vocal transcription accuracy.",
+  "copyReview": {
+    "scope": "Root-directed copy-only refinement after 390px visual review; no behavior changes.",
+    "changes": [
+      "Use headphones, then listen back and check the detected timing.",
+      "Success explains beat-zero reference and excluded count-in; graph metadata detail remains documentation-only.",
+      "Reference panel says no device-delay correction, avoiding ambiguity about backing beat-zero placement."
+    ]
+  }
+}

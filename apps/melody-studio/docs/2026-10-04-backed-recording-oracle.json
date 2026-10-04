@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "milestone": 113,
+  "scope": "Independent literal numerical oracle and genuine native AudioWorklet boundary tests",
+  "recordedAt": "2026-10-04T22:40:13.434802+00:00",
+  "independence": "Original expected sample arrays and frame plans were authored before producer implementation reads. The native harness imports only the public processor name and module URL; it uses real AudioContext, AudioBufferSourceNode and AudioWorkletNode, without synthetic processor results.",
+  "numerical": {
+    "command": "node --experimental-strip-types --test tests/backed-audio-oracle.test.ts",
+    "original": {
+      "passed": 10,
+      "failed": 0,
+      "durationMs": 184.529958,
+      "firstActualResult": "GREEN; producer supplied actual implementation without deliberate stubs",
+      "frozenOracleSha256": "a8ac19f1cc695fa159c8d2f7d11f45073a9d729ab7af54b4222da6bd740ad4b4"
+    },
+    "supplementalRed": {
+      "passed": 10,
+      "failed": 1,
+      "durationMs": 153.276771,
+      "failure": "Forward pre-arm gap from frame128 to640 rejected before any recording interval was armed."
+    },
+    "supplementalGreen": {
+      "passed": 11,
+      "failed": 0,
+      "durationMs": 153.082879,
+      "unchangedAfterRed": true
+    },
+    "policyAdjustment": "Native startup can skip forward render quanta before arm. Supplemental test permits only nonoverlapping pre-arm gaps; unchanged original tests and supplemental count-in check retain strict continuity after arm, plus topology/finite/overlap validation.",
+    "literalSupplement": {
+      "rate": 48000,
+      "preArmBlocks": [
+        [
+          0,
+          128
+        ],
+        [
+          640,
+          768
+        ]
+      ],
+      "capture": [
+        770,
+        774
+      ],
+      "samples": [
+        -0.25,
+        0,
+        0.25,
+        0.5
+      ]
+    },
+    "otherScopes": [
+      "Literal 44.1/48/192kHz fractional137BPM rounded-four-beat plans, plus8kHz40BPM",
+      "Detached selected-track exclusion and audible attack strictly before20seconds",
+      "Variable block intersections, exact stereo averaging, detached samples",
+      "Late Finish trims captured tail; future Finish does not pad unreceived audio",
+      "Atomic topology/nonfinite/overlap/gap rejection; cancellation and terminal behavior",
+      "Actual192kHz\u00d720seconds=3840000sample capacity and one-frame-overflow refusal"
+    ]
+  },
+  "native": {
+    "runner": "Root-coordinated production Playwright test-harness build; two workers; no agent-owned browser run",
+    "playwrightVersion": "1.63.0",
+    "firstCombinedRun": {
+      "startTime": "2026-10-04T22:23:45.518Z",
+      "duration": 37239.581,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 5,
+      "flaky": 0
+    },
+    "ownedCases": [
+      {
+        "title": "actual 44100 Hz worklet keeps exact graph-frame stereo interval and excludes count-in",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 2845
+      },
+      {
+        "title": "actual 48000 Hz worklet keeps exact graph-frame stereo interval and excludes count-in",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 2747
+      },
+      {
+        "title": "real worklet delayed Finish trims to requested end without message-delivery tail",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 2457
+      },
+      {
+        "title": "real worklet waits for initial input, then retains exact mono frames",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 2580
+      },
+      {
+        "title": "real worklet refuses missing without returning a partial take",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 467
+      },
+      {
+        "title": "real worklet refuses topology without returning a partial take",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 589
+      },
+      {
+        "title": "real worklet refuses duplicate-arm without returning a partial take",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 521
+      },
+      {
+        "title": "real worklet Cancel during count-in produces no captured samples",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 716
+      },
+      {
+        "title": "real worklet progress is bounded numeric telemetry with no audio chunks",
+        "file": "backed-audio.spec.ts",
+        "status": "passed",
+        "durationMs": 3902
+      }
+    ],
+    "combinedOutcome": "Nine direct worklet tests passed. Of ten separate editor tests, five passed and five failed. This receipt does not label the original19-case run green.",
+    "sampleOracle": {
+      "left": "((absoluteFrame-sourceFrame)%29-14)/32",
+      "right": "((absoluteFrame-sourceFrame)%31-15)/64",
+      "stereo": "(left+right)/2",
+      "comparison": "Every retained Float32 sample equals the independently calculated binary-fraction value exactly",
+      "rates": [
+        44100,
+        48000
+      ],
+      "mainIntervalFrames": 1003,
+      "countInTempo": 137,
+      "countInFormula": "start=countInFrame+round(4*60*sampleRate/137)",
+      "finish": "Send after requested end plus384frames, trim to original1003frame interval"
+    },
+    "readinessAndFailures": "Actual initial disconnected input yields no ready; real mono source then captures. After readiness, disconnected input, changed mono topology and duplicate arm each yield one error and no complete/partial samples. Count-in Cancel yields no complete.",
+    "progress": "Actual1.25second capture: positive count at most33 messages including boundaries; exact fields type/phase/framesCaptured; safe integer nondecreasing retained frame count within interval; no audio chunks.",
+    "cleanup": "All owned cases assert context closed and source stop attempted successfully; no page errors.",
+    "limits": [
+      "Synthetic original audio enters a genuine native graph; physical microphone, acoustics and device latency are not measured.",
+      "Silent output assertion samples a native AnalyserNode window at messages and completion, not a separate continuous full-output recording.",
+      "This direct harness does not independently verify the editor controller backing mix, permissions, persistence or repeated-context session lifecycle; those belong to separate editor tests."
+    ]
+  },
+  "filesAtReceipt": [
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/backed-audio-oracle.test.ts",
+      "bytes": 7854,
+      "sha256": "9fc58cd2ea23cde16f93990f0389dd82ecb47d832c757e33878e2f22b67f819b"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/backed-audio-harness.html",
+      "bytes": 300,
+      "sha256": "cdb669965c18f2650afc0feb2934a8f341b65adb436d30cde6cef83da2bc4a88"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/backed-audio-harness.ts",
+      "bytes": 7534,
+      "sha256": "d4f9ed3c45a9a4d3cb8ee3e9f971320403e8fbbf37a0fe6db33b3febbadc0de5"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/backed-audio.spec.ts",
+      "bytes": 4245,
+      "sha256": "7450894963863d02b7c72435f588eb0e12854ffe9daa2a01b72b338ec6086eb2"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/tmp/melody113-independent-oracle-first.log",
+      "bytes": 1150,
+      "sha256": "ff862fd493f141a89438bb72c8ff9c06c60bee827401d2e53748124843b1d20d"
+    },
+    {
+      "path": "/tmp/melody113-oracle-startup-gap.log",
+      "bytes": 2260,
+      "sha256": "2a4b55ffd66537cef320d5a44001ce4c9d1fc60d7daee936ae50b9ea98d33e2c"
+    },
+    {
+      "path": "/tmp/melody113-oracle-startup-gap-green.log",
+      "bytes": 1258,
+      "sha256": "0b2968e4366436ac75675666692dee5d707762a8d405cf9497b43dfe8a183679"
+    },
+    {
+      "path": "/tmp/melody113-new-native-results-first.json",
+      "bytes": 56647,
+      "sha256": "23e743c6bf613c99fcc6bbeb9a7cd32e53791102f8ad3c148f4764aa9d458176"
+    }
+  ],
+  "verificationLimit": "No new runtime, build or browser run was performed to create this receipt. Later targeted editor repair results are reported separately by root."
+}

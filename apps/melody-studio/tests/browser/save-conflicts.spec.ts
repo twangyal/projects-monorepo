@@ -16,6 +16,8 @@ function fixture(title = 'Shared original', variant = 1) {
 }
 async function saved(page: Page) { await expect(page.locator('#save-status')).toContainText(/Saved|Restored/); }
 async function open(page: Page, title: string, variant = 1) {
+  // Native file selection is unavailable until the complete saved-copy read settles.
+  await expect(page.getByLabel('Open project file', { exact: true })).toBeEnabled();
   await page.getByLabel('Open project file', { exact: true }).setInputFiles({ name: 'complete.melody.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(fixture(title, variant))) });
   await expect(page.getByLabel('Project title')).toHaveValue(title); await saved(page);
 }

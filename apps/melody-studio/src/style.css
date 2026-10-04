@@ -36,7 +36,9 @@ main { max-width: 1325px; margin: auto; padding: 0 2rem; }
 .capture-card .eyebrow { color: #8472a5; }
 .capture-card h2 { font-family: Georgia, serif; font-weight: 500; font-size: 1.6rem; letter-spacing: -.04rem; }
 .capture-card p:not(.eyebrow) { color: #706c83; font-size: .8rem; margin-top: .7rem; }
-.capture-controls { min-width: 320px; }
+.capture-controls { min-width: 320px; max-width: 660px; }
+.backing-guidance { max-width: 62ch; }
+#capture-state { flex: 1 1 180px; overflow-wrap: anywhere; }
 .button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
 .button-row + .button-row { margin-top: .5rem; }
 .record-dot { width: 9px; height: 9px; border-radius: 50%; background: #e69a9b; }

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/113",
+  "scope": "Pure backing composition/frame plan and dry microphone frame accumulator only; existing composition/reference schemas, synthesis, transcription, history and storage unchanged.",
+  "firstActualExecution": {
+    "result": "GREEN",
+    "tests": 15,
+    "passed": 15,
+    "failed": 0,
+    "nodeDurationMs": 140.29682,
+    "command": "node --experimental-strip-types --test tests/backing.test.ts tests/backed-frames.test.ts",
+    "log": "/tmp/melody113-kernel-first.log",
+    "logSha256": "c3fb64fb48e3684f6dcdd2f33237eb9152d9e596066fdd4307f661cd4cfb9861",
+    "logBytes": 1711,
+    "redClaim": "None: focused tests were authored first, followed by actual implementation; no deliberate throwing stubs or missing-import run were used."
+  },
+  "staticChecks": [
+    {
+      "result": "pass",
+      "command": "node_modules/.bin/eslint src/backing.ts src/backed-frames.ts tests/backing.test.ts tests/backed-frames.test.ts"
+    },
+    {
+      "result": "pass",
+      "command": "node_modules/.bin/tsc --noEmit --strict --noUnusedLocals --noUnusedParameters --skipLibCheck --allowImportingTsExtensions --target ES2022 --module ESNext --moduleResolution Bundler --lib ES2022,DOM,DOM.Iterable --types node src/backing.ts src/backed-frames.ts tests/backing.test.ts tests/backed-frames.test.ts"
+    }
+  ],
+  "coverage": [
+    "Detached full backing removes the target entirely and retains late/muted notes and source values.",
+    "Eligibility requires audible non-target material starting before 20 seconds at captured tempo.",
+    "Absolute ceil/round plans at 44,100/48,000/192,000 Hz including 137 BPM; unsafe sums and clocks refuse.",
+    "Variable blocks copy only the capture intersection; count-in and end tail excluded.",
+    "Dry mono/stereo/32-channel averages, source detachment, dense topology, finite values; monotonic nonoverlap before arm and exact continuity after arm.",
+    "Finish trims already received samples or waits for actual contiguous input; first cutoff remains pinned; no tail padding.",
+    "Early Finish/cancel terminality and single-result delivery.",
+    "Exact 192 kHz twenty-second full capture: 3,840,000 Float32 frames/15,360,000 sample bytes."
+  ],
+  "sourceSha256": {
+    "src/backing.ts": "781d58d2c2ca78276cde4169157b12f3a0385e50c8d7ede3599ccc89f41a6381",
+    "src/backed-frames.ts": "3b2e924acb82184db386b4dd9f95a5e6f98258cfe5286544a058ff3079946edf",
+    "tests/backing.test.ts": "4bd17e67d76d095311b89ac4a8d8c1d6154a572983e3c5c6857da2f247230ba4",
+    "tests/backed-frames.test.ts": "bf47fc1cea573b09e33d157ef37e2c6a246ca4c2a0cc0e78fdda6a065803a3b5"
+  },
+  "limits": [
+    "No native browser/audio graph, microphone, full application suite, build or CI run by this producer.",
+    "Synthetic scalar arrays verify implementation; they do not establish physical latency, acoustic isolation or vocal recognition accuracy.",
+    "Maximum sample-byte calculation and actual array length do not claim peak RSS or total pipeline memory.",
+    "Independent oracle and browser integration are separate owners and are not claimed by this receipt."
+  ],
+  "preArmStartupRepair": {
+    "cause": "Actual native trace shows stable stereo 128-frame readiness blocks with forward frame jumps before any arm command. No scheduled capture interval exists yet.",
+    "observedFramePairs": [
+      [
+        3584,
+        4224
+      ],
+      [
+        3200,
+        3712
+      ],
+      [
+        3584,
+        4224
+      ]
+    ],
+    "diagnostic": {
+      "path": "/tmp/melody113-diagnostic.json",
+      "bytes": 2909,
+      "sha256": "ee351a0419dbfd808094088a476e7cae6c99836ff5fa7fe321126d43eb8b4c61"
+    },
+    "policy": "Before arm, accept forward nonoverlapping graph blocks while preserving pinned topology and complete finite validation. After arm, require exact continuity through count-in and capture. No reset, padding or new allocation.",
+    "focusedFirstExecution": {
+      "tests": 3,
+      "passed": 1,
+      "failed": 2,
+      "nodeDurationMs": 98.240381,
+      "command": "node --experimental-strip-types --test --test-name-pattern='observed stereo readiness|pre-arm forward gaps|arming makes count-in' tests/backed-frames.test.ts",
+      "log": {
+        "path": "/tmp/melody113-prearm-kernel-red.log",
+        "bytes": 2295,
+        "sha256": "a474633cd1b6c6d8cf709cc92effe1e3db6ac83198e3ca382940fd81bd4d4849"
+      }
+    },
+    "repairedExecution": {
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "nodeDurationMs": 230.403618,
+      "command": "node --experimental-strip-types --test tests/backing.test.ts tests/backed-frames.test.ts",
+      "log": {
+        "path": "/tmp/melody113-prearm-kernel-green.log",
+        "bytes": 2044,
+        "sha256": "536acbdc7ef603a078f5e32d6ea8ad0457290a3c4d5d9ead7db2ed78234ccea4"
+      }
+    },
+    "staticChecks": "Scoped ESLint and targeted strict TypeScript commands listed above both pass after the repair.",
+    "coverage": [
+      "Two original native stereo frame-pair reproductions with exact armed sample interval.",
+      "Pre-arm backward, duplicate and overlapping blocks refuse; changed topology and nonfinite input refuse atomically.",
+      "A forward count-in gap after arm refuses, then contiguous input produces the unchanged exact capture interval."
+    ],
+    "integrationStatus": "Fresh native verification is pending; this producer has not executed a browser or build."
+  }
+}
