@@ -1,0 +1,1087 @@
+{
+  "schemaVersion": 1,
+  "split": "training",
+  "provenance": "Original authored examples; no scraped, user, financial or held-out source data.",
+  "examples": [
+    {
+      "id": "train-profitable-positive-bottom-line-1",
+      "family": "train-profitable-positive-bottom-line",
+      "text": "Companies with a positive bottom line",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-positive-bottom-line-2",
+      "family": "train-profitable-positive-bottom-line",
+      "text": "Firms reporting a positive bottom line",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-positive-bottom-line-3",
+      "family": "train-profitable-positive-bottom-line",
+      "text": "Businesses whose bottom line is positive",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-net-income-sign-1",
+      "family": "train-profitable-net-income-sign",
+      "text": "Companies earning positive net income",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-net-income-sign-2",
+      "family": "train-profitable-net-income-sign",
+      "text": "Firms with positive annual net income",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-net-income-sign-3",
+      "family": "train-profitable-net-income-sign",
+      "text": "Businesses that report positive net income",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-money-making-1",
+      "family": "train-profitable-money-making",
+      "text": "Companies making money",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-money-making-2",
+      "family": "train-profitable-money-making",
+      "text": "Firms that make money",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-money-making-3",
+      "family": "train-profitable-money-making",
+      "text": "Money making businesses",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-earnings-surplus-1",
+      "family": "train-profitable-earnings-surplus",
+      "text": "Companies with an earnings surplus",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-earnings-surplus-2",
+      "family": "train-profitable-earnings-surplus",
+      "text": "Firms reporting surplus earnings",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-earnings-surplus-3",
+      "family": "train-profitable-earnings-surplus",
+      "text": "Businesses whose earnings show a surplus",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-black-accounts-1",
+      "family": "train-profitable-black-accounts",
+      "text": "Companies operating in the black",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-black-accounts-2",
+      "family": "train-profitable-black-accounts",
+      "text": "Firms with accounts in the black",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-black-accounts-3",
+      "family": "train-profitable-black-accounts",
+      "text": "Businesses trading in the black",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-net-profit-1",
+      "family": "train-profitable-net-profit",
+      "text": "Companies reporting a net profit",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-net-profit-2",
+      "family": "train-profitable-net-profit",
+      "text": "Firms earning net profits",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-net-profit-3",
+      "family": "train-profitable-net-profit",
+      "text": "Businesses that turn a net profit",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-profitable-operations-1",
+      "family": "train-profitable-profitable-operations",
+      "text": "Companies running profitable operations",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-profitable-operations-2",
+      "family": "train-profitable-profitable-operations",
+      "text": "Firms whose operations are profitable",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-profitable-operations-3",
+      "family": "train-profitable-profitable-operations",
+      "text": "Businesses operating profitably",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-earnings-retained-1",
+      "family": "train-profitable-earnings-retained",
+      "text": "Companies keeping net earnings after expenses",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-earnings-retained-2",
+      "family": "train-profitable-earnings-retained",
+      "text": "Firms retaining earnings after their expenses",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-earnings-retained-3",
+      "family": "train-profitable-earnings-retained",
+      "text": "Businesses left with net earnings after costs",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-positive-results-1",
+      "family": "train-profitable-positive-results",
+      "text": "Companies with positive financial results",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-positive-results-2",
+      "family": "train-profitable-positive-results",
+      "text": "Firms posting positive earnings results",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-positive-results-3",
+      "family": "train-profitable-positive-results",
+      "text": "Businesses showing positive net results",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-profit-generating-1",
+      "family": "train-profitable-profit-generating",
+      "text": "Companies generating profits",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-profit-generating-2",
+      "family": "train-profitable-profit-generating",
+      "text": "Firms producing a net profit",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-profitable-profit-generating-3",
+      "family": "train-profitable-profit-generating",
+      "text": "Businesses bringing in net profits",
+      "intent": "profitable"
+    },
+    {
+      "id": "train-lossmaking-negative-bottom-line-1",
+      "family": "train-lossmaking-negative-bottom-line",
+      "text": "Companies with a negative bottom line",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-bottom-line-2",
+      "family": "train-lossmaking-negative-bottom-line",
+      "text": "Firms reporting a negative bottom line",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-bottom-line-3",
+      "family": "train-lossmaking-negative-bottom-line",
+      "text": "Businesses whose bottom line is negative",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-net-loss-1",
+      "family": "train-lossmaking-net-loss",
+      "text": "Companies reporting a net loss",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-net-loss-2",
+      "family": "train-lossmaking-net-loss",
+      "text": "Firms recording net losses",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-net-loss-3",
+      "family": "train-lossmaking-net-loss",
+      "text": "Businesses posting a net loss",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-money-losing-1",
+      "family": "train-lossmaking-money-losing",
+      "text": "Companies losing money",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-money-losing-2",
+      "family": "train-lossmaking-money-losing",
+      "text": "Firms that lose money",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-money-losing-3",
+      "family": "train-lossmaking-money-losing",
+      "text": "Money losing businesses",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-earnings-deficit-1",
+      "family": "train-lossmaking-earnings-deficit",
+      "text": "Companies with an earnings deficit",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-earnings-deficit-2",
+      "family": "train-lossmaking-earnings-deficit",
+      "text": "Firms reporting deficit earnings",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-earnings-deficit-3",
+      "family": "train-lossmaking-earnings-deficit",
+      "text": "Businesses whose earnings show a deficit",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-red-accounts-1",
+      "family": "train-lossmaking-red-accounts",
+      "text": "Companies operating in the red",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-red-accounts-2",
+      "family": "train-lossmaking-red-accounts",
+      "text": "Firms with accounts in the red",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-red-accounts-3",
+      "family": "train-lossmaking-red-accounts",
+      "text": "Businesses trading in the red",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-net-income-1",
+      "family": "train-lossmaking-negative-net-income",
+      "text": "Companies earning negative net income",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-net-income-2",
+      "family": "train-lossmaking-negative-net-income",
+      "text": "Firms with negative annual net income",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-net-income-3",
+      "family": "train-lossmaking-negative-net-income",
+      "text": "Businesses that report negative net income",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-unprofitable-operations-1",
+      "family": "train-lossmaking-net-loss-operations",
+      "text": "Companies whose operations produce a net loss",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-unprofitable-operations-2",
+      "family": "train-lossmaking-net-loss-operations",
+      "text": "Firms with operating results that show net losses",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-unprofitable-operations-3",
+      "family": "train-lossmaking-net-loss-operations",
+      "text": "Businesses operating with negative net income",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-expense-overrun-1",
+      "family": "train-lossmaking-expense-overrun",
+      "text": "Companies with expenses overtaking revenue",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-expense-overrun-2",
+      "family": "train-lossmaking-expense-overrun",
+      "text": "Firms whose costs exceed their revenue",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-expense-overrun-3",
+      "family": "train-lossmaking-expense-overrun",
+      "text": "Businesses spending revenue with a loss left over",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-results-1",
+      "family": "train-lossmaking-negative-results",
+      "text": "Companies with negative financial results",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-results-2",
+      "family": "train-lossmaking-negative-results",
+      "text": "Firms posting negative earnings results",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-negative-results-3",
+      "family": "train-lossmaking-negative-results",
+      "text": "Businesses showing negative net results",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-loss-generation-1",
+      "family": "train-lossmaking-loss-generation",
+      "text": "Companies generating losses",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-loss-generation-2",
+      "family": "train-lossmaking-loss-generation",
+      "text": "Firms producing a net loss",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-lossmaking-loss-generation-3",
+      "family": "train-lossmaking-loss-generation",
+      "text": "Businesses bringing in net losses",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "train-growing-revenue-rise-1",
+      "family": "train-growing-revenue-rise",
+      "text": "Companies with rising annual revenue",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-rise-2",
+      "family": "train-growing-revenue-rise",
+      "text": "Firms whose revenue is rising",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-rise-3",
+      "family": "train-growing-revenue-rise",
+      "text": "Businesses reporting revenue rises",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-increase-1",
+      "family": "train-growing-sales-increase",
+      "text": "Companies with increasing annual sales",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-increase-2",
+      "family": "train-growing-sales-increase",
+      "text": "Firms whose sales are increasing",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-increase-3",
+      "family": "train-growing-sales-increase",
+      "text": "Businesses reporting sales increases",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-expansion-1",
+      "family": "train-growing-revenue-expansion",
+      "text": "Companies with expanding revenue",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-expansion-2",
+      "family": "train-growing-revenue-expansion",
+      "text": "Firms expanding their annual revenue",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-expansion-3",
+      "family": "train-growing-revenue-expansion",
+      "text": "Businesses whose revenue is expanding",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-gain-1",
+      "family": "train-growing-sales-gain",
+      "text": "Companies with sales gains",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-gain-2",
+      "family": "train-growing-sales-gain",
+      "text": "Firms gaining sales",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-gain-3",
+      "family": "train-growing-sales-gain",
+      "text": "Businesses reporting annual sales gains",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-growth-1",
+      "family": "train-growing-revenue-growth",
+      "text": "Companies with positive revenue growth",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-growth-2",
+      "family": "train-growing-revenue-growth",
+      "text": "Firms showing positive annual revenue growth",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-growth-3",
+      "family": "train-growing-revenue-growth",
+      "text": "Businesses with revenue growth",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-higher-1",
+      "family": "train-growing-sales-higher",
+      "text": "Companies with higher annual sales",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-higher-2",
+      "family": "train-growing-sales-higher",
+      "text": "Firms whose sales moved higher",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-higher-3",
+      "family": "train-growing-sales-higher",
+      "text": "Businesses reporting higher sales",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-upward-1",
+      "family": "train-growing-revenue-upward",
+      "text": "Companies with revenue moving upward",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-upward-2",
+      "family": "train-growing-revenue-upward",
+      "text": "Firms whose revenue moved upward",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-upward-3",
+      "family": "train-growing-revenue-upward",
+      "text": "Businesses showing an upward revenue movement",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-climb-1",
+      "family": "train-growing-sales-climb",
+      "text": "Companies with climbing sales",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-climb-2",
+      "family": "train-growing-sales-climb",
+      "text": "Firms whose annual sales are climbing",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-sales-climb-3",
+      "family": "train-growing-sales-climb",
+      "text": "Businesses reporting a sales climb",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-advance-1",
+      "family": "train-growing-revenue-advance",
+      "text": "Companies with advancing revenue",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-advance-2",
+      "family": "train-growing-revenue-advance",
+      "text": "Firms whose annual revenue advances",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-revenue-advance-3",
+      "family": "train-growing-revenue-advance",
+      "text": "Businesses reporting a revenue advance",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-growing-turnover-1",
+      "family": "train-growing-growing-turnover",
+      "text": "Companies with growing turnover",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-growing-turnover-2",
+      "family": "train-growing-growing-turnover",
+      "text": "Firms whose annual turnover is growing",
+      "intent": "growing"
+    },
+    {
+      "id": "train-growing-growing-turnover-3",
+      "family": "train-growing-growing-turnover",
+      "text": "Businesses reporting turnover growth",
+      "intent": "growing"
+    },
+    {
+      "id": "train-declining-revenue-fall-1",
+      "family": "train-declining-revenue-fall",
+      "text": "Companies with falling annual revenue",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-fall-2",
+      "family": "train-declining-revenue-fall",
+      "text": "Firms whose revenue is falling",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-fall-3",
+      "family": "train-declining-revenue-fall",
+      "text": "Businesses reporting revenue falls",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-decrease-1",
+      "family": "train-declining-sales-decrease",
+      "text": "Companies with decreasing annual sales",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-decrease-2",
+      "family": "train-declining-sales-decrease",
+      "text": "Firms whose sales are decreasing",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-decrease-3",
+      "family": "train-declining-sales-decrease",
+      "text": "Businesses reporting sales decreases",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-contraction-1",
+      "family": "train-declining-revenue-contraction",
+      "text": "Companies with contracting revenue",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-contraction-2",
+      "family": "train-declining-revenue-contraction",
+      "text": "Firms contracting their annual revenue",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-contraction-3",
+      "family": "train-declining-revenue-contraction",
+      "text": "Businesses whose revenue is contracting",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-drop-1",
+      "family": "train-declining-sales-drop",
+      "text": "Companies with sales drops",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-drop-2",
+      "family": "train-declining-sales-drop",
+      "text": "Firms losing sales",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-drop-3",
+      "family": "train-declining-sales-drop",
+      "text": "Businesses reporting annual sales drops",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-negative-growth-1",
+      "family": "train-declining-revenue-negative-growth",
+      "text": "Companies with negative revenue growth",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-negative-growth-2",
+      "family": "train-declining-revenue-negative-growth",
+      "text": "Firms showing negative annual revenue growth",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-negative-growth-3",
+      "family": "train-declining-revenue-negative-growth",
+      "text": "Businesses with revenue decline",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-lower-1",
+      "family": "train-declining-sales-lower",
+      "text": "Companies with lower annual sales",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-lower-2",
+      "family": "train-declining-sales-lower",
+      "text": "Firms whose sales moved lower",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-lower-3",
+      "family": "train-declining-sales-lower",
+      "text": "Businesses reporting lower sales",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-downward-1",
+      "family": "train-declining-revenue-downward",
+      "text": "Companies with revenue moving downward",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-downward-2",
+      "family": "train-declining-revenue-downward",
+      "text": "Firms whose revenue moved downward",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-downward-3",
+      "family": "train-declining-revenue-downward",
+      "text": "Businesses showing a downward revenue movement",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-shrink-1",
+      "family": "train-declining-sales-shrink",
+      "text": "Companies with shrinking sales",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-shrink-2",
+      "family": "train-declining-sales-shrink",
+      "text": "Firms whose annual sales are shrinking",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-sales-shrink-3",
+      "family": "train-declining-sales-shrink",
+      "text": "Businesses reporting a sales shrink",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-retreat-1",
+      "family": "train-declining-revenue-retreat",
+      "text": "Companies with retreating revenue",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-retreat-2",
+      "family": "train-declining-revenue-retreat",
+      "text": "Firms whose annual revenue retreats",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-revenue-retreat-3",
+      "family": "train-declining-revenue-retreat",
+      "text": "Businesses reporting a revenue retreat",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-declining-turnover-1",
+      "family": "train-declining-declining-turnover",
+      "text": "Companies with declining turnover",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-declining-turnover-2",
+      "family": "train-declining-declining-turnover",
+      "text": "Firms whose annual turnover is declining",
+      "intent": "declining"
+    },
+    {
+      "id": "train-declining-declining-turnover-3",
+      "family": "train-declining-declining-turnover",
+      "text": "Businesses reporting turnover decline",
+      "intent": "declining"
+    },
+    {
+      "id": "train-lowdebt-low-leverage-1",
+      "family": "train-lowdebt-low-leverage",
+      "text": "Companies with low financial leverage",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-low-leverage-2",
+      "family": "train-lowdebt-low-leverage",
+      "text": "Firms carrying low leverage",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-low-leverage-3",
+      "family": "train-lowdebt-low-leverage",
+      "text": "Businesses whose financial leverage is low",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-debt-equity-low-1",
+      "family": "train-lowdebt-debt-equity-low",
+      "text": "Companies with low debt relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-debt-equity-low-2",
+      "family": "train-lowdebt-debt-equity-low",
+      "text": "Firms whose debt is low relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-debt-equity-low-3",
+      "family": "train-lowdebt-debt-equity-low",
+      "text": "Businesses carrying low debt for their equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-modest-borrowing-1",
+      "family": "train-lowdebt-modest-borrowing",
+      "text": "Companies with modest borrowing relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-modest-borrowing-2",
+      "family": "train-lowdebt-modest-borrowing",
+      "text": "Firms borrowing modestly relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-modest-borrowing-3",
+      "family": "train-lowdebt-modest-borrowing",
+      "text": "Businesses carrying modest borrowing for their equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-light-leverage-1",
+      "family": "train-lowdebt-light-leverage",
+      "text": "Companies with light financial leverage",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-light-leverage-2",
+      "family": "train-lowdebt-light-leverage",
+      "text": "Firms lightly leveraged",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-light-leverage-3",
+      "family": "train-lowdebt-light-leverage",
+      "text": "Businesses with a light leverage load",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-small-debt-ratio-1",
+      "family": "train-lowdebt-small-debt-ratio",
+      "text": "Companies with a small debt to equity ratio",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-small-debt-ratio-2",
+      "family": "train-lowdebt-small-debt-ratio",
+      "text": "Firms whose debt equity ratio is small",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-small-debt-ratio-3",
+      "family": "train-lowdebt-small-debt-ratio",
+      "text": "Businesses carrying a small equity relative debt ratio",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-little-borrowing-1",
+      "family": "train-lowdebt-little-borrowing",
+      "text": "Companies with little borrowing relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-little-borrowing-2",
+      "family": "train-lowdebt-little-borrowing",
+      "text": "Firms carrying little borrowing for their equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-little-borrowing-3",
+      "family": "train-lowdebt-little-borrowing",
+      "text": "Businesses whose equity carries little borrowing",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-limited-debt-ratio-1",
+      "family": "train-lowdebt-limited-debt-ratio",
+      "text": "Companies with a limited debt to equity ratio",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-limited-debt-ratio-2",
+      "family": "train-lowdebt-limited-debt-ratio",
+      "text": "Firms with limited equity relative debt",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-limited-debt-ratio-3",
+      "family": "train-lowdebt-limited-debt-ratio",
+      "text": "Businesses carrying limited debt relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-minimal-leverage-1",
+      "family": "train-lowdebt-minimal-leverage",
+      "text": "Companies with minimal financial leverage",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-minimal-leverage-2",
+      "family": "train-lowdebt-minimal-leverage",
+      "text": "Firms minimally leveraged",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-minimal-leverage-3",
+      "family": "train-lowdebt-minimal-leverage",
+      "text": "Businesses whose leverage is minimal",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-light-debt-equity-1",
+      "family": "train-lowdebt-light-debt-equity",
+      "text": "Companies carrying light debt relative to equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-light-debt-equity-2",
+      "family": "train-lowdebt-light-debt-equity",
+      "text": "Firms whose debt is light for their equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-light-debt-equity-3",
+      "family": "train-lowdebt-light-debt-equity",
+      "text": "Businesses with a light debt equity load",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-low-borrowing-ratio-1",
+      "family": "train-lowdebt-low-borrowing-ratio",
+      "text": "Companies with a low borrowing to equity ratio",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-low-borrowing-ratio-2",
+      "family": "train-lowdebt-low-borrowing-ratio",
+      "text": "Firms with a low equity relative borrowing load",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-lowdebt-low-borrowing-ratio-3",
+      "family": "train-lowdebt-low-borrowing-ratio",
+      "text": "Businesses whose borrowing equity ratio is low",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "train-highmargin-high-net-margin-1",
+      "family": "train-highmargin-high-net-margin",
+      "text": "Companies with high net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-high-net-margin-2",
+      "family": "train-highmargin-high-net-margin",
+      "text": "Firms whose net profit margin is high",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-high-net-margin-3",
+      "family": "train-highmargin-high-net-margin",
+      "text": "Businesses reporting a high net margin",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-large-net-margin-1",
+      "family": "train-highmargin-large-net-margin",
+      "text": "Companies with large net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-large-net-margin-2",
+      "family": "train-highmargin-large-net-margin",
+      "text": "Firms whose net margin is large",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-large-net-margin-3",
+      "family": "train-highmargin-large-net-margin",
+      "text": "Businesses earning a large net profit margin",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-wide-net-margin-1",
+      "family": "train-highmargin-wide-net-margin",
+      "text": "Companies with wide net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-wide-net-margin-2",
+      "family": "train-highmargin-wide-net-margin",
+      "text": "Firms whose net margin is wide",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-wide-net-margin-3",
+      "family": "train-highmargin-wide-net-margin",
+      "text": "Businesses keeping wide net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-strong-net-margin-1",
+      "family": "train-highmargin-strong-net-margin",
+      "text": "Companies with strong net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-strong-net-margin-2",
+      "family": "train-highmargin-strong-net-margin",
+      "text": "Firms whose net margin is strong",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-strong-net-margin-3",
+      "family": "train-highmargin-strong-net-margin",
+      "text": "Businesses reporting strong net margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-healthy-net-margin-1",
+      "family": "train-highmargin-healthy-net-margin",
+      "text": "Companies with healthy net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-healthy-net-margin-2",
+      "family": "train-highmargin-healthy-net-margin",
+      "text": "Firms whose net margin is healthy",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-healthy-net-margin-3",
+      "family": "train-highmargin-healthy-net-margin",
+      "text": "Businesses earning healthy net margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-profit-share-1",
+      "family": "train-highmargin-net-profit-share",
+      "text": "Companies retaining a large revenue share as net profit",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-profit-share-2",
+      "family": "train-highmargin-net-profit-share",
+      "text": "Firms keeping a large share of sales as net profit",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-profit-share-3",
+      "family": "train-highmargin-net-profit-share",
+      "text": "Businesses with a large net profit share of revenue",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-income-fraction-1",
+      "family": "train-highmargin-net-income-fraction",
+      "text": "Companies with a high net income fraction of revenue",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-income-fraction-2",
+      "family": "train-highmargin-net-income-fraction",
+      "text": "Firms whose net income is a large fraction of sales",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-income-fraction-3",
+      "family": "train-highmargin-net-income-fraction",
+      "text": "Businesses retaining a large revenue fraction as net income",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-earnings-per-sales-1",
+      "family": "train-highmargin-net-earnings-per-sales",
+      "text": "Companies earning high net earnings per sales",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-earnings-per-sales-2",
+      "family": "train-highmargin-net-earnings-per-sales",
+      "text": "Firms with large net earnings relative to sales",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-net-earnings-per-sales-3",
+      "family": "train-highmargin-net-earnings-per-sales",
+      "text": "Businesses earning large net profits relative to revenue",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-sizeable-net-margin-1",
+      "family": "train-highmargin-sizeable-net-margin",
+      "text": "Companies with sizeable net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-sizeable-net-margin-2",
+      "family": "train-highmargin-sizeable-net-margin",
+      "text": "Firms whose net margin is sizeable",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-sizeable-net-margin-3",
+      "family": "train-highmargin-sizeable-net-margin",
+      "text": "Businesses reporting sizeable net margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-generous-net-margin-1",
+      "family": "train-highmargin-generous-net-margin",
+      "text": "Companies with generous net profit margins",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-generous-net-margin-2",
+      "family": "train-highmargin-generous-net-margin",
+      "text": "Firms whose net margin is generous",
+      "intent": "highMargin"
+    },
+    {
+      "id": "train-highmargin-generous-net-margin-3",
+      "family": "train-highmargin-generous-net-margin",
+      "text": "Businesses keeping generous net margins",
+      "intent": "highMargin"
+    }
+  ]
+}

@@ -44,3 +44,5 @@ npm run test:browser
 ```
 
 The production suite uses port 4281, native settings storage, real downloads and actual keyboard/pointer controls. Its browser clock controls elapsed animation time without exposing or mutating private game state. Unit oracles cover calibration, sample freshness, bounded tension, frame-rate behavior, prerequisites, wins/losses and report/settings bounds. Remote CI is the browser acceptance gate in environments where Chromium download is unavailable. Current evidence is tracked in #39; no physical sensor or subjective horror-quality result is claimed.
+
+Verified 2026-10-04: eight unit tests, lint/typecheck/build, and all six production Chromium flows passed in [run 37171786378](https://github.com/twangyal/projects-monorepo/actions/runs/37171786378) on `554a04cdb2c1006208f6079e741c452189e46330`. The independent review findings were reproduced and corrected; source hashes, scope and limits are recorded in [the verification record](docs/2026-10-04-mvp-verification.json).
