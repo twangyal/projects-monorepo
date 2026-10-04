@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "sourceAsset": "/assets/main-jpNsQjvF.js",
+  "browserVersion": "151.0.7922.173",
+  "totalWallMs": 10323.409725,
+  "fixtures": [
+    {
+      "name": "original-a.melody.json",
+      "bytes": 9580709,
+      "sha256": "79b6b311e4ed8b59e17565d01f0de8ff964062a73963733e4356d81e52270778",
+      "matchesPreRuntimeFreeze": true
+    },
+    {
+      "name": "foreign-b.melody.json",
+      "bytes": 9580795,
+      "sha256": "9c48da65007d40ace355ee3270bfdc9f1c29c7207dcf7f67b329eb841b380b10",
+      "matchesPreRuntimeFreeze": true
+    },
+    {
+      "name": "expected-local-a.melody.json",
+      "bytes": 9580700,
+      "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f",
+      "matchesPreRuntimeFreeze": true
+    }
+  ],
+  "sources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/scripts/smoke_save_conflicts.mjs",
+      "bytes": 15899,
+      "sha256": "602f395d112c698352dbeb82b805d180a5f6488a2e94239eefe1f764d5571dbc"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/main.ts",
+      "bytes": 98596,
+      "sha256": "bf6e7357ee7fbae62b56773d60d60fb5d952181b85eda2ba0e392e16a3f59896"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/reference-storage.ts",
+      "bytes": 16541,
+      "sha256": "ff95c3be180518faed7b3c0afe0702aa52d5c85334fb46edf3a95e2b1473db7a"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/dist/assets/main-jpNsQjvF.js",
+      "bytes": 130171,
+      "sha256": "7a63584749ea7cd9b6e1dd940cfeccb0fc433ed035293ac719faf11a53f02680"
+    }
+  ],
+  "verification": {
+    "path": "/workspace/melody98-maximum-conflict-actual/verification.json",
+    "bytes": 10976,
+    "sha256": "7297f74e78132a9d072740c23801de72853b5d4895737acefd9df62528f9844a"
+  },
+  "images": [
+    {
+      "path": "/workspace/melody98-maximum-conflict-actual/desktop-conflict-replacement.png",
+      "bytes": 111731,
+      "sha256": "14359112ad791bd9d9086471e019a60a04b2c6f7c5246865b588b3c7746cc5bb",
+      "width": 1440,
+      "height": 1000,
+      "visuallyInspected": true,
+      "observation": "Viewport shows readable saved-copy and reference controls after replacement; no obvious text clipping or page overflow."
+    },
+    {
+      "path": "/workspace/melody98-maximum-conflict-actual/390px-restored.png",
+      "bytes": 48433,
+      "sha256": "f0cdb50eec389c935a80bf2fde2b31b5baa322dfbdcba0db6acd77acfd2e64bd",
+      "width": 390,
+      "height": 844,
+      "visuallyInspected": true,
+      "observation": "390px viewport shows contained, scrollable piano roll and readable note/continuation controls; no horizontal page overflow. Software viewport evidence only."
+    }
+  ],
+  "cleanup": {
+    "ownedBrowserPids": [
+      657165,
+      657341
+    ],
+    "allGone": true,
+    "serverStartedOrStoppedByProbe": false,
+    "browserSlotReleased": true
+  },
+  "restart": {
+    "bytes": 9580700,
+    "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f",
+    "byteExact": true
+  },
+  "failures": []
+}

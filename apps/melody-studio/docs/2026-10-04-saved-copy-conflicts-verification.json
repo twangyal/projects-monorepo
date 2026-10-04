@@ -2,7 +2,7 @@
   "issue": 98,
   "date": "2026-10-04",
   "version": "0.5.1",
-  "status": "complete local verification passed; exact published-head CI pending",
+  "status": "complete; exact published-head push and PR CI passed, all thirteen project PR workflows passed",
   "contract": "docs/superpowers/specs/2026-10-04-melody-saved-copy-conflicts-design.md",
   "unit": {
     "passed": 255,
@@ -72,5 +72,7 @@
     "restartSha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f",
     "wallMs": 10323.409725,
     "firstActualRun": "passed without expected-value or fixture changes"
-  }
+  },
+  "ciReceipt": "2026-10-04-saved-copy-conflicts-ci.json",
+  "maximumReviewReceipt": "2026-10-04-saved-copy-conflicts-maximum-review.json"
 }

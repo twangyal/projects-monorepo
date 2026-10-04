@@ -230,7 +230,12 @@ starts a server, writes IndexedDB directly, or imports product serializers.
 [maximum evidence](docs/2026-10-04-saved-copy-conflicts-maximum.json) preserve exact
 hashes and failed attempts. The prior direct-editor CI's [premature save assertion](docs/2026-10-04-direct-roll-retry-ci-first.json)
 now requires exact successful status before reload; musical and PCM expectations
-are unchanged. Published-head CI is recorded separately when available.
+are unchanged. Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37223103033)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37223106786) CI
+at `e856e3bf1845716cb176cee136d31315e444effd` pass all **255 units and 97 browser
+cases**, lint, type checking and build on Chromium153. All thirteen project PR
+workflows pass. The [exact CI receipt](docs/2026-10-04-saved-copy-conflicts-ci.json)
+records separate branch-head and synthetic-merge checkouts.
 
 ### Learned-continuation verification
 
