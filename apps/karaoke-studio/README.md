@@ -299,8 +299,12 @@ SRT/ZIP downloads. The native four-second archive preserves all three WAV hashes
 The deadline test advances a controlled browser clock; lifecycle tests dispatch
 page events and do not establish physical BFCache admission. Existing Spleeter
 inference evidence remains separate. See the [local verification receipt](docs/2026-10-04-srt-import-verification.json)
-and [new native evidence](docs/2026-10-04-srt-import-native.json). Published-head CI
-is recorded separately after its workflows finish.
+and [new native evidence](docs/2026-10-04-srt-import-native.json). Both push and PR
+CI at `6ec2f2cf827c16eb591d5721a87ac50813b73b49` pass the complete 166/66/61
+suites and static/build checks; the PR merge has the identical tree. The
+[CI receipt](docs/2026-10-04-srt-import-ci.json) preserves exact checkouts and
+log hashes. Twelve of thirteen project PR workflows passed at that head; the
+separate Motion fixture-readiness failure remains tracked in #106.
 
 The separate maximum run imports **200 cues / 20,000 Unicode code points** into
 an original 300-second clip from an exact **128 KiB** UTF-8 File. One extra byte

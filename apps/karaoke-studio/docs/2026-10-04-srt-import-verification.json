@@ -3,7 +3,7 @@
   "milestone": "Karaoke Studio #105 reviewed timed SRT import",
   "version": "0.4.0",
   "date": "2026-10-04",
-  "status": "All local static, 61 native cases, maximum artifacts and initial own push/PR CI passed; final verification-tool corrections and Motion #106 readiness CI pending.",
+  "status": "complete",
   "localStatic": {
     "pythonTests": 166,
     "pythonPassed": 166,
@@ -94,7 +94,14 @@
     "scope": "Original 300-second SRT/audio/archive persistence; separate six-second rendered video. Actual native File restore and full service/browser restart; no model inference.",
     "helperStaticChecks": "Corrected runner ESLint, helper Ruff and Python compilation passed."
   },
-  "publishedHeadCI": "Initial feature head 191018e5670fda48430a3da0da8c6f35341d6041 passes both Karaoke workflows. Twelve of thirteen PR workflows passed; Motion test readiness failure tracked and being repaired in #106. Final published verification-tool corrections pending.",
+  "publishedHeadCI": {
+    "receipt": "2026-10-04-srt-import-ci.json",
+    "head": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+    "tree": "776426bceb92fff56793bb62ffe07e1158d9152a",
+    "push": "166 Python, 66 TypeScript, 61 native plus static/build checks passed",
+    "pullRequest": "166 Python, 66 TypeScript, 61 native plus static/build checks passed; exact merge tree matches",
+    "allProjectScope": "12 of 13 PR workflows passed. The separate Motion test-readiness failure is preserved in #106; no all-green claim for this head."
+  },
   "limits": [
     "UTF-8 strict numbered SRT subset, with declared CRLF/BOM/single-pass entity rules; no arbitrary subtitle markup.",
     "Existing exporter rounds to milliseconds and can make submillisecond intervals overlap or exceed fractional duration; strict import refuses those files.",

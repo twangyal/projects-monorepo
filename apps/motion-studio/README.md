@@ -193,3 +193,15 @@ assertions remain intact. The affected native case passes against the unchanged
 production bundle; the [first-failure receipt](docs/2026-10-04-new-project-readiness-first.json)
 and [repair verification](docs/2026-10-04-new-project-readiness-verification.json)
 record the evidence. Final published-head CI is recorded separately.
+
+The next head `6ec2f2cf827c16eb591d5721a87ac50813b73b49` passed all 147/121 in
+push CI, but PR CI exposed a distinct tween-test reload before Redo had saved
+(120/121). Its trace showed **Saving locally…** immediately before reload;
+all in-memory artwork comparisons had passed. The test now waits for successful
+saving and actual native persisted-row equality before reloading. A focused
+audit also strengthens identical-file reimport, ninth-file refusal and SVG
+refusal checks so they cannot pass on an earlier message or unchanged old data.
+All four affected native cases pass against the unchanged production bundle,
+with original artwork/error expectations intact. The [intermediate CI receipt](docs/2026-10-04-new-project-readiness-ci.json)
+retains that head’s separate push success and PR failure. Final acceptance of
+the broadened completion barriers remains pending fresh CI.

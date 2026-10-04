@@ -331,7 +331,11 @@ test('eight ordinary literal projects refuse a ninth atomically with no silent e
   for (let i = 0; i < 8; i++) await importFixture(page, { ...libraryFixture(i % 2 ? 'B' : 'A'), title: `Original library ${i + 1}` });
   const full = await inspectLibrary(page); expect(full.head!.entries).toHaveLength(8);
   if (await page.locator('#new-project').isEnabled()) { await page.locator('#new-project').click(); await expect(page.locator('#message')).toContainText(/8|eight|full|limit/i); }
+  expect(await currentBackup(page)).toEqual(full.rows.find(row => row.id === full.head!.activeId)!.project);
+  await expect(page.locator('#message')).toContainText('Editable project file downloaded.');
   await page.locator('#project-file').setInputFiles({ name: 'ninth.motion.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ ...libraryFixture('A'), title: 'Must not evict' })) });
+  await expect(page.locator('#message')).toHaveText('The library is full. Export or explicitly delete a project before adding another. Your current project is unchanged.');
+  await expect(page.locator('#project-file')).toBeEnabled();
   await expect(page.locator('#project-title')).toHaveValue('Original library 8'); expect(await inspectLibrary(page)).toEqual(full);
 });
 

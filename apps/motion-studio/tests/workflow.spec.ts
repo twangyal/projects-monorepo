@@ -74,7 +74,7 @@ test('invalid project and SVG imports preserve artwork, then a valid backup reop
   await expect(page.locator('#message')).toContainText('unchanged');
   expect(await backup(page)).toEqual(saved);
   await page.getByLabel('Import artwork image', { exact: true }).setInputFiles({ name: 'unsafe.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>') });
-  await expect(page.locator('#message')).toContainText('unchanged');
+  await expect(page.locator('#message')).toHaveText('Choose an actual PNG, JPEG, or static WebP image. Your current project is unchanged.');
   expect(await backup(page)).toEqual(saved);
   await page.locator('#project-title').fill('Temporary title');
   await page.getByLabel('Open project file', { exact: true }).setInputFiles({ name: 'saved.motion.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });

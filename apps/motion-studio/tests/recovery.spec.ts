@@ -49,6 +49,25 @@ async function backup(page: Page): Promise<Buffer> {
   return readFile((await download.path())!);
 }
 
+async function activeLibraryProject(page: Page): Promise<{ activeId: string; ids: string[]; project: Project }> {
+  return page.evaluate(() => new Promise((resolve, reject) => {
+    const opened = indexedDB.open('motion-studio', 2);
+    opened.onerror = () => reject(opened.error);
+    opened.onsuccess = () => {
+      const db = opened.result, tx = db.transaction(['library', 'projects'], 'readonly');
+      const request = tx.objectStore('library').get('current');
+      let result: { activeId: string; ids: string[]; project: Project };
+      request.onsuccess = () => {
+        const head = request.result as { activeId: string; entries: { id: string }[] };
+        const row = tx.objectStore('projects').get(head.activeId);
+        row.onsuccess = () => { result = { activeId: head.activeId, ids: head.entries.map(entry => entry.id), project: row.result.project }; };
+      };
+      tx.oncomplete = () => { db.close(); resolve(result); };
+      tx.onabort = () => { db.close(); reject(tx.error); };
+    };
+  }));
+}
+
 test('a bounded project with genuine decoded PNGs can reopen its own backup', async ({ page }) => {
   const project = nearLimitProject(), original = Buffer.from(JSON.stringify(project));
   expect(original.length).toBeLessThan(6 * 1024 * 1024);
@@ -61,8 +80,17 @@ test('a bounded project with genuine decoded PNGs can reopen its own backup', as
   const exported = await backup(page);
   expect(exported.length).toBeLessThanOrEqual(6 * 1024 * 1024);
   expect(exported.equals(original)).toBe(true);
+  const beforeReimport = await activeLibraryProject(page);
   await page.locator('#project-file').setInputFiles({ name: 'roundtrip.motion.json', mimeType: 'application/json', buffer: exported });
   await expect(page.locator('#message')).toContainText('Project file imported as a new editable project.');
+  await expect.poll(async () => {
+    const current = await activeLibraryProject(page);
+    return !beforeReimport.ids.includes(current.activeId);
+  }).toBe(true);
+  const restored = await activeLibraryProject(page);
+  expect(restored.project).toEqual(project);
+  await expect(page.locator(`#project-library-list [data-project-id="${restored.activeId}"]`)).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#project-title')).toHaveValue(project.title);
   expect((await backup(page)).equals(original)).toBe(true);
 });
 

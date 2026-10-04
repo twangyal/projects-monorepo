@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "issue": 106,
+  "repository": "twangyal/projects-monorepo",
+  "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+  "treeSha": "776426bceb92fff56793bb62ffe07e1158d9152a",
+  "collectedAt": "2026-10-04T20:07:52.003Z",
+  "motion": [
+    {
+      "event": "push",
+      "runId": 37230574731,
+      "jobId": 111519174144,
+      "checkoutSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "checkoutKind": "branch head",
+      "treeSha": "776426bceb92fff56793bb62ffe07e1158d9152a",
+      "conclusion": "success",
+      "unit": {
+        "passed": 147,
+        "failed": 0,
+        "skipped": 0,
+        "milliseconds": 2177.963181
+      },
+      "browser": {
+        "passed": 121,
+        "failed": 0,
+        "workers": 2,
+        "seconds": 58.2,
+        "chromium": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "eslint": "success",
+      "typecheck": "success",
+      "build": "success",
+      "productionBundle": "main-Cqx2Ujdw.js",
+      "buildMilliseconds": 416,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230574731",
+      "log": {
+        "path": "/workspace/motion106-ci-push.log",
+        "bytes": 61191,
+        "sha256": "6c4869c955d98d46cc1fbca2c74a2a24c2f6e2f5b308325ba1cf03b48cbece68"
+      },
+      "node": "24.21.0",
+      "npm": "11.19.0"
+    },
+    {
+      "event": "pull_request",
+      "runId": 37230577521,
+      "jobId": 111519182212,
+      "checkoutSha": "82a70950ff7a20a70279f36f448e828cf814bd82",
+      "checkoutKind": "synthetic PR merge",
+      "treeSha": "776426bceb92fff56793bb62ffe07e1158d9152a",
+      "conclusion": "failure",
+      "unit": {
+        "passed": 147,
+        "failed": 0,
+        "skipped": 0,
+        "milliseconds": 1524.38074
+      },
+      "browser": {
+        "passed": 120,
+        "failed": 1,
+        "workers": 2,
+        "seconds": 51.6,
+        "chromium": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "eslint": "success",
+      "typecheck": "success",
+      "build": "success",
+      "productionBundle": "main-Cqx2Ujdw.js",
+      "buildMilliseconds": 307,
+      "failure": {
+        "file": "apps/motion-studio/tests/browser/tween.spec.ts",
+        "test": "explicit nonidentity pairing and reversal review actual pixels without saving, then Apply is one undoable edit",
+        "testLine": 27,
+        "assertionLine": 32,
+        "assertionColumn": 454,
+        "phase": "backup equality after reload",
+        "observed": "Generated cels present in pre-reload RAM backups; reloaded graph has only original endpoint cels.",
+        "traceEvidence": [
+          {
+            "milliseconds": 29941.204,
+            "event": "Redo command begins"
+          },
+          {
+            "milliseconds": 29980.497,
+            "event": "#save-status is Saving locally\u2026 after Redo"
+          },
+          {
+            "milliseconds": 30023.012,
+            "event": "RAM backup download completed"
+          },
+          {
+            "milliseconds": 30026.038,
+            "event": "Reload begins without durable save barrier"
+          },
+          {
+            "milliseconds": 30085.205,
+            "event": "Earlier endpoint-only project restored from saved storage"
+          }
+        ],
+        "classification": "Missing durable-save test admission; no product defect established",
+        "recommendation": "Wait for matching Saved in this browser status and compare actual persisted project to the accepted result before reload; retain all post-reload geometry and graph assertions."
+      },
+      "artifact": {
+        "id": 11313434629,
+        "bytes": 2101780,
+        "sha256": "86c96e37c766d72722b5ee02316d270077adad7336d62da6fbb94f5d5a903df8",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577521/artifacts/11313434629",
+        "path": "/workspace/attachments/219fcd2e-21c9-4e50-b77c-e44da3dc1556/motion106-first-pr-failure.zip",
+        "traceMember": "browser-tween-explicit-non-43084--Apply-is-one-undoable-edit/trace.zip"
+      },
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577521",
+      "log": {
+        "path": "/workspace/motion106-ci-first-pr-failure.log",
+        "bytes": 166034,
+        "sha256": "5526336ab4c943000bce6fa09a194ed6bd302133830ac0c831de536ee4d411b8"
+      },
+      "node": "24.21.0",
+      "npm": "11.19.0"
+    }
+  ],
+  "allProjectPrWorkflows": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37230577499,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577499"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37230577534,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577534"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37230577521,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577521"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37230577555,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577555"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37230577519,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577519"
+    },
+    {
+      "name": "Git History",
+      "runId": 37230577539,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577539"
+    },
+    {
+      "name": "Duet",
+      "runId": 37230577536,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577536"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37230577518,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577518"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37230577506,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577506"
+    },
+    {
+      "name": "Composure",
+      "runId": 37230577522,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577522"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37230577542,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577542"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37230577512,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577512"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37230577550,
+      "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577550"
+    }
+  ],
+  "limitations": [
+    "No workflow reruns, builds or browser runs during collection.",
+    "The new-project recovery fixture passed in both completed Motion runs; PR failure is a distinct Redo persistence barrier.",
+    "Other project statuses come from exact-head metadata, not inferred test counts.",
+    "Log hashes identify connector-decoded UTF8 text; signed artifact URLs are omitted."
+  ],
+  "allProjectPrSummary": {
+    "total": 13,
+    "success": 12,
+    "failure": 1,
+    "pending": 0
+  }
+}
