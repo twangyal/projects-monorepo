@@ -22,9 +22,9 @@ let calibration:HeartRateCalibration|null=null,calibrationConnection:number|null
 let startIntent=0,disposed=false;
 let calibrationText='Baseline: 0/5 received readings. Collect five stable readings before starting.';
 let run:Run|null=null,lastFrame=0,lastSample=-1,steadyToggle=false,pointerAim:{x:number;y:number}|undefined;
-let audio:AudioContext|null=null;const keys=new Set<string>(),touch=new Map<number,string>();let interactPointer:number|null=null;let lastEvent:RunEvent|null=null;
-function release():void {keys.clear();touch.clear();interactPointer=null;}
-function controls():Controls {const values=new Set([...keys,...touch.values()]);return{x:Number(values.has('right')||values.has('d')||values.has('arrowright'))-Number(values.has('left')||values.has('a')||values.has('arrowleft')),y:Number(values.has('down')||values.has('s')||values.has('arrowdown'))-Number(values.has('up')||values.has('w')||values.has('arrowup')),interact:values.has('e')||interactPointer!==null,steady:steadyToggle||values.has('shift'),aim:pointerAim};}
+let audio:AudioContext|null=null;const keys=new Set<string>(),touch=new Map<number,string>(),interactPointers=new Set<number>();let lastEvent:RunEvent|null=null;
+function release():void {keys.clear();touch.clear();interactPointers.clear();}
+function controls():Controls {const values=new Set([...keys,...touch.values()]);return{x:Number(values.has('right')||values.has('d')||values.has('arrowright'))-Number(values.has('left')||values.has('a')||values.has('arrowleft')),y:Number(values.has('down')||values.has('s')||values.has('arrowdown'))-Number(values.has('up')||values.has('w')||values.has('arrowup')),interact:values.has('e')||interactPointers.size>0,steady:steadyToggle||values.has('shift'),aim:pointerAim};}
 function announce(text:string):void {get('message').textContent=text;}
 function save():void {if(storageBlocked){storageStatus('Saved preferences are unreadable. Reset them explicitly before saving; current run stays in memory.');return;}try{settings={schemaVersion:1,baseline:calibrate(Array(5).fill(Number(baseline.value)) as number[]),scares:scares.checked,reducedMotion:reduced.checked,muted:muted.checked,bestSeconds:settings.bestSeconds};saveSettings(localStorage,settings);storageStatus('Preferences saved locally. No simulated sample log was stored.');}catch{storageStatus('Preferences could not be saved. Current game stays usable in memory.');}}
 function audioReady():void {if(muted.checked)return;try{audio??=new AudioContext();void audio.resume().catch(()=>{});}catch{announce('Optional sound is unavailable. The game remains playable.');}}
@@ -94,8 +94,8 @@ for(const button of document.querySelectorAll<HTMLButtonElement>('[data-move]'))
   button.addEventListener('pointerdown',e=>{if(run?.phase!=='running')return;e.preventDefault();button.setPointerCapture(e.pointerId);touch.set(e.pointerId,button.dataset.move!);});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(type,e=>touch.delete((e as PointerEvent).pointerId));
 }
-const interaction=get<HTMLButtonElement>('interact');interaction.addEventListener('pointerdown',e=>{if(run?.phase!=='running')return;e.preventDefault();interaction.setPointerCapture(e.pointerId);interactPointer=e.pointerId;});
-for(const type of ['pointerup','pointercancel','lostpointercapture'])interaction.addEventListener(type,e=>{if(interactPointer===(e as PointerEvent).pointerId)interactPointer=null;});
+const interaction=get<HTMLButtonElement>('interact');interaction.addEventListener('pointerdown',e=>{if(run?.phase!=='running')return;e.preventDefault();interaction.setPointerCapture(e.pointerId);interactPointers.add(e.pointerId);});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])interaction.addEventListener(type,e=>{interactPointers.delete((e as PointerEvent).pointerId);});
 interaction.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();keys.add('e');}});interaction.addEventListener('keyup',()=>keys.delete('e'));interaction.addEventListener('blur',()=>keys.delete('e'));
 canvas.addEventListener('pointerdown',e=>{const rect=canvas.getBoundingClientRect();pointerAim={x:(e.clientX-rect.left)/rect.width*WORLD.width,y:(e.clientY-rect.top)/rect.height*WORLD.height};get('keyboard-aim').setAttribute('aria-pressed','false');canvas.focus();});
 canvas.addEventListener('pointermove',e=>{if(!pointerAim)return;const rect=canvas.getBoundingClientRect();pointerAim={x:(e.clientX-rect.left)/rect.width*WORLD.width,y:(e.clientY-rect.top)/rect.height*WORLD.height};});
