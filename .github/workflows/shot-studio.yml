@@ -5,6 +5,11 @@ on:
   pull_request:
     paths: ['apps/shot-studio/**', '.github/workflows/shot-studio.yml']
   workflow_dispatch:
+concurrency:
+  # Automated runs follow the newest ref; manual verification keeps a unique ID.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
 permissions:
   contents: read
 jobs:
