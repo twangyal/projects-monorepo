@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "intents": {
+    "profitable": {
+      "canonicalQuery": "companies with profitable",
+      "screen": {
+        "sector": null,
+        "currency": null,
+        "filters": [
+          {
+            "metric": "netIncome",
+            "operator": "gt",
+            "value": 0,
+            "currency": null
+          }
+        ],
+        "includeStale": false,
+        "sortBy": "ticker",
+        "direction": "asc"
+      }
+    },
+    "lossMaking": {
+      "canonicalQuery": "companies with loss making",
+      "screen": {
+        "sector": null,
+        "currency": null,
+        "filters": [
+          {
+            "metric": "netIncome",
+            "operator": "lt",
+            "value": 0,
+            "currency": null
+          }
+        ],
+        "includeStale": false,
+        "sortBy": "ticker",
+        "direction": "asc"
+      }
+    },
+    "growing": {
+      "canonicalQuery": "companies with growing",
+      "screen": {
+        "sector": null,
+        "currency": null,
+        "filters": [
+          {
+            "metric": "growthPct",
+            "operator": "gt",
+            "value": 0,
+            "currency": null
+          }
+        ],
+        "includeStale": false,
+        "sortBy": "ticker",
+        "direction": "asc"
+      }
+    },
+    "declining": {
+      "canonicalQuery": "companies with declining revenue",
+      "screen": {
+        "sector": null,
+        "currency": null,
+        "filters": [
+          {
+            "metric": "growthPct",
+            "operator": "lt",
+            "value": 0,
+            "currency": null
+          }
+        ],
+        "includeStale": false,
+        "sortBy": "ticker",
+        "direction": "asc"
+      }
+    },
+    "lowDebt": {
+      "canonicalQuery": "companies with low debt",
+      "screen": {
+        "sector": null,
+        "currency": null,
+        "filters": [
+          {
+            "metric": "debtEquity",
+            "operator": "lte",
+            "value": 1,
+            "currency": null
+          }
+        ],
+        "includeStale": false,
+        "sortBy": "ticker",
+        "direction": "asc"
+      }
+    },
+    "highMargin": {
+      "canonicalQuery": "companies with high margin",
+      "screen": {
+        "sector": null,
+        "currency": null,
+        "filters": [
+          {
+            "metric": "marginPct",
+            "operator": "gte",
+            "value": 10,
+            "currency": null
+          }
+        ],
+        "includeStale": false,
+        "sortBy": "ticker",
+        "direction": "asc"
+      }
+    }
+  }
+}

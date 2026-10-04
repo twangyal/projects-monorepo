@@ -4,21 +4,21 @@
   "provenance": "Original authored examples; no scraped, user, financial or held-out source data.",
   "examples": [
     {
-      "id": "train-profitable-positive-bottom-line-1",
-      "family": "train-profitable-positive-bottom-line",
-      "text": "Companies with a positive bottom line",
+      "id": "train-profitable-net-surplus-result-1",
+      "family": "train-profitable-net-surplus-result",
+      "text": "Companies whose annual result is a net surplus",
       "intent": "profitable"
     },
     {
-      "id": "train-profitable-positive-bottom-line-2",
-      "family": "train-profitable-positive-bottom-line",
-      "text": "Firms reporting a positive bottom line",
+      "id": "train-profitable-net-surplus-result-2",
+      "family": "train-profitable-net-surplus-result",
+      "text": "Firms ending the year with positive net earnings",
       "intent": "profitable"
     },
     {
-      "id": "train-profitable-positive-bottom-line-3",
-      "family": "train-profitable-positive-bottom-line",
-      "text": "Businesses whose bottom line is positive",
+      "id": "train-profitable-net-surplus-result-3",
+      "family": "train-profitable-net-surplus-result",
+      "text": "Businesses showing a net surplus after costs",
       "intent": "profitable"
     },
     {
@@ -184,21 +184,21 @@
       "intent": "profitable"
     },
     {
-      "id": "train-lossmaking-negative-bottom-line-1",
-      "family": "train-lossmaking-negative-bottom-line",
-      "text": "Companies with a negative bottom line",
+      "id": "train-lossmaking-net-deficit-result-1",
+      "family": "train-lossmaking-net-deficit-result",
+      "text": "Companies whose annual result is a net deficit",
       "intent": "lossMaking"
     },
     {
-      "id": "train-lossmaking-negative-bottom-line-2",
-      "family": "train-lossmaking-negative-bottom-line",
-      "text": "Firms reporting a negative bottom line",
+      "id": "train-lossmaking-net-deficit-result-2",
+      "family": "train-lossmaking-net-deficit-result",
+      "text": "Firms ending the year with negative net earnings",
       "intent": "lossMaking"
     },
     {
-      "id": "train-lossmaking-negative-bottom-line-3",
-      "family": "train-lossmaking-negative-bottom-line",
-      "text": "Businesses whose bottom line is negative",
+      "id": "train-lossmaking-net-deficit-result-3",
+      "family": "train-lossmaking-net-deficit-result",
+      "text": "Businesses showing a net deficit after costs",
       "intent": "lossMaking"
     },
     {

@@ -1,0 +1,39 @@
+{
+  "absoluteTolerance": 1e-10,
+  "acceptedPerClass": {
+    "declining": 0,
+    "growing": 0,
+    "highMargin": 0,
+    "lossMaking": 0,
+    "lowDebt": 0,
+    "profitable": 0
+  },
+  "admissibleSupported": 60,
+  "admissibleUnsupported": 79,
+  "artifactSha256": "6065bc0353732492bb176749fa12df5d17bd4ec092f93bd7d53361855c5bb8ca",
+  "benchmarkAdmissible": false,
+  "completeDevelopment": true,
+  "contractSha256": "f71655b7f6ba1fe2ab4d7c861b0da18a981c5b74c59e9e2319ac225613ea0a10",
+  "developmentReady": false,
+  "developmentSha256": "cd3c2ddd6735af0e4b8bf09efafb5aecd70163341fc6913b57a36cdce2826b91",
+  "developmentStatus": "notReady",
+  "diagnosticOnly": true,
+  "invalidBenchmarkIDs": [
+    "dev-unsupported-unrelated-10"
+  ],
+  "maximumAbsoluteError": 2.7755575615628914e-16,
+  "mismatches": [],
+  "parityReferenceSha256": "e3b7e1d2b778ca21fbbea16c8078819ac5a0632c4876d256e6829677a67e4f3f",
+  "passed": true,
+  "screenMappingSha256": "00651fb9ccee4d194be442b84f9eba78f7a91faf752a2ad38be8c03d5422565b",
+  "supportedAccepted": 0,
+  "thresholds": {
+    "minMargin": 0.6,
+    "minScore": 0.95,
+    "minSimilarity": 0.7
+  },
+  "trainingSha256": "14f3e5ac721c793d9df57d42f0c72599ddb9002043a7fccf3c118722d960a83a",
+  "unsupportedAccepted": 0,
+  "vectors": 140,
+  "wrongSupportedAccepted": 0
+}

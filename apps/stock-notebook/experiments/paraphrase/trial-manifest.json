@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "status": "failed-development-no-heldout-inference",
+  "date": "2026-10-04",
+  "productIntegrated": false,
+  "heldoutInferenceRun": false,
+  "modelSha256": "6065bc0353732492bb176749fa12df5d17bd4ec092f93bd7d53361855c5bb8ca",
+  "failureReasons": [
+    "zero of 60 supported development requests accepted",
+    "79 admissible unsupported language examples, below required 80"
+  ],
+  "files": {
+    "README.md": {
+      "bytes": 6169,
+      "sha256": "f7435dc4eef85bf3f743a5b46ae3afda581c4078893f746477e8bd4a5cf9ec7b"
+    },
+    "corpus-audit.json": {
+      "bytes": 17762,
+      "sha256": "b6540b239b8d6e1beb2858bf30451d0b6dd936b588641750abaa230c404a1902"
+    },
+    "development-diagnostic.json": {
+      "bytes": 1286,
+      "sha256": "3006c199f121dc6fae3612dbd82c7cc9970bf431f9697ed257cb53a9c5315330"
+    },
+    "development-results.json": {
+      "bytes": 258080,
+      "sha256": "e3b7e1d2b778ca21fbbea16c8078819ac5a0632c4876d256e6829677a67e4f3f"
+    },
+    "development.json": {
+      "bytes": 30134,
+      "sha256": "cd3c2ddd6735af0e4b8bf09efafb5aecd70163341fc6913b57a36cdce2826b91"
+    },
+    "evaluate.py": {
+      "bytes": 47623,
+      "sha256": "8bcf3ca21b6e643a5f2323fe37811782e8b900b3341e67b88b25937135857c09"
+    },
+    "evaluation-contract.md": {
+      "bytes": 9656,
+      "sha256": "05d28b1e8584c23d1d7aa0704d4fa8563347cbac78ea61d51231da8f15e474ab"
+    },
+    "heldout-supported.json": {
+      "bytes": 25338,
+      "sha256": "233126508800954c907dfe24866861171547f9576ff326025257aa32b5403535"
+    },
+    "heldout-unsupported.json": {
+      "bytes": 55797,
+      "sha256": "0d116cf17c4cb17bc8a644141a88385979ed526145252a000a64f5f8723b1469"
+    },
+    "model.json": {
+      "bytes": 115562,
+      "sha256": "6065bc0353732492bb176749fa12df5d17bd4ec092f93bd7d53361855c5bb8ca"
+    },
+    "reference.py": {
+      "bytes": 12848,
+      "sha256": "6b3c6c346be4ee677c96a26bc4f85080d62d135abc3061dfce7d99698dc813ba"
+    },
+    "requirements.txt": {
+      "bytes": 192,
+      "sha256": "d8dd54d5f21a1501d9609b6ee4b0477d7f2322096114f4f194f0db344ebb8641"
+    },
+    "screen-mapping.json": {
+      "bytes": 2541,
+      "sha256": "00651fb9ccee4d194be442b84f9eba78f7a91faf752a2ad38be8c03d5422565b"
+    },
+    "test_evaluate.py": {
+      "bytes": 28625,
+      "sha256": "9af6292e07685ba96d157fae58235112198e407a31125f1dd502f279d2e59bd3"
+    },
+    "test_training.py": {
+      "bytes": 10439,
+      "sha256": "c86db544feba1c367d664a92f9dcb6e45f1513d845b2b42b1a9598d259b40c23"
+    },
+    "train.py": {
+      "bytes": 21436,
+      "sha256": "5b82f593f49ec9a717d6b2fdc8eef83b0554598b703d5ccb932062231b994e85"
+    },
+    "training-contract.json": {
+      "bytes": 15879,
+      "sha256": "f71655b7f6ba1fe2ab4d7c861b0da18a981c5b74c59e9e2319ac225613ea0a10"
+    },
+    "training.json": {
+      "bytes": 35597,
+      "sha256": "14f3e5ac721c793d9df57d42f0c72599ddb9002043a7fccf3c118722d960a83a"
+    }
+  }
+}

@@ -28,8 +28,20 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: apps/stock-notebook/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - run: npm ci
       - run: npm run check
+      - name: Verify isolated experiment invariants without ML dependencies
+        run: python -S -B -m unittest discover -s experiments/paraphrase -p 'test_*.py'
+      - name: Reproduce failed experiment diagnostics without opening holdouts
+        run: >-
+          python -S -B experiments/paraphrase/evaluate.py --diagnostic-development
+          --artifact experiments/paraphrase/model.json
+          --development experiments/paraphrase/development.json
+          --parity experiments/paraphrase/development-results.json
+          --output /tmp/stock-paraphrase-diagnostic.json
       - name: Verify maximum annual-history input and complete report
         run: node --experimental-strip-types scripts/annual-history-smoke.ts
       - run: npx playwright install --with-deps chromium

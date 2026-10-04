@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "status": "approved-before-fit-and-heldout-inference",
+  "status": "approved-before-refit-and-heldout-inference",
   "trainingContractSha256": "f71655b7f6ba1fe2ab4d7c861b0da18a981c5b74c59e9e2319ac225613ea0a10",
   "corpora": {
     "training": {
-      "sha256": "da9fc54ce3b038e9e439d26ef773188d8fcc239b65a38707bc0126a4a1f4ed01",
+      "sha256": "14f3e5ac721c793d9df57d42f0c72599ddb9002043a7fccf3c118722d960a83a",
       "examples": 180,
       "counts": {
         "profitable": 30,
@@ -50,9 +50,9 @@
         "train-lossmaking-expense-overrun",
         "train-lossmaking-loss-generation",
         "train-lossmaking-money-losing",
-        "train-lossmaking-negative-bottom-line",
         "train-lossmaking-negative-net-income",
         "train-lossmaking-negative-results",
+        "train-lossmaking-net-deficit-result",
         "train-lossmaking-net-loss",
         "train-lossmaking-net-loss-operations",
         "train-lossmaking-red-accounts",
@@ -72,7 +72,7 @@
         "train-profitable-money-making",
         "train-profitable-net-income-sign",
         "train-profitable-net-profit",
-        "train-profitable-positive-bottom-line",
+        "train-profitable-net-surplus-result",
         "train-profitable-positive-results",
         "train-profitable-profit-generating",
         "train-profitable-profitable-operations"
@@ -356,6 +356,14 @@
       "kind": "unsupported-heldout-construction-overlap",
       "count": 2,
       "description": "Independent author replaced only privately flagged IDs with new constructions; no training phrases, model scores or outcomes disclosed."
+    },
+    {
+      "kind": "deterministic-training-eligibility",
+      "count": 6,
+      "description": "Replaced six training phrases rejected by the unchanged predeclared rejection policy with explicit net-surplus/net-deficit constructions. Independently reread all changed labels and repeated schema/count/full cross-split duplicate/construction checks. Development and held-out bytes unchanged. First fit/export sanity had stopped before artifact publication or development outcome evaluation; correction used deterministic eligibility only, with no learned-score feedback or held-out inference.",
+      "previousTrainingSha256": "da9fc54ce3b038e9e439d26ef773188d8fcc239b65a38707bc0126a4a1f4ed01",
+      "trainingSha256": "14f3e5ac721c793d9df57d42f0c72599ddb9002043a7fccf3c118722d960a83a",
+      "contractUnchanged": true
     }
   ],
   "finalDisposition": "All schema/count checks passed; zero exact normalized duplicates within splits, zero exact normalized cross-split duplicates, zero remaining threshold/skeleton candidates; manually reviewed labels accepted. This is a bounded authored-corpus audit, not proof of population representativeness or exhaustive independence.",
