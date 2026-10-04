@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "issue": 70,
+  "status": "local-oracles-complete-ci-pending",
+  "sourceCommit": "793f8775bd01c4e3fff8ca1233e2aef681fbeba1",
+  "scope": "Tests only; no application, model, protocol or UI changes.",
+  "node": "24.19.0",
+  "checks": {
+    "unitPassed": 21,
+    "unitCommand": "node --test tests/oracle-*.test.ts",
+    "decoder": "Pillow 12.3.0",
+    "decodedSizes": [
+      [
+        2,
+        2
+      ],
+      [
+        976,
+        976
+      ]
+    ],
+    "decoderCommand": "node scripts/export-core-oracles.ts && python scripts/verify-core-oracles.py",
+    "decodedEquality": "Every RGBA byte, including zero-alpha RGB, equals input.",
+    "pngOracle": "Independent bitwise CRC, Node zlib/Adler decoding and exact filter/scanline validation.",
+    "metricOracle": "Hand-derived geometry, checker parity, encoded RGB RMSE and linear luminance denominators.",
+    "mutation": {
+      "change": "Force center result alpha to255",
+      "failedCases": 3,
+      "restoredPassed": 21
+    }
+  },
+  "limits": [
+    "The additional tests have not yet passed the full project static/native CI gate.",
+    "Uploaded-art perception and protection are not measured; no experiment fit was performed."
+  ]
+}
