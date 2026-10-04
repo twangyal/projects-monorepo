@@ -100,7 +100,7 @@ export async function loadProject(): Promise<Project | null> {
   if (value === undefined) return null;
   try { return snapshot(value); }
   catch (error) {
-    throw new Error(`The saved project is invalid and was preserved. Open a valid backup or start editing a new project. ${error instanceof Error ? error.message : ''}`);
+    throw new Error(`The saved project is invalid and was preserved. Download your current work before explicitly replacing the saved project. ${error instanceof Error ? error.message : ''}`);
   }
 }
 

@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-04",
+  "issue": 46,
+  "verifiedSourceCommit": "bf6b93155acf6fe1559ef7b4d5eaa2d675f1bf82",
+  "workflowRun": 37172863274,
+  "job": 111349238930,
+  "unitTests": 38,
+  "productionChromiumCases": 28,
+  "lint": "passed",
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "regressionBeforeFix": {
+    "commit": "ad4f36513f7e6c83ea8fd425b9b36cbb7be81b1f",
+    "run": 37172620954,
+    "otherCasesPassed": 23,
+    "editAfterCorruption": "failed"
+  },
+  "evidence": [
+    "Native corrupt record stays unchanged through edits, undo/redo and valid backup import",
+    "Confirmed replacement writes current project; cancel and quota failure preserve original",
+    "Delayed startup IndexedDB read keeps mutation controls disabled until restore",
+    "Real corrupted PNG compressed data rejects restoration without losing stored record",
+    "Denied read remains protected when storage access returns",
+    "Untouched recovery demo replacement reports an actual completed native save",
+    "Existing canvas/GIF workflows, independently decoded frames/timing and near-limit backup round-trip pass"
+  ],
+  "review": {
+    "independent": true,
+    "critical": 0,
+    "important": 0,
+    "minor": 1,
+    "ruling": "Misleading untouched-demo save status was corrected; new production browser case passes."
+  },
+  "limits": [
+    "Desktop Chromium and a narrow viewport; no physical touch-device claim",
+    "No concurrent-tab synchronization or raw invalid-record recovery download"
+  ],
+  "sha256": {
+    "src/main.ts": "f4ff5b100ef9fd36a36dbcab090bde7eb194c10e7874a57c587578c75ba493ed",
+    "src/storage.ts": "5d3f86c3b483291b1911e478e6df51b932dd131cef1a3f60e998e33cc5a18489",
+    "tests/storage.spec.ts": "5b47999a4296264fdfae9599cd05010c6ea487a793afef6981c79ef76c312cf0"
+  }
+}
