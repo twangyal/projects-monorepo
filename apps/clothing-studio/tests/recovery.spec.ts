@@ -67,3 +67,28 @@ for (const surface of ['sketch-surface', 'preview-surface']) test(`replacement s
   await page.reload(); await expect(page.getByLabel('Concept name')).toHaveValue(committed.title);
   expect(await backup(page)).toEqual(committed);
 });
+
+test('an existing undefined record is protected through edits until confirmed replacement', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#save-state')).not.toContainText('Checking');
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('clothing-studio', 1); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try { await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('project', 'readwrite'); tx.objectStore('project').put(undefined, 'current');
+      tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error);
+    }); } finally { db.close(); }
+  });
+  await page.reload(); await expect(page.locator('#save-state')).toContainText('previous concept protected');
+  await title(page, 'Memory work with unknown saved value');
+  await page.waitForTimeout(400);
+  expect(await stored(page)).toBeUndefined();
+  expect(await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('clothing-studio', 1); r.onsuccess = () => resolve(r.result); });
+    try { return await new Promise<number>(resolve => { const r = db.transaction('project').objectStore('project').count('current'); r.onsuccess = () => resolve(r.result); }); }
+    finally { db.close(); }
+  })).toBe(1);
+  page.once('dialog', dialog => dialog.accept()); await page.locator('#replace-saved').click();
+  await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  expect((await stored(page) as { title: string }).title).toBe('Memory work with unknown saved value');
+});
