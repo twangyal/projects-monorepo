@@ -1,0 +1,133 @@
+{
+  "repository": "twangyal/projects-monorepo",
+  "commit": "7a8f9514a98660dad726672bc5edc5489c5f98ab",
+  "observedAt": "2026-10-04 13:18:46 UTC",
+  "source": "GitHub connector fresh commit workflow runs, completed Composure jobs and decoded job logs",
+  "workflowCount": 13,
+  "allWorkflowsSuccessful": true,
+  "composure": {
+    "runId": 37204845799,
+    "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37204845799",
+    "jobId": 111443782547,
+    "status": "completed",
+    "conclusion": "success",
+    "unit": {
+      "tests": 97,
+      "passed": 97,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 584.345698
+    },
+    "checks": {
+      "lint": "success",
+      "typecheck": "success",
+      "productionBuild": "success",
+      "viteBuildMs": 231
+    },
+    "browser": {
+      "tests": 32,
+      "passed": 32,
+      "printedDuration": "2.2m",
+      "workers": 1,
+      "version": "Chrome for Testing 153.0.8010.12",
+      "playwrightChromiumBuild": 1243
+    },
+    "node": "v24.21.0",
+    "verifiedLogLines": [
+      "2026-10-04T13:13:36.7946613Z node: v24.21.0",
+      "2026-10-04T13:13:43.7133354Z ℹ tests 97",
+      "2026-10-04T13:13:43.7133966Z ℹ pass 97",
+      "2026-10-04T13:13:43.7134224Z ℹ fail 0",
+      "2026-10-04T13:13:43.7134483Z ℹ cancelled 0",
+      "2026-10-04T13:13:43.7134773Z ℹ skipped 0",
+      "2026-10-04T13:13:43.7135358Z ℹ duration_ms 584.345698",
+      "2026-10-04T13:13:47.3189377Z \u001b[32m✓ built in 231ms\u001b[39m",
+      "2026-10-04T13:14:08.9490463Z Downloading Chrome for Testing 153.0.8010.12 (playwright chromium v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
+      "2026-10-04T13:14:14.0468560Z Chrome for Testing 153.0.8010.12 (playwright chromium v1243) downloaded to /home/runner/.cache/ms-playwright/chromium-1243",
+      "2026-10-04T13:14:21.5435794Z Running 32 tests using 1 worker",
+      "2026-10-04T13:16:32.9817617Z   32 passed (2.2m)"
+    ]
+  },
+  "workflows": [
+    {
+      "name": "Motion Studio",
+      "runId": 37204845823,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37204845875,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37204846033,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37204845798,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37204845877,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Git History",
+      "runId": 37204845891,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Clothing Studio",
+      "runId": 37204845843,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37204845918,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37204846020,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Duet",
+      "runId": 37204845788,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37204845834,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Composure",
+      "runId": 37204845799,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37204845882,
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "workflowRerunsRequested": false,
+  "repositoryEditsMade": false
+}

@@ -3,8 +3,8 @@
   "date": "2026-10-04",
   "issue": 83,
   "issueUrl": "https://github.com/twangyal/projects-monorepo/issues/83",
-  "status": "Local software acceptance passed; CI not yet claimed.",
-  "scope": "Chromium 151 native touch-input software acceptance in a 390 × 844 hasTouch/isMobile browser context; not a physical phone or smartwatch test.",
+  "status": "Local software acceptance and remote CI passed.",
+  "scope": "Chromium 151 native touch-input software acceptance in a 390 \u00d7 844 hasTouch/isMobile browser context; not a physical phone or smartwatch test.",
   "environment": {
     "browser": "Chromium 151.0.7922.173 on Debian 13",
     "executable": "/usr/bin/chromium",
@@ -64,7 +64,7 @@
     "Native hidden-document transitions could not be exercised by tab activation/window minimization in this headless fixture. The six new cases cover native touch Pause/Resume and touchCancel; existing separately controlled lifecycle tests are not relabelled native-hidden evidence.",
     "Physical smartwatch compatibility and measurement accuracy remain unverified in https://github.com/twangyal/projects-monorepo/issues/62.",
     "Touchscreen and Bluetooth provider emulation establish browser software behavior, not physical Android/iOS touch behavior, watch compatibility, physiology or emotion inference.",
-    "No CI result is included. Temporary log paths identify original observations but are not durable links; only the selected byte-exact artifacts below are archived."
+    "Temporary log paths identify original local observations; selected byte-exact artifacts are archived. Remote CI is recorded separately in 2026-10-04-native-touch-ci.json."
   ],
   "sourceFiles": {
     "src/main.ts": {
@@ -168,5 +168,12 @@
     "bytes": 2427,
     "sha256": "582b06388d64af945c63958492f254eb209dd49e4382897bc0a16fc1805fe3ab",
     "kind": "Authored compact interpretation of observed runs; not a raw exported product report."
+  },
+  "remoteCI": {
+    "commit": "7a8f9514a98660dad726672bc5edc5489c5f98ab",
+    "record": "2026-10-04-native-touch-ci.json",
+    "unitPassed": 97,
+    "browserPassed": 32,
+    "allProjectWorkflowsPassed": 13
   }
 }
