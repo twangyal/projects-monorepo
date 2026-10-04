@@ -46,3 +46,14 @@ test('mobile pointer cancellation, comfort preferences and corrupt storage prese
   await page.evaluate(()=>localStorage.setItem('composure-settings-v1','{broken'));await page.reload();await expect(page.locator('#storage-status')).toContainText('raw record is kept');await page.getByRole('button',{name:'Save preferences',exact:true}).click();expect(await page.evaluate(()=>localStorage.getItem('composure-settings-v1'))).toBe('{broken');
   page.once('dialog',d=>d.accept());await page.getByRole('button',{name:'Reset unreadable preferences',exact:true}).click();await expect(page.locator('#storage-status')).toContainText('reset');
 });
+
+test('held movement releases when entering settings and restart restores keyboard aim semantics',async({page})=>{
+  await start(page);await page.keyboard.down('d');await page.clock.runFor(200);await page.locator('#baseline').focus();const before=await position(page);await page.clock.runFor(1000);expect(await position(page)).toEqual(before);await page.keyboard.up('d');
+  await page.locator('canvas').click();await expect(page.locator('#keyboard-aim')).toHaveAttribute('aria-pressed','false');await page.getByRole('button',{name:'Restart',exact:true}).click();await expect(page.locator('#keyboard-aim')).toHaveAttribute('aria-pressed','true');
+});
+
+test('bounded event log still announces objectives after 256 pause and resume events',async({page})=>{
+  await start(page);
+  for(let i=0;i<130;i++){await page.getByRole('button',{name:'Pause',exact:true}).click();await page.getByRole('button',{name:'Resume',exact:true}).click();}
+  await move(page,250,110);await interact(page);await expect(page.locator('#message')).toContainText('Fuse collected');const result=await report(page);expect(result.events).toHaveLength(256);expect(result.truncatedEvents).toBe(true);
+});
