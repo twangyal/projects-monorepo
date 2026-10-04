@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-10-04T00:37:18.561Z",
+  "browser": "151.0.7922.173",
+  "viewport": {
+    "desktop": [
+      1440,
+      1040
+    ],
+    "mobile": [
+      390,
+      844
+    ]
+  },
+  "desktopOverflow": false,
+  "mobileOverflow": false,
+  "pageErrors": [],
+  "externalRequests": [],
+  "measured": {
+    "timings": {
+      "parseCsvMs": 13.800000000745058,
+      "createNotebookMs": 36.100000001490116,
+      "screenMs": 9.899999998509884,
+      "reportMs": 54.100000001490116,
+      "saveMs": 29.100000001490116,
+      "loadMs": 35.399999998509884
+    },
+    "companyCount": 500,
+    "matches": 428,
+    "inputBytes": 55529,
+    "reportBytes": 507328,
+    "restoredEqual": true
+  },
+  "actual500RowUi": {
+    "renderedRows": 500,
+    "importToRenderedMs": 274,
+    "downloadedReportBytes": 593257,
+    "finalSourceLineFound": true
+  },
+  "limitation": "One local production-build sample in Chromium on Debian 13; the 500-row original fictional CSV is 55,529 bytes, not a 2 MiB worst-case benchmark. Figures are synthetic, not verified financial data.",
+  "verification": {
+    "unitTests": 67,
+    "productionBrowserTests": 15,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "financialInputVerification": "not performed; supplied facts remain unverified"
+  }
+}

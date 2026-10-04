@@ -1,0 +1,41 @@
+name: Stock Notebook
+
+on:
+  push:
+    paths:
+      - 'apps/stock-notebook/**'
+      - '.github/workflows/stock-notebook.yml'
+  pull_request:
+    paths:
+      - 'apps/stock-notebook/**'
+      - '.github/workflows/stock-notebook.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/stock-notebook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/stock-notebook/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - name: Production financial research, recovery and downloaded reports
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: stock-notebook-browser-results
+          path: apps/stock-notebook/test-results
+          retention-days: 7

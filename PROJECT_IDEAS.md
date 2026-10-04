@@ -86,8 +86,9 @@ Description: A personal style assistant that learns from outfits a user likes, d
 
 ## 13. AI-based stock screener
 
-Path: N/A
-Status: IDEA
+Path: `apps/stock-notebook`
+Status: ACTIVE
+Progress: The first local research milestone imports up to 500 annual-financial CSV rows, interprets a documented screening grammar into editable filters, and supplies source-linked facts, formulas and rule-based observations. Currency/date-aware comparisons, watchlists, notes, bounded history, IndexedDB recovery and real JSON/text exports complete the flow. Verified with 67 unit and 15 production Chromium tests in issue #32. Broad language understanding and generated analysis remain outstanding; no live data or learned investment-quality claim is made.
 Description: A stock research assistant that translates natural-language screening criteria into filters and analyzes the companies that match. Users receive a shortlist with source-linked explanations, relevant company and financial information, and a general outlook covering strengths, risks, and uncertainties. The app makes its interpretation of the criteria visible and distinguishes reported data from generated analysis. The central experience is moving from a broad investing idea to an understandable research summary. A portfolio version would focus on a defined company universe and a transparent screening-and-analysis workflow.
 
 ## 14. Casual betting social media
