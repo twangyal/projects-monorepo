@@ -168,7 +168,7 @@ library reset is included.
 
 ## Scene sequences
 
-Use **Scene sequence** to assemble whole shots from up to four complete copied
+Use **Scene sequence** to assemble shots or trimmed excerpts from up to four complete copied
 films. **Add current scene** copies your committed scene; **Import scene source**
 opens an ordinary project backup. A saved take also offers **Copy editable scene
 to sequence**. These are detached copies: later scene edits, take renames or take
@@ -176,7 +176,10 @@ deletion do not change them. Each source keeps both performers, costumes, light,
 every original shot and all movement cues.
 
 Choose a source shot, then **Add shot to sequence**. Select clips to rename,
-reorder, repeat or remove them. Rename sources without changing their films.
+reorder, repeat or remove them. Set **Clip In** and **Clip Out** in original-shot seconds,
+then choose **Apply clip range** to keep an excerpt as one Undo edit. **Use whole
+shot** restores that clip’s full original range. Repeat preserves the chosen range.
+Rename sources without changing their films.
 Remove a source after removing all clips that refer to it. Sequence Undo/Redo
 retains up to 30 prior edits independently of scene history. Finish or explicitly
 discard unsent sequence fields before actions that replace their contents; typing
@@ -186,13 +189,14 @@ alone does not save them. Correct invalid fields without losing their exact text
 sequence canvas. Every clip preserves its original source-film clock, including
 later blocking cues and looping phases. A repeated shot repeats that source clock.
 At a hard cut, scrubbing selects the next clip; explicit End preview still shows
-the selected shot's final camera. The interface displays both sequence and source
+the selected clip's exact Out camera. The interface displays both sequence and source
 time. The ordinary scene remains separately editable.
 
 **Save sequence** downloads a complete `.shot-sequence.json` with committed films
 and clip order. **Open sequence** and **New sequence** ask before replacing the
-current cut and remain reversible. New backups use sequence schema2; both genuine
-earlier schema1 formats migrate without changing their source films. Merely loading
+current cut and remain reversible. New backups use sequence schema3 with explicit
+In/Out fields. Both genuine schema1 formats and schema2 migrate to full-shot
+ranges without changing their source films. Merely loading
 an older browser draft never rewrites its saved bytes. Ordinary scene schema3 and
 the take archive format remain independent. A sequence backup contains editable
 scenes, not recorded video.
@@ -212,12 +216,21 @@ UTF-16 units; clip labels allow 40. Reordering uses an order-independent compens
 duration total, without rounding authored durations or widening the 60-second cap.
 Original chronological cut/source boundaries retain represented-number arithmetic.
 
+Each excerpt stays within its original shot and lasts at least 0.1 seconds.
+Values are not snapped or rounded. The minimum applies to the actual represented
+Out−In difference; an error shows that full value when decimal subtraction falls
+just below the limit. Trim fields apply together only when you choose Apply.
+Invalid or unfinished values remain visible; previews and backups keep the
+committed range. A successful trim leaves complete source films unchanged, uses
+the original camera travel and preserves performer cue/loop phases. There is no
+speed change or restart of a performance at the trimmed beginning.
+
 **Export sequence WebM** freshly renders the complete cut in real time using the
 existing 960×540 encoder and 32 MiB recording limit. Keep the tab visible; Cancel,
 page departure, hiding the tab or graphics loss stops the owned export. Scene and
 sequence recording cannot run together. The result downloads directly and is not
 added to the ordinary take notebook. This is editable-scene rendering; recorded
-media splicing, trimming, retiming, transitions and audio are not included.
+media splicing, retiming, transitions and audio are not included.
 
 ## Experimental VR
 
@@ -276,8 +289,8 @@ Tests start their own server and refuse to reuse an occupied port.
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains **146 unit tests and 53 Chromium browser
-checks**. Independent oracles include 18 camera/geometry cases and 14 performer
+requires a device. The pre-trimming suite contains **232 unit tests and 72 Chromium browser
+checks**; current milestone verification is recorded below. Independent oracles include 18 camera/geometry cases and 14 performer
 timing/migration cases. Native acceptance covers decoded camera and performer
 motion against a separate pinhole projection, stationary controls, literal wave
 pose envelopes, hidden intervals, strict migration, raw draft/import races,
@@ -410,3 +423,46 @@ The readiness repair passes **232 units and all 72 native cases** in both
 `9a4f08f6e3e415d29ca5c113979f91bb4d68711c`, with syntax checks and Chromium153.
 All thirteen project PR workflows pass. The [exact CI receipt](docs/2026-10-04-import-readiness-ci.json)
 also retains a separate Melody push test failure found by that run.
+
+
+## Sequence trimming acceptance (#114)
+
+Source-range trimming adds strict sequence schema3 migration, unchanged complete
+source films and one-edit range history. The [design](../../docs/superpowers/specs/2026-10-04-shot-sequence-trimming-design.md)
+fixes camera-local and performer-global clock semantics, exact endpoint previews,
+raw-field ownership and existing recovery/export bounds. Local verification passes 255 units and syntax checks, plus all 15 distinct new
+browser cases. The first native run passed 14/15; its remaining numeric-notice
+assertion ran after a backup intentionally replaced that notice. Moving the same
+assertion before download repaired the test. An independent source-hash fixture
+also required canonical property order, with values and hash assertions retained.
+Full regression and CI remain pending; see the [receipt](docs/2026-10-04-sequence-trim-verification.json).
+
+The independent maximum fixture contains four complete 20-shot films, 256 total
+blocking cues and twenty three-second excerpts. Each keeps seconds 0.5 through
+3.5 of an original four-second shot, for exactly 60 output seconds. Canonical
+JSON is 36,796 bytes; the separate 320 KiB raw input uses declared trailing
+whitespace. Both actual maximum attempts preserved exact full-process restart,
+capacity refusal and endpoint checks, but produced only 119 video frames over
+about 59.6 seconds, below the unchanged frame-rate acceptance threshold. These
+failures and short diagnostic comparisons remain preserved; maximum acceptance
+is under investigation. The ordinary six-second native export passed independent
+projection checks with 173 decoded frames.
+
+To freeze inputs and run the maximum against a separately served app using fresh
+directories:
+
+```sh
+SHOT_TRIMS_OUTPUT=/tmp/shot-trim-fixtures \
+  node scripts/smoke_sequence_trimming.mjs --fixtures-only
+CHROMIUM_PATH=/path/to/chromium SHOT_TRIMS_BASE_URL=http://127.0.0.1:4173 \
+  SHOT_TRIMS_FIXTURE_DIR=/tmp/shot-trim-fixtures \
+  SHOT_TRIMS_OUTPUT=/tmp/shot-trim-acceptance \
+  node scripts/smoke_sequence_trimming.mjs
+```
+
+The runner needs FFmpeg/FFprobe, verifies the original input bytes, owns its browser
+profile and records for a real minute. It starts no server and imports no
+production evaluators. It checks full-process restart, guarded capacity refusal,
+actual cancellation, endpoint previews and forty independently projected decoded
+video samples. Requested frame rate does not guarantee a frame in every short
+excerpt; physical headset acceptance remains open in #21.

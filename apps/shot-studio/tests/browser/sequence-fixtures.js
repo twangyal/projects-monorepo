@@ -4,6 +4,7 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 
 // Original scenes and scalar expectations frozen before new sequence producer inspection.
+// #114 compatibility changes only canonical version/full-range fields, not these pixel clocks.
 // The selected shot starts at source second1 in BOTH scenes. A's complete duration4
 // and late cue4 stay embedded, despite only its middle two-second shot being used.
 export function sequenceSourceA(){return{schemaVersion:3,title:'Scarlet arrival <original>',light:1,actors:[
@@ -24,13 +25,13 @@ export function sequenceSourceB(){return{schemaVersion:3,title:'Blue looping alt
   {name:'Unselected blue opening',duration:1,cameraMode:'static',eye:[-2,2.2,8],target:[-2,1.15,0],fov:50},
   {name:'Whole-clock blue loop',duration:2,cameraMode:'static',eye:[0,2.2,8],target:[0,1.15,0],fov:50},
 ]};}
-export function originalSequence(){return{schemaVersion:2,kind:'shot-studio-sequence',title:'Arrival / blue / arrival',sources:[
+export function originalSequence(){return{schemaVersion:3,kind:'shot-studio-sequence',title:'Arrival / blue / arrival',sources:[
   {id:'scarlet-original',label:'Scarlet source',film:sequenceSourceA()},
   {id:'blue-original',label:'Blue source',film:sequenceSourceB()},
 ],clips:[
-  {id:'arrival-first',sourceId:'scarlet-original',shotIndex:1,label:'Arrival first'},
-  {id:'blue-middle',sourceId:'blue-original',shotIndex:1,label:'Blue contrast'},
-  {id:'arrival-repeat',sourceId:'scarlet-original',shotIndex:1,label:'Arrival repeated'},
+  {id:'arrival-first',sourceId:'scarlet-original',shotIndex:1,label:'Arrival first',inTime:0,outTime:2},
+  {id:'blue-middle',sourceId:'blue-original',shotIndex:1,label:'Blue contrast',inTime:0,outTime:2},
+  {id:'arrival-repeat',sourceId:'scarlet-original',shotIndex:1,label:'Arrival repeated',inTime:0,outTime:2},
 ]};}
 export const sequenceSha=bytes=>createHash('sha256').update(bytes).digest('hex');
 export async function sequenceDownload(page,id='#sequence-save'){
@@ -64,4 +65,4 @@ export async function decodeSequenceVideo(bytes,path){
 // Published external version1 was a different exact shape. Its names and order
 // are retained literally; new clip IDs are the frozen one-based migration IDs.
 export function remoteSequenceV1(){const current=originalSequence();return{schemaVersion:1,kind:current.kind,title:current.title,sources:current.sources.map((source,i)=>({id:source.id,name:i===0?'É'.repeat(80):source.label,film:source.film})),clips:current.clips.map(clip=>({sourceId:clip.sourceId,shotIndex:clip.shotIndex}))};}
-export function migratedRemoteSequence(){const old=remoteSequenceV1();return{schemaVersion:2,kind:old.kind,title:old.title,sources:old.sources.map(source=>({id:source.id,label:source.name,film:source.film})),clips:old.clips.map((clip,index)=>({id:`legacy-clip-${index+1}`,sourceId:clip.sourceId,shotIndex:clip.shotIndex,label:old.sources.find(source=>source.id===clip.sourceId).film.shots[clip.shotIndex].name}))};}
+export function migratedRemoteSequence(){const old=remoteSequenceV1();return{schemaVersion:3,kind:old.kind,title:old.title,sources:old.sources.map(source=>({id:source.id,label:source.name,film:source.film})),clips:old.clips.map((clip,index)=>({id:`legacy-clip-${index+1}`,sourceId:clip.sourceId,shotIndex:clip.shotIndex,label:old.sources.find(source=>source.id===clip.sourceId).film.shots[clip.shotIndex].name,inTime:0,outTime:old.sources.find(source=>source.id===clip.sourceId).film.shots[clip.shotIndex].duration}))};}

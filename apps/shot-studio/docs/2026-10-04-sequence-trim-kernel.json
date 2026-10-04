@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/114",
+  "scope": "Owned sequence model/evaluator and new producer tests only. No UI, existing compatibility tests, full suite, build, browser or CI execution by this producer.",
+  "firstActualExecution": {
+    "command": "node --test --test-name-pattern='existing schema2 whole clips' tests/sequence-trim.test.js",
+    "tests": 1,
+    "passed": 0,
+    "failed": 1,
+    "nodeDurationMs": 70.74218,
+    "failure": "Old implementation returned sequence schema2 instead of required canonical3.",
+    "log": {
+      "path": "/tmp/shot114-trim-kernel-red.log",
+      "bytes": 1019,
+      "sha256": "e3b768687731c4d733045f274c7c3e3739824607926f1ef2516eaa47deeadd06"
+    }
+  },
+  "integrationIterations": [
+    {
+      "tests": 12,
+      "passed": 1,
+      "failed": 11,
+      "nodeDurationMs": 81.055084,
+      "sourceDefect": "New migration used shadowed per-clip value.schemaVersion instead of the root version; fixed by capturing legacyClips outside the map.",
+      "fixtureCorrection": "Original source-film literal shot property order was corrected to genuine canonical schema3 order before asserting exact JSON preservation. No values or preservation assertions changed.",
+      "log": {
+        "path": "/tmp/shot114-trim-kernel-first-implemented.log",
+        "bytes": 16316,
+        "sha256": "8286ce6dc7440bc6ab7c83b018e08aded3c7d5877c9893741783ef7bdef0c79d"
+      }
+    },
+    {
+      "tests": 12,
+      "passed": 11,
+      "failed": 1,
+      "nodeDurationMs": 88.073121,
+      "fixtureCorrection": "One 3.000000000000001 span among nineteen 3-second spans adds less than half an ULP at total60, so the existing compensated represented total remains60. Changed literal excess to3.00000000000001, which rounds above60. Established quota algorithm and strict refusal assertion unchanged.",
+      "log": {
+        "path": "/tmp/shot114-trim-kernel-second-implemented.log",
+        "bytes": 2520,
+        "sha256": "b4112737872efe2dcb4195185113efa4ec2a7b3c0bbacdc5fe86dd699edf327e"
+      }
+    }
+  ],
+  "greenExecution": {
+    "command": "node --test tests/sequence-trim.test.js",
+    "tests": 12,
+    "passed": 12,
+    "failed": 0,
+    "nodeDurationMs": 94.987698,
+    "log": {
+      "path": "/tmp/shot114-trim-kernel-green.log",
+      "bytes": 1493,
+      "sha256": "14d709813c5c66384caae665f985f58a20c6cde2ed703acfb583b88c521d5fed"
+    }
+  },
+  "sourceSyntax": {
+    "command": "node --check src/sequence.js",
+    "result": "pass"
+  },
+  "sourceSha256": {
+    "src/sequence.js": "e9fc3beb5d825b8b2ccb70153d047d25c24e9ba3ae88abc4ab3897cf08fe84f7",
+    "tests/sequence-trim.test.js": "49cad703f080fe79b07158c6f155233b07b7b45345565f841a31c4c057e0ded6"
+  },
+  "bounds": {
+    "sources": 4,
+    "clips": 20,
+    "seconds": 60,
+    "sourceBytes": 65536,
+    "sourceTotalBytes": 262144,
+    "sequenceInputOutputBytes": 327680,
+    "representedMinimumClipSpan": 0.1,
+    "canonicalSequenceSchema": 3,
+    "sourceFilmSchema": 3
+  },
+  "coverage": [
+    "Both genuine schema1 forms and canonical2 migrate to full ranges; old range-bearing shapes and future/unknown/accessor fields refuse.",
+    "Original travel middle-half camera and nonzero source-prefix performer positions/visibility; full source film unchanged.",
+    "Exact authored In/Out branches when inverse subtraction/addition differs by one ULP.",
+    "Fractional chronological clip cuts, compensated final endpoint and finite-time refusal.",
+    "Represented minimum/source bounds, negative-zero canonical range, no epsilon/clamping.",
+    "Reset/repeat/reorder/rename preserve other ranges/source snapshots; input detachment.",
+    "Actual20-clip60-second candidate, count/excess/reset-over-quota atomic refusals.",
+    "History invalid/no-op retain redo; frozen prepared snapshot; legacy draft no startup rewrite; exact320KiB padded input/+1 refusal."
+  ],
+  "limits": [
+    "No real renderer/WebM or native browser evidence claimed by this producer.",
+    "Exact320KiB test is whitespace-padded input, not a maximum semantic canonical graph claim.",
+    "Floating-point durations use existing sorted compensated represented total, not exact-rational arithmetic.",
+    "Independent oracle, compatibility, native and maximum acceptance belong to separate owners."
+  ]
+}

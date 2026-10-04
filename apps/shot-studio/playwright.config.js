@@ -4,9 +4,9 @@ if(!/^\d{1,5}$/.test(configuredPort)||Number(configuredPort)<1||Number(configure
 const port=Number(configuredPort),baseURL=`http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir:'tests/browser',timeout:90000,workers:1,
-  use:{baseURL,launchOptions:{
+  use:{baseURL,trace:'retain-on-failure',launchOptions:{
     ...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),
     args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'],
   }},
-  webServer:{command:`python3 -m http.server ${port} --bind 127.0.0.1`,url:baseURL,reuseExistingServer:false},
+  webServer:{command:`python3 -m http.server ${port} --bind 127.0.0.1`,url:baseURL,reuseExistingServer:false,gracefulShutdown:{signal:'SIGTERM',timeout:10000}},
 });

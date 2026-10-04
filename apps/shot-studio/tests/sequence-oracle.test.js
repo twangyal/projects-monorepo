@@ -1,5 +1,6 @@
 // Independent #90 oracle. Literal films, clocks and scalar expectations were
 // authored from the frozen contract before reading the sequence implementation.
+// #114 compatibility adds full-range schema3 fields only; these are not new trimming oracles.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as sequence from '../src/sequence.js';
@@ -21,17 +22,17 @@ function sourceB(){return {schemaVersion:3,title:'Other cast original',light:.8,
   {name:'Blue pacer',color:'#0000ff',performanceMode:'loop',x:1,z:-1,action:'walk'},
   {name:'Yellow witness',color:'#ffff00',performanceMode:'loop',x:-1,z:1,action:'wave'}],
   shots:[shot('Other introduction',3,2),shot('Other selected view',2,-2)]};}
-function document(){return {schemaVersion:2,kind:'shot-studio-sequence',title:'Literal reordered cut',
+function document(){return {schemaVersion:3,kind:'shot-studio-sequence',title:'Literal reordered cut',
   sources:[{id:'arrival',label:'Original arrival',film:sourceA()},
     {id:'other',label:'Other complete scene',film:sourceB()}],
-  clips:[{id:'travel',sourceId:'arrival',shotIndex:2,label:'Arrival first'},
-    {id:'other-cut',sourceId:'other',shotIndex:1,label:'Other cast'},
-    {id:'repeat',sourceId:'arrival',shotIndex:2,label:'Arrival repeated'},
-    {id:'intro-last',sourceId:'arrival',shotIndex:0,label:'Introduction last'}]};}
+  clips:[{id:'travel',sourceId:'arrival',shotIndex:2,label:'Arrival first',inTime:0,outTime:4},
+    {id:'other-cut',sourceId:'other',shotIndex:1,label:'Other cast',inTime:0,outTime:2},
+    {id:'repeat',sourceId:'arrival',shotIndex:2,label:'Arrival repeated',inTime:0,outTime:4},
+    {id:'intro-last',sourceId:'arrival',shotIndex:0,label:'Introduction last',inTime:0,outTime:1.1}]};}
 function fractional(){const film=sourceB();film.shots=[shot('One',1.1),shot('Two',1.2,1),shot('Three',1.3,2)];
-  return {schemaVersion:2,kind:'shot-studio-sequence',title:'Fractional boundaries',
+  return {schemaVersion:3,kind:'shot-studio-sequence',title:'Fractional boundaries',
     sources:[{id:'fractional',label:'Fractional source',film}],
-    clips:film.shots.map((_,shotIndex)=>({id:`clip-${shotIndex}`,sourceId:'fractional',shotIndex,label:`Cut ${shotIndex}`}))};}
+    clips:film.shots.map((item,shotIndex)=>({id:`clip-${shotIndex}`,sourceId:'fractional',shotIndex,label:`Cut ${shotIndex}`,inTime:0,outTime:item.duration}))};}
 function near(actual,expected){assert.ok(Math.abs(actual-expected)<=1e-12,`${actual} differs from ${expected}`);}
 function vector(actual,expected){assert.equal(actual.length,expected.length);actual.forEach((value,index)=>near(value,expected[index]));}
 function frozen(value){if(value&&typeof value==='object'){assert.equal(Object.isFrozen(value),true);
@@ -42,7 +43,7 @@ test('independent sequence oracle: exact limits and legal empty editable documen
     sourceBytes:65536,sourceTotalBytes:262144,bytes:327680});
   assert.equal(Object.isFrozen(sequence.SEQUENCE_LIMITS),true);
   const empty=sequence.createSequence();assert.equal(empty.kind,'shot-studio-sequence');
-  assert.equal(empty.schemaVersion,2);assert.deepEqual(empty.sources,[]);assert.deepEqual(empty.clips,[]);
+  assert.equal(empty.schemaVersion,3);assert.deepEqual(empty.sources,[]);assert.deepEqual(empty.clips,[]);
   assert.equal(sequence.sequenceDuration(empty),0);
   const prepared=sequence.prepareSequence(empty);assert.equal(prepared.duration,0);
   assert.throws(()=>prepared.frameAt(0));assert.throws(()=>prepared.clipFrame(0,0));
@@ -53,13 +54,13 @@ test('independent prefix oracle: reordered/repeated clips retain original source
   assert.equal(JSON.stringify(input),before);assert.equal(prepared.duration,11.1);
   assert.deepEqual(prepared.clips,[
     {id:'travel',label:'Arrival first',sourceId:'arrival',sourceLabel:'Original arrival',shotIndex:2,
-      shotName:'Selected travel',sequenceStart:0,sourceStart:1.1+1.2,duration:4},
+      shotName:'Selected travel',sequenceStart:0,sourceStart:1.1+1.2,duration:4,inTime:0,outTime:4,sourceDuration:4},
     {id:'other-cut',label:'Other cast',sourceId:'other',sourceLabel:'Other complete scene',shotIndex:1,
-      shotName:'Other selected view',sequenceStart:4,sourceStart:3,duration:2},
+      shotName:'Other selected view',sequenceStart:4,sourceStart:3,duration:2,inTime:0,outTime:2,sourceDuration:2},
     {id:'repeat',label:'Arrival repeated',sourceId:'arrival',sourceLabel:'Original arrival',shotIndex:2,
-      shotName:'Selected travel',sequenceStart:6,sourceStart:1.1+1.2,duration:4},
+      shotName:'Selected travel',sequenceStart:6,sourceStart:1.1+1.2,duration:4,inTime:0,outTime:4,sourceDuration:4},
     {id:'intro-last',label:'Introduction last',sourceId:'arrival',sourceLabel:'Original arrival',shotIndex:0,
-      shotName:'Unselected introduction',sequenceStart:10,sourceStart:0,duration:1.1}]);
+      shotName:'Unselected introduction',sequenceStart:10,sourceStart:0,duration:1.1,inTime:0,outTime:1.1,sourceDuration:1.1}]);
   assert.deepEqual(prepared.document,input);
   assert.equal(prepared.document.sources[0].film.shots.length,4);
   assert.equal(prepared.document.sources[0].film.actors[0].cues.at(-1).time,9);
@@ -149,7 +150,7 @@ test('independent edit oracle: reorder/repeat/remove and labels preserve source 
   const input=document(),before=JSON.stringify(input);
   const moved=sequence.moveSequenceClip(input,'other-cut',-1);
   assert.deepEqual(moved.clips.map(item=>item.id),['other-cut','travel','repeat','intro-last']);
-  const repeated=sequence.addSequenceClip(moved,{id:'fresh-repeat',sourceId:'arrival',shotIndex:2,label:'Repeat explicitly'});
+  const repeated=sequence.addSequenceClip(moved,{id:'fresh-repeat',sourceId:'arrival',shotIndex:2,label:'Repeat explicitly',inTime:0,outTime:4});
   assert.deepEqual(repeated.clips.map(item=>item.id),['other-cut','travel','repeat','intro-last','fresh-repeat']);
   const renamed=sequence.renameSequenceSource(sequence.renameSequenceClip(repeated,'travel',' New clip '),'arrival',' New source ');
   assert.equal(renamed.clips[1].label,' New clip ');assert.equal(renamed.sources[0].label,' New source ');
@@ -170,14 +171,14 @@ test('independent source removal oracle: unreferenced retained scenes need delib
 
 test('independent quota oracle: four sources/twenty clips/exact sixty are legal and overage refuses atomically',()=>{
   const film=sourceB();film.shots=[shot('Three-second full shot',3)];
-  const value={schemaVersion:2,kind:'shot-studio-sequence',title:'Exact topology bound',
+  const value={schemaVersion:3,kind:'shot-studio-sequence',title:'Exact topology bound',
     sources:Array.from({length:4},(_,index)=>({id:`source-${index}`,label:`Source ${index}`,film:copy(film)})),
-    clips:Array.from({length:20},(_,index)=>({id:`clip-${index}`,sourceId:`source-${index%4}`,shotIndex:0,label:`Clip ${index}`}))};
+    clips:Array.from({length:20},(_,index)=>({id:`clip-${index}`,sourceId:`source-${index%4}`,shotIndex:0,label:`Clip ${index}`,inTime:0,outTime:3}))};
   const before=JSON.stringify(value);assert.equal(sequence.sequenceDuration(value),60);
   assert.equal(sequence.prepareSequence(value).clipFrame(19,3).sequenceTime,60);
   assert.throws(()=>sequence.addSequenceSource(value,{id:'fifth',label:'Fifth',film}));
-  assert.throws(()=>sequence.addSequenceClip(value,{id:'twenty-first',sourceId:'source-0',shotIndex:0,label:'Extra'}));
-  const over=copy(value);over.sources[0].film.shots[0].duration=3.01;
+  assert.throws(()=>sequence.addSequenceClip(value,{id:'twenty-first',sourceId:'source-0',shotIndex:0,label:'Extra',inTime:0,outTime:3}));
+  const over=copy(value);over.sources[0].film.shots[0].duration=3.01;for(const clip of over.clips)if(clip.sourceId==='source-0')clip.outTime=3.01;
   assert.throws(()=>sequence.validateSequence(over));assert.equal(JSON.stringify(value),before);
 });
 
@@ -198,11 +199,11 @@ test('independent legacy migration oracle: original name-form v1 gains stable cl
   const film=sourceA(),input={schemaVersion:1,kind:'shot-studio-sequence',title:' Original private cut ',
     sources:[{id:'old',name:' Original source label ',film}],
     clips:[{sourceId:'old',shotIndex:2},{sourceId:'old',shotIndex:0},{sourceId:'old',shotIndex:2}]};
-  const before=JSON.stringify(input),expected={schemaVersion:2,kind:'shot-studio-sequence',title:input.title,
+  const before=JSON.stringify(input),expected={schemaVersion:3,kind:'shot-studio-sequence',title:input.title,
     sources:[{id:'old',label:input.sources[0].name,film:copy(film)}],clips:[
-      {id:'legacy-clip-1',sourceId:'old',shotIndex:2,label:'Selected travel'},
-      {id:'legacy-clip-2',sourceId:'old',shotIndex:0,label:'Unselected introduction'},
-      {id:'legacy-clip-3',sourceId:'old',shotIndex:2,label:'Selected travel'}]};
+      {id:'legacy-clip-1',sourceId:'old',shotIndex:2,label:'Selected travel',inTime:0,outTime:4},
+      {id:'legacy-clip-2',sourceId:'old',shotIndex:0,label:'Unselected introduction',inTime:0,outTime:1.1},
+      {id:'legacy-clip-3',sourceId:'old',shotIndex:2,label:'Selected travel',inTime:0,outTime:4}]};
   assert.deepEqual(sequence.validateSequence(input),expected);
   assert.deepEqual(sequence.importSequence(before),expected);assert.equal(JSON.stringify(input),before);
   const exact=before+' '.repeat(300*1024-Buffer.byteLength(before,'utf8'));
@@ -211,9 +212,9 @@ test('independent legacy migration oracle: original name-form v1 gains stable cl
   vector(frame.camera.eye,[2,4,6]);assert.equal(frame.sourceGlobal,(1.1+1.2)+4);
 });
 
-test('independent legacy migration oracle: in-session rich v1 keeps identities/labels and migrates once to canonical v2',()=>{
-  const input=document();input.schemaVersion=1;input.sources[0].label='x'.repeat(80);
-  const before=JSON.stringify(input),expected=copy(input);expected.schemaVersion=2;
+test('independent legacy migration oracle: in-session rich v1 keeps identities/labels and migrates once to canonical v3',()=>{
+  const input=document();input.schemaVersion=1;input.clips=input.clips.map(({inTime,outTime,...clip})=>{void inTime;void outTime;return clip;});input.sources[0].label='x'.repeat(80);
+  const before=JSON.stringify(input),expected=copy(input);expected.schemaVersion=3;expected.clips=expected.clips.map(clip=>({...clip,inTime:0,outTime:expected.sources.find(source=>source.id===clip.sourceId).film.shots[clip.shotIndex].duration}));
   assert.deepEqual(sequence.validateSequence(input),expected);
   assert.deepEqual(sequence.importSequence(before),expected);
   assert.deepEqual(sequence.importSequence(JSON.stringify(expected)),expected);
@@ -244,7 +245,7 @@ test('independent strict origin oracle: embedded legacy films and recovery/futur
     if(version===1)film.shots=film.shots.map(({cameraMode,endEye,endTarget,...item})=>item);
     const before=JSON.stringify(value);assert.throws(()=>sequence.validateSequence(value));assert.equal(JSON.stringify(value),before);}
   for(const value of [{kind:'shot-studio-sequence-recovery',raw:JSON.stringify(document())},
-    {...document(),schemaVersion:3},{...document(),kind:'film'}])assert.throws(()=>sequence.importSequence(JSON.stringify(value)));
+    {...document(),schemaVersion:4},{...document(),kind:'film'}])assert.throws(()=>sequence.importSequence(JSON.stringify(value)));
 });
 
 test('independent plain-data oracle: malformed references/shapes/Unicode reject with no getter execution',()=>{
@@ -266,7 +267,7 @@ test('independent operation atomicity oracle: invalid edits preserve exact input
     ()=>sequence.moveSequenceClip(input,'travel',0),()=>sequence.moveSequenceClip(input,'missing',1),
     ()=>sequence.removeSequenceClip(input,'missing'),()=>sequence.renameSequenceClip(input,'missing','Name'),
     ()=>sequence.renameSequenceSource(input,'arrival','x'.repeat(81)),
-    ()=>sequence.addSequenceClip(input,{id:'travel',sourceId:'arrival',shotIndex:2,label:'Duplicate'}),
+    ()=>sequence.addSequenceClip(input,{id:'travel',sourceId:'arrival',shotIndex:2,label:'Duplicate',inTime:0,outTime:4}),
     ()=>sequence.addSequenceSource(input,{id:'arrival',label:'Duplicate',film:sourceB()})]){
     assert.throws(operation);assert.equal(JSON.stringify(input),before);}
   const admitted=sequence.validateSequence(input);assert.deepEqual(admitted,input);

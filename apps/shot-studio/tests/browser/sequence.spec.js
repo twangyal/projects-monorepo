@@ -104,8 +104,8 @@ test('genuine legacy scene-file sources migrate completely while their literal o
 
 test('published name-based v1 and earlier rich v1 files both reopen as complete canonical v2',async({page})=>{
   await page.goto('/');
-  for(const [file,expected] of [[remoteSequenceV1(),migratedRemoteSequence()],[{...originalSequence(),schemaVersion:1},originalSequence()]]){
-    page.once('dialog',dialog=>dialog.accept());await page.locator('#sequence-open').setInputFiles({name:'legacy-complete.shot-sequence.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(file))});await expect(page.locator('#sequence-title')).toHaveValue(file.title);await expect.poll(async()=>JSON.parse(await rawSequence(page))).toEqual(expected);const exported=await sequenceBackup(page);expect(exported).toEqual(expected);expect(exported.schemaVersion).toBe(2);expect(exported.sources.map(source=>source.film)).toEqual([sequenceSourceA(),sequenceSourceB()]);expect(exported.clips.map(clip=>clip.shotIndex)).toEqual([1,1,1]);
+  for(const [file,expected] of [[remoteSequenceV1(),migratedRemoteSequence()],[{...originalSequence(),schemaVersion:1,clips:originalSequence().clips.map(({inTime,outTime,...clip})=>{void inTime;void outTime;return clip;})},originalSequence()]]){
+    page.once('dialog',dialog=>dialog.accept());await page.locator('#sequence-open').setInputFiles({name:'legacy-complete.shot-sequence.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(file))});await expect(page.locator('#sequence-title')).toHaveValue(file.title);await expect.poll(async()=>JSON.parse(await rawSequence(page))).toEqual(expected);const exported=await sequenceBackup(page);expect(exported).toEqual(expected);expect(exported.schemaVersion).toBe(3);expect(exported.sources.map(source=>source.film)).toEqual([sequenceSourceA(),sequenceSourceB()]);expect(exported.clips.map(clip=>clip.shotIndex)).toEqual([1,1,1]);
   }
 });
 

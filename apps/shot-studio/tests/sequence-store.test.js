@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import {SEQUENCE_DRAFT_KEY,SequenceDraftStore,SequenceHistory} from '../src/sequence-store.js';
 
 function fixture(){
-  return {schemaVersion:2,kind:'shot-studio-sequence',title:'Separate cut 🎬',sources:[{id:'scene_A',label:'Copied film',film:{
+  return {schemaVersion:3,kind:'shot-studio-sequence',title:'Separate cut 🎬',sources:[{id:'scene_A',label:'Copied film',film:{
     schemaVersion:3,title:'Original film',light:.7,
     actors:[{name:'Red',color:'#ff0000',performanceMode:'blocking',cues:[
       {time:0,x:-2,z:0,action:'idle',visible:false},{time:2,x:0,z:1,action:'wave',visible:true},{time:5,x:2,z:1,action:'idle',visible:true},
     ]},{name:'Blue',color:'#0000ff',performanceMode:'loop',x:1,z:-1,action:'walk'}],
     shots:[{name:'First',duration:2,eye:[0,2,7],target:[0,1,0],fov:45,cameraMode:'static'},
       {name:'Travelling',duration:3,eye:[-2,2,7],target:[-2,1,0],fov:45,cameraMode:'linear',endEye:[2,2,7],endTarget:[2,1,0]}],
-  }}],clips:[{id:'second_then_first',sourceId:'scene_A',shotIndex:1,label:'Travel'},
-    {id:'first_again',sourceId:'scene_A',shotIndex:0,label:'Arrival'}]};
+  }}],clips:[{id:'second_then_first',sourceId:'scene_A',shotIndex:1,label:'Travel',inTime:0,outTime:3},
+    {id:'first_again',sourceId:'scene_A',shotIndex:0,label:'Arrival',inTime:0,outTime:2}]};
 }
 
 function storage(initial=null){
@@ -24,7 +24,7 @@ function storage(initial=null){
 }
 
 function empty(store){
-  assert.equal(store.sequence.schemaVersion,2);assert.equal(store.sequence.kind,'shot-studio-sequence');
+  assert.equal(store.sequence.schemaVersion,3);assert.equal(store.sequence.kind,'shot-studio-sequence');
   assert.deepEqual(store.sequence.sources,[]);assert.deepEqual(store.sequence.clips,[]);
 }
 
@@ -39,7 +39,7 @@ test('absent sequence is proven empty without creating or accessing any other dr
 });
 
 test('valid pretty saved sequence loads complete detached sources without an implicit rewrite',()=>{
-  const value=fixture(),legacy={...value,schemaVersion:1},raw=JSON.stringify(legacy,null,2),disk=storage(raw),store=new SequenceDraftStore(()=>disk);
+  const value=fixture(),legacy={...value,schemaVersion:1,clips:value.clips.map(({inTime,outTime,...clip})=>{void inTime;void outTime;return clip;})},raw=JSON.stringify(legacy,null,2),disk=storage(raw),store=new SequenceDraftStore(()=>disk);
   assert.deepEqual(store.sequence,value);assert.equal(store.blocked,false);assert.equal(store.raw,null);assert.equal(disk.writes.length,0);
   store.sequence.sources[0].film.actors[0].cues[1].x=3;
   store.sequence.sources[0].film.shots[1].endEye[0]=-10;store.sequence.clips[0].label='Memory edit';
@@ -218,12 +218,12 @@ test('new read failure protects memory and invalidates older receipts until fres
   assert.equal(store.raw,'known corrupt');store.replace(fixture());assert.equal(store.blocked,false);
 });
 
-test('remote name-form schema1 loads as detached schema2 without rewriting actual saved bytes',()=>{
+test('remote name-form schema1 loads as detached schema3 without rewriting actual saved bytes',()=>{
   const expected=fixture(),remote={...fixture(),schemaVersion:1};
   remote.sources=remote.sources.map(({id,label,film})=>({id,name:label,film}));
   remote.clips=remote.clips.map(({sourceId,shotIndex})=>({sourceId,shotIndex}));
-  expected.clips=[{id:'legacy-clip-1',sourceId:'scene_A',shotIndex:1,label:'Travelling'},
-    {id:'legacy-clip-2',sourceId:'scene_A',shotIndex:0,label:'First'}];
+  expected.clips=[{id:'legacy-clip-1',sourceId:'scene_A',shotIndex:1,label:'Travelling',inTime:0,outTime:3},
+    {id:'legacy-clip-2',sourceId:'scene_A',shotIndex:0,label:'First',inTime:0,outTime:2}];
   const raw=JSON.stringify(remote,null,2),disk=storage(raw),store=new SequenceDraftStore(()=>disk);
   assert.equal(store.blocked,false);assert.deepEqual(store.sequence,expected);
   assert.equal(disk.records.get(SEQUENCE_DRAFT_KEY),raw);assert.equal(disk.writes.length,0);

@@ -1,7 +1,7 @@
 import {importProject,validateProject} from './model.js';
 import {StageRenderer} from './renderer.js';
 import {exportFilm} from './export.js';
-import {SEQUENCE_LIMITS,createSequence,validateSequence,importSequence,addSequenceSource,removeSequenceSource,renameSequenceSource,addSequenceClip,removeSequenceClip,renameSequenceClip,moveSequenceClip,prepareSequence} from './sequence.js';
+import {SEQUENCE_LIMITS,createSequence,validateSequence,importSequence,addSequenceSource,removeSequenceSource,renameSequenceSource,addSequenceClip,removeSequenceClip,renameSequenceClip,moveSequenceClip,prepareSequence,setSequenceClipRange,resetSequenceClipRange,MIN_SEQUENCE_CLIP_SECONDS} from './sequence.js';
 import {SequenceDraftStore,SequenceHistory} from './sequence-store.js';
 
 // This panel owns a separate document, draft, renderer and native form nodes.
@@ -37,7 +37,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
     $('sequence-source-rename').disabled=external||!source;$('sequence-source-label').disabled=external||!source;
     $('sequence-source-remove').disabled=external||!source;
     $('sequence-add-shot').disabled=external||!source;
-    for(const id of ['sequence-clip-label','sequence-clip-rename','sequence-repeat','sequence-remove','sequence-preview-start','sequence-preview-end'])$(id).disabled=external||index<0||(id.startsWith('sequence-preview')&&graphicsLost);
+    for(const id of ['sequence-clip-label','sequence-clip-rename','sequence-clip-in','sequence-clip-out','sequence-range-apply','sequence-range-reset','sequence-repeat','sequence-remove','sequence-preview-start','sequence-preview-end'])$(id).disabled=external||index<0||(id.startsWith('sequence-preview')&&graphicsLost);
     $('sequence-earlier').disabled=external||index<=0;$('sequence-later').disabled=external||index<0||index===documentState.clips.length-1;
     $('sequence-discard-edits').hidden=!drafts.size;
     $('sequence-draft-notice').hidden=!drafts.size;
@@ -72,7 +72,14 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
   function syncFields(){
     rawValue('sequence-title',documentState.title);
     rawValue('sequence-source-label',selectedSourceRecord()?.label??'');
-    rawValue('sequence-clip-label',documentState.clips.find(clip=>clip.id===selectedClip)?.label??'');
+    const clip=documentState.clips.find(clip=>clip.id===selectedClip),info=prepared.clips[clipIndex()];
+    rawValue('sequence-clip-label',clip?.label??'');
+    rawValue('sequence-clip-in',clip?String(clip.inTime):'');
+    rawValue('sequence-clip-out',clip?String(clip.outTime):'');
+    for(const name of ['sequence-clip-in','sequence-clip-out']){
+      $(name).min='0';if(info)$(name).max=String(info.sourceDuration);else $(name).removeAttribute('max');
+    }
+    $('sequence-range-info').textContent=info?`Original shot: 0–${info.sourceDuration}s. Committed In ${info.inTime}s · Out ${info.outTime}s · excerpt ${info.duration}s. Original source-film range ${info.sourceStart+info.inTime}–${info.sourceStart+info.outTime}s. Out must exceed In by at least ${MIN_SEQUENCE_CLIP_SECONDS}s.`:'Select a sequence clip to choose its source range.';
   }
   function reconcile(list,map,records,key,make,update){
     const keep=new Set(records.map(record=>record[key]));
@@ -102,7 +109,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
     reconcile($('sequence-clips'),clipRows,documentState.clips,'id',clip=>{
       const row=document.createElement('li'),button=document.createElement('button');button.type='button';button.dataset.sequenceClipId=clip.id;
       button.onclick=()=>{if(!guard({discard:true}))return;retire();selectedClip=clip.id;endpoint=null;position=prepared.clips[clipIndex()].sequenceStart;refresh();};row.append(button);return row;
-    },(row,clip,index)=>{const info=prepared.clips[index];row.querySelector('button').textContent=`${index+1} · ${clip.label} · ${info.sourceLabel} / ${info.shotName} · ${info.duration}s`;});
+    },(row,clip,index)=>{const info=prepared.clips[index];row.querySelector('button').textContent=`${index+1} · ${clip.label} · ${info.sourceLabel} / ${info.shotName} · ${info.duration}s · shot In ${info.inTime}s / Out ${info.outTime}s`;});
     $('sequence-summary').textContent=`${documentState.sources.length}/4 copied sources · ${documentState.clips.length}/20 clips · ${prepared.duration}/60 seconds`;
     $('sequence-scrub').max=String(prepared.duration);position=Math.min(position,prepared.duration);controls();render();
   }
@@ -119,15 +126,15 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
       getRenderer().draw(view.sourceFilm,view.sourceGlobal,view.camera);
       $('sequence-time').textContent=`Sequence ${view.sequenceTime.toFixed(2)} / ${prepared.duration.toFixed(2)}s`;
       const clip=prepared.clips[view.clipIndex];
-      $('sequence-source-time').textContent=`${clip.sourceLabel} / ${clip.shotName} · original source ${view.sourceGlobal.toFixed(2)}s · clip ${view.clipLocal.toFixed(2)}s${endpoint?` · ${endpoint.toUpperCase()} endpoint preview — not the next sequence cut`:''}`;
+      $('sequence-source-time').textContent=`${clip.sourceLabel} / ${clip.shotName} · original source ${view.sourceGlobal.toFixed(2)}s · shot ${view.shotLocal.toFixed(2)}s · excerpt ${view.clipLocal.toFixed(2)}s${endpoint?` · ${endpoint.toUpperCase()} endpoint preview — not the next sequence cut`:''}`;
       $('sequence-scrub').value=String(view.sequenceTime);
     }catch(error){stop();say(`${message(error)} The ordinary scene remains available; sequence backups are still usable.`);}
   }
-  function publish(next,{sourceId,clipId,clearField=null}={}){
+  function publish(next,{sourceId,clipId,clearField=null,clearFields=[]}={}){
     const safe=validateSequence(next),nextPrepared=prepareSequence(safe);
     retire();documentState=history.commit(safe);prepared=nextPrepared;
     if(sourceId!==undefined){selectedSource=sourceId;selectedShot=0;}if(clipId!==undefined)selectedClip=clipId;
-    if(clearField)drafts.delete(clearField);
+    if(clearField)drafts.delete(clearField);for(const field of clearFields)drafts.delete(field);
     endpoint=null;position=documentState.clips.length?prepared.clips[Math.max(0,clipIndex())].sequenceStart:0;
     refresh();persist();return true;
   }
@@ -141,7 +148,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
       say('Copied the complete editable film as a detached source. Select a whole shot and add it to the sequence. Later source edits do not update this copy.');return true;
     }catch(error){say(`${message(error)} Existing sources and clips are unchanged.`);return false;}
   }
-  for(const inputId of ['sequence-title','sequence-source-label','sequence-clip-label'])$(inputId).addEventListener('input',()=>{retire();drafts.add(inputId);controls();say('Unapplied sequence field; preview and backups keep committed work.');});
+  for(const inputId of ['sequence-title','sequence-source-label','sequence-clip-label','sequence-clip-in','sequence-clip-out'])$(inputId).addEventListener('input',()=>{retire();drafts.add(inputId);controls();say('Unapplied sequence field; preview and backups keep committed work.');});
   function applyField(inputId,action){
     if(locked())return;
     try{const next=action($(inputId).value);publish(next,{clearField:inputId});say('Sequence field applied.');}
@@ -150,11 +157,36 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
   $('sequence-title-apply').onclick=()=>applyField('sequence-title',title=>validateSequence({...documentState,title}));
   $('sequence-source-rename').onclick=()=>applyField('sequence-source-label',label=>renameSequenceSource(documentState,selectedSource,label));
   $('sequence-clip-rename').onclick=()=>applyField('sequence-clip-label',label=>renameSequenceClip(documentState,selectedClip,label));
+  // Applying an invalid range must not blur or rebuild the native numeric draft.
+  $('sequence-range-apply').addEventListener('pointerdown',event=>{if(event.isPrimary&&event.button===0)event.preventDefault();});
+  function rangeNumber(inputId,label){
+    const raw=$(inputId).value;
+    if(!raw.trim()||!Number.isFinite(Number(raw)))throw Error(`Enter a nonempty finite number for Clip ${label}.`);
+    return Number(raw);
+  }
+  $('sequence-range-apply').onclick=()=>{
+    if(locked()||clipIndex()<0)return;
+    try{
+      const inTime=rangeNumber('sequence-clip-in','In'),outTime=rangeNumber('sequence-clip-out','Out'),span=outTime-inTime;
+      if(span<MIN_SEQUENCE_CLIP_SECONDS)throw Error(`The computed excerpt duration is ${span}s. Out must exceed In by at least ${MIN_SEQUENCE_CLIP_SECONDS}s.`);
+      const next=setSequenceClipRange(documentState,selectedClip,inTime,outTime);
+      publish(next,{clearFields:['sequence-clip-in','sequence-clip-out']});
+      say('Clip range applied. Preview and export use this committed excerpt; the original source is unchanged. Undo sequence restores the previous range.');
+    }catch(error){
+      drafts.add('sequence-clip-in');drafts.add('sequence-clip-out');controls();
+      say(`${message(error)} Both exact fields are kept for correction; the committed range and history are unchanged.`);
+    }
+  };
+  $('sequence-range-reset').onclick=()=>{
+    if(!guard({discard:true})||clipIndex()<0)return;
+    try{publish(resetSequenceClipRange(documentState,selectedClip));say('The clip uses its whole original shot. Undo sequence restores the previous range.');}
+    catch(error){say(`${message(error)} The committed range is unchanged.`);}
+  };
   $('sequence-discard-edits').onclick=()=>{if(locked()||!drafts.size||!consentRaw())return;retire();controls();say('Unapplied sequence fields discarded. Committed sources, clips and history are unchanged.');};
   $('sequence-add-current').onclick=()=>{if(locked())return;const captured=captureFilm();if(captured)copySource(captured.film,captured.film.title,captured.owns);};
   $('sequence-source-remove').onclick=()=>edit(()=>removeSequenceSource(documentState,selectedSource));
   $('sequence-add-shot').onclick=()=>edit(()=>{
-    const source=selectedSourceRecord();if(!source)throw Error('Choose a copied source first.');const clip={id:id('clip'),sourceId:source.id,shotIndex:selectedShot,label:source.film.shots[selectedShot].name};
+    const source=selectedSourceRecord();if(!source)throw Error('Choose a copied source first.');const clip={id:id('clip'),sourceId:source.id,shotIndex:selectedShot,label:source.film.shots[selectedShot].name,inTime:0,outTime:source.film.shots[selectedShot].duration};
     const next=addSequenceClip(documentState,clip);selectedClip=clip.id;return next;
   });
   $('sequence-repeat').onclick=()=>edit(()=>{const clip=documentState.clips[clipIndex()];if(!clip)throw Error('Select a clip first.');const repeated={...clip,id:id('clip')};const next=addSequenceClip(documentState,repeated);selectedClip=repeated.id;return next;});

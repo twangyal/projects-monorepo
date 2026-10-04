@@ -14,17 +14,17 @@ function source(id='source-a'){
   return {id,label:' Original copy ',film};
 }
 function fixture(){
-  return {schemaVersion:2,kind:'shot-studio-sequence',title:' Literal cut ',sources:[source()],clips:[
-    {id:'c1',sourceId:'source-a',shotIndex:1,label:'Middle'},
-    {id:'c2',sourceId:'source-a',shotIndex:0,label:'Opening'},
-    {id:'c3',sourceId:'source-a',shotIndex:1,label:'Middle again'},
+  return {schemaVersion:3,kind:'shot-studio-sequence',title:' Literal cut ',sources:[source()],clips:[
+    {id:'c1',sourceId:'source-a',shotIndex:1,label:'Middle',inTime:0,outTime:1.2},
+    {id:'c2',sourceId:'source-a',shotIndex:0,label:'Opening',inTime:0,outTime:1.1},
+    {id:'c3',sourceId:'source-a',shotIndex:1,label:'Middle again',inTime:0,outTime:1.2},
   ]};
 }
 function unchanged(input,action){const before=JSON.stringify(input);assert.throws(action);assert.equal(JSON.stringify(input),before);}
 
 test('new sequence is empty and detached; empty evaluation explains how to add a clip',()=>{
   const a=sequence.createSequence(),b=sequence.createSequence();
-  assert.deepEqual(a,{schemaVersion:2,kind:'shot-studio-sequence',title:'Scene sequence',sources:[],clips:[]});
+  assert.deepEqual(a,{schemaVersion:3,kind:'shot-studio-sequence',title:'Scene sequence',sources:[],clips:[]});
   a.sources.push(source());assert.deepEqual(b.sources,[]);
   assert.equal(sequence.sequenceDuration(b),0);
   const prepared=sequence.prepareSequence(b);assert.equal(prepared.duration,0);assert.ok(Object.isFrozen(prepared.document));
@@ -63,7 +63,7 @@ test('new text is literal well-formed Unicode with UTF16 limits and no controls'
 test('IDs, references, indices, duplicate identity and schema3 embedded admission are strict',()=>{
   for(const mutate of [v=>v.sources[0].id='a/b',v=>v.clips[0].id='',v=>v.clips[0].sourceId='gone',
     v=>v.clips[0].shotIndex=1.5,v=>v.clips[0].shotIndex=3,v=>v.clips[0].shotIndex=true,
-    v=>v.sources.push(structuredClone(v.sources[0])),v=>v.clips[1].id='c1',v=>v.schemaVersion=3,
+    v=>v.sources.push(structuredClone(v.sources[0])),v=>v.clips[1].id='c1',v=>v.schemaVersion=4,
     v=>v.sources[0].film.schemaVersion=2]){
     const input=fixture();mutate(input);unchanged(input,()=>sequence.validateSequence(input));
   }
@@ -85,7 +85,7 @@ test('source add/rename/remove are detached and referenced removal refuses atomi
 
 test('clip add/repeat/rename/move/remove preserve sources and unrelated ordering',()=>{
   const base=fixture(),original=JSON.stringify(base);
-  const added=sequence.addSequenceClip(base,{id:'repeat',sourceId:'source-a',shotIndex:1,label:' New repeat '});
+  const added=sequence.addSequenceClip(base,{id:'repeat',sourceId:'source-a',shotIndex:1,label:' New repeat ',inTime:0,outTime:1.2});
   const renamed=sequence.renameSequenceClip(added,'repeat','Copy');
   const moved=sequence.moveSequenceClip(renamed,'repeat',-1);assert.deepEqual(moved.clips.map(c=>c.id),['c1','c2','repeat','c3']);
   const restored=sequence.moveSequenceClip(moved,'repeat',1);assert.deepEqual(sequence.removeSequenceClip(restored,'repeat'),base);
@@ -98,11 +98,11 @@ test('clip add/repeat/rename/move/remove preserve sources and unrelated ordering
 test('four sources and twenty clips at exactly60 seconds fit; plus-one count/time refuse',()=>{
   const film=createProject();film.shots[0].duration=3;
   const max={...sequence.createSequence(),sources:Array.from({length:4},(_,i)=>({id:`s${i}`,label:`Source ${i}`,film:structuredClone(film)})),
-    clips:Array.from({length:20},(_,i)=>({id:`c${i}`,sourceId:`s${i%4}`,shotIndex:0,label:`Clip ${i}`}))};
+    clips:Array.from({length:20},(_,i)=>({id:`c${i}`,sourceId:`s${i%4}`,shotIndex:0,label:`Clip ${i}`,inTime:0,outTime:3}))};
   assert.equal(sequence.sequenceDuration(max),60);assert.equal(sequence.prepareSequence(max).clips.length,20);
   unchanged(max,()=>sequence.addSequenceSource(max,{id:'fifth',label:'Extra',film}));
-  unchanged(max,()=>sequence.addSequenceClip(max,{id:'extra',sourceId:'s0',shotIndex:0,label:'Extra'}));
-  const longer=structuredClone(max);longer.sources[0].film.shots[0].duration=3.0001;
+  unchanged(max,()=>sequence.addSequenceClip(max,{id:'extra',sourceId:'s0',shotIndex:0,label:'Extra',inTime:0,outTime:3}));
+  const longer=structuredClone(max);longer.sources[0].film.shots[0].duration=3.0001;for(const clip of longer.clips)if(clip.sourceId==='s0')clip.outTime=3.0001;
   assert.throws(()=>sequence.validateSequence(longer));
 });
 
@@ -116,7 +116,7 @@ test('sequence imports admit actual320KiB input and reject one extra byte withou
 
 test('prepared original source clock repeats and clip endpoints keep the selected shot camera',()=>{
   const prepared=sequence.prepareSequence(fixture());
-  assert.deepEqual(prepared.clips[0],{id:'c1',label:'Middle',sourceId:'source-a',sourceLabel:' Original copy ',shotIndex:1,shotName:prepared.document.sources[0].film.shots[1].name,sequenceStart:0,sourceStart:1.1,duration:1.2});
+  assert.deepEqual(prepared.clips[0],{id:'c1',label:'Middle',sourceId:'source-a',sourceLabel:' Original copy ',shotIndex:1,shotName:prepared.document.sources[0].film.shots[1].name,sequenceStart:0,sourceStart:1.1,duration:1.2,inTime:0,outTime:1.2,sourceDuration:1.2});
   const first=prepared.clipFrame(0,0),middle=prepared.clipFrame(0,.6),end=prepared.clipFrame(0,1.2),repeat=prepared.clipFrame(2,.6);
   assert.equal(first.sourceGlobal,1.1);assert.equal(middle.sourceGlobal,1.1+.6);assert.equal(end.sourceGlobal,1.1+1.2);
   assert.deepEqual(first.camera.eye,[0,2,8]);assert.deepEqual(middle.camera.eye,[1,2,8]);assert.deepEqual(end.camera.eye,[2,2,8]);
@@ -125,7 +125,7 @@ test('prepared original source clock repeats and clip endpoints keep the selecte
 });
 
 test('ordered fractional prefixes pick exact next cuts and exact final authored endpoint',()=>{
-  const input=fixture();input.clips=[0,1,2].map((shotIndex,i)=>({id:`cut${i}`,sourceId:'source-a',shotIndex,label:`Shot ${i}`}));
+  const input=fixture();input.clips=[0,1,2].map((shotIndex,i)=>({id:`cut${i}`,sourceId:'source-a',shotIndex,label:`Shot ${i}`,inTime:0,outTime:[1.1,1.2,1.3][shotIndex]}));
   const prepared=sequence.prepareSequence(input),cut=1.1+1.2,total=cut+1.3;
   assert.equal(prepared.frameAt(cut).clipIndex,2);assert.equal(prepared.frameAt(cut).clipLocal,0);
   assert.equal(prepared.frameAt(total).clipIndex,2);assert.equal(prepared.frameAt(total).clipLocal,1.3);
@@ -148,10 +148,10 @@ function remoteLegacy(){
   const own=fixture();
   return {schemaVersion:1,kind:own.kind,title:own.title,sources:own.sources.map(({id,label,film})=>({id,name:label,film})),clips:own.clips.map(({sourceId,shotIndex})=>({sourceId,shotIndex}))};
 }
-test('published remote schema1 migrates exact source names and repeated shot order to deterministic rich schema2',()=>{
+test('published remote schema1 migrates exact source names and repeated shot order to deterministic rich schema3',()=>{
   const remote=remoteLegacy(),before=JSON.stringify(remote),expected=fixture();
   expected.sources[0].label=remote.sources[0].name;
-  expected.clips=remote.clips.map((clip,index)=>({...clip,id:`legacy-clip-${index+1}`,label:remote.sources[0].film.shots[clip.shotIndex].name}));
+  expected.clips=remote.clips.map((clip,index)=>({...clip,id:`legacy-clip-${index+1}`,label:remote.sources[0].film.shots[clip.shotIndex].name,inTime:0,outTime:remote.sources[0].film.shots[clip.shotIndex].duration}));
   assert.deepEqual(sequence.validateSequence(remote),expected);
   assert.deepEqual(sequence.importSequence(before),expected);
   assert.equal(JSON.stringify(remote),before);
@@ -159,13 +159,13 @@ test('published remote schema1 migrates exact source names and repeated shot ord
   assert.equal(remote.sources[0].film.actors[0].cues[1].x,2);
   assert.deepEqual(sequence.prepareSequence(remote).clipFrame(0,1.2).camera.eye,[2,2,8]);
 });
-test('our historical schema1 richshape preserves every exact ID label and film while migrating only version',()=>{
-  const legacy=fixture();legacy.schemaVersion=1;
+test('our historical schema1 richshape preserves every exact ID label and film while migrating full ranges',()=>{
+  const legacy=fixture();legacy.schemaVersion=1;legacy.clips=legacy.clips.map(({inTime,outTime,...clip})=>{void inTime;void outTime;return clip;});
   const before=JSON.stringify(legacy),expected=fixture();
   assert.deepEqual(sequence.validateSequence(legacy),expected);assert.deepEqual(sequence.importSequence(before),expected);assert.equal(JSON.stringify(legacy),before);
-  const empty=sequence.createSequence();empty.schemaVersion=1;assert.equal(sequence.validateSequence(empty).schemaVersion,2);
+  const empty=sequence.createSequence();empty.schemaVersion=1;assert.equal(sequence.validateSequence(empty).schemaVersion,3);
 });
-test('mixed legacy shapes and remote v1-only fields in canonical2 cannot be silently guessed away',()=>{
+test('mixed legacy shapes and remote v1-only fields in canonical3 cannot be silently guessed away',()=>{
   for(const mutate of [v=>v.clips[0].id='unexpected',v=>v.clips[0].label='unexpected',
     v=>v.sources[0].label='unexpected',v=>v.schemaVersion=2,
     v=>v.sources.push({...source('other')}),v=>v.clips[0].extra=true]){
@@ -179,12 +179,12 @@ test('source labels80 are exact but clip labels remain40 through edits and new c
   unchanged(input,()=>sequence.renameSequenceSource(input,'source-a','n'.repeat(81)));
   unchanged(input,()=>sequence.renameSequenceClip(input,'c1','n'.repeat(41)));
 });
-test('identifiable remote name-form v1 has its original300KiB rawfile limit and canonical2 keeps320KiB',()=>{
+test('identifiable remote name-form v1 has its original300KiB rawfile limit and canonical3 keeps320KiB',()=>{
   const legacy=remoteLegacy(),text=JSON.stringify(legacy),size=new TextEncoder().encode(text).length;
-  assert.equal(sequence.importSequence(text+' '.repeat(300*1024-size)).schemaVersion,2);
+  assert.equal(sequence.importSequence(text+' '.repeat(300*1024-size)).schemaVersion,3);
   assert.throws(()=>sequence.importSequence(text+' '.repeat(300*1024-size+1)),/300|byte|KiB|limit/i);
   const current=JSON.stringify(fixture()),currentSize=new TextEncoder().encode(current).length;
-  assert.equal(sequence.importSequence(current+' '.repeat(320*1024-currentSize)).schemaVersion,2);
+  assert.equal(sequence.importSequence(current+' '.repeat(320*1024-currentSize)).schemaVersion,3);
 });
 
 test('remote generated clip labels use bounded well-formed fallback without changing original shot names',()=>{
@@ -206,7 +206,7 @@ test('remote generated clip labels use bounded well-formed fallback without chan
 test('duration quota is order-independent at60 while chronological fractional cuts remain ordered',()=>{
   const film=createProject();film.shots[0].duration=1.3;film.shots[1].duration=4.7;
   const input={...sequence.createSequence(),sources:[{id:'exact',label:'Alternating',film}],
-    clips:Array.from({length:20},(_,i)=>({id:`c${i}`,sourceId:'exact',shotIndex:i%2,label:`Clip ${i}`}))};
+    clips:Array.from({length:20},(_,i)=>({id:`c${i}`,sourceId:'exact',shotIndex:i%2,label:`Clip ${i}`,inTime:0,outTime:i%2?4.7:1.3}))};
   const before=JSON.stringify(input),moved=sequence.moveSequenceClip(input,'c11',1),prepared=sequence.prepareSequence(moved);
   assert.equal(sequence.sequenceDuration(moved),60);assert.equal(prepared.duration,60);assert.equal(JSON.stringify(input),before);
   assert.equal(prepared.clips[12].id,'c11');
@@ -214,6 +214,6 @@ test('duration quota is order-independent at60 while chronological fractional cu
   assert.equal(prepared.frameAt(prefix).clipIndex,12);assert.equal(prepared.frameAt(prefix).clipLocal,0);
   assert.equal(prepared.frameAt(60).clipIndex,19);assert.equal(prepared.frameAt(60).clipLocal,4.7);
   assert.equal(prepared.frameAt(60).sequenceTime,60);assert.equal(prepared.clipFrame(19,4.7).sequenceTime,60);
-  const excessive=structuredClone(input);excessive.sources[0].film.shots[1].duration=4.700000000000001;
+  const excessive=structuredClone(input);excessive.sources[0].film.shots[1].duration=4.700000000000001;for(const clip of excessive.clips)if(clip.shotIndex===1)clip.outTime=4.700000000000001;
   unchanged(excessive,()=>sequence.validateSequence(excessive));
 });

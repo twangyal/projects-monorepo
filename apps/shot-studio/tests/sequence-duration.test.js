@@ -8,9 +8,9 @@ import {validateSequence,sequenceDuration,moveSequenceClip,prepareSequence} from
 
 function fullSequence(first=1.3,second=4.7){
   const film=createProject();film.shots[0].duration=first;film.shots[1].duration=second;
-  return {schemaVersion:2,kind:'shot-studio-sequence',title:'Exact fractional sixty',
+  return {schemaVersion:3,kind:'shot-studio-sequence',title:'Exact fractional sixty',
     sources:[{id:'source',label:'Fractional shots',film}],
-    clips:Array.from({length:20},(_,i)=>({id:`clip-${i}`,sourceId:'source',shotIndex:i%2,label:`Clip ${i}`}))};
+    clips:Array.from({length:20},(_,i)=>({id:`clip-${i}`,sourceId:'source',shotIndex:i%2,label:`Clip ${i}`,inTime:0,outTime:i%2?second:first}))};
 }
 
 test('moving an unchanged sixty-second fractional cut remains admitted and reversible',()=>{
@@ -42,7 +42,7 @@ test('duration admission is unchanged through every adjacent move and arbitrary 
 test('accurate fractional totals preserve smaller values and refuse an actual represented excess',()=>{
   const exact=fullSequence(),film=structuredClone(exact.sources[0].film);
   film.shots[1].duration=4.700000000000001;
-  const excess={...exact,sources:[{...exact.sources[0],film}]};
+  const excess={...exact,sources:[{...exact.sources[0],film}],clips:exact.clips.map(clip=>clip.shotIndex===1?{...clip,outTime:4.700000000000001}:{...clip})};
   for(const clips of [excess.clips,[...excess.clips].reverse(),[...excess.clips].sort((a,b)=>a.shotIndex-b.shotIndex)]){
     assert.throws(()=>validateSequence({...excess,clips}),/60 seconds/);
   }

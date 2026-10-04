@@ -1,0 +1,343 @@
+{
+  "issue": 114,
+  "status": "First native run completed: fourteen passed, one test-only status-observation ordering failure. Corrected case awaits root rerun.",
+  "plannedDistinctCases": 15,
+  "preRunCorrection": {
+    "reason": "Sequence File import is itself one Undo edit. Disabled-Undo assertions after one range Undo require a clean restored baseline.",
+    "change": "After genuine File import and deep saved-document equality, capture actual persisted text, reload, verify restored title and exact unchanged persisted text, then select first clip.",
+    "timing": "Before the first native execution.",
+    "assertionsWeakened": false,
+    "sourceFixtureOrMathChanged": false
+  },
+  "equalityPolicy": "Imported/canonical documents and source-film graphs use deep structural equality, independent of object property order. Exact byte equality is asserted only between actual captured saved/downloaded copies across reload/process restart; original fixture key order is not assumed canonical.",
+  "fixtures": {
+    "path": "/workspace/projects-monorepo/apps/shot-studio/tests/browser/sequence-trim-fixtures.js",
+    "bytes": 7892,
+    "sha256": "8d8fb4e9c00cbf1097cd69e357eba9986b8905e381d837a9013cdaf51770f368"
+  },
+  "tests": {
+    "path": "/workspace/projects-monorepo/apps/shot-studio/tests/browser/sequence-trim.spec.js",
+    "bytes": 16486,
+    "sha256": "d517e820a01bc809bc541451c964e246a5999d7de029a7d60f8dc12d6d327e40"
+  },
+  "verification": {
+    "nodeSyntax": "Both owned files passed node --check; revised spec syntax passed again.",
+    "nativeRuns": [
+      "First root-owned15:14passed1fixture-failure."
+    ],
+    "focusedRerun": "Pending root execution."
+  },
+  "firstRun": {
+    "stats": {
+      "startTime": "2026-10-04T23:08:19.174Z",
+      "duration": 54444.975999999995,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "cases": [
+      {
+        "name": "range Apply and whole-shot Reset each produce exactly one undoable edit without changing source films",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 3053
+          }
+        ]
+      },
+      {
+        "name": "trimmed preview uses original travel and performer clocks at interior cuts and explicit endpoints",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4512
+          }
+        ]
+      },
+      {
+        "name": "actual six-second trimmed WebM preserves original source phases and repeated excerpts",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8384
+          }
+        ]
+      },
+      {
+        "name": "invalid ranges preserve native raw nodes and focus and an identical Apply preserves redo",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2806
+          }
+        ]
+      },
+      {
+        "name": "represented minimum span and source bounds refuse atomically without clamping authored values",
+        "results": [
+          {
+            "status": "failed",
+            "durationMs": 7847
+          }
+        ]
+      },
+      {
+        "name": "repeating and reordering preserve independent committed ranges and all original source bytes",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2689
+          }
+        ]
+      },
+      {
+        "name": "literal schema1 name startup migrates full ranges without rewriting saved bytes",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1764
+          }
+        ]
+      },
+      {
+        "name": "literal schema1 rich startup migrates full ranges without rewriting saved bytes",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1933
+          }
+        ]
+      },
+      {
+        "name": "literal schema2 rich startup migrates full ranges without rewriting saved bytes",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1977
+          }
+        ]
+      },
+      {
+        "name": "changed-back trim intent retires a held genuine sequence File read without clearing raw fields",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1930
+          }
+        ]
+      },
+      {
+        "name": "controlled pagehide retires a pending real import and failed imports preserve applied ranges",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2041
+          }
+        ]
+      },
+      {
+        "name": "390px keyboard editing and cancelled discard keep unfinished range and neighboring literal label intact",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2658
+          }
+        ]
+      },
+      {
+        "name": "a stale tab retains new trim in protected memory without overwriting a foreign saved range",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2832
+          }
+        ]
+      },
+      {
+        "name": "actual export cancellation after progress leaves committed source ranges and history intact",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1901
+          }
+        ]
+      },
+      {
+        "name": "complete trimmed backup survives a whole persistent-browser restart byte for byte",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5490
+          }
+        ]
+      }
+    ],
+    "log": {
+      "path": "/tmp/shot114-new-native-first.log",
+      "bytes": 32605,
+      "sha256": "879e43fcd8c3671ed49188a8d0fb71888b58c57e5de728a4f71f0ceeef08e471"
+    },
+    "results": {
+      "path": "/tmp/shot114-new-native-results-first.json",
+      "bytes": 25841,
+      "sha256": "2e5f38c96ab5903dfd0396b0aad38be45520a5956a66fcff8052590e7f4f457d"
+    }
+  },
+  "firstFailure": {
+    "case": "represented minimum span and source bounds refuse atomically without clamping authored values",
+    "classification": "Test-only status observation occurred after an intentional native backup download replaced the prior error status.",
+    "expected": "0.09999999999999998",
+    "observed": "Downloaded complete committed sequence.",
+    "repair": "Move the identical represented-span status assertion immediately after Apply(.2,.3), before backup download. Keep all field/document/history/minimum checks and timeouts unchanged.",
+    "productionChanged": false,
+    "fixtureOrMathChanged": false
+  },
+  "actualMedia": {
+    "bytes": 625173,
+    "sha256": "99634fea2bcee19158ca93cc46bb611d75a6fc5cc3aae39aecd1203f7d618da8",
+    "codec": "vp9",
+    "decodedFrames": 173,
+    "ptsSpanSeconds": 5.933,
+    "independentSampleCount": 7,
+    "thresholds": {
+      "projection": 16,
+      "hiddenPixels": 20,
+      "nearbyPTS": 0.15
+    },
+    "maximumObservedProjectionErrorPixels": 4.352942814758535,
+    "sampleTimes": [
+      0.17,
+      1.087,
+      1.802,
+      2.299,
+      3.619,
+      4.198,
+      5.8
+    ],
+    "scope": "Actual six-second silent WebM; all frame PTS parsed, seven independently chosen interior frames decoded to RGB and checked against original source-time projections, visibility and light. Requested30fps is not an exact delivered frame-count assertion.",
+    "fullReceipt": {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-video.json",
+      "bytes": 4883,
+      "sha256": "fb2ae28e507335dfdc6cc97d0fa2e37da17729442ada7b894aa9506224fffa68"
+    }
+  },
+  "persistentRestart": {
+    "bytes": 2174,
+    "sha256": "9d504945cc5b1480c90c050c8b5e3192271e90cc8120a359da8f92ee5b6be114",
+    "processContexts": [
+      {
+        "opened": true,
+        "closed": true
+      },
+      {
+        "opened": true,
+        "closed": true
+      }
+    ],
+    "allClosed": true
+  },
+  "artifactReinspection": "Separately re-read successful actual six-second backup and deep-compared all sources/clips to independently authored fixture; re-read both2174-byte persistent downloads, confirmed byte equality and exact intended1.125\u21922.875 first range with every source intact.",
+  "artifacts": [
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-390px-keyboa-ded81-boring-literal-label-intact/trim-390px.png",
+      "bytes": 349382,
+      "sha256": "9a69a4845daeb227bb226bb773db89c5738eab656199e2d2b3d6df417823f5cd"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-backup.json",
+      "bytes": 2166,
+      "sha256": "a1224c81155a6b73795dca5afd94531323d1b37a41f2318be5a949f6d948f414"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-six-seconds.webm",
+      "bytes": 625173,
+      "sha256": "99634fea2bcee19158ca93cc46bb611d75a6fc5cc3aae39aecd1203f7d618da8"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-video.json",
+      "bytes": 4883,
+      "sha256": "fb2ae28e507335dfdc6cc97d0fa2e37da17729442ada7b894aa9506224fffa68"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-complete-tri-84823-owser-restart-byte-for-byte/persistent-original-trim.json",
+      "bytes": 2174,
+      "sha256": "9d504945cc5b1480c90c050c8b5e3192271e90cc8120a359da8f92ee5b6be114"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-complete-tri-84823-owser-restart-byte-for-byte/persistent-reopened-trim.json",
+      "bytes": 2174,
+      "sha256": "9d504945cc5b1480c90c050c8b5e3192271e90cc8120a359da8f92ee5b6be114"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-complete-tri-84823-owser-restart-byte-for-byte/persistent-trim-receipt.json",
+      "bytes": 259,
+      "sha256": "bb62a5202e144a011ee7ad2f13334b80b408e659719afd15fc34f9f07de10330"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-represented--5791c-ut-clamping-authored-values/error-context.md",
+      "bytes": 18346,
+      "sha256": "04a268a6b0a65910142b4b7b0e95103647b2c95d89836470c581d31e527c3002"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-represented--5791c-ut-clamping-authored-values/trace.zip",
+      "bytes": 1266160,
+      "sha256": "d9a2208d6b4eb454550b7328a38490786da24c97f212d5d39505c28496dc266c"
+    },
+    {
+      "path": "/workspace/shot114-native-first-artifacts/sequence-trim-trimmed-prev-98d1c-cuts-and-explicit-endpoints/original-trim-preview-pixels.json",
+      "bytes": 7156,
+      "sha256": "f7013ebb8b972277249fbb1fee5557142daadda50006a868bef1000f9126daa9"
+    }
+  ],
+  "sourcesAtReceipt": [
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence.js",
+      "bytes": 12900,
+      "sha256": "e9fc3beb5d825b8b2ccb70153d047d25c24e9ba3ae88abc4ab3897cf08fe84f7"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-ui.js",
+      "bytes": 24751,
+      "sha256": "c9a1d5768fa238cb0710c410855b35b12b209ea5657f7d47bef919366a9f2093"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/index.html",
+      "bytes": 15054,
+      "sha256": "336e8fb9ba08756c0536c7d31e08540b8447161da22877363a90553a5c2da06c"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/style.css",
+      "bytes": 9421,
+      "sha256": "b06be85eb93899a28fa65df28ad07069e10a98bbedf366bbbd74511b547725d0"
+    }
+  ],
+  "scopeLimits": [
+    "No claim of final fifteen-case acceptance until the focused correction is rerun.",
+    "No maximum20-clip/60-second or full legacy-suite result is included here.",
+    "Pagehide/pageshow is controlled event dispatch, not a claimed browser-native BFCache traversal.",
+    "Persistent contexts are launched and fully closed twice using one profile; the test receipt records context closure, not OS PID enumeration."
+  ],
+  "rootFocusedVerification": {
+    "result": "passed",
+    "stats": {
+      "startTime": "2026-10-04T23:10:34.587Z",
+      "duration": 5755.474999999999,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/shot114-affected-native.log",
+      "bytes": 2662,
+      "sha256": "0127c3f0187f4248183800fee7958a2a4d4f93fcd69a09b8936d3d74a6757031"
+    },
+    "results": {
+      "path": "/tmp/shot114-affected-native-results.json",
+      "bytes": 3320,
+      "sha256": "7cbb85a3bcf394dab597b64b92dcdbb5d24db34c5b83427b933e331c3d128b22"
+    },
+    "sourceChange": "Test notice assertion ordered before download; all original expectations and timeouts retained."
+  }
+}

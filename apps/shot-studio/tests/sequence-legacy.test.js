@@ -18,14 +18,14 @@ const fixture=()=>{
   return film;
 };
 const withAmber=()=>sequence.addSequenceSource(sequence.createSequence(),{id:'amber',label:'Amber',film:fixture()});
-const amberClip=(id,shotIndex)=>({id,sourceId:'amber',shotIndex,label:`Amber shot ${shotIndex+1}`});
+const amberClip=(id,shotIndex)=>({id,sourceId:'amber',shotIndex,label:`Amber shot ${shotIndex+1}`,inTime:0,outTime:shotIndex===0?3:5});
 
 test('current separate domain, prepared clock and store history APIs are callable',()=>{
   for(const name of ['createSequence','validateSequence','importSequence','addSequenceSource','addSequenceClip','removeSequenceClip','moveSequenceClip','removeSequenceSource','sequenceDuration','prepareSequence'])assert.equal(typeof sequence[name],'function',name);
   assert.equal(typeof SequenceHistory,'function');assert.equal(typeof SequenceDraftStore,'function');
 });
 test('empty canonical sequence is valid, detached and cannot be rendered',()=>{
-  const p=sequence.createSequence();assert.deepEqual(p,{schemaVersion:2,kind:'shot-studio-sequence',title:'Scene sequence',sources:[],clips:[]});
+  const p=sequence.createSequence();assert.deepEqual(p,{schemaVersion:3,kind:'shot-studio-sequence',title:'Scene sequence',sources:[],clips:[]});
   assert.equal(sequence.sequenceDuration(p),0);assert.throws(()=>sequence.prepareSequence(p).frameAt(0),/clip|empty/i);
   const q=sequence.validateSequence(p);q.sources.push({});assert.equal(p.sources.length,0);
 });
@@ -50,7 +50,7 @@ test('later source shot starts at original 3s; camera and action phase use sourc
 test('repeat resets original shot clock and exact hard cut selects the next source',()=>{
   let p=sequence.addSequenceClip(withAmber(),amberClip('first_repeat',1));p=sequence.addSequenceClip(p,amberClip('second_repeat',1));
   const blue=createProject();blue.title='Blue';blue.light=1.8;blue.shots[0].duration=2;
-  p=sequence.addSequenceSource(p,{id:'blue',label:'Blue',film:blue});p=sequence.addSequenceClip(p,{id:'blue_end',sourceId:'blue',shotIndex:0,label:'Blue first'});
+  p=sequence.addSequenceSource(p,{id:'blue',label:'Blue',film:blue});p=sequence.addSequenceClip(p,{id:'blue_end',sourceId:'blue',shotIndex:0,label:'Blue first',inTime:0,outTime:2});
   const prepared=sequence.prepareSequence(p);
   assert.equal(sequence.sequenceDuration(p),12);
   assert.equal(prepared.frameAt(4.999).clipIndex,0);
@@ -62,7 +62,7 @@ test('repeat resets original shot clock and exact hard cut selects the next sour
 test('fractional cut and source clocks use independently accumulated durations',()=>{
   const film=createProject();film.shots=[...Array(3)].map((_,i)=>({...structuredClone(film.shots[0]),name:`S${i}`,duration:1.1}));
   let p=sequence.addSequenceSource(sequence.createSequence(),{id:'f',label:'Fractional',film});
-  for(const [index,shotIndex] of [2,1,2].entries())p=sequence.addSequenceClip(p,{id:`fractional_${index}`,sourceId:'f',shotIndex,label:`Fractional ${index}`});
+  for(const [index,shotIndex] of [2,1,2].entries())p=sequence.addSequenceClip(p,{id:`fractional_${index}`,sourceId:'f',shotIndex,label:`Fractional ${index}`,inTime:0,outTime:1.1});
   const prepared=sequence.prepareSequence(p);
   assert.equal(prepared.frameAt(1.1).clipIndex,1);assert.equal(prepared.frameAt(1.1).sourceGlobal,1.1);
   const end=prepared.frameAt(3.3000000000000003);assert.equal(end.clipLocal,1.1);assert.equal(end.sourceGlobal,3.3000000000000003);
@@ -82,12 +82,12 @@ test('four sources admitted, fifth and duplicate id rejected atomically',()=>{
 test('twenty clips and exact sixty seconds admitted; quotas refuse without mutation',()=>{
   const film=createProject();film.shots=[{...film.shots[0],duration:3}];
   let p=sequence.addSequenceSource(sequence.createSequence(),{id:'s',label:'S',film});
-  for(let i=0;i<20;i++)p=sequence.addSequenceClip(p,{id:`clip_${i}`,sourceId:'s',shotIndex:0,label:`Clip ${i}`});
+  for(let i=0;i<20;i++)p=sequence.addSequenceClip(p,{id:`clip_${i}`,sourceId:'s',shotIndex:0,label:`Clip ${i}`,inTime:0,outTime:3});
   assert.equal(sequence.sequenceDuration(p),60);const before=JSON.stringify(p);
-  assert.throws(()=>sequence.addSequenceClip(p,{id:'clip_21',sourceId:'s',shotIndex:0,label:'Over'}));assert.equal(JSON.stringify(p),before);
+  assert.throws(()=>sequence.addSequenceClip(p,{id:'clip_21',sourceId:'s',shotIndex:0,label:'Over',inTime:0,outTime:3}));assert.equal(JSON.stringify(p),before);
   const long=createProject();long.shots[0].duration=15;
-  let q=sequence.addSequenceSource(sequence.createSequence(),{id:'l',label:'L',film:long});for(let i=0;i<4;i++)q=sequence.addSequenceClip(q,{id:`long_${i}`,sourceId:'l',shotIndex:0,label:'Long'});
-  const old=JSON.stringify(q);assert.throws(()=>sequence.addSequenceClip(q,{id:'too_long',sourceId:'l',shotIndex:0,label:'Over'}));assert.equal(q.clips.length,4);assert.equal(JSON.stringify(q),old);
+  let q=sequence.addSequenceSource(sequence.createSequence(),{id:'l',label:'L',film:long});for(let i=0;i<4;i++)q=sequence.addSequenceClip(q,{id:`long_${i}`,sourceId:'l',shotIndex:0,label:'Long',inTime:0,outTime:15});
+  const old=JSON.stringify(q);assert.throws(()=>sequence.addSequenceClip(q,{id:'too_long',sourceId:'l',shotIndex:0,label:'Over',inTime:0,outTime:15}));assert.equal(q.clips.length,4);assert.equal(JSON.stringify(q),old);
 });
 test('stable-ID move and remove preserve sources and reject referenced source removal',()=>{
   let p=sequence.addSequenceClip(withAmber(),amberClip('first',0));p=sequence.addSequenceClip(p,amberClip('later',1));
@@ -99,7 +99,7 @@ test('stable-ID move and remove preserve sources and reject referenced source re
 });
 test('current parser rejects films as sequences, future versions and extra keys',()=>{
   const p=withAmber();assert.deepEqual(sequence.importSequence(JSON.stringify(p)),p);
-  for(const candidate of [fixture(),{...p,schemaVersion:3},{...p,kind:'other'},{...p,extra:true}])assert.throws(()=>sequence.importSequence(JSON.stringify(candidate)));
+  for(const candidate of [fixture(),{...p,schemaVersion:4},{...p,kind:'other'},{...p,extra:true}])assert.throws(()=>sequence.importSequence(JSON.stringify(candidate)));
   for(const key of ['title','sources','clips','kind']){const q=structuredClone(p);delete q[key];assert.throws(()=>sequence.validateSequence(q));}
 });
 test('source and clip shapes, complete schema3 snapshots, indices and references are strict',()=>{
@@ -114,7 +114,7 @@ test('source and clip shapes, complete schema3 snapshots, indices and references
 });
 test('bounded import and both prepared time APIs reject coercion and nonfinite values',()=>{
   const text=JSON.stringify(withAmber()),bounded=text+' '.repeat(327680-Buffer.byteLength(text));
-  assert.equal(sequence.importSequence(bounded).schemaVersion,2);assert.throws(()=>sequence.importSequence(bounded+' '));
+  assert.equal(sequence.importSequence(bounded).schemaVersion,3);assert.throws(()=>sequence.importSequence(bounded+' '));
   assert.throws(()=>sequence.importSequence({}));assert.throws(()=>sequence.importSequence('{broken'));
   const p=sequence.addSequenceClip(withAmber(),amberClip('first',0)),prepared=sequence.prepareSequence(p);
   for(const time of [NaN,Infinity,-Infinity,'1',null,undefined]){assert.throws(()=>prepared.frameAt(time));assert.throws(()=>prepared.clipFrame(0,time));}
@@ -131,16 +131,16 @@ test('bounded separate history preserves redo after invalid or identical edits a
 function remoteLegacy(){return {schemaVersion:1,kind:'shot-studio-sequence',title:'Published sequence',sources:[{id:'amber',name:'Amber source name',film:fixture()}],clips:[{sourceId:'amber',shotIndex:1},{sourceId:'amber',shotIndex:0},{sourceId:'amber',shotIndex:1}]};}
 test('published v1 migrates complete films and deterministic clip identities with literal source clocks',()=>{
   const old=remoteLegacy(),raw=JSON.stringify(old),result=sequence.importSequence(raw);
-  assert.deepEqual(result,{schemaVersion:2,kind:'shot-studio-sequence',title:'Published sequence',sources:[{id:'amber',label:'Amber source name',film:fixture()}],clips:[
-    {id:'legacy-clip-1',sourceId:'amber',shotIndex:1,label:'Two-shot'},
-    {id:'legacy-clip-2',sourceId:'amber',shotIndex:0,label:'Establishing'},
-    {id:'legacy-clip-3',sourceId:'amber',shotIndex:1,label:'Two-shot'},
+  assert.deepEqual(result,{schemaVersion:3,kind:'shot-studio-sequence',title:'Published sequence',sources:[{id:'amber',label:'Amber source name',film:fixture()}],clips:[
+    {id:'legacy-clip-1',sourceId:'amber',shotIndex:1,label:'Two-shot',inTime:0,outTime:5},
+    {id:'legacy-clip-2',sourceId:'amber',shotIndex:0,label:'Establishing',inTime:0,outTime:3},
+    {id:'legacy-clip-3',sourceId:'amber',shotIndex:1,label:'Two-shot',inTime:0,outTime:5},
   ]});
   assert.equal(JSON.stringify(old),raw);const prepared=sequence.prepareSequence(result);
   assert.equal(prepared.frameAt(5).clipId,'legacy-clip-2');assert.equal(prepared.frameAt(5).sourceGlobal,0);
   assert.equal(prepared.frameAt(8).clipId,'legacy-clip-3');assert.equal(prepared.frameAt(8).sourceGlobal,3);
   assert.equal(prepared.clipFrame(0,5).camera.eye[0],4);assert.equal(prepared.clipFrame(0,5).sourceGlobal,8);
-  const repeated=sequence.addSequenceClip(result,{id:'explicit_repeat',sourceId:'amber',shotIndex:1,label:'Repeated last'});
+  const repeated=sequence.addSequenceClip(result,{id:'explicit_repeat',sourceId:'amber',shotIndex:1,label:'Repeated last',inTime:0,outTime:5});
   assert.deepEqual(repeated.clips.slice(0,3),result.clips);assert.equal(sequence.prepareSequence(repeated).frameAt(13).sourceGlobal,3);
 });
 test('published v1 original byte ceiling and source name limit remain admitted without mutation',()=>{
@@ -149,11 +149,11 @@ test('published v1 original byte ceiling and source name limit remain admitted w
   assert.equal(sequence.importSequence(padded).sources[0].label,'n'.repeat(80));assert.throws(()=>sequence.importSequence(padded+' '));
   const over=structuredClone(old);over.sources[0].name+='n';assert.throws(()=>sequence.validateSequence(over));assert.equal(old.sources[0].name.length,80);
 });
-test('published v1 disk text is retained across read-only migration then an explicit canonical2 save',()=>{
+test('published v1 disk text is retained across read-only migration then an explicit canonical3 save',()=>{
   const raw=JSON.stringify(remoteLegacy(),null,2),records=new Map([[SEQUENCE_DRAFT_KEY,raw],['shot-studio-v1','ordinary scene untouched']]),writes=[];
   const disk={getItem:key=>records.get(key)??null,setItem(key,value){writes.push([key,value]);records.set(key,value);}};
   const store=new SequenceDraftStore(()=>disk),loaded=store.sequence;
-  assert.equal(loaded.schemaVersion,2);assert.equal(store.blocked,false);assert.deepEqual(writes,[]);assert.equal(records.get(SEQUENCE_DRAFT_KEY),raw);
+  assert.equal(loaded.schemaVersion,3);assert.equal(store.blocked,false);assert.deepEqual(writes,[]);assert.equal(records.get(SEQUENCE_DRAFT_KEY),raw);
   const history=new SequenceHistory(loaded),next=history.current;next.title='New branch';history.commit(next);assert.deepEqual(history.undo(),loaded);assert.deepEqual(history.redo(),next);
   assert.equal(records.get(SEQUENCE_DRAFT_KEY),raw);store.save(next);
   assert.deepEqual(JSON.parse(records.get(SEQUENCE_DRAFT_KEY)),next);assert.equal(writes.length,1);assert.equal(records.get('shot-studio-v1'),'ordinary scene untouched');

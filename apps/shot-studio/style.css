@@ -16,3 +16,5 @@
 #sequence-time,#sequence-source-time,#sequence-summary{overflow-wrap:anywhere}#sequence-export-progress{width:100%;accent-color:#d9b17b;margin:12px 0}#sequence-play,#sequence-export{background:#d9b17b;color:#171c21;border-color:#d9b17b}
 @media(max-width:900px){.sequence-workspace{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:760px){.sequence-panel{padding:14px}.sequence-title,.sequence-label-edit{align-items:stretch}.sequence-title label,.sequence-label-edit label{flex-basis:100%}.sequence-tools button{flex:1 1 130px}.sequence-panel .scrub{display:block}.sequence-panel .scrub input{margin-top:10px}.sequence-heading{gap:4px}.sequence-heading h2{font-size:22px}}
+
+.sequence-range-edit{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.sequence-range-edit label{flex:1 1 180px;min-width:0}.sequence-range-edit input{min-height:44px;width:100%;min-width:0}#sequence-range-info{overflow-wrap:anywhere}

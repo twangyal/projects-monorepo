@@ -1,0 +1,57 @@
+{
+  "issue": 114,
+  "date": "2026-10-04",
+  "scope": "Source-range sequence trimming UI only; producer syntax verification, independent browser/media gates pending.",
+  "contract": "docs/superpowers/specs/2026-10-04-shot-sequence-trimming-design.md",
+  "sources": {
+    "src/sequence-ui.js": {
+      "bytes": 24751,
+      "sha256": "c9a1d5768fa238cb0710c410855b35b12b209ea5657f7d47bef919366a9f2093"
+    },
+    "index.html": {
+      "bytes": 15054,
+      "sha256": "336e8fb9ba08756c0536c7d31e08540b8447161da22877363a90553a5c2da06c"
+    },
+    "style.css": {
+      "bytes": 9421,
+      "sha256": "b06be85eb93899a28fa65df28ad07069e10a98bbedf366bbbd74511b547725d0"
+    }
+  },
+  "checks": [
+    {
+      "command": "node --check src/sequence-ui.js",
+      "result": "passed",
+      "log": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "controls": {
+    "in": "sequence-clip-in",
+    "out": "sequence-clip-out",
+    "apply": "sequence-range-apply",
+    "reset": "sequence-range-reset",
+    "info": "sequence-range-info"
+  },
+  "behavior": [
+    "Stable native number inputs use source-shot-local seconds and step any; no blur/change commits.",
+    "Input retires pending imports/rehearsal immediately, including changed-back input, while preserving exact native draft nodes.",
+    "Apply parses both nonempty finite fields together; below-minimum errors show the exact represented span without tolerance or rounding.",
+    "Apply protects numeric input focus from pointer blur; failed admission keeps both fields, committed preview/document and history.",
+    "Success clears only the two range draft markers and uses the existing single sequence history transaction; unrelated title/label drafts remain.",
+    "Use whole shot uses existing explicit raw-discard consent and one history transaction.",
+    "New clips include full source endpoints, while Repeat retains the committed range under a fresh ID.",
+    "Preview endpoints remain committed-only; source-film, original shot and excerpt-local times are displayed separately.",
+    "Existing protected storage, scene separation, export owner and page lifecycle paths remain in use."
+  ],
+  "limits": {
+    "sources": 4,
+    "clips": 20,
+    "outputSeconds": 60,
+    "minimumRepresentedSpanSeconds": 0.1,
+    "webmBytes": 33554432
+  },
+  "native": "No browser/build/server execution by this UI producer. Root and independent native owner coordinate actual acceptance.",
+  "claims": "No source-film modification, speed adjustment, retained-video splicing, new audio or physical XR claim."
+}
