@@ -135,3 +135,8 @@ Root owns final spec/plan/package/version/docs/CI/Git, shared builds and release
 ## Root integration decisions
 
 Friendly Challenges #87 implementation and all local gates are complete while exact-head CI is running. This is the next substantial unblocked authoring milestone. Existing schema2, history pruning and renderer semantics remain authoritative. A complete admitted proposal and actual resulting artwork must be reviewable before Apply; no procedural output is labeled learned animation. Source and original endpoint arrays remain exact. Root coordinates builds, native exports and publication.
+
+
+## Numerical evaluation correction from independent boundary checks
+
+The exact-equality guard is insufficient for valid unequal endpoints one floating-point step apart. An original fixture with width40 to39.99999999999999 and x-1280 to-1279.9999999999998 at frame2/95 reproduced a weighted-sum value outside the unchanged model bounds. Sampling and geometric/width interpolation now evaluate the same affine expression from the nearer endpoint: `a+(b-a)*t` for `t<=0.5`, otherwise `b+(a-b)*(1-t)`. This is an arithmetic evaluation correction, without clamping, widened bounds or display rounding. Encoded RGB retains the authored rounded weighted formula; original endpoint records remain exact. Independent unit fixtures and the complete native media/workspace suite verify the result.
