@@ -38,17 +38,23 @@
   },
   "limits": [
     "Full current merged checkout CI is pending; prior native CI is documented separately.",
-    "Uploaded-art perception and protection are not measured; no experiment fit was performed.",
-    "Nested root-array refusal is not an isolated measurement of parser depth enforcement."
+    "Uploaded-art perception and protection are not measured; no experiment fit was performed."
   ],
   "review": {
     "status": "no-blockers-after-correction",
     "corrections": [
       "Required title accessor is rejected without invocation.",
       "Same-project different-image commit is rejected atomically.",
-      "Each RGB luminance coefficient and the low-sRGB branch have isolated expectations."
+      "Each RGB luminance coefficient and the low-sRGB branch have isolated expectations.",
+      "Depth oracle asserts parser diagnostic and demonstrably fails without depth guard.",
+      "Positive split-IDAT/ancillary fixture carries valid DEFLATE scanline and tEXt keyword."
     ],
-    "guardMutations": "Removing each accessor/image guard or changing the red luminance coefficient fails its actual fixture."
+    "guardMutations": "Removing each accessor/image guard or changing the red luminance coefficient fails its actual fixture.",
+    "depthMutation": {
+      "change": "Remove parser JSON-depth guard",
+      "failedCases": 1,
+      "restoredTotalPassed": 91
+    }
   },
   "reconciliation": {
     "baseCommit": "d56778b7bff9667a4c746a2f0794fa095d2bfe61",

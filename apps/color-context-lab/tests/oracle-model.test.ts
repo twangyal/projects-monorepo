@@ -52,7 +52,9 @@ test('bounds literal Unicode, controls, ID and all numeric inputs', () => {
 test('JSON admission rejects duplicate decoded keys, invalid nesting and excessive bytes', () => {
   const p = project(); const json = model.serializeProject(p);
   assert.throws(() => model.parseProjectJson(json.replace('"title":', '"ti\\u0074le":"shadow","title":')));
-  assert.throws(() => model.parseProjectJson('['.repeat(17) + '0' + ']'.repeat(17)));
+  assert.throws(() => model.parseProjectJson('['.repeat(17) + '0' + ']'.repeat(17)), {
+    message: 'Project must be bounded valid JSON without duplicate keys.',
+  });
   assert.throws(() => model.parseProjectJson(' '.repeat(4*1024*1024) + json));
   assert.throws(() => model.parseProjectJson(json.replace('"schemaVersion":1', '"schemaVersion":1e999')));
   assert.throws(() => model.parseProjectJson(json + ' false'));

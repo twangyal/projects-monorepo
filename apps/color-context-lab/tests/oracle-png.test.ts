@@ -72,7 +72,10 @@ test('chunk grammar rejects reordered, duplicate, unsupported and interrupted cr
   for(const chunks of malformed) assert.throws(()=>inspectPng(fixture(chunks)));
 });
 test('ancillary cap includes framing and legal split IDAT groups remain admissible',()=>{
-  const idat=chunk('IDAT',Buffer.from([1])); const end=chunk('IEND');
-  assert.deepEqual(inspectPng(fixture([header(),chunk('tEXt',Buffer.alloc(256*1024-12)),chunk('IDAT'),idat,end])),{width:2,height:1,colorType:6});
-  assert.throws(()=>inspectPng(fixture([header(),chunk('tEXt',Buffer.alloc(256*1024-11)),idat,end])));
+  const compressed=deflateSync(Buffer.from([0,11,22,33,0,44,55,66,1]));
+  const first=chunk('IDAT',compressed.subarray(0,5));
+  const second=chunk('IDAT',compressed.subarray(5)); const end=chunk('IEND');
+  const text=(size:number)=>{const data=Buffer.alloc(size,65); data.write('Comment\0'); return chunk('tEXt',data);};
+  assert.deepEqual(inspectPng(fixture([header(),text(256*1024-12),first,second,end])),{width:2,height:1,colorType:6});
+  assert.throws(()=>inspectPng(fixture([header(),text(256*1024-11),first,second,end])));
 });
