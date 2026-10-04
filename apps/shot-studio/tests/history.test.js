@@ -31,7 +31,7 @@ test('motion arrays survive history, reordering and portable snapshots without a
   const initial=createProject(),h=new ProjectHistory(initial),candidate=h.current;
   Object.assign(candidate.shots[0],{cameraMode:'linear',endEye:[3,2,7],endTarget:[0,1,0]});
   const travel=h.commit(candidate);candidate.shots[0].endEye[0]=12;
-  assert.equal(h.current.shots[0].endEye[0],3);assert.equal(travel.schemaVersion,2);
+  assert.equal(h.current.shots[0].endEye[0],3);assert.equal(travel.schemaVersion,3);
   const moved=moveShot(h.current,0,1);assert.deepEqual(moved.shots[1],travel.shots[0]);h.commit(moved);
   moved.shots[1].endTarget[0]=10;assert.deepEqual(h.current.shots[1],travel.shots[0]);
   assert.deepEqual(h.undo(),travel);assert.deepEqual(h.undo(),initial);

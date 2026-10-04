@@ -1,5 +1,5 @@
 import {multiply,lookAt,perspective,modelMatrix} from './math.js';
-import {actorPose} from './model.js';
+import {performerAt} from './model.js';
 
 const VERTEX=`attribute vec3 position;attribute vec3 normal;uniform mat4 model;uniform mat4 viewProjection;varying vec3 n;void main(){n=mat3(model)*normal;gl_Position=viewProjection*model*vec4(position,1.0);}`;
 const FRAGMENT=`precision mediump float;varying vec3 n;uniform vec3 color;uniform float light;void main(){float diffuse=max(dot(normalize(n),normalize(vec3(-.4,1.,.6))),0.);gl_FragColor=vec4(color*(.28+diffuse*.72)*light,1.);}`;
@@ -43,7 +43,10 @@ export class StageRenderer{
     for(const x of [-3.8,3.8]){box(x,1.2,-2.8,.55,2.4,.55,'#d3b392');box(x,2.5,-2.8,.85,.2,.85,'#e2ccac');}
     box(0,.4,-3,2.8,.8,.7,'#a07860');box(0,.9,-3,3,.15,.9,'#ccb49b');
     for(const x of [-2.4,2.4]){box(x,.5,2.2,.8,1,.8,'#777d61');box(x,1.1,2.2,1.1,.4,1.1,'#799a6e');}
-    for(const a of p.actors){const pose=actorPose(a,time),x=pose.x,z=pose.z;
+    for(let index=0;index<p.actors.length;index++){
+      const a=p.actors[index],pose=performerAt(p,index,time);
+      if(!pose.visible)continue;
+      const x=pose.x,z=pose.z;
       box(x,1.15,z,.5,.65,.32,a.color);box(x,1.7,z,.4,.4,.4,'#ead0ab');
       box(x-.16,.43,z,.17,.72,.22,'#28394a',pose.leg);box(x+.16,.43,z,.17,.72,.22,'#28394a',-pose.leg);
       box(x-.4,1.13,z,.15,.65,.2,a.color,pose.arm);box(x+.4,1.13,z,.15,.65,.2,a.color,-pose.arm);

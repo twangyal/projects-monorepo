@@ -7,24 +7,24 @@ const legacy=()=>({schemaVersion:1,title:'Original film',light:1,
   shots:[{name:'Original camera',duration:4,eye:[5,3,7],target:[0,1,0],fov:45}]});
 const staticShot=()=>({name:'Authored camera',duration:4,eye:[1,2,5],target:[0,1,0],fov:40,cameraMode:'static'});
 const linear=(change={})=>({...staticShot(),cameraMode:'linear',endEye:[3,4,7],endTarget:[1,2,2],...change});
-function film(shot=staticShot()){const p=model.createProject();p.schemaVersion=2;p.shots=[shot];return p;}
+function film(shot=staticShot()){const p={...legacy(),schemaVersion:2};p.shots=[shot];return p;}
 function path(start,end){return linear({eye:start.map((v,i)=>v+[0,1,0][i]),target:[0,1,0],endEye:end.map((v,i)=>v+[0,1,0][i]),endTarget:[0,1,0]});}
 
-test('canonical starter uses explicit v2 static shots without changing authored images',()=>{
-  const p=model.createProject();assert.equal(model.SCHEMA_VERSION,2);assert.equal(p.schemaVersion,2);
+test('canonical starter uses explicit v3 performers and static shots without changing authored images',()=>{
+  const p=model.createProject();assert.equal(model.SCHEMA_VERSION,3);assert.equal(p.schemaVersion,3);
   assert.deepEqual(p.shots.map(s=>[s.cameraMode,s.eye,s.target,s.fov]),[['static',[5,3,7],[0,1,0],45],['static',[0,1.8,5],[0,1,0],40]]);
   assert.deepEqual(model.validateProject(p),p);
 });
 test('genuine original-key v1 imports migrate detached static scenes without mutating source',()=>{
   const p=legacy(),before=structuredClone(p),next=model.validateProject(p);
-  assert.equal(next.schemaVersion,2);assert.deepEqual(next.shots,[{...p.shots[0],cameraMode:'static'}]);
+  assert.equal(next.schemaVersion,3);assert.deepEqual(next.shots,[{...p.shots[0],cameraMode:'static'}]);
   assert.deepEqual(model.importProject(JSON.stringify(p)),next);next.shots[0].eye[0]=9;next.actors[0].name='Changed';assert.deepEqual(p,before);
 });
 test('legacy migration rejects unknown fields and any disguised motion instead of stripping them',()=>{
   assert.doesNotThrow(()=>model.validateProject(legacy()));
   for(const mutate of [p=>p.extra=true,p=>p.actors[0].extra=true,p=>p.shots[0].extra=true,
     p=>p.shots[0].cameraMode='static',p=>p.shots[0].endEye=[3,2,5],p=>p.shots[0].endTarget=[0,1,0],
-    p=>p.schemaVersion=3,p=>p.schemaVersion='1']){
+    p=>p.schemaVersion=4,p=>p.schemaVersion='1']){
     const p=legacy();mutate(p);const before=structuredClone(p);assert.throws(()=>model.validateProject(p));assert.deepEqual(p,before);
     assert.throws(()=>model.importProject(JSON.stringify(p)),/Invalid project backup/);
   }

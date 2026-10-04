@@ -11,6 +11,10 @@ function legacyFilm() {
     shots: [{name: 'Truck study', duration: 2, eye: [-2, 2.2, 8], target: [-2, 1.15, 0], fov: 50},
       {name: 'Next cut', duration: 2, eye: [0, 2.2, 5], target: [0, 1.15, 0], fov: 40}]};
 }
+// Literal old backups remain old; assertions compare their explicit migrated form.
+function canonicalFilm(project) {
+  return {...project, schemaVersion: 3, actors: project.actors.map(actor => ({...actor, performanceMode: 'loop'}))};
+}
 function travelFilm() {
   const project = legacyFilm(); project.schemaVersion = 2;
   project.shots[0] = {...project.shots[0], cameraMode: 'linear', endEye: [2, 2.2, 8], endTarget: [2, 1.15, 0]};
@@ -120,7 +124,7 @@ test('native endpoint authoring copies, captures and reverses explicit travel wi
   await expect(page.getByRole('combobox', {name: 'Camera motion', exact: true})).toHaveValue('static');
   await page.locator('#cameraMode').selectOption('linear');
   let film = await backup(page);
-  expect(film.schemaVersion).toBe(2); expect(film.shots[0]).toMatchObject({cameraMode: 'linear', endEye: original.shots[0].eye, endTarget: original.shots[0].target});
+  expect(film.schemaVersion).toBe(3); expect(film.shots[0]).toMatchObject({cameraMode: 'linear', endEye: original.shots[0].eye, endTarget: original.shots[0].target});
   await page.locator('#cameraEndpoint').selectOption('end'); await edit(page, 'eyeX', 2); await edit(page, 'targetX', 2); await edit(page, 'fov', 55);
   film = await backup(page);
   expect(film.shots[0]).toEqual({...original.shots[0], cameraMode: 'linear', fov: 55, endEye: [2, 2.2, 8], endTarget: [2, 1.15, 0]});
@@ -258,7 +262,7 @@ test('focused off-step End typing defeats a pending import and preexisting raw e
   expect((await backup(page)).shots[0]).toMatchObject({endEye: [6.25, 2.2, 8], eye: [-2, 2.2, 8]});
 });
 
-test('genuine original v1 draft migrates only in memory and real editing writes exact schema 2', async ({page}) => {
+test('genuine original v1 draft migrates only in memory and real editing writes exact schema 3', async ({page}) => {
   const legacy = legacyFilm(), originalRaw = JSON.stringify(legacy, null, 2) + '\n';
   await page.addInitScript(({key, text}) => {
     if (localStorage.getItem(key) === null) localStorage.setItem(key, text);
@@ -266,7 +270,7 @@ test('genuine original v1 draft migrates only in memory and real editing writes 
     Storage.prototype.setItem = function (name, value) { if (name === key) window.travelWrites++; return set.call(this, name, value); };
   }, {key: KEY, text: originalRaw});
   await page.goto('/'); await expect(page.getByLabel('Film title', {exact: true})).toHaveValue(legacy.title);
-  const canonical = {...legacy, schemaVersion: 2, shots: legacy.shots.map(shot => ({...shot, cameraMode: 'static'}))};
+  const canonical = {...legacy, schemaVersion: 3, actors: legacy.actors.map(actor => ({...actor, performanceMode: 'loop'})), shots: legacy.shots.map(shot => ({...shot, cameraMode: 'static'}))};
   expect(await backup(page)).toEqual(canonical); expect(await raw(page)).toBe(originalRaw);
   expect(await page.evaluate(() => window.travelWrites)).toBe(0);
   await expect(page.locator('#cameraEndpoint option[value=end]')).toBeDisabled();
@@ -275,7 +279,7 @@ test('genuine original v1 draft migrates only in memory and real editing writes 
   await edit(page, 'title', 'Edited canonical static film');
   expect(JSON.parse(await raw(page))).toEqual({...canonical, title: 'Edited canonical static film'});
   await page.reload(); await expect(page.getByLabel('Film title', {exact: true})).toHaveValue('Edited canonical static film');
-  expect((await backup(page)).schemaVersion).toBe(2);
+  expect((await backup(page)).schemaVersion).toBe(3);
 });
 
 for (const rejected of ['motion-bearing v1', 'future schema']) {
@@ -288,16 +292,16 @@ for (const rejected of ['motion-bearing v1', 'future schema']) {
     expect(JSON.parse(recovery.text)).toEqual({schemaVersion: 1, kind: 'unreadable-shot-studio-draft', storageKey: KEY, raw: text});
     await page.locator('#import').setInputFiles({name: 'valid-travel.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(travelFilm()))});
     await expect(page.getByLabel('Film title', {exact: true})).toHaveValue(legacyFilm().title);
-    await expect(page.locator('#cameraMode')).toHaveValue('linear'); expect(await backup(page)).toEqual(travelFilm()); expect(await raw(page)).toBe(text);
+    await expect(page.locator('#cameraMode')).toHaveValue('linear'); expect(await backup(page)).toEqual(canonicalFilm(travelFilm())); expect(await raw(page)).toBe(text);
     page.once('dialog', dialog => dialog.dismiss()); await page.getByRole('button', {name: 'Replace browser draft', exact: true}).click(); expect(await raw(page)).toBe(text);
     await page.evaluate(() => { const put = Storage.prototype.setItem; window.restoreTravelStorage = () => { Storage.prototype.setItem = put; };
       Storage.prototype.setItem = function (key, value) { if (key === 'shot-studio-v1') throw new DOMException('Full', 'QuotaExceededError'); return put.call(this, key, value); }; });
     page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', {name: 'Replace browser draft', exact: true}).click();
-    await expect(page.locator('#status')).toContainText(/could not replace/i); expect(await raw(page)).toBe(text); expect(await backup(page)).toEqual(travelFilm());
+    await expect(page.locator('#status')).toContainText(/could not replace/i); expect(await raw(page)).toBe(text); expect(await backup(page)).toEqual(canonicalFilm(travelFilm()));
     await page.evaluate(() => window.restoreTravelStorage());
     page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', {name: 'Replace browser draft', exact: true}).click();
-    expect(JSON.parse(await raw(page))).toEqual(travelFilm()); await page.reload(); await expect(page.locator('#cameraMode')).toHaveValue('linear');
-    expect(await backup(page)).toEqual(travelFilm());
+    expect(JSON.parse(await raw(page))).toEqual(canonicalFilm(travelFilm())); await page.reload(); await expect(page.locator('#cameraMode')).toHaveValue('linear');
+    expect(await backup(page)).toEqual(canonicalFilm(travelFilm()));
   });
 }
 
@@ -330,7 +334,7 @@ test('controlled XR captures the frozen End only and rejects an interior-singula
   const captured = await backup(page);
   expect(captured.shots[0]).toEqual({...project.shots[0], endEye: [1, 2, 5], endTarget: [1, 2, 2]});
   await expect(page.locator('#shotLabel')).toContainText(/end.*endpoint|endpoint.*end/i);
-  await page.getByRole('button', {name: 'Undo scene', exact: true}).click(); expect(await backup(page)).toEqual(project);
+  await page.getByRole('button', {name: 'Undo scene', exact: true}).click(); expect(await backup(page)).toEqual(canonicalFilm(project));
   await page.evaluate(() => window.restoreTravelStorage()); await page.getByRole('button', {name: 'Redo scene', exact: true}).click();
   expect(JSON.parse(await raw(page))).toEqual(captured);
 });

@@ -25,25 +25,25 @@ function legacy(){
 function validGate(){assert.doesNotThrow(()=>model.validateProject(project()));}
 
 test('oracle publishes canonical camera APIs and preserves original static migration',()=>{
-  assert.equal(model.SCHEMA_VERSION,2);
+  assert.equal(model.SCHEMA_VERSION,3);
   assert.equal(typeof model.cameraAt,'function');assert.equal(typeof model.frameAt,'function');
   const old=legacy(),before=structuredClone(old),canonical=model.validateProject(old);
-  assert.equal(canonical.schemaVersion,2);
-  assert.deepEqual(canonical,{...before,schemaVersion:2,shots:before.shots.map(shot=>({...shot,cameraMode:'static'}))});
+  assert.equal(canonical.schemaVersion,3);
+  assert.deepEqual(canonical,{...before,schemaVersion:3,actors:before.actors.map(actor=>({...actor,performanceMode:'loop'})),shots:before.shots.map(shot=>({...shot,cameraMode:'static'}))});
   assert.deepEqual(model.importProject(JSON.stringify(old)),canonical);
   assert.deepEqual(old,before);
   assert.notEqual(canonical.shots[0].eye,old.shots[0].eye);
-  assert.equal(model.createProject().schemaVersion,2);
+  assert.equal(model.createProject().schemaVersion,3);
   assert.ok(model.createProject().shots.every(shot=>shot.cameraMode==='static'&&!('endEye' in shot)));
 });
 
 test('oracle strictly refuses motion-bearing or undocumented-key v1 films',()=>{
-  assert.equal(model.validateProject(legacy()).schemaVersion,2);
+  assert.equal(model.validateProject(legacy()).schemaVersion,3);
   const changes=[
     p=>p.shots[0].cameraMode='linear',p=>p.shots[0].cameraMode='static',
     p=>p.shots[0].endEye=[1,2,5],p=>p.shots[0].endTarget=[0,1,0],
     p=>p.shots[0].undocumented=true,p=>p.actors[0].undocumented=true,p=>p.undocumented=true,
-    p=>p.schemaVersion=3,p=>p.schemaVersion='1',
+    p=>p.schemaVersion=4,p=>p.schemaVersion='1',
   ];
   for(const change of changes){
     const value=legacy();change(value);const original=structuredClone(value);

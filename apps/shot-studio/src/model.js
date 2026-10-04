@@ -1,10 +1,13 @@
+import {performerPose} from './performer.js';
+
 export const MAX_BYTES=65536;
-export const SCHEMA_VERSION=2;
+export const MAX_PERFORMER_CUES=32;
+export const SCHEMA_VERSION=3;
 export const ACTIONS=['idle','wave','walk'];
 export function createProject(){return {
   schemaVersion:SCHEMA_VERSION,title:'The arrival',light:1,
-  actors:[{name:'Mika',x:-1.2,z:0,color:'#db825c',action:'wave'},
-    {name:'Noor',x:1.2,z:-1,color:'#6cb1ba',action:'walk'}],
+  actors:[{name:'Mika',x:-1.2,z:0,color:'#db825c',action:'wave',performanceMode:'loop'},
+    {name:'Noor',x:1.2,z:-1,color:'#6cb1ba',action:'walk',performanceMode:'loop'}],
   shots:[{name:'Establishing',duration:4,eye:[5,3,7],target:[0,1,0],fov:45,cameraMode:'static'},
     {name:'Two-shot',duration:4,eye:[0,1.8,5],target:[0,1,0],fov:40,cameraMode:'static'}],
 };}
@@ -59,16 +62,31 @@ function validateShot(value,legacy=false){
   }
   return shot;
 }
+function validateCue(value,duration){
+  if(!exactKeys(value,['time','x','z','action','visible'])||!finite(value.time,0,duration)||!finite(value.x,-4,4)||!finite(value.z,-4,4)
+    ||!ACTIONS.includes(value.action)||typeof value.visible!=='boolean')throw Error('Invalid blocking cue. Keep its time within the film and coordinates within the stage; move or delete later cues before shortening the film.');
+  return {time:value.time,x:value.x,z:value.z,action:value.action,visible:value.visible};
+}
+function validateActor(value,duration,legacy=false){
+  const mode=legacy?'loop':value&&typeof value==='object'?Object.getOwnPropertyDescriptor(value,'performanceMode')?.value:undefined;
+  const keys=mode==='loop'?['name','x','z','color','action',...(legacy?[]:['performanceMode'])]:['name','color','performanceMode','cues'];
+  if(!['loop','blocking'].includes(mode)||!exactKeys(value,keys)||!text(value.name,30)||typeof value.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(value.color))throw Error('Invalid performer settings.');
+  if(mode==='loop'){
+    if(!finite(value.x,-4,4)||!finite(value.z,-4,4)||!ACTIONS.includes(value.action))throw Error('Invalid performer settings.');
+    return {name:value.name,x:value.x,z:value.z,color:value.color,action:value.action,performanceMode:'loop'};
+  }
+  if(!denseArray(value.cues,1,MAX_PERFORMER_CUES))throw Error('Authored blocking needs 1–32 complete cues.');
+  const cues=value.cues.map(cue=>validateCue(cue,duration));
+  if(cues[0].time!==0||cues.some((cue,index)=>index>0&&cue.time<=cues[index-1].time))throw Error('Blocking cues must begin at 0 and have strictly increasing unique times.');
+  return {name:value.name,color:value.color,performanceMode:'blocking',cues};
+}
 export function validateProject(p){
-  if(!exactKeys(p,['schemaVersion','title','light','actors','shots'])||(p.schemaVersion!==1&&p.schemaVersion!==SCHEMA_VERSION)
+  if(!exactKeys(p,['schemaVersion','title','light','actors','shots'])||![1,2,SCHEMA_VERSION].includes(p.schemaVersion)
     ||!text(p.title,80)||!finite(p.light,.2,2)||!denseArray(p.actors,2)||!denseArray(p.shots,1,20))throw Error('Invalid project format or limits.');
-  const actors=p.actors.map(a=>{
-    if(!exactKeys(a,['name','x','z','color','action'])||!text(a.name,30)||!finite(a.x,-4,4)||!finite(a.z,-4,4)
-      ||typeof a.color!=='string'||!/^#[0-9a-fA-F]{6}$/.test(a.color)||!ACTIONS.includes(a.action))throw Error('Invalid performer settings.');
-    return {name:a.name,x:a.x,z:a.z,color:a.color,action:a.action};
-  });
   const shots=p.shots.map(s=>validateShot(s,p.schemaVersion===1));
-  if(shots.reduce((s,x)=>s+x.duration,0)>60) throw Error('Films are limited to 60 seconds.');
+  const duration=shots.reduce((s,x)=>s+x.duration,0);
+  if(duration>60) throw Error('Films are limited to 60 seconds.');
+  const actors=p.actors.map(a=>validateActor(a,duration,p.schemaVersion!==SCHEMA_VERSION));
   return {schemaVersion:SCHEMA_VERSION,title:p.title,light:p.light,actors,shots};
 }
 export function importProject(text){
@@ -96,9 +114,11 @@ export function shotAt(p,time){
   }
 }
 export function actorPose(a,time){
-  return {x:a.x+(a.action==='walk'?.7*Math.sin(time):0),z:a.z,
-    arm:a.action==='wave'?.8+.5*Math.sin(time*6):a.action==='walk'?.5*Math.sin(time*5):0,
-    leg:a.action==='walk'?.35*Math.sin(time*5):0};
+  validTime(time);
+  const mode=a&&typeof a==='object'?Object.getOwnPropertyDescriptor(a,'performanceMode')?.value:undefined;
+  if(mode==='blocking')throw Error('Use performerAt with a full film to evaluate blocking.');
+  const actor=validateActor(a,60,mode===undefined),pose=performerPose(actor,time,60);
+  return {x:pose.x,z:pose.z,arm:pose.arm,leg:pose.leg};
 }
 export function cameraAt(shot,localSeconds){
   validTime(localSeconds);const valid=validateShot(shot),u=Math.max(0,Math.min(valid.duration,localSeconds))/valid.duration;
@@ -110,4 +130,58 @@ export function cameraAt(shot,localSeconds){
 export function frameAt(project,filmSeconds){
   const valid=validateProject(project),selected=shotAt(valid,filmSeconds);
   return {...selected,camera:cameraAt(selected.shot,selected.local)};
+}
+
+export function performerAt(project,actorIndex,filmSeconds){
+  const valid=validateProject(project);validActorIndex(valid,actorIndex);validTime(filmSeconds);
+  return performerPose(valid.actors[actorIndex],filmSeconds,totalDuration(valid));
+}
+export function setPerformanceMode(project,actorIndex,mode){
+  const valid=validateProject(project);validActorIndex(valid,actorIndex);
+  if(mode!=='loop'&&mode!=='blocking')throw Error('Choose Looping performance or Authored blocking.');
+  const actor=valid.actors[actorIndex];
+  if(actor.performanceMode===mode)return valid;
+  if(mode==='blocking')valid.actors[actorIndex]={name:actor.name,color:actor.color,performanceMode:'blocking',cues:[{time:0,x:actor.x,z:actor.z,action:actor.action,visible:true}]};
+  else{
+    const first=actor.cues[0];
+    valid.actors[actorIndex]={name:actor.name,x:first.x,z:first.z,color:actor.color,action:first.action,performanceMode:'loop'};
+  }
+  return validateProject(valid);
+}
+export function insertCue(project,actorIndex,cue){
+  const valid=validateProject(project),actor=blockingActor(valid,actorIndex),next=validateCue(cue,totalDuration(valid));
+  if(actor.cues.length>=MAX_PERFORMER_CUES)throw Error('Each performer is limited to 32 cues. Remove a cue first.');
+  if(actor.cues.some(item=>item.time===next.time))throw Error('A cue already exists at this exact time. Select it to edit.');
+  const following=actor.cues.findIndex(item=>item.time>next.time),cueIndex=following<0?actor.cues.length:following;
+  actor.cues.splice(cueIndex,0,next);
+  return {project:validateProject(valid),cueIndex};
+}
+export function updateCue(project,actorIndex,cueIndex,cue){
+  const valid=validateProject(project),actor=blockingActor(valid,actorIndex);validCueIndex(actor,cueIndex);
+  const next=validateCue(cue,totalDuration(valid));
+  if(cueIndex===0&&next.time!==0)throw Error('The first cue must stay at 0 seconds.');
+  if(actor.cues.some((item,index)=>index!==cueIndex&&item.time===next.time))throw Error('A cue already exists at this exact time. Select it to edit.');
+  actor.cues.splice(cueIndex,1);
+  const following=actor.cues.findIndex(item=>item.time>next.time),selected=following<0?actor.cues.length:following;
+  actor.cues.splice(selected,0,next);
+  return {project:validateProject(valid),cueIndex:selected};
+}
+export function removeCue(project,actorIndex,cueIndex){
+  const valid=validateProject(project),actor=blockingActor(valid,actorIndex);validCueIndex(actor,cueIndex);
+  if(cueIndex===0)throw Error('Keep the first cue at 0 seconds.');
+  actor.cues.splice(cueIndex,1);
+  return {project:validateProject(valid),cueIndex:Math.min(cueIndex,actor.cues.length-1)};
+}
+
+function validActorIndex(project,index){
+  if(!Number.isInteger(index)||index<0||index>=project.actors.length)throw Error('Select an existing performer.');
+}
+function blockingActor(project,index){
+  validActorIndex(project,index);
+  const actor=project.actors[index];
+  if(actor.performanceMode!=='blocking')throw Error('Switch this performer to Authored blocking before editing cues.');
+  return actor;
+}
+function validCueIndex(actor,index){
+  if(!Number.isInteger(index)||index<0||index>=actor.cues.length)throw Error('Select an existing blocking cue.');
 }

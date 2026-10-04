@@ -1,4 +1,4 @@
-import {validateProject,importProject,totalDuration,cameraAt,frameAt,MAX_BYTES} from './model.js';
+import {validateProject,importProject,totalDuration,cameraAt,frameAt,performerAt,setPerformanceMode,insertCue,updateCue,removeCue,MAX_PERFORMER_CUES,MAX_BYTES} from './model.js';
 import {StageRenderer} from './renderer.js';
 import {exportFilm} from './export.js';
 import {enterXR} from './xr.js';
@@ -11,7 +11,8 @@ let exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 let endpoint='start',previewMode='film',previewEndpoint='start',storageWarning='';
 let importEpoch=0,pendingImport=false;
 const unsent=new Set();
-const selectors=new Set(['actor','cameraEndpoint','cameraMode','preset']);
+const cueSelection=[0,0];
+const selectors=new Set(['actor','cameraEndpoint','cameraMode','preset','performanceMode']);
 const status=text=>$('status').textContent=text;
 if(draft.blocked)status('Could not load the saved draft. It has been preserved; automatic saving is blocked. '+(draft.raw!==null?'Save your current project and download the unreadable draft before explicitly replacing it.':'No recovery download is available because the saved contents could not be read. Save your current project before explicitly replacing the browser draft.'));
 let renderer,graphicsLost=false;
@@ -38,13 +39,38 @@ function evaluatedPreview(){
   const result=frameAt(project,time);
   return {...result,global:shotStart(result.index)+result.local};
 }
+function editingPose(){const a=project.actors[actor];return a.performanceMode==='blocking'?a.cues[cueSelection[actor]]:a;}
+function normalizeCueSelection(){project.actors.forEach((a,i)=>{cueSelection[i]=a.performanceMode==='blocking'?Math.min(cueSelection[i],a.cues.length-1):0;});}
+function refreshPerformer(){
+  const a=project.actors[actor],blocking=a.performanceMode==='blocking',pose=editingPose();
+  $('performanceMode').value=a.performanceMode;$('blockingEditor').hidden=!blocking;
+  $('cueLabel').textContent=blocking?`Editing performer ${actor+1} — cue at ${pose.time} seconds`:'';
+  $('cueTime').readOnly=cueSelection[actor]===0;$('cueTime').max=totalDuration(project);
+  $('removeCue').disabled=busy()||!blocking||cueSelection[actor]===0;
+  $('addCue').disabled=busy()||!blocking||a.cues.length>=MAX_PERFORMER_CUES;
+  $('previewCue').disabled=busy()||!blocking||graphicsLost;
+  const cueHadFocus=$('performerCues').contains(document.activeElement);
+  $('performerCues').replaceChildren();
+  if(blocking)a.cues.forEach((cue,i)=>{
+    const b=document.createElement('button');b.type='button';b.textContent=`${cue.time}s · ${cue.action}${cue.visible?'':' · hidden'}`;
+    b.dataset.cueIndex=String(i);b.dataset.cueTime=String(cue.time);b.setAttribute('aria-pressed',String(i===cueSelection[actor]));b.disabled=busy();
+    b.onclick=()=>{if(guarded())return;editIntent++;cueSelection[actor]=i;refresh(true);};$('performerCues').append(b);
+  });
+  if(cueHadFocus)$('performerCues').querySelector('[aria-pressed="true"]')?.focus({preventScroll:true});
+  $('action').querySelector('[value="walk"]').textContent=blocking?'Walk in place':'Pace';
+  $('closeupTarget').textContent=blocking?`Performer close-up targets the editing cue at ${pose.time}s (${pose.x}, ${pose.z}), not the performer’s current preview position.`:'Performer close-up targets the selected performer’s base position.';
+  $('xrPlacementTarget').textContent=blocking?`VR placement will edit performer ${actor+1}, cue at ${pose.time}s. This target stays fixed while the scene plays.`:`VR placement will edit performer ${actor+1}’s looping base position.`;
+}
 function refresh(resetFields=false){
-  const a=project.actors[actor],s=project.shots[selected];
+  normalizeCueSelection();
+  const a=project.actors[actor],pose=editingPose(),s=project.shots[selected];
   if(resetFields){
     const eye=endpoint==='end'?s.endEye:s.eye,target=endpoint==='end'?s.endTarget:s.target;
-    for(const [id,value] of Object.entries({title:project.title,actorName:a.name,actorX:a.x,actorZ:a.z,color:a.color,action:a.action,light:project.light,shotName:s.name,duration:s.duration,fov:s.fov,eyeX:eye[0],eyeY:eye[1],eyeZ:eye[2],targetX:target[0],targetY:target[1],targetZ:target[2]}))$(id).value=value;
+    for(const [id,value] of Object.entries({title:project.title,actorName:a.name,actorX:pose.x,actorZ:pose.z,color:a.color,action:pose.action,light:project.light,shotName:s.name,duration:s.duration,fov:s.fov,eyeX:eye[0],eyeY:eye[1],eyeZ:eye[2],targetX:target[0],targetY:target[1],targetZ:target[2]}))$(id).value=value;
     $('preset').value='custom';
+    $('cueTime').value=a.performanceMode==='blocking'?pose.time:0;$('cueVisible').checked=a.performanceMode==='blocking'?pose.visible:true;
   }
+  refreshPerformer();
   $('actor').value=actor;[...$('actor').options].forEach((o,i)=>o.textContent=project.actors[i].name);
   $('cameraMode').value=s.cameraMode;$('cameraEndpoint').value=endpoint;
   $('cameraEndpoint').disabled=busy()||s.cameraMode==='static';
@@ -74,11 +100,12 @@ function refresh(resetFields=false){
   $('earlier').disabled=busy()||selected===0;$('later').disabled=busy()||selected===project.shots.length-1;
 }
 // Validate before changing any film, presentation, history or durable state.
-function apply(candidate,{selection=selected,reset=false}={}){
+function apply(candidate,{selection=selected,reset=false,cueIndex=null}={}){
   try{
     const next=validateProject(candidate),changed=JSON.stringify(next)!==JSON.stringify(project);
     if(changed){project=history.commit(next);revision++;}
     selected=selection;
+    if(cueIndex!==null)cueSelection[actor]=cueIndex;
     if(reset)resetPresentation();
     if(project.shots[selected].cameraMode==='static'){endpoint='start';if(previewMode==='endpoint')previewEndpoint='start';}
     time=Math.min(time,totalDuration(project));unsent.clear();
@@ -99,11 +126,16 @@ function setCamera(shot,camera,which=endpoint){
 }
 function number(id){const raw=$(id).value;if(raw.trim()===''||!Number.isFinite(Number(raw)))throw Error('Enter a nonempty finite number for '+($(id).getAttribute('aria-label')||$(id).closest('label').textContent.trim())+'.');return Number(raw);}
 function formCandidate(){
-  const p=structuredClone(project),a=p.actors[actor],s=p.shots[selected];
+  let p=structuredClone(project),cueIndex=null;
+  if(p.actors[actor].performanceMode==='blocking'){
+    const result=updateCue(p,actor,cueSelection[actor],{time:number('cueTime'),x:number('actorX'),z:number('actorZ'),action:$('action').value,visible:$('cueVisible').checked});
+    p=result.project;cueIndex=result.cueIndex;
+  }else Object.assign(p.actors[actor],{x:number('actorX'),z:number('actorZ'),action:$('action').value});
+  const a=p.actors[actor],s=p.shots[selected];
   p.title=$('title').value;p.light=number('light');
-  Object.assign(a,{name:$('actorName').value,x:number('actorX'),z:number('actorZ'),color:$('color').value,action:$('action').value});
+  Object.assign(a,{name:$('actorName').value,color:$('color').value});
   Object.assign(s,{name:$('shotName').value,duration:number('duration'),fov:number('fov')});
-  setCamera(s,{eye:['eyeX','eyeY','eyeZ'].map(number),target:['targetX','targetY','targetZ'].map(number)});return p;
+  setCamera(s,{eye:['eyeX','eyeY','eyeZ'].map(number),target:['targetX','targetY','targetZ'].map(number)});return {project:p,cueIndex};
 }
 $('settings').addEventListener('submit',e=>e.preventDefault());
 $('settings').addEventListener('input',e=>{
@@ -117,6 +149,12 @@ $('settings').addEventListener('change',e=>{
     if(guarded()){if(id==='preset')$('preset').value='custom';refresh();return;}editIntent++;
     if(id==='actor'){actor=Number($('actor').value);refresh(true);return;}
     if(id==='cameraEndpoint'){endpoint=$('cameraEndpoint').value;refresh(true);return;}
+    if(id==='performanceMode'){
+      const mode=$('performanceMode').value,a=project.actors[actor];
+      if(mode===a.performanceMode)return;
+      if(mode==='loop'&&(a.cues.length>1||!a.cues[0].visible)&&!confirm('Keep the first cue’s position and action as a looping performance, and discard scheduled cues and visibility? Undo scene restores only committed blocking, not unsent fields.')){refresh();return;}
+      try{const p=setPerformanceMode(project,actor,mode);stop();apply(p,{cueIndex:0});}catch(e){status(e.message);refresh();}return;
+    }
     stop();const p=structuredClone(project),s=p.shots[selected];
     if(id==='cameraMode'){
       const mode=$('cameraMode').value;
@@ -126,19 +164,34 @@ $('settings').addEventListener('change',e=>{
         s.cameraMode='static';delete s.endEye;delete s.endTarget;
       }else{s.cameraMode='linear';s.endEye=[...s.eye];s.endTarget=[...s.target];}
     }else if(id==='preset'){
-      const a=p.actors[actor],presets={wide:{eye:[5,3,7],target:[0,1,0],fov:45},two:{eye:[0,1.8,5],target:[0,1,0],fov:40},close:{eye:[a.x,1.8,a.z+3],target:[a.x,1.35,a.z],fov:30}};
+      const a=editingPose(),presets={wide:{eye:[5,3,7],target:[0,1,0],fov:45},two:{eye:[0,1.8,5],target:[0,1,0],fov:40},close:{eye:[a.x,1.8,a.z+3],target:[a.x,1.35,a.z],fov:30}};
       const preset=presets[$('preset').value];if(!preset)return;setCamera(s,preset);s.fov=preset.fov;
     }
     apply(p);return;
   }
   // A change without an input event is still an unsent edit until accepted.
   unsent.add(id);editIntent++;stop();
-  try{apply(formCandidate());}catch(e){status(e.message);refresh();}
+  try{const result=formCandidate();apply(result.project,{cueIndex:result.cueIndex});}catch(e){status(e.message);refresh();}
 });
 $('discardEdits').onclick=()=>{
   if(busy()||!unsent.size)return;
   if(!confirm('Discard unsent edits and restore the committed fields?'))return;
   editIntent++;unsent.clear();refresh(true);status('Unsent edits discarded. The committed film and history are unchanged.');
+};
+$('addCue').onclick=()=>{
+  if(guarded())return;editIntent++;
+  try{const at=Math.min(totalDuration(project),Math.max(0,evaluatedPreview().global)),pose=performerAt(project,actor,at);
+    const result=insertCue(project,actor,{time:at,x:pose.x,z:pose.z,action:pose.action,visible:pose.visible});stop();apply(result.project,{cueIndex:result.cueIndex});
+  }catch(e){status(e.message);}
+};
+$('removeCue').onclick=()=>{
+  if(guarded())return;editIntent++;
+  try{const result=removeCue(project,actor,cueSelection[actor]);stop();apply(result.project,{cueIndex:result.cueIndex});}catch(e){status(e.message);}
+};
+$('previewCue').onclick=()=>{
+  if(guarded())return;const a=project.actors[actor];if(a.performanceMode!=='blocking')return;
+  editIntent++;stop();previewMode='film';time=a.cues[cueSelection[actor]].time;refresh();
+  status('Previewing the committed cue time with the film camera. A cue on a cut uses the next shot.');
 };
 $('copyEndpoint').onclick=()=>{
   if(guarded())return;editIntent++;const p=structuredClone(project),s=p.shots[selected];if(s.cameraMode!=='linear')return;
@@ -196,11 +249,19 @@ $('cancel').onclick=()=>abort?.abort();
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();abort?.abort();}});
 $('vr').onclick=async()=>{
   if(xr){await xr.end();return;}if(guarded())return;
-  const capturedShot=selected,capturedEndpoint=endpoint,capturedActor=actor;
+  const capturedShot=selected,capturedEndpoint=endpoint,capturedActor=actor,capturedCueTime=project.actors[actor].performanceMode==='blocking'?editingPose().time:null;
   stop();xrPending=true;xrAbort=new AbortController();refresh();status('Requesting VR…');
   try{
     xr=await enterXR(renderer,()=>project,()=>time,([x,z])=>{
-      const p=structuredClone(project);p.actors[capturedActor].x=Math.round(x*10)/10;p.actors[capturedActor].z=Math.round(z*10)/10;apply(p);
+      try{
+        let p=structuredClone(project);const a=p.actors[capturedActor];
+        if(capturedCueTime===null){if(a.performanceMode!=='loop')throw Error('The captured looping performer is no longer available.');a.x=Math.round(x*10)/10;a.z=Math.round(z*10)/10;}
+        else{if(a.performanceMode!=='blocking')throw Error('The captured blocking performer is no longer available.');
+          const i=a.cues.findIndex(cue=>cue.time===capturedCueTime);if(i<0)throw Error('The captured performer cue is no longer available.');
+          p=updateCue(p,capturedActor,i,{...a.cues[i],x:Math.round(x*10)/10,z:Math.round(z*10)/10}).project;
+        }
+        if(apply(p))status(`Performer placed${capturedCueTime===null?'':` at captured cue ${capturedCueTime}s`}. `+$('status').textContent);
+      }catch(e){status(e.message);}
     },()=>{
       xr=null;previewMode='endpoint';previewEndpoint=capturedEndpoint;time=evaluatedPreview().global;
       status((graphicsLost?'Graphics context lost. Save a backup and reload.':'Left VR.')+(storageWarning?' '+storageWarning:''));refresh();
@@ -208,7 +269,7 @@ $('vr').onclick=async()=>{
       const p=structuredClone(project);setCamera(p.shots[capturedShot],camera,capturedEndpoint);
       if(apply(p)){previewMode='endpoint';previewEndpoint=capturedEndpoint;time=evaluatedPreview().global;status('Camera captured. '+$('status').textContent);}
     },onCameraError:status});
-    status('VR active. Select the floor marker to place the performer; squeeze to capture into the selected '+capturedEndpoint+' endpoint.');
+    status('VR active. Select the floor marker to place '+(capturedCueTime===null?'the looping performer':'the performer at captured cue '+capturedCueTime+'s')+'; squeeze to capture into the selected '+capturedEndpoint+' endpoint.');
   }catch(e){status(e.message);}finally{xrPending=false;if(!xr)xrAbort=null;refresh();}
 };
 function loop(now){

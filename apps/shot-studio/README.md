@@ -1,7 +1,7 @@
 # Shot Studio
 
 A local 3D filmmaking sketchbook for idea #7. Stage two block characters in a
-courtyard, choose idle/wave/pace performances, adjust lighting, compose static or
+courtyard, choose looping actions or author timed movement, visibility and action cues, adjust lighting, compose static or
 traveling cameras, rehearse or scrub the shot list, and export a silent WebM film. Native browser
 JavaScript/WebGL: no accounts, external assets, services or paid APIs.
 
@@ -22,13 +22,15 @@ this is not a normal project backup. When reading is denied, a recovery download
 unavailable. Save your current project before reload or replacement. **Replace browser
 draft** asks for confirmation and enables autosave only after a successful write;
 cancellation or failure preserves the old record. Reloading preserves the
-film, not the current playhead, selected camera endpoint or performer.
+film, not the current playhead, selected camera endpoint, performer or cue.
 
-New saves use schema 2. Original schema-1 static films migrate without changing
-their composition. Loading an old draft does not write storage; the next valid
-edit or explicit draft replacement writes schema 2. Older readers reject this
-version rather than silently dropping camera travel. Unknown fields, unsupported
-versions and motion-bearing schema-1 films are rejected and retain raw recovery.
+New saves use schema 3. Genuine schema-1 static films and schema-2 camera-travel
+films migrate to explicit looping performers without changing their existing
+composition or animation formulas. Loading an old draft does not write storage;
+the next valid edit or explicit draft replacement writes schema 3. Older readers
+reject this version rather than silently dropping performer blocking. Unknown
+fields, unsupported versions, camera-travel fields in schema 1 and new performer
+fields in schema 1/2 are rejected and retain raw recovery.
 
 Typing into scene settings while a project file is still opening cancels that
 pending replacement, even before blur commits the edit. The exact focused draft
@@ -36,7 +38,7 @@ and existing saved film are retained; open the backup again when you intend to
 replace them. Typing alone does not commit an edit or create a history entry. An unfinished or
 invalid form stays visible, including raw coordinates that would create an unsafe
 camera path. Correct it or confirm **Discard unsent edits** before changing the
-selected performer/shot/endpoint or using actions that would replace or encode it.
+selected performer/cue/shot/endpoint or using actions that would replace or encode it.
 Opening another project also waits for this choice. Scrubbing previews the committed
 film; **Save project** downloads that committed film, not unsent fields. Leaving the
 page warns about unsent edits and pending imports; raw form input is not autosaved.
@@ -46,6 +48,33 @@ page warns about unsent edits and pending imports; raw form input is not autosav
 Select a performer, edit position/costume/action, adjust lighting. Compose a shot
 with a preset or numeric camera/target controls. Name/time it, add/select/remove
 shots, move the selected shot earlier/later, then rehearse or scrub the cut.
+
+Choose **Authored blocking** under **Performer motion** to give the selected
+performer a global film timeline. Conversion begins with a visible cue at 0 seconds,
+using the looping base position/action. Costume and name apply to the whole performer.
+
+- Scrub the committed film and choose **Add cue at preview**. The new cue captures
+  that time's evaluated position, action and visibility; its action phase restarts.
+  Each performer supports 1–32 unique, strictly ordered cues within the film.
+- Select a cue to edit its time, X/Z position, action and **Performer visible**.
+  Edits commit on change/blur and are reversible. The first cue stays at 0 and
+  cannot be removed. Retiming sorts the cues while retaining the edited selection.
+- Selecting a cue only changes the editing target. **Preview cue** stops rehearsal
+  and shows that exact global time with the film camera. A cue on a shot cut uses
+  the next shot. Camera endpoint previews still evaluate performers at global time.
+- Positions interpolate linearly between cues; equal positions hold still.
+  Visibility and actions change exactly at the next cue, with no fading. Wave/walk
+  limb phase restarts at every cue, even when the action name is unchanged. **Walk
+  in place** animates limbs without adding the looping mode's sinusoidal pacing.
+  After the last cue, position/action/visibility remain in effect through film end;
+  limb animation continues from that cue. Performers keep their fixed facing.
+- Shortening/removing shots cannot silently discard later cues: first move or
+  remove those cues. Reordering shots leaves cue times unchanged. A close-up camera
+  preset targets the selected editing cue, as labeled, rather than the current
+  preview position.
+- Switching back to **Looping performance** keeps the first cue's position/action.
+  Discarding other cues or hidden state asks for confirmation; Undo restores the
+  committed blocking. Unsent form edits still need correction or explicit discard.
 
 Choose **Linear travel** under **Camera motion**, then choose **Start** or **End**
 under **Editing endpoint** and edit its camera position and look target. Travel
@@ -71,7 +100,8 @@ give guidance to save a project instead.
 
 One courtyard, two block performers, 1–20 shots, 1–15 seconds each, **60 seconds
 total**. Backups are limited to **64 KiB** with bounded names, positions, angles
-and enum values. Imports never execute code or fetch media. Hard cuts; performances
+and enum values. Cues use global film time rather than restarting at camera cuts.
+Imports never execute code or fetch media. Hard cuts; looping performances
 use continuous film time. WebM is silent at 960 × 540, requested 30 fps, with a
 browser-selected VP9/VP8 encoder. Exact timing/dropped frames depend on hardware.
 Travel validates the entire path against coincident or vertical look directions,
@@ -87,6 +117,9 @@ generative animation, separate take library or immersive video export yet.
 **Enter VR** requests an `immersive-vr` WebXR session with a `local-floor` reference
 space and renders tracked stereo headset views of the actual 3D stage. Select the
 floor marker with a tracked controller to place the desktop-selected performer.
+For blocking, this edits only the cue selected when entering VR, identified by its
+exact cue time. The placement label identifies that fixed target while the
+performer animates; no current/nearest cue is substituted. Other cues stay intact.
 Squeeze a controller to capture the headset position and forward direction into
 the endpoint selected on desktop when entering VR. Its other endpoint, name,
 duration and lens stay unchanged. The whole resulting path must validate; a
@@ -94,8 +127,9 @@ rejected capture preserves the film. Exit VR to inspect that endpoint, undo or
 refine the camera. Captured shots use a level world-up camera, so
 headset roll is not reproduced and framing follows the existing lens rather
 than the headset field of view. Straight up/down or out-of-bounds views and
-missing tracking preserve the shot with guidance. Performers animate continuously
-while viewing the live set, including beyond the authored film duration; headset
+missing tracking preserve the shot with guidance. Looping performers animate
+continuously beyond film end. Blocking performers use the same evaluated film
+poses and clamp at the final film time; headset
 views do not rehearse the authored camera travel. Exit via
 the headset/browser session control; desktop editing is available afterwards.
 
@@ -135,18 +169,21 @@ Tests start their own server and refuse to reuse an occupied port.
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains 65 unit tests and 29 Chromium browser checks, including
-18 independently authored camera/geometry cases, decoded video landmarks against a
-separate pinhole projection, static/identical-endpoint controls, strict migration,
-raw draft/import races, controlled immersive endpoint capture/undo, reversible edits,
-portable shot order and exact End preview versus film cuts. The workflow repeats these checks for subsequent edits.
+requires a device. The suite contains **107 unit tests and 43 Chromium browser
+checks**. Independent oracles include 18 camera/geometry cases and 14 performer
+timing/migration cases. Native acceptance covers decoded camera and performer
+motion against a separate pinhole projection, stationary controls, literal wave
+pose envelopes, hidden intervals, strict migration, raw draft/import races,
+controlled immersive camera/cue capture, reversible edits and exact preview cuts.
+The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
 covered using controlled page lifecycle events; physical headset tests remain outstanding.
 
 `history.js` owns bounded scene history and shot ordering; `model.js` validates versioned snapshots/whole paths and evaluates cameras/cuts/performances; `math.js` owns column-major camera
 transforms; `renderer.js` draws native WebGL; `xr.js` manages immersive views and
 controller floor hits; `export.js` owns recording/cleanup; `app.js` manages DOM
-state, local drafts and imports.
+state, local drafts and imports. `performer.js` owns standalone validated pose
+evaluation; all renderer views use the same global-time performer adapter.
 
 Draft recovery was verified on 2026-10-04 in [run 37172319440](https://github.com/twangyal/projects-monorepo/actions/runs/37172319440) on `cae7d16d09b011b60a0057895c705497116a08ba`: all 28 unit tests, syntax checks and nine production Chromium flows passed. The new regression failed before the fix. See [the verification record](docs/2026-10-04-draft-recovery-verification.json) and issue [#44](https://github.com/twangyal/projects-monorepo/issues/44).
 
