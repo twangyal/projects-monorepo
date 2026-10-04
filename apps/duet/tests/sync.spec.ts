@@ -2,7 +2,8 @@ import { test, expect, type Page, type Route } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
 // Tracing's DOM snapshots grant sticky browser activation and would invalidate
-// the real autoplay rejection case. The native audio API is never stubbed.
+// the real autoplay rejection case. Playback always uses the native audio API;
+// startup regressions explicitly delay its invocation without faking playback.
 test.use({ trace: 'off', launchOptions: {
   ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
   args: ['--autoplay-policy=user-gesture-required'],
@@ -49,6 +50,116 @@ async function harness(page: Page): Promise<void> {
 async function metadata(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => window.syncHarness.audio.readyState)).toBeGreaterThanOrEqual(1);
 }
+
+declare global {
+  interface Window {
+    syncStartup: { release: () => void; settled: boolean; calls: number[] };
+  }
+}
+
+async function holdNativeStart(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const audio = window.syncHarness.audio;
+    const nativePlay = audio.play.bind(audio);
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const startup = { release, settled: false, calls: [] as number[] };
+    window.syncStartup = startup;
+    audio.play = () => {
+      startup.calls.push(audio.currentTime);
+      if (startup.calls.length !== 1) return nativePlay();
+      // Only scheduling is controlled; the browser decodes and plays real WAV.
+      return gate.then(() => nativePlay()).finally(() => { startup.settled = true; });
+    };
+  });
+}
+
+test('starting inside the drift deadband aligns before invoking native playback', async ({ page }) => {
+  await harness(page);
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 1)));
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.readyState)).toBe(4);
+  await holdNativeStart(page);
+  await page.evaluate(() => {
+    document.querySelector('#enable')!.addEventListener('click', () => {
+      const h = window.syncHarness;
+      h.apply(h.snapshot('a', true, h.audio.currentTime + .3));
+    }, { capture: true, once: true });
+  });
+  const before = await page.evaluate(() => window.syncHarness.audio.currentTime);
+  await page.getByRole('button', { name: 'Enable audio', exact: true }).click();
+  // At the exact play call, no native clock advancement can mask stale alignment.
+  expect(await page.evaluate(before => window.syncStartup.calls[0] - before, before)).toBeGreaterThanOrEqual(.299);
+  await page.evaluate(() => window.syncStartup.release());
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.currentTime)).toBeGreaterThan(before + .4);
+  await expect.poll(() => page.evaluate(() => window.syncHarness.drift())).toBeLessThan(.35);
+});
+
+test('a delayed native start reconciles the newest shared snapshot after playing', async ({ page }) => {
+  await harness(page);
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 1)));
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.readyState)).toBe(4);
+  await holdNativeStart(page);
+  await page.getByRole('button', { name: 'Enable audio', exact: true }).click();
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 5)));
+  await page.waitForTimeout(500);
+  await page.evaluate(() => window.syncStartup.release());
+  await expect.poll(() => page.evaluate(() => window.syncStartup.settled)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.currentTime)).toBeGreaterThan(5.2);
+  // Assert while audio is advancing, before duration clamping could hide lag.
+  expect(await page.evaluate(() => window.syncHarness.drift())).toBeLessThan(.2);
+});
+
+for (const change of ['pause', 'disable', 'source'] as const) {
+  test(`pending native startup preserves a newer ${change}`, async ({ page }) => {
+    await harness(page);
+    await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 1)));
+    await expect.poll(() => page.evaluate(() => window.syncHarness.audio.readyState)).toBe(4);
+    await holdNativeStart(page);
+    await page.getByRole('button', { name: 'Enable audio', exact: true }).click();
+    await page.evaluate(change => {
+      const h = window.syncHarness;
+      if (change === 'disable') h.sync.disable();
+      else h.apply(h.snapshot(change === 'source' ? 'b' : 'a', false, 4));
+    }, change);
+    await metadata(page);
+    await page.evaluate(() => window.syncStartup.release());
+    await expect.poll(() => page.evaluate(() => window.syncStartup.settled)).toBe(true);
+    await expect.poll(() => page.evaluate(() => window.syncHarness.audio.paused)).toBe(true);
+    expect(await page.evaluate(() => window.syncHarness.sync.enabled)).toBe(change !== 'disable');
+    if (change !== 'disable') expect(await page.evaluate(() => Math.abs(window.syncHarness.audio.currentTime - 4))).toBeLessThan(.01);
+    if (change === 'source') expect(await page.evaluate(() => window.syncHarness.audio.currentSrc)).toContain('/sync-tone-b.wav');
+    expect(await page.evaluate(() => window.syncHarness.statuses.some(status => /blocked|could not play/i.test(status)))).toBe(false);
+  });
+}
+
+test('a delayed native start pauses when shared playback has reached the end', async ({ page }) => {
+  await harness(page);
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 1)));
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.readyState)).toBe(4);
+  await holdNativeStart(page);
+  await page.getByRole('button', { name: 'Enable audio', exact: true }).click();
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 9.7)));
+  await page.waitForTimeout(500);
+  await page.evaluate(() => window.syncStartup.release());
+  await expect.poll(() => page.evaluate(() => window.syncStartup.settled)).toBe(true);
+  expect(await page.evaluate(() => window.syncHarness.audio.paused)).toBe(true);
+  await expect(page.getByRole('status')).toContainText('Waiting for the room’s next track');
+});
+
+test('an old native startup cannot pause the newer playing source', async ({ page }) => {
+  await harness(page);
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('a', true, 1)));
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.readyState)).toBe(4);
+  await holdNativeStart(page);
+  await page.getByRole('button', { name: 'Enable audio', exact: true }).click();
+  await page.evaluate(() => window.syncHarness.apply(window.syncHarness.snapshot('b', true, 4)));
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.currentSrc)).toContain('/sync-tone-b.wav');
+  await expect.poll(() => page.evaluate(() => window.syncHarness.audio.currentTime)).toBeGreaterThan(4.2);
+  await page.evaluate(() => window.syncStartup.release());
+  await expect.poll(() => page.evaluate(() => window.syncStartup.settled)).toBe(true);
+  expect(await page.evaluate(() => window.syncHarness.audio.paused)).toBe(false);
+  expect(await page.evaluate(() => window.syncHarness.sync.enabled)).toBe(true);
+});
 
 test('remote playback remains paused until the listener explicitly enables native audio', async ({ page }) => {
   await harness(page);

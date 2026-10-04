@@ -167,8 +167,11 @@ export class AudioSync {
     const track = latest.snapshot.tracks.find(item => item.id === latest.snapshot.playback.trackId)!;
     const duration = Number.isFinite(this.#audio.duration) ? Math.min(track.duration, this.#audio.duration) : track.duration;
     const target = Math.min(duration, estimatedPosition(latest.snapshot, Date.now() + latest.offset));
+    const starting = this.#shouldPlay() && this.#audio.paused && this.#attempt?.generation !== this.#generation;
     try {
-      if (force || Math.abs(this.#audio.currentTime - target) > .35) this.#audio.currentTime = target;
+      // A paused clock can already lag within the normal playback deadband.
+      // Starting playback must align it before native decoder startup adds lag.
+      if (force || starting || Math.abs(this.#audio.currentTime - target) > .35) this.#audio.currentTime = target;
     } catch {
       this.#block('Audio could not seek. Check the local connection and click Enable audio to retry.');
       return Promise.resolve();
@@ -204,7 +207,10 @@ export class AudioSync {
           if (!this.#shouldPlay()) this.#audio.pause();
           return;
         }
-        this.#report('Audio ready. Following the shared room.');
+        // Native play can settle long after the initial seek. Re-read the latest
+        // snapshot, including same-source seeks, while preserving this attempt
+        // until completion. Do not return its own promise via #synchronize().
+        void this.#synchronize(true);
       }, error => {
         if (generation !== this.#generation || !this.#shouldPlay()) return;
         this.#block(error instanceof DOMException && error.name === 'NotAllowedError'
