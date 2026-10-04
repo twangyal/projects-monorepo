@@ -24,6 +24,7 @@ test('capture scenes, sequence whole shots, repeat/reorder/undo and portable res
   expect(p.sources[0].film.title).toBe('The arrival');expect(p.sources[1].film.title).toBe('Changed scene');
   await page.locator('#sequence-title').fill('Temporary');await page.locator('#sequence-title').press('Tab');
   await page.locator('#sequence-open').setInputFiles({name:'cut.shot-sequence.json',mimeType:'application/json',buffer:Buffer.from(backup)});
+  await expect(page.locator('#sequence-title')).toHaveValue(p.title);
   expect(await stored(page)).toBe(JSON.stringify(p));expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe(scene);
   await page.reload();await expect(page.locator('#sequence-clips button')).toHaveCount(3);
   expect(JSON.parse(await stored(page))).toEqual(p);expect(errors).toEqual([]);
@@ -33,11 +34,13 @@ test('source shot preview uses original time and renders actual different source
   film.shots[1].duration=2;film.actors[0]={name:'Timed',color:'#ff0000',performanceMode:'blocking',cues:[
     {time:0,x:-3,z:0,action:'idle',visible:true},{time:2,x:0,z:0,action:'wave',visible:true},{time:4,x:3,z:0,action:'idle',visible:false}]};
   await page.locator('#sequence-import-scene').setInputFiles({name:'red.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(film))});
+  await expect(page.locator('#sequence-source option')).toHaveCount(1);
   await page.locator('#sequence-shot').selectOption('1');await page.locator('#sequence-add').click();
   await expect(page.locator('#sequence-clock')).toContainText('source 2.00');
   const first=await page.locator('#sequence-stage').screenshot();
   const blue=structuredClone(film);blue.title='Bright blue';blue.light=2;blue.actors[0].color='#0000ff';
   await page.locator('#sequence-import-scene').setInputFiles({name:'blue.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(blue))});
+  await expect(page.locator('#sequence-source option')).toHaveCount(2);
   await page.locator('#sequence-shot').selectOption('1');await page.locator('#sequence-add').click();
   await page.locator('#sequence-scrub').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}));});
   await expect(page.locator('#sequence-clock')).toContainText('source 2.00');await expect(page.locator('#sequence-clock')).toContainText('clip 2');
@@ -81,6 +84,7 @@ test('narrow keyboard controls and canceled export keep the complete sequence',a
 test('saved take film remains an independent sequence source after take deletion and scene edits',async({page})=>{
   await ready(page);const film=createProject();film.title='Captured take scene';film.shots=[{...film.shots[0],duration:1}];
   await page.locator('#import').setInputFiles({name:'take-scene.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(film))});
+  await expect(page.locator('#title')).toHaveValue(film.title);
   await page.locator('#record-take').click();await expect(page.locator('#take-status')).toContainText('Saved take in this browser',{timeout:15000});
   await page.locator('#sequence-capture-take').click();await page.locator('#sequence-add').click();const before=await stored(page);
   await page.locator('#title').fill('New scene');await page.locator('#title').press('Tab');
