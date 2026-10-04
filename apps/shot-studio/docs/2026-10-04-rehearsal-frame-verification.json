@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 75,
-  "status": "local-verification-complete-ci-pending",
+  "status": "verified",
   "failedCi": {
     "commit": "634c4668da4bf9e45a669bbd0a315abba983ab13",
     "runId": 37199016441,
@@ -58,7 +58,18 @@
     "apps/shot-studio/tests/browser/travel.spec.js": "b0dd798b86a26eb42da8382f6c6d8721e411e9fd1af5e532684e2f48aeb6d1ef"
   },
   "ci": {
-    "status": "pending"
+    "status": "success",
+    "commit": "313b20ccf11c3ff45f5927ced6c306a843fabaf5",
+    "runId": 37199574159,
+    "jobId": 111428295871,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37199574159",
+    "unitPassed": 107,
+    "unitDurationMs": 365.797198,
+    "browserPassed": 43,
+    "browserDuration": "1.1m",
+    "chromium": "153.0.8010.12",
+    "syntaxCheck": true,
+    "repositoryNote": "Shot passed; the other project failure at this commit is Melody and is under separate investigation. This is not an all-workflows-green claim."
   },
   "limitations": [
     "The timing-only reproduction deferred a real requestAnimationFrame callback; it did not fabricate rendered pixels, timestamps or saved data.",
