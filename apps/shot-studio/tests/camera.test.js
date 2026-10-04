@@ -26,3 +26,19 @@ test('a captured camera retains shot metadata, persists as a snapshot and is rev
   assert.deepEqual(history.undo(),p);assert.deepEqual(history.redo(),film);
   assert.deepEqual(JSON.parse(JSON.stringify(film)),film);
 });
+test('an End pose preserves Start and lens metadata through complete candidate validation',()=>{
+  const p=createProject();Object.assign(p.shots[1],{cameraMode:'linear',endEye:[0,1.8,5],endTarget:[0,1,0]});
+  const h=new ProjectHistory(p),candidate=h.current,captured=cameraFromPose(pose());
+  Object.assign(candidate.shots[1],{endEye:captured.eye,endTarget:captured.target});const film=h.commit(candidate);
+  assert.deepEqual(film.shots[1].eye,p.shots[1].eye);assert.deepEqual(film.shots[1].target,p.shots[1].target);
+  assert.deepEqual(film.shots[1].endEye,[1,2,5]);assert.deepEqual(film.shots[1].endTarget,[1,2,2]);
+  for(const key of ['name','duration','fov','cameraMode'])assert.equal(film.shots[1][key],p.shots[1][key]);
+  captured.eye[0]=10;assert.deepEqual(h.current,film);assert.deepEqual(h.undo(),p);assert.deepEqual(h.redo(),film);
+});
+test('valid standalone headset poses can still be rejected for a singular intermediate travel path',()=>{
+  const p=createProject();Object.assign(p.shots[0],{cameraMode:'linear',eye:[1,2,5],target:[1,2,2],endEye:[1,2,5],endTarget:[1,2,2]});
+  const h=new ProjectHistory(p),candidate=h.current,m=pose();m[10]=-1;
+  const captured=cameraFromPose(m);assert.deepEqual(captured,{eye:[1,2,5],target:[1,2,8]});
+  Object.assign(candidate.shots[0],captured);assert.throws(()=>h.commit(candidate),/camera|path/i);
+  assert.deepEqual(h.current,p);assert.equal(h.canUndo,false);assert.equal(h.canRedo,false);
+});

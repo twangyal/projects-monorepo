@@ -29,10 +29,10 @@ export class StageRenderer{
     this.uniforms=Object.fromEntries(['model','viewProjection','color','light'].map(name=>[name,gl.getUniformLocation(program,name)]));
     gl.enable(gl.DEPTH_TEST);gl.clearColor(.07,.10,.13,1);
   }
-  draw(project,time,shot){
+  draw(project,time,camera){
     const gl=this.gl;gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,this.canvas.width,this.canvas.height);
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
-    this.scene(project,time,multiply(perspective(shot.fov,this.canvas.width/this.canvas.height,.1,100),lookAt(shot.eye,shot.target)));
+    this.scene(project,time,multiply(perspective(camera.fov,this.canvas.width/this.canvas.height,.1,100),lookAt(camera.eye,camera.target)));
   }
   scene(p,time,viewProjection,marker=null){
     const gl=this.gl,u=this.uniforms;gl.useProgram(this.program);gl.uniformMatrix4fv(u.viewProjection,false,viewProjection);gl.uniform1f(u.light,p.light);

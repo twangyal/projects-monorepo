@@ -27,3 +27,21 @@ test('shot moves preserve camera/content and are reversible with whole-scene his
   assert.equal(p.shots[0].name,'Establishing');h.commit(moved);assert.deepEqual(h.undo(),p);
   for(const args of [[0,-1],[1,1],[-1,1],[0,2],[.5,1]])assert.throws(()=>moveShot(p,...args));
 });
+test('motion arrays survive history, reordering and portable snapshots without aliases',()=>{
+  const initial=createProject(),h=new ProjectHistory(initial),candidate=h.current;
+  Object.assign(candidate.shots[0],{cameraMode:'linear',endEye:[3,2,7],endTarget:[0,1,0]});
+  const travel=h.commit(candidate);candidate.shots[0].endEye[0]=12;
+  assert.equal(h.current.shots[0].endEye[0],3);assert.equal(travel.schemaVersion,2);
+  const moved=moveShot(h.current,0,1);assert.deepEqual(moved.shots[1],travel.shots[0]);h.commit(moved);
+  moved.shots[1].endTarget[0]=10;assert.deepEqual(h.current.shots[1],travel.shots[0]);
+  assert.deepEqual(h.undo(),travel);assert.deepEqual(h.undo(),initial);
+  assert.deepEqual(h.redo(),travel);assert.deepEqual(h.redo().shots[1],travel.shots[0]);
+  assert.deepEqual(JSON.parse(JSON.stringify(h.current)),h.current);
+});
+test('invalid whole-path edits preserve the history cursor and no-op redo',()=>{
+  const p=createProject();Object.assign(p.shots[0],{cameraMode:'linear',eye:[1,1,0],target:[0,1,0],endEye:[2,1,0],endTarget:[0,1,0]});
+  const h=new ProjectHistory(p),edited=h.current;edited.title='Valid later edit';h.commit(edited);h.undo();
+  const invalid=h.current;invalid.shots[0].endEye=[-1,1,0];assert.throws(()=>h.commit(invalid),/camera|path/i);
+  assert.deepEqual(h.current,p);assert.equal(h.canUndo,false);assert.equal(h.canRedo,true);
+  h.commit(h.current);assert.equal(h.canRedo,true);assert.deepEqual(h.redo(),edited);
+});
