@@ -115,17 +115,52 @@ test('four actual-video slots reject a fifth without eviction and reject malform
 });
 
 test('complete archives retain exact bytes across whole browser restart and fresh-profile declared import',async({},info)=>{
-  test.setTimeout(90000);const profile=await mkdtemp(join(tmpdir(),'shot86-profile-'));const baseURL=info.project.use.baseURL;
-  const options={headless:true,executablePath:process.env.CHROMIUM_PATH??'/usr/bin/chromium',acceptDownloads:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'],baseURL};
-  let context=await chromium.launchPersistentContext(profile,options);let page=await context.newPage();let bytes,receipt;
-  try{bytes=await createArchive(page);receipt=await libraryReceipt(page);await page.screenshot({path:info.outputPath('desktop-take.png'),fullPage:true});}finally{await context.close();}
-  context=await chromium.launchPersistentContext(profile,options);page=await context.newPage();
-  try{await page.goto('/');await expect(rows(page)).toHaveCount(1);await rows(page).first().click();expect(await libraryReceipt(page)).toEqual(receipt);expect((await downloadTake(page)).bytes).toEqual(bytes);}finally{await context.close();}
-  const fresh=await chromium.launchPersistentContext(await mkdtemp(join(tmpdir(),'shot86-fresh-')),options);
-  try{const imported=await fresh.newPage();await imported.goto('/');const current=await sceneRaw(imported);await importTake(imported,bytes);await expect(rows(imported)).toHaveCount(1);await rows(imported).first().click();const state=await libraryReceipt(imported);expect(state.records[0].metadata.id).not.toBe(receipt.records[0].metadata.id);expect(state.records[0].metadata.origin).toBe('imported-declared');expect(await sceneRaw(imported)).toBe(current);
-    const before=parseTake(bytes),after=parseTake((await downloadTake(imported)).bytes);expect(after.video).toEqual(before.video);expect(after.manifest).toEqual({...before.manifest,origin:'imported-declared'});
-    await imported.setViewportSize({width:390,height:844});await expect(imported.locator('#play-take')).toBeVisible();expect(await imported.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await imported.locator('#play-take').focus();await imported.keyboard.press('Enter');await expect.poll(()=>imported.locator('#take-video').evaluate(v=>v.currentTime)).toBeGreaterThan(.1);await imported.locator('#stop-take').click();await imported.screenshot({path:info.outputPath('narrow-imported-take.png'),fullPage:true});
+  test.setTimeout(90000);
+  const profile=await mkdtemp(join(tmpdir(),'shot86-profile-'));
+  // Use the same configured browser as the normal suite: explicit local override
+  // when supplied, otherwise Playwright's pinned browser on CI.
+  const options={...info.project.use.launchOptions,headless:true,acceptDownloads:true,baseURL:info.project.use.baseURL};
+  const lifecycle=[];
+  async function session(directory,label,run){
+    const context=await chromium.launchPersistentContext(directory,options),browser=context.browser();
+    const entry={label,profile:directory,browserVersion:browser?.version()??null,events:[]};lifecycle.push(entry);
+    const mark=(type,details={})=>{if(entry.events.length<40)entry.events.push({type,at:Date.now(),...details});};
+    browser?.on('disconnected',()=>mark('browser-disconnected'));
+    context.on('close',()=>mark('context-close'));
+    const page=await context.newPage();
+    page.on('close',()=>mark('page-close'));page.on('crash',()=>mark('page-crash'));
+    page.on('download',download=>mark('download-start',{name:download.suggestedFilename()}));
+    try{return await run(page);}
+    catch(error){entry.failure={message:String(error),pageClosed:page.isClosed(),browserConnected:browser?.isConnected()??null};throw error;}
+    finally{
+      mark('explicit-context-close-request');
+      await context.close();
+      mark('explicit-context-close-complete');
+      await writeFile(info.outputPath('restart-browser-lifecycle.json'),JSON.stringify(lifecycle,null,2));
+    }
+  }
+  let bytes,receipt;
+  await session(profile,'original recording',async page=>{
+    bytes=await createArchive(page);receipt=await libraryReceipt(page);
+    await page.screenshot({path:info.outputPath('desktop-take.png'),fullPage:true});
+  });
+  await session(profile,'reopened same profile',async page=>{
+    await page.goto('/');await expect(rows(page)).toHaveCount(1);await rows(page).first().click();
+    expect(await libraryReceipt(page)).toEqual(receipt);
+    expect((await downloadTake(page)).bytes).toEqual(bytes);
+  });
+  await session(await mkdtemp(join(tmpdir(),'shot86-fresh-')),'fresh-profile import',async imported=>{
+    await imported.goto('/');const current=await sceneRaw(imported);await importTake(imported,bytes);
+    await expect(rows(imported)).toHaveCount(1);await rows(imported).first().click();const state=await libraryReceipt(imported);
+    expect(state.records[0].metadata.id).not.toBe(receipt.records[0].metadata.id);
+    expect(state.records[0].metadata.origin).toBe('imported-declared');expect(await sceneRaw(imported)).toBe(current);
+    const before=parseTake(bytes),after=parseTake((await downloadTake(imported)).bytes);
+    expect(after.video).toEqual(before.video);expect(after.manifest).toEqual({...before.manifest,origin:'imported-declared'});
+    await imported.setViewportSize({width:390,height:844});await expect(imported.locator('#play-take')).toBeVisible();
+    expect(await imported.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await imported.locator('#play-take').focus();await imported.keyboard.press('Enter');
+    await expect.poll(()=>imported.locator('#take-video').evaluate(v=>v.currentTime)).toBeGreaterThan(.1);
+    await imported.locator('#stop-take').click();await imported.screenshot({path:info.outputPath('narrow-imported-take.png'),fullPage:true});
     await writeFile(info.outputPath('restart-verification.json'),JSON.stringify({archiveBytes:bytes.length,archiveSha256:sha(bytes),receipt,importedReceipt:state},null,2));
-  }finally{await fresh.close();}
+  });
 });

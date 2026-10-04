@@ -20,10 +20,21 @@ function candidate(revision=1){
 // controls expose abort/late-open/transaction-complete seams without pretending
 // to implement IndexedDB's scheduling or browser persistence.
 class ControlledDatabase {
-  constructor(){this.present=false;this.value=undefined;this.opens=[];this.transactions=[];this.closes=0;}
+  constructor(){this.present=false;this.value=undefined;this.opens=[];this.transactions=[];this.closes=0;this.openWaiters=new Set();}
   open(name,version){
     assert.equal(name,'shot-studio-takes');assert.equal(version,1);
-    const request={};this.opens.push(request);return request;
+    const request={};this.opens.push(request);for(const notify of this.openWaiters)notify();return request;
+  }
+  waitForOpen(index,pending){
+    if(this.opens[index])return Promise.resolve();
+    let notify;
+    const requested=new Promise(resolve=>{
+      notify=()=>{if(this.opens[index])resolve();};this.openWaiters.add(notify);
+    });
+    // Production already bounds the operation. Its rejection must propagate
+    // instead of hanging the driver if preflight fails before requesting IDB.
+    return Promise.race([requested,pending.then(()=>{throw Error('Storage completed without opening the database.');})])
+      .finally(()=>this.openWaiters.delete(notify));
   }
   opened(index=this.opens.length-1){
     const owner=this;
@@ -46,8 +57,9 @@ class ControlledDatabase {
 }
 
 async function opened(store,database,method='read',value){
+  const index=database.opens.length;
   const pending=method==='read'?store.read():store.save(value,{expectedRevision:value.revision-1});
-  pending.catch(()=>{});await flush();database.opened();await flush();return {pending,tx:database.transactions.at(-1)};
+  pending.catch(()=>{});await database.waitForOpen(index,pending);database.opened(index);await flush();return {pending,tx:database.transactions.at(-1)};
 }
 async function completeReads(database,tx){
   tx.reads();tx.complete();await flush();
@@ -67,12 +79,23 @@ test('only proven absence reads empty; present undefined is protected corruption
   assert.equal(database.present,true);assert.equal(database.value,undefined);store.close();
 });
 
-test('save captures detached metadata and resolves only after transaction completion',async()=>{
+test('save captures detached metadata and resolves only after transaction completion',async t=>{
   const database=new ControlledDatabase(),store=new TakeStore(()=>database),value=candidate();
+  const nativeDigest=crypto.subtle.digest.bind(crypto.subtle);
+  let releaseHash,hashArrived;
+  const gate=new Promise(resolve=>releaseHash=resolve),arrived=new Promise(resolve=>hashArrived=resolve);
+  t.mock.method(crypto.subtle,'digest',async(...args)=>{
+    const actual=await nativeDigest(...args);hashArrived();await gate;return actual;
+  });
+  t.after(()=>{releaseHash();store.close();});
   const pending=store.save(value,{expectedRevision:0});let settled=false;
   pending.then(()=>settled=true,()=>settled=true);
   value.records[0].metadata.name='Mutated while opening';value.records[0].metadata.film.title='Outside';
-  await flush();database.opened();await flush();
+  await arrived;
+  assert.equal(database.opens.length,0,'The real hash result is still pending, so no IDB request exists yet');
+  const ready=database.waitForOpen(0,pending);
+  await flush();assert.equal(database.opens.length,0);assert.equal(settled,false);
+  releaseHash();await ready;database.opened(0);await flush();
   const tx=await completeReads(database,database.transactions.at(-1));
   assert.equal(settled,false);assert.equal(database.present,false);
   assert.equal(tx.putValue.records[0].metadata.name,'Original take');

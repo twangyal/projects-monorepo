@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-04T14:56:28.536Z",
+  "repository": "twangyal/projects-monorepo",
+  "requestedHead": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+  "requestedTree": "f58baf9157b36458d4efcc8c104f7090fcb9aaa4",
+  "status": "first-head-shot-pr-and-push-failed-other-twelve-pr-workflows-success",
+  "source": "Authorized GitHub connector metadata and complete decoded Shot job logs",
+  "shot": [
+    {
+      "event": "pull_request",
+      "runId": 37210812185,
+      "jobId": 111461450015,
+      "headSha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "checkoutSha": "0d46f30c03d501f18b352d1e4e9d4c0401a72eb6",
+      "conclusion": "failure",
+      "startedAt": "2026-10-04T14:51:35Z",
+      "completedAt": "2026-10-04T14:51:52Z",
+      "unit": {
+        "total": 146,
+        "passed": 145,
+        "failed": 1,
+        "durationMs": 10446.423817
+      },
+      "syntax": "skipped",
+      "browser": "skipped",
+      "logPath": "/workspace/shot86-ci-first-pr.log",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-04T14:51:35Z",
+          "completed_at": "2026-10-04T14:51:36Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-04T14:51:36Z",
+          "completed_at": "2026-10-04T14:51:37Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-04T14:51:37Z",
+          "completed_at": "2026-10-04T14:51:38Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-04T14:51:38Z",
+          "completed_at": "2026-10-04T14:51:39Z"
+        },
+        {
+          "name": "Run npm test",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 5,
+          "started_at": "2026-10-04T14:51:39Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Run npm run check",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Run sudo apt-get update && sudo apt-get install -y ffmpeg",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 8,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Run npm run test:browser",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:50Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-10-04T14:51:50Z",
+          "completed_at": "2026-10-04T14:51:51Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-10-04T14:51:51Z",
+          "completed_at": "2026-10-04T14:51:51Z"
+        }
+      ],
+      "logBytes": 75250,
+      "logSha256": "5096ea1b7aa249006e6f08bfd865f3f503b6b17f9ded5f066b50208af3cdf822"
+    },
+    {
+      "event": "push",
+      "runId": 37210807901,
+      "jobId": 111461437017,
+      "headSha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "checkoutSha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "conclusion": "failure",
+      "startedAt": "2026-10-04T14:51:30Z",
+      "completedAt": "2026-10-04T14:54:35Z",
+      "unit": {
+        "total": 146,
+        "passed": 146,
+        "failed": 0,
+        "durationMs": 667.518709
+      },
+      "syntax": "success",
+      "browser": {
+        "total": 53,
+        "passed": 52,
+        "failed": 1,
+        "displayDuration": "2.4m"
+      },
+      "logPath": "/workspace/shot86-ci-first-push.log",
+      "artifact": {
+        "id": 11306243142,
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210807901/artifacts/11306243142",
+        "bytes": 2548695,
+        "files": 22,
+        "sha256": "ebca2385fa492b2f38212d74a4b492ef4121636ed780d293b03fef1af4bf2907"
+      },
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-10-04T14:51:31Z",
+          "completed_at": "2026-10-04T14:51:31Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-10-04T14:51:31Z",
+          "completed_at": "2026-10-04T14:51:32Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-10-04T14:51:32Z",
+          "completed_at": "2026-10-04T14:51:33Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-10-04T14:51:33Z",
+          "completed_at": "2026-10-04T14:51:34Z"
+        },
+        {
+          "name": "Run npm test",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-10-04T14:51:34Z",
+          "completed_at": "2026-10-04T14:51:35Z"
+        },
+        {
+          "name": "Run npm run check",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-10-04T14:51:35Z",
+          "completed_at": "2026-10-04T14:51:35Z"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-10-04T14:51:35Z",
+          "completed_at": "2026-10-04T14:51:55Z"
+        },
+        {
+          "name": "Run sudo apt-get update && sudo apt-get install -y ffmpeg",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-10-04T14:51:55Z",
+          "completed_at": "2026-10-04T14:52:08Z"
+        },
+        {
+          "name": "Run npm run test:browser",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 9,
+          "started_at": "2026-10-04T14:52:08Z",
+          "completed_at": "2026-10-04T14:54:32Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-10-04T14:54:32Z",
+          "completed_at": "2026-10-04T14:54:33Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19,
+          "started_at": "2026-10-04T14:54:33Z",
+          "completed_at": "2026-10-04T14:54:33Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-10-04T14:54:33Z",
+          "completed_at": "2026-10-04T14:54:34Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-10-04T14:54:34Z",
+          "completed_at": "2026-10-04T14:54:34Z"
+        }
+      ],
+      "logBytes": 261367,
+      "logSha256": "ce5f277db22295ebc43c72f44d2a3d64aa285d21c3601932cf12156927d252e9"
+    }
+  ],
+  "failures": [
+    {
+      "jobId": 111461450015,
+      "test": "save captures detached metadata and resolves only after transaction completion",
+      "location": "tests/take-store.test.js:70:1",
+      "error": "Cannot set properties of undefined (setting 'result')",
+      "stack": [
+        "ControlledDatabase.opened tests/take-store.test.js:44:29",
+        "TestContext.<anonymous> tests/take-store.test.js:75:26"
+      ],
+      "diagnosisStatus": "Reported to owner/root; controlled open readiness suspected, not yet independently confirmed."
+    },
+    {
+      "jobId": 111461437017,
+      "test": "complete archives retain exact bytes across whole browser restart and fresh-profile declared import",
+      "location": "tests/browser/takes.spec.js:117:1",
+      "error": "download.path: Target page, context or browser has been closed",
+      "stack": [
+        "downloadTake tests/browser/take-fixtures.js:28:52",
+        "tests/browser/takes.spec.js:123:161"
+      ],
+      "diagnosisStatus": "Reported to native owner/root; cause not established by reviewer."
+    }
+  ],
+  "workflows": [
+    {
+      "id": 37210812185,
+      "name": "Shot Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "failure",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812185",
+      "updated_at": "2026-10-04T14:51:53Z"
+    },
+    {
+      "id": 37210812178,
+      "name": "Motion Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812178",
+      "updated_at": "2026-10-04T14:52:48Z"
+    },
+    {
+      "id": 37210812207,
+      "name": "Style Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812207",
+      "updated_at": "2026-10-04T14:52:31Z"
+    },
+    {
+      "id": 37210812198,
+      "name": "Lens Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812198",
+      "updated_at": "2026-10-04T14:52:43Z"
+    },
+    {
+      "id": 37210812179,
+      "name": "Clothing Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812179",
+      "updated_at": "2026-10-04T14:52:29Z"
+    },
+    {
+      "id": 37210812216,
+      "name": "Friendly Challenges",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812216",
+      "updated_at": "2026-10-04T14:53:24Z"
+    },
+    {
+      "id": 37210812173,
+      "name": "Stock Notebook",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812173",
+      "updated_at": "2026-10-04T14:53:53Z"
+    },
+    {
+      "id": 37210812211,
+      "name": "Color Context Lab",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812211",
+      "updated_at": "2026-10-04T14:53:47Z"
+    },
+    {
+      "id": 37210812188,
+      "name": "Duet",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812188",
+      "updated_at": "2026-10-04T14:54:03Z"
+    },
+    {
+      "id": 37210812171,
+      "name": "Melody Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812171",
+      "updated_at": "2026-10-04T14:53:16Z"
+    },
+    {
+      "id": 37210812238,
+      "name": "Git History",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812238",
+      "updated_at": "2026-10-04T14:53:24Z"
+    },
+    {
+      "id": 37210812170,
+      "name": "Composure",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812170",
+      "updated_at": "2026-10-04T14:54:27Z"
+    },
+    {
+      "id": 37210812186,
+      "name": "Karaoke Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210812186",
+      "updated_at": "2026-10-04T14:55:31Z"
+    },
+    {
+      "id": 37210807901,
+      "name": "Shot Studio",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "failure",
+      "head_sha": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37210807901",
+      "updated_at": "2026-10-04T14:54:36Z"
+    }
+  ],
+  "limits": [
+    "No CI reruns, Git actions, repo changes or local suites by reviewer.",
+    "Other project workflow outcomes are metadata only.",
+    "Exact requested tree supplied by root; checked checkout SHA from actual logs.",
+    "First failed PR receipt is preserved; any corrected-head CI must be recorded separately."
+  ],
+  "corrections": {
+    "storage": {
+      "cause": "Test advanced one event-loop turn instead of awaiting the actual IndexedDB open request after asynchronous SHA-256 validation.",
+      "fix": "Wait for the actual controlled database request; explicitly hold the real native digest result to reproduce the race. Production unchanged.",
+      "red": "1/1 failed with the original undefined request; /tmp/shot86-store-hash-readiness-red.log",
+      "focused": "12/12 passed; /tmp/shot86-store-hash-readiness-green.log",
+      "fullUnit": "146/146 passed in 604.342714 ms; /tmp/shot86-store-readiness-full-unit.log"
+    },
+    "restart": {
+      "cause": "Original CI browser closure not reproduced locally; uploaded artifact contains no crash/disconnect reason.",
+      "fix": "Persistent contexts inherit the configured browser launch options instead of forcing system Chromium. Bounded lifecycle diagnostics retained for future CI failures. Exact archive/restart/import assertions unchanged.",
+      "focused": "1/1 passed in 9.5 seconds; /tmp/shot86-restart-configured-green.log",
+      "limits": "Local Chromium 151; pinned CI Chromium verification pending. No attribution of the unexplained closure to browser version."
+    }
+  }
+}

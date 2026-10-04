@@ -868,5 +868,10 @@
     "Maximum video has complete decoded timestamps and ten sampled independent landmark projections, not a pixel inspection of every frame.",
     "Screenshots/native media remain local; committed receipts and reproduction tests/scripts preserve exact hashes and measurements.",
     "No RAM peak, hardware compatibility or general latency guarantee is inferred."
-  ]
+  ],
+  "ciFollowup": {
+    "firstHead": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+    "receipt": "2026-10-04-retained-takes-ci-first.json",
+    "status": "First CI failed in two test fixtures. Storage readiness correction and configured-browser restart test pass targeted local verification; new exact-head CI pending."
+  }
 }
