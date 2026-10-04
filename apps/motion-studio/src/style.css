@@ -148,3 +148,15 @@ footer { display: flex; justify-content: space-between; gap: 20px; color: #a297a
   .tween-reverse { grid-column: 1; }
   .tween-actions button { flex: 1 1 100%; }
 }
+#project-library { margin-bottom: 22px; min-width: 0; }
+.library-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; justify-content: space-between; }
+#project-library-status, #project-library-count { font-size: 13px; overflow-wrap: anywhere; }
+#project-library-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit,minmax(min(260px,100%),1fr)); gap: 12px; }
+#project-library-list li { border: 1px solid #d8ccdf; border-radius: 8px; padding: 12px; display: grid; gap: 10px; min-width: 0; }
+#project-library-list li[aria-current=true] { border-color: #72538e; background: #faf6fc; }
+#project-library-list strong { overflow-wrap: anywhere; }
+.library-active { min-height: 18px; font-size: 12px; color: #593d71; }
+.library-row-actions, .library-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.library-row-actions button, .library-actions button { min-height: 44px; }
+#project-file-action { width: 100%; min-height: 44px; }
+@media (max-width: 700px) { .library-actions button { flex: 1 1 100%; } }

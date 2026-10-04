@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Motion Studio #104 supplemental independent native storage oracle",
+  "date": "2026-10-04",
+  "browser": "Chromium 151.0.7922.173 on Debian GNU/Linux 13",
+  "firstSupplementalRun": {
+    "passed": 4,
+    "failed": 0,
+    "durationMs": 2650.2340000000004,
+    "expectationCorrections": 0,
+    "cases": [
+      {
+        "title": "different-row saves merge and old active-row save cannot overwrite another instance selection",
+        "status": "passed",
+        "durationMs": 515
+      },
+      {
+        "title": "late absent-head callback after native completion refuses safely without fabricated absence or page errors",
+        "status": "passed",
+        "durationMs": 270
+      },
+      {
+        "title": "actual write completion beyond monotonic deadline protects receipts before the timer task fires",
+        "status": "passed",
+        "durationMs": 253
+      },
+      {
+        "title": "reviewDelete refuses an unaccepted foreign selection but fresh catalog permits explicit nonactive deletion",
+        "status": "passed",
+        "durationMs": 276
+      }
+    ]
+  },
+  "original19CaseReceipt": {
+    "path": "/workspace/motion104-storage-verification.json",
+    "bytes": 9756,
+    "sha256": "3119e45aa248880922db21c985b6938a2c8bee2f736c0e7a59f66102f9ad44ab"
+  },
+  "method": [
+    "All IndexedDB requests, result values, transactions, write operations and actual completion events remain native Chromium operations. No fake database or synthetic success value.",
+    "Absent-head case seeds real legacy bytes, withholds delivery of actual library get/getKey onsuccess callbacks until native readonly transactioncomplete, then delivers the original event and captured callback. Verifies safe rejection, no thrown callback/pageerror, retained old bytes and no fabricated head/rows.",
+    "Deadline-branch case wraps performance.now with a +10001 ms offset immediately inside an observer of genuine native RW transactioncomplete before delivering its original oncomplete callback. Native 10000 ms timer has not fired. This is injected monotonic time, not a second actual 10-second wall-clock timeout.",
+    "The native write already committed in the injected deadline branch. Independent subsequent native database reads prove its actual row remains; old opaque receipts cannot remove protection, and fresh accepted read/project permits a new successful save.",
+    "Different-row case reads and accepts refreshed catalog after foreign selection, explicitly duplicates local accepted A into C, and compares A/B/C saved payloads independently.",
+    "Cross-client delete review refuses unaccepted changed catalog, leaves exact rows/pointer, then compatible fresh acceptance allows deliberate nonactive deletion preserving foreign-selected B."
+  ],
+  "timingLimit": "Only the original 19-case gate proves real wall-clock held-write deadline (10.3 seconds). The supplemental injected branch case took253 ms; no actual20-second timeout claim.",
+  "servedBuild": [
+    {
+      "url": "http://127.0.0.1:4301/tests/library-storage-harness.html",
+      "bytes": 434,
+      "sha256": "8b0df3e1193e1f65e304fa387a6051a73279ab28092c4d4c62b9d666fbf48737"
+    },
+    {
+      "url": "http://127.0.0.1:4301/assets/library-storage-DCjU720z.js",
+      "bytes": 164,
+      "sha256": "1c3993e3647e0bbb6a4e453d26ea8d43022f67dac5a4d75b3d16fdfbfe116df3"
+    },
+    {
+      "url": "http://127.0.0.1:4301/assets/model-HMattrit.js",
+      "bytes": 12017,
+      "sha256": "3d569a648ce952e3e3de1c3d28631e3de8fdea0b10400ee08b62ccfe62c449a7"
+    },
+    {
+      "url": "http://127.0.0.1:4301/assets/library-storage-Dw11LVXo.js",
+      "bytes": 16786,
+      "sha256": "4923ef164631c2902e1c31876768544bbc0948f22b29bdbfa1bc5554e8d9b813"
+    }
+  ],
+  "sources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/browser/library-storage.spec.ts",
+      "bytes": 43242,
+      "sha256": "364f34a2806840d8edc8da2463a9d27a2d12cade8d114c8c8322a270b5650eb7"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/library-storage.ts",
+      "bytes": 28313,
+      "sha256": "2b6c375ac49ab483b07a4a2d0766d14996cb9af2495a36dbaf4439f925c0dcd6"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/library-model.ts",
+      "bytes": 6084,
+      "sha256": "5299241377896fb47dd9af66f2c96b683dce6e04526913387a3b20d37dd2adb7"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/tmp/motion104-storage-supplement.log",
+      "bytes": 881,
+      "sha256": "29fd2d57d8b6c70ee268328fb994e9bc33bbcc0c7e7ba1fa9de219eb0765bf5a"
+    },
+    {
+      "path": "/tmp/motion104-storage-supplement-results.json",
+      "bytes": 6514,
+      "sha256": "b44852d87135268ced984c4970e5d82ae7bee49f36b7bb7b2f7a1eeb184390c2"
+    },
+    {
+      "path": "/tmp/motion104-storage-supplement.config.mjs",
+      "bytes": 666,
+      "sha256": "25170dd50edc5490d32bcb1492a2957ab4223c410d44247c3ec0925f47ebe288"
+    }
+  ],
+  "cleanup": "Independent runner and browser exited. Root harness server remains owned by root."
+}

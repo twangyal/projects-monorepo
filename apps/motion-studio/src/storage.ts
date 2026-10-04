@@ -4,7 +4,6 @@ const DATABASE = 'motion-studio';
 const STORE = 'project';
 const KEY = 'current';
 const MAX_STORED_BYTES = MAX_JSON_BYTES;
-let mutations: Promise<void> = Promise.resolve();
 
 function storageError(action: string, cause?: unknown): Error {
   const detail = cause instanceof Error && cause.message ? ` ${cause.message}` : '';
@@ -60,32 +59,11 @@ function completed(transaction: IDBTransaction, action: string): Promise<void> {
   return result;
 }
 
-function enqueue(operation: () => Promise<void>): Promise<void> {
-  const result = mutations.then(operation);
-  // A failed save remains visible to its caller while later edits can still save.
-  mutations = result.catch(() => {});
-  return result;
-}
-
-async function write(action: 'save' | 'clear', project?: Project): Promise<void> {
-  const database = await openDatabase();
-  try {
-    const transaction = database.transaction(STORE, 'readwrite');
-    const done = completed(transaction, action);
-    const store = transaction.objectStore(STORE);
-    if (action === 'save') store.put(project, KEY);
-    else store.delete(KEY);
-    await done;
-  } catch (error) { throw storageError(action, error); }
-  finally { database.close(); }
-}
-
 export type RawRecord = { present: false } | { present: true; value: unknown };
 
 export async function readRawRecord(): Promise<RawRecord> {
   // Observe all mutations queued before this load, without requiring a prior save
   // to succeed. Image decoding is deliberately left to the editor's atomic restore.
-  await mutations;
   const database = await openDatabase();
   let value: unknown, count: number;
   try {
@@ -122,13 +100,14 @@ export async function loadProject(): Promise<Project | null> {
 
 // JSON.stringify alone silently drops undefined, invokes toJSON and changes
 // exotic values. Inspect descriptors first; never normalize a preserved record.
-export function serializeRawRecord(value: unknown): string {
+export function serializeRawRecord(value: unknown, maximum = MAX_STORED_BYTES): string {
+  if (!Number.isInteger(maximum) || maximum < 1 || maximum > MAX_STORED_BYTES + 256) throw new Error('Unsupported raw record byte bound.');
   const active = new Set<object>(), sizes = new Map<object, number>();
   const encoder = new TextEncoder();
   const oversized = () => new Error('Cannot download the saved record: its JSON exceeds 6 MiB + 168 bytes.');
-  function bounded(bytes: number): number { if (bytes > MAX_STORED_BYTES) throw oversized(); return bytes; }
+  function bounded(bytes: number): number { if (bytes > maximum) throw oversized(); return bytes; }
   function quoted(text: string): number {
-    if (text.length > MAX_STORED_BYTES) throw oversized();
+    if (text.length > maximum) throw oversized();
     return bounded(encoder.encode(JSON.stringify(text)).byteLength);
   }
   function inspect(item: unknown, depth: number): number {
@@ -158,17 +137,15 @@ export function serializeRawRecord(value: unknown): string {
   }
   inspect(value, 0);
   const json = JSON.stringify(value);
-  if (new TextEncoder().encode(json).byteLength > MAX_STORED_BYTES) throw new Error('Cannot download the saved record: its JSON exceeds 6 MiB + 168 bytes.');
+  if (new TextEncoder().encode(json).byteLength > maximum) throw new Error('Cannot download the saved record: its JSON exceeds 6 MiB + 168 bytes.');
   return json;
 }
 
 export async function saveProject(project: Project): Promise<void> {
-  // Validate and reconstruct immediately: callers may edit their original object
-  // while an earlier save is pending. The queue receives a stable bounded snapshot.
-  const safe = snapshot(project);
-  return enqueue(() => write('save', safe));
+  void project;
+  throw new Error('Single-project writes are retired. Use the named-project library.');
 }
 
 export async function clearProject(): Promise<void> {
-  return enqueue(() => write('clear'));
+  throw new Error('Single-project deletion is retired. Use explicit library deletion.');
 }

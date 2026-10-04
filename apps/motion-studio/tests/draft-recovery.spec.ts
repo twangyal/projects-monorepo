@@ -1,26 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { createProject } from '../src/model.ts';
+import { nativeCurrent, nativeLegacyRaw } from './native-saved-project.ts';
 
 const corrupt = { schemaVersion: 99, title: 'Protected original', extra: { unicode: '日本語 ✦', nested: [null, false, 7] } };
 
-async function record(page: Page, value?: unknown, put = false): Promise<unknown> {
-  return page.evaluate(async ({ value, put }) => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('motion-studio', 1);
-      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
-    });
-    try {
-      return await new Promise<unknown>((resolve, reject) => {
-        const tx = db.transaction('project', put ? 'readwrite' : 'readonly');
-        const request = put ? tx.objectStore('project').put(value, 'current') : tx.objectStore('project').get('current');
-        let result: unknown;
-        request.onsuccess = () => { result = request.result; };
-        tx.oncomplete = () => resolve(result); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
-      });
-    } finally { db.close(); }
-  }, { value, put });
-}
+async function record(page: Page, value?: unknown, put = false): Promise<unknown> { return nativeCurrent(page, put ? { value } : undefined); }
+
 async function seed(page: Page, value: unknown = corrupt) {
   await page.goto('/');
   await expect(page.locator('#save-status')).not.toContainText(/opening|checking|loading|restoring/i);
@@ -60,6 +46,8 @@ test('recovery retains raw data through history, imports, resets and current exp
   await expect(page.getByRole('region', { name: 'Saved draft recovery' })).toBeVisible();
   await title(page, 'Memory edit'); await page.locator('#undo').click(); await page.locator('#redo').click();
   const imported = createProject(); imported.title = 'Imported in memory'; imported.frameCount = 12;
+  await page.locator('#project-file-action').selectOption('replace');
+  page.once('dialog', dialog => dialog.accept());
   await page.locator('#project-file').setInputFiles({ name: 'import.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(imported)) });
   await expect(page.locator('#project-title')).toHaveValue(imported.title);
   await expect(page.locator('#save-status')).toContainText(/in memory|memory only/i);
@@ -79,6 +67,8 @@ test('cancel, failed import and failed deliberate replacement keep recovery acti
   await seed(page); await title(page, 'Keep memory');
   page.once('dialog', dialog => dialog.dismiss()); await page.locator('#replace-saved-project').click();
   await protectedRecord(page);
+  await page.locator('#project-file-action').selectOption('replace');
+  page.once('dialog', dialog => dialog.accept());
   await page.locator('#project-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
   await expect(page.locator('#message')).toContainText('unchanged');
   await page.evaluate(() => { IDBObjectStore.prototype.put = () => { throw new DOMException('Simulated write denied', 'QuotaExceededError'); }; });
@@ -95,6 +85,7 @@ test('successful confirmed replacement resumes autosave and reopens the actual r
   await expect(page.locator('#recovery-panel')).toBeHidden();
   await expect(page.locator('#save-status')).toHaveText('Saved in this browser');
   expect((await record(page) as { title: string }).title).toBe('Deliberately saved');
+  expect(await nativeLegacyRaw(page)).toEqual(corrupt);
   await title(page, 'Normal autosave resumes');
   await expect(page.locator('#save-status')).toHaveText('Saved in this browser');
   await page.reload(); await expect(page.locator('#project-title')).toHaveValue('Normal autosave resumes');
@@ -246,7 +237,7 @@ for (const kind of ['cycle', 'nonfinite', 'undefined', 'date', 'overbound'] as c
     if (kind === 'undefined') value = undefined;
     if (kind === 'date') value = { date: new Date(0) };
     if (kind === 'overbound') value = { data: 'x'.repeat(6 * 1024 * 1024 + 168) };
-    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('motion-studio', 1); r.onsuccess = () => resolve(r.result); });
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('motion-studio', 2); r.onsuccess = () => resolve(r.result); });
     await new Promise<void>((resolve, reject) => { const tx = db.transaction('project', 'readwrite'); tx.objectStore('project').put(value, 'current'); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); db.close();
   }, kind);
   await page.reload(); await expect(page.locator('#recovery-panel')).toBeVisible();
@@ -256,7 +247,7 @@ for (const kind of ['cycle', 'nonfinite', 'undefined', 'date', 'overbound'] as c
   await title(page, 'Still editable'); await page.waitForTimeout(400);
   expect(downloads).toEqual([]);
   expect(await page.evaluate(async kind => {
-    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('motion-studio', 1); r.onsuccess = () => resolve(r.result); });
+    const db = await new Promise<IDBDatabase>(resolve => { const r = indexedDB.open('motion-studio', 2); r.onsuccess = () => resolve(r.result); });
     const result = await new Promise<boolean>(resolve => { const store = db.transaction('project').objectStore('project'); const r = store.get('current'); r.onsuccess = () => {
       const v = r.result; resolve(kind === 'cycle' ? v.self === v : kind === 'nonfinite' ? v.number === Infinity : kind === 'undefined' ? v === undefined : kind === 'date' ? v.date instanceof Date : v.data.length === 6 * 1024 * 1024 + 168);
     }; }); db.close(); return result;

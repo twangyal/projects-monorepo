@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Motion Studio #104 independent library storage oracle",
+  "date": "2026-10-04",
+  "origin": "http://127.0.0.1:4301",
+  "harness": "/tests/library-storage-harness.html",
+  "browser": "Chromium 151.0.7922.173 built on Debian GNU/Linux 13 (trixie)",
+  "firstActualNativeRun": {
+    "passed": 19,
+    "failed": 0,
+    "durationMs": 17022.023999999998,
+    "expectationCorrections": 0,
+    "productFindings": 0,
+    "cases": [
+      {
+        "title": "real v1 and v2 legacy reads migrate only in memory; edit promotion leaves original native value exact",
+        "status": "passed",
+        "durationMs": 338
+      },
+      {
+        "title": "creating alongside admitted legacy atomically preserves old canvas and new entry in creation order",
+        "status": "passed",
+        "durationMs": 270
+      },
+      {
+        "title": "undefined head/legacy and orphan rows are protected, not absent or silently reconstructed",
+        "status": "passed",
+        "durationMs": 273
+      },
+      {
+        "title": "two accepted instances racing same project have one actual winner and preserve its whole geometry",
+        "status": "passed",
+        "durationMs": 261
+      },
+      {
+        "title": "different-row saves merge and old active-row save cannot overwrite another instance selection",
+        "status": "passed",
+        "durationMs": 242
+      },
+      {
+        "title": "unaccepted, cloned, foreign and consumed receipts cannot manufacture write authority",
+        "status": "passed",
+        "durationMs": 259
+      },
+      {
+        "title": "active deletion consumes prepared next receipt, old autosave cannot resurrect, last delete never falls back",
+        "status": "passed",
+        "durationMs": 319
+      },
+      {
+        "title": "nonactive deletion preserves actual selected entry and stale catalog delete refuses atomically",
+        "status": "passed",
+        "durationMs": 286
+      },
+      {
+        "title": "genuine post-put-success abort rolls back row/head and does not advance expected authority",
+        "status": "passed",
+        "durationMs": 276
+      },
+      {
+        "title": "replacement reviews are one-use, instance-bound, and cannot overwrite a newer complete row",
+        "status": "passed",
+        "durationMs": 272
+      },
+      {
+        "title": "bounded invalid candidates refuse atomically; duplicate captures saved committed geometry detached",
+        "status": "passed",
+        "durationMs": 293
+      },
+      {
+        "title": "unsafe raw protected row cannot be reviewed into ordinary replacement or autosave",
+        "status": "passed",
+        "durationMs": 301
+      },
+      {
+        "title": "one present-undefined project protects that row without blocking another valid project",
+        "status": "passed",
+        "durationMs": 284
+      },
+      {
+        "title": "genuine blocked version upgrade has bounded refusal and eventual success cannot leak authority",
+        "status": "passed",
+        "durationMs": 343
+      },
+      {
+        "title": "real held write deadline releases native transaction and queue, retaining exact previously committed bytes",
+        "status": "passed",
+        "durationMs": 10265
+      },
+      {
+        "title": "accepting a compatible refreshed catalog retains the currently accepted project save authority",
+        "status": "passed",
+        "durationMs": 281
+      },
+      {
+        "title": "accepting a refreshed legacy view retains admitted legacy canvas when creating a separate project",
+        "status": "passed",
+        "durationMs": 334
+      },
+      {
+        "title": "delaying a genuine readonly success callback beyond native completion cannot fabricate absent data",
+        "status": "passed",
+        "durationMs": 243
+      },
+      {
+        "title": "malformed raw record at exact wrapper byte cap plus one cannot obtain replacement authority",
+        "status": "passed",
+        "durationMs": 394
+      }
+    ]
+  },
+  "pureOracle": {
+    "passed": 9,
+    "failed": 0,
+    "durationMs": 116.358395,
+    "initialFixtureCorrection": "The initial UUID uppercase negative case used a digits-only UUID, so uppercasing did not change it. Corrected that literal to an uppercase alphabet-bearing UUID; no product defect or admission relaxation."
+  },
+  "method": [
+    "Real Chromium IndexedDB motion-studio version 2, actual get/getKey/put/getAll/getAllKeys and transaction complete/abort events; no fake-IDB implementation.",
+    "Original literal schema 1 and schema 2 records seeded into genuine version-1 database before native version-2 upgrade; exact raw old-store value compared before/after migration and promotion.",
+    "Two actual ProjectLibrary instances race native CAS; independent database reads verify whole winning rows and active pointer.",
+    "Declared timing/fault observers preserve native API results: post-put onsuccess aborts actual transaction; repeated actual readonly get requests keep write transaction alive until actual 10-second deadline; readonly onsuccess callback delivery held past real transaction completion.",
+    "Opaque receipts tested as unaccepted, cloned, foreign, consumed, pre-timeout and late-read generations; fresh accepted read/project after uncertainty is required.",
+    "Oversized malformed native string independently measured with TextEncoder at 6291881 UTF8 JSON bytes, exactly frozen wrapper cap plus one; raw bytes retained."
+  ],
+  "literalFixture": {
+    "title": "Original copper motion",
+    "schemaVersion": 2,
+    "background": "#102030",
+    "frameCount": 24,
+    "layerId": "original-copper",
+    "color": "#b87333",
+    "width": 3,
+    "points": [
+      {
+        "x": -7,
+        "y": 11
+      },
+      {
+        "x": 23,
+        "y": 41
+      }
+    ],
+    "keyframe": {
+      "x": 91,
+      "y": 47,
+      "scale": 1.25,
+      "rotation": -17,
+      "opacity": 0.625,
+      "frame": 0,
+      "easing": "linear"
+    },
+    "celFrames": [
+      0,
+      13
+    ],
+    "expectedGeometry": "The same independently authored literal geometry is retained through save, duplicate, CAS winner and rollback checks."
+  },
+  "timingDistinction": {
+    "blockedUpgrade": "Bounded native onblocked refusal/recovery, not claimed to wait the full deadline.",
+    "heldWrite": "Real repeated native requests kept the RW transaction alive; actual case took approximately 10.3 seconds."
+  },
+  "limits": [
+    "Storage-only test harness exposes ProjectLibrary and SavedProjectConflict; no production state/global injection.",
+    "No image decoding, full production UI, eight maximum-size project persistence or physical device claim from this gate.",
+    "Root-owned harness server remains live; independent runner and browser processes have exited."
+  ],
+  "sources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/library-model.test.ts",
+      "bytes": 6793,
+      "sha256": "ba34532c7c40f9d74353009f31ce0440af087b2841c263b367261cd785c1af84"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/browser/library-storage.spec.ts",
+      "bytes": 35043,
+      "sha256": "b31f962bf625f0532afd9f577e5b7059f0f5d35be53081000b4f45de54931ced"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/library-storage-harness.html",
+      "bytes": 254,
+      "sha256": "3b3776573d674b674aba5060216d28820f66d53980456d41bb9d9119a693a809"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/library-storage-harness.ts",
+      "bytes": 423,
+      "sha256": "fdd09f8bdf4227742f074b5b831ece3b9ca382b423e071dd57c0190398ca7776"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/library-model.ts",
+      "bytes": 6084,
+      "sha256": "5299241377896fb47dd9af66f2c96b683dce6e04526913387a3b20d37dd2adb7"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/library-storage.ts",
+      "bytes": 27611,
+      "sha256": "50db9115e0e57de9fe9d92dcce26182ef3045c44e75dcba3c7edcedd621af867"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/storage.ts",
+      "bytes": 7619,
+      "sha256": "470c7a066e02c19236342b92ce611c1fc107546441b0a66d7033ba5b25876e6d"
+    }
+  ],
+  "servedBuild": [
+    {
+      "url": "http://127.0.0.1:4301/tests/library-storage-harness.html",
+      "bytes": 434,
+      "sha256": "13924e5677170fcf86714449a9996aebc21bbdeed5de8c5c71b1da462f31ae43"
+    },
+    {
+      "url": "http://127.0.0.1:4301/assets/library-storage-H13yPJn5.js",
+      "bytes": 164,
+      "sha256": "68e99e4ec3e46c05d5135592553f11b51ef3b762587a0b2c036cf1468b721288"
+    },
+    {
+      "url": "http://127.0.0.1:4301/assets/model-HMattrit.js",
+      "bytes": 12017,
+      "sha256": "3d569a648ce952e3e3de1c3d28631e3de8fdea0b10400ee08b62ccfe62c449a7"
+    },
+    {
+      "url": "http://127.0.0.1:4301/assets/library-storage-DshG0PRK.js",
+      "bytes": 16433,
+      "sha256": "1c5dd401a35f841614b015712b648eb798ea192cb711b152571ec26c15715499"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/tmp/motion104-storage-first.log",
+      "bytes": 3280,
+      "sha256": "386a95bd2a9d2dd365e02238084130c7c0152d096f7a0c350c0ee43d310684a5"
+    },
+    {
+      "path": "/tmp/motion104-storage-first-results.json",
+      "bytes": 22629,
+      "sha256": "a2f17dfe9daad120bee61b9d5929d85383029427229cba42343473ff4d904cbe"
+    },
+    {
+      "path": "/tmp/motion104-storage.config.mjs",
+      "bytes": 656,
+      "sha256": "18dd3a06d4ab11a16447245e4f01b5424f9187794c1926ec78e49703297b99b9"
+    },
+    {
+      "path": "/tmp/motion104-library-model-first.log",
+      "bytes": 980,
+      "sha256": "82722843a74ba250e707b5afba2296ea58978903e77fe93493eed500532f9c7a"
+    }
+  ]
+}

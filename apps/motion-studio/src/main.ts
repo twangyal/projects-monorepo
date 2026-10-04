@@ -5,7 +5,10 @@ import { createTweenWorkspace } from './tween-view.ts';
 import { loadAssets, closeAssets, renderFrame, type Assets } from './render.ts';
 import { importImage, validateProjectImages } from './images.ts';
 import { exportGif } from './export.ts';
-import { readRawRecord, decodeSavedRecord, serializeRawRecord, saveProject, type RawRecord } from './storage.ts';
+import { serializeRawRecord, type RawRecord } from './storage.ts';
+import { ProjectLibrary, SavedProjectConflict, LibraryReadFailure, type LibraryHead, type LibraryCommit, type LoadedProject } from './library-storage.ts';
+import { MAX_LIBRARY_HEAD_BYTES } from './library-model.ts';
+import { createLibraryView } from './library-view.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
@@ -14,12 +17,13 @@ app.innerHTML = `
 <main><div class="intro"><div><p class="eyebrow">A LITTLE MOTION GOES A LONG WAY</p><h2>Make something move.</h2><p>Draw a character, give it a few poses, and watch it find its rhythm.</p></div><button id="load-demo" class="quiet">Try the orbit demo</button></div>
 <div id="message" role="status" aria-live="polite" hidden></div>
 <section id="recovery-panel" class="panel" role="region" aria-label="Saved draft recovery" hidden><h3>Saved draft recovery</h3><p>Your saved browser record is protected. Current edits stay in memory; save a project file to keep them.</p><p id="recovery-detail" role="status" aria-live="polite"></p><div class="recovery-actions"><button id="recovery-download">Download preserved record</button><button id="recovery-retry">Retry saved draft</button><button id="replace-saved-project">Replace saved project</button></div><p>Preserved-record JSON keeps the read record exactly when it is safe to serialize. It may need repair before it can open. Save project file downloads your current editable work separately.</p></section>
+<section id="project-library" class="panel" role="region" aria-label="Projects"></section>
 <div class="studio">
 <aside class="tools panel"><div class="panel-heading"><h3>Make your mark</h3><span>01</span></div><div class="tool-content">
 <div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button></div>
 <label class="field">Ink color<input id="ink" type="color" value="#563d75"></label><label class="field">Brush width <output id="brush-value">6 px</output><input id="brush" type="range" min="1" max="40" value="6"></label><p class="hint">Draw on the selected drawing layer. Move places a pose at the current frame.</p>
 <div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
-<div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
+<div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="field">Project file action<select id="project-file-action"><option value="new">Import as new project</option><option value="replace">Replace current project</option></select></label><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
 </div></aside>
 <section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas></div>
 <div class="transport panel"><button id="play" class="primary">Play animation</button><button id="first-frame" title="Go to the first frame">Start</button><label class="loop"><input id="loop" type="checkbox" checked> Loop</label><span id="time" class="mono">0.00 s / 4.00 s</span></div>
@@ -32,7 +36,7 @@ app.innerHTML = `
 function el<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
 const canvas = el<HTMLCanvasElement>('stage'), ctx = canvas.getContext('2d')!;
 let project = createDemo();
-const history = new History(project);
+let history = new History(project);
 let assets: Assets = new Map();
 let selected = project.layers.at(-1)?.id || '';
 let frame = 0, playing = false, mode: 'draw' | 'move' = 'draw';
@@ -40,7 +44,7 @@ let animation = 0, playStarted = 0, playFrom = 0;
 let busy = true, exporting = false, operation = 0, generation = 0;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let saveRevision = 0;
-let pendingKind: 'import' | 'history' | 'reset' | 'replacement' | null = null;
+let pendingKind: 'import' | 'history' | 'reset' | 'replacement' | 'library' | null = null;
 let saveState: 'pending' | 'saved' | 'failed' = 'saved';
 let exported: AbortController | null = null;
 let isDemo = true;
@@ -54,6 +58,16 @@ const poseProperties = ['x', 'y', 'scale', 'rotation', 'opacity'] as const;
 let pngRequest = 0;
 let replacementRequest = 0;
 let completedReplacementReceipt = 0;
+const library = new ProjectLibrary();
+let libraryHead: LibraryHead | null = null;
+let libraryMode: 'library' | 'legacy' | 'empty' = 'empty';
+let libraryAccepted = false, libraryPending = false, catalogRequest = 0, libraryTransition = 0;
+type Lineage = { id: string | null; origin: 'library' | 'legacy' | 'empty' };
+let lineage: Lineage = { id: null, origin: 'empty' };
+let recoveryTarget: string | 'head' | 'legacy' = 'legacy';
+let rawTarget: string | 'head' | 'legacy' = 'legacy';
+let saveChain: Promise<void> = Promise.resolve();
+const libraryView = createLibraryView(el('project-library'), id => void openLibraryProject(id), id => void deleteLibraryProject(id));
 const downloadUrls = new Set<string>();
 type Geometry = { width: number; height: number; dpr: number; left: number; top: number; canvasWidth: number; canvasHeight: number };
 interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; moved: boolean; layerId: string; frame: number; celFrame: number | null; generation: number; operation: number; geometry: Geometry }
@@ -76,7 +90,7 @@ function errorMessage(error: unknown) { return error instanceof Error ? error.me
 function layer(): Layer | undefined { return project.layers.find(item => item.id === selected); }
 function value(id: string, next: string) { const node = el<HTMLInputElement>(id); if (!drafts.has(id) && node.value !== next) node.value = next; }
 function pause() { playing = false; cancelAnimationFrame(animation); el('play').textContent = 'Play animation'; }
-function intent() { tweens.retire(); generation++; operation++; }
+function intent() { tweens.retire(); generation++; operation++; libraryTransition++; libraryPending = false; }
 function draftControls() {
   const pending = drafts.size > 0;
   el('pose-draft-status').hidden = !pending;
@@ -88,19 +102,72 @@ function admitDrafts(): boolean {
   tell('Apply valid editor values or discard edits before changing drawings, frames or projects.', true);
   return false;
 }
-function markDraft(id: string) { intent(); pause(); drafts.set(id, el<HTMLInputElement>(id).value); draftControls(); }
+function markDraft(id: string) { intent(); pause(); drafts.set(id, el<HTMLInputElement>(id).value); draftControls(); updateLibrary(); }
 function recoveryMessage(text: string) { recoveryDetail = text; el('recovery-detail').textContent = text; }
 function updateSaveState() { el('save-status').textContent = restorePending ? 'Opening your local studio…' : recoveryBlocked ? 'Local save unavailable · memory only; saved record protected' : saveState === 'pending' ? 'Saving locally…' : saveState === 'failed' ? 'Local save unavailable · keep a project file' : initialDemo ? 'Original demo · saved after your first edit' : 'Saved in this browser'; }
+function updateLibrary() {
+  const locked = busy || exporting || !!gesture || restorePending || libraryPending;
+  libraryView.update(libraryHead, lineage.id, locked);
+  el<HTMLButtonElement>('refresh-project-library').disabled = locked;
+  el<HTMLButtonElement>('download-legacy-project').disabled = locked;
+  el<HTMLButtonElement>('duplicate-project').disabled = locked || !libraryAccepted || recoveryBlocked || (libraryHead?.entries.length ?? 0) >= 8;
+  el<HTMLButtonElement>('save-project-as-new').disabled = locked || (libraryHead?.entries.length ?? 0) >= 8;
+}
+function knownCommit(result: LibraryCommit, snapshot: Project, owner: Lineage, request: number) {
+  if (result.entry && !owner.id) { owner.id = result.entry.id; owner.origin = 'library'; }
+  if (owner === lineage) {
+    libraryHead = result.head; libraryMode = 'library'; initialDemo = false;
+    if (request > completedReplacementReceipt) {
+      completedReplacementReceipt = request;
+      if (recoveryBlocked && result.entry) {
+        recoveryTarget = result.entry.id; rawTarget = result.entry.id;
+        rawRecord = { present: true, value: { schemaVersion: 1, id: result.entry.id, revision: result.entry.revision, project: snapshot } };
+      }
+    }
+    updateLibrary();
+  }
+}
+function queueActiveSave(snapshot: Project, revision: number, owner: Lineage): Promise<boolean> {
+  const storage = library;
+  let succeeded = false;
+  const execute = async () => {
+    if (owner === lineage && storage === library && recoveryBlocked) return;
+    try {
+      const result = owner.id ? await storage.save(owner.id, snapshot)
+        : owner.origin === 'legacy' ? await storage.promoteLegacy(snapshot) : await storage.create(snapshot);
+      knownCommit(result, snapshot, owner, revision);
+      succeeded = true;
+      if (owner === lineage && storage === library && revision === saveRevision && !recoveryBlocked) {
+        saveState = 'saved'; updateSaveState(); libraryView.status(`Current project: ${project.title}. Edits save to this project.`);
+      }
+    } catch (error) {
+      if (owner === lineage && storage === library) {
+        recoveryBlocked = true; saveState = 'failed'; recoveryTarget = owner.id ?? 'legacy';
+        const detail = error instanceof SavedProjectConflict ? 'Another tab changed this saved project. Your current artwork is kept. Reload the saved copy, download your work, or save it as a new project.' : errorMessage(error);
+        recoveryMessage(detail); libraryView.status(detail); updateSaveState(); controls();
+      }
+    }
+  };
+  const result = saveChain.then(execute);
+  saveChain = result.catch(() => {});
+  return result.then(() => succeeded);
+}
 function scheduleSave() {
   clearTimeout(saveTimer);
-  if (recoveryBlocked) { saveState = 'failed'; updateSaveState(); tell('The saved browser record is protected. Work stays in this page; download a project file before explicitly replacing the saved project.', true); return; }
+  if (recoveryBlocked || !libraryAccepted) { saveState = 'failed'; updateSaveState(); return; }
   saveState = 'pending'; updateSaveState();
-  const snapshot = structuredClone(project), revision = ++saveRevision;
-  saveTimer = setTimeout(() => {
-    void saveProject(snapshot).then(() => { if (revision === saveRevision) { saveState = 'saved'; updateSaveState(); } }).catch(error => {
-      if (revision === saveRevision) { saveState = 'failed'; updateSaveState(); tell(`${errorMessage(error)} Save a project file to keep your work.`, true); }
-    });
-  }, 250);
+  const snapshot = validateProject(project), revision = ++saveRevision, owner = lineage;
+  saveTimer = setTimeout(() => { saveTimer = undefined; void queueActiveSave(snapshot, revision, owner); }, 250);
+}
+async function flushActiveSave(): Promise<boolean> {
+  clearTimeout(saveTimer); saveTimer = undefined;
+  const owner = lineage, token = operation, revision = generation;
+  await saveChain;
+  if (owner !== lineage || token !== operation || revision !== generation) return false;
+  if (recoveryBlocked || !libraryAccepted) return false;
+  if (saveState === 'saved') return true;
+  const succeeded = await queueActiveSave(validateProject(project), ++saveRevision, owner);
+  return succeeded && owner === lineage && token === operation && revision === generation;
 }
 function draw() { renderFrame(ctx, gesture?.preview || project, frame, assets); canvas.dataset.frame = String(frame); }
 function controls() {
@@ -132,7 +199,7 @@ function controls() {
   el<HTMLButtonElement>('discard-pose-edits').disabled = locked;
   el<HTMLButtonElement>('make-tween').disabled = locked || restorePending || retryPending || !drawing;
   el('tween-eligibility').textContent = drawing ? 'Pair adjacent nonblank drawings with the same 1–8 strokes. Review geometric in-betweens before committing.' : 'In-betweens need vector drawings; imported images animate through poses.';
-  draftControls(); tweens.update();
+  draftControls(); tweens.update(); updateLibrary();
   canvas.setAttribute('aria-disabled', String(locked));
   el('cancel-export').hidden = !exporting; el('export-progress').hidden = !exporting;
 }
@@ -442,73 +509,266 @@ window.addEventListener('keydown', event => {
   if (event.code === 'Space' && event.target === canvas) { event.preventDefault(); el('play').click(); }
 });
 
+type PreparedProject = { project: Project; history: History; assets: Assets };
+async function prepareProject(input: Project): Promise<PreparedProject> {
+  const safe = validateProject(input), preparedHistory = new History(safe);
+  await validateProjectImages(safe);
+  const preparedAssets = await loadAssets(safe);
+  return { project: preparedHistory.current, history: preparedHistory, assets: preparedAssets };
+}
+function publishProject(prepared: PreparedProject, id: string | null, origin: Lineage['origin'], demo = false) {
+  pause(); tweens.close(); closeAssets(assets); assets = prepared.assets;
+  history = prepared.history; project = prepared.project; lineage = { id, origin };
+  selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = demo; initialDemo = false;
+  drafts.clear(); generation++; recoveryBlocked = false; rawRecord = null; saveState = 'saved';
+  refresh(); libraryView.status(id ? `Current project: ${project.title}. Edits save to this project.` : 'Your library is empty. The next edit saves this canvas as a new project.');
+}
+function libraryOwner() {
+  const storage = library, owner = lineage, token = operation, revision = generation;
+  return { storage, owner, token, revision,
+    current: () => library === storage && lineage === owner && operation === token && generation === revision && !gesture && !drafts.size };
+}
+async function refreshCatalog(): Promise<boolean> {
+  const storage = library, request = ++catalogRequest;
+  try {
+    const view = await storage.read();
+    if (storage !== library || request !== catalogRequest) return false;
+    const before = libraryHead?.entries.find(entry => entry.id === lineage.id);
+    const after = view.head?.entries.find(entry => entry.id === lineage.id);
+    storage.acceptRead(view.receipt); libraryAccepted = true; libraryHead = view.head; libraryMode = view.mode;
+    if (lineage.id && (!after || before?.revision !== after.revision)) { recoveryBlocked = true; recoveryTarget = lineage.id; saveState = 'failed'; recoveryMessage('The saved copy changed in another tab. Current memory and editor values were kept; review before replacing or reload explicitly.'); updateSaveState(); controls(); }
+    updateLibrary(); libraryView.status(`Projects refreshed (${libraryMode === 'legacy' ? 'original saved draft' : libraryMode === 'empty' ? 'empty library' : 'saved library'}). Current memory: ${project.title}. Editor values were kept.`);
+    return true;
+  } catch (error) {
+    if (storage === library && request === catalogRequest) {
+      libraryAccepted = false; recoveryBlocked = true; recoveryTarget = 'head'; saveState = 'failed';
+      if (error instanceof LibraryReadFailure) { recoveryTarget = error.target; rawTarget = error.target; rawRecord = error.raw; }
+      recoveryMessage(errorMessage(error)); libraryView.status(errorMessage(error)); updateSaveState(); controls();
+    }
+    return false;
+  }
+}
+async function leaveWorkspace(): Promise<boolean> {
+  if (busy || exporting || gesture || restorePending || libraryPending || !admitDrafts() || !tweens.confirmLeave()) return false;
+  const owner = libraryOwner();
+  if (await flushActiveSave()) return owner.current();
+  if (!owner.current()) return false;
+  if (!window.confirm('This current work is not saved. Leave it and clear its session Undo history? Download a project file first to keep your artwork. Cancel keeps this canvas.')) return false;
+  return owner.current();
+}
+function libraryFailure(error: unknown, target?: string | 'legacy' | 'head') {
+  const detail = error instanceof SavedProjectConflict ? 'Another tab changed the saved project or project list. Current artwork is kept. Refresh projects, reload the saved copy, or save memory as a new project.' : errorMessage(error);
+  libraryView.status(detail); tell(detail, true);
+  if (target !== undefined && (target === lineage.id || lineage.id === null)) { recoveryTarget = target; recoveryBlocked = true; saveState = 'failed'; recoveryMessage(detail); updateSaveState(); }
+  controls();
+}
+async function openLibraryProject(id: string) {
+  if (id === lineage.id && libraryHead?.activeId === id && !recoveryBlocked) return;
+  if (!await leaveWorkspace()) return;
+  pause(); intent(); const owner = libraryOwner(), transition = ++libraryTransition; libraryPending = true; updateLibrary();
+  let prepared: PreparedProject | null = null;
+  try {
+    const loaded = await owner.storage.readProject(id);
+    if (!owner.current()) return;
+    prepared = await prepareProject(loaded.project);
+    if (!owner.current()) return;
+    busy = true; pendingKind = 'library'; controls();
+    const result = await owner.storage.activate(loaded.receipt);
+    if (!owner.current()) return;
+    libraryHead = result.head; libraryMode = 'library'; libraryAccepted = true;
+    publishProject(prepared, loaded.entry.id, 'library'); prepared = null;
+    tell('Project opened. Undo starts fresh for this project.');
+  } catch (error) { if (owner.current()) libraryFailure(error, id); }
+  finally {
+    if (prepared) closeAssets(prepared.assets);
+    if (transition === libraryTransition) { libraryPending = false; if (owner.storage === library && owner.token === operation) { busy = false; pendingKind = null; } controls(); }
+  }
+}
+async function createLibraryProject(next: Project, demo = false, saveMemory = false) {
+  if (saveMemory) {
+    if (busy || exporting || gesture || restorePending || libraryPending || !admitDrafts() || !tweens.confirmLeave()) return;
+  } else if (!await leaveWorkspace()) return;
+  pause(); intent(); const owner = libraryOwner(), transition = ++libraryTransition; libraryPending = true; updateLibrary();
+  let prepared: PreparedProject | null = null;
+  try {
+    prepared = await prepareProject(next);
+    if (!owner.current()) return;
+    // Obtain only catalog authority; never silently replace current editor work.
+    const view = await owner.storage.read();
+    if (!owner.current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    owner.storage.acceptRead(view.receipt); libraryHead = view.head; libraryMode = view.mode; libraryAccepted = true;
+    if (view.legacy) {
+      const original = await prepareProject(view.legacy.project);
+      try { if (!owner.current()) return; owner.storage.acceptProject(view.legacy.receipt); }
+      finally { closeAssets(original.assets); }
+    }
+    busy = true; pendingKind = 'library'; controls();
+    const result = await owner.storage.create(prepared.project);
+    if (!owner.current()) return;
+    libraryHead = result.head; libraryMode = 'library';
+    publishProject(prepared, result.entry!.id, 'library', demo); prepared = null;
+    tell(saveMemory ? 'Your committed memory work is saved as a separate project.' : demo ? 'Original orbit demo saved as a separate project.' : 'New project saved. Your other projects were kept.');
+  } catch (error) { if (owner.current()) libraryFailure(error); }
+  finally {
+    if (prepared) closeAssets(prepared.assets);
+    if (transition === libraryTransition) { libraryPending = false; if (owner.storage === library && owner.token === operation) { busy = false; pendingKind = null; } controls(); }
+  }
+}
+async function duplicateLibraryProject() {
+  if (!await leaveWorkspace()) return;
+  pause(); intent(); const owner = libraryOwner(), transition = ++libraryTransition; libraryPending = true; updateLibrary();
+  let prepared: PreparedProject | null = null;
+  try {
+    prepared = await prepareProject(project);
+    if (!owner.current()) return;
+    busy = true; pendingKind = 'library'; controls();
+    const result = owner.owner.id ? await owner.storage.duplicate(owner.owner.id) : await owner.storage.create(prepared.project);
+    if (!owner.current()) return;
+    libraryHead = result.head; libraryMode = 'library';
+    publishProject(prepared, result.entry!.id, 'library'); prepared = null;
+    tell('Project duplicated. Both copies keep their own future edits; Undo starts fresh.');
+  } catch (error) { if (owner.current()) libraryFailure(error); }
+  finally {
+    if (prepared) closeAssets(prepared.assets);
+    if (transition === libraryTransition) { libraryPending = false; if (owner.storage === library && owner.token === operation) { busy = false; pendingKind = null; } controls(); }
+  }
+}
+async function deleteLibraryProject(id: string) {
+  if (!await leaveWorkspace()) return;
+  pause(); intent(); const owner = libraryOwner(), transition = ++libraryTransition; libraryPending = true; updateLibrary();
+  let prepared: PreparedProject | null = null;
+  try {
+    const view = await owner.storage.read();
+    if (!owner.current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    owner.storage.acceptRead(view.receipt); libraryHead = view.head; updateLibrary();
+    if (view.head?.activeId !== owner.owner.id) { libraryView.status('Another tab selected a different project. Open the project you want to keep before reviewing deletion again.'); return; }
+    const review = await owner.storage.reviewDelete(id);
+    if (!owner.current()) return;
+    if (!window.confirm(`Delete saved project “${review.entry.title}”? This permanently removes this browser copy and cannot be undone. Download a project file first. Cancel keeps it.`)) return;
+    if (!owner.current()) return;
+    const changesCanvas = owner.owner.id === id;
+    let next: LoadedProject | null = null;
+    if (changesCanvas && review.nextId) {
+      next = await owner.storage.readProject(review.nextId);
+      if (!owner.current()) return;
+      prepared = await prepareProject(next.project);
+    } else if (changesCanvas) prepared = await prepareProject(createProject());
+    if (!owner.current()) return;
+    busy = true; pendingKind = 'library'; controls();
+    const result = await owner.storage.delete(review.receipt, next?.receipt ?? null);
+    if (!owner.current()) return;
+    libraryHead = result.head; libraryMode = 'library';
+    if (changesCanvas && prepared) { publishProject(prepared, result.entry?.id ?? result.head.activeId, result.head.activeId ? 'library' : 'empty'); prepared = null; }
+    else { updateLibrary(); libraryView.status('Saved project deleted. Current editor and Undo history were kept.'); }
+    tell(changesCanvas ? 'Saved project deleted. Its session history was cleared; the original legacy draft will not reappear.' : 'Saved project deleted. Current project was kept.');
+  } catch (error) { if (owner.current()) libraryFailure(error); }
+  finally {
+    if (prepared) closeAssets(prepared.assets);
+    if (transition === libraryTransition) { libraryPending = false; if (owner.storage === library && owner.token === operation) { busy = false; pendingKind = null; } controls(); }
+  }
+}
+el('refresh-project-library').addEventListener('click', () => void refreshCatalog());
+el('duplicate-project').addEventListener('click', () => void duplicateLibraryProject());
+el('save-project-as-new').addEventListener('click', () => void createLibraryProject(validateProject(project), false, true));
+el('download-legacy-project').addEventListener('click', async () => {
+  const storage = library;
+  try {
+    const original = await storage.readRaw('legacy');
+    if (storage !== library) return;
+    if (!original.present) { libraryView.status('No original legacy draft is available. Current project files are downloaded with Save project file.'); return; }
+    const json = serializeRawRecord(original.value, MAX_JSON_BYTES);
+    download(new Blob([json], { type: 'application/json' }), '.original-legacy-draft.json', 'motion');
+    libraryView.status('Original legacy draft downloaded. It is separate from saved library projects and current editable work.');
+  } catch (error) { if (storage === library) libraryView.status(errorMessage(error)); }
+});
+
 async function replaceProject(next: Project, token: number, reset: boolean) {
-  const safe = validateProject(next); await validateProjectImages(safe);
+  const safe = validateProject(next), preparedHistory = reset ? new History(safe) : null; await validateProjectImages(safe);
   if (token !== operation || drafts.size || gesture) return false;
   const prepared = await loadAssets(safe);
   if (token !== operation || drafts.size || gesture) { closeAssets(prepared); return false; }
   tweens.close(); closeAssets(assets); assets = prepared;
-  if (reset) history.reset(safe); else history.commit(safe);
+  if (preparedHistory) history = preparedHistory; else history.commit(safe);
   project = history.current; selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = false; initialDemo = false;
   generation++; refresh(); scheduleSave(); return true;
 }
 async function importFile(input: HTMLInputElement, kind: 'image' | 'project') {
-  const file = input.files?.[0]; input.value = ''; if (!file || exporting || gesture || (busy && pendingKind !== 'import') || !admitDrafts() || !tweens.confirmLeave()) return;
-  pause(); intent(); const token = operation; busy = true; pendingKind = 'import'; controls();
+  const file = input.files?.[0]; input.value = '';
+  if (!file || exporting || gesture || (busy && pendingKind !== 'import') || !admitDrafts()) return;
+  if (pendingKind === 'import' && (busy || libraryPending)) { intent(); busy = false; pendingKind = null; }
+  const action = el<HTMLSelectElement>('project-file-action').value;
+  if (kind === 'project' && action === 'new') {
+    if (!await leaveWorkspace()) return;
+  } else {
+    if (!tweens.confirmLeave()) return;
+    if (kind === 'project') {
+      const before = libraryOwner();
+      if (!window.confirm(recoveryBlocked ? 'Replace current in-memory artwork with this file? The protected saved copy is kept unchanged. Downloads and Undo will use the imported committed project.' : 'Replace the current project artwork with this file? Download a backup first. Other saved projects are kept; this project starts a fresh Undo history.')) return;
+      if (!before.current()) return;
+    }
+  }
+  pause(); intent(); const token = operation, revision = generation, owner = lineage, transition = ++libraryTransition; libraryPending = true; pendingKind = 'import'; controls();
   try {
     let next: Project;
     if (kind === 'image') { const added = await importImage(file); next = structuredClone(project); next.layers.push(added); }
     else { if (file.size > MAX_JSON_BYTES) throw new Error(`Choose a project file no larger than ${MAX_JSON_BYTES.toLocaleString('en-US')} bytes (6 MiB plus the legacy migration allowance).`); next = validateProject(JSON.parse(await file.text())); }
-    if (token !== operation) return;
-    if (await replaceProject(next, token, kind === 'project')) { tell(kind === 'image' ? 'Artwork imported. Set a few poses to bring it to life.' : 'Project opened. Your embedded artwork and poses are ready.'); if (kind === 'image') selectMode('move'); }
+    if (token !== operation || revision !== generation || owner !== lineage) return;
+    if (kind === 'project' && action === 'new') {
+      // Reuse the already-consented transition without prompting or saving again.
+      const prepared = await prepareProject(next);
+      try {
+        if (token !== operation || revision !== generation || owner !== lineage) return;
+        busy = true; pendingKind = 'library'; controls();
+        const result = await library.create(prepared.project);
+        if (token !== operation || revision !== generation || owner !== lineage) return;
+        libraryHead = result.head; libraryMode = 'library';
+        publishProject(prepared, result.entry!.id, 'library');
+        tell('Project file imported as a new editable project. Other saved projects were kept.');
+        return;
+      } finally { if (assets !== prepared.assets) closeAssets(prepared.assets); }
+    }
+    if (await replaceProject(next, token, kind === 'project')) { tell(kind === 'image' ? 'Artwork imported. Set a few poses to bring it to life.' : recoveryBlocked ? 'Project file opened in memory. The saved copy remains protected.' : 'Project opened. Your embedded artwork and poses are ready.'); if (kind === 'image') selectMode('move'); }
   } catch (error) { if (token === operation) tell(`${errorMessage(error)} Your current project is unchanged.`, true); }
-  finally { if (token === operation) { busy = false; pendingKind = null; controls(); } }
+  finally { if (transition === libraryTransition) { libraryPending = false; if (token === operation) { busy = false; pendingKind = null; } controls(); } }
 }
 el<HTMLInputElement>('image-file').addEventListener('change', event => void importFile(event.target as HTMLInputElement, 'image'));
 el<HTMLInputElement>('project-file').addEventListener('change', event => void importFile(event.target as HTMLInputElement, 'project'));
-async function fresh(demo: boolean) {
-  if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave() || !window.confirm('Replace the current project? Save a project file first if you want to keep it.')) return;
-  pause(); intent(); const token = operation; busy = true; pendingKind = 'reset'; controls();
-  try { if (await replaceProject(demo ? createDemo() : createProject(), token, true)) { isDemo = demo; selectMode('draw'); tell(demo ? 'Original orbit demo loaded. Try moving a pose or drawing a new layer.' : 'A fresh canvas. Draw something, then add a pose near the end.'); } }
-  catch (error) { if (token === operation) tell(errorMessage(error), true); }
-  finally { if (token === operation) { busy = false; pendingKind = null; refresh(); } }
-}
+async function fresh(demo: boolean) { await createLibraryProject(demo ? createDemo() : createProject(), demo); }
 el('replace-saved-project').addEventListener('click', async () => {
   if (busy || exporting || gesture || !admitDrafts() || !recoveryBlocked || restorePending || retryPending) return;
-  const reviewed = project, reviewedOperation = operation, reviewedGeneration = generation;
-  if (!window.confirm('Replace the preserved browser record with the current project? Download your current project file first. This replaces the old saved artwork.')) return;
-  if (reviewed !== project || reviewedOperation !== operation || reviewedGeneration !== generation || drafts.size || gesture) { tell('The editor changed. Review replacement again; the saved record is kept.', true); return; }
-  pause(); intent(); const token = operation, revision = generation, request = ++replacementRequest;
-  busy = true; pendingKind = 'replacement'; clearTimeout(saveTimer); saveRevision++; controls();
-  const snapshot = validateProject(project);
+  if (recoveryTarget === 'head') { recoveryMessage('The project list cannot be replaced here. Preserve its record and repair browser storage before retrying.'); return; }
+  pause(); intent(); const owner = libraryOwner(), request = ++replacementRequest, saveRequest = ++saveRevision;
+  const snapshot = validateProject(project); let target = recoveryTarget;
+  busy = true; pendingKind = 'replacement'; clearTimeout(saveTimer); controls();
   try {
-    await saveProject(snapshot);
-    // Serialized writes may commit A while a newer explicit B request is already queued.
-    // Record actual durable success independently of who owns the current UI request.
-    if (request > completedReplacementReceipt) {
-      completedReplacementReceipt = request;
-      if (recoveryBlocked) rawRecord = { present: true, value: snapshot };
+    if (rawRecord === null && target === 'legacy') {
+      // Only an unknown startup/legacy target needs catalog discovery. A known
+      // project remains the replacement target even if another tab selected it away.
+      const view = await owner.storage.read();
+      if (!owner.current()) return;
+      libraryHead = view.head; libraryMode = view.mode; updateLibrary();
+      target = view.head?.activeId ?? 'legacy';
     }
+    const review = await owner.storage.reviewReplacement(target);
+    if (!owner.current() || request !== replacementRequest) return;
+    if (!window.confirm(`Replace saved project ${review.title ? `“${review.title}”` : '(unreadable saved copy)'} with current committed artwork? Download backups first. Unapplied fields and in-between choices are excluded. This overwrites this saved copy only.`)) return;
+    if (!owner.current() || request !== replacementRequest) return;
+    const result = await owner.storage.replace(snapshot, review.receipt);
+    knownCommit(result, snapshot, owner.owner, saveRequest);
     if (request !== replacementRequest) return;
-    if (token === operation && revision === generation && project === reviewed && !drafts.size && !gesture) {
+    if (owner.current()) {
+      if (result.entry) lineage.id = result.entry.id;
+      lineage.origin = 'library'; libraryHead = result.head; libraryMode = 'library'; libraryAccepted = true;
       recoveryBlocked = false; rawRecord = null; isDemo = false; initialDemo = false; saveState = 'saved';
       tell('Saved project explicitly replaced. Automatic saving is enabled.');
     } else if (recoveryBlocked) {
-      // The transaction really committed A, but a newer editor intent/work B owns this page.
-      // Preserve the known durable receipt without implying B was saved or enabling autosave.
-      saveState = 'failed';
-      const detail = 'The earlier captured project was saved. Newer memory work is not saved; download it or explicitly replace the saved project again.';
-      recoveryMessage(detail); if (!busy) tell(detail, true);
+      saveState = 'failed'; recoveryMessage('The earlier captured project was saved. Newer memory work is not saved; download it or explicitly replace the saved project again.');
     }
   } catch (error) {
-    if (request === replacementRequest && recoveryBlocked) {
-      saveState = 'failed'; recoveryMessage(errorMessage(error));
-      if (token === operation || !busy) tell(`${errorMessage(error)} The browser record remains protected; current memory work is not saved.`, true);
-    }
+    if (request === replacementRequest && recoveryBlocked) { saveState = 'failed'; recoveryMessage(errorMessage(error)); if (owner.storage === library) tell(`${errorMessage(error)} Current memory is not saved; the saved copy remains protected.`, true); }
   } finally {
-    // A stale write cannot unlock a newer import/history/replacement operation.
     if (request === replacementRequest) {
-      if (token === operation) { busy = false; pendingKind = null; }
+      if (owner.token === operation) { busy = false; pendingKind = null; }
       updateSaveState(); controls();
     }
   }
@@ -555,48 +815,95 @@ window.addEventListener('beforeunload', event => { if (saveState !== 'saved' || 
 window.addEventListener('blur', cancelGesture);
 window.addEventListener('resize', cancelGesture);
 const stageObserver = new ResizeObserver(cancelGesture); stageObserver.observe(canvas);
-window.addEventListener('pagehide', () => {
+window.addEventListener('pagehide', event => {
   intent(); pause(); cancelGesture(); exported?.abort();
   for (const url of downloadUrls) URL.revokeObjectURL(url); downloadUrls.clear();
+  clearTimeout(saveTimer); saveTimer = undefined; saveRevision++; libraryPending = false; catalogRequest++;
+  if (!event.persisted) { library.close(); closeAssets(assets); }
+  libraryAccepted = false; recoveryBlocked = true; saveState = 'failed';
+  recoveryMessage('This page was suspended. Current memory and editor values are kept; retry the saved copy before saving.');
   if (!restorePending) { busy = false; pendingKind = null; }
 });
-window.addEventListener('pageshow', () => { controls(); draw(); });
+window.addEventListener('pageshow', event => {
+  if (event.persisted) { libraryAccepted = false; recoveryBlocked = true; updateSaveState(); }
+  controls(); draw();
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); cancelGesture(); } });
 
 // Retry reads and decoding deliberately leave current memory work editable.
 // Every input/commit/import/history/reset invalidates the publication token.
 async function restoreSaved(startup: boolean) {
-  const token = operation, revision = generation;
-  const current = () => token === operation && revision === generation && !gesture && !drafts.size;
+  const owner = libraryOwner();
+  const selectedTarget = recoveryTarget;
+  let prepared: PreparedProject | null = null;
+  let phase: 'catalog' | 'project' = 'catalog';
   try {
-    const read = await readRawRecord(); rawRecord = read;
-    if (!current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
-    if (!read.present) {
-      recoveryBlocked = false; saveState = 'saved';
-      if (!startup && generation > 0) scheduleSave();
-      tell('No saved draft was found. Your current work is kept.'); return;
+    const view = await owner.storage.read();
+    phase = 'project';
+    if (!owner.current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    libraryHead = view.head; libraryMode = view.mode; updateLibrary();
+    let loaded: LoadedProject | null = null;
+    let next: Project | null = null;
+    if (view.mode === 'library') {
+      const id = !startup && selectedTarget !== 'legacy' && selectedTarget !== 'head' && view.head!.entries.some(entry => entry.id === selectedTarget) ? selectedTarget : view.head!.activeId;
+      if (id) { recoveryTarget = id; loaded = await owner.storage.readProject(id); next = loaded.project; }
+      else next = createProject();
+    } else if (view.legacy) { recoveryTarget = 'legacy'; next = view.legacy.project; }
+    const raw = await owner.storage.readRaw(recoveryTarget);
+    if (owner.storage === library && owner.owner === lineage) { rawRecord = raw; rawTarget = recoveryTarget; }
+    if (!owner.current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    if (!startup && !window.confirm('Reload the saved project and replace current memory artwork and session Undo history? Download your current project file first. Cancel keeps current work.')) return;
+    if (!owner.current()) return;
+    if (next) prepared = await prepareProject(next);
+    if (!owner.current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
+    owner.storage.acceptRead(view.receipt);
+    if (loaded) {
+      // Startup adoption never writes; an explicit retry can choose another entry.
+      if (loaded.entry.id === view.head!.activeId) owner.storage.acceptProject(loaded.receipt);
+      else {
+        const result = await owner.storage.activate(loaded.receipt);
+        if (!owner.current()) return;
+        libraryHead = result.head;
+      }
+    } else if (view.legacy) owner.storage.acceptProject(view.legacy.receipt);
+    libraryAccepted = true;
+    if (prepared) {
+      publishProject(prepared, loaded?.entry.id ?? null, loaded ? 'library' : view.mode === 'legacy' ? 'legacy' : 'empty'); prepared = null;
+      tell(view.mode === 'legacy' ? 'Your saved local project is ready. The original draft is retained; the next edit saves it in Projects.' : 'Your saved local project is ready.');
+    } else {
+      lineage = { id: null, origin: 'empty' }; recoveryBlocked = false; rawRecord = null; saveState = 'saved';
+      updateSaveState(); updateLibrary(); tell('No saved project was found. The original demo is kept until your first edit.');
     }
-    const saved = decodeSavedRecord(read.value);
-    if (!startup && generation > 0 && !window.confirm('Restore the saved draft and replace current in-memory work? Save a project file first to keep current edits.')) {
-      recoveryMessage('Restore cancelled. Current work and the preserved browser record were kept.'); return;
-    }
-    await validateProjectImages(saved);
-    const loaded = await loadAssets(saved);
-    if (!current()) { closeAssets(loaded); recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
-    pause(); tweens.close(); closeAssets(assets); assets = loaded; history.reset(saved); project = history.current;
-    selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = false; initialDemo = false;
-    recoveryBlocked = false; rawRecord = null; saveState = 'saved'; refresh(); tell('Your saved local project is ready.');
   } catch (error) {
-    if (!current()) { recoveryMessage('The editor changed during recovery. Newer work was kept; retry when ready.'); return; }
-    saveState = 'failed'; recoveryMessage(errorMessage(error));
-    tell(`${errorMessage(error)} Existing browser data is protected. You can work in memory and download a project file; replacement requires explicit confirmation.`, true);
-  }
+    if (owner.storage === library && owner.token === operation) {
+      saveState = 'failed'; recoveryBlocked = true; libraryAccepted = false;
+      recoveryMessage(errorMessage(error)); tell(`${errorMessage(error)} Current work is kept in memory. Download a project file; replacing a saved copy requires review.`, true);
+      if (error instanceof LibraryReadFailure) {
+        recoveryTarget = error.target; rawTarget = error.target; rawRecord = error.raw;
+        return;
+      }
+      try {
+        let target = recoveryTarget;
+        if (phase === 'catalog') {
+          const head = await owner.storage.readRaw('head');
+          target = 'head';
+          if (!head.present) {
+            // Review proves absent valid catalog/key membership; it writes nothing.
+            await owner.storage.reviewReplacement('legacy'); target = 'legacy';
+          }
+        }
+        const raw = await owner.storage.readRaw(target);
+        if (owner.storage === library && owner.token === operation) { recoveryTarget = target; rawTarget = target; rawRecord = raw; }
+      } catch { /* Unknown or unsafe library contents remain protected, never legacy fallback. */ }
+    }
+  } finally { if (prepared) closeAssets(prepared.assets); }
 }
+
 el('recovery-download').addEventListener('click', () => {
   try {
     if (!rawRecord) throw new Error('The saved record was not read. Its contents are unknown; raw download is unavailable. Retry when storage is accessible.');
     if (!rawRecord.present) throw new Error('No saved record is available for download.');
-    const json = serializeRawRecord(rawRecord.value);
+    const json = serializeRawRecord(rawRecord.value, rawTarget === 'head' ? MAX_LIBRARY_HEAD_BYTES : rawTarget === 'legacy' ? MAX_JSON_BYTES : MAX_JSON_BYTES + 256);
     download(new Blob([json], { type: 'application/json' }), '.preserved-record.json');
     recoveryMessage('Preserved record downloaded exactly as JSON. It is separate from the current project file and may require repair.');
   } catch (error) { recoveryMessage(errorMessage(error)); }

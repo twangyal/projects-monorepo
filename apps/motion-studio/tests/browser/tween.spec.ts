@@ -2,6 +2,7 @@ import {test,expect,type Page,type Download} from '@playwright/test';
 import {endpoints,applied,coreAt,type Film} from './tween-fixtures.ts';
 import {readFile,writeFile} from 'node:fs/promises';
 import {parseGIF,decompressFrames} from 'gifuct-js';
+import {nativeCurrent} from '../native-saved-project.ts';
 async function open(page:Page,film:Film=endpoints()){
   await page.goto('/');await expect(page.locator('#stage')).toHaveAttribute('aria-disabled','false');
   await page.locator('#project-file').setInputFiles({name:'original-endpoints.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(film))});
@@ -14,7 +15,7 @@ test('original endpoint drawings expose an explicit geometric in-between action'
 async function bytes(download:Download){const path=await download.path();if(!path)throw Error('Native download unavailable');return readFile(path);}
 async function download(page:Page,id='#backup'){const waiting=page.waitForEvent('download');await page.locator(id).click();return bytes(await waiting);}
 async function backup(page:Page):Promise<Film>{return JSON.parse((await download(page)).toString()) as Film;}
-async function stored(page:Page,write?:unknown){return page.evaluate(value=>new Promise<unknown>((resolve,reject)=>{const request=indexedDB.open('motion-studio',1);request.onerror=()=>reject(request.error);request.onupgradeneeded=()=>request.result.createObjectStore('project');request.onsuccess=()=>{const db=request.result,tx=db.transaction('project',value===undefined?'readonly':'readwrite'),s=tx.objectStore('project'),read=value===undefined?s.get('current'):s.put(value,'current');tx.oncomplete=()=>{db.close();resolve(read.result);};tx.onabort=()=>{db.close();reject(tx.error);};};}),write);}
+async function stored(page:Page,write?:unknown){return nativeCurrent(page,write===undefined?undefined:{value:write});}
 async function range(page:Page,id:string,frame:number){await page.locator(id).evaluate((node,value)=>{(node as HTMLInputElement).value=String(value);node.dispatchEvent(new Event('input',{bubbles:true}));},frame);}
 async function scrub(page:Page,frame:number){await range(page,'#frame',frame);await expect(page.locator('#stage')).toHaveAttribute('data-frame',String(frame));}
 async function pixels(page:Page,id:string,points:{x:number;y:number}[]){return page.locator(id).evaluate((node,points)=>{const ctx=(node as HTMLCanvasElement).getContext('2d')!;return points.map(p=>[...ctx.getImageData(p.x,p.y,1,1).data]);},points);}
@@ -78,7 +79,7 @@ test('pointer gesture cancellation retires scratch review without committing the
 
 test('protected corrupt storage stays exact while reviewed in-betweens are applied in memory',async({page})=>{
   await open(page);const corrupt={schemaVersion:999,original:'Preserve this literal unsupported record'};await stored(page,corrupt);await page.reload();await expect(page.locator('#recovery-panel')).toBeVisible();await expect(page.locator('#stage')).toHaveAttribute('aria-disabled','false');
-  await page.locator('#project-file').setInputFiles({name:'safe-endpoints.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(endpoints()))});await expect(page.locator('#project-title')).toHaveValue(endpoints().title);await page.locator('[data-layer-id=paired]').click();await configure(page);await review(page);await page.locator('#tween-apply').click();await expect(page.locator('#stage')).toHaveAttribute('data-frame','2');expectCandidate(await backup(page));expect(await stored(page)).toEqual(corrupt);expect(JSON.parse((await download(page,'#recovery-download')).toString())).toEqual(corrupt);
+  await page.locator('#project-file-action').selectOption('replace');page.once('dialog',d=>d.accept());await page.locator('#project-file').setInputFiles({name:'safe-endpoints.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(endpoints()))});await expect(page.locator('#project-title')).toHaveValue(endpoints().title);await page.locator('[data-layer-id=paired]').click();await configure(page);await review(page);await page.locator('#tween-apply').click();await expect(page.locator('#stage')).toHaveAttribute('data-frame','2');expectCandidate(await backup(page));expect(await stored(page)).toEqual(corrupt);expect(JSON.parse((await download(page,'#recovery-download')).toString())).toEqual(corrupt);
   page.once('dialog',d=>d.accept());await page.locator('#replace-saved-project').click();await expect(page.locator('#save-status')).toHaveText('Saved in this browser');expectCandidate(await stored(page) as Film);
 });
 

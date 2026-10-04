@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Download } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { parseGIF, decompressFrames } from 'gifuct-js';
+import { nativeCurrent, nativeCurrentRaw, nativeLegacyRaw } from '../native-saved-project.ts';
 import { legacy, migrated, media, shortening, key, line, originalPng, type Film } from './cel-fixtures.ts';
 
 async function bytes(download: Download) { const path = await download.path(); if (!path) throw Error('Native download missing'); return readFile(path); }
@@ -94,25 +95,16 @@ test('downloaded PNG and all decoded GIF frames respect exact held cuts, blank i
   expect(await backup(page)).toEqual(media());
 });
 
-async function record(page: Page, write?: { value: unknown }): Promise<unknown> {
-  return page.evaluate(({ write }) => new Promise((resolve, reject) => {
-    const opened = indexedDB.open('motion-studio', 1); opened.onerror = () => reject(opened.error);
-    opened.onupgradeneeded = () => opened.result.createObjectStore('project');
-    opened.onsuccess = () => { const db = opened.result, tx = db.transaction('project', write ? 'readwrite' : 'readonly'), store = tx.objectStore('project');
-      const request = write ? store.put(write.value, 'current') : store.get('current');
-      tx.oncomplete = () => { const value = request.result; db.close(); resolve(value); }; tx.onabort = () => { db.close(); reject(tx.error); };
-    };
-  }), { write });
-}
+async function record(page: Page, write?: { value: unknown }): Promise<unknown> { return nativeCurrent(page, write); }
 
 test('native stored schema1 migrates without a load write and actual schema2 edit survives reload', async ({ page }) => {
-  await open(page); await expect(page.locator('#save-status')).toHaveText('Saved in this browser');
+  await page.goto('/'); await expect(page.locator('#stage')).toHaveAttribute('aria-disabled', 'false');
   const original = { ...legacy(), harmlessExtension: { supplied: 'retain raw legacy field' } };
   await record(page, { value: original }); await page.reload();
   await expect(page.locator('#project-title')).toHaveValue(original.title); await expect(page.locator('#stage')).toHaveAttribute('aria-disabled', 'false');
   expect(await backup(page)).toEqual(migrated(legacy())); expect(await record(page)).toEqual(original);
   await scrub(page, 6); await page.locator('#duplicate-cel').click(); const edited = await backup(page);
-  await expect(page.locator('#save-status')).toHaveText('Saved in this browser'); expect(await record(page)).toEqual(edited);
+  await expect(page.locator('#save-status')).toHaveText('Saved in this browser'); expect(await record(page)).toEqual(edited); expect(await nativeLegacyRaw(page)).toEqual(original);
   await page.reload(); await expect(page.locator('#project-title')).toHaveValue(edited.title); expect(await backup(page)).toEqual(edited);
 });
 
@@ -344,12 +336,12 @@ test('controlled persisted return during actual replacement transaction never cl
     const original = IDBObjectStore.prototype.put;
     IDBObjectStore.prototype.put = function(value: unknown, key?: IDBValidKey) {
       const request = original.call(this, value, key);
-      if (state.armed && this.name === 'project' && key === 'current' && this.transaction.mode === 'readwrite') {
+      if (state.armed && this.name === 'projects' && typeof key === 'string' && this.transaction.mode === 'readwrite') {
         state.armed = false;
         this.transaction.addEventListener('complete', () => { state.completed++; });
         request.addEventListener('success', () => {
           state.started = true;
-          const keepAlive = () => { if (state.hold) this.get('current').addEventListener('success', keepAlive); };
+          const keepAlive = () => { if (state.hold) this.get(key!).addEventListener('success', keepAlive); };
           keepAlive();
         });
       }
@@ -366,7 +358,7 @@ test('controlled persisted return during actual replacement transaction never cl
   expect(await record(page)).toEqual(before); expect(await backup(page)).toEqual(after);
   await expect(page.locator('#save-status')).not.toHaveText('Saved in this browser');
   await expect(page.locator('#recovery-panel')).toBeVisible();
-  expect(JSON.parse((await download(page, '#recovery-download')).toString('utf8'))).toEqual(before);
+  expect(JSON.parse((await download(page, '#recovery-download')).toString('utf8'))).toEqual(await nativeCurrentRaw(page));
   await page.locator('#replace-saved-project').click();
   await expect(page.locator('#save-status')).toHaveText('Saved in this browser'); expect(await record(page)).toEqual(after);
   await page.reload(); await expect(page.locator('#project-title')).toHaveValue(after.title); expect(await backup(page)).toEqual(after);
@@ -382,13 +374,13 @@ test('queued replacement failure preserves the actual preceding successful write
     const original = IDBObjectStore.prototype.put;
     IDBObjectStore.prototype.put = function(value: unknown, key?: IDBValidKey) {
       const request = original.call(this, value, key);
-      if (this.name === 'project' && key === 'current' && this.transaction.mode === 'readwrite') {
+      if (this.name === 'projects' && typeof key === 'string' && this.transaction.mode === 'readwrite') {
         const order = ++state.writes;
         if (order === 1) {
           this.transaction.addEventListener('complete', () => { state.completed = true; });
           request.addEventListener('success', () => {
             state.started = true;
-            const keepAlive = () => { if (state.hold) this.get('current').addEventListener('success', keepAlive); };
+            const keepAlive = () => { if (state.hold) this.get(key!).addEventListener('success', keepAlive); };
             keepAlive();
           });
         } else if (order === 2) {
@@ -410,7 +402,7 @@ test('queued replacement failure preserves the actual preceding successful write
   await expect(page.locator('#replace-saved-project')).toBeEnabled();
   expect(await record(page)).toEqual(first); expect(await backup(page)).toEqual(second);
   await expect(page.locator('#save-status')).not.toHaveText('Saved in this browser'); await expect(page.locator('#recovery-panel')).toBeVisible();
-  expect(JSON.parse((await download(page, '#recovery-download')).toString('utf8'))).toEqual(first);
+  expect(JSON.parse((await download(page, '#recovery-download')).toString('utf8'))).toEqual(await nativeCurrentRaw(page));
   await page.locator('#replace-saved-project').click(); await expect(page.locator('#save-status')).toHaveText('Saved in this browser');
   expect(await record(page)).toEqual(second);
 });

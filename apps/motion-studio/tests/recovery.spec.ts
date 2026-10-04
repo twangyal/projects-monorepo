@@ -55,13 +55,14 @@ test('a bounded project with genuine decoded PNGs can reopen its own backup', as
   // The previous pretty-printed download crossed the import cap for this fixture.
   expect(Buffer.byteLength(JSON.stringify(project, null, 2))).toBeGreaterThan(6 * 1024 * 1024);
   await page.goto('/');
+  await expect(page.locator('#project-file')).toBeEnabled();
   await page.locator('#project-file').setInputFiles({ name: 'large.motion.json', mimeType: 'application/json', buffer: original });
-  await expect(page.locator('#message')).toContainText('Project opened.');
+  await expect(page.locator('#message')).toContainText('Project file imported as a new editable project.');
   const exported = await backup(page);
   expect(exported.length).toBeLessThanOrEqual(6 * 1024 * 1024);
   expect(exported.equals(original)).toBe(true);
   await page.locator('#project-file').setInputFiles({ name: 'roundtrip.motion.json', mimeType: 'application/json', buffer: exported });
-  await expect(page.locator('#message')).toContainText('Project opened.');
+  await expect(page.locator('#message')).toContainText('Project file imported as a new editable project.');
   expect((await backup(page)).equals(original)).toBe(true);
 });
 

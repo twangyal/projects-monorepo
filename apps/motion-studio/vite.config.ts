@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 const input: Record<string, string> = { main: resolve('index.html') };
 if (process.env.MOTION_TEST_HARNESS === '1') {
-  for (const name of ['export', 'media', 'tween']) {
+  for (const name of ['export', 'media', 'tween', 'library-storage']) {
     const path = resolve(`tests/${name}-harness.html`);
     if (existsSync(path)) input[name] = path;
   }

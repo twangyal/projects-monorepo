@@ -1,0 +1,723 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Motion Studio #104 existing native workflow preservation",
+  "complete": true,
+  "firstActualRun": {
+    "passed": 68,
+    "failed": 12,
+    "durationMs": 92404.10299999999,
+    "retries": 0,
+    "cases": [
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 36,
+        "title": "valid legacy artwork opens before held drawing controls become available",
+        "status": "passed",
+        "durationMs": 966
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 43,
+        "title": "drawings duplicate independently, interior painting stays held, blank and deletion are exact reversible edits",
+        "status": "passed",
+        "durationMs": 3651
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 77,
+        "title": "downloaded PNG and all decoded GIF frames respect exact held cuts, blank interval and independent moving pose",
+        "status": "passed",
+        "durationMs": 1655
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 100,
+        "title": "native stored schema1 migrates without a load write and actual schema2 edit survives reload",
+        "status": "passed",
+        "durationMs": 2188
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 111,
+        "title": "shortening asks exact multi-layer loss, refusal preserves all work and accepted resize is one reversible edit",
+        "status": "passed",
+        "durationMs": 1928
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 126,
+        "title": "aggregate duplicate rejection and no-op move preserve redo; occupied and first boundaries remain protected",
+        "status": "passed",
+        "durationMs": 4335
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 137,
+        "title": "raw pose drafts block cel navigation without loss and off-grid committed numbers retain exact precision",
+        "status": "passed",
+        "durationMs": 2295
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 160,
+        "title": "cancelled gestures and delayed resize notifications cannot commit artwork or destroy redo",
+        "status": "passed",
+        "durationMs": 2203
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 186,
+        "title": "late native PNG callback cannot download a changed-back raw draft or the wrong frame",
+        "status": "passed",
+        "durationMs": 1151
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 207,
+        "title": "recovery bitmap completion cannot replace newer raw pose intent, and the saved record remains protected",
+        "status": "passed",
+        "durationMs": 1256
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 229,
+        "title": "mobile keyboard can reach all 24 cel boundaries and image artwork keeps its distinct explanation",
+        "status": "passed",
+        "durationMs": 1229
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 248,
+        "title": "endpoint key-cap rejection happens before loss consent and mixed legacy cel input cannot erase valid work",
+        "status": "passed",
+        "durationMs": 1096
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 264,
+        "title": "controlled persisted lifecycle during Undo decode cannot move newer history or lose its preceding state",
+        "status": "passed",
+        "durationMs": 1561
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 286,
+        "title": "painting transformed artwork stores inverse coordinates only in the held drawing at gesture admission",
+        "status": "passed",
+        "durationMs": 1408
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 302,
+        "title": "cancelled real GIF delivery cannot download after a new cel edit or replace a newer export",
+        "status": "passed",
+        "durationMs": 1671
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 329,
+        "title": "controlled persisted return during actual replacement transaction never claims newer unsaved work is saved",
+        "status": "passed",
+        "durationMs": 1856
+      },
+      {
+        "file": "browser/cels.spec.ts",
+        "line": 367,
+        "title": "queued replacement failure preserves the actual preceding successful write receipt",
+        "status": "passed",
+        "durationMs": 2103
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 11,
+        "title": "original endpoint drawings expose an explicit geometric in-between action",
+        "status": "passed",
+        "durationMs": 536
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 27,
+        "title": "explicit nonidentity pairing and reversal review actual pixels without saving, then Apply is one undoable edit",
+        "status": "passed",
+        "durationMs": 2088
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 35,
+        "title": "actual PNG and all GIF frames show held interior artwork, round dots and independent simultaneous pose",
+        "status": "passed",
+        "durationMs": 2599
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 42,
+        "title": "generated drawing remains separately editable and original endpoints survive Undo and Redo",
+        "status": "passed",
+        "durationMs": 2103
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 46,
+        "title": "invalid and changed-back count text preserves its node and requires a fresh review",
+        "status": "passed",
+        "durationMs": 1494
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 50,
+        "title": "raw pose drafts block opening and later raw changed-back intent retires review without losing spelling",
+        "status": "passed",
+        "durationMs": 1425
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 54,
+        "title": "preview playback preserves main frame and scratch, while main seeking and canceled layer switching retire no artwork",
+        "status": "passed",
+        "durationMs": 2095
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 58,
+        "title": "ordinary project and GIF downloads remain committed-only while unaccepted artwork exists",
+        "status": "passed",
+        "durationMs": 1414
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 62,
+        "title": "failed import and controlled page lifecycle never revive a reviewed proposal or erase correspondence",
+        "status": "failed",
+        "durationMs": 6389,
+        "classification": "Product regression: default new import asked for tween leave consent twice, so one accepted review never reached the native File read."
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 66,
+        "title": "390px keyboard correspondence and dot preview fit without page overflow",
+        "status": "passed",
+        "durationMs": 1576
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 70,
+        "title": "late genuine project read after controlled page return cannot restore an invalidated review or overwrite artwork",
+        "status": "failed",
+        "durationMs": 5946,
+        "classification": "Product regression: default new import asked for tween leave consent twice, so one accepted review never reached the native File read."
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 76,
+        "title": "pointer gesture cancellation retires scratch review without committing the provisional drawing",
+        "status": "passed",
+        "durationMs": 1528
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 80,
+        "title": "protected corrupt storage stays exact while reviewed in-betweens are applied in memory",
+        "status": "passed",
+        "durationMs": 3918
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 86,
+        "title": "open correspondence updates after both endpoint drawings gain a stroke without erasing raw choices",
+        "status": "passed",
+        "durationMs": 2468
+      },
+      {
+        "file": "browser/tween.spec.ts",
+        "line": 97,
+        "title": "Undo removing the scratch owner requires explicit consent and dismissal keeps its raw controls",
+        "status": "passed",
+        "durationMs": 1512
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 29,
+        "title": "editing after invalid restore never overwrites the native saved record",
+        "status": "passed",
+        "durationMs": 1451
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 35,
+        "title": "raw saved record download preserves exact unknown properties without exporting the recovery demo",
+        "status": "passed",
+        "durationMs": 1455
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 41,
+        "title": "recovery retains raw data through history, imports, resets and current exports",
+        "status": "passed",
+        "durationMs": 1990
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 66,
+        "title": "cancel, failed import and failed deliberate replacement keep recovery active",
+        "status": "failed",
+        "durationMs": 6451,
+        "classification": "Fixture adaptation: protected memory-only invalid import now uses explicit replace-current mode and consent."
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 80,
+        "title": "successful confirmed replacement resumes autosave and reopens the actual record",
+        "status": "passed",
+        "durationMs": 1061
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 115,
+        "title": "denied reads protect unknown storage and retry preserves edits until confirmed restore",
+        "status": "passed",
+        "durationMs": 1278
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 131,
+        "title": "startup read keeps editor mutations locked until restore completes",
+        "status": "passed",
+        "durationMs": 1494
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 144,
+        "title": "a delayed retry cannot publish over a newer memory edit",
+        "status": "passed",
+        "durationMs": 1218
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 174,
+        "title": "late native image decode during retry releases bitmaps and preserves newer edits and history",
+        "status": "passed",
+        "durationMs": 1883
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 212,
+        "title": "genuine PNG decoding failure preserves the complete raw saved project",
+        "status": "passed",
+        "durationMs": 1257
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 229,
+        "title": "unsafe raw cycle never produces a lossy backup",
+        "status": "failed",
+        "durationMs": 5768,
+        "classification": "Product regression: known unsafe legacy value lost from recovery state when replacement comparison was used to classify a read failure."
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 229,
+        "title": "unsafe raw nonfinite never produces a lossy backup",
+        "status": "failed",
+        "durationMs": 5643,
+        "classification": "Product regression: known unsafe legacy value lost from recovery state when replacement comparison was used to classify a read failure."
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 229,
+        "title": "unsafe raw undefined never produces a lossy backup",
+        "status": "failed",
+        "durationMs": 5782,
+        "classification": "Product regression: known unsafe legacy value lost from recovery state when replacement comparison was used to classify a read failure."
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 229,
+        "title": "unsafe raw date never produces a lossy backup",
+        "status": "failed",
+        "durationMs": 5716,
+        "classification": "Product regression: known unsafe legacy value lost from recovery state when replacement comparison was used to classify a read failure."
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 229,
+        "title": "unsafe raw overbound never produces a lossy backup",
+        "status": "failed",
+        "durationMs": 5827,
+        "classification": "Product regression: known unsafe legacy value lost from recovery state when replacement comparison was used to classify a read failure."
+      },
+      {
+        "file": "draft-recovery.spec.ts",
+        "line": 255,
+        "title": "recovery actions remain visible, labelled and keyboard usable at a narrow viewport",
+        "status": "passed",
+        "durationMs": 637
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 39,
+        "title": "real GIF has every ordered frame, exact rounded timing, loop and moving drawing pixels",
+        "status": "passed",
+        "durationMs": 455
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 59,
+        "title": "embedded normalized image exports through the worker with real decoded movement",
+        "status": "passed",
+        "durationMs": 439
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 66,
+        "title": "maximum timeline encodes 96 frames with total duration eight seconds",
+        "status": "passed",
+        "durationMs": 1344
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 72,
+        "title": "fractional-second timelines round total GIF duration within one centisecond",
+        "status": "passed",
+        "durationMs": 443
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 79,
+        "title": "export snapshots artwork and terminates its actual worker after completion",
+        "status": "passed",
+        "durationMs": 403
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 106,
+        "title": "abort during real worker progress releases it and leaves the project unchanged",
+        "status": "passed",
+        "durationMs": 270
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 138,
+        "title": "unsupported browser and already aborted exports reject without launching a worker",
+        "status": "passed",
+        "durationMs": 295
+      },
+      {
+        "file": "export.spec.ts",
+        "line": 157,
+        "title": "client rejects an oversized encoded result and terminates the faulty worker",
+        "status": "passed",
+        "durationMs": 262
+      },
+      {
+        "file": "media.spec.ts",
+        "line": 8,
+        "title": "PNG, JPEG, and static WebP genuinely decode and normalize with PNG alpha and edge limits",
+        "status": "passed",
+        "durationMs": 699
+      },
+      {
+        "file": "media.spec.ts",
+        "line": 28,
+        "title": "high entropy valid artwork is downsampled further to respect embedded PNG budget",
+        "status": "passed",
+        "durationMs": 452
+      },
+      {
+        "file": "media.spec.ts",
+        "line": 40,
+        "title": "actual compressed-data failures release partially loaded bitmaps and saved dimensions are verified",
+        "status": "passed",
+        "durationMs": 225
+      },
+      {
+        "file": "media.spec.ts",
+        "line": 63,
+        "title": "shared renderer applies local transforms, alpha, dots, layering and restores caller state",
+        "status": "passed",
+        "durationMs": 245
+      },
+      {
+        "file": "media.spec.ts",
+        "line": 80,
+        "title": "DOM and OffscreenCanvas render identical transformed artwork and fitted centered images",
+        "status": "passed",
+        "durationMs": 567
+      },
+      {
+        "file": "recovery.spec.ts",
+        "line": 52,
+        "title": "a bounded project with genuine decoded PNGs can reopen its own backup",
+        "status": "failed",
+        "durationMs": 7040,
+        "classification": "Fixture adaptation: literal status copy changed for library import, canonical row validation or caught schema setup failure; exact data assertions remain."
+      },
+      {
+        "file": "recovery.spec.ts",
+        "line": 69,
+        "title": "drawing outside transformed artwork bounds fails cleanly and leaves drawing usable",
+        "status": "passed",
+        "durationMs": 1124
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 31,
+        "title": "local library keeps one validated project and restores its complete saved state",
+        "status": "passed",
+        "durationMs": 1005
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 56,
+        "title": "a delayed older save cannot overwrite a newer edit",
+        "status": "passed",
+        "durationMs": 801
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 106,
+        "title": "an invalid stored record is reported and preserved instead of silently replaced",
+        "status": "failed",
+        "durationMs": 5823,
+        "classification": "Fixture adaptation: literal status copy changed for library import, canonical row validation or caught schema setup failure; exact data assertions remain."
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 131,
+        "title": "blocked IndexedDB keeps the animation editable and JSON backup available",
+        "status": "passed",
+        "durationMs": 581
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 148,
+        "title": "schema creation failure is reported without an uncaught browser error",
+        "status": "failed",
+        "durationMs": 5462,
+        "classification": "Fixture adaptation: literal status copy changed for library import, canonical row validation or caught schema setup failure; exact data assertions remain."
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 164,
+        "title": "delayed startup restore locks mutations until the saved project is ready",
+        "status": "passed",
+        "durationMs": 1084
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 177,
+        "title": "undecodable saved artwork remains protected after editor changes",
+        "status": "passed",
+        "durationMs": 743
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 188,
+        "title": "a denied startup read remains protected after storage access returns",
+        "status": "passed",
+        "durationMs": 1167
+      },
+      {
+        "file": "storage.spec.ts",
+        "line": 197,
+        "title": "explicitly saving the untouched recovery demo reports a completed native save",
+        "status": "passed",
+        "durationMs": 697
+      },
+      {
+        "file": "tween-media.spec.ts",
+        "line": 16,
+        "title": "native preview renders sampled coincident dots with separate pose movement and original holds",
+        "status": "passed",
+        "durationMs": 253
+      },
+      {
+        "file": "tween-media.spec.ts",
+        "line": 41,
+        "title": "actual PNG independently decodes admitted intermediate artwork",
+        "status": "passed",
+        "durationMs": 307
+      },
+      {
+        "file": "tween-media.spec.ts",
+        "line": 56,
+        "title": "actual worker GIF contains independent held/intermediate/end pixels at all12 frames",
+        "status": "passed",
+        "durationMs": 703
+      },
+      {
+        "file": "tween-media.spec.ts",
+        "line": 72,
+        "title": "native rAF playback reaches end and disposal leaves a blank released canvas",
+        "status": "passed",
+        "durationMs": 505
+      },
+      {
+        "file": "workflow.spec.ts",
+        "line": 28,
+        "title": "draw, pose, undo, preview, persist and download a real animated GIF, PNG and editable project",
+        "status": "passed",
+        "durationMs": 2363
+      },
+      {
+        "file": "workflow.spec.ts",
+        "line": 69,
+        "title": "invalid project and SVG imports preserve artwork, then a valid backup reopens atomically",
+        "status": "failed",
+        "durationMs": 6663,
+        "classification": "Fixture adaptation: literal status copy changed for library import, canonical row validation or caught schema setup failure; exact data assertions remain."
+      },
+      {
+        "file": "workflow.spec.ts",
+        "line": 85,
+        "title": "pointer cancellation leaves no partial stroke and layers can be reordered and restored",
+        "status": "passed",
+        "durationMs": 1260
+      },
+      {
+        "file": "workflow.spec.ts",
+        "line": 101,
+        "title": "narrow layout supports editing without horizontal overflow, page errors or external requests",
+        "status": "passed",
+        "durationMs": 708
+      }
+    ]
+  },
+  "classification": {
+    "productCases": 7,
+    "fixtureAdaptations": 5
+  },
+  "origin": "http://127.0.0.1:4210",
+  "normalBuildSameSource": "main-vE_7XnpI.js",
+  "harnessIndexAtRun": "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"><meta name=\"theme-color\" content=\"#f8f6f2\"><meta name=\"description\" content=\"Draw, pose and animate your own artwork. A local browser animation studio.\"><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' ws:; object-src 'none'; base-uri 'none'\"><title>Motion Studio</title>  <script type=\"module\" crossorigin src=\"/assets/main-DqE2u2Gy.js\"></script>\n  <link rel=\"modulepreload\" crossorigin href=\"/assets/model-HMattrit.js\">\n  <link rel=\"modulepreload\" crossorigin href=\"/assets/render-BuRzjqUJ.js\">\n  <link rel=\"modulepreload\" crossorigin href=\"/assets/tween-preview-4S_ENoyu.js\">\n  <link rel=\"modulepreload\" crossorigin href=\"/assets/export-BWeWaX1x.js\">\n  <link rel=\"modulepreload\" crossorigin href=\"/assets/library-storage-Dw11LVXo.js\">\n  <link rel=\"stylesheet\" crossorigin href=\"/assets/main-CekMjDRK.css\">\n</head><body><div id=\"app\"></div></body></html>\n",
+  "artifacts": [
+    {
+      "path": "/tmp/motion104-old-native-first.log",
+      "bytes": 46738,
+      "sha256": "e0502e1fddfb193b71d634783e9a63b5d28cb0e2b43ad369698c5ed6d66a0cde"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results.json",
+      "bytes": 162174,
+      "sha256": "3f2300232146b311dab1e0a7ed11931ea65e2da01ad1961c3af40806db470d95"
+    },
+    {
+      "path": "/tmp/motion104-old-native.config.mjs",
+      "bytes": 531,
+      "sha256": "34a224e4bf68b58e4684784888797eb2a231947e465be6d01f394963646c7d77"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/browser-tween-failed-impor-490d5-sal-or-erase-correspondence/trace.zip",
+      "bytes": 1189684,
+      "sha256": "c68ec46f10c2d94a68d2b018dc05f5e9ca1773661c90e73c8f0fb4df0adc6e36"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/browser-tween-late-genuine-e6112-review-or-overwrite-artwork/trace.zip",
+      "bytes": 1064272,
+      "sha256": "376f646b55c30207ddd1fd128e63bf8e4d4890081f3633368f2695b0c873c6fd"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/draft-recovery-cancel-fail-3e304-cement-keep-recovery-active/trace.zip",
+      "bytes": 800218,
+      "sha256": "0c487443b00a117e23fd525b026267d6be2eff3bfa20a67dd1942b8063003cc4"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/draft-recovery-unsafe-raw--31b48-ver-produces-a-lossy-backup/trace.zip",
+      "bytes": 638662,
+      "sha256": "2f793b27cb5c50e9a99c82a84ec17b345ecf82590c01bda0b4446ec9341ed188"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/draft-recovery-unsafe-raw--6e080-ver-produces-a-lossy-backup/trace.zip",
+      "bytes": 635355,
+      "sha256": "7baf4bfbbb161da1aef3c32c1d199cfdbed7506653ba4bc81b428560577a9223"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/draft-recovery-unsafe-raw--9e896-ver-produces-a-lossy-backup/trace.zip",
+      "bytes": 601366,
+      "sha256": "64b81872ed785585329573c9797106349bde5abafca96a10bdf5c0966d6f7ee3"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/draft-recovery-unsafe-raw--ab992-ver-produces-a-lossy-backup/trace.zip",
+      "bytes": 675402,
+      "sha256": "4fa7bf9af9212556f49d0f9519582a9584324590a49a1ed6af09d8e3a5b00a74"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/draft-recovery-unsafe-raw-date-never-produces-a-lossy-backup/trace.zip",
+      "bytes": 568643,
+      "sha256": "4881cc1801621d30c05efb56634ac5c5b8a47068ce55fced7db4bece1eb9166d"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/recovery-a-bounded-project-baee0-s-can-reopen-its-own-backup/trace.zip",
+      "bytes": 220586,
+      "sha256": "04dbcf18d4959c4d71b06eb9881eaf224228ac6a3af9a90c1d8c24fe3aa1e7cb"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/storage-an-invalid-stored--b1b23-nstead-of-silently-replaced/trace.zip",
+      "bytes": 378890,
+      "sha256": "a8895b9d4249b1eaf8418db521f42d038fc42f28b35da61fcb9561422919e908"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/storage-schema-creation-fa-85454-t-an-uncaught-browser-error/trace.zip",
+      "bytes": 104768,
+      "sha256": "26fddf9eb92c9dc777d90536b4faa55a5f91dc568b0dd7cfc31f856819b0f182"
+    },
+    {
+      "path": "/tmp/motion104-old-native-results/workflow-invalid-project-a-508c3-d-backup-reopens-atomically/trace.zip",
+      "bytes": 1428784,
+      "sha256": "c9fbe3856310b76108925255793025996d0b9e9a8932b0cad0f51dcabf57ab02"
+    },
+    {
+      "path": "/tmp/motion104-old-native-repair.log",
+      "bytes": 5558,
+      "sha256": "658da6fcc4db1a1dc603b3022a95a8e20c003ae3a439869b015b67eaf5dadd08"
+    },
+    {
+      "path": "/tmp/motion104-old-native-repair-results.json",
+      "bytes": 23016,
+      "sha256": "cf84e84a732427ff6913154870e99460e21c01485ae88c386d49e3fc6adf1b5e"
+    },
+    {
+      "path": "/tmp/motion104-old-native-repair.config.mjs",
+      "bytes": 545,
+      "sha256": "0f39821b235c35f3d6d1718f3ad747c2001116c826b81eaec2f5df3ae193a17b"
+    },
+    {
+      "path": "/tmp/motion104-old-native-repair-results/storage-an-invalid-stored--b1b23-nstead-of-silently-replaced/trace.zip",
+      "bytes": 915130,
+      "sha256": "3b071000b9d461e2b9d0eb484ee0ba5b0da82e3dfdddbba0502d533b894bee01"
+    },
+    {
+      "path": "/tmp/motion104-old-native-final.log",
+      "bytes": 552,
+      "sha256": "f2158d097ade8a5a681963371876297053f5fbda4fa54362f85e1bf0a9b8767b"
+    },
+    {
+      "path": "/tmp/motion104-old-native-final-results.json",
+      "bytes": 3178,
+      "sha256": "4b9d25907690f24e7c884716c19be3cabfaffa8062c9e366e6ff86edb36b0a6b"
+    },
+    {
+      "path": "/tmp/motion104-old-native-final.config.mjs",
+      "bytes": 543,
+      "sha256": "0f520f7366d170e50d422be93276599a0d96771c8db88bf9466f0de28eb11114"
+    }
+  ],
+  "limitations": [
+    "Local verification uses documented staged runs; only exact published-head CI may be cited as a final complete single-suite run. Controlled pagehide/pageshow dispatch exercises ownership callbacks; it does not prove actual BFCache admission."
+  ],
+  "repairRun": {
+    "passed": 11,
+    "failed": 1,
+    "durationMs": 13490.41,
+    "productFindings": "Both double-consent cases and all five unsafe raw cases pass their unchanged assertions.",
+    "remaining": "One previously blocked later assertion uses old Project opened text; actual protected memory-file import succeeded with new explicit text. Native/data assertions will remain unchanged."
+  },
+  "finalAffectedCase": {
+    "passed": 1,
+    "failed": 0,
+    "durationMs": 2907.207,
+    "test": "an invalid stored record is reported and preserved instead of silently replaced",
+    "fixtureCorrection": "Assert actual Project file opened in memory success copy; all exact raw/durable/memory/failedwrite/cancel/reload assertions unchanged."
+  },
+  "distinctPassingCases": 80,
+  "method": "68 passed initially; all twelve failed cases were repaired and verified in focused runs (eleven plus final one). These are 80 distinct cases, not a claim of a single final all-80 local invocation. Exact published-head CI will run the complete suite."
+}

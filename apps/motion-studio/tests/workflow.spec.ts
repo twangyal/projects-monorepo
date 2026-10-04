@@ -5,7 +5,6 @@ import { parseGIF, decompressFrames } from 'gifuct-js';
 async function blank(page: Page) {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Motion Studio', exact: true })).toBeVisible();
-  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'New project', exact: true }).click();
   await expect(page.locator('#project-title')).toHaveValue('Untitled motion');
   await expect(page.locator('#stage')).toHaveAttribute('aria-disabled', 'false');
@@ -79,7 +78,7 @@ test('invalid project and SVG imports preserve artwork, then a valid backup reop
   expect(await backup(page)).toEqual(saved);
   await page.locator('#project-title').fill('Temporary title');
   await page.getByLabel('Open project file', { exact: true }).setInputFiles({ name: 'saved.motion.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });
-  await expect(page.locator('#message')).toContainText('Project opened');
+  await expect(page.locator('#message')).toContainText('Project file imported as a new editable project.');
   expect(await backup(page)).toEqual(saved);
 });
 
