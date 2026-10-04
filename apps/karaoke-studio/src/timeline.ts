@@ -58,7 +58,7 @@ export function mountTimeline(root: HTMLElement, callbacks: TimelineCallbacks): 
   function releaseWorker() {
     if (timeout !== undefined) clearTimeout(timeout);
     timeout = undefined; worker?.terminate(); worker = null; loading = false;
-    get('waveform-stop').hidden = !editor; get('waveform-progress').hidden = true;
+    get('waveform-stop').hidden = true; get('waveform-progress').hidden = true;
   }
   function failWaveform(message: string) {
     releaseWorker(); report(message); get('waveform-retry').hidden = !editor;
