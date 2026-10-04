@@ -11,7 +11,12 @@
     "lint": "passed",
     "typecheck": "passed",
     "build": "passed",
-    "remoteCI": "pending"
+    "remoteCI": {
+      "conclusion": "success",
+      "commit": "e4472fb6e7ee891460f7649100c5b850ef301d7f",
+      "workflowRun": 37173453233,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37173453233"
+    }
   },
   "maximumRuntime": {
     "browser": "151.0.7922.173",
