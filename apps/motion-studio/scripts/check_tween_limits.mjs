@@ -1,5 +1,8 @@
 /** Reproducible pure-module admission/geometry check; no browser/media claim. */
+/* global structuredClone */
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { buildDrawingTween, applyDrawingTween, planTweenFrames } from '../src/tween.ts';
