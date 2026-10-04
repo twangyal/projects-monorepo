@@ -1,6 +1,6 @@
 {
   "issue": 114,
-  "status": "implementation in progress; native and CI pending",
+  "status": "completed",
   "design": "docs/superpowers/specs/2026-10-04-shot-sequence-trimming-design.md",
   "independentMaximumFixture": {
     "authoredBeforeNewKernelInspection": true,
@@ -948,5 +948,13 @@
       "2026-10-04-sequence-trim-capture.json",
       "2026-10-04-sequence-trim-capture-review.json"
     ]
+  },
+  "finalCaptureCi": {
+    "result": "passed",
+    "head": "265d8809eb3ecd0f7e5451a14e0e4149950c5735",
+    "receipt": "2026-10-04-sequence-trim-capture-ci.json",
+    "unitPerEvent": 261,
+    "nativePerEvent": 87,
+    "allPrWorkflowsPassed": 13
   }
 }

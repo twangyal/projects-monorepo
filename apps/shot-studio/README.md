@@ -437,9 +437,13 @@ assertion ran after a backup intentionally replaced that notice. Moving the same
 assertion before download repaired the test. An independent source-hash fixture
 also required canonical property order, with values and hash assertions retained.
 The published trim core passes 255 units and 87 browser cases in both push and PR
-CI, with all thirteen project PR workflows green. CI for the final shared capture
-repair is pending; see the [local receipt](docs/2026-10-04-sequence-trim-verification.json)
-and [core CI receipt](docs/2026-10-04-sequence-trim-ci.json).
+CI, with all thirteen project PR workflows green. The final shared capture repair
+at `265d8809eb3ecd0f7e5451a14e0e4149950c5735` then passes **261 units and 87
+native cases in both push and PR CI**, with all thirteen project workflows green.
+The actual PR checkout has the same implementation tree. See the
+[local receipt](docs/2026-10-04-sequence-trim-verification.json),
+[preserved core CI](docs/2026-10-04-sequence-trim-ci.json) and
+[final capture CI](docs/2026-10-04-sequence-trim-capture-ci.json).
 
 The independent maximum fixture contains four complete 20-shot films, 256 total
 blocking cues and twenty three-second excerpts. Each keeps seconds 0.5 through
