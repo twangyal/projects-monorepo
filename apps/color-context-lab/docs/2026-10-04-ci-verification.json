@@ -1,0 +1,166 @@
+{
+  "commit": "793f8775bd01c4e3fff8ca1233e2aef681fbeba1",
+  "repository": "twangyal/projects-monorepo",
+  "allCompletedSuccessfully": true,
+  "workflows": [
+    {
+      "name": "Clothing Studio",
+      "id": 37202090650,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 36,
+        "browser": 18
+      }
+    },
+    {
+      "name": "Style Studio",
+      "id": 37202090583,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 51,
+        "browser": 30
+      }
+    },
+    {
+      "name": "Lens Studio",
+      "id": 37202090628,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 67,
+        "browser": 32
+      }
+    },
+    {
+      "name": "Motion Studio",
+      "id": 37202090653,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 43,
+        "browser": 44
+      }
+    },
+    {
+      "name": "Melody Studio",
+      "id": 37202090578,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 233,
+        "browser": 58
+      }
+    },
+    {
+      "name": "Friendly Challenges",
+      "id": 37202090586,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "python": 43,
+        "node": 22,
+        "browser": 12
+      }
+    },
+    {
+      "name": "Git History",
+      "id": 37202090574,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "pythonDiscovered": 304,
+        "coreSkips": 26,
+        "nativeSkips": 2,
+        "pythonVersions": [
+          "3.11",
+          "3.12",
+          "3.13"
+        ],
+        "browser": 20
+      }
+    },
+    {
+      "name": "Shot Studio",
+      "id": 37202090591,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 107,
+        "browser": 43
+      }
+    },
+    {
+      "name": "Duet",
+      "id": 37202090587,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "python": 145,
+        "node": 6,
+        "browser": 25
+      }
+    },
+    {
+      "name": "Composure",
+      "id": 37202090622,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "node": 97,
+        "browser": 26
+      }
+    },
+    {
+      "name": "Color Context Lab",
+      "id": 37202090572,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "python": 12,
+        "node": 69,
+        "browser": 32
+      }
+    },
+    {
+      "name": "Stock Notebook",
+      "id": 37202090590,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "python": 31,
+        "node": 231,
+        "browser": 56
+      }
+    },
+    {
+      "name": "Karaoke Studio",
+      "id": 37202090601,
+      "status": "completed",
+      "conclusion": "success",
+      "counts": {
+        "python": 166,
+        "node": 51,
+        "browser": 44
+      }
+    }
+  ],
+  "color": {
+    "runId": 37202090572,
+    "jobId": 111435695136,
+    "pythonSeconds": 5.342,
+    "nodeSeconds": 3.514064228,
+    "browserPrintedDuration": "1.2m",
+    "browser": "Chrome for Testing 153.0.8010.12 / Playwright Chromium v1243",
+    "python": "CPython 3.12.14",
+    "nodeMajor": 24,
+    "oracleSeconds": 16.833223334999985,
+    "oracleModels": 18,
+    "oracleEvaluations": 108,
+    "oracleAllDerivedMetricsIndependentlyRecomputed": true,
+    "oracleProtocolFitsExecuted": 0,
+    "oracleProtocolTestPredictionsExecuted": 0,
+    "reportSha256": "9fe630c1e7376d688c13180539ed113d91b040c97ea03811e03637366e0e3c2e"
+  }
+}
