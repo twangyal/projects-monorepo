@@ -15,7 +15,13 @@ python3 -m http.server 4173 --bind 127.0.0.1
 
 Open http://127.0.0.1:4173. No npm install is needed to run. Drafts are scoped to
 the browser origin/port; **Save project** downloads a JSON backup. Invalid backups
-preserve the scene; failed storage reports an error. Reloading preserves the
+preserve the scene; failed storage reports an error. An unreadable or failed-read startup
+draft blocks all automatic writes while you work in memory. **Download unreadable draft**
+exports a recovery JSON envelope whose `raw` string retains the exact saved contents;
+this is not a normal project backup. When reading is denied, a recovery download is
+unavailable. Save your current project before reload or replacement. **Replace browser
+draft** asks for confirmation and enables autosave only after a successful write;
+cancellation or failure preserves the old record. Reloading preserves the
 film, not the current playhead or selected camera/performer.
 
 ## Workflow and limits
@@ -80,7 +86,7 @@ npm run test:browser
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains 17 unit tests and five Chromium browser checks, including
+requires a device. The suite contains 28 unit tests and nine Chromium browser checks, including
 independently decoded video timestamps/changing frames, controlled immersive camera capture/undo, reversible edits, portable
 shot order and preview alignment after undo. The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
@@ -90,3 +96,5 @@ covered using controlled page lifecycle events; physical headset tests remain ou
 transforms; `renderer.js` draws native WebGL; `xr.js` manages immersive views and
 controller floor hits; `export.js` owns recording/cleanup; `app.js` manages DOM
 state, local drafts and imports.
+
+Draft recovery was verified on 2026-10-04 in [run 37172319440](https://github.com/twangyal/projects-monorepo/actions/runs/37172319440) on `cae7d16d09b011b60a0057895c705497116a08ba`: all 28 unit tests, syntax checks and nine production Chromium flows passed. The new regression failed before the fix. See [the verification record](docs/2026-10-04-draft-recovery-verification.json) and issue [#44](https://github.com/twangyal/projects-monorepo/issues/44).
