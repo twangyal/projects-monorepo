@@ -68,6 +68,8 @@ range when a whole file or function exceeds 200 lines; nothing is silently clipp
 
 For an addition or deletion, choose **Missing path** on the absent side and give
 the exact path at its pinned commit. The comparison verifies actual absence.
+Canonical paths exclude `./`, repeated slashes and trailing slashes, so Git path
+normalization cannot turn an existing entry into a false absence.
 An empty committed file is present and compares as zero lines. Directories,
 symlinks, binary/non-UTF-8 source, bad revisions, unavailable objects and failed
 reads are errors; they cannot become a missing side. Both sides cannot be missing.
@@ -343,3 +345,33 @@ An independently parsed TypeScript 5.9.3 reference matched all 20 top-level func
 Issue [#52](https://github.com/twangyal/projects-monorepo/issues/52) expands the suite to **239 discovered Python cases**: native-enabled runs on Python 3.11–3.13 pass with two expected skips, and the dependency-free run passes with 26 optional skips. Eight real Chromium flows cover immutable discovery/source/function/manual selection, rename evidence, supplied context, actual report anchors, byte-identical CLI downloads, cancellation, parser fallback, large-source pagination and same-tab session recovery. Seven enabled cases also pass using the installed wheel outside the source tree; the source suite separately verifies missing parser dependencies.
 
 Independent installed-package checks handled 10,000 candidate files, 10,000 Python functions, and an exact 512 KiB/8,192-line source with only 50 catalog/function rows and 100 source rows rendered. Actual HTML/JSON downloads matched independently invoked CLI bytes; a real report click reached the source target and scroll position inside the opaque sandbox. The 390-pixel layout had no page overflow, page errors or external requests. The browser suite also covers a 524,288-line source. These are fixture/runtime measurements, not latency guarantees or other-device compatibility. The complete final Python 3.11–3.13 matrix and browser job passed [CI at `c2bac6c`](https://github.com/twangyal/projects-monorepo/actions/runs/37175391363). See [the workbench verification record](docs/2026-10-04-workbench-verification.json).
+
+
+### Measured comparison verification
+
+Issue [#64](https://github.com/twangyal/projects-monorepo/issues/64) passes **304
+Python cases discovered**: 302 pass with the optional parser and two expected
+skips; 278 pass without it and 26 optional skips. Ruff, compilation and JavaScript
+lint pass. All **20 native browser cases** pass, including the eight original
+workflows unchanged. The installed wheel covers the same 20 cases outside the
+source tree: 18 with the extra and two against an actually parser-free environment.
+[CI at `37831a3`](https://github.com/twangyal/projects-monorepo/actions/runs/37192168127)
+passes the core/native Python 3.11–3.13 matrix and all 20 Chromium153 browser cases.
+All twelve project workflows passed that implementation commit.
+
+A separate original maximum-size fixture compares two exact 524,288-byte,
+200-line committed sources, with ten changes specified before output was observed.
+Native controls retain 100 rows per page and produce the expected 190 unchanged,
+10 removed and 10 added lines; a dirty worktree is ignored. Actual downloaded
+JSON (1,102,745 bytes) and HTML (2,119,823 bytes) are byte-identical to independent
+installed CLI outputs. The measured native comparison took 328 ms; the complete
+probe took 4.07 seconds. Private capabilities and absolute repository paths are
+absent from artifacts; no app storage, external requests or page errors occurred.
+Desktop and390px viewport screenshots were inspected and owned service/browser
+processes closed. These are fixture measurements, not general latency promises.
+
+The [comparison verification record](docs/2026-10-04-comparison-verification.json)
+retains hashes, exact inputs/counts, package-source parity, observed test history
+and limits. Review reproduced and fixed normalized path aliases falsely reported
+as missing; existing reader behavior stayed unchanged. The one full-suite test
+import failure was corrected before final304-case runs, without production changes.

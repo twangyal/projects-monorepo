@@ -1,0 +1,460 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": 64,
+  "version": "0.6.0",
+  "coreCommit": "fc2093d",
+  "implementationCommit": "37831a3299134a4145ed518c8c3d728aeadbaa8b",
+  "scope": "Explicit independently pinned source comparison across two revisions through library, CLI and existing authenticated local workbench, with bounded exact line alignment and immutable portable exports.",
+  "environment": {
+    "os": "Debian13 Linuxx86_64",
+    "nativePython": "3.11.16",
+    "corePython": "3.12.14",
+    "node": "24.19.0",
+    "playwright": "1.63.0",
+    "chromium": "151.0.7922.173",
+    "ruff": "0.14.3",
+    "optionalParser": {
+      "tree-sitter": "0.25.2",
+      "tree-sitter-javascript": "0.25.0",
+      "tree-sitter-typescript": "0.23.2"
+    }
+  },
+  "baseline": {
+    "discoveredPython": 239,
+    "nativePassed": 237,
+    "nativeSkipped": 2,
+    "nativeSeconds": 38.102,
+    "sourceBrowserPassed": 8,
+    "sourceBrowserSeconds": 13.8,
+    "ruff": "passed",
+    "compile": "passed",
+    "logsPrefix": "/tmp/git64-baseline-"
+  },
+  "finalLocal": {
+    "nativePython": {
+      "command": "GIT_HISTORY_REQUIRE_JAVASCRIPT=1 PYTHONDONTWRITEBYTECODE=1 /tmp/git-history-ts-env/bin/python -B -m unittest discover -v",
+      "discovered": 304,
+      "passed": 302,
+      "skipped": 2,
+      "failed": 0,
+      "seconds": 38.65,
+      "log": "/tmp/git64-root-native-final.log"
+    },
+    "corePython": {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -v",
+      "discovered": 304,
+      "passed": 278,
+      "skipped": 26,
+      "failed": 0,
+      "seconds": 35.724,
+      "log": "/tmp/git64-root-core-final.log"
+    },
+    "newCases": {
+      "comparisonProducer": 13,
+      "independentOracle": 20,
+      "render": 11,
+      "cli": 9,
+      "service": 12
+    },
+    "ruff": "passed",
+    "compile": "passed",
+    "eslint": "passed",
+    "javascriptSyntax": "passed",
+    "sourceBrowser": {
+      "passed": 20,
+      "oldUnchanged": 8,
+      "new": 12,
+      "seconds": 27.5,
+      "log": "/tmp/git64-full20.log",
+      "artifacts": "/tmp/git64-full20"
+    },
+    "installedBrowser": {
+      "optionalParser": {
+        "executed": 18,
+        "passed": 18,
+        "skipped": 0,
+        "seconds": 25.8,
+        "explicitCommandExclusions": 2,
+        "log": "/tmp/git64-installed-browser.log"
+      },
+      "coreOnly": {
+        "executed": 2,
+        "passed": 2,
+        "skipped": 0,
+        "seconds": 4.6,
+        "log": "/tmp/git64-installed-core-browser.log"
+      },
+      "allTwentyCasesCoveredAcrossConfigurations": true,
+      "reason": "The deliberately missing-extra worker uses Python -S. Installed-package bootstrap adds its site-packages parent, which can restore optional packages. The two missing-extra cases therefore run against an actually parser-free installed environment, rather than inventing an installed skip or weakening the source checks.",
+      "sourceTestsModifiedForInstalledRun": false,
+      "cliAndServiceCwdOutsideSourceTree": true,
+      "pythonPathEnvironmentEmpty": true,
+      "ownedFixtureServiceProcessesRemaining": 0
+    }
+  },
+  "ci": {
+    "commit": "37831a3299134a4145ed518c8c3d728aeadbaa8b",
+    "gitHistoryRun": 37192168127,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37192168127",
+    "status": "success",
+    "matrix": [
+      {
+        "python": "3.11",
+        "job": 111406482566,
+        "coreDiscovered": 304,
+        "coreSkipped": 26,
+        "coreSeconds": 40.037,
+        "nativeDiscovered": 304,
+        "nativeSkipped": 2,
+        "nativeSeconds": 40.419
+      },
+      {
+        "python": "3.12",
+        "job": 111406482709,
+        "coreDiscovered": 304,
+        "coreSkipped": 26,
+        "coreSeconds": 42.955,
+        "nativeDiscovered": 304,
+        "nativeSkipped": 2,
+        "nativeSeconds": 47.08
+      },
+      {
+        "python": "3.13",
+        "job": 111406482736,
+        "coreDiscovered": 304,
+        "coreSkipped": 26,
+        "coreSeconds": 41.324,
+        "nativeDiscovered": 304,
+        "nativeSkipped": 2,
+        "nativeSeconds": 43.812
+      }
+    ],
+    "browser": {
+      "job": 111406482833,
+      "passed": 20,
+      "seconds": 27.3,
+      "chromium": "153.0.8010.12"
+    },
+    "allTwelveProjectWorkflows": "success"
+  },
+  "observedDevelopmentHistory": [
+    "Independent semantic cases were authored before new producer reads. Initial19 callable-stub outcomes were NotImplementedError, not import failures or claimed algorithm defects. All19 passed unchanged on the first actual engine run.",
+    "Independent source review then found real false absence for Git-normalized aliases, including dir/, ./dir and repeated slashes. Producer recorded seven failing subcases before fixing only the new missing-aware reader and canonical comparison path admission. The added durable independent alias case first ran after the fix; no oracle RED is claimed for that case. Final oracle20 passed.",
+    "Renderer and CLI producer cases observed stub/absent-command RED before implementation. Service first checkpoint had five unsupported-operation failures and one existing authorization pass, followed by12 final real-HTTP cases.",
+    "Initial native UI RED was the missing Workspace selector against the old UI. Full20 browser cases then passed on first coherent implementation run, with no assertion/threshold corrections.",
+    "A producer attempted full discovery with -s tests but without -t ., producing relative-helper import errors along with still-unfinished CLI/render stubs. This was not counted as a passing full gate.",
+    "Root first normal full discovery ran296 cases with one failed module: new CLI tests imported top-level helpers, which worked under scoped discovery but failed package discovery. The import was corrected to tests.helpers without production changes. Both final304-case configurations passed.",
+    "Independent final source review found no additional actionable cross-module issue after the alias repair. CLI publication checks now observe cancellation immediately before stdout/atomic file publication; legacy commands retain their behavior when no budget is active.",
+    "Offline wheel build succeeded. First fresh-venv command attempted the default readonly HOME cache and failed before environment creation; retry explicitly used the existing writable /tmp cache. Installation then completed entirely offline."
+  ],
+  "wheel": {
+    "sourceCommit": "37831a3299134a4145ed518c8c3d728aeadbaa8b",
+    "wheel": "/tmp/git64-wheel/local_git_history-0.6.0-py3-none-any.whl",
+    "bytes": 73853,
+    "sha256": "ffb4784f7dce5da67cf2155c2bf7474ae3877683144fbd648f9cb82abb1777f6",
+    "allPackagedFilesMatchSource": true,
+    "files": [
+      {
+        "path": "git_history/__init__.py",
+        "bytes": 73,
+        "sha256": "a1861cf666a8c43bb9ae3ef6d4c92475f3a09b0f00605bc37b4b8c97dcda4f80"
+      },
+      {
+        "path": "git_history/__main__.py",
+        "bytes": 48,
+        "sha256": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d"
+      },
+      {
+        "path": "git_history/cli.py",
+        "bytes": 13640,
+        "sha256": "3b273cdb6a4d81c4369073b7f07ce1e409b9e9baf107e2dbe840c34afef388a0"
+      },
+      {
+        "path": "git_history/comparison.py",
+        "bytes": 13772,
+        "sha256": "48562074e43199c2527a1731f13611c49edc38f34e1a077086cbab2b632bc745"
+      },
+      {
+        "path": "git_history/comparison_render.py",
+        "bytes": 7400,
+        "sha256": "6a27124c53fed87988dec067daacc60169c7799ec38ae9486eae059284a25901"
+      },
+      {
+        "path": "git_history/context.py",
+        "bytes": 11995,
+        "sha256": "e8c71905b25eed0d02208697bc52e91be2d5df0a53337b600bdea73b2e3a7aed"
+      },
+      {
+        "path": "git_history/function_parser.py",
+        "bytes": 5290,
+        "sha256": "fa504db1698b00c6897cb1a38acbb71d5143a57217def7f2fa17033f0e236135"
+      },
+      {
+        "path": "git_history/model.py",
+        "bytes": 2418,
+        "sha256": "28c1df17144e88527737501eae9a9d6bdf12fa4d0b3b7dd9a9c78ccdb2219305"
+      },
+      {
+        "path": "git_history/native_parser.py",
+        "bytes": 9991,
+        "sha256": "b9cd98e37bb3cd7d4c00a4729c0219ee4cde7d0ddd0dece7de1cda45856a573a"
+      },
+      {
+        "path": "git_history/native_protocol.py",
+        "bytes": 752,
+        "sha256": "b53cc7c624646ab40b817ee6924ce8badc447e45f920bcc1b07bca6f573147a7"
+      },
+      {
+        "path": "git_history/native_syntax.py",
+        "bytes": 10773,
+        "sha256": "f79a62afeda0218b2e341e1b173b677e11bd9e5b969bbf0f09bb5378998c51ac"
+      },
+      {
+        "path": "git_history/native_worker.py",
+        "bytes": 3129,
+        "sha256": "f2cb0a633185a7695b9dc3826a0cba711745099ffbc25a81b08b739ee1aad0f1"
+      },
+      {
+        "path": "git_history/reader.py",
+        "bytes": 22341,
+        "sha256": "a016ffa2efb77105dd138615a0280ef087bfd465c5d19817cfa4a2b81d2570ec"
+      },
+      {
+        "path": "git_history/render.py",
+        "bytes": 22017,
+        "sha256": "0bf0d313d6cf67a15a1af23c169d513de6ebcbac99b1458bd8decc1ad815aa9f"
+      },
+      {
+        "path": "git_history/runner.py",
+        "bytes": 7750,
+        "sha256": "15f36bc751f9e117f612319e2d83d0d23ddb2b98628eea2a8892205833af7965"
+      },
+      {
+        "path": "git_history/synopsis.py",
+        "bytes": 3069,
+        "sha256": "a73bef0e4f12ec5de1206e6c886b8a74884254caa1655e05fb8c8f001b945d34"
+      },
+      {
+        "path": "git_history/work_budget.py",
+        "bytes": 2302,
+        "sha256": "eb94c4ceb2c5f461544f0c51964a183b7617cc65a8798fec5ce730de9dcf9f1a"
+      },
+      {
+        "path": "git_history/workbench.py",
+        "bytes": 25601,
+        "sha256": "81fcfe5a4bb9128eaaae6486b204c09098811cb7337101d50bd5664fab72b71f"
+      },
+      {
+        "path": "git_history/web/workbench.css",
+        "bytes": 12181,
+        "sha256": "f199ed3a80611a8e2f7bc656fd52c551e3de2cbc6c046a13dfbe71012b991ed1"
+      },
+      {
+        "path": "git_history/web/workbench.html",
+        "bytes": 19842,
+        "sha256": "98f87641647e396c4afc3b28342c21a34db03338f6801ad88cd371fb9376601d"
+      },
+      {
+        "path": "git_history/web/workbench.js",
+        "bytes": 45600,
+        "sha256": "cf770007f36c975e5c7c251434106d1bc10a5f7c47425e3aa704746322b964e5"
+      }
+    ]
+  },
+  "maximumNativeAcceptance": {
+    "verificationArtifact": {
+      "path": "/tmp/git64-maximum-native-uvFiz8/verification.json",
+      "bytes": 4399,
+      "sha256": "c878222ed74cecfaf1f494674350bd8cd1fef7d6dba8ef0bd37c55b11389f610"
+    },
+    "verification": {
+      "kind": "independent-installed-wheel-maximum-native-acceptance",
+      "fixtureSha256": "c26c1b893f58be6fcc7c9dfbdce15430ba7eaa9e4d503bb008c2e360b16f965f",
+      "fixture": "/tmp/git-comparison-max-6hovxhe3",
+      "output": "/tmp/git64-maximum-native-uvFiz8",
+      "installedPython": "/tmp/git64-installed-env/bin/python",
+      "chromium": "/usr/bin/chromium",
+      "noAppStateInjection": true,
+      "timingsMs": {
+        "installedClijson": 334.258557,
+        "installedClihtml": 255.065566,
+        "leftDiscover": 305.127332,
+        "leftSourceWithTwoPages": 466.6107340000003,
+        "rightDiscover": 92.16947100000016,
+        "rightSourceWithTwoPages": 346.6942589999999,
+        "nativeComparison": 327.8183719999997,
+        "uiTotal": 2458.003283,
+        "total": 4065.302886
+      },
+      "artifacts": {
+        "installed-cli-comparison.json": {
+          "path": "/tmp/git64-maximum-native-uvFiz8/installed-cli-comparison.json",
+          "bytes": 1102745,
+          "sha256": "b9275bf54a6323c18046b3056cf7594c13c87a5dff0d9632037c708b71c7e669"
+        },
+        "installed-cli-comparison.html": {
+          "path": "/tmp/git64-maximum-native-uvFiz8/installed-cli-comparison.html",
+          "bytes": 2119823,
+          "sha256": "6067a9132a3a04637833e71b8cc56c63b15df9a47f8ae31e1deedf0e44f38536"
+        },
+        "native-comparison.json": {
+          "path": "/tmp/git64-maximum-native-uvFiz8/native-comparison.json",
+          "bytes": 1102745,
+          "sha256": "b9275bf54a6323c18046b3056cf7594c13c87a5dff0d9632037c708b71c7e669",
+          "suggestedFilename": "git-source-comparison.json"
+        },
+        "native-comparison.html": {
+          "path": "/tmp/git64-maximum-native-uvFiz8/native-comparison.html",
+          "bytes": 2119823,
+          "sha256": "6067a9132a3a04637833e71b8cc56c63b15df9a47f8ae31e1deedf0e44f38536",
+          "suggestedFilename": "git-source-comparison.html"
+        },
+        "maximum-desktop.png": {
+          "path": "/tmp/git64-maximum-native-uvFiz8/maximum-desktop.png",
+          "bytes": 111228,
+          "sha256": "bf6a16a7fe3fa359766072bc998f1e1ab5ad90006d8d7f02436afcc9fd616bb9"
+        },
+        "maximum-mobile.png": {
+          "path": "/tmp/git64-maximum-native-uvFiz8/maximum-mobile.png",
+          "bytes": 64489,
+          "sha256": "7373b9c59b3805d1fb8b283429e658992f7e44e0b94c8b2d12c0d9f13e5e5810"
+        }
+      },
+      "sourceConfiguration": {
+        "kind": "original-authored-maximum-comparison-fixture",
+        "root": "/tmp/git-comparison-max-6hovxhe3",
+        "repo": "/tmp/git-comparison-max-6hovxhe3/original-fixture",
+        "left": {
+          "ref": "baseline",
+          "revision": "5825e0c601fdbaa5fcc1407bfc9a7be913d90fdf",
+          "path": "bulk.py",
+          "bytes": 524288,
+          "lineCount": 200,
+          "sha256": "727a67520f1e7b1812476c6bbab4e219b42ca36ad0012d500fa85266d4456ff3"
+        },
+        "right": {
+          "ref": "revised",
+          "revision": "b2bca4312c8a35c5726dc39c63483cb22c81a401",
+          "path": "bulk.py",
+          "bytes": 524288,
+          "lineCount": 200,
+          "sha256": "b9b529ca6ac05a36d02db74972961da8c1c20520f5ce413b147b38f2744f4bbc"
+        },
+        "expected": {
+          "unchanged_lines": 190,
+          "removed_lines": 10,
+          "added_lines": 10,
+          "changedOriginalLines": [
+            1,
+            21,
+            41,
+            61,
+            81,
+            101,
+            121,
+            141,
+            161,
+            181
+          ],
+          "present": true,
+          "worktreeRead": false
+        },
+        "limits": "Prepared original fixture only; no implementation measurement or native acceptance has run."
+      },
+      "checks": {
+        "alignmentPages": [
+          {
+            "rows": 100,
+            "first": 1,
+            "last": 100
+          },
+          {
+            "rows": 100,
+            "first": 101,
+            "last": 200
+          }
+        ],
+        "exactMaximumBytesPerSide": 524288,
+        "physicalLinesPerSide": 200,
+        "unchanged": 190,
+        "removed": 10,
+        "added": 10,
+        "actualNativeDownloadsMatchInstalledCli": true,
+        "exactLiteralSourcesAndHashes": true,
+        "committedOnly": true,
+        "noCapabilityOrAbsoluteRepoInArtifacts": true,
+        "noAppStorage": true,
+        "externalRequests": [],
+        "pageErrors": [],
+        "capabilityUrlLeaks": [],
+        "keyboardNativeActions": true,
+        "mobileNoDocumentOverflow": true,
+        "workspaceAndPinsPreservedOnResize": true
+      },
+      "success": true,
+      "servicePid": 434494,
+      "origin": "http://127.0.0.1:39493",
+      "browserVersion": "151.0.7922.173",
+      "browserCleanup": "owned persistent context closed",
+      "serviceExit": {
+        "code": 0,
+        "signal": null
+      },
+      "servicePortClosed": true,
+      "failures": [],
+      "serviceStderr": ""
+    },
+    "visualReview": {
+      "kind": "independent-retained-viewport-visual-review",
+      "verificationSha256": "c878222ed74cecfaf1f494674350bd8cd1fef7d6dba8ef0bd37c55b11389f610",
+      "screenshotsInspected": [
+        "maximum-desktop.png",
+        "maximum-mobile.png"
+      ],
+      "desktop": {
+        "viewport": [
+          1440,
+          1000
+        ],
+        "observations": [
+          "Completed190/10/10 counts visible.",
+          "Whole-file200-line selection and both complete immutable IDs/SHA256 are legible.",
+          "Actual HTML/JSON download controls and keyboard focus ring visible.",
+          "Long metadata stays inside both source panels."
+        ]
+      },
+      "mobile": {
+        "viewport": [
+          390,
+          844
+        ],
+        "observations": [
+          "Download controls stack and fit.",
+          "Full commit ID and64-character sourcehash wrap within viewport.",
+          "Completed190/10/10 counts and original1:200 range visible.",
+          "No document-level horizontal clipping."
+        ]
+      },
+      "limitations": [
+        "Controlled local repository/source fixture; no physical-device or external-repository claim.",
+        "Screenshots are viewport captures of result metadata; exact paginated source/alignment admission is independently asserted in verification.json."
+      ]
+    },
+    "probeScript": {
+      "path": "/tmp/git64-maximum-native.mjs",
+      "bytes": 13823,
+      "sha256": "a7b300d9f136f2cf462ba7357c9b401e481e58537272eba5596eb91fa19cd98c"
+    },
+    "fixtureConstruction": "Original200 ASCII comment lines. First88lines are2622bytes each, remaining112 are2621bytes; total524288 UTF-8bytes includingLF. Lines have unique numbered prefixes and repeated literal ampersands/angle brackets/quotes. The second commit changes one byte on each original line1,21,41,61,81,101,121,141,161,181. Expected190/10/10 was frozen before implementation output; an uncommitted sentinel must never appear."
+  },
+  "limits": [
+    "Alignment is deterministic exact-line LCS with deletion-first ties, at most200lines/512KiB per side and40000 cell comparisons. Positional pairing is not semantic equivalence, rename discovery, patch generation or author-intent inference.",
+    "Each named ref is resolved once independently, not as an atomic multi-ref repository snapshot. HTTP reports use submitted immutable full IDs as requested_ref; UI retains original discovery labels separately.",
+    "Source SHA256 and direct canonical-report validation establish internal text/alignment consistency, not authenticity of caller-supplied provenance.",
+    "Only explicitly absent canonical paths qualify as Missing; present empty files are distinct. Source/objects/parser/security failures never become missing sides.",
+    "The maximum acceptance times are one local original fixture run, not latency/resource guarantees for arbitrary hardware. Native controls and downloads are real; no application state or storage is injected.",
+    "No live discussion fetching, learned synthesis, cross-repository comparison, worktree source, repository mutation, remote deployment or new authentication model is added. Private capability fragments stay in memory and are absent from exported reports.",
+    "Actual maximum screenshots capture result metadata at desktop/mobile viewport sizes; source/alignment page completeness is separately asserted. Owned service/browser closed and its port was verified free."
+  ]
+}
