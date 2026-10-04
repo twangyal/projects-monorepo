@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 91,
-  "status": "current-astra-local-gate-passed-ci-pending",
+  "status": "complete",
   "sourceCommit": "793f8775bd01c4e3fff8ca1233e2aef681fbeba1",
   "scope": "Tests only; no application, model, protocol or UI changes.",
   "node": "24.19.0",
@@ -37,8 +37,8 @@
     }
   },
   "limits": [
-    "Full current merged checkout CI is pending; prior native CI is documented separately.",
-    "Uploaded-art perception and protection are not measured; no experiment fit was performed."
+    "Uploaded-art perception and protection are not measured. No protocol fitting was performed.",
+    "Native browser verification is from GitHub CI, not a local browser invocation. Optional Pillow verification is local."
   ],
   "review": {
     "status": "no-blockers-after-correction",
@@ -70,5 +70,17 @@
     "pythonPassed": 12,
     "browserPassed": 32,
     "status": "success-before-current-Astra-reconciliation"
+  },
+  "currentCi": {
+    "run": 37217535261,
+    "job": 111481005573,
+    "head": "7c06dac0685cf3ce5e7de4e6b0af8f79b98338b2",
+    "checkout": "c5909e7",
+    "merge": "47d067c52b7e085c13c82b54a507a7292ce996bf",
+    "unitPassed": 91,
+    "pythonPassed": 12,
+    "browserPassed": 32,
+    "lintTypecheckBuild": "passed",
+    "protocolFitsExecuted": 0
   }
 }
