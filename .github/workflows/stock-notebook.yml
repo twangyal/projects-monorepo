@@ -30,6 +30,8 @@ jobs:
           cache-dependency-path: apps/stock-notebook/package-lock.json
       - run: npm ci
       - run: npm run check
+      - name: Verify maximum annual-history input and complete report
+        run: node --experimental-strip-types scripts/annual-history-smoke.ts
       - run: npx playwright install --with-deps chromium
       - name: Production financial research, recovery and downloaded reports
         run: npm run test:browser

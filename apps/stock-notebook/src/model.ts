@@ -1,4 +1,4 @@
-import { LIMITS, type Dataset, type EditState, type Notebook, type ResearchNote, type Screen } from './types.ts';
+import { LIMITS, NOTEBOOK_SCHEMA_VERSION, type Dataset, type EditState, type Notebook, type ResearchNote, type Screen } from './types.ts';
 import { boundedArray, dataObject, requireValue, validateDataset, validateScreen, validateText, validateToday, validateUuid } from './validation.ts';
 import { parseQuery } from './query.ts';
 import { screenDataset } from './research.ts';
@@ -19,13 +19,16 @@ function extract(notebook: Notebook): EditState {
 }
 export function createNotebook(dataset: Dataset, today: string): Notebook {
   const screen: Screen = { sector: null, currency: null, filters: [], includeStale: false, sortBy: 'ticker', direction: 'asc' };
-  return validateNotebook({ schemaVersion: 1, id: crypto.randomUUID(), dataset, title: 'Stock notebook', query: '', screen, watchlist: [], comparison: [], notes: [] }, today);
+  return validateNotebook({ schemaVersion: NOTEBOOK_SCHEMA_VERSION, id: crypto.randomUUID(), dataset, title: 'Stock notebook', query: '', screen, watchlist: [], comparison: [], notes: [] }, today);
 }
 export function validateNotebook(value: unknown, today: string): Notebook {
   validateToday(today);
   const fields = dataObject(value, NOTEBOOK_KEYS);
-  requireValue(fields.schemaVersion === 1, 'Unsupported notebook schema version.');
+  requireValue(fields.schemaVersion === 1 || fields.schemaVersion === NOTEBOOK_SCHEMA_VERSION, 'Unsupported notebook schema version.');
   const id = validateUuid(fields.id), dataset = validateDataset(fields.dataset, today);
+  // V1 had unique-ticker semantics. Never reinterpret malformed legacy data as
+  // newly valid history simply because the canonical format is more expressive.
+  if (fields.schemaVersion === 1) requireValue(new Set(dataset.companies.map(row => row.ticker)).size === dataset.companies.length, 'Legacy notebook contains duplicate normalized tickers.');
   const title = validateText(fields.title, LIMITS.titleCharacters), query = validateText(fields.query, LIMITS.queryCharacters, 'query', true);
   const screen = validateScreen(fields.screen, dataset), known = new Set(dataset.companies.map(row => row.ticker));
   const watchlist = references(fields.watchlist, LIMITS.watchlist, known), comparison = references(fields.comparison, LIMITS.comparison, known);
@@ -41,7 +44,7 @@ export function validateNotebook(value: unknown, today: string): Notebook {
   notes.sort((a, b) => a.ticker < b.ticker ? -1 : a.ticker > b.ticker ? 1 : 0);
   parseQuery(query, dataset);
   screenDataset(dataset, screen, today);
-  const notebook: Notebook = { schemaVersion: 1, id, dataset, title, query, screen, watchlist, comparison, notes };
+  const notebook: Notebook = { schemaVersion: NOTEBOOK_SCHEMA_VERSION, id, dataset, title, query, screen, watchlist, comparison, notes };
   requireValue(encoder.encode(JSON.stringify(notebook)).length <= LIMITS.notebookBytes, 'Notebook exceeds the 4 MiB backup limit.');
   return notebook;
 }

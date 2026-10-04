@@ -1,4 +1,5 @@
 import { LIMITS, type Company, type Dataset, type Filter, type Metric, type Operator, type Screen } from './types.ts';
+import { latestCompanies } from './periods.ts';
 
 export function requireValue(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -119,20 +120,23 @@ export function validateDataset(value: unknown, today: string): Dataset {
   requireValue(data.basis === 'annual-12-month' && data.units === 'currency-millions', 'Dataset must declare annual twelve-month periods in currency millions.');
   requireValue(typeof data.synthetic === 'boolean', 'Synthetic provenance must be a boolean.');
   const companies = boundedArray(data.companies, LIMITS.companies, 1).map(row => validateCompany(row, importedDate));
-  const tickers = new Set<string>(); let previous = 1;
+  const periods = new Set<string>(), counts = new Map<string, number>(); let previous = 1;
   for (const row of companies) {
-    requireValue(!tickers.has(row.ticker), 'Dataset contains duplicate normalized tickers.'); tickers.add(row.ticker);
+    const key = `${row.ticker}:${row.fiscalDate}`;
+    requireValue(!periods.has(key), 'Dataset contains duplicate normalized ticker and fiscal date.'); periods.add(key);
+    const count = (counts.get(row.ticker) ?? 0) + 1;
+    requireValue(count <= LIMITS.periodsPerTicker, 'Use at most five annual periods per ticker.'); counts.set(row.ticker, count);
     requireValue(row.sourceLine > previous, 'Source lines must be strictly increasing in dataset order.'); previous = row.sourceLine;
   }
   return { id, fileName, importedDate, basis: 'annual-12-month', units: 'currency-millions', synthetic: data.synthetic, companies };
 }
 export function validateScreen(value: unknown, dataset: Dataset): Screen {
   const data = validateDataset(dataset, LIMITS.maxDate), screen = dataObject(value, ['sector', 'currency', 'filters', 'includeStale', 'sortBy', 'direction']);
-  const currencies = new Set(data.companies.map(row => row.currency));
+  const latest = latestCompanies(data.companies), currencies = new Set(latest.map(row => row.currency));
   let sector: string | null = null;
   if (screen.sector !== null) {
     const supplied = validateText(screen.sector, LIMITS.sectorCharacters);
-    sector = data.companies.find(row => row.sector.toLowerCase() === supplied.toLowerCase())?.sector ?? null;
+    sector = latest.find(row => row.sector.toLowerCase() === supplied.toLowerCase())?.sector ?? null;
     requireValue(sector !== null, 'Sector must exist in the supplied dataset.');
   }
   const selectedCurrency = screen.currency === null ? null : currency(screen.currency);

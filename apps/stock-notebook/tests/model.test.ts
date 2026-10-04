@@ -6,7 +6,7 @@ import { company, dataset, screen, TODAY } from './model-fixtures.ts';
 
 test('notebooks begin with detached dataset and empty annotations, query and default screen', () => {
   const input = dataset(), notebook = createNotebook(input, TODAY);
-  assert.equal(notebook.schemaVersion, 1); assert.match(notebook.id, /^[0-9a-f-]{36}$/);
+  assert.equal(notebook.schemaVersion, 2); assert.match(notebook.id, /^[0-9a-f-]{36}$/);
   assert.notEqual(notebook.id, createNotebook(input, TODAY).id);
   assert.equal(notebook.title, 'Stock notebook'); assert.equal(notebook.query, '');
   assert.deepEqual(notebook.screen, screen()); assert.deepEqual(notebook.watchlist, []);
@@ -28,7 +28,7 @@ test('notes normalize line endings, remove empty entries and sort by known canon
     { notes: [{ ticker: 'ALPHA', text: 'x'.repeat(4001) }] }, { notes: [{ ticker: 'MISSING', text: 'Note' }] },
     { notes: [{ ticker: 'ALPHA', text: 'A' }, { ticker: 'ALPHA', text: 'B' }] },
     { watchlist: ['ALPHA', 'ALPHA'] }, { comparison: ['UNKNOWN'] }, { watchlist: ['alpha'] },
-    { title: 'A\nB' }, { id: notebook.id + '\n' }, { schemaVersion: 2 }, { private: 1 }]) assert.throws(() => validateNotebook({ ...notebook, ...patch }, TODAY));
+    { title: 'A\nB' }, { id: notebook.id + '\n' }, { schemaVersion: 3 }, { private: 1 }]) assert.throws(() => validateNotebook({ ...notebook, ...patch }, TODAY));
 });
 
 test('watchlist, comparison and notes obey exact reference/count bounds including astral note text', () => {
@@ -56,10 +56,30 @@ test('operational validation rejects a mixed-currency money sort but accepts an 
 test('strict JSON rejects duplicate decoded keys, malformed Unicode, unsafe numbers and excessive depth/bytes', () => {
   const notebook = createNotebook(dataset(), TODAY), text = serializeNotebook(notebook, TODAY);
   assert.deepEqual(parseNotebookJson(text, TODAY), notebook); assert.equal(text, JSON.stringify(notebook));
-  for (const raw of [text.replace('"schemaVersion":1', '"schemaVersion":1,"schema\\u0056ersion":1'),
+  for (const raw of [text.replace('"schemaVersion":2', '"schemaVersion":2,"schema\\u0056ersion":2'),
     text.replace('"revenue":120', '"revenue":1e999'), text.replace('"revenue":120', '"revenue":NaN'),
     text.replace('"revenue":120', '"revenue":9007199254740992'), text + '{}',
     '['.repeat(25) + '0' + ']'.repeat(25), '{"__proto__":{},"__proto__":{}}', '\ud800',
     ' '.repeat(LIMITS.notebookBytes + 1), text.replace('"title":"Stock notebook"', '"title":"\\ud800"')]) assert.throws(() => parseNotebookJson(raw, TODAY));
   assert.throws(() => validateNotebook(notebook, '2025-01-01'));
+});
+
+test('valid legacy notebooks migrate to v2 without changing data, IDs or annotations', () => {
+  const legacy = { schemaVersion: 1, id: '22222222-2222-4222-8222-222222222222', dataset: dataset([company(), company({ ticker: 'BETA', sourceLine: 3 })]), title: 'Saved legacy research', query: 'companies with profitable', screen: screen({ currency: 'USD' }), watchlist: ['BETA'], comparison: ['BETA', 'ALPHA'], notes: [{ ticker: 'ALPHA', text: 'Evidence stays literal <b>text</b>' }] };
+  const raw = JSON.stringify(legacy), migrated = parseNotebookJson(raw, TODAY);
+  assert.equal(migrated.schemaVersion, 2);
+  assert.deepEqual(migrated, { ...legacy, schemaVersion: 2 });
+  assert.equal(JSON.stringify(legacy), raw);
+  migrated.dataset.companies[0].revenue = 999; assert.equal(legacy.dataset.companies[0].revenue, 120);
+  assert.equal(parseNotebookJson(serializeNotebook(validateNotebook(legacy, TODAY), TODAY), TODAY).schemaVersion, 2);
+  for (const schemaVersion of [0, 3, true, '2', null]) assert.throws(() => validateNotebook({ ...legacy, schemaVersion }, TODAY));
+});
+
+test('v1 unique-ticker semantics remain strict while v2 accepts dated annual history', () => {
+  const source = dataset([company({ fiscalDate: '2026-01-01' }), company({ ticker: 'alpha', fiscalDate: '2024-01-01', sourceLine: 3 })]);
+  const incoming = { schemaVersion: 2, id: '22222222-2222-4222-8222-222222222222', dataset: source, title: 'Annual history', query: '', screen: screen(), watchlist: ['ALPHA'], comparison: ['ALPHA'], notes: [{ ticker: 'ALPHA', text: 'Ticker-level notes' }] };
+  assert.deepEqual(validateNotebook(incoming, TODAY).dataset.companies.map(row => row.sourceLine), [2, 3]);
+  assert.throws(() => validateNotebook({ ...incoming, schemaVersion: 1 }, TODAY));
+  assert.throws(() => parseNotebookJson(JSON.stringify({ ...incoming, schemaVersion: 1 }), TODAY));
+  assert.deepEqual(parseNotebookJson(JSON.stringify(incoming), TODAY).notes, incoming.notes);
 });

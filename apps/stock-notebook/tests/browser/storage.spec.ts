@@ -27,6 +27,69 @@ test('native storage stores exact validated JSON text and detached round trips',
   expect(result).toEqual({ missing: null, storedText: true, exact: true, title: 'Captured study', exportEqual: true, cleared: null });
 });
 
+test('v1 load migrates only in memory, aborted save preserves exact raw text, and committed save writes v2', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const h = window.stockStorage;
+    const name = 'legacy-migration-native';
+    const legacy = h.legacyFixture() as Record<string, unknown>;
+    const raw = ` \n${JSON.stringify(legacy, null, 2)}\n `;
+    await h.rawRecord(name, raw, true);
+    const store = new h.NotebookStore(name);
+    const loaded = (await store.load('2026-10-04'))!;
+    const readOnly = await h.rawRecord(name) === raw && await store.exportRaw() === raw;
+    const canonical = loaded.schemaVersion;
+    const migratedSnapshot = { ...loaded, schemaVersion: 1 };
+    const original = IDBDatabase.prototype.transaction;
+    let rejected = false;
+    IDBDatabase.prototype.transaction = function (...args: Parameters<typeof original>) {
+      const tx = original.apply(this, args);
+      if (args[1] === 'readwrite') tx.objectStore('notebooks').get('current').onsuccess = () => tx.abort();
+      return tx;
+    };
+    try { await store.save({ ...loaded, title: 'Interrupted migration save' }, '2026-10-04'); }
+    catch { rejected = true; }
+    finally { IDBDatabase.prototype.transaction = original; }
+    const failureRetained = await h.rawRecord(name) === raw && await store.exportRaw() === raw;
+    await store.save(loaded, '2026-10-04');
+    const saved = await h.rawRecord(name);
+    const committed = saved === h.serializeNotebook(loaded, '2026-10-04');
+    const persistedVersion = (JSON.parse(saved as string) as { schemaVersion: number }).schemaVersion;
+    store.close();
+    const reopened = new h.NotebookStore(name);
+    const reload = (await reopened.load('2026-10-04'))!;
+    reopened.close();
+    return { legacy, migratedSnapshot, readOnly, canonical, rejected, failureRetained, committed, persistedVersion,
+      reloadVersion: reload.schemaVersion, title: reload.title };
+  });
+  const { legacy, migratedSnapshot, ...lifecycle } = result;
+  expect(migratedSnapshot).toEqual(legacy);
+  expect(lifecycle).toEqual({ readOnly: true, canonical: 2, rejected: true,
+    failureRetained: true, committed: true, persistedVersion: 2, reloadVersion: 2, title: 'Migrated legacy study' });
+});
+
+test('invalid v1 duplicate ticker and unsupported versions preserve exact recovery text', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const h = window.stockStorage;
+    const valid = h.legacyFixture() as { schemaVersion: number; dataset: { companies: { fiscalDate: string; sourceLine: number }[] } };
+    const duplicate = structuredClone(valid);
+    duplicate.dataset.companies.push({ ...duplicate.dataset.companies[0]!, fiscalDate: '2025-06-30', sourceLine: 3 });
+    const store = new h.NotebookStore('rejected-migration-native');
+    const outcomes: boolean[] = [];
+    for (const input of [duplicate, { ...valid, schemaVersion: 0 }, { ...valid, schemaVersion: 3 }]) {
+      const raw = JSON.stringify(input, null, 2) + '\n';
+      await h.rawRecord('rejected-migration-native', raw, true);
+      let error = '';
+      try { await store.load('2026-10-04'); }
+      catch (value) { error = (value as Error).message; }
+      outcomes.push(/kept.*raw saved record/i.test(error) && await store.exportRaw() === raw
+        && await h.rawRecord('rejected-migration-native') === raw);
+    }
+    store.close();
+    return outcomes;
+  });
+  expect(result).toEqual([true, true, true]);
+});
+
 test('captured snapshots and writes from multiple instances stay ordered through committed transactions', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.stockStorage;

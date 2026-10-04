@@ -1,5 +1,6 @@
 import { validateCompany, validateDataset, validateScreen, validateToday, boundedArray } from './validation.ts';
 import { LIMITS } from './types.ts';
+import { latestCompanies } from './periods.ts';
 import type { Company, Dataset, Screen, Derived, ResearchRow, ScreenResult, Comparison, Metric, Filter, Observation } from './types.ts';
 
 type Amount = 'revenue' | 'priorRevenue' | 'netIncome' | 'debt' | 'equity';
@@ -68,7 +69,7 @@ function matches(actual: number, filter: Filter): boolean {
 export function screenDataset(dataset: Dataset, screen: Screen, today: string): ScreenResult {
   const date = validateToday(today), data = validateDataset(dataset, date), criteria = validateScreen(screen, data);
   const rows: ResearchRow[] = []; let excludedStale = 0, excludedMissing = 0;
-  for (const company of data.companies) {
+  for (const company of latestCompanies(data.companies)) {
     if (!criteria.includeStale && stale(company, date)) { excludedStale++; continue; }
     if (criteria.sector !== null && company.sector.toLowerCase() !== criteria.sector.toLowerCase()) continue;
     if (criteria.currency !== null && company.currency !== criteria.currency) continue;
@@ -92,12 +93,13 @@ export function screenDataset(dataset: Dataset, screen: Screen, today: string): 
 }
 export function compareCompanies(dataset: Dataset, tickers: string[], today: string): Comparison {
   const date = validateToday(today), data = validateDataset(dataset, date);
+  const companies = latestCompanies(data.companies);
   boundedArray(tickers, LIMITS.comparison);
   if (new Set(tickers).size !== tickers.length
-      || tickers.some(ticker => typeof ticker !== 'string' || !data.companies.some(company => company.ticker === ticker))) {
+      || tickers.some(ticker => typeof ticker !== 'string' || !companies.some(company => company.ticker === ticker))) {
     throw new Error('Choose up to four distinct tickers present in the current dataset.');
   }
-  const rows = tickers.map(ticker => analyze(data.companies.find(company => company.ticker === ticker)!, date));
+  const rows = tickers.map(ticker => analyze(companies.find(company => company.ticker === ticker)!, date));
   if (!rows.length) return { rows, warnings: [], monetaryComparable: false };
   const monetaryComparable = new Set(rows.map(row => row.company.currency)).size === 1;
   const warnings: string[] = [];

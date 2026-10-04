@@ -4,6 +4,8 @@ import { createNotebook, validateNotebook, parseNotebookJson, serializeNotebook,
 import { NotebookHistory } from './history.ts';
 import { parseQuery } from './query.ts';
 import { analyzeCompany, screenDataset, compareCompanies } from './research.ts';
+import { latestCompanies } from './periods.ts';
+import { analyzeCompanyHistory, type CompanyHistory, type PeriodComparison } from './annual-history.ts';
 import { NotebookStore } from './storage.ts';
 import { buildReport } from './exports.ts';
 import { createDemoDataset } from './demo.ts';
@@ -44,7 +46,7 @@ const importReview = panel('Review the incoming universe', 'All money columns mu
 const importSummary = el('div'); importSummary.id = 'import-summary'; const unitLabel = el('label', '', 'checkbox'); const unitsConfirm = el('input'); unitsConfirm.type = 'checkbox'; unitsConfirm.id = 'units-confirm'; unitLabel.append(unitsConfirm, el('span', 'I confirm currency millions and comparable 12-month annual periods'));
 const replaceButton = button('Replace universe', replaceUniverse, 'primary'); const backupCurrent = button('Download current backup', downloadBackup); const cancelImport = button('Cancel import', cancelStaging);
 importReview.append(importSummary, el('p', 'Restatements, acquisitions, different fiscal lengths and changed accounting bases can defeat comparability. Supplied filing links do not verify figures.', 'notice'), unitLabel, el('p', 'Replacing the universe clears current watchlist, notes, comparison and undo history. Download the current backup before proceeding if needed.', 'hint'), replaceButton, backupCurrent, cancelImport); unitsConfirm.addEventListener('change', () => { replaceButton.disabled = !unitsConfirm.checked || !!loading; }); main.append(importReview);
-const empty = panel('Bring your own annual data', 'One CSV can contain up to 500 companies and 2 MiB. Blank amounts remain missing. No source link is fetched.'); empty.append(el('p', 'No universe has been loaded. Download the blank template or stage the fictional demo to explore the workflow.', 'empty')); main.append(empty);
+const empty = panel('Bring your own annual data', 'One CSV can contain up to 500 annual rows, five periods per ticker, and 2 MiB. Blank amounts remain missing. No source link is fetched.'); empty.append(el('p', 'No universe has been loaded. Download the blank template or stage the fictional demo to explore the workflow.', 'empty')); main.append(empty);
 const workspace = el('div', '', 'workspace'); workspace.hidden = true; main.append(workspace);
 const sourceHeader = el('div', '', 'source-header'); const sourceText = el('p'); sourceText.id = 'dataset-summary'; const syntheticLabel = el('p', 'Synthetic demonstration — not real companies or filings', 'synthetic'); syntheticLabel.id = 'synthetic-label'; sourceHeader.append(sourceText, syntheticLabel); workspace.append(sourceHeader);
 const titleForm = el('form', '', 'title-form'); titleForm.id = 'title-form'; const titleInput = field(titleForm, 'title', 'Notebook title') as HTMLInputElement; titleInput.maxLength = LIMITS.titleCharacters * 2; titleInput.required = true; const titleButton = button('Save title', () => {}); titleButton.type = 'submit'; titleForm.append(titleButton); titleInput.addEventListener('input', () => { titleDirty = true; draftIntent(); }); titleForm.addEventListener('submit', (e) => { e.preventDefault(); if (!notebook) return; try { const day = utcToday(); commit({ ...notebook, title: titleInput.value.trim() }, day); titleDirty = false; titleInput.value = notebook.title; } catch { announce('Use a notebook title with 1–80 characters. Your draft was kept.', true); } }); workspace.append(titleForm);
@@ -81,8 +83,8 @@ let titleDirty = false; let queryDirty = false; let screenDirty = false; let res
 let saveTimer: ReturnType<typeof setTimeout> | undefined; let saveQueue = Promise.resolve(); const store = new NotebookStore(); const noteDrafts = new Map<string, string>();
 type FilterEditor = { id: number; node: HTMLElement; metric: HTMLSelectElement; operator: HTMLSelectElement; value: HTMLInputElement; currency: HTMLSelectElement };
 let filterSequence = 0; const filterEditors: FilterEditor[] = [];
-function currentSectors(): string[] { if (!notebook) return []; const seen = new Map<string, string>(); for (const c of notebook.dataset.companies) if (!seen.has(c.sector.toLowerCase())) seen.set(c.sector.toLowerCase(), c.sector); return [...seen.values()].sort(); }
-function currentCurrencies(): string[] { return notebook ? [...new Set(notebook.dataset.companies.map((c) => c.currency))].sort() : []; }
+function currentSectors(): string[] { if (!notebook) return []; const seen = new Map<string, string>(); for (const c of latestCompanies(notebook.dataset.companies)) if (!seen.has(c.sector.toLowerCase())) seen.set(c.sector.toLowerCase(), c.sector); return [...seen.values()].sort(); }
+function currentCurrencies(): string[] { return notebook ? [...new Set(latestCompanies(notebook.dataset.companies).map((c) => c.currency))].sort() : []; }
 function markScreenDraft(): void { screenDirty = true; screenError.hidden = true; draftIntent(); }
 function draftIntent(): void { intentGeneration += 1; if (loading) { loading = null; announce('Pending import or restore canceled because you edited the notebook. Your draft was kept.'); renderImport(); } }
 function filterCaption(f: Filter): string { return `${metricNames[f.metric]} ${operators[f.operator]} ${String(f.value)}${moneyMetrics.has(f.metric) ? ` ${f.currency ?? 'any currency (zero sign test)'} million` : f.metric === 'debtEquity' ? '' : '%'}`; }
@@ -130,8 +132,8 @@ function cancelStaging(): void { loading = null; staged = null; operationSequenc
 function renderImport(): void {
   importReview.hidden = !loading && !staged; replaceButton.disabled = !!loading || !staged || !unitsConfirm.checked; backupCurrent.hidden = !notebook; unitLabel.hidden = !!loading;
   if (loading) { importSummary.replaceChildren(el('p', 'Validating the complete incoming file…')); return; } if (!staged) return;
-  const dataset = staged.kind === 'csv' ? null : staged.kind === 'dataset' ? staged.dataset : staged.notebook.dataset; const rows = staged.kind === 'csv' ? staged.preview.companies : dataset!.companies; const name = staged.kind === 'csv' ? staged.preview.fileName : dataset!.fileName; const day = utcToday(); const missingCount = rows.reduce((n, c) => n + ['revenue', 'priorRevenue', 'netIncome', 'debt', 'equity'].filter((k) => c[k as keyof Company] === null).length, 0); const dates = rows.map((c) => c.fiscalDate).sort(); const staleCount = rows.filter((c) => analyzeCompany(c, day).stale).length;
-  importSummary.replaceChildren(el('h3', name), el('p', `${rows.length} companies · currencies ${[...new Set(rows.map((c) => c.currency))].sort().join(', ')} · ${missingCount} missing amounts`), el('p', `Fiscal dates ${dates[0]} to ${dates[dates.length - 1]} · ${staleCount} stale companies as of ${day} UTC`, 'hint'), el('p', dataset?.synthetic ? 'Synthetic demonstration — not real companies or filings' : 'Imported figures and source links are supplied by you; they have not been verified.', dataset?.synthetic ? 'synthetic' : 'hint'));
+  const dataset = staged.kind === 'csv' ? null : staged.kind === 'dataset' ? staged.dataset : staged.notebook.dataset; const rows = staged.kind === 'csv' ? staged.preview.companies : dataset!.companies; const name = staged.kind === 'csv' ? staged.preview.fileName : dataset!.fileName; const day = utcToday(); const missingCount = rows.reduce((n, c) => n + ['revenue', 'priorRevenue', 'netIncome', 'debt', 'equity'].filter((k) => c[k as keyof Company] === null).length, 0); const dates = rows.map((c) => c.fiscalDate).sort(); const current = latestCompanies(rows); const staleCount = current.filter((c) => analyzeCompany(c, day).stale).length;
+  importSummary.replaceChildren(el('h3', name), el('p', `${rows.length} annual rows · ${current.length} unique companies · supplied currencies ${[...new Set(rows.map((c) => c.currency))].sort().join(', ')} · ${missingCount} missing amounts`), el('p', `Fiscal dates ${dates[0]} to ${dates[dates.length - 1]} · ${staleCount} companies with stale latest periods as of ${day} UTC`, 'hint'), el('p', dataset?.synthetic ? 'Synthetic demonstration — not real companies or filings' : 'Imported figures and source links are supplied by you; they have not been verified.', dataset?.synthetic ? 'synthetic' : 'hint'));
 }
 function replaceUniverse(): void {
   if (!staged || loading || !unitsConfirm.checked) return; if ((notebook || restoreFailed) && !confirm('Replace the current universe? Watchlist, notes, comparison, unsent drafts and undo history will be replaced. Download the current backup first if needed. Replacement happens only after full validation.')) return;
@@ -173,9 +175,90 @@ function facts(row: ResearchRow, scope = 'detail'): HTMLElement {
   content.append(el('h3', 'Derived observations')); if (!row.observations.some((o) => o.kind === 'strength' || o.kind === 'risk')) content.append(el('p', 'No rule-based strengths/risks found.', 'hint'));
   for (const kind of ['strength', 'risk', 'uncertainty'] as const) { const group = row.observations.filter((o) => o.kind === kind); const block = el('div', '', `observation-group ${kind}`); block.append(el('h4', kind === 'strength' ? 'Rule-based strengths' : kind === 'risk' ? 'Rule-based risks' : 'Uncertainties')); if (!group.length) block.append(el('p', kind === 'uncertainty' ? 'No additional uncertainty rules found.' : kind === 'strength' ? 'No rule-based strengths found.' : 'No rule-based risks found.', 'hint')); for (const o of group) { const item = el('p'); item.dataset.observationCode = o.code; item.append(el('span', o.text), el('span', ` · ${notebook!.dataset.fileName}:${c.sourceLine} · inputs: `, 'hint')); o.fields.forEach((key, i) => { if (i) item.append(document.createTextNode(', ')); const link = el('a', key); link.href = `#${fieldId(key)}`; item.append(link); }); block.append(item); } content.append(block); } return content;
 }
+function periodAnchor(company: Company): string { return `period-detail-${company.ticker}-${company.fiscalDate}`; }
+function periodReference(company: Company): HTMLAnchorElement {
+  const link = el('a', `${company.fiscalDate} · ${notebook!.dataset.fileName}:${company.sourceLine}`);
+  link.href = `#${periodAnchor(company)}`;
+  return link;
+}
+function historicalComparison(pair: PeriodComparison): HTMLElement {
+  const section = el('section', '', 'period-comparison');
+  section.dataset.previousDate = pair.previous.fiscalDate;
+  section.dataset.currentDate = pair.current.fiscalDate;
+  section.append(el('h4', `${pair.previous.fiscalDate} → ${pair.current.fiscalDate}`));
+  const sources = el('p', 'Supplied rows: ', 'hint');
+  sources.append(periodReference(pair.previous), document.createTextNode(' → '), periodReference(pair.current));
+  section.append(sources);
+  if (!pair.comparable) section.append(el('p', 'Automatic comparison unavailable', 'warning'));
+  for (const reason of pair.reasons) section.append(el('p', reason, 'hint'));
+  for (const warning of pair.warnings) section.append(el('p', warning, 'warning'));
+  const raw = (value: number | null): string => value === null ? 'Not supplied' : String(value);
+  for (const change of pair.changes) {
+    const block = el('div', '', 'historical-change'); block.dataset.metric = change.metric;
+    block.append(el('h5', metricNames[change.metric]));
+    if (change.metric === 'marginPct') {
+      block.append(el('p', `Previous inputs: net income ${amount(pair.previous.netIncome, pair.previous.currency, true)}; revenue ${amount(pair.previous.revenue, pair.previous.currency, true)}.`),
+        el('p', `Current inputs: net income ${amount(pair.current.netIncome, pair.current.currency, true)}; revenue ${amount(pair.current.revenue, pair.current.currency, true)}.`));
+      if (change.delta !== null) block.append(el('p', `Net margin change = (100 × ${raw(pair.current.netIncome)} / ${raw(pair.current.revenue)}) − (100 × ${raw(pair.previous.netIncome)} / ${raw(pair.previous.revenue)}) = ${String(change.delta)} percentage points.`));
+      else block.append(el('p', `Net margin change unavailable: ${change.reason ?? 'Inputs cannot be compared.'}`));
+      if (change.percentReason) block.append(el('p', change.percentReason, 'hint'));
+    } else {
+      const previous = pair.previous[change.metric], current = pair.current[change.metric];
+      block.append(el('p', `Previous input: ${amount(previous, pair.previous.currency, true)}. Current input: ${amount(current, pair.current.currency, true)}.`));
+      if (change.delta !== null) block.append(el('p', `Absolute change = ${raw(current)} − ${raw(previous)} = ${amount(change.delta, pair.current.currency, true)}.`));
+      else block.append(el('p', `Absolute change unavailable: ${change.reason ?? 'Inputs cannot be compared.'}`));
+      if (change.percentChange !== null) block.append(el('p', `Relative change = 100 × (${raw(current)} − ${raw(previous)}) / ${raw(previous)} = ${String(change.percentChange)}%.`));
+      else block.append(el('p', `Relative change unavailable: ${change.percentReason ?? 'Inputs cannot be compared.'}`, 'hint'));
+    }
+    section.append(block);
+  }
+  return section;
+}
+function annualHistory(history: CompanyHistory): HTMLElement {
+  const section = el('section', '', 'annual-history'); section.id = 'annual-history';
+  const first = history.periods[0]!.company.fiscalDate, last = history.periods.at(-1)!.company.fiscalDate;
+  section.append(el('h3', 'Supplied annual history'),
+    el('p', `${history.periods.length} supplied periods · ${first} to ${last}. Current screens use only the latest supplied row.`, 'hint'),
+    el('p', 'Historical comparisons use adjacent supplied rows, never interpolated years. Calendar alignment and matching currency, company name and sector are conservative checks, not verification of accounting comparability. 52/53-week reporters and changed names may need manual comparison.', 'notice'));
+  const scroll = el('div', '', 'history-table-scroll'); scroll.tabIndex = 0;
+  scroll.setAttribute('role', 'region'); scroll.setAttribute('aria-label', `${history.ticker} supplied annual history`);
+  const table = el('table', '', 'history-table'); table.append(el('caption', `${history.ticker} supplied annual history — amounts in currency millions; scroll horizontally for all inputs and sources.`));
+  const head = el('thead'), headings = el('tr');
+  for (const title of ['Fiscal year end', 'Ticker', 'Company name', 'Sector', 'Currency', 'Revenue', 'Prior revenue', 'Net income', 'Gross debt', 'Equity', 'Declared-input growth', 'Net margin', 'Debt / equity', 'Original source']) {
+    const cell = el('th', title); cell.scope = 'col'; headings.append(cell);
+  }
+  head.append(headings); table.append(head); const body = el('tbody');
+  for (const period of history.periods) {
+    const c = period.company, row = el('tr'); row.id = periodAnchor(c); row.dataset.fiscalDate = c.fiscalDate;
+    const date = el('th', c.fiscalDate); date.scope = 'row'; row.append(date);
+    for (const text of [c.ticker, c.name, c.sector, c.currency]) row.append(el('td', text));
+    for (const key of ['revenue', 'priorRevenue', 'netIncome', 'debt', 'equity'] as const) {
+      const cell = el('td', c[key] === null ? 'Not supplied' : String(c[key])); cell.id = `${row.id}-${key}`; row.append(cell);
+    }
+    for (const key of ['growthPct', 'marginPct', 'debtEquity'] as const) {
+      const value = period.derived[key]; row.append(el('td', value === null ? 'Undefined' : `${String(value)}${key === 'debtEquity' ? '' : '%'}`));
+    }
+    const source = el('td'); source.append(el('p', `${notebook!.dataset.fileName}:${c.sourceLine}`), sourceLink(c)); row.append(source); body.append(row);
+  }
+  table.append(body); scroll.append(table); section.append(scroll,
+    el('p', 'Declared-input growth = 100 × (revenue − prior revenue) / prior revenue. Net margin = 100 × net income / revenue. Debt / equity = gross debt / equity. Missing inputs or a nonpositive denominator make a ratio undefined. Stored-row changes below use the preceding stored revenue, which can differ from declared prior revenue.', 'hint'));
+  const comparisons = el('div'); comparisons.id = 'annual-comparisons'; comparisons.append(el('h3', 'Adjacent supplied-period changes'));
+  if (!history.comparisons.length) comparisons.append(el('p', 'A second supplied period is needed for an adjacent comparison.', 'hint'));
+  for (const pair of history.comparisons) comparisons.append(historicalComparison(pair));
+  section.append(comparisons);
+  const summaries = el('div', '', 'history-summaries'); summaries.id = 'annual-trends';
+  summaries.append(el('h3', 'All-period direction summaries'), el('p', `All ${history.periods.length} supplied periods, ${first} to ${last}. These are retrospective descriptions, not strengths, forecasts or recommendations.`, 'hint'));
+  const labels = { increasing: 'Increasing', decreasing: 'Decreasing', flat: 'Unchanged throughout', mixed: 'Mixed or unchanged intervals', unavailable: 'Unavailable' };
+  for (const trend of history.trends) {
+    const item = el('p'); item.dataset.metric = trend.metric; item.dataset.direction = trend.direction;
+    item.append(el('strong', `${metricNames[trend.metric]}: ${labels[trend.direction]}`), document.createTextNode(` · ${trend.periodCount} supplied periods`));
+    if (trend.reason) item.append(document.createTextNode(` · ${trend.reason}`)); summaries.append(item);
+  }
+  section.append(summaries); return section;
+}
 function renderDetail(day: string): void {
-  if (!notebook || !selectedTicker) { detail.hidden = true; return; } const company = notebook.dataset.companies.find((c) => c.ticker === selectedTicker); if (!company) { selectedTicker = null; detail.hidden = true; return; }
-  detail.hidden = false; detailContent.replaceChildren(facts(analyzeCompany(company, day))); const text = noteDrafts.get(selectedTicker) ?? notebook.notes.find((n) => n.ticker === selectedTicker)?.text ?? ''; if (noteInput.value !== text) noteInput.value = text;
+  if (!notebook || !selectedTicker) { detail.hidden = true; return; } const company = latestCompanies(notebook.dataset.companies).find((c) => c.ticker === selectedTicker); if (!company) { selectedTicker = null; detail.hidden = true; return; }
+  detail.hidden = false; detailContent.replaceChildren(el('h3', 'Latest supplied period'), facts(analyzeCompany(company, day)), annualHistory(analyzeCompanyHistory(notebook.dataset, selectedTicker, day))); const text = noteDrafts.get(selectedTicker) ?? notebook.notes.find((n) => n.ticker === selectedTicker)?.text ?? ''; if (noteInput.value !== text) noteInput.value = text;
 }
 function comparisonRemoveButton(ticker: string): HTMLButtonElement { const n = button('Remove from comparison', () => { toggleComparison(ticker); }); n.dataset.action = 'compare'; return n; }
 function renderTabs(): void { for (const [key, b] of tabButtons) { const selected = key === activeTab; b.setAttribute('aria-selected', String(selected)); b.tabIndex = selected ? 0 : -1; tabPanels.get(key)!.hidden = !selected; } }
@@ -183,14 +266,14 @@ tabs.addEventListener('keydown', (e) => { if (!['ArrowLeft', 'ArrowRight', 'Home
 function renderNotebook(day: string): void {
   const focused = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null; const focusedCard = focused?.closest<HTMLElement>('[data-ticker]'); const focusedPanel = focused?.closest<HTMLElement>('[role=tabpanel]'); const focusKey = focused?.dataset.action && focusedCard && focusedPanel ? { action: focused.dataset.action, ticker: focusedCard.dataset.ticker, panel: focusedPanel.id } : null;
   workspace.hidden = !notebook; empty.hidden = !!notebook; retryButton.hidden = !saveFailed; saveStrip.classList.toggle('unsaved', saveFailed); if (!notebook || !results) return; if (!titleDirty) titleInput.value = notebook.title; undoButton.disabled = !notebookHistory?.canUndo; redoButton.disabled = !notebookHistory?.canRedo;
-  const ds = notebook.dataset; sourceText.textContent = `${ds.fileName} · ${ds.companies.length} companies · imported ${ds.importedDate} · currency millions · annual 12-month basis`; syntheticLabel.hidden = !ds.synthetic;
+  const ds = notebook.dataset; const current = latestCompanies(ds.companies); const currentByTicker = new Map(current.map(c => [c.ticker, c])); sourceText.textContent = `${ds.fileName} · ${ds.companies.length} annual rows · ${current.length} unique companies · imported ${ds.importedDate} · currency millions · annual 12-month basis`; syntheticLabel.hidden = !ds.synthetic;
   const screen = notebook.screen; appliedCriteria.replaceChildren(el('p', `Evaluated ${day} UTC · sector ${screen.sector ?? 'all'} · currency ${screen.currency ?? 'all'} · ${screen.includeStale ? 'including stale companies' : 'excluding fiscal periods older than 548 days'}`), ...screen.filters.map((f) => el('p', filterCaption(f))), el('p', `Sort: ${screen.sortBy === 'ticker' ? 'Ticker' : metricNames[screen.sortBy]} ${screen.direction}`, 'hint'));
   if (!screen.filters.length) appliedCriteria.append(el('p', 'No numeric predicates.', 'hint')); if (notebook.query) { appliedCriteria.append(el('p', `Last applied interpretation: ${notebook.query}`, 'hint')); try { if (JSON.stringify(parseQuery(notebook.query, ds).screen) !== JSON.stringify(screen)) appliedCriteria.append(el('p', 'Filters edited after interpretation', 'edited-label')); } catch { /* Validated notebooks have a fully consumed saved query. */ } }
   screenStatus.textContent = `${results.rows.length} matched · ${results.excludedStale} excluded as stale · ${results.excludedMissing} excluded with required metrics missing`;
   resultList.replaceChildren(...results.rows.map((row) => companyCard(row, day))); if (!results.rows.length) resultList.append(el('p', 'No companies match the applied criteria. Inspect missing/stale counts or Clear filters.', 'empty'));
   const comparison = compareCompanies(ds, notebook.comparison, day); comparisonContent.replaceChildren(...comparison.warnings.map((s) => el('p', s, 'warning'))); if (comparison.rows.length < 2) comparisonContent.append(el('p', 'Select at least two companies to compare, up to four. Selections remain manual research choices, including stale companies.', 'empty'));
   else { const grid = el('div', '', 'comparison-grid'); for (const row of comparison.rows) { const card = el('article', '', 'comparison-card'); card.dataset.ticker = row.company.ticker; card.append(el('h3', row.company.ticker), el('p', `${row.stale ? 'Stale' : 'Fresh'} fiscal period · ${ageInDays(row.company, day)} days old`, 'hint'), comparisonRemoveButton(row.company.ticker), facts(row, 'comparison')); grid.append(card); } comparisonContent.append(grid); }
-  watchlistContent.replaceChildren(...notebook.watchlist.map((ticker) => companyCard(analyzeCompany(ds.companies.find((c) => c.ticker === ticker)!, day), day))); if (!notebook.watchlist.length) watchlistContent.append(el('p', 'No watchlist companies yet. Add companies from the shortlist.', 'empty')); renderDetail(day); renderTabs();
+  watchlistContent.replaceChildren(...notebook.watchlist.map((ticker) => companyCard(analyzeCompany(currentByTicker.get(ticker)!, day), day))); if (!notebook.watchlist.length) watchlistContent.append(el('p', 'No watchlist companies yet. Add companies from the shortlist.', 'empty')); renderDetail(day); renderTabs();
   if (focusKey) { const candidate = document.getElementById(focusKey.panel)?.querySelector<HTMLButtonElement>(`[data-ticker="${focusKey.ticker}"] [data-action="${focusKey.action}"]`); (candidate ?? tabButtons.get(activeTab))?.focus({ preventScroll: true }); }
 }
 window.addEventListener('beforeunload', (e) => { if (loading || titleDirty || queryDirty || screenDirty || noteDrafts.size || notebook && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });

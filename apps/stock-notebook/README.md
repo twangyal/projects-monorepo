@@ -2,7 +2,7 @@
 
 An offline workspace for turning supplied annual financial data into an understandable research shortlist. Import a company universe, inspect a supported-language interpretation, apply editable filters, compare the underlying figures and keep notes. Download a research report or an editable notebook backup. Data stays in this browser.
 
-This is the first, deterministic screening milestone for catalog idea #13. The parser and observations follow documented rules; they are not AI analysis. The initial milestone is tracked in [issue #32](https://github.com/twangyal/projects-monorepo/issues/32). Broad language understanding, generated outlooks and live financial coverage remain future work.
+This is a deterministic screening and annual-history workspace for catalog idea #13. The parser and observations follow documented rules; they are not AI analysis. The initial milestone is tracked in [issue #32](https://github.com/twangyal/projects-monorepo/issues/32), with supplied annual history in [issue #35](https://github.com/twangyal/projects-monorepo/issues/35). Broad language understanding, generated outlooks and live financial coverage remain future work.
 
 ## Run
 
@@ -35,7 +35,7 @@ Every amount is in **millions of the row's declared currency**. Each row represe
 
 | Field | Meaning |
 | --- | --- |
-| `ticker`, `name`, `sector` | A unique ticker in this universe, company name and sector label. |
+| `ticker`, `name`, `sector` | A normalized ticker identifying up to five supplied annual periods, with the company name and sector reported for that row. |
 | `currency` | Three uppercase letters supplied by the importer; no exchange-rate conversion. |
 | `fiscal_date` | Actual fiscal year-end date in `YYYY-MM-DD`, from 2000-01-01 through the current UTC date. |
 | `revenue`, `prior_revenue` | Nonnegative current and prior annual revenue, in currency millions. |
@@ -46,7 +46,7 @@ Every amount is in **millions of the row's declared currency**. Each row represe
 
 An empty numeric cell means **not supplied**, never zero. Use ordinary decimal notation with at most six decimal places and magnitude at most 1,000,000,000 million. Do not include separators, currency symbols, percent signs, exponent notation or `N/A`. A file may contain different currencies, but each row must use one consistent currency and scale.
 
-Import supports UTF-8, a leading BOM, LF/CRLF, quoted commas and escaped quotes. Fields must be single-line. The complete file is rejected on malformed syntax, inconsistent columns, duplicate tickers, future/invalid dates or invalid values. CSV is bounded at 2 MiB and 500 companies. Exact source filename and physical row are retained with the facts.
+Import supports UTF-8, a leading BOM, LF/CRLF, quoted commas and escaped quotes. Fields must be single-line. The complete file is rejected on malformed syntax, inconsistent columns, duplicate ticker/fiscal-date pairs, more than five periods for one ticker, future/invalid dates or invalid values. CSV is bounded at 2 MiB and 500 annual rows total. Exact source filename and physical row are retained with the facts. Dates may be in any order; the original CSV row order is preserved, and chronology is derived separately. Replacing a universe imports one complete CSV; the app does not merge duplicate periods or decide which restatement is authoritative.
 
 Choose **Load synthetic demo** to explore original fictional companies. Its synthetic label persists through views, backup and research report; its figures are not real company information.
 
@@ -68,6 +68,8 @@ Results and exports use the **applied controls**. After manual changes, the app 
 
 ## Understand the evidence
 
+Screening, sorting, current facts, watchlists and company comparisons select each ticker’s **latest supplied fiscal date first**. Older profitable or complete rows cannot rescue a latest row that fails a filter or has missing values. Sector and currency choices also come only from latest rows. Notes and manual selections belong to the ticker, while every historical fact keeps its own date and source.
+
 Each company keeps reported facts separate from derived ratios and fixed-rule observations. Growth is `100 × (revenue − prior revenue) / prior revenue`, margin is `100 × net income / revenue`, and leverage is `gross debt / equity`. Missing inputs or a nonpositive denominator leave the ratio undefined with an explanation. A negative equity value is never turned into misleading negative leverage.
 
 Thresholds, filtering and sorting use unrounded numbers. Displayed details and reports retain the full computed values and inputs; very small nonzero values use scientific notation rather than displaying as zero. Arithmetic uses IEEE754 numbers and does not claim accounting-ledger precision.
@@ -78,11 +80,23 @@ Money filters identify their currency; monetary sorting refuses mixed-currency m
 
 Rule-based strengths, risks and uncertainties cite only the row's supplied fields and visible formulas. They do not establish investment quality, fair value, future returns or a complete financial outlook. Supplied source links remain unverified.
 
+## Inspect supplied annual history
+
+Opening company evidence shows all accepted annual rows in date order, with their own names, sectors, currencies, five reported amounts and supplied source links. These remain visible even when automatic comparison is unavailable. A history table is horizontally scrollable on small screens.
+
+Historical changes compare **adjacent supplied rows only**. Automatic comparison requires consecutive calendar years, matching fiscal month/day (February 28/29 is allowed), and identical company name, sector and currency. Otherwise a reason is shown and automatic deltas are withheld. This is a conservative alignment rule, not accounting verification: a 52/53-week fiscal calendar, renamed company or changed business classification can require manual comparison. Missing years and missing values are never bridged.
+
+For comparable rows, revenue and gross debt show `current − previous` in currency millions. Relative change is `100 × (current − previous) / previous` only when the previous amount is positive; a zero base can retain an absolute difference while relative change is unavailable. Net-margin changes use **percentage points** between valid per-period margins. No currency conversion or annualization is performed.
+
+Each row’s declared `prior_revenue` remains independent of another uploaded row’s revenue. For example, current revenue 150 and declared prior revenue 120 yield **25% screening growth**. If the preceding stored row reports revenue 100, its separately labeled historical change is **50%**. Both sources remain intact and a disagreement warning is shown; the app does not infer or fix a restatement.
+
+Neutral direction summaries cover **all three to five supplied periods** only when every pair and metric qualifies and no prior-revenue disagreement is present. They distinguish strict increases, strict decreases, unchanged values, and mixed or unchanged intervals. Missing or incomparable data produces an unavailable reason. These are retrospective descriptions, not predictions or investment-quality assessments.
+
 ## Keep and recover work
 
 One notebook is autosaved locally after committed edits. It includes the dataset, applied screen, watchlist, comparisons and notes. Up to 30 edit states fit within an 8 MiB history budget; the immutable dataset is held once. Replacing the universe starts a new history and clears its old annotations only after successful staging and confirmation.
 
-JSON backups are bounded at 4 MiB and validated atomically on import. A plain UTF-8 research report includes effective criteria, source provenance, facts, formulas, observations, comparisons and notes. The report is a readable snapshot; use JSON to reopen an editable notebook.
+JSON backups use schema v2, are bounded at 4 MiB and are validated atomically on import. Valid schema-v1 single-period notebooks migrate in memory with IDs, facts, controls and annotations retained; old records with duplicate tickers remain invalid. The existing browser database location is unchanged. Loading v1 does not rewrite its raw saved record; a subsequent successful save writes v2. A plain UTF-8 research report includes effective criteria, source provenance, facts, formulas, observations, comparisons and notes. A dedicated annual-history appendix retains every supplied period once, including companies excluded by the current screen, with source rows, formulas and comparison reasons. The report is a readable snapshot; use JSON to reopen an editable notebook.
 
 Save failures leave work usable in memory with backup/retry actions. Corrupt or incompatible saved records are retained for raw backup or explicit reset, not replaced by a demo. A raw record that cannot be safely serialized within the bound produces an error rather than an empty backup. Keep downloaded backups for data you need to retain.
 
@@ -96,6 +110,15 @@ npm run test:browser
 
 For system Chromium use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The browser suite reserves port 4271 and uses the production app, real IndexedDB and actual downloaded files. Its storage harness is built only for tests.
 
-Verified locally with **67 unit tests**, ESLint, TypeScript, the production build and **15 production Chromium tests**. Independent arithmetic, source parsing, interpretation, ordering, persistence and full workflow checks verify the tool's processing; they do not verify uploaded financial facts. Browser checks cover native IndexedDB transactions and recovery, real CSV and downloaded reports/backups, import races, unsupported criteria, keyboard and mobile use.
+The original milestone passed 67 unit and 15 production Chromium tests. Annual-history verification now passes **105 unit tests**, ESLint, TypeScript and the production build. Its 20 browser cases passed individually: 19 passed together, then a corrected legacy duplicate fixture and a strengthened annual case passed in a focused run; all 10 native storage cases passed in the combined run. Independent arithmetic, source parsing, interpretation, ordering, persistence and full workflow checks verify the tool's processing; they do not verify uploaded financial facts. Browser checks cover native IndexedDB transactions and recovery, real CSV and downloaded reports/backups, import races, unsupported criteria, keyboard and mobile use.
 
 A single Chromium 151 production-build measurement on Debian 13 used 500 original fictional companies in a 55,529-byte CSV: parsing 13.8 ms, screening 9.9 ms and report creation 54.1 ms. The actual UI rendered all 500 rows in 274 ms and downloaded a 593,257-byte report retaining source line 501. These are local sample measurements, not a worst-case 2 MiB benchmark or a device-performance guarantee. See [runtime-verification.json](docs/runtime-verification.json) for exact measurements and limitations.
+
+
+For a reproducible maximum-bound annual-history fixture and independent arithmetic check:
+
+```sh
+node --experimental-strip-types scripts/annual-history-smoke.ts
+```
+
+The command writes original fictional CSV, schema-v2 JSON, a complete report and measured results into a new temporary directory; it never fetches the supplied source links. CI runs this check too. [Annual-history evidence](docs/2026-10-04-annual-history-verification.json) records an exact 2 MiB CSV with 500 annual rows across 100 tickers, five periods each in deliberately unsorted source order, and long retained source links. Node parsed it in 201 ms and built the 3,518,575-byte report in 245 ms. Real Chromium staged it in 289 ms, published 100 current cards in 466 ms, and downloaded a 3,521,695-byte report after a watchlist/note edit. All 500 annual appendix blocks and source row 501 were retained. Native IndexedDB reopen reproduced the downloaded notebook exactly; desktop/mobile layouts and keyboard table scrolling passed with zero external requests or page errors. These are single-runtime measurements of this fixture, not device-performance or financial-accuracy guarantees.

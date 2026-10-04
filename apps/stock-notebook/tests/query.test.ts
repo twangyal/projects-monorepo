@@ -74,3 +74,15 @@ test('valid large six-decimal thresholds roundtrip and returned screens are deta
   result.screen.filters[0]!.value = 1;
   assert.equal(parseQuery('companies with revenue above 543113052.487179 million USD', data).screen.filters[0]!.value, 543113052.487179);
 });
+
+test('interpretation explicitly selects latest supplied periods and historical-only vocabulary is rejected', () => {
+  const history: Dataset = { ...data, companies: [
+    { ...data.companies[0]!, fiscalDate: '2024-12-31', sector: 'Former sector', currency: 'CAD', sourceLine: 2 },
+    { ...data.companies[0]!, fiscalDate: '2025-12-31', sector: 'Current sector', currency: 'USD', sourceLine: 3 },
+  ] };
+  const result = parseQuery('companies in "Current sector" using currency USD', history);
+  assert.match(result.interpretation.join('\n'), /latest supplied annual period.*ticker/i);
+  for (const query of ['companies in "Former sector"', 'companies using currency CAD', 'companies with revenue above 1 million CAD']) {
+    assert.throws(() => parseQuery(query, history));
+  }
+});

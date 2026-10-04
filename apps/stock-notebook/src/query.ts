@@ -68,7 +68,7 @@ class Parser {
 }
 
 function interpretation(screen: Screen): string[] {
-  const result = [screen.sector === null ? 'All sectors' : `Sector: ${screen.sector}`,
+  const result = ['Use the latest supplied annual period for each ticker before applying filters', screen.sector === null ? 'All sectors' : `Sector: ${screen.sector}`,
     screen.currency === null ? 'All declared currencies; no currency conversion' : `Currency: ${screen.currency}`];
   const name = (metric: Metric): string => metrics.find(([, key]) => key === metric)![0];
   for (const filter of screen.filters) {

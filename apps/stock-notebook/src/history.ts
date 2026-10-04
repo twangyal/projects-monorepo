@@ -1,4 +1,4 @@
-import { LIMITS, type Dataset, type EditState, type Notebook } from './types.ts';
+import { LIMITS, NOTEBOOK_SCHEMA_VERSION, type Dataset, type EditState, type Notebook } from './types.ts';
 import { validateNotebook } from './model.ts';
 
 interface Entry { json: string; bytes: number }
@@ -19,7 +19,7 @@ export class NotebookHistory {
   }
   private snapshot(index: number): Notebook {
     const state = JSON.parse(this.states[index].json) as EditState;
-    return { schemaVersion: 1, id: this.id, dataset: JSON.parse(this.datasetJson) as Dataset, ...state };
+    return { schemaVersion: NOTEBOOK_SCHEMA_VERSION, id: this.id, dataset: JSON.parse(this.datasetJson) as Dataset, ...state };
   }
   get current(): Notebook { return this.snapshot(this.index); }
   get canUndo(): boolean { return this.index > 0; }

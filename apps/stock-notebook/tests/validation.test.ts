@@ -70,3 +70,21 @@ test('screen canonicalization checks exact filters, currency units, sectors and 
   assert.equal(validateScreen(screen({ filters: Array.from({ length: 16 }, (_, i) => ({ metric: 'growthPct', operator: 'gt', value: i, currency: null })) }), data).filters.length, 16);
   assert.throws(() => validateScreen(screen({ filters: Array.from({ length: 17 }, (_, i) => ({ metric: 'growthPct', operator: 'gt', value: i, currency: null })) }), data));
 });
+
+test('annual rows accept five distinct periods per ticker without reordering source provenance', () => {
+  const years = [2026, 2023, 2025, 2022, 2024];
+  const source = dataset(years.map((year, i) => company({ ticker: i % 2 ? 'alpha' : 'ALPHA', fiscalDate: `${year}-01-01`, sourceLine: i + 2 })));
+  const validated = validateDataset(source, TODAY);
+  assert.deepEqual(validated.companies.map(row => [row.ticker, row.fiscalDate, row.sourceLine]), years.map((year, i) => ['ALPHA', `${year}-01-01`, i + 2]));
+  validated.companies[0].revenue = 999; assert.equal(source.companies[0].revenue, 120);
+  assert.throws(() => validateDataset(dataset([...source.companies, company({ fiscalDate: '2021-01-01', sourceLine: 7 })]), TODAY));
+  assert.throws(() => validateDataset(dataset([company(), company({ ticker: ' alpha ', sourceLine: 3 })]), TODAY));
+  assert.throws(() => validateDataset(dataset([...source.companies].reverse()), TODAY));
+});
+
+test('current filter vocabulary comes only from the latest annual row for each ticker', () => {
+  const source = dataset([company({ sector: 'Old sector', currency: 'EUR', fiscalDate: '2024-01-01' }), company({ sector: 'Current sector', currency: 'USD', fiscalDate: '2026-01-01', sourceLine: 3 })]);
+  assert.equal(validateScreen(screen({ sector: 'current sector', currency: 'USD' }), source).sector, 'Current sector');
+  for (const patch of [{ sector: 'Old sector' }, { currency: 'EUR' }, { filters: [{ metric: 'revenue', operator: 'gt', value: 1, currency: 'EUR' }] }]) assert.throws(() => validateScreen({ ...screen(), ...patch }, source));
+  assert.equal(validateScreen(screen({ filters: [{ metric: 'netIncome', operator: 'gt', value: 0, currency: null }] }), source).filters.length, 1);
+});

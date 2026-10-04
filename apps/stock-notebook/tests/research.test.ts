@@ -105,3 +105,30 @@ test('all direct research APIs enforce supplied shapes, dates and financial boun
   assert.throws(() => screenDataset(dataset(), screen({ filters: [{ metric: 'netIncome', operator: 'gt', value: 1, currency: null }] }), today));
   assert.throws(() => compareCompanies(dataset(), ['PRIVATE_INPUT'], today), error => error instanceof Error && !error.message.includes('PRIVATE_INPUT'));
 });
+
+test('latest rows are chosen before every financial filter and stale/missing counts count companies once', () => {
+  const data = dataset([
+    { ticker: 'A', fiscalDate: '2020-12-31', revenue: 200, netIncome: 20, currency: 'EUR', sector: 'Legacy' },
+    { ticker: 'B', revenue: 200 },
+    { ticker: 'A', fiscalDate: '2025-12-31', revenue: null, netIncome: -1 },
+  ]);
+  const result = screenDataset(data, screen({ filters: [{ metric: 'revenue', operator: 'gt', value: 100, currency: 'USD' }] }), today);
+  assert.deepEqual(result.rows.map(row => row.company.ticker), ['B']);
+  assert.equal(result.excludedStale, 0); assert.equal(result.excludedMissing, 1);
+  assert.deepEqual(screenDataset(data, screen({ includeStale: true, filters: [{ metric: 'netIncome', operator: 'gt', value: 0, currency: null }] }), today).rows.map(row => row.company.ticker), ['B']);
+  assert.deepEqual(screenDataset(data, screen({ sortBy: 'revenue', includeStale: true }), today).rows.map(row => row.company.ticker), ['B', 'A']);
+});
+
+test('current comparison uses latest reported identity and its own prior revenue without historical fallback', () => {
+  const data = dataset([
+    { ticker: 'A', fiscalDate: '2024-12-31', name: 'Older name', currency: 'EUR', revenue: 100 },
+    { ticker: 'A', fiscalDate: '2025-12-31', name: 'Current name', revenue: 150, priorRevenue: 120 },
+    { ticker: 'B', revenue: null },
+  ]);
+  const result = compareCompanies(data, ['B', 'A'], today);
+  assert.equal(result.rows[1]!.company.name, 'Current name');
+  assert.equal(result.rows[1]!.derived.growthPct, 25);
+  assert.equal(result.rows[0]!.company.revenue, null);
+  assert.equal(result.monetaryComparable, true); assert.deepEqual(result.warnings, []);
+  result.rows[1]!.company.revenue = 0; assert.equal(data.companies[1]!.revenue, 150);
+});

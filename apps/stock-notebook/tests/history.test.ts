@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NotebookHistory } from '../src/history.ts';
-import { createNotebook, editState } from '../src/model.ts';
+import { createNotebook, editState, validateNotebook } from '../src/model.ts';
 import { LIMITS } from '../src/types.ts';
 import { company, dataset, screen, TODAY } from './model-fixtures.ts';
 
@@ -14,6 +14,23 @@ test('history detaches snapshots, preserves redo across no-ops and discards it a
   assert.equal(history.redo(TODAY).title, 'Second'); history.undo(TODAY);
   const branch = history.current; branch.watchlist = ['ALPHA']; history.commit(branch, TODAY); assert.equal(history.canRedo, false);
   assert.deepEqual(history.redo(TODAY).watchlist, ['ALPHA']);
+});
+
+test('legacy migration and multi-period undo emit v2 while retaining immutable source rows', () => {
+  const original = createNotebook(dataset(), TODAY);
+  const migrated = validateNotebook({ ...original, schemaVersion: 1 }, TODAY);
+  const legacyHistory = new NotebookHistory(migrated, TODAY);
+  assert.equal(legacyHistory.current.schemaVersion, 2);
+  const source = dataset([company({ fiscalDate: '2026-01-01' }), company({ fiscalDate: '2024-01-01', sourceLine: 3 })]);
+  const history = new NotebookHistory(createNotebook(source, TODAY), TODAY);
+  const baseline = history.current;
+  history.commit({ ...baseline, notes: [{ ticker: 'ALPHA', text: 'All periods share this note' }], watchlist: ['ALPHA'] }, TODAY);
+  assert.equal(history.undo(TODAY).schemaVersion, 2);
+  assert.deepEqual(history.current.dataset.companies, baseline.dataset.companies);
+  assert.deepEqual(history.redo(TODAY).notes, [{ ticker: 'ALPHA', text: 'All periods share this note' }]);
+  const changed = history.current; changed.dataset.companies[1].revenue = 999;
+  assert.throws(() => history.commit(changed, TODAY));
+  assert.deepEqual(history.current.dataset.companies, baseline.dataset.companies);
 });
 
 test('history cannot alter dataset or notebook identity and failures preserve state/cursor', () => {

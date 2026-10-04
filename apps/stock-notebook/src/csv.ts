@@ -27,7 +27,7 @@ function records(text: string): string[][] {
     field();
     if (cells.length === 1 && !cells[0]) csvError(line, 'blank records are not allowed');
     rows.push(cells); cells = [];
-    if (rows.length > LIMITS.companies + 1) csvError(line, 'at most 500 company records are allowed');
+    if (rows.length > LIMITS.companies + 1) csvError(line, 'at most 500 annual records are allowed');
     line++;
   }
   for (let index = 0; index < text.length; index++) {
@@ -79,8 +79,8 @@ export function parseCsv(bytes: Uint8Array, fileName: string, today: string): Cs
   if (text.startsWith('\uFEFF')) text = text.slice(1);
   const rows = records(text), header = rows.shift();
   if (!header || header.length !== HEADERS.length || header.some((value, index) => value !== HEADERS[index])) throw new Error('CSV header must match the eleven documented columns in order.');
-  if (!rows.length) throw new Error('CSV must contain at least one company record.');
-  const tickers = new Set<string>();
+  if (!rows.length) throw new Error('CSV must contain at least one annual record.');
+  const periods = new Map<string, Set<string>>();
   const companies = rows.map((fields, index): Company => {
     const line = index + 2;
     if (fields.length !== HEADERS.length) csvError(line, 'expected exactly eleven columns');
@@ -94,8 +94,11 @@ export function parseCsv(bytes: Uint8Array, fileName: string, today: string): Cs
     let company: Company;
     try { company = validateCompany(candidate, date); }
     catch { return csvError(line, 'invalid reported facts, date, identity or source link'); }
-    if (tickers.has(company.ticker)) csvError(line, 'duplicate normalized ticker');
-    tickers.add(company.ticker);
+    const dates = periods.get(company.ticker) ?? new Set<string>();
+    if (dates.has(company.fiscalDate)) csvError(line, 'duplicate normalized ticker and fiscal date');
+    if (dates.size >= LIMITS.periodsPerTicker) csvError(line, 'at most five annual periods per ticker are allowed');
+    dates.add(company.fiscalDate);
+    periods.set(company.ticker, dates);
     return company;
   });
   return { fileName: name, companies };

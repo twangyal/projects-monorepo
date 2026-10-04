@@ -113,3 +113,44 @@ test('exact byte limit, terminal blank field and Unicode text have real data sem
 test('Unicode identities cannot become ASCII tickers by case expansion', () => {
   for (const ticker of ['ß', 'ı', 'ſ', 'AK']) assert.throws(() => parse([row(ticker)]));
 });
+
+test('annual periods accept normalized ticker across distinct dates and preserve physical source order', () => {
+  const years = [2024, 2022, 2025, 2021, 2023];
+  const rows = years.map((year, index) => {
+    const cells = row(index % 2 ? ' alfa ' : 'ALFA');
+    cells[4] = `${year}-12-31`; cells[5] = String(100 + index);
+    return cells;
+  });
+  const preview = parse(rows);
+  assert.deepEqual(preview.companies.map(company => company.ticker), Array(5).fill('ALFA'));
+  assert.deepEqual(preview.companies.map(company => company.fiscalDate), years.map(year => `${year}-12-31`));
+  assert.deepEqual(preview.companies.map(company => company.sourceLine), [2, 3, 4, 5, 6]);
+  const dataset = createDataset(preview, TODAY);
+  assert.deepEqual(dataset.companies, preview.companies);
+  preview.companies[0].revenue = 1;
+  assert.equal(dataset.companies[0].revenue, 100);
+});
+
+test('duplicate normalized ticker/date and sixth annual period reject the entire CSV with safe row guidance', () => {
+  const first = row('alfa'), sameDate = row(' ALFA ');
+  sameDate[5] = '999';
+  assert.throws(() => parse([first, sameDate]), /CSV row 3: duplicate normalized ticker and fiscal date/);
+  const six = Array.from({ length: 6 }, (_, index) => {
+    const cells = row(index % 2 ? 'alfa' : 'ALFA'); cells[4] = `${2020 + index}-12-31`; return cells;
+  });
+  assert.throws(() => parse(six), /CSV row 7: at most five annual periods per ticker/);
+  assert.throws(() => createDataset({ fileName: 'annual.csv', companies: six.map((cells, index) => ({
+    ...parse([cells]).companies[0], sourceLine: index + 2,
+  })) }, TODAY));
+});
+
+test('500 raw annual rows from 100 tickers remain bounded independently of unique-company count', () => {
+  const annual = Array.from({ length: 500 }, (_, index) => {
+    const cells = row(`C${Math.floor(index / 5)}`); cells[4] = `${2025 - index % 5}-12-31`; return cells;
+  });
+  const preview = parse(annual);
+  assert.equal(preview.companies.length, 500);
+  assert.equal(new Set(preview.companies.map(company => company.ticker)).size, 100);
+  assert.equal(preview.companies[499].sourceLine, 501);
+  assert.throws(() => parse([...annual, row('EXTRA')]), /500 annual records/);
+});

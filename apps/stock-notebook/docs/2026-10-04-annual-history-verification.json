@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-04",
+  "environment": {
+    "os": "Debian 13 Linux x86_64",
+    "cpuQuota": 4
+  },
+  "verification": {
+    "unitTests": 105,
+    "independentAnnualOracleCases": 9,
+    "browserCases": 20,
+    "localBrowserRuns": "19 of 20 passed together; one old duplicate-ticker fixture was corrected to duplicate the exact fiscal date, and both affected/strengthened cases then passed. All 10 native storage cases passed in the combined run.",
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "remoteCI": "pending"
+  },
+  "nodeMaximumSmoke": {
+    "date": "2026-10-04",
+    "node": "v24.19.0",
+    "platform": "linux x64",
+    "fixture": {
+      "companies": 100,
+      "annualRows": 500,
+      "periodsPerTicker": 5,
+      "csvBytes": 2097152,
+      "sha256": "43d3c0a8ff7676975a4e62c45015b408c2cf6fa23be75ef3cec2dfa3b176b7c4",
+      "lastSourceLine": 501,
+      "note": "Original fictional data; exact CSV byte bound uses long retained source links and trimmed whitespace padding. No source URL is fetched."
+    },
+    "timings": {
+      "parseCsvMs": 201.25082600000002,
+      "createNotebookMs": 134.50857299999996,
+      "screenMs": 39.683532000000014,
+      "oneCompanyHistoryMs": 21.56229400000001,
+      "serializeMs": 102.51878299999998,
+      "reportMs": 245.25976100000003
+    },
+    "notebookBytes": 1079731,
+    "reportBytes": 3518575,
+    "verified": [
+      "latest period independent of source order",
+      "all raw rows preserved",
+      "exact annual change and direction oracle",
+      "schema v2 JSON roundtrip",
+      "final source row and link retained in report"
+    ],
+    "limitation": "One Node runtime sample with a specific bounded fixture; not a performance guarantee. Browser workflow is measured separately."
+  },
+  "productionBrowserMaximum": {
+    "browser": "151.0.7922.173",
+    "viewportDesktop": [
+      1440,
+      1040
+    ],
+    "viewportMobile": [
+      390,
+      844
+    ],
+    "fixture": {
+      "companies": 100,
+      "annualRows": 500,
+      "periodsPerTicker": 5,
+      "csvBytes": 2097152,
+      "sha256": "43d3c0a8ff7676975a4e62c45015b408c2cf6fa23be75ef3cec2dfa3b176b7c4",
+      "lastSourceLine": 501,
+      "note": "Original fictional data; exact CSV byte bound uses long retained source links and trimmed whitespace padding. No source URL is fetched."
+    },
+    "parseAndStageSeconds": 0.28903149600000005,
+    "publishAnd100CardsSeconds": 0.46572729700000015,
+    "backupBytes": 1079816,
+    "reportBytes": 3521695,
+    "reportDownloadSeconds": 0.3248644140000001,
+    "historyDates": [
+      "2022-06-30",
+      "2023-06-30",
+      "2024-06-30",
+      "2025-06-30",
+      "2026-06-30"
+    ],
+    "pairCount": 4,
+    "reportAnnualBlocks": 500,
+    "nativeIdbReopenExact": true,
+    "rawSourceRowsRetained": 500,
+    "noHorizontalPageOverflow": true,
+    "keyboardHistoryScroll": true,
+    "externalRequests": 0,
+    "pageErrors": 0,
+    "limitation": "One real Chromium production flow using original fictional data; no verification of real financial facts."
+  },
+  "screenshotsReviewed": [
+    "desktop annual formulas and all-period summary",
+    "mobile keyboard-scrollable annual table"
+  ],
+  "limitations": [
+    "Original fictional figures only; no verification of real financial facts or generated analysis.",
+    "Conservative calendar/identity/currency matching withholds some valid real-world comparisons.",
+    "All-period summaries are retrospective, and per-row declared prior revenue remains independent."
+  ]
+}
