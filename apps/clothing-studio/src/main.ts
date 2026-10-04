@@ -12,7 +12,7 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
   <a class="skip-link" href="#workspace">Skip to design workspace</a>
   <header class="topbar"><div class="brand"><span class="brand-mark" aria-hidden="true">✳</span><div><h1>Clothing Studio</h1><p>A little room for your next idea.</p></div></div>
-    <div class="header-actions"><span class="local-badge">LOCAL & PRIVATE</span><button id="new-project" class="quiet">New concept</button><label class="button quiet file-button">Open backup<input id="project-file" type="file" accept=".json,application/json" aria-label="Import project backup"></label><button id="backup" class="dark">Export project backup</button></div></header>
+    <div class="header-actions"><span class="local-badge">LOCAL & PRIVATE</span><button id="new-project" class="quiet">New concept</button><label class="button quiet file-button">Open backup<input id="project-file" type="file" accept=".json,application/json" aria-label="Import project backup"></label><button id="backup" class="dark">Export project backup</button><button id="replace-saved" class="quiet" hidden>Replace saved concept</button></div></header>
   <main id="workspace">
     <div class="workspace-heading"><div><p class="eyebrow">THE CONCEPT WORKSPACE</p><h2>Make something that feels like you.</h2><p>Shape a tee, add your mark, and see your idea in context.</p></div><div class="history-tools"><span id="save-state" role="status">Checking local save…</span><button id="undo" aria-label="Undo" title="Undo (Ctrl or ⌘ Z)">↶</button><button id="redo" aria-label="Redo" title="Redo (Ctrl or ⌘ Shift Z)">↷</button></div></div>
     <div id="message" role="status" aria-live="polite" hidden></div>
@@ -64,6 +64,8 @@ let loadBusy = false;
 let exportBusy = false;
 let unsaved = false;
 let startupTouched = false;
+let saveProtection: 'loading' | 'protected' | 'ready' = 'loading';
+let replacingSaved = false;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let saves = Promise.resolve();
 let gesture: { type: 'sketch' | 'placement'; pointer: number; base: Project; start: Point; stroke?: Stroke } | null = null;
@@ -83,6 +85,8 @@ function renderViews() {
 }
 
 function updateControls() {
+  element('replace-saved').hidden = saveProtection !== 'protected';
+  element<HTMLButtonElement>('replace-saved').disabled = replacingSaved || loadBusy || exportBusy || !!gesture;
   // Active text inputs can temporarily be empty, and retain native selection
   // and undo state while other asynchronous work updates the workspace.
   if (document.activeElement !== input('title') || !startupTouched) input('title').value = project.title;
@@ -101,8 +105,13 @@ function updateControls() {
 
 function scheduleSave() {
   unsaved = true;
-  element('save-state').textContent = 'Saving…';
   clearTimeout(saveTimer);
+  if (saveProtection !== 'ready') {
+    element('save-state').textContent = saveProtection === 'loading' ? 'Checking local save… Current concept stays in memory' : 'Not saved locally · previous concept protected';
+    if (saveProtection === 'protected') message('The previous saved concept is protected. Export your current project backup before explicitly replacing it.', true);
+    return;
+  }
+  element('save-state').textContent = 'Saving…';
   const snapshot = validateProject(project), version = editVersion;
   saveTimer = setTimeout(() => {
     saves = saves.then(() => saveProject(snapshot)).then(() => {
@@ -298,18 +307,34 @@ for (const [id, kind] of [['garment-png', 'garment'], ['preview-png', 'preview']
   finally { exportBusy = false; element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = false; }
 });
 
+element('replace-saved').addEventListener('click', async () => {
+  if (saveProtection !== 'protected' || replacingSaved || loadBusy || exportBusy || gesture) return;
+  if (!window.confirm('Replace the preserved browser concept with your current concept? Export your current project backup first. This replaces the old saved concept.')) return;
+  const snapshot = validateProject(project), version = editVersion;
+  replacingSaved = true; updateControls();
+  const saving = saves.then(() => saveProject(snapshot)); saves = saving.catch(() => {});
+  try {
+    await saving; saveProtection = 'ready';
+    if (version === editVersion) { unsaved = false; element('save-state').textContent = 'Locally saved'; }
+    else scheduleSave();
+    message('Saved concept explicitly replaced. Automatic saving is enabled.');
+  } catch { unsaved = true; element('save-state').textContent = 'Not saved locally · previous concept protected'; message('Could not replace the saved concept. Previous browser data remains protected; export your current project backup.', true); }
+  finally { replacingSaved = false; updateControls(); }
+});
+
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;
 void loadProject().then(saved => {
+  if (!saved) { saveProtection = 'ready'; if (unsaved) scheduleSave(); else element('save-state').textContent = 'Ready for your first idea'; return; }
   if (startupTouched || editVersion !== startupVersion || loadGeneration !== startupGeneration || loadBusy) {
-    if (element('save-state').textContent === 'Checking local save…') element('save-state').textContent = 'Current concept kept';
+    protectSaved('Your active concept was kept. The previous saved concept is protected. Export your current project backup before explicitly replacing it.');
     return;
   }
-  if (saved) { project = saved; history.reset(saved); renderViews(); updateControls(); element('save-state').textContent = 'Locally saved'; }
-  else element('save-state').textContent = 'Ready for your first idea';
+  project = saved; history.reset(saved); saveProtection = 'ready'; renderViews(); updateControls(); element('save-state').textContent = 'Locally saved';
 }).catch(() => {
-  if (editVersion !== startupVersion || startupTouched) return;
-  element('save-state').textContent = 'Local restore unavailable';
-  message('Could not restore the local project. You can open a backup or start a new concept.', true);
+  protectSaved('Could not restore the local project. Previous browser data remains protected. Work in memory and export your current project backup before explicitly replacing it.');
 });
+function protectSaved(text: string) {
+  saveProtection = 'protected'; element('save-state').textContent = 'Not saved locally · previous concept protected'; updateControls(); message(text, true);
+}

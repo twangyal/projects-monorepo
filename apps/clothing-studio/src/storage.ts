@@ -17,8 +17,10 @@ function openDatabase(): Promise<IDBDatabase> {
     }
     let settled = false;
     const request = indexedDB.open(DATABASE_NAME, 1);
+    let upgradeError: DOMException | null = null;
     request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME);
+      try { if (!request.result.objectStoreNames.contains(STORE_NAME)) request.result.createObjectStore(STORE_NAME); }
+      catch (error) { upgradeError = error instanceof DOMException ? error : new DOMException('Could not create project storage.'); request.transaction?.abort(); }
     };
     request.onsuccess = () => {
       if (settled) { request.result.close(); return; }
@@ -26,7 +28,7 @@ function openDatabase(): Promise<IDBDatabase> {
       request.result.onversionchange = () => request.result.close();
       resolve(request.result);
     };
-    request.onerror = () => { settled = true; reject(storageError('open', request.error)); };
+    request.onerror = () => { settled = true; reject(storageError('open', upgradeError ?? request.error)); };
     request.onblocked = () => { settled = true; reject(new Error('Local project storage is blocked by another tab. Close other Clothing Studio tabs and try again.')); };
   });
 }

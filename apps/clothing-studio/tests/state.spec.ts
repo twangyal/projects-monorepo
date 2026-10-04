@@ -38,6 +38,9 @@ async function finishRestore(page: Page) {
   await expect.poll(() => page.evaluate(() => (window as unknown as RestoreWindow).__restoreDecoded)).toBe(true);
 }
 
+
+async function savedTitle(page:Page):Promise<string>{return page.evaluate(async()=>{const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{return await new Promise<string>((resolve,reject)=>{const r=db.transaction('project','readonly').objectStore('project').get('current');r.onsuccess=()=>resolve(r.result.title);r.onerror=()=>reject(r.error);});}finally{db.close();}});}
+
 test('a slow startup restore cannot overwrite text typed before blur', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Concept name').fill('Previously saved');
@@ -48,7 +51,9 @@ test('a slow startup restore cannot overwrite text typed before blur', async ({ 
   await finishRestore(page);
   await expect(page.getByLabel('Concept name')).toHaveValue('My typing in progress');
   await page.getByLabel('Concept name').press('Tab');
-  await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  await expect(page.locator('#save-state')).toContainText('previous concept protected');
+  expect(await savedTitle(page)).toBe('Previously saved');
+  page.once('dialog',d=>d.accept());await page.locator('#replace-saved').click();await expect(page.locator('#save-state')).toHaveText('Locally saved');
 });
 
 test('a slow startup restore cannot replace an active sketch gesture', async ({ page }) => {
@@ -61,7 +66,8 @@ test('a slow startup restore cannot replace an active sketch gesture', async ({ 
   await page.mouse.up();
   await expect(page.locator('#stroke-count')).toHaveText('1 stroke');
   await expect(page.locator('#photo-name')).toHaveText('Sample silhouette');
-  await expect(page.locator('#save-state')).toHaveText('Locally saved');
+  await expect(page.locator('#save-state')).toContainText('previous concept protected');
+  page.once('dialog',d=>d.accept());await page.locator('#replace-saved').click();await expect(page.locator('#save-state')).toHaveText('Locally saved');
 });
 
 test('tall portrait previews remain entirely visible at large desktop widths', async ({ page }) => {
