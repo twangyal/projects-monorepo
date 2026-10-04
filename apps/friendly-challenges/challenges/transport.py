@@ -73,7 +73,7 @@ def _address(bind, port, origin):
     if host_address is not None:
         if host != bind:
             raise TransportError('An IPv4 HTTPS origin must match the bind address.')
-    elif re.fullmatch(r'[0-9]+|0x[0-9a-f]+', host.split('.')[-1]) or any(
+    elif re.fullmatch(r'[0-9]+|0x[0-9a-f]*', host.split('.')[-1]) or any(
         not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?', label) for label in host.split('.')
     ):
         raise TransportError('Use a canonical DNS hostname, not a numeric IPv4 alias.')

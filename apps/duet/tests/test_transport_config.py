@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import unittest
 
-from duet.transport import TransportError, matches_setup, prepare_transport
+from duet.transport import TransportError, _address, matches_setup, prepare_transport
 
 
 class TransportConfigTests(unittest.TestCase):
@@ -72,6 +72,29 @@ class TransportConfigTests(unittest.TestCase):
                 self.prepare(port=port)
         with self.assertRaises(TransportError):
             self.prepare(port=443, origin='https://localhost:443')
+
+    def test_bare_hex_final_labels_are_not_canonical_hostnames(self):
+        for port in [443, 8443]:
+            suffix = '' if port == 443 else ':8443'
+            for host in ['0x', '127.0.0x', 'name.0x']:
+                with self.subTest(port=port, host=host), self.assertRaises(TransportError):
+                    _address('127.0.0.1', port, f'https://{host}{suffix}')
+            for host in ['127.0.0.1', 'music.lan', 'music0x.lan']:
+                with self.subTest(port=port, valid_host=host):
+                    self.assertEqual(_address('127.0.0.1', port, f'https://{host}{suffix}'),
+                                     f'{host}{suffix}')
+
+    def test_configuration_rejects_bare_hex_browser_aliases(self):
+        for port in [443, 8443]:
+            suffix = '' if port == 443 else ':8443'
+            for host in ['0x', '127.0.0x', 'name.0x']:
+                with self.subTest(port=port, host=host), self.assertRaises(TransportError):
+                    self.prepare(port=port, origin=f'https://{host}{suffix}')
+            for host in ['127.0.0.1', 'music.lan', 'music0x.lan']:
+                with self.subTest(port=port, valid_host=host):
+                    config = self.prepare(port=port, origin=f'https://{host}{suffix}')
+                    self.assertEqual(config.authority, f'{host}{suffix}')
+                    self.assertEqual(config.origin, f'https://{host}{suffix}')
 
     def test_setup_file_exact_bytes_modes_and_symlinks(self):
         for content in [b'', b'a' * 63, b'a' * 66, b'A' * 64, b'a' * 64 + b'\r\n', b'a' * 64 + b' ', b'\xef\xbb\xbf' + b'a' * 64]:

@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/112",
+  "change": "In both isolated HTTPS origin validators, recognize the bare 0x final label as a numeric IPv4 alias by changing 0x[0-9a-f]+ to 0x[0-9a-f]*. Existing canonical IPv4 and DNS policy remains unchanged.",
+  "observedBeforeFix": {
+    "method": "Actual pure Python _address helpers and Node WHATWG URL; no service or browser started.",
+    "examples": [
+      {
+        "supplied": "https://0x:8443",
+        "browserCanonical": "https://0.0.0.0:8443"
+      },
+      {
+        "supplied": "https://127.0.0x:8443",
+        "browserCanonical": "https://127.0.0.0:8443"
+      },
+      {
+        "supplied": "https://name.0x:8443",
+        "browser": "rejects URL"
+      }
+    ]
+  },
+  "regressionScope": {
+    "layers": [
+      "actual _address helper",
+      "actual prepare_transport with real temporary OpenSSL-generated certificate/key and bounded mode-0600 setup file"
+    ],
+    "ports": [
+      443,
+      8443
+    ],
+    "rejectedHosts": [
+      "0x",
+      "127.0.0x",
+      "name.0x"
+    ],
+    "validControls": [
+      "127.0.0.1",
+      "music.lan",
+      "music0x.lan"
+    ],
+    "newTestMethodsPerApp": 2
+  },
+  "red": [
+    {
+      "app": "duet",
+      "testMethodsRun": 6,
+      "unittestSeconds": 0.038,
+      "failedRejectionSubtests": 12,
+      "failure": "TransportError not raised for bare hexadecimal final hostname labels",
+      "log": "/tmp/duet112-config-red.log"
+    },
+    {
+      "app": "friendly-challenges",
+      "testMethodsRun": 7,
+      "unittestSeconds": 0.175,
+      "failedRejectionSubtests": 12,
+      "failure": "TransportError not raised for bare hexadecimal final hostname labels",
+      "log": "/tmp/friendly112-config-red.log"
+    }
+  ],
+  "green": [
+    {
+      "app": "duet",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_transport_config.py",
+        "-v"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 0.12590037799964193,
+      "log": "/tmp/duet112-config-green.log",
+      "tail": [
+        "----------------------------------------------------------------------",
+        "Ran 6 tests in 0.056s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "app": "friendly-challenges",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_transport_config.py",
+        "-v"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 0.168016859999625,
+      "log": "/tmp/friendly112-config-green.log",
+      "tail": [
+        "----------------------------------------------------------------------",
+        "Ran 7 tests in 0.068s",
+        "",
+        "OK"
+      ]
+    }
+  ],
+  "staticChecks": [
+    {
+      "app": "duet",
+      "kind": "ruff",
+      "command": [
+        "/tmp/duet-service-checks/bin/ruff",
+        "check",
+        "duet/transport.py",
+        "tests/test_transport_config.py"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 0.007969288999447599,
+      "output": "All checks passed!\n"
+    },
+    {
+      "app": "duet",
+      "kind": "py_compile",
+      "files": [
+        "duet/transport.py",
+        "tests/test_transport_config.py"
+      ],
+      "result": "pass",
+      "bytecodeOutput": "/tmp only"
+    },
+    {
+      "app": "friendly-challenges",
+      "kind": "ruff",
+      "command": [
+        "/tmp/duet-service-checks/bin/ruff",
+        "check",
+        "challenges/transport.py",
+        "tests/test_transport_config.py"
+      ],
+      "exitCode": 0,
+      "wallSeconds": 0.007695585009059869,
+      "output": "All checks passed!\n"
+    },
+    {
+      "app": "friendly-challenges",
+      "kind": "py_compile",
+      "files": [
+        "challenges/transport.py",
+        "tests/test_transport_config.py"
+      ],
+      "result": "pass",
+      "bytecodeOutput": "/tmp only"
+    }
+  ],
+  "sourceSha256": {
+    "apps/duet/duet/transport.py": "8d28fe00626a6c39c1c8ac96ba8ab92e44904f899c0bd5975c275b4ac7e25894",
+    "apps/duet/tests/test_transport_config.py": "f7b17e854bf874cdd091cd7729b5fb68823c66a6322f758e58529cf23ae7c435",
+    "apps/friendly-challenges/challenges/transport.py": "b5d5673f4848a1b1cf33a8dd99e2ae03f752e3f682b8d29f8b50134e7ac7cde4",
+    "apps/friendly-challenges/tests/test_transport_config.py": "9923978139ee3673abf0f4c0540527428f8dbc3995834fa8b3bff3eeb30ab7fa"
+  },
+  "evidenceFiles": {
+    "/tmp/duet112-config-red.log": {
+      "bytes": 11868,
+      "sha256": "a11565c8ed6e14cd724fb98709a8a15c4b4508a54a0794d3cf29875c953a9cb1"
+    },
+    "/tmp/friendly112-config-red.log": {
+      "bytes": 12224,
+      "sha256": "6791cff9270ca4564ba8c39d73e4685eb0d924b6f9f5e8a971ce7d38919edefa"
+    },
+    "/tmp/duet112-config-green.log": {
+      "bytes": 1080,
+      "sha256": "a47cc3104d7d0459b3d329b3e953dc7d5a7f66fc93509f2359cf89aa6ebcc539"
+    },
+    "/tmp/friendly112-config-green.log": {
+      "bytes": 1256,
+      "sha256": "4a72a4e9860f45f6a7f36133edf81c544ef5e6dfd962216fb27989ee5adee899"
+    },
+    "/tmp/duet-friendly-bare-hex-origin-review.json": {
+      "bytes": 1636,
+      "sha256": "55ee91bca1a80864cc68f27e6cb30d1da9fd7996b3529c3d9fca6e3293d7747a"
+    },
+    "/tmp/origin112-static-results.json": {
+      "bytes": 1027,
+      "sha256": "83929044ee3cec0c988e5c6d4bc0c61a6f8a904c438d7e316ef18672cca544ca"
+    }
+  },
+  "limits": [
+    "Targeted configuration suites only; no full Python suites, native browser tests, services, builds or CI run by this agent.",
+    "Only the two transport modules and their existing configuration test files were modified; Motion reviewed files remain untouched.",
+    "No claim of physical LAN-device verification."
+  ],
+  "ci": {
+    "status": "pending publication",
+    "expectedPythonCounts": {
+      "duet": 185,
+      "friendly-challenges": 196
+    },
+    "unchangedTypeScriptAndNativeCounts": {
+      "duet": [
+        6,
+        30
+      ],
+      "friendly-challenges": [
+        42,
+        34
+      ]
+    }
+  }
+}
