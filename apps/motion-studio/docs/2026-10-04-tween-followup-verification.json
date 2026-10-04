@@ -1,0 +1,127 @@
+{
+  "issue": 88,
+  "pullRequest": 89,
+  "date": "2026-10-04",
+  "implementationHead": "5fd9a723b4f0dd274a8e24b4c211c9183d155536",
+  "mergedCommit": "47ec1d2666389a346712c34ece362be75e2d3029",
+  "scope": "Independent verification and repairs for the completed geometric drawing in-between editor.",
+  "repairs": [
+    "All-coincident vector paths render the same round filled dot as single-point artwork in preview, PNG and GIF.",
+    "Nearer-endpoint affine scalar evaluation preserves legal unequal coordinate/width values one floating-point step apart without clamping or widening limits."
+  ],
+  "ci": {
+    "runId": 37216786569,
+    "jobId": 111478801346,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216786569",
+    "event": "pull_request",
+    "checkout": "0db15d8f7be2824d2cfa6d0c5633670e0476b804",
+    "checkoutKind": "synthetic merge of 5fd9a723 into c730c485",
+    "unit": {
+      "passed": 130,
+      "failed": 0
+    },
+    "browser": {
+      "passed": 80,
+      "failed": 0,
+      "seconds": 45.6
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "precedingEvidence": {
+    "isolatedFix": {
+      "head": "6c2fc5c74bf92ad81dee6141f312c010d90a696d",
+      "pushRun": 37216473657,
+      "unit": 87,
+      "browser": 65
+    },
+    "combinedDotFix": {
+      "head": "186800a3f67523cf0f1d5049d152a00bdc657bf7",
+      "prRun": 37216633532,
+      "unit": 129,
+      "browser": 80
+    }
+  },
+  "failures": [
+    {
+      "head": "d5d7ac448ef644f11b517d7b6ea04bf57ff5c0e5",
+      "run": 37216228655,
+      "passed": 62,
+      "failed": 3,
+      "reason": "Native canvas, PNG and GIF sampled dots disappear."
+    },
+    {
+      "head": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "run": 37216403525,
+      "passed": 74,
+      "failed": 2,
+      "reason": "Same missing sampled dots in full editor and exports."
+    },
+    {
+      "head": "e4b1bafbb427912dd6ea7d0311840afe55e6b7dc",
+      "reason": "New verification script missing lint declarations for Node globals; corrected before final check."
+    },
+    {
+      "test": "unequal one-ulp boundary coordinates",
+      "reason": "Legal weighted arithmetic exceeded coordinate/width bounds; failing regression preceded affine evaluation repair."
+    }
+  ],
+  "local": {
+    "node": "24.19.0",
+    "check": "npm run check",
+    "unitPassed": 130,
+    "unitFailed": 0,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "browser": "Unavailable: admitted Chromium downloads were truncated; native acceptance comes from CI.",
+    "limits": {
+      "node": "v24.19.0",
+      "measurements": [
+        {
+          "pairs": 4,
+          "count": 22,
+          "finalCels": 24,
+          "finalStrokes": 100,
+          "finalPoints": 10000,
+          "sourceBytes": 70346,
+          "candidateBytes": 321862,
+          "sourceSha256": "d8168be65fea526b1071a845ee0bec68dfcb44ff6cdeca7658ede289c8433569",
+          "candidateSha256": "d8bbb9dd70a7ef0859f166b212349722e7141110a5ccf5b0a7f88ccdf2e05c03",
+          "buildMilliseconds": 24.343536999999998,
+          "applyMilliseconds": 31.46555699999999
+        },
+        {
+          "pairs": 8,
+          "count": 10,
+          "finalCels": 12,
+          "finalStrokes": 100,
+          "finalPoints": 10000,
+          "sourceBytes": 78786,
+          "candidateBytes": 309835,
+          "sourceSha256": "f45cad985f3308c917cfbfd318fc8bff7e7b1f9fd03a62c018d2c6e3e570b41b",
+          "candidateSha256": "551a99a6ade44b7d211f04cebc61aa9a631da8c5257d8d98498086c2544a43ab",
+          "buildMilliseconds": 21.96035999999998,
+          "applyMilliseconds": 25.79431600000001
+        }
+      ],
+      "limits": [
+        "Pure vector fixtures only; no raster assets, native UI, browser persistence, PNG/GIF export or peak-memory measurement.",
+        "Timings are single local observations, not latency guarantees."
+      ]
+    }
+  },
+  "review": {
+    "result": "No remaining concrete bug found",
+    "coreCases": 49,
+    "extraBoundaryPaths": 50000,
+    "claim": "Deterministic finite checks only, not a universal numerical or artistic-quality guarantee."
+  },
+  "integration": "Astra's existing editor/core/preview and original tests were adopted; alternate preliminary helpers remain only in history. No main merge or deployment.",
+  "limits": [
+    "Pure maximum script has no raster assets or native persistence/export claim.",
+    "Earlier workspace/maximum media acceptance belongs to the existing drawing-tweens verification record; it was not rerun locally here.",
+    "Existing schema 2, project bounds, RGB rounding and endpoint records remain unchanged."
+  ]
+}
