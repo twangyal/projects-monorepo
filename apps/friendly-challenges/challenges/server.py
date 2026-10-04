@@ -20,6 +20,7 @@ MAX_RESPONSE = 1024 * 1024
 MAX_STATIC = 8 * 1024 * 1024
 HEADER_BYTES = 16 * 1024
 SOCKET_TIMEOUT = 5
+HEADER_TIMEOUT = 15
 BODY_TIMEOUT = 15
 MAX_CONNECTIONS = 16
 ID = r'[0-9a-f]{32}'
@@ -144,6 +145,38 @@ def create_server(data_dir: Path, port: int = 8767, *, dist_dir: Path | None = N
     return ChallengeServer(data_dir, port, dist_dir, now)
 
 
+class _HeaderDeadlineReader:
+    """Bound the complete request line + headers, including continuously arriving bytes."""
+
+    def __init__(self, stream, connection):
+        self.stream = stream
+        self.connection = connection
+        self.deadline = time.monotonic() + HEADER_TIMEOUT
+
+    def readline(self, limit=-1):
+        line = bytearray()
+        while limit < 0 or len(line) < limit:
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Request headers timed out.')
+            self.connection.settimeout(min(SOCKET_TIMEOUT, remaining))
+            # BufferedReader.readline may perform arbitrarily many socket reads,
+            # each resetting the socket inactivity timeout. One-byte read1 owns
+            # at most one read and cannot consume any following request body.
+            byte = self.stream.read1(1)
+            if not byte:
+                break
+            line.extend(byte)
+            if byte == b'\n':
+                break
+        return bytes(line)
+
+    def __getattr__(self, name):
+        # Body reads and stream cleanup retain BufferedReader behavior. The
+        # body already has its own independent inactivity/total deadlines.
+        return getattr(self.stream, name)
+
+
 class _HeaderLimit:
     def __init__(self, stream):
         self.stream = stream
@@ -166,6 +199,7 @@ class Handler(BaseHTTPRequestHandler):
     def setup(self):
         super().setup()
         self.connection.settimeout(SOCKET_TIMEOUT)
+        self.rfile = _HeaderDeadlineReader(self.rfile, self.connection)
 
     def log_message(self, *args):
         pass
@@ -177,6 +211,7 @@ class Handler(BaseHTTPRequestHandler):
             return super().parse_request()
         finally:
             self.rfile = stream
+            self.connection.settimeout(SOCKET_TIMEOUT)
 
     def handle_expect_100(self):
         self._problem(417, 'invalid_request', 'Expect headers are not supported.')
