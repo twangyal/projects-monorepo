@@ -10,7 +10,7 @@ import sys
 import tempfile
 
 from .context import ContextRecords, load_context
-from .reader import inspect_repository, list_functions
+from .reader import inspect_repository, list_files, list_functions
 from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
 
@@ -87,10 +87,15 @@ def main(argv: list[str] | None = None) -> int:
                                   description="Inspect a committed range or Python, JavaScript or TypeScript function. JavaScript/TypeScript selection requires the optional javascript extra.")
     functions = commands.add_parser("functions", help="List functions in committed Python, JavaScript or TypeScript source.",
                                     description="List committed Python functions or optional JavaScript/TypeScript functions. Install the javascript extra for JavaScript/TypeScript selection.")
-    for command in (explain, functions):
+    files = commands.add_parser("files", help="Discover committed source file candidates without parsing them.")
+    for command in (explain, functions, files):
         command.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
         command.add_argument("--ref", default="HEAD", help="Committed revision (default: HEAD).")
+    for command in (explain, functions):
         command.add_argument("--file", required=True, help="Exact repository-relative file path.")
+    files.add_argument("--directory", default="", help="Exact repository-relative directory prefix (default: whole tree).")
+    files.add_argument("--language", choices=("all", "python", "javascript", "typescript"), default="all")
+    files.add_argument("--format", choices=("text", "json"), default="text")
     selection = explain.add_mutually_exclusive_group(required=True)
     selection.add_argument("--lines", type=_lines, metavar="START:END")
     selection.add_argument("--function", metavar="QUALIFIED_NAME", help="Exact qualified function name from the functions command.")
@@ -102,12 +107,30 @@ def main(argv: list[str] | None = None) -> int:
     functions.add_argument("--format", choices=("text", "json"), default="text")
     args = parser.parse_args(argv)
     try:
+        if args.command == "files":
+            catalog = list_files(args.repo, ref=args.ref, directory=args.directory, language=args.language)
+            if args.format == "json":
+                text = json.dumps(asdict(catalog), ensure_ascii=True, indent=2) + "\n"
+            else:
+                rows = [f"{json.dumps(catalog.repo_name)} at {catalog.revision}",
+                        "Source candidates (suffix/size only; contents are not parsed):"]
+                rows.extend(f"{item.language}\t{item.size_bytes} bytes\t{json.dumps(item.path)}"
+                            for item in catalog.files)
+                if not catalog.files:
+                    rows.append("No supported source candidates found for these filters.")
+                if catalog.omitted_non_utf8_paths:
+                    rows.append(f"Omitted {catalog.omitted_non_utf8_paths} regular file paths that are not UTF-8.")
+                text = "\n".join(rows) + "\n"
+            if len(text.encode("utf-8")) > MAX_REPORT_BYTES:
+                raise ValueError("Source listing exceeds 8 MiB; narrow --directory or --language.")
+            sys.stdout.write(text)
+            return 0
         if args.command == "functions":
             catalog = list_functions(args.repo, args.file, ref=args.ref)
             if args.format == "json":
                 text = json.dumps(asdict(catalog), ensure_ascii=True, indent=2) + "\n"
             else:
-                rows = [f"{catalog.path} at {catalog.revision}"]
+                rows = [f"{json.dumps(catalog.path)} at {catalog.revision}"]
                 for function in catalog.functions:
                     note = " (over 200 lines; select a smaller --lines range)" if function.end_line - function.start_line + 1 > 200 else ""
                     rows.append(f"{function.start_line}:{function.end_line}\t{function.kind}\t{function.qualified_name}{note}")

@@ -50,6 +50,24 @@ class FunctionCatalog:
 
 
 @dataclass
+class SourceFile:
+    path: str
+    language: str
+    size_bytes: int
+
+
+@dataclass
+class FileCatalog:
+    repo_name: str
+    revision: str
+    requested_ref: str
+    directory: str
+    language: str
+    files: list[SourceFile]
+    omitted_non_utf8_paths: int = 0
+
+
+@dataclass
 class ContextEntry:
     """Unverified supplied text, associated only with an existing report commit."""
     commit: str
