@@ -144,6 +144,8 @@ test('an invalid stored record is reported and preserved instead of silently rep
   expect(await readStored(page)).toEqual(corrupt);
   await expect(page.locator('#project-title')).not.toHaveValue('Unrecognized stored project');
   await expect(page.locator('#project-title')).toBeEnabled();
+  await page.clock.install();await setTitle(page,'New work stays in memory');await page.clock.runFor(1000);
+  expect(await readStored(page)).toEqual(corrupt);
 });
 
 test('blocked IndexedDB keeps the animation editable and JSON backup available', async ({ page }) => {
