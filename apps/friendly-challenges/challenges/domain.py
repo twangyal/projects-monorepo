@@ -360,7 +360,45 @@ def apply_command(state, role, action, payload, now, entity_id=None):
     _event(state, role, kind, details, now)
 
 
-def _replay(events, challenge_id):
+def validate_image_descriptor(value):
+    """Admit and detach the exact descriptor of retained normalized JPEG bytes."""
+    fields(value, 'mime bytes width height sha256', 'Image descriptor')
+    choice(value['mime'], ('image/jpeg',), 'Image format')
+    size = integer(value['bytes'], 'Image bytes', 1, 524288)
+    width = integer(value['width'], 'Image width', 1, 1024)
+    height = integer(value['height'], 'Image height', 1, 1024)
+    digest = value['sha256']
+    require(type(digest) is str and TOKEN.fullmatch(digest) is not None,
+            'Image digest must be a lowercase SHA-256 value.')
+    return dict(mime='image/jpeg', bytes=size, width=width, height=height, sha256=digest)
+
+
+def apply_image_evidence(state, role, payload, image, now, entity_id=None):
+    """Append one image evidence entry and event to transaction-local state."""
+    fields(payload, 'revision text url', 'Image evidence command')
+    revision = integer(payload['revision'], 'Revision', 1)
+    require(revision == state['revision'],
+            'The challenge changed. Refresh and review before trying again.', 'conflict', 409)
+    require(state['status'] not in TERMINAL,
+            'This challenge has ended; its record is immutable.', 'conflict', 409)
+    _role(role, PARTIES)
+    _state(state, ('active', 'disputed'))
+    require(len(state['evidence']) < 40,
+            'The 40-entry evidence allowance has been used.', 'limit', 409)
+    require(sum('image' in entry for entry in state['evidence']) < 8,
+            'The 8-image evidence allowance has been used.', 'limit', 409)
+    descriptor = validate_image_descriptor(image)
+    receipt = integer(now, 'Server time')
+    evidence = dict(id=_entity_id(state, entity_id), author=role,
+                    text=text(payload['text'], 1000, 'Evidence'), url=validate_url(payload['url']),
+                    createdAt=receipt, late=receipt >= state['terms']['deadline'], image=descriptor)
+    state['evidence'].append(evidence)
+    _event(state, role, 'evidence_image_added', dict(evidence=evidence), receipt)
+
+
+def _replay(events, challenge_id, schema_version=1):
+    require(type(schema_version) is int and schema_version in (1, 2),
+            'Unknown private record schema.')
     require(type(events) is list and 1 <= len(events) <= 256, 'Invalid stored event count.')
     first = fields(events[0], 'seq at actor kind details', 'Event')
     details = fields(first['details'], 'name terms termsVersion', 'Creation event')
@@ -395,6 +433,14 @@ def _replay(events, challenge_id):
                 expected = keys + (' termsVersion' if kind == 'terms_edited' else '')
                 fields(details, expected, 'Event details')
                 payload = {key: details[key] for key in keys.split()}
+            elif kind == 'evidence_image_added':
+                require(schema_version == 2, 'Image evidence requires private record schema 2.')
+                fields(details, 'evidence', 'Event details')
+                entry = fields(details['evidence'], 'id author text url createdAt late image',
+                               'Image evidence')
+                apply_image_evidence(state, role,
+                                     dict(revision=state['revision'], text=entry['text'],
+                                          url=entry['url']), entry['image'], now, entry['id'])
             elif kind in ('evidence_added', 'result_proposed', 'void_offered', 'arbiter_nominated'):
                 action, key, keys = {
                     'evidence_added': ('evidence', 'evidence', 'text url'),
@@ -409,7 +455,9 @@ def _replay(events, challenge_id):
                 payload = {field: entry[field] for field in keys.split()}
             else:
                 require(False, 'Unknown stored event kind.')
-            apply_command(state, role, action, dict(revision=state['revision'], **payload), now, entity_id)
+            if kind != 'evidence_image_added':
+                apply_command(state, role, action, dict(revision=state['revision'], **payload),
+                              now, entity_id)
         require(encode_json(state['events'][-1]) == encode_json(event), 'Stored event disagrees with its transition.')
         if kind == 'invite_issued' and details['seat'] == 'arbiter':
             arbiter_invite_live = True
@@ -422,10 +470,11 @@ def validate_record(record):
     """Replay the bounded audit to detect incoherent persisted snapshots/counters."""
     try:
         fields(record, 'schemaVersion state hashes', 'Private record')
-        require(type(record['schemaVersion']) is int and record['schemaVersion'] == 1, 'Unknown private record schema.')
+        require(type(record['schemaVersion']) is int and record['schemaVersion'] in (1, 2),
+                'Unknown private record schema.')
         state = record['state']
         require(type(state) is dict and 'id' in state and 'events' in state, 'Invalid stored state.')
-        replayed = _replay(state['events'], identifier(state['id']))
+        replayed = _replay(state['events'], identifier(state['id']), record['schemaVersion'])
         require(encode_json(replayed) == encode_json(state), 'Stored snapshot disagrees with its audit.')
         hashes = fields(record['hashes'], 'proposer opponent arbiter opponentInvite arbiterInvite', 'Private capabilities')
         used = set()

@@ -14,9 +14,12 @@ import threading
 import time
 
 from .store import DomainError, Store
+from .images import MAX_IMAGE_BYTES
+from .image_export import render_image_export
 
 MAX_JSON = 16 * 1024
 MAX_RESPONSE = 1024 * 1024
+MAX_IMAGE_BODY = 16 + MAX_JSON + MAX_IMAGE_BYTES
 MAX_STATIC = 8 * 1024 * 1024
 HEADER_BYTES = 16 * 1024
 SOCKET_TIMEOUT = 5
@@ -276,7 +279,7 @@ class Handler(BaseHTTPRequestHandler):
         for name, value in {
             'Content-Type': content_type, 'Content-Length': str(size), 'Connection': 'close',
             'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff',
-            'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+            'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
             **(extra or {}),
         }.items():
             self.send_header(name, value)
@@ -297,16 +300,16 @@ class Handler(BaseHTTPRequestHandler):
         except OSError:
             pass
 
-    def _object(self):
+    def _body(self, maximum, content_type):
         values = self.headers.get_all('Content-Length', [])
         if len(values) != 1 or not re.fullmatch(r'[0-9]{1,10}', values[0]):
             raise DomainError('invalid_request', 'Use one valid Content-Length header.', 400)
         size = int(values[0])
-        if size > MAX_JSON:
-            raise DomainError('too_large', 'JSON requests may contain at most 16 KiB.', 413)
+        if size > maximum:
+            raise DomainError('too_large', 'The request exceeds its supported byte limit.', 413)
         types = self.headers.get_all('Content-Type', [])
-        if len(types) != 1 or types[0].split(';', 1)[0].strip().lower() != 'application/json':
-            raise DomainError('invalid_request', 'Use the application/json content type.', 400)
+        if len(types) != 1 or types[0].split(';', 1)[0].strip().lower() != content_type:
+            raise DomainError('invalid_request', 'Use the supported request content type.', 400)
         deadline = time.monotonic() + BODY_TIMEOUT
         body = bytearray()
         while size:
@@ -319,6 +322,12 @@ class Handler(BaseHTTPRequestHandler):
                 raise DomainError('invalid_request', 'The request body ended early.', 400)
             body.extend(chunk)
             size -= len(chunk)
+        return bytes(body)
+
+    def _object(self):
+        return self._decode_object(self._body(MAX_JSON, 'application/json'))
+
+    def _decode_object(self, body):
         def pairs(items):
             result = {}
             for key, value in items:
@@ -346,6 +355,23 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError, RecursionError):
             raise DomainError('invalid_request', 'Supply a valid UTF-8 JSON object with unique fields and finite values.', 400) from None
 
+    def _image_object(self):
+        body = self._body(MAX_IMAGE_BODY, 'application/octet-stream')
+        if len(body) < 16 or body[:8] != b'FCEVID01':
+            raise DomainError('invalid_request', 'Supply a complete supported image evidence request.', 400)
+        metadata_size = int.from_bytes(body[8:12], 'little')
+        image_size = int.from_bytes(body[12:16], 'little')
+        if metadata_size > MAX_JSON or image_size > MAX_IMAGE_BYTES:
+            raise DomainError('too_large', 'The image evidence request exceeds its supported limits.', 413)
+        if (not metadata_size or not image_size
+                or len(body) != 16 + metadata_size + image_size):
+            raise DomainError('invalid_request', 'Image evidence framing must match its exact contents.', 400)
+        return self._decode_object(body[16:16 + metadata_size]), body[16 + metadata_size:]
+
+    def _binary(self, value, content_type, extra=None):
+        self._headers(200, content_type, len(value), extra)
+        self.wfile.write(value)
+
     def _token(self):
         header = self.headers.get('Authorization', '')
         token = header[7:] if header.startswith('Bearer ') else ''
@@ -359,6 +385,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {'schemaVersion': 1, 'maxChallenges': 20})
         if path == '/api/challenges' and method == 'POST':
             return self._json(201, store.create(self._object()))
+        media = re.fullmatch(r'/api/challenges/(' + ID + r')/evidence/(' + ID + r')/image', path)
+        if media and method == 'GET':
+            challenge_id, evidence_id = media.groups()
+            return self._binary(store.image(challenge_id, self._token(), evidence_id), 'image/jpeg')
         match = re.fullmatch(r'/api/challenges/(' + ID + r')(?:/([a-z/]+))?', path)
         if match:
             challenge_id, action = match.groups()
@@ -372,6 +402,20 @@ class Handler(BaseHTTPRequestHandler):
             if action == 'export' and method == 'GET':
                 return self._json(200, store.export(challenge_id, self._token()),
                                   {'Content-Disposition': f'attachment; filename="friendly-challenge-{challenge_id}.json"'})
+            if action == 'evidence/image' and method == 'POST':
+                token = self._token()
+                # Reject an unauthorized seat before decoding or accepting the
+                # larger body. Store reauthenticates inside the commit too.
+                store.get(challenge_id, token)
+                payload, image = self._image_object()
+                return self._json(200, store.add_image(challenge_id, token, payload, image))
+            if action == 'export/images' and method == 'GET':
+                public_record, images = store.export_images(challenge_id, self._token())
+                report = render_image_export(public_record, images)
+                return self._binary(report, 'text/html; charset=utf-8', {
+                    'Content-Disposition': f'attachment; filename="friendly-challenge-{challenge_id}-images.html"',
+                    'Content-Security-Policy': "default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+                })
             if action in ACTIONS and method == 'POST':
                 token = self._token()
                 return self._json(200, store.command(challenge_id, token, action, self._object()))
