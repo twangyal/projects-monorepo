@@ -112,7 +112,9 @@ function scheduleSave() {
     return;
   }
   element('save-state').textContent = 'Saving…';
-  const snapshot = validateProject(project), version = editVersion;
+  // Async replacement completion may schedule a save while a new sketch or
+  // placement gesture is active. Persist committed work, never its preview.
+  const snapshot = history.current, version = editVersion;
   saveTimer = setTimeout(() => {
     saves = saves.then(() => saveProject(snapshot)).then(() => {
       if (version === editVersion) { unsaved = false; element('save-state').textContent = 'Locally saved'; }
