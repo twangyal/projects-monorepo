@@ -76,3 +76,13 @@ Issue [#53](https://github.com/twangyal/projects-monorepo/issues/53) corrects an
 
 
 Issue [#68](https://github.com/twangyal/projects-monorepo/issues/68) guards failed IndexedDB schema creation. Native regression tests first reproduced an uncaught private browser exception, then verified sanitized backup guidance, no uncaught page error and successful save/reopen after retry. The complete gate passed 67 unit and 32 production Chromium cases, lint, type checking and build at [`82a090b`](https://github.com/twangyal/projects-monorepo/actions/runs/37198623345). See [the setup verification record](docs/2026-10-04-storage-setup-verification.json).
+
+A later repository-wide CI run exposed a timing assumption in the queued-storage
+fixture: its 50 ms delay could finish before real PNG validation started the
+IndexedDB transaction. The test now waits for its first actual kept-alive request
+to succeed, preserving its pending-save, immutable snapshot and ordered-clear
+assertions. A controlled native decode gate reproduces the hazard, and the fixed
+case passes locally with lint and type checking. No product code or timeout
+changed. The [verification receipt](docs/2026-10-04-storage-readiness-verification.json)
+preserves the actual CI failure and limits; its precise original interleaving was
+not captured.

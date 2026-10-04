@@ -30,6 +30,8 @@ test('queued saves capture immediately and complete only after their ordered nat
     let first = true;
     let started = 0;
     let firstCompleted = false;
+    let markFirstRequest!: () => void;
+    const firstRequest = new Promise<void>(resolve => { markFirstRequest = resolve; });
     IDBDatabase.prototype.transaction = function (...args: Parameters<typeof original>) {
       const tx = original.apply(this, args);
       if (args[1] === 'readwrite') {
@@ -38,7 +40,10 @@ test('queued saves capture immediately and complete only after their ordered nat
           first = false;
           const keepAlive = () => {
             const request = tx.objectStore('projects').get('current');
-            request.onsuccess = () => { if (hold) keepAlive(); };
+            request.onsuccess = () => {
+              if (hold) keepAlive();
+              markFirstRequest();
+            };
           };
           keepAlive();
         }
@@ -51,7 +56,8 @@ test('queued saves capture immediately and complete only after their ordered nat
       project.title = 'Second snapshot';
       const secondSave = window.lensStorage.saveProject(project);
       project.title = 'Unsaved mutation';
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Image validation precedes the transaction; elapsed time does not prove it started.
+      await firstRequest;
       const pending = !firstCompleted && started === 1;
       hold = false;
       await Promise.all([firstSave, secondSave]);
