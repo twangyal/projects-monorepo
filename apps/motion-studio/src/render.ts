@@ -82,8 +82,8 @@ function drawFrame(ctx: RenderContext, safe: Project, frame: number, assets: Ass
           const cel = layer.cels[drawingCelIndex(layer.cels, frame)];
           for (const stroke of cel.strokes) {
             ctx.strokeStyle = ctx.fillStyle = stroke.color; ctx.lineWidth = stroke.width; ctx.beginPath();
-            // Native Canvas does not paint a path made entirely of zero-length
-            // segments. Sampled dots retain their full editable point arrays.
+            // Canvas implementations differ on stroked zero-length polylines.
+            // A resampled dot retains many identical points; paint it explicitly.
             if (stroke.points.every(point => point.x === stroke.points[0].x && point.y === stroke.points[0].y)) {
               const point = stroke.points[0]; ctx.arc(point.x, point.y, stroke.width / 2, 0, Math.PI * 2); ctx.fill();
             } else {

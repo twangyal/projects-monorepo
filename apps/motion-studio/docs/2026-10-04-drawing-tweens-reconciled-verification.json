@@ -1,248 +1,39 @@
 {
   "issue": 88,
   "date": "2026-10-04",
-  "status": "initial local acceptance passed; subsequent Chromium153 CI found coincident-path rendering defect (see ci-first and dot-repair receipts)",
-  "version": "0.3.0",
-  "scope": "Reviewed geometric vector in-betweens; no AI, semantic correspondence or artistic-quality claim",
-  "commands": {
-    "check": "npm run check",
-    "newNative": "CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/motion88-native.config.mjs",
-    "existingNative": "CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/motion88-regression.config.mjs",
-    "maximum": "MOTION_TWEENS_OUTPUT=/workspace/motion88-maximum-final MOTION_TWEENS_BASE_URL=http://127.0.0.1:4294 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_drawing_tweens.mjs"
+  "status": "reconciled local verification passed; exact combined-head CI pending",
+  "integration": {
+    "local_repair_commit": "02bc4b0db460a30df4f0ea79ed2c2bf11f55f37d",
+    "concurrent_remote_head": "d56778b7bff9667a4c746a2f0794fa095d2bfe61",
+    "remote_merged_pr": 89,
+    "remote_implementation": "5fd9a723b4f0dd274a8e24b4c211c9183d155536",
+    "method": "Non-forced publication refused concurrent branch advancement. Imported exact Git commits/trees/blobs, verified all newly reachable objects, and merged both lines preserving new numerical correction, media tests, explicit-dot rendering, thumbnail repair and all evidence. Only comment/README conflicts needed resolution. Shot90 working files stayed separate.",
+    "unpublished_local_history_archived": true
   },
+  "numerical": "Retain newer independent unequal-boundary repair: evaluate affine interpolation from nearer endpoint, without clamping, widening, quantizing or changing encodedRGB rounding. Original endpoint records stay exact.",
   "unit": {
-    "passed": 105,
+    "passed": 132,
     "failed": 0,
     "skipped": 0,
-    "duration_ms": 1173.69265,
+    "duration_ms": 2029.192187,
     "lint": "passed",
     "typecheck": "passed",
-    "production_build": "passed",
-    "log_sha256": "8503e70c8681e8f397a8b43b0a03902754d4af5b07e3505dba58d379d7ad0aea"
+    "build": "passed",
+    "log_sha256": "4055145dc328c62691914a0d450d2d0daae88cd0609f86fcad2f83277c6c9618"
   },
   "browser": {
-    "distinct_total": 76,
-    "new": {
-      "feature": "Motion Studio #88 drawing in-betweens",
-      "final": {
-        "distinctCases": 15,
-        "passed": 15,
-        "failed": 0,
-        "seconds": 22.5,
-        "log": "/tmp/motion88-native-final.log"
-      },
-      "regressionRepeat": {
-        "passed": 2,
-        "seconds": 3.6,
-        "log": "/tmp/motion88-regression-green.log",
-        "includedInDistinctCases": true
-      },
-      "history": [
-        {
-          "log": "/tmp/motion88-initial-red.log",
-          "outcome": "Original schema2 endpoint fixture imported and saved; missing Make drawing in-betweens produced meaningful baseline RED."
-        },
-        {
-          "log": "/tmp/motion88-ui-red.log",
-          "outcome": "Undo removing scratch-owner layer reproduced missing consent. Topology case stopped at test-only wrapping-label lookup mismatch."
-        },
-        {
-          "log": "/tmp/motion88-topology-red.log",
-          "outcome": "Changed locator to exact accessible combobox role; original topology assertion then failed: two stale pairing rows after real pointer additions to both endpoints instead of three."
-        },
-        {
-          "outcome": "Both UI repairs then passed unchanged assertions; no expected pixel, numerical tolerance or budget adjustment."
-        }
-      ],
-      "fixture": {
-        "authoredBeforeProducerInspection": true,
-        "path": "/workspace/projects-monorepo/apps/motion-studio/tests/browser/tween-fixtures.ts",
-        "sha256": "5d197e21b8b754f51a09cfa01b170976ece2a9ad70cc778dfe0e70a19f613526",
-        "description": "Original red-to-blue line with explicit ending reversal and nonidentity pairing with green zero-length dot; independent linear pose plus fixed control. Source endpoints at0/8, generated2/4/6, twelve-frame timeline."
-      },
-      "pixelOracle": {
-        "pngFrames": [
-          0,
-          2,
-          3,
-          4,
-          6,
-          8,
-          11
-        ],
-        "gifFrames": 12,
-        "width": 640,
-        "height": 360,
-        "fps": 12,
-        "checks": "Native decoded downloaded PNG flat core RGBA; independent gifuct-js decoded GIF frames, exact3/3/2 palette at independently derived points and cumulative8/9centisecond delays. No producer evaluator or tween helper in expected values. Original endpoints retain literal points/colors/order; generated coordinates checked against closed-form scalar values to11decimal places.",
-        "limitations": "Small original endpoint fixtures, not maximum workload. Separate root-coordinated maximum runner owns quota,96-frame and persistent-process maximum evidence. Delayed File.text and controlled persisted page events are disclosed race instrumentation."
-      },
-      "sourceHashes": {
-        "tests/browser/tween.spec.ts": "bd0d467d4a1cdb2cadcfc88ac6a0572c2542ae4026e391cfde945ca0f79634fd",
-        "tests/browser/tween-fixtures.ts": "5d197e21b8b754f51a09cfa01b170976ece2a9ad70cc778dfe0e70a19f613526",
-        "src/main.ts": "4c3c7fd182c515c813fe257c88fc4f0f2046f079552a5e446dd1e3c5ab3adc7e",
-        "src/tween-view.ts": "7f5ade63c4732780e9c149495c08fa811ec1ba0d4a4cc7b4686b4112c1131dc2",
-        "src/tween.ts": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7",
-        "src/tween-preview.ts": "7f20fb3f743a506b4aae25005d679f295af3387a6ab074fd674ec73664648326",
-        "src/style.css": "feba188ee93b2b28dc4167a49abc9a75f878f431d5c6d2dff2778818d3e4cfef",
-        "dist/index.html": "82f476e032d240e68e061dd1422305f6cbe701a92a124ab0991d2ec46c4fa58f",
-        "dist/assets/gif.worker-BOpVV7Ww.js": "2cd371a67d4f927f9f8fc45de603d71a3f24f9ce04a7766265f7a6b2088a1c75",
-        "dist/assets/main-hNDAcNy1.js": "f336aaf7e48f63debfd745ff74ec074519e8ab1294b24ba491b1109ae6f28939"
-      },
-      "logs": {
-        "/tmp/motion88-initial-red.log": {
-          "bytes": 2647,
-          "sha256": "fe3d7f88ff668cab72155de324da27a070902a892e0fb04cd756b6c8b8067cf4"
-        },
-        "/tmp/motion88-ui-red.log": {
-          "bytes": 7952,
-          "sha256": "c739f882da8e381977d32b0ea6634f13635724d6099761d570d67c3b8cb14358"
-        },
-        "/tmp/motion88-topology-red.log": {
-          "bytes": 3530,
-          "sha256": "e55138e6c359402a5ebdbff0009efb420b59ac13067895fac4cf5975624be053"
-        },
-        "/tmp/motion88-regression-green.log": {
-          "bytes": 725,
-          "sha256": "8f277897f0acadb89fddf28889e16b710921a357d71dbabea7944baf6e1bae99"
-        },
-        "/tmp/motion88-native-final.log": {
-          "bytes": 2672,
-          "sha256": "0020bf4e43305636d5dd5deb762eaf5a55f9c841c6c00ea1ee03ebb0b5b5a0c5"
-        }
-      },
-      "artifacts": {
-        "/tmp/motion88-native-final-results/tween-390px-keyboard-corre-96c68-w-fit-without-page-overflow/review-390px.png": {
-          "bytes": 266219,
-          "sha256": "be876afb159368769e1ad0574901fe2ecce507674702b78c8f78885b41083f59"
-        },
-        "/tmp/motion88-native-final-results/tween-actual-PNG-and-all-G-f217d-dependent-simultaneous-pose/actual-geometric-tween.gif": {
-          "bytes": 15560,
-          "sha256": "04204d0e02eac38075d5d6138dcbdd591b11b75d1a4f0fd9712804dd952e5f3e"
-        },
-        "/tmp/motion88-native-final-results/tween-actual-PNG-and-all-G-f217d-dependent-simultaneous-pose/independent-interior.png": {
-          "bytes": 7409,
-          "sha256": "98a5d18f1c05ee8698dab73629e4db424c411e019c90632d188008690b9b8571"
-        }
-      },
-      "runtime": "Existing root-owned production preview4294; single nativeworker; all test Chromium contexts closed, no build/server modifications."
-    },
-    "existing": {
-      "passed": 61,
-      "failed": 0,
-      "duration": "43.7s",
-      "log_sha256": "8b5c22a38dd70268e9bb8b049e97603ea77540b59527db8af7bbf6ed8217134a",
-      "configuration": "Unchanged original test files, two native workers, isolated harness dist directory; same final source as normal production build."
-    }
-  },
-  "numerical": {
-    "schemaVersion": 1,
-    "scope": "Independent scalar/domain verification, no browser/media or artist-quality claim",
-    "originalOracle": {
-      "authoredBeforeProducerRead": true,
-      "firstCallableStubRun": {
-        "tests": 15,
-        "passedNegativeOnly": 4,
-        "failedSuccessfulPaths": 11,
-        "durationMs": 131.066765
-      },
-      "supplementalByteCase": "Negative-only first pass is not claimed as an algorithmic RED"
-    },
-    "boundaryRegression": {
-      "before": {
-        "resamples": 8,
-        "builds": 8930,
-        "failures": 8432,
-        "minimalCases": {
-          "firstOverflowSample": {
-            "index": 5,
-            "point": {
-              "x": 1280.0000000000002,
-              "y": 5
-            }
-          },
-          "overflowSamples": [
-            {
-              "k": 5,
-              "x": 1280.0000000000002,
-              "y": 5
-            },
-            {
-              "k": 9,
-              "x": 1280.0000000000002,
-              "y": 9
-            }
-          ],
-          "widthFailure": {
-            "gap": 7,
-            "frame": 1,
-            "t": 0.14285714285714285,
-            "weightedWidth": 40.00000000000001,
-            "message": "Stroke width must be a finite number from 1 to 40."
-          }
-        },
-        "permanentOracleRed": {
-          "tests": 2,
-          "failed": 2,
-          "durationMs": 114.508202
-        }
-      },
-      "after": {
-        "resamples": 8,
-        "builds": 8930,
-        "failures": 0,
-        "firstFailures": [],
-        "wallMs": 1388.7565180000001,
-        "negativeZeroOutput": {
-          "x": false,
-          "y": false
-        }
-      },
-      "repairMeaning": "Exact equal-scalar preservation; no clamping, bound widening or tolerance change",
-      "probe": "Original vertical paths, constant x=-1280/+1280 and width40, every interior frame fraction for gaps2..95; supplementary unequal vertical segments/repeated knots",
-      "postFixProbeStrength": "Checks exact constant identity as well as legal bounds",
-      "proofLimit": "Probe covers the declared constant-boundary concern, not exhaustive arbitrary floating-point geometry"
-    },
-    "finalOracle": {
-      "tests": 18,
-      "passed": 18,
-      "failed": 0,
-      "durationMs": 534.467467,
-      "combinedMaximum": {
-        "selectedCels": 24,
-        "strokes": 100,
-        "points": 10000
-      },
-      "separatePairMaximum": {
-        "pairs": 8,
-        "selectedCels": 12,
-        "strokes": 100,
-        "points": 10000
-      },
-      "nativeMediaOrPerformanceClaims": false
-    },
-    "files": {
-      "producer": "apps/motion-studio/src/tween.ts",
-      "producerSha256": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7",
-      "oracle": "apps/motion-studio/tests/tween-oracle.test.ts",
-      "oracleSha256": "7a16e932b5184b7d920d5558023103eb5dc9da176008c107b4554301740077df",
-      "probePath": "/tmp/motion88-boundary-probe.mjs",
-      "probeSha256": "4d8c8773778fae5569d34cd377583b68f9d76475048f11ed688eee01fb4d8201"
-    },
-    "rawEvidence": [
-      "/tmp/motion88-scalar-oracle-first.log",
-      "/tmp/motion88-boundary-oracle-first.log",
-      "/tmp/motion88-boundary-probe-before.json",
-      "/tmp/motion88-boundary-minimal.json",
-      "/tmp/motion88-boundary-probe.json",
-      "/tmp/motion88-scalar-oracle-final-green.log"
-    ]
+    "passed": 80,
+    "failed": 0,
+    "seconds": 60.0,
+    "chromium": "151.0.7922.173",
+    "log_sha256": "a07f07596e3831ce3c3868c5e430cc7e2fcb875c6d240827cbfe7c1365d35a43",
+    "configuration": "Complete80 cases, two workers, isolated harness build including independent tween module page; unchanged original workflow/media pixel assertions."
   },
   "maximum": {
     "schemaVersion": 1,
     "scope": "Independent original scalar and artifact oracle; no producer module imports. Normal native File, controls, downloads and persistent-profile restart.",
     "status": "passed",
-    "outputDirectory": "/workspace/motion88-maximum-final",
+    "outputDirectory": "/workspace/motion88-maximum-reconciled",
     "frozenExpectations": {
       "topology": {
         "selectedCels": 24,
@@ -312,22 +103,22 @@
     },
     "fixtures": [
       {
-        "path": "/workspace/motion88-maximum-final/topology-source.json",
+        "path": "/workspace/motion88-maximum-reconciled/topology-source.json",
         "bytes": 5491112,
         "sha256": "a05039b4e0d8b29a516895d520552d33e91a36cf10aa57a89bc7686d65f775d9"
       },
       {
-        "path": "/workspace/motion88-maximum-final/eight-pair-source.json",
+        "path": "/workspace/motion88-maximum-reconciled/eight-pair-source.json",
         "bytes": 150637,
         "sha256": "09d5cad262418fdfa7b76b1a25e66ed7a14391c781baa13c900206f849787719"
       },
       {
-        "path": "/workspace/motion88-maximum-final/topology-analytic-expected.json",
+        "path": "/workspace/motion88-maximum-reconciled/topology-analytic-expected.json",
         "bytes": 5758316,
         "sha256": "2e1f31c9af16275fdb425c6f2a9ef37140a6898c3d5dd503f1b3e2df3db405a8"
       },
       {
-        "path": "/workspace/motion88-maximum-final/eight-pair-analytic-expected.json",
+        "path": "/workspace/motion88-maximum-reconciled/eight-pair-analytic-expected.json",
         "bytes": 378406,
         "sha256": "41d3fbbbec5164bc0c4ce427c6fe4006934217a229b500c4e7067f2124ed9a11"
       }
@@ -412,11 +203,11 @@
           "strokes": 100,
           "points": 10000,
           "images": 4,
-          "canonicalBytes": 5758348,
-          "maxCoordinateError": 1.1368683772161603e-13
+          "canonicalBytes": 5758324,
+          "maxCoordinateError": 5.684341886080802e-14
         },
-        "reviewWallMs": 264.19256499999983,
-        "applyAndSaveWallMs": 599.338256,
+        "reviewWallMs": 283.26209100000005,
+        "applyAndSaveWallMs": 558.1495489999998,
         "gif": {
           "frames": 96,
           "durationMs": 8000,
@@ -520,8 +311,8 @@
           ],
           "bytes": 191999,
           "sha256": "a3547528bdef5d2e045efdb54188bf672299f4facce87fb6bc28a34db36420d8",
-          "encodeAndDownloadWallMs": 800.3160540000026,
-          "decodeWallMs": 464.886902000002
+          "encodeAndDownloadWallMs": 792.7005229999995,
+          "decodeWallMs": 459.38668399999733
         },
         "oneUndoRestoresSource": true,
         "redoByteExact": true
@@ -533,11 +324,11 @@
           "strokes": 100,
           "points": 10000,
           "images": 0,
-          "canonicalBytes": 378934,
+          "canonicalBytes": 378378,
           "maxCoordinateError": 5.684341886080802e-14
         },
-        "reviewWallMs": 2976.749606999998,
-        "applyAndSaveWallMs": 1899.4227699999974,
+        "reviewWallMs": 133.6704979999995,
+        "applyAndSaveWallMs": 418.6407339999969,
         "gif": {
           "frames": 96,
           "durationMs": 8000,
@@ -641,8 +432,8 @@
           ],
           "bytes": 246571,
           "sha256": "b931effff279d0095c72b4f3df2b3e1dd59de3b034ae58fe3e0cc4cbbb22c3ab",
-          "encodeAndDownloadWallMs": 1920.693223000002,
-          "decodeWallMs": 477.3281449999995
+          "encodeAndDownloadWallMs": 383.55762999999934,
+          "decodeWallMs": 461.3441669999993
         },
         "oneUndoRestoresSource": true,
         "redoByteExact": true
@@ -654,180 +445,30 @@
       "No producer implementation supplies expected geometry or export pixels."
     ],
     "fixtureImage": {
-      "path": "/workspace/motion88-maximum-final/original-white-ancillary.png",
+      "path": "/workspace/motion88-maximum-reconciled/original-white-ancillary.png",
       "bytes": 1004295,
       "sha256": "f646356931c3533ae15f109efd80a917dc70a83da55687d6848e56999bbe3677"
     },
     "browserVersion": "151.0.7922.173",
     "restart": {
       "firstBrowserProcess": [
-        614976
+        627436
       ],
       "secondBrowserProcess": [
-        615131
+        627712
       ],
-      "bytes": 5758348,
-      "sha256": "44be5d88031edfdc69ba0f108d7533a1caf09cf4145661243483109d32e081e6",
+      "bytes": 5758324,
+      "sha256": "114a8712afbed49c67bbad15fc7d54383e71a2b2a1f0bb49f7c6202029e02cae",
       "byteExact": true
     },
     "pageErrors": [],
     "externalRequests": []
   },
-  "maximum_summary": {
-    "issue": 88,
-    "observedAt": "2026-10-04T16:16:55.156038+00:00",
-    "status": "passed",
-    "origin": "http://127.0.0.1:4294",
-    "approvedBundle": "main-hNDAcNy1",
-    "browserVersion": "151.0.7922.173",
-    "verification": "/workspace/motion88-maximum-final/verification.json",
-    "log": {
-      "path": "/tmp/motion88-maximum-final.log",
-      "sha256": "452a9a3a05b35355c7503b1f3b347d1b94f61ccc98929d9774c20c30e148a103"
-    },
-    "scope": "Actual production File import, explicit native pairing/review/apply, committed-only scratch download, one Undo/Redo, PNG/GIF export, full persistent Chromium restart. No producer oracle imports or output-fitted tolerance changes.",
-    "cases": [
-      {
-        "label": "topology",
-        "usage": {
-          "selectedCels": 24,
-          "strokes": 100,
-          "points": 10000,
-          "images": 4,
-          "canonicalBytes": 5758348,
-          "maxCoordinateError": 1.1368683772161603e-13
-        },
-        "reviewWallMs": 264.19256499999983,
-        "applyAndSaveWallMs": 599.338256,
-        "oneUndoRestoresSource": true,
-        "redoByteExact": true,
-        "gif": {
-          "frames": 96,
-          "durationMs": 8000,
-          "bytes": 191999,
-          "sha256": "a3547528bdef5d2e045efdb54188bf672299f4facce87fb6bc28a34db36420d8",
-          "encodeAndDownloadWallMs": 800.3160540000026,
-          "decodeWallMs": 464.886902000002
-        },
-        "pngFrames": [
-          0,
-          4,
-          47,
-          94,
-          95
-        ]
-      },
-      {
-        "label": "eight-pairs",
-        "usage": {
-          "selectedCels": 12,
-          "strokes": 100,
-          "points": 10000,
-          "images": 0,
-          "canonicalBytes": 378934,
-          "maxCoordinateError": 5.684341886080802e-14
-        },
-        "reviewWallMs": 2976.749606999998,
-        "applyAndSaveWallMs": 1899.4227699999974,
-        "oneUndoRestoresSource": true,
-        "redoByteExact": true,
-        "gif": {
-          "frames": 96,
-          "durationMs": 8000,
-          "bytes": 246571,
-          "sha256": "b931effff279d0095c72b4f3df2b3e1dd59de3b034ae58fe3e0cc4cbbb22c3ab",
-          "encodeAndDownloadWallMs": 1920.693223000002,
-          "decodeWallMs": 477.3281449999995
-        },
-        "pngFrames": [
-          0,
-          8,
-          47,
-          94,
-          95
-        ]
-      }
-    ],
-    "restart": {
-      "firstBrowserProcess": [
-        614976
-      ],
-      "secondBrowserProcess": [
-        615131
-      ],
-      "bytes": 5758348,
-      "sha256": "44be5d88031edfdc69ba0f108d7533a1caf09cf4145661243483109d32e081e6",
-      "byteExact": true
-    },
-    "screenshots": [
-      {
-        "path": "/workspace/motion88-maximum-final/desktop.png",
-        "bytes": 211694,
-        "sha256": "32e1beaa300e98ed62493f70e5727906ba7303243a84aa559020f1038a971a37",
-        "visuallyReviewed": true,
-        "content": "Original synthetic artwork and ordinary product UI; no private data visible."
-      },
-      {
-        "path": "/workspace/motion88-maximum-final/390px.png",
-        "bytes": 174074,
-        "sha256": "4536e5afc76e7a0856fe7366c15cc3efa0e2ebcea27023df617f8b7626784225",
-        "visuallyReviewed": true,
-        "content": "Original synthetic artwork and ordinary product UI; no private data visible."
-      }
-    ],
-    "reviewedSources": [
-      {
-        "path": "/workspace/projects-monorepo/apps/motion-studio/src/tween.ts",
-        "sha256": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7"
-      },
-      {
-        "path": "/workspace/projects-monorepo/apps/motion-studio/src/tween-preview.ts",
-        "sha256": "7f20fb3f743a506b4aae25005d679f295af3387a6ab074fd674ec73664648326"
-      },
-      {
-        "path": "/workspace/projects-monorepo/apps/motion-studio/src/tween-view.ts",
-        "sha256": "7f5ade63c4732780e9c149495c08fa811ec1ba0d4a4cc7b4686b4112c1131dc2"
-      },
-      {
-        "path": "/workspace/projects-monorepo/apps/motion-studio/src/main.ts",
-        "sha256": "4c3c7fd182c515c813fe257c88fc4f0f2046f079552a5e446dd1e3c5ab3adc7e"
-      },
-      {
-        "path": "/workspace/projects-monorepo/apps/motion-studio/src/style.css",
-        "sha256": "feba188ee93b2b28dc4167a49abc9a75f878f431d5c6d2dff2778818d3e4cfef"
-      },
-      {
-        "path": "/workspace/projects-monorepo/apps/motion-studio/scripts/smoke_drawing_tweens.mjs",
-        "sha256": "ed5e25c3990479e71961a4cb50277f5833118483bfc259d5831d5b6806774569"
-      }
-    ],
-    "review": "No remaining actionable source finding; exact equal-input interpolation repair reviewed without widening/clamping. Full main consumer lifecycle also reviewed independently by git_runner.",
-    "limits": [
-      "Browser memory peak is not inferred from fixture size.",
-      "Wall times include native UI and download overhead; no isolated kernel timing or hardware-independent speed claim.",
-      "No producer implementation supplies expected geometry or export pixels.",
-      "Topology project is near byte cap, not exactly at byte ceiling. Separate eight-pair case does not claim24 selected cels.",
-      "Review/Apply timings include native UI, serialization, and save overhead; they are not isolated kernel benchmarks.",
-      "No backend, server, build or Git operation performed by the probe."
-    ],
-    "pageErrors": [],
-    "externalRequests": [],
-    "browserProcessesStopped": {
-      "614976": true,
-      "615131": true
-    }
-  },
-  "initial_integration": {
-    "unit": 103,
-    "lint": "passed",
-    "build": "TypeScript control-flow narrowing failed until fail became a declared never-returning function; no geometric semantics changed.",
-    "log_sha256": "3303e772d74aa6beda4ce356688474cab15742d50e629788bb046b85ef3a5d43"
-  },
   "source_sha256": {
-    "apps/motion-studio/src/tween.ts": "d6cae4da603fd66ce1508a4a9940b6a730f3bad81c93d221e82eb40cacdb4fc7",
+    "apps/motion-studio/src/tween.ts": "77cff77e772c82dd5ad852c130a440f2f6f25abfc2daaa4cb20b83b395e9bfc3",
     "apps/motion-studio/src/export.ts": "efcfbd1fb5dfbd5b5e57ad6e0b859d55801897785faa565f3f9b2099934f9c89",
-    "apps/motion-studio/src/tween-view.ts": "7f5ade63c4732780e9c149495c08fa811ec1ba0d4a4cc7b4686b4112c1131dc2",
-    "apps/motion-studio/src/render.ts": "75303e53fadf282acd775ae04dfad047f3c06232923d7ef9d95f7cef245f311b",
+    "apps/motion-studio/src/tween-view.ts": "3a2be2b3e14095cdd7a621256c9ed93f1a44f67ea610059b5d6a8b012101df9d",
+    "apps/motion-studio/src/render.ts": "7f31b3712b1f433feb208e08f76e974c91572f5c9315b7942b7cd584637d4866",
     "apps/motion-studio/src/model.ts": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc",
     "apps/motion-studio/src/images.ts": "7f4855569d2ac8d828d0b337876f44918244e0d35ffc3486f58a8ed123234d2e",
     "apps/motion-studio/src/gif.worker.ts": "cc57713bfc6fdab2020bd82209b7d9bb1702ebfdeacda7f9fc4d32253a6ab401",
@@ -837,32 +478,26 @@
     "apps/motion-studio/src/main.ts": "4c3c7fd182c515c813fe257c88fc4f0f2046f079552a5e446dd1e3c5ab3adc7e",
     "apps/motion-studio/src/history.ts": "f9b8da39214d9196b92760a4fe889808dcd4e5204293ca690f2c7f6fe77b3004",
     "apps/motion-studio/src/gifenc.d.ts": "075e339ba9b618ecac2b42fca7a9489e71feb40fef00c203a04b827fa05fc07c",
-    "apps/motion-studio/tests/tween.test.ts": "fe682cd34b916419de6fe1247cb8fee404b16ee48a8b7d3f8c433562bc3094bf",
-    "apps/motion-studio/tests/tween-oracle.test.ts": "7a16e932b5184b7d920d5558023103eb5dc9da176008c107b4554301740077df",
+    "apps/motion-studio/tests/tween-harness.ts": "da9c179e421730bce370b54fd60e18cd6f85301b42e0378449ec12bc600f9505",
     "apps/motion-studio/tests/tween-preview.test.ts": "4043bdb165e80c81f51207b07d2e6b250f49eb9716e990924ce6426d64bcb965",
-    "apps/motion-studio/tests/browser/tween.spec.ts": "bd0d467d4a1cdb2cadcfc88ac6a0572c2542ae4026e391cfde945ca0f79634fd",
-    "apps/motion-studio/tests/browser/tween-fixtures.ts": "5d197e21b8b754f51a09cfa01b170976ece2a9ad70cc778dfe0e70a19f613526",
-    "apps/motion-studio/scripts/smoke_drawing_tweens.mjs": "ed5e25c3990479e71961a4cb50277f5833118483bfc259d5831d5b6806774569"
+    "apps/motion-studio/tests/tween-harness.html": "fda1ac5bddeb8de963dd78be3ee4b7955b831bdd703788a2710aebc8128378bf",
+    "apps/motion-studio/tests/tween-preview-additional.test.ts": "e872280e324136041bbae954480931a0c896e8a1b6ce4cedc3f882479b065d2f",
+    "apps/motion-studio/tests/tween-oracle.test.ts": "7a16e932b5184b7d920d5558023103eb5dc9da176008c107b4554301740077df",
+    "apps/motion-studio/tests/tween-additional.test.ts": "744d34134c71fe343c8007872dd99e6a2af68024d954021ceb594b017db07d93",
+    "apps/motion-studio/tests/tween-media.spec.ts": "a6dbd09cd407cf85c3dc2856a2156f08dbfbbd8a6d8a91aa6137a51d800bb5d4",
+    "apps/motion-studio/tests/tween.test.ts": "fe682cd34b916419de6fe1247cb8fee404b16ee48a8b7d3f8c433562bc3094bf",
+    "apps/motion-studio/tests/render-degenerate.test.ts": "9ab6e7d522e2a2369221095568b39634331ed42aa34ca27104677f8cd51b22a3",
+    "apps/motion-studio/vite.config.ts": "1c0c8b1dc98677d24e61702d48e08d3847ad26fcaad6c2a9a65dcf77d239f9f0"
   },
   "production_assets": {
     "main-B8qFxE9D.css": "1514d1e3c964afa52de473f3dbe25cf7bf07d1c1055c43ab5f5c692568e649a2",
-    "gif.worker-BOpVV7Ww.js": "2cd371a67d4f927f9f8fc45de603d71a3f24f9ce04a7766265f7a6b2088a1c75",
-    "main-hNDAcNy1.js": "f336aaf7e48f63debfd745ff74ec074519e8ab1294b24ba491b1109ae6f28939"
+    "gif.worker-Diq5wjQj.js": "b663cc5b6da8f0bb0890dfb01cb3d4fc5a7a9edf388eae1ff4d1318e62573506",
+    "main-BnxT_Nqo.js": "f29d2bb33c007cf6d1588d8235fb8005a16e384d71b4a04b2176ac1b09608a5b"
   },
-  "visual_review": {
-    "reviewer": "root and independent maximum owner",
-    "desktop": true,
-    "390px_maximum": true,
-    "390px_pairing_and_preview": true,
-    "scope": "Original generated artwork and ordinary product UI, no physical-device compatibility claim"
-  },
-  "limitations": [
-    "Geometric sampling can soften corners and create crossings; it does not infer artistic intention.",
-    "Independent scalar and flat-core pixel checks use original bounded fixtures, not arbitrary-art quality evaluation.",
-    "Controlled File.text/page lifecycle regressions are identified in native evidence.",
-    "Maximum output has 24 selected cels with four pairs; separate eight-pair output has 12 selected cels.",
-    "Maximum image fixture contains disclosed ancillary padding, not photographic complexity; its 5758348-byte canonical output is below the 6291624-byte cap.",
-    "Measured UI/export wall times are runtime observations, not isolated kernel or general latency guarantees.",
-    "No browser memory peak or non-Chromium/device compatibility is inferred."
+  "limits": [
+    "Final canonical fixture bytes differ from earlier weighted arithmetic because floating-point number spelling changes; all original scalar/pixel tolerances and quotas remain unchanged.",
+    "Maximum raster/persistence acceptance here is nativeChromium151; CI supplies Chromium153 compatibility evidence separately.",
+    "Actual narrow desktop Chromium is not physical touch/browser compatibility.",
+    "No peak RAM, general speed, semantic motion or artistic-quality claim."
   ]
 }

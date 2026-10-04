@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "issue": 88,
+  "repository": "twangyal/projects-monorepo",
+  "headSha": "c730c48534fece47cbbde8f3837ecacab871539e",
+  "observedAt": "2026-10-04T16:26:14.404352+00:00",
+  "conclusion": "failure",
+  "motion": [
+    {
+      "event": "push",
+      "runId": 37216400222,
+      "jobId": 111477681992,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216400222",
+      "status": "completed",
+      "conclusion": "failure",
+      "headSha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "checkoutSha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "checkoutKind": "branch head",
+      "startedAt": "2026-10-04T16:20:28Z",
+      "completedAt": "2026-10-04T16:21:55Z",
+      "typescript": {
+        "tests": 105,
+        "passed": 105,
+        "failed": 0,
+        "skipped": 0,
+        "milliseconds": 1876.700808
+      },
+      "browser": {
+        "tests": 76,
+        "passed": 74,
+        "failed": 2,
+        "seconds": 46.8,
+        "chromium": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "eslint": "success",
+      "typecheck": "success",
+      "productionBuild": "success",
+      "stepResults": {
+        "Set up job": "success",
+        "Run actions/checkout@v4": "success",
+        "Run actions/setup-node@v4": "success",
+        "Run npm ci": "success",
+        "Run npm run check": "success",
+        "Run npm run typecheck": "success",
+        "Run npx playwright install --with-deps chromium": "success",
+        "Production Chromium workflow and real GIF verification": "failure",
+        "Run actions/upload-artifact@v4": "success",
+        "Post Run actions/setup-node@v4": "skipped",
+        "Post Run actions/checkout@v4": "success",
+        "Complete job": "success"
+      },
+      "failures": [
+        {
+          "path": "apps/motion-studio/tests/browser/tween.spec.ts",
+          "line": 30,
+          "test": "explicit nonidentity pairing and reversal review actual pixels without saving, then Apply is one undoable edit",
+          "observed": "Reviewed preview frame4 dot expected [0,255,0,255], received [255,255,255,255]; line/control matched."
+        },
+        {
+          "path": "apps/motion-studio/tests/browser/tween.spec.ts",
+          "line": 36,
+          "test": "actual PNG and all GIF frames show held interior artwork, round dots and independent simultaneous pose",
+          "observed": "PNG dot expected [0,255,0,255], received [255,255,255,255]; line/control matched. This case failed before its GIF checks."
+        }
+      ],
+      "artifact": {
+        "id": 11308187696,
+        "bytes": 3024361,
+        "sha256": "8e4f2a0f698b7db5c76f0331469b1c482ed1d1fc48c470b3387f7b86e3b64cd2",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216400222/artifacts/11308187696"
+      },
+      "log": {
+        "path": "/workspace/motion88-ci-push.log",
+        "bytes": 66666,
+        "sha256": "081f2a603ebffaf6cfa29eed6c9458e8958c979e1e9904e0110b70f1da21bf9e"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37216403525,
+      "jobId": 111477690992,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403525",
+      "status": "completed",
+      "conclusion": "failure",
+      "headSha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "checkoutSha": "a6ffce42f44c564dea2c5f70eac89d859de48730",
+      "checkoutKind": "synthetic PR merge",
+      "startedAt": "2026-10-04T16:20:31Z",
+      "completedAt": "2026-10-04T16:21:58Z",
+      "typescript": {
+        "tests": 105,
+        "passed": 105,
+        "failed": 0,
+        "skipped": 0,
+        "milliseconds": 1933.507935
+      },
+      "browser": {
+        "tests": 76,
+        "passed": 74,
+        "failed": 2,
+        "seconds": 47.0,
+        "chromium": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "eslint": "success",
+      "typecheck": "success",
+      "productionBuild": "success",
+      "stepResults": {
+        "Set up job": "success",
+        "Run actions/checkout@v4": "success",
+        "Run actions/setup-node@v4": "success",
+        "Run npm ci": "success",
+        "Run npm run check": "success",
+        "Run npm run typecheck": "success",
+        "Run npx playwright install --with-deps chromium": "success",
+        "Production Chromium workflow and real GIF verification": "failure",
+        "Run actions/upload-artifact@v4": "success",
+        "Post Run actions/setup-node@v4": "skipped",
+        "Post Run actions/checkout@v4": "success",
+        "Complete job": "success"
+      },
+      "failures": [
+        {
+          "path": "apps/motion-studio/tests/browser/tween.spec.ts",
+          "line": 30,
+          "test": "explicit nonidentity pairing and reversal review actual pixels without saving, then Apply is one undoable edit",
+          "observed": "Reviewed preview frame4 dot expected [0,255,0,255], received [255,255,255,255]; line/control matched."
+        },
+        {
+          "path": "apps/motion-studio/tests/browser/tween.spec.ts",
+          "line": 36,
+          "test": "actual PNG and all GIF frames show held interior artwork, round dots and independent simultaneous pose",
+          "observed": "PNG dot expected [0,255,0,255], received [255,255,255,255]; line/control matched. This case failed before its GIF checks."
+        }
+      ],
+      "artifact": {
+        "id": 11308068023,
+        "bytes": 3081653,
+        "sha256": "cff8b7aca708b234d1943bfd38fcf21929c926a42f2acd48c1334b5ac675e143",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403525/artifacts/11308068023"
+      },
+      "log": {
+        "path": "/workspace/motion88-ci-pull_request.log",
+        "bytes": 67726,
+        "sha256": "e33343908b9a353dd835e8d5a34db34984b6b5e1195e67e8f8a80ec730ced35b"
+      }
+    }
+  ],
+  "allProjectPrWorkflows": [
+    {
+      "id": 37216403560,
+      "name": "Lens Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403560",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:21:55Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403525,
+      "name": "Motion Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403525",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:21:59Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403600,
+      "name": "Color Context Lab",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403600",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:22:25Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403555,
+      "name": "Clothing Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403555",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:21:32Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403543,
+      "name": "Melody Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403543",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:22:04Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403676,
+      "name": "Style Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403676",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:21:21Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403549,
+      "name": "Friendly Challenges",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403549",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:23:12Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403550,
+      "name": "Stock Notebook",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403550",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:23:17Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403593,
+      "name": "Git History",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403593",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:22:55Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403570,
+      "name": "Shot Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403570",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:23:02Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403596,
+      "name": "Duet",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403596",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:23:02Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403537,
+      "name": "Karaoke Studio",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403537",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:24:56Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    },
+    {
+      "id": 37216403604,
+      "name": "Composure",
+      "event": "pull_request",
+      "head_sha": "c730c48534fece47cbbde8f3837ecacab871539e",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37216403604",
+      "created_at": "2026-10-04T16:20:28Z",
+      "updated_at": "2026-10-04T16:23:39Z",
+      "run_started_at": "2026-10-04T16:20:28Z"
+    }
+  ],
+  "allProjectPrSummary": {
+    "total": 13,
+    "success": 12,
+    "failure": 1,
+    "pending": 0
+  },
+  "limitations": [
+    "Read-only connector collection; no reruns, product edits, builds or local browser launch.",
+    "Counts and assertions read from completed job logs. Other project conclusions read from exact-head run metadata.",
+    "Missing degenerate dot is observed; browser-version dependence is a diagnosis lead, not yet a confirmed cause.",
+    "Stored SHA256 identifies connector-decoded UTF8 logs retained locally."
+  ]
+}

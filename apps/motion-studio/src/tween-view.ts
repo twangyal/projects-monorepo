@@ -87,9 +87,14 @@ export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
     const scale = Math.min(140 / Math.max(1, maxX - minX), 60 / Math.max(1, maxY - minY));
     const point = (p: { x: number; y: number }) => ({ x: 90 + (p.x - (minX + maxX) / 2) * scale, y: 50 + (p.y - (minY + maxY) / 2) * scale });
     context.strokeStyle = stroke.color; context.lineWidth = Math.min(18, Math.max(2, stroke.width * scale)); context.lineCap = 'round'; context.lineJoin = 'round'; context.beginPath();
-    for (const [i, p] of stroke.points.entries()) { const q = point(p); if (i) context.lineTo(q.x, q.y); else context.moveTo(q.x, q.y); }
-    if (stroke.points.length === 1) { const q = point(stroke.points[0]); context.lineTo(q.x + .01, q.y); }
-    context.stroke();
+    const first = stroke.points[0];
+    if (stroke.points.every(p => p.x === first.x && p.y === first.y)) {
+      const center = point(first); context.fillStyle = stroke.color;
+      context.arc(center.x, center.y, context.lineWidth / 2, 0, Math.PI * 2); context.fill();
+    } else {
+      for (const [i, p] of stroke.points.entries()) { const q = point(p); if (i) context.lineTo(q.x, q.y); else context.moveTo(q.x, q.y); }
+      context.stroke();
+    }
     for (const [label, p] of [['S', stroke.points[0]], ['E', stroke.points.at(-1)!]] as const) {
       const q = point(p); context.fillStyle = '#302a3d'; context.font = 'bold 12px sans-serif'; context.fillText(label, q.x + 5, q.y - (label === 'S' ? 7 : -15));
     }
