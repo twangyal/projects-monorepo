@@ -1,12 +1,12 @@
 # Git History
 
-A local evidence explorer for unfamiliar code. Select a committed file range or Python function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, available rename evidence, and optional supplied discussion excerpts.
+A local evidence explorer for unfamiliar code. Select a committed file range or named Python, JavaScript or TypeScript function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, available rename evidence, and optional supplied discussion excerpts.
 
 The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
 
 ## Run
 
-Requirements: Python **3.11+**, Git **2.30+**, and Linux or macOS. There are no runtime Python dependencies. Windows is not currently supported because bounded subprocess pipe handling uses POSIX selectors.
+Requirements: Python **3.11+**, Git **2.30+**, and Linux or macOS. Python function selection and manual ranges have no runtime Python dependencies. JavaScript/TypeScript function selection uses an optional pinned parser extra. Windows is not currently supported because bounded subprocess pipe handling uses POSIX selectors.
 
 From this app directory:
 
@@ -28,7 +28,7 @@ python3 -m git_history explain --repo /path/to/repository \
   --file src/example.py --lines 20:45 --format json > report.json
 ```
 
-### Select a Python function
+### Select a named function
 
 List qualified names and complete source ranges from the committed file, then select one:
 
@@ -41,7 +41,35 @@ python3 -m git_history explain --repo /path/to/repository \
 
 The listing supports `--format json` for automation and includes the resolved commit ID. Use that ID with `explain --ref` to keep the same snapshot if a branch moves between commands. An individual explanation resolves its revision only once, so function selection and Git evidence always describe the same commit.
 
-Python `.py` and `.pyi` files support ordinary and async functions, methods, and nested functions. Names include enclosing classes/functions (`Example.process`, `outer.inner`). Decorators are included in the selected range. Source is parsed with the running Python version's standard-library AST; nothing is imported or executed. Syntax errors and unsupported language versions produce guidance to use `--lines`. Repeated definitions with the same qualified name require a manual range. Functions over 200 lines are listed, but must be investigated with a smaller `--lines` selection. Other languages retain manual range support. Exactly one of `--lines` or `--function` is required.
+Python `.py` and `.pyi` files support ordinary and async functions, methods, and nested functions. Names include enclosing classes/functions (`Example.process`, `outer.inner`). Decorators are included in the selected range. Source is parsed with the running Python version's standard-library AST; nothing is imported or executed. Syntax errors and unsupported language versions produce guidance to use `--lines`. Repeated definitions with the same qualified name require a manual range. Functions over 200 lines are listed, but must be investigated with a smaller `--lines` selection. Exactly one of `--lines` or `--function` is required.
+
+### Optional JavaScript and TypeScript selection
+
+Install the extra explicitly in a virtual environment, from this app directory:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install '.[javascript]'
+.venv/bin/git-history functions --repo /path/to/repository --file src/example.ts
+.venv/bin/git-history explain --repo /path/to/repository \
+  --file src/example.ts --function Example.process --output function.html
+```
+
+The extra pins Tree-sitter 0.25.2, the JavaScript grammar 0.25.0 and the TypeScript grammar 0.23.2. `.js`, `.jsx`, `.mjs` and `.cjs` use the JavaScript grammar; `.ts`, `.mts` and `.cts` use TypeScript; `.tsx` uses TSX. Parsing never consults repository `package.json` or `tsconfig`, imports the inspected source, installs packages automatically or fetches dependencies. Missing or incompatible parser packages produce setup guidance; `--lines` continues to work without the extra.
+
+Supported names come from syntax:
+
+- Named function and generator declarations, including async functions and named default exports.
+- Direct identifier-bound arrows and function expressions, such as `const run = () => {}`. The binding `run` overrides a function expression's internal alias.
+- Identifier class methods, constructors, getters/setters and callable fields. A class expression bound to `Store` uses that name, including nested named functions such as `Store.load.validate`.
+- Identifier-bound object literal methods and callable properties, including nested identifier namespaces such as `api.users.fetch`.
+- Parenthesized expressions and TypeScript `as`, `satisfies`, type assertion and non-null wrappers around those bound values.
+
+Anonymous default exports, unbound callbacks, assignment inference, computed/private/string-literal members, namespace/module bodies, class static-initializer blocks, functions inside parameter expressions and type-only signatures are omitted. Their anonymous or unsupported scopes are barriers: nested declarations are not mislabelled as top-level functions. A `.d.ts` file with declarations but no implementation bodies produces an empty catalog. Exact identifier spelling is preserved; names do not resolve runtime aliases or normalize Unicode escapes. Getter/setter pairs and static/instance name collisions remain separate entries and can make a name ambiguous; use the listed `--lines` ranges.
+
+Ranges count **physical LF-delimited Git lines** in the original committed bytes, preserving BOM, CRLF and Unicode line separators. Declarations include a direct export prefix; methods include their attached decorators/modifiers. Bound arrows/expressions cover their own declarator/property/field, so a separately lined `const` keyword can fall outside that range. Whole-line selection can include neighboring syntax written on the same line. Malformed or recovered syntax trees fail as a whole; no partial catalog is published. The pinned JavaScript grammar rejects a valid default export when both `export` and `default` occupy separate lines; use manual ranges for that formatting. TypeScript/TSX handles the corresponding named declaration with its complete export prefix.
+
+Native parsing runs in a fresh isolated POSIX subprocess with a **5-second wall deadline**, **512 MiB address-space limit**, **3/4-second CPU limits**, and **8 MiB combined output cap**. The worker applies limits before loading native packages. Timeouts, crashes, caller interruption and oversized output trigger process-group cleanup; errors do not echo inspected source or native diagnostics. Unsupported resource controls fail with manual-range guidance. Linux Python 3.11–3.13 dependency/API checks passed; compatible macOS wheels exist, but macOS native parsing has not been runtime-verified.
 
 ### Attach supplied PR, issue, or discussion excerpts
 
@@ -134,7 +162,7 @@ python3 -m venv .venv
 - HTML is the default. Omit `--output` or use `--output -` for stdout. JSON uses report schema version 1 and the fields defined in `git_history/model.py`, plus a derived `synopsis` object. `selected_function` is null for manual ranges. These fields extend the original schema; consumers should allow additional fields.
 - Existing output files are preserved unless `--force` is supplied. Git metadata is protected even with `--force`, including bare and separate Git directories. Output publication is atomic; missing parent directories are reported.
 - Select at most **200 lines** from a source blob no larger than **512 KiB**. Binary/NUL-containing, non-UTF-8, symbolic-link and submodule inputs are rejected.
-- Function catalogs are limited to **10,000 definitions**, **2 MiB** of total qualified-name text, and **8 MiB** of serialized output. Files exceeding these limits can still be investigated with manual ranges. CRLF and UTF-8 BOM are supported; bare CR newlines require manual ranges because Python and Git count them differently.
+- Function catalogs are limited to **10,000 definitions**, **2 MiB** of total qualified-name text, and **8 MiB** of serialized output. Files exceeding these limits can still be investigated with manual ranges. CRLF and UTF-8 BOM are supported; Python bare CR newlines require manual ranges because Python and Git count them differently. JavaScript/TypeScript ranges always count LF only.
 - `--max-commits` is **1–50**, default **20**. Older range changes and rename records can be omitted; truncation is disclosed.
 - Each Git command has a **10-second** timeout and **2 MiB** combined stdout/stderr cap. Processes are killed and reaped on limits. Serialized reports are limited to **8 MiB**.
 - Shallow history is usable but incomplete. Configured partial/promisor clones are rejected to avoid implicit object downloads; use a complete local clone.
@@ -159,4 +187,20 @@ ruff check .
 
 Tests create temporary repositories and cover roots, line edits and insertions, rename-plus-edit, merges, shallow and bare repositories, special filenames, invalid input, Git configuration side effects, output protection, HTML escaping/anchors, function selection from immutable snapshots, synopsis evidence, CLI behavior, subprocess timeouts and byte caps, and bounded supplied-context imports with exact commit matching, safe discussion links and escaped provenance. No existing repository is modified by the tests.
 
+The default suite explicitly skips native syntax cases when the extra is absent. To require and verify the entire optional feature:
+
+```sh
+python3 -m pip install '.[javascript]'
+GIT_HISTORY_REQUIRE_JAVASCRIPT=1 python3 -m unittest discover -v
+python3 -m pip wheel --no-deps . --wheel-dir dist
+```
+
+CI checks dependency-free behavior before installing the extra, then requires the complete native suite and checks the installed command outside the source tree on Python 3.11, 3.12 and 3.13.
+
 Future work includes evidence-grounded semantic summaries. Supplied excerpts remain unverified context; this tool does not infer intent or automatically retrieve discussions.
+
+### Measured optional-parser verification
+
+[Recorded evidence](docs/2026-10-04-javascript-verification.json) covers the 177-test suite on actual Linux Python 3.11.16, 3.12.14 and 3.13.5: 176 pass with the extra and one core-only case skips. Without the extra, 151 pass and 26 native cases explicitly skip. Ruff, compilation, wheel build and installed commands outside the source tree passed.
+
+An independently parsed TypeScript 5.9.3 reference matched all 20 top-level function declaration ranges across committed Stock, Lens and Melody sources. Real installed CLI HTML/JSON reports matched the selected source and 25/46/13 blame lines respectively. The installed worker accepted exactly 512 KiB of source and 10,000 definitions, rejected one-byte/one-definition excess and qualified-name amplification, and rejected a 512 KiB malformed-depth fixture. The 10,000-definition catalog took 0.17 seconds; maximum observed child RSS across this acceptance run was 138 MiB. These are bounded fixture measurements, not a semantic-correctness or throughput guarantee for arbitrary source.

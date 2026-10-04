@@ -1,0 +1,141 @@
+{
+  "revision": "22c5d218f77df188b66b7d1db07f0c4233dc5652",
+  "python": "3.11.16",
+  "independentCompiler": "5.9.3",
+  "installedCli": [
+    {
+      "file": "apps/stock-notebook/src/research.ts",
+      "selection": "screenDataset",
+      "catalogCount": 14,
+      "independentDeclarations": 10,
+      "range": {
+        "qualified_name": "screenDataset",
+        "start_line": 68,
+        "end_line": 92
+      },
+      "blameLines": 25,
+      "changes": 1,
+      "htmlBytes": 25536,
+      "seconds": 0.4256826419987192
+    },
+    {
+      "file": "apps/lens-studio/src/render.ts",
+      "selection": "renderPixels",
+      "catalogCount": 8,
+      "independentDeclarations": 6,
+      "range": {
+        "qualified_name": "renderPixels",
+        "start_line": 32,
+        "end_line": 77
+      },
+      "blameLines": 46,
+      "changes": 1,
+      "htmlBytes": 34574,
+      "seconds": 0.38852477299951715
+    },
+    {
+      "file": "apps/melody-studio/src/arrangement.ts",
+      "selection": "repeatTrack",
+      "catalogCount": 4,
+      "independentDeclarations": 4,
+      "range": {
+        "qualified_name": "repeatTrack",
+        "start_line": 35,
+        "end_line": 47
+      },
+      "blameLines": 13,
+      "changes": 1,
+      "htmlBytes": 18895,
+      "seconds": 0.3685336210000969
+    }
+  ],
+  "boundaryCases": [
+    {
+      "case": "512 KiB exact",
+      "sourceBytes": 524288,
+      "seconds": 0.10270399599903612,
+      "outcome": "1 definitions"
+    },
+    {
+      "case": "512 KiB plus one",
+      "sourceBytes": 524289,
+      "seconds": 9.870000212686136e-05,
+      "outcome": "The committed source exceeds the native parser complexity limits; use manual --lines selection."
+    },
+    {
+      "case": "10,000 definitions",
+      "sourceBytes": 150000,
+      "seconds": 0.1699795169988647,
+      "outcome": "10000 definitions"
+    },
+    {
+      "case": "10,001 definitions",
+      "sourceBytes": 150015,
+      "seconds": 0.1452142729976913,
+      "outcome": "The committed source exceeds the native parser complexity limits; use manual --lines selection."
+    },
+    {
+      "case": "qualified names above 2 MiB",
+      "sourceBytes": 26699,
+      "seconds": 0.08487143399906927,
+      "outcome": "The committed source exceeds the native parser complexity limits; use manual --lines selection."
+    },
+    {
+      "case": "512 KiB malformed depth",
+      "sourceBytes": 524288,
+      "seconds": 0.3617929739993997,
+      "outcome": "The committed JavaScript/TypeScript source has invalid or unsupported syntax. Check its syntax or use manual --lines selection."
+    }
+  ],
+  "maximumChildRssKiB": 141452,
+  "limitations": "Linux runtime only. TypeScript compiler comparison covers 20 existing top-level declarations across three committed monorepo files; it is not a claim of complete JavaScript/TypeScript semantic analysis.",
+  "environment": {
+    "date": "2026-10-04",
+    "platform": "Linux x86_64 Debian 13",
+    "cpuQuota": 4,
+    "nativePins": {
+      "tree-sitter": "0.25.2",
+      "tree-sitter-javascript": "0.25.0",
+      "tree-sitter-typescript": "0.23.2"
+    },
+    "macOSRuntimeVerified": false
+  },
+  "tests": {
+    "discovered": 177,
+    "withExtra": {
+      "passed": 176,
+      "skipped": 1,
+      "skipReason": "The missing-dependency error test runs in core-only environments.",
+      "python": [
+        "3.11.16",
+        "3.12.14",
+        "3.13.5"
+      ],
+      "seconds": [
+        13.773,
+        13.829,
+        13.818
+      ]
+    },
+    "withoutExtra": {
+      "passed": 151,
+      "skipped": 26,
+      "skipReason": "Native syntax and installed-extra fixtures require optional dependencies.",
+      "python": "3.12.14",
+      "seconds": 8.885
+    },
+    "ruff": "passed",
+    "compileall": "passed",
+    "wheelBuild": "passed",
+    "installedCoreAndExtra": "both passed outside source tree",
+    "remoteCI": "pending"
+  },
+  "packaging": {
+    "version": "0.4.0",
+    "wheelSha256": "1a7d7f872548c3cd7294a4e62ba0b710e8add16331bfa8d1782ab07b09790183",
+    "corePythonSelection": true,
+    "coreManualTypeScriptEvidence": true,
+    "missingNativeGuidance": true,
+    "noNativeParentImports": true
+  }
+}

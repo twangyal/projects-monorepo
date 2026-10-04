@@ -4,10 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "local-git-history"
-version = "0.3.0"
+version = "0.4.0"
 description = "Read-only, evidence-linked reports for committed source history"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.optional-dependencies]
+javascript = [
+    "tree-sitter==0.25.2",
+    "tree-sitter-javascript==0.25.0",
+    "tree-sitter-typescript==0.23.2",
+]
 
 [project.scripts]
 git-history = "git_history.cli:main"

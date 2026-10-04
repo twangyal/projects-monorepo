@@ -30,8 +30,21 @@ jobs:
         with:
           python-version: '${{ matrix.python }}'
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m unittest discover -v
+      - name: Verify dependency-free Python and manual-range behavior
+        run: python -m unittest discover -v
       - run: python -m compileall -q git_history tests
       - run: ruff check .
-      - run: python -m pip install .
-      - run: git-history --help
+      - name: Build and install the optional parser extra
+        run: |
+          python -m pip wheel --no-deps . --wheel-dir dist
+          wheels=(dist/local_git_history-*.whl)
+          python -m pip install "${wheels[0]}[javascript]"
+      - name: Verify the complete suite with native parsing required
+        env:
+          GIT_HISTORY_REQUIRE_JAVASCRIPT: '1'
+        run: python -m unittest discover -v
+      - name: Check installed command and isolated parser outside the source tree
+        run: |
+          cd "$RUNNER_TEMP"
+          git-history --help
+          python -I -c "from git_history.function_parser import parse_functions; result = parse_functions('export const square = (n: number) => n * n;', 'sample.ts'); assert [(f.qualified_name, f.start_line, f.end_line) for f in result] == [('square', 1, 1)]"

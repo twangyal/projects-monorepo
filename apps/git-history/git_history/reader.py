@@ -250,7 +250,7 @@ def _catalog(snapshot: _Snapshot, file: str, ref: str) -> FunctionCatalog:
 
 
 def list_functions(repo: str | Path, file: str, ref: str = 'HEAD') -> FunctionCatalog:
-    """List committed Python functions without importing or executing source."""
+    """List supported committed functions without importing or executing source."""
     return _catalog(_load_snapshot(repo, file, ref), file, ref)
 
 

@@ -83,15 +83,17 @@ def write_report(output: Path, text: str, repo: str, force: bool = False) -> Non
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="git-history", description="Inspect committed source history using local Git evidence.")
     commands = parser.add_subparsers(dest="command", required=True)
-    explain = commands.add_parser("explain", help="Produce an evidence report for a line range or Python function.")
-    functions = commands.add_parser("functions", help="List functions in a committed Python file.")
+    explain = commands.add_parser("explain", help="Produce an evidence report for a line range or named function.",
+                                  description="Inspect a committed range or Python, JavaScript or TypeScript function. JavaScript/TypeScript selection requires the optional javascript extra.")
+    functions = commands.add_parser("functions", help="List functions in committed Python, JavaScript or TypeScript source.",
+                                    description="List committed Python functions or optional JavaScript/TypeScript functions. Install the javascript extra for JavaScript/TypeScript selection.")
     for command in (explain, functions):
         command.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
         command.add_argument("--ref", default="HEAD", help="Committed revision (default: HEAD).")
         command.add_argument("--file", required=True, help="Exact repository-relative file path.")
     selection = explain.add_mutually_exclusive_group(required=True)
     selection.add_argument("--lines", type=_lines, metavar="START:END")
-    selection.add_argument("--function", metavar="QUALIFIED_NAME", help="Exact Python function name from the functions command.")
+    selection.add_argument("--function", metavar="QUALIFIED_NAME", help="Exact qualified function name from the functions command.")
     explain.add_argument("--max-commits", type=int, default=20, help="At most 1–50 range-changing commits (default: 20).")
     explain.add_argument("--context", metavar="FILE", help="Optional local JSON of unverified discussion excerpts for represented commits.")
     explain.add_argument("--format", choices=("html", "json"), default="html")

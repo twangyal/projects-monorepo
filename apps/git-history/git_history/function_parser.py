@@ -8,6 +8,7 @@ import sys
 import tokenize
 
 from .model import FunctionDefinition
+from .native_protocol import SUFFIX_LANGUAGES
 
 
 MAX_FUNCTIONS = 10_000
@@ -20,8 +21,17 @@ class FunctionParseError(ValueError):
 
 def parse_functions(source: str, file: str) -> list[FunctionDefinition]:
     """Return every named function, preserving ambiguous repeated definitions."""
-    if PurePosixPath(file).suffix not in ('.py', '.pyi'):
-        raise FunctionParseError('Function selection supports .py and .pyi files; use --lines for other text files.')
+    suffix = PurePosixPath(file).suffix
+    if suffix in SUFFIX_LANGUAGES:
+        # Keep native dependencies out of the parent and the dependency-free
+        # Python/manual-range paths. The supervisor imports no native grammar.
+        from .native_parser import NativeParserError, parse_native_functions
+        try:
+            return parse_native_functions(source, SUFFIX_LANGUAGES[suffix])
+        except NativeParserError as exc:
+            raise FunctionParseError(str(exc)) from exc
+    if suffix not in ('.py', '.pyi'):
+        raise FunctionParseError('Function selection supports .py/.pyi and optional JavaScript/TypeScript files; use --lines for other text files.')
     if re.search(r'\r(?!\n)', source):
         raise FunctionParseError('Bare CR newlines have different Python and Git line numbers; use manual --lines selection.')
     # A UTF-8 signature and CRLF do not change physical line coordinates.
