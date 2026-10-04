@@ -1,6 +1,5 @@
-/** Reviewed geometric artwork proposals; no learned or semantic correspondence. */
-import { validateProject, MAX_DRAWING_CELS, MAX_JSON_BYTES } from './model.ts';
-import type { Point, Stroke, DrawingCel, DrawingLayer, Project } from './model.ts';
+/** Explicit, source-bound geometric proposals. No learned or inferred correspondence. */
+import { MAX_FRAMES, MAX_DRAWING_CELS, MAX_JSON_BYTES, validateProject, type DrawingCel, type DrawingLayer, type Point, type Project, type Stroke } from './model.ts';
 
 export const TWEEN_SAMPLES = 64;
 export const MAX_TWEEN_PAIRS = 8;
@@ -9,196 +8,207 @@ export interface TweenPair { startStroke: number; endStroke: number; reverseEnd:
 export interface TweenChoices { pairs: TweenPair[]; frames: number[] }
 export interface TweenUsage { layerCels: number; projectStrokes: number; projectPoints: number; projectBytes: number }
 export interface TweenProposal {
-  selection: TweenSelection; choices: TweenChoices; generated: DrawingCel[]; before: TweenUsage; after: TweenUsage;
+  selection: TweenSelection; choices: TweenChoices;
+  generated: DrawingCel[]; before: TweenUsage; after: TweenUsage;
 }
-
-// Identity, exact public fields and the complete canonical source are all pinned.
-// Never retain a second full image/candidate graph in this receipt.
 const receipts = new WeakMap<TweenProposal, { source: string; proposal: string }>();
 const encoder = new TextEncoder();
+function fail(message: string): never { throw new Error(message); }
+const positiveZero = (value: number): number => value === 0 ? 0 : value;
+const interpolate = (a: number, b: number, t: number): number => positiveZero(a === b ? a : (1 - t) * a + t * b);
 
-function record(value: unknown, fields: readonly string[], label: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)
-    || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new Error(`${label} must be a plain record.`);
+function object(value: unknown, keys: readonly string[], label: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)
+      || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) fail(`${label} must be a plain data object.`);
   const descriptors = Object.getOwnPropertyDescriptors(value);
-  const names = Reflect.ownKeys(descriptors);
-  if (names.length !== fields.length || fields.some(key => !Object.hasOwn(descriptors, key))
-    || names.some(key => typeof key !== 'string' || !fields.includes(key)
-      || !('value' in descriptors[key]) || !descriptors[key].enumerable)) {
-    throw new Error(`${label} requires exact data fields, without accessors.`);
+  const own = Reflect.ownKeys(descriptors);
+  if (own.length !== keys.length || own.some(key => typeof key !== 'string' || !keys.includes(key))) fail(`${label} has unsupported or missing fields.`);
+  for (const key of keys) {
+    const field = descriptors[key];
+    if (!field || !field.enumerable || !('value' in field)) fail(`${label} must not contain accessors.`);
   }
   return value as Record<string, unknown>;
 }
-function dataArray(value: unknown, min: number, max: number, label: string): unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype
-    || value.length < min || value.length > max || Reflect.ownKeys(value).length !== value.length + 1) {
-    throw new Error(`${label} requires a plain dense array of ${min}–${max} entries.`);
-  }
-  for (let i = 0; i < value.length; i++) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
-    if (!descriptor || !('value' in descriptor) || !descriptor.enumerable) throw new Error(`${label} requires own data entries.`);
+function array(value: unknown, minimum: number, maximum: number, label: string): unknown[] {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || value.length < minimum || value.length > maximum) fail(`${label} has an unsupported count.`);
+  if (Reflect.ownKeys(value).length !== value.length + 1) fail(`${label} must be a dense data array.`);
+  for (let index = 0; index < value.length; index++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    if (!descriptor?.enumerable || !('value' in descriptor)) fail(`${label} must be a dense array without accessors.`);
   }
   return value;
 }
-function bounded(value: unknown, min: number, max: number, label: string, integer = false, positiveZero = false): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max
-    || (integer && !Number.isInteger(value)) || (positiveZero && Object.is(value, -0))) {
-    throw new Error(`${label} is outside its finite${integer ? ' integer' : ''} bounds.`);
-  }
+function number(value: unknown, minimum: number, maximum: number, label: string, exactZero = false): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < minimum || value > maximum || (exactZero && Object.is(value, -0))) fail(`${label} must be a finite bounded number.`);
+  return positiveZero(value);
+}
+function integer(value: unknown, minimum: number, maximum: number, label: string, exactZero = false): number {
+  const result = number(value, minimum, maximum, label, exactZero);
+  if (!Number.isInteger(result)) fail(`${label} must be an integer.`);
+  return result;
+}
+function boolean(value: unknown, label: string): boolean {
+  if (typeof value !== 'boolean') fail(`${label} must be true or false.`);
   return value;
 }
-const zero = (n: number) => n === 0 ? 0 : n;
-// Equivalent affine interpolation evaluated from the nearer endpoint. The
-// weighted sum can round a constant legal1280/40 above its admission bound.
-// This preserves constant coordinates exactly without clamping any geometry.
-const interpolate = (a: number, b: number, t: number) => zero(t <= .5 ? a + (b - a) * t : b - (b - a) * (1 - t));
-function points(value: unknown, positiveZero = false): Point[] {
-  return dataArray(value, 1, 1000, 'Stroke points').map(entry => {
-    const p = record(entry, ['x', 'y'], 'Point');
-    return { x: zero(bounded(p.x, -1280, 1280, 'Point x', false, positiveZero)),
-      y: zero(bounded(p.y, -1280, 1280, 'Point y', false, positiveZero)) };
-  });
+function point(value: unknown, exactZero = false): Point {
+  const input = object(value, ['x', 'y'], 'Stroke point');
+  return { x: number(input.x, -1280, 1280, 'Point x', exactZero), y: number(input.y, -1280, 1280, 'Point y', exactZero) };
 }
-function admitSelection(value: unknown): TweenSelection {
-  const input = record(value, ['layerId', 'startFrame', 'endFrame'], 'Tween selection');
-  if (typeof input.layerId !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(input.layerId)) throw new Error('Select an existing drawing layer.');
-  const startFrame = bounded(input.startFrame, 0, 95, 'Starting frame', true);
-  const endFrame = bounded(input.endFrame, 0, 95, 'Ending frame', true);
-  if (endFrame - startFrame < 2) throw new Error('Endpoint drawings need at least one free interior frame.');
-  return { layerId: input.layerId, startFrame: zero(startFrame), endFrame };
+function selection(value: unknown, exactZero = false): TweenSelection {
+  const input = object(value, ['layerId', 'startFrame', 'endFrame'], 'Tween selection');
+  if (typeof input.layerId !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(input.layerId)) fail('Choose an existing drawing layer.');
+  const startFrame = integer(input.startFrame, 0, MAX_FRAMES - 1, 'Starting frame', exactZero);
+  const endFrame = integer(input.endFrame, 0, MAX_FRAMES - 1, 'Ending frame', exactZero);
+  if (endFrame <= startFrame + 1) fail('Choose two drawings with an interior frame between them.');
+  return { layerId: input.layerId, startFrame, endFrame };
 }
-function admitChoices(value: unknown, selection: TweenSelection, count: number): TweenChoices {
-  const input = record(value, ['pairs', 'frames'], 'Tween choices');
-  const pairs = dataArray(input.pairs, count, count, 'Stroke pairs').map((entry, i) => {
-    const p = record(entry, ['startStroke', 'endStroke', 'reverseEnd'], 'Stroke pair');
-    const startStroke = bounded(p.startStroke, 0, count - 1, 'Starting stroke', true);
-    const endStroke = bounded(p.endStroke, 0, count - 1, 'Ending stroke', true);
-    if (startStroke !== i || typeof p.reverseEnd !== 'boolean') throw new Error('Pair each starting stroke in order with explicit direction.');
-    return { startStroke: zero(startStroke), endStroke: zero(endStroke), reverseEnd: p.reverseEnd };
+function choices(value: unknown, selected: TweenSelection, expectedPairs?: number, exactZero = false): TweenChoices {
+  const input = object(value, ['pairs', 'frames'], 'Tween choices');
+  const used = new Set<number>();
+  const pairs = array(input.pairs, 1, MAX_TWEEN_PAIRS, 'Stroke pairs').map((value, index): TweenPair => {
+    const pair = object(value, ['startStroke', 'endStroke', 'reverseEnd'], 'Stroke pair');
+    const startStroke = integer(pair.startStroke, 0, MAX_TWEEN_PAIRS - 1, 'Starting stroke', exactZero);
+    const endStroke = integer(pair.endStroke, 0, MAX_TWEEN_PAIRS - 1, 'Ending stroke', exactZero);
+    if (startStroke !== index || used.has(endStroke)) fail('Pair every starting stroke with a different ending stroke, in starting order.');
+    used.add(endStroke);
+    return { startStroke, endStroke, reverseEnd: boolean(pair.reverseEnd, 'Ending direction') };
   });
-  if (new Set(pairs.map(p => p.endStroke)).size !== count) throw new Error('Each ending stroke must be paired exactly once.');
-  let previous = selection.startFrame;
-  const frames = dataArray(input.frames, 1, 22, 'New drawing frames').map(entry => {
-    const frame = bounded(entry, selection.startFrame + 1, selection.endFrame - 1, 'New drawing frame', true);
-    if (frame <= previous) throw new Error('New drawing frames must be distinct and increasing.');
-    previous = frame; return frame;
+  if ((expectedPairs !== undefined && pairs.length !== expectedPairs) || pairs.some(pair => pair.endStroke >= pairs.length)) fail('Pair every starting and ending stroke exactly once.');
+  let previous = selected.startFrame;
+  const frames = array(input.frames, 1, MAX_DRAWING_CELS - 2, 'New drawing frames').map(value => {
+    const frame = integer(value, selected.startFrame + 1, selected.endFrame - 1, 'New drawing frame', exactZero);
+    if (frame <= previous) fail('New drawing frames must be unique and increasing inside the endpoints.');
+    previous = frame;
+    return frame;
   });
   return { pairs, frames };
 }
-function endpoints(project: Project, selection: TweenSelection): { layer: DrawingLayer; start: DrawingCel; end: DrawingCel } {
-  const layer = project.layers.find(entry => entry.id === selection.layerId);
-  if (!layer || layer.kind !== 'drawing') throw new Error('Select an existing vector drawing layer.');
-  const index = layer.cels.findIndex(cel => cel.frame === selection.startFrame);
-  const start = layer.cels[index], end = layer.cels[index + 1];
-  if (!start || !end || end.frame !== selection.endFrame) throw new Error('Choose two adjacent authored drawings.');
-  if (start.strokes.length < 1 || start.strokes.length > MAX_TWEEN_PAIRS || start.strokes.length !== end.strokes.length) {
-    throw new Error('Endpoints need the same nonzero count of 1–8 explicitly paired strokes.');
-  }
-  return { layer, start, end };
-}
 
 export function planTweenFrames(startFrame: number, endFrame: number, count: number): number[] {
-  bounded(startFrame, 0, 95, 'Starting frame', true); bounded(endFrame, 0, 95, 'Ending frame', true);
-  bounded(count, 1, 22, 'Number of new drawings', true);
-  if (count > endFrame - startFrame - 1) throw new Error('There are not enough free interior frames.');
-  return Array.from({ length: count }, (_, j) => startFrame + Math.floor((j + 1) * (endFrame - startFrame) / (count + 1)));
+  const start = integer(startFrame, 0, MAX_FRAMES - 1, 'Starting frame');
+  const end = integer(endFrame, 0, MAX_FRAMES - 1, 'Ending frame');
+  const total = integer(count, 1, MAX_DRAWING_CELS - 2, 'New drawing count');
+  if (end <= start || total >= end - start) fail('Choose no more new drawings than there are interior frames.');
+  return Array.from({ length: total }, (_, index) => start + Math.floor((index + 1) * (end - start) / (total + 1)));
 }
 
-export function resampleStrokePoints(input: readonly Point[], reverse = false): Point[] {
-  if (typeof reverse !== 'boolean') throw new Error('Stroke reversal must be explicit boolean.');
-  const path = points(input); if (reverse) path.reverse();
-  const ends = [0];
-  for (let i = 1; i < path.length; i++) ends.push(ends[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y));
-  const total = ends.at(-1)!;
-  if (total === 0) return Array.from({ length: TWEEN_SAMPLES }, () => ({ ...path[0] }));
-  let segment = 1;
-  return Array.from({ length: TWEEN_SAMPLES }, (_, k) => {
-    if (k === 0) return { ...path[0] };
-    if (k === TWEEN_SAMPLES - 1) return { ...path.at(-1)! };
-    const distance = total * k / (TWEEN_SAMPLES - 1);
-    while (segment < path.length - 1 && (ends[segment] < distance || ends[segment] === ends[segment - 1])) segment++;
-    const fraction = (distance - ends[segment - 1]) / (ends[segment] - ends[segment - 1]);
-    const a = path[segment - 1], b = path[segment];
-    return { x: interpolate(a.x, b.x, fraction), y: interpolate(a.y, b.y, fraction) };
+type Segment = { a: Point; b: Point; length: number; from: number; to: number };
+function sample(points: readonly Point[], reverse: boolean): Point[] {
+  const ordered = reverse ? [...points].reverse() : points;
+  const segments: Segment[] = [];
+  let total = 0;
+  for (let index = 1; index < ordered.length; index++) {
+    const a = ordered[index - 1], b = ordered[index], length = Math.hypot(b.x - a.x, b.y - a.y);
+    if (length === 0) continue;
+    segments.push({ a, b, length, from: total, to: total + length });
+    total += length;
+  }
+  const copy = (p: Point): Point => ({ x: positiveZero(p.x), y: positiveZero(p.y) });
+  if (total === 0) return Array.from({ length: TWEEN_SAMPLES }, () => copy(ordered[0]));
+  let segment = 0;
+  return Array.from({ length: TWEEN_SAMPLES }, (_, index) => {
+    if (index === 0) return copy(ordered[0]);
+    if (index === TWEEN_SAMPLES - 1) return copy(ordered.at(-1)!);
+    const distance = total * index / (TWEEN_SAMPLES - 1);
+    while (distance > segments[segment].to && segment + 1 < segments.length) segment++;
+    const { a, b, from, length } = segments[segment], q = (distance - from) / length;
+    return { x: interpolate(a.x, b.x, q), y: interpolate(a.y, b.y, q) };
   });
 }
-function interpolateColor(a: string, b: string, t: number): string {
-  return '#' + [1, 3, 5].map(offset => Math.round((1 - t) * parseInt(a.slice(offset, offset + 2), 16)
-    + t * parseInt(b.slice(offset, offset + 2), 16)).toString(16).padStart(2, '0')).join('');
+export function resampleStrokePoints(points: readonly Point[], reverse = false): Point[] {
+  const input = array(points, 1, 1000, 'Stroke points').map(value => point(value));
+  return sample(input, boolean(reverse, 'Ending direction'));
 }
-function usage(project: Project, layerId: string): TweenUsage {
+
+function selectedLayer(project: Project, selected: TweenSelection): DrawingLayer {
+  const layer = project.layers.find(layer => layer.id === selected.layerId);
+  if (!layer || layer.kind !== 'drawing') fail('Choose an existing drawing layer with two endpoint drawings.');
+  return layer;
+}
+function usage(project: Project, layerId: string, json: string): TweenUsage {
   let projectStrokes = 0, projectPoints = 0;
   for (const layer of project.layers) if (layer.kind === 'drawing') for (const cel of layer.cels) {
     projectStrokes += cel.strokes.length;
     for (const stroke of cel.strokes) projectPoints += stroke.points.length;
   }
-  const layer = project.layers.find(entry => entry.id === layerId) as DrawingLayer;
-  return { layerCels: layer.cels.length, projectStrokes, projectPoints, projectBytes: encoder.encode(JSON.stringify(project)).byteLength };
+  const selected = project.layers.find(layer => layer.id === layerId) as DrawingLayer;
+  return { layerCels: selected.cels.length, projectStrokes, projectPoints, projectBytes: encoder.encode(json).length };
 }
-function candidate(source: Project, selection: TweenSelection, generated: DrawingCel[]): Project {
-  return validateProject({ ...source, layers: source.layers.map(layer => layer.id === selection.layerId && layer.kind === 'drawing'
-    ? { ...layer, cels: [...layer.cels, ...generated].sort((a, b) => a.frame - b.frame) } : layer) });
+function candidate(project: Project, selected: TweenSelection, generated: DrawingCel[]): Project {
+  const layer = selectedLayer(project, selected);
+  layer.cels = [...layer.cels, ...generated].sort((a, b) => a.frame - b.frame);
+  return validateProject(project);
+}
+const channels = (color: string): number[] => [1, 3, 5].map(index => parseInt(color.slice(index, index + 2), 16));
+function interpolateColor(a: number[], b: number[], t: number): string {
+  return '#' + a.map((channel, index) => Math.round((1 - t) * channel + t * b[index]).toString(16).padStart(2, '0')).join('');
 }
 
 export function buildDrawingTween(project: Project, selected: TweenSelection, requested: TweenChoices): TweenProposal {
-  const source = validateProject(project), selection = admitSelection(selected);
-  const { layer, start, end } = endpoints(source, selection);
-  const choices = admitChoices(requested, selection, start.strokes.length);
-  if (layer.cels.length + choices.frames.length > MAX_DRAWING_CELS) throw new Error('A drawing layer can retain at most 24 drawings.');
-  const paths = choices.pairs.map(pair => ({ a: resampleStrokePoints(start.strokes[pair.startStroke].points),
-    b: resampleStrokePoints(end.strokes[pair.endStroke].points, pair.reverseEnd) }));
-  const generated = choices.frames.map(frame => {
-    const t = (frame - selection.startFrame) / (selection.endFrame - selection.startFrame);
-    const strokes: Stroke[] = choices.pairs.map((pair, i) => {
-      const a = start.strokes[pair.startStroke], b = end.strokes[pair.endStroke];
-      return { color: interpolateColor(a.color, b.color, t), width: interpolate(a.width, b.width, t),
-        points: paths[i].a.map((p, k) => ({ x: interpolate(p.x, paths[i].b[k].x, t),
-          y: interpolate(p.y, paths[i].b[k].y, t) })) };
-    });
+  const admitted = validateProject(project), selectedSafe = selection(selected), layer = selectedLayer(admitted, selectedSafe);
+  const index = layer.cels.findIndex(cel => cel.frame === selectedSafe.startFrame);
+  const start = layer.cels[index], end = layer.cels[index + 1];
+  if (!start || !end || end.frame !== selectedSafe.endFrame) fail('Choose adjacent existing drawings; no intervening artwork may be replaced.');
+  if (start.strokes.length < 1 || start.strokes.length > MAX_TWEEN_PAIRS || start.strokes.length !== end.strokes.length) fail('Endpoint drawings need the same number of strokes, from 1 to 8. Blank or unmatched drawings cannot be tweened.');
+  const selectedChoices = choices(requested, selectedSafe, start.strokes.length);
+  const sourceJson = JSON.stringify(admitted), before = usage(admitted, selectedSafe.layerId, sourceJson);
+  const addedStrokes = selectedChoices.frames.length * start.strokes.length;
+  if (before.layerCels + selectedChoices.frames.length > MAX_DRAWING_CELS) fail('This proposal would exceed the 24-drawing layer limit.');
+  if (before.projectStrokes + addedStrokes > 100) fail('This proposal would exceed 100 retained project strokes.');
+  if (before.projectPoints + addedStrokes * TWEEN_SAMPLES > 10_000) fail('This proposal would exceed 10,000 retained project points.');
+  const sampled = selectedChoices.pairs.map(pair => {
+    const a = start.strokes[pair.startStroke], b = end.strokes[pair.endStroke];
+    return { start: sample(a.points, false), end: sample(b.points, pair.reverseEnd), widthA: a.width, widthB: b.width, colorA: channels(a.color), colorB: channels(b.color) };
+  });
+  const generated = selectedChoices.frames.map(frame => {
+    const t = (frame - selectedSafe.startFrame) / (selectedSafe.endFrame - selectedSafe.startFrame);
+    const strokes: Stroke[] = sampled.map(stroke => ({
+      color: interpolateColor(stroke.colorA, stroke.colorB, t), width: interpolate(stroke.widthA, stroke.widthB, t),
+      points: stroke.start.map((a, index) => ({ x: interpolate(a.x, stroke.end[index].x, t), y: interpolate(a.y, stroke.end[index].y, t) })),
+    }));
     return { frame, strokes };
   });
-  const complete = candidate(source, selection, generated);
-  const proposal: TweenProposal = { selection, choices, generated, before: usage(source, selection.layerId), after: usage(complete, selection.layerId) };
-  receipts.set(proposal, { source: JSON.stringify(source), proposal: JSON.stringify(proposal) });
+  const complete = candidate(admitted, selectedSafe, generated);
+  const after = usage(complete, selectedSafe.layerId, JSON.stringify(complete));
+  const proposal = { selection: selectedSafe, choices: selectedChoices, generated, before, after };
+  receipts.set(proposal, { source: sourceJson, proposal: JSON.stringify(proposal) });
   return proposal;
 }
 
-/** Validate public data without canonicalizing it before the exact receipt check. */
-function validateProposal(value: TweenProposal, source: Project): void {
-  const p = record(value, ['selection', 'choices', 'generated', 'before', 'after'], 'Reviewed proposal');
-  const selection = admitSelection(p.selection);
-  if (Object.is(value.selection.startFrame, -0) || Object.is(value.selection.endFrame, -0)) throw new Error('Reviewed frame values changed.');
-  const { start } = endpoints(source, selection);
-  const choices = admitChoices(p.choices, selection, start.strokes.length);
-  if (value.choices.pairs.some(pair => Object.is(pair.startStroke, -0) || Object.is(pair.endStroke, -0))) throw new Error('Reviewed stroke indices changed.');
-  const cels = dataArray(p.generated, choices.frames.length, choices.frames.length, 'Generated drawings');
-  cels.forEach((entry, i) => {
-    const cel = record(entry, ['frame', 'strokes'], 'Generated drawing');
-    if (bounded(cel.frame, 1, 94, 'Generated frame', true) !== choices.frames[i]) throw new Error('Generated frames changed.');
-    dataArray(cel.strokes, start.strokes.length, start.strokes.length, 'Generated strokes').forEach(entry => {
-      const stroke = record(entry, ['color', 'width', 'points'], 'Generated stroke');
-      if (typeof stroke.color !== 'string' || !/^#[0-9a-f]{6}$/.test(stroke.color)) throw new Error('Generated color changed.');
-      bounded(stroke.width, 1, 40, 'Generated width');
-      dataArray(stroke.points, TWEEN_SAMPLES, TWEEN_SAMPLES, 'Generated points'); points(stroke.points, true);
+function admittedUsage(value: unknown): TweenUsage {
+  const input = object(value, ['layerCels', 'projectStrokes', 'projectPoints', 'projectBytes'], 'Tween usage');
+  return { layerCels: integer(input.layerCels, 2, MAX_DRAWING_CELS, 'Layer drawing count', true), projectStrokes: integer(input.projectStrokes, 0, 100, 'Project stroke count', true), projectPoints: integer(input.projectPoints, 0, 10_000, 'Project point count', true), projectBytes: integer(input.projectBytes, 1, MAX_JSON_BYTES, 'Project byte count', true) };
+}
+function admitProposal(value: unknown): TweenProposal {
+  const input = object(value, ['selection', 'choices', 'generated', 'before', 'after'], 'Tween proposal');
+  const selected = selection(input.selection, true), requested = choices(input.choices, selected, undefined, true);
+  const generated = array(input.generated, requested.frames.length, requested.frames.length, 'Generated drawings').map((value, index): DrawingCel => {
+    const cel = object(value, ['frame', 'strokes'], 'Generated drawing');
+    const frame = integer(cel.frame, selected.startFrame + 1, selected.endFrame - 1, 'Generated frame', true);
+    if (frame !== requested.frames[index]) fail('Generated frames must match the reviewed selection.');
+    const strokes = array(cel.strokes, requested.pairs.length, requested.pairs.length, 'Generated strokes').map((value): Stroke => {
+      const stroke = object(value, ['color', 'width', 'points'], 'Generated stroke');
+      if (typeof stroke.color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(stroke.color)) fail('Generated color must be a six-digit hex color.');
+      return { color: stroke.color, width: number(stroke.width, 1, 40, 'Generated width', true), points: array(stroke.points, TWEEN_SAMPLES, TWEEN_SAMPLES, 'Generated points').map(value => point(value, true)) };
     });
+    return { frame, strokes };
   });
-  for (const label of ['before', 'after'] as const) {
-    const u = record(p[label], ['layerCels', 'projectStrokes', 'projectPoints', 'projectBytes'], 'Proposal usage');
-    bounded(u.layerCels, 1, 24, 'Drawing count', true);
-    bounded(u.projectStrokes, 0, 100, 'Stroke count', true, true);
-    bounded(u.projectPoints, 0, 10000, 'Point count', true, true);
-    bounded(u.projectBytes, 1, MAX_JSON_BYTES, 'Project bytes', true);
-  }
+  return { selection: selected, choices: requested, generated, before: admittedUsage(input.before), after: admittedUsage(input.after) };
 }
-function admittedCandidate(current: Project, proposal: TweenProposal): Project {
-  const receipt = receipts.get(proposal);
-  if (!receipt) throw new Error('Review this proposal in the current workspace before applying it.');
+function reviewedCandidate(current: Project, proposal: TweenProposal): Project {
+  const receipt = proposal && typeof proposal === 'object' ? receipts.get(proposal) : undefined;
+  if (!receipt) fail('Review this drawing proposal again before previewing or applying it.');
+  // Shape admission must not invoke accessors or normalize a mutated raw receipt.
+  const safe = admitProposal(proposal);
+  if (JSON.stringify(proposal) !== receipt.proposal) fail('The reviewed proposal changed. Review the drawing choices again.');
   const source = validateProject(current);
-  validateProposal(proposal, source);
-  if (JSON.stringify(source) !== receipt.source || JSON.stringify(proposal) !== receipt.proposal) {
-    throw new Error('The workspace or proposal changed. Review the in-betweens again.');
-  }
-  return candidate(source, proposal.selection, proposal.generated);
+  if (JSON.stringify(source) !== receipt.source) fail('The source project changed. Review the drawing choices again.');
+  return candidate(source, safe.selection, safe.generated);
 }
-export function previewDrawingTween(current: Project, proposal: TweenProposal): Project { return admittedCandidate(current, proposal); }
-export function applyDrawingTween(current: Project, proposal: TweenProposal): Project { return admittedCandidate(current, proposal); }
+export function previewDrawingTween(current: Project, proposal: TweenProposal): Project {
+  return reviewedCandidate(current, proposal);
+}
+export function applyDrawingTween(current: Project, proposal: TweenProposal): Project {
+  return reviewedCandidate(current, proposal);
+}

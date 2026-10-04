@@ -1,6 +1,6 @@
 # Motion Studio
 
-A local drawing and animation workspace: make original freehand artwork, create independent held drawings, combine them with layer poses and imported images, preview the animation, and export a GIF. Projects stay in your browser or downloaded backup files. AI assistance and online saving/private sharing links are future work.
+A local drawing and animation workspace: make original freehand artwork, create independent held drawings, review geometric in-betweens, combine artwork with layer poses and imported images, and export a GIF. Projects stay in your browser or downloaded backup files. AI assistance and online saving/private sharing links are future work.
 
 ## Run
 
@@ -28,9 +28,9 @@ Undo/Redo retain up to 30 project snapshots within a 20 MiB history budget; larg
 
 ## Drawings and pose keyframes
 
-Drawing boundaries (cels) and pose keyframes are independent. Each drawing layer starts at frame 1 and holds its current strokes until the next drawing boundary. Blank drawings create visible empty intervals; duplicates are detached copies, so later edits do not change the original. Drawings switch exactly at their boundaries; strokes are not interpolated or morphed. Imported image layers keep fixed artwork.
+Drawing boundaries (cels) and pose keyframes are independent. Each drawing layer starts at frame 1 and holds its current strokes until the next drawing boundary. Blank drawings create visible empty intervals; duplicates are detached copies, so later edits do not change the original. Drawings switch exactly at their boundaries. The reviewed in-between tool can create additional editable drawings between two authored boundaries. Imported image layers keep fixed artwork.
 
-Each layer separately has position, uniform scale, rotation, opacity and pose keys. Held drawings can move through these poses, giving frame-by-frame artwork changes and continuous layer motion in the same animation. There is no AI-generated artwork or automatic in-between drawing.
+Each layer separately has position, uniform scale, rotation, opacity and pose keys. Held drawings can move through these poses, giving frame-by-frame artwork changes and continuous layer motion in the same animation. The in-between tool uses explicit geometric stroke correspondence; it does not train a model or infer semantic motion.
 
 Between two keys, the starting key's **Motion to next pose** controls interpolation:
 
@@ -43,6 +43,23 @@ Rotation interpolates the entered degrees directly, allowing complete spins; it 
 The interface numbers frames from **1**. Project JSON stores frames from **0**: displayed frame 1 is `frame: 0`. Position values use the fixed 640×360 stage coordinates. Imported images initially fit within 320×240 without enlarging small images; pose scale then transforms that geometry.
 
 Unapplied pose/name text remains visible, including empty or invalid values. Apply valid values or use **Discard pose edits** before changing layers, drawings, frames or projects. Values need not align to a suggested increment. JSON downloads remain available for committed work and explicitly exclude raw drafts. Pointer cancellation, Escape, focus/visibility loss or changed canvas geometry discard an active gesture without a partial save.
+
+## Review drawing in-betweens
+
+1. Select a drawing layer with two adjacent nonempty drawings and at least one free frame between them. Finish or discard existing pose/name drafts, then choose **Make drawing in-betweens**. Both endpoints must contain the same number of strokes, from one through eight.
+2. Choose **Starting drawing**; its next boundary is the ending drawing. For each starting stroke, explicitly choose a different ending stroke. Thumbnails, paint-order numbers, color, width and direction markers help identify them. **Pair in drawing order** is an explicit shortcut. Use **Reverse ending stroke** when its path was drawn in the opposite direction.
+3. Choose **Number of new drawings** and inspect the exact proposed frame numbers. **Review in-betweens** creates a temporary candidate and reports its complete cel, stroke, point and file usage. The separate preview frame/play controls inspect the candidate without changing the main timeline or saving it.
+4. Choose **Apply in-betweens** for one history edit, or **Discard in-betweens** to keep the existing project. Apply selects the first new drawing. Undo returns to both original endpoints and the previous timeline; Redo restores the full result. New cels remain independently editable and are included in normal backups and PNG/GIF exports.
+
+Each paired path is sampled at 64 equally spaced arc-length positions. Intermediate coordinates, brush width and encoded RGB channels follow the authored frame fraction. Original endpoint strokes, pose keys and other artwork remain unchanged. The new drawings hold between their boundaries just like other cels, while existing pose movement continues. Generated paint order follows the starting drawing; an explicitly paired ending can have a different order. Review that final transition as well as the interior frames.
+
+Exactly equal coordinates and widths retain their value during sampling and interpolation, including legal boundary values. Other scalar interpolation uses ordinary double arithmetic, and color channels round to integer encoded RGB values. This is not a perceptual color model.
+
+Sampling can soften corners, produce crossings or create self-intersections. A zero-length path remains a dot; unmatched or blank endpoints are unavailable. This deterministic geometric tool does not recognize a character, infer intended movement or guarantee artistic quality. Inspect the actual preview before applying.
+
+All retained originals and generated points count toward the existing global budgets. A request is refused as a whole if the complete project would exceed any cel, stroke, point or file limit; requested output is never silently reduced. Up to 22 interior cels fit between a two-cel source and the 24-cel layer limit, but the other budgets can be tighter. Existing history pruning still applies; this operation preserves an immediate Undo even for maximum-sized source and result projects.
+
+Changing correspondence, reversal, count or editor input retires the reviewed proposal, including a value changed and then changed back. The new raw fields remain visible for another Review. Main frame/layer changes, edits, import/history/recovery work and page departure also retire the old preview. Deliberately leaving a pairing draft requires confirmation. Failed or cancelled work cannot resurrect an old proposal or overwrite newer artwork. Normal downloads always contain committed work; review scratch is neither autosaved nor included in project backups.
 
 ## Bounds and image import
 
@@ -106,3 +123,15 @@ Drawing-cel authoring (#84) passes **63 unit tests and all 61 production Chromiu
 The independent normal-build acceptance imports a genuine 6,291,456-byte schema-1 project and migrates it to 6,291,540 bytes. An exact **6,291,624-byte schema-2 project** with eight layers, four images, 27 drawings, 100 strokes and 10,000 points survives a complete Chromium process restart with byte-identical backups and embedded artwork. All seven boundary PNGs and **96 actual GIF frames** independently match held red/blue/blank/red artwork alongside moving and stationary controls. The 126,667-byte GIF has exactly 8,000 ms of delays; encode plus download took 861.88 ms and independent decoding 501.74 ms in this runtime. Cancellation after 5/96 rendered frames terminates its real worker without a partial download. A separate eight-drawing-layer fixture admits all 192 boundaries; the maximum graph retains three history states within 20 MiB.
 
 The first maximum run missed a brief real progress interval with adaptive polling; a diagnostic measured 95 partial progress values over 228.5 ms. Animation-frame polling fixed the acceptance runner, with no production change or artificial worker delay. See [complete local evidence](docs/2026-10-04-drawing-cels-verification.json) and [CI receipt](docs/2026-10-04-drawing-cels-ci.json) for exact hashes, failed attempts and limits. These are bounded fixture/runtime results, not memory, device-compatibility or general latency guarantees.
+
+The drawing in-between acceptance runner uses separate original fixtures and closed-form geometric expectations. With a normal build already served locally, run:
+
+```sh
+MOTION_TWEENS_BASE_URL=http://127.0.0.1:4294 CHROMIUM_PATH=/path/to/chromium node scripts/smoke_drawing_tweens.mjs
+```
+
+It creates a fresh temporary directory, or a new directory named by `MOTION_TWEENS_OUTPUT`; `--fixtures-only` prepares and independently checks the original inputs without a browser. One fixture reaches 24 selected cels, 100 project strokes and 10,000 points with four genuinely decoded PNGs containing declared ancillary capacity padding. A separate eight-pair fixture reaches the same global stroke/point limits. The runner checks scratch isolation, exact endpoints, one Undo/Redo, real PNGs and all 96 GIF frames against independent geometry, plus a complete Chromium process restart. The image fixture is near the JSON ceiling; it does not claim the exact byte maximum or photographic complexity. File sizes do not measure memory use.
+
+Drawing in-betweens (#88) pass **105 unit tests and 76 distinct Chromium cases** locally, including the 61 existing cases unchanged, plus lint/typecheck/build. Independent regressions found and verified fixes for stale endpoint pairing controls, missing discard consent when Undo removes the selected layer, and rounding beyond valid constant coordinate/width limits. All 8,930 bounded constant-axis proposals now retain their exact legal values.
+
+The maximum acceptance passed on its first native run: both 100-stroke/10,000-point fixtures, all ten PNGs and all 192 frames of two real GIFs match independent scalar and pixel expectations. The 24-cel/four-image project is **5,758,348 bytes** and survives a complete Chromium restart byte-for-byte. The separate eight-pair project is 378,934 bytes with 12 cels. GIFs are 191,999 and 246,571 bytes, each with exactly 8,000 ms of delays. See [verification evidence](docs/2026-10-04-drawing-tweens-verification.json) for observed timings, hashes, original fixtures, failed regressions and precise limits.

@@ -121,3 +121,30 @@ footer { display: flex; justify-content: space-between; gap: 20px; color: #a297a
   .cel-actions button { flex-basis: 100%; }
   #pose-draft-status, #discard-pose-edits { grid-column: 1 / -1; }
 }
+
+/* Reviewed scratch drawings stay separate from the main animation stage. */
+#make-tween { margin-top: 12px; min-height: 44px; }
+#tween-panel { margin-top: 18px; padding: 16px; border: 1px solid #cdb9dc; border-radius: 8px; background: #faf6fc; }
+#tween-panel p { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+#tween-panel button, #tween-panel select, #tween-panel input[type=text] { min-height: 44px; }
+.tween-endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: center; margin-top: 16px; }
+#tween-ending-strokes { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px; margin-bottom: 16px; }
+#tween-panel figure { margin: 0; min-width: 0; }
+#tween-panel figcaption { margin: 8px 0; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+#tween-panel figure canvas { width: 100%; aspect-ratio: 1.8; box-shadow: none; cursor: default; border: 1px solid #e2d6e7; border-radius: 4px; }
+.tween-pair { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; align-items: center; border-top: 1px solid #e2d6e7; padding: 14px 0; }
+.tween-pair .field { margin: 0; }
+.tween-reverse { grid-column: 2; display: flex; align-items: center; gap: 8px; font-size: 12px; min-height: 44px; }
+.tween-reverse input { min-width: 20px; min-height: 20px; accent-color: #72538e; }
+.tween-count { margin: 16px 0 0; max-width: 280px; }
+#tween-status { padding: 10px; background: #f0e8f6; color: #593d71; border-radius: 6px; }
+#tween-status.error { background: #fff0e9; color: #924729; }
+#tween-preview { cursor: default; width: 100%; }
+.tween-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 700px) {
+  #tween-panel { padding: 12px; }
+  .tween-endpoints, .tween-pair { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .tween-pair figure { max-width: 220px; }
+  .tween-reverse { grid-column: 1; }
+  .tween-actions button { flex: 1 1 100%; }
+}
