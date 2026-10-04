@@ -13,7 +13,7 @@
     "pythonTests": 114,
     "typescriptTests": 18,
     "browserTests": 17,
-    "browserLocalRuns": "15 original cases passed together; two later invalid-preview regressions passed after their targeted fix. Final combined CI pending.",
+    "browserLocalRuns": "15 original cases passed together; two later invalid-preview regressions passed after their targeted fix. All 17 passed together in remote CI at 8be72d1 (run 37167470645); all 11 project workflows passed.",
     "lint": "passed",
     "typecheck": "passed",
     "productionBuild": "passed"

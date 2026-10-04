@@ -147,7 +147,7 @@ The initial [verification notes](docs/verification.md) record observed Linux rea
 
 ## Full-song verification (2026-10-04)
 
-The full-song milestone ([#33](https://github.com/twangyal/projects-monorepo/issues/33)) passed 114 Python tests, 18 TypeScript tests, Ruff, ESLint, type checking and the production build. The 15-case production browser run passed, followed by two targeted oversized-draft regressions after their preview fix. Fast browser separation remains explicitly fake; real audio/video codecs and downloaded files are exercised.
+The full-song milestone ([#33](https://github.com/twangyal/projects-monorepo/issues/33)) passed 114 Python tests, 18 TypeScript tests, Ruff, ESLint, type checking and the production build. All 17 production browser cases passed together in [CI](https://github.com/twangyal/projects-monorepo/actions/runs/37167470645) at `8be72d1`; all 11 project workflows passed at that commit. Fast browser separation remains explicitly fake; real audio/video codecs and downloaded files are exercised.
 
 Actual **offline Spleeter** ran on the existing verified cache in Python 3.11.16, TensorFlow 2.12.1 and Spleeter 2.4.2, on a four-CPU-quota/16 GiB Debian 13 environment:
 

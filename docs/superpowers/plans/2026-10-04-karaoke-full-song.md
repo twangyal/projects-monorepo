@@ -19,5 +19,7 @@ Issue #33; authoritative reviewed contract: `../specs/2026-10-04-karaoke-full-so
 - [x] Run actual verified offline model on180s and300s original audio. Record exact sample counts,11-window maximum metadata, global peak/gain, time, peak RSS, scratch/published size and offline attempts0. Test cancellation during a later window and cleanup, including child reaping.
 - [x] Complete one real300s production service/browser flow, saved supplied lyric cues across a chunk boundary and near the end, actual full-duration video export and independently decoded timeline/codec checks. Reopen completed project after restart. Record lack of subjective boundary listening/reference-stem quality measurements if unavailable.
 - [x] Update README and catalog with delivered limits, setup, precise measured evidence and honest quality/platform limitations. Preserve original model/licensed-example provenance.
-- [ ] Fetch concurrent Astra state; review scoped diff; commit/push verified durable progress without force. Check CI and update/close#33 only to actual completion, keep draftPR12 current.
-- [ ] Immediately reassess and continue useful unblocked work under the user's goal.
+- [x] Fetch concurrent Astra state; review scoped diff; commit/push verified durable progress without force. Check CI and update/close#33 only to actual completion, keep draftPR12 current.
+- [x] Immediately reassess and continue useful unblocked work under the user's goal.
+
+Completion: `8be72d1` passed all 11 remote workflows; issue #33 is closed. Continued with optional JavaScript/TypeScript function selection in Git History, issue #34.
