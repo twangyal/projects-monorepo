@@ -25,6 +25,11 @@ export interface Derived { growthPct: number | null; marginPct: number | null; d
 export interface Observation { kind: 'strength' | 'risk' | 'uncertainty'; code: string; text: string; fields: (keyof Company)[] }
 export interface ResearchRow { company: Company; derived: Derived; stale: boolean; observations: Observation[] }
 export interface ScreenResult { rows: ResearchRow[]; excludedStale: number; excludedMissing: number }
+export interface ScreenReason {
+  kind: 'stale' | 'sector' | 'currency' | 'filter-currency' | 'undefined' | 'threshold';
+  text: string; fields: (keyof Company)[]; filterIndex: number | null;
+}
+export interface ScreenDecision { row: ResearchRow; matched: boolean; reasons: ScreenReason[] }
 export interface Comparison { rows: ResearchRow[]; warnings: string[]; monetaryComparable: boolean }
 
 export const LIMITS = Object.freeze({

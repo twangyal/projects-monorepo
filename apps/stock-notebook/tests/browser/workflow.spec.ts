@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { originalCsv, header } from '../oracle/fixtures';
 import { annualCsv, annualDataset } from '../oracle/annual-fixtures';
 import type { Notebook } from '../../src/types';
+import { createNotebook } from '../../src/model';
+import { company as fixtureCompany, dataset as fixtureDataset, today as fixtureToday } from '../oracle/fixtures';
 
 async function download(page: Page, label: string) {
   const button = page.getByRole('button', { name: label, exact: true });
@@ -33,6 +35,91 @@ async function interpret(page: Page, query: string) {
   await page.getByRole('button', { name: 'Interpret criteria', exact: true }).click();
 }
 async function apply(page: Page) { await page.getByRole('button', { name: 'Apply filters', exact: true }).click(); }
+
+test('applied exclusion audit survives drafts, history, native reopen and downloaded reports', async ({ page }) => {
+  await page.goto('/'); await importCsv(page);
+  await interpret(page, 'companies with profitable and growing and low debt'); await apply(page);
+  await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
+  const audit = page.locator('#exclusion-content');
+  await expect(audit.locator('[data-ticker]')).toHaveCount(4);
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toContainText(/debtEquity 3.*<= 1/);
+  await expect(audit.locator('[data-ticker="ECHO"]')).toContainText(/netIncome.*not supplied/);
+  await expect(audit.locator('[data-ticker="ECHO"]')).toContainText(/equity.*nonpositive/);
+  await expect(audit.locator('[data-ticker="FOXTROT"]')).toContainText(/548.day/);
+  await expect(audit.locator('[data-ticker="CHARLIE"]')).toContainText('original-research.csv:4');
+  const beforeDraft = await audit.innerText();
+  await page.locator('[data-filter-id] [name=value]').last().fill('4');
+  expect(await audit.innerText()).toBe(beforeDraft);
+  const draftReport = await download(page, 'Download research report');
+  expect(draftReport.text).toContain('Screening exclusion audit');
+  expect(draftReport.text).toMatch(/Excluded: BRAVO; fiscal 2025-12-31; source original-research.csv:3/);
+  expect(draftReport.text).toMatch(/debtEquity 3.*<= 1/);
+  await apply(page); await expect(audit.locator('[data-ticker]')).toHaveCount(3);
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toHaveCount(0);
+  await audit.locator('[data-ticker="ECHO"]').getByRole('button', { name: 'View excluded evidence', exact: true }).click();
+  await expect(page.locator('#company-detail')).toContainText('ECHO');
+  await page.getByLabel('Research note', { exact: true }).fill('Review missing source figures.');
+  await page.getByRole('button', { name: 'Save note', exact: true }).click();
+  await expect(page.locator('#save-status')).toContainText('Saved locally');
+  const saved = await backup(page); expect(saved.schemaVersion).toBe(2);
+  await page.reload(); await expect(page.locator('#dataset-summary')).toContainText('original-research.csv');
+  await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
+  await expect(audit.locator('[data-ticker]')).toHaveCount(3);
+  expect(await backup(page)).toEqual(saved);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(audit).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.getByRole('tab', { name: 'Shortlist', exact: true }).focus();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('tab', { name: 'Excluded companies', exact: true })).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Excluded companies', exact: true })).toHaveAttribute('aria-selected', 'true');
+  const finalReport = await download(page, 'Download research report');
+  expect(finalReport.text).toContain('Review missing source figures.');
+  expect(finalReport.text).not.toContain('Excluded: BRAVO;');
+});
+
+test('production maximum exclusion audit retains 500 companies and 8000 safe source-linked reasons', async ({ page, baseURL }) => {
+  const errors: string[] = [], external: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('request', request => { if (new URL(request.url()).origin !== new URL(baseURL!).origin) external.push(request.url()); });
+  const data = fixtureDataset(Array.from({ length: 500 }, (_, index) => fixtureCompany({
+    ticker: `T${String(index).padStart(3, '0')}`, fiscalDate: '2025-12-31',
+    name: index === 0 ? '<img src=x onerror=window.bad=true>' : `Original bounded company ${index}`,
+    filingUrl: 'https://example.com/' + 'p'.repeat(2000),
+  })));
+  const book = createNotebook(data, fixtureToday);
+  book.screen.filters = Array.from({ length: 16 }, (_, index) => ({ metric: 'growthPct', operator: 'gt', value: 1000 + index, currency: null }));
+  await page.goto('/');
+  const started = Date.now();
+  await page.getByLabel('Import notebook backup', { exact: true }).setInputFiles({ name: 'bounded-exclusions.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(book)) });
+  await expect(page.locator('#import-review')).toContainText('500 annual rows');
+  await page.getByLabel('I confirm currency millions and comparable 12-month annual periods', { exact: true }).check();
+  await page.getByRole('button', { name: 'Replace universe', exact: true }).click();
+  await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
+  const audit = page.locator('#exclusion-content');
+  await expect(audit.locator('[data-ticker]')).toHaveCount(500);
+  await expect(audit.locator('li')).toHaveCount(8000);
+  await expect(audit.locator('[data-ticker="T499"]')).toContainText('original-research.csv:501');
+  await expect(audit.locator('[data-ticker="T000"]')).toContainText('<img src=x onerror=window.bad=true>');
+  await expect(audit.locator('img')).toHaveCount(0);
+  const publishedMs = Date.now() - started;
+  const exportedAt = Date.now(), report = await download(page, 'Download research report');
+  expect((report.text.match(/^Excluded: /gm) ?? []).length).toBe(500);
+  expect((report.text.match(/^\[threshold\]/gm) ?? []).length).toBe(8000);
+  expect(Buffer.byteLength(report.text)).toBeLessThanOrEqual(8 * 1024 * 1024);
+  const reportMs = Date.now() - exportedAt;
+  await expect(page.locator('#save-status')).toContainText('Saved locally');
+  await page.reload(); expect(await backup(page)).toEqual(book);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(errors).toEqual([]); expect(external).toEqual([]);
+  console.log(JSON.stringify({ verification: 'maximum-exclusion-audit', companies: 500, reasons: 8000, publishedMs, reportMs, reportBytes: Buffer.byteLength(report.text), browser: await page.evaluate(() => navigator.userAgent) }));
+});
 
 test('real original CSV becomes an inspected shortlist, source-linked comparison, notes and portable reports', async ({ page, baseURL }) => {
   const errors: string[] = [], external: string[] = [];

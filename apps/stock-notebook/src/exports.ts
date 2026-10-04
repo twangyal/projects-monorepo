@@ -3,7 +3,7 @@ import type { Company, Notebook, ResearchRow, Screen } from './types.ts';
 import { validateToday } from './validation.ts';
 import { validateNotebook } from './model.ts';
 import { parseQuery } from './query.ts';
-import { analyzeCompany, compareCompanies, screenDataset } from './research.ts';
+import { analyzeCompany, compareCompanies, screenDataset, auditScreen } from './research.ts';
 import { latestCompanies } from './periods.ts';
 import { analyzeCompanyHistory } from './annual-history.ts';
 import type { PeriodComparison } from './annual-history.ts';
@@ -87,6 +87,17 @@ export function buildReport(notebook: Notebook, today: string): string {
   }
   if (!shortlist.rows.length) append('No companies match the applied criteria.');
   for (const row of shortlist.rows) companyBlock(row);
+  append('', 'Screening exclusion audit (latest supplied period only)',
+    'Every failed applied rule is retained; one company may have multiple reasons. Draft controls do not affect these decisions.',
+    'Missing/undefined metrics never pass; different monetary currencies are not numerically compared. Values are unrounded.');
+  const excluded = auditScreen(dataset, screen, date).filter(decision => !decision.matched);
+  if (!excluded.length) append('No companies excluded by the applied criteria.');
+  for (const decision of excluded) {
+    const company = decision.row.company;
+    append('', `Excluded: ${company.ticker}; fiscal ${company.fiscalDate}; source ${dataset.fileName}:${company.sourceLine}`,
+      company.filingUrl ? `Supplied source link: ${company.filingUrl}` : 'No filing link supplied');
+    for (const reason of decision.reasons) append(`[${reason.kind}] ${reason.text} (fields: ${reason.fields.join(', ')}; source ${dataset.fileName}:${company.sourceLine})`);
+  }
   append('', 'Selected comparison', `Comparison order: ${current.comparison.length ? current.comparison.join(', ') : '(none)'}`,
     `Monetary amounts directly comparable: ${comparison.monetaryComparable ? 'Yes; same supplied currency' : 'No'}`);
   for (const warning of comparison.warnings) append(`Comparison warning: ${warning}`);

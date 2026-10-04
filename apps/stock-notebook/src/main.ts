@@ -3,7 +3,7 @@ import { parseCsv, createDataset, blankCsvTemplate } from './csv.ts';
 import { createNotebook, validateNotebook, parseNotebookJson, serializeNotebook, editState } from './model.ts';
 import { NotebookHistory } from './history.ts';
 import { parseQuery } from './query.ts';
-import { analyzeCompany, screenDataset, compareCompanies } from './research.ts';
+import { analyzeCompany, screenDataset, compareCompanies, auditScreen } from './research.ts';
 import { latestCompanies } from './periods.ts';
 import { analyzeCompanyHistory, type CompanyHistory, type PeriodComparison } from './annual-history.ts';
 import { NotebookStore } from './storage.ts';
@@ -66,11 +66,13 @@ screenForm.addEventListener('input', markScreenDraft); screenForm.addEventListen
 const appliedPanel = panel('Applied criteria', 'These effective filters drive the shortlist and exports. Draft controls do not.'); const appliedCriteria = el('div'); appliedCriteria.id = 'applied-criteria'; appliedPanel.append(appliedCriteria); research.append(appliedPanel);
 const tabs = el('div', '', 'tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Research views');
 const tabButtons = new Map<string, HTMLButtonElement>(); const tabPanels = new Map<string, HTMLElement>();
-for (const label of ['Shortlist', 'Comparison', 'Watchlist']) { const key = label.toLowerCase(); const b = button(label, () => { activeTab = key; renderTabs(); }); b.id = `tab-${key}`; b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', `panel-${key}`); tabs.append(b); tabButtons.set(key, b); const p = panel(label); p.id = `panel-${key}`; p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', b.id); tabPanels.set(key, p); }
+for (const label of ['Shortlist', 'Comparison', 'Watchlist', 'Excluded companies']) { const key = label.toLowerCase().replaceAll(' ', '-'); const b = button(label, () => { activeTab = key; renderTabs(); }); b.id = `tab-${key}`; b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', `panel-${key}`); tabs.append(b); tabButtons.set(key, b); const p = panel(label); p.id = `panel-${key}`; p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', b.id); tabPanels.set(key, p); }
 research.append(tabs, ...tabPanels.values());
 const screenStatus = el('p', '', 'hint'); screenStatus.id = 'screen-status'; const resultList = el('div', '', 'company-list'); resultList.id = 'results'; tabPanels.get('shortlist')!.append(screenStatus, resultList);
 const comparisonContent = el('div'); comparisonContent.id = 'comparison-content'; tabPanels.get('comparison')!.append(comparisonContent);
 const watchlistContent = el('div', '', 'company-list'); watchlistContent.id = 'watchlist-content'; tabPanels.get('watchlist')!.append(watchlistContent);
+const exclusionSummary = el('p', '', 'hint'); const exclusionContent = el('div', '', 'company-list'); exclusionContent.id = 'exclusion-content';
+tabPanels.get('excluded-companies')!.append(exclusionSummary, exclusionContent);
 const detail = panel('Company evidence', 'Reported figures are supplied by the importer, not independently verified. Ratios and observations are calculated from those figures.'); detail.id = 'company-detail'; detail.hidden = true; const detailContent = el('div'); detail.append(detailContent);
 const noteForm = el('form'); noteForm.id = 'note-form'; const noteInput = field(noteForm, 'note', 'Research note', true) as HTMLTextAreaElement; noteInput.maxLength = LIMITS.noteCharacters * 2; const noteButton = button('Save note', () => {}, 'primary'); noteButton.type = 'submit'; noteForm.append(noteButton); noteInput.addEventListener('input', () => { if (selectedTicker) noteDrafts.set(selectedTicker, noteInput.value); draftIntent(); }); noteForm.addEventListener('submit', (e) => { e.preventDefault(); saveNote(); }); detail.append(noteForm); research.append(detail);
 main.append(el('footer', 'Local browser storage · no account · download a notebook backup for recovery elsewhere.'));
@@ -271,6 +273,19 @@ function renderNotebook(day: string): void {
   if (!screen.filters.length) appliedCriteria.append(el('p', 'No numeric predicates.', 'hint')); if (notebook.query) { appliedCriteria.append(el('p', `Last applied interpretation: ${notebook.query}`, 'hint')); try { if (JSON.stringify(parseQuery(notebook.query, ds).screen) !== JSON.stringify(screen)) appliedCriteria.append(el('p', 'Filters edited after interpretation', 'edited-label')); } catch { /* Validated notebooks have a fully consumed saved query. */ } }
   screenStatus.textContent = `${results.rows.length} matched · ${results.excludedStale} excluded as stale · ${results.excludedMissing} excluded with required metrics missing`;
   resultList.replaceChildren(...results.rows.map((row) => companyCard(row, day))); if (!results.rows.length) resultList.append(el('p', 'No companies match the applied criteria. Inspect missing/stale counts or Clear filters.', 'empty'));
+  const excluded = auditScreen(ds, screen, day).filter(decision => !decision.matched);
+  exclusionSummary.textContent = `${excluded.length} excluded companies · latest supplied periods only · every failed applied rule is shown. Multiple reasons can apply to one company; missing/stale summary counts use the first applicable gate. Draft filters do not affect this view.`;
+  exclusionContent.replaceChildren(...excluded.map(decision => {
+    const c = decision.row.company, card = el('article', '', 'company-card'); card.dataset.ticker = c.ticker;
+    card.append(el('h3', `${c.ticker} · ${c.name}`), el('p', `${c.sector} · ${c.currency} · fiscal ${c.fiscalDate} · ${ds.fileName}:${c.sourceLine}`, 'hint'), sourceLink(c));
+    const reasons = el('ul');
+    for (const reason of decision.reasons) {
+      const item = el('li'); item.append(el('p', reason.text), el('p', `Source fields: ${reason.fields.join(', ')} · ${ds.fileName}:${c.sourceLine}`, 'hint')); reasons.append(item);
+    }
+    const view = button('View excluded evidence', () => { openCompany(c.ticker); }); view.dataset.action = 'excluded-view';
+    card.append(reasons, view); return card;
+  }));
+  if (!excluded.length) exclusionContent.append(el('p', 'No companies excluded by the applied criteria.', 'empty'));
   const comparison = compareCompanies(ds, notebook.comparison, day); comparisonContent.replaceChildren(...comparison.warnings.map((s) => el('p', s, 'warning'))); if (comparison.rows.length < 2) comparisonContent.append(el('p', 'Select at least two companies to compare, up to four. Selections remain manual research choices, including stale companies.', 'empty'));
   else { const grid = el('div', '', 'comparison-grid'); for (const row of comparison.rows) { const card = el('article', '', 'comparison-card'); card.dataset.ticker = row.company.ticker; card.append(el('h3', row.company.ticker), el('p', `${row.stale ? 'Stale' : 'Fresh'} fiscal period · ${ageInDays(row.company, day)} days old`, 'hint'), comparisonRemoveButton(row.company.ticker), facts(row, 'comparison')); grid.append(card); } comparisonContent.append(grid); }
   watchlistContent.replaceChildren(...notebook.watchlist.map((ticker) => companyCard(analyzeCompany(currentByTicker.get(ticker)!, day), day))); if (!notebook.watchlist.length) watchlistContent.append(el('p', 'No watchlist companies yet. Add companies from the shortlist.', 'empty')); renderDetail(day); renderTabs();

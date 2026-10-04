@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-04",
+  "sourceCommit": "096d5758837dd4d9fe6ccbe00cf0eb30f0b47b42",
+  "workflow": "https://github.com/twangyal/projects-monorepo/actions/runs/37170541308",
+  "checks": {
+    "unitTests": 110,
+    "productionBrowserTests": 22,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "exact2MiBAnnualHistorySmoke": "passed"
+  },
+  "productionMaximum": {
+    "companies": 500,
+    "appliedFilters": 16,
+    "retainedReasons": 8000,
+    "publishedMs": 2020,
+    "downloadReportMs": 734,
+    "reportBytes": 3726716,
+    "browser": "HeadlessChrome/153.0.8010.12",
+    "verified": [
+      "all 500 latest companies and 8000 reasons rendered",
+      "actual downloaded report retained all decisions",
+      "native IndexedDB reopen equals original notebook",
+      "imported markup remained literal text",
+      "390x844 mobile layout has no page overflow",
+      "zero external requests",
+      "zero page errors"
+    ]
+  },
+  "limitations": [
+    "original fictional data, not verification of financial facts",
+    "single-runtime measurements, not device-performance guarantees",
+    "local browser download was invalid; browser claims come from linked exact-source remote CI"
+  ]
+}
