@@ -416,3 +416,11 @@ CLI JSON only. These are measured fixtures, not arbitrary-input latency promises
 The [verification record](docs/2026-10-04-context-authoring-verification.json)
 retains exact artifact/source hashes, actual failed attempts and corrections,
 independent domain checks, package details and verification limits.
+
+The [exact-head push CI](https://github.com/twangyal/projects-monorepo/actions/runs/37209120068)
+at `a04bc50862b1a4a89c9af2b8a9990b5020aa685d` passes the full core/native Python
+3.11–3.13 matrix, nine Node tests, lint, compilation, installed command/worker
+checks and all 35 browser cases (52.2 seconds). The PR run independently passes
+the same checks against its merge checkout. All thirteen project PR workflows
+passed. The [CI receipt](docs/2026-10-04-context-authoring-ci.json) distinguishes
+those checkouts and retains actual job counts/timings.

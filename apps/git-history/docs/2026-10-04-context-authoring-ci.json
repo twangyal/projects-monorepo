@@ -1,0 +1,539 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-04T14:29:39.031Z",
+  "repository": "twangyal/projects-monorepo",
+  "requestedHead": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+  "requestedTree": "ef4ce5bdc8ba13574d0d8ed10e0d53b1e8baceb9",
+  "status": "all-thirteen-pr-workflows-and-git-history-push-success",
+  "source": "Authorized GitHub connector REST metadata and decoded complete job logs",
+  "gitHistory": [
+    {
+      "runId": 37209120068,
+      "event": "push",
+      "conclusion": "success",
+      "headSha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209120068",
+      "jobs": [
+        {
+          "id": 111456484356,
+          "name": "browser",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:07Z",
+          "completedAt": "2026-10-04T14:25:34Z",
+          "durationSeconds": 87,
+          "checkoutSha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run actions/setup-node@v4",
+            "Run python -m pip install '.[javascript]'",
+            "Run npm ci",
+            "Run npm test",
+            "Run npm run lint",
+            "Run npx playwright install --with-deps chromium",
+            "Verify the local workbench against real Git repositories"
+          ],
+          "logCharacters": 50024,
+          "evidence": [
+            "2026-10-04T14:24:15.8207414Z # tests 9",
+            "2026-10-04T14:24:15.8207943Z # pass 9",
+            "2026-10-04T14:24:15.8211181Z # fail 0",
+            "2026-10-04T14:24:15.8224855Z # duration_ms 99.309634",
+            "2026-10-04T14:25:31.7148545Z   35 passed (52.2s)"
+          ],
+          "node": {
+            "total": 9,
+            "passed": 9,
+            "failed": 0,
+            "durationMs": 99.309634
+          },
+          "browser": {
+            "passed": 35,
+            "displayDuration": "52.2s"
+          }
+        },
+        {
+          "id": 111456484487,
+          "name": "verify (3.11)",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:09Z",
+          "completedAt": "2026-10-04T14:26:00Z",
+          "durationSeconds": 111,
+          "checkoutSha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run python -m pip install -r requirements-dev.txt",
+            "Verify dependency-free Python and manual-range behavior",
+            "Run python -m compileall -q git_history tests",
+            "Run ruff check .",
+            "Build and install the optional parser extra",
+            "Verify the complete suite with native parsing required",
+            "Check installed command and isolated parser outside the source tree"
+          ],
+          "logCharacters": 150668,
+          "evidence": [
+            "2026-10-04T14:25:03.2292720Z Ran 311 tests in 48.535s",
+            "2026-10-04T14:25:03.2293116Z OK (skipped=26)",
+            "2026-10-04T14:25:57.0809017Z Ran 311 tests in 50.802s",
+            "2026-10-04T14:25:57.0809271Z OK (skipped=2)"
+          ],
+          "python": [
+            {
+              "mode": "dependency-free",
+              "total": 311,
+              "passed": 285,
+              "skipped": 26,
+              "failed": 0,
+              "durationSeconds": 48.535
+            },
+            {
+              "mode": "native",
+              "total": 311,
+              "passed": 309,
+              "skipped": 2,
+              "failed": 0,
+              "durationSeconds": 50.802
+            }
+          ]
+        },
+        {
+          "id": 111456484499,
+          "name": "verify (3.13)",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:07Z",
+          "completedAt": "2026-10-04T14:25:41Z",
+          "durationSeconds": 94,
+          "checkoutSha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run python -m pip install -r requirements-dev.txt",
+            "Verify dependency-free Python and manual-range behavior",
+            "Run python -m compileall -q git_history tests",
+            "Run ruff check .",
+            "Build and install the optional parser extra",
+            "Verify the complete suite with native parsing required",
+            "Check installed command and isolated parser outside the source tree"
+          ],
+          "logCharacters": 150667,
+          "evidence": [
+            "2026-10-04T14:24:55.1348343Z Ran 311 tests in 41.155s",
+            "2026-10-04T14:24:55.1348530Z OK (skipped=26)",
+            "2026-10-04T14:25:39.3717150Z Ran 311 tests in 41.932s",
+            "2026-10-04T14:25:39.3717357Z OK (skipped=2)"
+          ],
+          "python": [
+            {
+              "mode": "dependency-free",
+              "total": 311,
+              "passed": 285,
+              "skipped": 26,
+              "failed": 0,
+              "durationSeconds": 41.155
+            },
+            {
+              "mode": "native",
+              "total": 311,
+              "passed": 309,
+              "skipped": 2,
+              "failed": 0,
+              "durationSeconds": 41.932
+            }
+          ]
+        },
+        {
+          "id": 111456484537,
+          "name": "verify (3.12)",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:08Z",
+          "completedAt": "2026-10-04T14:25:52Z",
+          "durationSeconds": 104,
+          "checkoutSha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run python -m pip install -r requirements-dev.txt",
+            "Verify dependency-free Python and manual-range behavior",
+            "Run python -m compileall -q git_history tests",
+            "Run ruff check .",
+            "Build and install the optional parser extra",
+            "Verify the complete suite with native parsing required",
+            "Check installed command and isolated parser outside the source tree"
+          ],
+          "logCharacters": 150666,
+          "evidence": [
+            "2026-10-04T14:24:58.9645910Z Ran 311 tests in 43.316s",
+            "2026-10-04T14:24:58.9646551Z OK (skipped=26)",
+            "2026-10-04T14:25:48.6402623Z Ran 311 tests in 46.782s",
+            "2026-10-04T14:25:48.6402871Z OK (skipped=2)"
+          ],
+          "python": [
+            {
+              "mode": "dependency-free",
+              "total": 311,
+              "passed": 285,
+              "skipped": 26,
+              "failed": 0,
+              "durationSeconds": 43.316
+            },
+            {
+              "mode": "native",
+              "total": 311,
+              "passed": 309,
+              "skipped": 2,
+              "failed": 0,
+              "durationSeconds": 46.782
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "runId": 37209123422,
+      "event": "pull_request",
+      "conclusion": "success",
+      "headSha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123422",
+      "jobs": [
+        {
+          "id": 111456493984,
+          "name": "browser",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:11Z",
+          "completedAt": "2026-10-04T14:25:59Z",
+          "durationSeconds": 108,
+          "checkoutSha": "fbf63588a72654edc537386ffe18e6db267d0c12",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run actions/setup-node@v4",
+            "Run python -m pip install '.[javascript]'",
+            "Run npm ci",
+            "Run npm test",
+            "Run npm run lint",
+            "Run npx playwright install --with-deps chromium",
+            "Verify the local workbench against real Git repositories"
+          ],
+          "logCharacters": 51078,
+          "evidence": [
+            "2026-10-04T14:24:24.0812317Z # tests 9",
+            "2026-10-04T14:24:24.0813674Z # pass 9",
+            "2026-10-04T14:24:24.0814222Z # fail 0",
+            "2026-10-04T14:24:24.0816426Z # duration_ms 133.590441",
+            "2026-10-04T14:25:55.2235083Z   35 passed (1.1m)"
+          ],
+          "node": {
+            "total": 9,
+            "passed": 9,
+            "failed": 0,
+            "durationMs": 133.590441
+          },
+          "browser": {
+            "passed": 35,
+            "displayDuration": "1.1m"
+          }
+        },
+        {
+          "id": 111456494077,
+          "name": "verify (3.12)",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:11Z",
+          "completedAt": "2026-10-04T14:26:01Z",
+          "durationSeconds": 110,
+          "checkoutSha": "fbf63588a72654edc537386ffe18e6db267d0c12",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run python -m pip install -r requirements-dev.txt",
+            "Verify dependency-free Python and manual-range behavior",
+            "Run python -m compileall -q git_history tests",
+            "Run ruff check .",
+            "Build and install the optional parser extra",
+            "Verify the complete suite with native parsing required",
+            "Check installed command and isolated parser outside the source tree"
+          ],
+          "logCharacters": 151725,
+          "evidence": [
+            "2026-10-04T14:25:05.8560368Z Ran 311 tests in 49.439s",
+            "2026-10-04T14:25:05.8560616Z OK (skipped=26)",
+            "2026-10-04T14:25:59.7224498Z Ran 311 tests in 50.560s",
+            "2026-10-04T14:25:59.7224756Z OK (skipped=2)"
+          ],
+          "python": [
+            {
+              "mode": "dependency-free",
+              "total": 311,
+              "passed": 285,
+              "skipped": 26,
+              "failed": 0,
+              "durationSeconds": 49.439
+            },
+            {
+              "mode": "native",
+              "total": 311,
+              "passed": 309,
+              "skipped": 2,
+              "failed": 0,
+              "durationSeconds": 50.56
+            }
+          ]
+        },
+        {
+          "id": 111456494088,
+          "name": "verify (3.13)",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:11Z",
+          "completedAt": "2026-10-04T14:25:57Z",
+          "durationSeconds": 106,
+          "checkoutSha": "fbf63588a72654edc537386ffe18e6db267d0c12",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run python -m pip install -r requirements-dev.txt",
+            "Verify dependency-free Python and manual-range behavior",
+            "Run python -m compileall -q git_history tests",
+            "Run ruff check .",
+            "Build and install the optional parser extra",
+            "Verify the complete suite with native parsing required",
+            "Check installed command and isolated parser outside the source tree"
+          ],
+          "logCharacters": 151731,
+          "evidence": [
+            "2026-10-04T14:25:05.2183496Z Ran 311 tests in 45.971s",
+            "2026-10-04T14:25:05.2183834Z OK (skipped=26)",
+            "2026-10-04T14:25:54.2209468Z Ran 311 tests in 45.493s",
+            "2026-10-04T14:25:54.2209763Z OK (skipped=2)"
+          ],
+          "python": [
+            {
+              "mode": "dependency-free",
+              "total": 311,
+              "passed": 285,
+              "skipped": 26,
+              "failed": 0,
+              "durationSeconds": 45.971
+            },
+            {
+              "mode": "native",
+              "total": 311,
+              "passed": 309,
+              "skipped": 2,
+              "failed": 0,
+              "durationSeconds": 45.493
+            }
+          ]
+        },
+        {
+          "id": 111456494132,
+          "name": "verify (3.11)",
+          "conclusion": "success",
+          "startedAt": "2026-10-04T14:24:11Z",
+          "completedAt": "2026-10-04T14:25:56Z",
+          "durationSeconds": 105,
+          "checkoutSha": "fbf63588a72654edc537386ffe18e6db267d0c12",
+          "checks": [
+            "Run actions/checkout@v4",
+            "Run actions/setup-python@v5",
+            "Run python -m pip install -r requirements-dev.txt",
+            "Verify dependency-free Python and manual-range behavior",
+            "Run python -m compileall -q git_history tests",
+            "Run ruff check .",
+            "Build and install the optional parser extra",
+            "Verify the complete suite with native parsing required",
+            "Check installed command and isolated parser outside the source tree"
+          ],
+          "logCharacters": 151725,
+          "evidence": [
+            "2026-10-04T14:25:03.1241324Z Ran 311 tests in 45.584s",
+            "2026-10-04T14:25:03.1241532Z OK (skipped=26)",
+            "2026-10-04T14:25:52.5368231Z Ran 311 tests in 46.900s",
+            "2026-10-04T14:25:52.5368508Z OK (skipped=2)"
+          ],
+          "python": [
+            {
+              "mode": "dependency-free",
+              "total": 311,
+              "passed": 285,
+              "skipped": 26,
+              "failed": 0,
+              "durationSeconds": 45.584
+            },
+            {
+              "mode": "native",
+              "total": 311,
+              "passed": 309,
+              "skipped": 2,
+              "failed": 0,
+              "durationSeconds": 46.9
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "id": 37209123576,
+      "name": "Style Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123576",
+      "created_at": "2026-10-04T14:24:09Z",
+      "updated_at": "2026-10-04T14:25:19Z"
+    },
+    {
+      "id": 37209123488,
+      "name": "Stock Notebook",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123488",
+      "created_at": "2026-10-04T14:24:09Z",
+      "updated_at": "2026-10-04T14:26:56Z"
+    },
+    {
+      "id": 37209123418,
+      "name": "Clothing Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123418",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:25:00Z"
+    },
+    {
+      "id": 37209123479,
+      "name": "Motion Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123479",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:25:22Z"
+    },
+    {
+      "id": 37209123422,
+      "name": "Git History",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123422",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:26:02Z"
+    },
+    {
+      "id": 37209123401,
+      "name": "Lens Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123401",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:25:22Z"
+    },
+    {
+      "id": 37209123417,
+      "name": "Shot Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123417",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:26:10Z"
+    },
+    {
+      "id": 37209123427,
+      "name": "Friendly Challenges",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123427",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:26:08Z"
+    },
+    {
+      "id": 37209123399,
+      "name": "Melody Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123399",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:25:56Z"
+    },
+    {
+      "id": 37209123415,
+      "name": "Duet",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123415",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:26:37Z"
+    },
+    {
+      "id": 37209123444,
+      "name": "Color Context Lab",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123444",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:26:34Z"
+    },
+    {
+      "id": 37209123457,
+      "name": "Composure",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123457",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:27:06Z"
+    },
+    {
+      "id": 37209123410,
+      "name": "Karaoke Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209123410",
+      "created_at": "2026-10-04T14:24:08Z",
+      "updated_at": "2026-10-04T14:29:14Z"
+    },
+    {
+      "id": 37209120068,
+      "name": "Git History",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "a04bc50862b1a4a89c9af2b8a9990b5020aa685d",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37209120068",
+      "created_at": "2026-10-04T14:24:05Z",
+      "updated_at": "2026-10-04T14:26:00Z"
+    }
+  ],
+  "failures": [],
+  "limits": [
+    "Read-only inspection; no rerun, repository mutation, build, or Git command.",
+    "Other project conclusions are workflow metadata only; exact logs inspected only for all eight Git History jobs.",
+    "311 unittest cases include skips: dependency-free285 passed/26 skipped; native309 passed/2 skipped.",
+    "Browser PR duration displayed by Playwright as1.1m (rounded); exact job/step timestamps retained.",
+    "Requested tree is supplied by parent; checkout head/merge hashes independently verified in job logs."
+  ]
+}
