@@ -1,0 +1,65 @@
+{
+  "status": "passed",
+  "scope": "Same-host client via actual RFC1918 interface; not physical two-device or network-latency evidence.",
+  "checks": [
+    "active RFC1918 interface exists",
+    "private runtime key/setup modes exactly0600",
+    "strict native CA and hostname verification enabled",
+    "private-interface status exact authority",
+    "setup-less creation rejected",
+    "setup creates original proposed challenge revision1",
+    "anonymous private challenge read rejected",
+    "setup key grants no private challenge authority",
+    "valid capability in Cookie grants no authority",
+    "invitation claims original opponent seat without accepting terms",
+    "consumed invitation rejects replay with404",
+    "original proposer Bearer capability authenticated",
+    "original opponent Bearer capability authenticated",
+    "other challenge capability rejected",
+    "owned accept thread joined",
+    "restart preserves exact original proposer public snapshot and private capability",
+    "restart preserves exact original opponent public snapshot and private capability",
+    "restart preserves consumed invitation rejection",
+    "owned accept thread joined"
+  ],
+  "servers": [
+    {
+      "boundAddress": [
+        "172.26.91.247",
+        53349
+      ],
+      "reuseAddress": 1
+    },
+    {
+      "boundAddress": [
+        "172.26.91.247",
+        53349
+      ],
+      "reuseAddress": 1
+    }
+  ],
+  "interface": {
+    "name": "eth0",
+    "address": "172.26.91.247",
+    "prefixLength": 22
+  },
+  "publicCertificateSha256": {
+    "ca.pem": "5e95cc5d5e3837168bc7ef8e9a7a1780a742abcfcb7c52209fba82fbfa3418c6",
+    "leaf.pem": "55336bcb3c2a7bc9728f25c8208fa44135afae0903bfc87881b89617e9169e11"
+  },
+  "origin": "https://172.26.91.247:53349",
+  "immediateRestartMilliseconds": 2.126658000634052,
+  "publicSnapshotSha256": {
+    "proposer": "de4901cbf323106d1cd784e33f880118c1ec728113b123b4bea3021be48c422e",
+    "opponent": "8ea0b259c7b6f3db167c9d17bfc1f2c02016b9df41561b60ba196c6c097361a4"
+  },
+  "privateRuntimeDirectoryRemoved": true,
+  "allOwnedServersClosed": true,
+  "wallSeconds": 0.1859990600059973,
+  "sourceHashes": {
+    "challenges/transport.py": "13e9682d8ceb05bb563a61b35a11043cb48060308aa359efec7efd8273f2477c",
+    "challenges/https_server.py": "5ef9a8c33799758c1216f419eda84b82580bb5150cc68aa2908bdf04d7a5fac6",
+    "challenges/server.py": "3525c9ff1247f287be14ee6214827a3a56ee316b91dab10c3d68c0e3565bdcf2"
+  },
+  "scriptSha256": "794eed0c78ef490b71254e613700508c201c3f3bc8f5ed89e522f93406494407"
+}

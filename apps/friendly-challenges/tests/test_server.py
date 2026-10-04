@@ -114,7 +114,9 @@ class ServerTests(unittest.TestCase):
 
     def test_private_capabilities_and_status_do_not_leak_a_directory_or_cookie_access(self):
         status, headers, public = self.request("GET", "/api/status")
-        self.assertEqual((status, public), (200, {"schemaVersion": 1, "maxChallenges": 20}))
+        self.assertEqual((status, public), (200, {"schemaVersion": 1, "maxChallenges": 20,
+            "transport": {"mode": "http-loopback", "origin": f"http://127.0.0.1:{self.server.server_port}",
+                          "setupRequired": False}}))
         self.assertNotIn("Set-Cookie", headers)
         for token in (None, "bad", "a" * 64, self.created["inviteToken"]):
             response = self.request("GET", self.endpoint, token=token)

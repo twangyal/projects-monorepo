@@ -18,11 +18,52 @@ npm run build
 python3 -m challenges --data-dir ./data --port 8767
 ```
 
-Open `http://127.0.0.1:8767`. Keep that process running. For development, run `npm run dev` in a second terminal to rebuild changed browser files, then refresh the page. The Python service serves the built `dist` directory and the API on the same origin. This app deliberately binds only to loopback; it is not an internet deployment or a claim of multi-device operation.
+Open `http://127.0.0.1:8767`. Keep that process running. For development, run `npm run dev` in a second terminal to rebuild changed browser files, then refresh the page. The Python service serves the built `dist` directory and the API on the same origin. The default binds only to loopback. The optional HTTPS mode below supports a configured address on a trusted local network; there is no discovery, public hosting or reverse-proxy mode.
+
+## Configure HTTPS for other devices
+
+This optional mode requires **Linux with memfd and `/proc/self/fd` support**, in addition to the existing runtime requirements. Default HTTP keeps its existing POSIX requirements. The operator supplies a matching unencrypted TLS private key and certificate chain for one stable address. Each device must normally trust the issuer, and the certificate's subject alternative name must cover that address. Use your existing local certificate authority and device trust settings; this app does not install an authority or bypass browser warnings.
+
+Choose an actual RFC1918 IPv4 address belonging to the computer, such as `192.168.1.42`, and a port. A lower-case DNS name may be used in the origin if all devices resolve it correctly and the certificate covers that name. The bind address must be a specific private or loopback IPv4 address; wildcard, public and IPv6 binds are refused. Keep access within a trusted LAN, configure any firewall allowance yourself, and do not forward the service from the public internet.
+
+Create a fresh private operator setup file. This command refuses to overwrite an existing file and does not print its contents:
+
+```sh
+python3 - <<'PY'
+import os
+from pathlib import Path
+import secrets
+path = Path.home() / '.config/friendly-challenges/setup-key'
+path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w', encoding='ascii') as output:
+    output.write(secrets.token_hex(32) + '\n')
+PY
+```
+
+The TLS private key and setup file must belong to the service user with exact mode `0600`; all supplied inputs must be ordinary files, not symbolic links. Certificate and private-key caps are 128 KiB and 32 KiB. The setup file contains exactly 64 lower-case hexadecimal characters, with at most one final newline. Supply all five optional flags together, using your actual address and paths:
+
+```sh
+python3 -m challenges --data-dir ./data --port 8767 \
+  --bind 192.168.1.42 --origin https://192.168.1.42:8767 \
+  --tls-cert /absolute/path/to/certificate-chain.pem \
+  --tls-key /absolute/path/to/private-key.pem \
+  --setup-token-file "$HOME/.config/friendly-challenges/setup-key"
+```
+
+The origin has no trailing slash, path or query. Its explicit port must match `--port`; port 443 instead omits `:443`. Configuration and listener binding are checked before the library is opened. The CLI prints only the public origin. Stop and restart the service to apply configuration or certificate changes.
+
+Open the HTTPS origin and enter the setup file's contents in **Operator setup key** when proposing a new challenge. Retrieve the key privately with your local editor. It authorizes creation only: it cannot claim a seat, accept terms, inspect images or decide an outcome. The password field clears when the creation request is dispatched, and the browser does not save it. Invite the opponent and approved arbiter through their separate one-use links; each participant keeps their own private access link. Seat claim still does not mean consent to an agreement.
+
+Creation and consent are never automatically retried. If a creation response is lost, it may already have committed; check any saved seat or received private access link before making another deliberate attempt. The setup key and database hashes cannot recover a credential that never reached the browser. A new attempt may consume another challenge slot. If the service address changes, open each original private access link with only its origin changed; browser storage is scoped to its previous origin. No new seats are minted.
+
+HTTPS uses TLS 1.2 or newer, one exact Host and a matching Origin on every mutation. Forwarded/proxy and cross-site requests are rejected. JSON, images and image exports remain Bearer-only; no cookie or public image URL grants access. The server admits at most 16 connections, one request per connection, with a backlog of 16. Bounds are 5 seconds for TLS handshake, 10 seconds and 16 KiB/64 fields for headers, 5 seconds of socket inactivity, 15 seconds for a body, 30 seconds for a response and 75 seconds overall. Shutdown closes connections and joins handlers before releasing the library lock; if a handler remains after its 5-second join budget, the live library stays locked.
+
+Automated same-host HTTPS checks can establish software behavior. Physical device certificate installation, mobile browser compatibility and separate-device use remain unverified until tested on actual devices. This configuration does not verify identities, evidence authenticity or consent outside the recorded actions.
 
 ## Try the complete flow
 
-1. **Propose challenge:** enter your name, title, description, success criteria, evidence rule, deadline and nonmonetary stake. Save your private access link, then share the separate opponent invitation with another browser profile on this computer.
+1. **Propose challenge:** enter your name, title, description, success criteria, evidence rule, deadline and nonmonetary stake. Save your private access link, then share the separate opponent invitation with another browser profile, or another device using the configured HTTPS origin.
 2. The opponent uses **Claim opponent seat** with their name. Claiming a seat is separate from accepting the agreement. They inspect the terms and use **Accept these terms**, or decline. Before acceptance, the proposer can revise the terms; a stale browser must review the new version before consenting.
 3. Both participants use **Add evidence** for text, or **Choose evidence image** and review the normalized copy before **Add evidence with image**, for progress or results. The shared activity feed records author, server time and any supplied link. Corrections are additional entries; previous statements cannot be deleted.
 4. Either participant uses **Propose result** with a named winner and reason. The other can agree or dispute. Agreement settles the challenge; disagreement opens a dispute without inventing a winner.
@@ -126,6 +167,17 @@ The HTTP service admits at most 16 active connections. A shared 15-second total 
 
 ## Verify
 
+HTTPS verification also needs the OpenSSL command-line tool to generate original temporary test certificates. Python's native TLS tests use normal CA and hostname validation. Isolated Chromium HTTPS cases allow only the exact generated fixture public-key fingerprint; production has no trust bypass. These cases launch fresh HTTPS services on available ports and clean up their own private files and processes.
+
+An optional maximum HTTPS gate creates a **new isolated** 20-challenge notebook with all three original seats and 160 distinct exact-512-KiB JPEGs. Reserve at least 1 GiB of free space. From this app directory:
+
+```sh
+python3 scripts/smoke_https_maximum.py --output /path/to/new-friendly-https-evidence --fixtures-only
+python3 scripts/smoke_https_maximum.py --output /path/to/new-friendly-https-evidence --run-prepared
+```
+
+Preparation freezes original record/image expectations before transport verification. The run uses strict native CA/hostname verification, downloads complete private images and HTML records through real HTTPS, then repeats after restarting its own CLI service on the same port. It compares exact private record text, original seat access, public audit, retained/embedded JPEG bytes and independently decoded colors. The prepared library and recovery material are private; keep that directory local. Only sanitized hashes/results belong in public evidence. The runner closes its own processes and never operates on an existing user notebook. Simple solid-color JPEGs use legal marker padding to reach the byte cap; they do not represent worst-case photographic complexity or a memory guarantee.
+
 ```sh
 python3 -m pip install -r requirements-dev.txt
 python3 -m unittest discover -s tests -p 'test_*.py' -v
@@ -158,6 +210,18 @@ FRIENDLY_SOURCE_OUTPUT=/tmp/friendly-source-new FRIENDLY_SOURCE_ORIGIN=http://12
 ```
 
 The source runner observes genuine native Blob arguments solely to verify the exact preview/upload bytes; it does not replace native decoding, upload or service state. Its timing is a single local observation, not a speed guarantee. Complete HTML and source artifacts stay local; no paid service or inference is used.
+
+## Trusted-LAN HTTPS verification (#108)
+
+Version 0.4 passes **194 Python tests**, **42 TypeScript tests**, compilation, Ruff, ESLint, type checking and the production build. Chromium verification covers **34 distinct cases**: the unchanged 28-case suite passes in 102.852 seconds, and six new HTTPS cases pass across retained runs. These scopes are recorded separately, not presented as one final local combined invocation. Exact published-head CI is pending. See the [integration receipt](docs/2026-10-04-https-lan-verification.json), [producer evidence](docs/2026-10-04-https-lan-producer.json) and [client evidence](docs/2026-10-04-https-lan-client.json).
+
+The [independent protocol oracle](docs/2026-10-04-https-lan-protocol.json) verifies normal CA/name/expiry checks, actual 16-slot admission, real 5-second handshake and 10-second trickled-header deadlines, exact header caps, setup-only creation, Bearer-only images, claim-versus-acceptance, held-lock shutdown refusal and same-port restart. Body/response/total/join timing branches use explicitly shortened budgets. The separate 8 MiB static-response probe checks transport/backpressure with opaque bytes, not image capacity. An [actual private-interface check](docs/2026-10-04-https-lan-private-interface.json) also passes strict CA/IP-SAN validation and original-seat restart recovery through the workspace's RFC1918 address; it remains same-host traffic.
+
+The [native receipt](docs/2026-10-04-https-lan-native.json) covers three independent original seats, changed terms and stale-consent refusal, exact reviewed PNG/JPEG normalization, private image access, mutually approved arbitration and the final immutable result. Complete JSON/HTML exports preserve the expected 13 audit events and embedded JPEG bytes; the retained 354-byte and 553-byte images independently decode within one channel value of the original literal colors. Restart preserves the original roles, records and images. A source review and actual native RED found a deferred private link that remained hidden after successful creation; a narrow completion fix now displays it for explicit consent. Earlier fixture mistakes involving recovered-role readiness, seat-replacement confirmation and dashboard button selection remain documented separately. The [review receipt](docs/2026-10-04-https-lan-review.json) preserves the finding and resolution.
+
+The first [maximum HTTPS run](docs/2026-10-04-https-lan-maximum.json) passes in **33.880 seconds**: 20 resolved records, three original seats per record and 160 distinct exact-512-KiB JPEGs retain **80 MiB** of image bytes across same-port CLI restart. All **960 authenticated image reads** match, and all **40 complete 5,607,835-byte HTML exports** have independently checked public audit, embedded JPEG bytes and decoded colors. Private record text stays exact. Export-generation timestamps may differ; complete HTML bytes are not claimed identical across time. Both owned service processes close cleanly. Fixture preparation had one event-name typo corrected before transport execution; the actual HTTPS run needed no repair.
+
+No domain, schema, archive format or consent rule changes. Physical device trust setup and browser compatibility remain unverified; no production certificate bypass, deployment or system network change was made.
 
 ## Complete archive verification (2026-10-04)
 

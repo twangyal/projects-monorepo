@@ -20,7 +20,7 @@ function section(title: string, hint = ''): HTMLElement {
   const n = el('section', '', 'panel'); n.append(el('h2', title)); if (hint) n.append(el('p', hint, 'hint')); return n;
 }
 function form(id: string): HTMLFormElement {
-  const n = el('form'); n.id = id; n.addEventListener('input', () => { n.dataset.dirty = 'true'; editorInputIntent++; }); return n;
+  const n = el('form'); n.id = id; n.addEventListener('input', (event) => { if (event.target instanceof HTMLInputElement && event.target.id === 'setup-key') return; n.dataset.dirty = 'true'; editorInputIntent++; }); return n;
 }
 function field(f: HTMLFormElement, name: string, caption: string, max: number, multiline = false, required = true, type = 'text'): HTMLInputElement | HTMLTextAreaElement {
   const label = el('label', caption, 'field'); const n = multiline ? el('textarea') : el('input'); n.name = name; n.id = `${f.id}-${name}`; n.maxLength = max; n.required = required;
@@ -58,6 +58,13 @@ const dashboard = el('div', '', 'dashboard'); main.append(dashboard);
 const hero = el('div', '', 'hero'); hero.append(el('p', 'MAKE IT FRIENDLY', 'eyebrow'), el('h1', 'Small stakes. Clear agreements.'), el('p', 'Choose a challenge, agree on the rules, and decide the result together. Private links give each person their own seat.')); dashboard.append(hero);
 const grid = el('div', '', 'dashboard-grid'); dashboard.append(grid);
 const createPanel = section('Propose a challenge', 'Your opponent joins first, then chooses whether to accept the agreement.'); const createForm = form('create-form'); field(createForm, 'name', 'Your name', 40); termsFields(createForm);
+const transportInfo = el('div', '', 'transport-info');
+const transportStatus = el('p', 'Checking this service’s connection mode…', 'hint'); transportStatus.id = 'transport-status'; transportStatus.setAttribute('aria-live', 'polite');
+const retryTransport = button('Check connection mode', () => { void loadTransportStatus(); }); retryTransport.id = 'retry-transport-status'; retryTransport.hidden = true;
+transportInfo.append(transportStatus, retryTransport); createPanel.append(transportInfo);
+const setupField = el('label', 'Operator setup key', 'field'); setupField.id = 'setup-key-field'; setupField.hidden = true;
+const setupKeyInput = el('input'); setupKeyInput.id = 'setup-key'; setupKeyInput.type = 'password'; setupKeyInput.maxLength = 64; setupKeyInput.autocomplete = 'off'; setupKeyInput.spellcheck = false;
+setupField.append(setupKeyInput, el('span', 'Only the operator can authorize a new challenge here. This key does not join a seat or accept an agreement.', 'hint')); createForm.append(setupField);
 const createButton = submit(createForm, 'Propose challenge', () => { void createChallenge(); }); createPanel.append(createForm); grid.append(createPanel);
 const notebook = section('Your challenges', 'Seats remembered in this browser. Keep a private access link if you need to return elsewhere.'); const recordList = el('div'); recordList.id = 'challenge-list'; notebook.append(recordList, el('p', 'The shared notebook holds 20 lifetime challenges, including finished ones. Records are never silently removed.', 'hint')); grid.append(notebook);
 const intent = section('A private link', 'Keep this link private. Names are labels, not verified identities.'); intent.id = 'link-intent'; intent.hidden = true; main.append(intent);
@@ -111,6 +118,46 @@ const quotaPanel = section('Notebook limits'); const quotaText = el('p', '', 'hi
 const activityPanel = section('Activity', 'The permanent record of agreements and actions.'); const activityList = el('ol', '', 'activity-list'); activityList.id = 'activity-list'; activityPanel.append(activityList); left.append(activityPanel);
 main.append(el('footer', 'Private links are credentials. Share invitations only with the intended person, and keep your own access link private.'));
 
+type Transport = { mode: 'https-lan' | 'http-loopback'; origin: string; setupRequired: boolean };
+let transport: Transport | null = null, transportEpoch = 0, transportLoading = false;
+let transportController: AbortController | null = null;
+let pendingCreation: { controller: AbortController; generation: number; intent: number } | null = null;
+function creationControls(): void {
+  createButton.disabled = busy || pageSuspended || !transport;
+  retryTransport.disabled = transportLoading;
+  setupField.hidden = dashboard.hidden || transport?.setupRequired !== true;
+  setupKeyInput.required = !setupField.hidden;
+}
+async function loadTransportStatus(): Promise<void> {
+  const epoch = ++transportEpoch; transportController?.abort();
+  const controller = new AbortController(); transportController = controller;
+  transport = null; transportLoading = true; creationControls();
+  transportStatus.textContent = 'Checking this service’s connection mode…'; retryTransport.hidden = true;
+  try {
+    const result = await request<{ transport?: unknown }>('GET', '/api/status', undefined, undefined, controller.signal);
+    if (epoch !== transportEpoch || controller.signal.aborted || pageSuspended) return;
+    const value = result.transport;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error();
+    const candidate = value as Record<string, unknown>;
+    if (Object.keys(candidate).sort().join(',') !== 'mode,origin,setupRequired' || typeof candidate.origin !== 'string' || candidate.origin.length > 267) throw new Error();
+    const origin = new URL(candidate.origin);
+    if (candidate.mode === 'https-lan'
+      ? candidate.setupRequired !== true || origin.protocol !== 'https:' || origin.origin !== candidate.origin || candidate.origin !== location.origin
+      : candidate.mode !== 'http-loopback' || candidate.setupRequired !== false || !/^http:\/\/127\.0\.0\.1:[1-9]\d{0,4}$/.test(candidate.origin)
+        || !origin.port && !candidate.origin.endsWith(':80') || Number(origin.port || 80) > 65535) throw new Error();
+    transport = { mode: candidate.mode as Transport['mode'], origin: candidate.origin, setupRequired: candidate.setupRequired as boolean };
+    if (!selected) connection.textContent = 'Connected · your private notebook';
+    transportStatus.textContent = transport.mode === 'https-lan'
+      ? `HTTPS challenge service: ${transport.origin}. Other devices must reach this address and trust its certificate. Creation requires the operator setup key; invitations and saved seats use their own private links.`
+      : `HTTP loopback service: ${transport.origin}. This address is for this computer. No operator setup key is needed to propose a challenge.`;
+  } catch {
+    if (epoch !== transportEpoch || controller.signal.aborted || pageSuspended) return;
+    transportStatus.textContent = 'Could not check this service’s connection mode. Check that the service is running and the browser trusts its certificate, then check again. Challenge creation is paused; invitations and saved access links remain available.';
+    retryTransport.hidden = false;
+    if (!selected) connection.textContent = 'Service unavailable · reconnect when the notebook is running';
+  } finally { if (epoch === transportEpoch && transportController === controller) { transportController = null; transportLoading = false; creationControls(); } }
+}
+function retireCreation(): void { pendingCreation?.controller.abort(); pendingCreation = null; setupKeyInput.value = ''; }
 let sessions: Record<string, string> = {};
 let selected: { id: string; token: string } | null = null;
 let snapshot: Snapshot | null = null;
@@ -143,8 +190,8 @@ function retrySavingAccess(): void {
 function remember(id: string, token: string): void {
   sessions[id] = token; try { saveSession(id, token); unsavedSeats.delete(id); } catch { unsavedSeats.add(id); announce('Your seat works in this page, but browser access could not be saved. Keep My private access link before closing or refreshing.', true); } updateAccessRecovery();
 }
-function stopSelection(): void { generation += 1; retireImageWork(); readController?.abort(); mutationController?.abort(); clearTimeout(pollTimer); selected = null; snapshot = null; busy = false; closeLink(); updateAccessRecovery(); }
-function showDashboard(): void { stopSelection(); workspace.hidden = true; dashboard.hidden = false; clearEditors(); connection.textContent = 'Your private notebook'; history.replaceState(null, '', '/'); renderRecords(); void refreshRecords(); }
+function stopSelection(): void { retireCreation(); generation += 1; retireImageWork(); readController?.abort(); mutationController?.abort(); clearTimeout(pollTimer); selected = null; snapshot = null; busy = false; closeLink(); updateAccessRecovery(); }
+function showDashboard(): void { stopSelection(); workspace.hidden = true; dashboard.hidden = false; clearEditors(); connection.textContent = 'Your private notebook'; history.replaceState(null, '', '/'); renderRecords(); creationControls(); void refreshRecords(); }
 function flushIncoming(): void { if (!busy && deferredLink) { const link = deferredLink; deferredLink = null; incoming(link); } }
 function captureIncoming(): void {
   if (!location.hash) return;
@@ -158,7 +205,7 @@ window.addEventListener('hashchange', captureIncoming);
 window.addEventListener('popstate', captureIncoming);
 function current(epoch: number, credential: { id: string; token: string }): boolean { return !pageSuspended && epoch === generation && selected?.id === credential.id && selected?.token === credential.token; }
 async function selectChallenge(id: string, token: string, initial?: Snapshot): Promise<void> {
-  stopSelection(); clearEditors(); selected = { id, token }; updateAccessRecovery(); dashboard.hidden = true; workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
+  stopSelection(); clearEditors(); selected = { id, token }; updateAccessRecovery(); dashboard.hidden = true; creationControls(); workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
 }
 function apply(next: Snapshot): void {
   if (!selected || next.id !== selected.id || snapshot && next.revision < snapshot.revision) return;
@@ -190,10 +237,56 @@ async function command(suffix: string, fields: Record<string, unknown>, f?: HTML
   catch (error) { if (current(epoch, credential) && !controller.signal.aborted) announce(errorText(error), true); }
   finally { if (current(epoch, credential)) { busy = false; render(); flushIncoming(); await refreshSelected(); } }
 }
+function creationPayload(): { name: string; terms: Terms } {
+  const payload = { name: value(createForm, 'name'), terms: readTerms(createForm) };
+  const valid = (text: string, maximum: number): boolean => {
+    if (!text.trim() || [...text].length > maximum) return false;
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if ((code < 32 && ![9, 10, 13].includes(code)) || code === 127) return false;
+      if (code >= 0xd800 && code <= 0xdbff) {
+        const next = text.charCodeAt(++i); if (!(next >= 0xdc00 && next <= 0xdfff)) return false;
+      } else if (code >= 0xdc00 && code <= 0xdfff) return false;
+    }
+    return true;
+  };
+  const now = Date.now(), t = payload.terms;
+  if (!valid(payload.name, 40) || !valid(t.title, 100) || !valid(t.description, 500)
+    || !valid(t.successCriteria, 500) || !valid(t.evidenceRule, 300) || !STAKES.includes(t.stake)
+    || !Number.isSafeInteger(t.deadline) || t.deadline <= now || t.deadline > now + 365 * 86400000
+    || new TextEncoder().encode(JSON.stringify(payload)).byteLength > 16 * 1024) throw new Error();
+  return payload;
+}
 async function createChallenge(): Promise<void> {
-  if (busy) return; const sentDraft = draft(createForm); busy = true; createButton.disabled = true; const epoch = generation;
-  try { const next = await request<Creation>('POST', '/api/challenges', { name: value(createForm, 'name'), terms: readTerms(createForm) }); remember(next.challengeId, next.token); if (epoch !== generation) return; if (draft(createForm) === sentDraft) reset(createForm); busy = false; void selectChallenge(next.challengeId, next.token, next.challenge); reveal(next.challengeId, 'invite', next.inviteToken); }
-  catch (error) { if (epoch === generation) announce(errorText(error), true); } finally { busy = false; createButton.disabled = false; flushIncoming(); }
+  if (busy || pageSuspended || !transport) return;
+  let payload: { name: string; terms: Terms };
+  try { payload = creationPayload(); } catch { announce('Check the required text and choose a future deadline no more than 365 days away. No challenge was sent; your draft and operator key are kept.', true); return; }
+  const setupKey = transport.setupRequired ? setupKeyInput.value : undefined;
+  if (setupKey !== undefined && !/^[0-9a-f]{64}$/.test(setupKey)) { announce('Enter the operator’s 64-character lowercase hexadecimal setup key. It is only for creating a challenge.', true); return; }
+  const owner = { controller: new AbortController(), generation, intent: editorInputIntent };
+  pendingCreation = owner; busy = true; creationControls();
+  // Complete local payload admission precedes this one actual dispatch. The key
+  // never enters FormData, remembered seats, URLs or a retained draft.
+  setupKeyInput.value = '';
+  try {
+    const next = await request<Creation>('POST', '/api/challenges', payload, undefined, owner.controller.signal, setupKey);
+    remember(next.challengeId, next.token); records.set(next.challengeId, next.challenge);
+    if (pendingCreation !== owner || owner.generation !== generation || pageSuspended || owner.controller.signal.aborted) return;
+    if (owner.intent !== editorInputIntent) {
+      renderRecords(); reveal(next.challengeId, 'access', next.token);
+      announce('Challenge created; its private access link is shown and remembered. Your newer draft is kept. Keep this link, then open it explicitly after handling your draft. No creation was replayed.'); return;
+    }
+    reset(createForm); pendingCreation = null; busy = false; creationControls();
+    void selectChallenge(next.challengeId, next.token, next.challenge); reveal(next.challengeId, 'invite', next.inviteToken);
+    flushIncoming();
+  } catch (error) {
+    if (pendingCreation === owner && owner.generation === generation && !pageSuspended && !owner.controller.signal.aborted) {
+      const uncertain = !(error instanceof ApiError) || error.status === 0 || error.code === 'internal_error';
+      announce(`${uncertain ? 'Could not confirm whether the challenge was created. It may have been saved; no request will be replayed. Keep your draft and check your private access before another deliberate attempt.' : errorText(error)}${setupKey !== undefined ? ' Re-enter the operator setup key for another deliberate attempt.' : ''}`, true);
+    }
+  } finally {
+    if (pendingCreation === owner) { pendingCreation = null; busy = false; creationControls(); flushIncoming(); }
+  }
 }
 async function acceptTerms(): Promise<void> {
   const s = snapshot; const r = reviewed; if (!s || !r || r.version !== s.termsVersion) return;
@@ -452,13 +545,14 @@ function retireImageWork(): void {
   for (const url of imageDownloadUrls) URL.revokeObjectURL(url); imageDownloadUrls.clear();
 }
 window.addEventListener('pagehide', () => {
-  pageSuspended = true; generation++; clearTimeout(pollTimer); readController?.abort(); mutationController?.abort();
+  if (pendingCreation) announce('Challenge creation was interrupted and may have arrived. Your draft is kept; no request is replayed. Check your private access before another deliberate attempt and re-enter the operator setup key if required.', true);
+  pageSuspended = true; retireCreation(); transportEpoch++; transportController?.abort(); transportController = null; transport = null; transportLoading = false; generation++; clearTimeout(pollTimer); readController?.abort(); mutationController?.abort();
   if (imageUploading) { imageReviewRequired = true; announce('The image append was interrupted. Your draft is kept in this page. Refresh and inspect the shared record before explicitly choosing another append; no upload is replayed.', true); }
-  imageUploading = false; busy = false; useAccess.disabled = false; claimButton.disabled = false; retireImageWork();
+  imageUploading = false; busy = false; creationControls(); useAccess.disabled = false; claimButton.disabled = false; retireImageWork();
 });
 window.addEventListener('pageshow', () => {
   if (!pageSuspended) return;
-  pageSuspended = false;
+  pageSuspended = false; void loadTransportStatus();
   // Existing cards keep their literal evidence. Recreate only their closed image controls.
   if (snapshot) for (const item of snapshot.evidence) if ('image' in item) {
     const card = evidenceNodes.get(item.id); if (card) {
@@ -470,11 +564,11 @@ window.addEventListener('pageshow', () => {
 });
 
 async function start(): Promise<void> {
+  creationControls(); void loadTransportStatus();
   const original = originalLocation; let link: PrivateLink | null = null;
   try { link = readLink(original); } catch { /* Never consume invalid private links. */ }
   try { sessions = loadSessions(); } catch { announce('Browser access storage is unavailable or damaged. Existing storage was not changed. Seats can work in memory; keep your private access link before closing.', true); }
   renderRecords(); if (link) incoming(link); else if (original.hash) announce('This private link is invalid. Its fragment has been removed. Ask for a fresh link.', true);
   const id = new URLSearchParams(original.search).get('challenge'); if (id && ID_PATTERN.test(id) && sessions[id]) await selectChallenge(id, sessions[id]!); else { connection.textContent = 'Your private notebook'; void refreshRecords(); }
-  try { await request<{ schemaVersion: number; maxChallenges: number }>('GET', '/api/status'); if (!selected) connection.textContent = 'Connected · your private notebook'; } catch { if (!selected) connection.textContent = 'Service unavailable · reconnect when the notebook is running'; }
 }
 void start();

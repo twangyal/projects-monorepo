@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "milestone": 108,
+  "scope": "Friendly Challenges opt-in trusted-LAN HTTPS CLI, creation-only client API and UI ownership",
+  "source": {
+    "challenges/__main__.py": {
+      "path": "challenges/__main__.py",
+      "bytes": 2248,
+      "sha256": "d0049be123c5a548a7a0ae1bc54f601ea0b601ed23056f122c7f1857f9a226e9"
+    },
+    "src/api.ts": {
+      "path": "src/api.ts",
+      "bytes": 14440,
+      "sha256": "823cee2784d24b9df6769ef437f983eeafa73a7f5f0611100dcf9dd5b395a675"
+    },
+    "src/main.ts": {
+      "path": "src/main.ts",
+      "bytes": 73643,
+      "sha256": "df30edf8fc033b4424c4d46ee608203354b7c5bdaa695aa14a4aa6498226d14f"
+    },
+    "src/style.css": {
+      "path": "src/style.css",
+      "bytes": 6719,
+      "sha256": "f6c9d50ce9f351a7073e1cbbbb606572172fcea7f85abe9611cd59d8047d8881"
+    },
+    "tests/test_cli_https.py": {
+      "path": "tests/test_cli_https.py",
+      "bytes": 7337,
+      "sha256": "7f4ddc66cdbec8984b3392b3bf997baee5b1c5aafd897bf73615573574de0ef7"
+    },
+    "tests/https-api.test.ts": {
+      "path": "tests/https-api.test.ts",
+      "bytes": 3912,
+      "sha256": "a1854642d9833115d9522587ffd375b6e526cc30b2f701293ef1ed2f9693263b"
+    }
+  },
+  "checks": [
+    {
+      "command": "python3 -m unittest tests.test_cli_https -v",
+      "phase": "initial red",
+      "tests": 7,
+      "assertionFailures": 8,
+      "fixtureErrors": 2,
+      "seconds": 0.008,
+      "log": {
+        "path": "/tmp/friendly108-cli-red.log",
+        "bytes": 11550,
+        "sha256": "0e72b4e9110ec246c25e41fdc7a44b68d2b17017999aa1ead75a65bc44599386"
+      },
+      "notes": "Eight missing-option assertions were meaningful RED. Two bind subcases errored because the test patch omitted create=True for the then-absent prepare_transport symbol; those errors are not behavioral proof. The patch was corrected before GREEN."
+    },
+    {
+      "command": "python3 -m unittest tests.test_cli_https -v",
+      "phase": "green",
+      "tests": 7,
+      "passed": 7,
+      "seconds": 0.01,
+      "log": {
+        "path": "/tmp/friendly108-cli-green.log",
+        "bytes": 1372,
+        "sha256": "717d0b54706320088975b5456b5af86d526f766ee623574fb54e8e084d4c9ebb"
+      },
+      "coverage": [
+        "unchanged default constructor and bound URL",
+        "all-or-nothing flags before listener/library admission",
+        "preparation before constructor",
+        "private-safe TransportError",
+        "real invalid TLS input leaves existing library bytes unchanged",
+        "fixed HTTPS occupied/unavailable bind guidance",
+        "unchanged default HTTP OSError"
+      ]
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/https-api.test.ts",
+      "phase": "red",
+      "tests": 5,
+      "passed": 1,
+      "failed": 4,
+      "milliseconds": 133.364723,
+      "log": {
+        "path": "/tmp/friendly108-api-red.log",
+        "bytes": 3386,
+        "sha256": "585aa5a797dbf3ad160114cc117141cde93cc7e922e894d472cf7d810d1b41e5"
+      },
+      "notes": "Expected failures: missing setup header, unrestricted setup destinations/syntax, and no setup header on initial creation. A test predicate for empty-key error reflection was corrected before GREEN."
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/https-api.test.ts tests/api.test.ts tests/image-api.test.ts",
+      "phase": "green",
+      "tests": 24,
+      "passed": 24,
+      "milliseconds": 211.648495,
+      "log": {
+        "path": "/tmp/friendly108-api-green.log",
+        "bytes": 2546,
+        "sha256": "4c83e89f75d58084c05d8631ef5fcde0314336ecbe61fab6b2de486b8f74fc0a"
+      },
+      "coverage": [
+        "exact creation-only setup header",
+        "token/setup exclusivity and route rejection before fetch",
+        "unchanged 16 KiB request bound",
+        "no inherited setup authority",
+        "one-attempt lost response",
+        "unchanged JSON validation and authenticated binary helpers"
+      ]
+    },
+    {
+      "command": "/tmp/duet-service-checks/bin/ruff check challenges/__main__.py tests/test_cli_https.py",
+      "passed": true,
+      "log": {
+        "path": "/tmp/friendly108-cli-ruff.log",
+        "bytes": 19,
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      }
+    },
+    {
+      "command": "python3 -m compileall -q challenges/__main__.py tests/test_cli_https.py",
+      "passed": true,
+      "notes": "Actual command completed successfully; no retained output because compile was quiet."
+    },
+    {
+      "command": "npm run typecheck",
+      "phase": "initial coherent UI",
+      "passed": true,
+      "log": {
+        "path": "/tmp/friendly108-ui-typecheck.log",
+        "bytes": 263,
+        "sha256": "5f42026bb443ba1a784ce48924c9c7eff57f1059e6af0313567c4c4cca3f4c99"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts src/api.ts tests/https-api.test.ts",
+      "phase": "initial coherent UI",
+      "passed": true,
+      "log": {
+        "path": "/tmp/friendly108-ui-lint.log",
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npm run typecheck",
+      "phase": "queued-link source correction",
+      "passed": true,
+      "log": {
+        "path": "/tmp/friendly108-ui-queued-typecheck.log",
+        "bytes": 263,
+        "sha256": "5f42026bb443ba1a784ce48924c9c7eff57f1059e6af0313567c4c4cca3f4c99"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts src/api.ts tests/https-api.test.ts",
+      "phase": "queued-link source correction",
+      "passed": true,
+      "log": {
+        "path": "/tmp/friendly108-ui-queued-lint.log",
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    }
+  ],
+  "ui": {
+    "transport": "Separate status epoch and AbortController gates only creation; exact self-origin HTTPS or explicit-port HTTP loopback admission. Existing seats, claims, private images and agreement actions stay independent.",
+    "setupKey": "Nameless password input, autocomplete off, maxLength 64. Setup-only input does not mark a draft. Complete local payload and 16 KiB admission precede immediate DOM clear at creation dispatch. No persistence/URL/draft inclusion; clear on selection/pagehide. Dispatched failure needs explicit re-entry.",
+    "ownership": "Creation owns request identity, generation and changed-back input intent; returned successful access is remembered even when activation is retired. Newer drafts and focus are retained. Stale completion/finally cannot activate another seat or clear newer busy work. Interrupted/lost creation reports uncertainty with no replay.",
+    "queuedLinkRepair": "Native owner independently reproduced real held HTTPS creation plus genuine scrubbed hashchange on the initial built bundle: successful creation bypassed finally and failed to offer the queued link. Current main explicitly flushes deferred intent after synchronous successful selection setup and invitation reveal; activation remains explicit.",
+    "stableControls": [
+      "transport-status",
+      "retry-transport-status",
+      "setup-key-field",
+      "setup-key"
+    ]
+  },
+  "independentNative": {
+    "owner": "git_reader",
+    "redLog": {
+      "path": "/tmp/friendly108-native-queued-red.log",
+      "bytes": 3611,
+      "sha256": "ecf7be93247cb398956bb9de80294077dd27a29f1f65452618ee0431ac987ffc"
+    },
+    "status": "Queued-link actual native RED retained by independent owner; corrected-bundle native rerun pending at receipt creation. Initial five cases had three passes and two harness corrections; no final native or hardware proof claimed by this CLI/UI receipt."
+  },
+  "limits": {
+    "jsonRequestBytes": 16384,
+    "jsonResponseBytes": 1048576,
+    "setupHexCharacters": 64,
+    "setupFileBytes": 65,
+    "challenges": 20,
+    "evidencePerChallenge": 40,
+    "imagesPerChallenge": 8,
+    "jpegBytes": 524288,
+    "jpegSidePixels": 1024,
+    "imageHtmlBytes": 12582912
+  },
+  "boundaries": [
+    "CLI success tests use controlled constructor mocks to avoid production service ownership; real TLS/loopback/browser gates belong to other independent owners.",
+    "No builds, browser sessions, certificate trust changes, paid services or physical multi-device claims by this owner.",
+    "No secret values or rejected private inputs copied into this receipt. Log references identify retained evidence by hash; logs are not embedded.",
+    "No product, record, audit or portable archive schema change."
+  ],
+  "rootNativeFollowup": {
+    "receipt": "2026-10-04-https-lan-native.json",
+    "result": "Six distinct native HTTPS cases now pass, including the unchanged queued-link regression after the source repair."
+  }
+}

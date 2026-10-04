@@ -1,0 +1,211 @@
+{
+  "issue": 108,
+  "version": "0.4.0",
+  "checkedAtUtc": "2026-10-04T21:04:10.590210+00:00",
+  "conclusion": "Local gates and actual artifacts passed; exact published-head CI pending",
+  "python": {
+    "passed": 194,
+    "seconds": 53.74,
+    "log": {
+      "path": "/tmp/friendly108-root-python-first.log",
+      "bytes": 32202,
+      "sha256": "e92c10bbba60d88c2fc7ab6046640842720a018c624ad7e4ee0b7c6102e7ff90"
+    },
+    "compileall": "passed",
+    "ruff": "passed",
+    "compatibility": "One existing exact status assertion gained the approved public transport field; all original role/no-cookie/no-private-data expectations retained."
+  },
+  "typescript": {
+    "passed": 42,
+    "milliseconds": 391.539184,
+    "eslint": "passed",
+    "typecheck": "passed",
+    "firstBuildMilliseconds": 257,
+    "firstBundle": "index-BvHlJBz_.js",
+    "log": {
+      "path": "/tmp/friendly108-root-check-first.log",
+      "bytes": 5860,
+      "sha256": "2ee4c578d2649772849ebab48891745653d37d4db38279d8a1ffdc8ee33886ba"
+    },
+    "finalBuildMilliseconds": 233,
+    "finalBundle": "index-C3DcWdpJ.js",
+    "finalBuildLog": {
+      "path": "/tmp/friendly108-root-build-final.log",
+      "bytes": 616,
+      "sha256": "2c80ece6368543dd7be748bd7dcbda0ea1b2eb7b16128b7bf9878314996120a8"
+    },
+    "changeBetweenBuilds": "Only the confirmed successful-creation deferred-link flush fix; scoped lint/type checks and final production build passed."
+  },
+  "native": {
+    "distinctPassingCases": 34,
+    "existingSuite": {
+      "stats": {
+        "startTime": "2026-10-04T20:58:39.403Z",
+        "duration": 102851.935,
+        "expected": 28,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/friendly108-old-native-first.log",
+        "bytes": 4688,
+        "sha256": "bcca60eb693cf740429926036b0a34751e4aba129d1197b192d960bd56c6eeba"
+      },
+      "results": {
+        "path": "/tmp/friendly108-old-native-results-first.json",
+        "bytes": 33911,
+        "sha256": "397e29094daada2f0d2ae08e2ee49471aa3eed6da54d597285a8f6cf2a3b3e0b"
+      },
+      "productionBundle": "index-C3DcWdpJ.js",
+      "assertionsUnchanged": true
+    },
+    "newHttpsSuite": {
+      "distinctPassingCases": 6,
+      "receipt": "2026-10-04-https-lan-native.json",
+      "scope": "First five had three passes/two fixture errors on index-BvHlJBz_. Sixth queued-link case reproduced a genuine product failure there, then passed after the narrow fix. Corrected two fixture cases subsequently pass on index-C3DcWdpJ; no single local combined 34-case invocation claimed."
+    },
+    "chromium": "151.0.7922.173",
+    "visual": "Root inspected the final 390px resolved-record screenshot; no horizontal overflow."
+  },
+  "maximum": {
+    "receipt": "2026-10-04-https-lan-maximum.json",
+    "firstActualHttpsRun": "passed",
+    "seconds": 33.88,
+    "records": 20,
+    "jpegCount": 160,
+    "jpegBytesEach": 524288,
+    "totalJpegBytes": 83886080,
+    "authenticatedImageReads": 960,
+    "htmlExports": 40,
+    "htmlBytesEach": 5607835,
+    "htmlBytesTotal": 224313400,
+    "checks": "All three original seats, exact private record text and images persist across immediate same-port CLI process restart. Independent HTML parsing checks complete public audit and each embedded JPEG byte/hash/decoded color. Export-generation timestamps are not an identical-HTML-byte claim.",
+    "originalFixtures": {
+      "path": "/workspace/friendly108-maximum-fixtures/fixtures.json",
+      "bytes": 391737,
+      "sha256": "0cc91f7418c601ea59f8f297c940509dcdeb86a1c61dc78c93f1140c62ea6dc1"
+    },
+    "preparation": "Initial fixture generation used a mistaken event-kind spelling, corrected to the preexisting evidence_image_added contract before transport execution; retained failure directory is separate. No actual HTTPS run failure or expectation weakening.",
+    "limits": "Simple original color JPEGs have legal marker padding; capacity is not a worst-case image/RSS or physical-device guarantee."
+  },
+  "receipts": {
+    "producer": "2026-10-04-https-lan-producer.json",
+    "client": "2026-10-04-https-lan-client.json",
+    "protocol": "2026-10-04-https-lan-protocol.json",
+    "review": "2026-10-04-https-lan-review.json",
+    "privateInterface": "2026-10-04-https-lan-private-interface.json"
+  },
+  "artifacts": [
+    {
+      "path": "apps/friendly-challenges/dist/index.html",
+      "bytes": 743,
+      "sha256": "8c8828f121579ff6e916f0e6a82a9031967448b9735d96c919c08e8210744ef5"
+    },
+    {
+      "path": "apps/friendly-challenges/dist/assets/index-C3DcWdpJ.js",
+      "bytes": 62069,
+      "sha256": "f32d6046313b937af6d3981d653270141073fef7578a120527ab6932430f081b"
+    },
+    {
+      "path": "apps/friendly-challenges/dist/assets/index-vF3kZ63t.css",
+      "bytes": 6696,
+      "sha256": "a18ed89cdd4a4e17b1eaec98565c5bf72a4839d12d4df4a690aeac74a19f629c"
+    }
+  ],
+  "sourceHashes": [
+    {
+      "path": "apps/friendly-challenges/challenges/transport.py",
+      "bytes": 7318,
+      "sha256": "13e9682d8ceb05bb563a61b35a11043cb48060308aa359efec7efd8273f2477c"
+    },
+    {
+      "path": "apps/friendly-challenges/challenges/https_server.py",
+      "bytes": 7560,
+      "sha256": "5ef9a8c33799758c1216f419eda84b82580bb5150cc68aa2908bdf04d7a5fac6"
+    },
+    {
+      "path": "apps/friendly-challenges/challenges/server.py",
+      "bytes": 26359,
+      "sha256": "3525c9ff1247f287be14ee6214827a3a56ee316b91dab10c3d68c0e3565bdcf2"
+    },
+    {
+      "path": "apps/friendly-challenges/challenges/__main__.py",
+      "bytes": 2248,
+      "sha256": "d0049be123c5a548a7a0ae1bc54f601ea0b601ed23056f122c7f1857f9a226e9"
+    },
+    {
+      "path": "apps/friendly-challenges/src/api.ts",
+      "bytes": 14440,
+      "sha256": "823cee2784d24b9df6769ef437f983eeafa73a7f5f0611100dcf9dd5b395a675"
+    },
+    {
+      "path": "apps/friendly-challenges/src/main.ts",
+      "bytes": 73643,
+      "sha256": "df30edf8fc033b4424c4d46ee608203354b7c5bdaa695aa14a4aa6498226d14f"
+    },
+    {
+      "path": "apps/friendly-challenges/src/style.css",
+      "bytes": 6719,
+      "sha256": "f6c9d50ce9f351a7073e1cbbbb606572172fcea7f85abe9611cd59d8047d8881"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_server.py",
+      "bytes": 31269,
+      "sha256": "1699025981120adc92f4b78c0b7d2b3584e7465356e7bba6f61c3809c476a5fc"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_transport_config.py",
+      "bytes": 6584,
+      "sha256": "fd2645831b1b857e59b1e46892701a8a853614b7c3d77db36ce8625216d229e5"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_https_server.py",
+      "bytes": 9843,
+      "sha256": "297124d693bc2a9911c3c8f9602d831c7e2ce6e231678ed9392b7c41c4c8c160"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_https_oracle.py",
+      "bytes": 32841,
+      "sha256": "333f06bde077c7a6a6b1d9604ac019efa1d3c697993d05d9b5d23d2202b71809"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_cli_https.py",
+      "bytes": 7337,
+      "sha256": "7f4ddc66cdbec8984b3392b3bf997baee5b1c5aafd897bf73615573574de0ef7"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/https-api.test.ts",
+      "bytes": 3912,
+      "sha256": "a1854642d9833115d9522587ffd375b6e526cc30b2f701293ef1ed2f9693263b"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/browser/https-lan.spec.ts",
+      "bytes": 22934,
+      "sha256": "beb61dd4ac7a8c2352a2afbe006f623cfda024ebe5ea8ced0140cc4cbc7da36e"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/browser/https-lan-fixtures.ts",
+      "bytes": 14049,
+      "sha256": "24665d5617968055de745eab5c39c1db69d858100862c35145eca174bd21defc"
+    },
+    {
+      "path": "apps/friendly-challenges/scripts/smoke_https_maximum.py",
+      "bytes": 25121,
+      "sha256": "f8e3b180eef5322338460f498262b232ce6113903883cec5ce1d894ed0bf4672"
+    },
+    {
+      "path": "apps/friendly-challenges/playwright.config.ts",
+      "bytes": 551,
+      "sha256": "1b727e1e3f47da8ed50e8f69d815e07c27305fac3a0d113830bbeed26e969f37"
+    }
+  ],
+  "limitations": [
+    "Same-host independent browser contexts and actual private-interface traffic do not establish physical device trust or browser compatibility.",
+    "Real measured protocol deadlines cover 5-second TLS/10-second headers; body/response/total/join branches use explicitly scaled constants.",
+    "The separate exact 8 MiB static response/backpressure probe is opaque transport data, not a JPEG/source-photo capacity claim.",
+    "No archive/schema/domain or source-photo normalization changes; prior offline archive capacity remains separate evidence.",
+    "Production has no trust bypass. Isolated Chromium uses only its original fixture SPKI; Python verifies normal CA and hostname rules.",
+    "No deployment, system trust/network change, service charge or new Python runtime dependency."
+  ]
+}

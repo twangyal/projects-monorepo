@@ -1,0 +1,419 @@
+{
+  "afterRestart": {
+    "absentCookieSetupAndForeignSeatDenied": true,
+    "exactImageReads": 480,
+    "originalAuthenticatedRolesPerRecord": [
+      "proposer",
+      "opponent",
+      "arbiter"
+    ],
+    "records": 20,
+    "reports": [
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-01.html",
+        "sha256": "e6cdcfa86891850a3c3568e533b24059689867672bce00eca6050ff3a58bdab0"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-02.html",
+        "sha256": "181a415e27e7d8da5b09c5606602dcced7018a85848bfced69e859619afb408e"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-03.html",
+        "sha256": "9df33df82203512d0b61d4b9c36a32bcfa9a2ff2917b08d25a97c6ace1f5ce62"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-04.html",
+        "sha256": "316290ac15ccc5fc7b6a7fb9bee3d8454385c65774500d7c91f60f3e08a72be4"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-05.html",
+        "sha256": "76b0d565d8d08d7fe93f8650c6c1fae045d525665ec2c3c185dab15b4bb9d5ed"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-06.html",
+        "sha256": "68c545093764d661b3850a033d4eaca493d44cb79a5f85b336c9f845b7b294d0"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-07.html",
+        "sha256": "3cbff5bc9ee1ebd7f79e3e21c0348325230e6d022203798aac61f40f2a035ea3"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-08.html",
+        "sha256": "8ca85346b91d28f4d55f128959d5beeb0be919bc90fcbe4cd052c2cc52ddb404"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-09.html",
+        "sha256": "36938a2d08af17b9b8b1a3ec3689b4083c5f6d9a72eb5971caeff88f880de0ba"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-10.html",
+        "sha256": "67d87d9d5fae24f8b751a3dfd9cd3da8e2eb24eee0993f6f319e7624ad334db1"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-11.html",
+        "sha256": "072d7d2b9141bfa2ccbb9f620a7bb61ddc15308bcec16441cacc256fdead2d82"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-12.html",
+        "sha256": "8ba2fc19ba852223b8ed235fff597c6925bfe65af9b19ea58be3a6b7d347a800"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-13.html",
+        "sha256": "f349e2e3aaba3deaed275e69656f3b0d2698d5eb22b468148d457b5c794c5eb6"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-14.html",
+        "sha256": "cbc391e9f4e0d8ab1eb9fcd82291a1249cd1da152cc6e99f8fdc001da13db985"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-15.html",
+        "sha256": "93f60e87ac62f3e6d17f0fe8f5efe7d8e2fbed139eb0cf1db5f1e6d982adc7dd"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-16.html",
+        "sha256": "5e289728ba9a8ebe9c33c8fb4f0673effeba5627603e5ddf21b608913244f5c1"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-17.html",
+        "sha256": "89f12e0d9464ded7adffac61f7d8f819913a26844a24a940c0d8e2a9eff01a09"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-18.html",
+        "sha256": "6761ac1b0957dd1d40f256441ff9cd4023c29343eaa150f26b130dbc3ea041b5"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-19.html",
+        "sha256": "e03a8b1c69c2d63459343290eb1c8953a6d0a02561dcc82eff3b7a4a50e1f54d"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "after-restart/challenge-20.html",
+        "sha256": "3a29b6f23146fa3847d73a4e5dbf6815e6f1f6f91efc819f68fcbde8cabc4acd"
+      }
+    ],
+    "tlsVersions": [
+      "TLSv1.3"
+    ],
+    "usedInvitesStillUnavailable": true
+  },
+  "allOriginalCapabilitiesRetained": true,
+  "allOriginalPrivateRecordTextUnchanged": true,
+  "beforeRestart": {
+    "absentCookieSetupAndForeignSeatDenied": true,
+    "exactImageReads": 480,
+    "originalAuthenticatedRolesPerRecord": [
+      "proposer",
+      "opponent",
+      "arbiter"
+    ],
+    "records": 20,
+    "reports": [
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-01.html",
+        "sha256": "32fffa02c51c1be83b010879058127ffe33283c487b22523c9a4ae1c700107f8"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-02.html",
+        "sha256": "994fbaaf3fed3ed42d2520a43811ed79618da67f6fe32f0e2b3091baacdd00ce"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-03.html",
+        "sha256": "c4f527e8d16b88f4fb933f4519614cb511a3ee0dd88be25e662842d74bd85d26"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-04.html",
+        "sha256": "5489c1e88c27a43e3cbe9f2b3f230f0d1dddcb3a8d885304104e49bb516a2879"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-05.html",
+        "sha256": "2086dde4315cf2733fb0fe6b4c657058552cb0f9d39a0a1c4199699a925ad6fe"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-06.html",
+        "sha256": "3ffcef42b445c30d1d72c8e5842f8f3e93f213ee3bf1fa937dbe417824ec606e"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-07.html",
+        "sha256": "6cc73ced0a097bbec83b5c0cd5053201018aaa8db2303f1eaa28544fdb7b8847"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-08.html",
+        "sha256": "a34ff4f9c86e66c06468355a63c707817b3956a629f3794f0e7445f07331e0a4"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-09.html",
+        "sha256": "3fb5dad51a76a5c29bf0cd7f43ee673ab265f497053f73b77c0dc4de21c49773"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-10.html",
+        "sha256": "f9620cb7809f0d09086871ddc41db6697a819849b24451db77446376c6d1b19f"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-11.html",
+        "sha256": "c9d7b5ed5fadc426e48880a3d387010d42055b6c1d0a53d763f51a6df68f2f51"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-12.html",
+        "sha256": "3179954cd7e7800ed0bf2afa199d0aa553db311353592af685888b8bdb520df6"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-13.html",
+        "sha256": "722bc56d8f32f1757b8d014a70ddc21b835f17fb3a5abd37b7886c621903a584"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-14.html",
+        "sha256": "f7b9206ac4abafc498d3395806618205d78fac5e86f3d9eeb6f2274dca753448"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-15.html",
+        "sha256": "fe220aa454a2d09dde624d8434b4d10263b29bf7211e56679e2bd04667ddb72e"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-16.html",
+        "sha256": "ddc5fb9e206813f5a7368bd56299160956d0ebeb96143ae5c0588ae001eee1a2"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-17.html",
+        "sha256": "7f300bcbe6d0f6f63e0be15953700cbabed519b579985c13caf6d1afc9fdea6c"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-18.html",
+        "sha256": "906a35286917b67acabb94de7fd650799e8c18f8a440b5bb6454cc6c2a084762"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-19.html",
+        "sha256": "6fd76f3b5ba9229cbdf019e4469eb4a4c0a93d81b8eb924468116826c2875801"
+      },
+      {
+        "bytes": 5607835,
+        "completePublicAudit": true,
+        "embeddedImages": 8,
+        "exactSourceBytes": true,
+        "filename": "before-restart/challenge-20.html",
+        "sha256": "e83b0c38af4f9e9bcb73ca80bcf3a717ce5bba9acb2f749f62512606292be763"
+      }
+    ],
+    "tlsVersions": [
+      "TLSv1.3"
+    ],
+    "usedInvitesStillUnavailable": true
+  },
+  "browserOrPhysicalDeviceClaim": false,
+  "certificateSha256": "daee35fbb581e2ad58ecfa81118e44d72a8d08410ddb59265b8fbfde3de3adaa",
+  "durationSeconds": 33.88,
+  "fixtureSha256": "0cc91f7418c601ea59f8f297c940509dcdeb86a1c61dc78c93f1140c62ea6dc1",
+  "opensslVersion": "OpenSSL 3.5.8 25 Aug 2026",
+  "originalPid": 705246,
+  "originalPrivateRecordSha256": {
+    "0e4db0730da351d782dd91425b04944c": "8ae69d144f2252a6717c259ac5d6d565365dab1ae00018c24594dcb2d35194a3",
+    "17fffba89baed94669c0dde6970f5d5e": "d2f433da62e38038fbe58cf151d210c446b884c70ea3ae0c0a74e245f3f95bbe",
+    "2376006599c442157bbfdd839af58293": "90c948ad1d5cbbb56ec3316233249ef57d9c42dbb4528404bacf38658c74bb78",
+    "31b5ef98c4eaab280e091055ae8d6cf8": "3e66d52290aee6c8887c3eb156cc1b3d52f87e5f8327b9ea642b28cd8170cd9b",
+    "37fa922938e599721eff965e488443f6": "4ff39a8f9e6366e0e6c7874becc0bad383cf948791153ce16454e7acd6cc53fc",
+    "45a92f35d460ab2e580d3cf89504085e": "ae38c5326b71c35e04fc1bf5764d5e24794d2c715258e718448b6691b90070fd",
+    "47a4a73499c4261a3af042a3ec40d208": "d4d14be2f91e75ede542d56bb96dabbf65740bb0bb17b4631b4d7688af41b1eb",
+    "5084337a392f0f0c29657b5ea47298c1": "721c3b214530acd23deab7f7ea409c80686b86ba626ce5effbbdd6e8cc8a82bc",
+    "66fe588224e002e94977778b5c27137d": "fed80bbf88cbd2edbd8a21cb6ddf014457803025bacfb6aff6318493ddc70fcf",
+    "679b0c46231079598638ab59db777f04": "0e7c547216f0fbd2499e724c7a30fcec4266672a79ead5604f2ba84550b0897f",
+    "6e0a8d7fa8fb01bab5a5c958d061512d": "8950e8d78562a77f193c8aef09cdf61630f91174138afcf302c093e73364e2af",
+    "939b759214ea07bae999666ac160f86b": "15328dc0a2e559b4023ba92fe5e40cd2fe0217a8a7cd5974e018932336b0c251",
+    "bc14cf1147791410c164a00d539bd3e5": "6e7dd4cdc89cd13d9cb51b84690670ac49a318406b0be7a91a792ab9224c56c1",
+    "d3ce8cc41f544a4920149e4d981557c9": "802afc728e92e0a6ead8c94a6c208401ec97b72f52ce866a67a677dc7adaaf9b",
+    "d5ad86b7338709e6b6a526487fc92384": "dc6ae2184da22241990c9ca7ddf83c9bdffd56a18fb19dff048fb7974369f6fc",
+    "e203b5dbd7df35287a947cb3afd5bd33": "c5191600c323e8abf1c75fb7e174535a917ee0aced078a11eb901182f9d99b4e",
+    "ed4f6468f6da7eac48047fb2512299be": "fa0ff312445a3be6159b29fb6d5b6dc888bd5cdea9edc9feb87806e247ba1210",
+    "eeae5f5909a90ab90113969e09ded27f": "267c69806430e5082482c37ff0ac7523e4941fb1ddd174d42fc7c5080e8cdebf",
+    "f9ed0cc5fcd1bbdd510acb761735b2f0": "0cfbd651eb5a1c4f8fbd8a291cdb2e4ab8b80d0c5ab309779d4c2320e983344d",
+    "fdecd58763483edc749b9effc062de4d": "b376f5e566b1f03d58dbbe2de034a046d02e5f3b3a14040783792995cbb551f8"
+  },
+  "pillowVersion": "12.3.0",
+  "port": 34131,
+  "processClosure": {
+    "bothGracefulSigtermExitAssertionsPassed": true,
+    "ownedPortNoLongerListening": true,
+    "pidsAbsentAfterRun": {
+      "originalPid": true,
+      "restartedPid": true
+    }
+  },
+  "pythonVersion": "3.12.14",
+  "records": 20,
+  "restartedPid": 706279,
+  "retainedImageBytes": 83886080,
+  "runLog": {
+    "bytes": 2945,
+    "filename": "run-first.log",
+    "sha256": "f7f91a93372021859c1894e292ad258e4e9894ec94309d4b6231220472ee1cc8"
+  },
+  "samePortFreshProcess": true,
+  "schemaVersion": 1,
+  "scope": "20 original three-seat resolved records, 160 distinct simple RGB JPEGs with legal marker-fill padding; no complex-photo/RSS claim.",
+  "scriptSha256": "f8e3b180eef5322338460f498262b232ce6113903883cec5ce1d894ed0bf4672",
+  "sourceSha256": {
+    "challenges/__main__.py": "d0049be123c5a548a7a0ae1bc54f601ea0b601ed23056f122c7f1857f9a226e9",
+    "challenges/https_server.py": "5ef9a8c33799758c1216f419eda84b82580bb5150cc68aa2908bdf04d7a5fac6",
+    "challenges/image_export.py": "b82a15a02f3622cb189a0cd2b6a81445e4a2861a2d442e261a47e76505fba8ed",
+    "challenges/images.py": "1ce842cfd04749e03b26f603841f0ff3f139921f62e23468322c5a15ba069993",
+    "challenges/server.py": "3525c9ff1247f287be14ee6214827a3a56ee316b91dab10c3d68c0e3565bdcf2",
+    "challenges/store.py": "fbc637db3c13377d4d48415d2b3e3a1c1921e98acd520f83b179435e19510275",
+    "challenges/transport.py": "13e9682d8ceb05bb563a61b35a11043cb48060308aa359efec7efd8273f2477c"
+  },
+  "status": "passed",
+  "strictCaAndHostnameVerification": true,
+  "uniqueImages": 160
+}

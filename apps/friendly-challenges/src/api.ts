@@ -100,11 +100,14 @@ async function readJSON(response: Response): Promise<Record<string, unknown>> {
 }
 
 /** Single attempt only: consent commands are never replayed after a failure. */
-export async function request<T>(method: string, path: string, body?: unknown, token?: string, signal?: AbortSignal): Promise<T> {
+export async function request<T>(method: string, path: string, body?: unknown, token?: string, signal?: AbortSignal, setupKey?: string): Promise<T> {
   if (!['GET', 'POST'].includes(method) || typeof path !== 'string' || !PATH.test(path)
       || (token !== undefined && (typeof token !== 'string' || !TOKEN_PATTERN.test(token)))
-      || (method === 'GET' && body !== undefined)) throw invalidRequest();
+      || (method === 'GET' && body !== undefined)
+      || (setupKey !== undefined && (typeof setupKey !== 'string' || !TOKEN_PATTERN.test(setupKey)
+        || method !== 'POST' || path !== '/api/challenges' || token !== undefined))) throw invalidRequest();
   const headers: Record<string, string> = { Accept: 'application/json' };
+  if (setupKey !== undefined) headers['X-Friendly-Setup-Key'] = setupKey;
   if (token !== undefined) headers.Authorization = `Bearer ${token}`;
   let serialized: string | undefined;
   if (body !== undefined) {

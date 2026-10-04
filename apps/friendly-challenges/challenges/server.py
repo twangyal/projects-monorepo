@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import socket
+from socketserver import TCPServer
 import stat
 import threading
 import time
@@ -16,6 +17,9 @@ import time
 from .store import DomainError, Store
 from .images import MAX_IMAGE_BYTES
 from .image_export import render_image_export
+from .transport import TransportConfig, validate_transport, matches_setup
+from .https_server import HttpsRuntime, HeaderReader, DeadlineWriter, RequestError
+from . import transport as transport_limits
 
 MAX_JSON = 16 * 1024
 MAX_RESPONSE = 1024 * 1024
@@ -36,7 +40,7 @@ ERROR_CODES = {'invalid_request', 'unauthorized', 'forbidden', 'not_found', 'con
 class ChallengeServer(HTTPServer):
     request_queue_size = 32
 
-    def __init__(self, data_dir, port, dist_dir, now):
+    def __init__(self, data_dir, port, dist_dir, now, *, transport=None):
         if type(port) is not int or not 0 <= port <= 65535:
             raise ValueError('Port must be an integer from 0 through 65535.')
         self.data_dir = Path(data_dir).absolute()
@@ -46,8 +50,25 @@ class ChallengeServer(HTTPServer):
         self._closed = False
         self._closing = False
         self._guard = threading.Lock()
-        self._slots = threading.BoundedSemaphore(MAX_CONNECTIONS)
+        self._slots = threading.BoundedSemaphore(MAX_CONNECTIONS) if transport is None else None
         self._handlers = {}
+        self.transport = transport
+        self.https_runtime = None
+        self.handler_connections = {}
+        if transport is not None:
+            validate_transport(transport, port)
+        try:
+            if transport is not None:
+                self.request_queue_size = transport_limits.LISTEN_BACKLOG
+                super().__init__((transport.bind, port), Handler)
+            self._initialize_library(port, now)
+            if transport is not None:
+                self.https_runtime = HttpsRuntime(self, transport)
+        except BaseException:
+            self.server_close()
+            raise
+
+    def _initialize_library(self, port, now):
         if self.data_dir.is_symlink():
             raise RuntimeError('The data directory must not be a symbolic link.')
         self.data_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -68,12 +89,23 @@ class ChallengeServer(HTTPServer):
                 if (self.data_dir / name).is_symlink():
                     raise RuntimeError('Database files must not be symbolic links.')
             self.store = Store(self.data_dir) if now is None else Store(self.data_dir, clock=now)
-            super().__init__(('127.0.0.1', port), Handler)
+            if self.transport is None:
+                super().__init__(('127.0.0.1', port), Handler)
         except BaseException:
             self.server_close()
             raise
 
+    def server_bind(self):
+        if self.transport is None:
+            return super().server_bind()
+        # Preserve TCP reuse flags without HTTPServer's reverse-DNS side effect.
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.transport.bind, self.server_address[1]
+
     def process_request(self, request, client_address):
+        if self.transport is not None:
+            self.https_runtime.admit(request, client_address)
+            return
         with self._guard:
             admitted = not self._closing and self._slots.acquire(blocking=False)
             if admitted:
@@ -121,6 +153,10 @@ class ChallengeServer(HTTPServer):
                 return
             self._closing = True
             handlers = list(self._handlers.items())
+        if self.https_runtime is not None:
+            self.https_runtime.stop()
+            # Join before Store.close, which acquires its request-shared RLock.
+            self.https_runtime.join()
         if hasattr(self, 'socket'):
             super().server_close()
         for _, connection in handlers:
@@ -144,8 +180,9 @@ class ChallengeServer(HTTPServer):
             self._closed = True
 
 
-def create_server(data_dir: Path, port: int = 8767, *, dist_dir: Path | None = None, now=None) -> ChallengeServer:
-    return ChallengeServer(data_dir, port, dist_dir, now)
+def create_server(data_dir: Path, port: int = 8767, *, dist_dir: Path | None = None, now=None,
+                  transport: TransportConfig | None = None) -> ChallengeServer:
+    return ChallengeServer(data_dir, port, dist_dir, now, transport=transport)
 
 
 class _HeaderDeadlineReader:
@@ -200,14 +237,32 @@ class Handler(BaseHTTPRequestHandler):
     sys_version = ''
 
     def setup(self):
-        super().setup()
-        self.connection.settimeout(SOCKET_TIMEOUT)
-        self.rfile = _HeaderDeadlineReader(self.rfile, self.connection)
+        self.owned_connection = self.server.handler_connections.get(self.request)
+        self._response_started = False
+        if self.owned_connection is None:
+            super().setup()
+            self.connection.settimeout(SOCKET_TIMEOUT)
+            self.rfile = _HeaderDeadlineReader(self.rfile, self.connection)
+        else:
+            self.connection = self.request
+            self.rfile = HeaderReader(self.owned_connection)
+            self.wfile = DeadlineWriter(self.owned_connection)
+            self.command = ''
+            self.request_version = 'HTTP/1.1'
+            self.requestline = ''
+
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except RequestError as error:
+            self._problem(error.status, 'too_large' if error.status == 431 else 'invalid_request', str(error))
 
     def log_message(self, *args):
         pass
 
     def parse_request(self):
+        if self.owned_connection is not None:
+            return super().parse_request()
         stream = self.rfile
         self.rfile = _HeaderLimit(stream)
         try:
@@ -252,11 +307,31 @@ class Handler(BaseHTTPRequestHandler):
     def _security(self):
         hosts = self.headers.get_all('Host', [])
         origins = self.headers.get_all('Origin', [])
-        allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
-        if (len(hosts) != 1 or hosts[0] not in allowed or len(origins) > 1
-                or (origins and origins[0] != 'http://' + hosts[0])
-                or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
-            raise DomainError('forbidden', 'Only requests from this local Friendly Challenges service are allowed.', 403)
+        config = self.server.transport
+        if config is None:
+            allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
+            if (len(hosts) != 1 or hosts[0] not in allowed or len(origins) > 1
+                    or (origins and origins[0] != 'http://' + hosts[0])
+                    or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
+                raise DomainError('forbidden', 'Only requests from this local Friendly Challenges service are allowed.', 403)
+        else:
+            sites = self.headers.get_all('Sec-Fetch-Site', [])
+            if (len(hosts) != 1 or hosts[0] != config.authority or len(origins) > 1
+                    or origins and origins[0] != config.origin
+                    or self.command == 'POST' and len(origins) != 1
+                    or len(sites) > 1 or 'cross-site' in sites
+                    or any(name.lower() == 'forwarded' or name.lower().startswith('x-forwarded-')
+                           for name in self.headers)):
+                raise DomainError('forbidden', 'Only requests from the configured Friendly Challenges origin are allowed.', 403)
+            if (self.headers.get_all('Expect') or self.headers.get_all('Upgrade')
+                    or 'upgrade' in [part.strip() for part in self.headers.get('Connection', '').lower().split(',')]):
+                raise DomainError('invalid_request', 'Expect and protocol upgrades are not supported.', 400)
+            if len(self.headers.get_all('Content-Type', [])) > 1:
+                raise DomainError('invalid_request', 'Use one Content-Type header.', 400)
+            if self.command == 'POST' and self.path == '/api/challenges':
+                keys = self.headers.get_all('X-Friendly-Setup-Key', [])
+                if len(keys) != 1 or not matches_setup(config, keys[0]):
+                    raise DomainError('forbidden', 'A valid operator setup key is required to create a challenge.', 403)
         if len(self.headers.get_all('Authorization', [])) > 1:
             raise DomainError('invalid_request', 'Use exactly one Authorization header.', 400)
         if self.command not in ('GET', 'HEAD', 'POST'):
@@ -275,6 +350,11 @@ class Handler(BaseHTTPRequestHandler):
             raise DomainError('invalid_request', 'GET and HEAD requests cannot contain a body.', 400)
 
     def _headers(self, status, content_type, size, extra=None):
+        if self.owned_connection is not None:
+            if self._response_started:
+                raise OSError('Response already started.')
+            self.owned_connection.phase(transport_limits.RESPONSE_SECONDS)
+            self._response_started = True
         self.send_response(status)
         for name, value in {
             'Content-Type': content_type, 'Content-Length': str(size), 'Connection': 'close',
@@ -295,6 +375,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _problem(self, status, code, message):
         self.close_connection = True
+        if self.owned_connection is not None and self._response_started:
+            return
         try:
             self._json(status, {'error': message, 'code': code})
         except OSError:
@@ -311,6 +393,9 @@ class Handler(BaseHTTPRequestHandler):
         if len(types) != 1 or types[0].split(';', 1)[0].strip().lower() != content_type:
             raise DomainError('invalid_request', 'Use the supported request content type.', 400)
         deadline = time.monotonic() + BODY_TIMEOUT
+        if self.owned_connection is not None:
+            self.owned_connection.phase(transport_limits.BODY_SECONDS)
+            deadline = self.owned_connection.deadline
         body = bytearray()
         while size:
             remaining = deadline - time.monotonic()
@@ -322,6 +407,8 @@ class Handler(BaseHTTPRequestHandler):
                 raise DomainError('invalid_request', 'The request body ended early.', 400)
             body.extend(chunk)
             size -= len(chunk)
+        if self.owned_connection is not None:
+            self.owned_connection.check()
         return bytes(body)
 
     def _object(self):
@@ -382,7 +469,10 @@ class Handler(BaseHTTPRequestHandler):
     def _route(self):
         method, path, store = self.command, self.path, self.server.store
         if path == '/api/status' and method in ('GET', 'HEAD'):
-            return self._json(200, {'schemaVersion': 1, 'maxChallenges': 20})
+            config = self.server.transport
+            transport = (dict(mode='https-lan', origin=config.origin, setupRequired=True) if config
+                         else dict(mode='http-loopback', origin=f'http://127.0.0.1:{self.server.server_port}', setupRequired=False))
+            return self._json(200, {'schemaVersion': 1, 'maxChallenges': 20, 'transport': transport})
         if path == '/api/challenges' and method == 'POST':
             return self._json(201, store.create(self._object()))
         media = re.fullmatch(r'/api/challenges/(' + ID + r')/evidence/(' + ID + r')/image', path)
