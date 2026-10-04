@@ -63,14 +63,26 @@ export function moveClip(sequence,clipIndex,direction){
   if(![-1,1].includes(direction))throw Error('Move a clip one place earlier or later.');
   index(clipIndex+direction,next.clips.length);
   [next.clips[clipIndex],next.clips[clipIndex+direction]]=[next.clips[clipIndex+direction],next.clips[clipIndex]];
-  return next;
+  return validateSequence(next);
 }
 export function removeSource(sequence,id){
   const next=validateSequence(sequence),at=next.sources.findIndex(source=>source.id===id);index(at,next.sources.length);
   if(next.clips.some(clip=>clip.sourceId===id))throw Error('Remove this source’s clips before removing the source.');
   next.sources.splice(at,1);return next;
 }
-function duration(sequence){return sequence.clips.reduce((sum,clip)=>sum+sequence.sources.find(s=>s.id===clip.sourceId).film.shots[clip.shotIndex].duration,0);}
+function duration(sequence){
+  // Admission depends on the durations, not clip order. Sum a canonical order
+  // with compensation so reordering cannot create or conceal a quota excess.
+  // This uses the represented total without rounding durations or an epsilon.
+  const values=sequence.clips.map(clip=>sequence.sources.find(s=>s.id===clip.sourceId).film.shots[clip.shotIndex].duration).sort((a,b)=>a-b);
+  let sum=0,correction=0;
+  for(const value of values){
+    const next=sum+value;
+    correction+=Math.abs(sum)>=Math.abs(value)?(sum-next)+value:(value-next)+sum;
+    sum=next;
+  }
+  return sum+correction;
+}
 export function sequenceDuration(sequence){return duration(validateSequence(sequence));}
 export function sequenceFrameAt(sequence,seconds){
   if(typeof seconds!=='number'||!Number.isFinite(seconds))throw Error('Sequence time must be a finite number.');

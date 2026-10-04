@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "issue": 90,
+  "status": "core-fix-local-passed-ci-pending",
+  "scope": "Sequence duration admission only; complete UI/native/max/restart acceptance remains with PR93.",
+  "base": "f9e0a28457c3f04647b4a8d3bdbc0dfa1f0d57ff",
+  "reviewFinding": "Moving clip11 later in20 alternating1.3/4.7-second clips changes naive60-second sum to60.00000000000001; the returned cut becomes invalid. A tiny actual excess can also be concealed by summation order.",
+  "correction": "Canonical sorted Neumaier compensated total; no epsilon, rounding of authored durations or quota widening. moveClip revalidates returned result. Chronological cut/source clocks preserved.",
+  "verification": {
+    "newCases": 3,
+    "beforeFailures": 3,
+    "afterTotalUnitPassed": 169,
+    "syntaxPassed": true,
+    "covered": [
+      "Every adjacent move, grouped/reversed order, full60-second endpoint, unchanged sources/input and Undo/Redo.",
+      "Near-excess second duration4.700000000000001 is rejected in all tested orders."
+    ]
+  },
+  "limits": [
+    "Native CI pending for this head.",
+    "No claim of complete issue90 flow or physical headset acceptance."
+  ]
+}
