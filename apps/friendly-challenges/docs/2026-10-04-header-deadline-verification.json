@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 80,
-  "status": "local-python-complete-ci-pending",
+  "status": "complete",
   "startingAstraCommit": "b2b782b50341b9279538437aafba7aa7ec387abf",
   "environment": {
     "python": "3.12.14",
@@ -32,22 +32,24 @@
     ]
   },
   "ci": {
-    "status": "passed-before-test-timing-followup",
+    "status": "passed",
     "implementationCommit": "fdf01638d63b092bcd17ac26de6cdf57d6f6760e",
-    "runId": 37201797103,
-    "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37201797103",
-    "jobId": 111434833202,
+    "finalCommit": "fb9cde234dfd19f4677a927d4593d9a9772ed0f9",
+    "runId": 37202059483,
+    "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37202059483",
+    "jobId": 111435609868,
     "pythonPassed": 47,
+    "pythonSeconds": 24.178,
     "typescriptPassed": 22,
     "browserPassed": 12,
-    "browserSeconds": 49.8,
+    "browserSeconds": 48.9,
     "ruff": true,
     "typecheck": true,
     "productionBuild": true,
-    "followup": "Timing-only test adjustment awaits exact-commit CI."
+    "mergeCommit": "033a57de579eb616cae64f7028de60f063c281b1"
   },
   "limitations": [
-    "Real socket tests shorten the header deadline to 0.1\u20131 seconds; production uses 15 seconds.",
+    "Real socket tests shorten the header deadline to 0.1–1 seconds; production uses 15 seconds.",
     "Ruff is unavailable locally; no local lint, TypeScript or production-browser checks are claimed. The existing project workflow will exercise those on the exact commit.",
     "This service remains loopback-only. No production deployment or general denial-of-service resistance is claimed."
   ],
