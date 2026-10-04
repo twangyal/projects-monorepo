@@ -2,7 +2,7 @@
   "issue": 107,
   "version": "0.3.0",
   "checkedAtUtc": "2026-10-04T20:33:06.806745+00:00",
-  "localStatus": "passed; exact published-head CI pending",
+  "localStatus": "passed; both exact published-head CI events and all thirteen PR workflows passed at 880070a6ee83707434e293a986a9d6aedaa6522d",
   "python": {
     "fullDiscovery": {
       "passed": 182,
@@ -164,16 +164,21 @@
     }
   ],
   "ci": {
-    "status": "mixed first head: push failed one stale-revision fixture; PR passed",
-    "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
-    "receipt": "2026-10-04-https-lan-ci-first.json",
+    "status": "passed both exact-head events and all thirteen PR workflows",
+    "headSha": "880070a6ee83707434e293a986a9d6aedaa6522d",
+    "treeSha": "facd50cafb4823976f453ccce1af3da9488c83b1",
+    "receipt": "2026-10-04-https-lan-ci.json",
+    "firstMixedReceipt": "2026-10-04-https-lan-ci-first.json",
     "push": {
+      "runId": 37233367305,
       "pythonPassed": 183,
       "typescriptPassed": 6,
-      "nativePassed": 29,
-      "nativeFailed": 1
+      "nativePassed": 30,
+      "nativeFailed": 0
     },
     "pullRequest": {
+      "runId": 37233369756,
+      "checkoutSha": "dfd41ddd748316b5ae357638e1a65fe0305a4a83",
       "pythonPassed": 183,
       "typescriptPassed": 6,
       "nativePassed": 30,
@@ -215,6 +220,6 @@
     },
     "static": "Type checking and scoped ESLint passed.",
     "normalBundleSha256": "f989c5a472c88537fb22d72636861919c77f32ea90f187842671442b5d23e3e4",
-    "finalPublishedCi": "pending"
+    "finalPublishedCi": "2026-10-04-https-lan-ci.json"
   }
 }
