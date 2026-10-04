@@ -6,7 +6,9 @@ import re
 from urllib.parse import urlsplit
 
 from .function_parser import FunctionParseError, parse_functions
-from .model import ChangeEvidence, FunctionCatalog, LineEvidence, RenameEvidence, Report
+from .model import (ChangeEvidence, FileCatalog, FunctionCatalog, LineEvidence,
+                    RenameEvidence, Report, SourceFile)
+from .native_protocol import SUFFIX_LANGUAGES
 from .runner import GitError, GitRunner
 
 
@@ -195,13 +197,8 @@ class _Snapshot:
     source: str
 
 
-def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
-    """Resolve once and read bounded committed source for either selection route."""
-    if not isinstance(file, str) or not file or '\x00' in file:
-        raise ReaderError('Supply a nonempty repository-relative file path without NUL characters.')
-    path = PurePosixPath(file)
-    if path.is_absolute() or '..' in path.parts or file.startswith('\\') or re.match(r'^[A-Za-z]:[\\/]', file):
-        raise ReaderError('File must be a repository-relative path without parent traversal.')
+def _resolve_repository(repo: str | Path, ref: str) -> tuple[GitRunner, Path, str]:
+    """Resolve a complete local repository and one immutable commit."""
     if not isinstance(ref, str) or not ref or '\x00' in ref:
         raise ReaderError('Supply a nonempty Git revision without NUL characters.')
     git = GitRunner(repo)
@@ -216,6 +213,66 @@ def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
         raise ReaderError('Cannot resolve the requested revision to a commit; check --repo and --ref.') from exc
     if not _HASH.fullmatch(revision):
         raise ReaderError('Git did not resolve the revision to a valid commit ID.')
+    return git, repository_root, revision
+
+
+def list_files(repo: str | Path, ref: str = 'HEAD', *, directory: str = '',
+               language: str = 'all') -> FileCatalog:
+    """Discover source candidates from tree entries and blob-size metadata."""
+    if not isinstance(directory, str) or '\x00' in directory:
+        raise ReaderError('Directory must be a repository-relative path without NUL characters.')
+    path = PurePosixPath(directory)
+    if path.is_absolute() or '..' in path.parts or directory.startswith('\\') or re.match(r'^[A-Za-z]:[\\/]', directory):
+        raise ReaderError('Directory must be repository-relative without parent traversal.')
+    if not isinstance(language, str) or language not in ('all', 'python', 'javascript', 'typescript'):
+        raise ReaderError('Language must be all, python, javascript or typescript.')
+    directory = '' if str(path) == '.' else str(path)
+    git, root, revision = _resolve_repository(repo, ref)
+    args = ('--', directory + '/') if directory else ()
+    raw = git.run('--literal-pathspecs', 'ls-tree', '-r', '-l', '-z', '--full-tree', revision, *args)
+    files = []
+    omitted = 0
+    for record in raw.split(b'\x00'):
+        if not record:
+            continue
+        metadata, separator, name = record.partition(b'\t')
+        fields = metadata.split()
+        if not separator or len(fields) != 4:
+            raise ReaderError('Git returned an invalid source-tree entry.')
+        mode, kind, _, size = fields
+        if kind != b'blob' or mode not in (b'100644', b'100755'):
+            continue
+        try:
+            filename = name.decode('utf-8')
+        except UnicodeDecodeError:
+            omitted += 1
+            continue
+        suffix = PurePosixPath(filename).suffix
+        detected = 'python' if suffix in ('.py', '.pyi') else SUFFIX_LANGUAGES.get(suffix)
+        if detected == 'tsx':
+            detected = 'typescript'
+        if detected is None or (language != 'all' and language != detected):
+            continue
+        if not re.fullmatch(rb'[0-9]{1,20}', size):
+            raise ReaderError('Git returned an invalid source-file size.')
+        size_bytes = int(size)
+        if size_bytes > MAX_BLOB_BYTES:
+            continue
+        if len(files) >= 10_000:
+            raise ReaderError('Source catalog exceeds 10,000 files; narrow --directory or --language.')
+        files.append(SourceFile(filename, detected, size_bytes))
+    files.sort(key=lambda item: item.path)
+    return FileCatalog(root.name, revision, ref, directory, language, files, omitted)
+
+
+def _load_snapshot(repo: str | Path, file: str, ref: str) -> _Snapshot:
+    """Resolve once and read bounded committed source for either selection route."""
+    if not isinstance(file, str) or not file or '\x00' in file:
+        raise ReaderError('Supply a nonempty repository-relative file path without NUL characters.')
+    path = PurePosixPath(file)
+    if path.is_absolute() or '..' in path.parts or file.startswith('\\') or re.match(r'^[A-Za-z]:[\\/]', file):
+        raise ReaderError('File must be a repository-relative path without parent traversal.')
+    git, repository_root, revision = _resolve_repository(repo, ref)
     listing = git.run('--literal-pathspecs', 'ls-tree', '--full-tree', '-z', revision, '--', file)
     entry = None
     for candidate in listing.split(b'\x00'):

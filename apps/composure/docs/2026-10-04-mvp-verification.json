@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-04",
+  "issue": 39,
+  "verifiedSourceCommit": "554a04cdb2c1006208f6079e741c452189e46330",
+  "workflowRun": 37171786378,
+  "job": 111346036784,
+  "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37171786378",
+  "checks": {
+    "unitTests": 8,
+    "productionChromiumFlows": 6,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "browserEvidence": [
+    "Actual keyboard escape and simulated JSON download; native best/preference reopen",
+    "Noise loss; locked prerequisites",
+    "Stale signal and pause/blur suspend active time and controls",
+    "Mobile pointer cancellation and no horizontal overflow",
+    "Held movement releases on settings focus; restart restores keyboard aim ARIA",
+    "After 256 capped events, objective announcements and actual report stay current"
+  ],
+  "review": {
+    "independent": true,
+    "critical": 0,
+    "important": 1,
+    "minor": 2,
+    "rulings": "All three findings corrected. Two production regressions first failed on 36e905cbe5dd4d55d091ff055a46e27388833699 (run 37171591723) and pass on the verified source. Minor findings were fixed within this coherent milestone because they shared existing input/render code."
+  },
+  "limits": [
+    "Simulated readings only; no supported smartwatch or physical-device verification",
+    "Desktop Chromium with mobile viewport/pointer tests; no physical touch or sound quality assessment",
+    "No subjective horror-quality, emotional/medical inference, or full nonvisual accessibility claim"
+  ],
+  "sha256": {
+    "src/model.ts": "17de2604566faf73afd12de4ca238e9ab3ca12a1a01ad345b8b171e5d9a703b4",
+    "src/main.ts": "776abcd3be75206f28440f92530d9f4a2b64f60c5787d1977c015435e34f0e14",
+    "src/style.css": "3157a707b120c1f290bd3db67c05bc876611ba0ea54718fdcb81c7163a0c8236",
+    "src/settings.ts": "04fbdb4a10ddf4732adfb8cfc58c03f09eae377d36ac65f0abab00a481b98580",
+    "tests/model.test.ts": "09bc6b7b0c335a1fb5f2b98abe34f5953d52268b43dcac3f8507d64f8acf5f11",
+    "tests/settings.test.ts": "09bbbe8ff13e91d05d6c9978c2512af9d79ac98e2ed6502841b76264e313d671",
+    "tests/browser/workflow.spec.ts": "7c0b81552f4b498274312eb6525234dd015c2586e3fe186a99403396d3bf995d",
+    "package-lock.json": "4bf7c614ded65b64adf21cf0bfb2dbf1805425a58158263a1403742b83668aea",
+    "playwright.config.ts": "94bc52e7e8173d525031169b71413d78323051b956d9a8406d05c767704195c5"
+  }
+}

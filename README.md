@@ -16,5 +16,8 @@ An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized
 | Style Studio | Maintenance | `apps/style-studio` |
 | Friendly Challenges | Maintenance | `apps/friendly-challenges` |
 | Shot Studio | Active | `apps/shot-studio` |
+| Lens Studio | Maintenance | `apps/lens-studio` |
+| Stock Notebook | Active | `apps/stock-notebook` |
+| Composure | Active | `apps/composure` |
 
 Each project is intentionally self-contained under `apps/`; see its README for run and verification instructions.
