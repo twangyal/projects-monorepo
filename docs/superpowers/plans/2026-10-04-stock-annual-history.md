@@ -11,5 +11,7 @@ Issue #35; contract `../specs/2026-10-04-stock-annual-history-design.md`. Root o
 - [x] **git_reader:** `src/main.ts`, `style.css`. Latest-only UI and filter choices, period/company counts, safe dated history/evidence/formulas/links, accessible desktop/mobile flow. Preserve drafts/history/import/save request ownership. No concurrent shared build/server use.
 - [x] **git_runner:** `tests/browser/workflow.spec.ts`, new `tests/annual-history-oracle.test.ts` and owned browser fixtures. Independent numeric/raw-source oracle, unsorted multi-period upload, latest-only selection, source-linked history, native JSON/report download/reimport/reload and legacy migration workflow. Own shared browser port 4271 only when root releases it.
 - [x] Full unit/lint/type/build checks and production browser suite; independent review and fix demonstrated regressions. Root owns final maximum 500-row production measurement and exported/reopened data evidence.
-- [ ] Update docs/catalog/evidence; fetch Astra, commit/push without force, inspect CI and update draft PR12/issue #35 to actual state.
-- [ ] Immediately reassess the next high-value unblocked task.
+- [x] Update docs/catalog/evidence; fetch Astra, commit/push without force, inspect CI and update draft PR12/issue #35 to actual state.
+- [x] Immediately reassess the next high-value unblocked task.
+
+Completion: `236be2e` passed Stock CI with 105 unit tests, all 20 production browser cases together and the maximum-input smoke. Issue #35 is closed; the next gated learned-language assessment is #36.
