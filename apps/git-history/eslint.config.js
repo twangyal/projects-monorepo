@@ -8,4 +8,8 @@ export default [
     files: ['git_history/web/*.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
   },
+  {
+    files: ['tests/*.test.js'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.node },
+  },
 ];

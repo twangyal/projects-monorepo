@@ -46,7 +46,7 @@ test('draw, pose, undo, preview, persist and download a real animated GIF, PNG a
   expect(Number(await page.getByLabel('Position X', { exact: true }).inputValue())).toBeGreaterThan(320);
   expect(Number(await page.getByLabel('Position X', { exact: true }).inputValue())).toBeLessThan(440);
   const editable = await backup(page);
-  expect(editable.layers[0].strokes).toHaveLength(1);
+  expect(editable.layers[0].cels[0].strokes).toHaveLength(1);
   expect(editable.layers[0].keys.map((key: { frame: number }) => key.frame)).toEqual([0, 11]);
   await expect(page.locator('#save-status')).toHaveText('Saved in this browser');
   await page.reload();
@@ -88,7 +88,7 @@ test('pointer cancellation leaves no partial stroke and layers can be reordered 
   const box = (await page.locator('#stage').boundingBox())!;
   await page.mouse.move(box.x + 30, box.y + 30); await page.mouse.down(); await page.mouse.move(box.x + 100, box.y + 80);
   await page.locator('#stage').dispatchEvent('pointercancel', { pointerId: 1 }); await page.mouse.up();
-  expect((await backup(page)).layers[0].strokes).toHaveLength(0);
+  expect((await backup(page)).layers[0].cels[0].strokes).toHaveLength(0);
   await page.getByRole('button', { name: '+ Drawing layer', exact: true }).click();
   await page.getByLabel('Layer name', { exact: true }).fill('Second layer');
   await page.getByRole('button', { name: 'Lower', exact: true }).click();

@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "status": "blocked-model-access",
+  "asOfUtc": "2026-10-04",
+  "candidate": {
+    "modelId": "microsoft/trocr-small-handwritten",
+    "officialRepository": "https://github.com/microsoft/unilm/tree/master/trocr",
+    "officialReadme": "https://raw.githubusercontent.com/microsoft/unilm/master/trocr/README.md",
+    "officialModelCard": "https://huggingface.co/microsoft/trocr-small-handwritten/raw/main/README.md",
+    "officialOriginalCheckpoint": "https://layoutlm.blob.core.windows.net/trocr/model_zoo/fairseq/trocr-small-handwritten.pt",
+    "reportedParameters": 62000000,
+    "reportedFineTuningDataset": "IAM",
+    "codeLicense": {
+      "name": "MIT",
+      "url": "https://raw.githubusercontent.com/microsoft/unilm/master/LICENSE",
+      "sha256": "904dc4d8749877f1dba1cda48200d2462dccbeb7c134d5e4ef6fa75e0198c8fe"
+    },
+    "readmeSha256": "0dec335c68dfb51be592c205c06e323afc08f32df77f4c9acbafd7792e598445",
+    "weightsLicense": null,
+    "weightsSha256": null,
+    "weightsDownloaded": false
+  },
+  "network": {
+    "policy": "enforced restricted package_managers",
+    "revision": 42,
+    "ordinaryRequest": {
+      "url": "https://huggingface.co/microsoft/trocr-small-handwritten/raw/main/README.md",
+      "curlExitCode": 56,
+      "proxyConnectHttpStatus": 403,
+      "message": "CONNECT tunnel failed, response 403"
+    },
+    "retryOrBypassAttempted": false,
+    "officialGitHubReleaseAssets": {
+      "queried": "https://api.github.com/repos/microsoft/unilm/releases?per_page=100",
+      "releases": [
+        {
+          "tag": "yoco.v0",
+          "assets": [
+            {
+              "name": "harness_data.zip",
+              "size": 73261469,
+              "url": "https://github.com/microsoft/unilm/releases/download/yoco.v0/harness_data.zip"
+            }
+          ]
+        },
+        {
+          "tag": "s2s-ft.v0.3",
+          "assets": []
+        },
+        {
+          "tag": "s2s-ft.v0.2",
+          "assets": []
+        },
+        {
+          "tag": "s2s-ft.v0.0",
+          "assets": []
+        }
+      ]
+    }
+  },
+  "alternative": {
+    "id": "githubharald/SimpleHTR",
+    "officialReadme": "https://raw.githubusercontent.com/githubharald/SimpleHTR/master/README.md",
+    "checkpointHosts": [
+      "www.dropbox.com"
+    ],
+    "hostAllowedByCurrentPolicy": false,
+    "checkpointRequestAttempted": false,
+    "weightsLicense": null,
+    "inferenceRun": false
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "isolation": "private venv; no global install",
+    "dependencyCheck": {
+      "cudaAvailable": false,
+      "elapsedSeconds": 6.837833236990264,
+      "inferenceRun": false,
+      "operation": "dependency-import-only",
+      "peakRssKiB": 356464,
+      "torchInteropThreads": 1,
+      "torchThreads": 1,
+      "versions": {
+        "Pillow": "11.3.0",
+        "numpy": "2.2.6",
+        "safetensors": "0.6.2",
+        "sentencepiece": "0.2.1",
+        "torch": "2.6.0+cpu",
+        "transformers": "4.57.3"
+      },
+      "weightsLoaded": false
+    },
+    "cpuSecondsSoft": 30,
+    "cpuSecondsHard": 35,
+    "wallSeconds": 45,
+    "addressSpaceBytes": 3221225472,
+    "packagesInstalledBeforeStopLargeUnusedInstruction": true
+  },
+  "inference": {
+    "run": false,
+    "modelLoaded": false,
+    "fixturesRead": false,
+    "personalTrainingRun": false,
+    "heldoutPredictionsViewed": false,
+    "latencySeconds": null,
+    "peakRssKiB": null,
+    "qualityMetrics": null
+  },
+  "limitations": [
+    "Dependency-import success is not trained-model CPU feasibility.",
+    "Code MIT license does not establish checkpoint licensing.",
+    "IAM results in the official README are not a measurement on owned notes.",
+    "No downloaded weights, safe-weight validation or checkpoint checksum is available.",
+    "Installed Tesseract general OCR is not evidence of handwriting usefulness.",
+    "No repository app/source/Git writes occurred."
+  ]
+}

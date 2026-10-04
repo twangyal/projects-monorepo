@@ -1,11 +1,12 @@
 {
   "name": "git-history-workbench",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22.18.0" },
   "scripts": {
-    "lint": "eslint git_history/web/workbench.js",
+    "lint": "eslint git_history/web/*.js tests/*.test.js",
+    "test": "node --test tests/*.test.js",
     "test:browser": "playwright test"
   },
   "devDependencies": {

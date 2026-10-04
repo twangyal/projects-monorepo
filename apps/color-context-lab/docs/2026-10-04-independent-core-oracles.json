@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "issue": 70,
-  "status": "local-oracles-complete-ci-pending",
+  "issue": 91,
+  "status": "current-astra-local-gate-passed-ci-pending",
   "sourceCommit": "793f8775bd01c4e3fff8ca1233e2aef681fbeba1",
   "scope": "Tests only; no application, model, protocol or UI changes.",
   "node": "24.19.0",
@@ -27,10 +27,17 @@
       "change": "Force center result alpha to255",
       "failedCases": 3,
       "restoredPassed": 22
+    },
+    "fullLocalGate": {
+      "command": "npm ci && npm run check",
+      "unitPassed": 91,
+      "lintPassed": true,
+      "typecheckPassed": true,
+      "buildPassed": true
     }
   },
   "limits": [
-    "The additional tests have not yet passed the full project static/native CI gate.",
+    "Full current merged checkout CI is pending; prior native CI is documented separately.",
     "Uploaded-art perception and protection are not measured; no experiment fit was performed.",
     "Nested root-array refusal is not an isolated measurement of parser depth enforcement."
   ],
@@ -42,5 +49,20 @@
       "Each RGB luminance coefficient and the low-sRGB branch have isolated expectations."
     ],
     "guardMutations": "Removing each accessor/image guard or changing the red luminance coefficient fails its actual fixture."
+  },
+  "reconciliation": {
+    "baseCommit": "d56778b7bff9667a4c746a2f0794fa095d2bfe61",
+    "productionAndExperimentFilesPreserved": true,
+    "priorWorkspaceRecordPreserved": true,
+    "additionalCases": 22
+  },
+  "previousCi": {
+    "run": 37202578907,
+    "checkout": "a1c2a4e9d9ac0906bdddb9e37c478b59d00f95ed",
+    "head": "046c71173d08173e5cd4c55a2109296670a53368",
+    "typescriptPassed": 91,
+    "pythonPassed": 12,
+    "browserPassed": 32,
+    "status": "success-before-current-Astra-reconciliation"
   }
 }

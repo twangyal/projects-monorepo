@@ -64,14 +64,14 @@ test('shared renderer applies local transforms, alpha, dots, layering and restor
   const result = await page.evaluate(() => {
     const h = window.mediaHarness, project = h.createProject(); project.background = '#FFFFFF'; project.frameCount = 12;
     const layer = project.layers[0] as DrawingLayer;
-    layer.strokes = [{ color: '#FF0000', width: 10, points: [{ x: 20, y: 0 }] }];
+    layer.cels[0].strokes = [{ color: '#FF0000', width: 10, points: [{ x: 20, y: 0 }] }];
     layer.keys = [{ frame: 0, x: 100, y: 100, scale: 2, rotation: 90, opacity: 0.5, easing: 'linear' }];
     const c = document.createElement('canvas'); c.width = 640; c.height = 360; const ctx = c.getContext('2d')!;
     ctx.translate(7, 9); ctx.globalAlpha = 0.3;
     h.renderFrame(ctx, project, 0, new Map());
     const pixel = (x: number, y: number) => Array.from(ctx.getImageData(x, y, 1, 1).data);
     const transformed = pixel(100, 140), original = pixel(120, 100), state = [ctx.getTransform().e, ctx.getTransform().f, ctx.globalAlpha];
-    const top = h.createDrawingLayer(); top.strokes = [{ color: '#0000FF', width: 12, points: [{ x: 0, y: 0 }] }]; top.keys[0].x = 100; top.keys[0].y = 140; project.layers.push(top);
+    const top = h.createDrawingLayer(); top.cels[0].strokes = [{ color: '#0000FF', width: 12, points: [{ x: 0, y: 0 }] }]; top.keys[0].x = 100; top.keys[0].y = 140; project.layers.push(top);
     h.renderFrame(ctx, project, 0, new Map()); return { transformed, original, state, top: pixel(100, 140) };
   });
   expect(result.transformed).toEqual([255, 127, 127, 255]); expect(result.original).toEqual([255, 255, 255, 255]);

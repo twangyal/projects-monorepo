@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-04",
+  "issue": 83,
+  "issueUrl": "https://github.com/twangyal/projects-monorepo/issues/83",
+  "initialSix": {
+    "passed": 2,
+    "failed": 4,
+    "displayedSeconds": 49.1,
+    "source": "/tmp/composure83-touch-baseline.log",
+    "interpretation": "Both complete native touch wins passed immediately. Four ancillary failures required fixture-versus-production diagnosis."
+  },
+  "fixtureCorrections": [
+    "Partial touchEnd initially submitted remaining contacts and released the wrong finger; touchMove with a subset did not lift a contact. The final adapter submits the lifted contact and requires its actual trusted pointerup ID before continuing.",
+    "An exact lock-progress assertion after release wrongly disallowed natural decay; corrected to require no increase.",
+    "A second-finger Pause gesture did not promise native click synthesis. The Pause control is tested with a genuine single-touch tap.",
+    "Headless tab activation and native window minimization left document visibility visible, even after disabling Playwright focus emulation. This is not an app failure or a native-hidden acceptance claim."
+  ],
+  "confirmedProductionFailures": [
+    {
+      "problem": "Last-written interaction pointer discarded another still-held contact.",
+      "reproduction": "At the reachable steady lock, contacts 16 and 17 touched Hold to interact. A verified trusted pointerup 17 lifted only the newer contact. Lock progress fell from 15% to 10% over 800 ms while contact 16 remained held.",
+      "receipt": "interaction-ownership-red.json",
+      "receiptNote": "The final pointercancel 16 is test cleanup after the failed assertion, not the user lifting the held contact.",
+      "correction": "Use per-pointer Set ownership; matching up/cancel/lostcapture removes only that contact and lifecycle release clears all."
+    },
+    {
+      "problem": "Native finger drift could hand the interaction gesture to page panning.",
+      "reproduction": "A trusted interaction touch moved 24 CSS px vertically; Chromium emitted trusted pointercancel to #interact and lock progress was 0% after 4,200 ms instead of 100%.",
+      "receipt": "finger-drift-red.json",
+      "correction": "Apply touch-action: none and user-select: none to the interaction control."
+    }
+  ],
+  "green": "Both confirmed symptoms passed unchanged meaningful acceptance assertions against the corrected production build."
+}

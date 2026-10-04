@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "source": "simulated",
+  "scenario": "observatory-escape-v1",
+  "baselineBpm": 70,
+  "scares": false,
+  "outcome": "won",
+  "loss": null,
+  "activeSeconds": 15.550000000000352,
+  "objectives": {
+    "fuse": true,
+    "power": true,
+    "key": true,
+    "unlocked": true
+  },
+  "samples": [
+    {
+      "time": 0,
+      "bpm": 70
+    },
+    {
+      "time": 1.0000000000000013,
+      "bpm": 70
+    },
+    {
+      "time": 2.0166666666666644,
+      "bpm": 70
+    },
+    {
+      "time": 3.0333333333333274,
+      "bpm": 70
+    },
+    {
+      "time": 4.049999999999991,
+      "bpm": 70
+    },
+    {
+      "time": 5.066666666666654,
+      "bpm": 70
+    },
+    {
+      "time": 6.083333333333317,
+      "bpm": 70
+    },
+    {
+      "time": 7.09999999999998,
+      "bpm": 70
+    },
+    {
+      "time": 8.099999999999982,
+      "bpm": 70
+    },
+    {
+      "time": 9.100000000000032,
+      "bpm": 70
+    },
+    {
+      "time": 10.100000000000081,
+      "bpm": 70
+    },
+    {
+      "time": 11.100000000000131,
+      "bpm": 70
+    },
+    {
+      "time": 12.10000000000018,
+      "bpm": 70
+    },
+    {
+      "time": 13.10000000000023,
+      "bpm": 70
+    },
+    {
+      "time": 14.10000000000028,
+      "bpm": 70
+    },
+    {
+      "time": 15.10000000000033,
+      "bpm": 70
+    }
+  ],
+  "events": [
+    {
+      "time": 0,
+      "kind": "start",
+      "text": "Find a fuse and key; restore power, steady the lock and escape."
+    },
+    {
+      "time": 1.7666666666666653,
+      "kind": "fuse",
+      "text": "Fuse collected. Restore the lower power panel."
+    },
+    {
+      "time": 4.883333333333321,
+      "kind": "power",
+      "text": "Power restored. Find the key on the upper shelf."
+    },
+    {
+      "time": 7.616666666666645,
+      "kind": "key",
+      "text": "Key collected. Use it at the exit lock once power is restored."
+    },
+    {
+      "time": 14.350000000000293,
+      "kind": "unlock",
+      "text": "Lock opened. Reach the right-hand exit."
+    },
+    {
+      "time": 15.550000000000352,
+      "kind": "win",
+      "text": "You escaped the observatory."
+    }
+  ],
+  "truncatedSamples": false,
+  "truncatedEvents": false,
+  "limitations": "Declared simulated game inputs only; not measured physiology, emotion inference, medical information or a deterministic replay file."
+}

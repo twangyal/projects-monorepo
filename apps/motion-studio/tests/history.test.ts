@@ -65,3 +65,22 @@ test('serialized byte budget evicts old snapshots before thirty states', () => {
   assert.equal(states, 14);
   assert.equal(history.current.title, 'State 7');
 });
+
+
+test('preparing an asynchronous history candidate leaves the current cursor and redo branch intact', () => {
+  const original = createProject(), history = new History(original);
+  const edited = { ...original, title: 'Second state' };
+  history.commit(edited);
+  const pending = history.peek('undo');
+  pending.title = 'Mutated detached preview';
+  assert.deepEqual(history.current, edited);
+  assert.equal(history.canUndo, true);
+  assert.equal(history.canRedo, false);
+  // A canceled decode never advances or rolls back the cursor. New work can
+  // arrive before that old candidate resolves without corrupting its ancestry.
+  history.commit({ ...edited, title: 'Newer state' });
+  assert.equal(history.undo().title, 'Second state');
+  assert.equal(history.peek('redo').title, 'Newer state');
+  assert.equal(history.current.title, 'Second state');
+  assert.equal(history.redo().title, 'Newer state');
+});

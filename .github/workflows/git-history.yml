@@ -67,6 +67,7 @@ jobs:
           cache-dependency-path: apps/git-history/package-lock.json
       - run: python -m pip install '.[javascript]'
       - run: npm ci
+      - run: npm test
       - run: npm run lint
       - run: npx playwright install --with-deps chromium
       - name: Verify the local workbench against real Git repositories

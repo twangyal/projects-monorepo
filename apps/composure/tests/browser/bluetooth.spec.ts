@@ -168,19 +168,19 @@ for(const pending of [false,true]){
   });
 }
 
-test('real cached history return retains the heap and allows deliberate sensor connection',async()=>{
+test('real cached history return retains the heap and allows deliberate sensor connection',async({baseURL})=>{
   const browser=await chromium.launch({channel:'chromium',ignoreDefaultArgs:['--disable-back-forward-cache'],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
   try{
-    const context=await browser.newContext();const page=await context.newPage();const pageErrors:string[]=[];
+    const context=await browser.newContext({baseURL});const page=await context.newPage();const pageErrors:string[]=[];
     page.on('pageerror',error=>pageErrors.push(error.message));
     // No native Bluetooth device is used: this tests Chromium page lifecycle,
     // then the existing controlled provider's explicit chooser boundary.
-    await installBle(page);await page.goto('http://127.0.0.1:4281/');
+    await installBle(page);await page.goto('/');
     await page.locator('#input-source').selectOption('bluetooth-hr');await page.evaluate(()=>{
       const state={shown:false};Object.defineProperty(window,'cachedVisit',{value:state});
       window.addEventListener('pageshow',event=>{if(event.persisted)state.shown=true;});
     });
-    await page.goto('http://127.0.0.1:4281/?away');
+    await page.goto('/?away');
     // Cached restoration does not fire a new document load event.
     await page.goBack({waitUntil:'commit',timeout:10000});
     await expect.poll(()=>page.evaluate(()=>(window as Window&{cachedVisit?:{shown:boolean}}).cachedVisit?.shown),{timeout:10000}).toBe(true);

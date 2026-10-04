@@ -89,7 +89,7 @@ test('export snapshots artwork and terminates its actual worker after completion
       const progress: number[] = [];
       const pending = window.exportHarness.exportGif(project, value => progress.push(value));
       project.layers[0].keys[0].x = -600;
-      if (project.layers[0].kind === 'drawing') project.layers[0].strokes = [];
+      if (project.layers[0].kind === 'drawing') project.layers[0].cels[0].strokes = [];
       const blob = await pending;
       return { bytes: Array.from(new Uint8Array(await blob.arrayBuffer())), progress, terminated };
     } finally {

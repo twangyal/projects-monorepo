@@ -1,8 +1,9 @@
 [project]
 name = "friendly-challenges"
-version = "0.1.0"
+version = "0.2.0"
 description = "Private local nonmonetary agreements, evidence and mutual outcomes"
 requires-python = ">=3.11"
+dependencies = ["Pillow==12.3.0"]
 
 [tool.ruff]
 target-version = "py311"

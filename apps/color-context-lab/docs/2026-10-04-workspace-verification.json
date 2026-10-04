@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 70,
-  "status": "local-verification-complete-ci-pending",
+  "status": "verified",
   "unit": {
     "passed": 69,
     "durationMs": 1938.214825,
@@ -262,7 +262,28 @@
     "src/types.ts": "1f3c90135fc0c91ba9f3d6f64b23f8f68c7dfb6a1d586160ebf25332632c7e32"
   },
   "ci": {
-    "status": "pending"
+    "status": "passed",
+    "commit": "793f8775bd01c4e3fff8ca1233e2aef681fbeba1",
+    "runId": 37202090572,
+    "jobId": 111435695136,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37202090572",
+    "unitPassed": 69,
+    "unitDurationMs": 3514.064228,
+    "pythonPassed": 12,
+    "pythonDurationSeconds": 5.342,
+    "independentOraclePassed": true,
+    "independentOracleDurationSeconds": 16.833223334999985,
+    "protocolFitsExecuted": 0,
+    "browserPassed": 32,
+    "browserDuration": "1.2m",
+    "chromium": "153.0.8010.12",
+    "node": "24",
+    "python": "3.12.14",
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "repositoryWorkflowsPassed": 13,
+    "repositoryWorkflowsFailed": 0
   },
   "limitations": [
     "Supported PNG import defines a browser-normalized baseline; it does not retain the compressed original or guarantee pixel identity with the original encoded source.",

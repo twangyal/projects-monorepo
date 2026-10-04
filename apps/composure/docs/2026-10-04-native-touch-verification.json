@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": 83,
+  "issueUrl": "https://github.com/twangyal/projects-monorepo/issues/83",
+  "status": "Local software acceptance and remote CI passed.",
+  "scope": "Chromium 151 native touch-input software acceptance in a 390 \u00d7 844 hasTouch/isMobile browser context; not a physical phone or smartwatch test.",
+  "environment": {
+    "browser": "Chromium 151.0.7922.173 on Debian 13",
+    "executable": "/usr/bin/chromium",
+    "node": "v24.19.0",
+    "origin": "http://127.0.0.1:4292",
+    "clock": "Playwright controlled elapsed clock; no injected game state."
+  },
+  "observedChecks": {
+    "unit": {
+      "passed": 97,
+      "durationMs": 670.922,
+      "evidence": "Root-observed npm test result supplied to the acceptance archivist."
+    },
+    "nativeTouch": {
+      "passed": 6,
+      "failed": 0,
+      "durationMs": 31275.83,
+      "startTime": "2026-10-04T12:54:55.160Z",
+      "sourceLog": "/tmp/composure83-touch-final6.log",
+      "sourceJson": "/tmp/composure83-touch-final6.json"
+    },
+    "integratedFirst": {
+      "passed": 31,
+      "failed": 1,
+      "durationMs": 140347.35199999998,
+      "failure": "Existing cached-history fixture hardcoded port 4281 and received ERR_CONNECTION_REFUSED; production preview was 4292.",
+      "sourceLog": "/tmp/composure83-all32.log",
+      "sourceJson": "/tmp/composure83-all32.json"
+    },
+    "correctedFixture": {
+      "passed": 1,
+      "failed": 0,
+      "durationMs": 2906.994,
+      "correction": "Root changed only fixture origin plumbing: baseURL in browser context and relative navigation. No production change.",
+      "sourceLog": "/tmp/composure83-cached-fixed.log",
+      "sourceJson": "/tmp/composure83-cached-fixed.json"
+    },
+    "collectiveBrowserAcceptance": {
+      "verifiedCases": 32,
+      "interpretation": "31 passing cases from the integrated run plus the one origin-corrected cached-history case, all on the same production build; not a claim of single 32/32 invocation."
+    },
+    "lint": "npm run lint passed",
+    "typecheck": "npm run typecheck passed",
+    "productionBuild": {
+      "durationMs": 175,
+      "evidence": "Root-observed build result; exact emitted bytes hashed below."
+    }
+  },
+  "inputIntegrity": [
+    "Movement and interaction use Chromium Input.dispatchTouchEvent and native touchscreen taps; no keyboard movement or synthetic PointerEvents.",
+    "Read-only capture checks isTrusted=true and pointerType=touch for every observed pointer event; each selective lift verifies the corresponding native pointer ID.",
+    "The simulator winning receipt contains 38 trusted touch events and 19 pointerdowns. Its report records all objectives completed, 16 admitted simulated samples and a 15.55-second active win.",
+    "Controlled BLE uses only the existing injected navigator.bluetooth boundary with real EventTarget/DataView notifications. Five 70 BPM calibration packets span 4 seconds; no calibration value is replayed, one new gameplay packet is recorded, and device identity getters remain unread.",
+    "Actual JSON downloads and native localStorage verify source-labelled wins, simulator preferences/best persistence, and unchanged simulator preferences for the BLE win."
+  ],
+  "limitations": [
+    "Native hidden-document transitions could not be exercised by tab activation/window minimization in this headless fixture. The six new cases cover native touch Pause/Resume and touchCancel; existing separately controlled lifecycle tests are not relabelled native-hidden evidence.",
+    "Physical smartwatch compatibility and measurement accuracy remain unverified in https://github.com/twangyal/projects-monorepo/issues/62.",
+    "Touchscreen and Bluetooth provider emulation establish browser software behavior, not physical Android/iOS touch behavior, watch compatibility, physiology or emotion inference.",
+    "Temporary log paths identify original local observations; selected byte-exact artifacts are archived. Remote CI is recorded separately in 2026-10-04-native-touch-ci.json."
+  ],
+  "sourceFiles": {
+    "src/main.ts": {
+      "bytes": 29913,
+      "sha256": "a928097cd02b74afc3b99b5dd6ac94d7361d8822addad7a5bf599ebdd0ec1303"
+    },
+    "src/style.css": {
+      "bytes": 4292,
+      "sha256": "a9d4c55447ad6112b9cab8ebb0097f3aa3820afc5791640b129804553a29dd7f"
+    },
+    "tests/browser/touch.spec.ts": {
+      "bytes": 8645,
+      "sha256": "9ef487e8a152eb7eae8b71098e1ed0889c33e3a71b4bf321e58e30f68912ece6"
+    },
+    "tests/browser/touch-helper.ts": {
+      "bytes": 6321,
+      "sha256": "8b007a06b7cd8f7cc8ed585f122d47228e11543f138baf1204c37d0974407f74"
+    },
+    "tests/browser/bluetooth.spec.ts": {
+      "bytes": 18287,
+      "sha256": "02bb48951788eba1b4ab90ac87f8af1e2ca7957dfa225f605336a32703cb63a6"
+    }
+  },
+  "productionFiles": {
+    "dist/assets/index-xv8p79p0.js": {
+      "bytes": 41821,
+      "sha256": "6b5c9b2461721c983890deebce8e579cfe0b81bafc4df5f68ad9616092fca1f4"
+    },
+    "dist/assets/index-7ROK7JA2.css": {
+      "bytes": 4340,
+      "sha256": "3dad68f1ba46cd1054eda5e6b66f66c20f6bef21eb946bfead101ccf5d787153"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "docs/native-touch/simulated-win.json",
+      "bytes": 2314,
+      "sha256": "ebe61ef6891acd82ae4198d601e2da2233bf56f6d6907ce8d9e4e224dd2c8dab",
+      "source": "/tmp/composure83-touch-results/touch-native390px-touch-al-96e53-ort-and-durable-preferences/native-touch-simulated-win.json",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/controlled-bluetooth-win.json",
+      "bytes": 1913,
+      "sha256": "5226878e607d4b1083f3e13b4ac1a17beae159c533dab8a6337c135f03955ee3",
+      "source": "/tmp/composure83-touch-results/touch-controlled-standardB-e86b8--claiming-physical-hardware/native-touch-controlled-bluetooth-win.json",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/simulated-trusted-touch-events.json",
+      "bytes": 4924,
+      "sha256": "1fc6d622c9335f4d0aa1722902b6a67054f07cbda457c38bbcb0218285e009e3",
+      "source": "/tmp/composure83-touch-results/touch-native390px-touch-al-96e53-ort-and-durable-preferences/winning-trusted-touch-events.json",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/simulated-win-390px.png",
+      "bytes": 232937,
+      "sha256": "f777720d308da47daa067aa640011a4aafdc01186a8827e7015358b592bf75bc",
+      "source": "/tmp/composure83-touch-results/touch-native390px-touch-al-96e53-ort-and-durable-preferences/native-touch-win-390px.png",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/controlled-bluetooth-trusted-touch-events.json",
+      "bytes": 5716,
+      "sha256": "68edc1efad3564fec01bbe2760d77488fbe75f639df9a02740d9cfa6a3df5d47",
+      "source": "/tmp/composure83-touch-results/touch-controlled-standardB-e86b8--claiming-physical-hardware/trusted-touch-events.json",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/interaction-ownership-green.json",
+      "bytes": 4148,
+      "sha256": "a9e8d9680bf95efc25cd55fec8809eb778396ea23b70669546b94a59f970ce75",
+      "source": "/tmp/composure83-touch-results/touch-two-genuine-fingers--df263-ter-the-newer-contact-lifts/trusted-touch-events.json",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/finger-drift-green.json",
+      "bytes": 3888,
+      "sha256": "784740e87849e6c4a961bcda2be044e1d66db04cf6a3e8cb3d24fa851799d380",
+      "source": "/tmp/composure83-touch-results/touch-native-slight-finger-46d21-the-gesture-to-page-panning/trusted-touch-events.json",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/interaction-ownership-red.json",
+      "bytes": 4152,
+      "sha256": "0e7572211ae5ad9d3802305f08984b97be7d04ab7fb01a1814207ca8063f5c2b",
+      "source": "/tmp/composure83-touch-receipts.json :: failing interaction test attachment trusted-touch-events.json (decoded exact base64 payload)",
+      "byteExactAgainstSource": true
+    },
+    {
+      "path": "docs/native-touch/finger-drift-red.json",
+      "bytes": 3892,
+      "sha256": "8fa7eff5f876430dcdb5663c91f52b28c77544df139f1a96280f8686f595e92f",
+      "source": "/tmp/composure83-touch-focused.json :: failing drift test attachment trusted-touch-events.json (decoded exact base64 payload)",
+      "byteExactAgainstSource": true
+    }
+  ],
+  "compactRedSummary": {
+    "path": "docs/native-touch/initial-red-summary.json",
+    "bytes": 2427,
+    "sha256": "582b06388d64af945c63958492f254eb209dd49e4382897bc0a16fc1805fe3ab",
+    "kind": "Authored compact interpretation of observed runs; not a raw exported product report."
+  },
+  "remoteCI": {
+    "commit": "7a8f9514a98660dad726672bc5edc5489c5f98ab",
+    "record": "2026-10-04-native-touch-ci.json",
+    "unitPassed": 97,
+    "browserPassed": 32,
+    "allProjectWorkflowsPassed": 13
+  }
+}

@@ -1,9 +1,9 @@
-import { validateProject, type Project } from './model.ts';
+import { MAX_JSON_BYTES, validateProject, type Project } from './model.ts';
 
 const DATABASE = 'motion-studio';
 const STORE = 'project';
 const KEY = 'current';
-const MAX_STORED_BYTES = 6 * 1024 * 1024;
+const MAX_STORED_BYTES = MAX_JSON_BYTES;
 let mutations: Promise<void> = Promise.resolve();
 
 function storageError(action: string, cause?: unknown): Error {
@@ -14,7 +14,7 @@ function storageError(action: string, cause?: unknown): Error {
 function snapshot(value: unknown): Project {
   const safe = validateProject(value);
   if (new TextEncoder().encode(JSON.stringify(safe)).byteLength > MAX_STORED_BYTES) {
-    throw new Error('The local project exceeds 6 MiB. Remove some artwork or images before saving.');
+    throw new Error('The local project exceeds 6 MiB + 168 bytes. Remove some artwork or images before saving.');
   }
   return safe;
 }
@@ -125,7 +125,7 @@ export async function loadProject(): Promise<Project | null> {
 export function serializeRawRecord(value: unknown): string {
   const active = new Set<object>(), sizes = new Map<object, number>();
   const encoder = new TextEncoder();
-  const oversized = () => new Error('Cannot download the saved record: its JSON exceeds 6 MiB.');
+  const oversized = () => new Error('Cannot download the saved record: its JSON exceeds 6 MiB + 168 bytes.');
   function bounded(bytes: number): number { if (bytes > MAX_STORED_BYTES) throw oversized(); return bytes; }
   function quoted(text: string): number {
     if (text.length > MAX_STORED_BYTES) throw oversized();
@@ -158,7 +158,7 @@ export function serializeRawRecord(value: unknown): string {
   }
   inspect(value, 0);
   const json = JSON.stringify(value);
-  if (new TextEncoder().encode(json).byteLength > MAX_STORED_BYTES) throw new Error('Cannot download the saved record: its JSON exceeds 6 MiB.');
+  if (new TextEncoder().encode(json).byteLength > MAX_STORED_BYTES) throw new Error('Cannot download the saved record: its JSON exceeds 6 MiB + 168 bytes.');
   return json;
 }
 

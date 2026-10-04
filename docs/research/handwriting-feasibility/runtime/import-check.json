@@ -1,0 +1,1 @@
+{"cudaAvailable": false, "elapsedSeconds": 6.837833236990264, "inferenceRun": false, "operation": "dependency-import-only", "peakRssKiB": 356464, "torchInteropThreads": 1, "torchThreads": 1, "versions": {"Pillow": "11.3.0", "numpy": "2.2.6", "safetensors": "0.6.2", "sentencepiece": "0.2.1", "torch": "2.6.0+cpu", "transformers": "4.57.3"}, "weightsLoaded": false}

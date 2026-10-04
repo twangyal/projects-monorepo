@@ -379,7 +379,8 @@ class _Handler(BaseHTTPRequestHandler):
         if self.command != 'POST' and size:
             self._reject(400, 'Unexpected request body.')
             return
-        if self.path not in ('/', '/workbench.js', '/workbench.css', '/api/session', '/api/jobs', '/api/result', '/api/cancel'):
+        if self.path not in ('/', '/workbench.js', '/workbench.css', '/context-editor.js',
+                             '/api/session', '/api/jobs', '/api/result', '/api/cancel'):
             self._reject(404, 'Unknown route.')
             return
         if not self.path.startswith('/api/'):
@@ -388,6 +389,7 @@ class _Handler(BaseHTTPRequestHandler):
                 return
             name, mime = {'/': ('workbench.html', 'text/html; charset=utf-8'),
                           '/workbench.js': ('workbench.js', 'text/javascript; charset=utf-8'),
+                          '/context-editor.js': ('context-editor.js', 'text/javascript; charset=utf-8'),
                           '/workbench.css': ('workbench.css', 'text/css; charset=utf-8')}[self.path]
             try:
                 raw = (Path(__file__).resolve().parent / 'web' / name).read_bytes()

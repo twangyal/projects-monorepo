@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 2,
+  "source": "bluetooth-hr",
+  "scenario": "observatory-escape-v1",
+  "baselineBpm": 70,
+  "scares": false,
+  "outcome": "won",
+  "loss": null,
+  "activeSeconds": 15.56666666666702,
+  "objectives": {
+    "fuse": true,
+    "power": true,
+    "key": true,
+    "unlocked": true
+  },
+  "samples": [
+    {
+      "time": 0,
+      "bpm": 70,
+      "receivedSeconds": 4.001
+    }
+  ],
+  "events": [
+    {
+      "time": 0,
+      "kind": "start",
+      "text": "Find a fuse and key; restore power, steady the lock and escape."
+    },
+    {
+      "time": 1.7166666666666655,
+      "kind": "fuse",
+      "text": "Fuse collected. Restore the lower power panel."
+    },
+    {
+      "time": 4.899999999999988,
+      "kind": "power",
+      "text": "Power restored. Find the key on the upper shelf."
+    },
+    {
+      "time": 7.6333333333333115,
+      "kind": "key",
+      "text": "Key collected. Use it at the exit lock once power is restored."
+    },
+    {
+      "time": 14.350000000000293,
+      "kind": "unlock",
+      "text": "Lock opened. Reach the right-hand exit."
+    },
+    {
+      "time": 15.56666666666702,
+      "kind": "win",
+      "text": "You escaped the observatory."
+    }
+  ],
+  "truncatedSamples": false,
+  "truncatedEvents": false,
+  "limitations": "Received standard-HR notifications are game inputs; device compatibility and accuracy are unverified. No emotion or medical inference is made, and this is not a deterministic replay file.",
+  "calibration": {
+    "baselineBpm": 70,
+    "samples": [
+      {
+        "bpm": 70,
+        "receivedSeconds": 0
+      },
+      {
+        "bpm": 70,
+        "receivedSeconds": 1
+      },
+      {
+        "bpm": 70,
+        "receivedSeconds": 2
+      },
+      {
+        "bpm": 70,
+        "receivedSeconds": 3
+      },
+      {
+        "bpm": 70,
+        "receivedSeconds": 4
+      }
+    ],
+    "spanSeconds": 4,
+    "runStartedSeconds": 4
+  }
+}
