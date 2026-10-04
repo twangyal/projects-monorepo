@@ -302,3 +302,5 @@ The runner writes to a fresh temporary directory by default. Set
 `SHOT_TAKES_OUTPUT` to a new directory to retain artifacts at a chosen location.
 It needs Chromium and FFmpeg, records for a real minute and never builds, starts
 a server, imports producer oracles or uses a remote service.
+
+Retained-take CI at `6b2efeb3` passed all **146 unit tests, syntax checks and 53 browser tests** in both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37211773638) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37211776395) runs; all thirteen project PR workflows passed. The [CI receipt](docs/2026-10-04-retained-takes-ci.json) records exact checkouts. The [first CI failures](docs/2026-10-04-retained-takes-ci-first.json) remain documented: a test assumed native hashing finished after one event-loop turn, and a persistent-browser download closed for an unconfirmed reason. The corrected fixtures wait for the real database request and inherit the configured browser; all original archive/restart assertions remain.
