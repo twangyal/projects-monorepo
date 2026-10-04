@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "issue": 107,
+  "evidenceDate": "2026-10-04",
+  "scope": "Producer configuration, bounded opt-in HTTPS runtime and server authority; default loopback API compatibility.",
+  "sourceFiles": [
+    {
+      "path": "apps/duet/duet/transport.py",
+      "bytes": 6990,
+      "sha256": "f039576f51b77f8f3d9222db2582d0ab61dda043649f32447ce95db4c3b61daf"
+    },
+    {
+      "path": "apps/duet/duet/https_server.py",
+      "bytes": 7451,
+      "sha256": "380abf20ba5461122fc612fc9559383c405674d7b6664006fc5890a2a6582c5c"
+    },
+    {
+      "path": "apps/duet/duet/server.py",
+      "bytes": 32737,
+      "sha256": "54a8c9e3c2dbfa982bde161066a138c29a52e8eae5e362a60d672be2072b9888"
+    },
+    {
+      "path": "apps/duet/tests/test_transport_config.py",
+      "bytes": 6059,
+      "sha256": "aa6be18a66a3bb05458e5780dca5a2b75d16a8cad641234ea84054dd28f3e45b"
+    },
+    {
+      "path": "apps/duet/tests/test_https_server.py",
+      "bytes": 9512,
+      "sha256": "e291ce44a3f9429729840f40ad42bdf0f809394a1ecabef6b8a37861a0b1643d"
+    }
+  ],
+  "ownedRuns": [
+    {
+      "command": "python3 -m unittest tests.test_transport_config",
+      "result": "expected deliberate stub errors",
+      "tests": 4,
+      "elapsedSeconds": 0.024,
+      "logPath": "/tmp/duet107-transport-red.log",
+      "logSha256": "b993085f01c4784396b4f3ee6d303cb752b0a109a2509edd368e2db31173814e",
+      "errors": 4
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config",
+      "result": "pass",
+      "tests": 4,
+      "elapsedSeconds": 0.048,
+      "logPath": "/tmp/duet107-transport-green.log",
+      "logSha256": "c180bc4ca5b2b082520e1a8c9f4fe2a316b5c5ed7d488bef35aee5cfddd6f610"
+    },
+    {
+      "command": "python3 -m unittest tests.test_https_server",
+      "result": "expected deliberate runtime stub errors",
+      "tests": 5,
+      "elapsedSeconds": 0.101,
+      "logPath": "/tmp/duet107-https-red.log",
+      "logSha256": "d39936bdea6f63000e2509656ca65b4dbee33bad32fded95fec9470db9e116a8",
+      "errors": 5
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config tests.test_https_server",
+      "result": "pass",
+      "tests": 9,
+      "elapsedSeconds": 2.178,
+      "logPath": "/tmp/duet107-producer-first-green.log",
+      "logSha256": "2a1f9f585c53f05f54926abd446ebd27863de1ee02d7ed77e5e8dfa165083d42"
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config tests.test_https_server",
+      "result": "pass after shutdown-order repair",
+      "tests": 10,
+      "elapsedSeconds": 2.678,
+      "logPath": "/tmp/duet107-producer-final.log",
+      "logSha256": "8f669dc868f7c839be3b3ad2cd338230577b892de34a8143dcac0d3f7359c706"
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config tests.test_https_server",
+      "result": "pass after restart repair",
+      "tests": 11,
+      "elapsedSeconds": 3.191,
+      "logPath": "/tmp/duet107-producer-restart-final.log",
+      "logSha256": "748ea77f3f9c132dd8ded8a4110a66cfac67e2488a7a9b47a415e9b3da0d0a77",
+      "configurationTests": 4,
+      "httpsRuntimeTests": 7
+    },
+    {
+      "command": "python3 -m unittest tests.test_server",
+      "result": "pass unchanged existing tests",
+      "tests": 26,
+      "elapsedSeconds": 15.551,
+      "logPath": "/tmp/duet107-loopback-server.log",
+      "logSha256": "346b0fb5a9d4310299d017366d9ac0f10b1e2a59fea6aeb3f276b2992c43c002"
+    }
+  ],
+  "actualDefects": [
+    {
+      "id": "hexadecimal-ipv4-alias",
+      "firstDiscovery": "Independent literal protocol oracle, followed by two producer subcase assertions.",
+      "failure": "Noncanonical hexadecimal IPv4 aliases were admitted as DNS hostnames.",
+      "repair": "Reject numeric or hexadecimal final hostname components, preserving canonical DNS and exact bind/origin address rules.",
+      "failureEvidence": {
+        "command": "python3 -m unittest tests.test_transport_config.TransportConfigTests.test_exact_private_address_and_origin_spellings",
+        "result": "actual admission defect",
+        "tests": 1,
+        "elapsedSeconds": 0.062,
+        "logPath": "/tmp/duet107-hex-red.log",
+        "logSha256": "a40d7fe330640d608318d1aebfc54cd94d5f99327e0f75eb44cf918593d7164d",
+        "failedSubcases": 2
+      }
+    },
+    {
+      "id": "request-join-before-shared-lock",
+      "firstDiscovery": "Independent scaled native TLS teardown oracle with a controlled held Store boundary.",
+      "failure": "jobs.close acquired the shared store/request lock before the bounded request join and could exceed that join budget.",
+      "repair": "HTTPS shutdown closes admitted sockets, then joins requests within REQUEST_JOIN_SECONDS before jobs.close and database/lifetime-lock teardown. Refusal retains Store and lock for later close.",
+      "failureEvidence": {
+        "command": "python3 -m unittest tests.test_https_server.HttpsServerTests.test_held_request_refuses_teardown_before_waiting_on_shared_job_lock",
+        "result": "actual shutdown defect",
+        "tests": 1,
+        "elapsedSeconds": 2.082,
+        "logPath": "/tmp/duet107-join-red.log",
+        "logSha256": "5e2e84e756244de392b7beedb12ffcc85d32988fbce24587c34d58513eb74615",
+        "failures": 1
+      },
+      "testBoundary": "Producer holds Store.snapshot for at most 2 seconds and scales REQUEST_JOIN_SECONDS to 0.15; this is a labeled lifecycle branch test, not a measured production 5-second join deadline."
+    },
+    {
+      "id": "same-port-clean-restart",
+      "firstDiscovery": "Full native two-seat flow failed immediate same-port CLI restart; independent CLI proof and producer actual TLS regression confirmed errno 98.",
+      "failure": "The HTTPS no-reverse-DNS server_bind override omitted TCPServer SO_REUSEADDR initialization, leaving an active-close TIME_WAIT listener unusable immediately.",
+      "repair": "HTTPS server_bind calls TCPServer.server_bind directly, retaining its socket options without HTTPServer reverse DNS. The default loopback branch is unchanged.",
+      "failureEvidence": {
+        "command": "python3 -m unittest tests.test_https_server.HttpsServerTests.test_successful_tls_response_can_restart_same_listener_port_immediately",
+        "result": "actual restart defect",
+        "tests": 1,
+        "elapsedSeconds": 0.533,
+        "logPath": "/tmp/duet107-restart-owned-red.log",
+        "logSha256": "e72daba9f2d37b263de07687a4acf3b840195836fbab119243391d9fbf7cc00f",
+        "errors": 1,
+        "errno": 98
+      }
+    }
+  ],
+  "staticChecks": {
+    "ruff": {
+      "command": "/tmp/duet-service-checks/bin/ruff check duet/transport.py duet/https_server.py duet/server.py tests/test_transport_config.py tests/test_https_server.py",
+      "result": "All checks passed; directly observed on final restart-repaired source.",
+      "logPath": null
+    },
+    "compile": {
+      "command": "python3 -m compileall -q duet/transport.py duet/https_server.py duet/server.py",
+      "result": "pass before the final narrow TCPServer.server_bind repair; final source is imported/executed by the 11-test producer run."
+    }
+  },
+  "relatedOwnerEvidence": [
+    {
+      "command": "python3 -m unittest tests.test_https_oracle",
+      "result": "independent 20-case oracle pass after join repair, before final restart repair",
+      "tests": 20,
+      "elapsedSeconds": 25.4,
+      "logPath": "/tmp/duet107-oracle-final.log",
+      "logSha256": "ec4a5f88d22f4b227a3cbfb79c021d20e50931a8a2f1d5bccdd721bef950b473",
+      "owner": "git_history_review"
+    },
+    {
+      "command": "root full Python suite (see retained log for runner)",
+      "result": "pass before final restart test and repair",
+      "tests": 182,
+      "elapsedSeconds": 60.871,
+      "logPath": "/tmp/duet107-root-python-first.log",
+      "logSha256": "6b570b98aa8f05f4a597ab6506e3601b28405b009d6617a466230d904fc7a140",
+      "owner": "root"
+    },
+    {
+      "command": "native HTTPS browser suite (see retained log for runner)",
+      "result": "4 pass, 1 immediate-restart failure",
+      "tests": 5,
+      "elapsedSeconds": 39.7,
+      "logPath": "/tmp/duet107-native-first.log",
+      "logSha256": "beb3480ee0cdda4941ba331f57990b39d8970a17fc0835b8c7a177fae32514a0",
+      "passed": 4,
+      "failed": 1,
+      "owner": "git_reader"
+    },
+    {
+      "command": "unchanged affected native two-seat/restart case (see retained log for runner)",
+      "result": "pass after final restart repair",
+      "tests": 1,
+      "elapsedSeconds": 18.6,
+      "logPath": "/tmp/duet107-native-restart-focused.log",
+      "logSha256": "2fbc20e794035d0110b29ba4cd9054654482d890708b755e9d41f6eefb109687",
+      "owner": "git_reader"
+    }
+  ],
+  "assertedBoundaries": [
+    "Config/TLS/setup input admission completes before library creation; HTTPS bind/listen also precedes Store construction and startup pause.",
+    "Source TLS/setup files use regular NOFOLLOW bounded reads. Native SSL receives owned in-memory copies of the admitted bytes, never rebound source paths.",
+    "Only 16 admitted raw/SSL sockets, one watchdog, handshake off accept loop; per-phase and total deadlines use exact owned connection identity.",
+    "HTTP syntax header counts exclude prefetched body bytes; authentication, Origin, setup and framing gates precede body admission.",
+    "Setup key is creation-only; room capabilities remain independent, media cookies gain Secure only for HTTPS.",
+    "Request/media cleanup must finish before SQLite and lifetime lock release; failed bounded request join retains ownership."
+  ],
+  "limitations": [
+    "No reruns were performed to create this receipt; timings and outcomes are retained historical runs and their source-stage distinctions are explicit.",
+    "The 11-test producer run is the final owned configuration/runtime run. The 182-test root run precedes the added restart test/repair and is not claimed as final-head verification.",
+    "Native evidence is four successful original cases plus the unchanged affected case after repair, not a claimed single all-five rerun.",
+    "Production network deadline measurements and other protocol/security cases belong to the independent oracle receipt; producer scaled held-Store testing only verifies its declared shutdown branch.",
+    "Software loopback TLS tests do not establish physical two-device audio synchronization, arbitrary network latency or normal trust on every client device.",
+    "Server key-pair loading does not prove certificate hostname/expiry/chain/browser trust; these remain operator/client responsibilities.",
+    "No certificate private keys, setup key values, participant capabilities, input file contents or private URLs are included."
+  ]
+}

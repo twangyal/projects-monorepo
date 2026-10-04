@@ -8,11 +8,12 @@ interface Blend { trackId: string; category: string; reason: string }
 interface Room { id: string; title: string; createdAt: number; profiles: { host: { name: string }; guest: { name: string } | null }; myRole: Role; serverTime: number; tracks: Track[]; ratings: Record<string, { host: number; guest: number }>; blend: Blend[]; playlist: string[]; playlistRevision: number; playback: Playback; memories: Memory[]; activeJob?: Job | null }
 interface Credentials { roomId: string; token: string }
 interface Created extends Credentials { inviteToken?: string; room: Room }
+interface Transport { mode: 'https-lan' | 'http-loopback'; origin: string; setupRequired: boolean }
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
 <a class="skip" href="#room-main">Skip to your room</a><header><a class="brand" href="/"><span class="logo" aria-hidden="true">d.</span><div><h1>duet</h1><p>A little more us.</p></div></a><div class="header-note"><span class="status-dot"></span><span id="connection">Your songs. Your space.</span></div></header>
-<main><div id="notice" role="status" aria-live="polite" hidden></div>
-<section id="welcome" class="welcome"><div class="welcome-copy"><p class="eyebrow">TWO PEOPLE. ONE SOUNDTRACK.</p><h2>Meet somewhere<br>in the music.</h2><p>Bring your favorite songs. Find the ones you both love.<br>Keep a little piece of the moments they belong to.</p><div class="record-art" aria-hidden="true"><div class="disc"><div>duet</div></div><span>A SIDE<br>YOU & ME</span></div></div><div class="welcome-form panel"><div id="create-view"><p class="eyebrow">MAKE ROOM FOR YOUR SONGS</p><h3>Start a room for two.</h3><form id="create-form"><label>Your name<input id="host-name" required maxlength="40" autocomplete="given-name" placeholder="Alex"></label><label>Room name<input id="room-title" required maxlength="80" value="Our little soundtrack"></label><button class="primary full" type="submit">Create our room</button></form><p class="fine">No accounts or streaming subscription. You supply the audio files. Processing and room data stay on this local service.</p></div><div id="join-view" hidden><p class="eyebrow">THERE'S A PLACE FOR YOU</p><h3>Join your partner's room.</h3><form id="join-form"><label>Your name<input id="guest-name" required maxlength="40" autocomplete="given-name" placeholder="Sam"></label><button class="primary full" type="submit">Join the room</button></form><p class="fine">This invitation reserves the second seat. Review the room together before sharing your own access link.</p></div><div id="access-view" hidden><h3>Open your saved seat.</h3><p class="fine">This private access link grants one participant's role in the room.</p><button id="restore-access" class="primary full">Use this access link</button></div><div id="saved-rooms"></div></div></section>
+<main><div id="notice" role="status" aria-live="polite" hidden></div><div class="transport-info"><p id="transport-status" aria-live="polite">Checking this service’s connection mode…</p><button id="retry-transport-status" class="text-button" hidden>Check connection mode</button></div>
+<section id="welcome" class="welcome"><div class="welcome-copy"><p class="eyebrow">TWO PEOPLE. ONE SOUNDTRACK.</p><h2>Meet somewhere<br>in the music.</h2><p>Bring your favorite songs. Find the ones you both love.<br>Keep a little piece of the moments they belong to.</p><div class="record-art" aria-hidden="true"><div class="disc"><div>duet</div></div><span>A SIDE<br>YOU & ME</span></div></div><div class="welcome-form panel"><div id="create-view"><p class="eyebrow">MAKE ROOM FOR YOUR SONGS</p><h3>Start a room for two.</h3><form id="create-form"><label>Your name<input id="host-name" required maxlength="40" autocomplete="given-name" placeholder="Alex"></label><label>Room name<input id="room-title" required maxlength="80" value="Our little soundtrack"></label><label id="setup-key-field" hidden>Operator setup key<input id="setup-key" type="password" maxlength="64" autocomplete="off" spellcheck="false"><span class="fine">Only the service operator’s key can create rooms at this HTTPS address. It does not grant a participant’s seat.</span></label><button class="primary full" type="submit">Create our room</button></form><p class="fine">No accounts or streaming subscription. You supply the audio files. Processing and room data stay on this local service.</p></div><div id="join-view" hidden><p class="eyebrow">THERE'S A PLACE FOR YOU</p><h3>Join your partner's room.</h3><form id="join-form"><label>Your name<input id="guest-name" required maxlength="40" autocomplete="given-name" placeholder="Sam"></label><button class="primary full" type="submit">Join the room</button></form><p class="fine">This invitation reserves the second seat. Review the room together before sharing your own access link.</p></div><div id="access-view" hidden><h3>Open your saved seat.</h3><p class="fine">This private access link grants one participant's role in the room.</p><button id="restore-access" class="primary full">Use this access link</button></div><div id="saved-rooms"></div></div></section>
 <section id="room-view" hidden><div class="room-intro"><div><p class="eyebrow">THE SOUNDTRACK WE'RE MAKING</p><h2 id="room-heading"></h2><div id="participants" class="participants"></div></div><div class="room-actions"><button id="invite" class="quiet">Invite your partner</button><button id="access-link" class="quiet">My private access link</button><button id="room-export" class="quiet">Export room notes</button><button id="leave-room" class="text-button">Back to rooms</button></div></div>
 <div id="link-panel" class="link-panel panel" hidden><strong id="link-heading"></strong><p id="link-help" class="fine"></p><div><input id="share-link" readonly aria-label="Room link"><button id="copy-link">Copy link</button><button id="close-link" class="text-button">Close</button></div></div>
 <div class="room-grid" id="room-main"><section class="library panel"><div class="section-heading"><div><span class="section-no">01</span><h3>What we bring</h3></div><span id="track-count" class="small-tag">0 / 12 SONGS</span></div><div class="library-body"><p class="section-description">Your favorites, their favorites, and the space in between.</p><form id="upload-form" class="upload-form"><label class="file-zone"><strong>Choose a song to share</strong><span id="audio-file-name">WAV, MP3, FLAC or Ogg · 1–300 seconds · 25 MiB</span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Choose song file"></label><div class="pair"><label>Song title<input id="track-title" required maxlength="80" placeholder="A song that feels like you"></label><label>Artist <span class="optional">optional</span><input id="track-artist" maxlength="80" placeholder="Artist name"></label></div><button id="upload" type="submit">Add to our library</button></form><div id="upload-job" class="upload-job" hidden><span id="job-stage"></span><button id="cancel-job">Cancel upload</button></div><div id="library-list"></div></div></section>
@@ -27,6 +28,8 @@ const sync = new AudioSync(audio, status => { el('audio-status').textContent = s
 let credentials: Credentials | null = null, room: Room | null = null;
 let invite: { roomId: string; token: string } | null = null, incomingAccess: Credentials | null = null;
 let generation = 0, offset = 0, latestServerTime = 0, contentSignature = '', busy = false;
+let transport: Transport | null = null, transportEpoch = 0, transportLoading = false;
+let identityRequest = 0, pendingIdentity: number | null = null;
 let polling: ReturnType<typeof setTimeout> | undefined, job: Job | null = null;
 let file: File | null = null, seeking: Playback | null = null, connected = true, requestOrder = 0, appliedOrder = 0;
 class ApiError extends Error { constructor(message: string, readonly status: number) { super(message); } }
@@ -45,8 +48,12 @@ function saveCredentials(auth: Credentials, title: string) {
   try { const saved = savedCredentials(); saved[auth.roomId] = { token: auth.token, title }; localStorage.setItem(storageKey, JSON.stringify(saved)); }
   catch { notify('This browser cannot remember your seat. Keep your private access link before closing the page.', true); }
 }
-async function api<T>(path: string, method = 'GET', body?: unknown, raw?: { file: File; title: string; artist: string }, auth = credentials): Promise<{ value: T; start: number; end: number }> {
+async function api<T>(path: string, method = 'GET', body?: unknown, raw?: { file: File; title: string; artist: string }, auth = credentials, setupKey?: string): Promise<{ value: T; start: number; end: number }> {
   const headers = new Headers();
+  if (setupKey !== undefined) {
+    if (path !== '/api/rooms' || method !== 'POST') throw new Error('The operator setup key is only for creating a room.');
+    headers.set('X-Duet-Setup-Key', setupKey);
+  }
   if (auth) headers.set('Authorization', `Bearer ${auth.token}`);
   if (raw) { headers.set('Content-Type', 'application/octet-stream'); headers.set('X-Track-Title', encodeURIComponent(raw.title)); headers.set('X-Track-Artist', encodeURIComponent(raw.artist)); }
   else if (method !== 'GET') headers.set('Content-Type', 'application/json');
@@ -61,6 +68,13 @@ function localLink(fragment: string) { const url = new URL(location.href); url.s
 function showLink(url: string, heading: string, help: string) { el<HTMLInputElement>('share-link').value = url; el('link-heading').textContent = heading; el('link-help').textContent = help; el('link-panel').hidden = false; }
 function controls() {
   for (const form of ['create-form', 'join-form', 'upload-form', 'memory-form']) for (const input of el(form).querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>('input,button,select,textarea')) input.disabled = busy;
+  el<HTMLFormElement>('create-form').querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled = busy || !transport;
+  el<HTMLButtonElement>('retry-transport-status').disabled = transportLoading;
+  const creating = !el('create-view').hidden && !el('welcome').hidden;
+  const needsSetup = creating && transport?.setupRequired === true;
+  el('setup-key-field').hidden = !needsSetup;
+  el<HTMLInputElement>('setup-key').required = needsSetup;
+  if (!creating) el<HTMLInputElement>('setup-key').value = '';
   el<HTMLButtonElement>('upload').disabled = busy || !file || !!job || !room || room.tracks.length >= 12;
   el<HTMLInputElement>('audio-file').disabled = busy || !!job || !room || room.tracks.length >= 12;
   el<HTMLButtonElement>('build-mix').disabled = busy || !room?.tracks.length;
@@ -73,6 +87,32 @@ function controls() {
   el<HTMLButtonElement>('cancel-job').disabled = busy || !job || (job.uploadedBy !== room?.myRole && room?.myRole !== 'host');
   for (const button of document.querySelectorAll<HTMLButtonElement>('#library-list button,#playlist button,#memory-list button')) button.disabled = busy || button.dataset.boundary === 'true';
 }
+async function loadTransportStatus() {
+  const owner = ++transportEpoch; transport = null; transportLoading = true; controls();
+  el('transport-status').textContent = 'Checking this service’s connection mode…';
+  el('retry-transport-status').hidden = true;
+  try {
+    const result = await api<{ transport?: unknown }>('/api/status', 'GET', undefined, undefined, null);
+    if (owner !== transportEpoch) return;
+    const value = result.value.transport;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Connection mode unavailable.');
+    const candidate = value as Record<string, unknown>;
+    if (Object.keys(candidate).sort().join(',') !== 'mode,origin,setupRequired' || typeof candidate.origin !== 'string' || candidate.origin.length > 300) throw new Error('Connection mode unavailable.');
+    const origin = new URL(candidate.origin);
+    if (candidate.mode === 'https-lan'
+      ? candidate.setupRequired !== true || origin.protocol !== 'https:' || origin.origin !== candidate.origin || candidate.origin !== location.origin
+      : candidate.mode !== 'http-loopback' || candidate.setupRequired !== false || !/^http:\/\/127\.0\.0\.1:[1-9]\d{0,4}$/.test(candidate.origin)) throw new Error('Connection mode unavailable.');
+    transport = { mode: candidate.mode as Transport['mode'], origin: candidate.origin, setupRequired: candidate.setupRequired as boolean };
+    el('transport-status').textContent = transport.mode === 'https-lan'
+      ? `HTTPS music room service: ${transport.origin}. Your partner’s device must reach this address and trust its certificate. Room creation requires the operator setup key; joining and saved seats use their own private links.`
+      : `HTTP loopback service: ${transport.origin}. This address is for this computer. No operator setup key is needed to create a room.`;
+  } catch {
+    if (owner !== transportEpoch) return;
+    el('transport-status').textContent = 'Could not check this service’s connection mode. Check that the service is running and the browser trusts its certificate, then check again. Room creation is paused; invitations and saved access links remain available.';
+    el('retry-transport-status').hidden = false;
+  } finally { if (owner === transportEpoch) { transportLoading = false; controls(); } }
+}
+el('retry-transport-status').addEventListener('click', () => void loadTransportStatus());
 function accept(snapshot: Room, start: number, end: number, order: number) {
   if (snapshot.id !== credentials?.roomId || snapshot.serverTime < latestServerTime || (snapshot.serverTime === latestServerTime && order < appliedOrder)) return;
   latestServerTime = snapshot.serverTime; appliedOrder = order; room = snapshot; offset = clockOffset(snapshot.serverTime, start, end); connected = true;
@@ -111,7 +151,9 @@ async function poll() {
     el('audio-status').textContent = `Waiting for the room: ${message(error)}`;
   } finally { if (current === generation && credentials) polling = setTimeout(() => void poll(), 1000); }
 }
-async function open(auth: Credentials) {
+async function open(auth: Credentials, identityOwner?: number) {
+  if (pendingIdentity !== null && pendingIdentity !== identityOwner) { pendingIdentity = null; identityRequest++; busy = false; }
+  el<HTMLInputElement>('setup-key').value = '';
   generation++; clearTimeout(polling); sync.disable(); credentials = auth; room = null; job = null; latestServerTime = 0; appliedOrder = 0; contentSignature = ''; el('link-panel').hidden = true; el<HTMLInputElement>('share-link').value = ''; el('room-view').hidden = true; el('welcome').hidden = false;
   const current = generation, order = ++requestOrder;
   const result = await api<Room>(roomPath('/access'), 'POST', {}, undefined, auth);
@@ -220,17 +262,35 @@ el<HTMLInputElement>('volume').addEventListener('input', event => { audio.volume
 el('build-mix').addEventListener('click', () => { if (room) void mutate('/blend', 'POST', { revision: room.playlistRevision }); });
 
 async function submitIdentity(kind: 'create' | 'join') {
-  if (busy) return; busy = true; controls();
+  if (busy) return;
+  let setupKey: string | undefined;
+  if (kind === 'create') {
+    if (!transport) { notify('Check the connection mode before creating a room.', true); return; }
+    if (transport.setupRequired) {
+      setupKey = el<HTMLInputElement>('setup-key').value;
+      if (!/^[a-f0-9]{64}$/.test(setupKey)) { notify('Enter the operator’s 64-character lowercase hexadecimal setup key. It is only for creating a room.', true); return; }
+    }
+  }
+  const current = generation, request = ++identityRequest;
+  pendingIdentity = request; busy = true; controls();
   try {
+    // The one dispatch owns this value; no retry, seat request or persisted field uses it.
+    if (kind === 'create') el<HTMLInputElement>('setup-key').value = '';
     const result = kind === 'create'
-      ? await api<Created>('/api/rooms', 'POST', { title: el<HTMLInputElement>('room-title').value, name: el<HTMLInputElement>('host-name').value }, undefined, null)
+      ? await api<Created>('/api/rooms', 'POST', { title: el<HTMLInputElement>('room-title').value, name: el<HTMLInputElement>('host-name').value }, undefined, null, setupKey)
       : await api<Created>(`/api/rooms/${invite!.roomId}/join`, 'POST', { inviteToken: invite!.token, name: el<HTMLInputElement>('guest-name').value }, undefined, null);
-    const auth = { roomId: result.value.roomId, token: result.value.token }; saveCredentials(auth, result.value.room.title); renderSaved(); await open(auth);
+    const auth = { roomId: result.value.roomId, token: result.value.token }; saveCredentials(auth, result.value.room.title);
+    if (current !== generation || pendingIdentity !== request) return;
+    renderSaved(); await open(auth, request);
+    if (generation !== current + 1 || pendingIdentity !== request || credentials?.roomId !== auth.roomId || credentials.token !== auth.token || room?.id !== auth.roomId) return;
     if (result.value.inviteToken) showLink(localLink(`invite=${result.value.inviteToken}`), 'A place for your partner', 'Send this invitation to the person sharing your room. It can claim the second seat once.');
     else notify('You are both in. Bring a song and find your overlap.');
     invite = null; incomingAccess = null;
-  } catch (error) { notify(message(error), true); }
-  finally { busy = false; controls(); }
+  } catch (error) {
+    if (pendingIdentity === request) notify(error instanceof TypeError
+      ? 'The response was interrupted. The room or seat may have been created. Check your saved rooms and keep any received private access link before trying again; nothing was repeated automatically.'
+      : `${message(error)}${kind === 'create' && transport?.setupRequired ? ' Re-enter the operator setup key for another deliberate attempt.' : ''}`, true);
+  } finally { if (pendingIdentity === request) { pendingIdentity = null; busy = false; controls(); } }
 }
 el('create-form').addEventListener('submit', event => { event.preventDefault(); void submitIdentity('create'); });
 el('join-form').addEventListener('submit', event => { event.preventDefault(); if (invite) void submitIdentity('join'); });
@@ -275,6 +335,8 @@ el('room-export').addEventListener('click', async () => {
 });
 function hasDraft() { return !!file || !!el<HTMLTextAreaElement>('memory-text').value.trim(); }
 function home() {
+  el<HTMLInputElement>('setup-key').value = '';
+  pendingIdentity = null; identityRequest++;
   generation++; clearTimeout(polling); sync.disable(); credentials = null; room = null; job = null; busy = false; seeking = null; contentSignature = ''; file = null;
   el<HTMLFormElement>('upload-form').reset(); el<HTMLTextAreaElement>('memory-text').value = ''; el('audio-file-name').textContent = 'WAV, MP3, FLAC or Ogg · 1–300 seconds · 25 MiB'; el<HTMLInputElement>('share-link').value = ''; el('link-panel').hidden = true;
   el('welcome').hidden = false; el('room-view').hidden = true; el('create-view').hidden = false; el('join-view').hidden = true; el('access-view').hidden = true; el('connection').textContent = 'Your songs. Your space.'; el('connection').classList.remove('offline'); history.replaceState(null, '', location.pathname); renderSaved(); controls();
@@ -309,7 +371,12 @@ function readLocation() {
 }
 readLocation(); window.addEventListener('hashchange', readLocation);
 renderSaved(); controls();
+void loadTransportStatus();
 setInterval(() => { if (room) { renderPlayer(); if (!connected) el('connection').textContent = 'Connection paused · retrying'; } }, 250);
-window.addEventListener('pagehide', () => { generation++; clearTimeout(polling); sync.disable(); });
-window.addEventListener('pageshow', event => { if (event.persisted && credentials) void poll(); });
+window.addEventListener('pagehide', () => {
+  el<HTMLInputElement>('setup-key').value = ''; transportEpoch++; transport = null; transportLoading = false;
+  if (pendingIdentity !== null) { pendingIdentity = null; identityRequest++; busy = false; }
+  generation++; clearTimeout(polling); sync.disable();
+});
+window.addEventListener('pageshow', event => { if (event.persisted) { controls(); void loadTransportStatus(); if (credentials) void poll(); } });
 window.addEventListener('beforeunload', event => { if (hasDraft()) { event.preventDefault(); event.returnValue = ''; } });

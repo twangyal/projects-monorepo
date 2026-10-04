@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import socket
+from socketserver import TCPServer
 import stat
 import threading
 import time
@@ -19,6 +20,9 @@ import uuid
 
 from .jobs import JobManager
 from .store import DomainError, Store
+from .transport import TransportConfig, validate_transport, matches_setup
+from .https_server import HttpsRuntime, HeaderReader, DeadlineWriter, RequestError
+from . import transport as transport_limits
 
 MAX_UPLOAD = 25 * 1024 * 1024
 MAX_JSON = 64 * 1024
@@ -67,7 +71,7 @@ class DuetServer(ThreadingHTTPServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, data_dir, port, dist_dir, normalize):
+    def __init__(self, data_dir, port, dist_dir, normalize, *, transport=None):
         if type(port) is not int or not 0 <= port <= 65535:
             raise ValueError('Port must be an integer between 0 and 65535.')
         self.data_dir = Path(data_dir).absolute()
@@ -81,6 +85,23 @@ class DuetServer(ThreadingHTTPServer):
         self._data_lock = None
         self._data_fd = None
         self._closed = False
+        self.transport = transport
+        self.https_runtime = None
+        self.handler_connections = {}
+        if transport is not None:
+            validate_transport(transport, port)
+        try:
+            if transport is not None:
+                self.request_queue_size = transport_limits.LISTEN_BACKLOG
+                super().__init__((transport.bind, port), Handler)
+            self._initialize_library(port)
+            if transport is not None:
+                self.https_runtime = HttpsRuntime(self, transport)
+        except BaseException:
+            self.server_close()
+            raise
+
+    def _initialize_library(self, port):
         _directory(self.data_dir)
         if not Path(f'/proc/{os.getpid()}/fd').is_dir() or not shutil.rmtree.avoids_symlink_attacks:
             raise RuntimeError('Duet requires Linux /proc descriptor paths and safe fd-based directory cleanup.')
@@ -114,16 +135,39 @@ class DuetServer(ThreadingHTTPServer):
                 for name in os.listdir(work):
                     if re.fullmatch(ID, name):
                         _cleanup_child(work, name)
-            super().__init__(('127.0.0.1', port), Handler)
+            if self.transport is None:
+                super().__init__(('127.0.0.1', port), Handler)
         except BaseException:
             self.server_close()
             raise
+
+    def server_bind(self):
+        if self.transport is None:
+            return super().server_bind()
+        # HTTPServer.server_bind otherwise performs an unnecessary reverse DNS lookup.
+        # Retain TCPServer's reuse-address policy for immediate clean restart.
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.transport.bind, self.server_address[1]
+
+    def process_request(self, request, client_address):
+        if self.transport is None:
+            return super().process_request(request, client_address)
+        self.https_runtime.admit(request, client_address)
+
+    def handle_error(self, request, client_address):
+        # Suppress framework tracebacks containing private paths/headers.
+        pass
 
     def server_close(self):
         if self._closed:
             return
         # Cancellation and joining happen before either SQLite or the lifetime
         # lock closes, so a second process cannot clean a still-running worker.
+        if self.https_runtime is not None:
+            self.https_runtime.stop()
+            # A request may hold the shared store/job lock. Apply its bounded
+            # join before attempting JobManager.close(), which needs that lock.
+            self.https_runtime.join()
         self.jobs.close()
         self._closed = True
         try:
@@ -141,11 +185,12 @@ class DuetServer(ThreadingHTTPServer):
                 self._data_fd = None
 
 
-def create_server(data_dir: Path, port: int = 8766, *, dist_dir: Path | None = None, normalize=None) -> DuetServer:
+def create_server(data_dir: Path, port: int = 8766, *, dist_dir: Path | None = None, normalize=None,
+                  transport: TransportConfig | None = None) -> DuetServer:
     if normalize is None:
         from .media import normalize_audio
         normalize = normalize_audio
-    return DuetServer(data_dir, port, dist_dir, normalize)
+    return DuetServer(data_dir, port, dist_dir, normalize, transport=transport)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -153,8 +198,35 @@ class Handler(BaseHTTPRequestHandler):
     server_version = 'Duet'
 
     def setup(self):
-        super().setup()
-        self.connection.settimeout(5)
+        self.owned_connection = self.server.handler_connections.get(self.request)
+        self._response_started = False
+        if self.owned_connection is None:
+            super().setup()
+            self.connection.settimeout(5)
+        else:
+            self.connection = self.request
+            self.rfile = HeaderReader(self.owned_connection)
+            self.wfile = DeadlineWriter(self.owned_connection)
+            self.command = ''
+            self.request_version = 'HTTP/1.1'
+            self.requestline = ''
+
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except RequestError as error:
+            self.close_connection = True
+            try:
+                self._json(error.status, {'error': str(error)})
+            except OSError:
+                pass
+
+    def handle_expect_100(self):
+        if self.server.transport is None:
+            return super().handle_expect_100()
+        self.close_connection = True
+        self._json(417, {'error': 'Expect requests are not supported.'})
+        return False
 
     def log_message(self, *args):
         # Paths, headers and bodies may contain private capabilities.
@@ -174,22 +246,52 @@ class Handler(BaseHTTPRequestHandler):
             self._security()
             self._route()
         except DomainError as error:
-            self._json(error.status, {'error': str(error)[:400]})
+            if not self._response_started:
+                self._json(error.status, {'error': str(error)[:400]})
         except (socket.timeout, TimeoutError):
-            self._json(408, {'error': 'The request timed out. Try again.'})
+            if not self._response_started:
+                self._json(408, {'error': 'The request timed out. Try again.'})
         except (BrokenPipeError, ConnectionResetError):
             pass
         except Exception:
-            self._json(500, {'error': 'The request could not be completed. Existing room data was preserved.'})
+            if not self._response_started:
+                self._json(500, {'error': 'The request could not be completed. Existing room data was preserved.'})
 
     def _security(self):
         hosts = self.headers.get_all('Host', [])
-        allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
         origins = self.headers.get_all('Origin', [])
-        if (len(hosts) != 1 or hosts[0] not in allowed or len(origins) > 1
-                or (origins and origins[0] != 'http://' + hosts[0])
-                or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
-            raise DomainError(403, 'Only requests from this local Duet service are allowed.')
+        config = self.server.transport
+        if config is None:
+            allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
+            if (len(hosts) != 1 or hosts[0] not in allowed or len(origins) > 1
+                    or (origins and origins[0] != 'http://' + hosts[0])
+                    or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
+                raise DomainError(403, 'Only requests from this local Duet service are allowed.')
+        else:
+            sites = self.headers.get_all('Sec-Fetch-Site', [])
+            if (len(hosts) != 1 or hosts[0] != config.authority or len(origins) > 1
+                    or origins and origins[0] != config.origin
+                    or self.command in ('POST', 'PUT', 'DELETE') and len(origins) != 1
+                    or len(sites) > 1 or 'cross-site' in sites
+                    or any(name.lower() == 'forwarded' or name.lower().startswith('x-forwarded-')
+                           for name in self.headers)):
+                raise DomainError(403, 'Only requests from the configured Duet origin are allowed.')
+            if (self.headers.get_all('Expect') or self.headers.get_all('Upgrade')
+                    or 'upgrade' in [part.strip() for part in self.headers.get('Connection', '').lower().split(',')]):
+                raise DomainError(400, 'Expect and protocol upgrades are not supported.')
+            lengths = self.headers.get_all('Content-Length', [])
+            if (self.headers.get_all('Transfer-Encoding') or len(lengths) > 1
+                    or lengths and not re.fullmatch(r'[0-9]{1,12}', lengths[0])
+                    or self.command in ('GET', 'HEAD') and lengths and int(lengths[0]) != 0):
+                raise DomainError(400, 'Use valid fixed-length framing without a GET or HEAD body.')
+            if (len(self.headers.get_all('Authorization', [])) > 1
+                    or self.command in ('POST', 'PUT', 'DELETE')
+                    and len(self.headers.get_all('Content-Type', [])) > 1):
+                raise DomainError(400, 'Use one authorization and content-type header.')
+            if self.command == 'POST' and self.path == '/api/rooms':
+                keys = self.headers.get_all('X-Duet-Setup-Key', [])
+                if len(keys) != 1 or not matches_setup(config, keys[0]):
+                    raise DomainError(403, 'A valid operator setup key is required to create a room.')
         static_room_link = (self.command in ('GET', 'HEAD')
                             and re.fullmatch(r'/\?room=' + ID, self.path))
         if ('?' in self.path and not static_room_link) or '#' in self.path:
@@ -198,6 +300,9 @@ class Handler(BaseHTTPRequestHandler):
             raise DomainError(404, 'Route not found.')
 
     def _headers(self, status, content_type, size, headers=None):
+        if self.owned_connection is not None and not self._response_started:
+            self.owned_connection.phase(transport_limits.RESPONSE_SECONDS)
+        self._response_started = True
         self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(size))
@@ -227,6 +332,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def _body(self, size, cancel=None, output=None):
         deadline = time.monotonic() + 30
+        if self.owned_connection is not None:
+            self.owned_connection.phase(transport_limits.BODY_SECONDS)
+            deadline = self.owned_connection.deadline
         result = bytearray()
         while size:
             if cancel is not None and cancel.is_set():
@@ -242,6 +350,8 @@ class Handler(BaseHTTPRequestHandler):
                 output.write(chunk)
             else:
                 result.extend(chunk)
+        if self.owned_connection is not None:
+            self.owned_connection.check()
         return bytes(result)
 
     def _object(self, keys):
@@ -273,6 +383,8 @@ class Handler(BaseHTTPRequestHandler):
                 token = authorization[0][7:]
         elif allow_cookie:
             try:
+                if self.server.transport is not None and len(self.headers.get_all('Cookie', [])) > 1:
+                    raise DomainError(400, 'Use one media cookie header.')
                 cookies = SimpleCookie()
                 cookies.load(self.headers.get('Cookie', ''))
                 item = cookies.get('duet_' + room_id)
@@ -284,14 +396,18 @@ class Handler(BaseHTTPRequestHandler):
         role = self.server.store.authenticate(room_id, token)
         return token, role
 
-    @staticmethod
-    def _cookie(room_id, token):
-        return {'Set-Cookie': f'duet_{room_id}={token}; Path=/api/rooms/{room_id}; HttpOnly; SameSite=Strict'}
+    def _cookie(self, room_id, token):
+        secure = '; Secure' if self.server.transport is not None else ''
+        return {'Set-Cookie': f'duet_{room_id}={token}; Path=/api/rooms/{room_id}; HttpOnly; SameSite=Strict{secure}'}
 
     def _route(self):
         method, path, store = self.command, self.path, self.server.store
         if path == '/api/status' and method in ('GET', 'HEAD'):
-            return self._json(200, dict(version=1, maxRooms=5, maxTracks=12, maxDuration=300, maxUploadBytes=MAX_UPLOAD))
+            config = self.server.transport
+            transport = (dict(mode='https-lan', origin=config.origin, setupRequired=True) if config
+                         else dict(mode='http-loopback', origin=f'http://127.0.0.1:{self.server.server_port}', setupRequired=False))
+            return self._json(200, dict(version=1, maxRooms=5, maxTracks=12, maxDuration=300,
+                                       maxUploadBytes=MAX_UPLOAD, transport=transport))
         if path == '/api/rooms' and method == 'POST':
             body = self._object('title name')
             created = store.create_room(body['title'], body['name'])

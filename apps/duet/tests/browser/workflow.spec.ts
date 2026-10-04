@@ -42,12 +42,12 @@ async function deleteSaved(page: Page) {
 }
 test.afterEach(async ({ page }) => { await deleteSaved(page); });
 
-test('two independent seats share real audio, ratings, a mix, playback, memories and recovery', async ({ page, browser }) => {
+test('two independent seats share real audio, ratings, a mix, playback, memories and recovery', async ({ page, browser, baseURL }) => {
   test.setTimeout(90000);
   const failures: string[] = [], external: string[] = [];
-  page.on('pageerror', error => failures.push(error.message)); page.on('request', request => { if (!request.url().startsWith('http://127.0.0.1:4220') && !request.url().startsWith('blob:')) external.push(request.url()); });
+  page.on('pageerror', error => failures.push(error.message)); page.on('request', request => { if (!request.url().startsWith(baseURL!) && !request.url().startsWith('blob:')) external.push(request.url()); });
   const invite = await create(page, 'The long way home');
-  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4220' }), guest = await context.newPage();
+  const context = await browser.newContext({ baseURL }), guest = await context.newPage();
   try {
     await join(guest, invite); await expect(page.locator('#participants')).toContainText('Sam');
     await upload(page, 'Sunny side'); await upload(guest, 'Moonlit', wav(330));
@@ -94,12 +94,12 @@ test('two independent seats share real audio, ratings, a mix, playback, memories
   } finally { await context.close(); }
 });
 
-test('private access restores one seat and an invitation cannot take a third seat', async ({ page, browser }) => {
-  const invite = await create(page, 'Two seats only'), context = await browser.newContext({ baseURL: 'http://127.0.0.1:4220' }), guest = await context.newPage();
+test('private access restores one seat and an invitation cannot take a third seat', async ({ page, browser, baseURL }) => {
+  const invite = await create(page, 'Two seats only'), context = await browser.newContext({ baseURL }), guest = await context.newPage();
   try {
     await join(guest, invite);
     await page.locator('#access-link').click(); const recovery = await page.locator('#share-link').inputValue(); await page.locator('#close-link').click();
-    const strangerContext = await browser.newContext({ baseURL: 'http://127.0.0.1:4220' }), stranger = await strangerContext.newPage();
+    const strangerContext = await browser.newContext({ baseURL }), stranger = await strangerContext.newPage();
     try {
       await stranger.goto(invite); await stranger.locator('#guest-name').fill('Third person'); await stranger.getByRole('button', { name: 'Join the room' }).click();
       await expect(stranger.locator('#notice')).toBeVisible(); await expect(stranger.locator('#room-view')).toBeHidden();

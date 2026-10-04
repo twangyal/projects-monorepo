@@ -29,7 +29,46 @@ An **invitation** claims the second seat once. Before it is claimed, the host ca
 
 A **private access link** restores an existing host or guest seat. Anyone holding it can act as that participant, so keep your own link private and give your partner the invitation instead. Access links use a URL fragment that the app removes after reading it. The browser saves its own credential locally when storage is available; if storage is blocked, the current session can still work, but keep the private link before closing it. Native audio uses a room-scoped cookie rather than a token in its media URL.
 
-These links refer to the service on **your computer**. The current service binds only to loopback; it does not provide LAN discovery, remote invitations, secure internet hosting, or multi-device deployment. The verified listening scope is two independent browser contexts on one machine. Secure remote deployment is separate future work.
+By default these links refer to the service on **your computer**. To use two devices on a trusted local network, configure the HTTPS mode below. There is no network discovery, public internet hosting, reverse-proxy mode or automatic certificate installation.
+
+## Use HTTPS on a trusted local network
+
+The operator supplies a certificate and unencrypted private key for one stable service address. Both browsers must normally trust its issuer, and the certificate's subject alternative name must match the address in the link. Arrange this with your existing local certificate authority and device trust settings; Duet does not create or install an authority. Do not bypass browser certificate warnings. Automated HTTPS tests use separate original fixtures; physical two-device certificate setup and listening remain unverified.
+
+Choose the computer's actual private IPv4 address, a port and an exact HTTPS origin. For example, if the computer owns `192.168.1.42` and the certificate includes that IP address, use `https://192.168.1.42:8766`. A lower-case DNS name also works if both devices resolve it to that computer and the certificate covers the name. The bind address must be a specific RFC1918 private or loopback IPv4 address. Wildcards, public addresses and IPv6 are not accepted. Keep the service on a trusted LAN; configure any firewall access yourself for those devices without internet port forwarding.
+
+Create a fresh operator setup key file in a private directory. This command refuses to overwrite an existing file and never prints its contents:
+
+```sh
+python3 - <<'PY'
+import os
+from pathlib import Path
+import secrets
+path = Path.home() / '.config/duet/setup-key'
+path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w', encoding='ascii') as output:
+    output.write(secrets.token_hex(32) + '\n')
+PY
+```
+
+Keep both the TLS private key and setup key owned by the service user, with exact mode `0600`. They must be ordinary files, not symbolic links; an encrypted private key is refused without a password prompt. The certificate may be at most 128 KiB, the private key 32 KiB, and the setup file exactly 64 lower-case hexadecimal characters with an optional final newline. All five transport flags are required together:
+
+```sh
+python3 -m duet --data-dir "$HOME/.local/share/duet" --port 8766 \
+  --bind 192.168.1.42 --origin https://192.168.1.42:8766 \
+  --tls-cert /absolute/path/to/certificate-chain.pem \
+  --tls-key /absolute/path/to/private-key.pem \
+  --setup-token-file "$HOME/.config/duet/setup-key"
+```
+
+Use your actual address and file paths. The origin has no trailing slash, path or query; its explicit port must equal `--port` (port 443 instead omits `:443`). Invalid configuration and a failed HTTPS bind are rejected before saved rooms are opened or paused. The server prints its public origin, without credentials. Transport configuration is read at startup; stop and restart the service to change it.
+
+Open that origin in the operator's browser. Enter the setup file's contents in **Operator setup key** when creating a room; retrieve it privately with your local editor. This key authorizes creation only. It cannot enter an existing seat, play private audio or replace an invitation. The browser clears the password field when dispatching the request and does not save the key. Share the guest invitation with the other device, and retain each participant's own private access link separately. Each device must still choose **Enable audio on this device**.
+
+Creation is never automatically replayed. If its response is lost, the room may already exist, so check a saved private access link before trying again. A response lost before its private credential reaches the browser cannot be recovered from the setup key or database hashes; a new attempt may consume another room slot. Changing the service origin requires opening each original private access link with only its origin changed. Old browser storage belongs to its old origin; changing the address does not mint new seats or synchronize separate library copies.
+
+HTTPS requires TLS 1.2 or newer, the exact configured Host, and the exact Origin on every mutation. Forwarded/proxy headers and cross-site requests are rejected. Media cookies gain `Secure` while retaining room scope, `HttpOnly` and `SameSite=Strict`; room credentials stay out of audio URLs. The listener admits at most 16 connections with a backlog of 16. Each connection serves one request: a 5-second TLS handshake, 10-second/16-KiB/64-field header limit, 5-second socket idle timeout, 30-second body and response phases, and 75-second total lifetime. Shutdown closes owned connections and joins requests before releasing the library lock. If a handler cannot stop within its 5-second join budget, cleanup refuses to release the live library's ownership.
 
 ## Bring songs, build a mix, and listen
 
@@ -95,7 +134,7 @@ Automated verification targets Chromium with independent contexts and real norma
 
 ## Verify
 
-Fast checks need FFmpeg/ffprobe and development-only Ruff; there is no ML runtime or model download:
+Fast checks need FFmpeg/ffprobe, the OpenSSL command-line tool for original test certificates, and development-only Ruff; there is no ML runtime or model download:
 
 ```sh
 python3 -m pip install -r requirements-dev.txt
@@ -114,7 +153,9 @@ npm run test:browser
 CHROMIUM_PATH=/path/to/chromium npm run test:browser
 ```
 
-Playwright builds the production site with `DUET_TEST_HARNESS=1` and runs a fresh local service on port 4220. The flag adds isolated synchronization test pages; normal builds omit them. The browser server uses the real FFmpeg normalizer, and synchronization tests use native audio. Python media tests inspect actual codec, duration, and conversion boundaries; domain/HTTP tests exercise participant isolation, invitations, revisions, quotas, persistence, and cancellation. CI installs standard-library Python tooling, Ruff, FFmpeg, npm dependencies, and Chromium; no external music service is needed.
+Playwright builds the production site with `DUET_TEST_HARNESS=1` and runs a fresh local service on port 4220. If that port is in use, choose a free port with `DUET_TEST_PORT=4304 CHROMIUM_PATH=/path/to/chromium npm run test:browser`; the runner refuses to reuse a running service. The flag adds isolated synchronization test pages; normal builds omit them. The browser server uses the real FFmpeg normalizer, and synchronization tests use native audio. Python media tests inspect actual codec, duration, and conversion boundaries; domain/HTTP tests exercise participant isolation, invitations, revisions, quotas, persistence, and cancellation. CI installs standard-library Python tooling, Ruff, FFmpeg, OpenSSL, npm dependencies, and Chromium; no external music service is needed.
+
+HTTPS browser cases additionally start fresh HTTPS services on available ports with original temporary certificates and setup files. Only the exact fixture public-key fingerprint is excepted in their isolated Chromium process; production has no certificate bypass. Separate native Python SSL tests verify trusted chains and reject the wrong name, unknown authority and expired certificates. Secrets are kept out of committed evidence; test services and temporary private files are cleaned up.
 
 [The measured five-minute media gate](docs/media-verification.json) records an original synthetic stereo FLAC converted to 300.000 seconds of decoded Opus audio in 5.77 seconds, with 39 MiB maximum child RSS on the test machine. It includes reproduction commands and measurement limits; this is not a quality assessment or a guarantee of runtime on other machines.
 
@@ -133,3 +174,13 @@ The gate retains its original sources, complete archive, restored library and me
 The measured full-capacity gate produced a **503,706,257-byte archive**. Create, inspect and restore passed in **122.51 s, 117.87 s and 125.47 s**, preserving all original source files and restoring all sixty audio files byte for byte. Both ordinary service restarts retained the paused 17.25-second checkpoints with a single revision increment. The [verification record](docs/2026-10-04-library-archive-verification.json) records hashes, original defect reproductions, CI status, native recovery and the scope of the resource measurements.
 
 All twelve project workflows passed the complete archive implementation `726a996c008e8da1b2e7143773f3c81b2cb67e96`; [Duet CI](https://github.com/twangyal/projects-monorepo/actions/runs/37194799973) passed the same 145 Python, 6 TypeScript and 25 browser cases with Chromium 153.
+
+## HTTPS acceptance (#107)
+
+Version 0.3 preserves the loopback workflow and adds explicitly configured HTTPS. Local verification passes a full **182-case Python run**, then the additional immediate-restart regression in an **11-case producer gate**: 183 distinct Python cases now exist. All six TypeScript tests, lint, type checking and normal build pass. Production Chromium verification covers **30 distinct cases** across the existing 25-case suite and five HTTPS cases. These are documented passing scopes, not a claim of one final local combined run; exact published-head CI is pending. See the [verification receipt](docs/2026-10-04-https-lan-verification.json), [producer tests](docs/2026-10-04-https-lan-producer.json) and [CLI/client receipt](docs/2026-10-04-https-lan-client.json).
+
+Independent tests found and fixed a numeric-host alias, shutdown lock ordering, unsafe CLI bind-error output and missing socket reuse on immediate HTTPS restart. The [protocol receipt](docs/2026-10-04-https-lan-protocol.json) records original certificate-chain/name/expiry checks, real 16-connection saturation, actual 5-second handshake and 10-second trickled-header deadlines, exact 16 KiB/64-field limits, private authority, and native audio ranges. Body/response/total/shutdown deadline branches use explicitly scaled constants. A separate exact 8 MiB response checks transport capacity and backpressure with opaque original bytes; it is not a playable-media or memory-use claim.
+
+The [native receipt](docs/2026-10-04-https-lan-native.json) retains the first restart failure and unchanged repaired case. Two independent seats use original 12-second audio, separate ratings, reordered mix, explicit audio consent, pause/seek and memories. Same-port service restart preserves original private seats and exact normalized Opus; fresh contexts recover each original role. The retained 194,009-byte Opus decodes independently to 12 seconds with the original 277 Hz tone. Setup keys are not retained, lost creation responses are not replayed, and delayed real responses cannot overwrite newer drafts or reactivate a departed room. Desktop and 390px layouts have no horizontal overflow.
+
+A separate [private-interface check](docs/2026-10-04-https-lan-private-interface.json) binds the actual RFC1918 interface, uses normal strict CA/IP-SAN validation, and retains both original seats across immediate restart. It remains same-host traffic. Physical device certificate installation, arbitrary network timing and output-device synchronization are unverified. No system certificate trust or network configuration was changed.

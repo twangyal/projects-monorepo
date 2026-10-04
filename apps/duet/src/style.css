@@ -146,3 +146,9 @@ footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1
 
 .track-buttons button { min-height: 30px; }
 .order-buttons button { min-width: 30px; min-height: 24px; }
+
+.transport-info { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin:.5rem 0 1rem; }
+#transport-status { flex:1; min-width:0; margin:0; color:#666957; font-size:.78rem; line-height:1.5; overflow-wrap:anywhere; }
+#retry-transport-status { min-height:44px; }
+#setup-key-field .fine { font-weight:normal; line-height:1.45; }
+#setup-key { max-width:100%; font-family:monospace; }
