@@ -55,7 +55,12 @@
     "local_evidence": "Combined run passed 29/30; the remaining test incorrectly expected pre-normalization low-alpha RGB. Corrected actual-import/canonical-source checks then passed 2/2. All cases individually passed. Remote CI will run the complete suite together.",
     "worker_cleanup": "Native jobs checks confirm all created workers terminate on completion, supersession, abort and compressed-image decode failure.",
     "storage": "Actual IndexedDB ordering, transaction completion/abort, corrupt and undecodable record preservation, blocked upgrade, unavailable storage, retry and exact demo masks verified.",
-    "editor": "Real photo import, focal/shift, authored planes, painting, undo/redo, decoded PNG and JSON downloads, reload, invalid import, numeric drafts, keyboard, delayed actual worker messages, delayed native decode, storage unavailable and mobile layout."
+    "editor": "Real photo import, focal/shift, authored planes, painting, undo/redo, decoded PNG and JSON downloads, reload, invalid import, numeric drafts, keyboard, delayed actual worker messages, delayed native decode, storage unavailable and mobile layout.",
+    "remote_evidence": {
+      "commit": "c63ac79ab7ed0a78df99537b01df367679c04657",
+      "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37163746892",
+      "result": "All 30 production browser cases and the full check gate passed together; all ten repository workflows succeeded."
+    }
   },
   "maximum_size_measurement": {
     "width": 1280,
