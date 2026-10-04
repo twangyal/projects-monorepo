@@ -34,6 +34,52 @@ async function interpret(page: Page, query: string) {
 }
 async function apply(page: Page) { await page.getByRole('button', { name: 'Apply filters', exact: true }).click(); }
 
+test('applied exclusion audit survives drafts, history, native reopen and downloaded reports', async ({ page }) => {
+  await page.goto('/'); await importCsv(page);
+  await interpret(page, 'companies with profitable and growing and low debt'); await apply(page);
+  await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
+  const audit = page.locator('#exclusion-content');
+  await expect(audit.locator('[data-ticker]')).toHaveCount(4);
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toContainText(/debtEquity 3.*<= 1/);
+  await expect(audit.locator('[data-ticker="ECHO"]')).toContainText(/netIncome.*not supplied/);
+  await expect(audit.locator('[data-ticker="ECHO"]')).toContainText(/equity.*nonpositive/);
+  await expect(audit.locator('[data-ticker="FOXTROT"]')).toContainText(/548.day/);
+  await expect(audit.locator('[data-ticker="CHARLIE"]')).toContainText('original-research.csv:4');
+  const beforeDraft = await audit.innerText();
+  await page.locator('[data-filter-id] [name=value]').last().fill('4');
+  expect(await audit.innerText()).toBe(beforeDraft);
+  const draftReport = await download(page, 'Download research report');
+  expect(draftReport.text).toContain('Screening exclusion audit');
+  expect(draftReport.text).toMatch(/Excluded: BRAVO; fiscal 2025-12-31; source original-research.csv:3/);
+  expect(draftReport.text).toMatch(/debtEquity 3.*<= 1/);
+  await apply(page); await expect(audit.locator('[data-ticker]')).toHaveCount(3);
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(audit.locator('[data-ticker="BRAVO"]')).toHaveCount(0);
+  await audit.locator('[data-ticker="ECHO"]').getByRole('button', { name: 'View excluded evidence', exact: true }).click();
+  await expect(page.locator('#company-detail')).toContainText('ECHO');
+  await page.getByLabel('Research note', { exact: true }).fill('Review missing source figures.');
+  await page.getByRole('button', { name: 'Save note', exact: true }).click();
+  await expect(page.locator('#save-status')).toContainText('Saved locally');
+  const saved = await backup(page); expect(saved.schemaVersion).toBe(2);
+  await page.reload(); await expect(page.locator('#dataset-summary')).toContainText('original-research.csv');
+  await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
+  await expect(audit.locator('[data-ticker]')).toHaveCount(3);
+  expect(await backup(page)).toEqual(saved);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(audit).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.getByRole('tab', { name: 'Shortlist', exact: true }).focus();
+  await page.keyboard.press('End');
+  await expect(page.getByRole('tab', { name: 'Excluded companies', exact: true })).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Excluded companies', exact: true })).toHaveAttribute('aria-selected', 'true');
+  const finalReport = await download(page, 'Download research report');
+  expect(finalReport.text).toContain('Review missing source figures.');
+  expect(finalReport.text).not.toContain('Excluded: BRAVO;');
+});
+
 test('real original CSV becomes an inspected shortlist, source-linked comparison, notes and portable reports', async ({ page, baseURL }) => {
   const errors: string[] = [], external: string[] = [];
   page.on('pageerror', error => errors.push(error.message));

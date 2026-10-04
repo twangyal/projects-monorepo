@@ -1,7 +1,7 @@
 import { validateCompany, validateDataset, validateScreen, validateToday, boundedArray } from './validation.ts';
 import { LIMITS } from './types.ts';
 import { latestCompanies } from './periods.ts';
-import type { Company, Dataset, Screen, Derived, ResearchRow, ScreenResult, Comparison, Metric, Filter, Observation } from './types.ts';
+import type { Company, Dataset, Screen, Derived, ResearchRow, ScreenResult, Comparison, Metric, Filter, Observation, ScreenDecision, ScreenReason } from './types.ts';
 
 type Amount = 'revenue' | 'priorRevenue' | 'netIncome' | 'debt' | 'equity';
 const amounts: Amount[] = ['revenue', 'priorRevenue', 'netIncome', 'debt', 'equity'];
@@ -66,17 +66,61 @@ function matches(actual: number, filter: Filter): boolean {
     case 'eq': return actual === filter.value;
   }
 }
+const metricFields: Record<Metric, (keyof Company)[]> = {
+  revenue: ['revenue'], netIncome: ['netIncome'], debt: ['debt'], equity: ['equity'],
+  growthPct: ['revenue', 'priorRevenue'], marginPct: ['netIncome', 'revenue'], debtEquity: ['debt', 'equity'],
+};
+const operators = { gt: '>', gte: '>=', lt: '<', lte: '<=', eq: '=' } as const;
+function decisions(data: Dataset, criteria: Screen, date: string): ScreenDecision[] {
+  return latestCompanies(data.companies).map(company => {
+    const row = analyze(company, date), reasons: ScreenReason[] = [];
+    const add = (kind: ScreenReason['kind'], text: string, fields: (keyof Company)[], filterIndex: number | null = null): void => {
+      reasons.push({ kind, text, fields: [...fields], filterIndex });
+    };
+    if (!criteria.includeStale && row.stale) {
+      const age = (Date.parse(date + 'T00:00:00Z') - Date.parse(company.fiscalDate + 'T00:00:00Z')) / 86_400_000;
+      add('stale', `Fiscal period age ${age} UTC days exceeds the applied 548-day limit.`, ['fiscalDate']);
+    }
+    if (criteria.sector !== null && company.sector.toLowerCase() !== criteria.sector.toLowerCase()) {
+      add('sector', `Supplied sector ${company.sector} does not match applied sector ${criteria.sector}.`, ['sector']);
+    }
+    if (criteria.currency !== null && company.currency !== criteria.currency) {
+      add('currency', `Supplied currency ${company.currency} does not match applied universe currency ${criteria.currency}.`, ['currency']);
+    }
+    criteria.filters.forEach((filter, index) => {
+      const fields = metricFields[filter.metric], actual = value(row, filter.metric);
+      if (filter.currency !== null && company.currency !== filter.currency) {
+        add('filter-currency', `Supplied currency ${company.currency} does not match filter ${index + 1} currency ${filter.currency}; monetary values are not compared.`, ['currency'], index);
+        return;
+      }
+      if (actual === null) {
+        const absent = fields.filter(field => company[field] === null);
+        const denominator = filter.metric === 'growthPct' ? 'priorRevenue' : filter.metric === 'marginPct' ? 'revenue' : 'equity';
+        const why = absent.length ? `${absent.join(' and ')} not supplied` : `${denominator} denominator is ${denominator === 'equity' ? 'nonpositive' : 'zero'}`;
+        add('undefined', `Filter ${index + 1}: ${filter.metric} is undefined (${why}); missing or undefined values never pass.`, fields, index);
+      } else if (!matches(actual, filter)) {
+        const units = money(filter.metric) ? ` million ${company.currency}` : filter.metric === 'debtEquity' ? ' (ratio)' : '%';
+        add('threshold', `Filter ${index + 1}: ${filter.metric} ${actual}${units} does not satisfy ${operators[filter.operator]} ${filter.value}${units}.`, fields, index);
+      }
+    });
+    return { row, matched: reasons.length === 0, reasons };
+  });
+}
+/** All failed applied rules, with unrounded values; no older-period fallback. */
+export function auditScreen(dataset: Dataset, screen: Screen, today: string): ScreenDecision[] {
+  const date = validateToday(today), data = validateDataset(dataset, date), criteria = validateScreen(screen, data);
+  return decisions(data, criteria, date).sort((a, b) => order(a.row.company.ticker, b.row.company.ticker));
+}
 export function screenDataset(dataset: Dataset, screen: Screen, today: string): ScreenResult {
   const date = validateToday(today), data = validateDataset(dataset, date), criteria = validateScreen(screen, data);
   const rows: ResearchRow[] = []; let excludedStale = 0, excludedMissing = 0;
-  for (const company of latestCompanies(data.companies)) {
-    if (!criteria.includeStale && stale(company, date)) { excludedStale++; continue; }
-    if (criteria.sector !== null && company.sector.toLowerCase() !== criteria.sector.toLowerCase()) continue;
-    if (criteria.currency !== null && company.currency !== criteria.currency) continue;
-    if (criteria.filters.some(filter => filter.currency !== null && filter.currency !== company.currency)) continue;
-    const row = analyze(company, date);
-    if (criteria.filters.some(filter => value(row, filter.metric) === null)) { excludedMissing++; continue; }
-    if (criteria.filters.every(filter => matches(value(row, filter.metric)!, filter))) rows.push(row);
+  for (const decision of decisions(data, criteria, date)) {
+    if (decision.matched) { rows.push(decision.row); continue; }
+    // Preserve the established mutually exclusive count precedence, while the
+    // audit retains every failure (including failures beyond the first gate).
+    if (decision.reasons.some(reason => reason.kind === 'stale')) { excludedStale++; continue; }
+    if (decision.reasons.some(reason => ['sector', 'currency', 'filter-currency'].includes(reason.kind))) continue;
+    if (decision.reasons.some(reason => reason.kind === 'undefined')) excludedMissing++;
   }
   if (money(criteria.sortBy) && new Set(rows.map(row => row.company.currency)).size > 1) {
     throw new Error('Cannot sort monetary amounts across different currencies. Choose a currency filter or sort by a ratio or ticker.');
