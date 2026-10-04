@@ -66,8 +66,9 @@ Description: A shared music experience that combines two people's tastes, suppor
 
 ## 10. Art protection using color theory
 
-Path: N/A
-Status: IDEA
+Path: `apps/color-context-lab`
+Status: ACTIVE
+Progress: Color Context Lab is implementing its first reviewed research milestone in issue #70: bounded local PNG normalization, exact raw-pixel backups, neutral/solid/checker surround comparison, numerical color diagnostics and complete PNG/HTML exports. A separate preregistered procedural shape-classifier experiment has fixed controls, disjoint geometry families, a development readiness gate and an explicit masking bypass. Implementation and independent verification are underway; no protocol model has been fitted and no art-protection or human-perception result is claimed.
 Description: A research project exploring whether changes to color and surrounding visual context can preserve an artwork's appearance for people while disrupting how image models learn from it. Inspired by differences between pixel colors and perceived colors, the tool would generate modified versions of artwork and compare their visual quality and effects on model behavior. The portfolio deliverable would include an artist-facing comparison interface and reproducible experiments. Whether perceptual ambiguity can provide useful resistance to AI training remains a hypothesis; results would report measured effects and limits rather than promise prevention. Existing image-perturbation research provides useful comparisons and evidence of bypasses to test against.[^art]
 
 ## 11. Online drawing board
