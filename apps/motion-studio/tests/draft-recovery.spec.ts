@@ -38,10 +38,10 @@ test('raw saved record download preserves exact unknown properties without expor
   await protectedRecord(page);
 });
 
-test('recovery retains raw data through history, imports, resets and current exports', async ({ page }) => {
+test('recovery retains raw data through history, imports, resets and current exports', async ({ page, baseURL }) => {
   const errors: string[] = [], external: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (!request.url().startsWith('http://127.0.0.1:4210') && !request.url().startsWith('blob:') && !request.url().startsWith('data:')) external.push(request.url()); });
+  page.on('request', request => { if (!request.url().startsWith(`${baseURL}/`) && !request.url().startsWith('blob:') && !request.url().startsWith('data:')) external.push(request.url()); });
   await seed(page);
   await expect(page.getByRole('region', { name: 'Saved draft recovery' })).toBeVisible();
   await title(page, 'Memory edit'); await page.locator('#undo').click(); await page.locator('#redo').click();

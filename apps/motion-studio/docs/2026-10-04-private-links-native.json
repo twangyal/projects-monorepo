@@ -1,0 +1,654 @@
+{
+  "schemaVersion": 1,
+  "issue": 110,
+  "scope": "Independent native HTTPS/UI/media acceptance; no producer model/render/evaluator imports for expected fixtures or pixels",
+  "distinctNativeCases": 9,
+  "singleAllNineGreenRun": false,
+  "runs": {
+    "first": {
+      "log": {
+        "path": "/tmp/motion110-native-first.log",
+        "bytes": 15365,
+        "sha256": "fa47a52e02ae02798f4c40caad06e2142440728f9776815b377ae3b401006221"
+      },
+      "json": {
+        "path": "/tmp/motion110-native-first-results.json",
+        "bytes": 36566,
+        "sha256": "12f1cc0bf58cf5148417eafc23249d24122ca03ea3ffdbf0549352ca6d40b0c9"
+      },
+      "stats": {
+        "startTime": "2026-10-04T21:35:35.530Z",
+        "duration": 124587.682,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 4,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "HTTPS snapshot exports original cels and poses and opens only an explicit independent local copy",
+          "status": "timedOut",
+          "durationMs": 90113
+        },
+        {
+          "title": "read and revoke authorities differ, cancel preserves access and revocation survives restart",
+          "status": "passed",
+          "durationMs": 2477
+        },
+        {
+          "title": "raw drafts block publication and late committed receipt preserves newer exact editor input",
+          "status": "failed",
+          "durationMs": 6584
+        },
+        {
+          "title": "lost real publication response reports uncertainty without automatic retry",
+          "status": "passed",
+          "durationMs": 2179
+        },
+        {
+          "title": "new private fragment retires held earlier read and wrong authority cannot expose cached artwork",
+          "status": "failed",
+          "durationMs": 7444
+        },
+        {
+          "title": "unavailable service status disables only publication while local artwork remains editable and exportable",
+          "status": "passed",
+          "durationMs": 2139
+        },
+        {
+          "title": "explicit local copy refuses full eight-entry library without changing records or captured artwork",
+          "status": "passed",
+          "durationMs": 2503
+        },
+        {
+          "title": "cancel and controlled pagehide retire late publication receipts without clearing newer raw work",
+          "status": "passed",
+          "durationMs": 1835
+        },
+        {
+          "title": "corrupt local library refuses snapshot adoption without overwriting recovery bytes or the editor draft",
+          "status": "failed",
+          "durationMs": 7059
+        }
+      ]
+    },
+    "affected": {
+      "log": {
+        "path": "/tmp/motion110-native-affected.log",
+        "bytes": 1175,
+        "sha256": "7a2de7356c371d07df6e203697699bffac9ac7ddb28e0ce09c973b088b51f0b2"
+      },
+      "json": {
+        "path": "/tmp/motion110-native-affected-results.json",
+        "bytes": 7509,
+        "sha256": "5df92af2a3b17fe3add0a24c0851f503056636fb92ae164b513f2e7efaf71893"
+      },
+      "stats": {
+        "startTime": "2026-10-04T21:39:46.971Z",
+        "duration": 14348.606000000002,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "HTTPS snapshot exports original cels and poses and opens only an explicit independent local copy",
+          "status": "passed",
+          "durationMs": 4390
+        },
+        {
+          "title": "raw drafts block publication and late committed receipt preserves newer exact editor input",
+          "status": "passed",
+          "durationMs": 2117
+        },
+        {
+          "title": "new private fragment retires held earlier read and wrong authority cannot expose cached artwork",
+          "status": "passed",
+          "durationMs": 2569
+        },
+        {
+          "title": "explicit local copy refuses full eight-entry library without changing records or captured artwork",
+          "status": "passed",
+          "durationMs": 2578
+        },
+        {
+          "title": "corrupt local library refuses snapshot adoption without overwriting recovery bytes or the editor draft",
+          "status": "passed",
+          "durationMs": 2078
+        }
+      ]
+    }
+  },
+  "firstFailures": {
+    "product": "Actual HTTP404 for Vite gif.worker-Diq5wjQj.js: service asset regex excluded internal dots; owner fixed route with actual TLS regression, then original media assertions passed.",
+    "fixture": [
+      "Raw drafts are refused on actual guarded activation; test incorrectly required disabled control. Corrected to native click, zero POST, exact raw value/node/focus.",
+      "Delayed native fetch hook accidentally held the later wrong-token request too; corrected to one-shot hold.",
+      "Corrupt local adoption status belongs to snapshot-local-status rather than main snapshot-status; corrected target."
+    ],
+    "additionalCorrectedFalsePass": "Full-library status assertion also watched main snapshot-status, and /8/ matched UTF-8. Retargeted actual local-copy status and repeated unchanged complete IDB/capacity checks."
+  },
+  "maximumFirst": {
+    "receipt": {
+      "path": "/workspace/motion110-maximum-native-first/verification.json",
+      "bytes": 1047,
+      "sha256": "01113e34fa2353bb7d2108d6fcf16e6033e98e0952e3cd9c9a65d53e6a6314d5"
+    },
+    "result": "failed",
+    "wallMs": 6169.964263999999,
+    "allObservedPidsExited": true,
+    "diagnosis": "Original JSON key ordering differs from existing canonical validator order; first runner asserted bytes against hand-written order before saving actual download. Second captured native artifacts prove all values identical and only object-key order differs. Original frozen fixtures/values/padding/media thresholds unchanged."
+  },
+  "maximumFinal": {
+    "receipt": {
+      "path": "/workspace/motion110-maximum-native-second/verification.json",
+      "bytes": 11772,
+      "sha256": "7530c55e6ce57e82f15a2132079dc9e1e70cf51b0bcf88ab09cfffc2653a51e0"
+    },
+    "result": "passed",
+    "wallMs": 57851.963037,
+    "publications": 8,
+    "bytesEach": 6291624,
+    "totalPublishedProjectBytes": 50332992,
+    "ninthRefusalStatus": 409,
+    "gif": {
+      "frames": 96,
+      "totalDelayMs": 8000,
+      "encodeDownloadMs": 1068.0548439999984,
+      "path": "/workspace/motion110-maximum-native-second/maximum-96-frames.gif",
+      "bytes": 122817,
+      "sha256": "b29784940410d3b431db50173640252519f4baaaa469cc8d2e99e86fc834d525"
+    },
+    "allObservedPidsExited": true,
+    "checks": [
+      "Eight original 6291624-byte complete projects passed real browser publication, service image admission, durable commit and exact viewer download.",
+      "Same-port whole CLI process restart preserves all eight original IDs/read capabilities and exact project bytes.",
+      "One representative maximum publication: four independently decoded PNG boundaries and every96 GIF frame/pixel/centisecond delay. Other seven verified byte-exact projects, not seven more media exports.",
+      "All eight original revoke capabilities remain valid after restart; all eight revocations remain refused after a second whole process restart."
+    ],
+    "scopeLimits": [
+      "Padded simple8x8 PNGs exercise exact complete JSON capacity and decoder acceptance, not photographic complexity or peak RAM.",
+      "One representative maximum publication rendered4actualPNGframes andall96GIFframes; other7verified exact JSON/image bytes acrossrestart.",
+      "Strict CA verified service readiness; only exact fixture SPKI trust in Chromium. No blanket ignoreHTTPSErrors, no physical device or public hosting claim."
+    ]
+  },
+  "keyOrderProof": {
+    "source": {
+      "path": "/workspace/motion110-maximum-native-second/original-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "98253a2a0a9f67d928bcef0e84dba1f13322d30ce28dc2af24f80bbec9a233bd"
+    },
+    "committed": {
+      "path": "/workspace/motion110-maximum-native-second/committed-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "a8fed713ce163ca8ae3b27bfb231a5f772dc2abd29a786e5c6d717e94b06e1c8"
+    },
+    "viewed": {
+      "path": "/workspace/motion110-maximum-native-second/viewed-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "a8fed713ce163ca8ae3b27bfb231a5f772dc2abd29a786e5c6d717e94b06e1c8"
+    },
+    "allLiteralValuesAndEmbeddedPngBytesEqual": true,
+    "committedAndViewedByteIdentical": true,
+    "allBytes": 6291624
+  },
+  "fixtureExpectations": [
+    {
+      "path": "/workspace/motion110-native-fixtures/expectations.json",
+      "bytes": 1252,
+      "sha256": "972a6a1f2c6363ed275da1d33f93305a80e570eeab49c7abbbdc23d74a96df8e"
+    },
+    {
+      "path": "/workspace/motion110-native-fixtures/maximum-expectations.json",
+      "bytes": 323,
+      "sha256": "d543aa2eb97ef8ed3ccd648225c02880026b0e95ed8aff5f3052a35f112c373a"
+    },
+    {
+      "path": "/workspace/motion110-native-fixtures/maximum-original.motion.json",
+      "bytes": 6291624,
+      "sha256": "98253a2a0a9f67d928bcef0e84dba1f13322d30ce28dc2af24f80bbec9a233bd"
+    }
+  ],
+  "ownedSources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/private-links.spec.ts",
+      "bytes": 17511,
+      "sha256": "82b4ced8700c4f8d1917c715428f51b9748994601bc176efbe2d23292e1c87fb"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/private-links-fixtures.ts",
+      "bytes": 12296,
+      "sha256": "5243fde92687a3a0503185add5628bc3442c343621629ae2ea5ac3b0350b0807"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/scripts/smoke_private_links.mjs",
+      "bytes": 11256,
+      "sha256": "4a33888b3a763969390498fbd3dd99f22b374e38b9c3f8dcd30000ce2514491b"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/scripts/private-links-fixtures.mjs",
+      "bytes": 4005,
+      "sha256": "32d9a7303b2632be9fca443ee9e2d5a694416563ce59acb000534c0cb67526ce"
+    }
+  ],
+  "productionBundle": [
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/main-B6RPjm_L.js",
+      "bytes": 72090,
+      "sha256": "17e927f118fa688aaabe8e84d388248a4bc3f508559ec7c2b1014b781e46f8ec"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/view-D8s8vlDj.js",
+      "bytes": 10443,
+      "sha256": "f0fcc40911fde116cd8b45f921975d05466cb4a91702099edf9077fd542087c2"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/private-api-CFdAL8mg.js",
+      "bytes": 47265,
+      "sha256": "f3b43201fb62d03af7d99b1e0e581aecb1f35e1e476e2ecf033c625f16ea0a77"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/private-api-D2iD0auj.css",
+      "bytes": 14230,
+      "sha256": "2a92800a28a8b837d95ff48f311557f44a69bd3b804ee71e84292851a744c589"
+    }
+  ],
+  "repairedBackend": {
+    "path": "/workspace/projects-monorepo/apps/motion-studio/server/http.ts",
+    "bytes": 13736,
+    "sha256": "0ff5a7249907397e1ad7207ddd8377425d524deaa8552aa8d3e2f894aa4afa01"
+  },
+  "nativeArtifacts": [
+    {
+      "path": "/workspace/motion110-native-first/private-links-cancel-and-c-4a697-out-clearing-newer-raw-work/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "9b5dbbedfb4897e3029bb813b96e23a5d68241311b55982b643244fa77808426"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-cancel-and-c-4a697-out-clearing-newer-raw-work/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "c667100c801f95ba40e56aaf6f138d1d473248254d4b52f702c340342b7e755f"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-corrupt-loca-8b8d6-y-bytes-or-the-editor-draft/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "253fab33bcfcd5a38e794524f5da006e42c5cbb78965e1f6dcb44cf9dfe1bd9c"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-corrupt-loca-8b8d6-y-bytes-or-the-editor-draft/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "645b989d23a0def6f4021daf63dfd85d84659004dd0637a4044fbda63eb0c470"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-raw-drafts-b-31016-es-newer-exact-editor-input/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "ca66426e77eba57980e726102f58c4158c3d28c1f12da8bc941cb866f38d7ff4"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-raw-drafts-b-31016-es-newer-exact-editor-input/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "7949a4ac7a1cd473b305d2ccd12df424649e5435f64fc6cd25807bed5d45eff6"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-unavailable--0511b-ins-editable-and-exportable/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "af891850712e2b1ce0827aaffa9bf652b24c2a07415ba31ba6925627cdf58dbd"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-unavailable--0511b-ins-editable-and-exportable/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "7d5f843a2f1fdc0e5838a5c1d3f76675cee58df09417d89dea60dd688eb33aa9"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-11.png",
+      "bytes": 6994,
+      "sha256": "2ceb32527bb8f5800bfb3ca6b56e44e7125d8b857c7f30ef74508b669f6c75d4"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "d4602c316aaf3866910431a18b82a18f1948dfa5250f3c7e3c96902473ee15c5"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-5.png",
+      "bytes": 6991,
+      "sha256": "0cd39e970a8351a5bd3bc0ece45b489b7eb4d9d9b263eda2b201275e3f733e96"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "c14c5d1c882a3d8e7dab3e75bda5404ce34332efcbdd43c77731d4189febc361"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-0.png",
+      "bytes": 6988,
+      "sha256": "795a309a616a9a91663b4ea9cdde95be4f0d40fe846f2ce6f00bbb6387f2de14"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-6.png",
+      "bytes": 6987,
+      "sha256": "6734beaea057d74139106a3b357c06a5161ce7d091858689d3c210378556a9ef"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-read-and-rev-8f2ca-revocation-survives-restart/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "325ec171489d7b5d92743fe262938da4fff476c180e560a8431b374a2e991ae3"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-read-and-rev-8f2ca-revocation-survives-restart/owned-process-closure.json",
+      "bytes": 145,
+      "sha256": "4341dc989af8b3d76d11fa1700646d7b796e7675dbe466373f3c75431897460a"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-explicit-loc-9b602-records-or-captured-artwork/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "9bec989cc14e72dd559fbf2a09e6bbda131102f1531671f692b593c6b43e3208"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-explicit-loc-9b602-records-or-captured-artwork/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "1b48bc62d7dfe6451159f8b94bc0ac6b120203b90d7d82dfeb0bcc2c6fa6c87c"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-lost-real-pu-c45dd-nty-without-automatic-retry/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "ec157850096c8daa706aa256df13e8ca2b0e8eeb0021c9da3bb51621e6ef48a8"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-lost-real-pu-c45dd-nty-without-automatic-retry/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "2e8173875f991bb2589a9a70196870b8ec8858a875bfc073e3b44d832f7f81c1"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-new-private--0431e-annot-expose-cached-artwork/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "8fba0d84d1f7778da32afdbe7b2c56214061ada074ec91194920c0b74228a326"
+    },
+    {
+      "path": "/workspace/motion110-native-first/private-links-new-private--0431e-annot-expose-cached-artwork/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "5e5d17e40e64df382d5ae09ab05faf07b03a4d7f3900c112c9ff9d5d7b0b7cd6"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-corrupt-loca-8b8d6-y-bytes-or-the-editor-draft/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "eb9638e4f1c150e10e115f5f6f6614700bc9c9f89a04477d2b135a7a943077d5"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-corrupt-loca-8b8d6-y-bytes-or-the-editor-draft/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "ec21bc4eb65ee1db26b6dcc0cb5e41048c250c5ae843a79fa14b549a86c6f273"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-raw-drafts-b-31016-es-newer-exact-editor-input/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "8aab441b9c042daaa9ad7433dfa7d6dc80b446a5d98ed0352c33a9c9f5a24177"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-raw-drafts-b-31016-es-newer-exact-editor-input/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "8553e6f1c0065bf2a1618c1f87f39ecae6df66ecbac7fd747e5a8485dd277eae"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-private.gif",
+      "bytes": 16053,
+      "sha256": "0b0efee8012e940f1a610e4a9ca00092111f04414b5eed519c4a77d375ca6e70"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/private-view-390.png",
+      "bytes": 44348,
+      "sha256": "b48500a09dbbede1b4864345fb898398c3ba0da093bd5a7a46196df33ce2afcb"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-11.png",
+      "bytes": 6994,
+      "sha256": "2ceb32527bb8f5800bfb3ca6b56e44e7125d8b857c7f30ef74508b669f6c75d4"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/private-view-desktop.png",
+      "bytes": 49176,
+      "sha256": "cb397e5cb6555f68a391ac034e96e4115bfdf8b79615073ded257a65b7856bd4"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "436914d5f2323a77247cbef803185fa46182c59eea5ce41c12c3d7075eb9266a"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/independent-media-receipt.json",
+      "bytes": 462,
+      "sha256": "d1c0af34c2dac81a50104f394e58d41598f04b444ba70339f32eb5cecf3b126d"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-5.png",
+      "bytes": 6991,
+      "sha256": "0cd39e970a8351a5bd3bc0ece45b489b7eb4d9d9b263eda2b201275e3f733e96"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/owned-process-closure.json",
+      "bytes": 145,
+      "sha256": "6101ea8dac4586eac74b79fdc361a5c5c63944bde1d2802e56b5d5f1ea56ca64"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-0.png",
+      "bytes": 6988,
+      "sha256": "795a309a616a9a91663b4ea9cdde95be4f0d40fe846f2ce6f00bbb6387f2de14"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-frame-6.png",
+      "bytes": 6987,
+      "sha256": "6734beaea057d74139106a3b357c06a5161ce7d091858689d3c210378556a9ef"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy/original-private.motion.json",
+      "bytes": 1113,
+      "sha256": "71af231fd14791c045ced7fa03f2f6de484e46d6bef33e56ab96cdc084284101"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-explicit-loc-9b602-records-or-captured-artwork/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "630ca7e783fcae5dcddf9846e7186563e76c3fdc379746f16d15f0863e667e53"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-explicit-loc-9b602-records-or-captured-artwork/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "65a8fb1015cd0c10dbd8ddda08506945d392817d7489755b13f1e63880a007bf"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-new-private--0431e-annot-expose-cached-artwork/public-certificate-receipt.json",
+      "bytes": 290,
+      "sha256": "08059188410b4ae2c07f01c61ff96a831c5bb434b3f6c5797736fad79bb3c5ab"
+    },
+    {
+      "path": "/workspace/motion110-native-affected/private-links-new-private--0431e-annot-expose-cached-artwork/owned-process-closure.json",
+      "bytes": 133,
+      "sha256": "b756224e744bff88e79139210ffb68881795767e48d49cee32ffcd2d7953cead"
+    }
+  ],
+  "nativeProcessClosure": [
+    {
+      "case": "private-links-cancel-and-c-4a697-out-clearing-newer-raw-work",
+      "run": "first",
+      "servicePids": [
+        721919
+      ],
+      "browserPids": [
+        721934
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-corrupt-loca-8b8d6-y-bytes-or-the-editor-draft",
+      "run": "first",
+      "servicePids": [
+        722056
+      ],
+      "browserPids": [
+        722071
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-raw-drafts-b-31016-es-newer-exact-editor-input",
+      "run": "first",
+      "servicePids": [
+        721133
+      ],
+      "browserPids": [
+        721148
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-unavailable--0511b-ins-editable-and-exportable",
+      "run": "first",
+      "servicePids": [
+        721623
+      ],
+      "browserPids": [
+        721638
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy",
+      "run": "first",
+      "servicePids": [
+        720630
+      ],
+      "browserPids": [
+        720645
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-read-and-rev-8f2ca-revocation-survives-restart",
+      "run": "first",
+      "servicePids": [
+        720966,
+        721116
+      ],
+      "browserPids": [
+        720981
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-explicit-loc-9b602-records-or-captured-artwork",
+      "run": "first",
+      "servicePids": [
+        721763
+      ],
+      "browserPids": [
+        721778
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-lost-real-pu-c45dd-nty-without-automatic-retry",
+      "run": "first",
+      "servicePids": [
+        721310
+      ],
+      "browserPids": [
+        721325
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-new-private--0431e-annot-expose-cached-artwork",
+      "run": "first",
+      "servicePids": [
+        721451
+      ],
+      "browserPids": [
+        721466
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-corrupt-loca-8b8d6-y-bytes-or-the-editor-draft",
+      "run": "affected",
+      "servicePids": [
+        723178
+      ],
+      "browserPids": [
+        723193
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-raw-drafts-b-31016-es-newer-exact-editor-input",
+      "run": "affected",
+      "servicePids": [
+        722742
+      ],
+      "browserPids": [
+        722757
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-HTTPS-snapsh-a59b7-icit-independent-local-copy",
+      "run": "affected",
+      "servicePids": [
+        722535,
+        722721
+      ],
+      "browserPids": [
+        722550
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-explicit-loc-9b602-records-or-captured-artwork",
+      "run": "affected",
+      "servicePids": [
+        723028
+      ],
+      "browserPids": [
+        723043
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "case": "private-links-new-private--0431e-annot-expose-cached-artwork",
+      "run": "affected",
+      "servicePids": [
+        722876
+      ],
+      "browserPids": [
+        722891
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    }
+  ],
+  "staticChecks": {
+    "scopedESLint": "pass",
+    "ownedScriptsNodeSyntax": "pass",
+    "fullTypeScript": "pass"
+  },
+  "privateArtifacts": "Failure trace archives remain private local diagnostic evidence; raw capabilities/setup/key files are not included in this receipt.",
+  "postRunRunnerTightening": {
+    "change": "Ninth publication assertion requires exactly HTTP409 rather than any4xx.",
+    "basis": "Actual completed maximum receipt already observed409.",
+    "verification": "Scoped ESLint and Node syntax passed; no browser or maximum repeat.",
+    "changesProductOrFixtureValues": false
+  },
+  "testedBundleScope": "Native and maximum evidence applies to main-B6RPjm_L.js, view-D8s8vlDj.js, private-api-CFdAL8mg.js and private-api-D2iD0auj.css. Subsequent canonical HTTP80 page-origin validation and finite80s publish/revoke helper changes are not covered by these completed runs; root schedules separate full130 native verification after rebuilding."
+}

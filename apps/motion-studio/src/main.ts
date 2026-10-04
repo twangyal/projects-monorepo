@@ -8,6 +8,7 @@ import { exportGif } from './export.ts';
 import { serializeRawRecord, type RawRecord } from './storage.ts';
 import { ProjectLibrary, SavedProjectConflict, LibraryReadFailure, type LibraryHead, type LibraryCommit, type LoadedProject } from './library-storage.ts';
 import { MAX_LIBRARY_HEAD_BYTES } from './library-model.ts';
+import { createPrivateLinks } from './private-links.ts';
 import { createLibraryView } from './library-view.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -31,7 +32,7 @@ app.innerHTML = `
 <div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
 </section>
 <aside class="pose-panel panel"><div class="panel-heading"><h3>Strike a pose</h3><span>02</span></div><div class="tool-content"><label class="field">Layer name<input id="layer-name" maxlength="40"></label><p id="pose-state" class="pose-state">Frame 1 · saved pose</p><div class="pair"><label class="field">Position X<input id="pose-x" type="text" inputmode="decimal" min="-640" max="1280" step="1"></label><label class="field">Position Y<input id="pose-y" type="text" inputmode="decimal" min="-360" max="720" step="1"></label></div><label class="field">Scale<input id="pose-scale" type="text" inputmode="decimal" min="0.1" max="4" step="0.05"></label><label class="field">Rotation (degrees)<input id="pose-rotation" type="text" inputmode="decimal" min="-720" max="720" step="5"></label><label class="field">Opacity<input id="pose-opacity" type="text" inputmode="decimal" min="0" max="1" step="0.05"></label><label class="field">Motion to next pose<select id="easing"><option value="linear">Steady / linear</option><option value="ease">Ease in & out</option><option value="hold">Hold this pose</option></select></label><p id="pose-draft-status" role="status" hidden></p><button id="discard-pose-edits" class="full" hidden>Discard pose edits</button><button id="set-key" class="primary full">Set keyframe</button><button id="remove-key" class="text-button">Remove this keyframe</button><p class="hint">Changing pose values sets a key at this frame. The first key always stays. Drawing edits the active held drawing until its next boundary.</p><div class="note"><span aria-hidden="true">✦</span><strong>Start with two poses.</strong><p>Set a pose at the start. Scrub near the end, move your layer, then press play.</p></div></div></aside>
-</div><footer><span>Made here. Saved here. Your artwork stays in this browser.</span><span>Layer motion · no account required</span></footer></main>`;
+</div><section id="private-links" class="panel" role="region" aria-label="Private snapshot links"></section><footer><span>Local projects stay in this browser. Private sharing is optional and explicit.</span><span>Layer motion · no account required</span></footer></main>`;
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
 const canvas = el<HTMLCanvasElement>('stage'), ctx = canvas.getContext('2d')!;
@@ -84,6 +85,14 @@ const tweens = createTweenWorkspace(el('tween-workspace'), {
   },
 });
 el('make-tween').addEventListener('click', () => tweens.open());
+const privateLinks = createPrivateLinks(el('private-links'), {
+  state: () => ({ generation, intent: operation, locked: busy || exporting || !!gesture || restorePending || retryPending || libraryPending, drafts: drafts.size > 0 || tweens.unsaved }),
+  capture: () => {
+    if (busy || exporting || gesture || restorePending || retryPending || libraryPending || !admitDrafts()) return null;
+    if (tweens.unsaved) { tell('Apply or discard in-between scratch before publishing. The captured project excludes it.', true); return null; }
+    pause(); return { project: validateProject(project), generation, intent: operation };
+  },
+});
 
 function tell(text: string, error = false) { el('message').textContent = text; el('message').hidden = !text; el('message').classList.toggle('error', error); }
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'This operation could not be completed.'; }
@@ -171,6 +180,7 @@ async function flushActiveSave(): Promise<boolean> {
 }
 function draw() { renderFrame(ctx, gesture?.preview || project, frame, assets); canvas.dataset.frame = String(frame); }
 function controls() {
+  privateLinks.update();
   const locked = busy || exporting || !!gesture;
   el('recovery-panel').hidden = restorePending || !recoveryBlocked;
   for (const id of ['recovery-download', 'recovery-retry', 'replace-saved-project']) el<HTMLButtonElement>(id).disabled = locked || retryPending;
@@ -517,6 +527,7 @@ async function prepareProject(input: Project): Promise<PreparedProject> {
   return { project: preparedHistory.current, history: preparedHistory, assets: preparedAssets };
 }
 function publishProject(prepared: PreparedProject, id: string | null, origin: Lineage['origin'], demo = false) {
+  privateLinks.clearSetup();
   pause(); tweens.close(); closeAssets(assets); assets = prepared.assets;
   history = prepared.history; project = prepared.project; lineage = { id, origin };
   selected = project.layers.at(-1)?.id || ''; frame = 0; isDemo = demo; initialDemo = false;

@@ -1,0 +1,86 @@
+{
+  "issue": 110,
+  "scope": "Independent literal PNG and actual Node store/HTTP/TLS tests",
+  "testFile": "apps/motion-studio/tests/private-oracle.test.ts",
+  "distinctCases": 12,
+  "passingCases": 12,
+  "singleCombinedAllGreenClaim": false,
+  "firstFullIntegration": {
+    "passed": 11,
+    "failed": 1,
+    "milliseconds": 4586.414768,
+    "failure": "Test subprocess --input-type=module -e was inherited by file-based worker and rejected by Node. Not production CLI behavior."
+  },
+  "correction": {
+    "behavior": "Use owned actual .mjs entry instead of eval/input-type; matching argument moves from argv[1] to argv[2].",
+    "firstEntryCorrection": "Wrong positional argv after replacing eval with file was corrected; second failure retained.",
+    "focusedPassed": 1,
+    "milliseconds": 404.800839
+  },
+  "earlyEvidence": {
+    "firstEightCases": "6 failures against deliberate stubs, 2 negative-only passes. Valid base-first controls added.",
+    "laterTenCases": "3 passed, 7 failed while implementation landed. Two PNG positive failures were a canonical property-order fixture assumption, not decoder defects.",
+    "canonicalCorrection": "Compare independently authored full project/image bytes and hash canonical returned bytes; no production helpers generate expected fields.",
+    "admissionSevenPassedMilliseconds": 3712.862487
+  },
+  "coverage": [
+    "15 PNG color/depth dialects plus Adam7 and 1x1 empty passes",
+    "Sub/Up/Average/Paeth rows",
+    "800x800 RGBA16 exact 5120800 inflated bytes",
+    "4096 chunks accepted and +1 refused",
+    "Full zlib EOF/trailing/second stream, CRC/APNG/order and fatal JSON admission",
+    "Real parent-held flock across separate Node processes and actual close",
+    "Indexed hash/missing/symlink/unknown children preserve original records/sentinels",
+    "Unindexed crash file cleanup and permanent revoke across reopen; previously held authorized FD remains readable",
+    "Wrong setup rejected before incomplete max-body consumption; cookie/setup/revoke cannot read",
+    "Duplicate Host/query/cross-origin/framing/forwarded/pipeline refusal",
+    "Normal test TLS CA verification, wrong trust/name refusal, sixteen raw handshakes and seventeenth refusal"
+  ],
+  "limitations": [
+    "No browser or new build run; existing packaged dist used only for service initialization.",
+    "No physical-device or RSS claim.",
+    "No full single-invocation green claim after isolated launcher correction; root owns later combined gate."
+  ],
+  "logs": [
+    {
+      "path": "/tmp/motion110-private-oracle-red.log",
+      "bytes": 5650,
+      "sha256": "a542ed47fc8fddcd8168f4ebe51b153a69986fb58f294b1bb9b4a30ae7692188"
+    },
+    {
+      "path": "/tmp/motion110-private-oracle-frozen-red.log",
+      "bytes": 11169,
+      "sha256": "946ea3015e53443451f96d29f04bcc7eb4b246968cbb5afac0384e8c283e8126"
+    },
+    {
+      "path": "/tmp/motion110-private-admission-oracle.log",
+      "bytes": 931,
+      "sha256": "94dcce86a4213b9dda4965cf3d108b35319f18054db1bdd9a8a15df393ee3e6b"
+    },
+    {
+      "path": "/tmp/motion110-private-oracle-first-integration.log",
+      "bytes": 2852,
+      "sha256": "442249a0bceaf30d9319e281f617e34806740fd0f3da00e67ea972b81cc212f6"
+    },
+    {
+      "path": "/tmp/motion110-private-lock-corrected.log",
+      "bytes": 1278,
+      "sha256": "9b6fd2ac415e07d9a9551f942f43b583301c36ab62c9a8afc2f6fad91ef188e1"
+    },
+    {
+      "path": "/tmp/motion110-private-lock-final.log",
+      "bytes": 222,
+      "sha256": "cecda0ee19733dea21332a8edc35f795f93ab6ca9af9afebfbb7e731734ec1ca"
+    },
+    {
+      "path": "/tmp/motion110-private-oracle-lint.log",
+      "bytes": 208,
+      "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+    },
+    {
+      "path": "/tmp/motion110-private-oracle-final-types.log",
+      "bytes": 208,
+      "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+    }
+  ]
+}

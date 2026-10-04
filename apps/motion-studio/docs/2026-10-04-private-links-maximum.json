@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 1,
+  "scope": "Eight exact canonical maximum private publications with actual HTTPS/Chromium/PNG/GIF; original simple padded PNG fixtures, no physical device or RAM claim",
+  "checks": [
+    "Eight original 6291624-byte complete projects passed real browser publication, service image admission, durable commit and exact viewer download.",
+    "Same-port whole CLI process restart preserves all eight original IDs/read capabilities and exact project bytes.",
+    "One representative maximum publication: four independently decoded PNG boundaries and every96 GIF frame/pixel/centisecond delay. Other seven verified byte-exact projects, not seven more media exports.",
+    "All eight original revoke capabilities remain valid after restart; all eight revocations remain refused after a second whole process restart."
+  ],
+  "publications": [
+    {
+      "index": 0,
+      "id": "b4835c73-cf41-4136-aada-4b4c79ee2a90",
+      "bytes": 6291624,
+      "sha256": "a8fed713ce163ca8ae3b27bfb231a5f772dc2abd29a786e5c6d717e94b06e1c8",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 1,
+      "id": "b9f65bc3-7aa0-4d62-8c0d-aefe9e3830e2",
+      "bytes": 6291624,
+      "sha256": "a86f2171094b1f4d8e21fd90ccf0c73f644bdd21c53c9069d058d71cc2b2ebae",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 2,
+      "id": "b0b5952d-ada6-471b-94ee-f1e29f12570e",
+      "bytes": 6291624,
+      "sha256": "537b033bcf9e60024b4dc677d350ad3b5fc2c99f38a779b88228677e50eead4b",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 3,
+      "id": "a7738241-4387-4a71-a235-f48470634ecc",
+      "bytes": 6291624,
+      "sha256": "3350ad20cc261a3a2cf29d366b3ff972821128f712f64d53c2d7b20efa80657b",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 4,
+      "id": "f1ef8021-b027-48d9-a470-98a52b4def7f",
+      "bytes": 6291624,
+      "sha256": "9c3afb998e556831e255a3126b078fc031cf340a09e029556afb854b0709ea0b",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 5,
+      "id": "0f5de60a-6577-47e0-aefd-802e07be8a1c",
+      "bytes": 6291624,
+      "sha256": "26dcb49a6ad77da992b9f9e0792d1d12d7adf36ad079091a1e3f11ad3269f947",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 6,
+      "id": "02396a28-0482-40b4-ac8e-8b751da35ff5",
+      "bytes": 6291624,
+      "sha256": "9149bb9f97709aefd1a6891cc84a83f4b6137f128d932c6bcbd8cd61c8cabf20",
+      "beforeRestart": true,
+      "afterRestart": true
+    },
+    {
+      "index": 7,
+      "id": "289f89ad-6100-4e1f-9ac4-425e4999c271",
+      "bytes": 6291624,
+      "sha256": "ff85dc8f6a10f4b9607306cebf7f3abcf19e3ab50a303685d6eac8186fb809f0",
+      "beforeRestart": true,
+      "afterRestart": true
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "98253a2a0a9f67d928bcef0e84dba1f13322d30ce28dc2af24f80bbec9a233bd"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "a8fed713ce163ca8ae3b27bfb231a5f772dc2abd29a786e5c6d717e94b06e1c8"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "a8fed713ce163ca8ae3b27bfb231a5f772dc2abd29a786e5c6d717e94b06e1c8"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-1.motion.json",
+      "bytes": 6291624,
+      "sha256": "cde2c8e6ef33c4d0c442c1abbe399712d762a8bc92f8b591ab3a6ba5dc6d240b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-1.motion.json",
+      "bytes": 6291624,
+      "sha256": "a86f2171094b1f4d8e21fd90ccf0c73f644bdd21c53c9069d058d71cc2b2ebae"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-1.motion.json",
+      "bytes": 6291624,
+      "sha256": "a86f2171094b1f4d8e21fd90ccf0c73f644bdd21c53c9069d058d71cc2b2ebae"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-2.motion.json",
+      "bytes": 6291624,
+      "sha256": "1adcc8023395d6d42d4dcd5ea99db008a5d3cbed07401f51d458108908768be8"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-2.motion.json",
+      "bytes": 6291624,
+      "sha256": "537b033bcf9e60024b4dc677d350ad3b5fc2c99f38a779b88228677e50eead4b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-2.motion.json",
+      "bytes": 6291624,
+      "sha256": "537b033bcf9e60024b4dc677d350ad3b5fc2c99f38a779b88228677e50eead4b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-3.motion.json",
+      "bytes": 6291624,
+      "sha256": "5f5236c3d3f7d4e0930347bc78551deae4b9ed011f7f2ad529b29afafb7e760f"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-3.motion.json",
+      "bytes": 6291624,
+      "sha256": "3350ad20cc261a3a2cf29d366b3ff972821128f712f64d53c2d7b20efa80657b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-3.motion.json",
+      "bytes": 6291624,
+      "sha256": "3350ad20cc261a3a2cf29d366b3ff972821128f712f64d53c2d7b20efa80657b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-4.motion.json",
+      "bytes": 6291624,
+      "sha256": "63dfe343633c10565ed98c0158af4e7c47331d3070c8e98627cfc50e0c2efc71"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-4.motion.json",
+      "bytes": 6291624,
+      "sha256": "9c3afb998e556831e255a3126b078fc031cf340a09e029556afb854b0709ea0b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-4.motion.json",
+      "bytes": 6291624,
+      "sha256": "9c3afb998e556831e255a3126b078fc031cf340a09e029556afb854b0709ea0b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-5.motion.json",
+      "bytes": 6291624,
+      "sha256": "60c77209517f5dc425953e18b99019d8cf8aee86cdeb7d3acaaa0814f24bb7ab"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-5.motion.json",
+      "bytes": 6291624,
+      "sha256": "26dcb49a6ad77da992b9f9e0792d1d12d7adf36ad079091a1e3f11ad3269f947"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-5.motion.json",
+      "bytes": 6291624,
+      "sha256": "26dcb49a6ad77da992b9f9e0792d1d12d7adf36ad079091a1e3f11ad3269f947"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-6.motion.json",
+      "bytes": 6291624,
+      "sha256": "7dd1baeae6a64dbd6cf52f1d98c6f41639c4d989cc94ae91cc441b3cdc3ecd80"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-6.motion.json",
+      "bytes": 6291624,
+      "sha256": "9149bb9f97709aefd1a6891cc84a83f4b6137f128d932c6bcbd8cd61c8cabf20"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-6.motion.json",
+      "bytes": 6291624,
+      "sha256": "9149bb9f97709aefd1a6891cc84a83f4b6137f128d932c6bcbd8cd61c8cabf20"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/original-7.motion.json",
+      "bytes": 6291624,
+      "sha256": "213e29df39484c2f399efc454fa8e668c140cbea482069231103789d031bf743"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/committed-7.motion.json",
+      "bytes": 6291624,
+      "sha256": "ff85dc8f6a10f4b9607306cebf7f3abcf19e3ab50a303685d6eac8186fb809f0"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/viewed-7.motion.json",
+      "bytes": 6291624,
+      "sha256": "ff85dc8f6a10f4b9607306cebf7f3abcf19e3ab50a303685d6eac8186fb809f0"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-0.motion.json",
+      "bytes": 6291624,
+      "sha256": "a8fed713ce163ca8ae3b27bfb231a5f772dc2abd29a786e5c6d717e94b06e1c8"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-1.motion.json",
+      "bytes": 6291624,
+      "sha256": "a86f2171094b1f4d8e21fd90ccf0c73f644bdd21c53c9069d058d71cc2b2ebae"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-2.motion.json",
+      "bytes": 6291624,
+      "sha256": "537b033bcf9e60024b4dc677d350ad3b5fc2c99f38a779b88228677e50eead4b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-3.motion.json",
+      "bytes": 6291624,
+      "sha256": "3350ad20cc261a3a2cf29d366b3ff972821128f712f64d53c2d7b20efa80657b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-4.motion.json",
+      "bytes": 6291624,
+      "sha256": "9c3afb998e556831e255a3126b078fc031cf340a09e029556afb854b0709ea0b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-5.motion.json",
+      "bytes": 6291624,
+      "sha256": "26dcb49a6ad77da992b9f9e0792d1d12d7adf36ad079091a1e3f11ad3269f947"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-6.motion.json",
+      "bytes": 6291624,
+      "sha256": "9149bb9f97709aefd1a6891cc84a83f4b6137f128d932c6bcbd8cd61c8cabf20"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/restarted-7.motion.json",
+      "bytes": 6291624,
+      "sha256": "ff85dc8f6a10f4b9607306cebf7f3abcf19e3ab50a303685d6eac8186fb809f0"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-frame-0.png",
+      "bytes": 6988,
+      "sha256": "795a309a616a9a91663b4ea9cdde95be4f0d40fe846f2ce6f00bbb6387f2de14"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-frame-47.png",
+      "bytes": 7006,
+      "sha256": "8a38e7b825f6786319b29755ea3cadee33833641b29f73cd7f1fe5b2c6c5d4f8"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-frame-48.png",
+      "bytes": 7005,
+      "sha256": "573bf49f08182749ad0f798532d38be45fc109d85a0f1bec4de6d437218354f6"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-frame-95.png",
+      "bytes": 6983,
+      "sha256": "550b1b3f3d84baae22402b1daa46f3f56c9974ca5c4d75d19891466917a5ef93"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-96-frames.gif",
+      "bytes": 122817,
+      "sha256": "b29784940410d3b431db50173640252519f4baaaa469cc8d2e99e86fc834d525"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-desktop.png",
+      "bytes": 48253,
+      "sha256": "b41bab4c20c303c778eaec60e467257ade3bbcf3f726f6fb0b3b3799eee3ac0b"
+    },
+    {
+      "path": "/workspace/motion110-maximum-native-second/maximum-390.png",
+      "bytes": 43114,
+      "sha256": "722a4ac592511ae628398cb48d0844dcb6344232816dc558eac35eb855932296"
+    }
+  ],
+  "servicePids": [
+    723757,
+    723998,
+    724032
+  ],
+  "browserPids": [
+    723772
+  ],
+  "trust": {
+    "certificateSha256": "11ee0f14f7f16ab9defab371681b30635793210d4b4a17107d0a83d46c4ef9c5",
+    "fixtureSpki": "gZYPvOdL1EuOxSDONMyDauqZBT+AIAX6XZvGd4lxUzY=",
+    "strictNodeCaReadiness": true,
+    "blanketIgnoreHttpsErrors": false,
+    "browserVersion": "151.0.7922.173"
+  },
+  "canonicalization": "Literal source key order differs from existing validator canonical order; every native committed backup and viewer download must be6291624 bytes, deep-equal the original independent graph, and byte-identical to each other.",
+  "ninthRefusalStatus": 409,
+  "gif": {
+    "frames": 96,
+    "totalDelayMs": 8000,
+    "encodeDownloadMs": 1068.0548439999984,
+    "path": "/workspace/motion110-maximum-native-second/maximum-96-frames.gif",
+    "bytes": 122817,
+    "sha256": "b29784940410d3b431db50173640252519f4baaaa469cc8d2e99e86fc834d525"
+  },
+  "result": "passed",
+  "allObservedPidsExited": true,
+  "wallMs": 57851.963037,
+  "firstAttempt": {
+    "result": "failed",
+    "milliseconds": 6169.964263999999,
+    "receipt": "/workspace/motion110-maximum-native-first/verification.json",
+    "classification": "Frozen literal source property order differed from the existing canonical validator output; saved artifacts from the second attempt prove key-order only, identical values/PNG bytes and unchanged exact byte count."
+  },
+  "sourceBundleScope": "main-B6RPjm_L.js / view-D8s8vlDj.js / private-api-CFdAL8mg.js; before subsequent client HTTP80/deadline handling. Rendering/model/server payload logic is unchanged.",
+  "visualReview": "Root inspected the real 390px maximum viewer screenshot; controls and artwork fit without horizontal overflow."
+}

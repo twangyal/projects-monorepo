@@ -1,10 +1,10 @@
 # Motion Studio
 
-A local drawing and animation workspace: make original freehand artwork, create independent held drawings, review geometric in-betweens, combine artwork with layer poses and imported images, and export a GIF. Keep up to eight independently editable projects in your browser and download portable backups. AI assistance and online saving/private sharing links are future work.
+A local drawing and animation workspace: make original freehand artwork, create independent held drawings, review geometric in-betweens, combine artwork with layer poses and imported images, and export a GIF. Keep up to eight independently editable projects in your browser and download portable backups. An optional local service publishes immutable private snapshot links for viewing, downloads and explicit local copies. AI assistance and live synchronization remain future work.
 
 ## Run
 
-Use Node.js **22.18+** and npm; CI uses Node 24. From the repository root:
+Use Node.js **24+** and npm; CI uses Node 24. From the repository root:
 
 ```sh
 cd apps/motion-studio
@@ -88,9 +88,58 @@ The original single-project record is preserved during the library upgrade; **Do
 
 Regularly download **Save project file** (`.motion.json`) for an editable backup outside browser storage. It remains plain schema-2 Project JSON with every drawing boundary and embedded image; library IDs and wrappers are not added to portable files. **Open project file** validates the model and every image before adding a new entry. Select **Replace current project** to explicitly replace editable work while retaining its library identity; in protected recovery this changes memory only until deliberate saved-copy replacement succeeds. Genuine schema-1 projects migrate into one first drawing per drawing layer with their original appearance and poses. The 168-byte compatibility allowance covers the maximum eight legacy drawing wrappers. Older app versions reject schema 2 and the upgraded database instead of silently losing artwork.
 
-Browser data can be cleared or become unavailable. There is no account backup, online synchronization or private hosted link.
+Browser data can be cleared or become unavailable. The optional private-link service below stores only snapshots you explicitly publish; it does not synchronize browser edits or provide an account backup.
 
 **Save frame PNG** exports the captured committed frame, including its held drawing and opaque stage background. A later edit, frame change or page departure retires a pending PNG download; it cannot acquire a new filename or frame from newer work. **Export animation** renders every frame through the same renderer as the preview, then encodes an infinitely looping GIF with a **fixed 256-color palette**. Colors and gradients can differ from the full-color PNG/preview; GIF is not a lossless archival format. Individual GIF delays alternate between 80 and 90 ms to approximate 12 fps, with total duration rounded to hundredths of a second. Export is limited to 30 seconds of processing and 32 MiB of encoded output.
+
+
+## Private snapshot links
+
+The optional service lets an operator publish a captured committed animation and send a private viewing link. Recipients can play it, export PNG/GIF/project files, or explicitly **Save as new local project** and then **Open local studio**. Later edits do not change an existing publication. Local library IDs, history and unfinished editor/tween drafts are excluded. Finish or discard pending drafts before publishing.
+
+Keep using the static site when you do not need sharing. An unavailable service disables publishing only; drawing, local saves, imports and exports remain available.
+
+The service requires Linux, `/proc/self/fd`, `flock` (usually `util-linux`), Node 24 and an existing production build. It uses a separate private data directory. From this project directory:
+
+```sh
+npm ci
+npm run build
+# Create a dedicated private operator configuration directory once:
+install -d -m 700 /absolute/private/motion-config
+umask 077
+openssl rand -hex 32 > /absolute/private/motion-config/setup-token
+chmod 600 /absolute/private/motion-config/setup-token
+npm run serve -- --data-dir /absolute/private/motion-snapshots --port 8770 \
+  --setup-token-file /absolute/private/motion-config/setup-token
+```
+
+Open `http://127.0.0.1:8770` on the same computer. Enter the setup key only in **Private snapshot links** when publishing. The key is creation authority; it grants no ability to view or revoke another snapshot. The page clears it when dispatching publication and never saves it in browser storage. Keep it private; distribute viewing links to recipients instead.
+
+For other devices on a trusted private network, use HTTPS with a certificate whose SAN covers the exact chosen address or DNS name, and a CA chain trusted normally by each browser. Configure local DNS and trust outside this application. A DNS origin must resolve to the exact configured private IPv4 address. For example, with an operator-owned certificate and private key:
+
+```sh
+chmod 600 /absolute/private/motion-config/server-key.pem
+npm run serve -- --data-dir /absolute/private/motion-snapshots --port 8770 \
+  --bind 192.168.1.20 --origin https://motion.example.test:8770 \
+  --tls-cert /absolute/private/motion-config/server-cert.pem \
+  --tls-key /absolute/private/motion-config/server-key.pem \
+  --setup-token-file /absolute/private/motion-config/setup-token
+```
+
+Supply all four HTTPS options together. Only explicit canonical loopback or RFC1918 IPv4 binds are accepted; wildcard/public/IPv6 addresses, reverse proxies and forwarded origins are unsupported. The exact configured origin is the link origin and required request authority. TLS configuration and the listener are checked before the store is opened. Private key and setup files must be owned by the service user, regular nonsymlink files with mode 0600. No automatic certificate installation or trust bypass is provided.
+
+A publication returns two separate links. The **viewing link** allows the captured project to be read; the **revocation link** allows only explicit revocation. Treat both as private capabilities. The viewer removes their fragment from the address bar before fetching and keeps authority in page memory only; reloading requires the original link. Credentials never enter downloaded project/media files. Revocation stops later authorized reads, including after a service restart, but cannot recall a copy already downloaded or a response already authorized.
+
+Publishing and revocation have an 80-second browser deadline covering the whole exchange; cancel or timeout never replays the command. A lost publication response can mean the snapshot was committed even though its links were not received. Do not automatically retry. The operator can inspect stored publication IDs/titles offline and revoke a chosen ID while the service is stopped; these commands acquire the same store lock and print no capabilities:
+
+```sh
+npm run serve -- --data-dir /absolute/private/motion-snapshots --inspect
+npm run serve -- --data-dir /absolute/private/motion-snapshots --revoke-id UUID
+```
+
+The store holds at most eight active publications, each at most 6,291,624 canonical UTF-8 bytes with every embedded image. Eight maximum payloads total 50,332,992 bytes plus index and temporary staging. Revoke an old publication explicitly to free a slot. Unknown/corrupt stored data refuses startup and remains protected; there is no automatic empty reset. Back up the entire stopped private directory securely if needed. The service never lists publications over HTTP.
+
+Network admission is bounded to 16 connections before TLS work, one publishing body/decode worker, a 5-second TLS handshake, 10-second headers, 15-second body, 30-second decode/response phases and 75-second connection lifetime. Headers are limited to 16 KiB and 64 fields. PNG admission validates complete compressed data and actual pixels before publication; these bounds are capacities, not peak-memory or general speed guarantees. No accounts, collaboration, automatic cloud upload, paid service or deployment is included. Physical two-device trust and browser acceptance require a separate real hardware check.
 
 ## Browser requirements
 
@@ -212,3 +261,25 @@ all 121 browser cases**, plus lint, type checking and build. The PR's actual
 synthetic merge has the same source tree; both use Chromium 153.0.8010.12.
 All thirteen project PR workflows pass. The [final CI receipt](docs/2026-10-04-new-project-readiness-final-ci.json)
 preserves checkouts, log hashes and timings alongside the earlier failures.
+
+## Private-link verification (#110)
+
+The optional service retains the existing model, local-library and rendering suites. Independent producer and oracle checks cover complete PNG color/depth/Adam7 admission, bounded zlib output, actual inherited-FD flock ownership, canonical TLS configuration, role-separated read/revoke capabilities, durable commit/revocation ordering, protected corruption and shutdown lock retention. Actual transport tests measure five-second TLS, ten-second header and five-second shutdown branches; other absolute limits are explicit source bounds, not separate wall-clock measurements. The browser mutation deadline uses controlled-clock tests. See the [integration receipt](docs/2026-10-04-private-links-verification.json) and its linked producer/protocol evidence for exact run scopes and initial failures.
+
+The normal-build native gate exercises real HTTPS publication, separate recipient contexts, actual preview/PNG/GIF/project downloads, explicit local copies, stale/cancelled reads, raw-draft protection, capacity, corrupted local data, revocation and whole-service restart. Its first run found a real static-route error: the service rejected Vite's dotted GIF-worker basename. The repaired route serves the worker while preserving traversal and unlisted/private-file refusal. Test-only readiness/status corrections are retained separately in the [native receipt](docs/2026-10-04-private-links-native.json).
+
+Eight independently authored **6,291,624-byte** projects total **50,332,992 bytes** and pass actual browser publication, embedded-PNG admission and byte-exact downloads before and after a full CLI restart. A ninth publication returns 409. Every original revoke capability still works after restart; all eight revoked links remain refused after another restart. Four PNG boundaries and **all 96 frames** of one representative maximum GIF match independent artwork and timing; that 122,817-byte GIF has exactly 8,000 ms of delays. The other seven projects are byte-retention checks, not additional media-export claims. The passing run took 57.85 seconds in this environment. Small original PNGs carry declared ancillary padding to reach the byte boundary; this does not measure complex photographic decoding or peak RAM.
+
+The first maximum attempt compared literal source property order with the existing validator's canonical order. Retained downloads from the corrected run prove identical parsed artwork/image bytes and unchanged exact byte counts; each viewer file is byte-identical to the actual captured editor backup. Original fixtures, first failure, actual artifacts and process cleanup remain in the [maximum receipt](docs/2026-10-04-private-links-maximum.json). That media gate predates the later HTTP-port-80 and bounded-client-exchange refinements; its exact normal bundles are recorded separately from final native/CI validation.
+
+To repeat the actual maximum gate from this project directory after a normal build:
+
+```sh
+npm run build
+MOTION_PRIVATE_OUTPUT_DIR=/tmp/motion-private-acceptance \
+  CHROMIUM_PATH=/path/to/chromium node scripts/smoke_private_links.mjs
+```
+
+The output directory must not exist. The runner creates original inputs, its own ephemeral service/key material and browser contexts, then closes only its own processes. Chromium trusts only the generated fixture SPKI; readiness and independent Node/Python protocol checks use ordinary CA and hostname validation. No production trust bypass is present. A separate [private-interface gate](docs/2026-10-04-private-links-private-interface.json) verifies actual same-host RFC1918 traffic, original capabilities and permanent revocation across two restarts. Physical devices and public hosting remain unverified.
+
+Final local integration passes **204 unit tests and all 130 Chromium cases** in complete invocations, plus ESLint, type checking and the normal production build. The full native run includes all 121 existing editor/storage/media cases and all nine sharing cases, with the final origin/deadline client handling. The first full unit attempt caught an intermediate test-launcher argument correction; no product repair was needed for that failure. Exact published-head CI is pending and will be recorded separately.

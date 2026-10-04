@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "milestone": 110,
+  "scope": "Motion Studio browser private publication and independent captured snapshot viewer",
+  "source": {
+    "src/private-api.ts": {
+      "path": "src/private-api.ts",
+      "bytes": 12988,
+      "sha256": "f7399f99502509ddc83bc6c253293bc6dae68b555dd0f412b7e096dd76118c40"
+    },
+    "src/private-links.ts": {
+      "path": "src/private-links.ts",
+      "bytes": 8545,
+      "sha256": "cb71c0f7a91aa57170d3c62f872fed0de46562b30d7e68cba14d5652b61d395a"
+    },
+    "src/snapshot-view.ts": {
+      "path": "src/snapshot-view.ts",
+      "bytes": 16190,
+      "sha256": "ceaf3fc12d5cbb4ff2a79880e3aa76d8d62bd1b57bf0af5ef08ef1fe940f4e56"
+    },
+    "src/main.ts": {
+      "path": "src/main.ts",
+      "bytes": 73273,
+      "sha256": "a4354dca46d0965e629bdcf4f5bb498a59a89cf5142c779023aa43470283167e"
+    },
+    "src/style.css": {
+      "path": "src/style.css",
+      "bytes": 16436,
+      "sha256": "64bb9e2635a34eac2bb8b9a806fa112cd7157f47f2187b45df919015c81caaf8"
+    },
+    "index.html": {
+      "path": "index.html",
+      "bytes": 690,
+      "sha256": "03e97223e2f5445628e0c68be9de9b231b54c5b395628c5b0b5fc3b0be9fe601"
+    },
+    "view.html": {
+      "path": "view.html",
+      "bytes": 614,
+      "sha256": "cd2c929650bb7c10b5df2e57183da44f543a2546d0491a506afc236ba857f51d"
+    },
+    "tests/private-api.test.ts": {
+      "path": "tests/private-api.test.ts",
+      "bytes": 11512,
+      "sha256": "b94ea51a7a14403dd246accc57d4d0852c817ce131412f4672541fcabd83fd01"
+    }
+  },
+  "checks": [
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "initial public stub red",
+      "tests": 6,
+      "passed": 0,
+      "failed": 6,
+      "milliseconds": 123.81675,
+      "log": {
+        "path": "/tmp/motion110-api-red.log",
+        "bytes": 6012,
+        "sha256": "f80782ac34a967eb19f9d2322b2a71ca62b46d785a7ceeb955f17f4ad596c52c"
+      }
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "first green",
+      "tests": 6,
+      "passed": 6,
+      "milliseconds": 132.052229,
+      "log": {
+        "path": "/tmp/motion110-api-green.log",
+        "bytes": 738,
+        "sha256": "242abf5439786cf8f52ccd21fed1b695c12f03b94cfd0e4b47fe6a575ea07350"
+      },
+      "fixtureCorrections": "Original test compared random layer IDs from a fresh createProject invocation and raw factory property ordering. Corrected to the original captured bytes/semantic body; no authority, hash or limit assertions relaxed."
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "captured publication receipt red",
+      "tests": 7,
+      "passed": 6,
+      "failed": 1,
+      "milliseconds": 148.653994,
+      "log": {
+        "path": "/tmp/motion110-api-receipt-red.log",
+        "bytes": 1451,
+        "sha256": "8de62c012b272ece68f0eea85c4352113aff8fb251067605f888266acb53981b"
+      },
+      "expectedFailure": "Wrong projectBytes/projectSha256 in an otherwise valid 201 publication was not rejected."
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "final green",
+      "tests": 7,
+      "passed": 7,
+      "milliseconds": 138.825536,
+      "log": {
+        "path": "/tmp/motion110-api-final-green.log",
+        "bytes": 823,
+        "sha256": "4b38222e0756c4179f4380c312c4bc1afd2ac05e66b2cfb6b7fb1983bf4638ec"
+      }
+    },
+    {
+      "command": "npm run typecheck",
+      "passed": true,
+      "log": {
+        "path": "/tmp/motion110-browser-typecheck.log",
+        "bytes": 257,
+        "sha256": "2ea552c90246ba10ecd53e9bc502cf816519957f68c5ffef88fd348f368a18df"
+      }
+    },
+    {
+      "command": "npx eslint src/private-api.ts src/private-links.ts src/snapshot-view.ts src/main.ts tests/private-api.test.ts",
+      "passed": true,
+      "log": {
+        "path": "/tmp/motion110-browser-lint.log",
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "actual Motion wire-code review red",
+      "tests": 11,
+      "passed": 7,
+      "failed": 4,
+      "log": {
+        "path": "/tmp/motion110-api-wire-red.log",
+        "bytes": 7160,
+        "sha256": "3f92a784c05b4d7550d7819494415724f89933ef657aa7c4cbed190859cb5104"
+      },
+      "expectedFailure": "Client aliases did not preserve actual capacity/not-found/forbidden/other MotionError codes or their private-safe recovery guidance."
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "actual Motion wire-code green",
+      "tests": 11,
+      "passed": 11,
+      "milliseconds": 136.201945,
+      "log": {
+        "path": "/tmp/motion110-api-wire-green.log",
+        "bytes": 1231,
+        "sha256": "3e20c43e3ccfd75bb6ac24903b129e592d6e6dfb97783155e696f3d7976e91ec"
+      }
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "canonical port80 and aggregate command deadline red",
+      "tests": 14,
+      "passed": 11,
+      "failed": 3,
+      "milliseconds": 194.761716,
+      "log": {
+        "path": "/tmp/motion110-api-deadline-red.log",
+        "bytes": 3861,
+        "sha256": "b5c984eef58f3ff4e66a9ff7d0454bd3577c56c4f626f83f1298a02f828e5131"
+      },
+      "expectedFailure": "Canonical port80 was rejected; both stalled publish fetch and stalled revoke body lacked aggregate completion deadline."
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/private-api.test.ts",
+      "phase": "canonical port80 and aggregate command deadline green",
+      "tests": 14,
+      "passed": 14,
+      "milliseconds": 168.386709,
+      "log": {
+        "path": "/tmp/motion110-api-deadline-green.log",
+        "bytes": 1554,
+        "sha256": "e96c084c4f8421ecd60b261f6f4cd9242c7282b679be065df241a67a318b9751"
+      },
+      "clockBoundary": "Deadline tests advance Node mock setTimeout by80000ms and use real microtask/event-loop completion; they are controlled-clock ownership tests, not80-second wall-clock measurements."
+    },
+    {
+      "command": "npm run typecheck",
+      "phase": "canonical origin and deadline final",
+      "passed": true,
+      "log": {
+        "path": "/tmp/motion110-browser-deadline-typecheck.log",
+        "bytes": 257,
+        "sha256": "2ea552c90246ba10ecd53e9bc502cf816519957f68c5ffef88fd348f368a18df"
+      }
+    },
+    {
+      "command": "npx eslint src/private-api.ts src/private-links.ts src/snapshot-view.ts src/main.ts tests/private-api.test.ts",
+      "phase": "canonical origin and deadline final",
+      "passed": true,
+      "log": {
+        "path": "/tmp/motion110-browser-deadline-lint.log",
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    }
+  ],
+  "behaviors": {
+    "publisher": "Stable controls below the editing workspace; status failure disables only publication. Committed canonical Project2 captured before await; raw fields, gestures and in-between scratch refused before default pointer focus. Setup password has no name/persistence and clears at dispatch, project replacement, close and pagehide. Separate status and request identities. Successful receipt must match captured bytes/hash; returned read/revoke links remain distinct and immutable while newer editor work is kept. Cancel/lost response makes no rollback or automatic replay claim.",
+    "viewer": "Fragment scrub precedes any private request. Exact UUIDv4 plus read OR revoke lower-hex token; unknown/duplicate/overlong fields reject. No credential storage/history/download inclusion. Viewer assets, canvas, frame, playback and export worker are independent. Bounded stream exact Content-Length plus X-Project-SHA256 verified before model/image decoding. Revoke authority never fetches artwork and requires explicit confirmation.",
+    "localCopy": "Save as new local project creates a fresh ProjectLibrary, real read/accept receipt plus bounded media/history preparation, then one new-entry create. A 10-second aggregate deadline and signal retire late native decodes, close assets and close only that owned store. Capacity/corrupt/CAS failure never activates an existing row. Success offers Open local studio without automatic navigation and keeps viewer/downloads. Interrupted write can be uncertain; no automatic create replay.",
+    "lifecycle": "New fragment/pagehide retires fetch/decode/export/native storage and releases owned bitmap/object URLs. Frame PNG captures private render output; GIF uses unchanged shared worker. Publisher status/layout sits below the canvas so asynchronous service copy does not move an owned drawing gesture.",
+    "wireErrors": "All ten actual Motion codes are preserved with browser-local fixed recovery copy; capacity says revoke one, not-found says private link unavailable, forbidden gives deliberate setup re-entry. Server error literals are never echoed and browser imports no server module.",
+    "transport": "Both modes require exact canonical URL.origin and, in a browser, exact location.origin. HTTP loopback port80 omits :80; explicit:80, aliases, noncanonical/zero/oversized ports and foreign origins fail closed.",
+    "commandDeadline": "Publish and revoke bound the entire fetch/stream/receipt/hash exchange to80seconds with a monotonic final check and a child abort signal. The UI caller ownership signal stays live on automatic expiry, so matching catch/finally displays uncertain-completion guidance and unlocks; usercancel/newpage ownership still retires its own work. No retry/replay. Existing10-second read/local-admission deadlines remain unchanged."
+  },
+  "limits": {
+    "projectBytes": 6291624,
+    "controlResponseBytes": 8192,
+    "fragmentCharacters": 128,
+    "jsonDepth": 32,
+    "jsonContainers": 20000,
+    "localProjects": 8,
+    "localAdmissionDeadlineMs": 10000,
+    "frames": 96,
+    "width": 640,
+    "height": 360,
+    "fps": 12,
+    "gifBytes": 33554432,
+    "gifDeadlineMs": 30000,
+    "commandCompletionDeadlineMs": 80000
+  },
+  "boundaries": [
+    "API tests use controlled fetch responses and actual Web Crypto hashes; no browser or TLS/runtime claim from this receipt.",
+    "No build/server/native session, Git or source schema/storage changes by this owner. Root and independent native owners run integration after coherent producer readiness.",
+    "No physical device/network proof, identity/authenticity claim or promise to delete already received copies.",
+    "No private credentials or source filenames are embedded in this receipt."
+  ]
+}

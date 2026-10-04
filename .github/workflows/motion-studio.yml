@@ -33,6 +33,8 @@ jobs:
           cache: npm
           cache-dependency-path: apps/motion-studio/package-lock.json
       - run: npm ci
+      - name: Local private-link transport prerequisites
+        run: sudo apt-get update && sudo apt-get install -y openssl util-linux
       - run: npm run check
       - run: npm run typecheck
       - run: npx playwright install --with-deps chromium

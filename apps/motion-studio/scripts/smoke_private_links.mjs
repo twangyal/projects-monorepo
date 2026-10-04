@@ -1,0 +1,56 @@
+/* global process, Buffer, performance, setTimeout, clearTimeout, URL, URLSearchParams, fetch, Event, document, innerWidth */
+// Run only after the root-owned production build and exclusive browser lease.
+// Actual eight maximum JSON publications; original padded PNGs are not complex-photo/RSS evidence.
+import assert from 'node:assert/strict';
+import { chromium, expect } from '@playwright/test';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, mkdir, writeFile, readFile, chmod, rm, access } from 'node:fs/promises';
+import { createHash, randomBytes, X509Certificate } from 'node:crypto';
+import { createServer } from 'node:net';
+import { request } from 'node:https';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { maximumProject, MAX_BYTES, assertMaximumPng, assertMaximumGif } from './private-links-fixtures.mjs';
+const execute=promisify(execFile),sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+const out=process.env.MOTION_PRIVATE_OUTPUT_DIR;if(!out)throw Error('MOTION_PRIVATE_OUTPUT_DIR must name a new output directory');await mkdir(out,{recursive:false});
+const temp=await mkdtemp(join(tmpdir(),'motion110-maximum-')),key=join(temp,'key.pem'),cert=join(temp,'certificate.pem'),setupPath=join(temp,'setup'),data=join(temp,'library');
+let child,browser;const pids=[],browserPids=[],startTime=performance.now();
+const receipt={schemaVersion:1,scope:'Eight exact canonical maximum private publications with actual HTTPS/Chromium/PNG/GIF; original simple padded PNG fixtures, no physical device or RAM claim',checks:[],publications:[],artifacts:[],servicePids:pids,browserPids};
+const artifact=async(name,bytes)=>{const path=join(out,name);await writeFile(path,bytes);const item={path,bytes:bytes.length,sha256:sha(bytes)};receipt.artifacts.push(item);return item;};
+const stop=async()=>{const old=child;child=undefined;if(!old||old.exitCode!==null)return;const ended=new Promise((done,reject)=>{const timer=setTimeout(()=>{old.kill('SIGKILL');reject(Error('Owned maximum service did not stop'));},10000);old.once('exit',()=>{clearTimeout(timer);done();});});old.kill('SIGTERM');await ended;};
+try{
+ await execute('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','2','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1,DNS:localhost']);await chmod(key,0o600);const setup=randomBytes(32).toString('hex');await writeFile(setupPath,setup+'\n',{mode:0o600});const certificate=await readFile(cert),spki=sha(new X509Certificate(certificate).publicKey.export({type:'spki',format:'der'}));const spkiBase64=Buffer.from(spki,'hex').toString('base64');
+ const port=await new Promise(done=>{const server=createServer();server.listen(0,'127.0.0.1',()=>{const address=server.address();server.close(()=>done(address.port));});}),origin=`https://127.0.0.1:${port}`;
+ const ready=()=>new Promise(done=>{const req=request(origin+'/api/status',{ca:certificate,timeout:1000},response=>{response.resume();done(response.statusCode===200);});req.on('error',()=>done(false));req.on('timeout',()=>req.destroy());req.end();});
+ const start=async()=>{child=spawn(process.execPath,['--experimental-strip-types','server/main.ts','--data-dir',data,'--port',String(port),'--bind','127.0.0.1','--origin',origin,'--tls-cert',cert,'--tls-key',key,'--setup-token-file',setupPath],{cwd:resolve(import.meta.dirname,'..'),stdio:'ignore'});pids.push(child.pid);await expect.poll(ready,{timeout:30000}).toBe(true);};
+ await start();browser=await chromium.launch({...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:[`--ignore-certificate-errors-spki-list=${spkiBase64}`]});const cdp=await browser.newBrowserCDPSession();browserPids.push(...(await cdp.send('SystemInfo.getProcessInfo')).processInfo.filter(p=>p.type==='browser').map(p=>p.id));await cdp.detach();receipt.trust={certificateSha256:sha(certificate),fixtureSpki:spkiBase64,strictNodeCaReadiness:true,blanketIgnoreHttpsErrors:false,browserVersion:browser.version()};
+ const operator=await browser.newContext(),recipient=await browser.newContext(),page=await operator.newPage(),viewer=await recipient.newPage();
+ await page.goto(origin);await expect(page.locator('#project-file')).toBeEnabled();await page.locator('#project-file-action').selectOption('replace');
+ const publications=[];
+ const download=async(selector)=>{const pending=viewer.waitForEvent('download');await viewer.locator(selector).click();const file=await pending;return readFile(await file.path());};
+ for(let i=0;i<8;i++){
+  const project=maximumProject(i),bytes=Buffer.from(JSON.stringify(project));assert.equal(bytes.length,MAX_BYTES);await artifact(`original-${i}.motion.json`,bytes);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#project-file').setInputFiles({name:`original-${i}.motion.json`,mimeType:'application/json',buffer:bytes});await expect(page.locator('#project-title')).toHaveValue(project.title);await expect(page.locator('#save-status')).toHaveText('Saved in this browser');
+  const pendingBackup=page.waitForEvent('download');await page.locator('#backup').click();const editorFile=await pendingBackup,canonical=await readFile(await editorFile.path());await artifact(`committed-${i}.motion.json`,canonical);assert.equal(canonical.length,MAX_BYTES);assert.deepEqual(JSON.parse(canonical.toString()),project);
+  await page.locator('#private-link-setup').fill(setup);await expect(page.locator('#publish-snapshot')).toBeEnabled();const old=await page.locator('#private-view-link').inputValue(),response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/snapshots'&&r.request().method()==='POST');await page.locator('#publish-snapshot').click();assert.equal((await response).status(),201);await expect.poll(async()=>{const value=await page.locator('#private-view-link').inputValue();return value!==old&&/\/view#snapshot=[a-f0-9-]+&read=[a-f0-9]{64}$/.test(value);},{timeout:30000}).toBe(true);
+  const read=await page.locator('#private-view-link').inputValue(),revoke=await page.locator('#private-revoke-link').inputValue();await expect(page.locator('#private-link-setup')).toHaveValue('');const r=new URLSearchParams(new URL(read).hash.slice(1)),d=new URLSearchParams(new URL(revoke).hash.slice(1));assert.equal(r.get('snapshot'),d.get('snapshot'));assert.notEqual(r.get('read'),d.get('revoke'));publications.push({read,revoke,id:r.get('snapshot'),readToken:r.get('read'),revokeToken:d.get('revoke'),project,bytes:canonical});
+  await viewer.goto(read);await expect(viewer.locator('#snapshot-title')).toHaveText(project.title);await expect(viewer.locator('#snapshot-project')).toBeEnabled();const actual=await download('#snapshot-project');await artifact(`viewed-${i}.motion.json`,actual);assert.deepEqual(JSON.parse(actual.toString()),project);assert.equal(actual.length,MAX_BYTES);assert(actual.equals(canonical));receipt.publications.push({index:i,id:r.get('snapshot'),bytes:actual.length,sha256:sha(actual),beforeRestart:true,afterRestart:false});
+ }
+ receipt.canonicalization='Literal source key order differs from existing validator canonical order; every native committed backup and viewer download must be6291624 bytes, deep-equal the original independent graph, and byte-identical to each other.';
+ receipt.checks.push('Eight original 6291624-byte complete projects passed real browser publication, service image admission, durable commit and exact viewer download.');
+ const ninth=await page.evaluate(async({setup,body})=>{const response=await fetch('/api/snapshots',{method:'POST',headers:{'Content-Type':'application/json','X-Motion-Setup-Key':setup},body,credentials:'omit',redirect:'error'});return response.status;},{setup,body:JSON.stringify(maximumProject(8))});assert.equal(ninth,409);receipt.ninthRefusalStatus=ninth;
+ await stop();await start();
+ for(let i=0;i<publications.length;i++){
+  const item=publications[i];await viewer.goto(item.read);await expect(viewer.locator('#snapshot-title')).toHaveText(item.project.title);await expect(viewer.locator('#snapshot-project')).toBeEnabled();const after=await download('#snapshot-project');await artifact(`restarted-${i}.motion.json`,after);assert(after.equals(item.bytes));receipt.publications[i].afterRestart=true;
+ }
+ receipt.checks.push('Same-port whole CLI process restart preserves all eight original IDs/read capabilities and exact project bytes.');
+ const first=publications[0];await viewer.goto(first.read);await expect(viewer.locator('#snapshot-project')).toBeEnabled();
+ for(const frame of[0,47,48,95]){await viewer.locator('#snapshot-frame').evaluate((node,value)=>{node.value=String(value);node.dispatchEvent(new Event('input',{bubbles:true}));},frame);const png=await download('#snapshot-png');await artifact(`maximum-frame-${frame}.png`,png);assertMaximumPng(png,frame);}
+ const gifStart=performance.now(),gif=await download('#snapshot-gif');const gifArtifact=await artifact('maximum-96-frames.gif',gif);receipt.gif={...assertMaximumGif(gif),encodeDownloadMs:performance.now()-gifStart,...gifArtifact};receipt.checks.push('One representative maximum publication: four independently decoded PNG boundaries and every96 GIF frame/pixel/centisecond delay. Other seven verified byte-exact projects, not seven more media exports.');
+ await viewer.screenshot({path:join(out,'maximum-desktop.png'),fullPage:true});await viewer.setViewportSize({width:390,height:844});assert(await viewer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await viewer.screenshot({path:join(out,'maximum-390.png'),fullPage:true});for(const name of['maximum-desktop.png','maximum-390.png']){const bytes=await readFile(join(out,name));receipt.artifacts.push({path:join(out,name),bytes:bytes.length,sha256:sha(bytes)});}
+ for(const item of publications){const status=await viewer.evaluate(async({id,token})=>(await fetch(`/api/snapshots/${id}/revoke`,{method:'POST',headers:{Authorization:`Bearer ${token}`},credentials:'omit',redirect:'error'})).status,{id:item.id,token:item.revokeToken});assert(status>=200&&status<300);}
+ await stop();await start();for(const item of publications){const status=await viewer.evaluate(async({id,token})=>(await fetch(`/api/snapshots/${id}`,{headers:{Authorization:`Bearer ${token}`},credentials:'omit',redirect:'error'})).status,{id:item.id,token:item.readToken});assert.equal(status,404);}receipt.checks.push('All eight original revoke capabilities remain valid after restart; all eight revocations remain refused after a second whole process restart.');
+ receipt.result='passed';await operator.close();await recipient.close();
+}catch(error){receipt.result='failed';receipt.error={name:error instanceof Error?error.name:'Error',message:'Maximum acceptance failed; private diagnostic remains in local process output.'};throw error;}
+finally{await browser?.close();await stop();await rm(temp,{recursive:true,force:true});receipt.allObservedPidsExited=(await Promise.all([...pids,...browserPids].map(async pid=>{try{await access(`/proc/${pid}`);return false;}catch{return true;}}))).every(Boolean);receipt.wallMs=performance.now()-startTime;await writeFile(join(out,'verification.json'),JSON.stringify(receipt,null,2)+'\n');}

@@ -98,11 +98,11 @@ test('pointer cancellation leaves no partial stroke and layers can be reordered 
   expect((await backup(page)).layers).toHaveLength(2);
 });
 
-test('narrow layout supports editing without horizontal overflow, page errors or external requests', async ({ page }) => {
+test('narrow layout supports editing without horizontal overflow, page errors or external requests', async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [], external: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (/^https?:/.test(request.url()) && !request.url().startsWith('http://127.0.0.1:4210/')) external.push(request.url()); });
+  page.on('request', request => { if (/^https?:/.test(request.url()) && !request.url().startsWith(`${baseURL}/`)) external.push(request.url()); });
   await blank(page); await stroke(page);
   await page.getByLabel('Position X', { exact: true }).fill('400'); await page.getByLabel('Position X', { exact: true }).press('Tab');
   await expect(page.getByLabel('Position X', { exact: true })).toHaveValue('400');

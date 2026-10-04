@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const input: Record<string, string> = { main: resolve('index.html') };
+const input: Record<string, string> = { main: resolve('index.html'), view: resolve('view.html') };
 if (process.env.MOTION_TEST_HARNESS === '1') {
   for (const name of ['export', 'media', 'tween', 'library-storage']) {
     const path = resolve(`tests/${name}-harness.html`);

@@ -1,0 +1,350 @@
+{
+  "issue": 110,
+  "version": "0.5.0",
+  "checkedAtUtc": "2026-10-04T21:49:51.366971+00:00",
+  "conclusion": "Complete final local gates passed:204 units,130 native cases,lint,typecheck,normal production build; published-head CI pending.",
+  "firstRootGate": {
+    "tests": 193,
+    "passed": 192,
+    "failed": 1,
+    "milliseconds": 27675.409353,
+    "log": {
+      "path": "/tmp/motion110-root-check-first.log",
+      "bytes": 20675,
+      "sha256": "0791e678af2cb1321c485caf80225b9efc62f605dc28f6f3d5fc39ad58f86a67"
+    },
+    "classification": "Captured the independent fixture file-entry correction before argv moved from eval position 1 to actual file position 2. Production source was not changed for this failure; later suite includes the final nine store cases and eleven API cases."
+  },
+  "completeRootGate": {
+    "tests": 200,
+    "passed": 200,
+    "failed": 0,
+    "milliseconds": 27796.542511,
+    "eslint": "passed",
+    "typecheck": "passed by production build",
+    "productionBuildMilliseconds": 493,
+    "log": {
+      "path": "/tmp/motion110-root-check-final.log",
+      "bytes": 21468,
+      "sha256": "60db641267526004e03687238030c7b2112beb574372f67dff353c8aca569c6f"
+    }
+  },
+  "receipts": {
+    "admission": "2026-10-04-private-links-admission.json",
+    "store": "2026-10-04-private-links-store.json",
+    "transport": "2026-10-04-private-links-transport.json",
+    "protocol": "2026-10-04-private-links-protocol.json",
+    "client": "2026-10-04-private-links-client.json",
+    "private-interface": "2026-10-04-private-links-private-interface.json",
+    "review": "2026-10-04-private-links-review.json",
+    "native": "2026-10-04-private-links-native.json",
+    "maximum": "2026-10-04-private-links-maximum.json"
+  },
+  "normalBuild": [
+    {
+      "path": "apps/motion-studio/dist/assets/gif.worker-Diq5wjQj.js",
+      "bytes": 17777,
+      "sha256": "b663cc5b6da8f0bb0890dfb01cb3d4fc5a7a9edf388eae1ff4d1318e62573506"
+    },
+    {
+      "path": "apps/motion-studio/dist/assets/main-B6RPjm_L.js",
+      "bytes": 72090,
+      "sha256": "17e927f118fa688aaabe8e84d388248a4bc3f508559ec7c2b1014b781e46f8ec"
+    },
+    {
+      "path": "apps/motion-studio/dist/assets/private-api-CFdAL8mg.js",
+      "bytes": 47265,
+      "sha256": "f3b43201fb62d03af7d99b1e0e581aecb1f35e1e476e2ecf033c625f16ea0a77"
+    },
+    {
+      "path": "apps/motion-studio/dist/assets/private-api-D2iD0auj.css",
+      "bytes": 14230,
+      "sha256": "2a92800a28a8b837d95ff48f311557f44a69bd3b804ee71e84292851a744c589"
+    },
+    {
+      "path": "apps/motion-studio/dist/assets/view-D8s8vlDj.js",
+      "bytes": 10443,
+      "sha256": "f0fcc40911fde116cd8b45f921975d05466cb4a91702099edf9077fd542087c2"
+    },
+    {
+      "path": "apps/motion-studio/dist/index.html",
+      "bytes": 875,
+      "sha256": "ec028b5cd6a44f6f1bb6754247200d0ab3e11cd859aaa10116f08528526a2724"
+    },
+    {
+      "path": "apps/motion-studio/dist/view.html",
+      "bytes": 790,
+      "sha256": "bb9bd1867b53438fb4e439a3214f47ad4731600a1b671d8f6609d1108f887060"
+    }
+  ],
+  "limitations": [
+    "Physical devices/public internet deployment not verified.",
+    "Normal Node/Python TLS validates original certificate chain and hostname; native Chromium fixture trust is separately scoped.",
+    "Capacity and actual compressed-image bounds do not establish peak RSS or photographic complexity.",
+    "First-failure scopes and deliberately controlled write/deadline branches remain in individual receipts."
+  ],
+  "ci": {
+    "status": "pending implementation publication"
+  },
+  "nativeFirst": {
+    "passed": 5,
+    "failed": 4,
+    "durationReported": "2.1m",
+    "productFailure": "The service asset allowlist rejected the real gif.worker-Diq5wjQj.js basename, returning 404 and preventing GIF startup.",
+    "fixtureCorrections": [
+      "Publication draft guard was tested as disabled rather than actual activation refusal with zero POSTs and preserved raw data.",
+      "Held read gate must delay only its original request, not the subsequent wrong-capability read.",
+      "Local-copy failures belong to the explicit local-copy status; full-capacity assertion must not match incidental UTF-8 byte text."
+    ],
+    "followUp": "Five affected cases (four failures plus capacity status correction) pending; no artwork/authority/history/data expectations or timeout widened."
+  },
+  "nativeFollowUp": {
+    "passed": 5,
+    "failed": 0,
+    "durationReported": "14.3s",
+    "distinctNewCasesPassingAcrossRetainedRuns": 9,
+    "singleCombinedAllGreenClaim": false,
+    "frontendBuildUnchanged": true,
+    "productRepair": "Startup asset allowlist admits bounded internal-dot filenames such as actual Vite GIF workers, preserving traversal, unlisted path and private-data refusal.",
+    "remaining": "All130 final native passed; maximum prior-normal-build scope retained separately; exact published CI pending."
+  },
+  "postRootGateUnitRegression": {
+    "scope": "One additional actual TLS static-worker regression, RED 404 then GREEN exact bytes/type and negative path checks.",
+    "distinctUnitCasesNow": 201,
+    "full201LocalInvocationClaim": false
+  },
+  "finalFullNative": {
+    "stats": {
+      "startTime": "2026-10-04T21:46:25.508Z",
+      "duration": 100682.828,
+      "expected": 130,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "passed": 130,
+    "failed": 0,
+    "includes": "All original 121 editor/storage/media cases and all nine private-link cases in one invocation. Existing tests retain assertions; two network-origin fixtures now use configured baseURL.",
+    "source": "Final HTTP80 and complete80-second mutating client exchange included; production harness build generated by normal Playwright configuration at isolated port4305.",
+    "port4305Closed": true,
+    "log": {
+      "path": "/tmp/motion110-full-native-first.log",
+      "bytes": 19479,
+      "sha256": "e902dbf01d85ea9c95cd245bebc69a45db63e03d9b0f96ad678e970b5a072772"
+    },
+    "results": {
+      "path": "/tmp/motion110-full-native-results-first.json",
+      "bytes": 144088,
+      "sha256": "3cfaa328954c563ffa3d6c0162d7a9ffbde1239a99aa70386124a04917107232"
+    }
+  },
+  "finalUnits": {
+    "passed": 204,
+    "failed": 0,
+    "milliseconds": 30818.925768,
+    "eslint": "passed",
+    "log": {
+      "path": "/tmp/motion110-final-units-lint.log",
+      "bytes": 20750,
+      "sha256": "026e28fd8b990c4331b6780cf24084776cac0cd58eba0f9d74d3badd584449bd"
+    }
+  },
+  "finalNormalBuild": {
+    "typecheck": "passed",
+    "milliseconds": 425,
+    "log": {
+      "path": "/tmp/motion110-final-normal-build.log",
+      "bytes": 874,
+      "sha256": "4822d6735913ead03379abd4e29016f87c2d06e70fa3b8581818af69fe1138ad"
+    },
+    "artifacts": [
+      {
+        "path": "apps/motion-studio/dist/assets/gif.worker-Diq5wjQj.js",
+        "bytes": 17777,
+        "sha256": "b663cc5b6da8f0bb0890dfb01cb3d4fc5a7a9edf388eae1ff4d1318e62573506"
+      },
+      {
+        "path": "apps/motion-studio/dist/assets/main-BOzKsOaw.js",
+        "bytes": 72090,
+        "sha256": "f96074b1af3f541dfed3c6bf9cb9803f1e544f9a27cc73d855086fe1fcbbf539"
+      },
+      {
+        "path": "apps/motion-studio/dist/assets/private-api-D2iD0auj.css",
+        "bytes": 14230,
+        "sha256": "2a92800a28a8b837d95ff48f311557f44a69bd3b804ee71e84292851a744c589"
+      },
+      {
+        "path": "apps/motion-studio/dist/assets/private-api-DM0CBQEg.js",
+        "bytes": 48048,
+        "sha256": "ba495a86d5b01cdcb1beeb92018eaaaf507712cdfcc923ce5e874e7e8e6faf8b"
+      },
+      {
+        "path": "apps/motion-studio/dist/assets/view-Dlu94r91.js",
+        "bytes": 10443,
+        "sha256": "b9a19f5e700e0a15442942216465c057c3d2e7bac83fef0a271ddffcf68eb29b"
+      },
+      {
+        "path": "apps/motion-studio/dist/index.html",
+        "bytes": 875,
+        "sha256": "3458720d437c3193926127e1bbd0d4b50bf84f3f44098c23d7dae054d9c0cc2d"
+      },
+      {
+        "path": "apps/motion-studio/dist/view.html",
+        "bytes": 790,
+        "sha256": "2672d94e008977b9b5b84bc930c1d26c223ddaad172afa99e94acde312b95341"
+      }
+    ]
+  },
+  "sourceHashes": [
+    {
+      "path": "apps/motion-studio/server/connections.ts",
+      "bytes": 7243,
+      "sha256": "40163a4e2a66c4351c147aaa024bac571688e22b67e26491b08dfbb711b17697"
+    },
+    {
+      "path": "apps/motion-studio/server/http.ts",
+      "bytes": 13736,
+      "sha256": "0ff5a7249907397e1ad7207ddd8377425d524deaa8552aa8d3e2f894aa4afa01"
+    },
+    {
+      "path": "apps/motion-studio/server/main.ts",
+      "bytes": 3428,
+      "sha256": "066890628e2ba6ad400d2acdd3b6c0bd0bc9fa95fe51890e86ca0ff5682bd4b9"
+    },
+    {
+      "path": "apps/motion-studio/server/png-admission.ts",
+      "bytes": 4933,
+      "sha256": "f337486b544ca81d34c0ead6a24cf525bef926d6b720a22b4ceef4052b8d7b0e"
+    },
+    {
+      "path": "apps/motion-studio/server/project-admission.ts",
+      "bytes": 2859,
+      "sha256": "16d73b1ab881c28994b945acbf7f160559cec1c1642a2891545f45a8b53eb3a2"
+    },
+    {
+      "path": "apps/motion-studio/server/project.worker.ts",
+      "bytes": 1200,
+      "sha256": "33ea796e25bbf66666dd61f40f43ec8876e988a1183ac5ecc2f55ef0c5ebb898"
+    },
+    {
+      "path": "apps/motion-studio/server/snapshot-store.ts",
+      "bytes": 16447,
+      "sha256": "77332f3b10eb3a8042f6c430c9860a6126fedaeabccfeb440301edbdea6b6044"
+    },
+    {
+      "path": "apps/motion-studio/server/store-files.ts",
+      "bytes": 5495,
+      "sha256": "e336312401a9bd3fbfc8d05a17dc4ddaf8944fc01a9c404c5e67e6185013d523"
+    },
+    {
+      "path": "apps/motion-studio/server/strict-json.ts",
+      "bytes": 2603,
+      "sha256": "a7e1634cfed1426e855b61210a88420bcba137c988ae69b99fdc68200c12b94d"
+    },
+    {
+      "path": "apps/motion-studio/server/transport.ts",
+      "bytes": 5563,
+      "sha256": "3dcee64047eb0c1fd65e8385e81c94b5eabfd471e987aa6fac5409e0f36d4c10"
+    },
+    {
+      "path": "apps/motion-studio/server/types.ts",
+      "bytes": 4449,
+      "sha256": "70d5aea4aee906d30b5df78582d5534e0519daca7c8eab8c9bfdfec635676a21"
+    },
+    {
+      "path": "apps/motion-studio/src/export.ts",
+      "bytes": 3937,
+      "sha256": "efcfbd1fb5dfbd5b5e57ad6e0b859d55801897785faa565f3f9b2099934f9c89"
+    },
+    {
+      "path": "apps/motion-studio/src/gif.worker.ts",
+      "bytes": 3197,
+      "sha256": "cc57713bfc6fdab2020bd82209b7d9bb1702ebfdeacda7f9fc4d32253a6ab401"
+    },
+    {
+      "path": "apps/motion-studio/src/gifenc.d.ts",
+      "bytes": 414,
+      "sha256": "075e339ba9b618ecac2b42fca7a9489e71feb40fef00c203a04b827fa05fc07c"
+    },
+    {
+      "path": "apps/motion-studio/src/history.ts",
+      "bytes": 1967,
+      "sha256": "f9b8da39214d9196b92760a4fe889808dcd4e5204293ca690f2c7f6fe77b3004"
+    },
+    {
+      "path": "apps/motion-studio/src/images.ts",
+      "bytes": 9935,
+      "sha256": "7f4855569d2ac8d828d0b337876f44918244e0d35ffc3486f58a8ed123234d2e"
+    },
+    {
+      "path": "apps/motion-studio/src/library-model.ts",
+      "bytes": 6084,
+      "sha256": "5299241377896fb47dd9af66f2c96b683dce6e04526913387a3b20d37dd2adb7"
+    },
+    {
+      "path": "apps/motion-studio/src/library-storage.ts",
+      "bytes": 29255,
+      "sha256": "0ff65a01754692da85cff7d9c09df8b652a370ddc5c757a0d83f8ddccd61086e"
+    },
+    {
+      "path": "apps/motion-studio/src/library-view.ts",
+      "bytes": 3190,
+      "sha256": "879b0b705a490df42b9363602b17f8d9b85fdc3ce213925fd194aa4d7986ced3"
+    },
+    {
+      "path": "apps/motion-studio/src/main.ts",
+      "bytes": 73273,
+      "sha256": "a4354dca46d0965e629bdcf4f5bb498a59a89cf5142c779023aa43470283167e"
+    },
+    {
+      "path": "apps/motion-studio/src/model.ts",
+      "bytes": 21036,
+      "sha256": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc"
+    },
+    {
+      "path": "apps/motion-studio/src/private-api.ts",
+      "bytes": 12988,
+      "sha256": "f7399f99502509ddc83bc6c253293bc6dae68b555dd0f412b7e096dd76118c40"
+    },
+    {
+      "path": "apps/motion-studio/src/private-links.ts",
+      "bytes": 8545,
+      "sha256": "cb71c0f7a91aa57170d3c62f872fed0de46562b30d7e68cba14d5652b61d395a"
+    },
+    {
+      "path": "apps/motion-studio/src/render.ts",
+      "bytes": 5810,
+      "sha256": "7f31b3712b1f433feb208e08f76e974c91572f5c9315b7942b7cd584637d4866"
+    },
+    {
+      "path": "apps/motion-studio/src/snapshot-view.ts",
+      "bytes": 16190,
+      "sha256": "ceaf3fc12d5cbb4ff2a79880e3aa76d8d62bd1b57bf0af5ef08ef1fe940f4e56"
+    },
+    {
+      "path": "apps/motion-studio/src/storage.ts",
+      "bytes": 7619,
+      "sha256": "470c7a066e02c19236342b92ce611c1fc107546441b0a66d7033ba5b25876e6d"
+    },
+    {
+      "path": "apps/motion-studio/src/style.css",
+      "bytes": 16436,
+      "sha256": "64bb9e2635a34eac2bb8b9a806fa112cd7157f47f2187b45df919015c81caaf8"
+    },
+    {
+      "path": "apps/motion-studio/src/tween-preview.ts",
+      "bytes": 3810,
+      "sha256": "7f20fb3f743a506b4aae25005d679f295af3387a6ab074fd674ec73664648326"
+    },
+    {
+      "path": "apps/motion-studio/src/tween-view.ts",
+      "bytes": 17718,
+      "sha256": "3a2be2b3e14095cdd7a621256c9ed93f1a44f67ea610059b5d6a8b012101df9d"
+    },
+    {
+      "path": "apps/motion-studio/src/tween.ts",
+      "bytes": 15137,
+      "sha256": "77cff77e772c82dd5ad852c130a440f2f6f25abfc2daaa4cb20b83b395e9bfc3"
+    }
+  ]
+}
