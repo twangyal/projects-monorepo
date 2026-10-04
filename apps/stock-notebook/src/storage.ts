@@ -80,9 +80,11 @@ export class NotebookStore {
     return new Promise((resolve, reject) => {
       let tx: IDBTransaction | undefined;
       let settled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let timeoutError: Error | undefined;
       const finish = (error: Error | null, result?: T) => {
         if (settled) return;
-        settled = true; this.#cancellations.delete(cancel); this.#closeConnection(db);
+        settled = true; clearTimeout(timer); this.#cancellations.delete(cancel); this.#closeConnection(db);
         if (error) reject(error); else resolve(result!);
       };
       const cancel = () => {
@@ -93,8 +95,18 @@ export class NotebookStore {
         this.#assertOpen();
         tx = db.transaction(STORE, mode);
         this.#cancellations.add(cancel);
-        tx.onabort = () => finish(storageError(this.#closed ? 'is closed' : 'could not complete the transaction'));
+        tx.onabort = () => finish(timeoutError ?? storageError(this.#closed ? 'is closed' : 'could not complete the transaction'));
         tx.onerror = () => { /* Native abort reports failure after rollback. */ };
+        timer = setTimeout(() => {
+          if (settled) return;
+          timeoutError = storageError('transaction did not respond; pending work was aborted');
+          try { tx!.abort(); }
+          catch {
+            // InvalidState means native completion already won the race. Its
+            // terminal event must report the real outcome, including a commit.
+            timeoutError = undefined;
+          }
+        }, 10000);
         const readResult = action(tx.objectStore(STORE));
         tx.oncomplete = () => {
           try { finish(null, readResult()); } catch { finish(storageError('could not read the saved record')); }
