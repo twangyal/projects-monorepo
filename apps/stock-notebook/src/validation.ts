@@ -80,7 +80,7 @@ function localAddress(host: string): boolean {
   }
   return false;
 }
-function filingUrl(value: unknown): string | null {
+export function validateSourceUrl(value: unknown): string | null {
   if (value === null) return null;
   requireValue(typeof value === 'string' && [...value].length <= LIMITS.urlCharacters && value.length > 0, 'Supplied source URL exceeds supported bounds.');
   validateUnicode(value);
@@ -109,7 +109,7 @@ export function validateCompany(value: unknown, today: string): Company {
   }
   return { ticker, name: validateText(row.name, LIMITS.nameCharacters), sector: validateText(row.sector, LIMITS.sectorCharacters),
     currency: currency(row.currency), fiscalDate, revenue: amounts.revenue, priorRevenue: amounts.priorRevenue,
-    netIncome: amounts.netIncome, debt: amounts.debt, equity: amounts.equity, filingUrl: filingUrl(row.filingUrl), sourceLine: row.sourceLine };
+    netIncome: amounts.netIncome, debt: amounts.debt, equity: amounts.equity, filingUrl: validateSourceUrl(row.filingUrl), sourceLine: row.sourceLine };
 }
 export function validateDataset(value: unknown, today: string): Dataset {
   validateToday(today);

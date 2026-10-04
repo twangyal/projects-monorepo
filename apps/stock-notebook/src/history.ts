@@ -3,8 +3,8 @@ import { validateNotebook } from './model.ts';
 
 interface Entry { json: string; bytes: number }
 function entry(notebook: Notebook): Entry {
-  const { title, query, screen, watchlist, comparison, notes } = notebook;
-  const json = JSON.stringify({ title, query, screen, watchlist, comparison, notes } satisfies EditState);
+  const { title, query, screen, watchlist, comparison, notes, briefs } = notebook;
+  const json = JSON.stringify({ title, query, screen, watchlist, comparison, notes, briefs } satisfies EditState);
   return { json, bytes: new TextEncoder().encode(json).length };
 }
 export class NotebookHistory {

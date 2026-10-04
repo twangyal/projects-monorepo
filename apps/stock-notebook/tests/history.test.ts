@@ -18,14 +18,14 @@ test('history detaches snapshots, preserves redo across no-ops and discards it a
 
 test('legacy migration and multi-period undo emit v2 while retaining immutable source rows', () => {
   const original = createNotebook(dataset(), TODAY);
-  const migrated = validateNotebook({ ...original, schemaVersion: 1 }, TODAY);
+  const migrated = validateNotebook({ ...Object.fromEntries(Object.entries(original).filter(([key]) => key !== 'briefs')), schemaVersion: 1 }, TODAY);
   const legacyHistory = new NotebookHistory(migrated, TODAY);
-  assert.equal(legacyHistory.current.schemaVersion, 2);
+  assert.equal(legacyHistory.current.schemaVersion, 3);
   const source = dataset([company({ fiscalDate: '2026-01-01' }), company({ fiscalDate: '2024-01-01', sourceLine: 3 })]);
   const history = new NotebookHistory(createNotebook(source, TODAY), TODAY);
   const baseline = history.current;
   history.commit({ ...baseline, notes: [{ ticker: 'ALPHA', text: 'All periods share this note' }], watchlist: ['ALPHA'] }, TODAY);
-  assert.equal(history.undo(TODAY).schemaVersion, 2);
+  assert.equal(history.undo(TODAY).schemaVersion, 3);
   assert.deepEqual(history.current.dataset.companies, baseline.dataset.companies);
   assert.deepEqual(history.redo(TODAY).notes, [{ ticker: 'ALPHA', text: 'All periods share this note' }]);
   const changed = history.current; changed.dataset.companies[1].revenue = 999;

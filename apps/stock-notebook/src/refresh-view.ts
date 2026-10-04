@@ -1,5 +1,6 @@
 import type { Company, Dataset, Notebook, Screen } from './types.ts';
 import type { CriteriaAction, RefreshChoices, RefreshReview } from './refresh.ts';
+import { briefReportLines } from './brief-report.ts';
 
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = ''): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag); element.textContent = text; element.className = className; return element;
@@ -59,7 +60,7 @@ export function mountRefreshView(root: HTMLElement, callbacks: RefreshViewCallba
   const [unitsLabel, units] = checkbox('refresh-units-confirm', 'I confirm the refreshed CSV uses currency millions and comparable 12-month annual periods');
   const [lossLabel, losses] = checkbox('refresh-losses-confirm', 'I reviewed the annual periods and research that will be removed');
   const lossSummary = node('p', '', 'refresh-loss-summary');
-  body.append(summary, criteria, annotations, changes, node('p', 'This replaces the whole dataset and starts a new undo history. Retained notes are not rewritten for the new figures. Review them against the incoming evidence. Download the proposed review before applying if you want to keep a change log.', 'notice'), unitsLabel, lossSummary, lossLabel);
+  body.append(summary, criteria, annotations, changes, node('p', 'This replaces the whole dataset and starts a new undo history. Retained notes and briefs are not rewritten for the new figures. Captured citations keep their original sources. Review them against the incoming evidence. Download the proposed review before applying if you want to keep a change log.', 'notice'), unitsLabel, lossSummary, lossLabel);
   const buttons = node('div', '', 'refresh-actions');
   const apply = action('Apply reviewed refresh', callbacks.apply); apply.className = 'primary';
   const rebuild = action('Rebuild refresh review', callbacks.rebuild), cancel = action('Cancel refresh', callbacks.cancel);
@@ -132,7 +133,7 @@ export function mountRefreshView(root: HTMLElement, callbacks: RefreshViewCallba
         radio.addEventListener('change', () => { selectedCriteria = item.action; callbacks.change(); }); criteriaContent.append(option);
       }
       annotationContent.replaceChildren();
-      if (!review.annotations.length) annotationContent.append(node('p', 'No committed watchlist, comparison or notes to carry forward.', 'hint'));
+      if (!review.annotations.length) annotationContent.append(node('p', 'No committed watchlist, comparison, notes or briefs to carry forward.', 'hint'));
       for (const item of review.annotations) {
         const group = node('article', '', 'refresh-annotation'); group.dataset.refreshAnnotationTicker = item.ticker;
         group.append(node('h4', item.ticker), node('p', `Previous: ${item.previous.name} · ${item.previous.sector} · ${item.previous.currency} · latest ${item.previous.fiscalDate}`), source(item.previous, base.dataset));
@@ -140,6 +141,13 @@ export function mountRefreshView(root: HTMLElement, callbacks: RefreshViewCallba
         else group.append(node('p', 'Absent from the incoming dataset.'));
         group.append(node('p', `${item.watchlisted ? 'Watchlisted' : 'Not watchlisted'} · ${item.comparisonIndex !== null ? `comparison position ${item.comparisonIndex + 1}` : 'not in comparison'} · ${item.note !== null ? 'saved note included' : 'no saved note'}`, 'hint'));
         if (item.note !== null) { const note = node('details'); note.append(node('summary', 'Read complete saved note'), node('p', item.note, 'refresh-note')); group.append(note); }
+        if (item.brief !== null) {
+          group.append(node('p', `${item.brief.statements.length} saved statements · ${item.brief.citations.length} supplied citations`, 'hint'));
+          const brief = node('details'); brief.dataset.refreshBriefTicker = item.ticker;
+          brief.append(node('summary', 'Read complete saved brief and incoming source comparison'),
+            node('p', briefReportLines(item.brief, base.dataset, review.today, incoming).join('\n'), 'refresh-note'));
+          group.append(brief);
+        }
         if (item.policy === 'decide') {
           group.append(node('p', `Review changed details: ${item.reasons.join(', ')}. A matching ticker alone does not establish the same issuer.`, 'notice'));
           const label = node('label', `Research retention for ${item.ticker}`, 'field'), select = node('select'); select.name = `retention-${item.ticker}`;

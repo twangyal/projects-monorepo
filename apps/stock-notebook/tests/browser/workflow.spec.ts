@@ -65,7 +65,7 @@ test('applied exclusion audit survives drafts, history, native reopen and downlo
   await page.getByLabel('Research note', { exact: true }).fill('Review missing source figures.');
   await page.getByRole('button', { name: 'Save note', exact: true }).click();
   await expect(page.locator('#save-status')).toContainText('Saved locally');
-  const saved = await backup(page); expect(saved.schemaVersion).toBe(2);
+  const saved = await backup(page); expect(saved.schemaVersion).toBe(3);
   await page.reload(); await expect(page.locator('#dataset-summary')).toContainText('original-research.csv');
   await page.getByRole('tab', { name: 'Excluded companies', exact: true }).click();
   await expect(audit.locator('[data-ticker]')).toHaveCount(3);
@@ -399,7 +399,7 @@ test('unsorted supplied annual rows drive latest-only screens and source-linked 
   expect(await page.locator('#screen-sector option').allTextContents()).not.toContain('Historical sector');
   expect(await page.locator('#screen-currency option').allTextContents()).not.toContain('EUR');
   const initial = await backup(page);
-  expect(initial.schemaVersion).toBe(2);
+  expect(initial.schemaVersion).toBe(3);
   expect(initial.dataset.companies).toEqual(annualDataset().companies);
 
   await result(page, 'ALFA').getByRole('button', { name: 'Add to watchlist', exact: true }).click();
@@ -499,14 +499,14 @@ test('annual history is keyboard accessible on mobile and invalid extra periods 
   expect(errors).toEqual([]);
 });
 
-test('a real v1 saved notebook restores visible research, keeps raw legacy text until editing, and saves v2 for reload', async ({ page }) => {
+test('a real v1 saved notebook restores visible research, keeps raw legacy text until editing, and saves v3 for reload', async ({ page }) => {
   await page.goto('/'); await importCsv(page);
   await result(page, 'ALFA').getByRole('button', { name: 'Add to watchlist', exact: true }).click();
   await result(page, 'ALFA').getByRole('button', { name: 'View evidence', exact: true }).click();
   await page.locator('#note-form [name=note]').fill('A preserved legacy research note.');
   await page.getByRole('button', { name: 'Save note', exact: true }).click();
   await expect(page.locator('#save-status')).toContainText(/^Saved\b/i);
-  const prior = await backup(page), legacyText = JSON.stringify({ ...prior, schemaVersion: 1 });
+  const prior = await backup(page), legacyText = JSON.stringify({ ...Object.fromEntries(Object.entries(prior).filter(([key]) => key !== 'briefs')), schemaVersion: 1 });
   await page.evaluate(text => new Promise<void>((resolve, reject) => {
     const opening = indexedDB.open('stock-notebook-v1', 1);
     opening.onerror = () => reject(opening.error);
@@ -519,7 +519,7 @@ test('a real v1 saved notebook restores visible research, keeps raw legacy text 
   }), legacyText);
   await page.reload();
   await expect(page.locator('#title-form [name=title]')).toHaveValue(prior.title);
-  const restored = await backup(page); expect(restored).toEqual(prior); expect(restored.schemaVersion).toBe(2);
+  const restored = await backup(page); expect(restored).toEqual(prior); expect(restored.schemaVersion).toBe(3);
   const readPersisted = () => page.evaluate(() => new Promise<string>((resolve, reject) => {
     const opening = indexedDB.open('stock-notebook-v1', 1);
     opening.onerror = () => reject(opening.error);

@@ -6,7 +6,7 @@ import { serializeNotebook } from '../src/model.ts';
 
 function notebook(): Notebook {
   return {
-    schemaVersion: 2, id: '00000000-0000-4000-8000-000000000001', title: 'Explicit research study',
+    schemaVersion: 3, briefs: [], id: '00000000-0000-4000-8000-000000000001', title: 'Explicit research study',
     dataset: {
       id: '00000000-0000-4000-8000-000000000002', fileName: 'annual-supplied.csv', importedDate: '2026-10-03',
       basis: 'annual-12-month', units: 'currency-millions', synthetic: false,

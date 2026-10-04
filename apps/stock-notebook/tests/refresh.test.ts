@@ -77,7 +77,7 @@ test('research decisions preserve literal text and selection order while droppin
   const result = applyRefresh(base, next, { criteria: 'keep', annotations: [{ ticker: 'DROP', action: 'drop' }, { ticker: 'ALPHA', action: 'keep' }] }, TODAY);
   assert.deepEqual(result.watchlist, ['BETA', 'ALPHA']); assert.deepEqual(result.comparison, ['BETA', 'ALPHA']);
   assert.deepEqual(result.notes, [base.notes[0]]);
-  assert.equal(result.id, base.id); assert.equal(result.title, base.title); assert.equal(result.schemaVersion, 2);
+  assert.equal(result.id, base.id); assert.equal(result.title, base.title); assert.equal(result.schemaVersion, 3);
   assert.deepEqual(result.dataset, next);
 });
 
@@ -184,13 +184,19 @@ test('maximum disjoint universes produce exactly 1000 periods and 204 annotation
 });
 
 test('combined replacement byte cap rejects without truncating otherwise-valid inputs', () => {
-  const rows = Array.from({ length: 400 }, (_, i) => company({ ticker: `C${i}`, sourceLine: i + 2 }));
+  const rows = Array.from({ length: 500 }, (_, i) => company({ ticker: `C${i}`, sourceLine: i + 2 }));
   const base = createNotebook(dataset(rows), TODAY);
   base.notes = rows.slice(0, 100).map(row => ({ ticker: row.ticker, text: '📈'.repeat(4000) }));
+  // Include valid supplied research to exercise the new 6 MiB complete cap.
+  // Each input fits independently; retaining all annotations cannot be truncated.
+  base.briefs = rows.slice(0, 50).map((row, index) => ({ ticker: row.ticker, statements: [], citations: [{
+    id: `33333333-3333-4333-8333-${String(index).padStart(12, '0')}`, kind: 'excerpt',
+    title: 'Original supplied research', author: null, publishedDate: null, url: null, excerpt: '📈'.repeat(4000),
+  }] }));
   const validated = validateNotebook(base, TODAY);
-  const next = incoming(rows.map(row => ({ ...row, filingUrl: 'https://example.com/' + '📈'.repeat(1800) })));
+  const next = incoming(rows.map(row => ({ ...row, filingUrl: 'https://example.com/' + '📈'.repeat(2000) })));
   createNotebook(next, TODAY); // The incoming universe alone fits the backup cap.
   const original = JSON.stringify([validated, next]);
-  assert.throws(() => applyRefresh(validated, next, keep, TODAY), /4 MiB|backup limit/);
+  assert.throws(() => applyRefresh(validated, next, keep, TODAY), /6 MiB|backup limit/);
   assert.equal(JSON.stringify([validated, next]), original);
 });

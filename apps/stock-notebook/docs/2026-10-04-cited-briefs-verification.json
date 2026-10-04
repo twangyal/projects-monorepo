@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "issue": 67,
+  "version": "0.4.0",
+  "status": "local-verification-complete-ci-pending",
+  "baseline": {
+    "unitTests": 149,
+    "browserTests": 34,
+    "evidence": "/tmp/stock67-baseline-99fz31c5/verification.json",
+    "unchangedInputHashes": 49
+  },
+  "verification": {
+    "unitTests": 206,
+    "unitDurationMs": 12928.037822,
+    "newDomainMigration": 18,
+    "newHistoryRefresh": 11,
+    "newReports": 12,
+    "independentOracle": 16,
+    "browser": {
+      "startTime": "2026-10-04T11:26:35.124Z",
+      "duration": 54950.448,
+      "expected": 49,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "chromium": "151.0.7922.173",
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "productionEntry": "index-B6Gu84bM.js",
+    "browserTestHarnessEntry": "main-DxbiG-dS.js",
+    "independentSourceReview": "Domain/history/report and UI/persistence reviewers found no remaining actionable defects."
+  },
+  "nativeMaximum": {
+    "passed": true,
+    "elapsedSeconds": 8.067085856,
+    "base": "http://127.0.0.1:53627",
+    "expectation": {
+      "briefCount": 50,
+      "citationCount": 100,
+      "statementCount": 50,
+      "graphBytes": 1048576,
+      "notebookBytes": 1074990,
+      "sourceAnnualRows": 100,
+      "incomingAnnualRows": 50,
+      "retainedBriefsSha256": "64b7a95059ed2db0abcfa1e1875c640db5a48ce0d447f512b7833a169d745f04",
+      "expectedMissingSnapshots": 50,
+      "expectedKeepDecisions": 50,
+      "oldSnapshotDate": "2024-12-31",
+      "currentDate": "2025-12-31",
+      "sourceFile": "original-annuals.csv",
+      "incomingFile": "incoming-annuals.csv",
+      "noExternalRequests": true
+    },
+    "browser": "151.0.7922.173",
+    "standalone": {
+      "bytes": 23690,
+      "sha256": "00f64e379b2385baf3d613a8a0f995eedc7b41b7dbb86d9c53f1503779599863",
+      "exactLiteralStatements": 1,
+      "exactLiteralExcerpts": 1
+    },
+    "initialReport": {
+      "bytes": 1395784,
+      "sha256": "8992fa277171c07464d7d4b3195155b4eafbf5fa4833dedb858877f00c1e8a70",
+      "exactLiteralStatements": 50,
+      "exactLiteralExcerpts": 50
+    },
+    "proposedReport": {
+      "bytes": 1262984,
+      "sha256": "499ffee6ffefcaa85e79ea5325ea3ff08b00a8d6f96cce76876ab8f65be44357",
+      "exactLiteralStatements": 50,
+      "exactLiteralExcerpts": 50
+    },
+    "afterReport": {
+      "bytes": 1279637,
+      "sha256": "59277409284c66c13ca29ca58a297ca732131fc2be0d736b74ed35756fdb9248",
+      "exactLiteralStatements": 50,
+      "exactLiteralExcerpts": 50
+    },
+    "restart": {
+      "completeChromiumProcessRelaunch": true,
+      "byteIdenticalNotebook": true,
+      "byteIdenticalReport": true,
+      "notebookBytes": 1061648,
+      "notebookSha256": "4a20f5d4b53789c123a522227ad9abe066068277b197dca5e5afe1ceb4fa8516"
+    },
+    "pageErrors": [],
+    "externalRequests": [],
+    "artifacts": [
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/initial.json",
+        "bytes": 1074990,
+        "sha256": "799ef2a3b326e0ad4a2b509d03d58beef53c2866cadca739469fe31ab6d0aebf",
+        "suggestedFilename": "stock-notebook.json"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/initial-company.txt",
+        "bytes": 23690,
+        "sha256": "00f64e379b2385baf3d613a8a0f995eedc7b41b7dbb86d9c53f1503779599863",
+        "suggestedFilename": "stock-notebook-S00-brief.txt"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/initial-full.txt",
+        "bytes": 1395784,
+        "sha256": "8992fa277171c07464d7d4b3195155b4eafbf5fa4833dedb858877f00c1e8a70",
+        "suggestedFilename": "stock-notebook-report.txt"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/reopened.json",
+        "bytes": 1074990,
+        "sha256": "799ef2a3b326e0ad4a2b509d03d58beef53c2866cadca739469fe31ab6d0aebf",
+        "suggestedFilename": "stock-notebook.json"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/proposed-refresh.txt",
+        "bytes": 1262984,
+        "sha256": "499ffee6ffefcaa85e79ea5325ea3ff08b00a8d6f96cce76876ab8f65be44357",
+        "suggestedFilename": "stock-notebook-refresh-review.txt"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/previous-before-refresh.json",
+        "bytes": 1074990,
+        "sha256": "799ef2a3b326e0ad4a2b509d03d58beef53c2866cadca739469fe31ab6d0aebf",
+        "suggestedFilename": "stock-notebook-previous.json"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/after-refresh.json",
+        "bytes": 1061648,
+        "sha256": "4a20f5d4b53789c123a522227ad9abe066068277b197dca5e5afe1ceb4fa8516",
+        "suggestedFilename": "stock-notebook.json"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/after-refresh-full.txt",
+        "bytes": 1279637,
+        "sha256": "59277409284c66c13ca29ca58a297ca732131fc2be0d736b74ed35756fdb9248",
+        "suggestedFilename": "stock-notebook-report.txt"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/after-process-restart.json",
+        "bytes": 1061648,
+        "sha256": "4a20f5d4b53789c123a522227ad9abe066068277b197dca5e5afe1ceb4fa8516",
+        "suggestedFilename": "stock-notebook.json"
+      },
+      {
+        "file": "/workspace/stock67-brief-native-final/downloads/after-process-restart-full.txt",
+        "bytes": 1279637,
+        "sha256": "59277409284c66c13ca29ca58a297ca732131fc2be0d736b74ed35756fdb9248",
+        "suggestedFilename": "stock-notebook-report.txt"
+      }
+    ],
+    "controlledBoundaries": [],
+    "limitations": [
+      "Source authenticity and statement support are not verified.",
+      "Only supplied local CSV/JSON data was used; source HTTPS links were not opened."
+    ]
+  },
+  "existingMaximumChecks": {
+    "annualHistory": {
+      "directory": "/tmp/stock-annual-history-shSOnc",
+      "date": "2026-10-04",
+      "node": "v24.19.0",
+      "platform": "linux x64",
+      "fixture": {
+        "companies": 100,
+        "annualRows": 500,
+        "periodsPerTicker": 5,
+        "csvBytes": 2097152,
+        "sha256": "43d3c0a8ff7676975a4e62c45015b408c2cf6fa23be75ef3cec2dfa3b176b7c4",
+        "lastSourceLine": 501,
+        "note": "Original fictional data; exact CSV byte bound uses long retained source links and trimmed whitespace padding. No source URL is fetched."
+      },
+      "timings": {
+        "parseCsvMs": 311.353708,
+        "createNotebookMs": 333.132451,
+        "screenMs": 117.686779,
+        "oneCompanyHistoryMs": 68.63145199999997,
+        "serializeMs": 306.45345599999996,
+        "reportMs": 414.3166269999999
+      },
+      "notebookBytes": 1079743,
+      "reportBytes": 3519028,
+      "verified": [
+        "latest period independent of source order",
+        "all raw rows preserved",
+        "exact annual change and direction oracle",
+        "schema v3 JSON roundtrip",
+        "final source row and link retained in report"
+      ],
+      "limitation": "One Node runtime sample with a specific bounded fixture; not a performance guarantee. Browser workflow is measured separately."
+    },
+    "refresh": {
+      "directory": "/tmp/stock-refresh-pw3Xdj",
+      "date": "2026-10-04",
+      "node": "v24.19.0",
+      "platform": "linux x64",
+      "fixture": {
+        "companies": 100,
+        "annualRowsPerInput": 500,
+        "periodsPerTicker": 5,
+        "unionPeriods": 1000,
+        "csvBytesPerInput": 2097152,
+        "csvSha256": {
+          "previous": "d04cc558bf45fd503f256e628e8103c2a44016b2319230401138099a923e936d",
+          "incoming": "337bd01e7462eb5f5bde22c50f8cd4dc507fb3909020143dcae64ecf07984ab7"
+        },
+        "retainedWatchlistEntries": 100,
+        "retainedComparisonEntries": 4,
+        "retainedNotes": 100,
+        "codePointsPerNote": 4000,
+        "note": "Original fictional data, disjoint five-year periods, retained long source links and maximum Unicode note lengths. Exact CSV bound includes trimmed padding. No source link is fetched."
+      },
+      "timings": {
+        "parsePreviousMs": 350.02859600000005,
+        "parseIncomingMs": 201.435247,
+        "reviewMs": 428.991399,
+        "applyMs": 554.9515159999999,
+        "refreshReportMs": 1385.6525149999998,
+        "researchReportMs": 349.0731469999996
+      },
+      "artifacts": {
+        "before": {
+          "bytes": 2274403,
+          "sha256": "40b08ed1c6023b436f21d2f94d0080a3fe6764ae5be92406c32cb022f164e5a0"
+        },
+        "after": {
+          "bytes": 2274425,
+          "sha256": "37330f741b1a70348adf96ae0f328d007951be1d7e03c973b57d4eeb25aeb47a"
+        },
+        "report": {
+          "bytes": 4057030,
+          "sha256": "fbb2123196e7a1072fc93bf0ee7891cefe00bd159c9209fda8cff697b004e42b"
+        },
+        "research": {
+          "bytes": 5026441,
+          "sha256": "1e2791ef0e1371d64c1af3a2bb20d1d28a375de8583d6555dcf78b3e994765ca"
+        }
+      },
+      "verified": [
+        "1,000 complete old/new period records",
+        "independent latest-period ordering and amounts",
+        "unchanged notebook identity and applied criteria",
+        "exact ordered research retention",
+        "complete correctly attributed proposed report",
+        "incoming-only final research provenance",
+        "exact schema-v3 JSON roundtrip",
+        "unchanged previous notebook"
+      ],
+      "limitation": "One Node sample and specific maximum-bound fixture, not a browser or performance guarantee. Native browser publication/persistence is verified separately."
+    }
+  },
+  "implementationHistory": [
+    "Domain, history, refresh, reports and independent oracle recorded meaningful failures before actual implementation; the native authoring test first failed on the absent Company brief control.",
+    "Existing fixtures migrated only canonical schema/output expectations; genuine old v1/v2 inputs retain their old shape. The combined-byte refusal case was strengthened to exceed the new complete 6 MiB cap with individually valid inputs.",
+    "The old raw-export bound test initially used 4 MiB plus one byte; its exact boundary and rejection fixture now use 6 MiB, preserving all five invalid-record assertions.",
+    "New native helpers target the actual native summary disclosure and visible stale status, and await Saved plus actual native stored-record equality before reload. Literal graph, financial and report assertions remain intact.",
+    "The first combined final gate had 48 passes and one missing Chromium executable failure before application launch. Supplying CHROMIUM_PATH for the manually launched persistent context produced all 49 passes without any source change.",
+    "The original maximum native proof passed, then the same frozen script passed again against the final normal production build. No source URL, model download or external request occurred."
+  ],
+  "compatibility": {
+    "legacyVersions": [
+      1,
+      2
+    ],
+    "canonicalVersion": 3,
+    "legacyRawAndCanonicalBytes": 4194304,
+    "notebookBytes": 6291456,
+    "briefGraphBytes": 1048576,
+    "reportBytes": 8388608,
+    "historyStates": 30,
+    "historyBytes": 8388608,
+    "frozenExperimentChanged": false
+  },
+  "sourceSha256": {
+    "src/annual-history.ts": "f4be70c93566f94af5681d3c0628ffc6a2260915db3bba895925fc0451b9f83c",
+    "src/brief-report.ts": "858cf57cf886ae32ff1959d5c74ea67b1c838c70354aee0f7add5d760e96a3c3",
+    "src/brief-view.ts": "2a6a01120fa1e0a67956e0b7dc7ab4e46874f05efb9babae0053b8a53ac6b232",
+    "src/brief.ts": "9c7c5fa9420546732448acb9b4f793bdf843a664226b4357f66417d9cfebd777",
+    "src/csv.ts": "549e16d9ae2f8f3c2e994a984a9ebe5f2d313f27d278fb1f3cff4505f2d7c649",
+    "src/demo.ts": "2f5e08b0af595762feecee66795519ac976aca32dad7372f6cbc0c32f0695dcf",
+    "src/exports.ts": "3558378edad96514d71ff588aa6ab0fe23700390890961e3be72a2d02b783af7",
+    "src/history.ts": "4d7b1ea619609b0cc03b20e34b036cd93c4d946a07890c80cec7d98decb3828e",
+    "src/main.ts": "36eeaf89040f80ec07486f719d5838c1a58a989740c046d53b4eac548519ba07",
+    "src/model.ts": "749c3a5463ece86a6c00778d499b1c3ae60a36a5ddb6e4d95fb181644337d45a",
+    "src/periods.ts": "dec2c760f951477c547b4358259e23e284b8b4b64f74d7a47c738d9010131480",
+    "src/query.ts": "2a4aaa81c7c628c5c8d4a7a67ea53fb8d620afcc9de425e9a180da441a65c456",
+    "src/refresh-report.ts": "09e0cd06f3e413c361877f48b02e84e0fc1077b3a0df008e6d9524300977d994",
+    "src/refresh-view.ts": "7c7c658cd64d544a156a5d68ff0e76874b14ec2ca745bf958b5774768f375b49",
+    "src/refresh.ts": "bb6defaf9f8ff6cd9f1ae3692a74d9f7bb11d52a06420fc62147ea82defceb20",
+    "src/research.ts": "cdf788aca4ce2f3f362faa9f10468232bb52f7fcff26793e8de3d79bb9ed193f",
+    "src/storage.ts": "e823cbb6971e6439bba80705b5db1d10334201c6414802ccfe7d6a40f011b9cd",
+    "src/style.css": "e631dce539d4594f830378e5fbec3563dd337d0849a338b6d83780af2c6d0357",
+    "src/types.ts": "0acd907be1beb55483916c49f66f64a816c98191325471fd7e057a1e17f2df5a",
+    "src/validation.ts": "45eb3e438307465427d7c47344a1dacef6f16f4bcd55fee768b1c3ea0dba8227",
+    "tests/annual-history-oracle.test.ts": "16bdac11b944c5ada2ab8160a98df1bf5280efd4342c3376b117bb420e828170",
+    "tests/annual-history.test.ts": "490845d4f16ef4f1e653f6e41a87a6377548f75d2e7d985a2224605a7f4c451e",
+    "tests/brief-history.test.ts": "d73b490d7e8bfae0490be02318a4f0278298606200316769f5fc34d0400d78dd",
+    "tests/brief-migration.test.ts": "2e389a4657877a14596ad51c43eecec810ec42c024b9f2e28eea0b514e0a4c5a",
+    "tests/brief-oracle.test.ts": "570f32900867c7e64ef4c4de25015d4c34b22f2f8ad250a828d7b9406c226094",
+    "tests/brief-refresh.test.ts": "613070e6d15897449aae1d0ecfc6f7f26020e02970b456d922c784cb9cd1fb42",
+    "tests/brief-report.test.ts": "b6213bc19154f8c480ad2d79359813509376ee96dda1dbc880712b00d00ab0fd",
+    "tests/brief.test.ts": "22359a4f0e9ee84bfbaf0924f6b7b80c7607b0e1b841a4fb8ef995ce34425b32",
+    "tests/browser/brief.spec.ts": "1163d0f355cd17d6bb00b75037ae9112303348f652a94bd0e63a70c9738852c4",
+    "tests/browser/refresh.spec.ts": "4db7a2699311b0958d14f9f1a4293c8646d196ccd0c4b1865341773aa57488b7",
+    "tests/browser/storage.spec.ts": "ded5987fb6ba6b1b3d0d6424d41c7e939117de6f8011a1c0af3afc49c67729d0",
+    "tests/browser/workflow.spec.ts": "4d5ac94c79f2e2bb2fefd58e65687c186da5da6c34e65d5658f7bb5a5bd4a4a0",
+    "tests/csv.test.ts": "4521ad9a8597418e14306101568d81cf92ab949f7c576a1c757fd0a915688c14",
+    "tests/demo.test.ts": "b11f9290d4cfabb383b9891d589f93401dd280822a02257e606f7ec3428624f1",
+    "tests/exports.test.ts": "ee3b50457c755aa01c69f7300cdc7ec998a502c2e06e24e212ee7bc0038384e1",
+    "tests/history.test.ts": "c822da5ef370da13f848ad4a1fdeb86071a6c1be849afd1815ada3cdff70996b",
+    "tests/independent-research.test.ts": "59ee535138d3afbf7aef59db618b22a8ebc28cd4a7fec971000b33ddb83dcacf",
+    "tests/model-fixtures.ts": "1bab1fa1d42e53a25da23b7d1fb9162199f5cbd4cdb3a4888a89770653a7b64f",
+    "tests/model.test.ts": "a753aeb4a1bde564f34bec806d196e792e3347ac3c0f78d282c1c1a704979d17",
+    "tests/oracle/annual-fixtures.ts": "413cb77e128be891389fd0fa59977f1ad4685966261ca5c638e43bbf3651d9b9",
+    "tests/oracle/fixtures.ts": "daf705aa56e4b93fe07c972869eb0cdca5ee72a17175a3cfaca0edde454dbe99",
+    "tests/periods.test.ts": "bb1684850a2b388b2b95b642f960fd43a4d83fee211e73566a9c04375cab8ae4",
+    "tests/query.test.ts": "ca015ee5d2d55ff3289642b5766972ffa54164b4ce83e70aa845b803a5e2ecc7",
+    "tests/refresh-oracle.test.ts": "3736a0255b2c11811b8279d6596eca78f565702ad985e68f45f686833d123e15",
+    "tests/refresh-report.test.ts": "65a74de1c76655e1d0bf728c9cddb0e067a58f6eee9a15d20ba765bf8fc474a9",
+    "tests/refresh.test.ts": "447d4b8bb96867e0ac88c415d78b56b38a48d115669cacaf90c152a61659049f",
+    "tests/research.test.ts": "1bb4eebcde60f91e2a0a026cbb6e89123972985d0eff013d48ad719fe8269747",
+    "tests/screen-audit.test.ts": "3be0b4f21775abda7ab7a8ffacc87ac5b4f162dcbfd96e69aedcba55f2b62c80",
+    "tests/storage-harness.html": "3a83b095fe254e21d7556119d823cd51d3f331c0641a30f571a688dad030a2e2",
+    "tests/storage-harness.ts": "64a8d8bb394b4776e857c58d8a6fb0d1eae11506de70c21522f9642a9cfc5c33",
+    "tests/storage.test.ts": "1a8c3886a9de81911034537bf05220cfc1b9e56ed768b781514524ca0c9514da",
+    "tests/validation.test.ts": "c2f6e0eb23e8ef859f4737d03608f85a9b173c42d45552dcb1f1becc5dc5cccf",
+    "scripts/annual-history-smoke.ts": "9115d8ac80d5d0b30fc04100a7575a17fbd162005646f9b92dccb55d05897581",
+    "scripts/refresh-smoke.ts": "58400374c221a46e30bb661202b530fe7257b9f770ce4334121e30604814fe7c",
+    "scripts/smoke_cited_briefs.mjs": "aa293e3f3be5b168ba99daacde59ae830268141731a636613fb1b87b37ddf792"
+  },
+  "ci": {
+    "status": "pending"
+  },
+  "limitations": [
+    "Supplied statements, excerpts and links are not verified for authenticity, truth or support. Matching annual values do not establish issuer continuity.",
+    "No source fetching, generated analysis, recommendation or learned model behavior was added. Frozen issue36 remains unchanged.",
+    "The browser probe uses original fictional data and one Chromium runtime; timings are observations, not performance guarantees or OS-crash durability evidence.",
+    "Reports preserve committed evidence. Raw drafts and session history are not part of portable backups. A later explicit textarea edit can normalize CRLF even though load/export preserve literal stored text.",
+    "The measured maximum is the independent 1 MiB brief-graph bound with 50 briefs and 100 citations; it is not a claim that every independent notebook/report maximum was exercised simultaneously in the browser."
+  ]
+}

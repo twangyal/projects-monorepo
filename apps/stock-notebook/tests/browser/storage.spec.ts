@@ -27,7 +27,7 @@ test('native storage stores exact validated JSON text and detached round trips',
   expect(result).toEqual({ missing: null, storedText: true, exact: true, title: 'Captured study', exportEqual: true, cleared: null });
 });
 
-test('v1 load migrates only in memory, aborted save preserves exact raw text, and committed save writes v2', async ({ page }) => {
+test('v1 load migrates only in memory, aborted save preserves exact raw text, and committed save writes v3', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.stockStorage;
     const name = 'legacy-migration-native';
@@ -38,7 +38,7 @@ test('v1 load migrates only in memory, aborted save preserves exact raw text, an
     const loaded = (await store.load('2026-10-04'))!;
     const readOnly = await h.rawRecord(name) === raw && await store.exportRaw() === raw;
     const canonical = loaded.schemaVersion;
-    const migratedSnapshot = { ...loaded, schemaVersion: 1 };
+    const migratedSnapshot = { ...Object.fromEntries(Object.entries(loaded).filter(([key]) => key !== 'briefs')), schemaVersion: 1 };
     const original = IDBDatabase.prototype.transaction;
     let rejected = false;
     IDBDatabase.prototype.transaction = function (...args: Parameters<typeof original>) {
@@ -63,8 +63,8 @@ test('v1 load migrates only in memory, aborted save preserves exact raw text, an
   });
   const { legacy, migratedSnapshot, ...lifecycle } = result;
   expect(migratedSnapshot).toEqual(legacy);
-  expect(lifecycle).toEqual({ readOnly: true, canonical: 2, rejected: true,
-    failureRetained: true, committed: true, persistedVersion: 2, reloadVersion: 2, title: 'Migrated legacy study' });
+  expect(lifecycle).toEqual({ readOnly: true, canonical: 3, rejected: true,
+    failureRetained: true, committed: true, persistedVersion: 3, reloadVersion: 3, title: 'Migrated legacy study' });
 });
 
 test('invalid v1 duplicate ticker and unsupported versions preserve exact recovery text', async ({ page }) => {
@@ -75,7 +75,7 @@ test('invalid v1 duplicate ticker and unsupported versions preserve exact recove
     duplicate.dataset.companies.push({ ...duplicate.dataset.companies[0]!, fiscalDate: '2025-06-30', sourceLine: 3 });
     const store = new h.NotebookStore('rejected-migration-native');
     const outcomes: boolean[] = [];
-    for (const input of [duplicate, { ...valid, schemaVersion: 0 }, { ...valid, schemaVersion: 3 }]) {
+    for (const input of [duplicate, { ...valid, schemaVersion: 0 }, { ...valid, schemaVersion: 4 }]) {
       const raw = JSON.stringify(input, null, 2) + '\n';
       await h.rawRecord('rejected-migration-native', raw, true);
       let error = '';
@@ -186,7 +186,7 @@ test('raw export has exact UTF-8 bounds and rejects invalid Unicode or unseriali
   const result = await page.evaluate(async () => {
     const h = window.stockStorage;
     const store = new h.NotebookStore('raw-limits');
-    const limit = 4 * 1024 * 1024;
+    const limit = 6 * 1024 * 1024;
     await h.rawRecord('raw-limits', 'x'.repeat(limit), true);
     const exact = (await store.exportRaw())!.length;
     const cycle: Record<string, unknown> = {}; cycle.self = cycle;
@@ -199,7 +199,7 @@ test('raw export has exact UTF-8 bounds and rejects invalid Unicode or unseriali
     store.close();
     return { exact, errors };
   });
-  expect(result.exact).toBe(4 * 1024 * 1024);
+  expect(result.exact).toBe(6 * 1024 * 1024);
   expect(result.errors).toHaveLength(5);
   for (const message of result.errors) expect(message).toMatch(/raw.*backup.*(invalid|large|serializ)|raw.*(invalid|large|serializ).*backup/i);
 });

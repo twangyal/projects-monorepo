@@ -1,4 +1,4 @@
-import { LIMITS, type Company, type Dataset, type Notebook, type Screen } from './types.ts';
+import { BRIEF_LIMITS, LIMITS, type Company, type CompanyBrief, type Dataset, type Notebook, type Screen } from './types.ts';
 import { boundedArray, dataObject, requireValue, validateDataset, validateScreen, validateToday } from './validation.ts';
 import { validateNotebook } from './model.ts';
 import { latestCompanies } from './periods.ts';
@@ -30,6 +30,7 @@ export interface RefreshCompanyChange {
 export interface RefreshAnnotation {
   ticker: string;
   watchlisted: boolean; comparisonIndex: number | null; note: string | null;
+  brief: CompanyBrief | null;
   previous: Company; incoming: Company | null;
   policy: 'keep' | 'remove' | 'decide';
   reasons: RefreshIdentityReason[];
@@ -102,14 +103,15 @@ function review(base: Notebook, incoming: Dataset, today: string): RefreshReview
   // Sort the tuple explicitly: delimiters must not change prefix-ticker order.
   periods.sort((a, b) => order(a.ticker, b.ticker) || order(a.fiscalDate, b.fiscalDate));
   const notes = new Map(base.notes.map(note => [note.ticker, note.text]));
-  const annotated = new Set([...base.watchlist, ...base.comparison, ...notes.keys()]);
+  const briefs = new Map(base.briefs.map(brief => [brief.ticker, brief]));
+  const annotated = new Set([...base.watchlist, ...base.comparison, ...notes.keys(), ...briefs.keys()]);
   const annotations: RefreshAnnotation[] = [...annotated].sort(order).map(ticker => {
     const previous = oldLatest.get(ticker)!, next = newLatest.get(ticker);
     const reasons: RefreshIdentityReason[] = next ? identityFields.filter(field => previous[field] !== next[field]) : [];
     if (next && base.dataset.synthetic !== incoming.synthetic) reasons.push('synthetic');
     const index = base.comparison.indexOf(ticker);
     return { ticker, watchlisted: base.watchlist.includes(ticker), comparisonIndex: index < 0 ? null : index,
-      note: notes.get(ticker) ?? null, previous: { ...previous }, incoming: copyRow(next),
+      note: notes.get(ticker) ?? null, brief: briefs.has(ticker) ? structuredClone(briefs.get(ticker)!) : null, previous: { ...previous }, incoming: copyRow(next),
       policy: !next ? 'remove' : reasons.length ? 'decide' : 'keep', reasons };
   });
   return { notebookId: base.id, previousDatasetId: base.dataset.id, incomingDatasetId: incoming.id, today,
@@ -129,7 +131,7 @@ export function applyRefresh(base: Notebook, incoming: Dataset, choices: Refresh
   requireValue(selected.screenError === null && selected.queryError === null, 'The selected refresh criteria are incompatible. Review the criteria errors and choose a valid action.');
   const required = new Set(reviewed.annotations.filter(group => group.policy === 'decide').map(group => group.ticker));
   const decisions = new Map<string, AnnotationAction>();
-  for (const value of boundedArray(fields.annotations, LIMITS.watchlist + LIMITS.comparison + LIMITS.notes)) {
+  for (const value of boundedArray(fields.annotations, LIMITS.watchlist + LIMITS.comparison + LIMITS.notes + BRIEF_LIMITS.briefs)) {
     const decision = dataObject(value, ['ticker', 'action']);
     requireValue(typeof decision.ticker === 'string' && required.has(decision.ticker) && !decisions.has(decision.ticker), 'Supply one decision per research group requiring review, using its exact normalized ticker.');
     requireValue(decision.action === 'keep' || decision.action === 'drop', 'Choose Keep research or Drop research.');
@@ -139,5 +141,6 @@ export function applyRefresh(base: Notebook, incoming: Dataset, choices: Refresh
   const retained = new Set(reviewed.annotations.filter(group => group.policy === 'keep' || group.policy === 'decide' && decisions.get(group.ticker) === 'keep').map(group => group.ticker));
   return validateNotebook({ ...current, dataset: next, query: selected.query, screen: selected.screen,
     watchlist: current.watchlist.filter(ticker => retained.has(ticker)), comparison: current.comparison.filter(ticker => retained.has(ticker)),
-    notes: current.notes.filter(note => retained.has(note.ticker)) }, date);
+    notes: current.notes.filter(note => retained.has(note.ticker)),
+    briefs: current.briefs.filter(brief => retained.has(brief.ticker)) }, date);
 }

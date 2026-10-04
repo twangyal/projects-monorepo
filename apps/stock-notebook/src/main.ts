@@ -11,6 +11,7 @@ import { buildReport } from './exports.ts';
 import { reviewRefresh, applyRefresh, type RefreshReview } from './refresh.ts';
 import { buildRefreshReport } from './refresh-report.ts';
 import { mountRefreshView } from './refresh-view.ts';
+import { mountBriefView } from './brief-view.ts';
 import { createDemoDataset } from './demo.ts';
 import { LIMITS } from './types.ts';
 import type { Company, CsvPreview, Dataset, Filter, Metric, Notebook, Operator, ResearchRow, Screen, ScreenResult } from './types.ts';
@@ -51,7 +52,7 @@ recovery.append(button('Download raw saved record', () => { void downloadRaw(); 
 const importReview = panel('Review the incoming universe', 'All money columns must be in currency millions. Rows must represent comparable 12-month annual periods; prior revenue must be the comparable preceding annual period.'); importReview.id = 'import-review'; importReview.hidden = true;
 const importSummary = el('div'); importSummary.id = 'import-summary'; const unitLabel = el('label', '', 'checkbox'); const unitsConfirm = el('input'); unitsConfirm.type = 'checkbox'; unitsConfirm.id = 'units-confirm'; unitLabel.append(unitsConfirm, el('span', 'I confirm currency millions and comparable 12-month annual periods'));
 const replaceButton = button('Replace universe', replaceUniverse, 'primary'); const backupCurrent = button('Download current backup', downloadBackup); const cancelImport = button('Cancel import', cancelStaging);
-importReview.append(importSummary, el('p', 'Restatements, acquisitions, different fiscal lengths and changed accounting bases can defeat comparability. Supplied filing links do not verify figures.', 'notice'), unitLabel, el('p', 'Replacing the universe clears current watchlist, notes, comparison and undo history. Download the current backup before proceeding if needed.', 'hint'), replaceButton, backupCurrent, cancelImport); unitsConfirm.addEventListener('change', () => { replaceButton.disabled = !unitsConfirm.checked || !!loading; }); main.append(importReview);
+importReview.append(importSummary, el('p', 'Restatements, acquisitions, different fiscal lengths and changed accounting bases can defeat comparability. Supplied filing links do not verify figures.', 'notice'), unitLabel, el('p', 'Replacing the universe clears current watchlist, notes, comparison, company briefs and undo history. Download the current backup before proceeding if needed.', 'hint'), replaceButton, backupCurrent, cancelImport); unitsConfirm.addEventListener('change', () => { replaceButton.disabled = !unitsConfirm.checked || !!loading; }); main.append(importReview);
 const empty = panel('Bring your own annual data', 'One CSV can contain up to 500 annual rows, five periods per ticker, and 2 MiB. Blank amounts remain missing. No source link is fetched.'); empty.append(el('p', 'No universe has been loaded. Download the blank template or stage the fictional demo to explore the workflow.', 'empty')); main.append(empty);
 const workspace = el('div', '', 'workspace'); workspace.hidden = true; main.append(workspace);
 const sourceHeader = el('div', '', 'source-header'); const sourceText = el('p'); sourceText.id = 'dataset-summary'; const syntheticLabel = el('p', 'Synthetic demonstration — not real companies or filings', 'synthetic'); syntheticLabel.id = 'synthetic-label'; sourceHeader.append(sourceText, syntheticLabel); workspace.append(sourceHeader);
@@ -95,7 +96,8 @@ interface RefreshSession { base: Notebook; incoming: Dataset; review: RefreshRev
 let refreshSession: RefreshSession | null = null;
 let refreshPending: { id: number; generation: number; intent: number } | null = null;
 let refreshActive = false; let refreshError = '';
-function editorDrafts(): boolean { return titleDirty || queryDirty || screenDirty || noteDrafts.size > 0; }
+const briefView = mountBriefView(detail, { notebook: () => notebook, receipt: () => `${generation}/${intentGeneration}/${selectedTicker}`, intent: draftIntent, changed: updateRefresh, commit: (briefs, day) => { if (notebook) commit({ ...notebook, briefs }, day); }, download });
+function editorDrafts(): boolean { return titleDirty || queryDirty || screenDirty || noteDrafts.size > 0 || briefView.hasDrafts(); }
 function freshRefresh(session: RefreshSession, day: string): boolean {
   return !session.stale && session.generation === generation && session.intent === intentGeneration && session.review.today === day
     && session.review.incomingDatasetId === session.incoming.id && session.base.id === notebook?.id;
@@ -151,7 +153,10 @@ function rebuildRefresh(): void {
 }
 function discardRefreshDrafts(): void {
   if (!notebook || !refreshSession || !editorDrafts()) return;
-  if (!confirm('Discard all unsent title, screening, filter and note drafts for this refresh? Unsent drafts are absent from notebook backups. Committed research and saved notes will be kept.')) return;
+  const receipt = `${generation}/${intentGeneration}`, session = refreshSession, day = utcToday();
+  if (!confirm('Discard all unsent title, screening, filter, note, brief and citation drafts for this refresh? Unsent drafts are absent from notebook backups. Committed research and saved evidence will be kept.')) return;
+  if (receipt !== `${generation}/${intentGeneration}` || refreshSession !== session || utcToday() !== day) return;
+  briefView.clearDrafts(); briefView.setState(notebook, selectedTicker);
   titleDirty = false; queryDirty = false; screenDirty = false; noteDrafts.clear(); stagedQuery = null;
   titleInput.value = notebook.title; queryInput.value = notebook.query; fillScreen(notebook.screen); interpretation.hidden = true;
   noteInput.value = notebook.notes.find(item => item.ticker === selectedTicker)?.text ?? '';
@@ -221,10 +226,11 @@ function commit(candidate: Notebook, day: string, computed?: ScreenResult): void
   if (!notebook || !notebookHistory) return; const next = validateNotebook(candidate, day); const nextResults = computed ?? screenDataset(next.dataset, next.screen, day); if (JSON.stringify(editState(next)) === JSON.stringify(editState(notebook))) { results = nextResults; renderNotebook(day); return; }
   notebookHistory.commit(next, day); notebook = notebookHistory.current; results = nextResults; generation += 1; draftIntent(); queueSave(); renderNotebook(day);
 }
-function undo(): void { if (!notebookHistory?.canUndo) return; const day = utcToday(); try { const next = notebookHistory.undo(day); notebook = next; results = screenDataset(next.dataset, next.screen, day); generation += 1; draftIntent(); if (!screenDirty) fillScreen(next.screen); if (!queryDirty) queryInput.value = next.query; queueSave(); renderNotebook(day); } catch { announce('Undo could not be applied with today’s data rules. Current work was kept.', true); } }
-function redo(): void { if (!notebookHistory?.canRedo) return; const day = utcToday(); try { const next = notebookHistory.redo(day); notebook = next; results = screenDataset(next.dataset, next.screen, day); generation += 1; draftIntent(); if (!screenDirty) fillScreen(next.screen); if (!queryDirty) queryInput.value = next.query; queueSave(); renderNotebook(day); } catch { announce('Redo could not be applied with today’s data rules. Current work was kept.', true); } }
+function undo(): void { if (!notebookHistory?.canUndo || !briefView.guardHistory()) return; const day = utcToday(); try { const next = notebookHistory.undo(day); notebook = next; results = screenDataset(next.dataset, next.screen, day); generation += 1; draftIntent(); if (!screenDirty) fillScreen(next.screen); if (!queryDirty) queryInput.value = next.query; queueSave(); renderNotebook(day); } catch { announce('Undo could not be applied with today’s data rules. Current work was kept.', true); } }
+function redo(): void { if (!notebookHistory?.canRedo || !briefView.guardHistory()) return; const day = utcToday(); try { const next = notebookHistory.redo(day); notebook = next; results = screenDataset(next.dataset, next.screen, day); generation += 1; draftIntent(); if (!screenDirty) fillScreen(next.screen); if (!queryDirty) queryInput.value = next.query; queueSave(); renderNotebook(day); } catch { announce('Redo could not be applied with today’s data rules. Current work was kept.', true); } }
 function publish(candidate: Notebook, restored = false, day = utcToday()): void {
   const next = validateNotebook(candidate, day); const computed = screenDataset(next.dataset, next.screen, day); const history = new NotebookHistory(next, day);
+  briefView.clearDrafts();
   notebook = next; notebookHistory = history; results = computed; generation += 1; intentGeneration += 1; selectedTicker = null; noteDrafts.clear(); titleDirty = false; queryDirty = false; screenDirty = false; stagedQuery = null; staged = null; loading = null; restoreFailed = false; saveFailed = false; recovery.hidden = true; titleInput.value = next.title; queryInput.value = next.query; fillScreen(next.screen); interpretation.hidden = true; activeTab = 'shortlist'; savedGeneration = restored ? generation : -1;
   saveStatus.textContent = restored ? 'Saved locally · notebook restored' : 'Saving locally…'; invalidateRefresh(); renderImport(); renderNotebook(day); if (!restored) queueSave();
 }
@@ -244,8 +250,11 @@ function renderImport(): void {
   importSummary.replaceChildren(el('h3', name), el('p', `${rows.length} annual rows · ${current.length} unique companies · supplied currencies ${[...new Set(rows.map((c) => c.currency))].sort().join(', ')} · ${missingCount} missing amounts`), el('p', `Fiscal dates ${dates[0]} to ${dates[dates.length - 1]} · ${staleCount} companies with stale latest periods as of ${day} UTC`, 'hint'), el('p', dataset?.synthetic ? 'Synthetic demonstration — not real companies or filings' : 'Imported figures and source links are supplied by you; they have not been verified.', dataset?.synthetic ? 'synthetic' : 'hint'));
 }
 function replaceUniverse(): void {
-  if (!staged || loading || !unitsConfirm.checked) return; if ((notebook || restoreFailed) && !confirm('Replace the current universe? Watchlist, notes, comparison, unsent drafts and undo history will be replaced. Download the current backup first if needed. Replacement happens only after full validation.')) return;
-  try { const day = utcToday(); const candidate = staged.kind === 'notebook' ? validateNotebook(staged.notebook, day) : createNotebook(staged.kind === 'dataset' ? staged.dataset : createDataset(staged.preview, day), day); publish(candidate); announce('Universe replaced. All figures use declared currency millions and annual periods.'); } catch { announce('Replacement failed validation. Current notebook, drafts and saved data were kept.', true); }
+  const incoming = staged, day = utcToday(), receipt = `${generation}/${intentGeneration}`;
+  if (!incoming || loading || !unitsConfirm.checked) return;
+  if ((notebook || restoreFailed) && !confirm('Replace the current universe? Watchlist, notes, comparison, briefs, citations, unsent drafts and undo history will be replaced. Download the current backup first if needed. Replacement happens only after full validation.')) return;
+  if (staged !== incoming || loading || !unitsConfirm.checked || day !== utcToday() || receipt !== `${generation}/${intentGeneration}`) { announce('The incoming review or editor changed during confirmation. Nothing was replaced.', true); return; }
+  try { const candidate = incoming.kind === 'notebook' ? validateNotebook(incoming.notebook, day) : createNotebook(incoming.kind === 'dataset' ? incoming.dataset : createDataset(incoming.preview, day), day); publish(candidate, false, day); announce('Universe replaced. All figures use declared currency millions and annual periods.'); } catch { announce('Replacement failed validation. Current notebook, drafts and saved data were kept.', true); }
 }
 function queueSave(): void { clearTimeout(saveTimer); saveStatus.textContent = saveFailed ? 'Not saved · new edits kept in this page; retrying local storage…' : 'Unsaved changes · saving locally…'; retryButton.hidden = !saveFailed; saveTimer = setTimeout(persist, 300); }
 function persist(): void {
@@ -365,8 +374,8 @@ function annualHistory(history: CompanyHistory): HTMLElement {
   section.append(summaries); return section;
 }
 function renderDetail(day: string): void {
-  if (!notebook || !selectedTicker) { detail.hidden = true; return; } const company = latestCompanies(notebook.dataset.companies).find((c) => c.ticker === selectedTicker); if (!company) { selectedTicker = null; detail.hidden = true; return; }
-  detail.hidden = false; detailContent.replaceChildren(el('h3', 'Latest supplied period'), facts(analyzeCompany(company, day)), annualHistory(analyzeCompanyHistory(notebook.dataset, selectedTicker, day))); const text = noteDrafts.get(selectedTicker) ?? notebook.notes.find((n) => n.ticker === selectedTicker)?.text ?? ''; if (noteInput.value !== text) noteInput.value = text;
+  if (!notebook || !selectedTicker) { detail.hidden = true; briefView.setState(notebook, null); return; } const company = latestCompanies(notebook.dataset.companies).find((c) => c.ticker === selectedTicker); if (!company) { selectedTicker = null; detail.hidden = true; return; }
+  detail.hidden = false; detailContent.replaceChildren(el('h3', 'Latest supplied period'), facts(analyzeCompany(company, day)), annualHistory(analyzeCompanyHistory(notebook.dataset, selectedTicker, day))); const text = noteDrafts.get(selectedTicker) ?? notebook.notes.find((n) => n.ticker === selectedTicker)?.text ?? ''; if (noteInput.value !== text) noteInput.value = text; briefView.setState(notebook, selectedTicker);
 }
 function comparisonRemoveButton(ticker: string): HTMLButtonElement { const n = button('Remove from comparison', () => { toggleComparison(ticker); }); n.dataset.action = 'compare'; return n; }
 function renderTabs(): void { for (const [key, b] of tabButtons) { const selected = key === activeTab; b.setAttribute('aria-selected', String(selected)); b.tabIndex = selected ? 0 : -1; tabPanels.get(key)!.hidden = !selected; } }
@@ -393,11 +402,11 @@ function renderNotebook(day: string): void {
   }));
   if (!excluded.length) exclusionContent.append(el('p', 'No companies excluded by the applied criteria.', 'empty'));
   const comparison = compareCompanies(ds, notebook.comparison, day); comparisonContent.replaceChildren(...comparison.warnings.map((s) => el('p', s, 'warning'))); if (comparison.rows.length < 2) comparisonContent.append(el('p', 'Select at least two companies to compare, up to four. Selections remain manual research choices, including stale companies.', 'empty'));
-  else { const grid = el('div', '', 'comparison-grid'); for (const row of comparison.rows) { const card = el('article', '', 'comparison-card'); card.dataset.ticker = row.company.ticker; card.append(el('h3', row.company.ticker), el('p', `${row.stale ? 'Stale' : 'Fresh'} fiscal period · ${ageInDays(row.company, day)} days old`, 'hint'), comparisonRemoveButton(row.company.ticker), facts(row, 'comparison')); grid.append(card); } comparisonContent.append(grid); }
+  else { const grid = el('div', '', 'comparison-grid'); for (const row of comparison.rows) { const card = el('article', '', 'comparison-card'); card.dataset.ticker = row.company.ticker; card.append(el('h3', row.company.ticker), el('p', `${row.stale ? 'Stale' : 'Fresh'} fiscal period · ${ageInDays(row.company, day)} days old`, 'hint'), comparisonRemoveButton(row.company.ticker), button('View evidence', () => { openCompany(row.company.ticker); }), facts(row, 'comparison')); grid.append(card); } comparisonContent.append(grid); }
   watchlistContent.replaceChildren(...notebook.watchlist.map((ticker) => companyCard(analyzeCompany(currentByTicker.get(ticker)!, day), day))); if (!notebook.watchlist.length) watchlistContent.append(el('p', 'No watchlist companies yet. Add companies from the shortlist.', 'empty')); renderDetail(day); renderTabs();
   if (focusKey) { const candidate = document.getElementById(focusKey.panel)?.querySelector<HTMLButtonElement>(`[data-ticker="${focusKey.ticker}"] [data-action="${focusKey.action}"]`); (candidate ?? tabButtons.get(activeTab))?.focus({ preventScroll: true }); }
 }
-window.addEventListener('beforeunload', (e) => { if (loading || refreshPending || titleDirty || queryDirty || screenDirty || noteDrafts.size || notebook && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', (e) => { if (loading || refreshPending || editorDrafts() || notebook && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });
 window.addEventListener('keydown', (e) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return; e.preventDefault(); if (e.shiftKey) redo(); else undo(); });
 async function start(): Promise<void> { const op = { id: ++operationSequence, intent: intentGeneration }; loading = op; try { const restored = await store.load(utcToday()); if (loading !== op || op.intent !== intentGeneration) return; loading = null; if (restored) publish(restored, true); } catch { if (loading === op && op.intent === intentGeneration) { loading = null; restoreFailed = true; recovery.hidden = false; announce('Saved notebook could not be restored. Its raw record is preserved. Download raw saved record or explicitly Reset saved record before starting over.', true); } } }
 renderTabs(); void start();

@@ -5,8 +5,8 @@ import { company } from './model-fixtures.ts';
 import { NOTEBOOK_SCHEMA_VERSION, LIMITS } from '../src/types.ts';
 import { latestCompanies, periodsForTicker } from '../src/periods.ts';
 
-test('annual history publishes canonical v2 and a five-period limit', () => {
-  assert.equal(NOTEBOOK_SCHEMA_VERSION, 2);
+test('annual history publishes canonical v3 and a five-period limit', () => {
+  assert.equal(NOTEBOOK_SCHEMA_VERSION, 3);
   assert.equal(LIMITS.periodsPerTicker, 5);
 });
 

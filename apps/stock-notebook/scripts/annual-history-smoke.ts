@@ -40,7 +40,7 @@ function measure<T>(name: string, operation: () => T): T {
 const preview = measure('parseCsvMs', () => parseCsv(csv, 'annual-history-max.csv', today));
 const notebook = measure('createNotebookMs', () => createNotebook(createDataset(preview, today, true), today));
 const screened = measure('screenMs', () => screenDataset(notebook.dataset, notebook.screen, today));
-assert.equal(notebook.schemaVersion, 2);
+assert.equal(notebook.schemaVersion, 3);
 assert.equal(notebook.dataset.companies.length, 500);
 assert.equal(screened.rows.length, 100);
 assert.deepEqual(screened.rows.map(row => row.company.sourceLine), Array.from({length: 100}, (_, i) => 3 + i * 5));
@@ -64,7 +64,7 @@ const result = {
     sha256: createHash('sha256').update(csv).digest('hex'), lastSourceLine: 501,
     note: 'Original fictional data; exact CSV byte bound uses long retained source links and trimmed whitespace padding. No source URL is fetched.'},
   timings, notebookBytes: Buffer.byteLength(backup), reportBytes: Buffer.byteLength(report),
-  verified: ['latest period independent of source order', 'all raw rows preserved', 'exact annual change and direction oracle', 'schema v2 JSON roundtrip', 'final source row and link retained in report'],
+  verified: ['latest period independent of source order', 'all raw rows preserved', 'exact annual change and direction oracle', 'schema v3 JSON roundtrip', 'final source row and link retained in report'],
   limitation: 'One Node runtime sample with a specific bounded fixture; not a performance guarantee. Browser workflow is measured separately.',
 };
 writeFileSync(join(directory, 'verification.json'), JSON.stringify(result, null, 2) + '\n');

@@ -8,7 +8,7 @@ import type { Notebook } from '../src/types.ts';
 
 function fixture(title = 'Captured study'): Notebook {
   return {
-    schemaVersion: 2, id: crypto.randomUUID(), title, query: '',
+    schemaVersion: 3, briefs: [], id: crypto.randomUUID(), title, query: '',
     dataset: { id: crypto.randomUUID(), fileName: 'supplied.csv', importedDate: '2026-10-04', basis: 'annual-12-month', units: 'currency-millions', synthetic: false,
       companies: [{ ticker: 'AAA', name: 'Original supplied fixture', sector: 'Software', currency: 'USD', fiscalDate: '2026-06-30', revenue: 120, priorRevenue: 100, netIncome: 12, debt: 40, equity: 80, filingUrl: null, sourceLine: 2 }] },
     screen: { sector: null, currency: null, filters: [], includeStale: false, sortBy: 'ticker', direction: 'asc' }, watchlist: [], comparison: [], notes: [],
@@ -16,7 +16,7 @@ function fixture(title = 'Captured study'): Notebook {
 }
 /** Explicit former-schema input, never a canonical Notebook fixture. */
 function legacyFixture(title = 'Migrated legacy study'): unknown {
-  return { ...fixture(title), schemaVersion: 1, query: 'companies with growing',
+  return { ...Object.fromEntries(Object.entries(fixture(title)).filter(([key]) => key !== 'briefs')), schemaVersion: 1, query: 'companies with growing',
     watchlist: ['AAA'], comparison: ['AAA'], notes: [{ ticker: 'AAA', text: 'Legacy supplied note\nKeep this annotation' }] };
 }
 async function rawRecord(name: string, value?: unknown, write = false): Promise<unknown> {

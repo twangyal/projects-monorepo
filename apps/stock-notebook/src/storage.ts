@@ -15,7 +15,7 @@ function rawText(value: unknown): string {
   try { text = typeof value === 'string' ? value : JSON.stringify(value); }
   catch { throw new Error('Raw saved record cannot be serialized as a backup. Stored data was kept; do not reset until you have recovered it.'); }
   if (typeof text !== 'string') throw new Error('Raw saved record cannot be serialized as a backup. Stored data was kept.');
-  if (text.length > LIMITS.notebookBytes || new TextEncoder().encode(text).length > LIMITS.notebookBytes) throw new Error('Raw saved record is too large for the 4 MiB backup limit. Stored data was kept.');
+  if (text.length > LIMITS.notebookBytes || new TextEncoder().encode(text).length > LIMITS.notebookBytes) throw new Error(`Raw saved record is too large for the ${LIMITS.notebookBytes / (1024 * 1024)} MiB backup limit. Stored data was kept.`);
   for (const character of text) {
     const point = character.codePointAt(0)!;
     if (point >= 0xd800 && point <= 0xdfff) throw new Error('Raw saved record has invalid Unicode and cannot become a UTF-8 backup. Stored data was kept.');

@@ -6,11 +6,11 @@ import { company, dataset, screen, TODAY } from './model-fixtures.ts';
 
 test('notebooks begin with detached dataset and empty annotations, query and default screen', () => {
   const input = dataset(), notebook = createNotebook(input, TODAY);
-  assert.equal(notebook.schemaVersion, 2); assert.match(notebook.id, /^[0-9a-f-]{36}$/);
+  assert.equal(notebook.schemaVersion, 3); assert.match(notebook.id, /^[0-9a-f-]{36}$/);
   assert.notEqual(notebook.id, createNotebook(input, TODAY).id);
   assert.equal(notebook.title, 'Stock notebook'); assert.equal(notebook.query, '');
   assert.deepEqual(notebook.screen, screen()); assert.deepEqual(notebook.watchlist, []);
-  assert.deepEqual(notebook.comparison, []); assert.deepEqual(notebook.notes, []);
+  assert.deepEqual(notebook.comparison, []); assert.deepEqual(notebook.notes, []); assert.deepEqual(notebook.briefs, []);
   input.companies[0].revenue = 0; assert.equal(notebook.dataset.companies[0].revenue, 120);
   const edited = editState(notebook); edited.screen.filters.push({ metric: 'netIncome', operator: 'gt', value: 0, currency: null });
   assert.deepEqual(notebook.screen.filters, []); assert.equal('dataset' in edited, false);
@@ -28,7 +28,7 @@ test('notes normalize line endings, remove empty entries and sort by known canon
     { notes: [{ ticker: 'ALPHA', text: 'x'.repeat(4001) }] }, { notes: [{ ticker: 'MISSING', text: 'Note' }] },
     { notes: [{ ticker: 'ALPHA', text: 'A' }, { ticker: 'ALPHA', text: 'B' }] },
     { watchlist: ['ALPHA', 'ALPHA'] }, { comparison: ['UNKNOWN'] }, { watchlist: ['alpha'] },
-    { title: 'A\nB' }, { id: notebook.id + '\n' }, { schemaVersion: 3 }, { private: 1 }]) assert.throws(() => validateNotebook({ ...notebook, ...patch }, TODAY));
+    { title: 'A\nB' }, { id: notebook.id + '\n' }, { schemaVersion: 4 }, { private: 1 }]) assert.throws(() => validateNotebook({ ...notebook, ...patch }, TODAY));
 });
 
 test('watchlist, comparison and notes obey exact reference/count bounds including astral note text', () => {
@@ -56,7 +56,7 @@ test('operational validation rejects a mixed-currency money sort but accepts an 
 test('strict JSON rejects duplicate decoded keys, malformed Unicode, unsafe numbers and excessive depth/bytes', () => {
   const notebook = createNotebook(dataset(), TODAY), text = serializeNotebook(notebook, TODAY);
   assert.deepEqual(parseNotebookJson(text, TODAY), notebook); assert.equal(text, JSON.stringify(notebook));
-  for (const raw of [text.replace('"schemaVersion":2', '"schemaVersion":2,"schema\\u0056ersion":2'),
+  for (const raw of [text.replace('"schemaVersion":3', '"schemaVersion":3,"schema\\u0056ersion":3'),
     text.replace('"revenue":120', '"revenue":1e999'), text.replace('"revenue":120', '"revenue":NaN'),
     text.replace('"revenue":120', '"revenue":9007199254740992'), text + '{}',
     '['.repeat(25) + '0' + ']'.repeat(25), '{"__proto__":{},"__proto__":{}}', '\ud800',
@@ -64,15 +64,15 @@ test('strict JSON rejects duplicate decoded keys, malformed Unicode, unsafe numb
   assert.throws(() => validateNotebook(notebook, '2025-01-01'));
 });
 
-test('valid legacy notebooks migrate to v2 without changing data, IDs or annotations', () => {
+test('valid legacy notebooks migrate to v3 without changing data, IDs or annotations', () => {
   const legacy = { schemaVersion: 1, id: '22222222-2222-4222-8222-222222222222', dataset: dataset([company(), company({ ticker: 'BETA', sourceLine: 3 })]), title: 'Saved legacy research', query: 'companies with profitable', screen: screen({ currency: 'USD' }), watchlist: ['BETA'], comparison: ['BETA', 'ALPHA'], notes: [{ ticker: 'ALPHA', text: 'Evidence stays literal <b>text</b>' }] };
   const raw = JSON.stringify(legacy), migrated = parseNotebookJson(raw, TODAY);
-  assert.equal(migrated.schemaVersion, 2);
-  assert.deepEqual(migrated, { ...legacy, schemaVersion: 2 });
+  assert.equal(migrated.schemaVersion, 3);
+  assert.deepEqual(migrated, { ...legacy, schemaVersion: 3, briefs: [] });
   assert.equal(JSON.stringify(legacy), raw);
   migrated.dataset.companies[0].revenue = 999; assert.equal(legacy.dataset.companies[0].revenue, 120);
-  assert.equal(parseNotebookJson(serializeNotebook(validateNotebook(legacy, TODAY), TODAY), TODAY).schemaVersion, 2);
-  for (const schemaVersion of [0, 3, true, '2', null]) assert.throws(() => validateNotebook({ ...legacy, schemaVersion }, TODAY));
+  assert.equal(parseNotebookJson(serializeNotebook(validateNotebook(legacy, TODAY), TODAY), TODAY).schemaVersion, 3);
+  for (const schemaVersion of [0, 4, true, '2', null]) assert.throws(() => validateNotebook({ ...legacy, schemaVersion }, TODAY));
 });
 
 test('v1 unique-ticker semantics remain strict while v2 accepts dated annual history', () => {

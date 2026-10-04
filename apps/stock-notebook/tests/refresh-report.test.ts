@@ -14,7 +14,7 @@ function fixtures(): { base: Notebook; incoming: Dataset; choices: RefreshChoice
     filingUrl: 'https://example.com/old-a', sourceLine: 2,
   };
   const base: Notebook = {
-    schemaVersion: 2, id: '00000000-0000-4000-8000-000000000001', title: 'Retained study',
+    schemaVersion: 3, briefs: [], id: '00000000-0000-4000-8000-000000000001', title: 'Retained study',
     dataset: {
       id: '00000000-0000-4000-8000-000000000002', fileName: 'previous.csv', importedDate: '2026-10-03',
       basis: 'annual-12-month', units: 'currency-millions', synthetic: false,

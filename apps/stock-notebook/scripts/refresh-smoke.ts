@@ -105,7 +105,7 @@ const result = {
     note: 'Original fictional data, disjoint five-year periods, retained long source links and maximum Unicode note lengths. Exact CSV bound includes trimmed padding. No source link is fetched.' },
   timings,
   artifacts: Object.fromEntries(Object.entries({ before, after, report, research }).map(([name, value]) => [name, { bytes: Buffer.byteLength(value), sha256: digest(value) }])),
-  verified: ['1,000 complete old/new period records', 'independent latest-period ordering and amounts', 'unchanged notebook identity and applied criteria', 'exact ordered research retention', 'complete correctly attributed proposed report', 'incoming-only final research provenance', 'exact schema-v2 JSON roundtrip', 'unchanged previous notebook'],
+  verified: ['1,000 complete old/new period records', 'independent latest-period ordering and amounts', 'unchanged notebook identity and applied criteria', 'exact ordered research retention', 'complete correctly attributed proposed report', 'incoming-only final research provenance', 'exact schema-v3 JSON roundtrip', 'unchanged previous notebook'],
   limitation: 'One Node sample and specific maximum-bound fixture, not a browser or performance guarantee. Native browser publication/persistence is verified separately.',
 };
 writeFileSync(join(directory, 'verification.json'), JSON.stringify(result, null, 2) + '\n');

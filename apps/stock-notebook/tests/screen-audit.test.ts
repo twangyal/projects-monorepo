@@ -117,7 +117,7 @@ test('maximum Unicode source provenance does not prevent a complete exclusion re
     metric: 'growthPct', operator: 'lt', value: index, currency: null,
   }));
   const book = validateNotebook(candidate, today);
-  assert.equal(Buffer.byteLength(JSON.stringify(book)), 1_455_125);
+  assert.equal(Buffer.byteLength(JSON.stringify(book)), 1_455_137);
   assert.deepEqual([book.notes.length, book.watchlist.length, book.comparison.length], [0, 0, 0]);
 
   const report = buildReport(book, today);
