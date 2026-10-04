@@ -44,6 +44,8 @@ jobs:
           --output /tmp/stock-paraphrase-diagnostic.json
       - name: Verify maximum annual-history input and complete report
         run: node --experimental-strip-types scripts/annual-history-smoke.ts
+      - name: Verify maximum reviewed refresh and retained research
+        run: node --experimental-strip-types scripts/refresh-smoke.ts
       - run: npx playwright install --with-deps chromium
       - name: Production financial research, recovery and downloaded reports
         run: npm run test:browser
