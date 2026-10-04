@@ -1,0 +1,468 @@
+{
+  "issue": 84,
+  "date": "2026-10-04",
+  "implementation_commit": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+  "status": "passed locally and in exact-head CI",
+  "commands": {
+    "check": "npm run check",
+    "browser": "CHROMIUM_PATH=/usr/bin/chromium npm run test:browser",
+    "maximum": "MOTION_CELS_OUTPUT=/workspace/motion84-native-rerun MOTION_CELS_BASE_URL=http://127.0.0.1:4294 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_drawing_cels.mjs"
+  },
+  "unit": {
+    "passed": 63,
+    "failed": 0,
+    "skipped": 0,
+    "duration_ms": 609.103714,
+    "log_sha256": "cda063b9d09447ce09b4de3ac644e85464ad97f8081b55bef93ffde9bef4d31b",
+    "lint": "passed",
+    "typecheck": "passed"
+  },
+  "browser": {
+    "total_cases": 61,
+    "combined_run": {
+      "passed": 60,
+      "failed": 1,
+      "seconds": 45.7,
+      "log_sha256": "a4540e410c793d82ccfdd490e61e1894cc445090e3562ff8567b83cfeb8e8382"
+    },
+    "remaining_affected_run": {
+      "passed": 1,
+      "failed": 0,
+      "seconds": 2.6,
+      "log_sha256": "5c9a7843d12605e9471213c406a3dff032aa11d3e7284d47c928d6d5ccb2baf2"
+    },
+    "explanation": "The sole combined-run failure expected the obsolete wording original browser record. The updated message truthfully covers a later completed receipt; the test-only substring correction passed the complete affected preservation/replacement/reload case. All 17 new cases passed in the combined run."
+  },
+  "prior_integration_failures": [
+    {
+      "run": "59 cases: 57 passed, 2 failed",
+      "cause": "Old raw overbound fixture was below the new 168-byte migration allowance; transformed-canvas test used offscreen absolute coordinates after native scrolling.",
+      "fix": "Raise the explicit overbound fixture and use native locator-relative canvas clicks. Both affected cases passed together in 2.9 seconds."
+    },
+    {
+      "cause": "First native focus assertion ran after a backup download button moved focus.",
+      "fix": "Assert deletion focus immediately after the action; the unchanged product passed the affected test."
+    }
+  ],
+  "observed_product_red_green": [
+    {
+      "case": "legacy cel controls/model/renderer",
+      "before": "10 new model cases and 7 renderer cases failed against the old implementation; native legacy import/pixel succeeded before missing cel controls failed.",
+      "after": "New model/render and full native workflows pass."
+    },
+    {
+      "case": "array data admission",
+      "before": "A caller-provided array map accessor executed during validation.",
+      "after": "Nonplain array properties/accessors are refused before iteration."
+    },
+    {
+      "case": "late history image decode after newer edit",
+      "before": "Undo cursor advanced before decode and stale rollback damaged newer history ancestry.",
+      "after": "Detached peek followed by owned synchronous cursor publication passes unchanged real image-decode regression."
+    },
+    {
+      "case": "late explicit recovery write",
+      "before": "Actual durable A and current B differed while UI falsely claimed B saved.",
+      "after": "Successful stale A retains protection for B and provides the actual A receipt; explicit B save survives reload."
+    },
+    {
+      "case": "queued A success then B abort",
+      "before": "Actual durable A differed from stale preserved download O after native B transaction abort.",
+      "after": "Monotonic completed-write receipt exposes A while keeping B unsaved; explicit B retry passes."
+    }
+  ],
+  "source_sha256": {
+    "apps/motion-studio/src/export.ts": "efcfbd1fb5dfbd5b5e57ad6e0b859d55801897785faa565f3f9b2099934f9c89",
+    "apps/motion-studio/src/render.ts": "75303e53fadf282acd775ae04dfad047f3c06232923d7ef9d95f7cef245f311b",
+    "apps/motion-studio/src/model.ts": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc",
+    "apps/motion-studio/src/images.ts": "7f4855569d2ac8d828d0b337876f44918244e0d35ffc3486f58a8ed123234d2e",
+    "apps/motion-studio/src/gif.worker.ts": "cc57713bfc6fdab2020bd82209b7d9bb1702ebfdeacda7f9fc4d32253a6ab401",
+    "apps/motion-studio/src/style.css": "fee27504777dc924d822d40db63134ee74c405a179abb13b03257314ecbfee9b",
+    "apps/motion-studio/src/storage.ts": "2e20b405a87abc4b4eb68f4951dc3238aefe79fdf720dd05fd3030ef70003263",
+    "apps/motion-studio/src/main.ts": "34695c2d7e3c9ab852802055880cf2ade37db4c34b083c23a62a16bc0eb0c1cc",
+    "apps/motion-studio/src/history.ts": "f9b8da39214d9196b92760a4fe889808dcd4e5204293ca690f2c7f6fe77b3004",
+    "apps/motion-studio/src/gifenc.d.ts": "075e339ba9b618ecac2b42fca7a9489e71feb40fef00c203a04b827fa05fc07c",
+    "apps/motion-studio/tests/browser/cels.spec.ts": "0cace9794d95bcbbabdf5ec8c362d10e0f84fea41af217c00fd64e04ca875c2c",
+    "apps/motion-studio/tests/browser/cel-fixtures.ts": "b734c2fe76397f6d1d19676229e7ddc9f435db54050b6461f149912b88c25392",
+    "apps/motion-studio/scripts/smoke_drawing_cels.mjs": "cefae832346e7bf3bb1f2901c3517b6dc183892601a83ba17cfbb78460a90214"
+  },
+  "production_build": {
+    "vite_ms": 342,
+    "assets": {
+      "main-woqrqDgp.css": "5ec12cc5e70cb7ce429255a3689d62ddbff44926b02fc37cc6d27b9e062bcc38",
+      "main-C1vOGNrA.js": "fc38295c11a8f1e14569e567b5b33c2cc17db1781abc1e758cc42d4ef5faa897",
+      "gif.worker-BOpVV7Ww.js": "2cd371a67d4f927f9f8fc45de603d71a3f24f9ce04a7766265f7a6b2088a1c75"
+    }
+  },
+  "maximum": {
+    "schemaVersion": 1,
+    "scope": "Original bounded fixture and native UI acceptance; no producer oracle imports.",
+    "outputDirectory": "/workspace/motion84-native-rerun",
+    "fixtures": {
+      "legacy": {
+        "path": "/workspace/motion84-native-rerun/legacy-exact-6MiB.motion.json",
+        "bytes": 6291456,
+        "sha256": "6288f763d1114b05a52eb205b38c757ee48d1e4a54b94f60486e0f8d933a3975"
+      },
+      "maximum": {
+        "path": "/workspace/motion84-native-rerun/canonical-exact-6MiB-plus168.motion.json",
+        "bytes": 6291624,
+        "sha256": "b72b38ccc84534a1fa2cf8995ebce76a7d7e8c2ee5402e92522ba5a0c9a85a9f"
+      },
+      "allCels": {
+        "path": "/workspace/motion84-native-rerun/eight-drawings-192-cels.motion.json",
+        "bytes": 210125,
+        "sha256": "413abdbef4aebe85dc70d66ffc930a98ce2dcd6bcbd5106965598741e01927bb"
+      }
+    },
+    "counts": {
+      "legacy": {
+        "layers": 8,
+        "images": 4,
+        "cels": 4,
+        "strokes": 100,
+        "points": 10000,
+        "longestStroke": 1000
+      },
+      "maximum": {
+        "layers": 8,
+        "images": 4,
+        "cels": 27,
+        "strokes": 100,
+        "points": 10000,
+        "longestStroke": 1000
+      },
+      "allCels": {
+        "layers": 8,
+        "images": 0,
+        "cels": 192,
+        "strokes": 100,
+        "points": 10000,
+        "longestStroke": 1000
+      }
+    },
+    "legacyMigrationExpectedBytes": 6291540,
+    "limits": [
+      "Four images plus four drawings migrate with84 bytes, not168.",
+      "The192-cel fixture has eight drawings and zero images.",
+      "No browser memory peak is inferred from file sizes."
+    ],
+    "checks": [
+      "Exact6MiB original schema1 imports and migrates without changing artwork; four drawing wrappers add84 bytes.",
+      "Exact6MiB+168 canonical graph and all embedded PNG bytes survive full persistent Chromium process restart; actual before/after backups are byte-identical.",
+      "Raw whole-file capacity+1 refuses atomically, preserving complete saved graph.",
+      "A native title edit making canonical JSON exactly one byte too large retains the editable draft but cannot replace committed backup or native saved record; correcting it restores admission.",
+      "All96 actual GIF frames, exact abrupt held cuts, static/moving controls, opaque patches, infinite loop and8second cumulative delays independently decoded.",
+      "Separate eight-drawing graph admits all192 boundaries and aggregate100strokes/10kpoints, without claiming simultaneous four images."
+    ],
+    "artifacts": [
+      {
+        "kind": "frame-png",
+        "frame": 23,
+        "bytes": 8398,
+        "sha256": "9ef0a137a5453df860b084d0254d674560b186d4721fe6cdf275d54ee853ddca"
+      },
+      {
+        "kind": "frame-png",
+        "frame": 24,
+        "bytes": 8402,
+        "sha256": "681f1b6298f0ea17d76e66ae1e28e1a85f6bd9f2bce613217a1ab7b651a67705"
+      },
+      {
+        "kind": "frame-png",
+        "frame": 47,
+        "bytes": 8388,
+        "sha256": "d103cbc23f896037d81082c0c6fed976bed066ae6fa1c8066d8b4ec21684cb68"
+      },
+      {
+        "kind": "frame-png",
+        "frame": 48,
+        "bytes": 7586,
+        "sha256": "1ff507a5bbf7613cefb1d2067edfb819300df3820caf7aab0af2512dd23b30f7"
+      },
+      {
+        "kind": "frame-png",
+        "frame": 71,
+        "bytes": 7632,
+        "sha256": "e62f568397174ca3b5414caddbfce5b64f5ca83cc101d47d615122f34d746223"
+      },
+      {
+        "kind": "frame-png",
+        "frame": 72,
+        "bytes": 8430,
+        "sha256": "65878a2b17317e31ab72ef5b7bb0e31ee216d72a134986ccc4877e6ceb120eb9"
+      },
+      {
+        "kind": "frame-png",
+        "frame": 95,
+        "bytes": 8326,
+        "sha256": "3fa613b22271df7433b201fdac455d3ec5536410de712bab1c4a827c8b311951"
+      }
+    ],
+    "browserVersion": "151.0.7922.173",
+    "firstBrowserProcess": [
+      523686
+    ],
+    "nativeSavedRecord": {
+      "bytes": 6291624,
+      "sha256": "8c954472d6983adc3b4d6c9073a5a89f03a2038bfdea207a76507bf13b7852aa"
+    },
+    "secondBrowserProcess": [
+      523806
+    ],
+    "cancellation": {
+      "endToEndWallMs": 1189.7981639999998,
+      "progressFractionAtCancel": 0.052083333333333336,
+      "partialDownload": false,
+      "nativeWorkerStarted": 1,
+      "nativeWorkerTerminated": 1
+    },
+    "gif": {
+      "frames": 96,
+      "durationMs": 8000,
+      "frameHashes": [
+        "1f30cb30c2b29b058e2013108f32d75e6edefc9fa4b84528af861d4718edbc1f",
+        "dc9de8b1345f0c19a1bb9e57322c855a2b4cd57036695a3716b1c9fccb50f438",
+        "ae943fd8110465b07ddacf929928397b1bda67adef945b2153b4beaaaeca26cd",
+        "2fa2461c4756a7b412ee9145ff1a6e64a7afecbd2a1f8c16e1014b25323f58df",
+        "91b4d5da9c593b2815a3066b494c8c7c378f4e7a891b28259fb63fb0577e25ee",
+        "35b481b42aaef57fa009c27950cf6345d8616a7a66dc073899e0926397073e17",
+        "b0cafa0e1c964b522449d4a0c847e4d07163ab656dcce9c29dceedfe73fbd756",
+        "ff05ec68b4b1156a5b4a9bdb77db1bd4684547159f988ac2945ebadf0332b647",
+        "a789b9eeebb555211f18ff7c85da3cd8c258eb8c5901b64ecba08536f617517f",
+        "70ecc536faa1257fc5d35e44fdecc483be39192e902bb8597d1f0060a4f1e43f",
+        "6feade244a20db9f8a3e2a643301f83c94025649e51c050dfbc6f8cbd2f86487",
+        "918d1877e9a02b5ef05f7e8788dc9a2dae09bb5dcb6019ce1c26b2235e150592",
+        "78e0351942cb7cc755e7948336f1432de4ae7c38127cdf06b41ad36a9cf7491f",
+        "696a878a2bd1efc7c45fadcdc842f95addbb8a986a004ac0427118e2d7de9927",
+        "aad554b6a90f0aa0ffcf2bee6069599778ea9a5d4066d549edbdfd9aab6f73d3",
+        "dfdb9c3346bce97b9773377b3cb694c37b1ac9d35c4c26ebd4791c893d2d0be8",
+        "3187370240cf6fc9786db4300aa1e136bd48a2cc2c16407050774b1b38895489",
+        "2ab0af32b360187f4da59970ea37ad47a9fb7a0525b7d7e6c2156de5faaacceb",
+        "cc5d51bfa92a6aad1506b49e3a17de88533191257a986e154926c5eeaeb8d25e",
+        "a256c8a57042b0467e277650e3c18f2970c2a8c27c1620b314b479c8518d60cc",
+        "b91b64df31742044e7a8a0be492cc85c3cbd387e873155c9b6b5ace22143a708",
+        "a904c26d7309b9f575ae3e6d32b785d3a5a5905417191aadccfcb5ab2a739ad2",
+        "8ace9d89ce28016a8f65910680fc169f869ecb09dff2d98bde9acab44c2ea178",
+        "e7f20346173c116fe55453989875786fc66259dafc4172013738c15763468248",
+        "3dc66a36b3d2c6b6b91028bdb771eae7ffd74a885076957873903b96c34182d8",
+        "8ba7bc1da7431ab3f8a6823f121e54b5d6f7e95d3d6928d94bbfb48df119ff29",
+        "64338a612143dd68119691ab352da69ba6e11e4b66703ff35620e7fe815d138b",
+        "03e9e72ed210b8328eb2bd18be58374107fbdaad5c4f22fdf3d764ddc56b1702",
+        "6b3b275c16de861af18b1d4943b311b18ddfadd9b5bd5b9040f865cf3d2e0209",
+        "8cf855a39c23dbf404fd082c2f85f69a5a520f3a3c341c1a288fe573648f03f6",
+        "fbc5f9b7583d2940e3f8ce3ab6b2913c2873fc5cbf2646266bf181cbe4d7fff4",
+        "e2e897c932e9877e6a3284bf4ddb3ac12a40ca683b633a450ac3844e24db3b46",
+        "e64e09e2b1e8925b288c33e1261a91a3b39413675c35d954c6ac24282f3c842b",
+        "d89b36608e06168b90ad2b0d61bbbbc36cced8b20d8deae6023131234f519869",
+        "43d4aa63342e4b46ad449176fe71a4fd8e7632c74130a33049bc7a33726ca0eb",
+        "1ffcaae6a4c806a57b11ccfa5683a2a11eaeed267c59114cecd272bbd725fc93",
+        "93639db1ca0fff1dcf547e64fc4ee36885d13c28a27975aa9147e19e6a020ec6",
+        "e4b27948c5cfe747f691feff7c027707db180c9e0792e2282cfb9fee4e149dba",
+        "aec138dc4e3437016feafca71702802ae95ffcac61855cd1ca1e9cc2c21e3dd1",
+        "0102b85733a3d88d622cdf4b6e35b09f6412088a97b95b3324d7356af5034379",
+        "0d85d13e6603704e72f001b182e30259f74480c96d4a852c2932c3813c019f1c",
+        "27b0a6bb739aaa01c1fb9bd71617f8532430fe31cd40b94abdd512ae1d87fe03",
+        "ce239d670df33a9e741d882e688f0a7ee8c44dec0dcbe3fb3c95b34494313f2a",
+        "5a9dbfcb80de06ba7786e8fb38ed39ead9eb50de8867da1fed5ee0eda0033edc",
+        "a79c46fcd2feae072951616ecdef07031397d051c19ba8f05aa9047d2e892f14",
+        "58cb228afcd7eb506190468adeddaa2bd9d8fba365c5aee284f22ac7ab90620a",
+        "54febd5b00bd71fa20cf53f1b6c0a13da281483c735581991721e4452ae4cda9",
+        "27ddb44ed58e64c71f8a3430a9ae974c22e683e48658a2c230ed83a4c4784aa5",
+        "8a4545781b6762a448010dbbfa13a08b7f79c83a0c395455dfd82f7b6bcfeaac",
+        "1c1a94783896fd3e4461f05fd885d3709bb0af567e5ad018272756e303e98330",
+        "9c02bf883f558a511a733a01d27324a0d9b377e3980c31a9a1ca84344a72d6de",
+        "70ea5befcac3520690b5104c28abb91aa67c46b4c1fdeae78335a4e5544f509f",
+        "574f55b23e1adb42ec0663acb494f98145a7467c923e269f38717b7058a190db",
+        "3f9ada43c1e5da434596b3717183e41875d033409c27639b212fd698774999c0",
+        "1214105df793d9a7fb6442571a4a39ef2c3011f6d1ca40583747b00142c04c30",
+        "db77ca824a444d297c0195480d0c36b0b0d12388fe010036c0d3a1af12f89cfa",
+        "9afcfd65b5ae3236d679a67ad95c89ca8102936134d976b26647ff483a8ec12e",
+        "44e6d2a9dce93a48ff755bc226a791e31088214a31efa2c6920400514a85d309",
+        "73322a3f2609680cab2e42bcab219731fe734ed00dc75a08de0884a4773a35f9",
+        "6e2bf73e3c6d1b4073b06cf244f05a2746f8e5b1053ab7f9157abfa2085b1829",
+        "7c154df3890ebd32ea0e00ddf860f0e71cc7ad253c3efc7057e6310ec9d62a8d",
+        "a27db33135f0a43c054e49d883380f29b6e7e7b99e4a04d72d5ba14c007f015b",
+        "8032cedd2955be91df3ef3cc243324745e7dd1baeb986556f850c3490900c0ec",
+        "c8fa09e6b7b6e99a7453a37b99afd40d3442800c45aed9230f92d89eda5dca9c",
+        "3695eca384831f3afd9b0dd6f076709be875a54c2e140a2f80a1b771655936ea",
+        "bbeb1e8e450ca90d595c1e3125e3ca3226db2e158cc6d322aca365edce2655bd",
+        "f4961465f8512a05013385780d0663b62679e67995aafaff6177aa399463a1bd",
+        "ff1cc4ce136beb84a53655f74fda738954a0a118c8493fc459c1f0e094ee1d1b",
+        "ced5651bafa9775c4cf6e05ac2b44d131b2d7f9c64e4cbf3c77330954624cbb7",
+        "3d5014198b22f0fc668337525c0048a6393c6a490232692a3e74b31493a42a47",
+        "b510721b8ef7312158c050c2507fa94152312bb925e8e7bb5ca1fec73cc2ec69",
+        "bc48335c1cb2cbc6b9bd4ad9955653a8235666a0e888943492a1922096d60185",
+        "9324d8f6ece8ad057b949e7a344165cbf16f8334abf229003519a93c642338cc",
+        "e436d138bc93ff86ba9ef4a68e253eda7c648bccadfc2e227a26abf0fea7b2c0",
+        "6b9ca6e89acfbac7f208e59e86c7b1bb56d91e33b48789fd15a29846a20599fe",
+        "5f2901c492a837949be2122408942611a8acf44d7ec92a4cb411445e1c518b7e",
+        "2a6c46334a7c741733c3d087b1e6d5167f292c7778d8d56f58c1aea338c3049d",
+        "842f5b3608711a60eeb84228594a78cf9db3b03a2dcaf8e0869636ddb58f5bd6",
+        "87ab20edfc0ee8d0ee2adc1a4c475331e7aa440493709933c407e029e7e4bfc7",
+        "acb95c4adeabdb98759ac1be32e6fc7edec5987a29e75ff5f80e0540eb464df1",
+        "6e991e2218303bd54a77408b68e696b820c56e52ee36b5d76238aa97cf7aa03f",
+        "0a3100ef1bfd22ce211233f2f9e9565ef48ac8f426a548048efc7ee705a80450",
+        "a32f53f96b21bde3973296a1e813b7ba338581b50a6028e6d04fb4b0657377d9",
+        "a05e49a0c92f7f2e89b7e95ab117c0ab86a069c1503aa6cbe38989fe43ffe0cf",
+        "7685963f703de191465e2f4c86736d31ffca0d15936a6f8e1f5b1bf6f6a58c1a",
+        "620678933df740790bc966e159f876419a8b50f2940085a018927b33fcd8076c",
+        "27a4e4f6c15d161cc8ddb566643eea8d8829dea2717719737ebe0b68d6177f6d",
+        "e20fff9e94916956f3e64ab70e9729a2bac61feb32ef164534745c185d76221b",
+        "dabd90097fbecd5893e96ad1374c51ce2690875e429d81f108b6452dec62f18f",
+        "6fec4e109fcd5f2891f3b2386c838887930d2b77519a3318aff6f89b81845e3a",
+        "829870aa556811fa4ad249353f5fde5aff1d25bb9e271b7d6b8934a2425d333b",
+        "a2d17a4729fd3a29990cb0a9516715f9a4f85e075b8f1737274d70bb28ef272a",
+        "98336d3ae5d2c9edd94cbbb58558ceafcc034d80a4ace658045cb5bdf8c09b1e",
+        "5c3a135028dfa2ccfc693192aaf48fc49897a5cf8e6e1dd5e45a8cbc2db39455",
+        "e2d3e9b98abaeac95e4840557f04a90a9ebbec0f129a7fd150b8cc692ab06d71",
+        "1e31ee056a6d461b596cf9c9b3abe7d731ce2d90c9fc39a5be516e43e08c1f22"
+      ],
+      "bytes": 126667,
+      "sha256": "5329f92dea3d210a6e07c85e0fa0078db014355119c01453e5d1be240cafdea1",
+      "encodeAndDownloadWallMs": 861.8827450000026,
+      "independentDecodeWallMs": 501.7369699999981
+    },
+    "history": {
+      "retainedStates": 3,
+      "undoSteps": 2,
+      "serializedBytesPerState": 6291624,
+      "retainedSerializedBytes": 18874872,
+      "budgetBytes": 20971520,
+      "failedFullBudgetDuplicateKeepsRedo": true
+    },
+    "pageErrors": [],
+    "externalRequests": [],
+    "status": "passed"
+  },
+  "maximum_attempt_history": {
+    "first_attempt": "/workspace/motion84-native-final",
+    "status": "failed at cancellation sampling; no cancellation was issued",
+    "cause": "Adaptive polling missed a real 228.5 ms progress window. A separate read-only native observation saw 100 progress changes, including 95 partial fractions, followed by a successful genuine GIF download.",
+    "fix": "Observe the public progress element with requestAnimationFrame polling; require actual 0 < progress < 1 before native Cancel. No worker delay or synthetic progress.",
+    "first_verification_sha256": "89923cd24d0c782175cdb66b6cc2693a534097172b0a028827fcec5a6c15ce94",
+    "diagnostic_sha256": "d39c1abdf0ffb55cfd45cdc69e24449c914f6b20af4f7a69104a8b2a99d8e41b",
+    "final_runner_sha256": "cefae832346e7bf3bb1f2901c3517b6dc183892601a83ba17cfbb78460a90214"
+  },
+  "actual_artifacts": [
+    {
+      "name": "desktop.png",
+      "bytes": 207255,
+      "sha256": "14eb4be71fcb192cd14d3f0eb26fc4ddc3f4d5d7c55ef257804958e463776de8"
+    },
+    {
+      "name": "after-canonical-plus-one.motion.json",
+      "bytes": 6291624,
+      "sha256": "8c954472d6983adc3b4d6c9073a5a89f03a2038bfdea207a76507bf13b7852aa"
+    },
+    {
+      "name": "frame-47.png",
+      "bytes": 8388,
+      "sha256": "d103cbc23f896037d81082c0c6fed976bed066ae6fa1c8066d8b4ec21684cb68"
+    },
+    {
+      "name": "canonical-exact-6MiB-plus168.motion.json",
+      "bytes": 6291624,
+      "sha256": "b72b38ccc84534a1fa2cf8995ebce76a7d7e8c2ee5402e92522ba5a0c9a85a9f"
+    },
+    {
+      "name": "frame-24.png",
+      "bytes": 8402,
+      "sha256": "681f1b6298f0ea17d76e66ae1e28e1a85f6bd9f2bce613217a1ab7b651a67705"
+    },
+    {
+      "name": "legacy-exact-6MiB.motion.json",
+      "bytes": 6291456,
+      "sha256": "6288f763d1114b05a52eb205b38c757ee48d1e4a54b94f60486e0f8d933a3975"
+    },
+    {
+      "name": "frame-23.png",
+      "bytes": 8398,
+      "sha256": "9ef0a137a5453df860b084d0254d674560b186d4721fe6cdf275d54ee853ddca"
+    },
+    {
+      "name": "before-budget-duplicate.motion.json",
+      "bytes": 6291624,
+      "sha256": "c26e602424206c69aa9eedfc4634e76bb510a468ff68daf68e95b0fb7fed6fdd"
+    },
+    {
+      "name": "after-oversize.motion.json",
+      "bytes": 6291624,
+      "sha256": "8c954472d6983adc3b4d6c9073a5a89f03a2038bfdea207a76507bf13b7852aa"
+    },
+    {
+      "name": "maximum-after-restart.motion.json",
+      "bytes": 6291624,
+      "sha256": "8c954472d6983adc3b4d6c9073a5a89f03a2038bfdea207a76507bf13b7852aa"
+    },
+    {
+      "name": "frame-48.png",
+      "bytes": 7586,
+      "sha256": "1ff507a5bbf7613cefb1d2067edfb819300df3820caf7aab0af2512dd23b30f7"
+    },
+    {
+      "name": "eight-drawings-192-cels.motion.json",
+      "bytes": 210125,
+      "sha256": "413abdbef4aebe85dc70d66ffc930a98ce2dcd6bcbd5106965598741e01927bb"
+    },
+    {
+      "name": "frame-71.png",
+      "bytes": 7632,
+      "sha256": "e62f568397174ca3b5414caddbfce5b64f5ca83cc101d47d615122f34d746223"
+    },
+    {
+      "name": "actual-192-cels.motion.json",
+      "bytes": 210125,
+      "sha256": "bf54f314bf01c22754bd9aa126be6ef72a10f754c02caeb11325a1cdf404309a"
+    },
+    {
+      "name": "frame-72.png",
+      "bytes": 8430,
+      "sha256": "65878a2b17317e31ab72ef5b7bb0e31ee216d72a134986ccc4877e6ceb120eb9"
+    },
+    {
+      "name": "after-cancel.motion.json",
+      "bytes": 6291624,
+      "sha256": "8c954472d6983adc3b4d6c9073a5a89f03a2038bfdea207a76507bf13b7852aa"
+    },
+    {
+      "name": "maximum-96-frames.gif",
+      "bytes": 126667,
+      "sha256": "5329f92dea3d210a6e07c85e0fa0078db014355119c01453e5d1be240cafdea1"
+    },
+    {
+      "name": "maximum-before-restart.motion.json",
+      "bytes": 6291624,
+      "sha256": "8c954472d6983adc3b4d6c9073a5a89f03a2038bfdea207a76507bf13b7852aa"
+    },
+    {
+      "name": "frame-95.png",
+      "bytes": 8326,
+      "sha256": "3fa613b22271df7433b201fdac455d3ec5536410de712bab1c4a827c8b311951"
+    },
+    {
+      "name": "after-budget-duplicate.motion.json",
+      "bytes": 6291624,
+      "sha256": "c26e602424206c69aa9eedfc4634e76bb510a468ff68daf68e95b0fb7fed6fdd"
+    },
+    {
+      "name": "actual-legacy-migrated.motion.json",
+      "bytes": 6291540,
+      "sha256": "d5eae37b33f3f989b11cc5c35d2566cb8ef6bf0b4ba5f871ae7d8b0222facbae"
+    },
+    {
+      "name": "390px.png",
+      "bytes": 176766,
+      "sha256": "b30ffac65a17c05d7f3307cd6beacb81940e88ee131dfd8c97d265c719b670bb"
+    }
+  ],
+  "limits": [
+    "Controlled persisted pagehide/pageshow events establish lifecycle ownership, not physical BFCache/device compatibility.",
+    "The maximum restart closes and launches distinct actual persistent Chromium processes.",
+    "Four images plus four drawings cannot simultaneously have 192 drawing cels; separate fixtures establish those limits.",
+    "GIF timing is encode-plus-download wall time; independent decode is measured separately. No peak memory claim.",
+    "Artwork holds and layer poses are deterministic; no AI drawing, stroke morphing, onion-skin guides, online storage or physical mobile-browser claim.",
+    "Generated maximum artifacts and screenshots remain local; reproducible fixtures and complete hashes are recorded here."
+  ],
+  "ci_receipt": "2026-10-04-drawing-cels-ci.json"
+}
