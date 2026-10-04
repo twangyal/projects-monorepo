@@ -2,7 +2,7 @@
 
 A local 3D filmmaking sketchbook for idea #7. Stage two block characters in a
 courtyard, choose looping actions or author timed movement, visibility and action cues, adjust lighting, compose static or
-traveling cameras, rehearse or scrub the shot list, and export a silent WebM film. Native browser
+traveling cameras, rehearse or scrub the shot list, retain alternate recorded takes, and export a silent WebM film. Native browser
 JavaScript/WebGL: no accounts, external assets, services or paid APIs.
 
 ## Run
@@ -110,7 +110,61 @@ eye–target separation is at least 0.3 and horizontal separation at least 0.1; 
 is 25–80 degrees. Boundary decisions use JavaScript’s represented numbers. These
 limits do not prevent moving through set geometry or performers. No easing, roll,
 animated lens, transitions between shots, audio, skeletal assets, dialogue,
-generative animation, separate take library or immersive video export yet.
+generative animation, recorded-clip splicing or immersive video export yet.
+
+## Retained takes
+
+The take notebook pairs an actual recording with the exact editable film captured
+when recording began. Finish or explicitly discard unsent scene fields, enter a
+**Take name**, then choose **Record take**. Keep the tab visible until recording
+and saving finish. Keep four takes, each with a WebM of at most **32 MiB**, plus
+its bounded film and metadata. Recording counts actual encoder chunks and stops
+if that limit is exceeded; requested bitrate is not a size guarantee. Direct
+**Export WebM** remains available with the same bound.
+
+Select a saved take to **Play recording**, **Restart recording**, or **Stop
+recording playback**. Playback leaves the current scene and unsent fields intact.
+Renaming changes its notebook label, not the captured film title. Deleting asks
+for confirmation and removes a take only after storage completes. Take deletion
+is not scene Undo.
+
+**Open editable film** asks before restoring the captured film. Correct or
+explicitly discard unsent scene edits first. Restore is one ordinary history
+edit; Undo returns to the previous committed film. The retained take stays
+available. Edit the film and record another take to compare an alternative. The
+ordered shot list assembles authored camera cuts; the notebook does not splice
+already recorded clips.
+
+**Download take backup** saves one complete `.shot-take` file with the film,
+metadata and exact WebM. **Import take backup** validates and appends under a new
+local identity. It never replaces the current film or another take. Export each
+take before deleting it or moving browsers. Ordinary **Save project** JSON holds
+the current editable film only; it does not include this separate notebook.
+
+The notebook uses IndexedDB on this browser origin/port, independently of the
+protected scene draft in localStorage. Saved status requires a completed storage
+transaction. A failed save retains the completed take in memory with **Retry
+saving take**, a complete backup download and explicit discard. Download it
+before leaving; unsaved recordings do not survive reload. An unreadable library
+is protected and offers **Retry take library**, never silent replacement. A
+change in another tab rejects a stale write; reload/review before retrying.
+Browser data clearing or eviction can remove saved takes; keep portable backups.
+
+A backup has a 16-byte header, at most 80 KiB of UTF-8 JSON manifest and 32 MiB
+of WebM. Its film stays strict schema 3 within 64 KiB. Framing, field shapes,
+Unicode, byte lengths and SHA-256 are checked. Imported film/video pairing and
+timestamps are supplied and unverified; hashes prove integrity, not authorship
+or correspondence. No external media is fetched. Bounded WebM-header checks
+and an actual decoded 960×540 first frame establish basic playback admission,
+not validity of every codec frame. Playback errors preserve bytes for backup.
+
+Native recorder WebM may have unknown/infinite duration or lack seekable ranges.
+**Restart recording** restarts actual media; arbitrary seeking is not promised.
+Original recordings are silent at a requested 30 fps; dropped frames and timing
+depend on the browser/hardware. Page departure cancels owned work and releases
+video URLs. Late reads, hashing, decoding or saves cannot replace newer fields
+or take selections. No upload, remote service, automatic eviction or destructive
+library reset is included.
 
 ## Experimental VR
 
@@ -169,7 +223,7 @@ Tests start their own server and refuse to reuse an occupied port.
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains **107 unit tests and 43 Chromium browser
+requires a device. The suite contains **146 unit tests and 53 Chromium browser
 checks**. Independent oracles include 18 camera/geometry cases and 14 performer
 timing/migration cases. Native acceptance covers decoded camera and performer
 motion against a separate pinhole projection, stationary controls, literal wave
@@ -181,7 +235,9 @@ covered using controlled page lifecycle events; physical headset tests remain ou
 
 `history.js` owns bounded scene history and shot ordering; `model.js` validates versioned snapshots/whole paths and evaluates cameras/cuts/performances; `math.js` owns column-major camera
 transforms; `renderer.js` draws native WebGL; `xr.js` manages immersive views and
-controller floor hits; `export.js` owns recording/cleanup; `app.js` manages DOM
+controller floor hits; `export.js` owns bounded recording/cleanup; `takes.js`, `take-archive.js`,
+`take-video.js` and `take-store.js` validate, transfer and preserve the separate
+notebook; `take-ui.js` owns its controls and playback. `app.js` manages DOM
 state, local drafts and imports. `performer.js` owns standalone validated pose
 evaluation; all renderer views use the same global-time performer adapter.
 
@@ -213,3 +269,36 @@ and at most 20 hidden red pixels. Literal wave-angle WebGL silhouettes differed 
 software results, not hardware or universal encoder guarantees. The
 [blocking verification record](docs/2026-10-04-performer-blocking-verification.json)
 retains hashes, exact fixtures, measurements, test history and limitations.
+
+
+Retained takes ([#86](https://github.com/twangyal/projects-monorepo/issues/86))
+pass all 146 unit cases, syntax checks and 53 distinct browser cases locally
+(43 existing plus 10 new). Native checks cover actual opposite-moving recordings,
+immutable snapshots, replay, restore/Undo, native storage abort/retry and cross-tab
+conflict, protected corrupt reads, raw-caret/late-read ownership, cancellation,
+four-slot refusal and complete backup transfer through a full browser restart.
+Independent decoded projections differ by at most 2.357 pixels in the two short
+films, within the frozen 16-pixel bound; control drift stays below 0.072 pixels.
+
+A separate actual 60-second film fills all 20 shots and 32 cues per performer. Its
+2,178,876-byte VP9 recording has 1,706 decoded frames spanning 59.936 seconds, and
+ten independent landmark samples differ by at most 2.202 pixels. Four saved
+pairs (one recording plus three imported copies) retain 8,715,504 video bytes
+through a complete Chromium process restart; the original 2,185,527-byte backup
+is byte-identical afterwards. Separate synthetic domain tests cover exact 32 MiB
+media, 80 KiB manifests and four-Blob 128 MiB accounting; these are not native video
+or memory-peak measurements. Desktop/390px screenshots were inspected.
+
+The [verification record](docs/2026-10-04-retained-takes-verification.json) retains
+actual failed attempts, corrections, source/artifact hashes and limits. Reproduce
+the original full-minute fixture with a separately running normal app server:
+
+```sh
+CHROMIUM_PATH=/usr/bin/chromium SHOT_TAKES_BASE_URL=http://127.0.0.1:4173 \
+  node scripts/smoke_retained_takes.mjs
+```
+
+The runner writes to a fresh temporary directory by default. Set
+`SHOT_TAKES_OUTPUT` to a new directory to retain artifacts at a chosen location.
+It needs Chromium and FFmpeg, records for a real minute and never builds, starts
+a server, imports producer oracles or uses a remote service.
