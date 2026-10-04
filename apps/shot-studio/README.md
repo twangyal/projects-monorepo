@@ -24,6 +24,11 @@ draft** asks for confirmation and enables autosave only after a successful write
 cancellation or failure preserves the old record. Reloading preserves the
 film, not the current playhead or selected camera/performer.
 
+Typing into scene settings while a project file is still opening cancels that
+pending replacement, even before blur commits the edit. The exact focused draft
+and existing saved film are retained; open the backup again when you intend to
+replace them. Typing alone does not commit an edit or create a history entry.
+
 ## Workflow and limits
 
 Select a performer, edit position/costume/action, adjust lighting. Compose a shot
@@ -86,7 +91,7 @@ npm run test:browser
 CI checks real WebGL pixels, desktop/mobile controls, persistence, invalid imports,
 unavailable VR and an actual WebM export decoded by FFprobe. Controlled unit checks
 cover encoder failure/cancellation and XR unavailability/setup failure. Actual VR
-requires a device. The suite contains 28 unit tests and nine Chromium browser checks, including
+requires a device. The suite contains 28 unit tests and twelve Chromium browser checks, including
 independently decoded video timestamps/changing frames, controlled immersive camera capture/undo, reversible edits, portable
 shot order and preview alignment after undo. The workflow repeats these checks for subsequent edits.
 CI screenshots were reviewed at desktop and mobile sizes. Page restoration is
@@ -98,3 +103,5 @@ controller floor hits; `export.js` owns recording/cleanup; `app.js` manages DOM
 state, local drafts and imports.
 
 Draft recovery was verified on 2026-10-04 in [run 37172319440](https://github.com/twangyal/projects-monorepo/actions/runs/37172319440) on `cae7d16d09b011b60a0057895c705497116a08ba`: all 28 unit tests, syntax checks and nine production Chromium flows passed. The new regression failed before the fix. See [the verification record](docs/2026-10-04-draft-recovery-verification.json) and issue [#44](https://github.com/twangyal/projects-monorepo/issues/44).
+
+Pending-import draft protection ([#57](https://github.com/twangyal/projects-monorepo/issues/57)) passed 28 unit tests, syntax checks and all twelve native browser cases locally on Chromium 151 and in [Chromium 153 CI](https://github.com/twangyal/projects-monorepo/actions/runs/37180331421) at `6eb2666`; all twelve project workflows passed. Two new regressions first reproduced lost text/numeric input, then passed without weakening the existing guards. They delay delivery of genuine native file bytes and verify focused raw spelling, unchanged saved film, later blur, ordinary import and Undo. This establishes the timing-dependent race, not its frequency on an ungated local file read. See [the measured repair evidence](docs/2026-10-04-import-draft-verification.json).
