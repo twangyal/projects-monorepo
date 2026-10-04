@@ -62,12 +62,42 @@ def _integer(value: object, low: int, high: int) -> int:
     return value
 
 
+def _comparison_side(value: object) -> dict:
+    side = _keys(value, {'revision', 'path', 'selection'})
+    revision = _text(side['revision'], 64)
+    if not _REVISION.fullmatch(revision):
+        raise ValueError('Use the full immutable revision returned by discovery.')
+    _text(side['path'], 4096)
+    selection = side['selection']
+    if type(selection) is not dict or type(selection.get('kind')) is not str:
+        raise ValueError('Invalid comparison selection.')
+    kind = selection['kind']
+    if kind in ('whole', 'missing'):
+        _keys(selection, {'kind'})
+    elif kind == 'lines':
+        _keys(selection, {'kind', 'start', 'end'})
+        start = _integer(selection['start'], 1, 2 ** 31 - 1)
+        end = _integer(selection['end'], start, 2 ** 31 - 1)
+        if end - start + 1 > 200:
+            raise ValueError('Select at most 200 lines.')
+    elif kind == 'function':
+        _keys(selection, {'kind', 'function'})
+        _text(selection['function'], 8192)
+    else:
+        raise ValueError('Unsupported comparison selection.')
+    return side
+
+
 def _job_args(value: object) -> tuple[str, dict]:
     request = _keys(value, {'operation', 'args'})
     operation = request['operation']
-    if type(operation) is not str or operation not in ('files', 'source', 'functions', 'report'):
+    if type(operation) is not str or operation not in ('files', 'source', 'functions', 'report', 'comparison'):
         raise ValueError('Unknown operation.')
-    if operation == 'files':
+    if operation == 'comparison':
+        args = _keys(request['args'], {'left', 'right'})
+        _comparison_side(args['left'])
+        _comparison_side(args['right'])
+    elif operation == 'files':
         args = _keys(request['args'], {'ref', 'directory', 'language'})
         _text(args['ref'], 1024)
         _text(args['directory'], 4096, empty=True)
@@ -153,7 +183,19 @@ def _execute_operation(repo: Path, operation: str, args: dict) -> object:
             raise _ActionableError(str(error)) from None
 
     check_work_budget()
-    if operation == 'files':
+    if operation == 'comparison':
+        from .comparison import CompareSelection, CompareTarget, compare_repository
+        from .comparison_render import render_comparison_html, render_comparison_json
+
+        def target(side):
+            return CompareTarget(side['revision'], side['path'], CompareSelection(**side['selection']))
+
+        report = read(compare_repository, repo, target(args['left']), target(args['right']))
+        check_work_budget()
+        html = validated(render_comparison_html, report)
+        check_work_budget()
+        result = {'html': html, 'json': validated(render_comparison_json, report)}
+    elif operation == 'files':
         result = asdict(read(list_files, repo, ref=args['ref'], directory=args['directory'], language=args['language']))
     elif operation == 'source':
         result = asdict(read(read_source, repo, args['path'], args['revision']))

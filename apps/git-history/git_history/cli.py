@@ -11,10 +11,13 @@ import sys
 import tempfile
 import threading
 
+from .comparison import CompareSelection, CompareTarget, compare_repository
+from .comparison_render import render_comparison_html, render_comparison_json
 from .context import ContextRecords, load_context
 from .reader import inspect_repository, list_files, list_functions
 from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
+from .work_budget import WorkBudgetError, check_work_budget, work_budget
 
 
 def _lines(value: str) -> tuple[int, int]:
@@ -68,6 +71,7 @@ def write_report(output: Path, text: str, repo: str, force: bool = False) -> Non
                                          prefix=".git-history-", delete=False) as handle:
             temporary = Path(handle.name)
             handle.write(text)
+        check_work_budget()
         if force:
             os.replace(temporary, output)
         else:
@@ -110,8 +114,46 @@ def main(argv: list[str] | None = None) -> int:
     explain.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
     explain.add_argument("--force", action="store_true", help="Replace an existing report output file.")
     functions.add_argument("--format", choices=("text", "json"), default="text")
+    compare = commands.add_parser("compare", help="Compare two explicitly selected committed source regions.")
+    compare.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
+    for name in ("left", "right"):
+        compare.add_argument(f"--{name}-ref", default="HEAD", help="Committed revision (default: HEAD).")
+        compare.add_argument(f"--{name}-file", required=True, help="Exact repository-relative file path, including for Missing.")
+        group = compare.add_mutually_exclusive_group(required=True)
+        group.add_argument(f"--{name}-whole", action="store_true", help="Select the entire committed file (at most 200 lines).")
+        group.add_argument(f"--{name}-lines", type=_lines, metavar="START:END")
+        group.add_argument(f"--{name}-function", metavar="QUALIFIED_NAME", help="Select one exact qualified function name.")
+        group.add_argument(f"--{name}-missing", action="store_true", help="Verify that this exact path is absent at this commit.")
+    compare.add_argument("--format", choices=("html", "json"), default="html")
+    compare.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
+    compare.add_argument("--force", action="store_true", help="Replace an existing report output file.")
     args = parser.parse_args(argv)
     try:
+        if args.command == "compare":
+            targets = []
+            for name in ("left", "right"):
+                lines = getattr(args, f"{name}_lines")
+                function = getattr(args, f"{name}_function")
+                if lines is not None:
+                    chosen = CompareSelection("lines", *lines)
+                elif function is not None:
+                    chosen = CompareSelection("function", function=function)
+                else:
+                    chosen = CompareSelection("missing" if getattr(args, f"{name}_missing") else "whole")
+                targets.append(CompareTarget(getattr(args, f"{name}_ref"),
+                                             getattr(args, f"{name}_file"), chosen))
+            with work_budget(timeout=45, max_output_bytes=32 * 1024 * 1024):
+                report = compare_repository(args.repo, *targets)
+                check_work_budget()
+                text = (render_comparison_html(report) if args.format == "html"
+                        else render_comparison_json(report))
+                check_work_budget()
+                if args.output and args.output != "-":
+                    write_report(Path(args.output), text, args.repo, args.force)
+                    print(f"Report saved to {Path(args.output).absolute()}", file=sys.stderr)
+                else:
+                    sys.stdout.write(text)
+            return 0
         if args.command == 'serve':
             from .workbench import create_server
             server = None
@@ -186,6 +228,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except BrokenPipeError:
         return 1
-    except (GitError, ValueError, OSError, UnicodeError) as error:
+    except (GitError, ValueError, OSError, UnicodeError, WorkBudgetError) as error:
         print(f"Git history: {error}", file=sys.stderr)
         return 2

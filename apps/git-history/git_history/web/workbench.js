@@ -53,8 +53,10 @@ function controls() {
   $('stop-button').disabled = !pumping && !desired;
   $('start-line').disabled = $('selection-mode').value === 'function';
   $('end-line').disabled = $('selection-mode').value === 'function';
+  comparisonControls();
 }
 function revokeDownloads() {
+  revokeComparisonDownloads();
   if (htmlUrl) URL.revokeObjectURL(htmlUrl);
   if (jsonUrl) URL.revokeObjectURL(jsonUrl);
   htmlUrl = null; jsonUrl = null;
@@ -323,8 +325,301 @@ window.addEventListener('hashchange', () => {
   }
   invalidate(); ready = false; capability = token;
   snapshot = null; files = []; filePage = 0; clearSource(); renderFiles();
+  for (const side of Object.values(comparisonSides)) unpinSide(side);
   $('revision').textContent = 'Discover a revision first';
   $('catalog-summary').textContent = 'Discovery resolves the ref to one immutable commit.';
   void connectSession();
 });
+// Comparison state is separate from history drafts, but all operations use the
+// same queueJob/pump above. Only a matching global intent may publish a result.
+const comparisonSides = Object.fromEntries(['left', 'right'].map(key => [key, {
+  key, pin: null, source: null, files: [], functions: [], counts: new Map(),
+  selectedFunction: null, filePage: 0, sourcePage: 0, functionPage: 0, missingVerified: false,
+}]));
+let comparison = null, comparisonPage = 0, comparisonHtmlUrl = null, comparisonJsonUrl = null;
+const sideElement = (side, suffix) => $(side.key + '-' + suffix);
+function revokeComparisonDownloads() {
+  if (comparisonHtmlUrl) URL.revokeObjectURL(comparisonHtmlUrl);
+  if (comparisonJsonUrl) URL.revokeObjectURL(comparisonJsonUrl);
+  comparisonHtmlUrl = null; comparisonJsonUrl = null;
+  for (const id of ['comparison-download-html', 'comparison-download-json']) {
+    $(id).removeAttribute('href'); $(id).setAttribute('aria-disabled', 'true');
+  }
+  if (comparison) $('comparison-stale').hidden = false;
+  for (const side of Object.values(comparisonSides)) side.missingVerified = false;
+}
+function currentSidePath(side) {
+  try { return boundedText(exactText(sideElement(side, 'path').value, 'Path'), 4096, 'Path'); }
+  catch { return null; }
+}
+function currentSideSource(side) {
+  return side.pin && side.source && side.source.revision === side.pin.revision && side.source.path === currentSidePath(side) ? side.source : null;
+}
+function comparisonControls() {
+  const unavailable = !ready || uncertainJob;
+  let valid = !unavailable, missing = 0;
+  for (const side of Object.values(comparisonSides)) {
+    const mode = sideElement(side, 'selection-mode').value, loaded = currentSideSource(side);
+    sideElement(side, 'discover-button').disabled = unavailable;
+    sideElement(side, 'open-source').disabled = unavailable || !side.pin;
+    sideElement(side, 'functions-button').disabled = unavailable || !loaded;
+    sideElement(side, 'start-line').disabled = mode !== 'lines';
+    sideElement(side, 'end-line').disabled = mode !== 'lines';
+    sideElement(side, 'missing-status').hidden = mode !== 'missing';
+    sideElement(side, 'missing-status').textContent = side.missingVerified ? 'Verified absent at pinned revision' : 'Verification pending';
+    let help = 'Select at most 200 physical lines. Empty whole files are valid.';
+    if (!side.pin) help = 'Discover this ref to pin an immutable revision first.';
+    else if (mode === 'missing') { missing++; help = 'Choose the exact absent path. Absence is checked only when comparison succeeds.'; }
+    else if (!loaded) help = 'Open this exact path at the pinned revision before selecting present source.';
+    else if (mode === 'whole' && loaded.line_count > 200) help = `Whole file has ${loaded.line_count} lines. Choose a smaller manual range or function of at most 200 lines.`;
+    else if (mode === 'function' && !side.selectedFunction) help = 'Discover functions and explicitly select a unique function, or use a manual range.';
+    sideElement(side, 'selection-help').textContent = help;
+    if (!side.pin || currentSidePath(side) === null || mode !== 'missing' && (!loaded || mode === 'whole' && loaded.line_count > 200 || mode === 'function' && !side.selectedFunction)) valid = false;
+  }
+  $('compare-button').disabled = !valid || missing === 2;
+  if (missing === 2) $('left-selection-help').textContent = 'Both sides cannot be missing. Select present source on at least one side.';
+}
+function clearSideSource(side) {
+  side.source = null; side.functions = []; side.counts = new Map(); side.selectedFunction = null;
+  side.sourcePage = 0; side.functionPage = 0; side.missingVerified = false;
+  sideElement(side, 'selected-path').textContent = 'No source loaded';
+  sideElement(side, 'selected-function').textContent = 'No named function selected';
+  sideElement(side, 'function-status').textContent = 'Whole files, manual ranges and missing paths do not require an optional parser.';
+  renderSideSource(side); renderSideFunctions(side);
+}
+function unpinSide(side) {
+  side.pin = null; side.files = []; side.filePage = 0; clearSideSource(side);
+  sideElement(side, 'revision').textContent = 'Discover this ref to resolve its commit';
+  sideElement(side, 'catalog-summary').textContent = 'Discovery controls changed. Discover again to pin this side.';
+  renderSideFiles(side);
+}
+function sideDiscoveryChanged(side) { invalidate(); unpinSide(side); controls(); }
+function sidePathChanged(side) { invalidate(); clearSideSource(side); controls(); }
+function renderSideFiles(side) {
+  const list = sideElement(side, 'file-list'); list.replaceChildren();
+  const query = sideElement(side, 'file-filter').value.toLocaleLowerCase();
+  const matches = side.files.filter(file => file.path.toLocaleLowerCase().includes(query));
+  for (const file of matches.slice(side.filePage * PAGE, (side.filePage + 1) * PAGE)) {
+    const item = node('li'), button = node('button'); button.type = 'button';
+    button.append(node('span', visible(file.path), 'file-path'), node('small', `${file.language} · ${file.size_bytes} bytes`));
+    button.addEventListener('click', () => { sideElement(side, 'path').value = JSON.stringify(file.path); sidePathChanged(side); openSideSource(side); });
+    item.append(button); list.append(item);
+  }
+  pager(side.key + '-file', side.filePage, matches.length, PAGE, 'matches');
+  sideElement(side, 'file-page').textContent += ` · ${side.files.length} total files`;
+}
+function physicalTokens(text) {
+  if (text === '') return [];
+  const parts = text.split('\n');
+  const endsWithLf = parts.at(-1) === '';
+  if (endsWithLf) parts.pop();
+  return parts.map((part, index) => part + (index < parts.length - 1 || endsWithLf ? '\n' : ''));
+}
+function appendExactToken(cell, token) {
+  let ending = 'No final newline', content = token;
+  if (token.endsWith('\r\n')) { ending = 'CRLF'; content = token.slice(0, -2); }
+  else if (token.endsWith('\n')) { ending = 'LF'; content = token.slice(0, -1); }
+  cell.append(node('pre', content), node('span', ending, 'line-ending'));
+}
+function renderSideSource(side) {
+  const body = sideElement(side, 'source-lines').tBodies[0]; body.replaceChildren();
+  if (!side.source) { sideElement(side, 'source-caption').textContent = 'No source loaded'; pager(side.key + '-source', 0, 0, 100, 'lines'); return; }
+  const tokens = side.source.tokens;
+  sideElement(side, 'source-caption').textContent = `${visible(side.source.path)} · ${tokens.length} physical lines · committed source${tokens.length ? '' : ' · present empty file'}`;
+  for (let index = side.sourcePage * 100; index < Math.min(tokens.length, (side.sourcePage + 1) * 100); index++) {
+    const row = node('tr'), number = node('th'), button = node('button', String(index + 1)); number.scope = 'row'; button.type = 'button';
+    button.setAttribute('aria-label', `Select ${side.key} line ${index + 1}`);
+    button.addEventListener('click', event => {
+      const start = Number(sideElement(side, 'start-line').value);
+      if (event.shiftKey && Number.isInteger(start) && start > 0 && start <= index + 1) sideElement(side, 'end-line').value = String(index + 1);
+      else { sideElement(side, 'start-line').value = String(index + 1); sideElement(side, 'end-line').value = String(index + 1); }
+      sideElement(side, 'selection-mode').value = 'lines'; invalidate(); controls();
+    });
+    number.append(button); const cell = node('td'); appendExactToken(cell, tokens[index]); row.append(number, cell); body.append(row);
+  }
+  pager(side.key + '-source', side.sourcePage, tokens.length, 100, 'lines');
+}
+function renderSideFunctions(side) {
+  const list = sideElement(side, 'function-list'); list.replaceChildren();
+  const query = sideElement(side, 'function-filter').value.toLocaleLowerCase();
+  const matches = side.functions.filter(fn => fn.qualified_name.toLocaleLowerCase().includes(query));
+  for (const fn of matches.slice(side.functionPage * PAGE, (side.functionPage + 1) * PAGE)) {
+    const item = node('li'), length = fn.end_line - fn.start_line + 1;
+    const eligible = length <= 200 && side.counts.get(fn.qualified_name) === 1 && utf8.encode(fn.qualified_name).length <= 8192;
+    item.append(node('p', visible(fn.qualified_name)), node('small', `${fn.kind} · lines ${fn.start_line}:${fn.end_line} · ${length} lines`));
+    const button = node('button', eligible ? 'Select function' : 'Use manual range'); button.type = 'button';
+    button.addEventListener('click', () => {
+      invalidate(); sideElement(side, 'start-line').value = String(fn.start_line); sideElement(side, 'end-line').value = String(fn.end_line);
+      if (eligible) { side.selectedFunction = fn.qualified_name; sideElement(side, 'selection-mode').value = 'function'; sideElement(side, 'selected-function').textContent = `Selected function: ${visible(fn.qualified_name)}`; }
+      else { sideElement(side, 'selection-mode').value = 'lines'; status(length > 200 ? 'This function is longer than 200 lines. Narrow the manual range before comparing.' : 'This name is ambiguous or too long. Use an explicit manual range.'); }
+      side.sourcePage = Math.floor((fn.start_line - 1) / 100); renderSideSource(side); controls();
+    });
+    item.append(button); list.append(item);
+  }
+  pager(side.key + '-function', side.functionPage, matches.length, PAGE, 'matches');
+  sideElement(side, 'function-page').textContent += ` · ${side.functions.length} total functions`;
+}
+function openSideSource(side) {
+  if (!side.pin) { error('Discover this side before opening its exact path.'); return; }
+  try {
+    const revision = side.pin.revision, path = boundedText(exactText(sideElement(side, 'path').value, 'Path'), 4096, 'Path');
+    queueJob('source', { revision, path }, result => {
+      if (side.pin?.revision !== revision || currentSidePath(side) !== path || result.revision !== revision || result.path !== path) throw new Error('Selection changed.');
+      clearSideSource(side); side.source = { ...result, tokens: physicalTokens(result.source) };
+      sideElement(side, 'selected-path').textContent = visible(result.path); renderSideSource(side); controls();
+    }, `Reading ${side.key} committed source.`);
+  } catch (failure) { error(failure.message); }
+}
+for (const side of Object.values(comparisonSides)) {
+  for (const suffix of ['ref', 'directory']) sideElement(side, suffix).addEventListener('input', () => sideDiscoveryChanged(side));
+  for (const event of ['input', 'change']) sideElement(side, 'language').addEventListener(event, () => sideDiscoveryChanged(side));
+  sideElement(side, 'path').addEventListener('input', () => sidePathChanged(side));
+  for (const suffix of ['start-line', 'end-line']) sideElement(side, suffix).addEventListener('input', invalidate);
+  for (const event of ['input', 'change']) sideElement(side, 'selection-mode').addEventListener(event, () => { invalidate(); controls(); });
+  sideElement(side, 'discovery-form').addEventListener('submit', event => {
+    event.preventDefault();
+    try {
+      const args = { ref: boundedText(sideElement(side, 'ref').value, 1024, 'Ref'), directory: boundedText(exactText(sideElement(side, 'directory').value, 'Directory'), 4096, 'Directory', true), language: sideElement(side, 'language').value };
+      queueJob('files', args, catalog => {
+        side.pin = { revision: catalog.revision, requested_ref: catalog.requested_ref }; clearSideSource(side);
+        side.files = catalog.files; side.filePage = 0; sideElement(side, 'revision').textContent = catalog.revision;
+        sideElement(side, 'catalog-summary').textContent = `Requested ref: ${visible(catalog.requested_ref)} · ${catalog.files.length} candidates · ${catalog.omitted_non_utf8_paths || 0} non-UTF-8 paths omitted. All reads on this side use the pinned commit above.`;
+        renderSideFiles(side); controls();
+      }, `Discovering ${side.key} ref.`);
+    } catch (failure) { error(failure.message); }
+  });
+  sideElement(side, 'source-form').addEventListener('submit', event => { event.preventDefault(); openSideSource(side); });
+  sideElement(side, 'functions-button').addEventListener('click', () => {
+    const source = currentSideSource(side); if (!source) return;
+    const { revision, path } = source;
+    queueJob('functions', { revision, path }, catalog => {
+      if (side.pin?.revision !== revision || currentSidePath(side) !== path || side.source !== source) throw new Error('Selection changed.');
+      side.functions = catalog.functions; side.functionPage = 0; side.counts = new Map();
+      for (const fn of side.functions) side.counts.set(fn.qualified_name, (side.counts.get(fn.qualified_name) || 0) + 1);
+      sideElement(side, 'function-status').textContent = `${side.functions.length} committed definitions. Long or ambiguous functions need a smaller explicit manual range.`;
+      renderSideFunctions(side); controls();
+    }, `Discovering ${side.key} functions.`);
+  });
+  for (const [kind, change, render] of [['file', n => { side.filePage += n; }, renderSideFiles], ['source', n => { side.sourcePage += n; }, renderSideSource], ['function', n => { side.functionPage += n; }, renderSideFunctions]]) {
+    sideElement(side, kind + '-prev').addEventListener('click', () => { change(-1); render(side); });
+    sideElement(side, kind + '-next').addEventListener('click', () => { change(1); render(side); });
+  }
+  sideElement(side, 'file-filter').addEventListener('input', () => { side.filePage = 0; renderSideFiles(side); });
+  sideElement(side, 'function-filter').addEventListener('input', () => { side.functionPage = 0; renderSideFunctions(side); });
+}
+function comparisonTarget(side) {
+  if (!side.pin) throw new Error(`Discover the ${side.key} ref first.`);
+  const path = boundedText(exactText(sideElement(side, 'path').value, 'Path'), 4096, 'Path');
+  const kind = sideElement(side, 'selection-mode').value, source = currentSideSource(side);
+  let selection = { kind };
+  if (kind !== 'missing' && !source) throw new Error(`Open the ${side.key} source at its pinned revision first.`);
+  if (kind === 'whole') { if (source.line_count > 200) throw new Error(`The ${side.key} whole file exceeds 200 lines. Choose a smaller range or function.`); }
+  else if (kind === 'lines') {
+    const start = integer(sideElement(side, 'start-line').value, 1, source.line_count, `${side.key} start line`);
+    const end = integer(sideElement(side, 'end-line').value, start, source.line_count, `${side.key} end line`);
+    if (end - start + 1 > 200) throw new Error(`Select at most 200 lines on the ${side.key}. Your range is kept.`);
+    selection = { kind, start, end };
+  } else if (kind === 'function') {
+    if (!side.selectedFunction) throw new Error(`Explicitly select a unique ${side.key} function or use a manual range.`);
+    selection = { kind, function: side.selectedFunction };
+  } else if (kind !== 'missing') throw new Error('Choose a supported comparison selection.');
+  return { revision: side.pin.revision, path, selection };
+}
+function freezeView(value) {
+  if (value && typeof value === 'object') { for (const child of Object.values(value)) freezeView(child); Object.freeze(value); }
+  return value;
+}
+function completedComparison(result, targets) {
+  if (typeof result.html !== 'string' || typeof result.json !== 'string') throw new Error('Invalid comparison result.');
+  const report = JSON.parse(result.json);
+  if (report.schema_version !== 1 || report.kind !== 'source-comparison' || typeof report.repo_name !== 'string' || !Array.isArray(report.blocks) || report.blocks.length > 400) throw new Error('Invalid comparison report.');
+  const tokens = {};
+  for (const key of ['left', 'right']) {
+    const side = report[key], target = targets[key];
+    if (!side || side.revision !== target.revision || side.requested_ref !== target.revision || side.path !== target.path || typeof side.source !== 'string' || utf8.encode(side.source).length > 512 * 1024 || !['present', 'missing'].includes(side.status) || side.selection?.kind !== target.selection.kind) throw new Error('Invalid comparison side.');
+    for (const field of ['start', 'end', 'function']) if ((side.selection[field] ?? null) !== (target.selection[field] ?? null)) throw new Error('Invalid comparison selection.');
+    tokens[key] = physicalTokens(side.source);
+    if (tokens[key].length > 200 || (side.status === 'missing') !== (target.selection.kind === 'missing') || side.status === 'missing' && (tokens[key].length || side.source_sha256 !== null)) throw new Error('Invalid source bounds.');
+    if (!tokens[key].length && (side.start_line !== null || side.end_line !== null) || side.status === 'present' && !/^[a-f0-9]{64}$/.test(side.source_sha256 || '') || target.selection.kind === 'function' && typeof side.selected_function !== 'string') throw new Error('Invalid comparison metadata.');
+    if (tokens[key].length && (!Number.isSafeInteger(side.start_line) || side.start_line < 1 || side.end_line !== side.start_line + tokens[key].length - 1)) throw new Error('Invalid line bounds.');
+  }
+  let left = 0, right = 0, unchanged = 0, removed = 0, added = 0;
+  const rows = [];
+  for (const block of report.blocks) {
+    if (!block || !['equal', 'change'].includes(block.kind) || !['left_start', 'left_end', 'right_start', 'right_end'].every(field => Number.isSafeInteger(block[field])) || block.left_start !== left || block.right_start !== right || block.left_end < left || block.right_end < right || block.left_end > tokens.left.length || block.right_end > tokens.right.length) throw new Error('Invalid alignment.');
+    const a = block.left_end - left, b = block.right_end - right;
+    if (a + b === 0 || block.kind === 'equal' && (a !== b || tokens.left.slice(left, block.left_end).some((token, i) => token !== tokens.right[right + i]))) throw new Error('Invalid alignment equality.');
+    for (let index = 0; index < Math.max(a, b); index++) rows.push({ kind: block.kind, left: index < a ? left + index : null, right: index < b ? right + index : null });
+    if (block.kind === 'equal') unchanged += a; else { removed += a; added += b; }
+    left = block.left_end; right = block.right_end;
+  }
+  if (left !== tokens.left.length || right !== tokens.right.length || unchanged !== report.unchanged_lines || removed !== report.removed_lines || added !== report.added_lines || rows.length > 400) throw new Error('Incomplete alignment.');
+  return freezeView({ report, tokens, rows });
+}
+function selectionLabel(side) {
+  if (side.status === 'missing') return 'Verified missing path';
+  const scope = side.selection.kind === 'function' ? `function ${visible(side.selected_function)}` : side.selection.kind === 'whole' ? 'whole file' : 'manual range';
+  return `${scope} · ${side.start_line === null ? 'present empty file' : `original lines ${side.start_line}:${side.end_line}`}`;
+}
+function renderComparisonMetadata() {
+  const host = $('comparison-metadata'); host.replaceChildren();
+  for (const key of ['left', 'right']) {
+    const side = comparison.report[key], panel = node('section'), list = node('dl', undefined, 'snapshot');
+    panel.append(node('h3', key === 'left' ? 'Left completed selection' : 'Right completed selection'));
+    for (const [label, text] of [['Revision / submitted ref', side.revision], ['Path', visible(side.path)], ['Selection', selectionLabel(side)], ['Selected text SHA-256', side.source_sha256 ?? 'Not applicable — absent path']]) list.append(node('dt', label), node('dd', text));
+    panel.append(list); host.append(panel);
+  }
+}
+function renderComparisonRows() {
+  const body = $('comparison-lines').tBodies[0]; body.replaceChildren();
+  if (!comparison) { pager('comparison', 0, 0, 100, 'rows'); return; }
+  for (const entry of comparison.rows.slice(comparisonPage * 100, (comparisonPage + 1) * 100)) {
+    const row = node('tr'); row.className = 'comparison-' + entry.kind;
+    for (const key of ['left', 'right']) {
+      const index = entry[key], number = node('td'), cell = node('td');
+      if (index === null) { number.textContent = '—'; cell.append(node('span', 'No line on this side', 'missing-line')); }
+      else {
+        const line = comparison.report[key].start_line + index; number.textContent = String(line); row.dataset[key + 'Line'] = String(line);
+        appendExactToken(cell, comparison.tokens[key][index]);
+      }
+      number.className = 'comparison-number'; cell.className = entry.kind === 'change' && index !== null ? key === 'left' ? 'comparison-removed' : 'comparison-added' : '';
+      row.append(number, cell);
+    }
+    body.append(row);
+  }
+  pager('comparison', comparisonPage, comparison.rows.length, 100, 'rows');
+}
+$('comparison-form').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const targets = { left: comparisonTarget(comparisonSides.left), right: comparisonTarget(comparisonSides.right) };
+    if (targets.left.selection.kind === 'missing' && targets.right.selection.kind === 'missing') throw new Error('Both sides cannot be missing.');
+    const requestedLabels = { left: comparisonSides.left.pin.requested_ref, right: comparisonSides.right.pin.requested_ref };
+    queueJob('comparison', targets, result => {
+      const completed = completedComparison(result, targets);
+      const newHtml = URL.createObjectURL(new Blob([result.html], { type: 'text/html;charset=utf-8' }));
+      let newJson;
+      try { newJson = URL.createObjectURL(new Blob([result.json], { type: 'application/json;charset=utf-8' })); }
+      catch (failure) { URL.revokeObjectURL(newHtml); throw failure; }
+      revokeComparisonDownloads(); comparison = completed; comparisonPage = 0; comparisonHtmlUrl = newHtml; comparisonJsonUrl = newJson;
+      $('comparison-description').textContent = `Completed committed text comparison in ${visible(completed.report.repo_name)}. Discovery labels: Left ${visible(requestedLabels.left)}; Right ${visible(requestedLabels.right)}. The exported requested refs are the exact submitted commit IDs shown below; the two refs were pinned independently.`;
+      $('comparison-summary').textContent = `${completed.report.unchanged_lines} unchanged lines · ${completed.report.removed_lines} removed lines · ${completed.report.added_lines} added lines${completed.rows.length ? '' : ' · no source lines (empty present source remains distinct from absence)'}.`;
+      $('comparison-stale').hidden = true;
+      for (const key of ['left', 'right']) comparisonSides[key].missingVerified = completed.report[key].status === 'missing';
+      renderComparisonMetadata(); renderComparisonRows();
+      for (const [id, href, name] of [['comparison-download-html', newHtml, 'git-source-comparison.html'], ['comparison-download-json', newJson, 'git-source-comparison.json']]) { $(id).href = href; $(id).download = name; $(id).setAttribute('aria-disabled', 'false'); }
+      controls();
+    }, 'Comparing selected committed source.');
+  } catch (failure) { error(failure.message); }
+});
+$('comparison-prev').addEventListener('click', () => { comparisonPage--; renderComparisonRows(); });
+$('comparison-next').addEventListener('click', () => { comparisonPage++; renderComparisonRows(); });
+for (const id of ['comparison-download-html', 'comparison-download-json']) $(id).addEventListener('click', event => { if ($(id).getAttribute('aria-disabled') === 'true') event.preventDefault(); });
+for (const event of ['input', 'change']) $('workspace-mode').addEventListener(event, () => {
+  invalidate();
+  const comparing = $('workspace-mode').value === 'comparison';
+  $('history-workspace').hidden = comparing; $('comparison-workspace').hidden = !comparing;
+  status(pumping ? 'Workspace changed. Stopping previous work and waiting for cleanup…' : 'Workspace changed. Drafts and pinned revisions are kept.');
+});
+
 void connectSession();

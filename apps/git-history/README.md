@@ -2,6 +2,8 @@
 
 A local evidence explorer for unfamiliar code, with a command line and browser workbench. Select a committed file range or named Python, JavaScript or TypeScript function; get a portable HTML report or structured JSON containing an evidence synopsis, source, blame, range-changing patches, commit messages, available rename evidence, and optional supplied discussion excerpts.
 
+You can also explicitly compare two committed source selections, including different paths or functions, with exact line changes and portable comparison exports.
+
 The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
 
 ## Run
@@ -48,6 +50,77 @@ The workbench keeps source, catalogs and reports in memory for the current sessi
 Only one job runs at a time. Existing source/Git/parser limits still apply, with an additional 45-second aggregate subprocess deadline and 32 MiB combined subprocess-output budget per job. Python parsing runs in a standard-library worker with the same 5-second/512 MiB limits as optional native parsing. Bounded in-process validation/rendering observes cancellation between stages; Stop is cooperative during those stages. HTTP input is limited to 2 MiB with an absolute 5-second header/body deadline; supplied context is still at most 256 KiB. Each report is at most 8 MiB and each serialized response at most 32 MiB. Exceeding a limit fails that operation without changing the repository.
 
 The service accepts only its exact loopback Host, same-origin authenticated API requests and its packaged static assets. It serves one repository selected at startup; the browser cannot switch repository roots, read arbitrary local context files or write reports into server paths. It is a local developer tool, not a multi-user deployment or protection against other software running as your OS user.
+
+### Compare two committed selections
+
+Choose **Compare revisions** in **Workspace**. The Left and Right sides are
+independent: discover each ref, then open its exact path and choose **Whole file**,
+**Manual range**, **Named function**, or **Missing path**. Each discovery displays
+its full immutable commit ID. Editing a ref unpins that side; explicitly rediscover
+to use a changed branch. Opening or editing the other side does not repin it.
+
+Use different paths to inspect a moved function or renamed file. This is your
+explicit pairing, not an inferred rename or claim that the symbols mean the same
+thing. Named functions use the existing optional parser rules; manual ranges and
+whole text files do not need that extra. Each comparison side supports at most
+**200 physical Git lines** from a **512 KiB** UTF-8 source blob. Select a smaller
+range when a whole file or function exceeds 200 lines; nothing is silently clipped.
+
+For an addition or deletion, choose **Missing path** on the absent side and give
+the exact path at its pinned commit. The comparison verifies actual absence.
+An empty committed file is present and compares as zero lines. Directories,
+symlinks, binary/non-UTF-8 source, bad revisions, unavailable objects and failed
+reads are errors; they cannot become a missing side. Both sides cannot be missing.
+
+Choose **Compare selected source** to review the immutable result. It preserves
+exact source and original line numbers, including BOM, CRLF, Unicode separators,
+whitespace and the absence of a final newline. The alignment uses exact full-line
+matches and a deterministic deletion-first tie rule. Consecutive unmatched lines
+are paired in order for display; that pairing does not establish semantic
+correspondence, moved-line detection or a patch that can be applied elsewhere.
+
+Comparison rows paginate at 100 rows. **Download comparison HTML** and **Download
+comparison JSON** save the exact completed report, including both commit IDs,
+paths, selection modes, source hashes and change counts. Hashes establish text
+integrity, not authenticity. HTML is standalone and script-free. Browser exports
+use their submitted full IDs as `requested_ref`; the original typed discovery
+labels remain separate in the workbench. Any newer source-selection input makes
+the previous result visibly stale and disables its downloads. Errors, Stop and
+late responses preserve your current fields; workspaces retain their own drafts.
+No comparison data is autosaved or sent to a remote service.
+
+The CLI uses the same comparison and renderers:
+
+```sh
+python3 -m git_history compare --repo /path/to/repository \
+  --left-ref HEAD~1 --left-file src/example.py --left-lines 20:45 \
+  --right-ref HEAD --right-file src/example.py --right-function Example.process \
+  --output comparison.html
+```
+
+Each side requires exactly one of `--left-whole`, `--left-lines START:END`,
+`--left-function NAME`, `--left-missing` (and corresponding `--right-*` choices).
+Both file paths are required, including a missing path. Each ref defaults to
+`HEAD` and is resolved once independently; use full IDs to reproduce pinned
+workbench exports. Use `--format json` for structured output, `--output -` or no
+output flag for stdout, and explicit `--force` to replace an existing report.
+The existing Git-metadata protections and atomic no-clobber publication apply.
+
+Comparison JSON has its own `kind: "source-comparison"`, schema version 1; it does
+not change the existing history-report schema. Selected text occurs once per side,
+with alignment blocks expressed as zero-based half-open offsets into physical
+LF-delimited source tokens. Original file line bounds remain 1-based. Source
+SHA-256 is null for missing paths and the hash of empty bytes for an empty file.
+Direct library renderers validate source/provenance field shapes, hashes and the
+canonical alignment; this consistency check does not authenticate supplied Git
+provenance. See the [comparison contract](../../docs/superpowers/specs/2026-10-04-git-comparison-design.md).
+
+The exact-line algorithm performs at most 40,000 cell comparisons using an
+approximately 80 KiB typed table. Tokenization, alignment, reading, parsing and
+rendering cooperate with the existing job budget. CLI comparisons also use the
+45-second aggregate deadline and 32 MiB subprocess-output budget. Each output is
+bounded at 8 MiB. No history/blame/context, remote discussion fetching, generated
+explanation or repository-wide change summary is implied by a comparison.
 
 ### Select a named function
 
