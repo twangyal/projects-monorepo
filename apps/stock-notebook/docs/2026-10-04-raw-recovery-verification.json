@@ -1,0 +1,63 @@
+{
+  "issue": 72,
+  "implementationCommit": "4e1c65da384ad5397a39decd33c15aadb179b321",
+  "schemaVersion": 3,
+  "limits": {
+    "backupBytes": 6291456,
+    "nestingDepth": 512
+  },
+  "baseline": {
+    "schemaVersion": 2,
+    "unitPassed": 149,
+    "localCheck": "passed"
+  },
+  "red": {
+    "commit": "14af9ac1a097221d622685c0b74a5da459f6eedf",
+    "run": 37199154415,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37199154415",
+    "unitOldSerializer": {
+      "passed": 7,
+      "failed": 18
+    },
+    "browser": {
+      "passed": 35,
+      "failed": 3,
+      "failures": [
+        "unsafe native records exported lossy JSON",
+        "compact shared graph reached final stringify",
+        "schema creation leaked uncaught private exception"
+      ]
+    }
+  },
+  "firstGreen": {
+    "commit": "882a0198cf6a58d5da2e1b9ae12f0d5fa8a7d5f0",
+    "run": 37199536483,
+    "browser": {
+      "passed": 52,
+      "failed": 1,
+      "reason": "Existing message assertion required serialization guidance for a cyclic record; message corrected without relaxing assertion."
+    }
+  },
+  "green": {
+    "commit": "4e1c65da384ad5397a39decd33c15aadb179b321",
+    "run": 37199718920,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37199718920",
+    "pullRequestRun": 37199721837,
+    "unitPassed": 231,
+    "browserPassed": 53,
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "isolatedExperiment": "unchanged invariants/development diagnostic passed",
+    "maximumFixtures": [
+      "annual-history-smoke",
+      "refresh-smoke"
+    ]
+  },
+  "review": "Independent scoped review found no actionable issue; independent Unicode/depth/sharing probes passed.",
+  "limitsOfEvidence": [
+    "Local Chromium download blocked; native tests executed on GitHub CI Chromium153.",
+    "Raw structured JSON backup preserves values, not shared-reference identity.",
+    "No generic structured-clone archive; unsafe records remain in IndexedDB for other recovery methods."
+  ]
+}

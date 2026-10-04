@@ -1,5 +1,5 @@
 import type { Notebook } from './types.ts';
-import { LIMITS } from './types.ts';
+import { serializeRawRecord } from './raw-backup.ts';
 import { validateToday } from './validation.ts';
 import { parseNotebookJson, serializeNotebook } from './model.ts';
 
@@ -9,18 +9,6 @@ const KEY = 'current';
 const queues = new Map<string, Promise<void>>();
 function storageError(detail: string): Error {
   return new Error(`Local storage ${detail}. Keep your notebook open, download a backup, then retry. Close other Stock Notebook tabs if storage is blocked.`);
-}
-function rawText(value: unknown): string {
-  let text: unknown;
-  try { text = typeof value === 'string' ? value : JSON.stringify(value); }
-  catch { throw new Error('Raw saved record cannot be serialized as a backup. Stored data was kept; do not reset until you have recovered it.'); }
-  if (typeof text !== 'string') throw new Error('Raw saved record cannot be serialized as a backup. Stored data was kept.');
-  if (text.length > LIMITS.notebookBytes || new TextEncoder().encode(text).length > LIMITS.notebookBytes) throw new Error(`Raw saved record is too large for the ${LIMITS.notebookBytes / (1024 * 1024)} MiB backup limit. Stored data was kept.`);
-  for (const character of text) {
-    const point = character.codePointAt(0)!;
-    if (point >= 0xd800 && point <= 0xdfff) throw new Error('Raw saved record has invalid Unicode and cannot become a UTF-8 backup. Stored data was kept.');
-  }
-  return text;
 }
 
 export class NotebookStore {
@@ -65,8 +53,15 @@ export class NotebookStore {
         request = indexedDB.open(this.#name, 1);
       } catch { fail(storageError('is unavailable in this browser')); return; }
       request.onupgradeneeded = () => {
-        if (settled || this.#closed) { request.transaction?.abort(); return; }
-        if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
+        try {
+          if (settled || this.#closed) { request.transaction?.abort(); return; }
+          if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
+        } catch {
+          // Reject and clean up even if schema creation or abort throws. A late
+          // success is closed by onsuccess; native abort rolls back setup.
+          try { request.transaction?.abort(); } catch { /* Preserve safe guidance. */ }
+          fail(storageError('could not set up the saved notebook'));
+        }
       };
       request.onerror = () => fail(storageError('could not be opened'));
       request.onblocked = () => fail(storageError('is blocked by another tab'));
@@ -140,7 +135,7 @@ export class NotebookStore {
   exportRaw(): Promise<string | null> {
     return this.#ordered(async () => {
       const record = await this.#read();
-      return record.present ? rawText(record.value) : null;
+      return record.present ? serializeRawRecord(record.value) : null;
     });
   }
   clear(): Promise<void> {
