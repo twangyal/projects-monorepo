@@ -96,10 +96,12 @@
 - [x] Run `npm run test`, `npm run lint`, `npm run typecheck`, `npm run build` and all `npm run test:browser` after coordinated fixes. Use actual installed Chromium via optional `CHROMIUM_PATH`; do not weaken existing checks.
 - [x] Independently complete native upload → explicit selected phrase → Undo/Redo → reload → real decoded MIDI/WAV smoke with literal source names and off-grid notes. Record observed limits/test results/artifact sizes; fixtures prove this contract, not universal DAW fidelity.
 - [x] Update README to explain supported formats, strict rejection/subset review, beat-window shift, absent persisted trailing silence/EOT padding, explicit instruments/default state, saved schema, text choices and 480-tick re-export limitation. Do not call this generated AI or source-sound reproduction.
-- [ ] Review final diff; commit/push only under root ownership, inspect scoped CI, then close issue #60 after actual gates. No unrelated catalog or source changes.
+- [x] Review final diff; commit/push only under root ownership, inspect scoped CI, then close issue #60 after actual gates. No unrelated catalog or source changes.
 
 ## Measured completion
 
 Parser `8bc7459` and complete review/UI/tests `e281bb8` are durable checkpoints. The local combined gate passed 173 unit tests, lint and type checking; the production build and all 35 native browser cases passed (36.5 seconds). The independent oracle's first actual execution was GREEN, not an observed RED. Producer parser/review and the pre-feature native file test did observe failures before implementation. Independent review found a public-review whitespace mutation accepted after normalization; exact receipt comparison and a regression resolve it. One browser assertion assumed different warning wording and was corrected without a product change.
 
 Independent actual native import, review, Undo/Redo and JSON/MIDI/WAV decoding verified a two-note off-grid phrase, separate exact 1 MiB / 2,048-note import, and complete persistent-browser close/relaunch with exact JSON recovery. The permanent evidence record contains thresholds, measured artifacts and limitations. These synthetic fixtures establish bounded interchange/local synthesis; they do not establish general MIDI sound fidelity or real singing accuracy.
+
+Issue #60 closed completed at 07:52:43 UTC after implementation/evidence commits were pushed. All twelve CI workflows passed the implementation commit; Melody CI passed 173 unit and 35 browser cases. The tracked portable smoke script passed another actual native run in 4.053 seconds. Reassessment selected Composure Bluetooth software input (#61), with physical device verification still unclaimed.
