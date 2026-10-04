@@ -2,6 +2,7 @@ import { LIMITS, NOTEBOOK_SCHEMA_VERSION, type Dataset, type EditState, type Not
 import { boundedArray, dataObject, requireValue, validateDataset, validateScreen, validateText, validateToday, validateUuid } from './validation.ts';
 import { parseQuery } from './query.ts';
 import { screenDataset } from './research.ts';
+import { validateBriefs } from './brief.ts';
 
 const encoder = new TextEncoder();
 const NOTEBOOK_KEYS = ['schemaVersion', 'id', 'dataset', 'title', 'query', 'screen', 'watchlist', 'comparison', 'notes'];
@@ -14,17 +15,21 @@ function references(value: unknown, maximum: number, known: Set<string>): string
   return result;
 }
 function extract(notebook: Notebook): EditState {
-  const { title, query, screen, watchlist, comparison, notes } = notebook;
-  return { title, query, screen, watchlist, comparison, notes };
+  const { title, query, screen, watchlist, comparison, notes, briefs } = notebook;
+  return { title, query, screen, watchlist, comparison, notes, briefs };
 }
 export function createNotebook(dataset: Dataset, today: string): Notebook {
   const screen: Screen = { sector: null, currency: null, filters: [], includeStale: false, sortBy: 'ticker', direction: 'asc' };
-  return validateNotebook({ schemaVersion: NOTEBOOK_SCHEMA_VERSION, id: crypto.randomUUID(), dataset, title: 'Stock notebook', query: '', screen, watchlist: [], comparison: [], notes: [] }, today);
+  return validateNotebook({ schemaVersion: NOTEBOOK_SCHEMA_VERSION, id: crypto.randomUUID(), dataset, title: 'Stock notebook', query: '', screen, watchlist: [], comparison: [], notes: [], briefs: [] }, today);
 }
 export function validateNotebook(value: unknown, today: string): Notebook {
   validateToday(today);
-  const fields = dataObject(value, NOTEBOOK_KEYS);
-  requireValue(fields.schemaVersion === 1 || fields.schemaVersion === NOTEBOOK_SCHEMA_VERSION, 'Unsupported notebook schema version.');
+  requireValue(value !== null && typeof value === 'object', 'Expected a notebook data object.');
+  const versionField = Object.getOwnPropertyDescriptor(value, 'schemaVersion');
+  requireValue(versionField && 'value' in versionField, 'Use an ordinary notebook schema version.');
+  const version: unknown = versionField.value;
+  requireValue(version === 1 || version === 2 || version === NOTEBOOK_SCHEMA_VERSION, 'Unsupported notebook schema version.');
+  const fields = dataObject(value, version === NOTEBOOK_SCHEMA_VERSION ? [...NOTEBOOK_KEYS, 'briefs'] : NOTEBOOK_KEYS);
   const id = validateUuid(fields.id), dataset = validateDataset(fields.dataset, today);
   // V1 had unique-ticker semantics. Never reinterpret malformed legacy data as
   // newly valid history simply because the canonical format is more expressive.
@@ -44,8 +49,11 @@ export function validateNotebook(value: unknown, today: string): Notebook {
   notes.sort((a, b) => a.ticker < b.ticker ? -1 : a.ticker > b.ticker ? 1 : 0);
   parseQuery(query, dataset);
   screenDataset(dataset, screen, today);
-  const notebook: Notebook = { schemaVersion: NOTEBOOK_SCHEMA_VERSION, id, dataset, title, query, screen, watchlist, comparison, notes };
-  requireValue(encoder.encode(JSON.stringify(notebook)).length <= LIMITS.notebookBytes, 'Notebook exceeds the 4 MiB backup limit.');
+  const legacyFields = { schemaVersion: version, id, dataset, title, query, screen, watchlist, comparison, notes };
+  if (version !== NOTEBOOK_SCHEMA_VERSION) requireValue(encoder.encode(JSON.stringify(legacyFields)).length <= LIMITS.legacyNotebookBytes, 'Legacy notebook exceeds the 4 MiB backup limit.');
+  const briefs = version === NOTEBOOK_SCHEMA_VERSION ? validateBriefs(fields.briefs, dataset, today) : [];
+  const notebook: Notebook = { ...legacyFields, schemaVersion: NOTEBOOK_SCHEMA_VERSION, briefs };
+  requireValue(encoder.encode(JSON.stringify(notebook)).length <= LIMITS.notebookBytes, 'Notebook exceeds the 6 MiB backup limit.');
   return notebook;
 }
 export function serializeNotebook(notebook: Notebook, today: string): string { return JSON.stringify(validateNotebook(notebook, today)); }
@@ -56,7 +64,7 @@ export function editState(notebook: Notebook): EditState {
 }
 export function parseNotebookJson(text: string, today: string): Notebook {
   validateToday(today);
-  requireValue(typeof text === 'string' && text.length <= LIMITS.notebookBytes && encoder.encode(text).length <= LIMITS.notebookBytes, 'Notebook JSON exceeds the 4 MiB limit.');
+  requireValue(typeof text === 'string' && text.length <= LIMITS.notebookBytes && encoder.encode(text).length <= LIMITS.notebookBytes, 'Notebook JSON exceeds the 6 MiB limit.');
   let cursor = 0;
   const invalid = () => new Error('Notebook must be valid bounded JSON without duplicate keys.');
   function whitespace() { while (cursor < text.length && /[\x20\t\r\n]/.test(text[cursor])) cursor++; }
@@ -111,5 +119,9 @@ export function parseNotebookJson(text: string, today: string): Notebook {
     return number;
   }
   const parsed = value(1); whitespace(); if (cursor !== text.length) throw invalid();
+  if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    const version = (parsed as Record<string, unknown>).schemaVersion;
+    if (version === 1 || version === 2) requireValue(encoder.encode(text).length <= LIMITS.legacyNotebookBytes, 'Legacy notebook JSON exceeds the 4 MiB limit.');
+  }
   return validateNotebook(parsed, today);
 }

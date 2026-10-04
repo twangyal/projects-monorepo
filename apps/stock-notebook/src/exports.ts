@@ -7,6 +7,7 @@ import { analyzeCompany, compareCompanies, screenDataset, auditScreen } from './
 import { latestCompanies } from './periods.ts';
 import { analyzeCompanyHistory } from './annual-history.ts';
 import type { PeriodComparison } from './annual-history.ts';
+import { briefReportLines } from './brief-report.ts';
 
 const operators = { gt: '>', gte: '>=', lt: '<', lte: '<=', eq: '=' } as const;
 const monetary = new Set(['revenue', 'netIncome', 'debt', 'equity']);
@@ -173,5 +174,11 @@ export function buildReport(notebook: Notebook, today: string): string {
     }
   }
   append('Figures and period comparability are supplied by the importer and have not been independently verified.');
+  append('', 'Company briefs (all committed user-authored research, including companies outside the shortlist)');
+  if (!current.briefs.length) append('(none)');
+  for (const brief of current.briefs) {
+    append('');
+    for (const line of briefReportLines(brief, dataset, date)) append(line);
+  }
   return lines.join('\n') + '\n';
 }

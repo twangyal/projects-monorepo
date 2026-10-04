@@ -27,7 +27,7 @@ function csv(rows: Company[]): string {
     row.revenue, row.priorRevenue, row.netIncome, row.debt, row.equity, row.filingUrl].map(quote).join(',')).join('\n') + '\n';
 }
 function fixture(patch: Partial<Notebook> = {}): Notebook {
-  return { schemaVersion: 2, id: '22222222-2222-4222-8222-222222222222', title: 'Committed refresh research', query: '',
+  return { schemaVersion: 3, briefs: [], id: '22222222-2222-4222-8222-222222222222', title: 'Committed refresh research', query: '',
     screen: structuredClone(DEFAULT_SCREEN), watchlist: ['DELTA', 'ALFA', 'BRAVO', 'CHARLIE'], comparison: ['BRAVO', 'ALFA', 'CHARLIE'],
     notes: [{ ticker: 'ALFA', text: ALPHA_NOTE }, { ticker: 'BRAVO', text: 'Beta baseline note' }, { ticker: 'CHARLIE', text: LOST_NOTE }],
     dataset: { id: '11111111-1111-4111-8111-111111111111', fileName: 'previous-financials.csv', importedDate: DAY,
@@ -136,7 +136,7 @@ test('reviewed refresh retains research and reopens the exact downloaded incomin
   await acceptRefresh(page);
   await expect(page.locator('#save-status')).toContainText('Saved locally');
   const after = await backup(page);
-  expect(after.schemaVersion).toBe(2); expect(after.id).toBe(before.id); expect(after.title).toBe(before.title);
+  expect(after.schemaVersion).toBe(3); expect(after.id).toBe(before.id); expect(after.title).toBe(before.title);
   expect(after.dataset.id).not.toBe(before.dataset.id);
   expect(after.dataset).toMatchObject({ fileName: 'incoming-financials.csv', importedDate: DAY, synthetic: false });
   expect(after.dataset.companies).toEqual(NEW_ROWS);
@@ -365,7 +365,7 @@ test('older in-flight native save cannot mark refreshed memory saved when its qu
 test('read-only v1 restoration and cancelled refresh preserve exact legacy text until explicit refresh save', async ({ page }) => {
   await loadNotebook(page);
   const original = fixture();
-  const legacy = { ...original, schemaVersion: 1, dataset: { ...original.dataset, companies: OLD_ROWS.slice(1) } };
+  const legacy = { ...Object.fromEntries(Object.entries(original).filter(([key]) => key !== 'briefs')), schemaVersion: 1, dataset: { ...original.dataset, companies: OLD_ROWS.slice(1) } };
   const legacyText = JSON.stringify(legacy, null, 2) + '\n';
   await page.evaluate(raw => new Promise<void>((resolve, reject) => {
     const open = indexedDB.open('stock-notebook-v1', 1); open.onerror = () => reject(new Error('Could not seed native legacy record.'));
@@ -376,16 +376,16 @@ test('read-only v1 restoration and cancelled refresh preserve exact legacy text 
     };
   }), legacyText);
   await page.reload(); await expect(page.locator('#dataset-summary')).toContainText('previous-financials.csv');
-  expect((await backup(page)).schemaVersion).toBe(2); expect(await rawRecord(page)).toBe(legacyText);
+  expect((await backup(page)).schemaVersion).toBe(3); expect(await rawRecord(page)).toBe(legacyText);
   await stageRefresh(page); await resolveRefresh(page);
   const previous = JSON.parse(await download(page, 'Download previous notebook')) as Notebook;
-  expect(previous.schemaVersion).toBe(2); expect(previous.dataset.companies).toEqual(OLD_ROWS.slice(1));
+  expect(previous.schemaVersion).toBe(3); expect(previous.dataset.companies).toEqual(OLD_ROWS.slice(1));
   await page.getByRole('button', { name: 'Cancel refresh', exact: true }).click();
   expect(await rawRecord(page)).toBe(legacyText);
   await stageRefresh(page); await resolveRefresh(page); await acceptRefresh(page);
   await expect(page.locator('#save-status')).toContainText('Saved locally');
   const saved = JSON.parse(await rawRecord(page) as string) as Notebook;
-  expect(saved.schemaVersion).toBe(2); expect(saved.dataset.companies).toEqual(NEW_ROWS);
+  expect(saved.schemaVersion).toBe(3); expect(saved.dataset.companies).toEqual(NEW_ROWS);
   expect(saved.id).toBe(original.id); expect(saved.notes.find(note => note.ticker === 'ALFA')?.text).toBe(ALPHA_NOTE);
 });
 

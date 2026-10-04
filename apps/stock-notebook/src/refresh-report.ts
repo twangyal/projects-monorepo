@@ -4,6 +4,7 @@ import { validateToday, validateDataset } from './validation.ts';
 import { validateNotebook } from './model.ts';
 import { reviewRefresh, applyRefresh } from './refresh.ts';
 import type { RefreshChoices } from './refresh.ts';
+import { briefReportLines } from './brief-report.ts';
 
 const moneyFields = ['revenue', 'priorRevenue', 'netIncome', 'debt', 'equity'] as const;
 const format = (value: string | number | null): string => typeof value === 'string' ? JSON.stringify(value) : String(value);
@@ -97,8 +98,8 @@ export function buildRefreshReport(
     endpoint('Previous', period.previous, previous.dataset);
     endpoint('Incoming', period.incoming, nextDataset);
   }
-  append('Annual period changes end', '', 'Committed research retention (literal saved notes)');
-  if (!review.annotations.length) append('No committed watchlist, comparison or note groups.');
+  append('Annual period changes end', '', 'Committed research retention (literal saved notes and company briefs)');
+  if (!review.annotations.length) append('No committed watchlist, comparison, note or brief groups.');
   for (const annotation of review.annotations) {
     const outcome = annotation.policy === 'decide' ? decisions.get(annotation.ticker)! : annotation.policy;
     append('', `Research group: ${annotation.ticker}`, `Outcome: ${outcome}`,
@@ -108,6 +109,11 @@ export function buildRefreshReport(
     endpoint('Previous latest research reference', annotation.previous, previous.dataset);
     endpoint('Incoming latest research reference', annotation.incoming, nextDataset);
     append('Full literal saved note:', annotation.note ?? '(No saved note)');
+    const brief = previous.briefs.find(item => item.ticker === annotation.ticker);
+    if (brief) {
+      append(`Full previous company brief; proposed outcome: ${outcome}`);
+      for (const line of briefReportLines(brief, previous.dataset, date, nextDataset)) append(line);
+    }
   }
   append('', 'Applying this proposal starts fresh history for the replaced dataset; Undo cannot reverse this refresh.',
     'Download the previous notebook JSON backup before applying. Notebook backups exclude unsent editor drafts.',

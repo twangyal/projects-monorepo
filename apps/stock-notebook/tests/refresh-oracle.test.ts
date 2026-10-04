@@ -29,7 +29,7 @@ function dataset(rows: Company[], incoming = false, change: Partial<Dataset> = {
 }
 function notebook(data: Dataset, change: Partial<Notebook> = {}): Notebook {
   return {
-    schemaVersion: 2, id: BASE_ID, title: 'Literal field notes', dataset: data, query: '',
+    schemaVersion: 3, briefs: [], id: BASE_ID, title: 'Literal field notes', dataset: data, query: '',
     screen: structuredClone(DEFAULT_SCREEN), watchlist: [], comparison: [], notes: [], ...change,
   };
 }

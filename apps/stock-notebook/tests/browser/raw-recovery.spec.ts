@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type {} from '../storage-harness.ts';
+import { LIMITS } from '../../src/types.ts';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/tests/storage-harness.html');
@@ -70,9 +71,9 @@ test('shared native graphs are rejected before JSON expansion and remain recover
 });
 
 test('raw object backups honor escaped UTF-8 boundaries without changing native data', async ({ page }) => {
-  const result = await page.evaluate(async () => {
+  const result = await page.evaluate(async limit => {
     const h = window.stockStorage, name = 'object-raw-boundary';
-    const store = new h.NotebookStore(name), limit = 4 * 1024 * 1024;
+    const store = new h.NotebookStore(name);
     // {"x":"..."} costs eight bytes, independent of the serializer.
     const exact = { x: 'é'.repeat((limit - 8) / 2) };
     await h.rawRecord(name, exact, true);
@@ -86,7 +87,7 @@ test('raw object backups honor escaped UTF-8 boundaries without changing native 
     await h.rawRecord(name, { x: '\u0000\n"\\🐟' }, true);
     const escaped = await store.exportRaw(); store.close();
     return { accepted, error, preserved, escaped };
-  });
+  }, LIMITS.notebookBytes);
   expect(result.accepted).toBe(true);
   expect(result.error).toMatch(/too large|exceeds/i);
   expect(result.preserved).toBe(true);
