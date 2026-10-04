@@ -56,6 +56,8 @@ Names are limited to 40 characters; titles to 100; descriptions, success criteri
 
 There are no attachments, file uploads, automatic evidence previews, identity verification, notifications or public social graph. The local milestone covers the complete agreement-to-resolution experience; remote hosting and broader social features require a separate design.
 
+The HTTP service admits at most 16 active connections. A shared 15-second total deadline covers the request line and all headers, even when bytes keep arriving; unfinished requests close without reflecting partial input. Header bytes remain capped at 16 KiB and socket inactivity at five seconds. Once headers finish, a separate 15-second total deadline covers the request body. Healthy requests can proceed when expired connections release their slots.
+
 ## Verify
 
 ```sh
@@ -71,3 +73,5 @@ npm run test:browser
 `npm run check` runs TypeScript unit tests, ESLint, type checking and a production build. Playwright starts the real production Python service with an isolated temporary database on port 4250. To use an existing Chromium executable, set `CHROMIUM_PATH=/path/to/chromium` for the browser test command. Primary acceptance uses actual independent browser contexts and the real service; focused failure tests may intercept requests to reproduce outages and races.
 
 The completed local milestone passes **43 Python tests, 22 TypeScript unit tests and 12 production Chromium tests**, plus Ruff, compilation, ESLint, TypeScript and the Vite production build. A focused rerun also verified the final persistent memory-only warning/retry extension. Independent reviews covered role/transaction boundaries, historical audit replay, HTTP framing/lifetime and browser credential/draft races. Root visually inspected desktop and 390-pixel mobile views and created a real challenge through the production UI. See `docs/runtime-verification.json` for the measured local environment and scope; GitHub issue #30 records durable commits and remote CI.
+
+Issue #80 adds four real-socket regressions for slow request-line/header saturation, a deadline shared across complete header lines, and the independent body phase. The expanded local Python suite passes 47 cases; see `docs/2026-10-04-header-deadline-verification.json` for current verification evidence and limits.

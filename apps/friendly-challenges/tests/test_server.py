@@ -398,6 +398,84 @@ class ServerTests(unittest.TestCase):
         finally:
             connection.close()
 
+    def _assert_slow_headers_release_all_slots(self, prefix):
+        connections = []
+        with patch("challenges.server.HEADER_TIMEOUT", 1.0, create=True):
+            try:
+                for _ in range(16):
+                    connection = socket.create_connection(
+                        ("127.0.0.1", self.server.server_port), timeout=2
+                    )
+                    connections.append(connection)
+                    connection.sendall(prefix)
+                # Actual service behavior proves all slots are held initially.
+                self.assertEqual(self.request("GET", "/api/status")[0], 503)
+                for _ in range(12):
+                    for connection in connections:
+                        try:
+                            connection.sendall(b"x")
+                        except OSError:
+                            pass
+                    time.sleep(0.12)
+                # Bytes arrive well inside the 5-second inactivity timeout.
+                # A total header deadline must nevertheless release capacity.
+                self.assertEqual(self.request("GET", "/api/status")[0], 200)
+                for connection in connections:
+                    self.assertEqual(connection.recv(1024), b"")
+                self.assertEqual(self.snapshot()["revision"], 1)
+            finally:
+                for connection in connections:
+                    connection.close()
+
+    def test_total_header_deadline_releases_capacity_during_slow_field(self):
+        host = f"127.0.0.1:{self.server.server_port}"
+        self._assert_slow_headers_release_all_slots(
+            f"GET /api/status HTTP/1.1\r\nHost: {host}\r\nX-Slow: ".encode()
+        )
+
+    def test_total_header_deadline_also_bounds_slow_request_line(self):
+        self._assert_slow_headers_release_all_slots(b"GET /api/status")
+
+    def test_header_deadline_is_shared_across_complete_header_lines(self):
+        with patch("challenges.server.HEADER_TIMEOUT", 0.2, create=True):
+            connection = socket.create_connection(
+                ("127.0.0.1", self.server.server_port), timeout=2
+            )
+            try:
+                host = f"127.0.0.1:{self.server.server_port}"
+                connection.sendall(f"GET /api/status HTTP/1.1\r\nHost: {host}\r\n".encode())
+                for _ in range(8):
+                    try:
+                        connection.sendall(b"X-Progress: value\r\n")
+                    except OSError:
+                        break
+                    time.sleep(0.04)
+                self.assertEqual(connection.recv(1024), b"")
+                self.assertEqual(self.request("GET", "/api/status")[0], 200)
+            finally:
+                connection.close()
+
+    def test_finished_headers_leave_body_its_independent_deadline(self):
+        payload = json.dumps({"name": "Casey", "terms": self.terms}).encode()
+        with patch("challenges.server.HEADER_TIMEOUT", 0.1, create=True):
+            connection = socket.create_connection(
+                ("127.0.0.1", self.server.server_port), timeout=2
+            )
+            try:
+                connection.sendall(
+                    (f"POST /api/challenges HTTP/1.1\r\nHost: 127.0.0.1:{self.server.server_port}\r\n"
+                     f"Content-Type: application/json\r\nContent-Length: {len(payload)}\r\n\r\n").encode()
+                    + payload[:1]
+                )
+                time.sleep(0.25)
+                connection.sendall(payload[1:])
+                response = http.client.HTTPResponse(connection)
+                response.begin()
+                self.assertEqual(response.status, 201)
+                self.assertEqual(json.loads(response.read())["challenge"]["terms"], self.terms)
+            finally:
+                connection.close()
+
     def test_body_total_deadline_applies_even_while_bytes_keep_arriving(self):
         with patch("challenges.server.BODY_TIMEOUT", 0.2):
             connection = socket.create_connection(("127.0.0.1", self.server.server_port), timeout=2)
