@@ -39,7 +39,7 @@ Startup never downloads models. Missing/corrupt weights disable new separation w
 1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
 2. Wait for separation, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
 3. Paste your lyrics, one line per cue, and press **Create draft timings**. Even spacing is only a starting point; it does not detect singing or identify words.
-4. Listen and correct each line's start/end seconds. **Mark start** and **Mark end** use the current playback position; **Play line** seeks to its start. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
+4. Listen and correct each line's start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** seeks to its start. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
 5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
 
 Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
@@ -53,6 +53,35 @@ unapplied pasted words keep their separate unsaved warning. A new edit after und
 clears redo. Saving successfully, opening another clip, deleting the selected clip,
 or reloading resets this session-only history. Failed requests retain it. History
 does not undo saved server revisions, media jobs, or permanent clip deletion.
+
+### Timing with the waveform
+
+The waveform always shows the **original recording**, including while you listen
+to the vocal or backing estimate. Its peaks represent amplitude in both stereo
+channels; they do not detect words or provide automatic lyric alignment. Select
+a cue to center the detail view. **Previous window**, **Next window** and
+**Center on playhead** move the view without changing the lyrics. Seeking does
+not automatically start playback.
+
+A completed handle drag is one undoable lyric edit. Arrow keys move a focused
+handle by 10 ms, or 100 ms with Shift; holding a key remains one edit until release.
+Movement preserves an existing boundary's fractional precision. Other cue
+boundaries and text are unchanged. Overlap or a zero-length cue is rejected;
+gaps and exactly adjacent cues are allowed. Escape, lost pointer capture,
+switching views/tracks/projects or another edit cancels an unfinished gesture.
+Invalid numeric timings disable the handles until corrected; waveform navigation
+and the original numeric fields remain available. Waveform activity does not
+replace your input fields or clear incomplete text/timing drafts.
+
+Waveform loading streams the local normalized WAV in a browser worker. Each
+441-frame/10 ms bin retains exact signed 16-bit minimum and maximum values across
+both channels, including opposite-phase audio. A five-minute song has 30,000
+bins and 120,000 bytes of peak data. The final partial bin uses only real samples.
+Container overhead is limited to 4 KiB, and the whole load has a 30-second deadline.
+**Stop waveform** releases pending work; **Retry waveform** starts a new attempt.
+Playback and manual timing continue to work after a stopped or failed load.
+Peaks are temporary and are recomputed when a project is reopened. No model,
+network service, project migration or extra setup is needed for this view.
 
 Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; this is line-level karaoke, not word-by-word highlighting. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
 

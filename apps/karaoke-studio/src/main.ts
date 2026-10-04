@@ -1,6 +1,8 @@
 import './style.css';
 import { activeCue, draftCues, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft } from './draft-history.ts';
+import { mountTimeline } from './timeline.ts';
+import { proposeBoundary, timingError } from './timing.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
 interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; activeJob?: Job | null }
@@ -28,6 +30,7 @@ app.innerHTML = `
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">YOUR LYRICS, YOUR TIMING</span></div>
+        <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
@@ -55,6 +58,34 @@ let videoUrl: string | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let animation = 0;
 let projectGeneration = 0;
+let loadedProjectGeneration = 0;
+let editGeneration = 0;
+let mediaGeneration = 0;
+const timeline = mountTimeline(element('timing-workbench'), {
+  onSeek(time) { if (working) { audio.currentTime = time; draw(); } },
+  onSelectCue(index) {
+    for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('timing-selected', Number(row.dataset.cue) === index);
+  },
+  onGestureStart() {
+    if (!working || currentJob || loading || requestingJob || saving || timingError(working.cues, working.duration)) return false;
+    lyricHistory?.endGroup(); return true;
+  },
+  onCommitBoundary(change) {
+    if (!working || currentJob || loading || requestingJob || saving || change.projectId !== working.id || change.projectGeneration !== loadedProjectGeneration || change.editGeneration !== editGeneration) return false;
+    const cue = working.cues[change.cueIndex];
+    if (!cue || !Object.is(cue[change.boundary], change.before)) return false;
+    proposeBoundary(working.cues, working.duration, change.cueIndex, change.boundary, change.after);
+    if (Object.is(change.before, change.after)) return false;
+    cue[change.boundary] = change.after;
+    const input = element('cue-list').querySelector<HTMLInputElement>(`[data-cue="${change.cueIndex}"] input[data-boundary="${change.boundary}"]`);
+    if (input) input.value = String(change.after);
+    changed(null); return true;
+  },
+});
+function updateTimeline() {
+  timeline.setEditor(working ? { projectId: working.id, projectGeneration: loadedProjectGeneration, editGeneration, duration: working.duration, cues: working.cues, busy: !!currentJob || loading || requestingJob || saving } : null);
+}
+
 
 function message(text: string, error = false) {
   const node = element('message'); node.textContent = text; node.hidden = !text; node.classList.toggle('error', error);
@@ -100,24 +131,28 @@ function controls() {
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy;
+  updateTimeline();
 }
 function draftSnapshot(): LyricDraft {
   return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty };
 }
 function changed(group: string | null = null) {
   if (!working) return;
+  timeline.cancelGesture(); editGeneration++;
   lyricHistory?.record(draftSnapshot(), group);
   dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
 }
 function restoreDraft(direction: 'undo' | 'redo') {
   if (!working || !lyricHistory || currentJob || loading || requestingJob || saving) return;
+  timeline.cancelGesture(); editGeneration++;
+  const rawTimings = captureTimingDrafts();
   const draft = lyricHistory[direction]();
   if (!draft) return;
   working.title = draft.title; working.cues = draft.cues;
   element<HTMLInputElement>('title').value = draft.title;
   element<HTMLTextAreaElement>('lyric-draft').value = draft.pastedText;
   draftDirty = draft.pastedDirty; dirty = lyricHistory.dirty; videoUrl = null;
-  renderCues(); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
+  renderCues(rawTimings); controls(); draw(); message(direction === 'undo' ? 'Lyric edit undone.' : 'Lyric edit restored.');
 }
 element('undo-lyrics').addEventListener('click', () => restoreDraft('undo'));
 element('redo-lyrics').addEventListener('click', () => restoreDraft('redo'));
@@ -157,6 +192,7 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
   for (const [index, line] of lines.entries()) context.fillText(line, 640, y + (index - (lines.length - 1) / 2) * lineHeight);
 }
 function draw() {
+  timeline.setPlayback(audio.currentTime || 0);
   context.fillStyle = '#14232f'; context.fillRect(0, 0, 1280, 720);
   context.textAlign = 'center'; context.textBaseline = 'middle';
   const invalid = validateWorking();
@@ -193,12 +229,16 @@ void document.fonts.ready.then(draw);
 
 function track(kind: string) {
   if (!working) return;
+  timeline.cancelGesture();
   const position = audio.currentTime || 0, playing = !audio.paused;
+  const id = working.id, project = loadedProjectGeneration, owner = ++mediaGeneration;
   currentTrack = kind;
-  audio.pause(); audio.src = `/api/projects/${working.id}/audio/${kind}`;
+  audio.pause(); const url = `/api/projects/${id}/audio/${kind}`; audio.src = url;
+  const expectedSource = new URL(url, location.href).href;
   audio.onloadedmetadata = () => {
-    audio.currentTime = Math.min(position, working?.duration || 0);
-    if (playing) void audio.play().catch(() => message('Press play to continue listening.'));
+    if (owner !== mediaGeneration || working?.id !== id || loadedProjectGeneration !== project || audio.src !== expectedSource || loading) return;
+    audio.currentTime = Math.min(position, working.duration);
+    if (playing) void audio.play().catch(() => { if (owner === mediaGeneration && working?.id === id) message('Press play to continue listening.'); });
   };
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-track]')) button.setAttribute('aria-pressed', String(button.dataset.track === kind));
   audio.load(); draw();
@@ -212,17 +252,25 @@ function cueInput(label: string, value: string, type: string, onInput: (value: s
   control.addEventListener('input', () => { onInput(control.value); changed(label); });
   wrapper.append(control); return wrapper;
 }
-function renderCues() {
+interface RawTiming { start: number; end: number; startText: string; endText: string }
+function captureTimingDrafts(): RawTiming[] {
+  return working?.cues.map((cue, index) => {
+    const row = element('cue-list').querySelector(`[data-cue="${index}"]`);
+    return { start: cue.start, end: cue.end, startText: row?.querySelector<HTMLInputElement>('[data-boundary="start"]')?.value ?? '', endText: row?.querySelector<HTMLInputElement>('[data-boundary="end"]')?.value ?? '' };
+  }) || [];
+}
+function renderCues(rawTimings: RawTiming[] = []) {
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Paste your words above, then create draft timings to begin.'; list.append(empty); return; }
   for (const [index, cue] of working.cues.entries()) {
     const row = document.createElement('div'); row.className = 'cue'; row.dataset.cue = String(index);
     const number = document.createElement('span'); number.className = 'cue-number'; number.textContent = String(index + 1).padStart(2, '0'); row.append(number);
     const text = cueInput(`Lyric line ${index + 1}`, cue.text, 'text', value => { cue.text = value; }); text.className = 'cue-text'; row.append(text);
-    const start = cueInput(`Start line ${index + 1}`, Number.isFinite(cue.start) ? String(Number(cue.start.toFixed(3))) : '', 'number', value => { cue.start = value === '' ? NaN : Number(value); }); row.append(start);
-    const end = cueInput(`End line ${index + 1}`, Number.isFinite(cue.end) ? String(Number(cue.end.toFixed(3))) : '', 'number', value => { cue.end = value === '' ? NaN : Number(value); }); row.append(end);
+    const start = cueInput(`Start line ${index + 1}`, rawTimings[index] && Object.is(rawTimings[index].start, cue.start) ? rawTimings[index].startText : Number.isFinite(cue.start) ? String(cue.start) : '', 'number', value => { cue.start = value === '' ? NaN : Number(value); }); start.querySelector('input')!.dataset.boundary = 'start'; row.append(start);
+    const end = cueInput(`End line ${index + 1}`, rawTimings[index] && Object.is(rawTimings[index].end, cue.end) ? rawTimings[index].endText : Number.isFinite(cue.end) ? String(cue.end) : '', 'number', value => { cue.end = value === '' ? NaN : Number(value); }); end.querySelector('input')!.dataset.boundary = 'end'; row.append(end);
     const actions = document.createElement('div'); actions.className = 'cue-actions';
     for (const [label, action] of [
+      ['Select timing', () => timeline.selectCue(index)],
       ['Mark start', () => { cue.start = Math.round(audio.currentTime * 1000) / 1000; renderCues(); changed(); }],
       ['Mark end', () => { cue.end = Math.min(working!.duration, Math.round(audio.currentTime * 1000) / 1000); renderCues(); changed(); }],
       ['Play line', () => { if (Number.isFinite(cue.start)) { audio.currentTime = cue.start; void audio.play().catch(() => message('Press play in the audio controls.')); } }],
@@ -244,12 +292,14 @@ async function refreshProjects() {
   element('library-count').textContent = `${projects.length} of ${session?.maxProjects || 20} local clip slots used.`;
 }
 async function openProject(id: string) {
+  timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; mediaGeneration++;
   const generation = ++projectGeneration;
   loading = true; controls();
   try {
   const project = await request<Project>(`/api/projects/${encodeURIComponent(id)}`);
   if (generation !== projectGeneration) return;
   audio.pause(); audio.removeAttribute('src'); audio.load();
+  loadedProjectGeneration++; editGeneration++;
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
   element<HTMLInputElement>('title').value = project.title;
   element<HTMLSelectElement>('projects').value = project.id;
@@ -281,7 +331,9 @@ element('draft-timings').addEventListener('click', () => {
   catch (error) { message(error instanceof Error ? error.message : 'Could not create draft timings.', true); }
 });
 element('save').addEventListener('click', async () => {
+  timeline.cancelGesture();
   if (!working || saving || draftDirty || validateWorking()) return;
+  timeline.cancelGesture(); editGeneration++;
   saving = true; controls();
   try {
     working = await request<Project>(`/api/projects/${working.id}`, json('PUT', { title: working.title, cues: working.cues, revision: working.revision }));
@@ -299,11 +351,13 @@ element('backing-download').addEventListener('click', () => { if (working) downl
 element('lyrics-download').addEventListener('click', () => { if (working && !dirty) download(`/api/projects/${working.id}/lyrics`, '.srt'); });
 element('video-download').addEventListener('click', () => { if (videoUrl) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {
+  timeline.cancelGesture();
   if (!working || currentJob || saving || loading) return;
   if (!window.confirm(`Delete “${working.title}” and its audio, lyrics, and video from this local library? This cannot be undone.`)) return;
   saving = true; controls();
   try {
     await request(`/api/projects/${working.id}`, json('DELETE', {}));
+    timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; loadedProjectGeneration++; mediaGeneration++;
     ++projectGeneration; audio.pause(); audio.removeAttribute('src'); audio.load();
     working = null; lyricHistory = null; dirty = false; draftDirty = false; videoUrl = null;
     element('clip-details').hidden = true; element<HTMLInputElement>('title').value = '';
@@ -385,3 +439,9 @@ async function refresh() {
 element('refresh').addEventListener('click', () => void refresh());
 window.addEventListener('beforeunload', event => { if (dirty || draftDirty) { event.preventDefault(); event.returnValue = ''; } });
 controls(); draw(); void refresh();
+
+window.addEventListener('pagehide', event => {
+  mediaGeneration++; audio.pause();
+  if (event.persisted) timeline.stopWaveform(); else timeline.destroy();
+});
+window.addEventListener('pageshow', event => { if (event.persisted) { controls(); draw(); } });

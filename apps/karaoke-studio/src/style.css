@@ -741,3 +741,31 @@ button {
   animation:none
 }
 }
+
+/* The timeline is a transient timing aid; the lyric inputs remain the editors. */
+#timing-workbench { padding:1.1rem 1.15rem; border-bottom:1px solid #e3e7dc; min-width:0 }
+.waveform-heading { display:flex; align-items:flex-start; gap:.6rem; flex-wrap:wrap }
+.waveform-heading>div { flex:1; min-width:180px }
+.waveform-heading h4 { margin:0 0 .25rem; font-size:.9rem; color:#436158 }
+.waveform-heading button { min-height:44px }
+#waveform-status { margin:.65rem 0; overflow-wrap:anywhere }
+#waveform-progress { width:100%; height:8px; accent-color:#4a7770 }
+#waveform-overview,#waveform-detail { width:100%; max-width:100%; border-radius:5px; cursor:crosshair }
+#waveform-overview { height:72px; margin-bottom:.7rem }
+#waveform-detail { height:116px }
+#waveform-seek { width:100%; min-height:44px; margin:0; accent-color:#456461 }
+.waveform-toolbar { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; margin:.65rem 0 }
+.waveform-toolbar .field { min-width:105px }
+.waveform-toolbar button { min-height:44px; font-size:.65rem }
+#waveform-window { margin-left:auto; font-size:.65rem; font-variant-numeric:tabular-nums; color:#5a7468 }
+.waveform-detail-wrap { position:relative; min-width:0; overflow:hidden; border:1px solid #d6dfcf; border-radius:6px; background:#f0f3eb }
+.waveform-handle-lane { position:relative; height:49px; margin:0; border-top:1px solid #d7dfd2 }
+.waveform-handle-lane [role=slider] { position:absolute; top:2px; min-width:44px; height:44px; width:44px; transform:translateX(-50%); display:grid; place-items:center; border:1px solid #769582; border-radius:6px; background:#fffdf5; color:#3d6254; touch-action:none; cursor:ew-resize; user-select:none; font-size:.6rem; font-variant-numeric:tabular-nums }
+.waveform-handle-lane [role=slider] span { pointer-events:none; max-width:42px; overflow-wrap:anywhere; text-align:center; line-height:1.3 }
+.waveform-handle-lane [aria-disabled=true] { opacity:.5; cursor:default }
+.waveform-handle-lane [role=slider]:focus-visible { outline:3px solid #cb9b58; outline-offset:1px }
+.waveform-selection { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; gap:.8rem; margin-top:.8rem }
+.waveform-selection select { width:100%; min-height:44px }
+#waveform-edit-status { min-height:1.7em; margin-top:.5rem; color:#775b3e; overflow-wrap:anywhere }
+.cue.timing-selected { box-shadow:inset 3px 0 #5e8171 }
+@media(max-width:700px) { #timing-workbench { padding:1rem .8rem } .waveform-selection { grid-template-columns:minmax(0,1fr) } #waveform-window { flex-basis:100%; margin:0 } .waveform-toolbar button { flex:1; min-width:85px } }
