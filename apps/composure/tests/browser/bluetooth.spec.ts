@@ -1,5 +1,5 @@
 import {test,expect,chromium,type Page} from '@playwright/test';
-import {PRIVATE_IDENTITY,setup,connect,calibrate,startBle,emit,stats,releaseStage,holdStage,connectionEvent,report,move,interact,position,type Stage} from './bluetooth-fixtures.ts';
+import {PRIVATE_IDENTITY,installBle,setup,connect,calibrate,startBle,emit,stats,releaseStage,holdStage,connectionEvent,report,move,interact,position,type Stage} from './bluetooth-fixtures.ts';
 
 const errors=new WeakMap<Page,string[]>();
 test.beforeEach(({page})=>{const collected:string[]=[];errors.set(page,collected);page.on('pageerror',error=>collected.push(error.message));});
@@ -169,13 +169,14 @@ for(const pending of [false,true]){
 }
 
 test('real cached history return retains the heap and allows deliberate sensor connection',async()=>{
-  const browser=await chromium.launch({ignoreDefaultArgs:['--disable-back-forward-cache'],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
+  const browser=await chromium.launch({channel:'chromium',ignoreDefaultArgs:['--disable-back-forward-cache'],...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
   try{
     const context=await browser.newContext();const page=await context.newPage();const pageErrors:string[]=[];
     page.on('pageerror',error=>pageErrors.push(error.message));
     // No native Bluetooth device is used: this tests Chromium page lifecycle,
     // then the existing controlled provider's explicit chooser boundary.
-    await setup(page);await page.evaluate(()=>{
+    await installBle(page);await page.goto('http://127.0.0.1:4281/');
+    await page.locator('#input-source').selectOption('bluetooth-hr');await page.evaluate(()=>{
       const state={shown:false};Object.defineProperty(window,'cachedVisit',{value:state});
       window.addEventListener('pageshow',event=>{if(event.persisted)state.shown=true;});
     });
