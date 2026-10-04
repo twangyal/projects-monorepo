@@ -6,7 +6,7 @@
   "scope": "Tests only; no application, model, protocol or UI changes.",
   "node": "24.19.0",
   "checks": {
-    "unitPassed": 21,
+    "unitPassed": 22,
     "unitCommand": "node --test tests/oracle-*.test.ts",
     "decoder": "Pillow 12.3.0",
     "decodedSizes": [
@@ -26,11 +26,21 @@
     "mutation": {
       "change": "Force center result alpha to255",
       "failedCases": 3,
-      "restoredPassed": 21
+      "restoredPassed": 22
     }
   },
   "limits": [
     "The additional tests have not yet passed the full project static/native CI gate.",
-    "Uploaded-art perception and protection are not measured; no experiment fit was performed."
-  ]
+    "Uploaded-art perception and protection are not measured; no experiment fit was performed.",
+    "Nested root-array refusal is not an isolated measurement of parser depth enforcement."
+  ],
+  "review": {
+    "status": "no-blockers-after-correction",
+    "corrections": [
+      "Required title accessor is rejected without invocation.",
+      "Same-project different-image commit is rejected atomically.",
+      "Each RGB luminance coefficient and the low-sRGB branch have isolated expectations."
+    ],
+    "guardMutations": "Removing each accessor/image guard or changing the red luminance coefficient fails its actual fixture."
+  }
 }

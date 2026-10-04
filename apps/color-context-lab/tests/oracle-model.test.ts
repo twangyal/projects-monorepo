@@ -24,6 +24,8 @@ test('rejects extra fields, accessors and nonordinary prototypes without calling
   const p = project(); let calls = 0;
   const bad = { ...p, get surprise() { calls++; return 1; } };
   assert.throws(() => model.validateProject(bad)); assert.equal(calls, 0);
+  const required = { ...p, get title() { calls++; return p.title; } };
+  assert.throws(() => model.validateProject(required)); assert.equal(calls, 0);
   assert.throws(() => model.validateProject(Object.assign(Object.create({}), p)));
   assert.throws(() => model.validateSettings({ ...p.settings, border: 0.5 }));
   assert.throws(() => model.validateSettings({ ...p.settings, colorA: '#ABCDEF' }));
@@ -47,7 +49,7 @@ test('bounds literal Unicode, controls, ID and all numeric inputs', () => {
   for (const border of [NaN, Infinity, -1, 129, '1']) assert.throws(() => model.validateSettings({ ...p.settings, border }));
   assert.throws(() => model.validateProject({ ...p, id: 'A0000000-0000-4000-8000-000000000000' }));
 });
-test('JSON admission rejects duplicate decoded keys, excessive depth and bytes', () => {
+test('JSON admission rejects duplicate decoded keys, invalid nesting and excessive bytes', () => {
   const p = project(); const json = model.serializeProject(p);
   assert.throws(() => model.parseProjectJson(json.replace('"title":', '"ti\\u0074le":"shadow","title":')));
   assert.throws(() => model.parseProjectJson('['.repeat(17) + '0' + ']'.repeat(17)));
@@ -68,6 +70,8 @@ test('history preserves redo on no-op and rejects image changes atomically', () 
   assert.equal(history.commit(next), true); assert.equal(history.undo().title, p.title);
   assert.equal(history.commit(p), false); assert.equal(history.canRedo, true);
   assert.throws(() => history.commit(project())); assert.equal(history.canRedo, true);
+  assert.throws(() => history.commit({ ...p, image: image() }));
+  assert.equal(history.canRedo, true); assert.deepEqual(history.current, p);
   const snapshot = history.current; snapshot.settings.border = 128;
   assert.equal(history.current.settings.border, 48); assert.equal(history.redo().title, 'next');
   assert.throws(() => history.reset({ ...p, title: '' })); assert.equal(history.current.title, 'next');

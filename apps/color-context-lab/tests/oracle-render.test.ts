@@ -29,6 +29,16 @@ test('RMSE and linear luminance use whole-raster denominator, never alpha weight
   const gray = ((128/255 + .055)/1.055)**2.4;
   assert.ok(Math.abs(c.metrics.meanAbsoluteLuminanceDelta - (1-gray)*8/9) < 1e-12);
 });
+test('isolated color luminance uses each coefficient and the low-sRGB branch', () => {
+  for (const [channel, byte, weight] of [[0,1,.2126],[1,2,.7152],[2,3,.0722]]) {
+    const p = project(1,1,new Uint8ClampedArray([10,20,30,0]));
+    const rgb = [128,128,128]; rgb[channel]=byte;
+    p.settings.border=1; p.settings.colorA='#'+rgb.map(c=>c.toString(16).padStart(2,'0')).join('');
+    const gray=((128/255+.055)/1.055)**2.4;
+    const expected=(gray-byte/255/12.92)*weight*8/9;
+    assert.ok(Math.abs(renderComparison(p).metrics.meanAbsoluteLuminanceDelta-expected)<1e-12);
+  }
+});
 test('zero border is exact source regardless of both surround colors', () => {
   const pixels = new Uint8ClampedArray([17,63,255,0,49,1,2,64]);
   const p = project(2,1,pixels); p.settings.border=0; p.settings.colorA='#010203'; p.settings.colorB='#ffffff';
