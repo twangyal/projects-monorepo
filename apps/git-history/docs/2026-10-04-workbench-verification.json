@@ -21,7 +21,7 @@
     "dependencyFreePython": "3.12",
     "dependencyFreePassed": 213,
     "dependencyFreeExpectedSkips": 26,
-    "note": "The final handler-admission fixture amendment was rerun on3.11/3.12 after their complete suites;3.13 complete suite and dependency-free suite ran after amendment. Remote CI will run every final suite.",
+    "note": "Complete final dependency-free/native Python matrix and browser job passed in remote CI at the recorded immutable commit.",
     "sourceBrowserTests": 8,
     "sourceBrowserSeconds": 11.2,
     "installedWheelBrowserTests": 7,
@@ -31,7 +31,18 @@
     "eslint": "passed",
     "compile": "passed",
     "wheelBuild": "passed",
-    "remoteCI": "pending"
+    "remoteCI": {
+      "conclusion": "success",
+      "commit": "c2bac6c8ef500ea25e346bc1b46646d1f751b48f",
+      "workflowRun": 37175391363,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37175391363",
+      "jobs": [
+        "verify (3.11)",
+        "verify (3.12)",
+        "verify (3.13)",
+        "browser"
+      ]
+    }
   },
   "runtimeMaximums": {
     "browser": "151.0.7922.173",
