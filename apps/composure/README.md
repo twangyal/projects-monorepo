@@ -60,6 +60,22 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-The production suite uses port 4281, native settings storage, real downloads and actual keyboard/pointer controls. Its browser clock controls elapsed animation time without exposing or mutating private game state. Unit oracles cover calibration, sample freshness, bounded tension, frame-rate behavior, prerequisites, wins/losses and report/settings bounds. Set `CHROMIUM_PATH=/path/to/chromium` to use an installed Chromium executable instead of the Playwright download. Current evidence is tracked in #39; no physical sensor or subjective horror-quality result is claimed.
+The production suite uses port 4281, native settings storage, real downloads and actual keyboard/pointer controls. Its browser clock controls elapsed animation time without exposing or mutating private game state. Unit oracles cover calibration, sample freshness, bounded tension, frame-rate behavior, prerequisites, wins/losses and report/settings bounds. Set `CHROMIUM_PATH=/path/to/chromium` to use an installed Chromium executable instead of the Playwright download. Original simulator evidence is tracked in #39; no physical sensor or subjective horror-quality result is claimed.
 
-Verified 2026-10-04: eight unit tests, lint/typecheck/build, and all six production Chromium flows passed in [run 37171786378](https://github.com/twangyal/projects-monorepo/actions/runs/37171786378) on `554a04cdb2c1006208f6079e741c452189e46330`. The independent review findings were reproduced and corrected; source hashes, scope and limits are recorded in [the verification record](docs/2026-10-04-mvp-verification.json).
+Original simulated milestone, verified 2026-10-04: eight unit tests, lint/typecheck/build, and all six production Chromium flows passed in [run 37171786378](https://github.com/twangyal/projects-monorepo/actions/runs/37171786378) on `554a04cdb2c1006208f6079e741c452189e46330`. The independent review findings were reproduced and corrected; source hashes, scope and limits are recorded in [the verification record](docs/2026-10-04-mvp-verification.json).
+
+
+Bluetooth software milestone #61, verified 2026-10-04: **97 unit tests and 23 production browser cases** passed, including all six original simulator flows, plus lint/typecheck/build. All twelve project workflows passed implementation `a73f866a475f775cce4644af49674f7db0c97373`; [Composure CI](https://github.com/twangyal/projects-monorepo/actions/runs/37189037388) independently passed 97/23. The [Bluetooth verification record](docs/2026-10-04-bluetooth-verification.json) records source commits, observed regressions and harness corrections, exact report/build hashes, screenshots, and limits.
+
+An independent production-browser probe checks unmodified capability first: this Linux Chromium 151 build has no Bluetooth API, displays unavailable guidance, and still starts the simulator. Separate controlled-provider profiles deliver actual `DataView` notifications for 68–72 BPM at one-second intervals, collect a 70 BPM baseline, start with no replayed calibration samples, and download source-labeled reports. Native keyboard controls complete the desktop escape; mobile emulation checks startup/layout and a new reading. Preferences remain byte-identical, device identity getters are never read, and genuine page navigation disconnects the owned connection. Only `navigator.bluetooth` and the clock are controlled; the probe does not import production modules or inject game state. A unique fixture-only sessionStorage counter observes teardown. This is software acceptance, not physical sensor verification.
+
+To reproduce against a separately started production preview:
+
+```sh
+npm run build
+npm run preview -- --port 4292 --strictPort
+# In a second terminal in apps/composure:
+COMPOSURE_BLE_BASE_URL=http://127.0.0.1:4292/ node scripts/smoke_bluetooth_input.mjs
+```
+
+Set `CHROMIUM_PATH` for an installed browser and optionally `COMPOSURE_BLE_OUTPUT` to a **new** output directory. Otherwise the script creates a fresh temporary directory. It never overwrites existing evidence, builds the app or starts a server. Reports, PNGs, isolated profiles, hashes and timing stay in the output directory; owned browser contexts close on completion. The tracked script passed in 11.94 wall seconds. Native hidden-document transitions and physical watches still require separate verification in #62.
