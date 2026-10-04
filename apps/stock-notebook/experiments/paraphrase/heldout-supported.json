@@ -1,0 +1,727 @@
+{
+  "schemaVersion": 1,
+  "split": "heldout-supported",
+  "provenance": "Original authored examples created independently from the committed six-intent screening specification, without reading training or development data, normalization contracts, reference implementations, fitted models or model outputs. Families group distinct financial expressions or syntactic framing. These are synthetic evaluation examples, not real user requests.",
+  "examples": [
+    {
+      "id": "heldout-supported-profitable-01",
+      "family": "income-statement-surplus-entry",
+      "text": "The entry under net income should put the business in surplus.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-02",
+      "family": "positive-bottom-line",
+      "text": "A positive bottom-line result is my screening criterion.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-03",
+      "family": "positive-bottom-line",
+      "text": "The companies in my list should have a bottom line in the black.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-04",
+      "family": "positive-bottom-line",
+      "text": "Being in the black on net income is what qualifies a company for this screen.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-05",
+      "family": "income-exceeds-costs",
+      "text": "Find firms whose income exceeds all their expenses.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-06",
+      "family": "income-exceeds-costs",
+      "text": "Include a business when its total income outweighs its total costs.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-07",
+      "family": "income-exceeds-costs",
+      "text": "I am looking for companies that bring in more than they spend overall.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-08",
+      "family": "income-exceeds-costs",
+      "text": "After every expense is accounted for, the company should have income left over.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-09",
+      "family": "reported-profit",
+      "text": "Which businesses report a net profit?",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-10",
+      "family": "reported-profit",
+      "text": "A reported profit after tax should determine membership in the shortlist.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-11",
+      "family": "reported-profit",
+      "text": "Keep the firms that show a profit on their income statement.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-12",
+      "family": "reported-profit",
+      "text": "The financial result I want to see is a net profit.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-13",
+      "family": "profitability-status",
+      "text": "Limit the universe to profit-making enterprises.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-14",
+      "family": "profitability-status",
+      "text": "Profitability is the condition for adding a business to my results.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-15",
+      "family": "profitability-status",
+      "text": "Only companies operating at a net profit belong on this list.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-16",
+      "family": "profitability-status",
+      "text": "I want a selection of firms with profitable operations overall.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-17",
+      "family": "net-income-sign",
+      "text": "Screen for net income on the positive side.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-18",
+      "family": "net-income-sign",
+      "text": "The sign of net income should be positive for every company selected.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-19",
+      "family": "net-income-sign",
+      "text": "A business qualifies if its net income has a positive value.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-profitable-20",
+      "family": "net-income-sign",
+      "text": "Show the companies with a positive result after costs and taxes.",
+      "intent": "profitable"
+    },
+    {
+      "id": "heldout-supported-lossmaking-01",
+      "family": "income-statement-deficit-ending",
+      "text": "An income statement ending in a net deficit marks a business for inclusion.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-02",
+      "family": "negative-bottom-line",
+      "text": "A bottom line in the red is the result I am screening for.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-03",
+      "family": "negative-bottom-line",
+      "text": "The shortlist should consist of firms with a negative bottom-line result.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-04",
+      "family": "negative-bottom-line",
+      "text": "Being in the red on net income is my inclusion criterion.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-05",
+      "family": "expenses-exceed-income",
+      "text": "Find companies whose total expenses exceed their total income.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-06",
+      "family": "expenses-exceed-income",
+      "text": "Include businesses that spend more than they bring in overall.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-07",
+      "family": "expenses-exceed-income",
+      "text": "A company belongs in the results when all its costs outweigh its income.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-08",
+      "family": "expenses-exceed-income",
+      "text": "After accounting for every expense, I want the firms left with a deficit.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-09",
+      "family": "reported-net-loss",
+      "text": "Which firms report a net loss?",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-10",
+      "family": "reported-net-loss",
+      "text": "Use a reported after-tax loss as the condition for inclusion.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-11",
+      "family": "reported-net-loss",
+      "text": "The income statement should show a net loss for each selected company.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-12",
+      "family": "reported-net-loss",
+      "text": "I want businesses whose reported financial result is a loss.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-13",
+      "family": "lossmaking-status",
+      "text": "Restrict the list to loss-making enterprises.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-14",
+      "family": "lossmaking-status",
+      "text": "Running at a net loss is what qualifies a firm for my screen.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-15",
+      "family": "lossmaking-status",
+      "text": "Build a shortlist of businesses making losses overall.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-16",
+      "family": "lossmaking-status",
+      "text": "The companies I am interested in are operating at a net loss.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-17",
+      "family": "net-income-negative-sign",
+      "text": "Screen for net income on the negative side.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-18",
+      "family": "net-income-negative-sign",
+      "text": "A negative value for net income should put a company in the results.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-19",
+      "family": "net-income-negative-sign",
+      "text": "The sign of net income must be negative for the businesses selected.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-lossmaking-20",
+      "family": "net-income-negative-sign",
+      "text": "Show firms with a negative result after costs and taxes.",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "heldout-supported-growing-01",
+      "family": "booked-revenue-increment",
+      "text": "Eligibility comes from an increase in the amount booked as revenue.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-02",
+      "family": "revenue-expansion",
+      "text": "Expansion in revenue should qualify a company for this list.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-03",
+      "family": "revenue-expansion",
+      "text": "I am interested in firms whose revenue is getting larger.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-04",
+      "family": "revenue-expansion",
+      "text": "The businesses selected should be experiencing revenue expansion.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-05",
+      "family": "top-line-rise",
+      "text": "Find companies with a rising top line.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-06",
+      "family": "top-line-rise",
+      "text": "An increase in the top line is the condition for inclusion.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-07",
+      "family": "top-line-rise",
+      "text": "I want firms whose top-line revenue is moving upward.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-08",
+      "family": "top-line-rise",
+      "text": "Growing the top line should be the common feature of this shortlist.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-09",
+      "family": "sales-revenue-increase",
+      "text": "Which businesses are increasing their sales revenue?",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-10",
+      "family": "sales-revenue-increase",
+      "text": "Include firms that show an increase in revenue from sales.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-11",
+      "family": "sales-revenue-increase",
+      "text": "A rise in sales revenue is what I want this screen to identify.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-12",
+      "family": "sales-revenue-increase",
+      "text": "The sales revenue of each selected company should be growing.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-13",
+      "family": "positive-revenue-growth",
+      "text": "Screen for a positive revenue growth rate.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-14",
+      "family": "positive-revenue-growth",
+      "text": "Positive revenue growth should determine which businesses appear.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-15",
+      "family": "positive-revenue-growth",
+      "text": "A company qualifies when its revenue growth has a positive sign.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-16",
+      "family": "positive-revenue-growth",
+      "text": "The revenue growth figure must be positive for inclusion.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-17",
+      "family": "revenue-gain",
+      "text": "Show businesses that have gained revenue.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-18",
+      "family": "revenue-gain",
+      "text": "I want the companies recording an upward change in revenue.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-19",
+      "family": "revenue-gain",
+      "text": "An enlargement of revenue is my criterion for selecting firms.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-growing-20",
+      "family": "revenue-gain",
+      "text": "Retain companies that have achieved a revenue increase.",
+      "intent": "growing"
+    },
+    {
+      "id": "heldout-supported-declining-01",
+      "family": "revenue-amount-reduction",
+      "text": "For this list, revenue must have moved to a smaller amount.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-02",
+      "family": "revenue-contraction",
+      "text": "Contraction in revenue is the condition I want to screen for.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-03",
+      "family": "revenue-contraction",
+      "text": "I am looking for firms whose revenue is getting smaller.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-04",
+      "family": "revenue-contraction",
+      "text": "The companies included should be experiencing revenue shrinkage.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-05",
+      "family": "top-line-fall",
+      "text": "Find companies with a falling top line.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-06",
+      "family": "top-line-fall",
+      "text": "A decrease in the top line should qualify a business for this list.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-07",
+      "family": "top-line-fall",
+      "text": "I want firms whose top-line revenue is moving downward.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-08",
+      "family": "top-line-fall",
+      "text": "A shrinking top line should be the common feature of the results.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-09",
+      "family": "sales-revenue-decrease",
+      "text": "Which businesses are losing sales revenue?",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-10",
+      "family": "sales-revenue-decrease",
+      "text": "Include firms showing a reduction in revenue from sales.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-11",
+      "family": "sales-revenue-decrease",
+      "text": "The sales revenue of each company selected should be falling.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-12",
+      "family": "sales-revenue-decrease",
+      "text": "A drop in sales revenue is what this screen should identify.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-13",
+      "family": "negative-revenue-growth",
+      "text": "Screen for a negative revenue growth rate.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-14",
+      "family": "negative-revenue-growth",
+      "text": "Negative revenue growth should determine which companies appear.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-15",
+      "family": "negative-revenue-growth",
+      "text": "A company qualifies when its revenue growth has a negative sign.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-16",
+      "family": "negative-revenue-growth",
+      "text": "The revenue growth figure must be negative for inclusion.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-17",
+      "family": "revenue-decrease",
+      "text": "Show firms that have suffered a revenue decrease.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-18",
+      "family": "revenue-decrease",
+      "text": "I want businesses recording a downward change in revenue.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-19",
+      "family": "revenue-decrease",
+      "text": "A reduction in revenue is my criterion for selecting companies.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-declining-20",
+      "family": "revenue-decrease",
+      "text": "Retain companies that have seen their revenue diminish.",
+      "intent": "declining"
+    },
+    {
+      "id": "heldout-supported-lowdebt-01",
+      "family": "low-debt-equity-ratio",
+      "text": "Select firms with a low debt-to-equity ratio.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-02",
+      "family": "low-debt-equity-ratio",
+      "text": "A low ratio of gross debt to equity should qualify a company.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-03",
+      "family": "low-debt-equity-ratio",
+      "text": "I want the businesses whose debt relative to equity is low.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-04",
+      "family": "low-debt-equity-ratio",
+      "text": "Use low debt compared with shareholder equity as the screening condition.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-05",
+      "family": "equity-covers-borrowing",
+      "text": "Find businesses whose shareholder equity covers their gross debt.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-06",
+      "family": "equity-covers-borrowing",
+      "text": "Equity sufficient to cover all gross borrowings is my criterion.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-07",
+      "family": "equity-covers-borrowing",
+      "text": "Keep companies with enough equity to match their debt obligations.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-08",
+      "family": "equity-covers-borrowing",
+      "text": "A firm qualifies when its equity can cover the gross debt balance.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-09",
+      "family": "modest-relative-borrowing",
+      "text": "Which companies carry modest borrowings relative to equity?",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-10",
+      "family": "modest-relative-borrowing",
+      "text": "The list should contain firms with modest debt against their equity base.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-11",
+      "family": "modest-relative-borrowing",
+      "text": "A modest gross debt burden compared with equity is what I am looking for.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-12",
+      "family": "modest-relative-borrowing",
+      "text": "Include businesses whose borrowings are small in relation to shareholder equity.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-13",
+      "family": "limited-balance-sheet-leverage",
+      "text": "Screen for limited leverage measured by debt to equity.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-14",
+      "family": "limited-balance-sheet-leverage",
+      "text": "Choose businesses with low balance-sheet leverage on a debt-equity basis.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-15",
+      "family": "limited-balance-sheet-leverage",
+      "text": "Leverage should be low when comparing gross debt with equity.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-16",
+      "family": "limited-balance-sheet-leverage",
+      "text": "I want a shortlist with restrained financial leverage relative to equity.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-17",
+      "family": "equity-backed-debt-position",
+      "text": "Show firms with an equity base that fully backs their gross debt.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-18",
+      "family": "equity-backed-debt-position",
+      "text": "Adequate shareholder equity behind the debt balance should determine inclusion.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-19",
+      "family": "equity-backed-debt-position",
+      "text": "The businesses selected should have debt comfortably supported by their equity.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-lowdebt-20",
+      "family": "equity-backed-debt-position",
+      "text": "Retain companies with a light debt load in proportion to their equity base.",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "heldout-supported-highmargin-01",
+      "family": "high-net-margin",
+      "text": "Select businesses with a high net profit margin.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-02",
+      "family": "high-net-margin",
+      "text": "A high net margin should determine which firms appear on this list.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-03",
+      "family": "high-net-margin",
+      "text": "I am interested in companies whose net income margin is high.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-04",
+      "family": "high-net-margin",
+      "text": "Use a large net profit margin as the condition for inclusion.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-05",
+      "family": "profit-share-of-revenue",
+      "text": "Find firms where net profit makes up a large share of revenue.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-06",
+      "family": "profit-share-of-revenue",
+      "text": "A substantial proportion of revenue should remain as net income.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-07",
+      "family": "profit-share-of-revenue",
+      "text": "Include businesses with a large slice of revenue represented by net profit.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-08",
+      "family": "profit-share-of-revenue",
+      "text": "The net profit portion of company revenue is what I want to be high.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-09",
+      "family": "net-income-relative-sales",
+      "text": "Which businesses have high net income relative to sales revenue?",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-10",
+      "family": "net-income-relative-sales",
+      "text": "Choose firms with a high ratio of net income to total revenue.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-11",
+      "family": "net-income-relative-sales",
+      "text": "Net income should be large in relation to revenue for the companies selected.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-12",
+      "family": "net-income-relative-sales",
+      "text": "A large net-income-to-revenue ratio is my screening criterion.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-13",
+      "family": "retain-revenue-after-expenses",
+      "text": "Screen for businesses retaining a large revenue share after all costs and taxes.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-14",
+      "family": "retain-revenue-after-expenses",
+      "text": "I want firms that keep a substantial share of sales as after-tax profit.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-15",
+      "family": "retain-revenue-after-expenses",
+      "text": "A high share of revenue left after every expense should qualify a company.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-16",
+      "family": "retain-revenue-after-expenses",
+      "text": "Keep businesses where a large fraction of sales survives as net profit.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-17",
+      "family": "net-profit-yield-on-sales",
+      "text": "Show companies producing substantial net profit per unit of revenue.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-18",
+      "family": "net-profit-yield-on-sales",
+      "text": "The screen should identify firms with a high net profit percentage of sales.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-19",
+      "family": "net-profit-yield-on-sales",
+      "text": "For each unit of sales revenue, the company should retain a large amount of net profit.",
+      "intent": "highMargin"
+    },
+    {
+      "id": "heldout-supported-highmargin-20",
+      "family": "net-profit-yield-on-sales",
+      "text": "Retain firms with strong net profitability measured as a share of revenue.",
+      "intent": "highMargin"
+    }
+  ]
+}

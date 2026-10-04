@@ -1,0 +1,1197 @@
+{
+  "schemaVersion": 1,
+  "split": "heldout-unsupported",
+  "provenance": "Original authored examples independently labeled from the reviewed six-intent scope. No training, development, model, reference or inference material or outputs were consulted. These are not real user requests or financial data.",
+  "examples": [
+    {
+      "id": "unsupported-negation-explicit-001",
+      "family": "negation-explicit",
+      "text": "Keep companies whose net result is neither a gain nor a loss.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-002",
+      "family": "negation-explicit",
+      "text": "Leave out businesses with declining revenue.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-003",
+      "family": "negation-explicit",
+      "text": "Exclude firms whose net income is positive.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-004",
+      "family": "negation-explicit",
+      "text": "I want companies without a profit.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-005",
+      "family": "negation-explicit",
+      "text": "Keep names that are not loss-making.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-006",
+      "family": "negation-explicit",
+      "text": "Do not include businesses with high margins.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-007",
+      "family": "negation-explicit",
+      "text": "Find companies with no revenue growth.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-008",
+      "family": "negation-explicit",
+      "text": "Ignore firms whose debt is low.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-009",
+      "family": "negation-explicit",
+      "text": "Show only businesses without falling sales.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-010",
+      "family": "negation-explicit",
+      "text": "Companies other than the profitable ones, please.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-011",
+      "family": "negation-explicit",
+      "text": "Remove names that have growing revenue.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-explicit-012",
+      "family": "negation-explicit",
+      "text": "Exclude companies with negative earnings.",
+      "intent": null,
+      "reason": "Negation is outside the learned single-filter scope and may include zero or a complement rather than the strict opposite intent."
+    },
+    {
+      "id": "unsupported-negation-contractions-001",
+      "family": "negation-contractions",
+      "text": "Find firms that aren't earning a profit.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-002",
+      "family": "negation-contractions",
+      "text": "I don't want companies with declining revenue.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-003",
+      "family": "negation-contractions",
+      "text": "Show businesses whose sales haven't grown.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-004",
+      "family": "negation-contractions",
+      "text": "Don't select profitable companies.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-005",
+      "family": "negation-contractions",
+      "text": "Pick firms that aren't losing money.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-006",
+      "family": "negation-contractions",
+      "text": "I wouldn't include businesses with high margins.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-007",
+      "family": "negation-contractions",
+      "text": "Give me names whose revenue isn't falling.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-008",
+      "family": "negation-contractions",
+      "text": "Don't bring up companies with low leverage.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-009",
+      "family": "negation-contractions",
+      "text": "Find businesses that haven't reported positive income.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-010",
+      "family": "negation-contractions",
+      "text": "I'm not looking for growing companies.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-011",
+      "family": "negation-contractions",
+      "text": "Choose companies whose profit margin isn't high.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-negation-contractions-012",
+      "family": "negation-contractions",
+      "text": "Keep a company unless its revenue hasn't fallen.",
+      "intent": null,
+      "reason": "A contraction introduces negation; accepting a positive class or its strict opposite would not preserve the request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-001",
+      "family": "implicit-compounds",
+      "text": "Find profitable firms that carry low debt.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-002",
+      "family": "implicit-compounds",
+      "text": "Show growing businesses with strong profit margins.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-003",
+      "family": "implicit-compounds",
+      "text": "Loss-making companies whose revenue is declining.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-004",
+      "family": "implicit-compounds",
+      "text": "Pick high-margin firms with low leverage.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-005",
+      "family": "implicit-compounds",
+      "text": "Find businesses earning a profit while sales fall.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-006",
+      "family": "implicit-compounds",
+      "text": "Growing revenue despite a net loss is what I want.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-007",
+      "family": "implicit-compounds",
+      "text": "Show low-debt companies that earn positive net income.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-008",
+      "family": "implicit-compounds",
+      "text": "Choose declining businesses with high net margins.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-009",
+      "family": "implicit-compounds",
+      "text": "Find positive earnings accompanied by expanding revenue.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-010",
+      "family": "implicit-compounds",
+      "text": "High margins backed by a debt-light balance sheet, please.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-011",
+      "family": "implicit-compounds",
+      "text": "Show businesses with falling revenue but positive profits.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-012",
+      "family": "implicit-compounds",
+      "text": "I want loss-making firms that still have high margins.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-013",
+      "family": "implicit-compounds",
+      "text": "Find growing companies carrying no more debt than equity.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-014",
+      "family": "implicit-compounds",
+      "text": "Pick profitable businesses whose net margins are high.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-015",
+      "family": "implicit-compounds",
+      "text": "Low leverage paired with shrinking sales is my screen.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-implicit-compounds-016",
+      "family": "implicit-compounds",
+      "text": "Show companies with positive income plus rising revenue.",
+      "intent": null,
+      "reason": "The request contains multiple financial intents; one filter with the fixed defaults cannot express the whole request."
+    },
+    {
+      "id": "unsupported-explicit-digits-001",
+      "family": "explicit-digits",
+      "text": "Find companies with net income above 0.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-002",
+      "family": "explicit-digits",
+      "text": "Show profit margins of at least 10%.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-003",
+      "family": "explicit-digits",
+      "text": "Businesses with debt to equity below 0.5, please.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-004",
+      "family": "explicit-digits",
+      "text": "Find revenue growth greater than 0%.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-005",
+      "family": "explicit-digits",
+      "text": "Show companies whose revenue fell by more than 5%.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-006",
+      "family": "explicit-digits",
+      "text": "Pick businesses with a 15% net margin.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-007",
+      "family": "explicit-digits",
+      "text": "Screen for net losses exceeding 2 million.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-008",
+      "family": "explicit-digits",
+      "text": "Give me debt to equity no greater than 1.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-009",
+      "family": "explicit-digits",
+      "text": "Only firms with revenue of 100 million or more.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-digits-010",
+      "family": "explicit-digits",
+      "text": "Find companies whose growth is between 0% and 10%.",
+      "intent": null,
+      "reason": "An explicit numeric threshold requires the precise controlled parser; numeric requests are excluded even when the value matches a default."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-001",
+      "family": "explicit-spelled-quantities",
+      "text": "Find net income greater than zero.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-002",
+      "family": "explicit-spelled-quantities",
+      "text": "Show net margins of at least ten percent.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-003",
+      "family": "explicit-spelled-quantities",
+      "text": "Companies with debt below half their equity, please.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-004",
+      "family": "explicit-spelled-quantities",
+      "text": "Pick firms growing revenue by twenty percent.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-005",
+      "family": "explicit-spelled-quantities",
+      "text": "I want sales falling by five percent or more.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-006",
+      "family": "explicit-spelled-quantities",
+      "text": "Find companies earning one million in net income.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-007",
+      "family": "explicit-spelled-quantities",
+      "text": "Show revenue growth above zero percent.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-008",
+      "family": "explicit-spelled-quantities",
+      "text": "Businesses with debt to equity under one, please.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-009",
+      "family": "explicit-spelled-quantities",
+      "text": "Find net margins between ten and fifteen percent.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-explicit-spelled-quantities-010",
+      "family": "explicit-spelled-quantities",
+      "text": "Only companies whose annual revenue exceeds a billion.",
+      "intent": null,
+      "reason": "A spelled-out amount or percentage is still an explicit threshold, outside the learned paraphrase scope."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-001",
+      "family": "sector-qualifiers",
+      "text": "Find profitable retailers.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-002",
+      "family": "sector-qualifiers",
+      "text": "Show growing software companies.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-003",
+      "family": "sector-qualifiers",
+      "text": "Loss-making banks are the businesses I want.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-004",
+      "family": "sector-qualifiers",
+      "text": "Pick high-margin firms in healthcare.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-005",
+      "family": "sector-qualifiers",
+      "text": "Find low-debt manufacturers.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-006",
+      "family": "sector-qualifiers",
+      "text": "Which mining companies have declining revenue?",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-007",
+      "family": "sector-qualifiers",
+      "text": "Positive net income among airlines, please.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-008",
+      "family": "sector-qualifiers",
+      "text": "Look for strong net margins in utilities.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-009",
+      "family": "sector-qualifiers",
+      "text": "Find debt-light semiconductor businesses.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-sector-qualifiers-010",
+      "family": "sector-qualifiers",
+      "text": "Show falling sales in the food sector.",
+      "intent": null,
+      "reason": "The requested sector or industry restriction is an additional filter; the learned mapping must leave sector null."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-001",
+      "family": "currency-qualifiers",
+      "text": "Find profitable businesses reporting in USD.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-002",
+      "family": "currency-qualifiers",
+      "text": "Show growing companies with euro-denominated accounts.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-003",
+      "family": "currency-qualifiers",
+      "text": "Pick loss-making firms that use JPY.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-004",
+      "family": "currency-qualifiers",
+      "text": "Find low-debt companies whose accounts are in pounds.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-005",
+      "family": "currency-qualifiers",
+      "text": "High-margin companies with CAD financial statements, please.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-006",
+      "family": "currency-qualifiers",
+      "text": "Show declining revenue for businesses reporting in CHF.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-007",
+      "family": "currency-qualifiers",
+      "text": "Only dollar reporters with positive net income.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-008",
+      "family": "currency-qualifiers",
+      "text": "Find euro-reporting names with high margins.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-009",
+      "family": "currency-qualifiers",
+      "text": "Show net losses after converting the figures to dollars.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-currency-qualifiers-010",
+      "family": "currency-qualifiers",
+      "text": "Find revenue growth for companies using INR.",
+      "intent": null,
+      "reason": "Currency or conversion requirements are additional constraints; the six learned screens have no currency filter or FX operation."
+    },
+    {
+      "id": "unsupported-period-qualifiers-001",
+      "family": "period-qualifiers",
+      "text": "Find companies that were profitable last year.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-002",
+      "family": "period-qualifiers",
+      "text": "Show revenue growth during the latest quarter.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-003",
+      "family": "period-qualifiers",
+      "text": "Find businesses with losses in 2023.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-004",
+      "family": "period-qualifiers",
+      "text": "Only high margins reported this month.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-005",
+      "family": "period-qualifiers",
+      "text": "Low leverage in every year of the supplied history, please.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-006",
+      "family": "period-qualifiers",
+      "text": "Find firms whose revenue declined for three years running.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-007",
+      "family": "period-qualifiers",
+      "text": "Show profits from the fiscal year ending in June.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-008",
+      "family": "period-qualifiers",
+      "text": "Pick profitable companies with filings less than a week old.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-009",
+      "family": "period-qualifiers",
+      "text": "Find high margins before the pandemic.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-period-qualifiers-010",
+      "family": "period-qualifiers",
+      "text": "Companies that have always grown their sales, please.",
+      "intent": null,
+      "reason": "The requested time period, filing recency or persistence condition differs from the fixed latest-row screen and freshness defaults."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-001",
+      "family": "income-basis-confusion",
+      "text": "Find firms with positive operating income.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-002",
+      "family": "income-basis-confusion",
+      "text": "Show companies posting a gross profit.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-003",
+      "family": "income-basis-confusion",
+      "text": "Businesses with positive EBITDA, please.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-004",
+      "family": "income-basis-confusion",
+      "text": "Find companies making money before tax.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-005",
+      "family": "income-basis-confusion",
+      "text": "Show losses from continuing operations only.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-006",
+      "family": "income-basis-confusion",
+      "text": "Pick firms with positive adjusted earnings.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-007",
+      "family": "income-basis-confusion",
+      "text": "Find companies with operating losses.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-008",
+      "family": "income-basis-confusion",
+      "text": "Positive cash flow from operations is what I want.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-009",
+      "family": "income-basis-confusion",
+      "text": "Show businesses with a profit before interest expense.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-income-basis-confusion-010",
+      "family": "income-basis-confusion",
+      "text": "Find positive earnings after excluding restructuring charges.",
+      "intent": null,
+      "reason": "The requested earnings basis is not reported net income; accepting profitable or loss-making would substitute a different quantity."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-001",
+      "family": "margin-basis-confusion",
+      "text": "Find companies with high gross margins.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-002",
+      "family": "margin-basis-confusion",
+      "text": "Show strong operating profit margins.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-003",
+      "family": "margin-basis-confusion",
+      "text": "Businesses with healthy EBITDA margins, please.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-004",
+      "family": "margin-basis-confusion",
+      "text": "Find high returns on equity.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-005",
+      "family": "margin-basis-confusion",
+      "text": "Show companies with high contribution margins.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-006",
+      "family": "margin-basis-confusion",
+      "text": "Pick firms with a large markup over cost.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-007",
+      "family": "margin-basis-confusion",
+      "text": "Find strong pre-tax margins.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-008",
+      "family": "margin-basis-confusion",
+      "text": "Look for high cash flow margins.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-009",
+      "family": "margin-basis-confusion",
+      "text": "Show businesses with high adjusted net margins.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-margin-basis-confusion-010",
+      "family": "margin-basis-confusion",
+      "text": "Find companies earning a high return on assets.",
+      "intent": null,
+      "reason": "These margin or return measures differ from the supported net-income/revenue margin and its fixed threshold."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-001",
+      "family": "price-growth-confusion",
+      "text": "Find stocks whose share prices are growing.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-002",
+      "family": "price-growth-confusion",
+      "text": "Show companies with declining stock prices.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-003",
+      "family": "price-growth-confusion",
+      "text": "Pick names with rising market capitalization.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-004",
+      "family": "price-growth-confusion",
+      "text": "Find businesses whose earnings per share are growing.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-005",
+      "family": "price-growth-confusion",
+      "text": "Show stocks with positive total returns.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-006",
+      "family": "price-growth-confusion",
+      "text": "Companies with shrinking earnings per share, please.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-007",
+      "family": "price-growth-confusion",
+      "text": "Find shares that gained value over the year.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-008",
+      "family": "price-growth-confusion",
+      "text": "Show companies whose dividends are increasing.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-009",
+      "family": "price-growth-confusion",
+      "text": "Look for falling bond prices.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-price-growth-confusion-010",
+      "family": "price-growth-confusion",
+      "text": "Find stocks gaining faster than the market.",
+      "intent": null,
+      "reason": "The requested price, shareholder return or per-share change is not annual revenue growth from the supplied figures."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-001",
+      "family": "ranking-and-ordering",
+      "text": "Show the most profitable companies first.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-002",
+      "family": "ranking-and-ordering",
+      "text": "Pick the least indebted business.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-003",
+      "family": "ranking-and-ordering",
+      "text": "Rank companies by their revenue growth.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-004",
+      "family": "ranking-and-ordering",
+      "text": "Find high-margin firms ordered by margin.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-005",
+      "family": "ranking-and-ordering",
+      "text": "Put the biggest losses at the top.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-006",
+      "family": "ranking-and-ordering",
+      "text": "Show the fastest-growing company.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-007",
+      "family": "ranking-and-ordering",
+      "text": "Low-debt names sorted by revenue, please.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-008",
+      "family": "ranking-and-ordering",
+      "text": "Give me the top three profitable businesses.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-009",
+      "family": "ranking-and-ordering",
+      "text": "List declining companies from worst to best.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-ranking-and-ordering-010",
+      "family": "ranking-and-ordering",
+      "text": "Find the highest-margin firm in the dataset.",
+      "intent": null,
+      "reason": "A rank, top selection or requested ordering changes the screen beyond its fixed ticker-ascending sort."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-001",
+      "family": "valuation-and-investment",
+      "text": "Find undervalued profitable companies.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-002",
+      "family": "valuation-and-investment",
+      "text": "Show growing businesses trading at a bargain.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-003",
+      "family": "valuation-and-investment",
+      "text": "Pick cheap stocks with low debt.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-004",
+      "family": "valuation-and-investment",
+      "text": "Find high margins at a reasonable share price.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-005",
+      "family": "valuation-and-investment",
+      "text": "Show companies with low price to earnings ratios.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-006",
+      "family": "valuation-and-investment",
+      "text": "Which profitable business should I buy?",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-007",
+      "family": "valuation-and-investment",
+      "text": "Find a good entry price for the growing names.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-008",
+      "family": "valuation-and-investment",
+      "text": "Show stocks worth more than their current price.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-009",
+      "family": "valuation-and-investment",
+      "text": "Find loss-making businesses that are good investments.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-valuation-and-investment-010",
+      "family": "valuation-and-investment",
+      "text": "Pick companies with a margin of safety.",
+      "intent": null,
+      "reason": "Valuation, investment attractiveness or security pricing is absent from the six financial filters and supplied annual data."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-001",
+      "family": "forecasts-and-outlooks",
+      "text": "Find companies likely to be profitable next year.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-002",
+      "family": "forecasts-and-outlooks",
+      "text": "Show firms whose revenue will grow.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-003",
+      "family": "forecasts-and-outlooks",
+      "text": "Which businesses will stop losing money?",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-004",
+      "family": "forecasts-and-outlooks",
+      "text": "Find companies expected to have high margins.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-005",
+      "family": "forecasts-and-outlooks",
+      "text": "Pick low-debt businesses that will outperform.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-006",
+      "family": "forecasts-and-outlooks",
+      "text": "Show companies heading for a revenue decline.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-007",
+      "family": "forecasts-and-outlooks",
+      "text": "Predict which profitable firms will remain profitable.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-008",
+      "family": "forecasts-and-outlooks",
+      "text": "Find firms likely to improve their margins soon.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-009",
+      "family": "forecasts-and-outlooks",
+      "text": "Which companies will reduce their debt?",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-forecasts-and-outlooks-010",
+      "family": "forecasts-and-outlooks",
+      "text": "Show the next big growth winner.",
+      "intent": null,
+      "reason": "The request asks for future outcomes or predictions; retrospective reported figures cannot support that intent."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-001",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Find quality compounders.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-002",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Show financially healthy businesses.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-003",
+      "family": "ambiguous-financial-shorthand",
+      "text": "I want safe balance sheets.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-004",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Pick companies with strong fundamentals.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-005",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Find resilient earners.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-006",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Show a clean financial story.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-007",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Look for an earnings comeback.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-008",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Find capital-efficient companies.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-009",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Give me defensive names.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-010",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Show businesses with a good growth profile.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-011",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Find stable companies.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-012",
+      "family": "ambiguous-financial-shorthand",
+      "text": "I want a healthy bottom line.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-013",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Show the best businesses.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-ambiguous-financial-shorthand-014",
+      "family": "ambiguous-financial-shorthand",
+      "text": "Look for cash-positive names.",
+      "intent": null,
+      "reason": "The shorthand lacks a unique supported metric or convention and must not be expanded into an assumed investment goal or filter."
+    },
+    {
+      "id": "unsupported-unrelated-request-001",
+      "family": "unrelated-request",
+      "text": "Write a birthday message for my brother.",
+      "intent": null,
+      "reason": "This is an ordinary unrelated request rather than a financial screening intent."
+    },
+    {
+      "id": "unsupported-unrelated-request-002",
+      "family": "unrelated-request",
+      "text": "Find a quiet cafe near the station.",
+      "intent": null,
+      "reason": "This is an ordinary unrelated request rather than a financial screening intent."
+    },
+    {
+      "id": "unsupported-unrelated-request-003",
+      "family": "unrelated-request",
+      "text": "Explain how a bicycle gear works.",
+      "intent": null,
+      "reason": "This is an ordinary unrelated request rather than a financial screening intent."
+    },
+    {
+      "id": "unsupported-unrelated-request-004",
+      "family": "unrelated-request",
+      "text": "Help me plan a weekend hike.",
+      "intent": null,
+      "reason": "This is an ordinary unrelated request rather than a financial screening intent."
+    },
+    {
+      "id": "unsupported-unrelated-request-005",
+      "family": "unrelated-request",
+      "text": "Show a recipe for tomato soup.",
+      "intent": null,
+      "reason": "This is an ordinary unrelated request rather than a financial screening intent."
+    },
+    {
+      "id": "unsupported-unrelated-request-006",
+      "family": "unrelated-request",
+      "text": "What should I pack for a rainy holiday?",
+      "intent": null,
+      "reason": "This is an ordinary unrelated request rather than a financial screening intent."
+    }
+  ]
+}

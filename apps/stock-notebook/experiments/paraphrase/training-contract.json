@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "stock-paraphrase-1",
+  "purpose": "Frozen pre-fit contract for six limited learned screening suggestions; no financial ranking, generated outlook or general language claim.",
+  "seed": 20261004,
+  "classOrder": ["profitable", "lossMaking", "growing", "declining", "lowDebt", "highMargin"],
+  "canonicalMappings": [
+    {"intent": "profitable", "query": "companies with profitable", "metric": "netIncome", "operator": "gt", "value": 0},
+    {"intent": "lossMaking", "query": "companies with loss making", "metric": "netIncome", "operator": "lt", "value": 0},
+    {"intent": "growing", "query": "companies with growing", "metric": "growthPct", "operator": "gt", "value": 0},
+    {"intent": "declining", "query": "companies with declining revenue", "metric": "growthPct", "operator": "lt", "value": 0},
+    {"intent": "lowDebt", "query": "companies with low debt", "metric": "debtEquity", "operator": "lte", "value": 1},
+    {"intent": "highMargin", "query": "companies with high margin", "metric": "marginPct", "operator": "gte", "value": 10}
+  ],
+  "screenDefaults": {"sector": null, "currency": null, "includeStale": false, "sortBy": "ticker", "direction": "asc", "filterCurrency": null, "filterCount": 1},
+  "limits": {"rawCodePoints": 512, "rawUtf8Bytes": 2048, "tokens": 64, "vocabularyFeatures": 2048, "featureCharacters": 80, "artifactBytes": 1048576, "absoluteCoefficient": 1000000, "maximumIdf": 100, "maximumCorpusExamples": 2000},
+  "normalizer": {
+    "version": "ascii-words-1",
+    "inputType": "string",
+    "rawFullMatchRegex": "[A-Za-z]+(?:['-][A-Za-z]+)*(?:[ \\t]+[A-Za-z]+(?:['-][A-Za-z]+)*)*[.!?]?",
+    "steps": [
+      "Reject a non-string, raw code-point/UTF-8 byte limit violation, NUL or a lone surrogate; never truncate.",
+      "Trim only ASCII spaces and tabs from both ends; require the complete trimmed text to match rawFullMatchRegex using ASCII semantics. No other Unicode, digits, symbols, line breaks or punctuation are accepted.",
+      "Convert ASCII A-Z to a-z, remove at most the one permitted final period/exclamation/question mark, replace each internal hyphen with an ASCII space, and collapse runs of spaces/tabs to one space.",
+      "Split on ASCII spaces. Internal apostrophes remain part of the token. Reject empty input or more than 64 tokens. Do not perform stemming, Unicode folding, stopword removal, clause removal or prefix salvage."
+    ],
+    "featureTokens": "The normalized tokens in original order, including request stopwords and repeated words.",
+    "featureNames": "Unigram token or two adjacent tokens separated by one ASCII space; unique names are sorted in ascending ASCII lexicographic order."
+  },
+  "rejectionPolicy": {
+    "version": "unsupported-veto-1",
+    "order": ["invalidInput", "negation", "composition", "unsupportedConstraint", "multipleCanonicalAnchors", "unknownContent", "emptyFeatures", "modelThresholds"],
+    "negationTokens": ["not", "no", "never", "none", "neither", "nor", "without", "non", "avoid", "avoiding", "exclude", "excluding", "except", "unless", "cannot", "can't", "won't", "ain't"],
+    "negationTokenSuffix": "n't",
+    "compositionTokens": ["and", "or", "but", "plus", "also", "both", "either", "versus", "vs", "while", "yet", "together"],
+    "unsupportedConstraintTokens": ["sort", "sorted", "sorting", "rank", "ranked", "ranking", "order", "ordered", "ascending", "descending", "top", "bottom", "best", "worst", "safest", "safer", "safe", "recommend", "recommended", "recommendation", "buy", "sell", "invest", "investment", "investments", "future", "forecast", "forecasts", "forecasting", "predict", "prediction", "predicted", "outlook", "outlooks", "tomorrow", "next", "valuation", "valuations", "undervalued", "overvalued", "cheap", "expensive", "price", "prices", "return", "returns", "dividend", "dividends", "sector", "sectors", "industry", "industries", "currency", "currencies", "dollar", "dollars", "euro", "euros", "pound", "pounds", "yen", "million", "millions", "billion", "billions", "percent", "percentage", "percentages", "threshold", "thresholds", "above", "below", "least", "most", "equal", "equals", "than", "between", "minimum", "maximum", "exactly", "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "hundred", "thousand", "stale", "fresh", "latest", "historical", "history", "quarter", "quarterly", "monthly", "daily"],
+    "canonicalAnchorTokenSequences": [["profitable"], ["loss", "making"], ["growing"], ["declining", "revenue"], ["low", "debt"], ["high", "margin"]],
+    "canonicalAnchorRule": "Reject when two or more distinct canonical anchor sequences occur as contiguous whole-token sequences. This is a veto only; it never chooses or returns an intent.",
+    "requestStopwords": ["a", "an", "the", "i", "i'm", "i'd", "we", "we're", "me", "us", "my", "our", "please", "can", "could", "would", "will", "you", "your", "show", "find", "list", "select", "give", "get", "want", "need", "like", "looking", "look", "for", "of", "to", "in", "on", "that", "which", "whose", "are", "is", "it's", "be", "being", "have", "has", "having", "with", "those", "these", "some", "any", "all", "only", "company", "companies", "firm", "firms", "business", "businesses", "stock", "stocks", "share", "shares"],
+    "unknownContentRule": "Derive known content tokens solely from all normalized supported training texts before vocabulary truncation. Reject every token outside that set and requestStopwords; require at least one non-stopword token. Development/held-out tokens never extend this set.",
+    "emptyFeaturesRule": "Reject a zero-norm vector after fixed-vocabulary vectorization.",
+    "limitations": "These vetoes are conservative, incomplete semantic checks. Score gates and independent unsupported evaluation must still reject requests that use known words in an unsupported meaning. No rule directly accepts an input."
+  },
+  "training": {
+    "dependencies": {"python": "3.12.14", "scikitLearn": "1.8.0", "numpy": "2.3.5", "scipy": "1.17.0"},
+    "minimumSupportedPerClass": 30,
+    "supportedTrainingOnly": true,
+    "vocabularyFit": "Training texts only; generate binary unigram/bigram document frequency, choose at most 2048 features by descending document frequency with ASCII feature-name tie breaking, then assign columns by ASCII feature-name order.",
+    "idfFormula": "1 + naturalLog((1 + trainingDocumentCount) / (1 + featureDocumentCount))",
+    "vectorFormula": "For each vocabulary feature present, binary TF=1 times IDF; otherwise 0. Divide the complete vector by sqrt(sum(value*value)) when the norm is positive. Repeated feature occurrence never increases TF.",
+    "classifier": {"family": "multinomial-logistic-regression", "C": 1, "solver": "lbfgs", "maxIter": 2000, "tol": 1e-10, "fitIntercept": true, "classWeight": null},
+    "classBalance": "Use the same number of supported training examples for each class; do not duplicate examples to balance.",
+    "classOrderRule": "Reorder fitted sklearn rows to classOrder during export; sklearn's alphabetic class ordering is not the artifact ordering.",
+    "centroidFormula": "For each class, average its training TF-IDF vectors and L2-normalize that average; a zero centroid aborts training.",
+    "reproducibility": "Set PYTHONHASHSEED to the fixed seed and OMP_NUM_THREADS/OPENBLAS_NUM_THREADS/MKL_NUM_THREADS to 1 before numeric imports. Fail on missing/version-mismatched dependencies, convergence warnings, nonfinite values or an oversized artifact. No package/model downloads.",
+    "noFitBeforeRelease": true
+  },
+  "corpusSchema": {
+    "rootKeys": ["schemaVersion", "split", "provenance", "examples"],
+    "schemaVersion": 1,
+    "splitValues": ["training", "development"],
+    "provenance": "Original authored examples; no scraped, user, financial or held-out source data.",
+    "supportedExampleKeys": ["id", "family", "text", "intent"],
+    "unsupportedExampleKeys": ["id", "family", "text", "intent", "reason"],
+    "idFamilyRegex": "[a-z][a-z0-9-]{0,79}",
+    "unsupportedIntent": null,
+    "reasonMaxCharacters": 240,
+    "trainingIntentRule": "Only the six supported intents; no unsupported training examples.",
+    "developmentMinimum": {"supportedPerClass": 10, "unsupportedTotal": 80},
+    "familyRule": "A family identifies a semantic and syntactic construction, not punctuation, politeness or company-noun variants. A family belongs to exactly one split. IDs, raw texts and normalized supported texts must be unique; unsupported normalization failures retain their raw text for audit.",
+    "leakageAudit": "Report normalized exact overlaps and token/bigram Jaccard pairs >=0.8 across training/development, excluding pairs whose overlap is solely request stopwords. Record manual dispositions before fitting. The independent auditor alone inspects held-out overlap; do not reveal held-out phrases or outcomes to the training owner."
+  },
+  "inference": {
+    "logitFormula": "intercepts[c] + sum(coefficients[c][j] * vector[j]) in ascending column order",
+    "scoreFormula": "Stable softmax: subtract the maximum logit, exponentiate, divide by the sum of exponentials in classOrder.",
+    "winningClass": "Maximum score, breaking exact ties by earlier classOrder position.",
+    "marginFormula": "Winning score minus the greatest score of the other five classes.",
+    "similarityFormula": "Dot product of the L2-normalized input vector and winning-class centroid in ascending column order; clamp to [-1,1] only for floating-point overshoot.",
+    "acceptance": "After all deterministic vetoes, accept exactly when topScore >= minScore AND margin >= minMargin AND similarity >= minSimilarity. Threshold comparisons use computed doubles without rounding, tolerance or epsilon. Otherwise abstain; never return a partial screen.",
+    "floatingParityAbsoluteTolerance": 1e-10,
+    "decisionParity": "Acceptance/abstention and exact canonical filter/default mapping must match independently, including boundary fixtures. Probability tolerance never changes acceptance.",
+    "scoreMeaning": "Classifier scores, not calibrated probabilities of correctness."
+  },
+  "thresholdSelection": {
+    "minScoreGrid": [0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95],
+    "minMarginGrid": [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6],
+    "minSimilarityGrid": [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7],
+    "search": "Evaluate the entire finite Cartesian grid using cached development scores; no random search or additional threshold values.",
+    "eligibility": "Zero accepted unsupported development examples and zero incorrect accepted supported intent/filter mappings.",
+    "tieRule": "First restrict eligible candidates to those accepting at least ceil(0.75 * each class's supported development count) for every class. Among these ready candidates maximize total accepted supported examples, then maximize the minimum per-class supported coverage fraction, then choose descending minScore, descending minMargin, descending minSimilarity lexicographically. Fractions are compared by integer cross multiplication. If no ready candidate exists, select a diagnostic candidate among zero-error/zero-unsupported eligible candidates using that same optimization, but mark it notReady.",
+    "developmentReadiness": "Per-class coverage is a candidate constraint before coverage optimization. If no ready candidate exists, record notReady with the best eligible diagnostic candidate and do not open the held-out release gate. If no eligible candidate exists, record noEligibleThresholds and do not export an acceptance artifact.",
+    "freeze": "Freeze the selected thresholds, policy, architecture, corpora hashes, artifact and development results before any held-out evaluation. Do not tune on held-out failures."
+  },
+  "artifactSchema": {
+    "rootKeys": ["schemaVersion", "contractSha256", "trainingSha256", "developmentSha256", "dependencies", "classOrder", "canonicalMappings", "screenDefaults", "normalizer", "rejectionPolicy", "limits", "knownContentTokens", "vocabulary", "idf", "coefficients", "intercepts", "centroids", "thresholds"],
+    "schemaVersion": 1,
+    "hashFormat": "64 lowercase hexadecimal SHA-256 digits over the exact UTF-8 file bytes",
+    "contractMetadataRule": "classOrder/canonicalMappings/screenDefaults/normalizer/rejectionPolicy/limits/dependencies must equal this contract exactly; no executable source, extra keys, URLs or arbitrary options.",
+    "knownContentTokens": "Sorted unique normalized non-stopword training tokens only; ASCII lexicographic order; at most 4096 tokens, each at most 40 characters.",
+    "vocabulary": "Sorted unique ASCII unigram/bigram feature-name strings; 1..2048 entries, each at most 80 characters; unigram/bigram token syntax matches the normalizer.",
+    "idf": "Exactly vocabulary.length finite doubles, 1..100 inclusive.",
+    "coefficients": "Six rows in classOrder, each exactly vocabulary.length finite doubles with absolute value <=1000000.",
+    "intercepts": "Six finite doubles in classOrder, absolute value <=1000000.",
+    "centroids": "Six rows in classOrder, each exactly vocabulary.length finite doubles between 0 and 1, with L2 norm within 1e-10 of 1.",
+    "thresholds": "Object with exactly minScore/minMargin/minSimilarity; each finite value must appear in its predeclared grid.",
+    "encoding": "UTF-8 JSON, no BOM, no duplicate keys, no NaN/Infinity, no trailing data; Python export uses ensure_ascii=true, sort_keys=true, separators=(',',':'), allow_nan=false, then exactly one LF. Preserve float precision; normalize signed zero to 0.0. No timestamps.",
+    "validation": "Enforce the one MiB byte bound and depth <=12 before inference; reject malformed shape, unknown versions/options, nonfinite values, invalid feature tokens, dimensional mismatch or contract/hash mismatch. Invalid artifacts never become a partial model."
+  },
+  "developmentReport": {
+    "requiredEvidence": ["contract/corpus/artifact hashes", "dependency versions and seed", "training/development class counts and family counts", "exact/near-duplicate audit dispositions", "normalization and veto reason counts", "complete grid candidate eligibility/coverage", "selected thresholds and tie rationale", "per-class accepted/correct/incorrect/abstained counts", "unsupported accepted/abstained counts by reason", "readiness status", "fit convergence", "artifact byte count"],
+    "parityVectors": {
+      "rootKey": "parityVectors",
+      "ordering": "One row per development example, sorted by ASCII example ID; never include held-out examples.",
+      "rowKeys": ["id", "text", "expectedIntent", "vetoReason", "normalized", "tokens", "features", "scores", "topIntent", "topScore", "margin", "similarity", "accepted", "canonicalQuery", "screen"],
+      "features": "Sparse array of [columnIndex, normalizedValue] in ascending column order; null if deterministic rejection occurs before vectorization.",
+      "scores": "Six finite softmax scores in classOrder, or null for a deterministic veto. topIntent/topScore/margin/similarity are null for a deterministic veto.",
+      "vetoReason": "First triggered rejectionPolicy.order value, or null on acceptance. modelThresholds means at least one selected threshold was not met.",
+      "normalizedTokens": "normalized and tokens are null when invalidInput triggers; otherwise preserve normalized text and its complete token array.",
+      "result": "accepted is boolean. canonicalQuery and screen are null on every abstention. On acceptance screen contains the exact shared defaults and single mapped filter; original prose is never a canonical query."
+    },
+    "heldOutAccess": "The trainer/reference/development report must never read heldout-* files or consume held-out outcomes. Independent authors and evaluator own those files."
+  }
+}
