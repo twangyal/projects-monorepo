@@ -178,7 +178,7 @@ test('startup never resets a corrupt indexed file or follows an outside project 
 });
 test('unindexed crash file is unservable and cleaned under lock while committed authority remains exact',async()=>{
   const path=await directory();await install(path);const orphan='87654321-4321-4321-8321-cba987654321';
-  await writeFile(join(path,orphan+'.motion.json'),document);
+  await writeFile(join(path,orphan+'.motion.json'),document,{mode:0o600});
   const store=await SnapshotStore.open(path);
   try {
     assert.equal((await readdir(path)).includes(orphan+'.motion.json'),false);

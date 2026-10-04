@@ -84,7 +84,14 @@
     "First-failure scopes and deliberately controlled write/deadline branches remain in individual receipts."
   ],
   "ci": {
-    "status": "pending implementation publication"
+    "status": "failed-first-published-head; fixture repair verified locally, corrected-head CI pending",
+    "headSha": "c7a76f98e6a988a78d791da81ff28637b11f4865",
+    "receipt": "2026-10-04-private-links-ci-first.json",
+    "pushRunId": 37237753147,
+    "prRunId": 37237755148,
+    "countsBoth": "204 units:203 passed,1 permissions-dependent fixture failed; browser/lint/type/build not reached.",
+    "repair": "Explicit0600 valid crash-file fixture; controlledumask0022 RED then GREEN; no production change.",
+    "finalPublishedCi": "pending"
   },
   "nativeFirst": {
     "passed": 5,
