@@ -128,7 +128,17 @@
     "compileall": "passed",
     "wheelBuild": "passed",
     "installedCoreAndExtra": "both passed outside source tree",
-    "remoteCI": "pending"
+    "remoteCI": {
+      "commit": "51b7d51eb06b8afd6f057b32ce6537a7ef363f26",
+      "workflow": "Git History",
+      "run": 37168598868,
+      "conclusion": "success",
+      "python": [
+        "3.11",
+        "3.12",
+        "3.13"
+      ]
+    }
   },
   "packaging": {
     "version": "0.4.0",

@@ -11,5 +11,7 @@ Issue #34; contract: `../specs/2026-10-04-git-history-javascript-design.md`. Roo
 - [x] **root:** shared protocol constants, optional-extra packaging/version/CI, README/catalog and real installed CLI/wheel evidence. Preserve dependency-free core checks. All Git and issues remain root-owned.
 - [x] Run focused owner checks, then full suites on actual Python 3.11–3.13, lint, compile and wheel/core-only/native-extra verification. Independently review native scope and subprocess safety; fix actual findings.
 - [x] Exercise real committed monorepo TypeScript/JavaScript function HTML/JSON evidence and immutable snapshot behavior; record measured bounds and platform limitations.
-- [ ] Fetch Astra state, review scoped diff, commit and push without force; check CI, update draft PR12, close #34 only if complete.
-- [ ] Immediately reassess and continue the next useful unblocked task.
+- [x] Fetch Astra state, review scoped diff, commit and push without force; check CI, update draft PR12, close #34 only if complete.
+- [x] Immediately reassess and continue the next useful unblocked task.
+
+Completion: `51b7d51` passed Git History remote CI on Python 3.11–3.13; issue #34 is closed. A separate Stock recovery-browser failure from this CI round is being investigated before annual-history issue #35.

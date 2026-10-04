@@ -147,6 +147,24 @@ test('unavailable storage retains an editable notebook and real JSON/text backup
 });
 
 test('corrupt persisted text remains recoverable until explicit reset without a fabricated notebook', async ({ page }) => {
+  await page.addInitScript(() => {
+    const control = { held: true, started: false, committed: false };
+    Object.defineProperty(window, 'stockResetTransaction', { value: control });
+    const nativeDelete = IDBObjectStore.prototype.delete;
+    IDBObjectStore.prototype.delete = function (key: IDBValidKey | IDBKeyRange): IDBRequest<undefined> {
+      const deletion = nativeDelete.call(this, key);
+      if (this.name === 'notebooks' && key === 'current') {
+        control.started = true;
+        this.transaction.addEventListener('complete', () => { control.committed = true; });
+        const keepNativeTransactionOpen = () => {
+          const request = this.get('__test_reset_transaction_hold__');
+          request.onsuccess = () => { if (control.held) keepNativeTransactionOpen(); };
+        };
+        keepNativeTransactionOpen();
+      }
+      return deletion;
+    };
+  });
   await page.goto('/');
   const raw = '{"broken":true}';
   await page.evaluate(raw => new Promise<void>((resolve, reject) => {
@@ -165,8 +183,36 @@ test('corrupt persisted text remains recoverable until explicit reset without a 
   await expect(page.locator('.workspace')).toBeHidden();
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Reset saved record', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as {
+    stockResetTransaction: { started: boolean };
+  }).stockResetTransaction.started)).toBe(true);
+  // Import stays visible during reset. It is not a transaction-completion
+  // signal: navigation now aborts the native deletion and preserves old text.
   await expect(page.getByLabel('Import CSV', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download raw saved record', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as {
+    stockResetTransaction: { committed: boolean };
+  }).stockResetTransaction.committed)).toBe(false);
+  await page.evaluate(() => { (window as unknown as {
+    stockResetTransaction: { held: boolean };
+  }).stockResetTransaction.held = false; });
+  await expect(page.locator('#message')).toContainText('Saved record reset. Current in-memory work was kept.');
+  await expect(page.getByRole('button', { name: 'Download raw saved record', exact: true })).toBeHidden();
+  expect(await page.evaluate(() => (window as unknown as {
+    stockResetTransaction: { committed: boolean };
+  }).stockResetTransaction.committed)).toBe(true);
   await page.reload();
+  const stillSaved = await page.evaluate(() => new Promise<boolean>((resolve, reject) => {
+    const opening = indexedDB.open('stock-notebook-v1', 1);
+    opening.onerror = () => reject(opening.error);
+    opening.onsuccess = () => {
+      const db = opening.result, transaction = db.transaction('notebooks', 'readonly');
+      const current = transaction.objectStore('notebooks').getKey('current');
+      transaction.oncomplete = () => { db.close(); resolve(current.result !== undefined); };
+      transaction.onabort = () => { db.close(); reject(transaction.error); };
+    };
+  }));
+  expect(stillSaved).toBe(false);
   await expect(page.getByRole('button', { name: 'Download raw saved record', exact: true })).toBeHidden();
   await expect(page.locator('.workspace')).toBeHidden();
 });
