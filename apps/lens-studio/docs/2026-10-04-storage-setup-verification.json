@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-04",
+  "issue": 68,
+  "commit": "82a090b721e5075850126ebe9319ca455f8e8d7e",
+  "testOnlyCommit": "64fa43b2eeb7aeb3bc3d30f36fbe285e2ddf4c66",
+  "testOnlyRun": 37198444748,
+  "testOnlyOutcome": "31 browser cases passed; setup regression failed because private exception escaped as pageerror",
+  "verifiedRun": 37198623345,
+  "verifiedJob": 111425524816,
+  "checks": {
+    "unitPassed": 67,
+    "browserPassed": 32,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "acceptance": [
+    "Sanitized actionable open failure",
+    "No uncaught pageerror or private exception detail",
+    "Upgrade rollback followed by real native retry",
+    "Successful save and load after retry"
+  ],
+  "review": "Independent read-only review found no substantive issue",
+  "limitations": [
+    "Chromium/Linux acceptance; broader device/browser validation remains future work",
+    "Native browser checks executed in GitHub Actions; local gate covered unit/lint/typecheck/build"
+  ]
+}
