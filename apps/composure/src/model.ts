@@ -12,7 +12,7 @@ export const WORLD={width:1200,height:320,step:1/60,timeLimit:180} as const;
 const clamp=(value:number,min:number,max:number):number=>Math.max(min,Math.min(max,value));
 const finite=(n:unknown):n is number=>typeof n==='number'&&Number.isFinite(n);
 export function calibrate(readings:number[]):number {
-  if(!Array.isArray(readings)||readings.length!==5||!readings.every(n=>finite(n)&&n>=40&&n<=120)||Math.max(...readings)-Math.min(...readings)>12) throw new Error('Use five simulated baseline readings from 40–120 BPM with at most 12 BPM spread.');
+  if(!Array.isArray(readings)||readings.length!==5||[0,1,2,3,4].some(index=>!Object.hasOwn(readings,index))||!readings.every(n=>finite(n)&&n>=40&&n<=120)||Math.max(...readings)-Math.min(...readings)>12) throw new Error('Use five simulated baseline readings from 40–120 BPM with at most 12 BPM spread.');
   return readings.reduce((a,b)=>a+b,0)/5;
 }
 function event(run:Run,kind:string,text:string):void {
