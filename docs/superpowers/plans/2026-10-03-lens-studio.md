@@ -22,17 +22,23 @@ Owners run tests they own and report exact outcomes. Before building or starting
 
 ## Acceptance and durable completion
 
-- [ ] Model, media, history, storage, renderer/PNG/jobs and editor modules complete with scoped tests.
-- [ ] Independent scalar reference confirms RGBA maximum error ≤1 and coverage error ≤1e-9 in both perspective directions; exact subject anchoring and identity hold.
-- [ ] Independent PNG decoder confirms exact raw kernel RGBA, including low alpha; Canvas visual comparison acknowledges presentation quantization.
-- [ ] Real source formats/orientations and atomic failure/cancellation paths pass production Chromium checks.
-- [ ] Complete UI workflow, real downloads, reload, blocked/corrupt storage recovery and desktop/mobile layout pass.
-- [ ] Root records actual maximum-size worker/export timings and visually checks synthetic edges/holes; document hardware/browser limits without extrapolating.
-- [ ] Combined unit, lint, TypeScript, build and production-browser checks pass; independent review findings resolved.
-- [ ] README/run instructions, scoped CI, catalog and verification evidence reflect delivered scope and limitations.
+- [x] Model, media, history, storage, renderer/PNG/jobs and editor modules complete with scoped tests.
+- [x] Independent scalar reference confirms RGBA maximum error ≤1 and coverage error ≤1e-9 in both perspective directions; exact subject anchoring and identity hold.
+- [x] Independent PNG decoder confirms exact raw kernel RGBA, including low alpha; Canvas visual comparison acknowledges presentation quantization.
+- [x] Real source formats/orientations and atomic failure/cancellation paths pass production Chromium checks.
+- [x] Complete UI workflow, real downloads, reload, blocked/corrupt storage recovery and desktop/mobile layout pass.
+- [x] Root records actual maximum-size worker/export timings and visually checks synthetic edges/holes; document hardware/browser limits without extrapolating.
+- [x] Combined unit, lint, TypeScript, build and production-browser checks pass; independent review findings resolved.
+- [x] README/run instructions, scoped CI, catalog and verification evidence reflect delivered scope and limitations.
 - [ ] Review diff, fetch concurrent Astra state, commit and push without force. Check remote CI, update #31 based on evidence and update draft PR #12.
 - [ ] Reassess the next meaningful unblocked work, preserving both excluded projects.
 
 ## Review focus
 
 The chief risks are orientation applied twice, canvas corruption of low-alpha export bytes, premultiplied edge errors, a continuous-area claim substituted for sampled coverage, painting in projected coordinates, worker completion publishing stale state, and an old save/restore replacing newer work. Each has an owner and a separate actual-behavior acceptance check above. Numeric fields, public modules, source headers and persisted payloads enforce the same bounds. The project is usable without any model download, network API, payment or external service.
+
+## Verified local milestone
+
+Root final `npm run check` passed 67 unit tests, ESLint, TypeScript and a normal production build. Local production browser evidence is 29/30 combined, followed by 2/2 corrected checks; the only final failure was a fixture comparing pre-normalization low-alpha colors rather than the canonical native raster. All 30 cases individually pass. Remote CI will run the complete suite together. The 24-case independent geometry oracle observed max RGBA error 0 and coverage error 1.11e-16; all 48 format/orientation/aspect fixtures matched every expected normalized pixel. Separate independent model/storage/renderer/UI reviews found no outstanding material defect after fixes.
+
+An actual 1280×1280 high-entropy source normalized in 1263.9 ms, rendered in 2976.6 ms and exported in 3396.2 ms in production Chromium 151 on this container; output was 6,555,448 bytes. Cancellation returned AbortError in 604.4 ms including synchronous preflight. Desktop1440×1040 and mobile390×844 views were inspected with no errors, external requests or horizontal overflow. Exact scope and limitations are in the project runtime-verification JSON.

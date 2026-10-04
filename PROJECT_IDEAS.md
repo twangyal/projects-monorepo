@@ -105,9 +105,10 @@ Description: A note-reading app that adapts to an individual's handwriting using
 
 ## 16. Focal length converter
 
-Path: N/A
-Status: IDEA
+Path: `apps/lens-studio`
+Status: MAINTENANCE
 Description: A photo editor that approximates how an existing image would look under different lens and camera setups. It offers two modes: changing the field of view from a fixed camera position, and changing focal length together with virtual camera distance to keep the subject similarly sized while altering perspective. Users compare the original and simulated result side by side. Depth-aware reconstruction would support perspective changes, and wider or shifted views may require estimated or generated content for regions absent from the original photo. The project would present its outputs as simulations rather than exact recreations.[^lens]
+Milestone: Lens Studio delivers local PNG/JPEG/WebP import, fixed focal framing, independently verified three-plane manual perspective, source/result comparison, bounded painting/history, IndexedDB recovery and real JSON/lossless PNG exports. Unknown regions stay transparent; learned depth, generated fill and calibrated camera reconstruction are not claimed. See its README and issue #31.
 
 ## 17. Track physiological state to create situations in a game
 
