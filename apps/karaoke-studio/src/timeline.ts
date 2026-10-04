@@ -25,10 +25,14 @@ export interface TimelineController {
   stopWaveform(): void;
   destroy(): void;
 }
+interface GestureGeometry {
+  viewportWidth: number; viewportHeight: number; dpr: number;
+  left: number; top: number; width: number; height: number;
+}
 interface Gesture {
   change: BoundaryCommit; original: number; proposed: number; mode: 'pointer' | 'keyboard';
   pointerId?: number; originX: number; width: number; span: number; ticks: number;
-  keys: Set<string>; handle: HTMLElement;
+  keys: Set<string>; handle: HTMLElement; geometry: GestureGeometry;
 }
 
 export function mountTimeline(root: HTMLElement, callbacks: TimelineCallbacks): TimelineController {
@@ -195,22 +199,38 @@ export function mountTimeline(root: HTMLElement, callbacks: TimelineCallbacks): 
     for (const [canvas, height] of [[overview, 72], [detail, 116]] as const) { canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); }
     draw();
   }
+  function captureGeometry(): GestureGeometry {
+    const rect = detail.getBoundingClientRect();
+    return { viewportWidth: globalThis.window.innerWidth, viewportHeight: globalThis.window.innerHeight, dpr: globalThis.devicePixelRatio, left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+  }
+  function ensureGestureGeometry(): boolean {
+    if (!gesture) return false;
+    const before = gesture.geometry, now = captureGeometry();
+    // Resize events and observer callbacks may arrive after pointer/key release.
+    // Read actual layout synchronously before previewing or committing instead
+    // of treating notification delivery as proof that the mapping is current.
+    if (before.viewportWidth === now.viewportWidth && before.viewportHeight === now.viewportHeight && before.dpr === now.dpr
+      && before.left === now.left && before.top === now.top && before.width === now.width && before.height === now.height) return true;
+    cancelGesture();
+    editStatus('Timing gesture cancelled because the view moved or resized. Your lyric draft is unchanged.');
+    return false;
+  }
   function begin(boundary: CueBoundary, mode: 'pointer' | 'keyboard', handle: HTMLElement): Gesture | null {
     if (!canEdit() || !callbacks.onGestureStart()) return null;
     cancelGesture();
-    const base = editor!, original = base.cues[selected][boundary];
-    gesture = { change: { projectId: base.projectId, projectGeneration: base.projectGeneration, editGeneration: base.editGeneration, cueIndex: selected, boundary, before: original, after: original }, original, proposed: original, mode, originX: 0, width: detail.getBoundingClientRect().width, span: window.end - window.start, ticks: 0, keys: new Set(), handle };
+    const base = editor!, original = base.cues[selected][boundary], geometry = captureGeometry();
+    gesture = { change: { projectId: base.projectId, projectGeneration: base.projectGeneration, editGeneration: base.editGeneration, cueIndex: selected, boundary, before: original, after: original }, original, proposed: original, mode, originX: 0, width: geometry.width, span: window.end - window.start, ticks: 0, keys: new Set(), handle, geometry };
     return gesture;
   }
   function preview(value: number) {
-    if (!gesture || !editor) return;
+    if (!gesture || !editor || !ensureGestureGeometry()) return;
     gesture.proposed = value; gesture.change.after = value;
     try { proposeBoundary(editor.cues, editor.duration, selected, gesture.change.boundary, value); editStatus(`Provisional ${gesture.change.boundary}: ${value.toFixed(3)} seconds. Release to apply; Escape cancels.`); }
     catch { editStatus('This boundary would overlap a cue or make an empty interval. Release rejects it; Escape cancels.'); }
     draw();
   }
   function finish() {
-    const completed = gesture; if (!completed || !editor) return;
+    const completed = gesture; if (!completed || !editor || !ensureGestureGeometry()) return;
     gesture = null;
     if (completed.pointerId !== undefined && completed.handle.hasPointerCapture(completed.pointerId)) completed.handle.releasePointerCapture(completed.pointerId);
     if (Object.is(completed.original, completed.proposed)) { editStatus('Timing unchanged.'); draw(); return; }
@@ -226,7 +246,7 @@ export function mountTimeline(root: HTMLElement, callbacks: TimelineCallbacks): 
     listen(handle, 'pointerdown', event => {
       const pointer = event as PointerEvent; if (pointer.button !== 0 || !pointer.isPrimary) return;
       const current = begin(boundary, 'pointer', handle); if (!current) return;
-      pointer.preventDefault(); handle.focus(); current.pointerId = pointer.pointerId; current.originX = pointer.clientX; handle.setPointerCapture(pointer.pointerId);
+      pointer.preventDefault(); handle.focus({ preventScroll: true }); current.pointerId = pointer.pointerId; current.originX = pointer.clientX; handle.setPointerCapture(pointer.pointerId);
     });
     listen(handle, 'pointermove', event => {
       const pointer = event as PointerEvent; if (gesture?.mode !== 'pointer' || gesture.pointerId !== pointer.pointerId) return;

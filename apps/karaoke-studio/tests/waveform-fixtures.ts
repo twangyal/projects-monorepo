@@ -124,3 +124,42 @@ export async function downloadedText(page: Page, name: string): Promise<string> 
   if (!path) throw new Error('Expected an actual downloaded subtitle file.');
   return readFile(path, 'utf8');
 }
+
+interface GeometryGate { hold(): void; release(): void }
+type GeometryTestWindow = Window & typeof globalThis & { __waveformGeometryGate: GeometryGate };
+
+// Delay only notifications: viewport/layout changes and pointer/key releases
+// still use the actual browser. Installed before production event registration.
+export async function installGeometryGate(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    let held = false, pendingResize = false;
+    const callbacks: (() => void)[] = [];
+    const OriginalObserver = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class extends OriginalObserver {
+      constructor(callback: ResizeObserverCallback) {
+        super((entries, observer) => {
+          if (held) callbacks.push(() => callback(entries, observer));
+          else callback(entries, observer);
+        });
+      }
+    };
+    globalThis.addEventListener('resize', event => {
+      if (!held) return;
+      event.stopImmediatePropagation(); pendingResize = true;
+    }, { capture: true });
+    (globalThis as GeometryTestWindow).__waveformGeometryGate = {
+      hold() { held = true; },
+      release() {
+        held = false;
+        if (pendingResize) { pendingResize = false; globalThis.dispatchEvent(new Event('resize')); }
+        for (const callback of callbacks.splice(0)) callback();
+      },
+    };
+  });
+}
+export async function holdGeometryNotifications(page: Page): Promise<void> {
+  await page.evaluate(() => (globalThis as GeometryTestWindow).__waveformGeometryGate.hold());
+}
+export async function releaseGeometryNotifications(page: Page): Promise<void> {
+  await page.evaluate(() => (globalThis as GeometryTestWindow).__waveformGeometryGate.release());
+}

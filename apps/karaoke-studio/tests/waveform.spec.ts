@@ -1,7 +1,7 @@
 import { type Locator, type Page } from '@playwright/test';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { beginDrag, detailWindow, downloadedText, expect, handleValue, openWaveform, storedProject, test, waveformReady } from './waveform-fixtures.ts';
+import { beginDrag, detailWindow, downloadedText, expect, handleValue, holdGeometryNotifications, installGeometryGate, openWaveform, releaseGeometryNotifications, storedProject, test, waveformReady } from './waveform-fixtures.ts';
 
 const runFile = promisify(execFile);
 const undo = (page: Page) => page.getByRole('button', { name: 'Undo lyric edit', exact: true });
@@ -169,6 +169,41 @@ test('Escape, lost capture, pointer cancellation and blur discard provisional mo
   await page.reload(); await page.mouse.up(); await waveformReady(page);
   expect(await handleValue(page, 'start')).toBe(.5);
   await expect(undo(page)).toBeDisabled(); await expect(redo(page)).toBeDisabled();
+});
+
+test('geometry changes reject pointer and key releases before delayed resize notifications arrive', async ({ page, clips, request }) => {
+  await installGeometryGate(page);
+  const project = await clips.create(); await openWaveform(page, project);
+  await startHandle(page).press('ArrowRight'); await undo(page).click();
+  for (const scenario of ['pointer height', 'pointer width', 'keyboard height', 'pointer layout', 'pointer preview'] as const) {
+    await test.step(scenario, async () => {
+      if (scenario === 'keyboard height') {
+        await startHandle(page).focus(); await page.keyboard.down('ArrowRight');
+      } else await beginDrag(page, 'start', .2);
+      await holdGeometryNotifications(page);
+      try {
+        const viewport = page.viewportSize()!;
+        if (scenario === 'pointer width') await page.setViewportSize({ ...viewport, width: viewport.width - 80 });
+        else if (scenario === 'pointer layout') await page.locator('#timing-workbench').evaluate(element => { element.style.transform = 'translateY(4px)'; });
+        else await page.setViewportSize({ ...viewport, height: viewport.height + 100 });
+        if (scenario === 'pointer preview') {
+          const box = await startHandle(page).boundingBox(); if (!box) throw new Error('Expected captured pointer handle.');
+          await page.mouse.move(box.x + box.width / 2 + 1, box.y + box.height / 2);
+          expect(await handleValue(page, 'start')).toBe(.5);
+        }
+        if (scenario === 'keyboard height') await page.keyboard.up('ArrowRight'); else await page.mouse.up();
+        // No wait for the product's resize listener is allowed: notifications
+        // remain held here. Preview/release must itself reject stale geometry.
+        expect(await handleValue(page, 'start')).toBe(.5);
+        await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('0.5');
+        await expect(undo(page)).toBeDisabled(); await expect(redo(page)).toBeEnabled();
+        expect(await storedProject(request, project.id)).toEqual(project);
+      } finally {
+        await page.locator('#timing-workbench').evaluate(element => { element.style.transform = ''; });
+        await releaseGeometryNotifications(page);
+      }
+    });
+  }
 });
 
 test('view, cue and stem changes cancel held keys; competing edits and undo keep their newer draft', async ({ page, clips }) => {
