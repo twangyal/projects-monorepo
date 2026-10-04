@@ -6,7 +6,7 @@ import {ProjectHistory,moveShot} from './history.js';
 import {DraftStore} from './draft.js';
 
 const $=id=>document.getElementById(id),draft=new DraftStore();
-let project=draft.project,selected=0,actor=0,time=0,playing=false,start=0,revision=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
+let project=draft.project,selected=0,actor=0,time=0,playing=false,start=0,revision=0,editIntent=0,exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
 const status=text=>$('status').textContent=text;
 if(draft.blocked)status('Could not load the saved draft. It has been preserved; automatic saving is blocked. '+(draft.raw!==null?'Save your current project and download the unreadable draft before explicitly replacing it.':'No recovery download is available because the saved contents could not be read. Save your current project before explicitly replacing the browser draft.'));
 let renderer,graphicsLost=false;
@@ -41,6 +41,9 @@ for(const [id,direction] of [['earlier',-1],['later',1]])$(id).onclick=()=>{
   if(busy())return;try{const next=moveShot(project,selected,direction);stop();selected+=direction;apply(next);time=shotStart(selected);}catch(e){status(e.message);}
 };
 $('settings').addEventListener('submit',e=>e.preventDefault());
+// Typing is replacement intent even before blur commits a valid scene. Keep
+// raw fields untouched and prevent an older file read from replacing them.
+$('settings').addEventListener('input',()=>{editIntent++;});
 $('settings').addEventListener('change',e=>{
   if(busy())return;stop();
   if(e.target.id==='actor'){actor=Number($('actor').value);refresh();return;}
@@ -67,8 +70,8 @@ $('replaceDraft').onclick=()=>{
 $('save').onclick=()=>download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),'shot-studio.json');
 let importEpoch=0;
 $('import').onchange=async()=>{
-  const file=$('import').files[0],epoch=++importEpoch,base=revision;if(!file)return;
-  try{if(file.size>MAX_BYTES)throw Error('Project backup exceeds 64 KiB.');const p=importProject(await file.text());if(epoch!==importEpoch||revision!==base||busy())throw Error('The scene changed while opening the file. Open it again to replace it.');stop();selected=0;time=0;apply(p);}catch(e){status(e.message);}finally{$('import').value='';}
+  const file=$('import').files[0],epoch=++importEpoch,base=revision,intent=editIntent;if(!file)return;
+  try{if(file.size>MAX_BYTES)throw Error('Project backup exceeds 64 KiB.');const p=importProject(await file.text());if(epoch!==importEpoch||revision!==base||editIntent!==intent||busy())throw Error('The scene changed while opening the file. Open it again to replace it.');stop();selected=0;time=0;apply(p);}catch(e){status(e.message);}finally{$('import').value='';}
 };
 $('export').onclick=async()=>{
   stop();exporting=true;abort=new AbortController();refresh();status('Recording WebM. Keep this tab visible.');

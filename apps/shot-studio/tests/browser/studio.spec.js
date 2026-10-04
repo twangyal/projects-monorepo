@@ -1,6 +1,73 @@
 import {test,expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 
+async function holdProjectRead(page){
+  await page.addInitScript(()=>{
+    const nativeText=File.prototype.text;
+    window.projectRead={ready:false,inputEvents:0,changeEvents:0};
+    document.addEventListener('input',e=>{if(['shotName','eyeX'].includes(e.target.id))window.projectRead.inputEvents++;});
+    document.addEventListener('change',e=>{if(['shotName','eyeX'].includes(e.target.id))window.projectRead.changeEvents++;});
+    File.prototype.text=async function(){
+      const text=await nativeText.call(this);
+      if(this.name==='pending-film.json'&&!window.projectRead.ready){
+        window.projectRead.text=text;window.projectRead.ready=true;
+        await new Promise(resolve=>{window.releaseProjectRead=resolve;});
+      }
+      return text;
+    };
+  });
+  await page.goto('/');await expect(page.locator('#status')).toContainText('Ready');
+  await page.getByLabel('Film title').fill('Existing authored film');await page.getByLabel('Film title').press('Tab');
+  const raw=await page.evaluate(()=>localStorage.getItem('shot-studio-v1'));
+  const incoming=JSON.parse(raw);incoming.title='Incoming complete film';incoming.shots[0].name='Imported establishing';incoming.shots[0].eye[0]=8;
+  const text=JSON.stringify(incoming);
+  await page.locator('#import').setInputFiles({name:'pending-film.json',mimeType:'application/json',buffer:Buffer.from(text)});
+  await expect.poll(()=>page.evaluate(()=>window.projectRead.ready)).toBe(true);
+  expect(await page.evaluate(()=>window.projectRead.text)).toBe(text);
+  return {raw,incoming,text};
+}
+
+for(const [field,value] of [['shotName','Unsent shot draft'],['eyeX','6.250']]){
+  test(`pending project import preserves focused ${field} typing without a change event`,async({page})=>{
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    const {raw,text}=await holdProjectRead(page);
+    await page.locator(`#${field}`).fill(value);
+    expect(await page.evaluate(()=>window.projectRead.changeEvents)).toBe(0);
+    expect(await page.evaluate(()=>window.projectRead.inputEvents)).toBe(1);
+    await expect(page.locator(`#${field}`)).toBeFocused();
+    expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe(raw);
+    // Only native read completion is delayed; the real file bytes, parser,
+    // WebGL editor, input events, history and browser storage remain genuine.
+    await page.evaluate(()=>window.releaseProjectRead());
+    await expect(page.locator('#status')).toContainText('scene changed while opening');
+    await expect(page.locator(`#${field}`)).toHaveValue(value);
+    await expect(page.locator(`#${field}`)).toBeFocused();
+    expect(await page.evaluate(()=>window.projectRead.changeEvents)).toBe(0);
+    expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe(raw);
+    await expect(page.getByLabel('Film title')).toHaveValue('Existing authored film');
+    // Typing did not create a history entry: ordinary blur commits the draft,
+    // and a later intentional import can still be undone to that edited film.
+    await page.locator(`#${field}`).press('Tab');
+    const edited=await page.evaluate(()=>localStorage.getItem('shot-studio-v1'));
+    expect(edited).not.toBe(raw);
+    await page.locator('#import').setInputFiles({name:'ordinary-film.json',mimeType:'application/json',buffer:Buffer.from(text)});
+    await expect(page.getByLabel('Film title')).toHaveValue('Incoming complete film');
+    await page.getByRole('button',{name:'Undo scene',exact:true}).click();
+    expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe(edited);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('pending project import still rejects a committed scene edit',async({page})=>{
+  await holdProjectRead(page);
+  await page.locator('#shotName').fill('Committed while reading');await page.locator('#shotName').press('Tab');
+  const edited=await page.evaluate(()=>localStorage.getItem('shot-studio-v1'));
+  await page.evaluate(()=>window.releaseProjectRead());
+  await expect(page.locator('#status')).toContainText('scene changed while opening');
+  await expect(page.locator('#shotName')).toHaveValue('Committed while reading');
+  expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe(edited);
+});
+
 test('immersive camera capture persists selected shot and can be undone after exit',async({page},info)=>{
   await page.addInitScript(()=>{
     WebGLRenderingContext.prototype.makeXRCompatible=async()=>{};
