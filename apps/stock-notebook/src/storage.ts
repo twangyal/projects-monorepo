@@ -82,21 +82,34 @@ export class NotebookStore {
       let settled = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
       let timeoutError: Error | undefined;
+      let failure: Error | undefined;
+      let readResult: (() => T) | undefined;
       const finish = (error: Error | null, result?: T) => {
         if (settled) return;
         settled = true; clearTimeout(timer); this.#cancellations.delete(cancel); this.#closeConnection(db);
         if (error) reject(error); else resolve(result!);
       };
       const cancel = () => {
-        try { tx?.abort(); } catch { /* A finished transaction cannot be aborted again. */ }
-        finish(storageError('is closed; open a new notebook store to retry'));
+        const error = storageError('is closed; open a new notebook store to retry');
+        if (!tx) { finish(error); return; }
+        try { tx.abort(); failure ??= error; }
+        catch {
+          // Native completion already owns the outcome. Keep its handlers and
+          // report the actual commit instead of claiming that close rolled it back.
+        }
       };
       try {
         this.#assertOpen();
         tx = db.transaction(STORE, mode);
         this.#cancellations.add(cancel);
-        tx.onabort = () => finish(timeoutError ?? storageError(this.#closed ? 'is closed' : 'could not complete the transaction'));
+        tx.onabort = () => finish(timeoutError ?? failure ?? storageError(this.#closed ? 'is closed' : 'could not complete the transaction'));
         tx.onerror = () => { /* Native abort reports failure after rollback. */ };
+        // Install both terminal handlers before admitting any request: setup may
+        // throw after a request has already entered the native transaction.
+        tx.oncomplete = () => {
+          if (failure || !readResult) { finish(failure ?? storageError('could not read the saved record')); return; }
+          try { finish(null, readResult()); } catch { finish(storageError('could not read the saved record')); }
+        };
         timer = setTimeout(() => {
           if (settled) return;
           timeoutError = storageError('transaction did not respond; pending work was aborted');
@@ -107,13 +120,11 @@ export class NotebookStore {
             timeoutError = undefined;
           }
         }, 10000);
-        const readResult = action(tx.objectStore(STORE));
-        tx.oncomplete = () => {
-          try { finish(null, readResult()); } catch { finish(storageError('could not read the saved record')); }
-        };
+        readResult = action(tx.objectStore(STORE));
       } catch {
-        try { tx?.abort(); } catch { /* Preserve the original actionable failure. */ }
-        finish(storageError(this.#closed ? 'is closed' : 'could not complete the transaction'));
+        failure ??= storageError(this.#closed ? 'is closed' : 'could not complete the transaction');
+        if (!tx) { finish(failure); return; }
+        try { tx.abort(); } catch { /* Await the actual native terminal outcome. */ }
       }
     });
   }

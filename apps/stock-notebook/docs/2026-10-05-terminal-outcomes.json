@@ -1,0 +1,35 @@
+{
+  "issue": 120,
+  "baseline": "64b518847b15ed18069709eda69335d0cec19c3d",
+  "date": "2026-10-05",
+  "baseline_native_red": {
+    "failed": 3,
+    "failures": [
+      "admitted put then synchronous throw: operation rejected and queued read fulfilled before application native abort delivery",
+      "active store close: operation rejected and queued read fulfilled before application native abort delivery",
+      "close during native complete: actual durable write incorrectly reported closed failure"
+    ]
+  },
+  "focused_native_green": {
+    "passed": 3
+  },
+  "full_local_gate": {
+    "units": 231,
+    "browser": 59,
+    "lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed",
+    "browser_seconds": 102,
+    "chromium": "153.0.8010.0"
+  },
+  "independent_review": {
+    "findings": 0,
+    "scope": "read-only lifecycle, queue, sanitizer and original native regressions; no independent test execution"
+  },
+  "evidence": "Genuine native IndexedDB with held application abort delivery and independent complete raw-record reads. Full literal notes, watchlist/comparison and original source data retained; another store instance retries after rollback. Actual native complete delivered before application handler closes the store; exact committed raw text and truthful write success verified. Existing clear, active close, quota, unavailable, upgrade and timeout cases all pass.",
+  "source_sha256": {
+    "apps/stock-notebook/src/storage.ts": "b2708821e32e2a95ac5c4b649cdc6f0b34a3a0963fe3c3df1ce65b415c21067a",
+    "apps/stock-notebook/tests/browser/terminal-outcomes.spec.ts": "9acd3a76b26df0a8d68e2fda9f6a19f15ec804bd6f956d1aa1345d864d08c70b"
+  },
+  "published_ci": "pending; issue stays open until exact implementation-head CI"
+}

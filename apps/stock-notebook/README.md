@@ -206,3 +206,12 @@ Database schema setup exceptions now abort the upgrade and give sanitized backup
 Issue [#77](https://github.com/twangyal/projects-monorepo/issues/77) adds a nominal 10-second deadline to each created native transaction. A still-active or blocked transaction is aborted; its native rollback event releases the ordered queue. If a commit has already completed before the deadline callback runs, the real completion event reports that commit correctly. Timers and connections are released on success, failure and close. Previously queued operations start their own deadlines when their transactions are created; browser scheduling can delay timer callbacks in background or suspended pages.
 
 Actual Chromium tests held a native write open and blocked load/clear behind a separate connection. Both failed against unchanged code, then passed with exact prior-record preservation, queue recovery and retry. A separate native commit/deadline-ordering fixture verifies committed data is never falsely reported as rolled back. The full gate passes **231 unit tests and all 56 browser cases**, lint/type checking/build, isolated experiment diagnostics and maximum annual/refresh probes. See [the measured verification record](docs/2026-10-04-transaction-timeout-verification.json).
+
+Issue [#120](https://github.com/twangyal/projects-monorepo/issues/120) extends
+terminal ordering to synchronous request setup errors and store close. An admitted
+write waits for actual native rollback before reporting failure or releasing the
+same-database queue. Closing after native commit reports the committed result;
+new calls on the closed store still fail. Three original native regressions failed
+before the fix and now pass with exact complete-record preservation and a separate
+instance retry. The complete local gate passes **231 unit tests and 59 browser
+cases**, lint/type checking/build. See [the verification record](docs/2026-10-05-terminal-outcomes.json).
