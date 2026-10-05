@@ -5,6 +5,7 @@ import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
+import { splitCue, mergeCue } from './cue-edit.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
 interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
@@ -405,6 +406,33 @@ element('srt-apply').addEventListener('click', () => {
   working.cues = cues; renderCues(); changed();
   message(draftDirty ? 'Timed lyrics imported. Your unapplied pasted words are kept; create draft timings or discard that paste before saving.' : 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.');
 });
+function editCueStructure(index: number, kind: 'split' | 'merge'): void {
+  if (!working || currentJob || loading || requestingJob || saving || archiveChecking) return;
+  try {
+    const raw = captureTimingDrafts(), current = working.cues[index];
+    let next;
+    if (kind === 'split') {
+      const text = element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${index}"] textarea`);
+      if (!text || text.selectionStart !== text.selectionEnd) throw new Error('Place a single text caret between the words to split; do not select a text range.');
+      const time = Math.round(audio.currentTime * 1000) / 1000;
+      next = splitCue(working.cues, index, text.selectionStart, time, working.duration);
+      raw.splice(index, 1,
+        { start: current.start, end: time, startText: raw[index].startText, endText: String(time) },
+        { start: time, end: current.end, startText: String(time), endText: raw[index].endText });
+    } else {
+      next = mergeCue(working.cues, index, working.duration);
+      raw.splice(index, 2, { start: current.start, end: working.cues[index + 1].end,
+        startText: raw[index].startText, endText: raw[index + 1].endText });
+    }
+    retireSrt('Cue structure changed. The prior lyric import review was canceled.');
+    retireTiming('Cue structure changed. Staged listening times were not applied.');
+    working.cues = next; renderCues(raw); changed();
+    const focus = element('cue-list').querySelector<HTMLTextAreaElement>(`[data-cue="${kind === 'split' ? index + 1 : index}"] textarea`);
+    focus?.focus(); focus?.setSelectionRange(0, 0);
+    message(kind === 'split' ? 'Line split at the caret and playhead. Both literal text halves were kept; Undo restores the original line.'
+      : 'Lines merged with a newline, including any gap between them. Undo restores both original intervals.');
+  } catch (error) { message(error instanceof Error ? error.message : 'Cue edit could not be applied. Current words and timings were kept.', true); }
+}
 function renderCues(rawTimings: RawTiming[] = []) {
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Paste your words above, then create draft timings to begin.'; list.append(empty); return; }
@@ -425,8 +453,21 @@ function renderCues(rawTimings: RawTiming[] = []) {
       const button = document.createElement('button'); button.className = 'text-button'; button.textContent = label;
       button.setAttribute('aria-label', `${label} line ${index + 1}`); button.addEventListener('click', () => { if (label !== 'Select timing') retireTiming('A lyric action cancelled the timing session. Staged times were not applied.'); action(); }); actions.append(button);
     }
+    const split = document.createElement('button'); split.className = 'text-button'; split.textContent = 'Split at caret and playhead';
+    split.setAttribute('aria-label', `Split at caret and playhead line ${index + 1}`);
+    split.title = 'Place a caret between words, seek inside this interval, then split into two cues.';
+    split.addEventListener('click', () => editCueStructure(index, 'split')); actions.append(split);
+    if (index + 1 < working.cues.length) {
+      const merge = document.createElement('button'); merge.className = 'text-button'; merge.textContent = 'Merge with next';
+      merge.setAttribute('aria-label', `Merge with next line ${index + 1}`);
+      merge.title = 'Join literal text with a newline and include any instrumental gap between these lines.';
+      merge.addEventListener('click', () => editCueStructure(index, 'merge')); actions.append(merge);
+    }
     row.append(actions); list.append(row);
   }
+  const hint = document.createElement('p'); hint.className = 'fine';
+  hint.textContent = 'Split: place a caret between words and seek the playhead inside that line. Merge with next: joins words with a newline and includes any gap. Each action is one unsaved Undo/Redo edit.';
+  list.append(hint);
   controls(); draw();
 }
 

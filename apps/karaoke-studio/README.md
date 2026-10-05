@@ -44,6 +44,18 @@ Startup never downloads models. Missing/corrupt weights disable new separation w
 
 Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
 
+To break a supplied phrase into shorter cues, pause or seek the audio inside its
+interval, place a single text caret between its words, then choose **Split at
+caret and playhead**. Both literal text halves keep their original outer times.
+The playhead becomes their shared boundary; no words or spacing are generated.
+Whitespace-only halves, selected text ranges and cuts inside an emoji are refused.
+**Merge with next** joins the two literal texts with one newline and spans both
+intervals, including any instrumental gap. These actions validate the entire
+proposal before changing the editor, preserve unrelated numeric spellings and
+pasted drafts, and make one unsaved Undo/Redo edit. Save lyrics when ready.
+The last line has no next line to merge. Existing cue and character limits apply
+to the complete result. See [issue #121](https://github.com/twangyal/projects-monorepo/issues/121).
+
 **Undo lyric edit** and **Redo lyric edit** recover up to **30 unsaved edits**:
 title/text/timing corrections, removed lines, pasted words, draft generation, and
 discarded pastes. Typing in one field counts as one edit until you leave it.
