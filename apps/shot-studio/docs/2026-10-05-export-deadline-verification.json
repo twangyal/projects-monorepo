@@ -1,0 +1,12 @@
+{
+  "issue": 124,
+  "base": "877c3c487a0f31999645f88d04fc4ef630507be3",
+  "scope": "Absolute deadline ownership for the existing MediaRecorder exporter; no timestamped encoding or capture cadence change.",
+  "rootCause": "Only the timer enforced timeout. An encoder or animation callback delivered after the deadline but ahead of a delayed timer could inspect payloads, draw/request frames, or publish a completed Blob.",
+  "red": {"command": "node --test tests/export-deadline.test.js", "pass": 1, "fail": 3, "failure": "Missing expected rejection for expired completion, payload delivery, and resumed frame."},
+  "baseline": {"command": "npm test", "pass": 328, "fail": 0},
+  "finalLocal": {"runtime": "Node.js v24.19.0", "command": "npm test", "pass": 335, "fail": 0, "syntaxCommand": "npm run check", "syntaxExit": 0},
+  "additionalCoverage": ["A draw crossing the deadline cannot request its late frame", "Expired initial draw refuses capture and encoder admission", "Completion before deadline preserves the full output", "Audio refusal waits for the owned context close"],
+  "fixtureCorrection": "The initial admission test expected an undefined RAF callback; cleanup correctly clears it to null. Corrected that assertion without changing the no-capture/no-encoder requirement.",
+  "limits": ["Controlled browser API doubles establish deadline ownership, not native media accuracy", "Native browser checks and published-head CI are not yet observed", "Earlier real video startup frame gaps and the timestamped exporter remain unfinished in #124"]
+}

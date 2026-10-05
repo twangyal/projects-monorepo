@@ -28,3 +28,12 @@ test('encoder constructor failure or unsupported audiovisual format retires the 
 test('combined encoder byte overflow rejects before retaining data and cleans both tracks',async t=>{
   const f=await fixture(t),pending=exportFilm(f.canvas,f.draw,1,{audioSession:f.session,maxBytes:2});f.recorder.ondataavailable({data:new Blob(['123'])});await assert.rejects(pending,/byte limit/i);assert.equal(f.videoTrack.stops,1);assert.equal(f.audioTrack.stops,1);assert.equal(f.recorder.ondataavailable,null);
 });
+
+test('absolute deadline refusal waits for owned audio close without publishing a late encoder result',async t=>{
+  let release;const held=new Promise(resolve=>release=resolve),f=await fixture(t,{close:()=>held});
+  let now=1000;install(t,'performance',{now:()=>now});let terminal=false;
+  const pending=exportFilm(f.canvas,f.draw,1,{audioSession:f.session}).finally(()=>terminal=true);
+  now=12000;f.recorder.stop();await Promise.resolve();assert.equal(terminal,false);
+  assert.equal(f.videoTrack.stops,1);assert.equal(f.audioTrack.stops,1);
+  release();await assert.rejects(pending,/timed out/i);assert.equal(f.context.closes,1);
+});

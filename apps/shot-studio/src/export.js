@@ -22,6 +22,7 @@ function captureFilm(canvas,draw,duration,{signal,maxBytes,audioSession}){
   if(signal?.aborted)throw Error('Export cancelled.');
   return new Promise((resolve,reject)=>{
     let stream,recorder,frame=0,timeout,finished=false,started,bytes=0,lastCapture=-Infinity,captureTrack;
+    const deadline=performance.now()+(duration+10)*1000;
     const chunks=[];
     const cleanup=()=>{
       cancelAnimationFrame(frame);clearTimeout(timeout);
@@ -36,34 +37,41 @@ function captureFilm(canvas,draw,duration,{signal,maxBytes,audioSession}){
       cleanup();chunks.length=0;reject(error);
     };
     const cancel=()=>fail(Error('Export cancelled.'));
+    const timedOut=()=>fail(Error('Export timed out. Keep this tab visible while recording.'));
+    const owns=()=>{
+      if(finished)return false;
+      if(signal?.aborted){cancel();return false;}
+      if(performance.now()>=deadline){timedOut();return false;}
+      return true;
+    };
     const tick=now=>{
-      if(finished)return;
+      if(!owns())return;
       try{
         const t=audioSession?audioSession.time():Math.min(duration,(now-started)/1000);draw(t);
-        if(finished)return;
+        if(!owns())return;
         const eligible=!captureTrack||now-lastCapture>=1000/30;
         if(captureTrack&&eligible){captureTrack.requestFrame();lastCapture=now;}
-        if(finished)return;
+        if(!owns())return;
         if(t>=duration&&eligible)recorder.stop();else frame=requestAnimationFrame(tick);
       }catch(error){fail(error);}
     };
     try{
       draw(0);
-      if(signal?.aborted)throw Error('Export cancelled.');
+      if(!owns())return;
       stream=canvas.captureStream(0);
-      if(signal?.aborted)throw Error('Export cancelled.');
+      if(!owns())return;
       captureTrack=stream.getVideoTracks?.()[0];
       if(typeof captureTrack?.requestFrame!=='function'){
         const probe=stream;stream=undefined;captureTrack=undefined;
         for(const track of probe.getTracks()){try{track.stop();}catch{}}
-        if(signal?.aborted)throw Error('Export cancelled.');
+        if(!owns())return;
         stream=canvas.captureStream(30);
-        if(signal?.aborted)throw Error('Export cancelled.');
+        if(!owns())return;
       }
       const recordingStream=audioSession?new MediaStream([...stream.getVideoTracks(),...audioSession.captureStream.getAudioTracks()]):stream;
       recorder=new MediaRecorder(recordingStream,{mimeType:mime,videoBitsPerSecond:2500000});
       recorder.ondataavailable=event=>{
-        if(finished)return;
+        if(!owns())return;
         try{
           const data=event.data;
           if(!Number.isSafeInteger(data.size)||data.size<0)throw Error('Video encoder produced an invalid chunk.');
@@ -71,9 +79,9 @@ function captureFilm(canvas,draw,duration,{signal,maxBytes,audioSession}){
           if(data.size){bytes+=data.size;chunks.push(data);}
         }catch(error){fail(error);}
       };
-      recorder.onerror=()=>fail(Error('Video encoder failed. Try a shorter film.'));
+      recorder.onerror=()=>{if(owns())fail(Error('Video encoder failed. Try a shorter film.'));};
       recorder.onstop=()=>{
-        if(finished)return;finished=true;cleanup();
+        if(!owns())return;finished=true;cleanup();
         try{
           const blob=new Blob(chunks,{type:mime});
           if(!blob.size)throw Error('Encoder produced no video.');
@@ -82,15 +90,15 @@ function captureFilm(canvas,draw,duration,{signal,maxBytes,audioSession}){
         }catch(error){reject(error);}finally{chunks.length=0;}
       };
       signal?.addEventListener('abort',cancel,{once:true});
-      if(signal?.aborted){cancel();return;}
+      if(!owns())return;
       recorder.start(100);
-      if(finished)return;
+      if(!owns())return;
       if(audioSession)audioSession.start(0,{capture:true});
-      if(finished)return;
+      if(!owns())return;
       started=performance.now();
       if(captureTrack){captureTrack.requestFrame();lastCapture=started;}
-      if(finished)return;
-      timeout=setTimeout(()=>fail(Error('Export timed out. Keep this tab visible while recording.')),(duration+10)*1000);
+      if(!owns())return;
+      timeout=setTimeout(timedOut,Math.max(0,deadline-performance.now()));
       frame=requestAnimationFrame(tick);
     }catch(error){fail(error);}
   });
