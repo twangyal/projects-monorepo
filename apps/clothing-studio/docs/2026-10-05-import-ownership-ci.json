@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "issue": 118,
+  "status": "passed",
+  "implementation": "0c249520c7d3de30096f81335d4329793aa3e855",
+  "tree": "597274708e5760a30125c7ef9aabbeb4b345e4d2",
+  "prCheckout": "8656ecccfabfc6c671ffb37c9bd150cef3a15e69",
+  "prTree": "597274708e5760a30125c7ef9aabbeb4b345e4d2",
+  "treesIdentical": true,
+  "push": {
+    "run": 37251968052,
+    "job": 111581284830,
+    "attempt": 1,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37251968052",
+    "units": 39,
+    "unitDurationMs": 424.979839,
+    "browser": 39,
+    "browserDisplayedDuration": "20.1s",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "log": {
+      "path": "/tmp/clothing118-ci-job-111581284830.log",
+      "bytes": 47006,
+      "sha256": "e13fb990bfa1fa885269d158688b0c0185fd3db650e16a3ead517fad543f7c85"
+    }
+  },
+  "pullRequest": {
+    "run": 37251970510,
+    "job": 111581291596,
+    "attempt": 1,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37251970510",
+    "units": 39,
+    "unitDurationMs": 632.84979,
+    "browser": 39,
+    "browserDisplayedDuration": "19.9s",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "log": {
+      "path": "/tmp/clothing118-ci-job-111581291596.log",
+      "bytes": 48067,
+      "sha256": "877f5b6e5156c4548cde065482d665120435819ce3685449c26bc01b28d333bf"
+    }
+  },
+  "environment": {
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12",
+    "browserWorkers": 2
+  },
+  "limitations": [
+    "Both published runs passed on attempt1; the local first-run hardcoded-origin failures are preserved separately.",
+    "Actual PR merge checkout tree equals implementation; no main merge or deployment."
+  ]
+}

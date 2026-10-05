@@ -91,3 +91,9 @@ cancellation and fresh retry. Controlled page-transition events verify ownership
 policy only. The first full run's two hardcoded-test-port failures remain preserved;
 only those tests' exact origin was corrected. See the [verification receipt](docs/2026-10-05-import-ownership-verification.json)
 for original failures and published CI status.
+
+Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37251968052)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37251970510) CI
+pass the complete 39-unit/39-browser gate at
+`0c249520c7d3de30096f81335d4329793aa3e855`. The [CI receipt](docs/2026-10-05-import-ownership-ci.json)
+confirms the actual PR checkout has the identical implementation tree.

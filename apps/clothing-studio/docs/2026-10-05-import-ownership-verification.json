@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 118,
-  "status": "Local complete; published CI pending.",
+  "status": "Complete:39 units and39 native browser cases,lint/type/build,independent review and both published CI gates pass.",
   "source": {
     "main": {
       "path": "apps/clothing-studio/src/main.ts",
@@ -87,7 +87,14 @@
     },
     "testHarnessOmitted": true
   },
-  "ci": "pending",
+  "ci": {
+    "status": "passed",
+    "receipt": "2026-10-05-import-ownership-ci.json",
+    "implementation": "0c249520c7d3de30096f81335d4329793aa3e855",
+    "tree": "597274708e5760a30125c7ef9aabbeb4b345e4d2",
+    "push": "https://github.com/twangyal/projects-monorepo/actions/runs/37251968052",
+    "pullRequest": "https://github.com/twangyal/projects-monorepo/actions/runs/37251970510"
+  },
   "limitations": [
     "Held genuine File.text/createImageBitmap completions establish import ownership and actual bitmap cleanup; no fake decoder output.",
     "Controlled persisted pagehide/pageshow is policy coverage, not actual BFCache or physical navigation.",
