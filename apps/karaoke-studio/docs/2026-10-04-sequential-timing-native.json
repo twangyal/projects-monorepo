@@ -1,6 +1,6 @@
 {
   "issue": 115,
-  "status": "First native invocation passed all14 original cases against final UI; full regression and maximum pending.",
+  "status": "All14 original new native cases passed first invocation; full75-case regression and independent maximum now complete (see rootverification/maximum receipts).",
   "plannedDistinctCases": 14,
   "originalFixture": {
     "durationSeconds": 6,

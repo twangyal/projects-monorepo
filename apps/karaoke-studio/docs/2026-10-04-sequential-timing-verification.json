@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 115,
-  "status": "Local complete regression passed; independent maximum scheduling failure under investigation.",
+  "status": "completed",
   "scope": "Manual supplied-line timing on actual audio.currentTime. No new model inference or physical synchronization claim.",
   "unit": {
     "passed": 86,
@@ -69,22 +69,28 @@
   ],
   "rootVisual": "Inspected original 390px complete review screenshot. Controls and full literal multiline review fit without horizontal overflow.",
   "maximum": {
-    "status": "first attempt failed at trusted action scheduling bound after148 marks",
-    "receipt": {
-      "path": "/workspace/karaoke115-maximum-final/verification.json",
-      "bytes": 51287,
-      "sha256": "b896bf3173497d0f64084515e56522c935e6e30bd556acbe88af3342350298e4"
-    },
-    "log": {
-      "path": "/tmp/karaoke115-maximum-native-first.log",
-      "bytes": 603,
-      "sha256": "a553811d39d5fc70ddaec86bf149d4a14740961f7b542117aaadcec4cf8e5ddd"
-    },
-    "fixture": "/workspace/karaoke115-maximum-fixtures",
-    "tolerancesUnchanged": true,
-    "investigation": "Preserve original 150ms action-scheduling bound. Independent acceptance author reviewing trusted click actionability overhead; no product clock error established."
+    "result": "passed with preserved first failures and staged same-artifact recheck",
+    "receipt": "2026-10-04-sequential-timing-maximum.json",
+    "nativeMarks": 400,
+    "cues": 200,
+    "lyricCodePoints": 20000,
+    "videoFrames": 7200,
+    "pcmFrames": 13230080,
+    "archiveBytes": 158792632,
+    "videoBytes": 12560208,
+    "actualListeningWallMs": 300167.73480599996,
+    "actualExportDownloadWallMs": 41909.48289299995,
+    "fullServiceBrowserRestart": "passed"
   },
-  "ci": "pending",
+  "ci": {
+    "status": "passed",
+    "receipt": "2026-10-04-sequential-timing-ci.json",
+    "head": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+    "pythonPerEvent": 166,
+    "typeScriptPerEvent": 86,
+    "nativePerEvent": 75,
+    "allPrWorkflowsPassed": 13
+  },
   "fullNative": {
     "stats": {
       "startTime": "2026-10-04T23:49:21.063Z",

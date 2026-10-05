@@ -372,16 +372,53 @@ needed; omit `CHROMIUM_PATH` to use Playwright's installed browser.
 
 The supplied-line timing flow passes **86 TypeScript tests**, **166 Python tests**,
 lint/type/build and **all 75 native browser cases** in one local full regression.
-The fourteen original new cases also passed their first separate invocation.
-They use real player progression and trusted input, verify exact saved boundaries,
-raw draft Undo/Redo and stale-state rejection, and decode an actual 144-frame
-H.264/AAC video against observed cue/gap boundaries. The small clock-observation
-bound is test instrumentation, not a physical synchronization claim.
+Both published-head push and PR CI pass the same counts and static/build gates;
+all thirteen project PR workflows pass, with the actual PR checkout tree matching
+the implementation. The fourteen original new cases also passed their first
+separate invocation, including a real 144-frame H.264/AAC export.
 
-The separate original five-minute/200-line/20,000-code-point maximum is still
-under verification: its first run stopped after 148 marks at a declared action
-scheduling bound. The original fixture and tolerance remain unchanged. See the
-[verification record](docs/2026-10-04-sequential-timing-verification.json),
-[independent native evidence](docs/2026-10-04-sequential-timing-native.json),
+The independent maximum records **400 trusted actions during 300.168 seconds of
+actual playback**, retaining all 200 supplied cues and 20,000 Unicode code points.
+Complete review, one Apply/Undo/Redo and explicit Save preserve literal text and
+raw drafts. Its **158,792,632-byte archive**, exact 29,891-byte SRT and all three
+52,920,044-byte original WAVs survive an actual same-origin service restart and a
+new Chromium process. The **12,560,208-byte five-minute H.264/AAC video** passes
+all 7,200 frame timestamps, full audio/video decode, 13,230,080 decoded stereo PCM
+frames (80 padding frames), fifteen independent glyph/boundary/final-frame checks
+and non-silent late audio. Export/download took 41.909 seconds; independent media
+inspection took 16.577 seconds. These measured times are not general performance
+guarantees or physical synchronization accuracy.
+
+Two verification failures remain explicit. The first maximum stopped after 148
+marks because locator actionability work exceeded the original 150 ms scheduling
+bound. Pre-positioning a hit-tested trusted mouse action retained that bound;
+the next 400-action run had at most 41.955 ms scheduling lateness and 3.742 ms
+clock-observation difference, below the unchanged 20 ms observation limit. Its
+last audio-inspection command then used an unsupported FFmpeg `.5` duration.
+Changing only that argument to `0.5` allowed the **same captured video** to pass
+inspection, followed by separate saved-state and restart checks. This is staged
+acceptance, not an uninterrupted all-green second invocation. Product source,
+original media/text and acceptance tolerances were unchanged.
+
+See the [root verification](docs/2026-10-04-sequential-timing-verification.json),
+[native evidence](docs/2026-10-04-sequential-timing-native.json),
+[maximum receipt](docs/2026-10-04-sequential-timing-maximum.json),
+[CI receipt](docs/2026-10-04-sequential-timing-ci.json),
 [pure oracle](docs/2026-10-04-sequential-timing-oracle.json) and
 [UI review](docs/2026-10-04-sequential-timing-client-review.json).
+
+The standalone maximum runner needs installed Playwright/Chromium, core Python
+with Pillow, FFmpeg/ffprobe and fresh output directories. From this app directory,
+set `KARAOKE_TIMING_FIXTURES` and run
+`node scripts/smoke_sequential_timing.mjs --fixtures-only`. Copy its generated
+`library/` to a new `KARAOKE_TIMING_LIBRARY` directory, then separately start
+`python3 -u tests/srt_smoke_server.py --serve /absolute/library --port 8766`.
+This synthetic test service forbids inference and serves the existing production
+build. Set `KARAOKE_TIMING_SERVICE_PID` to that Python process, `KARAOKE_TIMING_ORIGIN`
+to `http://127.0.0.1:8766`, `KARAOKE_TIMING_OUTPUT` to a fresh directory and
+`CHROMIUM_PATH` to the browser executable. Run the script with `--capture`, which
+listens for a real five minutes. After a successful capture, gracefully restart
+that owned service on the same port/library, update its PID variable and run
+`--verify-restart`. Optional `KARAOKE_PYTHON` selects the core interpreter. The
+runner owns its browsers, never its service, and neither generates model stems
+nor claims subjective alignment quality.
