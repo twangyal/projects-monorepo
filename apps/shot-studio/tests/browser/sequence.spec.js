@@ -18,9 +18,60 @@ const clipRows=page=>page.locator('#sequence-clips [data-sequence-clip-id]');
 async function settle(page){await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));}
 const rawSequence=storedSequenceText;
 async function rawScene(page){return page.evaluate(()=>localStorage.getItem('shot-studio-v1'));}
-async function openSequence(page,document=originalSequence()){
-  await page.goto('/');await expect(page.locator('#sequence-panel')).toBeVisible();page.once('dialog',d=>d.accept());await page.locator('#sequence-open').setInputFiles({name:'original-scenes.shot-sequence.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(document))});await expect(page.locator('#sequence-title')).toHaveValue(document.title);await expect.poll(async()=>JSON.parse(await rawSequence(page))).toEqual(document);
+async function openSequence(page,document=originalSequence(),{navigate=true}={}){
+  if(navigate)await page.goto('/');
+  await expect(page.locator('#sequence-panel')).toBeVisible();
+  // These healthy-storage scenarios require positive startup admission; imports
+  // during a pending load deliberately retire it and protect the browser copy.
+  await expect(page.locator('#sequence-save-status')).toHaveText('Sequence saved in this browser');
+  page.once('dialog',d=>d.accept());await page.locator('#sequence-open').setInputFiles({name:'original-scenes.shot-sequence.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(document))});await expect(page.locator('#sequence-title')).toHaveValue(document.title);await expect.poll(async()=>JSON.parse(await rawSequence(page))).toEqual(document);
 }
+test('healthy sequence import waits for delayed native storage startup before saving',async({page})=>{
+  // Hold delivery of one actual IDB open success, retaining its real database.
+  // Removing the healthy fixture's readiness wait must import before this gate.
+  await page.addInitScript(()=>{
+    if(sessionStorage.getItem('sequence-startup-gate-released'))return;
+    const open=IDBFactory.prototype.open;
+    window.sequenceStartupGate={entered:false,release:null,imports:0};
+    document.addEventListener('change',event=>{
+      if(event.target.id==='sequence-open')window.sequenceStartupGate.imports++;
+    },true);
+    IDBFactory.prototype.open=function(name,...args){
+      const request=open.call(this,name,...args);
+      if(name!=='shot-studio-sequence-documents')return request;
+      IDBFactory.prototype.open=open;
+      let handler;
+      Object.defineProperty(request,'onsuccess',{get:()=>handler,set:value=>{handler=value;}});
+      request.addEventListener('success',event=>{
+        window.sequenceStartupGate.entered=true;
+        window.sequenceStartupGate.release=()=>{sessionStorage.setItem('sequence-startup-gate-released','yes');handler?.call(request,event);};
+      },{once:true});
+      return request;
+    };
+  });
+  await page.goto('/');
+  await expect.poll(()=>page.evaluate(()=>window.sequenceStartupGate?.entered)).toBe(true);
+  const imported=openSequence(page,originalSequence(),{navigate:false});
+  // Retain rejections until after native ownership has been released.
+  imported.catch(()=>{});
+  await expect(page.locator('#sequence-save-status')).toHaveText('Reading saved sequence…');
+  try{
+    // A bounded negative observation, not a startup sleep or retry: the native
+    // operation cannot finish until this test explicitly releases it.
+    const earlyImport=await page.waitForFunction(()=>window.sequenceStartupGate.imports>0,{},{timeout:300}).then(()=>true,error=>{
+      if(error.name!=='TimeoutError')throw error;
+      return false;
+    });
+    expect(earlyImport).toBe(false);
+  }finally{await page.evaluate(()=>window.sequenceStartupGate.release());}
+  await imported;
+  const stored=await sequenceStoredState(page);
+  expect(stored.document.sequence).toEqual(originalSequence());
+  await expect(page.locator('#sequence-replace-saved')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#sequence-title')).toHaveValue(originalSequence().title);
+  expect((await sequenceStoredState(page)).archive).toEqual(stored.archive);
+});
 async function seekSequence(page,time){await page.locator('#sequence-scrub').evaluate((node,value)=>{node.value=String(value);node.dispatchEvent(new Event('input',{bubbles:true}));},time);await settle(page);}
 async function importSource(page,film,name='original-source.json'){const before=await sourceRows(page).count();await page.locator('#sequence-import-source').setInputFiles({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(film))});await expect(sourceRows(page)).toHaveCount(before+1);await sourceRows(page).last().click();}
 async function addShot(page,index=1){const before=await clipRows(page).count();await page.locator(`[data-source-shot-index="${index}"]`).click();await page.locator('#sequence-add-shot').click();await expect(clipRows(page)).toHaveCount(before+1);}
@@ -91,7 +142,7 @@ test('complete sequence bytes survive full browser-process restart and a fresh-p
   async function session(directory,label,run){const context=await chromium.launchPersistentContext(directory,options),browser=context.browser(),receipt={label,version:browser?.version(),closed:false};sessions.push(receipt);try{await run(await context.newPage());}finally{await context.close();receipt.closed=true;await writeFile(info.outputPath('sequence-browser-lifecycle.json'),JSON.stringify(sessions,null,2));}}
   await session(profile,'initial complete save',async page=>{await openSequence(page);canonical=(await sequenceDownload(page)).bytes;expect(JSON.parse(canonical)).toEqual(originalSequence());});
   await session(profile,'same profile reopened',async page=>{await page.goto('/');await expect(page.locator('#sequence-title')).toHaveValue(originalSequence().title);expect((await sequenceDownload(page)).bytes).toEqual(canonical);});
-  await session(await mkdtemp(join(tmpdir(),'shot90-portable-')),'fresh profile explicit import',async page=>{await page.goto('/');page.once('dialog',d=>d.accept());await page.locator('#sequence-open').setInputFiles({name:'portable.shot-sequence.json',mimeType:'application/json',buffer:canonical});await expect(page.locator('#sequence-title')).toHaveValue(originalSequence().title);expect((await sequenceDownload(page)).bytes).toEqual(canonical);});await writeFile(info.outputPath('complete-original.shot-sequence.json'),canonical);await writeFile(info.outputPath('sequence-portable-verification.json'),JSON.stringify({bytes:canonical.length,sha256:sequenceSha(canonical),processes:sessions.length,allClosed:sessions.every(s=>s.closed)},null,2));
+  await session(await mkdtemp(join(tmpdir(),'shot90-portable-')),'fresh profile explicit import',async page=>{await page.goto('/');await expect(page.locator('#sequence-save-status')).toHaveText('Sequence saved in this browser');page.once('dialog',d=>d.accept());await page.locator('#sequence-open').setInputFiles({name:'portable.shot-sequence.json',mimeType:'application/json',buffer:canonical});await expect(page.locator('#sequence-title')).toHaveValue(originalSequence().title);await expect.poll(()=>rawSequence(page)).toBe(canonical.toString());expect((await sequenceDownload(page)).bytes).toEqual(canonical);});await writeFile(info.outputPath('complete-original.shot-sequence.json'),canonical);await writeFile(info.outputPath('sequence-portable-verification.json'),JSON.stringify({bytes:canonical.length,sha256:sequenceSha(canonical),processes:sessions.length,allClosed:sessions.every(s=>s.closed)},null,2));
 });
 
 test('390px keyboard sequence navigation keeps raw ordinary camera spelling and both canvases contained',async({page},info)=>{

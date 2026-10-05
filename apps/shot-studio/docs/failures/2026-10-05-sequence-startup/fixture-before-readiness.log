@@ -1,0 +1,90 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:19] "GET / HTTP/1.1" 200 -
+
+
+Running 1 test using 1 worker
+
+(node:44) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] tests/browser/sequence.spec.js:24:1 › healthy sequence import waits for delayed native storage startup before saving
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET / HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/app.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /style.css HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/renderer.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/history.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/export.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/model.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/xr.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/take-ui.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/draft.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence-ui.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/performer.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/timestamped-export.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/math.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/takes.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/take-archive.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/take-video.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/take-store.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence-document.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence-archive.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence-document-store.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence-audio.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/sequence-audio-session.js HTTP/1.1" 200 -
+
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /src/export-timeline.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [06/Oct/2026 01:06:20] "GET /vendor/mediabunny/mediabunny.min.mjs HTTP/1.1" 200 -
+
+  1) tests/browser/sequence.spec.js:24:1 › healthy sequence import waits for delayed native storage startup before saving 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      58 |       return false;
+      59 |     });
+    > 60 |     expect(earlyImport).toBe(false);
+         |                         ^
+      61 |   }finally{await page.evaluate(()=>window.sequenceStartupGate.release());}
+      62 |   await imported;
+      63 |   const stored=await sequenceStoredState(page);
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/shot-studio/tests/browser/sequence.spec.js:60:25
+
+    Error Context: test-results/sequence-healthy-sequence--590f7-orage-startup-before-saving/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/sequence-healthy-sequence--590f7-orage-startup-before-saving/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/sequence-healthy-sequence--590f7-orage-startup-before-saving/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    tests/browser/sequence.spec.js:24:1 › healthy sequence import waits for delayed native storage startup before saving 

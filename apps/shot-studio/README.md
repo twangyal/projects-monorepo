@@ -681,3 +681,12 @@ to `index / 30`, from a fixed zero origin without fitting, finds maximum error
 below 0.334 ms and maximum gap 34 ms. Full/headed Chromium compatibility is not
 established by these software-WebGL headless checks; the forced full-Chromium153
 `SIGTRAP` process log remains preserved alongside the original failed captures.
+
+### Sequence startup fixture repair — 2026-10-05
+
+Healthy sequence persistence fixtures now wait for positive initial storage readiness
+before importing. The new native delayed-startup regression fails with the earlier
+fixture and passes with the repair; complete browser-process restart and independent
+stored-archive assertions remain intact. Fresh local checks pass 345 unit and 106
+browser cases plus syntax checks. [Verification and retained first failures](docs/2026-10-05-sequence-startup-verification.md)
+record the browser provenance and exact limits; separate compatibility #128 remains open.

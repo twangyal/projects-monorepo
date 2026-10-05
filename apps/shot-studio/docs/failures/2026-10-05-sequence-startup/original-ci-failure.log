@@ -1,0 +1,35 @@
+2026-10-05T14:27:39.1447763Z   1) tests/browser/sequence.spec.js:89:1 › complete sequence bytes survive full browser-process restart and a fresh-profile native import 
+2026-10-05T14:27:39.1449784Z 
+2026-10-05T14:27:39.1450188Z     Error: page.evaluate: AbortError: Version change transaction was aborted in upgradeneeded event handler.
+2026-10-05T14:27:39.1450619Z 
+2026-10-05T14:27:39.1450718Z        at sequence-storage-fixtures.js:7
+2026-10-05T14:27:39.1450826Z 
+2026-10-05T14:27:39.1450931Z        5 | export async function sequenceStoredState(page){
+2026-10-05T14:27:39.1451243Z        6 |   await expect(page.locator('#sequence-save-status')).not.toHaveText(/^(Reading|Saving)/);
+2026-10-05T14:27:39.1451592Z     >  7 |   const stored=await page.evaluate(()=>new Promise((resolve,reject)=>{
+2026-10-05T14:27:39.1451821Z          |                           ^
+2026-10-05T14:27:39.1452037Z        8 |     const request=indexedDB.open('shot-studio-sequence-documents',1);
+2026-10-05T14:27:39.1452280Z        9 |     request.onerror=()=>reject(request.error);
+2026-10-05T14:27:39.1452507Z       10 |     request.onupgradeneeded=()=>request.transaction.abort();
+2026-10-05T14:27:39.1453024Z         at sequenceStoredState (/home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence-storage-fixtures.js:7:27)
+2026-10-05T14:27:39.1453677Z         at storedSequenceText (/home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence-storage-fixtures.js:33:16)
+2026-10-05T14:27:39.1454163Z         at /home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence.spec.js:22:399
+2026-10-05T14:27:39.1454623Z         at openSequence (/home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence.spec.js:22:361)
+2026-10-05T14:27:39.1455109Z         at /home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence.spec.js:92:62
+2026-10-05T14:27:39.1455547Z         at session (/home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence.spec.js:91:228)
+2026-10-05T14:27:39.1455985Z         at /home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/sequence.spec.js:92:3
+2026-10-05T14:27:39.1456204Z 
+2026-10-05T14:27:39.1456425Z     Error Context: test-results/sequence-complete-sequence-38b8b-fresh-profile-native-import/error-context.md
+2026-10-05T14:27:39.1456662Z 
+2026-10-05T14:27:39.1456933Z     attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+2026-10-05T14:27:39.1457304Z     test-results/sequence-complete-sequence-38b8b-fresh-profile-native-import/trace.zip
+2026-10-05T14:27:39.1457548Z     Usage:
+2026-10-05T14:27:39.1457611Z 
+2026-10-05T14:27:39.1458179Z         npx playwright show-trace test-results/sequence-complete-sequence-38b8b-fresh-profile-native-import/trace.zip
+2026-10-05T14:27:39.1459597Z 
+2026-10-05T14:27:39.1459984Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+2026-10-05T14:27:39.1460224Z 
+2026-10-05T14:27:39.1460297Z   1 failed
+2026-10-05T14:27:39.1461000Z     tests/browser/sequence.spec.js:89:1 › complete sequence bytes survive full browser-process restart and a fresh-profile native import 
+2026-10-05T14:27:39.1461549Z   104 passed (3.8m)
+2026-10-05T14:27:39.1668649Z ##[error]Process completed with exit code 1.
