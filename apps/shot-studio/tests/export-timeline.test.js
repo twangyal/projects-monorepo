@@ -82,6 +82,20 @@ test('microsecond rounding at a30Hz boundary cannot create a zero-duration encod
   assert.deepEqual(planExportFrames(.000001).frame(0),{time:0,timestamp:0,duration:1});
 });
 
+test('rounded-up frame boundaries end without an extra zero-duration sample',()=>{
+  for(const [duration,count,end] of [[2/30,2,66667],[5/30,5,166667],[32/30,32,1066667]]){
+    const plan=planExportFrames(duration);
+    assert.equal(plan.frameCount,count);
+    const last=plan.frame(count-1);
+    assert.ok(last.duration>0);
+    assert.equal(last.timestamp+last.duration,end);
+    assert.throws(()=>plan.frame(count));
+  }
+  const beyond=planExportFrames(.066668);
+  assert.equal(beyond.frameCount,3);
+  assert.deepEqual(beyond.frame(2),{time:2/30,timestamp:66667,duration:1});
+});
+
 function replace(t,key,value,target=globalThis){
   const old=Object.getOwnPropertyDescriptor(target,key);Object.defineProperty(target,key,{value,configurable:true,writable:true});
   t.after(()=>{if(old)Object.defineProperty(target,key,old);else delete target[key];});

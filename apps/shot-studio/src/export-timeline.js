@@ -11,7 +11,11 @@ function indexIn(index,count){
 
 /** Timestamped inputs are derived from authored time, never browser scheduling. */
 export function planExportFrames(duration){
-  const end=durationMicros(duration),frameCount=Math.ceil(end*30/1000000);
+  const end=durationMicros(duration);
+  let frameCount=Math.ceil(end*30/1000000);
+  // Microsecond rounding can place the last candidate exactly at the end
+  // (for example two authored frames end at 66667us). It has no interval.
+  if(Math.round((frameCount-1)*1000000/30)>=end)frameCount--;
   return Object.freeze({frameCount,frame(index){
     indexIn(index,frameCount);
     const timestamp=Math.round(index*1000000/30),next=Math.min(end,Math.round((index+1)*1000000/30));
