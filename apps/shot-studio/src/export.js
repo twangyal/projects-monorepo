@@ -103,3 +103,5 @@ function captureFilm(canvas,draw,duration,{signal,maxBytes,audioSession}){
     }catch(error){fail(error);}
   });
 }
+
+export {createTimestampedExporter,createBoundedVideoSink,exportTimestampedFilm} from './timestamped-export.js';

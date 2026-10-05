@@ -56,3 +56,22 @@ retrying to manufacture acceptance. Original push and PR captures from the
 deadline commit are retained in `failures/2026-10-05-deadline-ci/` with decoded
 PTS and hashes. Their opening gaps are378ms and355ms respectively; neither is
 repaired by the deadline guard or this input module.
+
+## Native pipeline candidate
+
+`src/timestamped-export.js` now implements a separately callable
+`exportTimestampedFilm`. It uses the locally verified pinned bundle, probes actual
+native codec support, copies each draw into a timestamped VideoFrame, and feeds
+original planar PCM through AudioData on the same origin. Awaited source adds
+respect Mediabunny's writer/encoder backpressure. Every sample closes, cancellation
+drains output ownership, and the absolute deadline guards asynchronous boundaries,
+container writes and final Blob publication. A bounded seekable sink handles WebM
+metadata patches and refuses any write beyond the configured limit before copy.
+
+The candidate is deliberately not the application's production export yet.
+Native tests independently decode all 60 frames through a deliberate350ms stall,
+check original red/blue pixels and authored timestamps, exercise real Opus silence/
+tone/tail output and real encoder cancellation. Local Chrome154 executable acquisition
+succeeded, but launch is blocked by socket permissions (`process_singleton_posix.cc`,
+`socket() failed: Operation not permitted`); these native cases must run in CI.
+No acceptance is inferred from executable presence or controlled backend tests.
