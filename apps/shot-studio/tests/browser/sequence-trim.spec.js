@@ -4,6 +4,7 @@ import {writeFile,mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {trimSequence,legacyTrimSequence,migratedTrimSequence,trimBackup,trimDownload,trimSha,seekTrim,settleTrim,trimCanvas,verifyTrimPixels,decodeTrimVideo} from './sequence-trim-fixtures.js';
+import {observeCaptureTiming} from './capture-timing-fixtures.js';
 
 const KEY='shot-studio-sequence-v1';
 const clips=page=>page.locator('#sequence-clips [data-sequence-clip-id]');
@@ -38,7 +39,9 @@ test('trimmed preview uses original travel and performer clocks at interior cuts
 });
 
 test('actual six-second trimmed WebM preserves original source phases and repeated excerpts',async({page},info)=>{
- test.setTimeout(45000);await load(page);const before=await trimBackup(page),video=await trimDownload(page,'#sequence-export');expect(video.name).toMatch(/\.webm$/i);const receipt=await decodeTrimVideo(video.bytes,info.outputPath('original-trim-six-seconds.webm'));expect(await trimBackup(page)).toEqual(before);expect(await page.locator('#take-list [data-take-id]').count()).toBe(0);await writeFile(info.outputPath('original-trim-video.json'),JSON.stringify(receipt,null,2));await writeFile(info.outputPath('original-trim-backup.json'),JSON.stringify(before));
+ test.setTimeout(45000);await load(page);const saveTiming=await observeCaptureTiming(page);
+ try{const before=await trimBackup(page),video=await trimDownload(page,'#sequence-export');expect(video.name).toMatch(/\.webm$/i);const receipt=await decodeTrimVideo(video.bytes,info.outputPath('original-trim-six-seconds.webm'));expect(await trimBackup(page)).toEqual(before);expect(await page.locator('#take-list [data-take-id]').count()).toBe(0);await writeFile(info.outputPath('original-trim-video.json'),JSON.stringify(receipt,null,2));await writeFile(info.outputPath('original-trim-backup.json'),JSON.stringify(before));}
+ finally{await saveTiming(info.outputPath('original-trim-capture-timing.json'));}
 });
 
 test('invalid ranges preserve native raw nodes and focus and an identical Apply preserves redo',async({page})=>{

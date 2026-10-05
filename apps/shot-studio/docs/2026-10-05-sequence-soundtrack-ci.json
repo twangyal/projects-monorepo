@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 124,
   "date": "2026-10-05",
-  "status": "first-ci-diagnosed-focused-followup-passed-republication-ci-pending",
+  "status": "followup-push-initial-media-gap-reproduced-investigation-open",
   "scope": "Actual first push and same-tree pull-request CI results; original failed media and trace analysis. No production correction or tolerance change based on these CI failures.",
   "firstCi": {
     "push": {
@@ -576,5 +576,85 @@
   "reviewLimits": [
     "No browser, service, Git operation or production edit was performed by this receipt author.",
     "Artifact analysis uses original retained WebM and Playwright traces. A same-tree passing CI run is evidence of variability, not proof that the initial temporal gate passed."
-  ]
+  ],
+  "followupCi": {
+    "head": "6f4a7fca76cee747afb8ad1f90fa9fbbded5c574",
+    "tree": "bf0876dceffb3f52c5962db69613f8265a25f121",
+    "pullRequest": {
+      "run": 37268119795,
+      "job": 111629143639,
+      "checkout": "fddac1aa86c163160d2c021c650cbbaf0e05cd7d",
+      "sameTree": true,
+      "unitPass": 328,
+      "nativePass": 99,
+      "nativeFail": 0,
+      "logSha256": "97895c4a5a2245261a9d33b59c3919a9ed48af371d7668e619a16429321ddc09"
+    },
+    "push": {
+      "run": 37268116208,
+      "job": 111629133074,
+      "unitPass": 328,
+      "nativePass": 98,
+      "nativeFail": 1,
+      "failure": "Unchanged sequence-trim decode target0.2 missed by0.171s against<0.15s gate.",
+      "logSha256": "11d21e4bbe2bb445a30aef3db7ff759785e66cae3153c6c70dffd013b79a6ab9"
+    },
+    "originalFailedMedia": {
+      "bytes": 461252,
+      "sha256": "8f12ecac7c58efa556bb2977a509e4ea9a064d2d1fd21249b642552c0e7ba9ba",
+      "frames": 109,
+      "lastPts": 5.933,
+      "firstPts": [
+        0,
+        0.029,
+        0.381,
+        0.479
+      ],
+      "soleGapOver150ms": {
+        "from": 0.029,
+        "to": 0.381,
+        "seconds": 0.352
+      },
+      "nearestToPoint2": {
+        "pts": 0.029,
+        "error": 0.171
+      },
+      "otherTargetsMaximumError": 0.03,
+      "traceSha256": "84b0f1f7711137bbd3600fe8ae0f734724c437f4b1884721e0a5c5e75a5baa1f",
+      "artifactZipSha256": "02db5b5783203052019af7b38f1cdb7566a241565be850671a167c685cd3b8a3"
+    },
+    "interpretation": "Startup storage repair passes. A repeated initial native frame gap remains unresolved; at least one subsequent frame existed before the second stall, so delaying only the first RAF is not yet a justified fix. Original timing gate and producer scheduler remain unchanged. Root instrumented capture is next; issue124 stays open."
+  },
+  "diagnosticFollowup": {
+    "localBaseline": {
+      "browser": "Chromium151.0.7922.173",
+      "originalReceiptSha256": "fbaf1c9559c0f87e4babc6be63e38be77e21762fe856677513e484c52a502ef0",
+      "originalFailure": "Diagnostic postprocess referenced undefined index; original media and instrumentation were already saved. No producer failure is claimed.",
+      "offlineSameArtifact": {
+        "receiptSha256": "da43d262a9d549643ee7dd81626f97427e823632c69392bf494cdac030458104",
+        "path": "/workspace/shot124-capture-baseline/offline-postprocess.json",
+        "unchangedDecode": "pass116frames5.951s, original0.15s gate and pixels; no recapture"
+      },
+      "finding": "Setup draw/captureStream/constructor/start cost about2ms. No350ms local stall. RAF timestamp may precede first origin and is already clamped to0; delayed recorder start event is not a suitable origin."
+    },
+    "matchingBrowserAttempt": {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/workspace/.cache/ms-playwright node node_modules/playwright/cli.js install chromium --only-shell",
+      "target": "Chrome Headless Shell153.0.8010.12",
+      "outcome": "One installer invocation failed after its automatic download attempts:403Domain forbidden under enforced network policy. No alternate mirror or bypass attempted.",
+      "logSha256": "d218d994ff47ae693bf4cee9c16cac3d20a1a4e1864222f497c5345f704d4f67"
+    },
+    "instrumentedExistingCase": {
+      "stats": {
+        "startTime": "2026-10-05T05:53:42.163Z",
+        "duration": 10549.352,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "1eb09fc783ce2206ce4d400ae5bddaadb8ab23d97daf3c3d0f47b0b969b5f4e0",
+      "scope": "Test-only transparent wrappers record bounded first1000ms/1500events plus totals for draw/RAF/requestFrame/recorder; save even when original decode fails, restore wrappers. Production code, fixture,45s timeout and150ms gate unchanged.",
+      "publishedCi": "pending"
+    }
+  }
 }

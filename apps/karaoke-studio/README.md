@@ -243,7 +243,12 @@ tests**, lint/type/build and **all 91 production Chromium cases** in one full
 regression. Twelve practice cases cover actual PCM playback, strict fractional
 ranges, instrumental gaps, native controls, late responses/completions, raw
 drafts and saved-byte preservation. Controlled lifecycle and play-refusal faults
-are labeled separately from actual native playback. Published CI is pending.
+are labeled separately from actual native playback. The first published
+[push](https://github.com/twangyal/projects-monorepo/actions/runs/37268889825) and
+[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37268892275) checks
+pass the same **166/116/91** counts at `7eecfa65d51feb3a7f390b437c7a275daac98a21`.
+The actual PR checkout has the identical tree, and all thirteen project PR
+workflows pass. See the [CI receipt](docs/2026-10-05-practice-ci.json).
 
 An independent maximum uses three original five-minute stereo WAVs, 200 cues
 and 20,000 lyric code points. Two real 297–300 second repeats, pause/resume,

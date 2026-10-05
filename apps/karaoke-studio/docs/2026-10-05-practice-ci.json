@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "issue": 125,
+  "status": "passed",
+  "head": "7eecfa65d51feb3a7f390b437c7a275daac98a21",
+  "tree": "a2ce30981312f6d5e48dbf0086ee639b1310749e",
+  "firstPublishedRuns": [
+    {
+      "event": "push",
+      "run": 37268889825,
+      "job": 111631463504,
+      "checkout": "7eecfa65d51feb3a7f390b437c7a275daac98a21",
+      "python": 166,
+      "pythonSeconds": 63.394,
+      "typeScript": 116,
+      "native": 91,
+      "conclusion": "success",
+      "rawJobLogSha256": "aaf0ab9b6388b39f912321207bb3c1522dbe2e2202bd0e7efb5e701b2a05e5af"
+    },
+    {
+      "event": "pull_request",
+      "run": 37268892275,
+      "job": 111631471812,
+      "checkout": "cf34288b0a62f21ad64dee318382325d4fb5f394",
+      "python": 166,
+      "pythonSeconds": 61.441,
+      "typeScript": 116,
+      "native": 91,
+      "conclusion": "success",
+      "checkoutTreeMatches": true,
+      "rawJobLogSha256": "08fc23d0a331e32ca6d203793d304e3ec5e47e3f3e652e72ef3aa673aa9b3ea5"
+    }
+  ],
+  "allProjectPrWorkflows": [
+    {
+      "name": "Clothing Studio",
+      "run": 37268892278,
+      "conclusion": "success"
+    },
+    {
+      "name": "Style Studio",
+      "run": 37268892279,
+      "conclusion": "success"
+    },
+    {
+      "name": "Git History",
+      "run": 37268892320,
+      "conclusion": "success"
+    },
+    {
+      "name": "Motion Studio",
+      "run": 37268892272,
+      "conclusion": "success"
+    },
+    {
+      "name": "Melody Studio",
+      "run": 37268892270,
+      "conclusion": "success"
+    },
+    {
+      "name": "Color Context Lab",
+      "run": 37268892297,
+      "conclusion": "success"
+    },
+    {
+      "name": "Lens Studio",
+      "run": 37268892256,
+      "conclusion": "success"
+    },
+    {
+      "name": "Stock Notebook",
+      "run": 37268892296,
+      "conclusion": "success"
+    },
+    {
+      "name": "Composure",
+      "run": 37268892276,
+      "conclusion": "success"
+    },
+    {
+      "name": "Friendly Challenges",
+      "run": 37268892252,
+      "conclusion": "success"
+    },
+    {
+      "name": "Duet",
+      "run": 37268892310,
+      "conclusion": "success"
+    },
+    {
+      "name": "Karaoke Studio",
+      "run": 37268892275,
+      "conclusion": "success"
+    },
+    {
+      "name": "Shot Studio",
+      "run": 37268892299,
+      "conclusion": "success"
+    }
+  ],
+  "limits": [
+    "CI fast separator is explicitly fake; original PCM/native playback and existing video exports remain real.",
+    "No new model inference, acoustic-output quality, browser portability or sample-exact looping claim.",
+    "All initial local failures and bounded corrections remain in practice-verification/client/oracle receipts."
+  ]
+}

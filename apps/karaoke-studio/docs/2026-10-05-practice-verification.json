@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 125,
-  "status": "local-verification-passed-ci-pending",
+  "status": "local-and-first-published-ci-passed",
   "baseCommit": "6f4a7fca76cee747afb8ad1f90fa9fbbded5c574",
   "scope": [
     "Explicit selected-lyric once/repeat playback at native 1x with exact admitted cue endpoints and instrumental gaps.",
@@ -131,7 +131,7 @@
     "Native loop endpoints use bounded observed timing; no sample-exact repeat or hardware audible-output claim.",
     "Maximum precedes only the later accessible-label and visible-controls fixes; those are separately covered by focused/full native validation."
   ],
-  "ci": null,
+  "ci": "2026-10-05-practice-ci.json",
   "files": [
     {
       "path": "src/practice.ts",

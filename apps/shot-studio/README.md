@@ -554,7 +554,11 @@ other recording contained an initial 361 ms frame gap. Its original pixels and
 timeline origin were correct, so the production scheduler and 150 ms timing gate
 remain unchanged. Both focused checks pass after that diagnosis. The
 [CI receipt](docs/2026-10-05-sequence-soundtrack-ci.json) preserves the first
-failures and hashes; follow-up publication checks are pending.
+failures and hashes. The follow-up PR passes 328/99, but its push run
+passes 328/98 and repeats a 352 ms initial frame gap. The storage case is fixed;
+video startup investigation remains open. A bounded test-only observer now saves
+first-second draw/RAF/capture/encoder timings in CI while retaining every original
+acceptance gate. The local instrumented case passes.
 
 The independent maximum uses four complete 20-shot scenes, 256 performer cues,
 twenty clips and 60 seconds of stereo PCM. Its complete **11,554,385-byte** archive
