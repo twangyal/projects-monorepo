@@ -94,15 +94,15 @@ confirmation and can be undone.
 Undo scene / Redo scene restores up to 30 prior valid scene states in this session,
 including edits, sequencing and imports. Invalid/identical edits preserve redo; a
 new edit after undo clears it. Reload keeps the draft but starts fresh history.
-History and sequencing controls are locked during recording and immersive sessions. Export WebM in real time while keeping the
-tab visible. Cancel stops the encoder and capture tracks. Unsupported encoders
+History and sequencing controls are locked during recording and immersive sessions. Export WebM with authored 30 fps timestamps while keeping the
+tab visible. Cancel drains native encoders and closes every input sample. Unsupported encoders
 give guidance to save a project instead.
 
 One courtyard, two block performers, 1–20 shots, 1–15 seconds each, **60 seconds
 total**. Backups are limited to **64 KiB** with bounded names, positions, angles
 and enum values. Cues use global film time rather than restarting at camera cuts.
 Imports never execute code or fetch media. Hard cuts; looping performances
-use continuous film time. WebM is silent at 960 × 540, requested 30 fps, with a
+use continuous film time. WebM is silent at 960 × 540, authored 30 fps, with a
 browser-selected VP9/VP8 encoder. Exact timing/dropped frames depend on hardware.
 Travel validates the entire path against coincident or vertical look directions,
 not only its endpoints. Eye/target coordinates stay within ±15, Y is at least 0.3,
@@ -118,7 +118,7 @@ The take notebook pairs an actual recording with the exact editable film capture
 when recording began. Finish or explicitly discard unsent scene fields, enter a
 **Take name**, then choose **Record take**. Keep the tab visible until recording
 and saving finish. Keep four takes, each with a WebM of at most **32 MiB**, plus
-its bounded film and metadata. Recording counts actual encoder chunks and stops
+its bounded film and metadata. Encoding bounds actual container writes and stops
 if that limit is exceeded; requested bitrate is not a size guarantee. Direct
 **Export WebM** remains available with the same bound.
 
@@ -160,7 +160,7 @@ not validity of every codec frame. Playback errors preserve bytes for backup.
 
 Native recorder WebM may have unknown/infinite duration or lack seekable ranges.
 **Restart recording** restarts actual media; arbitrary seeking is not promised.
-Original recordings are silent at a requested 30 fps; dropped frames and timing
+Older recordings were silent at a requested 30 fps; dropped frames and timing
 depend on the browser/hardware. Page departure cancels owned work and releases
 video URLs. Late reads, hashing, decoding or saves cannot replace newer fields
 or take selections. No upload, remote service, automatic eviction or destructive
@@ -235,7 +235,7 @@ committed range. A successful trim leaves complete source films unchanged, uses
 the original camera travel and preserves performer cue/loop phases. There is no
 speed change or restart of a performance at the trimmed beginning.
 
-**Export sequence WebM** freshly renders the complete cut in real time using the
+**Export sequence WebM** freshly renders the complete cut at authored 30 fps using the
 existing 960×540 encoder and 32 MiB recording limit. Keep the tab visible; Cancel,
 page departure, hiding the tab or graphics loss stops the owned export. Scene and
 sequence recording cannot run together. The result downloads directly and is not
@@ -621,3 +621,32 @@ local suite passes 349 cases plus syntax checks. This module is a prerequisite,
 not a production export replacement. The [input contract](docs/timestamped-export-inputs.md)
 and [verification receipt](docs/2026-10-05-export-timeline-verification.json)
 record numerical semantics and unfinished muxer/native acceptance work.
+
+## Timestamped production export (#124)
+
+Ordinary films, retained silent takes and complete soundtrack sequences now use
+the same timestamped VP9/VP8 pipeline and locally served unchanged Mediabunny1.61.1
+muxer. Frame time comes from the authored30Hz schedule, so a delayed task does
+not skip frames. Original trimmed PCM becomes bounded48kHz blocks on that same
+origin; export creates no AudioContext or audible playback. Rehearsal keeps its
+existing owned audio graph. Native backpressure,32MiB write admission, absolute
+deadlines, closed samples and cancellation drain protect publication. Scene/take/
+sequence authoring stays locked until cancelled native work drains.
+
+The separately callable candidate passed363unit and102native cases in both
+first push and PR CI at05269ec8aff1f2be2e857e382a95a423ff6aa155. Its new original
+silent and Opus fixtures independently decode every one of60frames through an
+intentional350ms stall, including exact authored PTS and red/blue pixel gates.
+A subsequent controlled regression reproduced late encoder initialization after
+cancellation; the adapter now drains pending source adds before closing output.
+The integrated local suite passes340units plus syntax.25MediaRecorder-specific
+cases were replaced by the timestamped lifecycle/input suite; the original media,
+storage and recovery gates remain. Native cancellation observers retain genuine
+encoders while deliberately delaying zero-time UI yields250ms. This is controlled
+cancellation coverage, not a latency claim.
+
+Integrated native acceptance is pending. CI now also runs the unchanged original
+full-minute soundtrack/restart script in a separate job, including forty original
+visual samples, all audio transitions and exact complete backup recovery. Do not
+count production acceptance or close#124 until those checks pass. Earlier capture
+failures remain preserved in the existing failure directory.

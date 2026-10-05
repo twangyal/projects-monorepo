@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "candidateHead": "05269ec8aff1f2be2e857e382a95a423ff6aa155",
+  "candidateCi": {
+    "push": 37315564594,
+    "pullRequest": 37315571569,
+    "unitCases": 363,
+    "nativeCases": 102,
+    "status": "both-first-events-pass"
+  },
+  "candidateNativeGates": [
+    "60 exact authored input frames after deliberate350ms main-thread stall",
+    "independent FFprobe PTS and red/blue decoded pixels for silent and Opus exports",
+    "decoded silence/tone/trailing-silence without AudioContext playback",
+    "genuine native encoder cancellation"
+  ],
+  "localIntegrated": {
+    "unitCases": 340,
+    "syntax": "pass",
+    "node": "24.19.0",
+    "native": "not executed: socket permissions prevent browser launch"
+  },
+  "testMigration": {
+    "removedCases": 25,
+    "reason": "obsolete MediaRecorder/captureStream callback implementation contracts; timestamped driver/native ownership tests replace them",
+    "existingMediaTimingPixelAudioRecoveryGates": "unchanged"
+  },
+  "additionalRepair": {
+    "regression": "pending native codec query creates an encoder after output cancellation",
+    "oldAdapter": "controlled regression fails with a still-configured encoder",
+    "newAdapter": "pending source adds drain before output.cancel; all codecs close",
+    "sourceArchive": "now also retains unchanged shared source dependencies"
+  },
+  "productionIntegration": "all film/take/sequence callers use timestamped pipeline; awaiting exact-head native/full-minute CI",
+  "acceptance": "pending; do not close issue or count integrated native success"
+}

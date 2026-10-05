@@ -36,3 +36,38 @@ jobs:
           name: shot-studio-browser-review
           path: apps/shot-studio/test-results/
           retention-days: 1
+  maximum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Original full-minute soundtrack and complete restart acceptance
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4174 --bind 127.0.0.1 > /tmp/shot-maximum-server.log 2>&1 &
+          shot_server_pid=$!
+          trap 'kill "$shot_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --silent --fail http://127.0.0.1:4174/ > /dev/null; then break; fi
+            sleep .1
+          done
+          mkdir -p test-results
+          node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-maximum-fixtures
+          shot_chromium_path=$(node --input-type=module -e "import {chromium} from '@playwright/test'; process.stdout.write(chromium.executablePath())")
+          CHROMIUM_PATH="$shot_chromium_path" node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-maximum-fixtures --output test-results/maximum --origin http://127.0.0.1:4174
+          node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/maximum
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-maximum-review
+          path: apps/shot-studio/test-results/maximum/
+          retention-days: 1

@@ -243,7 +243,7 @@ $('import').onchange=async()=>{
   finally{if(epoch===importEpoch){$('import').value='';pendingImport=false;}}
 };
 $('export').onclick=async()=>{
-  if(guarded())return;stop();exporting=true;abort=new AbortController();refresh();status('Recording WebM. Keep this tab visible.');
+  if(guarded())return;stop();exporting=true;abort=new AbortController();refresh();status('Encoding WebM. Keep this tab visible.');
   const p=structuredClone(project);
   try{const blob=await exportFilm($('stage'),t=>{const view=frameAt(p,t);const global=p.shots.slice(0,view.index).reduce((sum,shot)=>sum+shot.duration,0)+view.local;renderer.draw(p,global,view.camera);},totalDuration(p),{signal:abort.signal});download(blob,'shot-studio.webm');status('WebM ready.'+(storageWarning?' '+storageWarning:''));}
   catch(e){status(e.message);}finally{exporting=false;abort=null;refresh();}

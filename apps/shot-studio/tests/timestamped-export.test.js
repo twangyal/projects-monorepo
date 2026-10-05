@@ -70,3 +70,16 @@ test('a write after retirement checks ownership before reading payload fields',(
  let retired=false,reads=0;assert.equal(typeof current.createBoundedVideoSink,'function');const sink=current.createBoundedVideoSink(8,()=>{if(retired)throw Error('retired');});retired=true;
  assert.throws(()=>sink.write({get position(){reads++;return 0;},get data(){reads++;return new Uint8Array([1]);}}),/retired/);assert.equal(reads,0);
 });
+
+test('the driver interleaves original audio and video on the shared authored origin',async()=>{
+ const {admitSequenceAudio,sequenceAudioDescriptor,planSoundtrack}=await import('../src/sequence-audio.js');
+ const bytes=new Uint8Array(44+48000*2),v=new DataView(bytes.buffer);
+ for(const [at,text] of [[0,'RIFF'],[8,'WAVEfmt '],[36,'data']])bytes.set(new TextEncoder().encode(text),at);
+ v.setUint32(4,bytes.length-8,true);v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,48000,true);v.setUint32(28,96000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);v.setUint32(40,96000,true);
+ for(let i=0;i<48000;i++)v.setInt16(44+i*2,8192,true);
+ const asset=await admitSequenceAudio(new Blob([bytes])),plan=planSoundtrack({label:'literal',asset:sequenceAudioDescriptor(asset),inFrame:0,outFrame:4800,startTime:.04,gain:.5},asset,.2),b=backend(),run=factory(b);
+ await run({width:64,height:64},()=>{},.2,{soundtrack:{asset,plan}});
+ const timeline=b.events.filter(x=>Array.isArray(x));assert.deepEqual(timeline.map(x=>x[1]),[...timeline.map(x=>x[1])].sort((a,c)=>a-c));
+ const audio=b.samples.filter(x=>x.block);assert.equal(audio.length,10);assert.deepEqual(audio.map(x=>x.block.timestamp),Array.from({length:10},(_,i)=>i*20000));
+ assert.ok(audio[0].block.data.every(x=>x===0));assert.ok(audio[3].block.data.every(x=>x===.125));assert.ok(audio[9].block.data.every(x=>x===0));assert.ok(b.samples.every(x=>x.closed));assert.deepEqual(new Uint8Array(await asset.blob.arrayBuffer()),bytes);
+});

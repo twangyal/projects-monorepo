@@ -33,17 +33,23 @@ export const nativeExportBackend={
   const output=new bunny.Output({format:new bunny.WebMOutputFormat(),target});
   const video=new bunny.VideoSampleSource({codec,bitrate:2500000});output.addVideoTrack(video,{frameRate:30});
   const audio=pcm?new bunny.AudioSampleSource({codec:'opus',bitrate:128000}):null;if(audio)output.addAudioTrack(audio);
+  let retired=false,closing;const pending=new Set();
+  const active=()=>{if(retired)throw Error('Export cancelled.');};
+  const track=work=>{active();const promise=work();pending.add(promise);promise.then(()=>pending.delete(promise),()=>pending.delete(promise));return promise;};
+  // Native support queries cannot be cancelled. Drain any source add before
+  // cancelling the muxer, so an encoder created after that query is also closed.
+  const cancel=()=>{retired=true;return closing??=(async()=>{await Promise.allSettled([...pending]);await output.cancel();})();};
   return {
-   start:()=>output.start(),finalize:()=>output.finalize(),cancel:()=>output.cancel(),
+   start:()=>{active();return output.start();},finalize:()=>{active();return output.finalize();},cancel,
    video(canvas,frame){
-    const native=new VideoFrame(canvas,{timestamp:frame.timestamp,duration:frame.duration});
+    active();const native=new VideoFrame(canvas,{timestamp:frame.timestamp,duration:frame.duration});
     try{return new bunny.VideoSample(native);}catch(error){native.close();throw error;}
    },
    audio(block){
-    const native=new AudioData({...block,format:'f32-planar'});
+    active();const native=new AudioData({...block,format:'f32-planar'});
     try{return new bunny.AudioSample(native);}catch(error){native.close();throw error;}
    },
-   addVideo:sample=>video.add(sample),addAudio:sample=>audio.add(sample),
+   addVideo:sample=>track(()=>video.add(sample)),addAudio:sample=>track(()=>audio.add(sample)),
   };
  },
 };

@@ -28,7 +28,7 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
     playerUrl=null;
   }
   function controls(){
-    const working=!!operation,record=selectedRecord(),saved=savedRecord();
+    const working=!!operation||nativeDrain!==null,record=selectedRecord(),saved=savedRecord();
     $('record-take').disabled=working||sceneBusy()||protectedLibrary||!loaded||!!unsaved||library.records.length>=TAKE_LIMITS.count;
     $('import-take').disabled=working||protectedLibrary||!loaded||!!unsaved||library.records.length>=TAKE_LIMITS.count;
     $('cancel-take').hidden=!working;$('cancel-take').textContent=operation?.kind==='record'?'Cancel take recording':'Cancel take operation';
@@ -59,9 +59,9 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
       $('take-list').append(row);
     }
   }
+  let nativeDrain=null;
   function retire(){
     epoch++;const old=operation;operation=null;old?.controller.abort();
-    if(old?.kind==='record')recordingChanged(false);
     controls();
   }
   function choose(id){
@@ -71,16 +71,16 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
     controls();
   }
   async function run(kind,task,{bindScene=false}={}){
-    if(operation||suspended)return;
+    if(operation||nativeDrain!==null||suspended)return;
     const controller=new AbortController(),token=++epoch;
     const context={signal:controller.signal,bindScene,intent:sceneIntent(),owns:()=>operation?.token===token&&!suspended&&!controller.signal.aborted,
       check(){if(!this.owns()||(this.bindScene&&sceneIntent()!==this.intent))throw new TakeError('cancelled','The scene input or take selection changed. The take operation was cancelled; existing data is unchanged.');}};
     operation={kind,controller,token,context};
-    if(kind==='record')recordingChanged(true);
+    if(kind==='record'){nativeDrain=token;recordingChanged(true);}
     controls();
     try{await task(context);}
     catch(error){if(context.owns())say(message(error));}
-    finally{if(operation?.token===token){operation=null;if(kind==='record')recordingChanged(false);controls();}}
+    finally{if(operation?.token===token)operation=null;if(nativeDrain===token){nativeDrain=null;recordingChanged(false);}controls();}
   }
   function publish(next){
     const previous=selectedRecord(),admitted=validateLibrary(next);
@@ -128,7 +128,7 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
       captured=createTakeMetadata({id:freshId(),name:$('take-name').value,recordedAt:new Date().toISOString(),origin:'recorded-here',film,mime:'video/webm',bytes:1,sha256:'0'.repeat(64)});
     }catch(error){say(message(error));return;}
     run('record',async context=>{
-      say('Recording take from the captured committed film. Keep this tab visible.');
+      say('Encoding take from the captured committed film. Keep this tab visible.');
       const blob=await recordFilm(captured.film,context.signal);context.check();
       say('Checking the completed recording…');
       const info=await inspectTakeVideo(blob,{signal:context.signal});context.check();
@@ -228,6 +228,6 @@ export function createTakeUI({captureFilm,recordFilm,restoreFilm,sceneIntent,sce
   document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPlayer();if(operation?.kind==='record'){retire();say('Take recording cancelled because the tab became hidden.');}}});
   window.addEventListener('pagehide',suspend);window.addEventListener('pageshow',resume);
   controls();$('retry-library').click();
-  return {controls,sceneIntentChanged,hasPendingWork:()=>!!unsaved,
+  return {controls,sceneIntentChanged,hasPendingWork:()=>!!unsaved||nativeDrain!==null,
     cancelRecording(reason){if(operation?.kind==='record'){retire();say(reason);}}};
 }

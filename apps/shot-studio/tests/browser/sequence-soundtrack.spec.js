@@ -1,3 +1,4 @@
+import {observeNativeExport} from './native-export-observer.js';
 import { test, expect, chromium } from '@playwright/test';
 import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -224,28 +225,18 @@ test('actual mono 44.1 kHz WAV keeps original frames and pitch through native Op
   await writeFile(info.outputPath('soundtrack-native-mono.json'), JSON.stringify({ inputBytes: mono.length, inputSha256: soundtrackSha(mono), inputFrames: 44100, inputRate: 44100, outputBytes: result.bytes.length, outputSha256: soundtrackSha(result.bytes), outputRate: 48000, decodedFrames, plateau: { start, end, frequency, rms, expectedRms }, silentTail: { start: quietStart, end: quietEnd, rms: quietRms }, scope: 'Actual mono44.1k original source frames and native Opus48k resampling; fixed interior plateau and2.15..5.8s silent tail across six-second audio extent, no fitted timeline offset' }, null, 2));
 });
 
-test('Cancel during genuine audiovisual recording drains every owned track and graph without changing the complete sequence', async ({ page }, info) => {
-  await audioObservation(page); await page.addInitScript(() => {
-    window.soundCaptureOracle = { streams: [], recorders: [] };
-    const capture = HTMLCanvasElement.prototype.captureStream, destination = AudioContext.prototype.createMediaStreamDestination, start = MediaRecorder.prototype.start;
-    HTMLCanvasElement.prototype.captureStream = function (...args) { const stream = capture.apply(this, args); window.soundCaptureOracle.streams.push(stream); return stream; };
-    AudioContext.prototype.createMediaStreamDestination = function (...args) { const node = destination.apply(this, args); window.soundCaptureOracle.streams.push(node.stream); return node; };
-    MediaRecorder.prototype.start = function (...args) { const record = { recorder: this, stopped: false }; window.soundCaptureOracle.recorders.push(record); this.addEventListener('stop', () => { record.stopped = true; }, { once: true }); return start.apply(this, args); };
-  });
-  await begin(page); await settings(page); await durable(page, adjusted()); const before = await downloaded(page), row = await stored(page), ordinary = await page.evaluate(() => localStorage.getItem('shot-studio-v1'));
-  const downloads = [], observeDownload = file => downloads.push(file.suggestedFilename()); page.on('download', observeDownload);
-  await page.locator('#sequence-export').click();
-  await expect.poll(() => page.evaluate(() => window.soundCaptureOracle.recorders.map(({ recorder }) => ({ state: recorder.state, kinds: recorder.stream.getTracks().map(track => track.kind).sort(), live: recorder.stream.getTracks().every(track => track.readyState === 'live') })))).toEqual([{ state: 'recording', kinds: ['audio', 'video'], live: true }]);
-  await expect.poll(() => page.locator('#sequence-export-progress').evaluate(node => node.value)).toBeGreaterThan(0); expect(await page.evaluate(() => window.soundOracle.starts.length)).toBe(1);
-  await page.locator('#sequence-cancel').click(); await expect(page.locator('#sequence-status')).toContainText('export cancelled');
-  await expect.poll(() => page.evaluate(() => ({
-    contexts: window.soundOracle.contexts.map(context => context.state),
-    recorders: window.soundCaptureOracle.recorders.map(({ recorder, stopped }) => ({ state: recorder.state, stopped, ended: recorder.stream.getTracks().every(track => track.readyState === 'ended') })),
-    streams: window.soundCaptureOracle.streams.map(stream => stream.getTracks().every(track => track.readyState === 'ended')),
-  }))).toEqual({ contexts: ['closed'], recorders: [{ state: 'inactive', stopped: true, ended: true }], streams: [true, true] });
-  await expect(page.locator('#sequence-export')).toBeEnabled(); expect(downloads).toEqual([]); page.off('download', observeDownload);
-  expect((await downloaded(page)).bytes).toEqual(before.bytes); expect(await stored(page)).toEqual(row); expect(await page.evaluate(() => localStorage.getItem('shot-studio-v1'))).toBe(ordinary); expect(await page.locator('#take-list [data-take-id]').count()).toBe(0);
-  await writeFile(info.outputPath('soundtrack-native-cancel.json'), JSON.stringify({ nativeRecorder: 'Observed actual MediaRecorder.start with one live audio and one live video track, then actual stop event', ownedContexts: 1, ownedStreams: 2, allTracksEnded: true, allContextsClosed: true, downloadCount: downloads.length, completeBackupSha256: soundtrackSha(before.bytes), completeStoredArchiveSha256: soundtrackSha(Buffer.from(row.archive)), savedRevision: row.revision }, null, 2));
+test('Cancel during genuine audiovisual encoding drains native codecs without live playback or changing the complete sequence', async ({ page }, info) => {
+  await audioObservation(page);await observeNativeExport(page);
+  await begin(page);await settings(page);await durable(page,adjusted());const before=await downloaded(page),row=await stored(page),ordinary=await page.evaluate(()=>localStorage.getItem('shot-studio-v1'));
+  const downloads=[];page.on('download',file=>downloads.push(file.suggestedFilename()));await page.locator('#sequence-export').click();
+  await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.some(e=>e.state==='configured')&&window.exportOracle.audio.some(e=>e.state==='configured'))).toBe(true);
+  await expect.poll(()=>page.locator('#sequence-export-progress').evaluate(node=>node.value)).toBeGreaterThan(0);
+  expect(await page.evaluate(()=>window.soundOracle.starts.length)).toBe(0);expect(await page.evaluate(()=>window.soundOracle.contexts.length)).toBe(0);
+  await page.locator('#sequence-cancel').click();await expect(page.locator('#sequence-status')).toContainText('export cancelled');
+  await expect.poll(()=>page.evaluate(()=>[...window.exportOracle.video,...window.exportOracle.audio].every(e=>e.state==='closed'))).toBe(true);
+  await expect(page.locator('#sequence-export')).toBeEnabled();expect(downloads).toEqual([]);
+  expect((await downloaded(page)).bytes).toEqual(before.bytes);expect(await stored(page)).toEqual(row);expect(await page.evaluate(()=>localStorage.getItem('shot-studio-v1'))).toBe(ordinary);expect(await page.locator('#take-list [data-take-id]').count()).toBe(0);
+  await writeFile(info.outputPath('soundtrack-native-cancel.json'),JSON.stringify({nativeEncoders:'Actual configured VideoEncoder and AudioEncoder both closed; controlled250ms task-yield delay permits UI cancellation',ownedAudioContexts:0,livePlaybackStarts:0,downloadCount:downloads.length,completeBackupSha256:soundtrackSha(before.bytes),completeStoredArchiveSha256:soundtrackSha(Buffer.from(row.archive)),savedRevision:row.revision},null,2));
 });
 
 test('full persistent Chromium restart restores exact complete sequence metadata and original WAV bytes', async ({ baseURL }, info) => {

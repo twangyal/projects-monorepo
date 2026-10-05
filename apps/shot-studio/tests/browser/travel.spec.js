@@ -1,3 +1,4 @@
+import {observeNativeExport} from './native-export-observer.js';
 import {test, expect} from '@playwright/test';
 import {readFile, stat, writeFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
@@ -367,26 +368,21 @@ test('mobile keyboard End controls remain usable and never encode or replace uns
   await page.screenshot({path: info.outputPath('travel-mobile.png'), fullPage: true});
 });
 
-test('native recording cancellation and persisted page lifecycle release real capture tracks without a download', async ({page}) => {
-  await page.addInitScript(() => {
-    const capture = HTMLCanvasElement.prototype.captureStream; window.travelTrackStops = 0;
-    HTMLCanvasElement.prototype.captureStream = function (...args) {
-      const stream = capture.apply(this, args);
-      for (const track of stream.getTracks()) { const stop = track.stop; track.stop = function () { window.travelTrackStops++; return stop.call(this); }; }
-      return stream;
-    };
-  });
+test('native recording cancellation and persisted page lifecycle release real native encoders without a download', async ({page}) => {
+  await observeNativeExport(page);
   await openFilm(page, travelFilm()); const durable = await raw(page), downloads = [];
   page.on('download', file => downloads.push(file.suggestedFilename()));
   await page.getByRole('button', {name: 'Export WebM', exact: true}).click();
+  await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.some(encoder=>encoder.state==='configured'))).toBe(true);
   for (const id of ['cameraMode', 'cameraEndpoint', 'eyeX', 'undo', 'scrub', 'import']) await expect(page.locator(`#${id}`)).toBeDisabled();
   await page.getByRole('button', {name: 'Cancel export', exact: true}).click();
   await expect(page.getByRole('button', {name: 'Rehearse', exact: true})).toBeEnabled();
-  await expect.poll(() => page.evaluate(() => window.travelTrackStops)).toBeGreaterThanOrEqual(1);
+  await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.every(encoder=>encoder.state==='closed'))).toBe(true);
   await page.getByRole('button', {name: 'Export WebM', exact: true}).click();
+  await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.some(encoder=>encoder.state==='configured'))).toBe(true);
   await page.evaluate(() => { dispatchEvent(new PageTransitionEvent('pagehide', {persisted: true})); dispatchEvent(new PageTransitionEvent('pageshow', {persisted: true})); });
   await expect(page.getByRole('button', {name: 'Rehearse', exact: true})).toBeEnabled();
-  await expect.poll(() => page.evaluate(() => window.travelTrackStops)).toBeGreaterThanOrEqual(2);
+  await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.every(encoder=>encoder.state==='closed'))).toBe(true);
   await filmPositionFrame(page); expect(downloads).toEqual([]); expect(await raw(page)).toBe(durable);
 });
 

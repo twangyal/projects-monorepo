@@ -28,8 +28,8 @@
     "bundleBytes": 690410,
     "bundleSha256": "652fbe9226e55cb0c0784aaba6b4b73fea4fc0df498f62050cdc617a4bd97ca2",
     "licenseSha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
-    "sourceArchiveBytes": 576437,
-    "sourceArchiveSha256": "2e5cf590d501cfdd5a8fc41a9a8a95822df39fdf3c4d761e6cc581577145ef67",
-    "sourceArchiveScope": "Unchanged src/scripts/package manifests/tsconfig/LICENSE via git archive of sourceCommit; upstream test/example media excluded."
+    "sourceArchiveBytes": 580632,
+    "sourceArchiveSha256": "d5f4d61689397557789792c8be7417ce57102a17078cef40aa4bcc7f15e81a5e",
+    "sourceArchiveScope": "Unchanged src/shared/scripts/package manifests/tsconfig/LICENSE via git archive of sourceCommit; upstream test/example media excluded."
   }
 }

@@ -1,8 +1,9 @@
 # Timestamped export input contract (#124)
 
-`src/export-timeline.js` is a tested prerequisite. It is not wired into the
-production exporter. The existing MediaRecorder path still reproduces opening
-frame gaps; do not count this module as native capture acceptance.
+`src/export-timeline.js` supplies the timestamped production exporter. The
+separate native candidate passed the first push and PR gates; integrated
+production and full-minute acceptance remain pending. Earlier MediaRecorder
+failures remain retained as historical evidence.
 
 `planExportFrames(duration)` accepts a finite duration from one microsecond
 through 60 seconds. `frameCount` is at most 1,800. `frame(index)` supplies
@@ -31,12 +32,10 @@ adding less than one sample interval of represented coverage when the source
 duration is fractional. Native Opus/WebM padding and millisecond quantization
 remain separate output-level acceptance questions.
 
-Next integration must use a pinned, locally served maintained WebM muxer with
-its unchanged source/license and provenance. Release bundle retrieval through
-the current GitHub GET tool returned404; source metadata for Mediabunny1.61.1
-is available, but no dependency was vendored or verified here. Resolve the
-package transport/build and freeze its checksum before integration. Do not use
-a runtime CDN or silently substitute a handwritten container encoder.
+The unchanged Mediabunny1.61.1 release is now locally served under `vendor`,
+with a matching locally verified SHA256, license and unchanged source archive
+(including shared source dependencies). The source/release pin and checksum
+tests preserve provenance. No runtime CDN or handwritten container is used.
 
 The integration must probe native VP9/VP8 and, for soundtracks, Opus support
 before admitting work; copy each genuine draw into its timestamped VideoFrame;
@@ -68,7 +67,8 @@ drains output ownership, and the absolute deadline guards asynchronous boundarie
 container writes and final Blob publication. A bounded seekable sink handles WebM
 metadata patches and refuses any write beyond the configured limit before copy.
 
-The candidate is deliberately not the application's production export yet.
+The application now uses this pipeline for all three export flows; integrated
+native acceptance remains pending.
 Native tests independently decode all 60 frames through a deliberate350ms stall,
 check original red/blue pixels and authored timestamps, exercise real Opus silence/
 tone/tail output and real encoder cancellation. Local Chrome154 executable acquisition

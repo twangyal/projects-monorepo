@@ -1,3 +1,4 @@
+import {observeNativeExport} from './native-export-observer.js';
 import {test,expect,chromium} from '@playwright/test';
 import {mkdtemp,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -94,13 +95,13 @@ for(const intent of ['changed-back raw field','pagehide'])test(`late real archiv
   if(intent==='changed-back raw field'){await expect(page.locator('#shotName')).toBeFocused();expect(await page.locator('#shotName').evaluate(node=>[node.selectionStart,node.selectionEnd])).toEqual([3,3]);}
 });
 
-test('recording cancellation and pagehide stop actual capture without partial publication',async({page})=>{
-  await page.addInitScript(()=>{const Native=MediaRecorder,capture=HTMLCanvasElement.prototype.captureStream;window.takeNative={recorders:[],streams:[]};globalThis.MediaRecorder=class extends Native{start(...args){super.start(...args);window.takeNative.recorders.push(this);}};HTMLCanvasElement.prototype.captureStream=function(...args){const stream=capture.apply(this,args);window.takeNative.streams.push(stream);return stream;};});
-  await openTakeFilm(page);await page.locator('#take-name').fill('Cancelled actual recording');await page.locator('#record-take').click();await expect(page.locator('#cancel-take')).toBeVisible();await expect.poll(()=>page.evaluate(()=>window.takeNative.recorders.filter(r=>r.state==='recording').length)).toBe(1);await page.locator('#cancel-take').click();
+test('recording cancellation and pagehide stop actual encoding without partial publication',async({page})=>{
+  await observeNativeExport(page);
+  await openTakeFilm(page);await page.locator('#take-name').fill('Cancelled actual recording');await page.locator('#record-take').click();await expect(page.locator('#cancel-take')).toBeVisible();await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.filter(encoder=>encoder.state==='configured').length)).toBe(1);await page.locator('#cancel-take').click();
   await expect(rows(page)).toHaveCount(0);await expect(page.locator('#record-take')).toBeEnabled();
-  await page.locator('#record-take').click();await expect(page.locator('#cancel-take')).toBeVisible();await expect.poll(()=>page.evaluate(()=>window.takeNative.recorders.filter(r=>r.state==='recording').length)).toBe(1);
+  await page.locator('#record-take').click();await expect(page.locator('#cancel-take')).toBeVisible();await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.filter(encoder=>encoder.state==='configured').length)).toBe(1);
   await page.evaluate(()=>{dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));});
-  await expect(page.locator('#cancel-take')).toBeHidden();await expect(rows(page)).toHaveCount(0);const state=await libraryReceipt(page);expect(state===null||state.records.length===0).toBe(true);await expect.poll(()=>page.evaluate(()=>window.takeNative.recorders.every(r=>r.state==='inactive')&&window.takeNative.streams.flatMap(s=>s.getTracks()).every(t=>t.readyState==='ended'))).toBe(true);
+  await expect(page.locator('#cancel-take')).toBeHidden();await expect(rows(page)).toHaveCount(0);const state=await libraryReceipt(page);expect(state===null||state.records.length===0).toBe(true);await expect.poll(()=>page.evaluate(()=>window.exportOracle.video.every(encoder=>encoder.state==='closed'))).toBe(true);
 });
 
 test('four actual-video slots reject a fifth without eviction and reject malformed bounded archives',async({page})=>{

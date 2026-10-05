@@ -14,7 +14,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
   let store=new SequenceDocumentStore(),bundle=validateSequenceBundle({document:createSequenceDocument(),asset:null});
   let documentState=bundle.document.sequence,history=new SequenceDocumentHistory(bundle),prepared=prepareSequence(documentState);
   let loadOwner=null,storageDrain=null,protectedCopy=true,saveActive=null,saveQueued=null,manualSave=false,version=0,savedVersion=-1;
-  let audioOwner=null,selectedAudioFile=null;
+  let audioOwner=null,selectedAudioFile=null,exportDrain=false;
   let selectedSource=documentState.sources[0]?.id??'',selectedShot=0,selectedClip=documentState.clips[0]?.id??'';
   let epoch=0,operation=null,suspended=false,unsaved=false,renderer=null,graphicsLost=false;
   let playing=false,animation=0,playStarted=0,position=0,endpoint=null;
@@ -24,7 +24,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
   const message=error=>error instanceof Error?error.message:'The sequence operation failed. Your current work is kept.';
   const selectedSourceRecord=()=>documentState.sources.find(source=>source.id===selectedSource);
   const clipIndex=()=>documentState.clips.findIndex(clip=>clip.id===selectedClip);
-  const locked=()=>suspended||sceneBusy()||operation?.kind==='export';
+  const locked=()=>suspended||sceneBusy()||exportDrain||operation?.kind==='export';
   function closeAudio(owner){
     if(!owner)return Promise.resolve();owner.controller.abort();
     try{owner.session?.stop();}catch{}
@@ -37,7 +37,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
     playing=false;cancelAnimationFrame(animation);animation=0;$('sequence-play').textContent='Rehearse sequence';void closeAudio(audioOwner);
   }
   function retire(){
-    epoch++;const old=operation;operation=null;old?.controller.abort();clearTimeout(old?.timer);if(old?.kind==='export')recordingChanged(false);stop();
+    epoch++;const old=operation;operation=null;old?.controller.abort();clearTimeout(old?.timer);stop();
     if(loadOwner&&!loadOwner.retired){loadOwner.retired=true;loadOwner.controller.abort();protectedCopy=true;store.protect();}
   }
   function rawValue(id,value){if(!drafts.has(id)&&$(id).value!==value)$(id).value=value;}
@@ -450,14 +450,15 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
   $('sequence-export').onclick=async()=>{
     if(!guard({discard:true})||graphicsLost||!prepared.clips.length||audioOwner)return;
     let captured,capturedBundle;try{capturedBundle=validateSequenceBundle(bundle);captured=prepareSequence(capturedBundle.document.sequence);getRenderer();}catch(error){say(message(error));return;}
-    const context=startOperation('export');$('sequence-export-progress').value=0;recordingChanged(true);controls();say('Recording sequence WebM in real time. Keep this tab visible. This is fresh rendering from editable scenes, not a splice of retained recordings.');
-    let session=null;
+    const context=startOperation('export');exportDrain=true;$('sequence-export-progress').value=0;recordingChanged(true);controls();say('Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.');
+    let soundtrack;
     try{
-      session=await prepareAudio(capturedBundle,context);if(!context.owns()||capturedBundle.asset&&!session)return;context.prepared();
-      const blob=await exportFilm(canvas,time=>{if(!context.owns())throw Error('Sequence export cancelled.');const view=captured.frameAt(time);renderer.draw(view.sourceFilm,view.sourceGlobal,view.camera);$('sequence-export-progress').value=time/captured.duration;},captured.duration,{signal:context.signal,...(session?{audioSession:session}:{})});
-      if(context.owns()){download(blob,'shot-studio-sequence.webm');say(`Sequence WebM downloaded${session?' with its soundtrack':''}. No ordinary take was added.`);}
+      soundtrack=capturedBundle.asset?{asset:capturedBundle.asset,plan:planSoundtrack(capturedBundle.document.soundtrack,capturedBundle.asset,captured.duration)}:null;
+      if(!context.owns())return;context.prepared();
+      const blob=await exportFilm(canvas,time=>{if(!context.owns())throw Error('Sequence export cancelled.');const view=captured.frameAt(time);renderer.draw(view.sourceFilm,view.sourceGlobal,view.camera);$('sequence-export-progress').value=time/captured.duration;},captured.duration,{signal:context.signal,...(soundtrack?{soundtrack}:{})});
+      if(context.owns()){download(blob,'shot-studio-sequence.webm');$('sequence-export-progress').value=1;say(`Sequence WebM downloaded${soundtrack?' with its soundtrack':''}. No ordinary take was added.`);}
     }catch(error){if(context.owns())say(message(error));}
-    finally{if(session)await closeAudio(audioOwner);if(context.owns()){recordingChanged(false);context.done();render();}else context.done();}
+    finally{exportDrain=false;recordingChanged(false);if(context.owns()){context.done();render();}else{context.done();controls();}}
   };
   $('sequence-cancel').onclick=()=>{if(operation){const kind=operation.kind;retire();controls();render();say(`Sequence ${kind==='export'?'export':'work'} cancelled. Editable sequence is unchanged.`);}};
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();graphicsLost=true;retire();controls();say('Sequence graphics context lost. Save sequence to keep editable work, then reload. The ordinary scene is separate.');});
@@ -472,7 +473,7 @@ export function createSequenceUI({captureFilm,sceneBusy,recordingChanged,downloa
     queueMicrotask(()=>{if(store===target&&target.protected){retire();protectedCopy=true;saveQueued=null;controls();say('The older browser sequence draft changed in another tab. Current memory work is kept; review the protected saved copy before saving.');}});
   });
   refresh();void loadSaved();
-  return {controls,copySource,suspend,hasPendingWork:()=>drafts.size>0||!!operation||!!saveActive||!!saveQueued||!!loadOwner||unsaved,
+  return {controls,copySource,suspend,hasPendingWork:()=>exportDrain||drafts.size>0||!!operation||!!saveActive||!!saveQueued||!!loadOwner||unsaved,
     cancelExport(reason){if(operation?.kind==='export'){retire();controls();say(reason);}},
   };
 }
