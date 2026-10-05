@@ -16,7 +16,7 @@
     "genuine native encoder cancellation"
   ],
   "localIntegrated": {
-    "unitCases": 340,
+    "unitCases": 342,
     "syntax": "pass",
     "node": "24.19.0",
     "native": "not executed: socket permissions prevent browser launch"
@@ -33,5 +33,20 @@
     "sourceArchive": "now also retains unchanged shared source dependencies"
   },
   "productionIntegration": "all film/take/sequence callers use timestamped pipeline; awaiting exact-head native/full-minute CI",
-  "acceptance": "pending; do not close issue or count integrated native success"
+  "acceptance": "pending; do not close issue or count integrated native success",
+  "firstIntegratedCi": {
+    "head": "24733168bbcf94b7307786cf86a2e3cd1462fdf0",
+    "prRun": 37317646100,
+    "unitsPassed": 340,
+    "nativePassed": 103,
+    "nativeFailed": 1,
+    "failureReceipt": "failures/2026-10-05-first-integration/ci.json",
+    "status": "Native decoded mono pitch/RMS passed; obsolete liveAudioSource assertion failed. Maximum failed during restart download before export."
+  },
+  "reviewRepairs": [
+    "Startup, sample-add and finalization operations remain pending until drained. Held finalization cancellation regression fails before fix and passes after.",
+    "Failed audio flush retains ownership until sibling video flush settles. Regression fails before fix and passes after.",
+    "Pinned source closure seam waits allSettled because aggregate Output.finalize can reject while sibling closure is pending; no modified third-party source.",
+    "Real native VideoEncoder held-flush browser regression added; not yet executed locally."
+  ]
 }

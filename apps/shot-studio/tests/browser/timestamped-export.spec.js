@@ -64,3 +64,23 @@ test('native startup cancellation waits for the pending support query and closes
   }finally{release();await pending;window.VideoEncoder=Native;}
  });expect(result.published).toBe(false);expect(result.error).toMatch(/cancelled/);expect(result.settledBeforeRelease).toBe(false);expect(result.encoders.length).toBeGreaterThan(0);expect(result.encoders.every(x=>x==='closed')).toBe(true);
 });
+
+test('native finalization cancellation retains ownership until a real encoder flush drains',async({page})=>{
+ await page.goto('/');const result=await page.evaluate(async()=>{
+  const {exportTimestampedFilm}=await import('/src/export.js'),Native=VideoEncoder,controller=new AbortController();let held=false,release,settled=false;
+  const gate=new Promise(r=>release=r),encoders=[];
+  window.VideoEncoder=class extends Native{
+   constructor(...args){super(...args);encoders.push(this);}
+   async flush(){held=true;await gate;return super.flush();}
+  };
+  const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;const context=canvas.getContext('2d');
+  const pending=exportTimestampedFilm(canvas,()=>context.fillRect(0,0,64,64),.1,{signal:controller.signal}).then(()=>({published:true}),error=>({published:false,error:error.message})).finally(()=>settled=true);
+  try{
+   const deadline=performance.now()+5000;while(!held&&performance.now()<deadline)await new Promise(r=>setTimeout(r,10));
+   if(!held)throw Error('Native finalization flush was not reached');controller.abort();await new Promise(r=>setTimeout(r,10));
+   const settledBeforeRelease=settled,statesBeforeRelease=encoders.map(e=>e.state);release();const result=await pending;
+   return{...result,settledBeforeRelease,statesBeforeRelease,encoders:encoders.map(e=>e.state)};
+  }finally{release();await pending;window.VideoEncoder=Native;}
+ });expect(result.published).toBe(false);expect(result.error).toMatch(/cancelled/);expect(result.settledBeforeRelease).toBe(false);
+ expect(result.statesBeforeRelease).toContain('configured');expect(result.encoders.length).toBeGreaterThan(0);expect(result.encoders.every(x=>x==='closed')).toBe(true);
+});

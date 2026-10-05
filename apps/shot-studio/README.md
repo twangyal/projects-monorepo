@@ -639,13 +639,22 @@ silent and Opus fixtures independently decode every one of60frames through an
 intentional350ms stall, including exact authored PTS and red/blue pixel gates.
 A subsequent controlled regression reproduced late encoder initialization after
 cancellation; the adapter now drains pending source adds before closing output.
-The integrated local suite passes340units plus syntax.25MediaRecorder-specific
+Cancellation and failed finalization also wait for every track flush; two reviewed
+regressions cover abort during flush and a failing audio track with a pending video
+flush. The adapter deliberately uses a pinned source-close hook for sibling drain.
+The integrated local suite passes342units plus syntax.25MediaRecorder-specific
 cases were replaced by the timestamped lifecycle/input suite; the original media,
 storage and recovery gates remain. Native cancellation observers retain genuine
 encoders while deliberately delaying zero-time UI yields250ms. This is controlled
 cancellation coverage, not a latency claim.
 
-Integrated native acceptance is pending. CI now also runs the unchanged original
+First integrated PR CI passes103/104native cases: decoded mono pitch/RMS pass,
+then an obsolete live-playback expectation fails. That expectation now requires
+zero live playback; original decoded audio gates remain. The first maximum check
+fails at the post-restart backup download before export, and its [receipt](docs/failures/2026-10-05-first-integration/ci.json)
+is retained. The runner now creates a fresh owned page in the same persistent
+profile, matching the existing passing restart case. Integrated native acceptance
+is pending. CI also runs the unchanged original
 full-minute soundtrack/restart script in a separate job, including forty original
 visual samples, all audio transitions and exact complete backup recovery. Do not
 count production acceptance or close#124 until those checks pass. Earlier capture

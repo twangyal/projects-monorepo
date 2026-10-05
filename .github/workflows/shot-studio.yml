@@ -69,5 +69,7 @@ jobs:
         if: always()
         with:
           name: shot-studio-maximum-review
-          path: apps/shot-studio/test-results/maximum/
+          path: |
+            apps/shot-studio/test-results/maximum/**
+            !apps/shot-studio/test-results/maximum/profile/**
           retention-days: 1

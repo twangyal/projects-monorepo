@@ -36,11 +36,16 @@ export const nativeExportBackend={
   let retired=false,closing;const pending=new Set();
   const active=()=>{if(retired)throw Error('Export cancelled.');};
   const track=work=>{active();const promise=work();pending.add(promise);promise.then(()=>pending.delete(promise),()=>pending.delete(promise));return promise;};
+  // Pinned1.61.1's aggregate finalize rejects as soon as one source fails, and
+  // cancel then returns on its canceled state. This internal source-close hook
+  // reuses each existing close promise so a sibling flush cannot be abandoned.
+  // Keep this adapter regression-tested when updating the pinned dependency.
+  const drainSources=()=>Promise.allSettled([video,...(audio?[audio]:[])].map(source=>source._flushOrWaitForOngoingClose(true)));
   // Native support queries and finalization flushes cannot be cancelled. Drain
   // every owned operation before retiring output, including a late encoder.
-  const cancel=()=>{retired=true;return closing??=(async()=>{await Promise.allSettled([...pending]);await output.cancel();})();};
+  const cancel=()=>{retired=true;return closing??=(async()=>{await Promise.allSettled([...pending]);await drainSources();await output.cancel();})();};
   return {
-   start:()=>track(()=>output.start()),finalize:()=>track(()=>output.finalize()),cancel,
+   start:()=>track(()=>output.start()),finalize:()=>track(async()=>{try{await output.finalize();}finally{await drainSources();}}),cancel,
    video(canvas,frame){
     active();const native=new VideoFrame(canvas,{timestamp:frame.timestamp,duration:frame.duration});
     try{return new bunny.VideoSample(native);}catch(error){native.close();throw error;}

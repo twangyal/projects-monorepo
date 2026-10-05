@@ -12,3 +12,9 @@ available at https://github.com/Vanilagy/mediabunny/tree/922054aaac0bfe5e48545a4
 
 No runtime CDN, package fetch, or modified third-party source is used.
 `tests/export-dependency.test.js` verifies all three durable file hashes.
+
+The application adapter deliberately uses the pinned internal source-close hook
+`_flushOrWaitForOngoingClose` to drain every sibling track after aggregate
+finalization fails. Public `close()` returns no promise; aggregate finalization
+can reject early. The native lifecycle regressions cover this boundary. Recheck
+this seam and all original media gates before changing the dependency version.
