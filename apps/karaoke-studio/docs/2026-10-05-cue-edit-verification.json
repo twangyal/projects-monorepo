@@ -26,7 +26,7 @@
     "lint": "passed",
     "typecheck": "passed",
     "production_build": "passed",
-    "native_browser": "full final clean run pending"
+    "native_browser": "repaired complete 79-case run pending"
   },
   "local_python": {
     "run": 166,
@@ -47,5 +47,18 @@
     "apps/karaoke-studio/tests/cue-edit.test.ts": "ce9bf5faa0bf54757040128ff7a5d6940a9c1e1db0eb6c2c352d7dcc0e6ebed9",
     "apps/karaoke-studio/tests/cue-edit.spec.ts": "687250a036fbcfdf21a364ac08c42049cfac037c84a8a1f16716d63f31fb50dd"
   },
-  "published_ci": "pending; issue remains open"
+  "published_ci": "pending; issue remains open",
+  "verification_corrections": {
+    "first_extended_browser_run": {
+      "passed": 77,
+      "failed": 1,
+      "limitation": "An overlapping native invocation overwrote trace output; discarded for final acceptance."
+    },
+    "sequential_browser_run": {
+      "passed": 77,
+      "failed": 2,
+      "cause": "Four new test clips consumed bounded shared-service slots; the last two unchanged uploads correctly hit the 20-project capacity."
+    },
+    "fix": "Each new case deletes only its own original clip after verification using existing token-protected JSON DELETE. Production limits and all old assertions retained."
+  }
 }

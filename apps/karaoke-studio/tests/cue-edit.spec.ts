@@ -1,6 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
+// The suite shares one bounded service library. Release only this case's own
+// created clip so new coverage cannot consume slots used by unchanged cases.
+test.afterEach(async ({ page, request }) => {
+  const id = new URL(page.url()).searchParams.get('project');
+  if (!id) return;
+  const session = await (await request.get('/api/session')).json();
+  const response = await request.delete(`/api/projects/${id}`, { headers: { 'X-Karaoke-Token': session.token }, data: {} });
+  expect(response.ok()).toBe(true);
+});
+
 function audioFixture(): Buffer {
   const frames = 6 * 44100, bytes = Buffer.alloc(44 + frames * 4);
   bytes.write('RIFF'); bytes.writeUInt32LE(bytes.length - 8, 4); bytes.write('WAVEfmt ', 8);
