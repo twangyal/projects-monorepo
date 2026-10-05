@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 119,
   "date": "2026-10-05",
-  "status": "local acceptance passed; published CI pending",
+  "status": "local and both first published CI events passed",
   "version": "0.4.0",
   "feature": "Up to eight reusable named mixes per room, explicit current-list membership editing, revision-safe paused loading and complete version-2 archive preservation",
   "design": "docs/superpowers/specs/2026-10-05-duet-saved-mixes-design.md",
@@ -233,6 +233,7 @@
     "Maximum runtime covers graph counts using short original two-second audio and readable labels; exact metadata caps are independently covered by literal Python fixtures. It does not repeat the earlier sixty 8 MiB/300-second media gate.",
     "Physical two-device setup and listening remain unverified in issue 109. No streaming catalog, recommendation-learning, public hosting or network-discovery claim.",
     "Private raw seat credentials and archived credential/invite hashes stay in local private fixtures and are not published.",
-    "CI is pending at this local acceptance receipt; published results will identify exact branch and merge trees."
-  ]
+    "Both first published Duet CI events passed; the CI receipt identifies exact branch and identical actual PR merge trees and records the unrelated Karaoke failure."
+  ],
+  "publishedCI": "2026-10-05-saved-mixes-ci.json"
 }

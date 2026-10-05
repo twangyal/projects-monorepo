@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "status": "both first published Duet events passed",
+  "implementation": {
+    "commit": "8dfcf68b4387e6da07d5f3b0080afd2ed402b0db",
+    "tree": "978f0f5c6f953bb111be3ff2e39aad93f716de65"
+  },
+  "actualPrMerge": {
+    "commit": "aa96bbf860765157c282e10be8504f161df888b4",
+    "tree": "978f0f5c6f953bb111be3ff2e39aad93f716de65",
+    "matchesImplementationTree": true
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.5",
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "python": "3.11.16",
+    "chromium": "153.0.8010.12"
+  },
+  "checks": [
+    {
+      "event": "push",
+      "runId": 37255166356,
+      "jobId": 111590561311,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37255166356",
+      "conclusion": "success",
+      "checkout": "8dfcf68b4387e6da07d5f3b0080afd2ed402b0db",
+      "tree": "978f0f5c6f953bb111be3ff2e39aad93f716de65",
+      "python": {
+        "tests": 219,
+        "seconds": 69.897
+      },
+      "typescript": {
+        "tests": 12,
+        "durationMs": 170.968761
+      },
+      "browser": {
+        "tests": 40,
+        "displayDuration": "2.6m"
+      },
+      "static": [
+        "compileall",
+        "Ruff",
+        "ESLint",
+        "TypeScript",
+        "normal production build"
+      ],
+      "log": {
+        "path": "/tmp/duet119-ci-push.log",
+        "bytes": 157387,
+        "sha256": "cefe9ee84ae08e905e5833b4c09e2402cf21da6a1525f33dbe1a463a071d369c"
+      }
+    },
+    {
+      "event": "pr",
+      "runId": 37255169273,
+      "jobId": 111590570481,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37255169273",
+      "conclusion": "success",
+      "checkout": "aa96bbf860765157c282e10be8504f161df888b4",
+      "tree": "978f0f5c6f953bb111be3ff2e39aad93f716de65",
+      "python": {
+        "tests": 219,
+        "seconds": 63.775
+      },
+      "typescript": {
+        "tests": 12,
+        "durationMs": 118.834155
+      },
+      "browser": {
+        "tests": 40,
+        "displayDuration": "2.3m"
+      },
+      "static": [
+        "compileall",
+        "Ruff",
+        "ESLint",
+        "TypeScript",
+        "normal production build"
+      ],
+      "log": {
+        "path": "/tmp/duet119-ci-pr.log",
+        "bytes": 158444,
+        "sha256": "bfe963a3e05dd4d9cb3ea8cbcd500dae0648179188b7aa1f1cbad2bf6c569438"
+      }
+    }
+  ],
+  "widerPr": {
+    "passed": 12,
+    "failed": 1,
+    "runs": [
+      {
+        "name": "Style Studio",
+        "id": 37255169380,
+        "conclusion": "success"
+      },
+      {
+        "name": "Karaoke Studio",
+        "id": 37255169395,
+        "conclusion": "failure"
+      },
+      {
+        "name": "Clothing Studio",
+        "id": 37255169299,
+        "conclusion": "success"
+      },
+      {
+        "name": "Git History",
+        "id": 37255169346,
+        "conclusion": "success"
+      },
+      {
+        "name": "Composure",
+        "id": 37255169379,
+        "conclusion": "success"
+      },
+      {
+        "name": "Stock Notebook",
+        "id": 37255169314,
+        "conclusion": "success"
+      },
+      {
+        "name": "Lens Studio",
+        "id": 37255169337,
+        "conclusion": "success"
+      },
+      {
+        "name": "Color Context Lab",
+        "id": 37255169300,
+        "conclusion": "success"
+      },
+      {
+        "name": "Motion Studio",
+        "id": 37255169340,
+        "conclusion": "success"
+      },
+      {
+        "name": "Melody Studio",
+        "id": 37255169330,
+        "conclusion": "success"
+      },
+      {
+        "name": "Friendly Challenges",
+        "id": 37255169325,
+        "conclusion": "success"
+      },
+      {
+        "name": "Duet",
+        "id": 37255169273,
+        "conclusion": "success"
+      },
+      {
+        "name": "Shot Studio",
+        "id": 37255169377,
+        "conclusion": "success"
+      }
+    ],
+    "failure": "Karaoke existing controlled persisted-page-departure sequential timing case: expected Mark line end, received Mark line start; 78/79 native cases. Current concurrent Karaoke source is unchanged by Duet. Exact first failure recorded on issue 121 and handed back to that ongoing integration. No all-thirteen-green claim at this head."
+  },
+  "localAndMaximum": "2026-10-05-saved-mixes-verification.json",
+  "limits": [
+    "Physical-device acceptance remains open in issue 109.",
+    "Maximum graph uses short original audio; metadata boundary fixtures and prior media-byte acceptance are separate.",
+    "No main merge or deployment."
+  ]
+}
