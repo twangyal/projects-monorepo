@@ -26,6 +26,21 @@ Open the localhost URL printed by Vite. No account, backend, API key, paid servi
 
 Undo/Redo retain up to 30 project snapshots within a 20 MiB history budget; large projects may retain fewer. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text fields. With the canvas focused, Space toggles playback. History is session-only and is not included in backups.
 
+## Correct an existing stroke
+
+Choose a drawing layer and the desired held drawing, then select **Edit strokes**. Select a path on the canvas or choose **Stroke N** in **Selected drawing strokes**. The list follows paint order and can select artwork that is covered or outside the stage. Canvas selection checks the selected layer's active drawing; overlapping strokes select the last painted path. Imported images remain separate layers.
+
+- Drag the selected stroke to move its whole path. Its shape and the layer's pose keys stay unchanged. A click only selects.
+- With the canvas or a stroke button focused, use arrow keys to move one stage pixel, or Shift+Arrow for ten. Held repeated keys are ignored.
+- Set **Selected stroke color** and **Selected stroke width**, then choose **Apply stroke appearance**. Width accepts finite values from 1 through 40. **Discard stroke edits** restores those fields from the committed stroke. Ink color and Brush width still control new drawing.
+- **Delete selected stroke**, or Delete/Backspace while the canvas or a stroke button has focus, removes that path. Undo restores it. Ordinary text-field editing keeps its normal keyboard behavior.
+
+Each completed drag, keyboard move, appearance application or deletion is one Undo/Redo edit. An unchanged value creates no edit. Corrections affect the active drawing throughout its held interval; detached duplicate cels and generated in-between drawings remain independent. Other strokes, images and pose keys are preserved.
+
+Apply or explicitly discard raw appearance values before changing selection, frame, layer, mode or project. Selection clears on those transitions and on unrelated edits or history navigation. Pointer cancellation, Escape, focus loss, page departure or changed stage geometry discard a drag preview. A move that puts any point outside the supported coordinate range is refused as a whole. Selection outlines and drag previews are temporary: autosaves, project files, PNGs, GIFs and private snapshots contain only committed artwork.
+
+This tool edits complete strokes. It does not reshape individual points, cut paths with an eraser, infer objects or generate artwork. The existing project format, file limits and saved-copy protection continue to apply.
+
 ## Drawings and pose keyframes
 
 Drawing boundaries (cels) and pose keyframes are independent. Each drawing layer starts at frame 1 and holds its current strokes until the next drawing boundary. Blank drawings create visible empty intervals; duplicates are detached copies, so later edits do not change the original. Drawings switch exactly at their boundaries. The reviewed in-between tool can create additional editable drawings between two authored boundaries. Imported image layers keep fixed artwork.
@@ -287,3 +302,10 @@ Final local integration passes **204 unit tests and all 130 Chromium cases** in 
 The first published head passed 203/204 unit tests in both CI events before the browser stage. Its simulated crash-file fixture inherited the process umask: local 0077 created the required 0600 file, while CI 0022 created 0644. The service correctly refused that nonprivate child. The fixture now explicitly creates its intended valid orphan with mode 0600; a focused run under umask 0022 reproduces the failure and then passes. Production permission enforcement and corrupt-file refusal remain unchanged. The first failure is retained in the [initial CI receipt](docs/2026-10-04-private-links-ci-first.json).
 
 Exact corrected-head [push CI](https://github.com/twangyal/projects-monorepo/actions/runs/37238138030) and [PR CI](https://github.com/twangyal/projects-monorepo/actions/runs/37238141120) each pass **204 unit tests and all 130 Chromium cases**, plus lint, type checking and build. The branch checks out `45af03a2bcb00b5c862f153dbc138231cac4e11c`; the PR checks out `628b964c311c5aa5def3171da518d0e146cca585`, with the same verified tree. All thirteen project PR workflows pass. The [final CI receipt](docs/2026-10-04-private-links-ci.json) records exact checkouts, log hashes, timings and the one-line fixture repair; no workflow was rerun. This completes the optional private-snapshot milestone. Physical devices and public hosting remain unverified.
+
+
+## Retained-stroke acceptance (#122)
+
+Version 0.6 adds whole-stroke selection, movement, appearance changes and deletion without changing the saved format or renderer. Local acceptance passes **225 unit tests and all 141 native browser cases**, plus lint, type checking and production build. The [verification receipt](docs/2026-10-05-stroke-edit-verification.json) preserves original failures and the narrow repairs for unchanged uppercase color values consuming Redo and explicit pose Discard committing on blur. Independent native tests cover transformed geometry, dots/overlaps, raw fields, cancellation, touch/list/keyboard authoring, real PNGs and every frame of an exported GIF. Published CI is pending.
+
+The [maximum run](docs/2026-10-05-stroke-edit-maximum.json) verifies eight layers, four original embedded PNGs, 100 strokes, 10,000 points, a 1,000-point stroke and 24 drawings in the selected layer. An exact **6,291,624-byte** project survives complete Chromium restart; one extra input byte is refused. Separate unpadded artwork permits real edits without artificial numeric-size restrictions. Its **223,074-byte** edited backup survives another restart byte for byte, with exact unrelated artwork, images and pose keys. All **96 GIF frames / 8 seconds** and original/edited PNG checks match independent geometry and color expectations. Capacity PNG padding is declared; these checks do not establish peak memory, physical touch hardware or a combined 192-cel maximum.

@@ -162,3 +162,19 @@ footer { display: flex; justify-content: space-between; gap: 20px; color: #a297a
 @media (max-width: 700px) { .library-actions button { flex: 1 1 100%; } }
 
 #private-links{margin-bottom:22px}#private-links p{overflow-wrap:anywhere}#private-link-controls{max-width:760px}#private-link-results{padding:16px;background:#f1eee8;border-radius:10px;margin-top:14px}#private-link-results input{font-size:13px;width:100%;min-width:0}#private-links button{min-height:44px;margin:4px 8px 4px 0}.snapshot-page{max-width:1000px;margin:auto}.snapshot-page .canvas-surround{aspect-ratio:16/9;padding:0}.snapshot-page canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}.snapshot-controls,.snapshot-actions{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.snapshot-controls .field{flex:1;min-width:180px}.snapshot-actions button,.snapshot-controls button,#snapshot-revoke,#snapshot-cancel-read{min-height:44px}.snapshot-page progress{width:100%}#snapshot-open-studio{display:inline-block;padding:12px 0}#snapshot-open-studio[hidden]{display:none}@media(max-width:600px){.snapshot-page{padding:16px 14px}.snapshot-page .panel{padding:16px}.snapshot-actions button{max-width:100%}#private-link-results{padding:12px}}
+
+.stage-stack { position: relative; }
+#stroke-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; background: transparent; box-shadow: none; }
+canvas[data-mode=edit] { cursor: grab; }
+#stroke-editor { margin-bottom: 18px; padding: 12px 0; border-bottom: 1px solid #ddd7e3; }
+#stroke-list { display: grid; gap: 8px; max-height: 270px; overflow: auto; margin: 12px 0; }
+#stroke-list > div { display: grid; gap: 4px; }
+#stroke-list button { min-height: 44px; text-align: left; }
+#stroke-list button[aria-pressed=true] { background: #eadff1; border-color: #9573b5; }
+#stroke-list span, #stroke-status { font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+#stroke-appearance { display: grid; gap: 8px; }
+#stroke-appearance .field { margin: 0; }
+#stroke-appearance button { min-height: 44px; white-space: normal; }
+.tools .segmented { flex-wrap: wrap; }
+.tools .segmented button { min-height: 44px; }
+@media(max-width:700px) { #stroke-editor-host { grid-column: 1 / -1; } #stroke-appearance { grid-template-columns: 1fr 1fr; } #stroke-appearance button, #stroke-status { grid-column: 1 / -1; } }

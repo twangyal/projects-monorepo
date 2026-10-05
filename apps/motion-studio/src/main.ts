@@ -1,4 +1,6 @@
 import './style.css';
+import { createStrokeEditor, StrokeDrag, uniformCanvas } from './stroke-editor.ts';
+import { hitStroke, translateStroke, type StrokeTarget } from './stroke-edit.ts';
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
 import { History } from './history.ts';
 import { createTweenWorkspace } from './tween-view.ts';
@@ -21,12 +23,12 @@ app.innerHTML = `
 <section id="project-library" class="panel" role="region" aria-label="Projects"></section>
 <div class="studio">
 <aside class="tools panel"><div class="panel-heading"><h3>Make your mark</h3><span>01</span></div><div class="tool-content">
-<div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button></div>
+<div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button><button id="edit-strokes-mode" aria-pressed="false">Edit strokes</button></div><div id="stroke-editor-host"></div>
 <label class="field">Ink color<input id="ink" type="color" value="#563d75"></label><label class="field">Brush width <output id="brush-value">6 px</output><input id="brush" type="range" min="1" max="40" value="6"></label><p class="hint">Draw on the selected drawing layer. Move places a pose at the current frame.</p>
 <div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
 <div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="field">Project file action<select id="project-file-action"><option value="new">Import as new project</option><option value="replace">Replace current project</option></select></label><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
 </div></aside>
-<section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas></div>
+<section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><div class="stage-stack"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas><canvas id="stroke-overlay" width="640" height="360" aria-hidden="true"></canvas></div></div>
 <div class="transport panel"><button id="play" class="primary">Play animation</button><button id="first-frame" title="Go to the first frame">Start</button><label class="loop"><input id="loop" type="checkbox" checked> Loop</label><span id="time" class="mono">0.00 s / 4.00 s</span></div>
 <div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button></div><p id="drawing-action-hint" class="hint"></p><button id="make-tween">Make drawing in-betweens</button><p id="tween-eligibility" class="hint"></p><div id="tween-workspace"></div></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
 <div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
@@ -40,7 +42,7 @@ let project = createDemo();
 let history = new History(project);
 let assets: Assets = new Map();
 let selected = project.layers.at(-1)?.id || '';
-let frame = 0, playing = false, mode: 'draw' | 'move' = 'draw';
+let frame = 0, playing = false, mode: 'draw' | 'move' | 'edit' = 'draw';
 let animation = 0, playStarted = 0, playFrom = 0;
 let busy = true, exporting = false, operation = 0, generation = 0;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -71,7 +73,7 @@ let saveChain: Promise<void> = Promise.resolve();
 const libraryView = createLibraryView(el('project-library'), id => void openLibraryProject(id), id => void deleteLibraryProject(id));
 const downloadUrls = new Set<string>();
 type Geometry = { width: number; height: number; dpr: number; left: number; top: number; canvasWidth: number; canvasHeight: number };
-interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; moved: boolean; layerId: string; frame: number; celFrame: number | null; generation: number; operation: number; geometry: Geometry }
+interface Gesture { pointer: number; base: Project; preview: Project; start: Point; pose: Pose; stroke?: Stroke; strokeTarget?: StrokeTarget; strokeDrag?: StrokeDrag; moved: boolean; layerId: string; frame: number; celFrame: number | null; generation: number; operation: number; geometry: Geometry }
 let gesture: Gesture | null = null;
 const tweens = createTweenWorkspace(el('tween-workspace'), {
   state: () => ({ project, assets, layerId: selected, frame, generation, operation, locked: busy || exporting || !!gesture || restorePending || retryPending }),
@@ -85,8 +87,19 @@ const tweens = createTweenWorkspace(el('tween-workspace'), {
   },
 });
 el('make-tween').addEventListener('click', () => tweens.open());
+const strokeEditor = createStrokeEditor(el('stroke-editor-host'), {
+  state: () => ({ project, layerId: selected, frame, generation, operation, locked: busy || exporting || !!gesture, enabled: mode === 'edit' }),
+  admitOtherDrafts: () => {
+    if (!drafts.size) return true;
+    tell('Apply or discard the other editor values before editing a retained stroke. Your raw fields are kept.', true); return false;
+  },
+  begin(keepSelection = false) { pause(); cancelGesture(); intent(keepSelection); },
+  apply: commit,
+  changed() { controls(); draw(); },
+});
+const overlayContext = el<HTMLCanvasElement>('stroke-overlay').getContext('2d')!;
 const privateLinks = createPrivateLinks(el('private-links'), {
-  state: () => ({ generation, intent: operation, locked: busy || exporting || !!gesture || restorePending || retryPending || libraryPending, drafts: drafts.size > 0 || tweens.unsaved }),
+  state: () => ({ generation, intent: operation, locked: busy || exporting || !!gesture || restorePending || retryPending || libraryPending, drafts: drafts.size > 0 || tweens.unsaved || strokeEditor.unsaved }),
   capture: () => {
     if (busy || exporting || gesture || restorePending || retryPending || libraryPending || !admitDrafts()) return null;
     if (tweens.unsaved) { tell('Apply or discard in-between scratch before publishing. The captured project excludes it.', true); return null; }
@@ -99,7 +112,7 @@ function errorMessage(error: unknown) { return error instanceof Error ? error.me
 function layer(): Layer | undefined { return project.layers.find(item => item.id === selected); }
 function value(id: string, next: string) { const node = el<HTMLInputElement>(id); if (!drafts.has(id) && node.value !== next) node.value = next; }
 function pause() { playing = false; cancelAnimationFrame(animation); el('play').textContent = 'Play animation'; }
-function intent() { tweens.retire(); generation++; operation++; libraryTransition++; libraryPending = false; }
+function intent(keepStroke = false) { if (!keepStroke) strokeEditor.retire(); tweens.retire(); generation++; operation++; libraryTransition++; libraryPending = false; }
 function draftControls() {
   const pending = drafts.size > 0;
   el('pose-draft-status').hidden = !pending;
@@ -107,11 +120,12 @@ function draftControls() {
   el('discard-pose-edits').hidden = !pending;
 }
 function admitDrafts(): boolean {
+  if (!strokeEditor.admit()) return false;
   if (!drafts.size) return true;
   tell('Apply valid editor values or discard edits before changing drawings, frames or projects.', true);
   return false;
 }
-function markDraft(id: string) { intent(); pause(); drafts.set(id, el<HTMLInputElement>(id).value); draftControls(); updateLibrary(); }
+function markDraft(id: string) { cancelGesture(); intent(); pause(); drafts.set(id, el<HTMLInputElement>(id).value); draftControls(); updateLibrary(); }
 function recoveryMessage(text: string) { recoveryDetail = text; el('recovery-detail').textContent = text; }
 function updateSaveState() { el('save-status').textContent = restorePending ? 'Opening your local studio…' : recoveryBlocked ? 'Local save unavailable · memory only; saved record protected' : saveState === 'pending' ? 'Saving locally…' : saveState === 'failed' ? 'Local save unavailable · keep a project file' : initialDemo ? 'Original demo · saved after your first edit' : 'Saved in this browser'; }
 function updateLibrary() {
@@ -178,7 +192,7 @@ async function flushActiveSave(): Promise<boolean> {
   const succeeded = await queueActiveSave(validateProject(project), ++saveRevision, owner);
   return succeeded && owner === lineage && token === operation && revision === generation;
 }
-function draw() { renderFrame(ctx, gesture?.preview || project, frame, assets); canvas.dataset.frame = String(frame); }
+function draw() { const visible = gesture?.preview || project; renderFrame(ctx, visible, frame, assets); strokeEditor.overlay(overlayContext, visible); canvas.dataset.frame = String(frame); }
 function controls() {
   privateLinks.update();
   const locked = busy || exporting || !!gesture;
@@ -209,7 +223,8 @@ function controls() {
   el<HTMLButtonElement>('discard-pose-edits').disabled = locked;
   el<HTMLButtonElement>('make-tween').disabled = locked || restorePending || retryPending || !drawing;
   el('tween-eligibility').textContent = drawing ? 'Pair adjacent nonblank drawings with the same 1–8 strokes. Review geometric in-betweens before committing.' : 'In-betweens need vector drawings; imported images animate through poses.';
-  draftControls(); tweens.update(); updateLibrary();
+  draftControls(); tweens.update(); strokeEditor.update(); updateLibrary();
+  el<HTMLButtonElement>('edit-strokes-mode').disabled = locked || !drawing;
   canvas.setAttribute('aria-disabled', String(locked));
   el('cancel-export').hidden = !exporting; el('export-progress').hidden = !exporting;
 }
@@ -344,9 +359,18 @@ el('add-blank-cel').addEventListener('click', () => changeCel('blank'));
 el('duplicate-cel').addEventListener('click', () => changeCel('duplicate'));
 el('delete-cel').addEventListener('click', () => changeCel('delete'));
 
-function selectMode(next: 'draw' | 'move') { mode = next; el('draw-mode').setAttribute('aria-pressed', String(mode === 'draw')); el('move-mode').setAttribute('aria-pressed', String(mode === 'move')); canvas.dataset.mode = mode; }
+function selectMode(next: 'draw' | 'move' | 'edit') { pause(); intent(); mode = next; el('draw-mode').setAttribute('aria-pressed', String(mode === 'draw')); el('move-mode').setAttribute('aria-pressed', String(mode === 'move')); el('edit-strokes-mode').setAttribute('aria-pressed', String(mode === 'edit')); canvas.dataset.mode = mode; controls(); draw(); }
 el('draw-mode').addEventListener('click', () => { if (admitDrafts()) selectMode('draw'); });
 el('move-mode').addEventListener('click', () => { if (admitDrafts()) selectMode('move'); });
+el('edit-strokes-mode').addEventListener('click', () => { if (admitDrafts() && layer()?.kind === 'drawing') selectMode('edit'); });
+// Refuse before native focus/blur can auto-apply an unrelated pose field.
+app.addEventListener('pointerdown', event => {
+  if (event.button !== 0) return;
+  // Discard owns the raw fields before native blur can auto-commit a valid pose value.
+  if ((event.target as HTMLElement).closest('#discard-pose-edits')) { event.preventDefault(); return; }
+  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode')) return;
+  if (!admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, true);
 el<HTMLInputElement>('ink').addEventListener('input', () => tweens.retire());
 el<HTMLInputElement>('brush').addEventListener('input', event => { tweens.retire(); el('brush-value').textContent = `${(event.target as HTMLInputElement).value} px`; });
 function stagePoint(event: PointerEvent): Point { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * WIDTH / rect.width, y: (event.clientY - rect.top) * HEIGHT / rect.height }; }
@@ -376,13 +400,25 @@ function cancelGesture() {
   controls(); draw();
 }
 canvas.addEventListener('pointerdown', event => {
-  if (event.button !== 0 || busy || exporting || gesture || !admitDrafts()) return;
+  if (event.button !== 0 || !event.isPrimary || busy || exporting || gesture) return;
+  if (!admitDrafts()) { event.preventDefault(); return; }
   const chosen = layer();
   if (!chosen) { tell('Add a drawing layer or import artwork first.', true); return; }
-  if (mode === 'draw' && chosen.kind !== 'drawing') { tell('Select a drawing layer to draw, or choose Move to position this image.', true); return; }
+  if ((mode === 'draw' || mode === 'edit') && chosen.kind !== 'drawing') { tell('Select a drawing layer to draw, or choose Move to position this image.', true); return; }
+  const measured = geometry();
+  if (mode === 'edit' && !uniformCanvas(measured.canvasWidth, measured.canvasHeight)) { event.preventDefault(); strokeEditor.status('Canvas proportions changed. Restore a uniform stage before dragging; the stroke list remains available.'); return; }
   pause(); intent(); canvas.focus({ preventScroll: true });
   const point = stagePoint(event), pose = evaluatePose(chosen, frame), preview = structuredClone(project);
   const celFrame = chosen.kind === 'drawing' ? evaluateDrawingCel(chosen, frame).frame : null;
+  let retainedTarget: StrokeTarget | undefined;
+  if (mode === 'edit' && chosen.kind === 'drawing') {
+    if (pose.opacity === 0) { event.preventDefault(); strokeEditor.status('This layer is transparent. Select its retained strokes from the list.'); controls(); draw(); return; }
+    const active = evaluateDrawingCel(chosen, frame);
+    const index = hitStroke(active.strokes, localPoint(point, pose), 6 * WIDTH / measured.canvasWidth / pose.scale);
+    if (index === null) { event.preventDefault(); strokeEditor.status('No retained stroke was hit. Choose a stroke from the list.'); controls(); draw(); return; }
+    retainedTarget = { layerId: chosen.id, celFrame: active.frame, strokeIndex: index };
+    strokeEditor.select(index, true);
+  }
   let local: Point | null = null;
   if (mode === 'draw') {
     try {
@@ -392,6 +428,7 @@ canvas.addEventListener('pointerdown', event => {
     } catch (error) { tell(errorMessage(error), true); return; }
   }
   gesture = { pointer: event.pointerId, base: project, preview, start: point, pose, moved: false, layerId: chosen.id, frame, celFrame, generation, operation, geometry: geometry() };
+  if (retainedTarget) { gesture.strokeTarget = retainedTarget; gesture.strokeDrag = new StrokeDrag({ x: event.clientX, y: event.clientY }, pose, gesture.geometry.canvasWidth); }
   if (mode === 'draw') {
     const stroke: Stroke = { color: el<HTMLInputElement>('ink').value, width: Number(el<HTMLInputElement>('brush').value), points: [local!] };
     const target = preview.layers.find(item => item.id === selected)!;
@@ -404,7 +441,9 @@ canvas.addEventListener('pointermove', event => {
   if (!gesture || gesture.pointer !== event.pointerId) return;
   if (!ownsGesture(gesture)) { cancelGesture(); return; }
   const point = stagePoint(event);
-  if (gesture.stroke) {
+  if (gesture.strokeTarget) {
+    try { updateRetainedStroke(gesture, event); } catch (error) { cancelGesture(); strokeEditor.status(errorMessage(error)); return; }
+  } else if (gesture.stroke) {
     try {
       const local = checkedPoint(point, gesture.pose), last = gesture.stroke.points.at(-1)!;
       if (Math.hypot(local.x - last.x, local.y - last.y) >= 1) {
@@ -421,25 +460,37 @@ canvas.addEventListener('pointermove', event => {
   }
   draw();
 });
+function updateRetainedStroke(active: Gesture, event: PointerEvent) {
+  const update = active.strokeDrag!.update({ x: event.clientX, y: event.clientY });
+  active.moved = update.moved;
+  active.preview = update.moved ? translateStroke(active.base, active.strokeTarget!, update.delta) : active.base;
+}
 function endGesture(event: PointerEvent, cancelled: boolean) {
   if (!gesture || gesture.pointer !== event.pointerId) return;
   if (cancelled || !ownsGesture(gesture)) { cancelGesture(); return; }
+  if (gesture.strokeTarget) {
+    try { updateRetainedStroke(gesture, event); } catch (error) { cancelGesture(); strokeEditor.status(errorMessage(error)); return; }
+  }
   const completed = gesture; gesture = null;
   if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   if (completed.stroke || completed.moved) {
     try {
       const chosen = completed.preview.layers.find(item => item.id === completed.layerId)!;
       const next = completed.stroke && chosen.kind === 'drawing' ? replaceDrawingCelStrokes(completed.base, completed.layerId, completed.celFrame!, chosen.cels.find(cel => cel.frame === completed.celFrame)!.strokes) : completed.preview;
-      commit(next); tell('');
+      const changed = commit(next);
+      if (completed.strokeTarget) { strokeEditor.rebind(completed.strokeTarget); strokeEditor.status(changed ? 'Stroke moved.' : 'Stroke position is unchanged. No new edit was made.'); controls(); draw(); }
+      tell('');
     } catch (error) { tell(errorMessage(error), true); refresh(); }
   } else { controls(); draw(); }
 }
 canvas.addEventListener('pointerup', event => endGesture(event, false));
 canvas.addEventListener('pointercancel', event => endGesture(event, true));
+canvas.addEventListener('blur', () => { if (gesture?.strokeTarget) cancelGesture(); });
+app.addEventListener('input', () => { if (gesture?.strokeTarget) cancelGesture(); }, true);
 canvas.addEventListener('lostpointercapture', event => { if (gesture) endGesture(event as PointerEvent, true); });
 
 function setPose() {
-  const chosen = layer(); if (!chosen || busy || exporting || gesture) return;
+  const chosen = layer(); if (!chosen || busy || exporting || gesture || !strokeEditor.admit()) return;
   const pose = Object.fromEntries(poseProperties.map(property => [property, el<HTMLInputElement>(`pose-${property}`).value.trim() === '' ? NaN : Number(el<HTMLInputElement>(`pose-${property}`).value)])) as Pose;
   try {
     const next = structuredClone(project), index = next.layers.findIndex(item => item.id === chosen.id);
@@ -462,6 +513,7 @@ el('remove-key').addEventListener('click', () => changeLayer(item => removeKeyfr
 function editName(id: 'project-title' | 'layer-name') {
   if (busy || exporting || gesture) return;
   markDraft(id);
+  if (!strokeEditor.admit()) return;
   const raw = el<HTMLInputElement>(id).value;
   if ([...drafts.keys()].some(key => key !== id)) { admitDrafts(); return; }
   try {
@@ -515,6 +567,21 @@ el('redo').addEventListener('click', () => void travel('redo'));
 window.addEventListener('keydown', event => {
   if (event.key === 'Escape' && gesture) { event.preventDefault(); cancelGesture(); return; }
   if ((event.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]')) return;
+  const strokeFocus = event.target === canvas || (event.target as HTMLElement).closest('#stroke-list button');
+  if (mode === 'edit' && strokeFocus && !event.ctrlKey && !event.metaKey && !event.altKey && (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Delete', 'Backspace'].includes(event.key))) {
+    event.preventDefault();
+    if (event.repeat || busy || exporting || gesture || !admitDrafts()) return;
+    const target = strokeEditor.target; if (!target) return;
+    if (event.key === 'Delete' || event.key === 'Backspace') { strokeEditor.remove(); return; }
+    const chosen = layer(); if (!chosen) return;
+    pause(); intent(true); strokeEditor.rebind(target);
+    const pose = evaluatePose(chosen, frame), amount = event.shiftKey ? 10 : 1;
+    const stageDelta = { x: event.key === 'ArrowLeft' ? -amount : event.key === 'ArrowRight' ? amount : 0, y: event.key === 'ArrowUp' ? -amount : event.key === 'ArrowDown' ? amount : 0 };
+    const origin = localPoint({ x: 0, y: 0 }, pose), point = localPoint(stageDelta, pose);
+    try { const changed = commit(translateStroke(project, target, { x: point.x - origin.x, y: point.y - origin.y })); strokeEditor.rebind(target); strokeEditor.status(changed ? 'Stroke moved.' : 'Stroke position is unchanged. No new edit was made.'); controls(); draw(); }
+    catch (error) { strokeEditor.status(errorMessage(error)); }
+    return;
+  }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); void travel(event.shiftKey ? 'redo' : 'undo'); }
   if (event.code === 'Space' && event.target === canvas) { event.preventDefault(); el('play').click(); }
 });
@@ -795,7 +862,7 @@ el('backup').addEventListener('click', () => {
   if (busy || exporting || gesture) return;
   tweens.retire();
   download(new Blob([JSON.stringify(validateProject(project))], { type: 'application/json' }), '.motion.json');
-  tell(`Editable project file downloaded. It includes every committed drawing and pose.${drafts.size ? ' Unapplied editor values are not included.' : ''}`);
+  tell(`Editable project file downloaded. It includes every committed drawing and pose.${drafts.size || strokeEditor.unsaved ? ' Unapplied editor values are not included.' : ''}`);
 });
 el('png').addEventListener('click', () => {
   if (busy || exporting || gesture || !admitDrafts()) return;
@@ -822,9 +889,10 @@ el('gif').addEventListener('click', async () => {
   finally { if (exported === controller) { exporting = false; exported = null; controls(); } }
 });
 el('cancel-export').addEventListener('click', () => exported?.abort());
-window.addEventListener('beforeunload', event => { if (saveState !== 'saved' || gesture || drafts.size || tweens.unsaved) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (saveState !== 'saved' || gesture || drafts.size || tweens.unsaved || strokeEditor.unsaved) { event.preventDefault(); event.returnValue = ''; } });
 window.addEventListener('blur', cancelGesture);
 window.addEventListener('resize', cancelGesture);
+window.addEventListener('scroll', cancelGesture, true);
 const stageObserver = new ResizeObserver(cancelGesture); stageObserver.observe(canvas);
 window.addEventListener('pagehide', event => {
   intent(); pause(); cancelGesture(); exported?.abort();

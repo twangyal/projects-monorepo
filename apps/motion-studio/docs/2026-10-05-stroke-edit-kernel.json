@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "issue": 122,
+  "date": "2026-10-05",
+  "status": "Pure kernel frozen after scoped producer verification; independent/native verification is separately owned.",
+  "sources": {
+    "src/stroke-edit.ts": {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/stroke-edit.ts",
+      "bytes": 5702,
+      "sha256": "f04b9bb2710976ff509659717b8e499b16bd01b7f6d442de020cc65ceb3b871f"
+    },
+    "tests/stroke-edit.test.ts": {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/stroke-edit.test.ts",
+      "bytes": 8599,
+      "sha256": "65248435ec3f1945e3d6cb3a01b5de6a0edb355e15dfe8ee565d89c357124926"
+    }
+  },
+  "producerRuns": [
+    {
+      "phase": "Actual callable-stub first run: six successful-path failures, one negative-only pass; not a claimed baseline interaction bug.",
+      "command": "node --experimental-strip-types --test tests/stroke-edit.test.ts",
+      "log": {
+        "path": "/tmp/motion122-kernel-first.log",
+        "bytes": 6277,
+        "sha256": "55f5bc1e0e8215428eb472b572edefd585e9fd3d627010d460b6a16ee85fe311"
+      },
+      "tests": 7,
+      "passed": 1,
+      "failed": 6,
+      "durationMs": 133.4715
+    },
+    {
+      "phase": "First implementation: six pass, one invalid maximum-fixture setup failure before edit.",
+      "command": "node --experimental-strip-types --test tests/stroke-edit.test.ts",
+      "log": {
+        "path": "/tmp/motion122-kernel-first-implementation.log",
+        "bytes": 1848,
+        "sha256": "24faa52c69df4f77937460912ad9593add4933cf2be509a32afafde2ddf0412e"
+      },
+      "tests": 7,
+      "passed": 6,
+      "failed": 1,
+      "durationMs": 227.041469
+    },
+    {
+      "phase": "Corrected image filler distribution; all seven pass.",
+      "command": "node --experimental-strip-types --test tests/stroke-edit.test.ts",
+      "log": {
+        "path": "/tmp/motion122-kernel-fixture-corrected.log",
+        "bytes": 858,
+        "sha256": "2bcba5e5cc9ea8815159b7533ab02496fe4a74f2253504fba045d6f60dde89fc"
+      },
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "durationMs": 424.829653
+    },
+    {
+      "phase": "Final exact cap/+1 fixture and frozen implementation: all seven pass.",
+      "command": "node --experimental-strip-types --test tests/stroke-edit.test.ts",
+      "log": {
+        "path": "/tmp/motion122-kernel-final.log",
+        "bytes": 857,
+        "sha256": "f4f80ed90411922edfee383a49bd283990a1ff3625f636cc6ec7d25fd3edebd5"
+      },
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "durationMs": 495.754292
+    }
+  ],
+  "staticChecks": [
+    {
+      "command": "./node_modules/.bin/eslint src/stroke-edit.ts tests/stroke-edit.test.ts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/motion122-kernel-lint-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit --strict --noUnusedLocals --noUnusedParameters --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --lib ES2022,DOM src/stroke-edit.ts tests/stroke-edit.test.ts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/motion122-kernel-tsc-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "fixtureCorrection": {
+    "rootApproved": true,
+    "failure": "The first actual maximum fixture placed all filler into one image and exceeded the unchanged1.5MiB per-image URL bound before invoking an edit.",
+    "repair": "Distributed base64 filler across the four original bounded slots, then filled zero-to-three remaining bytes with valid title ASCII. The final fixture reaches exactly6,291,624B and translating a selected x9 point to10 yields exactly6,291,625B and refuses.",
+    "productionBoundsChanged": false
+  },
+  "kernel": {
+    "exports": [
+      "hitStroke",
+      "translateStroke",
+      "setStrokeAppearance",
+      "deleteStroke"
+    ],
+    "target": "Exact layer ID, existing cel boundary and stroke index; no implicit held-boundary substitution.",
+    "query": "Existing model validates bounded retained strokes in a fixed pure query shell. Reverse paint order, inclusive half-width plus padding, clamped nearest segment projection, explicit point/zero-length circle behavior.",
+    "numericPolicy": "Ordinary scalar dot projection; equivalent unit projection only when large finite queries overflow the dot. Exact endpoint selection; no epsilon or geometry clamping. Zero displacement preserves original component representation.",
+    "edits": "Every operation starts from a detached model-admitted complete graph and finishes with unchanged complete model/count/coordinate/JSON validation. No point resampling, pose change, image change, history or storage side effects."
+  },
+  "coverage": [
+    "Round segment body/endcap/boundary and just-outside queries",
+    "Topmost overlap, repeated vertices and one/coincident-point dots",
+    "Literal diagonal nearest-point values and invalid finite/padding admission",
+    "Rigid translation with complete unrelated cel/layer/image/pose/paint-order equality and no input aliases",
+    "Exact color/width update and last-stroke deletion preserving blank frame0 cel",
+    "Missing/image targets, nonboundary frames, invalid indices/options and atomic invalid translation",
+    "Exact coordinate edges and strict positive-epsilon refusal",
+    "100 strokes/10000 points unchanged and exact canonical file cap/+1 rejection"
+  ],
+  "limits": {
+    "schemaVersion": 2,
+    "celsPerLayer": 24,
+    "strokes": 100,
+    "points": 10000,
+    "pointCoordinates": [
+      -1280,
+      1280
+    ],
+    "width": [
+      1,
+      40
+    ],
+    "projectBytes": 6291624
+  },
+  "limitations": [
+    "No shared build, browser, service, storage or renderer runs by this producer.",
+    "Owned image fixture is opaque model-admitted base64; no actual PNG decoding or pixel-fidelity claim. Native owners use genuine original PNG/GIF artifacts independently.",
+    "Pointer/CSS/pose/opacity and gesture ownership are UI responsibilities, not proved by these pure helper tests.",
+    "A negative-only stub pass does not establish working semantics. No preexisting interaction defect reproduction is invented."
+  ]
+}

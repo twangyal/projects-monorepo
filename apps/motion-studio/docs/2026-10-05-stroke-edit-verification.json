@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "issue": 122,
+  "date": "2026-10-05",
+  "status": "local complete acceptance passed; published CI pending",
+  "version": "0.6.0",
+  "design": "docs/superpowers/specs/2026-10-05-motion-stroke-editing-design.md",
+  "behavior": "Select and correct individual retained strokes using existing schema-2 graphs, renderers, history and library ownership. Canvas/list selection, transformed rigid translation, stage-axis keyboard movement, explicit appearance Apply/Discard and deletion.",
+  "sourceSha256": {
+    "apps/motion-studio/src/main.ts": "2d1329860af1e539a1689d142fd77481188c40569d6b5650f13848c1df3d9f0f",
+    "apps/motion-studio/src/style.css": "a3a233b2e835fead1235197e8acc3080e4d95ba75c0328bd4f6f3cc7aa74dd5c",
+    "apps/motion-studio/src/stroke-edit.ts": "f04b9bb2710976ff509659717b8e499b16bd01b7f6d442de020cc65ceb3b871f",
+    "apps/motion-studio/src/stroke-editor.ts": "d903636f217d61ad506654e076b5eafaff8d6bbe2eed96988b7820e33ab5dda6",
+    "apps/motion-studio/src/model.ts": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc",
+    "apps/motion-studio/src/history.ts": "f9b8da39214d9196b92760a4fe889808dcd4e5204293ca690f2c7f6fe77b3004",
+    "apps/motion-studio/src/render.ts": "7f31b3712b1f433feb208e08f76e974c91572f5c9315b7942b7cd584637d4866",
+    "apps/motion-studio/src/library-storage.ts": "0ff65a01754692da85cff7d9c09df8b652a370ddc5c757a0d83f8ddccd61086e",
+    "apps/motion-studio/tests/stroke-edit.spec.ts": "cdc3ea50ebec622d3476fb458d08514ca88aba3d92048f17cc73741a30343a6f",
+    "apps/motion-studio/tests/stroke-edit-fixtures.ts": "fa957e8bfec3096ae6d0caa4f6cb87629e7815fe80b78b3a70ca2f8d66f04b86",
+    "apps/motion-studio/scripts/smoke_stroke_edit.mjs": "b51c9a733b85acd12e444a1f0484e4435bc263869e2be2d69ff01129705c5aa6"
+  },
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "chromium": "151.0.7922.173",
+    "playwright": "1.63.0",
+    "vite": "7.3.6",
+    "platform": "Linux"
+  },
+  "node": {
+    "first": {
+      "tests": 225,
+      "passed": 225,
+      "durationMs": 27937.038352,
+      "lint": "passed",
+      "build": "stopped at in-progress independent browser test TypeScript byte-view signature mismatch",
+      "correction": "PNG/GIF helper accepts Uint8Array or Uint8ClampedArray. No pixel, graph, timing or tolerance expectation changed.",
+      "log": {
+        "path": "/tmp/motion122-node-check-first.log",
+        "sha256": "5b24c5af0a515cff90b0673fa71af126095f0ba18bcfb1d10a4ecd2f19129988",
+        "bytes": 23854
+      }
+    },
+    "final": {
+      "tests": 225,
+      "passed": 225,
+      "durationMs": 27762.415369,
+      "lint": "passed",
+      "typecheck": "passed",
+      "normalProductionBuild": "passed",
+      "log": {
+        "path": "/tmp/motion122-node-check-final.log",
+        "sha256": "929da0bcee2337d6643cf509568f3b61f6baf945d356cfd330d982b1ce656345",
+        "bytes": 24118
+      }
+    }
+  },
+  "native": {
+    "firstNewCases": {
+      "stats": {
+        "startTime": "2026-10-05T02:39:39.439Z",
+        "duration": 45103.261999999995,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/motion122-native-first-results.json",
+        "sha256": "6098e6abb5acd044b98f65ff03f456d63ac202a61524864c2858db28edda5bc4",
+        "bytes": 29024
+      },
+      "log": {
+        "path": "/tmp/motion122-native-first.log",
+        "sha256": "ea40bb968522568e459b69d5cd8773f270c85e7cb57847b98aa28e1b9cc0c6a4",
+        "bytes": 11484
+      },
+      "artifacts": "/workspace/motion122-native-first-artifacts",
+      "failures": [
+        {
+          "classification": "product defect",
+          "case": "unchanged uppercase native color Apply",
+          "observed": "Literal #0000FF changed to #0000ff, producing a false edit and invalidating Redo",
+          "repair": "Preserve the committed string when native RGB is unchanged; different RGB remains an ordinary validated edit."
+        },
+        {
+          "classification": "product defect",
+          "case": "explicit Discard pose after refused stroke selection",
+          "observed": "Pointer focus transition committed pose X211 before discard instead of keeping200",
+          "repair": "Only the explicit Discard pose pointerdown suppresses blur; ordinary other blur commits remain unchanged."
+        },
+        {
+          "classification": "fixture premise",
+          "case": "new raw title during active held gesture",
+          "observed": "Actual title is deliberately disabled by the existing gesture lock; fill times out",
+          "repair": "Assert disabled state, cancel using actual Escape, then enter the original raw title/caret before late old pointerup. Full graph/history/raw expectations unchanged."
+        }
+      ]
+    },
+    "finalCompleteSuite": {
+      "stats": {
+        "startTime": "2026-10-05T02:45:05.974Z",
+        "duration": 117301.111,
+        "expected": 141,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/motion122-full-native-first-results.json",
+        "sha256": "d3909041844a784e3af81b35897c34d16a9de73f29e59614a0dfe7c2e8861175",
+        "bytes": 156232
+      },
+      "log": {
+        "path": "/tmp/motion122-full-native-first.log",
+        "sha256": "6d60ad83fc10af0f7a901fedb63c66dddbd7aa7e6831061437b7727a42555dc9",
+        "bytes": 20980
+      },
+      "artifacts": "/workspace/motion122-full-native-first-artifacts"
+    },
+    "originalAssertionsPreserved": "Both genuine product RED tests are unchanged; approved fixture correction and prior source-only type/raw-discard fixes are documented separately."
+  },
+  "maximum": {
+    "status": "passed",
+    "wallMs": 86569.363247,
+    "counts": {
+      "layers": 8,
+      "images": 4,
+      "cels": 27,
+      "selectedLayerCels": 24,
+      "strokes": 100,
+      "points": 10000,
+      "longestStroke": 1000
+    },
+    "runtime": {
+      "path": "/workspace/motion122-maximum-fixtures/verification.json",
+      "sha256": "f367e76515232b4a9e1dcdd586548dde761b7f6ca203cdb29e9a4fdf06edf2e1",
+      "bytes": 14660
+    },
+    "receipt": "2026-10-05-stroke-edit-maximum.json",
+    "capacityBytes": 6291624,
+    "editedBackup": {
+      "capacityByteExact": true,
+      "editedArtworkByteExact": true,
+      "backupBytes": 223074,
+      "backupSha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+    },
+    "gif": {
+      "bytes": 121922,
+      "sha256": "fe94702444d7bf1f15a8dadf6c8dfb9d205fcc4bc05e6ea9a1ad44f61da8ce54",
+      "frames": 96,
+      "durationMs": 8000,
+      "encodeAndDownloadWallMs": 2178.820332999996,
+      "independentDecodeWallMs": 1083.5787649999984
+    },
+    "browserPids": [
+      [
+        834562
+      ],
+      [
+        834736
+      ],
+      [
+        839462
+      ]
+    ],
+    "browsersClosed": true,
+    "rootPreview": {
+      "pid": 834525,
+      "origin": "http://127.0.0.1:4321",
+      "stopped": true,
+      "immutableDist": "/workspace/motion122-maximum-dist"
+    },
+    "visualReview": "Root viewed retained 390px screenshot; no horizontal overflow."
+  },
+  "independentEvidence": [
+    "2026-10-05-stroke-edit-kernel.json",
+    "2026-10-05-stroke-edit-oracle.json",
+    "2026-10-05-stroke-edit-ui.json",
+    "2026-10-05-stroke-edit-browser-oracle.json",
+    "2026-10-05-stroke-edit-review.json"
+  ],
+  "limits": [
+    "No schema, storage authority, renderer or history implementation changes. No point reshaping, path-cut eraser, multi-selection, grouping, AI or new backend.",
+    "Maximum counts and actual artwork editing use an unpadded graph. Exact file capacity separately uses declared legal PNG ancillary padding; it is not a peak-memory or typical-file-size claim.",
+    "Maximum selected layer has24cels and project27total cels; this does not claim simultaneous192cels with incompatible point/stroke limits.",
+    "Same-machine Chromium verification does not establish physical touch hardware, arbitrary browser support or performance guarantees.",
+    "Published CI is pending; final receipt will identify actual branch and merge checkouts."
+  ]
+}
