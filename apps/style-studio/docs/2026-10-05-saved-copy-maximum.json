@@ -1,0 +1,1476 @@
+{
+  "schemaVersion": 1,
+  "issue": 116,
+  "date": "2026-10-05",
+  "status": "First actual maximum runtime passed with frozen original fixtures after documented preflight-only final-pump wait.",
+  "independence": {
+    "originalExpectations": "Literal original fixture tags, 14-value vectors, complete profile identities and quadrants; no producer validator/storage/image exporter/model expected-value import.",
+    "storageObservation": "Native IndexedDB readonly get/getKey plus actual transaction completion; no fake database or production private receipt inspection.",
+    "runtimeOwnership": "Root-owned external static origin; script only creates/closes its own persistent Chromium processes.",
+    "authorExecution": "Only source syntax, scoped ESLint and embedded Python AST checks; no fixture generation/browser/server/build."
+  },
+  "authoredBounds": {
+    "pieces": 36,
+    "piecesPerCategory": 12,
+    "examples": 80,
+    "looks": 30,
+    "photos": 20,
+    "jpegDimensions": [
+      720,
+      720
+    ],
+    "jpegBytesEach": 204800,
+    "jpegBytesTotal": 4096000,
+    "rawInputBytes": 8388608,
+    "overflowInputBytes": 8388609,
+    "boardDimensions": [
+      1200,
+      1000
+    ],
+    "historySnapshots": 20,
+    "historyBytes": 25165824
+  },
+  "expectedFullHistoryStates": 4,
+  "capacityDisclosure": {
+    "jpegPadding": "Harmless declared COM segments before original compressed JPEG; all original RGB quadrant patterns independently decoded by Pillow and real native import.",
+    "rawPadding": "Trailing JSON whitespace expands the actually supported ~5.5MiB canonical complete profile to an exact8MiB input.",
+    "complexity": "No worst-case photo/decoded RAM, normalization maximum, fitting accuracy or inference claim."
+  },
+  "nativeChecksAuthored": [
+    "All graph maxima coexist in actual portable Project1; exact8MiB native File import/+1 rejection preserves complete current state.",
+    "Same IDs/title/counts foreign B changes actual photo0 bytes/rating/look; newer C causes a reviewed-replacement race refusal.",
+    "Protected local candidate remains exportable with exact original photos and existing rating edit; Undo/Redo and raw DOM nodes/caret stay intact.",
+    "Fresh explicit reviewed replacement writes complete local candidate; measured24MiB history retains four complete photo-bearing states.",
+    "Actual1200x1000 PNG outputs A and B independently decode with literal quadrant/interior/background samples and wrong-photo negative control.",
+    "Two distinct actual browser processes reopen the same profile/origin, preserving exact schema2 stored wrapper, revision and complete bare native Project1 JSON."
+  ],
+  "pixelOracle": {
+    "sourceInteriorPoints": [
+      [
+        120,
+        120
+      ],
+      [
+        600,
+        120
+      ],
+      [
+        120,
+        600
+      ],
+      [
+        600,
+        600
+      ]
+    ],
+    "boardPhotoX": [
+      101,
+      465,
+      829
+    ],
+    "boardPhotoY": 272,
+    "boardPhotoSide": 270,
+    "maxRgbChannelDifference": 12,
+    "whiteRgba": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "cardRgba": [
+      244,
+      241,
+      235,
+      255
+    ]
+  },
+  "sourceHashes": {
+    "scripts/smoke_saved_copy_conflicts.mjs": "d1634c8fbee9e672f25d783a28f22049b61b56d6713d7a1dade1d625adf6e333"
+  },
+  "authorChecks": {
+    "nodeSyntax": "passed",
+    "scopedEslint": "passed",
+    "independentPythonAst": "both parse",
+    "fixtureGeneration": "not run",
+    "nativeAcceptance": "not run"
+  },
+  "reproduction": {
+    "cwd": "apps/style-studio",
+    "prepare": "STYLE_CONFLICT_FIXTURES=/workspace/style116-maximum-fixtures node scripts/smoke_saved_copy_conflicts.mjs --fixtures-only",
+    "run": "STYLE_CONFLICT_FIXTURES=/workspace/style116-maximum-fixtures STYLE_CONFLICT_OUTPUT=/workspace/style116-maximum-final STYLE_CONFLICT_ORIGIN=http://127.0.0.1:ROOT_PORT CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_saved_copy_conflicts.mjs --run-prepared",
+    "optionalEnvironment": "STYLE_CONFLICT_PYTHON=python-with-Pillow",
+    "dependencies": [
+      "App-local Playwright",
+      "Chromium",
+      "Python with Pillow"
+    ],
+    "estimatedWallMinutes": [
+      1,
+      2
+    ],
+    "estimatedWorkspaceDiskMiB": [
+      80,
+      150
+    ],
+    "guards": "Fixture/output directories must not exist; no server/build/production module lifecycle controlled by runner."
+  },
+  "limits": [
+    "No CI, physical-device, subjective fashion or completed maximum acceptance claim before actual runtime.",
+    "Current controls and data schema are frozen from public design; newer storage implementation remains unread by acceptance author."
+  ],
+  "rootPreflight": {
+    "originalRunnerSha256": "d1634c8fbee9e672f25d783a28f22049b61b56d6713d7a1dade1d625adf6e333",
+    "independentFinding": "A final content-only read can observe the already-saved pre-Undo title06 while queued Undo/Redo saves still create a later revision. Before freezing exact restart row, wait for truthful current Saved status and enabled Reload, then keep unchanged complete row/revision assertion.",
+    "changedBeforeAnyRuntime": true,
+    "fixtureAndBoundsUnchanged": true,
+    "runnerSha256": "9f8c1e457b45633183779b35202c5a73d03a82691139b4272ad7f880a8bffa61"
+  },
+  "rootRuntime": {
+    "verification": {
+      "path": "/workspace/style116-maximum-first/verification.json",
+      "bytes": 28996,
+      "sha256": "0379e2b1e5b8332d8058c592fb41a6dd0dd37f9c8aaf987775b8a4ec1cea8521"
+    },
+    "log": {
+      "path": "/tmp/style116-maximum-first.log",
+      "bytes": 109,
+      "sha256": "c1ef648180fa241ee1bcc7d4cc45dca1152edbb2069e792b443794a822f4ed10"
+    },
+    "outputDirectory": "/workspace/style116-maximum-first",
+    "actual": {
+      "schemaVersion": 1,
+      "status": "passed",
+      "origin": "http://127.0.0.1:4312",
+      "fixtureReceiptSha256": "a12788d0fc2445c5c5b1f196eccd9a94834d18b7610802093a0e26ae62b7904b",
+      "runnerSha256": "9f8c1e457b45633183779b35202c5a73d03a82691139b4272ad7f880a8bffa61",
+      "fixture": {
+        "schemaVersion": 1,
+        "status": "fixtures-frozen-not-run",
+        "planSha256": "f8e8c221c0e6ad5486b2408bdaaae0ca7574d40adcb580127b728eababc33281",
+        "imageFactsSha256": "4c58ba4dfa17f16968e6912a085e3ac35ccc0a939bbc7a132f1f4d0d54aa43da",
+        "files": [
+          {
+            "name": "profile-A.json",
+            "bytes": 5544230,
+            "sha256": "378ceda5ec5ef01790ccb7a501a60621ae9da5ee7f3a9190056f879d723fc9ee"
+          },
+          {
+            "name": "profile-B.json",
+            "bytes": 5544230,
+            "sha256": "669039f9abbc2e4b39feafdf00a6b144a5f1a7d8f3a7ca27058b1b6ac8ca4c67"
+          },
+          {
+            "name": "profile-C.json",
+            "bytes": 5544230,
+            "sha256": "8c4546a9620c1a8a8dfe952fef4c5701a66f1f8cb3aa1e34e1d78c647befee03"
+          },
+          {
+            "name": "profile-local.json",
+            "bytes": 5544230,
+            "sha256": "d75255e8197f5a13380c703cf55af71e4297d2cde9912c01ff2461b4be13913d"
+          },
+          {
+            "name": "profile-exact-8MiB.json",
+            "bytes": 8388608,
+            "sha256": "7e92a8ca715a92107fcd82d922d5948218e34d28092c96ae2423864e75f5f81f"
+          },
+          {
+            "name": "profile-plus-one.json",
+            "bytes": 8388609,
+            "sha256": "9b97a4d937fd2ef6e29a4766a39e97a4e972cf5ff135a77379095180fb840ffe"
+          }
+        ],
+        "images": {
+          "pillowVersion": "12.3.0",
+          "images": [
+            {
+              "file": "photo-00.jpg",
+              "sha256": "c65f736e222a8a4fa8d224123bc4ade2cb155530b9f9bd32348b99539002e755",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15768,
+              "declaredPaddingBytes": 189032,
+              "samples": [
+                [
+                  232,
+                  33,
+                  40
+                ],
+                [
+                  31,
+                  40,
+                  231
+                ],
+                [
+                  40,
+                  233,
+                  32
+                ],
+                [
+                  23,
+                  222,
+                  215
+                ]
+              ]
+            },
+            {
+              "file": "photo-01.jpg",
+              "sha256": "6b406e672501cbf8a48f8b2139ddefc66d9e2187c34257fe3ee9a8e4df02e71c",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15835,
+              "declaredPaddingBytes": 188965,
+              "samples": [
+                [
+                  28,
+                  74,
+                  221
+                ],
+                [
+                  74,
+                  219,
+                  28
+                ],
+                [
+                  220,
+                  28,
+                  75
+                ],
+                [
+                  227,
+                  181,
+                  34
+                ]
+              ]
+            },
+            {
+              "file": "photo-02.jpg",
+              "sha256": "95aa45d0619355e502a6b1d6ba0d14881e513b13aba6b35ffa962778ade36364",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15700,
+              "declaredPaddingBytes": 189100,
+              "samples": [
+                [
+                  33,
+                  186,
+                  78
+                ],
+                [
+                  186,
+                  78,
+                  32
+                ],
+                [
+                  77,
+                  32,
+                  185
+                ],
+                [
+                  222,
+                  69,
+                  177
+                ]
+              ]
+            },
+            {
+              "file": "photo-03.jpg",
+              "sha256": "829beaec2ba2c3a2b2daca4f22bbce64940ef1821304f366a384fd0bb7a5d433",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15700,
+              "declaredPaddingBytes": 189100,
+              "samples": [
+                [
+                  144,
+                  53,
+                  132
+                ],
+                [
+                  53,
+                  131,
+                  143
+                ],
+                [
+                  130,
+                  143,
+                  53
+                ],
+                [
+                  111,
+                  202,
+                  123
+                ]
+              ]
+            },
+            {
+              "file": "photo-04.jpg",
+              "sha256": "e24ccd52d7ae78b20b695b9d3bb1617120c3cb62d81351b50bbab1e69d2c1ffd",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15566,
+              "declaredPaddingBytes": 189234,
+              "samples": [
+                [
+                  180,
+                  124,
+                  37
+                ],
+                [
+                  124,
+                  37,
+                  180
+                ],
+                [
+                  37,
+                  180,
+                  124
+                ],
+                [
+                  75,
+                  131,
+                  218
+                ]
+              ]
+            },
+            {
+              "file": "photo-05.jpg",
+              "sha256": "e9429d8558a9b1047ebc790617b4d74adc71cc745f53f856f9a15260fac4c576",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15745,
+              "declaredPaddingBytes": 189055,
+              "samples": [
+                [
+                  217,
+                  196,
+                  133
+                ],
+                [
+                  195,
+                  133,
+                  218
+                ],
+                [
+                  133,
+                  217,
+                  194
+                ],
+                [
+                  38,
+                  59,
+                  122
+                ]
+              ]
+            },
+            {
+              "file": "photo-06.jpg",
+              "sha256": "09d20d8e9e1de3dfdbfd5399135669190fdc11544d3934226ebd0950093f705a",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15564,
+              "declaredPaddingBytes": 189236,
+              "samples": [
+                [
+                  62,
+                  74,
+                  38
+                ],
+                [
+                  73,
+                  38,
+                  62
+                ],
+                [
+                  38,
+                  62,
+                  74
+                ],
+                [
+                  193,
+                  181,
+                  217
+                ]
+              ]
+            },
+            {
+              "file": "photo-07.jpg",
+              "sha256": "b77a1ca5bf1091c3050ce9aec33f82552c53c2fc29e6436da26903f642410e41",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15475,
+              "declaredPaddingBytes": 189325,
+              "samples": [
+                [
+                  99,
+                  145,
+                  135
+                ],
+                [
+                  145,
+                  135,
+                  99
+                ],
+                [
+                  135,
+                  99,
+                  145
+                ],
+                [
+                  156,
+                  110,
+                  120
+                ]
+              ]
+            },
+            {
+              "file": "photo-08.jpg",
+              "sha256": "e4894cf26f1575a8f939d4e7e98d7416f4ba276326e8e23528c798dec6aaeac4",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15789,
+              "declaredPaddingBytes": 189011,
+              "samples": [
+                [
+                  136,
+                  216,
+                  39
+                ],
+                [
+                  216,
+                  41,
+                  136
+                ],
+                [
+                  39,
+                  136,
+                  215
+                ],
+                [
+                  119,
+                  39,
+                  216
+                ]
+              ]
+            },
+            {
+              "file": "photo-09.jpg",
+              "sha256": "0d2e3313c95273cf134844378518b60b091b645fedb56f60d4f26b5badb09aad",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15543,
+              "declaredPaddingBytes": 189257,
+              "samples": [
+                [
+                  173,
+                  95,
+                  137
+                ],
+                [
+                  95,
+                  138,
+                  173
+                ],
+                [
+                  136,
+                  173,
+                  95
+                ],
+                [
+                  82,
+                  160,
+                  118
+                ]
+              ]
+            },
+            {
+              "file": "photo-10.jpg",
+              "sha256": "0dd7e2893cc5a3cec1788d9a5a3ab3babd2edfd9a6555299f624e955b2b68392",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15790,
+              "declaredPaddingBytes": 189010,
+              "samples": [
+                [
+                  210,
+                  166,
+                  43
+                ],
+                [
+                  165,
+                  42,
+                  210
+                ],
+                [
+                  43,
+                  210,
+                  166
+                ],
+                [
+                  45,
+                  89,
+                  212
+                ]
+              ]
+            },
+            {
+              "file": "photo-11.jpg",
+              "sha256": "b069c8eff2f009b7e3cb7f7c1c26c13f8ab75c4c0a50ec9e7969ac5e8dbc69c9",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15721,
+              "declaredPaddingBytes": 189079,
+              "samples": [
+                [
+                  55,
+                  46,
+                  139
+                ],
+                [
+                  45,
+                  139,
+                  55
+                ],
+                [
+                  139,
+                  55,
+                  45
+                ],
+                [
+                  200,
+                  209,
+                  116
+                ]
+              ]
+            },
+            {
+              "file": "photo-12.jpg",
+              "sha256": "cd8dbe09691a297e4c798a83401d7455ae1db6eed2c9a23afe259c4fed5aec73",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15654,
+              "declaredPaddingBytes": 189146,
+              "samples": [
+                [
+                  93,
+                  116,
+                  44
+                ],
+                [
+                  116,
+                  44,
+                  92
+                ],
+                [
+                  44,
+                  92,
+                  115
+                ],
+                [
+                  162,
+                  139,
+                  211
+                ]
+              ]
+            },
+            {
+              "file": "photo-13.jpg",
+              "sha256": "5fcd5df4e76d1bb33e1ceb5658e2a5487f36eed651300b79714e860e81160e76",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15476,
+              "declaredPaddingBytes": 189324,
+              "samples": [
+                [
+                  129,
+                  186,
+                  141
+                ],
+                [
+                  187,
+                  141,
+                  128
+                ],
+                [
+                  140,
+                  129,
+                  187
+                ],
+                [
+                  126,
+                  69,
+                  114
+                ]
+              ]
+            },
+            {
+              "file": "photo-14.jpg",
+              "sha256": "221ebb27e06f48b80c1af721c00b0ffeb4722e2edf878d5ac78c5432e664df6f",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15567,
+              "declaredPaddingBytes": 189233,
+              "samples": [
+                [
+                  167,
+                  66,
+                  46
+                ],
+                [
+                  66,
+                  46,
+                  167
+                ],
+                [
+                  46,
+                  166,
+                  66
+                ],
+                [
+                  88,
+                  189,
+                  209
+                ]
+              ]
+            },
+            {
+              "file": "photo-15.jpg",
+              "sha256": "5f4686f0f607bdc26a019cdfb9d3bd274b7e5ebb008997fcff9ee04b5d607b40",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15610,
+              "declaredPaddingBytes": 189190,
+              "samples": [
+                [
+                  203,
+                  136,
+                  143
+                ],
+                [
+                  137,
+                  143,
+                  203
+                ],
+                [
+                  143,
+                  204,
+                  137
+                ],
+                [
+                  52,
+                  119,
+                  112
+                ]
+              ]
+            },
+            {
+              "file": "photo-16.jpg",
+              "sha256": "02aaa2cb64c8590fc54a0ac3dfa9cc6dae305acbdf5902083c4a5884734298e5",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15747,
+              "declaredPaddingBytes": 189053,
+              "samples": [
+                [
+                  48,
+                  208,
+                  48
+                ],
+                [
+                  208,
+                  48,
+                  48
+                ],
+                [
+                  48,
+                  48,
+                  208
+                ],
+                [
+                  207,
+                  47,
+                  207
+                ]
+              ]
+            },
+            {
+              "file": "photo-17.jpg",
+              "sha256": "5bf965ec31b2b7d23ff2c6773aac8d705dd76e5a64ae46eef9ddf769b3cb97c2",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15610,
+              "declaredPaddingBytes": 189190,
+              "samples": [
+                [
+                  85,
+                  87,
+                  144
+                ],
+                [
+                  87,
+                  145,
+                  86
+                ],
+                [
+                  145,
+                  85,
+                  87
+                ],
+                [
+                  170,
+                  168,
+                  111
+                ]
+              ]
+            },
+            {
+              "file": "photo-18.jpg",
+              "sha256": "363de107fba36966ac34064336af3772ddae0addeee4129351411c83e44579db",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15655,
+              "declaredPaddingBytes": 189145,
+              "samples": [
+                [
+                  122,
+                  158,
+                  50
+                ],
+                [
+                  157,
+                  50,
+                  122
+                ],
+                [
+                  50,
+                  123,
+                  158
+                ],
+                [
+                  133,
+                  97,
+                  205
+                ]
+              ]
+            },
+            {
+              "file": "photo-19.jpg",
+              "sha256": "9bf8c969d0efef3baefbb6b409f7de72a8da5228d05d8e52f9292c6318837c74",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15634,
+              "declaredPaddingBytes": 189166,
+              "samples": [
+                [
+                  159,
+                  37,
+                  146
+                ],
+                [
+                  36,
+                  146,
+                  159
+                ],
+                [
+                  148,
+                  159,
+                  37
+                ],
+                [
+                  96,
+                  218,
+                  109
+                ]
+              ]
+            },
+            {
+              "file": "photo-00-alternate.jpg",
+              "sha256": "0e30fb910baa8b6dbea34e8160108087f93249d9aab477fc74870a88e18777c4",
+              "bytes": 204800,
+              "compressedBeforePaddingBytes": 15767,
+              "declaredPaddingBytes": 189033,
+              "samples": [
+                [
+                  23,
+                  222,
+                  215
+                ],
+                [
+                  40,
+                  233,
+                  32
+                ],
+                [
+                  31,
+                  40,
+                  231
+                ],
+                [
+                  232,
+                  33,
+                  40
+                ]
+              ]
+            }
+          ]
+        },
+        "expected": {
+          "pieces": 36,
+          "piecesPerCategory": 12,
+          "examples": 80,
+          "looks": 30,
+          "photos": 20,
+          "totalJpegBytes": 4096000,
+          "rawFileBytes": 8388608,
+          "overflowFileBytes": 8388609,
+          "historyBytes": 25165824,
+          "historySnapshots": 20
+        },
+        "measuredCanonicalBytes": 5544230,
+        "rawWhitespacePaddingBytes": 2844378,
+        "expectedRetainedFullHistorySnapshots": 4,
+        "generatorSha256": "d1634c8fbee9e672f25d783a28f22049b61b56d6713d7a1dade1d625adf6e333",
+        "limitations": [
+          "Exact 200 KiB JPEG capacity uses harmless declared COM padding before SOS; image patterns are simple original RGB quadrants, not worst-case compressed photographic complexity.",
+          "Exact 8 MiB input uses trailing JSON whitespace; complete canonical supported content is measured, not claimed to fill 8 MiB.",
+          "No trained parameters, subjective taste accuracy, inference speed, peak memory or physical-device claim.",
+          "The runner only owns its own browser processes; it never builds, starts or stops the externally provided server."
+        ]
+      },
+      "browserProcesses": [
+        784324,
+        784820
+      ],
+      "errors": [],
+      "external": [],
+      "artifacts": [
+        {
+          "name": "A-native.json",
+          "bytes": 5544230,
+          "sha256": "378ceda5ec5ef01790ccb7a501a60621ae9da5ee7f3a9190056f879d723fc9ee"
+        },
+        {
+          "name": "board-A.png",
+          "bytes": 94534,
+          "sha256": "7ec7d84045cade4cbb6fae3bdb028d37396fce9a9c95fc464154c709bb9179d3"
+        },
+        {
+          "name": "A-after-overflow-native.json",
+          "bytes": 5544230,
+          "sha256": "378ceda5ec5ef01790ccb7a501a60621ae9da5ee7f3a9190056f879d723fc9ee"
+        },
+        {
+          "name": "A-second-tab-native.json",
+          "bytes": 5544230,
+          "sha256": "378ceda5ec5ef01790ccb7a501a60621ae9da5ee7f3a9190056f879d723fc9ee"
+        },
+        {
+          "name": "B-winner-native.json",
+          "bytes": 5544230,
+          "sha256": "669039f9abbc2e4b39feafdf00a6b144a5f1a7d8f3a7ca27058b1b6ac8ca4c67"
+        },
+        {
+          "name": "board-B.png",
+          "bytes": 91633,
+          "sha256": "ca3b1d6f741c11f9b13d7d0e1df02dde9da699c96b3ebd1d00f48bf9ff9ea77e"
+        },
+        {
+          "name": "local-conflict-native.json",
+          "bytes": 5544230,
+          "sha256": "d75255e8197f5a13380c703cf55af71e4297d2cde9912c01ff2461b4be13913d"
+        },
+        {
+          "name": "local-undo-native.json",
+          "bytes": 5544230,
+          "sha256": "378ceda5ec5ef01790ccb7a501a60621ae9da5ee7f3a9190056f879d723fc9ee"
+        },
+        {
+          "name": "local-redo-native.json",
+          "bytes": 5544230,
+          "sha256": "d75255e8197f5a13380c703cf55af71e4297d2cde9912c01ff2461b4be13913d"
+        },
+        {
+          "name": "local-after-stale-review-native.json",
+          "bytes": 5544230,
+          "sha256": "d75255e8197f5a13380c703cf55af71e4297d2cde9912c01ff2461b4be13913d"
+        },
+        {
+          "name": "local-replacement-native.json",
+          "bytes": 5544230,
+          "sha256": "d75255e8197f5a13380c703cf55af71e4297d2cde9912c01ff2461b4be13913d"
+        },
+        {
+          "name": "final-native.json",
+          "bytes": 5544230,
+          "sha256": "a9b367ffed808defadd57751286ab77d65f6e5ea3f4b0418bab50a57fd046428"
+        },
+        {
+          "name": "restart-native.json",
+          "bytes": 5544230,
+          "sha256": "a9b367ffed808defadd57751286ab77d65f6e5ea3f4b0418bab50a57fd046428"
+        },
+        {
+          "name": "desktop.png",
+          "bytes": 1668813,
+          "sha256": "efaea13af31553a7505c6875a358bea072483b013611e7bb1a50b2f351bd52de"
+        },
+        {
+          "name": "mobile-390.png",
+          "bytes": 1671514,
+          "sha256": "f44181082cec9f6d9e8059bf7a9d6b414a3fb7cac7d92c7ee5b62fe535e9e7d4"
+        }
+      ],
+      "boards": [
+        {
+          "status": "passed",
+          "format": "PNG",
+          "width": 1200,
+          "height": 1000,
+          "bytes": 94534,
+          "sha256": "7ec7d84045cade4cbb6fae3bdb028d37396fce9a9c95fc464154c709bb9179d3",
+          "samples": [
+            {
+              "card": 0,
+              "source": [
+                120,
+                120
+              ],
+              "board": [
+                146,
+                317
+              ],
+              "rgb": [
+                232,
+                33,
+                40
+              ],
+              "expectedOriginalRgb": [
+                232,
+                32,
+                40
+              ]
+            },
+            {
+              "card": 0,
+              "source": [
+                600,
+                120
+              ],
+              "board": [
+                326,
+                317
+              ],
+              "rgb": [
+                31,
+                40,
+                231
+              ],
+              "expectedOriginalRgb": [
+                32,
+                40,
+                232
+              ]
+            },
+            {
+              "card": 0,
+              "source": [
+                120,
+                600
+              ],
+              "board": [
+                146,
+                497
+              ],
+              "rgb": [
+                40,
+                233,
+                32
+              ],
+              "expectedOriginalRgb": [
+                40,
+                232,
+                32
+              ]
+            },
+            {
+              "card": 0,
+              "source": [
+                600,
+                600
+              ],
+              "board": [
+                326,
+                497
+              ],
+              "rgb": [
+                23,
+                222,
+                215
+              ],
+              "expectedOriginalRgb": [
+                23,
+                223,
+                215
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                120,
+                120
+              ],
+              "board": [
+                510,
+                317
+              ],
+              "rgb": [
+                28,
+                74,
+                221
+              ],
+              "expectedOriginalRgb": [
+                28,
+                74,
+                220
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                600,
+                120
+              ],
+              "board": [
+                690,
+                317
+              ],
+              "rgb": [
+                74,
+                219,
+                28
+              ],
+              "expectedOriginalRgb": [
+                74,
+                220,
+                28
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                120,
+                600
+              ],
+              "board": [
+                510,
+                497
+              ],
+              "rgb": [
+                220,
+                28,
+                75
+              ],
+              "expectedOriginalRgb": [
+                220,
+                28,
+                74
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                600,
+                600
+              ],
+              "board": [
+                690,
+                497
+              ],
+              "rgb": [
+                227,
+                181,
+                34
+              ],
+              "expectedOriginalRgb": [
+                227,
+                181,
+                35
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                120,
+                120
+              ],
+              "board": [
+                874,
+                317
+              ],
+              "rgb": [
+                33,
+                186,
+                78
+              ],
+              "expectedOriginalRgb": [
+                32,
+                186,
+                78
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                600,
+                120
+              ],
+              "board": [
+                1054,
+                317
+              ],
+              "rgb": [
+                186,
+                78,
+                32
+              ],
+              "expectedOriginalRgb": [
+                186,
+                78,
+                32
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                120,
+                600
+              ],
+              "board": [
+                874,
+                497
+              ],
+              "rgb": [
+                77,
+                32,
+                185
+              ],
+              "expectedOriginalRgb": [
+                78,
+                32,
+                186
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                600,
+                600
+              ],
+              "board": [
+                1054,
+                497
+              ],
+              "rgb": [
+                222,
+                69,
+                177
+              ],
+              "expectedOriginalRgb": [
+                223,
+                69,
+                177
+              ]
+            }
+          ],
+          "wrongPhotoRejected": true,
+          "rgbaSha256": "a21950a24bc81f5e41b6831d4a76d622f781001c4fc92da47ac5fe51414c7169"
+        },
+        {
+          "status": "passed",
+          "format": "PNG",
+          "width": 1200,
+          "height": 1000,
+          "bytes": 91633,
+          "sha256": "ca3b1d6f741c11f9b13d7d0e1df02dde9da699c96b3ebd1d00f48bf9ff9ea77e",
+          "samples": [
+            {
+              "card": 0,
+              "source": [
+                120,
+                120
+              ],
+              "board": [
+                146,
+                317
+              ],
+              "rgb": [
+                23,
+                222,
+                215
+              ],
+              "expectedOriginalRgb": [
+                23,
+                223,
+                215
+              ]
+            },
+            {
+              "card": 0,
+              "source": [
+                600,
+                120
+              ],
+              "board": [
+                326,
+                317
+              ],
+              "rgb": [
+                40,
+                233,
+                32
+              ],
+              "expectedOriginalRgb": [
+                40,
+                232,
+                32
+              ]
+            },
+            {
+              "card": 0,
+              "source": [
+                120,
+                600
+              ],
+              "board": [
+                146,
+                497
+              ],
+              "rgb": [
+                31,
+                40,
+                231
+              ],
+              "expectedOriginalRgb": [
+                32,
+                40,
+                232
+              ]
+            },
+            {
+              "card": 0,
+              "source": [
+                600,
+                600
+              ],
+              "board": [
+                326,
+                497
+              ],
+              "rgb": [
+                232,
+                33,
+                40
+              ],
+              "expectedOriginalRgb": [
+                232,
+                32,
+                40
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                120,
+                120
+              ],
+              "board": [
+                510,
+                317
+              ],
+              "rgb": [
+                28,
+                74,
+                221
+              ],
+              "expectedOriginalRgb": [
+                28,
+                74,
+                220
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                600,
+                120
+              ],
+              "board": [
+                690,
+                317
+              ],
+              "rgb": [
+                74,
+                219,
+                28
+              ],
+              "expectedOriginalRgb": [
+                74,
+                220,
+                28
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                120,
+                600
+              ],
+              "board": [
+                510,
+                497
+              ],
+              "rgb": [
+                220,
+                28,
+                75
+              ],
+              "expectedOriginalRgb": [
+                220,
+                28,
+                74
+              ]
+            },
+            {
+              "card": 1,
+              "source": [
+                600,
+                600
+              ],
+              "board": [
+                690,
+                497
+              ],
+              "rgb": [
+                227,
+                181,
+                34
+              ],
+              "expectedOriginalRgb": [
+                227,
+                181,
+                35
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                120,
+                120
+              ],
+              "board": [
+                874,
+                317
+              ],
+              "rgb": [
+                33,
+                186,
+                78
+              ],
+              "expectedOriginalRgb": [
+                32,
+                186,
+                78
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                600,
+                120
+              ],
+              "board": [
+                1054,
+                317
+              ],
+              "rgb": [
+                186,
+                78,
+                32
+              ],
+              "expectedOriginalRgb": [
+                186,
+                78,
+                32
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                120,
+                600
+              ],
+              "board": [
+                874,
+                497
+              ],
+              "rgb": [
+                77,
+                32,
+                185
+              ],
+              "expectedOriginalRgb": [
+                78,
+                32,
+                186
+              ]
+            },
+            {
+              "card": 2,
+              "source": [
+                600,
+                600
+              ],
+              "board": [
+                1054,
+                497
+              ],
+              "rgb": [
+                222,
+                69,
+                177
+              ],
+              "expectedOriginalRgb": [
+                223,
+                69,
+                177
+              ]
+            }
+          ],
+          "wrongPhotoRejected": true,
+          "rgbaSha256": "0fbba2dee9f011c196e3fb303b653bf70e13d597ef55ca7c700c667b43ec403f"
+        }
+      ],
+      "checks": [
+        "Full A/B/C photo/rating/look conflict identity; protected local Undo/Redo/raw nodes/caret; stale reviewed replacement refused and fresh explicit replacement complete.",
+        "Complete 36/80/30/20 graph, exact 8MiB raw admission/+1 refusal, four full-history snapshots by measured 24MiB budget, full distinct browser restart and exact complete native JSON."
+      ],
+      "browserVersion": "151.0.7922.173",
+      "firstSavedRevision": "dca794d1-9025-4cc1-bea8-8f14b3c95e42",
+      "finalStoredReceipt": {
+        "schemaVersion": 2,
+        "revision": "6a2c4b47-b73f-4530-8409-9df4b13dfcea",
+        "storedJsonBytes": 5544310,
+        "storedJsonSha256": "cb7bdce6bd6d8844960a8b0898e7164bf46bbf982facde9e00e0180054d22caa",
+        "completeProjectBytes": 5544230,
+        "completeProjectSha256": "a9b367ffed808defadd57751286ab77d65f6e5ea3f4b0418bab50a57fd046428"
+      },
+      "history": {
+        "completeSnapshotBytes": 5544230,
+        "retainedSnapshots": 4,
+        "undoTransitions": 3,
+        "budgetBytes": 25165824,
+        "provesByteCap": true
+      },
+      "expected": {
+        "pieces": 36,
+        "piecesPerCategory": 12,
+        "examples": 80,
+        "looks": 30,
+        "photos": 20,
+        "totalJpegBytes": 4096000,
+        "rawFileBytes": 8388608,
+        "overflowFileBytes": 8388609,
+        "historyBytes": 25165824,
+        "historySnapshots": 20
+      },
+      "wallMs": 89118.041327,
+      "allOwnedBrowserProcessesClosed": true
+    },
+    "normalBuild": {
+      "path": "/tmp/style116-normal-production-build.log",
+      "bytes": 610,
+      "sha256": "2b7487d5f820a044f1518f304140a4c0eff5a1d9389f6358437d99839a7abb74"
+    },
+    "ownedServerStopped": true
+  }
+}

@@ -1,9 +1,9 @@
-import { openProjectStore } from '../src/storage.ts';
+import { openProjectStore, SavedCopyConflict, STORAGE_OPERATION_MS, MAX_STORED_BYTES } from '../src/storage.ts';
 import { createProject } from '../src/domain.ts';
 
-function rawDatabase(): Promise<IDBDatabase> {
+function rawDatabase(version = 2): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('style-studio', 1);
+    const request = indexedDB.open('style-studio', version);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -63,6 +63,6 @@ function abortNextWrite(): void {
   };
 }
 
-const harness = { openProjectStore, createProject, rawDatabase, rawWrite, rawRead, holdNextWrite, abortNextWrite };
+const harness = { openProjectStore, SavedCopyConflict, STORAGE_OPERATION_MS, MAX_STORED_BYTES, createProject, rawDatabase, rawWrite, rawRead, holdNextWrite, abortNextWrite };
 declare global { interface Window { storageHarness: typeof harness } }
 window.storageHarness = harness;

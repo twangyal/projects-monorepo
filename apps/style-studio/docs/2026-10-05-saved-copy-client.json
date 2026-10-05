@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "issue": 116,
+  "createdAt": "2026-10-05T00:17:04.621743+00:00",
+  "scope": [
+    "src/main.ts",
+    "src/style.css"
+  ],
+  "status": "coherent UI implementation; independent native acceptance pending",
+  "source": [
+    {
+      "path": "src/main.ts",
+      "bytes": 55150,
+      "sha256": "c3c26e1c5298c0917c32b3dc18718854a235f8239cc219be406e81d6725cb5fc"
+    },
+    {
+      "path": "src/style.css",
+      "bytes": 13310,
+      "sha256": "5a82cd3d2597ef62582f65969c20c4c46cb09e9d201e4022fb5a0dd4b05ecfe3"
+    },
+    {
+      "path": "docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4079,
+      "sha256": "764b38c31857001b08018a6e5251a9ae2275a0833f8022f7fdaa76a3b15ff8b6"
+    }
+  ],
+  "beforeImplementation": {
+    "receipt": "docs/2026-10-05-saved-copy-baseline.json",
+    "owner": "root",
+    "result": "Original real two-page stale autosave lost the winner’s photo/piece/opinion/look graph; protection assertion RED. UI producer did not rerun this baseline."
+  },
+  "checks": [
+    {
+      "command": "npx eslint src/main.ts",
+      "cwd": "apps/style-studio",
+      "exitCode": 0,
+      "log": "/tmp/style116-ui-lint-final.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "cwd": "apps/style-studio",
+      "exitCode": 2,
+      "log": "/tmp/style116-ui-typecheck-final.log",
+      "result": "No owned main/style diagnostics. Nine existing tests/browser/storage.spec.ts LoadedProject compatibility diagnostics remain for root adaptation."
+    },
+    {
+      "command": "git diff --check -- apps/style-studio/src/main.ts apps/style-studio/src/style.css",
+      "exitCode": 0
+    }
+  ],
+  "implementation": {
+    "savePump": "One active native save plus one latest detached committed snapshot; any older foreign conflict retires the pending snapshot. Success acknowledges only the captured committed generation and live page lifetime.",
+    "authority": "Initial restore/reload accepts opaque load receipt only after full JPEG decoding, temporary History/model admission and synchronous intent/lifetime checks. No canceled restore or in-memory replacement invents write permission.",
+    "recovery": "Typed SavedCopyConflict and SavedCopyProtected retain protected current memory; only store-proven ordinary rollback exposes Retry saving. Unknown/closed storage reopens for fresh review/read.",
+    "replacement": "Fresh native summary, explicit confirmation naming saved profile/counts or absence/unreadability, committed-only exclusion disclosure, same reviewed receipt passed to CAS replace. Newer local work during confirmed native write requires manual Retry; retired page lifetime remains protected.",
+    "drafts": "Status-only storage callbacks preserve native forms/caret, keyed look fields, current selection/history and normalized unsubmitted photo drafts. Explicit admitted reload alone resets those editors/history.",
+    "lifetime": "Persisted pagehide retires async UI authority while keeping the live store/native terminal truth and current committed/raw/photo/history graph. Nonpersisted teardown closes storage and retires owned downloads.",
+    "portable": "Project schema1, JSON backup, model, photos and all quotas unchanged."
+  },
+  "limits": {
+    "pendingCommittedSnapshots": 1,
+    "activeWrites": 1,
+    "nativeStorageOperationMs": 10000,
+    "projectBytes": 8388608,
+    "storedWrapperBytes": 8388688,
+    "historySnapshots": 20,
+    "historyBytes": 25165824
+  },
+  "claimsExcluded": [
+    "No build, browser run, persistent service or Git mutation by this UI producer.",
+    "No independent native or maximum proof claimed; those belong to root and separate acceptance owners."
+  ]
+}

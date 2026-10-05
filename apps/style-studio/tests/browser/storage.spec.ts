@@ -8,11 +8,12 @@ test.beforeEach(async ({ page }) => {
   await expect.poll(() => page.evaluate(() => Boolean(window.storageHarness))).toBe(true);
 });
 
-test('real IndexedDB opens the version-one singleton and persists across store reopen', async ({ page }) => {
+test('real IndexedDB opens the version-two singleton and persists across accepted store reopen', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.storageHarness;
     const store = await h.openProjectStore();
     const empty = await store.load();
+    store.acceptLoad(empty.receipt);
     await store.save(h.createProject('Persistent profile'));
     await store.close();
     const reopened = await h.openProjectStore();
@@ -20,17 +21,17 @@ test('real IndexedDB opens the version-one singleton and persists across store r
     const raw = await h.rawDatabase();
     const schema = { name: raw.name, version: raw.version, stores: Array.from(raw.objectStoreNames) };
     raw.close(); await reopened.close();
-    return { empty, title: loaded?.title, schema };
+    return { empty: empty.project, title: loaded.project?.title, schema };
   });
-  expect(result).toEqual({ empty: null, title: 'Persistent profile', schema: { name: 'style-studio', version: 1, stores: ['profiles'] } });
+  expect(result).toEqual({ empty: null, title: 'Persistent profile', schema: { name: 'style-studio', version: 2, stores: ['profiles'] } });
 });
 
 test('an existing incompatible database is reported without silently replacing it', async ({ page }) => {
   const result = await page.evaluate(async () => {
-    const raw = await window.storageHarness.rawDatabase();
+    const raw = await window.storageHarness.rawDatabase(1);
     raw.close();
     const message = await window.storageHarness.openProjectStore().then(store => store.close().then(() => ''), error => String(error));
-    const unchanged = await window.storageHarness.rawDatabase();
+    const unchanged = await window.storageHarness.rawDatabase(1);
     const stores = Array.from(unchanged.objectStoreNames); unchanged.close();
     return { message, stores };
   });
@@ -48,9 +49,10 @@ test('schema creation failure has no uncaught page error and native setup can re
     catch (error) { message = (error as Error).message; }
     finally { IDBDatabase.prototype.createObjectStore = original; }
     const retry = await h.openProjectStore(), empty = await retry.load();
+    retry.acceptLoad(empty.receipt);
     await retry.save(h.createProject('After setup retry')); await retry.close();
     const reopened = await h.openProjectStore(), loaded = await reopened.load(); await reopened.close();
-    return { message, empty, title: loaded?.title };
+    return { message, empty: empty.project, title: loaded.project?.title };
   });
   expect(result.message).toMatch(/storage.*unavailable.*memory.*backup/i);
   expect(result.message).not.toContain('Private setup detail');
@@ -61,6 +63,7 @@ test('schema creation failure has no uncaught page error and native setup can re
 test('queued saves capture nested data at call time before earlier transactions finish', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.storageHarness, store = await h.openProjectStore();
+    store.acceptLoad((await store.load()).receipt);
     const gate = h.holdNextWrite();
     let firstSettled = false;
     const first = store.save(h.createProject('Blocking')).then(() => { firstSettled = true; });
@@ -74,9 +77,9 @@ test('queued saves capture nested data at call time before earlier transactions 
     const settledBeforeComplete = firstSettled;
     gate.release(); await first; await queued;
     const saved = await store.load();
-    saved!.pieces[0].name = 'Mutated load';
+    saved.project!.pieces[0].name = 'Mutated load';
     const fresh = await store.load(); await store.close();
-    return { settledBeforeComplete, title: fresh?.title, piece: fresh?.pieces[0].name, style: fresh?.pieces[0].tags.style };
+    return { settledBeforeComplete, title: fresh.project?.title, piece: fresh.project?.pieces[0].name, style: fresh.project?.pieces[0].tags.style };
   });
   expect(result).toEqual({ settledBeforeComplete: false, title: 'Captured', piece: 'Original piece', style: 'classic' });
 });
@@ -84,6 +87,7 @@ test('queued saves capture nested data at call time before earlier transactions 
 test('save and clear commit in invocation order and do not resurrect an older profile', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.storageHarness, store = await h.openProjectStore();
+    store.acceptLoad((await store.load()).receipt);
     const first = store.save(h.createProject('Old'));
     const clear = store.clear();
     await Promise.all([first, clear]);
@@ -91,7 +95,7 @@ test('save and clear commit in invocation order and do not resurrect an older pr
     const saves = [store.save(h.createProject('First')), store.clear(), store.save(h.createProject('Newest'))];
     await Promise.all(saves);
     const latest = await store.load(); await store.close();
-    return { cleared, title: latest?.title };
+    return { cleared: cleared.project, title: latest.project?.title };
   });
   expect(result).toEqual({ cleared: null, title: 'Newest' });
 });
@@ -99,6 +103,7 @@ test('save and clear commit in invocation order and do not resurrect an older pr
 test('a real aborted write and invalid save do not poison later queued operations', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.storageHarness, store = await h.openProjectStore();
+    store.acceptLoad((await store.load()).receipt);
     await store.save(h.createProject('Original'));
     h.abortNextWrite();
     const failed = store.save(h.createProject('Aborted'));
@@ -108,7 +113,7 @@ test('a real aborted write and invalid save do not poison later queued operation
     const invalid = await store.save({ ...h.createProject(), title: '' }).then(() => false, () => true);
     await store.save(h.createProject('After invalid'));
     const latest = await store.load(); await store.close();
-    return { statuses: outcomes.map(outcome => outcome.status), failedMessage, invalid, title: latest?.title };
+    return { statuses: outcomes.map(outcome => outcome.status), failedMessage, invalid, title: latest.project?.title };
   });
   expect(result.statuses).toEqual(['rejected', 'fulfilled']);
   expect(result.failedMessage).toMatch(/storage|save|export/i);
@@ -118,6 +123,7 @@ test('a real aborted write and invalid save do not poison later queued operation
 test('close waits for accepted writes and immediately rejects all new operations', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.storageHarness, store = await h.openProjectStore();
+    store.acceptLoad((await store.load()).receipt);
     const gate = h.holdNextWrite();
     const first = store.save(h.createProject('First'));
     await gate.started;
@@ -132,7 +138,7 @@ test('close waits for accepted writes and immediately rejects all new operations
     const closedBeforeRelease = closed;
     gate.release(); await Promise.all([first, second, closing]); await store.close();
     const reopened = await h.openProjectStore(), latest = await reopened.load(); await reopened.close();
-    return { rejected, closedBeforeRelease, title: latest?.title };
+    return { rejected, closedBeforeRelease, title: latest.project?.title };
   });
   expect(result).toEqual({ rejected: [true, true, true], closedBeforeRelease: false, title: 'Accepted latest' });
 });
@@ -148,12 +154,16 @@ test('corrupt records including undefined remain untouched after failed loads', 
       const unchanged = JSON.stringify(await h.rawRead(raw)) === JSON.stringify(value);
       results.push({ message, unchanged });
     }
+    const ordinaryClearRefused = await store.clear().then(() => false, () => true);
+    const review = await store.reviewReplacement();
+    await store.replace(h.createProject('Reviewed recovery'), review.receipt);
     await store.clear();
     const empty = await store.load();
     raw.close(); await store.close();
-    return { results, empty };
+    return { results, empty: empty.project, ordinaryClearRefused };
   });
   expect(result.empty).toBeNull();
+  expect(result.ordinaryClearRefused).toBe(true);
   expect(result.results).toHaveLength(4);
   for (const item of result.results) {
     expect(item.message).toMatch(/saved|profile|corrupt|invalid/i);

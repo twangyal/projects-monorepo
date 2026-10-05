@@ -1,0 +1,131 @@
+{
+  "purpose": "Independent pre-change two-page stale autosave protection expectation; expected RED on old unconditional storage.",
+  "origin": "http://127.0.0.1:4310",
+  "fixture": {
+    "path": "/tmp/style116-baseline-fixture.json",
+    "sha256": "2cd36f7b608fecafd199862aedf85905992ef67565c40c071f2af654a07b0399",
+    "projectVersion": 1,
+    "seedJpeg": {
+      "width": 720,
+      "height": 720,
+      "leftRGB": [
+        220,
+        20,
+        60
+      ],
+      "rightRGB": [
+        20,
+        40,
+        220
+      ],
+      "bytes": 15745,
+      "sha256": "112c335cddd7054df675d0c4395de483e1620c9aabeef285407f23653b3a6b52"
+    },
+    "winnerPng": {
+      "width": 120,
+      "height": 80,
+      "leftRGB": [
+        255,
+        210,
+        0
+      ],
+      "rightRGB": [
+        0,
+        210,
+        235
+      ],
+      "bytes": 267,
+      "sha256": "6af5bc263b791d5d9057e9c9d15aef04f678cad937dc4251f4dc26ea211f8009"
+    },
+    "profile": "Three original category-complete pieces, one complete saved-look snapshot, one retained image, no inferred tags or pretrained inputs."
+  },
+  "stage": "stale-save-completed",
+  "result": "expected-protection-red",
+  "pageErrors": [],
+  "externalOrigins": [],
+  "browserClosed": true,
+  "winner": {
+    "path": "/workspace/style116-baseline-stale-save/tab-a-complete-winner.json",
+    "bytes": 31130,
+    "sha256": "42814dfe179465e55530731967b2e6bf07fbb2972f51715bd7fcd788cf5ac714"
+  },
+  "normalizedWinnerPhoto": {
+    "width": 720,
+    "height": 720,
+    "left": [
+      255,
+      210,
+      0,
+      255
+    ],
+    "right": [
+      0,
+      210,
+      235,
+      255
+    ],
+    "sha256": "43ca7cc7021939b34aa701bee791e5d0d94585dc5c7b6467c262887dbad0626a"
+  },
+  "after": {
+    "title": "Stale page title116",
+    "pieces": 3,
+    "photos": 1,
+    "examples": 0,
+    "lookName": "Original saved combination",
+    "durableMatchesStaleMemory": true,
+    "durableMatchesWinner": false,
+    "saveStatus": "Saved on this device \u00b7 export a profile for backup"
+  },
+  "memory": {
+    "path": "/workspace/style116-baseline-stale-save/tab-b-memory-after-edit.json",
+    "bytes": 22521,
+    "sha256": "eef33c0213cc65195425c65b28d95cb2c4e19648297c2bb063b25a38528bfcba"
+  },
+  "initial": {
+    "path": "/workspace/style116-baseline-stale-save/initial-complete.json",
+    "bytes": 22530,
+    "sha256": "1ef060e640c5a448cf4e31747a58a76b5e95e99ccdeb64a05cd931f68f251a26"
+  },
+  "error": "PROTECTION EXPECTATION: stale page must not overwrite the previously committed complete winner photo, rating and saved look",
+  "sourceSha256": "db3cc58f87b987f7e99a9f2e58b8eac2f37976da487a56893463e648a8badfb7",
+  "rootRun": {
+    "log": {
+      "path": "/tmp/style116-baseline-native.log",
+      "bytes": 384,
+      "sha256": "2db1f36f2a16a6226503837dda84f1ccd68128cd5667e7211e2cb711ec2b09ca"
+    },
+    "build": {
+      "path": "/tmp/style116-baseline-build.log",
+      "bytes": 610,
+      "sha256": "021623a9245c1cb1e66e643c5bcdf7cc35e922ccc0d532ef963bc59ac59423f4"
+    },
+    "server": {
+      "pid": 774324,
+      "port": 4310,
+      "cwd": "/workspace/style116-baseline-dist",
+      "sources": {
+        "src/storage.ts": "dc88a9b280fcd1a023b93fd6e8482919fe35119e6d48dde035e645eceae8cbbd",
+        "src/main.ts": "da17c101d3d469b1c8d3ba81313f5d740b6a1a3b6707d9e921a6a5b692a997d4"
+      },
+      "head": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "buildLog": "/tmp/style116-baseline-build.log"
+    },
+    "rawReceipt": {
+      "path": "/workspace/style116-baseline-stale-save/verification.json",
+      "bytes": 2645,
+      "sha256": "01fc698ba69de0f7f06653188d26be69bbd6a70e11a8f3f7f4cd589ddd47c03c"
+    },
+    "nativeFirstInvocation": true,
+    "unchangedSource": true
+  },
+  "originalProbe": {
+    "path": "/tmp/style116-baseline-stale-save.mjs",
+    "bytes": 8749,
+    "sha256": "db3cc58f87b987f7e99a9f2e58b8eac2f37976da487a56893463e648a8badfb7"
+  },
+  "fixtureFile": {
+    "path": "/tmp/style116-baseline-fixture.json",
+    "bytes": 23447,
+    "sha256": "2cd36f7b608fecafd199862aedf85905992ef67565c40c071f2af654a07b0399"
+  }
+}

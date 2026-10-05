@@ -54,6 +54,28 @@ Input photos must be static JPEG, PNG, or WebP, at most 8 MiB, 16 megapixels, an
 
 IndexedDB autosave is local to the browser. Failed/unavailable storage leaves the in-memory profile editable and reports the problem; **export a JSON backup before closing**. Browser storage alone is not a backup. The app preserves corrupt saved data rather than silently overwriting it with an empty profile. Accepted saves run in order, and late startup/import/photo work cannot overwrite newer edits.
 
+Each page now checks the complete saved copy before writing. If another tab has
+changed it, autosave stops and keeps both the newer saved profile and this page's
+current work. Continue editing or use **Export profile** to keep a complete backup,
+including photos. Your forms, unsubmitted photos and session Undo/Redo remain
+available while the saved copy is protected.
+
+**Reload saved profile** deliberately discards this page's unsaved profile,
+unapplied fields and session history after confirmation and successful photo
+checks. **Replace saved copy** first reviews the current saved profile, then asks
+before replacing it with this page's complete committed profile. Unapplied fields
+and unsubmitted photos are excluded and stay in the editor. If another tab saves
+again during that review, replacement refuses and requires a fresh review.
+New profile, sample loading and JSON import remain reversible local edits; they
+do not bypass protection of a conflicting or unreadable saved copy.
+
+A confirmed storage failure can offer **Retry saving**. An unknown result or
+ten-second storage deadline keeps the copy protected until explicit recovery;
+it never claims a save succeeded. This release upgrades the local database to
+version 2 to prevent older clients from writing without these checks. Close old
+tabs if the upgrade is blocked, and use the current app build to reopen it.
+The upgrade itself preserves the existing profile; portable JSON stays schema 1.
+
 Undo/redo is session-only: at most 20 snapshots including the current profile, with a 24 MiB serialized-history budget. Large profiles have fewer undo steps. Unreferenced photos are collected from the current profile, while saved look and example references keep their assets.
 
 ## Verify
@@ -70,9 +92,45 @@ npm run test:browser
 CHROMIUM_PATH=/path/to/chromium npm run test:browser
 ```
 
-Playwright uses production assets on port 4240. `STYLE_STUDIO_TEST_HARNESS=1` adds isolated storage/image harness entries for browser verification; normal builds omit them. Verification covers real IndexedDB and image decoding/export as well as learning, domain bounds, and the complete user flow. No account, third-party image service, or downloaded model is needed.
+Playwright uses production assets on port 4240; `STYLE_TEST_PORT` selects another unused port. `STYLE_STUDIO_TEST_HARNESS=1` adds isolated storage/image harness entries for browser verification; normal builds omit them. Verification covers real IndexedDB and image decoding/export as well as learning, domain bounds, and the complete user flow. No account, third-party image service, or downloaded model is needed.
 
 The completed local milestone passes 51 unit tests and 30 production Chromium tests, plus ESLint, TypeScript and a production build. Browser checks use real image decoding, PNG pixels and IndexedDB, including storage failures, corrupt-record recovery, concurrent operation cancellation, and the complete personal-learning workflow. An independent orientation review compared all eight EXIF orientations across JPEG/PNG/WebP, rectangular and square sources: all 48 cases matched independently transformed reference pixels. These checks validate the implementation, not the predictive quality of a particular person's training examples.
 
 
 Issue [#68](https://github.com/twangyal/projects-monorepo/issues/68) guards failed IndexedDB schema creation. Native regression tests first reproduced an uncaught private browser exception, then verified sanitized backup guidance, no uncaught page error and successful save/reopen after retry. The complete gate passed 51 unit and 30 production Chromium cases, lint, type checking and build at [`82a090b`](https://github.com/twangyal/projects-monorepo/actions/runs/37198623281). See [the setup verification record](docs/2026-10-04-storage-setup-verification.json).
+
+Issue [#116](https://github.com/twangyal/projects-monorepo/issues/116) prevents a
+reproduced stale-tab overwrite of complete photos, ratings and saved looks.
+Version 0.2.0 passes **51 unit and 56 production Chromium cases**, lint, type
+checking and build locally. Native checks exercise actual transaction aborts,
+old-client fencing, corrupt/missing records, ten-second deadlines, competing
+writers, reviewed replacement and preserved editor drafts. The [verification
+receipt](docs/2026-10-05-saved-copy-verification.json) retains the original data-loss
+reproduction and both corrected test-wording failures.
+
+The first original maximum-capacity run preserves 36 pieces, 80 ratings, 30 saved
+looks and 20 distinct 720 × 720 JPEGs of exactly 200 KiB each through conflict,
+Undo/Redo, stale replacement refusal and fresh replacement. A **5,544,230-byte**
+complete backup survives a new Chromium process byte-for-byte. Two actual PNG
+boards pass independent image checks, and four full snapshots demonstrate the
+24 MiB history bound. Exact 8 MiB input uses trailing JSON whitespace; JPEG
+capacity uses declared harmless comment padding. These are capacity and
+correctness checks, without claims about photographic complexity, peak memory,
+general latency or fashion accuracy. See [the complete maximum
+receipt](docs/2026-10-05-saved-copy-maximum.json).
+
+To repeat that optional acceptance, install Python 3 with Pillow and a Chromium
+browser. Build normally, then serve `dist` on a loopback origin in another
+terminal (for example `python3 -m http.server 4312 --bind 127.0.0.1 --directory dist`).
+Use new fixture and output directories; existing evidence is never overwritten:
+
+```sh
+STYLE_CONFLICT_FIXTURES=/tmp/style-capacity-fixtures \
+  node scripts/smoke_saved_copy_conflicts.mjs --fixtures-only
+STYLE_CONFLICT_FIXTURES=/tmp/style-capacity-fixtures \
+  STYLE_CONFLICT_OUTPUT=/tmp/style-capacity-results \
+  STYLE_CONFLICT_ORIGIN=http://127.0.0.1:4312 CHROMIUM_PATH=/usr/bin/chromium \
+  node scripts/smoke_saved_copy_conflicts.mjs --run-prepared
+```
+
+The runner owns its browser processes and leaves the supplied server untouched.

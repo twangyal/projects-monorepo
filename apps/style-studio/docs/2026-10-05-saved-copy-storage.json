@@ -1,0 +1,91 @@
+{
+  "issue": 116,
+  "status": "Producer source coherent; independent native integration pending",
+  "scope": [
+    "src/storage.ts",
+    "tests/storage.test.ts",
+    "docs/2026-10-05-saved-copy-storage.json"
+  ],
+  "design": {
+    "path": "/workspace/projects-monorepo/docs/superpowers/specs/2026-10-04-style-saved-copy-conflicts-design.md",
+    "bytes": 28858,
+    "sha256": "dd3137961dff0c862abcf326bf2ce0067d34375354c5b85a42a45627a34133f1"
+  },
+  "source": {
+    "path": "/workspace/projects-monorepo/apps/style-studio/src/storage.ts",
+    "bytes": 20050,
+    "sha256": "91ae885dd42c40ce758ddecbd1f152d49a1f45b2783611149aa7a35c075e010c"
+  },
+  "ownedTest": {
+    "path": "/workspace/projects-monorepo/apps/style-studio/tests/storage.test.ts",
+    "bytes": 1218,
+    "sha256": "e727f8c5b6b55be1c19478179677104490b62da2db6bd967c82fd741706a3836"
+  },
+  "baseline": {
+    "owner": "root using independently authored two-page probe",
+    "receipt": {
+      "path": "/workspace/projects-monorepo/apps/style-studio/docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4079,
+      "sha256": "764b38c31857001b08018a6e5251a9ae2275a0833f8022f7fdaa76a3b15ff8b6"
+    },
+    "result": "Actual original protection RED: stale title autosave erased winning photo/piece/rating/look and reported Saved",
+    "producerDidNotRunBaseline": true
+  },
+  "ownedVerification": {
+    "unit": {
+      "command": "node --experimental-strip-types --test tests/storage.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "durationMs": 152.032077,
+      "log": {
+        "path": "/tmp/style116-storage-unit-final.log",
+        "bytes": 305,
+        "sha256": "51eb6c64fcf575ee53cfef27a5b38d7503b5296ccb0301a53672dafe86251c87"
+      },
+      "meaning": "Existing unavailable/security admission tests strengthened to require SavedCopyProtected and sanitized private exception guidance; not native CAS proof"
+    },
+    "lint": {
+      "command": "./node_modules/.bin/eslint src/storage.ts tests/storage.test.ts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/style116-storage-lint-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "strictTypecheck": {
+      "command": "./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --lib ES2022,DOM src/storage.ts tests/storage.test.ts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/style116-storage-tsc-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "history": "No fabricated throwing-stub test-first claim. Root native baseline is decisive actual RED before implementation. No fake IndexedDB, browser, server or production build run by producer."
+  },
+  "implementation": {
+    "database": {
+      "name": "style-studio",
+      "version": 2,
+      "store": "profiles",
+      "key": "current",
+      "legacyReadNoPut": true
+    },
+    "portableProjectVersion": 1,
+    "storedWrapperVersion": 2,
+    "maxProjectBytes": 8388608,
+    "maxStoredBytes": 8388688,
+    "deadlineMs": 10000,
+    "identity": "Entire raw JSON-compatible value in deterministic field order, exact ordered arrays/UTF8 budget, negative-zero positions and present-undefined distinct from absent",
+    "authority": "Instance-private purpose/used/protection-epoch receipts; successful load requires explicit acceptance; native compare and mutation share one RW transaction; expected identity advances on native complete only",
+    "protection": "SavedCopyConflict for changed winner; root-approved SavedCopyProtected for unknown/deadline/versionchange/closed/unreadable authority; confirmed RW rollback/quota preserves expectation",
+    "ownership": "Native callback admission and readonly completion both required; monotonic timer and synchronous terminal deadline checks; timeout invalidates receipts/closes new work and late callbacks cannot restore authority; normal close drains accepted queue"
+  },
+  "limitations": [
+    "Node tests do not validate browser IndexedDB transaction semantics. Independent native oracle and UI/max/profile-restart gates remain separately owned and pending.",
+    "Logical timeout is not proof of native rollback; no Saved acknowledgement or ordinary authority is granted for unknown settlement.",
+    "CAS protects cooperating application writers, not arbitrary same-origin scripts/developer-tools access.",
+    "All existing model/media/text/portable/history semantics and browser quota limitations remain."
+  ]
+}

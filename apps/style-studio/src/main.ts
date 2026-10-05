@@ -8,7 +8,7 @@ import { createDemoProject } from './demo.ts';
 import { featuresFromTags, tagsFromFeatures } from './features.ts';
 import { assessOutfit, generateAlternatives, trainPreferenceModel } from './model.ts';
 import { ProjectHistory } from './history.ts';
-import { openProjectStore, type ProjectStore } from './storage.ts';
+import { openProjectStore, SavedCopyConflict, SavedCopyProtected, type ProjectStore } from './storage.ts';
 import { exportLookPng, normalizePhoto, validateProjectPhotos } from './images.ts';
 import {
   FITS, FORMALITIES, LIMITS, PALETTES, STYLES,
@@ -23,7 +23,7 @@ mount.innerHTML = `
 <header class="site-header"><a class="brand" href="#top"><span class="brand-mark" aria-hidden="true">s.</span> Style Studio</a><nav aria-label="Workspace"><a href="#wardrobe">Wardrobe</a><a href="#taste">Your taste</a><a href="#ideas">Outfit ideas</a><a href="#saved">Saved looks</a></nav><span class="local-badge">Local & private</span></header>
 <main id="top">
   <section class="hero" aria-labelledby="hero-title"><div><p class="eyebrow">A wardrobe that feels like you</p><h1 id="hero-title">Good style starts<br>with <em>your taste.</em></h1><p class="hero-copy">Keep the pieces you own. Teach us what you like. Find a few new ways to wear them.</p><button id="load-sample" class="button secondary">Load sample profile</button><p class="quiet">Original sample pieces and labels. Replacing your profile is confirmed and undoable.</p></div><aside class="model-panel" aria-labelledby="model-heading"><div class="panel-top"><span class="eyebrow">Your preference notebook</span><span class="dot" aria-hidden="true"></span></div><h2 id="model-heading">Learning your point of view</h2><p id="model-status" role="status"></p><div id="model-counts" class="counts"></div><p class="quiet">A small model learns from your Like / Pass labels and the tags you enter. Photos are references only; there is no automatic image recognition.</p><p class="quiet">Scores describe estimated taste alignment, not probabilities, fit or objective fashion quality.</p></aside></section>
-  <section class="profile-bar" aria-label="Profile and backup"><form id="profile-form"><label for="profile-title">Profile title</label><div class="inline"><input id="profile-title" name="title" maxlength="80" required><button class="button subtle" type="submit">Save profile title</button></div></form><div class="profile-actions"><button id="undo" class="button subtle">Undo</button><button id="redo" class="button subtle">Redo</button><button id="export-profile" class="button subtle">Export profile</button><button id="import-profile" class="button subtle">Import profile</button><input id="profile-import" type="file" accept=".json,application/json" class="visually-hidden" aria-label="Choose profile JSON"><button id="new-profile" class="button subtle">New profile</button></div><div class="save-line"><p id="save-status" role="status">Opening local storage…</p><button id="retry-save" class="button subtle" hidden>Retry saving</button></div></section>
+  <section class="profile-bar" aria-label="Profile and backup"><form id="profile-form"><label for="profile-title">Profile title</label><div class="inline"><input id="profile-title" name="title" maxlength="80" required><button class="button subtle" type="submit">Save profile title</button></div></form><div class="profile-actions"><button id="undo" class="button subtle">Undo</button><button id="redo" class="button subtle">Redo</button><button id="export-profile" class="button subtle">Export profile</button><button id="import-profile" class="button subtle">Import profile</button><input id="profile-import" type="file" accept=".json,application/json" class="visually-hidden" aria-label="Choose profile JSON"><button id="new-profile" class="button subtle">New profile</button></div><div class="save-line"><p id="save-status" role="status">Opening local storage…</p><button id="retry-save" class="button subtle" hidden>Retry saving</button><button id="retry-load" class="button subtle">Reload saved profile</button><button id="replace-saved-copy" class="button subtle">Replace saved copy</button></div></section>
   <div class="message-line"><p id="message" role="status" aria-live="polite">Start with your own pieces, or load the sample profile to try the complete flow.</p><button id="cancel-operation" class="button subtle" hidden>Cancel operation</button></div>
   <section id="wardrobe" class="workspace-section" aria-labelledby="wardrobe-heading"><div class="section-heading"><div><p class="eyebrow">01 / The pieces you reach for</p><h2 id="wardrobe-heading">Your wardrobe</h2></div><p id="wardrobe-count" class="section-caption"></p></div><div class="section-layout"><form id="piece-form" class="editor-panel"><h3 id="piece-form-heading">Add a wardrobe piece</h3><p class="quiet">Use your own photo or keep an illustrated reference. Describe the piece yourself.</p><label for="piece-name">Piece name</label><input id="piece-name" name="name" required maxlength="80" placeholder="The linen shirt"><label for="piece-category">Category</label><select id="piece-category" name="category"><option value="top">Top</option><option value="bottom">Bottom</option><option value="shoes">Shoes</option></select><div id="piece-tags" class="tag-fields"></div><label for="piece-photo">Reference photo (optional)</label><input id="piece-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="piece-photo-preview" class="photo-draft"></div><p id="piece-photo-status" class="quiet" role="status"></p><button id="remove-piece-photo" class="text-button" type="button" hidden>Remove reference photo</button><div class="form-actions"><button id="piece-submit" class="button" type="submit">Add wardrobe piece</button><button id="cancel-piece-edit" class="button subtle" type="button" hidden>Cancel edit</button></div></form><div><div id="wardrobe-list" class="wardrobe-grid"></div><p id="wardrobe-empty" class="empty">A favorite shirt, a reliable pair of trousers, the shoes you always wear. Add one of each to start making looks.</p></div></div></section>
   <section id="taste" class="workspace-section" aria-labelledby="taste-heading"><div class="section-heading"><div><p class="eyebrow">02 / Your likes, your labels</p><h2 id="taste-heading">Teach your taste</h2></div><p id="example-count" class="section-caption"></p></div><div class="section-layout"><form id="example-form" class="editor-panel"><h3>Keep an outfit opinion</h3><p class="quiet">An outfit can be a reference you like or one you would pass on. Enter the tags you see.</p><label for="example-caption">Outfit caption</label><input id="example-caption" name="caption" required maxlength="160" placeholder="Relaxed weekend layers"><div id="example-tags" class="tag-fields"></div><label for="example-label">Your opinion</label><select id="example-label" name="label"><option value="like">Like</option><option value="pass">Pass</option></select><label for="example-photo">Outfit reference photo (optional)</label><input id="example-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="example-photo-preview" class="photo-draft"></div><p id="example-photo-status" class="quiet" role="status"></p><button id="remove-example-photo" class="text-button" type="button" hidden>Remove reference photo</button><button id="example-submit" class="button" type="submit">Teach my taste</button></form><div><div id="example-list" class="example-list"></div><p id="example-empty" class="empty">Your opinions make this personal. Start with at least eight examples, including three Likes and three Passes.</p></div></div></section>
@@ -88,11 +88,19 @@ let generation = 0;
 let store: ProjectStore | null = null;
 let storageReady = false;
 let preserveStoredData = false;
-let explicitReplacement = false;
+let committedGeneration = 0;
+let lifetime = 0;
+let terminal = false;
+let startupPending = true;
+let reopenNeeded = false;
+let manualSave = false;
+let pendingSnapshot: { project: Project; generation: number } | null = null;
+interface RecoveryOwner { controller: AbortController; intent: number; generation: number; lifetime: number }
+let recoveryOwner: RecoveryOwner | null = null;
 let pendingSave = false;
 let saving = false;
 let saveFailed = false;
-let saveSequence = 0;
+
 let editingPiece: string | null = null;
 let assessedTags: Tags | null = null;
 let suggestionSignature: string | null = null;
@@ -110,9 +118,10 @@ function describe(error: unknown): string { return error instanceof Error ? erro
 function isAbort(error: unknown): boolean { return error instanceof DOMException && error.name === 'AbortError'; }
 function cancelOperation(): void {
   operation?.abort(); operation = null; element('#cancel-operation').hidden = true;
+  storageControls();
 }
 function interact(): void {
-  generation++; startupController.abort();
+  generation++; startupController.abort(); recoveryOwner?.controller.abort();
   if (operation) message('The pending import or board export was cancelled because the workspace changed.');
   cancelOperation();
 }
@@ -124,31 +133,65 @@ pieceForm.addEventListener('change', () => { pieceForm.dataset.dirty = 'true'; }
 exampleForm.addEventListener('input', () => { exampleForm.dataset.dirty = 'true'; });
 exampleForm.addEventListener('change', () => { exampleForm.dataset.dirty = 'true'; });
 
-function saveStatus(text: string, retry = false): void {
-  element('#save-status').textContent = text; element('#retry-save').hidden = !retry;
+function storageControls(): void {
+  const outstanding = startupPending || saving || recoveryOwner !== null;
+  element<HTMLButtonElement>('#retry-save').hidden = !saveFailed || preserveStoredData || !storageReady;
+  element<HTMLButtonElement>('#retry-save').disabled = outstanding;
+  element<HTMLButtonElement>('#retry-load').disabled = outstanding;
+  element<HTMLButtonElement>('#replace-saved-copy').disabled = outstanding || operation !== null
+    || Object.values(photoDrafts).some(draft => draft.busy);
+}
+function saveStatus(text: string): void {
+  element('#save-status').textContent = text; storageControls();
+}
+function protect(text: string, reopen = false): void {
+  preserveStoredData = true; storageReady = false; pendingSnapshot = null;
+  pendingSave = true; saveFailed = false; manualSave = false; reopenNeeded ||= reopen;
+  saveStatus(`${text} Your current profile is in memory. Export a backup, reload the saved profile, or review Replace saved copy.`);
 }
 function persist(): void {
   pendingSave = true;
-  if (!storageReady || !store || preserveStoredData) return;
-  pendingSave = false;
-  const sequence = ++saveSequence;
-  saving = true;
-  saveStatus('Saving on this device…');
-  void store.save(project).then(() => {
-    if (sequence === saveSequence) {
-      saving = false; saveFailed = false;
+  if (preserveStoredData || manualSave || !storageReady || !store) {
+    if (!startupPending && recoveryOwner === null) saveStatus(manualSave
+      ? 'Newer work is unsaved. Use Retry saving to save the current committed profile; unapplied fields are excluded.'
+      : 'Unsaved current profile · saved copy protected. Another tab may have changed it; export a backup or use the recovery controls.');
+    return;
+  }
+  // Retain only the newest detached committed snapshot alongside the active write.
+  pendingSnapshot = { project: history.current, generation: committedGeneration };
+  pumpSave();
+}
+function pumpSave(): void {
+  if (saving || recoveryOwner || !storageReady || !store || preserveStoredData || manualSave || !pendingSnapshot) return;
+  const captured = pendingSnapshot; pendingSnapshot = null;
+  const target = store, ownedLifetime = lifetime;
+  saving = true; saveFailed = false; saveStatus('Saving on this device…');
+  void target.save(captured.project).then(() => {
+    if (ownedLifetime !== lifetime || preserveStoredData) return;
+    if (captured.generation === committedGeneration && !pendingSnapshot) {
+      pendingSave = false; saveFailed = false;
       saveStatus('Saved on this device · export a profile for backup');
     }
   }).catch(error => {
-    if (sequence === saveSequence) {
-      saving = false; saveFailed = true;
-      saveStatus(`Local save failed: ${describe(error)} Your edits remain available; export a backup.`, true);
+    // Even an older write's conflict retires all ordinary queued authority.
+    pendingSnapshot = null;
+    if (error instanceof SavedCopyConflict) protect(describe(error));
+    else {
+      // Only a store-proven rollback may retain ordinary retry authority.
+      if (error instanceof SavedCopyProtected || ownedLifetime !== lifetime || preserveStoredData) {
+        protect(`Local save could not be confirmed: ${describe(error)}`, error instanceof SavedCopyProtected);
+      } else {
+        pendingSave = true; saveFailed = true; manualSave = true;
+        saveStatus(`Local save failed: ${describe(error)} Your edits remain available; export a backup or use Retry saving.`);
+      }
     }
+  }).finally(() => {
+    saving = false; storageControls(); pumpSave();
   });
 }
 function publish(next: Project, text: string, alreadyInHistory = false): boolean {
   if (!alreadyInHistory && !history.apply(next)) { message('No changes to save.'); return false; }
-  interact();
+  interact(); committedGeneration++;
   project = alreadyInHistory ? next : history.current;
   model = trainPreferenceModel(project.examples);
   render(); persist(); message(text);
@@ -171,6 +214,7 @@ function renderPhotoDraft(kind: 'piece' | 'example'): void {
   if (asset) { const image = node('img'); image.src = asset.dataUrl; image.alt = 'Selected local reference photo'; area.append(image); }
   element(`#remove-${kind}-photo`).hidden = !(draft.asset || draft.existingId);
   element<HTMLButtonElement>(`#${kind}-submit`).disabled = draft.busy;
+  storageControls();
 }
 function clearPhotoDraft(kind: 'piece' | 'example'): void {
   const draft = photoDrafts[kind]; draft.controller?.abort(); draft.sequence++;
@@ -275,7 +319,7 @@ function renderWardrobe(): void {
       const actions = card.querySelector('.card-actions')!;
       actions.append(button('Edit piece', 'text-button', () => {
         const current = project.pieces.find(item => item.id === piece.id); if (!current) return;
-        clearPhotoDraft('piece'); editingPiece = current.id;
+        interact(); clearPhotoDraft('piece'); editingPiece = current.id;
         pieceForm.dataset.dirty = 'false';
         field(pieceForm, 'name').value = current.name; field(pieceForm, 'category').value = current.category; writeTags(pieceForm, current.tags);
         photoDrafts.piece.existingId = current.photoId; renderPhotoDraft('piece');
@@ -395,7 +439,7 @@ function fileName(title: string): string { return title.replace(/[^\p{L}\p{N}._-
 async function exportBoard(lookId: string): Promise<void> {
   cancelOperation(); const controller = new AbortController(); operation = controller;
   const snapshot = project; const look = snapshot.looks.find(item => item.id === lookId); if (!look) return;
-  message('Rendering your outfit board on this device…'); element('#cancel-operation').hidden = false;
+  message('Rendering your outfit board on this device…'); element('#cancel-operation').hidden = false; storageControls();
   try {
     const blob = await exportLookPng(snapshot, lookId, controller.signal);
     if (controller.signal.aborted || operation !== controller) return;
@@ -464,18 +508,14 @@ function replaceProfile(next: Project, text: string): void {
   // A confirmed whole-profile replacement discards form drafts, including
   // keyed look forms whose IDs also exist in the imported profile.
   for (const card of lookCards.values()) card.querySelector<HTMLFormElement>('form')!.dataset.dirty = 'false';
-  preserveStoredData = false;
-  explicitReplacement = true;
-  if (store) storageReady = true;
   if (!publish(next, text)) {
-    // A confirmed empty reset still replaces a corrupt stored record, even
-    // when the in-memory empty profile has no history change to record.
-    interact(); persist(); message(text);
+    // An identical in-memory replacement grants no new saved-copy authority.
+    interact(); message(text);
   }
   resetEditors(); render();
 }
 function storedReplacementNotice(): string {
-  return preserveStoredData ? ' The unreadable stored record will also be replaced; Undo cannot restore that record.' : '';
+  return preserveStoredData ? ' This changes only your in-memory profile. The saved copy stays protected until you use Replace saved copy.' : '';
 }
 element('#load-sample').addEventListener('click', () => {
   if (window.confirm(`Replace the current profile with clearly labeled sample pieces and opinions? This is undoable. Export your profile first for a backup.${storedReplacementNotice()}`)) attempt(() => replaceProfile(createDemoProject(), 'Sample profile loaded. These original sample labels are not your personal preferences; replace them with your own.'));
@@ -487,12 +527,12 @@ element('#export-profile').addEventListener('click', () => attempt(() => {
   download(new Blob([serializeProject(project)], { type: 'application/json' }), `${fileName(project.title)}.json`);
   message('Profile backup exported with photos, labels and saved snapshots. Keep this file somewhere safe.');
 }));
-element('#import-profile').addEventListener('click', () => element<HTMLInputElement>('#profile-import').click());
+element('#import-profile').addEventListener('click', () => { interact(); element<HTMLInputElement>('#profile-import').click(); });
 element<HTMLInputElement>('#profile-import').addEventListener('change', event => {
   const input = event.target as HTMLInputElement; const file = input.files?.[0]; input.value = ''; if (!file) return;
   if (!window.confirm(`Import this profile and replace the current one? Invalid files preserve your profile. A successful import is undoable.${storedReplacementNotice()}`)) return;
   cancelOperation(); const controller = new AbortController(); operation = controller; const startGeneration = generation;
-  element('#cancel-operation').hidden = false; message('Validating the complete profile and its local photos…');
+  element('#cancel-operation').hidden = false; storageControls(); message('Validating the complete profile and its local photos…');
   void (async () => {
     try {
       if (file.size > LIMITS.projectBytes) throw new Error('Profile JSON exceeds 8 MiB.');
@@ -504,46 +544,149 @@ element<HTMLInputElement>('#profile-import').addEventListener('change', event =>
     finally { if (operation === controller) cancelOperation(); }
   })();
 });
-element('#cancel-operation').addEventListener('click', () => { cancelOperation(); message('Operation cancelled. Your profile was preserved.'); });
+element('#cancel-operation').addEventListener('click', () => {
+  recoveryOwner?.controller.abort(); cancelOperation(); message('Operation cancelled. Your profile was preserved.');
+});
 element('#retry-save').addEventListener('click', () => {
+  if (startupPending || saving || recoveryOwner || preserveStoredData || !storageReady || !store || !saveFailed) return;
+  manualSave = false; saveFailed = false; persist();
+});
+function stopPhotoWork(): void {
+  for (const [prefix, draft] of Object.entries(photoDrafts) as ['piece' | 'example', PhotoDraft][]) {
+    if (!draft.controller) continue;
+    draft.controller.abort(); draft.controller = null; draft.sequence++; draft.busy = false;
+    element(`#${prefix}-photo-status`).textContent = 'Photo preparation cancelled. Your previous reference is kept.';
+    renderPhotoDraft(prefix);
+  }
+}
+function recoveryCurrent(owner: RecoveryOwner): boolean {
+  return recoveryOwner === owner && !owner.controller.signal.aborted && owner.intent === generation
+    && owner.generation === committedGeneration && owner.lifetime === lifetime;
+}
+function beginRecovery(): RecoveryOwner {
+  interact(); stopPhotoWork();
+  const owner = { controller: new AbortController(), intent: generation, generation: committedGeneration, lifetime };
+  recoveryOwner = owner; element('#cancel-operation').hidden = false; storageControls(); return owner;
+}
+async function recoveryStore(owner: RecoveryOwner): Promise<ProjectStore | null> {
+  if (!store || reopenNeeded) {
+    const previous = store; store = null;
+    if (previous) void previous.close().catch(() => {});
+    const opened = await openProjectStore();
+    if (!recoveryCurrent(owner)) { void opened.close().catch(() => {}); return null; }
+    store = opened; reopenNeeded = false;
+  }
+  return store;
+}
+function publishLoaded(next: Project, preparedHistory: ProjectHistory, preparedModel: ReturnType<typeof trainPreferenceModel>): void {
+  for (const card of lookCards.values()) card.querySelector<HTMLFormElement>('form')!.dataset.dirty = 'false';
+  project = next; history = preparedHistory; model = preparedModel; committedGeneration++;
+  preserveStoredData = false; storageReady = true; pendingSave = false; pendingSnapshot = null;
+  saveFailed = false; manualSave = false;
+  resetEditors(); render();
+}
+element('#retry-load').addEventListener('click', () => {
+  if (startupPending || saving || recoveryOwner) return;
+  const intent = generation, ownedLifetime = lifetime;
+  if (!window.confirm('Reload the saved profile? This discards this page’s unsaved profile changes, unapplied fields and unsubmitted photos, and resets Undo and Redo. Export your current profile first to keep a backup.')) return;
+  if (intent !== generation || ownedLifetime !== lifetime || saving || recoveryOwner) return;
+  const owner = beginRecovery();
+  preserveStoredData = true; storageReady = false; pendingSnapshot = null;
+  saveStatus('Reading the saved profile and checking all photos…');
   void (async () => {
+    let reported = false;
     try {
-      if (preserveStoredData && !window.confirm('Save the current in-memory profile instead of the unreadable stored profile? This replaces the stored record. Export the current profile first if you want a backup.')) return;
-      if (!store) {
-        if (!window.confirm('Save this current profile on this device? It will replace any previous profile stored here.')) return;
-        store = await openProjectStore();
+      const target = await recoveryStore(owner); if (!target || !recoveryCurrent(owner)) return;
+      const loaded = await target.load(); if (!recoveryCurrent(owner)) return;
+      const next = loaded.project ?? createProject();
+      await validateProjectPhotos(next, owner.controller.signal); if (!recoveryCurrent(owner)) return;
+      const preparedHistory = new ProjectHistory(next), preparedModel = trainPreferenceModel(next.examples);
+      if (!recoveryCurrent(owner)) return;
+      target.acceptLoad(loaded.receipt);
+      publishLoaded(next, preparedHistory, preparedModel);
+      saveStatus(loaded.project ? 'Saved on this device · export a profile for backup' : 'Local storage ready · export a profile for backup');
+      message('Saved profile loaded. Session history and unapplied fields were reset.'); reported = true;
+    } catch (error) {
+      if (recoveryCurrent(owner)) { protect(`Saved profile could not be loaded: ${describe(error)}`, true); reported = true; }
+    } finally {
+      if (recoveryOwner === owner) {
+        recoveryOwner = null;
+        if (preserveStoredData && !reported) saveStatus('Current work was kept. The saved copy remains protected; export a backup or explicitly reload or replace it.');
+        if (!operation) element('#cancel-operation').hidden = true;
+        storageControls();
       }
-      preserveStoredData = false; storageReady = true; persist();
-    } catch (error) { saveStatus(`Local storage unavailable: ${describe(error)} Export your profile to keep your work.`, true); }
+    }
+  })();
+});
+element('#replace-saved-copy').addEventListener('click', () => {
+  if (startupPending || saving || recoveryOwner || operation || Object.values(photoDrafts).some(draft => draft.busy)) return;
+  const captured = history.current, owner = beginRecovery();
+  preserveStoredData = true; storageReady = false; pendingSnapshot = null;
+  saveStatus('Reviewing the saved copy before replacement…');
+  void (async () => {
+    let reported = false;
+    try {
+      const target = await recoveryStore(owner); if (!target || !recoveryCurrent(owner)) return;
+      const review = await target.reviewReplacement(); if (!recoveryCurrent(owner)) return;
+      const summary = review.summary;
+      const description = !summary.present ? 'There is no saved profile.' : summary.readable
+        ? `Saved profile “${summary.title}”: ${summary.pieces} pieces, ${summary.examples} opinions, ${summary.looks} looks and ${summary.photos} photos.`
+        : 'The current saved profile is unreadable.';
+      if (!window.confirm(`${description} Replace it with this page’s complete committed profile, including its photos and saved looks? Unapplied fields and unsubmitted photos are excluded and will stay in the editor. This cannot be undone in the saved copy; export a backup first.`)) return;
+      if (!recoveryCurrent(owner)) return;
+      saveStatus('Replacing the saved copy…');
+      await target.replace(captured, review.receipt);
+      if (owner.lifetime !== lifetime || recoveryOwner !== owner) return;
+      if (!recoveryCurrent(owner)) {
+        // The durable captured copy is known; newer work needs a deliberate save.
+        preserveStoredData = false; storageReady = true; manualSave = true;
+        pendingSnapshot = null; pendingSave = true; saveFailed = true;
+        saveStatus('The reviewed profile was saved. Newer work remains unsaved. Use Retry saving to save the current committed profile; unapplied fields are excluded.'); reported = true;
+        return;
+      }
+      preserveStoredData = false; storageReady = true; pendingSave = false; pendingSnapshot = null;
+      saveFailed = false; manualSave = false;
+      saveStatus('Saved on this device · export a profile for backup');
+      message('Saved copy replaced. Your current fields and unsubmitted photos were kept.'); reported = true;
+    } catch (error) {
+      if (owner.lifetime === lifetime && recoveryOwner === owner) {
+        protect(`Saved copy was not replaced: ${describe(error)}`, error instanceof SavedCopyProtected); reported = true;
+      }
+    } finally {
+      if (recoveryOwner === owner) {
+        recoveryOwner = null;
+        if (preserveStoredData && !reported) saveStatus('Saved copy protected. Your current profile and fields were kept. Review Replace saved copy again or reload explicitly.');
+        if (!operation) element('#cancel-operation').hidden = true;
+        storageControls();
+      }
+    }
   })();
 });
 
-render();
+render(); storageControls();
 void (async () => {
-  const initialGeneration = generation;
+  const initialGeneration = generation, ownedLifetime = lifetime;
+  const current = () => generation === initialGeneration && lifetime === ownedLifetime && !startupController.signal.aborted;
   try {
     store = await openProjectStore();
-    const saved = await store.load();
-    if (saved && generation === initialGeneration) {
-      try { await validateProjectPhotos(saved, startupController.signal); }
-      catch (error) { if (!isAbort(error) && !startupController.signal.aborted) throw error; }
-      if (generation === initialGeneration && !startupController.signal.aborted) {
-        project = saved; history = new ProjectHistory(project); model = trainPreferenceModel(project.examples);
-        resetEditors(); render(); message('Your local profile is ready. Photos and preferences stayed on this device.');
-      }
-    }
-    storageReady = true;
-    if (pendingSave) persist(); else if (saveSequence === 0) saveStatus('Local storage ready · export a profile for backup');
+    if (terminal) { void store.close().catch(() => {}); return; }
+    if (!current()) { protect('The initial restore was retired. Newer work was kept.'); return; }
+    const loaded = await store.load();
+    if (!current()) { protect('The initial restore was retired. Newer work was kept.'); return; }
+    const next = loaded.project ?? createProject();
+    await validateProjectPhotos(next, startupController.signal);
+    if (!current()) { protect('The initial restore was retired. Newer work was kept.'); return; }
+    const preparedHistory = new ProjectHistory(next), preparedModel = trainPreferenceModel(next.examples);
+    if (!current()) { protect('The initial restore was retired. Newer work was kept.'); return; }
+    store.acceptLoad(loaded.receipt);
+    if (loaded.project) {
+      publishLoaded(next, preparedHistory, preparedModel);
+      message('Your local profile is ready. Photos and preferences stayed on this device.');
+    } else { storageReady = true; preserveStoredData = false; pendingSave = false; }
+    saveStatus(loaded.project ? 'Saved on this device · export a profile for backup' : 'Local storage ready · export a profile for backup');
   } catch (error) {
-    if (explicitReplacement && store) {
-      // A later result from the old read cannot revoke the user's explicit
-      // choice to replace that record with the current validated profile.
-      preserveStoredData = false; storageReady = true; persist(); return;
-    }
-    preserveStoredData = store !== null;
-    storageReady = false;
-    saveStatus(`Local profile could not be loaded: ${describe(error)} Current edits are in memory; export a backup.`, true);
-  }
+    protect(`Local profile could not be loaded: ${isAbort(error) ? 'Restore cancelled; current work was kept.' : describe(error)}`, true);
+  } finally { startupPending = false; storageControls(); }
 })();
 function hasUnsavedDrafts(): boolean {
   if (pendingSave || saving || saveFailed) return true;
@@ -560,9 +703,10 @@ function hasUnsavedDrafts(): boolean {
 window.addEventListener('beforeunload', event => {
   if (hasUnsavedDrafts()) { event.preventDefault(); event.returnValue = ''; }
 });
-window.addEventListener('pagehide', () => {
-  startupController.abort(); cancelOperation();
-  for (const draft of Object.values(photoDrafts)) draft.controller?.abort();
+window.addEventListener('pagehide', event => {
+  lifetime++; generation++; startupController.abort(); recoveryOwner?.controller.abort(); cancelOperation(); stopPhotoWork();
+  if (startupPending || saving || recoveryOwner) protect('A pending storage operation was retired. Current work was kept.');
   for (const url of downloads) URL.revokeObjectURL(url);
   downloads.clear();
+  if (!event.persisted) { terminal = true; if (store) void store.close().catch(() => {}); }
 });

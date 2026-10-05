@@ -362,12 +362,13 @@ test('cold-start outfit ideas are unranked and limited wardrobes disclose shared
 test('a late startup photo decode cannot replace a newer edit, and resetting a pending photo cannot attach it later', async ({ page }) => {
   await addPiece(page, 'Saved photo before reload', 'top', liked, await photoFixture(page));
   await expect(page.locator('#save-status')).toContainText(/saved on this device/i);
+  const originalSaved = await exportProfile(page);
   await holdNextDecode(page, true);
   await page.reload();
   await page.waitForFunction(() => window.styleDecodeStarted);
   await title(page, 'My newer edit wins over the late load');
   await releaseDecode(page);
-  await expect(page.locator('#save-status')).toContainText(/saved on this device/i);
+  await expect(page.locator('#save-status')).toContainText(/restore.*(?:cancelled|retired)/i);
   const afterLoad = await exportProfile(page);
   expect(afterLoad.title).toBe('My newer edit wins over the late load');
   expect(afterLoad.pieces).toHaveLength(0);
@@ -383,6 +384,17 @@ test('a late startup photo decode cannot replace a newer edit, and resetting a p
   expect(afterReset.pieces).toHaveLength(1);
   expect(afterReset.pieces[0].photoId).toBeNull();
   expect(afterReset.photos).toHaveLength(0);
+  const durable = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
+    const request = indexedDB.open('style-studio', 2);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const database = request.result, transaction = database.transaction('profiles', 'readonly');
+      const get = transaction.objectStore('profiles').get('current');
+      transaction.oncomplete = () => { database.close(); resolve(get.result.project); };
+      transaction.onabort = () => { database.close(); reject(transaction.error); };
+    };
+  }));
+  expect(durable).toEqual(originalSaved);
 });
 
 test('intervening edits cancel a photo-bearing import and a real board export without stale publication or download', async ({ page }) => {
@@ -442,10 +454,10 @@ test('a quota error leaves edits and backup usable, then an explicit retry saves
   expect(await exportProfile(page)).toEqual(available);
 });
 
-test('corrupt stored data is preserved until confirmed New profile durably replaces it with a valid empty profile', async ({ page }) => {
+test('corrupt stored data survives New profile until explicit reviewed replacement saves a valid empty profile', async ({ page }) => {
   await expect(page.locator('#save-status')).toContainText(/local storage ready/i);
   await page.evaluate(() => new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open('style-studio', 1);
+    const request = indexedDB.open('style-studio', 2);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const database = request.result;
@@ -457,8 +469,8 @@ test('corrupt stored data is preserved until confirmed New profile durably repla
   }));
   await page.reload();
   await expect(page.locator('#save-status')).toContainText(/could not be loaded/i);
-  const preserved = await page.evaluate(() => new Promise<unknown>((resolve, reject) => {
-    const request = indexedDB.open('style-studio', 1);
+  const readSaved = () => page.evaluate(() => new Promise<unknown>((resolve, reject) => {
+    const request = indexedDB.open('style-studio', 2);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const database = request.result;
@@ -470,11 +482,16 @@ test('corrupt stored data is preserved until confirmed New profile durably repla
       transaction.onabort = () => { database.close(); reject(transaction.error); };
     };
   }));
-  expect(preserved).toEqual({ broken: true });
+  expect(await readSaved()).toEqual({ broken: true });
   await page.getByRole('button', { name: 'New profile', exact: true }).click();
+  await expect(page.locator('#save-status')).toContainText('Your current profile is in memory.');
+  await expect(page.locator('#retry-save')).toBeHidden();
+  await expect(page.locator('#replace-saved-copy')).toBeEnabled();
+  expect(await readSaved()).toEqual({ broken: true });
+  await page.locator('#replace-saved-copy').click();
   await expect(page.locator('#save-status')).toContainText(/saved on this device/i);
   await page.reload();
-  await expect(page.locator('#save-status')).toContainText(/local storage ready/i);
+  await expect(page.locator('#save-status')).toContainText(/saved on this device/i);
   const recovered = await exportProfile(page);
   expect(recovered.title).toBe('My style');
   expect(recovered.pieces).toEqual([]);
