@@ -1,0 +1,604 @@
+{
+  "issue": 124,
+  "milestone": "Complete sequence soundtrack",
+  "status": "Root corrected native12/12 verified; newly strengthened full-film audio-tail regression pending root execution",
+  "authoredAt": "2026-10-05T03:41:52.272016+00:00",
+  "ownership": "Only new independent unit/native tests, uniquely named original fixture helper and this receipt; no production/config/old tests edits.",
+  "independence": {
+    "expectedFactsFrozenBeforeNewProducerReads": true,
+    "readBeforeFreeze": [
+      "root-approved sequence soundtrack contract",
+      "existing Shot scene/sequence model and native harness fixtures"
+    ],
+    "originalFixtureMethod": "Independent PCM16 RIFF header/sample/channel/silence synthesis and SHOTSEQ1 framing; expected hashes computed directly from original bytes, no producer serializers/planner used.",
+    "newProducerCodeUsedOnlyAsSystemUnderTest": true,
+    "runtimeLimits": "Scoped Node units/static and pure fixture generation only by author; root owns all live browser/service/media gates."
+  },
+  "ownedFiles": {
+    "tests/sequence-soundtrack-oracle.test.js": {
+      "sha256": "e79d7c5089427ac225745bb6949bffcae4aea8120372c320e8b5e4dcae844348",
+      "bytes": 12234
+    },
+    "tests/browser/sequence-soundtrack-fixtures.js": {
+      "sha256": "f9b95cd7178b6a938b802289462f7b4c0add2b19d27dec3517726c2648d57601",
+      "bytes": 4450
+    },
+    "tests/browser/sequence-soundtrack.spec.js": {
+      "sha256": "8601808bfb1d14742a7edda916dd708f75034c5f57fb83c6b7a3f77e1b740ce1",
+      "bytes": 33717
+    }
+  },
+  "frozenOriginalFixture": {
+    "wav": {
+      "bytes": 768044,
+      "sha256": "3ad476ac505277155bc9e53a1eb3f91ace564bd8b793ca72b2a3de7efd937714",
+      "sampleRate": 48000,
+      "channels": 2,
+      "frameCount": 192000
+    },
+    "mono": {
+      "bytes": 88244,
+      "sha256": "a172d1986d587b8aae14b703b444b2e48e66099f64e20d80dea0c133e21ddb0e",
+      "sampleRate": 44100,
+      "channels": 1,
+      "frameCount": 44100
+    },
+    "archive": {
+      "bytes": 769562,
+      "sha256": "87c43b42491b5d620a700c25941353e4fec329dc397576a35f1412e6f87585b9"
+    },
+    "plan": {
+      "sampleRate": 48000,
+      "channels": 2,
+      "frameCount": 192000,
+      "inFrame": 12000,
+      "outFrame": 156000,
+      "startTime": 0.75,
+      "gain": 0.5,
+      "sequenceDuration": 6,
+      "audibleStart": 0.75,
+      "audibleEnd": 3.75,
+      "audible": true
+    },
+    "signal": {
+      "sourceActiveSeconds": [
+        0.5,
+        2.5
+      ],
+      "trimmedTimelineActiveSeconds": [
+        1,
+        3
+      ],
+      "leftHz": 440,
+      "rightHz": 880,
+      "leftPcmAmplitude": 8192,
+      "rightPcmAmplitude": 16384,
+      "gain": 0.5
+    },
+    "document": {
+      "schemaVersion": 1,
+      "kind": "shot-studio-sequence-document",
+      "sequence": {
+        "schemaVersion": 3,
+        "kind": "shot-studio-sequence",
+        "title": "Original soundtrack sequence \u03a9",
+        "sources": [
+          {
+            "id": "original-film",
+            "label": "Original complete film",
+            "film": {
+              "schemaVersion": 3,
+              "title": "Retained film with silent tail",
+              "light": 1,
+              "actors": [
+                {
+                  "name": "Red time landmark",
+                  "color": "#ff0000",
+                  "performanceMode": "blocking",
+                  "cues": [
+                    {
+                      "time": 0,
+                      "x": -1,
+                      "z": 0,
+                      "action": "idle",
+                      "visible": true
+                    },
+                    {
+                      "time": 2,
+                      "x": -1,
+                      "z": 0,
+                      "action": "wave",
+                      "visible": true
+                    },
+                    {
+                      "time": 3,
+                      "x": -1,
+                      "z": 0,
+                      "action": "idle",
+                      "visible": false
+                    },
+                    {
+                      "time": 6,
+                      "x": -1,
+                      "z": 0,
+                      "action": "idle",
+                      "visible": true
+                    }
+                  ]
+                },
+                {
+                  "name": "Green fixed control",
+                  "color": "#00ff00",
+                  "performanceMode": "blocking",
+                  "cues": [
+                    {
+                      "time": 0,
+                      "x": 2,
+                      "z": 0,
+                      "action": "idle",
+                      "visible": true
+                    }
+                  ]
+                }
+              ],
+              "shots": [
+                {
+                  "name": "Retained one second prefix",
+                  "duration": 1,
+                  "eye": [
+                    0,
+                    2.2,
+                    8
+                  ],
+                  "target": [
+                    0,
+                    1.15,
+                    0
+                  ],
+                  "fov": 50,
+                  "cameraMode": "static"
+                },
+                {
+                  "name": "Original body",
+                  "duration": 5,
+                  "eye": [
+                    0,
+                    2.2,
+                    8
+                  ],
+                  "target": [
+                    0,
+                    1.15,
+                    0
+                  ],
+                  "fov": 50,
+                  "cameraMode": "static"
+                }
+              ]
+            }
+          }
+        ],
+        "clips": [
+          {
+            "id": "first-excerpt",
+            "sourceId": "original-film",
+            "shotIndex": 1,
+            "label": "First three seconds",
+            "inTime": 0,
+            "outTime": 3
+          },
+          {
+            "id": "second-excerpt",
+            "sourceId": "original-film",
+            "shotIndex": 1,
+            "label": "Repeated three seconds",
+            "inTime": 0,
+            "outTime": 3
+          }
+        ]
+      },
+      "soundtrack": {
+        "label": "Original stereo tones \u03a9",
+        "asset": {
+          "sha256": "3ad476ac505277155bc9e53a1eb3f91ace564bd8b793ca72b2a3de7efd937714",
+          "bytes": 768044,
+          "sampleRate": 48000,
+          "channels": 2,
+          "frameCount": 192000
+        },
+        "inFrame": 0,
+        "outFrame": 192000,
+        "startTime": 0,
+        "gain": 1
+      }
+    }
+  },
+  "unitResults": [
+    {
+      "path": "/tmp/shot124-oracle-first.log",
+      "sha256": "32ea23d247b343924ded5427afb57671e11478c40e49a9c59a1edc6a7825060f",
+      "passed": 3,
+      "failed": 7,
+      "durationMs": 346.825349,
+      "scope": "Audio parser already actual; seven document/attachment/history/archive stub failures. One generic archive-refusal pass on throwing stub is not positive admission evidence."
+    },
+    {
+      "path": "/tmp/shot124-oracle-first-integration.log",
+      "sha256": "a3b8d4a70a3b64bc38a5a9f2c90fb0a70c96fd0a2de503b6752979d68e785d6c",
+      "passed": 8,
+      "failed": 2,
+      "durationMs": 380.894359,
+      "scope": "Actual integration. Invalid baseline legacy NUL fixture rejected by old model; final budget hash helper passed unsupported ArrayBuffer to Node Hash.update. Product budget/redo assertions had passed before helper failure."
+    },
+    {
+      "path": "/tmp/shot124-oracle-final.log",
+      "sha256": "8ccfaa3c4c6aae34f78eddef709ca58760f57bc586b071274d9562a305edbfc9",
+      "passed": 10,
+      "failed": 0,
+      "durationMs": 407.086406,
+      "scope": "Actual coherent modules; root-approved fixture corrections only, all numeric/media/archive/budget expectations unchanged."
+    }
+  ],
+  "approvedFixtureCorrections": [
+    "setSequenceSoundtrack called with exact label/inFrame/outFrame/startTime/gain only, removing unintended descriptor property from test argument.",
+    "Existing model.js rejects controls including NUL; legacy UTF16 roundtrip fixture retains accepted lone surrogate without inadmissible NUL. No domain requirement weakened.",
+    "Convert actual immutable Blob ArrayBuffer to Buffer for Node SHA helper; every original byte/hash/budget expectation retained."
+  ],
+  "nativePlan": {
+    "caseCount": 12,
+    "file": "tests/browser/sequence-soundtrack.spec.js",
+    "cases": [
+      "native WAV selection requires explicit import; trim gain offset and remove each retain complete original audio and Undo",
+      "one-time frame rounding, invalid raw input and same-value Apply preserve exact complete bundle and Redo",
+      "rehearsal is explicit, seek and raw intent stop its owned native graph and endpoint preview stays silent",
+      "held genuine WAV read cannot overwrite newer changed-back label intent and Cancel permits same-file retry",
+      "complete archive roundtrip rejects tampered bytes and preserves original sequence source, PCM and normal scene",
+      "two real tabs protect the whole saved archive and reviewed replacement refuses a third writer",
+      "actual legacy load performs no rewrite and foreign legacy bytes protect later complete saves",
+      "390px keyboard settings and confirmed Clear sequence Undo keep exact committed audio",
+      "actual six-second audiovisual WebM retains both streams, original stereo tone plateaus and complete backup",
+      "actual mono 44.1 kHz WAV keeps original frames and pitch through native Opus resampling",
+      "Cancel during genuine audiovisual recording drains every owned track and graph without changing the complete sequence",
+      "full persistent Chromium restart restores exact complete sequence metadata and original WAV bytes"
+    ],
+    "actualBoundaries": [
+      "native File chooser and explicit import",
+      "actual Blob.arrayBuffer delegated, exact original768044B/SHA checked, then next explicitly armed audio/wav Blob delivery held",
+      "native AudioContext/source start/stop wrappers observe and delegate actual APIs",
+      "actual IndexedDB transaction-terminal get/getKey and complete archive readback",
+      "actual second-tab UI writer plus third writer during native replacement dialog",
+      "native storage event from foreign legacy writer",
+      "390px native keyboard and confirmations",
+      "actual MediaRecorder audiovisual WebM, independent ffprobe/ffmpeg",
+      "complete Chromium persistent process close/relaunch under root runtime",
+      "Compact polling parses literal SHOTSEQ1 header, exact extents and document in the real browser after native transaction complete, hashes actual full archive and WAV there, and returns metadata/hashes instead of hundreds thousands traced JSON byte values. Existing explicit whole-byte checks remain outside polling; no timeout increase.",
+      "Actual mono44100Hz/44100frame source buffer exported through native MediaRecorder Opus48000Hz; independent ffprobe audio-frame sample counts and monotonic PTS match all finite ffmpeg decoded PCM frames, with fixed330Hz/RMS plateau.",
+      "Actual audio+video MediaRecorder recording and positive video progress precede explicit Cancel; actual stop event, both owned streams ended and AudioContext closed precede complete backup/stored row/ordinary scene identity checks and no-download assertion."
+    ],
+    "audioOracle": {
+      "originalSignal": {
+        "sourceActiveSeconds": [
+          0.5,
+          2.5
+        ],
+        "trimmedTimelineActiveSeconds": [
+          1,
+          3
+        ],
+        "leftHz": 440,
+        "rightHz": 880,
+        "leftPcmAmplitude": 8192,
+        "rightPcmAmplitude": 16384,
+        "gain": 0.5
+      },
+      "plateauFramesAtDecoded48k": [
+        57600,
+        129600
+      ],
+      "pitchToleranceHz": 2,
+      "relativeRmsTolerance": 0.05,
+      "expectedRmsFormula": "(8192 or16384)/32768 *0.5 /sqrt(2)",
+      "streamExpectation": "Exactly one VP8/VP9 960x540 video and one stereo Opus audio",
+      "alignmentScope": "Interior plateau only here. No independently shifted/fitted A/V alignment claim; maximum runner owns common-origin100ms marker gate."
+    },
+    "fullRestart": "Original complete archive downloaded before/after whole persistent Chromium process restart; actual complete native row revision/legacy baseline/audio bytes compared unchanged.",
+    "sourcePreflight": "UI owner explicitly confirmed staged chooser, clean audio replacement without extra confirm, pending Cancel, editable label during old-audio admission, changed-back retirement, same-value Apply clearing raw, and corrupt archive nonpublication.",
+    "monoResamplingOracle": {
+      "source": {
+        "bytes": 88244,
+        "sampleRate": 44100,
+        "channels": 1,
+        "frames": 44100,
+        "frequencyHz": 330,
+        "pcmAmplitude": 4096
+      },
+      "settings": {
+        "inFrame": 0,
+        "outFrame": 44100,
+        "startTime": 1,
+        "gain": 0.5
+      },
+      "decodedSampleRate": 48000,
+      "fixedPlateauFrames": [
+        57600,
+        86400
+      ],
+      "pitchToleranceHz": 2,
+      "relativeRmsTolerance": 0.05,
+      "expectedRmsFormula": "4096/32768 *0.5 /sqrt(2)",
+      "frameAssertions": "Exact original source buffer44100frames@44100; ffprobe decoded frame nb_samples sum equals every ffmpeg float sample; strictly monotonic finite native audio PTS; all decoded PCM samples finite.",
+      "scope": "Fixed interior plateau without fitted offsets. Root maximum owns common-origin100ms alignment.",
+      "fullFilmAudioExtentSeconds": [
+        5.9,
+        6.2
+      ],
+      "silentTail": {
+        "fixedSeconds": [
+          2.15,
+          5.8
+        ],
+        "fixedFramesAt48000": [
+          103200,
+          278400
+        ],
+        "maximumRms": 0.001
+      },
+      "newRegression": "Root-approved after actual six-second mono export decoded95040samples=1.98s, matching audible cutoff2s. Maximum independent60s export decoded45s ending at audible cutoff45s. New unchanged six-second fixture now requires5.9..6.2s decoded audio and fixed2.15..5.8s silence. This stronger test has not yet run; no invented RED or passing outcome."
+    },
+    "cancellationOracle": {
+      "observe": "Native canvas capture streams, native AudioContext media destination, native MediaRecorder.start and stop event; all methods delegate unmodified input/output.",
+      "beforeCancel": "Exactly one genuine recording recorder with live audio+video and positive rendered progress, source started once.",
+      "afterCancel": "One closed AudioContext; every owned canvas/destination/combined track ended; native recorder inactive and stop event observed; zero downloads; exact complete in-memory backup and full saved archive row unchanged, no take created."
+    }
+  },
+  "nativeResults": {
+    "executedBy": "root, report independently read by author",
+    "first": {
+      "stats": {
+        "startTime": "2026-10-05T03:42:34.669Z",
+        "duration": 121536.56,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "native WAV selection requires explicit import; trim gain offset and remove each retain complete original audio and Undo",
+          "status": "passed",
+          "durationMs": 7253,
+          "errors": []
+        },
+        {
+          "title": "one-time frame rounding, invalid raw input and same-value Apply preserve exact complete bundle and Redo",
+          "status": "passed",
+          "durationMs": 5876,
+          "errors": []
+        },
+        {
+          "title": "rehearsal is explicit, seek and raw intent stop its owned native graph and endpoint preview stays silent",
+          "status": "passed",
+          "durationMs": 8767,
+          "errors": []
+        },
+        {
+          "title": "held genuine WAV read cannot overwrite newer changed-back label intent and Cancel permits same-file retry",
+          "status": "failed",
+          "durationMs": 10967,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  78 | test('held genuine WAV read cannot overwrite newer changed-back label intent and Cancel permits same-file retry', async ({ page }) => {\n  79 |   await begin(page); await holdAudioFile(page);\n> 80 |   await page.locator('#sequence-audio-file').setInputFiles({ name: 'held-original.wav', mimeType: 'audio/wav', buffer: WAV }); await page.locator('#sequence-audio-import').click(); await expect.poll(() => page.evaluate(() => window.soundFileGate.entered)).toBe(true);\n     |                                                                                                                                                                                                                                                                 ^\n  81 |   const label = page.locator('#sequence-audio-label'); await label.fill('changed'); await label.fill('Original stereo tones \u03a9'); await label.focus(); await label.evaluate(node => { node.dataset.oracleLabel = 'same'; node.setSelectionRange(2, 5); });\n  82 |   await page.evaluate(() => window.soundFileGate.release()); await expect.poll(() => page.evaluate(() => window.soundFileGate.delivered)).toBe(true);\n  83 |   await expect(label).toHaveValue('Original stereo tones \u03a9'); await expect(label).toHaveAttribute('data-oracle-label', 'same'); await expect(label).toBeFocused(); expect(await label.evaluate(node => [node.selectionStart, node.selectionEnd])).toEqual([2, 5]); expect((await backup(page)).document).toEqual(DOCUMENT);\n    at /workspace/projects-monorepo/apps/shot-studio/tests/browser/sequence-soundtrack.spec.js:80:257"
+          ]
+        },
+        {
+          "title": "complete archive roundtrip rejects tampered bytes and preserves original sequence source, PCM and normal scene",
+          "status": "passed",
+          "durationMs": 11816,
+          "errors": []
+        },
+        {
+          "title": "two real tabs protect the whole saved archive and reviewed replacement refuses a third writer",
+          "status": "failed",
+          "durationMs": 13774,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 5\u001b[39m\n\u001b[31m+ Received  + 5\u001b[39m\n\n\u001b[33m@@ -126,12 +126,12 @@\u001b[39m\n\u001b[2m        \"channels\": 2,\u001b[22m\n\u001b[2m        \"frameCount\": 192000,\u001b[22m\n\u001b[2m        \"sampleRate\": 48000,\u001b[22m\n\u001b[2m        \"sha256\": \"3ad476ac505277155bc9e53a1eb3f91ace564bd8b793ca72b2a3de7efd937714\",\u001b[22m\n\u001b[2m      },\u001b[22m\n\u001b[32m-     \"gain\": 0.25,\u001b[39m\n\u001b[32m-     \"inFrame\": 12000,\u001b[39m\n\u001b[32m-     \"label\": \"Second tab committed\",\u001b[39m\n\u001b[32m-     \"outFrame\": 156000,\u001b[39m\n\u001b[32m-     \"startTime\": 0.75,\u001b[39m\n\u001b[31m+     \"gain\": 1,\u001b[39m\n\u001b[31m+     \"inFrame\": 0,\u001b[39m\n\u001b[31m+     \"label\": \"Original stereo tones \u03a9\",\u001b[39m\n\u001b[31m+     \"outFrame\": 192000,\u001b[39m\n\u001b[31m+     \"startTime\": 0,\u001b[39m\n\u001b[2m    },\u001b[22m\n\u001b[2m  }\u001b[22m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  16 | })); }\n  17 | async function durable(page, expected) {\n> 18 |   await expect.poll(async () => { const row = await stored(page); return row.present && row.archive ? readLiteralArchive(row.archive).document : null; }).toEqual(expected);\n     |                                                                                                                                                           ^\n  19 |   await expect(page.locator('#sequence-save-status')).toHaveText('Sequence saved in this browser');\n  20 | }\n  21 | async function begin(page, complete = true) {\n    at durable (/workspace/projects-monorepo/apps/shot-studio/tests/browser/sequence-soundtrack.spec.js:18:155)\n    at /workspace/projects-monorepo/apps/shot-studio/tests/browser/sequence-soundtrack.spec.js:101:200"
+          ]
+        },
+        {
+          "title": "actual legacy load performs no rewrite and foreign legacy bytes protect later complete saves",
+          "status": "passed",
+          "durationMs": 18236,
+          "errors": []
+        },
+        {
+          "title": "390px keyboard settings and confirmed Clear sequence Undo keep exact committed audio",
+          "status": "passed",
+          "durationMs": 5201,
+          "errors": []
+        },
+        {
+          "title": "actual six-second audiovisual WebM retains both streams, original stereo tone plateaus and complete backup",
+          "status": "passed",
+          "durationMs": 14577,
+          "errors": []
+        },
+        {
+          "title": "full persistent Chromium restart restores exact complete sequence metadata and original WAV bytes",
+          "status": "passed",
+          "durationMs": 20259,
+          "errors": []
+        }
+      ],
+      "artifacts": "/workspace/shot124-native-first-artifacts",
+      "reports": {
+        "/tmp/shot124-native-first-results.json": {
+          "sha256": "038a9cc92b37e09b97531420215f3001fc52bfd157cbc82aaff0568251078f5b",
+          "bytes": 25865
+        },
+        "/tmp/shot124-native-first.log": {
+          "sha256": "f76f1c83e1715eae1dcf7e8511f78960761c93c59a4fafb7ec9d28205968e559",
+          "bytes": 29591
+        }
+      }
+    },
+    "followup": {
+      "executedBy": "root; report and media evidence independently read by oracle author",
+      "stats": {
+        "startTime": "2026-10-05T04:51:42.456Z",
+        "duration": 90484.417,
+        "expected": 12,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "native WAV selection requires explicit import; trim gain offset and remove each retain complete original audio and Undo",
+          "status": "passed",
+          "durationMs": 4245,
+          "errors": []
+        },
+        {
+          "title": "one-time frame rounding, invalid raw input and same-value Apply preserve exact complete bundle and Redo",
+          "status": "passed",
+          "durationMs": 2586,
+          "errors": []
+        },
+        {
+          "title": "rehearsal is explicit, seek and raw intent stop its owned native graph and endpoint preview stays silent",
+          "status": "passed",
+          "durationMs": 4853,
+          "errors": []
+        },
+        {
+          "title": "held genuine WAV read cannot overwrite newer changed-back label intent and Cancel permits same-file retry",
+          "status": "passed",
+          "durationMs": 2856,
+          "errors": []
+        },
+        {
+          "title": "complete archive roundtrip rejects tampered bytes and preserves original sequence source, PCM and normal scene",
+          "status": "passed",
+          "durationMs": 8659,
+          "errors": []
+        },
+        {
+          "title": "two real tabs protect the whole saved archive and reviewed replacement refuses a third writer",
+          "status": "passed",
+          "durationMs": 10728,
+          "errors": []
+        },
+        {
+          "title": "actual legacy load performs no rewrite and foreign legacy bytes protect later complete saves",
+          "status": "passed",
+          "durationMs": 12306,
+          "errors": []
+        },
+        {
+          "title": "390px keyboard settings and confirmed Clear sequence Undo keep exact committed audio",
+          "status": "passed",
+          "durationMs": 1996,
+          "errors": []
+        },
+        {
+          "title": "actual six-second audiovisual WebM retains both streams, original stereo tone plateaus and complete backup",
+          "status": "passed",
+          "durationMs": 8471,
+          "errors": []
+        },
+        {
+          "title": "actual mono 44.1 kHz WAV keeps original frames and pitch through native Opus resampling",
+          "status": "passed",
+          "durationMs": 9305,
+          "errors": []
+        },
+        {
+          "title": "Cancel during genuine audiovisual recording drains every owned track and graph without changing the complete sequence",
+          "status": "passed",
+          "durationMs": 8590,
+          "errors": []
+        },
+        {
+          "title": "full persistent Chromium restart restores exact complete sequence metadata and original WAV bytes",
+          "status": "passed",
+          "durationMs": 14318,
+          "errors": []
+        }
+      ],
+      "specSha256": "3f15620e36fabdf8c6dad320e483d2da10568108c5972b81b755eb97b6ce9511",
+      "reports": {
+        "/tmp/shot124-native-second-results.json": {
+          "sha256": "2ce7f730af0977f66f0c6f9712de7f0087fe3ddadb7b710a63308ab14999ff64",
+          "bytes": 15621
+        },
+        "/tmp/shot124-native-second.log": {
+          "sha256": "22c05f3ef726f099998a8dc4f3cd059424148fae7e3d5211c9c7da0886951e62",
+          "bytes": 27644
+        }
+      },
+      "artifacts": "/workspace/shot124-native-second-artifacts",
+      "scope": "Corrected12 cases passed; mono verified44100source frames,330Hz/within5%RMS and actual cancellation drained tracks. This source did not assert full-film decoded audio extent or trailing silence.",
+      "monoEvidence": {
+        "inputBytes": 88244,
+        "inputSha256": "a172d1986d587b8aae14b703b444b2e48e66099f64e20d80dea0c133e21ddb0e",
+        "inputFrames": 44100,
+        "inputRate": 44100,
+        "outputBytes": 109914,
+        "outputSha256": "f1a11ceb0cf1ae487cd72ff8214d38547953582d3b7158980df5ee41e69e2a5a",
+        "outputRate": 48000,
+        "decodedFrames": 95040,
+        "plateau": {
+          "start": 57600,
+          "end": 86400,
+          "frequency": 330,
+          "rms": 0.044145063888066334,
+          "expectedRms": 0.044194173824159216
+        },
+        "scope": "Actual mono44.1k original source frames and native Opus48k resampling; fixed interior plateau, no fitted timeline offset"
+      }
+    }
+  },
+  "staticVerification": {
+    "syntax": "PASS all three owned JS files",
+    "scopedRecommendedESLint": "PASS with temporary node+browser globals config; no tracked configuration change"
+  },
+  "commands": {
+    "unit": "node --test tests/sequence-soundtrack-oracle.test.js",
+    "native": "CHROMIUM_PATH=/usr/bin/chromium SHOT_TEST_PORT=<root-reserved> npm run test:browser -- tests/browser/sequence-soundtrack.spec.js"
+  },
+  "limitsAndNonClaims": [
+    "Actual first native8/10 and corrected12/12 are preserved. New full-film audio-tail assertions expose a previously unasserted behavior in actual original exports; root execution of those new assertions remains pending, with no invented RED or passing claim.",
+    "Unit64MiB gate uses five distinct exact12MiB valid WAV containers (60MiB) then refuses sixth (72MiB), and proves redo truncation reclaims unique assets. Ancillary JUNK padding is legal container bytes, not extra audio payload.",
+    "Stereo4s source768044B; mono1s44.1k88244B. Neither is claimed to be maximum60s sample payload.",
+    "Root/maximum owner separately verifies full60s audiovisual alignment and maximum media.",
+    "No fake IndexedDB or decoded image/audio output; native observation/delivery gates explicitly labeled."
+  ],
+  "firstNativeSourceHashes": {
+    "tests/sequence-soundtrack-oracle.test.js": {
+      "sha256": "e79d7c5089427ac225745bb6949bffcae4aea8120372c320e8b5e4dcae844348",
+      "bytes": 12234
+    },
+    "tests/browser/sequence-soundtrack-fixtures.js": {
+      "sha256": "f9b95cd7178b6a938b802289462f7b4c0add2b19d27dec3517726c2648d57601",
+      "bytes": 4450
+    },
+    "tests/browser/sequence-soundtrack.spec.js": {
+      "sha256": "3994aad8cb5e380bc789748a297d99e27ce5d1d6ce70fcc7bdbabb249a025e9d",
+      "bytes": 21715
+    }
+  },
+  "nativeFirstClassifications": {
+    "case4": "Fixture gate expected File identity, but production copies into immutable Blob before actual native read. Approved repair holds next explicitly armed actual audio/wav Blob read only after exact original length/SHA verification. No fake bytes or media outcome.",
+    "case6": "Fixture transport deadline: original durable poll returned all768KB archive bytes as hundreds thousands JSON numbers under Playwright tracing. Preserved trace call113 returned prior revision1 at55952.554ms; call115 returned correct new revision2 descriptor at59521.653ms, after UI saved at56084.844ms. The five-second poll expired while serializing correct later data. Approved correction independently frames/parses/hashes actual bytes in-browser and returns compact metadata. Exact document/audio expectations and original timeout remain unchanged; explicit full-byte comparisons remain outside polling.",
+    "cases6and7TitleAction": "Baseline title commits only through explicit #sequence-title-apply, never Tab. Root approved replacing Tab with exact explicit Apply. Case7 passed first but did not perform its intended title commit; stronger corrected case must rerun.",
+    "unchangedAssertions": "Original PCM, whole archive, graph, raw values/caret, history and third-writer expectations are unchanged.",
+    "boundedScreenshot": "Root requested bounded390x844 native mobile screenshot after separate maximum full-page protocol failure on a tall document. Mobile width/keyboard/Undo/complete-byte assertions unchanged; scroll soundtrack label into view and screenshot viewport only. Original mobile native case passed first."
+  },
+  "postNativeRepairStatic": {
+    "initialAdditionSyntax": "FAIL: extra closing parenthesis in newly authored cancellation assertion before any native execution; fixed syntax only.",
+    "syntax": "PASS both owned native JS files after repair",
+    "scopedRecommendedESLint": "PASS after new12 cases, with existing temporary Node/browser globals config; no tracked configuration change",
+    "nativeRunByAuthor": false,
+    "nativeFollowupPending": "Root owns all browser/runtime execution. No repaired or additional native passing result claimed.",
+    "strengthenedAudioTail": "Fresh node --check and scoped recommended ESLint PASS; native runtime remains root-only."
+  }
+}

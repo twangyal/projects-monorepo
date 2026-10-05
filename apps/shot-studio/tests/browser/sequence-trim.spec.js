@@ -1,3 +1,4 @@
+import {storedSequenceText,legacySequenceText} from './sequence-storage-fixtures.js';
 import {test,expect} from '@playwright/test';
 import {writeFile,mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -8,7 +9,7 @@ const KEY='shot-studio-sequence-v1';
 const clips=page=>page.locator('#sequence-clips [data-sequence-clip-id]');
 const fieldIn=page=>page.locator('#sequence-clip-in');
 const fieldOut=page=>page.locator('#sequence-clip-out');
-const raw=page=>page.evaluate(key=>localStorage.getItem(key),KEY);
+const raw=storedSequenceText;
 async function load(page,value=trimSequence()){
  await page.goto('/');await expect(page.locator('#sequence-open')).toBeEnabled();const accept=dialog=>dialog.accept();page.on('dialog',accept);
  try{await page.locator('#sequence-open').setInputFiles({name:'literal-trim.shot-sequence.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});await expect(page.locator('#sequence-title')).toHaveValue(value.title);await expect.poll(async()=>JSON.parse(await raw(page))).toEqual(value);}finally{page.off('dialog',accept);}
@@ -58,7 +59,7 @@ test('repeating and reordering preserve independent committed ranges and all ori
 });
 
 for(const [version,form] of [[1,'name'],[1,'rich'],[2,'rich']])test(`literal schema${version} ${form} startup migrates full ranges without rewriting saved bytes`,async({page})=>{
- const old=legacyTrimSequence(version,form),text=JSON.stringify(old,null,2),expected=migratedTrimSequence(old);await page.goto('/');await page.evaluate(({key,text})=>localStorage.setItem(key,text),{key:KEY,text});await page.reload();await expect(page.locator('#sequence-title')).toHaveValue(old.title);expect(await raw(page)).toBe(text);expect(await trimBackup(page)).toEqual(expected);expect(await raw(page)).toBe(text);await clips(page).first().click();await apply(page,1,3);expected.clips[0].inTime=1;expected.clips[0].outTime=3;expect(await trimBackup(page)).toEqual(expected);await expect.poll(async()=>JSON.parse(await raw(page))).toEqual(expected);await page.reload();await expect(fieldIn(page)).toHaveValue('1');expect(await trimBackup(page)).toEqual(expected);
+ const old=legacyTrimSequence(version,form),text=JSON.stringify(old,null,2),expected=migratedTrimSequence(old);await page.goto('/');await page.evaluate(({key,text})=>localStorage.setItem(key,text),{key:KEY,text});await page.reload();await expect(page.locator('#sequence-title')).toHaveValue(old.title);expect(await raw(page)).toBe(text);expect(await trimBackup(page)).toEqual(expected);expect(await raw(page)).toBe(text);await clips(page).first().click();await apply(page,1,3);expected.clips[0].inTime=1;expected.clips[0].outTime=3;expect(await trimBackup(page)).toEqual(expected);await expect.poll(async()=>JSON.parse(await raw(page))).toEqual(expected);expect(await legacySequenceText(page)).toBe(text);await page.reload();await expect(fieldIn(page)).toHaveValue('1');expect(await trimBackup(page)).toEqual(expected);
 });
 
 test('changed-back trim intent retires a held genuine sequence File read without clearing raw fields',async({page})=>{

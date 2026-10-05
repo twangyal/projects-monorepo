@@ -2,7 +2,7 @@
 
 A local 3D filmmaking sketchbook for idea #7. Stage two block characters in a
 courtyard, choose looping actions or author timed movement, visibility and action cues, adjust lighting, compose static or
-traveling cameras, rehearse or scrub the shot list, retain alternate recorded takes, assemble copied scenes into editable sequences, and export silent WebM films. Native browser
+traveling cameras, rehearse or scrub the shot list, retain alternate recorded takes, assemble copied scenes into editable sequences, add a local sequence soundtrack, and export WebM films. Native browser
 JavaScript/WebGL: no accounts, external assets, services or paid APIs.
 
 ## Run
@@ -109,7 +109,7 @@ not only its endpoints. Eye/target coordinates stay within ±15, Y is at least 0
 eye–target separation is at least 0.3 and horizontal separation at least 0.1; FOV
 is 25–80 degrees. Boundary decisions use JavaScript’s represented numbers. These
 limits do not prevent moving through set geometry or performers. No easing, roll,
-animated lens, transitions between shots, audio, skeletal assets, dialogue,
+animated lens, transitions between shots, scene audio, skeletal assets, dialogue,
 generative animation, recorded-clip splicing or immersive video export yet.
 
 ## Retained takes
@@ -192,22 +192,32 @@ At a hard cut, scrubbing selects the next clip; explicit End preview still shows
 the selected clip's exact Out camera. The interface displays both sequence and source
 time. The ordinary scene remains separately editable.
 
-**Save sequence** downloads a complete `.shot-sequence.json` with committed films
-and clip order. **Open sequence** and **New sequence** ask before replacing the
-current cut and remain reversible. New backups use sequence schema3 with explicit
-In/Out fields. Both genuine schema1 formats and schema2 migrate to full-shot
-ranges without changing their source films. Merely loading
-an older browser draft never rewrites its saved bytes. Ordinary scene schema3 and
-the take archive format remain independent. A sequence backup contains editable
-scenes, not recorded video.
+**Save sequence** downloads the complete committed sequence. Without a soundtrack,
+it remains a `.shot-sequence.json`; with audio, the `.shot-sequence` binary archive
+includes exact original WAV bytes, soundtrack settings and every copied film.
+**Open sequence** accepts both complete archives and older JSON backups. Opening
+or starting a new sequence asks before replacement and remains reversible.
+The inner editable sequence stays schema3 with explicit clip In/Out. Both genuine
+schema1 forms and schema2 migrate to full-shot ranges without changing source
+films. Loading an older browser draft never rewrites its saved bytes. Ordinary
+scene schema3 and the separate silent-take archive remain independent.
 
-The separate localStorage draft protects unreadable or changed records. A change
-from another tab refuses the stale save and keeps current work in memory. Download
-the exact preserved record and your current sequence before deciding whether to
-**Replace saved sequence**. Replacement asks for fresh confirmation and checks
-again; failures retain protection. This compares the last observed record before
-writing, but localStorage does not provide an atomic cross-tab transaction. Keep
-portable backups; clearing browser data can remove drafts.
+Complete sequence documents save atomically in a separate IndexedDB record.
+The scene panel and take notebook stay usable during sequence loading. A saved
+status requires the complete transaction to finish for the current edit; a failed
+save keeps the whole sequence and audio in memory for backup. If another tab
+changes the saved record, stale writes refuse. Keep the preserved saved archive
+and your current complete backup before **Replace saved sequence**: replacement
+reviews the current record, asks for confirmation, and checks its exact bytes
+again before writing. Cancellation and failures retain protection and raw fields.
+Unsupported or unreadable storage never becomes an empty writable draft.
+
+When no new complete record exists, the old localStorage sequence can be opened
+without a write. Its first successful deliberate edit saves the complete new
+record; the old text stays untouched. Changes made by an older tab protect the
+new save until reviewed. IndexedDB transactions are atomic; the additional check
+against legacy localStorage is not a transaction across both storage systems.
+Browser eviction or clearing can still remove local drafts. Keep portable backups.
 
 Limits are **4 sources, 20 clips and 60 seconds**, with each complete source film
 at most 64 KiB and complete sequence input/output at most 320 KiB. The original
@@ -230,7 +240,48 @@ existing 960×540 encoder and 32 MiB recording limit. Keep the tab visible; Canc
 page departure, hiding the tab or graphics loss stops the owned export. Scene and
 sequence recording cannot run together. The result downloads directly and is not
 added to the ordinary take notebook. This is editable-scene rendering; recorded
-media splicing, retiming, transitions and audio are not included.
+media splicing, retiming and transitions are not included. A configured sequence
+soundtrack is included in direct export; ordinary scene exports and retained takes
+remain silent.
+
+## Sequence soundtrack
+
+Import one local **PCM16 WAV** into the sequence. Supported input is little-endian
+RIFF/WAVE, mono or stereo at 44.1 or 48 kHz, **1–60 seconds** and at most **12 MiB**.
+Compressed WAV, floating-point WAV, RF64 and other audio formats are refused with
+conversion guidance. Valid ancillary WAV chunks stay in the exact retained file.
+No upload, microphone capture, remote media or paid service is involved.
+
+Set **In**, **Out**, **Start** and **Gain**, then apply them together. Source seconds
+round once to the nearest sample frame; the displayed effective range must span
+at least 0.1 seconds. Start is sequence time from 0 to 60 seconds; gain is 0–1.
+Audio follows the assembled sequence clock across cuts, while copied performers
+and cameras retain their original film clocks. It plays once without stretching,
+looping or normalization. Any portion beyond the sequence end is visibly cropped;
+an empty sequence or a start beyond the film can retain an inaudible soundtrack.
+Editing clips never silently changes the audio settings or extends the film.
+
+**Rehearse sequence** deliberately starts audio at the current sequence position.
+Scrubbing and endpoint previews are silent. Stop, raw field input, selection,
+editing, import, Undo/Redo, hidden tabs and page departure stop owned playback.
+A soundtrack export requires an audiovisual WebM encoder and an available audio
+context; unsupported browsers receive an error instead of a silent substitute.
+Rendering and source scheduling share the audio clock. Native encoding and device
+latency still depend on the browser and hardware; sample-exact muxing is not promised.
+
+Import, adjustment and removal are ordinary single Undo edits. Complete history
+shares immutable audio bytes and retains up to 30 prior states and **64 MiB of
+unique WAVs**. A replacement that exceeds the audio budget refuses without changing
+history; keep a complete backup, then deliberately clear sequence Undo history
+if needed. No-op and invalid edits keep Redo. Reload starts fresh session history.
+
+Portable audio sequences use a 16-byte framing header, at most **324 KiB** of
+complete metadata and at most **12 MiB** of exact WAV, within a **16 MiB** file
+limit. The embedded sequence keeps its separate 320 KiB limit. Lengths, framing,
+strict metadata, full WAV structure and SHA-256 are checked before replacement.
+Hashes establish byte integrity, not authorship or permission to use supplied audio.
+The backup contains editable scenes and original soundtrack audio, not exported
+video or the separate take notebook. Unapplied fields are visibly excluded.
 
 ## Experimental VR
 
@@ -483,3 +534,51 @@ production evaluators. It checks full-process restart, guarded capacity refusal,
 actual cancellation, endpoint previews and forty independently projected decoded
 video samples. Requested frame rate does not guarantee a frame in every short
 excerpt; physical headset acceptance remains open in #21.
+
+## Sequence soundtrack acceptance (#124)
+
+The complete document keeps exact original WAV bytes with the editable sequence,
+protected atomic browser saves, portable recovery, and bounded reversible history.
+The [design](../../docs/superpowers/specs/2026-10-05-shot-sequence-soundtrack-design.md)
+fixes sample-frame trimming, sequence-time placement, capture ownership and legacy
+preservation. Final local verification passes **328 unit cases**, syntax checks and **all 99
+native browser cases** in one regression. See the [root verification](docs/2026-10-05-sequence-soundtrack-verification.json).
+Native cases exercise real WAV selection, raw drafts, complete backup/restart,
+two-tab conflicts, mono 44.1 kHz resampling, stereo tones and encoder cancellation.
+
+The independent maximum uses four complete 20-shot scenes, 256 performer cues,
+twenty clips and 60 seconds of stereo PCM. Its complete **11,554,385-byte** archive
+survives a full browser restart byte-for-byte, alongside an unchanged ordinary
+scene and actual silent saved take. Separate exact 12 MiB WAV and 324 KiB raw
+metadata inputs admit; their +1 variants refuse without changing committed work.
+The resulting **5,761,015-byte VP9/Opus WebM** passes independent decoding:
+**1,101 video frames**, **2,880,000 stereo audio frames**, all forty original
+camera/performer/light/color samples, fixed pitch/gain/silence checks and all
+sixteen audio transitions within **40 ms** of their shared timeline positions.
+No fitted audio or video offset is used. This measures Chromium 151 in this
+environment; it does not promise sample-exact muxing on every device.
+
+First failures are preserved in the [maximum receipt](docs/2026-10-05-sequence-soundtrack-maximum.json).
+The first audio stream stopped at the soundtrack's end, before the sequence ended.
+A native regression reproduced the missing silent tail; capture now keeps a
+zero-valued source active until owned cleanup, without changing the imported PCM
+or audible playback. A separate reopened headless page delivered only two frame
+callbacks per second; the runner now explicitly activates its own page. Production
+video scheduling and all original acceptance thresholds remain unchanged. A
+mobile full-page screenshot protocol failure is retained; focused viewport
+captures and the full-document horizontal-overflow assertion verify mobile layout.
+
+To prepare original fixtures and capture/decode the maximum against a separately
+served app, use fresh output directories:
+
+```sh
+node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-soundtrack-fixtures
+CHROMIUM_PATH=/path/to/chromium node scripts/smoke_sequence_soundtrack.mjs \
+  --capture --fixtures /tmp/shot-soundtrack-fixtures \
+  --output /tmp/shot-soundtrack-acceptance --origin http://127.0.0.1:4173
+node scripts/smoke_sequence_soundtrack.mjs --inspect --output /tmp/shot-soundtrack-acceptance
+```
+
+The runner starts no server. It owns and closes fresh browser processes, retains
+the original recorded video for independent inspection, and needs FFmpeg/FFprobe.
+Physical headset acceptance remains separate in #21.

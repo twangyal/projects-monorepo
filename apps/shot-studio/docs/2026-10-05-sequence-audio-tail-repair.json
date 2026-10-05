@@ -1,0 +1,81 @@
+{
+  "issue": 124,
+  "scope": "Keep capture audio frames alive through the complete sequence, including leading and trailing silence and wholly inaudible settings.",
+  "diagnosis": {
+    "root_observed_native_failures": [
+      "First maximum capture had a 60-second video but only 45 seconds of audio, ending with its last audible source.",
+      "Actual 6-second mono regression decoded 95040 frames against its existing 283200-frame minimum."
+    ],
+    "controlled_native_probe": {
+      "baseline": "/workspace/shot124-cadence-probe-second/baseline.json",
+      "baseline_audio_frames": 190080,
+      "zero_constant_source": "/workspace/shot124-cadence-probe-second/silence.json",
+      "zero_constant_source_audio_frames": 288000,
+      "sequence_seconds": 6,
+      "sample_rate": 48000,
+      "interpretation": "The MediaStreamAudioDestination stopped producing audio frames when its only AudioBufferSource ended. A live zero-valued ConstantSource retained the full timeline."
+    },
+    "native_red_log": "/tmp/shot124-tail-red.log",
+    "native_red_results": "/tmp/shot124-tail-red-results.json",
+    "native_red_artifacts": "/workspace/shot124-tail-red-artifacts"
+  },
+  "implementation": [
+    "Create a ConstantSource only when start is explicitly called in capture mode.",
+    "Set offset to zero and connect only to the existing capture destination, starting at the existing sample-aligned audio origin.",
+    "Leave original PCM, crop, gain, source scheduling, preview routing, and export clock unchanged; allocate no extra PCM buffer.",
+    "Keep the zero source active until existing recorder/session cleanup, including silent leading and trailing time and a wholly inaudible descriptor.",
+    "Stop and disconnect the owned zero source exactly once through idempotent stop/close on completion, cancellation, or native start failure.",
+    "Refuse capture clearly when ConstantSource is unsupported while preserving preview support."
+  ],
+  "focused_verification": {
+    "command": "node --test tests/sequence-audio-session.test.js",
+    "initial_red": {
+      "log": "/tmp/shot124-audio-tail-unit-red.log",
+      "passed": 7,
+      "failed": 5,
+      "duration_ms": 219.050066,
+      "reason": "Expected failures for missing zero-source lifetime and failure cleanup; all six existing cases and preview-independence case passed."
+    },
+    "first_integration": {
+      "log": "/tmp/shot124-audio-tail-unit-green.log",
+      "passed": 11,
+      "failed": 1,
+      "duration_ms": 177.287555,
+      "reason": "New fixture required bit-identical results from mathematically equal scheduling expressions with different floating-point grouping: 1.5000208333333331 versus 1.5000208333333334. The fixture now permits less than two machine epsilons while preserving exact offset/duration and the existing scheduling formula."
+    },
+    "final": {
+      "log": "/tmp/shot124-audio-tail-unit-final.log",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "duration_ms": 220.282894
+    },
+    "syntax": [
+      "node --check src/sequence-audio-session.js",
+      "node --check tests/sequence-audio-session.test.js"
+    ],
+    "syntax_exit_code": 0,
+    "coverage": [
+      "Sample-aligned shared origin; original source crop and gain unchanged",
+      "Live zero signal after source end through sequence end; no second PCM allocation",
+      "Wholly out-of-range soundtrack",
+      "Gain zero",
+      "Preview independent of ConstantSource support",
+      "Abort stops/disconnects immediately and awaits native context drain",
+      "Native zero-source start failure retires all owned resources"
+    ]
+  },
+  "integration_status": "Root owns the full project suite, exporter mock compatibility, and actual native mono/maximum re-verification. This focused receipt does not claim those gates have passed.",
+  "files": [
+    {
+      "path": "src/sequence-audio-session.js",
+      "bytes": 6221,
+      "sha256": "63c852eb569265a896272c3e0abbb65b5e16c6cdf7795576c7e09a07d32bbb0c"
+    },
+    {
+      "path": "tests/sequence-audio-session.test.js",
+      "bytes": 11613,
+      "sha256": "9e971625ef9ed704f7ca87a82dbb13788a8674397193cc514a5f9327e31b0f99"
+    }
+  ]
+}

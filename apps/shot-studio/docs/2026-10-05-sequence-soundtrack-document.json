@@ -1,0 +1,140 @@
+{
+  "milestone": 124,
+  "date": "2026-10-05",
+  "component": "Complete sequence document, shared-asset history and portable archive",
+  "status": "source frozen;17 focused producer tests passed; root owns broad/native/CI acceptance",
+  "contract": "docs/superpowers/specs/2026-10-05-shot-sequence-soundtrack-design.md",
+  "source": [
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-document.js",
+      "bytes": 7704,
+      "sha256": "3a43f7e398da655af1bbb87ef12f6d78d23c17b5e7200c9d5eee473c4d160c10"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-archive.js",
+      "bytes": 6285,
+      "sha256": "0b556caf4aa23547adbd0a5fa8f43774ad18c1e3d4ada19bb5e8eb80d19d1dd0"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/tests/sequence-document.test.js",
+      "bytes": 11289,
+      "sha256": "86107eb68118d1c1b768ce6383fcf0595ed6ed6d441428856ff2423b48b9e2d9"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/tests/sequence-archive.test.js",
+      "bytes": 6314,
+      "sha256": "aa88eb7bd23329c249ad4232863e8d07e247d2b376b23712afe3faf2b199703f"
+    }
+  ],
+  "runs": [
+    {
+      "phase": "document/history initial stub RED",
+      "tests": 9,
+      "passed": 1,
+      "failed": 8,
+      "duration_ms": 74.12051,
+      "note": "One refusal-only case passing a deliberate stub is not positive admission evidence; audio-dependent failures included peer admission stubs. Positive no-audio/history cases fail at owned missing APIs.",
+      "log": {
+        "path": "/tmp/shot124-document-red.log",
+        "bytes": 7628,
+        "sha256": "245869d026db6889536421e1cdaf2a8a38209ecee173013ba774f55503ce07a6"
+      }
+    },
+    {
+      "phase": "archive initial stub RED",
+      "tests": 7,
+      "passed": 2,
+      "failed": 5,
+      "duration_ms": 89.089898,
+      "note": "Refusal-only stub passes are not positive validation evidence.",
+      "log": {
+        "path": "/tmp/shot124-archive-red.log",
+        "bytes": 5377,
+        "sha256": "820104cd9642d18a04177b028ff42a19b9cabd5d49d51df53e3d900b8c342850"
+      }
+    },
+    {
+      "phase": "first actual integration",
+      "tests": 16,
+      "passed": 15,
+      "failed": 1,
+      "duration_ms": 258.266314,
+      "cause": "Fixture compared original film JSON property insertion order against preexisting canonical model order; all graph values were equal.",
+      "log": {
+        "path": "/tmp/shot124-document-archive-first-green.log",
+        "bytes": 5335,
+        "sha256": "d3ad9e40a320d1c50198bc54ea3d43696603c81303618bb5347f851968e32b6f"
+      }
+    },
+    {
+      "phase": "exact graph fixture correction",
+      "tests": 16,
+      "passed": 16,
+      "duration_ms": 279.911698,
+      "change": "Compared complete source graph using deep equality rather than source JSON key order. Exact canonical archive reencode bytes, all original values and UTF16 were retained.",
+      "log": {
+        "path": "/tmp/shot124-document-archive-green.log",
+        "bytes": 1751,
+        "sha256": "2e11ecf53aff68de7aacaf50b16e5d2011a98aff09674048bd75984f91573586"
+      }
+    },
+    {
+      "phase": "final strengthened scope",
+      "tests": 17,
+      "passed": 17,
+      "duration_ms": 273.734373,
+      "log": {
+        "path": "/tmp/shot124-document-archive-final.log",
+        "bytes": 1871,
+        "sha256": "9f40f6dc36de03edd9b033d8b19375afdd085f9526ed6f04eb5b016c7a8adeeb"
+      }
+    }
+  ],
+  "static": {
+    "syntax": "node --check src/sequence-document.js and src/sequence-archive.js passed",
+    "lint": "Scoped ESLint recommended browser globals for both modules and Node globals for both owned test files passed.",
+    "lint_correction": "Replaced intentional control-character regex with equivalent bounded char-code checks; no admitted label expansion."
+  },
+  "independent_original_inputs": [
+    "Literal complete canonical3 source with two performers, later traveling shot and fractional excerpt .25..1.75; original accepted lone-surrogate film title retains exact UTF16 through canonical JSON.",
+    "Literal genuine name-form schema1 and rich1/2 sequence inputs migrate through unchanged old importer, with full original films and full-shot ranges.",
+    "Original one-second mono48kPCM16 WAV and independently generated stereo44.1kPCM16 samples; SHA256 expected independently with node:crypto.",
+    "Manual SHOTSEQ1 header + literal metadata + WAV fixtures do not use the writer to construct all accepted/refused expectations."
+  ],
+  "verified": [
+    "Strict wrapper/asset/settings keys and primitive/finite/frame/label admission; getter avoidance and metadata detachment.",
+    "Branded immutable WAV required; forged public asset or mismatched hash/frame descriptor rejects whole bundle.",
+    "Attach/trim/remove/replace and Undo/Redo preserve complete copied source graphs and original WAV assets; no-op retains Redo.",
+    "Exact64MiB history: five12MiB admitted original WAV containers plus one4MiB container; next asset refusal is atomic.",
+    "After Undo, candidate4MiB+2 would exceed unique history cap by exactly2bytes and is refused without consumingRedo; small branch releases discardedRedo asset before accounting.",
+    "Independently admitted identical bytes share one retained asset across different metadata states; normal30prior eviction and explicitclear preserve current and release unreachable assets.",
+    "Complete archive exact16byteheader,324KiBrawmetadata boundary/+1,12MiBWAV/16MiBouter header admission, exactEOF, fatalUTF8, duplicatekeys/depth/nonfinite rejection.",
+    "Actual original stereo WAV bytes and hash survive decode/reencode byte-identically; corrupted media and absent/orphan/mismatched audio reject.",
+    "Pre-abort and controlled delay of genuine nativeBlob.arrayBuffer completion cannot publish a partial import; owned10second aggregate archive deadline propagates cancellation to audio admission."
+  ],
+  "bounds": {
+    "sequence_bytes": 327680,
+    "metadata_bytes": 331776,
+    "wav_bytes": 12582912,
+    "archive_bytes": 16777216,
+    "header_bytes": 16,
+    "history_unique_wav_bytes": 67108864,
+    "prior_states": 30,
+    "archive_deadline_ms": 10000,
+    "metadata_json_depth": 32
+  },
+  "format": {
+    "magic_ascii": "SHOTSEQ1",
+    "lengths": "u32 little-endian metadata@8 WAV@12",
+    "metadata": "UTF8 JSON.stringify of canonical complete document, no trailing LF required or emitted",
+    "wav": "Exact original privately admitted immutable Blob; zero bytes iff soundtrack null"
+  },
+  "scope_limits": [
+    "Synthetic legal ancillary padding establishes exact asset/history capacity; it is not maximum-duration playback or native encoder evidence.",
+    "Metadata boundary uses legal whitespace in manually framed raw input; canonical valid document may have a lower reachable maximum under existing inner graph constraints.",
+    "No runtime audio/video, browser, service, full suite, installation or CI was run by this owner.",
+    "No existing sequence.js/model.js/take format, old tests, package configuration, README or Git state was modified.",
+    "History identity deduplicates by actual SHA256 of privately admitted assets; public descriptor validation alone makes no provenance/authorship claim.",
+    "Archive cancellation retires publication; a native Blob read or hashing operation already in flight may finish later and is then ignored."
+  ]
+}

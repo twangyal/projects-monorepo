@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "status": "local-verification-passed-ci-pending",
+  "recordedAt": "2026-10-05T05:04:31.455279+00:00",
+  "baseCommit": "34b64dd78811185c002643f88850d6bf5f7dee31",
+  "changes": [
+    "One admitted immutable PCM16 WAV per complete sequence document, frame trims/start/gain, bounded complete history and byte-exact archives.",
+    "Complete native IndexedDB CAS saves and recovery preserve legacy bytes and newer UI intent.",
+    "Explicit audio rehearsal and Opus/VP9 or VP8 export with full-duration silence and owned lifecycle cleanup."
+  ],
+  "unitFirst": {
+    "tests": 322,
+    "pass": 322,
+    "fail": 0,
+    "milliseconds": 1534.452267,
+    "log": "/tmp/shot124-unit-first.log"
+  },
+  "unitFinal": {
+    "tests": 328,
+    "pass": 328,
+    "fail": 0,
+    "milliseconds": 1943.758365,
+    "log": "/tmp/shot124-unit-final.log"
+  },
+  "syntax": {
+    "command": "npm run check; node --check scripts/smoke_sequence_soundtrack.mjs",
+    "exitCode": 0
+  },
+  "nativeRuns": [
+    {
+      "name": "native-first",
+      "stats": {
+        "startTime": "2026-10-05T03:42:34.669Z",
+        "duration": 121536.56,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "failures": [
+        {
+          "test": "held genuine WAV read cannot overwrite newer changed-back label intent and Cancel permits same-file retry",
+          "status": "failed",
+          "error": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+        },
+        {
+          "test": "two real tabs protect the whole saved archive and reviewed replacement refuses a third writer",
+          "status": "failed",
+          "error": "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 5\n+ Received  + 5\n\n@@ -126,12 +126,12 @@\n        \"channels\": 2,\n        \"frameCount\": 192000,\n        \"sampleRate\": 48000,\n        \"sha256\": \"3ad476ac505277155bc9e53a1eb3f91ace564bd8b793ca72b2a3de7efd937714\",\n      },\n-     \"gain\": 0.25,\n-     \"inFrame\": 12000,\n-     \"label\": \"Second tab committed\",\n-     \"outFrame\": 156000,\n-     \"startTime\": 0.75,\n+     \"gain\": 1,\n+     \"inFrame\": 0,\n+     \"label\": \"Original stereo tones \u03a9\",\n+     \"outFrame\": 192000,\n+     \"startTime\": 0,\n    },\n  }\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+        }
+      ],
+      "rawReportSha256": "038a9cc92b37e09b97531420215f3001fc52bfd157cbc82aaff0568251078f5b"
+    },
+    {
+      "name": "native-second",
+      "stats": {
+        "startTime": "2026-10-05T04:51:42.456Z",
+        "duration": 90484.417,
+        "expected": 12,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "failures": [],
+      "rawReportSha256": "2ce7f730af0977f66f0c6f9712de7f0087fe3ddadb7b710a63308ab14999ff64"
+    },
+    {
+      "name": "tail-red",
+      "stats": {
+        "startTime": "2026-10-05T04:55:39.134Z",
+        "duration": 10894.279,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "failures": [
+        {
+          "test": "actual mono 44.1 kHz WAV keeps original frames and pitch through native Opus resampling",
+          "status": "failed",
+          "error": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 283200\nReceived:    95040"
+        }
+      ],
+      "rawReportSha256": "eb2fee8d101b3f2d5fcb5171765403688e928a3b236b2d4274895aa67a5e726a"
+    },
+    {
+      "name": "tail-green",
+      "stats": {
+        "startTime": "2026-10-05T04:58:18.983Z",
+        "duration": 22356.461,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "failures": [],
+      "rawReportSha256": "b247872c4d1519c0345c6302fa3502a10d5351be37523d1479fa31a7f456966a"
+    },
+    {
+      "name": "full-regression",
+      "command": "CHROMIUM_PATH=/usr/bin/chromium SHOT_TEST_PORT=4323 npm run test:browser -- --reporter=line,json",
+      "stats": {
+        "startTime": "2026-10-05T05:00:36.904Z",
+        "duration": 341523.74,
+        "expected": 99,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "failures": [],
+      "rawReportSha256": "dc9d5fa3e1a417ffddffef1a04ad24530fad5a73bf063defc89bdc1eaa0b0c2c"
+    }
+  ],
+  "sourceReview": [
+    "Independent full-source read: no actionable finding in archive/admission/history/CAS/UI/audio/export lifecycle.",
+    "Independent follow-up read of capture-only zero-source fix at SHA63c852eb569265a896272c3e0abbb65b5e16c6cdf7795576c7e09a07d32bbb0c: no actionable finding."
+  ],
+  "maximumReceipt": "2026-10-05-sequence-soundtrack-maximum.json",
+  "limits": [
+    "No physical headset/device compatibility claim; #21 stays open.",
+    "Native frame timing and codec behavior remain hardware/browser dependent.",
+    "Root owns Git/GitHub, broad tests and actual services/browsers; producer agents and independent oracle used disjoint source ownership."
+  ],
+  "files": [
+    {
+      "path": "src/sequence-audio.js",
+      "bytes": 6875,
+      "sha256": "7b89ee0d78c40ffc0531f3e245dd3de851b8f85d869c00834e9abf17f75537c6"
+    },
+    {
+      "path": "src/sequence-audio-session.js",
+      "bytes": 6221,
+      "sha256": "63c852eb569265a896272c3e0abbb65b5e16c6cdf7795576c7e09a07d32bbb0c"
+    },
+    {
+      "path": "src/sequence-document.js",
+      "bytes": 7704,
+      "sha256": "3a43f7e398da655af1bbb87ef12f6d78d23c17b5e7200c9d5eee473c4d160c10"
+    },
+    {
+      "path": "src/sequence-archive.js",
+      "bytes": 6285,
+      "sha256": "0b556caf4aa23547adbd0a5fa8f43774ad18c1e3d4ada19bb5e8eb80d19d1dd0"
+    },
+    {
+      "path": "src/sequence-document-store.js",
+      "bytes": 15275,
+      "sha256": "8555fb86b049296a68eeaf96312d4c28c7458b777d6c601d5a64c7b580a6d819"
+    },
+    {
+      "path": "src/sequence-ui.js",
+      "bytes": 43252,
+      "sha256": "2f187d7f76196352da5282d35b358c7309c372eaa7208bd64709965aa416509b"
+    },
+    {
+      "path": "src/export.js",
+      "bytes": 5287,
+      "sha256": "93351f6dd837a1b49a2261d2b37d4f3f966f14a8e8f6682898eb21da482fcc5c"
+    },
+    {
+      "path": "index.html",
+      "bytes": 17557,
+      "sha256": "5bd78905e857c679283e4d597ff1cdfbdd5b1181c79c8b12a1b1148cf5fdecd6"
+    },
+    {
+      "path": "style.css",
+      "bytes": 10158,
+      "sha256": "577d6408ad039484d24c2f99504589e8331c54dbff3c778a4796e6bd420e7e07"
+    },
+    {
+      "path": "tests/browser/sequence-soundtrack.spec.js",
+      "bytes": 33717,
+      "sha256": "8601808bfb1d14742a7edda916dd708f75034c5f57fb83c6b7a3f77e1b740ce1"
+    },
+    {
+      "path": "tests/browser/sequence-soundtrack-fixtures.js",
+      "bytes": 4450,
+      "sha256": "f9b95cd7178b6a938b802289462f7b4c0add2b19d27dec3517726c2648d57601"
+    },
+    {
+      "path": "tests/browser/sequence-storage-fixtures.js",
+      "bytes": 2207,
+      "sha256": "f5b19f6a83b7f819090f3f13044cb175218477f20aaec54fac634f2463e3967d"
+    },
+    {
+      "path": "tests/browser/sequence.spec.js",
+      "bytes": 22955,
+      "sha256": "47148287596f5ffb85c2388e8068649aa1844fb8a32cb38508834e5329b7328a"
+    },
+    {
+      "path": "tests/browser/sequence-trim.spec.js",
+      "bytes": 16585,
+      "sha256": "ddc4c5f0c098cced164395c6d92d870eb84b8365cb36ef4d596e621a099b0439"
+    },
+    {
+      "path": "scripts/smoke_sequence_soundtrack.mjs",
+      "bytes": 29944,
+      "sha256": "e256aa5b9722ad9217337a0fba60f45d4dd19fb135dbc309d98ec5d9df16cdea"
+    }
+  ],
+  "failureAccounting": [
+    "First10 native8pass/2fail: heldFile fixture did not intercept immutableBlob; wholearchive JSON transfer in polling consumed existing5s deadline even though trace returned correctrevision2. Fixture corrected to exactbytes gated read and compact independent browser SHA/framing readback, same deadlines.",
+    "Two title-action fixtures originally pressedTab although sequence title requires explicitApply; corrected before subsequentrun; one first-passcase had not actually committed its intended edit.",
+    "Strengthened real mono native assertion thenfailed correctly:95040decodedframes below283200minimum; capture-onlyzero source repaired actual missingtail. Finalnative2/2includes same originaltone/source/fulltail and genuine cancellation.",
+    "Maximum screenshot and decode failures, independentdiagnostics and final unchangedgates are preserved in the linkedmaximumreceipt."
+  ],
+  "verifiedAt": "2026-10-05T05:06:55.745731+00:00",
+  "serviceCleanup": "Root maximum service PID893645 on4324 stopped after screenshot verification; Playwright owns and terminates its4323 server. All root-owned new browsers closed."
+}

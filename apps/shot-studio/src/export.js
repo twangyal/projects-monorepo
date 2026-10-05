@@ -1,11 +1,24 @@
+import {assertSequenceAudioSession} from './sequence-audio-session.js';
 export const MAX_VIDEO_BYTES=32*1024*1024;
 
-export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES}={}){
+export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES,audioSession}={}){
+  if(audioSession!==undefined)return exportWithAudio(canvas,draw,duration,{signal,maxBytes,audioSession});
+  return captureFilm(canvas,draw,duration,{signal,maxBytes});
+}
+async function exportWithAudio(canvas,draw,duration,options){
+  assertSequenceAudioSession(options.audioSession);
+  try{
+    assertSequenceAudioSession(options.audioSession,duration);
+    return await captureFilm(canvas,draw,duration,options);
+  }finally{await options.audioSession.close();}
+}
+function captureFilm(canvas,draw,duration,{signal,maxBytes,audioSession}){
   if(!Number.isInteger(maxBytes)||maxBytes<=0||maxBytes>MAX_VIDEO_BYTES)throw Error('Video byte limit must be a positive integer of at most 32 MiB.');
   if(typeof duration!=='number'||!Number.isFinite(duration)||duration<=0||duration>60)throw Error('Video duration must be finite and greater than 0, at most 60 seconds.');
   if(!canvas.captureStream||!globalThis.MediaRecorder)throw Error('Video export is unavailable in this browser.');
-  const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(t=>MediaRecorder.isTypeSupported(t));
-  if(!mime)throw Error('This browser cannot encode WebM. Save a project backup instead.');
+  const formats=audioSession?['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus']:['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  const mime=formats.find(t=>MediaRecorder.isTypeSupported(t));
+  if(!mime)throw Error(audioSession?'This browser cannot encode audiovisual WebM. Save a complete sequence backup instead.':'This browser cannot encode WebM. Save a project backup instead.');
   if(signal?.aborted)throw Error('Export cancelled.');
   return new Promise((resolve,reject)=>{
     let stream,recorder,frame=0,timeout,finished=false,started,bytes=0,lastCapture=-Infinity,captureTrack;
@@ -13,6 +26,7 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
     const cleanup=()=>{
       cancelAnimationFrame(frame);clearTimeout(timeout);
       if(recorder){recorder.ondataavailable=null;recorder.onerror=null;recorder.onstop=null;}
+      audioSession?.stop();
       for(const track of stream?.getTracks()??[]){try{track.stop();}catch{}}
       signal?.removeEventListener('abort',cancel);
     };
@@ -25,7 +39,7 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
     const tick=now=>{
       if(finished)return;
       try{
-        const t=Math.min(duration,(now-started)/1000);draw(t);
+        const t=audioSession?audioSession.time():Math.min(duration,(now-started)/1000);draw(t);
         if(finished)return;
         const eligible=!captureTrack||now-lastCapture>=1000/30;
         if(captureTrack&&eligible){captureTrack.requestFrame();lastCapture=now;}
@@ -46,7 +60,8 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
         stream=canvas.captureStream(30);
         if(signal?.aborted)throw Error('Export cancelled.');
       }
-      recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2500000});
+      const recordingStream=audioSession?new MediaStream([...stream.getVideoTracks(),...audioSession.captureStream.getAudioTracks()]):stream;
+      recorder=new MediaRecorder(recordingStream,{mimeType:mime,videoBitsPerSecond:2500000});
       recorder.ondataavailable=event=>{
         if(finished)return;
         try{
@@ -69,6 +84,8 @@ export function exportFilm(canvas,draw,duration,{signal,maxBytes=MAX_VIDEO_BYTES
       signal?.addEventListener('abort',cancel,{once:true});
       if(signal?.aborted){cancel();return;}
       recorder.start(100);
+      if(finished)return;
+      if(audioSession)audioSession.start(0,{capture:true});
       if(finished)return;
       started=performance.now();
       if(captureTrack){captureTrack.requestFrame();lastCapture=started;}
