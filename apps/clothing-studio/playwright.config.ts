@@ -10,7 +10,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'npm run build && npm run preview -- --port 4186 --strictPort',
+    command: 'CLOTHING_STORAGE_TEST_HARNESS=1 npm run build && npm run preview -- --port 4186 --strictPort',
     url: 'http://127.0.0.1:4186', reuseExistingServer: false,
   },
 });

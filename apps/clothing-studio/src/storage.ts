@@ -33,59 +33,67 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-function complete(transaction: IDBTransaction, action: string): Promise<void> {
-  const result = new Promise<void>((resolve, reject) => {
-    transaction.oncomplete = () => resolve();
-    transaction.onabort = () => reject(storageError(action, transaction.error));
-    transaction.onerror = () => reject(storageError(action, transaction.error));
+const TRANSACTION_DEADLINE_MS = 10_000;
+
+async function transact<T>(mode: IDBTransactionMode, action: string,
+  request: (store: IDBObjectStore) => () => T): Promise<T> {
+  const database = await openDatabase();
+  return new Promise<T>((resolve, reject) => {
+    let transaction: IDBTransaction;
+    try { transaction = database.transaction(STORE_NAME, mode); }
+    catch { database.close(); reject(storageError(action)); return; }
+    let failure: Error | null = null;
+    let readResult: (() => T) | undefined;
+    // This timer belongs to this native transaction, including time queued
+    // behind another connection. Only a native terminal event releases callers.
+    const timer = setTimeout(() => {
+      const timeout = new Error(`Local project storage timed out after 10 seconds. Keep your current concept open and export a project backup, then retry.`);
+      try { transaction.abort(); failure ??= timeout; }
+      catch {
+        // Native commit/abort may already have won while its callback is delayed.
+        // Await that event rather than falsely reporting a committed write lost.
+      }
+    }, TRANSACTION_DEADLINE_MS);
+    const finish = () => { clearTimeout(timer); database.close(); };
+    transaction.oncomplete = () => {
+      finish();
+      if (failure) { reject(failure); return; }
+      try { resolve(readResult!()); } catch { reject(storageError(action)); }
+    };
+    transaction.onabort = () => { finish(); reject(failure ?? storageError(action, transaction.error)); };
+    transaction.onerror = () => {
+      // An error event precedes rollback. Keep the autosave queue waiting for it.
+      failure ??= storageError(action, transaction.error);
+    };
+    try { readResult = request(transaction.objectStore(STORE_NAME)); }
+    catch {
+      failure = storageError(action);
+      try { transaction.abort(); } catch { /* Await the actual native terminal outcome. */ }
+    }
   });
-  // A synchronous object-store operation can throw before its caller awaits us.
-  // Preserve rejection for that caller without leaving an orphaned transaction.
-  void result.catch(() => {});
-  return result;
 }
 
 export async function loadProject(): Promise<Project | null> {
-  const database = await openDatabase();
-  try {
-    const transaction = database.transaction(STORE_NAME, 'readonly');
-    const completed = complete(transaction, 'read');
-    const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(PROJECT_KEY), presence = store.count(PROJECT_KEY);
-    const requested = new Promise<unknown>((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(storageError('read', request.error));
-    });
-    const counted = new Promise<number>((resolve, reject) => {
-      presence.onsuccess = () => resolve(presence.result);
-      presence.onerror = () => reject(storageError('read', presence.error));
-    });
-    const [value, count] = await Promise.all([requested, counted, completed]);
-    if (count === 0) return null;
-    const project = validateProject(value);
-    await validatePhoto(project.photo);
-    return project;
-  } finally { database.close(); }
+  const record = await transact('readonly', 'read', store => {
+    const value = store.get(PROJECT_KEY), presence = store.count(PROJECT_KEY);
+    return () => ({ value: value.result as unknown, count: presence.result });
+  });
+  if (record.count === 0) return null;
+  const project = validateProject(record.value);
+  await validatePhoto(project.photo);
+  return project;
 }
 
 export async function saveProject(project: Project): Promise<void> {
   const safe = validateProject(project);
   await validatePhoto(safe.photo);
-  const database = await openDatabase();
-  try {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    const completed = complete(transaction, 'save');
-    transaction.objectStore(STORE_NAME).put(safe, PROJECT_KEY);
-    await completed;
-  } finally { database.close(); }
+  await transact('readwrite', 'save', store => {
+    store.put(safe, PROJECT_KEY); return () => undefined;
+  });
 }
 
 export async function clearProject(): Promise<void> {
-  const database = await openDatabase();
-  try {
-    const transaction = database.transaction(STORE_NAME, 'readwrite');
-    const completed = complete(transaction, 'clear');
-    transaction.objectStore(STORE_NAME).delete(PROJECT_KEY);
-    await completed;
-  } finally { database.close(); }
+  await transact('readwrite', 'clear', store => {
+    store.delete(PROJECT_KEY); return () => undefined;
+  });
 }
