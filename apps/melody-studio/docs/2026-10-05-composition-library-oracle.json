@@ -1,0 +1,123 @@
+{
+  "issue": 126,
+  "date": "2026-10-05",
+  "role": "independent native acceptance author",
+  "status": "locally-verified-published-ci-pending",
+  "ownership": [
+    "tests/library-fixtures.ts",
+    "tests/library.spec.ts",
+    "docs/2026-10-05-composition-library-oracle.json"
+  ],
+  "independence": {
+    "producerSourcesRead": false,
+    "changedMainRead": false,
+    "expectedValues": "Original literal complete composition, note graph, retained signed PCM, standard JSON envelope, independently computed SHA-256 and raw IndexedDB row metadata. No producer encoder, decoder, reducer or validator constructs expected output.",
+    "publicApiHarness": "Root-owned test-only harness exposes CompositionLibrary without fixtures or expectation logic."
+  },
+  "frozenFirstFailure": {
+    "title": "library baseline: complete original audio project exposes explicit saved-copy controls",
+    "rootReportedResult": "Complete original audio-backed file load, existing autosave, and exact exported bytes passed; #library-select absent failed after five seconds.",
+    "results": "/tmp/melody126-native-missing-results.json",
+    "artifacts": "/workspace/melody126-native-missing-artifacts",
+    "assertionsChangedAfterFailure": false
+  },
+  "cases": 22,
+  "coverage": [
+    "Exact original canonical bytes, complete audio graph, independent raw row metadata and SHA",
+    "Separate copy label and title, trimmed explicit label, update fresh revision, exact download",
+    "Refresh without Blob arrayBuffer reads and unchanged current autosave row",
+    "Two-tab seventh-to-eighth capacity race and ninth refusal",
+    "Independent-ID updates, stale same-ID update refusal, delete cancellation and nonresurrection",
+    "Plausible same-size selected corruption retains exact download while Open refuses",
+    "Raw title DOM identity, backward caret selection, numeric spelling, MIDI review and continuation scratch",
+    "One reversible complete Open, canceled consent preservation and asset-ID collision atomic refusal",
+    "Held real Blob-read completion retired by changed-back editor input, label, selection, cancel, persisted page lifecycle",
+    "Native request success followed by transaction abort rollback",
+    "Real 10000ms write deadline with native keepalive, cleanup and explicit retry",
+    "Startup read ownership and protected undefined current row remains protected after library Open/edit/save",
+    "Full Chromium process restart with unique disposable profile, exact downloads, mobile keyboard and screenshot",
+    "Opaque forged/cloned/wrong-instance/consumed receipt refusal, immutable wrappers and detached PCM",
+    "Actual blocked IndexedDB open behind blocked native deletion retains drain through cancel and terminal close",
+    "Already-committed transaction canceled before response delivery retains exactly one copy without replay",
+    "Pending microphone permission and native cleanup block Save/Open"
+  ],
+  "controlledFaults": [
+    "Same-size Blob bytes deliberately altered without changing metadata/hash",
+    "Real Blob arrayBuffer result delivery held",
+    "Real IDB request success followed by transaction.abort",
+    "Native transaction kept alive with read requests; original 10000ms product deadline unchanged",
+    "Stored current descriptor deliberately set to undefined",
+    "Native database deletion blocked by an explicit real connection to isolate open drain ownership",
+    "AbortSignal canceled inside native transaction complete event before consumer success callback",
+    "getUserMedia permission promise deliberately held then rejected; physical microphone behavior is not tested",
+    "Persisted pagehide/pageshow events dispatched for lifecycle handling; this is not a claim of actual browser BFCache eligibility"
+  ],
+  "authorVerification": {
+    "typecheck": "./node_modules/.bin/tsc --noEmit --pretty false passed",
+    "lint": "./node_modules/.bin/eslint tests/library-fixtures.ts tests/library.spec.ts passed",
+    "browserExecution": "None; root owns all test/browser/service execution"
+  },
+  "sourceSha256": {
+    "tests/library-fixtures.ts": "7f145c8d8b82def5c3f5130357295146456450117c2f7d6efe27c5829e2ce76b",
+    "tests/library.spec.ts": "0f64579ec83160179cf9ca000f7b26a6928978a9e4e15641f382b40ac050870d"
+  },
+  "limitations": [
+    "No passing browser outcome claimed until root executes the frozen cases.",
+    "Short independent PCM deliberately bounds native test runtime; the separate maximum runner owns eight maximum musical copies and full-size aggregate payload validation.",
+    "This suite does not fill 64MiB unique audio history, emulate genuine browser quota exhaustion, establish physical microphone accuracy, or cover other browsers.",
+    "Focused producer tests own parser/metadata aggregate limits, malformed catalog protection and exhaustive invalid-label validation."
+  ],
+  "firstIntegratedExecution": {
+    "owner": "root",
+    "startTime": "2026-10-05T06:06:03.405Z",
+    "durationMs": 27739.57,
+    "passed": 21,
+    "failed": 1,
+    "skipped": 0,
+    "flaky": 0,
+    "results": "/tmp/melody126-native-first-results.json",
+    "artifacts": "/workspace/melody126-native-first-artifacts",
+    "failedTitle": "library controlled pending microphone permission blocks Save and Open through native cleanup",
+    "failureLocation": "tests/library.spec.ts:305:49",
+    "classification": "product native-drain admission failure; no fixture or assertion change",
+    "traceEvidence": {
+      "trace": "library-library-controlled-354f8-Open-through-native-cleanup/trace.zip:1-trace.trace",
+      "permissionRequestedObservedMs": 22753.393,
+      "createDisabledPassedMs": 22769.831,
+      "openDisabledPassedMs": 22782.566,
+      "ordinaryCancelCompletedMs": 22878.057,
+      "firstCreateEnabledObservedMs": 22943.725,
+      "lastCreateEnabledObservedMs": 27806.901,
+      "assertionFailureMs": 27909.361,
+      "enabledPolls": 14,
+      "permissionReleased": false,
+      "releaseEvidence": "release() appears only at test line306; preceding line305 failure prevents execution. No release invocation exists in trace.",
+      "originalSourceEvidence": "recorder.ts:82 awaits getUserMedia; cancel():178-186 invalidates generation and sets state=idle before permission settles; late resolution/rejection drains at82-90."
+    },
+    "assertionsChanged": false,
+    "sourceHashesChanged": false
+  },
+  "rootFinalNative": {
+    "result": "passed",
+    "stats": {
+      "startTime": "2026-10-05T06:14:49.174Z",
+      "duration": 134864.892,
+      "expected": 138,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": {
+      "path": "/tmp/melody126-native-complete-results.json",
+      "bytes": 153149,
+      "sha256": "3942155013a3a6d7b1580af5053925167124e9a4eca28696923dc4e23854cfe7"
+    },
+    "log": {
+      "path": "/tmp/melody126-native-complete.log",
+      "bytes": 20523,
+      "sha256": "40fcf22ece42454f416fad0cd340f8c28710c8fdd6927cb6d347889a6ca1d544"
+    },
+    "artifacts": "/workspace/melody126-native-complete-artifacts",
+    "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
+  }
+}

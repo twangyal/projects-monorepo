@@ -1,0 +1,111 @@
+{
+  "issue": 126,
+  "date": "2026-10-05",
+  "owner": "library_ui",
+  "status": "locally-verified-published-ci-pending",
+  "spec": "docs/superpowers/specs/2026-10-05-melody-composition-library-design.md",
+  "ownedFiles": [
+    "apps/melody-studio/src/library-view.ts",
+    "apps/melody-studio/src/main.ts",
+    "apps/melody-studio/src/style.css",
+    "apps/melody-studio/docs/2026-10-05-composition-library-client.json"
+  ],
+  "sourceSha256": {
+    "apps/melody-studio/src/library-view.ts": "a4ef27a0a3b76c3e143e06f4ec540bb156b0483735984d088d7428665f1b8574",
+    "apps/melody-studio/src/main.ts": "37048070c1c17e328130b61574681449e30143875e1d2c73dc44768a09995ac5",
+    "apps/melody-studio/src/style.css": "ea0b9e8b77ea0dd76f93da5b8a1b5be80194c792aedb6d4688f09904e2e42f16"
+  },
+  "firstFailure": {
+    "executor": "root",
+    "command": "MELODY_TEST_PORT=<unique> CHROMIUM_PATH=/usr/bin/chromium npm run test:browser -- tests/library.spec.ts --grep library baseline --workers=1",
+    "actual": "Original complete audio project loaded; exact canonical current backup assertion passed; absent #library-select failed toBeVisible at tests/library.spec.ts:8.",
+    "log": "/tmp/melody126-native-missing.log",
+    "results": "/tmp/melody126-native-missing-results.json",
+    "artifacts": "/workspace/melody126-native-missing-artifacts",
+    "authorization": "Root explicitly authorized implementation only after preserved native missing-controls RED."
+  },
+  "staticChecks": [
+    {
+      "command": "./node_modules/.bin/tsc --noEmit",
+      "result": "PASS"
+    },
+    {
+      "command": "./node_modules/.bin/eslint src/library-view.ts src/main.ts",
+      "result": "PASS"
+    }
+  ],
+  "contracts": [
+    "Stable #composition-library is outside rebuilt app.innerHTML alongside existing reference/MIDI hosts.",
+    "Frozen IDs/actions/copy implemented; label drafts and library status never alter current-workspace autosave flags or saved-copy receipts.",
+    "Create/Update synchronously capture only history.snapshot; library pointer admission prevents default focus/blur and library-only operations never rebuild editor DOM.",
+    "Update/Delete confirm captured label and UUID; producer opaque receipt/revision CAS provides final native authority.",
+    "Refresh loads metadata only, preserves selected UUID if still present and explains removed selection; selection never opens or changes label.",
+    "Download reads selected review and uses its original Blob in ObjectURL without re-encoding; safely damaged bytes remain downloadable.",
+    "Open checks startup/audio native cleanup/processing/rendering/current saves/replacement/file reads/roll guards, explicitly confirms scratch/MIDI replacement, then uses existing atomic history commit before clearing scratch.",
+    "Open preserves 64MiB unique-audio history limits and asset-ID collision refusal; protected current-workspace recovery grants no write or saved-copy acceptance authority.",
+    "Absolute 10-second admission deadline, logical cancellation, AbortController and generation/editor intent/selected receipt/raw label checks after awaits and confirmations; nativePending keeps controls guarded during native drains.",
+    "Canceled/failed mutation requires explicit Refresh and never retries automatically; uncertain result never claims rollback. A late successful retired mutation is disclosed only on subsequent explicit Refresh without overwriting newer status.",
+    "Persisted pagehide retires operation without permanently closing store; pageshow requires explicit Refresh and performs no replay or Open. Nonpersisted departure closes terminal store."
+  ],
+  "rulings": [
+    {
+      "authority": "root",
+      "decision": "Label or selection intent retires every active library operation, including Refresh.",
+      "rationale": "Late catalog completion cannot rewrite metadata or status owned by newer selection/label intent.",
+      "costIfWrong": "Requires another explicit Refresh after such changes."
+    },
+    {
+      "authority": "root",
+      "decision": "Use existing startup/pendingLoad/saving/savePending/replacing current-workspace guards.",
+      "rationale": "Existing ReferenceStorage exposes no nativePending; its source and autosave architecture remain outside this task."
+    }
+  ],
+  "limitations": [
+    "All browser/test/service/Git execution belongs to root; this owner did not run them.",
+    "Root native and integrated verification remains pending; source/static checks are not a browser success claim.",
+    "Canceled response cannot establish whether native mutation committed; explicit Refresh resolves catalog state.",
+    "No microphone accuracy, quota availability, other-browser or general performance claim."
+  ],
+  "nativeFirstRun": {
+    "executor": "root",
+    "result": "21PASS/1FAIL in27.7seconds",
+    "failedTest": "library controlled pending microphone permission blocks Save and Open through native cleanup",
+    "failure": "tests/library.spec.ts:305 expected #library-create disabled after Cancel, received enabled while native getUserMedia was held",
+    "log": "/tmp/melody126-native-first.log",
+    "results": "/tmp/melody126-native-first-results.json",
+    "artifacts": "/workspace/melody126-native-first-artifacts",
+    "oracleTrace": "requested22753ms; pre-Cancel disabled assertions22769/22782ms; Cancel22878ms; Create enabled22943ms through27909ms failure. Fixture release at306 never executed."
+  },
+  "fixes": [
+    {
+      "rootCause": "Ordinary recorder.start permission await does not use nativeAudioPending. Cancel clears capture/busy and MelodyRecorder.cancel exposes idle before uncancelable getUserMedia settles. Library guard therefore admitted work during native microphone cleanup.",
+      "implementation": "main-owned pendingMicrophoneStarts counter increments for each recorder.start call and decrements only in finally after permission/start settles; library capture/Open guards include counter>0 and controls resync at native settlement.",
+      "scope": "Only main.ts; recorder native generation behavior, autosave and independent22native assertions unchanged.",
+      "staticVerification": "tsc --noEmit and targeted ESLint PASS after fix.",
+      "runtimeVerification": "Passed unchanged pending-permission case within final138/138native regression."
+    }
+  ],
+  "rootFinalNative": {
+    "result": "passed",
+    "stats": {
+      "startTime": "2026-10-05T06:14:49.174Z",
+      "duration": 134864.892,
+      "expected": 138,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": {
+      "path": "/tmp/melody126-native-complete-results.json",
+      "bytes": 153149,
+      "sha256": "3942155013a3a6d7b1580af5053925167124e9a4eca28696923dc4e23854cfe7"
+    },
+    "log": {
+      "path": "/tmp/melody126-native-complete.log",
+      "bytes": 20523,
+      "sha256": "40fcf22ece42454f416fad0cd340f8c28710c8fdd6927cb6d347889a6ca1d544"
+    },
+    "artifacts": "/workspace/melody126-native-complete-artifacts",
+    "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
+  }
+}

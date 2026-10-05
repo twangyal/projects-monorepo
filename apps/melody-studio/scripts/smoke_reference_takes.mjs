@@ -157,7 +157,7 @@ async function launch() {
 async function importProject(page, file, title) {
   await page.getByLabel('Open project file', { exact: true }).setInputFiles(file);
   await expect(page.getByLabel('Project title')).toHaveValue(title);
-  await expect(page.getByRole('status')).toContainText('Project opened');
+  await expect(page.locator('#notice')).toContainText('Project opened');
   await expect(page.locator('#save-status')).toHaveText('Saved in this browser', { timeout: 15000 });
 }
 async function download(page, name, fileName) {
@@ -256,7 +256,7 @@ try {
     const input = inputWav(sourceRate, kind, frequency); const inputPath = join(output, `${name}.wav`);
     await writeFile(inputPath, input);
     await page.getByLabel('Import audio file', { exact: true }).setInputFiles(inputPath);
-    await expect(page.getByRole('status')).toContainText(/Detected.*retained a normalized reference take/, { timeout: 30000 });
+    await expect(page.locator('#notice')).toContainText(/Detected.*retained a normalized reference take/, { timeout: 30000 });
     await expect(page.locator('#save-status')).toHaveText('Saved in this browser', { timeout: 15000 });
     const actual = JSON.parse(await download(page, 'Save project file', `${name}.melody.json`));
     assert.equal(actual.assets.length, 1); const asset = actual.assets[0], samples = decodeAsset(asset).samples;

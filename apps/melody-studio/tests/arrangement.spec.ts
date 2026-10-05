@@ -4,7 +4,7 @@ import { savedProject } from './browser/continuation-fixtures.ts';
 test('capture, duplicate, transpose, repeat, undo and export a layered idea', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Try demo melody' }).click();
-  await expect(page.getByRole('status')).toContainText('Detected');
+  await expect(page.locator('#notice')).toContainText('Detected');
   const captured = await savedProject(page);
   await page.getByRole('button', { name: 'Duplicate track', exact: true }).click();
   await expect(page.getByLabel('Track name')).toHaveValue('Melody copy');
@@ -56,7 +56,7 @@ test('a rejected transpose is atomic and does not consume undo history', async (
   await page.getByRole('button', { name: 'Apply note' }).click();
   const before = await savedProject(page);
   await page.getByRole('button', { name: 'Transpose down a semitone', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('C2');
+  await expect(page.locator('#notice')).toContainText('C2');
   expect(await savedProject(page)).toEqual(before);
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   expect((await savedProject(page)).tracks[0].notes[0].pitch).toBe(60);

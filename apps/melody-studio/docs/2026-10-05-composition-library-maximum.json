@@ -1,0 +1,454 @@
+{
+  "schemaVersion": 1,
+  "issue": 126,
+  "status": "first-native-run-passed",
+  "dateUtc": "2026-10-05",
+  "runner": "scripts/smoke_library.mjs",
+  "runnerSha256": "33c1037f7125d0dea73b5f6898a161222ea2321d11fb54818ce79bd2e1f159b4",
+  "independence": {
+    "productionImports": false,
+    "newLibraryProducerOrUiRead": false,
+    "expectedBytes": "Literal complete-backup schema/order and original fixtures; offline Python independently froze canonical bytes and PCM digests before native execution.",
+    "midiOracle": "Independent bounded MIDI parser; literal 480 PPQN note events, tempo, tracks and volume.",
+    "wavOracle": "Independent RIFF decoder and scalar sine/envelope/PCM16 math; timing, pitch and leading/internal silence."
+  },
+  "commands": {
+    "prepare": "cd /workspace/projects-monorepo/apps/melody-studio && node scripts/smoke_library.mjs --prepare-only /workspace/melody126-maximum-fixtures",
+    "run": "cd /workspace/projects-monorepo/apps/melody-studio && MELODY_LIBRARY_BASE_URL=http://127.0.0.1:4173 MELODY_LIBRARY_FIXTURE_DIR=/workspace/melody126-maximum-fixtures MELODY_LIBRARY_OUTPUT_DIR=/workspace/melody126-maximum-first CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_library.mjs",
+    "staticSyntax": "node --check scripts/smoke_library.mjs",
+    "staticLint": "./node_modules/.bin/eslint scripts/smoke_library.mjs"
+  },
+  "originContract": "Root supplies an existing frozen production build at explicit loopback http origin, with no path/query/fragment. Runner never builds, starts or stops any service.",
+  "outputContract": "Preparation and explicit output directories must be new; no overwrites/reuse of original fixtures or first-run artifacts. verification.json is written before browser launch and retains first failure, script downloads and process facts. Optional CHROMIUM_PATH chooses existing Chromium; otherwise existing Playwright Chromium is used.",
+  "musicalCapacity": {
+    "compositions": 8,
+    "tracksEach": 8,
+    "notesEach": 2048,
+    "notesPerTrack": 256,
+    "totalStoredNotes": 16384,
+    "referencesEach": 8,
+    "totalDistinctReferences": 64,
+    "referenceSecondsEach": 20,
+    "referenceRate": 22050,
+    "referenceFramesEach": 441000,
+    "referencePcmBytesEach": 882000,
+    "totalUniquePcmBytes": 56448000,
+    "originalBackupBytesEach": 9587572,
+    "originalBackupPayloadBytes": 76700576,
+    "finalBackupPayloadBytes": 76700584,
+    "aggregatePayloadCapBytes": 100663296,
+    "aggregateMetadataCapBytes": 16384,
+    "historyAudioCapBytes": 67108864,
+    "historySpareBytes": 10660864,
+    "notes": "Each voice has 256 distinct sequential original note IDs/placements; one audible sine voice and seven deliberately muted voices permit isolated export inspection while retaining every note."
+  },
+  "frozen": {
+    "fixtures": [
+      {
+        "index": 1,
+        "title": "Original library composition 1",
+        "bytes": 9587572,
+        "sha256": "01e96b6f2c5fb8b71d56e8722ddee2083af47697a583ac63f9315bdef3937088",
+        "pcmSha256": [
+          "73a7fa75042504912703a074223bda69aec35e5cce9c010319be8241c6ad87c8",
+          "57adff2b3c38119ea32842eb66bd07d09c76770bc760cb9cf6deb5cc1a8ae04b",
+          "c2f3b3efbbe7c68ff5dd0c01de99337de730859ef2e33357b44efc7701cc5d67",
+          "8730c3636a3ae607525c8a26730ecc0b6e87a33f6fee544653bd0fb3649c6aea",
+          "e70631abdb59e27251a03d1c5670052de2469a94af0a31db828880ae277666c4",
+          "081b736c84661744255b013c69d4187672eed755db1866464fdd29ec99f7ad9d",
+          "fbedbde8efc98804c0dd698b8ae4d5277a684886b9fa6ebef5b96d2488fd677a",
+          "c8ca9235f9b66958ab362cccf9603c22da7fe46745d458924548c960eadcd019"
+        ]
+      },
+      {
+        "index": 2,
+        "title": "Original library composition 2",
+        "bytes": 9587572,
+        "sha256": "b9b68284997b483196a2474d11431842cbc2b24304a59480f87918c1562cfd2e",
+        "pcmSha256": [
+          "13dc19587b6a872d2de1b4d8597dbf3fa08f1583f1c587a531e0c4d9a9cba2bc",
+          "541690eb47e3dd9c897021e1ce7ba74a1e6604e8994cf7d67190f77d8e7cde81",
+          "01c12220a03af1ce80a04a253c5557dad82c095928dda82f3f33d6031a8f07c8",
+          "da91aec03823bb1cc23794235ad94cd574c157a2066239686c4e7e4a26d19c26",
+          "e58a7756610fc2edffc5ed061933cad2a1c280eec933c1ffbb4bc22b6a6b1e55",
+          "3a6add9a4688dd1a91e8ffed59b0646bec7d1801631185271823ec76e9b4c19b",
+          "dcb29bd2c3845ac90cc11a4dd9aa909498dcd1fb8e7f37ad6d4eaf7bb7973cdd",
+          "cadc11ed2bff9f6e24bd6793dcc471b8a3c54936f7d2ece1bb80be3b7fa40183"
+        ]
+      },
+      {
+        "index": 3,
+        "title": "Original library composition 3",
+        "bytes": 9587572,
+        "sha256": "b95646bb52480a53d4b31e484d09623ae4ef50dc9cbc3fccd7b5a68d2da00737",
+        "pcmSha256": [
+          "857a776334e0fa98d4a6c0892313b9013a533262bd6392892ea30f66cef1fb04",
+          "5693d39807d6657cb8537c506fb731660aa44cd4f0345095c18901a6f10d6a90",
+          "1244c94d38000fc997eae1c245ce493c788a577631637a3b4d22feeb0b14eefa",
+          "d8f8deb33e359b5a5f4e1de8eb131060cfe195b8a9f8c19219353a577560fac8",
+          "92473594c9e27cbb9778ab4fa1d6a192aed06cf54c668f7708658117e5a0d028",
+          "3c747b302d0ca309111c0d1f95d8f01b15f0cddf26c131847709a5cf1db85517",
+          "8da33b8b700f8b15151ed593ff0d73e6c7cd098d6a9f2bfed417b7021d5b8241",
+          "81ca995152f321bd41184d44494a51516c12a3796445d5f7e949f0631f38da19"
+        ]
+      },
+      {
+        "index": 4,
+        "title": "Original library composition 4",
+        "bytes": 9587572,
+        "sha256": "29ef456137ae60dd0b7c7c4429280a44f726dd5899660f97e25baba85e7dfc15",
+        "pcmSha256": [
+          "ee69932afc2b2a6c1a5980995097b1f9c73e6efe46b455a05adc54444eeb203b",
+          "a1f07d24d3dc9614ebd9b2f46c52cf4ca7b8bc853c7131b6991bcabb42238c24",
+          "3ac503c90cfcddd57d9fb16628403c3bd2a202f09c80a459ab47a372df4cfd58",
+          "0c7c4ac389020353d6866c7d273e4c79f3bb7521d017c12a360f426c65f0c348",
+          "2ad79271c2f5eec1de468a55f72bf3bc3957c06c87f7b8e7c2d255f8ccc465ed",
+          "c69c2be7f66338238c1e04fd087ba51819d471f645cbf036a2a141bf8ab2fa0c",
+          "56e4229f0178416003a61d7dce1a6349eff8267d38238608f8d7dfbe82646ecd",
+          "7503ed1059c638555eea8589536516cffa69a7dac9a7a2c29366a1f5df94bade"
+        ]
+      },
+      {
+        "index": 5,
+        "title": "Original library composition 5",
+        "bytes": 9587572,
+        "sha256": "531b42b56c91dbc5f1574edfb248e5dd3e2b470d876e87c8d09397ac2503dfca",
+        "pcmSha256": [
+          "5771d3c574c0accdff230b463a22318e8ec13f42439c4bebbd2837435dd0dad1",
+          "4a0b1961d36ccdca4e8d8a436e17a9230837e819d0200fd4858bce0e696b7591",
+          "3cff2d0431ce78112e1c69fa8e3080af532bc2d6083222bc033b002a1484e196",
+          "daf247c327b9f2444efe318eb31bff165da99a902467d399f908fda1fdff5373",
+          "7108622ec0e188bd11db584d6b1384ade41ad0a55a75882f1191338b8c1fb6d6",
+          "e7d5fb731d4c424c62fb88e641e655aedf7fcb98a557aa3af9a48312269b0966",
+          "dbb09d73ee0db16defc55937c226728225a6c078018f9ef6434ecf8f3a349730",
+          "758993722fdaae18b20f14ae9c7c059c2677f976896af76d490a452917939c84"
+        ]
+      },
+      {
+        "index": 6,
+        "title": "Original library composition 6",
+        "bytes": 9587572,
+        "sha256": "df25ed78bbf16d7e6af656426a759fcb46c748a8978a00a835d032b8c20cea78",
+        "pcmSha256": [
+          "60d13f2ee56cf709fecbfa189ea137a2a16a5d22958bc946ffd5ea4dfd06c5cb",
+          "a7ee9ef043328b5d4efbee053a7370c2f93445616ca2c7f259a43fd3370d587b",
+          "36c603cfc56655501985ad9bf395483c42072f28f838861cae3a68d80bffe45c",
+          "719bf1292a090c35d76b7721a5fbafef7b7520e3f0e3b2d1d3c7b4771e475163",
+          "ecd5310cbf9cb0580e1ccc68daa3cdc722e444ef8c89c6dec652811ffc166705",
+          "74af6fb8754fa0384751055f5ac47edc21e3a6a7efbc2d07c2612a99d95b7908",
+          "9835ec692829163b72c81b687294f9307a6d77b02ab3d89e82b9214b1d60ff71",
+          "3e9ef06bcc6ee2252587a2ca2e2b357c1c80841ac58d974d5ef9693b2b12d631"
+        ]
+      },
+      {
+        "index": 7,
+        "title": "Original library composition 7",
+        "bytes": 9587572,
+        "sha256": "28e08177035506ebb887658ac0d20b047f8841fcf176ee650c0c358f748a285b",
+        "pcmSha256": [
+          "17fb2939c4d99c07e4cf2dd2f911493c4b162df49224599a21f2e292cbac0b8f",
+          "df69a2de59d9202899f0d839c08610bda59a58fe64ea3300d4e38f606c4774e0",
+          "3cc7505f3a04bfee7183fc9a7a0ee9f2543f524ee3997b471b56c15cb8eb0fc2",
+          "df54f3deb79bdfd7e37fdaa86f4a693ac1903552d5e7663bf3bdec1840b75618",
+          "ecc48846eed04029a202ed67668676667f4ef725c9fc28effb16bffad22b1da6",
+          "3c87bde9b9c52d519ffda53b021afd43d251043ebd260ca2b332784bca83de62",
+          "d74c146fa1a5e4fbe5fea866e7d0c079d25eed9a7e718a8d17960c989300dbc7",
+          "fec1abc647edc274eb092d384e622c62c7cfd086f8dbab56ae7b9b1010e7516b"
+        ]
+      },
+      {
+        "index": 8,
+        "title": "Original library composition 8",
+        "bytes": 9587572,
+        "sha256": "bea4c0807b02abed9e70481d164b921eb3a81be644031f2e1502eb16a1445655",
+        "pcmSha256": [
+          "52319b02a551c34d6f3aefb4b52e1669b09c7924f86ef83b2b05ce64d7e1a1fd",
+          "eb5931d159e4a4fdbf4644465907699060083fe29d3c407ce8b1f08365121741",
+          "f0af97027deb7163e7c824b5445bcda870679bd5fa623ff095bfc354810ef093",
+          "574b5008f69c81097b91c671635e57683b992825b229ecceaf88116ed9721c8e",
+          "019f852d7cd637e8f6a311a3fe0c44c9bfd3a81b81ea936596063a367817b291",
+          "8042d575373ea3c17b0f84c1ee1e2b511de63dc24547c2843988613c2aac581f",
+          "a927d7bcb2cd6a0f31e37e61aeeaf530932a46865b9a2d9b77116d58296ac443",
+          "36166f39d7e0e09b81e747097af1f52b95db5812089890284eec13f19a3cc411"
+        ]
+      }
+    ],
+    "replacement": {
+      "bytes": 9587580,
+      "sha256": "fd96f85476ba71e432642f03a6cb2bc3ab020f9daab84dfe6fa5606e2b0c0d32"
+    },
+    "parserBoundary": {
+      "bytes": 12582912,
+      "sha256": "3d98ab071e7564f28c337eac0e47fc4cf8d6b22d5e6677d1fc4c091855c8b2b0",
+      "overflowBytes": 12582913,
+      "overflowSha256": "3b63132114cf3e3098e94e97e757bcf05262c99ec268521f5c345505d38059c9"
+    }
+  },
+  "assertions": [
+    "All eight canonical fixtures independently match frozen bytes/SHA and all 64 original asset UUIDs/PCM SHA values are distinct.",
+    "Create all eight through committed-workspace UI capture; ninth admission refuses via disabled capacity control or explicit capacity error, with every row unchanged.",
+    "Genuine native getAll(undefined,9) is observed around Refresh; forwarded Blob arrayBuffer/text/stream/bytes and FileReader content methods record zero calls.",
+    "One explicitly confirmed replacement changes title/label/revision and canonical bytes, reusing the original graph; the other seven native row metadata and final exact downloads remain unchanged.",
+    "Canceled Delete confirmation leaves all copies intact; confirmed Delete removes only selected entry; recreation uses original eighth graph and a fresh library entry UUID.",
+    "All eight selected Download actions return exact frozen backup bytes, without changing the editor title.",
+    "Full Chromium browser PID termination is recorded; the same profile opens under a different Chromium process and all eight complete copies reopen byte-exact through ordinary Save project file downloads.",
+    "Reopened selected MIDI: format1,480PPQN,nine tracks,256 audible notes at ticks120+240n,off ticks240+240n,pitches69/72,velocity102,CC7=64,500000microseconds tempo,end tick61440.",
+    "Reopened selected WAV: 1412964 mono22050Hz frames; all PCM within two signed16 units of independent sine/envelope math; measured440Hz and523.2511306011972Hz within1Hz; exact leading/internal zero samples; retained reference PCM excluded from synthesized export.",
+    "Exact12MiB whitespace parser boundary admits and 12MiB+1 refuses with canonical workspace unchanged; these are explicitly non-musical parser fixtures."
+  ],
+  "historyBudgetStrategy": "Only original64 audio assets are imported/opened. Replacement edits title only. Deletion/recreation reuse existing graph. No history reset, same-ID changed PCM or ninth distinct audio graph.",
+  "costEstimate": {
+    "hardRunWatchdogMilliseconds": 240000,
+    "expectedRuntimeSeconds": "60-150 on the existing Chromium machine; measured by root execution.",
+    "preparedFixedFileBytesApproximately": 111454000,
+    "nativeBackupDownloadFiles": 17,
+    "nativeBackupDownloadBytes": 162988740,
+    "selectedWavBytes": 2825972,
+    "selectedMidiBytesUpperBound": 10000,
+    "screenshotsMaximum": 2,
+    "observationRecordsBound": {
+      "blobReads": 100,
+      "listCalls": 20,
+      "pageErrors": 100,
+      "externalRequests": 100
+    },
+    "executionArtifactsBytesEstimate": 166000000,
+    "combinedFixtureArtifactAndProfileDiskReserveBytes": 805306368,
+    "profileDiskEstimateBytes": "90-250 MiB dependent on Chromium IndexedDB/WAL/blob cleanup",
+    "memory": "Eight original encoded Buffers total76.7MB plus native browser library/editor/history and transient decode; sequential selected file checks avoid all-library decoded bundles. This is an estimate, not peak RSS proof.",
+    "retention": "All fixtures, first-run downloads, screenshots, verification and profile are retained for root inspection; runner removes nothing.",
+    "measuredRuntimeMilliseconds": 36139.554539,
+    "measuredNativeBackupDownloadBytes": 162988740,
+    "measuredSelectedMidiBytes": 2443
+  },
+  "staticVerification": {
+    "nodeCheck": "passed",
+    "targetedEslint": "passed",
+    "browserOrTestExecution": "First maximum browser execution performed once by root and passed; author read retained evidence and checked artifact bytes/hashes, without rerun."
+  },
+  "limitations": [
+    "No physical audio capture accuracy, subjective musical quality, other-browser behavior, absolute peak memory or arbitrary-machine performance claim.",
+    "Full backup payload capacity is a limit; actual musical originals total76,700,576 bytes, not96MiB padding.",
+    "Native mutation races, corrupt-store and blocked-drain cases belong to the independent browser/store gates; this runner establishes the full-copy user flow."
+  ],
+  "runtimeVerification": {
+    "run": "first",
+    "executor": "root",
+    "reruns": 0,
+    "fixtureOrSourceAdjustmentsAfterRun": false,
+    "origin": "http://127.0.0.1:4328",
+    "startedAtUtc": "2026-10-05T06:09:20.506Z",
+    "milliseconds": 36139.554539,
+    "chromium": "151.0.7922.173",
+    "command": "cd /workspace/projects-monorepo/apps/melody-studio && MELODY_LIBRARY_BASE_URL=http://127.0.0.1:4328 MELODY_LIBRARY_FIXTURE_DIR=/workspace/melody126-maximum-fixtures MELODY_LIBRARY_OUTPUT_DIR=/workspace/melody126-maximum-first CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_library.mjs",
+    "report": {
+      "path": "/workspace/melody126-maximum-first/verification.json",
+      "bytes": 26773,
+      "sha256": "a6916837f19ab714a364b61a4e4c8f58bcca4a65868fa30964f8a0bbac1f7e3c"
+    },
+    "originalBackupBytes": 76700576,
+    "finalBackupBytes": 76700584,
+    "originalMetadataJsonBytes": 2401,
+    "finalMetadataJsonBytes": 2427,
+    "ninthRefusal": "UI capacity admission disabled",
+    "refreshObservation": {
+      "blobReads": [],
+      "lists": [
+        {
+          "store": "copies",
+          "mode": "readonly",
+          "count": 9
+        }
+      ]
+    },
+    "music": {
+      "midi": {
+        "tracks": 9,
+        "ppqn": 480,
+        "audibleNotes": 256,
+        "tempoMicroseconds": 500000,
+        "endTick": 61440
+      },
+      "wav": {
+        "frames": 1412964,
+        "rate": 22050,
+        "maximumLsbError": 1,
+        "frequencies": [
+          440.0000159854596,
+          523.2511724270968
+        ],
+        "leadingAndInternalSilenceExact": true,
+        "referencesNotMixed": true
+      }
+    },
+    "processes": [
+      {
+        "phase": "initial",
+        "pids": [
+          929907
+        ],
+        "afterClose": [
+          {
+            "pid": 929907,
+            "exists": false
+          }
+        ]
+      },
+      {
+        "phase": "fresh-process",
+        "pids": [
+          930062
+        ],
+        "afterClose": [
+          {
+            "pid": 930062,
+            "exists": false
+          }
+        ]
+      }
+    ],
+    "exactNativeBackupDownloads": 17,
+    "exactNativeBackupDownloadBytes": 162988740,
+    "runnerListedArtifactBytes": 165817274,
+    "checks": [
+      "Exactly 12 MiB parser input admitted; 12 MiB + 1 refused with canonical workspace bytes unchanged.",
+      "Eight complete independent originals retained; ninth admission refused without changing any row.",
+      "Refresh inspected bounded native metadata/Blob handles only, with zero observed Blob or FileReader content reads.",
+      "One explicitly confirmed replacement changes only selected bytes/revision/label; seven originals retain exact metadata.",
+      "Canceled deletion retains eight rows; confirmed deletion removes one; recreation uses a distinct entry UUID and original audio graph.",
+      "All eight selected library downloads are byte exact; selection/download never opens or renames the current editor.",
+      "Original browser process terminated; a distinct fresh Chromium process reopened all eight exact complete copies and every original PCM digest.",
+      "Selected reopened MIDI independently matches all note pitches/ticks; WAV matches scalar synthesis within two signed16 units, pitch and exact silence."
+    ],
+    "errors": [],
+    "externalRequests": [],
+    "artifacts": [
+      {
+        "name": "parser-refusal-current.melody.json",
+        "bytes": 9587572,
+        "sha256": "01e96b6f2c5fb8b71d56e8722ddee2083af47697a583ac63f9315bdef3937088"
+      },
+      {
+        "name": "refresh-observation.json",
+        "bytes": 119,
+        "sha256": "48a665b66a3382952f983f4767666416a479a0f8a29e616464b99848941c75c8"
+      },
+      {
+        "name": "selected-1.melody.json",
+        "bytes": 9587580,
+        "sha256": "fd96f85476ba71e432642f03a6cb2bc3ab020f9daab84dfe6fa5606e2b0c0d32"
+      },
+      {
+        "name": "selected-2.melody.json",
+        "bytes": 9587572,
+        "sha256": "b9b68284997b483196a2474d11431842cbc2b24304a59480f87918c1562cfd2e"
+      },
+      {
+        "name": "selected-3.melody.json",
+        "bytes": 9587572,
+        "sha256": "b95646bb52480a53d4b31e484d09623ae4ef50dc9cbc3fccd7b5a68d2da00737"
+      },
+      {
+        "name": "selected-4.melody.json",
+        "bytes": 9587572,
+        "sha256": "29ef456137ae60dd0b7c7c4429280a44f726dd5899660f97e25baba85e7dfc15"
+      },
+      {
+        "name": "selected-5.melody.json",
+        "bytes": 9587572,
+        "sha256": "531b42b56c91dbc5f1574edfb248e5dd3e2b470d876e87c8d09397ac2503dfca"
+      },
+      {
+        "name": "selected-6.melody.json",
+        "bytes": 9587572,
+        "sha256": "df25ed78bbf16d7e6af656426a759fcb46c748a8978a00a835d032b8c20cea78"
+      },
+      {
+        "name": "selected-7.melody.json",
+        "bytes": 9587572,
+        "sha256": "28e08177035506ebb887658ac0d20b047f8841fcf176ee650c0c358f748a285b"
+      },
+      {
+        "name": "selected-8.melody.json",
+        "bytes": 9587572,
+        "sha256": "bea4c0807b02abed9e70481d164b921eb3a81be644031f2e1502eb16a1445655"
+      },
+      {
+        "name": "fresh-open-1.melody.json",
+        "bytes": 9587580,
+        "sha256": "fd96f85476ba71e432642f03a6cb2bc3ab020f9daab84dfe6fa5606e2b0c0d32"
+      },
+      {
+        "name": "fresh-selected.mid",
+        "bytes": 2443,
+        "sha256": "209a2f50d50d14dbc86532ac03d3078de5495a8178c88ffdbdefa033d970a11e"
+      },
+      {
+        "name": "fresh-selected.wav",
+        "bytes": 2825972,
+        "sha256": "9df1cb3cc05a95d51c453c232024c38b2d8237c9e30240738b78ae4b0605df27"
+      },
+      {
+        "name": "fresh-open-2.melody.json",
+        "bytes": 9587572,
+        "sha256": "b9b68284997b483196a2474d11431842cbc2b24304a59480f87918c1562cfd2e"
+      },
+      {
+        "name": "fresh-open-3.melody.json",
+        "bytes": 9587572,
+        "sha256": "b95646bb52480a53d4b31e484d09623ae4ef50dc9cbc3fccd7b5a68d2da00737"
+      },
+      {
+        "name": "fresh-open-4.melody.json",
+        "bytes": 9587572,
+        "sha256": "29ef456137ae60dd0b7c7c4429280a44f726dd5899660f97e25baba85e7dfc15"
+      },
+      {
+        "name": "fresh-open-5.melody.json",
+        "bytes": 9587572,
+        "sha256": "531b42b56c91dbc5f1574edfb248e5dd3e2b470d876e87c8d09397ac2503dfca"
+      },
+      {
+        "name": "fresh-open-6.melody.json",
+        "bytes": 9587572,
+        "sha256": "df25ed78bbf16d7e6af656426a759fcb46c748a8978a00a835d032b8c20cea78"
+      },
+      {
+        "name": "fresh-open-7.melody.json",
+        "bytes": 9587572,
+        "sha256": "28e08177035506ebb887658ac0d20b047f8841fcf176ee650c0c358f748a285b"
+      },
+      {
+        "name": "fresh-open-8.melody.json",
+        "bytes": 9587572,
+        "sha256": "bea4c0807b02abed9e70481d164b921eb3a81be644031f2e1502eb16a1445655"
+      },
+      {
+        "path": "/workspace/melody126-maximum-first/final-desktop.png",
+        "bytes": 125151,
+        "sha256": "508b7a3fb7c29918da3e24965c6e0d56f510a4ef2da84f54a8df47b33acd636f"
+      },
+      {
+        "path": "/workspace/melody126-maximum-first/verification.json",
+        "bytes": 26773,
+        "sha256": "a6916837f19ab714a364b61a4e4c8f58bcca4a65868fa30964f8a0bbac1f7e3c"
+      },
+      {
+        "path": "/tmp/melody126-maximum-first.log",
+        "bytes": 122,
+        "sha256": "06fb7c352c3b6cd818d9d1ab4a56a2cc762d7d52c28ea91f4c9bc751ead3ac31"
+      }
+    ],
+    "rootObservations": {
+      "finalScreenshot": "Root viewed final-desktop.png and found the controls legible.",
+      "preview": "Root owned port4328/PID929870 and stopped it after the run.",
+      "broaderGate": "The full native suite is independently root-owned; no result inferred from this maximum receipt."
+    },
+    "unmeasured": [
+      "Peak RSS",
+      "Full Chromium profile/WAL/blob disk use",
+      "Physical microphone behavior",
+      "Other browser compatibility"
+    ]
+  }
+}

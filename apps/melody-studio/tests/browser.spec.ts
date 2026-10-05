@@ -37,19 +37,19 @@ test('compose, edit, layer, play, persist and export', async ({ page }) => {
   }
   page.on('dialog', dialog => dialog.accept());
   await page.getByLabel('Open project file').setInputFiles(path!);
-  await expect(page.getByRole('status')).toContainText('Project opened');
+  await expect(page.locator('#notice')).toContainText('Project opened');
   expect(errors).toEqual([]);
 });
 
 test('local demo audio is transcribed and invalid imports preserve the project', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Try demo melody' }).click();
-  await expect(page.getByRole('status')).toContainText('Detected', { timeout: 20000 });
+  await expect(page.locator('#notice')).toContainText('Detected', { timeout: 20000 });
   await expect(page.locator('.note-event')).not.toHaveCount(0);
   await page.getByLabel('Project title').fill('Keep my song');
   await page.getByLabel('Project title').press('Tab');
   await page.getByLabel('Open project file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"version":99}') });
-  await expect(page.getByRole('status')).toContainText('Could not open');
+  await expect(page.locator('#notice')).toContainText('Could not open');
   await expect(page.getByLabel('Project title')).toHaveValue('Keep my song');
   await page.reload();
   await expect(page.getByLabel('Project title')).toHaveValue('Keep my song');
@@ -63,7 +63,7 @@ test('recording permission failures recover and unavailable storage is visible',
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Record melody', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Microphone');
+  await expect(page.locator('#notice')).toContainText('Microphone');
   await expect(page.getByRole('button', { name: 'Record melody', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Add note', exact: true }).click();
   await expect(page.locator('#save-status')).toContainText(/not saved/i);
@@ -101,12 +101,12 @@ test('imported audio follows the real decoder and worker path', async ({ page })
   const samples = Float32Array.from({ length: 22050 }, (_, i) => Math.sin(2 * Math.PI * 440 * i / 22050) * 0.3);
   await page.goto('/');
   await page.getByLabel('Import audio file').setInputFiles({ name: 'a4.wav', mimeType: 'audio/wav', buffer: Buffer.from(encodeWav(samples, 22050)) });
-  await expect(page.getByRole('status')).toContainText('Detected');
+  await expect(page.locator('#notice')).toContainText('Detected');
   await expect(page.getByLabel('Pitch (MIDI)')).toHaveValue('69');
   // Detected velocity may not be a multiple of .05; a pitch-only correction must still submit.
   await page.getByLabel('Pitch (MIDI)').fill('67');
   await page.getByRole('button', { name: 'Apply note' }).click();
-  await expect(page.getByRole('status')).toContainText('Note updated');
+  await expect(page.locator('#notice')).toContainText('Note updated');
 });
 
 test('dense synthesis is cancellable without freezing the page', async ({ page }) => {

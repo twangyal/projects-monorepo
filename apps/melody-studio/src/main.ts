@@ -1,4 +1,5 @@
 import './style.css';
+import { createLibraryView } from './library-view.ts';
 import { createComposition, createDemoComposition, createNote, createTrack, validateComposition, compositionDurationBeats } from './model.ts';
 import { createDemoMelody } from './audio.ts';
 import { encodeMidi } from './midi.ts';
@@ -25,7 +26,10 @@ const midiHost = document.createElement('section');
 midiHost.id = 'midi-import'; midiHost.setAttribute('aria-labelledby', 'midi-heading');
 const referenceHost = document.createElement('section');
 referenceHost.id = 'reference-panel'; referenceHost.setAttribute('aria-labelledby', 'reference-heading');
-root.append(app, referenceHost, midiHost);
+const libraryHost = document.createElement('section');
+libraryHost.id = 'composition-library'; libraryHost.setAttribute('aria-labelledby', 'library-heading');
+root.append(app, libraryHost, referenceHost, midiHost);
+let libraryView: ReturnType<typeof createLibraryView> | null = null;
 let storage: Storage | null = null;
 try { storage = window.localStorage; } catch { /* Recovery is shown in the interface. */ }
 let project = createComposition();
@@ -39,6 +43,9 @@ let loadEpoch = 0, projectFileEpoch = 0, projectFileReading = false;
 let pendingLoad: { epoch: number; retired: boolean } | null = null;
 let capture: Capture | null = null;
 let nativeAudioPending = false;
+// Cancel retires a recorder generation immediately; native microphone permission
+// still owns cleanup until each start promise settles (including a late stream).
+let pendingMicrophoneStarts = 0;
 let comparisonOwner: { key: string; generation: number; window: string } | null = null;
 const windowDrafts = new Map<string, { start: string; end: string }>();
 let referenceKey = '';
@@ -103,6 +110,7 @@ function numericDraft(value: string, label: string): number {
 }
 function scratchExists(): boolean { return fieldDrafts.size > 0 || noteDrafts.size > 0 || proposal !== null; }
 function newEditorIntent() {
+  libraryView?.retire();
   roll.cancel();
   editorIntent++;
   const hadProjectRead = projectFileReading;
@@ -453,7 +461,7 @@ function captureError(owner: Capture, error: unknown, prefix = 'Could not proces
 }
 function finishCapture(owner: Capture): void {
   if (owner.timer) clearTimeout(owner.timer);
-  if (capture !== owner) return;
+  if (capture !== owner) { libraryView?.sync(); return; }
   capture = null; busy = null; clearRecordingTimer(); render();
 }
 async function processSamples(samples: Float32Array, sampleRate: number, channels: number, owner: Capture): Promise<void> {
@@ -522,6 +530,7 @@ async function startRecording() {
   if (nativeAudioPending) { announce('Audio work is still draining. Retry when it finishes; reload if it never finishes.'); return; }
   if (!confirmReplace()) return;
   const owner = beginCapture('microphone'); if (!owner) return;
+  pendingMicrophoneStarts++;
   busy = 'requesting'; message = 'Microphone access is used only while you record. You can cancel at any time.'; render();
   try {
     await recorder.start(blob => { void processBlob(blob, owner); }, error => {
@@ -534,6 +543,7 @@ async function startRecording() {
       if (label) label.textContent = `Recording ${Math.min(20, Math.floor((Date.now() - recordedAt) / 1000))} / 20 seconds…`;
     }, 250);
   } catch (error) { captureError(owner, error, 'Microphone unavailable'); finishCapture(owner); }
+  finally { pendingMicrophoneStarts--; libraryView?.sync(); }
 }
 function backedDraftGuard(): boolean {
   if (scratchExists() || roll.active) {
@@ -712,6 +722,7 @@ root.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0 || actionPointer) return;
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || button.hasAttribute('data-note') || !root.contains(button)) return;
+  if (libraryHost.contains(button)) event.preventDefault();
   if (button.dataset.action === 'record-backed') {
     event.preventDefault();
     if (!backedDraftGuard()) { event.stopImmediatePropagation(); return; }
@@ -922,6 +933,7 @@ function midiStatus(text: string) {
   if (node) node.textContent = text;
 }
 function updateMidiControls() {
+  libraryView?.sync();
   const file = midiHost.querySelector<HTMLInputElement>('#midi-file'); if (!file) return;
   file.disabled = !!busy;
   midiHost.querySelector<HTMLButtonElement>('#midi-review')!.disabled = !!busy || midiReading || !midiSource;
@@ -1075,6 +1087,7 @@ midiHost.querySelector('#midi-apply')!.addEventListener('click', () => {
 
 function documentNode(selector: string): HTMLElement { return app.querySelector<HTMLElement>(selector)!; }
 function syncSaveStatus(): void {
+  libraryView?.sync();
   const node = app.querySelector<HTMLElement>('#save-status'); if (node) node.textContent = saveMessage;
   const retry = referenceHost.querySelector<HTMLButtonElement>('#retry-save');
   if (retry) { retry.hidden = recovery || (!unsaved && hasSavedCopy); retry.disabled = startup || saving || replacing; }
@@ -1372,6 +1385,33 @@ referenceHost.addEventListener('click', event => {
   }
 });
 window.addEventListener('beforeunload', event => { if (saving || unsaved) { event.preventDefault(); event.returnValue = ''; } });
+
+// Every external input/action is a new dependent library intent, including MIDI
+// review choices which do not increment compositionGeneration/editorIntent.
+for (const type of ['pointerdown', 'pointerup', 'pointercancel'] as const) root.addEventListener(type, () => {
+  queueMicrotask(() => libraryView?.sync());
+}, true);
+for (const type of ['input', 'change', 'click'] as const) root.addEventListener(type, event => {
+  if (!libraryHost.contains(event.target as Node)) libraryView?.retire();
+}, true);
+libraryView = createLibraryView(libraryHost, {
+  state: () => {
+    const blocked = startup || !!pendingLoad || !!busy || capture !== null || nativeAudioPending || pendingMicrophoneStarts > 0 || replacing
+      || projectFileReading || midiReading || roll.active;
+    return { generation: compositionGeneration, intent: editorIntent, captureBlocked: blocked,
+      openBlocked: blocked || saving || savePending !== null,
+      scratch: scratchExists() || midiSource !== null || midiReview !== null || windowDrafts.size > 0 };
+  },
+  snapshot: () => history.snapshot(),
+  open: bundle => {
+    if (!commit(bundle.document.composition, 'Saved composition opened. Complete notes and reference takes restored. Undo restores the previous committed project.', false, bundle.document, bundle.assets)) return false;
+    stopPlayback(false);
+    fieldDrafts.clear(); noteDrafts.clear(); clearContinuation(); windowDrafts.clear(); referenceKey = '';
+    activeTrackId = project.tracks[0].id; selectedNoteId = null; defaultSeedCount();
+    cancelMidi(); render();
+    return true;
+  },
+});
 
 render();
 

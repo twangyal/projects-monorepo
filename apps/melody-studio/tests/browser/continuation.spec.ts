@@ -129,7 +129,7 @@ test('note drafts and invalid seed count survive guards and asynchronous playbac
   await page.getByLabel('Duration (beats)').fill('0');
   for (const button of ['Another suggestion', 'Audition ending + suggestion', 'Apply continuation']) {
     await action(page, button).click();
-    await expect(page.getByRole('status')).toContainText('Apply or discard your note edits first');
+    await expect(page.locator('#notice')).toContainText('Apply or discard your note edits first');
     await expect(page.getByLabel('Pitch (MIDI)')).toHaveValue('200');
     await expect(page.getByLabel('Duration (beats)')).toHaveValue('0');
     await expect(proposalRows(page)).toHaveCount(4);

@@ -136,6 +136,16 @@ There is no account backup or cloud synchronization. A successful read of an abs
 
 **Export MIDI** writes a standard format-1 `.mid` file with track names, tempo, note timing, velocity, volume, and approximate General MIDI instrument choices. Overlapping notes of the same pitch within one track merge into one sustained MIDI note at the highest velocity; adjacent notes retain separate attacks. This avoids ambiguous note-off behavior in MIDI players. The local WAV mix layers those notes independently. Another music app's instruments may sound different. **Export WAV** renders the current local instruments and mix as mono, 22,050 Hz, 16-bit PCM audio. Synthesis runs in a cancellable worker to keep large compositions responsive. Muted tracks are omitted from audible output. Audio transcription, reviewed MIDI phrase import and complete Melody project backups have separate import flows and limits.
 
+## Keep a library of complete compositions
+
+Use **Saved compositions** to keep up to eight named copies in this browser. Choose **Refresh copies** to list them, enter a saved-copy label, then choose **Save new copy**. A copy includes the committed composition and all retained reference takes. Unapplied fields, MIDI review and continuation suggestions stay outside the copy. Labels are separate from composition titles; duplicate labels are allowed.
+
+Current-workspace autosave remains separate. Saved copies change only when you explicitly choose **Update selected copy** and confirm replacing that copy. Refreshing or selecting a copy does not open it. **Open selected copy** reviews the complete backup and asks before replacing the workspace, including any scratch that would be discarded. It creates one Undo edit; existing audio-history limits and protected-autosave recovery still apply.
+
+**Download selected copy** preserves the exact stored complete-backup bytes. Keep portable backups outside the browser before clearing site data. If a safely bounded copy is damaged, downloading its original bytes remains available while Open is refused. Updating or deleting it still requires explicit confirmation. Invalid catalog metadata protects the library from writes instead of clearing records.
+
+Each copy uses the existing 12 MiB backup bound, eight tracks, 256 notes per track and up to eight 20-second reference takes. The library allows at most 96 MiB of backup payload plus bounded metadata. Browser storage capacity may be lower. A failed, cancelled or conflicting mutation requires **Refresh copies** before another attempt; it is never replayed automatically. Operations have a ten-second deadline, but native browser storage work must finish draining before another operation is admitted. Cancellation cannot undo a transaction that already committed.
+
 ## Browser requirements and accuracy
 
 Microphone capture requires a secure context (localhost or HTTPS), explicit browser permission, `getUserMedia`, and `MediaRecorder`. Playback and audio decoding require Web Audio; transcription uses a Web Worker. Supported import formats depend on the browser's codecs. If microphone access is denied or unavailable, use imported audio, manually added notes, or the generated demo. Downloads, IndexedDB and Web Crypto must also be permitted by the browser. If storage is unavailable, complete project downloads preserve your in-memory work.
@@ -154,7 +164,7 @@ npm run build
 npm run test:browser
 ```
 
-`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Set `MELODY_TEST_PORT` to use another free loopback port. Their build enables storage and real AudioWorklet test pages through `MELODY_TEST_HARNESS=1`; ordinary `npm run build` omits both pages. Install Playwright's Chromium if needed:
+`npm run check` runs unit tests, lint, and the build (which includes type checking). Browser tests run separately, build the production assets, and start their own preview server on port 4174. Set `MELODY_TEST_PORT` to use another free loopback port. Their build enables storage, composition-library and real AudioWorklet test pages through `MELODY_TEST_HARNESS=1`; ordinary `npm run build` omits those pages. Install Playwright's Chromium if needed:
 
 ```sh
 npx playwright install chromium
@@ -313,3 +323,21 @@ MELODY_BACKED_BASE_URL=http://127.0.0.1:4308 \
 ```
 
 The generator reproduces the original input hash without production imports. Existing output directories are refused. The runner uses its own browser profile and closes its own processes; it expects you to start and stop the preview server. Local acceptance covers all **116 distinct browser cases**: the first full invocation passed 115/116, including all 19 new cases. The remaining pre-existing stale-tab test set a File while startup still disabled importing. Its helper now waits for the actual enabled control; the original case then passes with every storage, reference, history assertion and timeout unchanged. This is staged passing coverage, not a claim of one final all-green local invocation. The [readiness receipt](docs/2026-10-04-backed-recording-readiness.json) retains exact first trace timestamps and the focused pass. Both the [push](https://github.com/twangyal/projects-monorepo/actions/runs/37241975731) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37241977979) at `b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d` pass all **301 units and 116 native cases**, with lint, type checking and production build. All thirteen project PR workflows pass. The [CI receipt](docs/2026-10-04-backed-recording-ci.json) verifies that the actual PR checkout tree matches the published implementation.
+
+## Composition-library acceptance (#126)
+
+The v0.7 library passes **315 unit tests and all 138 native Chromium cases**, plus lint, type checking and production build. Independent native cases cover exact bytes, eight-copy races, stale revisions, corrupt recovery, raw fields/caret/MIDI/proposals, native rollback, the real ten-second deadline, cancellation before and after native commit, pending microphone cleanup, protected current storage and full browser restart. The [verification receipt](docs/2026-10-05-composition-library-verification.json) preserves first failures and corrections. The new status region required scoping older editor-notice assertions; their expected text and deadlines remain unchanged. Published CI is pending.
+
+The independent maximum retained **eight compositions, 16,384 notes and 64 distinct twenty-second references**. Initial stored backups total **76,700,576 bytes**; one explicit replacement changes that to **76,700,584 bytes**. All eight exact copies reopen after the original browser process terminates. Seventeen downloaded backups match original bytes; Refresh reads only bounded metadata and Blob handles. Selected reopened MIDI matches original pitches/ticks, and synthesized WAV matches an independent scalar oracle within one signed-16 unit, with exact silence and measured 440/523.25 Hz tones. Parser admission at exactly 12 MiB and refusal one byte above are separate from musical capacity. See the [maximum receipt](docs/2026-10-05-composition-library-maximum.json).
+
+To reproduce the maximum, start an ordinary production preview and use fresh fixture/output directories:
+
+```sh
+node scripts/smoke_library.mjs --prepare-only /tmp/melody-library-originals
+MELODY_LIBRARY_BASE_URL=http://127.0.0.1:4173 \
+MELODY_LIBRARY_FIXTURE_DIR=/tmp/melody-library-originals \
+MELODY_LIBRARY_OUTPUT_DIR=/tmp/melody-library-result \
+CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_library.mjs
+```
+
+The runner owns its two browser processes, requires fresh directories and retains first results; it does not start or stop the preview server. Allow 768 MiB of free disk for fixtures, downloads and browser storage. Its 240-second deadline and payload bounds are limits, not a measured peak-memory guarantee.

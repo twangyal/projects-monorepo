@@ -89,7 +89,7 @@ test('Finish records a real synthetic microphone, decodes A4 and releases the st
   await awaitCapturedTone(page);
   await page.getByRole('button', { name: 'Finish recording', exact: true }).click();
   await expectReleasedStream(page);
-  await expect(page.getByRole('status')).toContainText('Detected', { timeout: 20000 });
+  await expect(page.locator('#notice')).toContainText('Detected', { timeout: 20000 });
   await expect(page.getByLabel('Pitch (MIDI)')).toHaveValue('69');
   await expect(page.locator('.note-event')).not.toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Record melody', exact: true })).toBeEnabled();
@@ -112,13 +112,13 @@ test('cancelling pending permission releases its late stream and preserves exist
     return (window as unknown as RecordingWindow).__melodyRecording.requests;
   })).toBe(1);
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Capture cancelled');
+  await expect(page.locator('#notice')).toContainText('Capture cancelled');
   await page.evaluate(() => (window as unknown as RecordingWindow).__melodyRecording.resolvePermission());
   await expectReleasedStream(page);
   await expect(page.getByRole('button', { name: 'Record melody', exact: true })).toBeEnabled();
   expect(await page.locator('.note-event').evaluateAll(notes => notes.map(note => note.getAttribute('aria-label')))).toEqual(priorNotes);
   expect(await savedProject(page)).toEqual(priorSavedProject);
-  await expect(page.getByRole('status')).toContainText('Capture cancelled');
+  await expect(page.locator('#notice')).toContainText('Capture cancelled');
   expect(errors).toEqual([]);
 });
 
@@ -132,7 +132,7 @@ test('a real microphone stream ending completes recording automatically and rest
   await awaitCapturedTone(page);
   await page.evaluate(() => (window as unknown as RecordingWindow).__melodyRecording.stopInput());
   await expectReleasedStream(page);
-  await expect(page.getByRole('status')).toContainText('Detected', { timeout: 20000 });
+  await expect(page.locator('#notice')).toContainText('Detected', { timeout: 20000 });
   await expect(page.getByLabel('Pitch (MIDI)')).toHaveValue('69');
   await expect(page.getByRole('button', { name: 'Record melody', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Finish recording', exact: true })).toBeHidden();

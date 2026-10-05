@@ -1,0 +1,132 @@
+{
+  "issue": 126,
+  "status": "locally-verified-published-ci-pending",
+  "scope": "Independent composition library storage; existing complete-project validators, backup format, history and current-workspace persistence are consumed unchanged.",
+  "api": [
+    "CompositionLibrary",
+    "LibraryEntry",
+    "LibraryReceipt",
+    "LibraryReview",
+    "LibraryOptions"
+  ],
+  "database": {
+    "name": "melody-studio.library",
+    "version": 1,
+    "store": "copies",
+    "keyPath": "id",
+    "autoIncrement": false
+  },
+  "bounds": {
+    "copies": 8,
+    "backupBytes": 12582912,
+    "payloadBytes": 100663296,
+    "metadataBytes": 16384,
+    "operationMs": 10000
+  },
+  "identity": "Private instance-owned per-ID receipt generation retires all earlier sibling tokens on destructive admission. Fresh UUID revision, complete canonical row metadata and Blob size/type are compared in the native write transaction. This is revision CAS, not synchronous byte-by-byte Blob CAS.",
+  "capture": "Save and Update validate and defensively detach document and PCM synchronously before the first await; unchanged encoder bytes become an immutable application/json Blob.",
+  "listing": "getAll(undefined, 9) admits bounded metadata and Blob handles only, without Blob content reads.",
+  "review": "Selected exact Blob is hashed and decoded, then saved identity is re-read. Safely bounded corrupt bytes remain downloadable with null bundle and sanitized error.",
+  "nativeOwnership": "A per-instance operation queue waits for actual open and transaction terminal events after prompt logical cancellation or timeout. close is terminal and waits for owned native cleanup. No mutation is retried.",
+  "verification": {
+    "executionOwner": "root",
+    "missingApiBaseline": {
+      "log": "/tmp/melody126-store-missing.log",
+      "classification": "module-loader absence, not behavioral RED"
+    },
+    "behavioralRed": {
+      "log": "/tmp/melody126-store-stub.log",
+      "cases": 14,
+      "failed": 14,
+      "passed": 0,
+      "classification": "Exact-API throwing stub fails real positive behavior/setup assertions",
+      "durationMs": 132.173008
+    },
+    "focusedStaticTypecheck": "passed",
+    "focusedTests": {
+      "firstLog": "/tmp/melody126-store-first.log",
+      "passed": 13,
+      "failed": 1,
+      "durationMs": 152.837861,
+      "failure": "history-budget fixture duplicated a note ID when cloning the second track; corrected to a distinct note-2 without changing assertions",
+      "rerun": "passed all 14 cases after fixture correction and private receipt generation fix",
+      "final": {
+        "log": "/tmp/melody126-store-final.log",
+        "cases": 14,
+        "passed": 14,
+        "failed": 0,
+        "durationMs": 204.074965
+      }
+    },
+    "nativeBrowserTests": {
+      "firstResult": "21 passed, 1 failed",
+      "remainingFailure": "microphone-cancel UI case assigned to UI owner",
+      "storageNativeOutcome": "No reported storage-native failures; integrated rerun pending"
+    },
+    "incrementalSiblingRed": {
+      "log": "/tmp/melody126-sibling-red.log",
+      "cases": 1,
+      "failed": 1,
+      "passed": 0,
+      "durationMs": 129.354065,
+      "failure": "Missing expected rejection: preexisting sibling receipt still allowed deletion after failed update"
+    },
+    "fullProjectFirst": {
+      "log": "/tmp/melody126-check-first.log",
+      "unitCases": 315,
+      "unitPassed": 315,
+      "unitFailed": 0,
+      "unitDurationMs": 6414.269469,
+      "lint": "failed no-control-regex on intentional C0/C1 label-rejection expression"
+    },
+    "labelLintFix": {
+      "change": "After rejecting labels outside 1\u201380 UTF-16 units, reject C0/C1 and U+2028/U+2029 using character codes; Unicode surrogate checks unchanged",
+      "focusedStaticLint": "passed",
+      "focusedTests": "root rerun pending",
+      "focusedStaticTypecheck": "passed"
+    },
+    "finalCheck": {
+      "result": "passed",
+      "units": 315,
+      "unitDurationMs": 5603.730529,
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true,
+      "log": {
+        "path": "/tmp/melody126-check-final.log",
+        "bytes": 32854,
+        "sha256": "8ece9b86b9501ea627158a84c0cc01e9dabbe48ccfb25b10a6d9c65fe059dd40"
+      }
+    }
+  },
+  "limits": [
+    "Physical microphone accuracy, browser quota availability, cross-browser behavior and general performance are outside this evidence."
+  ],
+  "sourceHashes": {
+    "src/composition-library.ts": "09da6b889f5ac4a73c49c0018e20d41f47c4aa2c70f0c3f9f7974d5011af7a49",
+    "tests/composition-library.test.ts": "71de20cc463d3a5925330a605e1faddc7b1ffdb844d07523561e7ca051e63d22"
+  },
+  "rootFinalNative": {
+    "result": "passed",
+    "stats": {
+      "startTime": "2026-10-05T06:14:49.174Z",
+      "duration": 134864.892,
+      "expected": 138,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": {
+      "path": "/tmp/melody126-native-complete-results.json",
+      "bytes": 153149,
+      "sha256": "3942155013a3a6d7b1580af5053925167124e9a4eca28696923dc4e23854cfe7"
+    },
+    "log": {
+      "path": "/tmp/melody126-native-complete.log",
+      "bytes": 20523,
+      "sha256": "40fcf22ece42454f416fad0cd340f8c28710c8fdd6927cb6d347889a6ca1d544"
+    },
+    "artifacts": "/workspace/melody126-native-complete-artifacts",
+    "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "issue": 126,
+  "date": "2026-10-05",
+  "status": "local-acceptance-passed-ci-pending",
+  "scope": "Explicit saved complete-composition copies, separate from current-workspace autosave; eight-copy bounded IndexedDB library with exact backup recovery and guarded reversible Open.",
+  "version": "0.7.0",
+  "dependenciesChanged": false,
+  "unitHistory": {
+    "missingModule": {
+      "path": "/tmp/melody126-store-missing.log",
+      "bytes": 1464,
+      "sha256": "d7c8e0d6058f98af134a7150d074312fc6005fba46c5c3639632928c642989e3"
+    },
+    "throwingApiStub": {
+      "log": {
+        "path": "/tmp/melody126-store-stub.log",
+        "bytes": 10746,
+        "sha256": "2469860f33ec173a6d1da939fc2f6c10a105eeb874de1e64c26302f89ec66260"
+      },
+      "passed": 0,
+      "failed": 14,
+      "durationMs": 132.173008
+    },
+    "firstImplementation": {
+      "log": {
+        "path": "/tmp/melody126-store-first.log",
+        "bytes": 2646,
+        "sha256": "72022e85e589701cbcef05fc4f789ab76a00fede43e0d7388815500015ce1fa4"
+      },
+      "passed": 13,
+      "failed": 1,
+      "durationMs": 152.837861,
+      "correction": "History fixture second track now has unique note-2 instead of duplicated note-1; assertions unchanged."
+    },
+    "siblingReceiptRed": {
+      "log": {
+        "path": "/tmp/melody126-sibling-red.log",
+        "bytes": 881,
+        "sha256": "9ed4e1f46f82434cfc340dfaea7f19df19bee80394e9a0f0cf1208dc4cb7eee9"
+      },
+      "failed": 1,
+      "durationMs": 129.354065,
+      "fix": "Private per-ID receipt generations retire sibling authority after destructive admission."
+    },
+    "focusedPass": {
+      "log": {
+        "path": "/tmp/melody126-store-final.log",
+        "bytes": 1518,
+        "sha256": "f32130dc19c67c708098b57a7aac608cb7f8b5f4ae4a405d7ea004a375f216ff"
+      },
+      "passed": 14,
+      "durationMs": 204.074965
+    }
+  },
+  "checkHistory": {
+    "first": {
+      "log": {
+        "path": "/tmp/melody126-check-first.log",
+        "bytes": 31879,
+        "sha256": "f9a16305c25315849c2b8ad29a4bcadc8c7022cb22564e204b0e6985fd9fbb9a"
+      },
+      "unitsPassed": 315,
+      "durationMs": 6414.269469,
+      "lintFailure": "Intentional C0/C1 label-refusal regex rejected by no-control-regex. Equivalent bounded character-code predicate preserves every rejection."
+    },
+    "final": {
+      "log": {
+        "path": "/tmp/melody126-check-final.log",
+        "bytes": 32854,
+        "sha256": "8ece9b86b9501ea627158a84c0cc01e9dabbe48ccfb25b10a6d9c65fe059dd40"
+      },
+      "unitsPassed": 315,
+      "durationMs": 5603.730529,
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true
+    },
+    "afterScopedSelectors": {
+      "lint": true,
+      "log": {
+        "path": "/tmp/melody126-lint-scoped.log",
+        "bytes": 248,
+        "sha256": "82faf8cbb7bb52e01d46e8687f6e536b30a10f3876632896f3816424201cf25b"
+      },
+      "typecheckAndBuild": "Passed as preparation for final browser suite."
+    }
+  },
+  "nativeHistory": {
+    "missingControls": {
+      "stats": {
+        "startTime": "2026-10-05T05:50:50.352Z",
+        "duration": 11610.729,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/melody126-native-missing.log",
+        "bytes": 3708,
+        "sha256": "cfa25e8b0a9945b1ed9640acff8dab3ffc7c370546f25eaa707e32ad0a491a49"
+      },
+      "classification": "Exact original import/autosave/backup passed before missing #library-select failed."
+    },
+    "firstIntegrated": {
+      "stats": {
+        "startTime": "2026-10-05T06:06:03.405Z",
+        "duration": 27739.57,
+        "expected": 21,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/melody126-native-first.log",
+        "bytes": 7102,
+        "sha256": "d873889021fb8e4951e16a52b2ea82aab5d834aa85495bc09e7880896777c2d2"
+      },
+      "classification": "Onlyfailure: Cancel exposed library actions before held microphone permission settled. Counter around each recorder.start await retains native drain ownership; original assertion unchanged."
+    },
+    "firstFullRegression": {
+      "stats": {
+        "startTime": "2026-10-05T06:10:59.228Z",
+        "duration": 145679.711,
+        "expected": 118,
+        "skipped": 0,
+        "unexpected": 20,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/melody126-native-final.log",
+        "bytes": 76421,
+        "sha256": "e876e0d332275ced57e13526495049b4d4704ce2b8672e297a9402f3ee995e2f"
+      },
+      "classification": "All20failures were strict status-locator ambiguity: legitimate #notice and new accessible #library-status. All22new library cases passed, including unchanged microphone cancellation case.",
+      "correction": {
+        "files": [
+          "tests/arrangement.spec.ts",
+          "tests/browser/continuation.spec.ts",
+          "tests/browser/reference-takes.spec.ts",
+          "tests/browser.spec.ts",
+          "tests/recording.spec.ts",
+          "scripts/smoke_backed_recording.mjs",
+          "scripts/smoke_reference_takes.mjs"
+        ],
+        "selectors": 26,
+        "testAssertions": 23,
+        "smokeAssertions": 3,
+        "scope": "Only existing editor status locators become #notice. Expected text/regex/deadlines and all new independent oracle/max sources unchanged."
+      }
+    },
+    "final": {
+      "result": "passed",
+      "stats": {
+        "startTime": "2026-10-05T06:14:49.174Z",
+        "duration": 134864.892,
+        "expected": 138,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/melody126-native-complete-results.json",
+        "bytes": 153149,
+        "sha256": "3942155013a3a6d7b1580af5053925167124e9a4eca28696923dc4e23854cfe7"
+      },
+      "log": {
+        "path": "/tmp/melody126-native-complete.log",
+        "bytes": 20523,
+        "sha256": "40fcf22ece42454f416fad0cd340f8c28710c8fdd6927cb6d347889a6ca1d544"
+      },
+      "artifacts": "/workspace/melody126-native-complete-artifacts",
+      "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
+    }
+  },
+  "maximum": {
+    "result": "first-run-passed",
+    "milliseconds": 36139.554539,
+    "report": {
+      "path": "/workspace/melody126-maximum-first/verification.json",
+      "bytes": 26773,
+      "sha256": "a6916837f19ab714a364b61a4e4c8f58bcca4a65868fa30964f8a0bbac1f7e3c"
+    },
+    "receipt": "2026-10-05-composition-library-maximum.json",
+    "compositions": 8,
+    "tracksEach": 8,
+    "notesEach": 2048,
+    "distinctReferences": 64,
+    "uniquePcmBytes": 56448000,
+    "initialPayloadBytes": 76700576,
+    "finalPayloadBytes": 76700584,
+    "exactBackupDownloads": 17,
+    "fullBrowserProcessRestart": true,
+    "refreshBlobContentReads": 0,
+    "midiWavIndependent": true,
+    "visualReview": "Root viewed full library desktop screenshot and390px native keyboard/restart screenshot; contained, legible controls."
+  },
+  "review": {
+    "independentAgent": "library_review",
+    "result": "No actionable findings; static review covered bounds/CAS, native drains, detached capture, exact-byte recovery, history admission and page lifecycle. Sibling-authority change independently regression-tested."
+  },
+  "testHarness": "Conditional MELODY_TEST_HARNESS=1 entry only. Ordinary production build contains index.html and assets, no test pages.",
+  "limits": [
+    "Chromium151 native acceptance; publishedCI pending.",
+    "No claim of physical microphone accuracy, arbitrary browser quota, cross-browser guarantees or peak memory measurement.",
+    "Revision/metadataCAS, not byte-by-byte synchronous Blob CAS. Native committed-before-cancel outcomes require Refresh, never automatic replay."
+  ],
+  "sourceSha256": {
+    "src/composition-library.ts": "09da6b889f5ac4a73c49c0018e20d41f47c4aa2c70f0c3f9f7974d5011af7a49",
+    "src/library-view.ts": "a4ef27a0a3b76c3e143e06f4ec540bb156b0483735984d088d7428665f1b8574",
+    "src/main.ts": "37048070c1c17e328130b61574681449e30143875e1d2c73dc44768a09995ac5",
+    "src/style.css": "ea0b9e8b77ea0dd76f93da5b8a1b5be80194c792aedb6d4688f09904e2e42f16",
+    "tests/composition-library.test.ts": "71de20cc463d3a5925330a605e1faddc7b1ffdb844d07523561e7ca051e63d22",
+    "tests/library-fixtures.ts": "7f145c8d8b82def5c3f5130357295146456450117c2f7d6efe27c5829e2ce76b",
+    "tests/library.spec.ts": "0f64579ec83160179cf9ca000f7b26a6928978a9e4e15641f382b40ac050870d",
+    "scripts/smoke_library.mjs": "33c1037f7125d0dea73b5f6898a161222ea2321d11fb54818ce79bd2e1f159b4",
+    "vite.config.ts": "e98e89488caba45a862ebef6ab8cbc793eb4cbaa2c6cee967ee577060b9bd70e"
+  }
+}

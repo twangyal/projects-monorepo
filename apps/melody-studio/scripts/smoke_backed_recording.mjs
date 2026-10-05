@@ -204,7 +204,7 @@ async function main() {
     await page.locator('[data-track="' + expected.backing.target + '"]').click();
     const captureStarted = performance.now(); await button(page, 'Record with backing').click();
     await expect(page.locator('#capture-state')).toContainText(/Recording .*20 seconds with backing/, { timeout: 30000 });
-    await expect(page.locator('[role="status"]')).toContainText('Detected', { timeout: 60000 });
+    await expect(page.locator('#notice')).toContainText('Detected', { timeout: 60000 });
     await expect(button(page, 'Record with backing')).toBeEnabled({ timeout: 30000 });
     await expect(page.locator('#save-status')).toHaveText('Saved in this browser', { timeout: 30000 });
     evidence.measured.captureToSavedMilliseconds = performance.now() - captureStarted;

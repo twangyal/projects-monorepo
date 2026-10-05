@@ -188,7 +188,7 @@ async function idb(page: Page) {
 for (const [rate, frequency, expectedPitch] of [[44100, 440, 69], [48000, 1000, 83]]) {
   test(`native ${rate} Hz import retains a ${frequency} Hz reference with original silence and notes-only exports`, async ({ page }) => {
     await installProbe(page); await page.goto('/'); await importTone(page, rate, frequency);
-    await expect(page.getByRole('status')).toContainText('Detected', { timeout: 20000 });
+    await expect(page.locator('#notice')).toContainText('Detected', { timeout: 20000 });
     await expect(page.getByLabel('Pitch (MIDI)')).toHaveValue(String(expectedPitch));
     const project = await backup(page), asset = project.assets[0]; expect(project.assets).toHaveLength(1);
     expect(asset.kind).toBe('audio-file'); expect(asset.captureTempo).toBe(120); expect(asset.frameCount).toBe(33075);
@@ -256,9 +256,9 @@ test('native opposite-phase and silent captures fail atomically without discardi
   page.on('dialog', dialog => dialog.accept()); await page.goto('/'); await open(page);
   await page.locator('.note-event').first().click(); await page.getByLabel('Duration (beats)').fill('1.000');
   const before = await backup(page); await importTone(page, 48000, 440, 2, true);
-  await expect(page.getByRole('status')).toContainText(/No clear notes/i, { timeout: 20000 });
+  await expect(page.locator('#notice')).toContainText(/No clear notes/i, { timeout: 20000 });
   expect(await backup(page)).toEqual(before); await expect(page.getByLabel('Duration (beats)')).toHaveValue('1.000');
-  await importTone(page, 44100, 440, 1, false, true); await expect(page.getByRole('status')).toContainText(/No clear notes/i);
+  await importTone(page, 44100, 440, 1, false, true); await expect(page.locator('#notice')).toContainText(/No clear notes/i);
   expect(await backup(page)).toEqual(before); await expect(page.getByLabel('Duration (beats)')).toHaveValue('1.000');
 });
 
@@ -268,7 +268,7 @@ for (const phase of ['decode', 'normalize']) {
     await page.locator('.note-event').first().click(); await page.getByLabel('Duration (beats)').fill('');
     const before = await backup(page); await gate(page, phase); await importTone(page); await held(page, phase);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(page.getByLabel('Duration (beats)')).toHaveValue('');
-    await importTone(page); await expect(page.getByRole('status')).toContainText(/drain|finishing|retry|previous|running/i);
+    await importTone(page); await expect(page.locator('#notice')).toContainText(/drain|finishing|retry|previous|running/i);
     await release(page); await expect(page.getByRole('button', { name: 'Try demo melody', exact: true })).toBeEnabled();
     expect(await backup(page)).toEqual(before); await expect(page.getByLabel('Duration (beats)')).toHaveValue('');
     await page.getByRole('button', { name: 'Undo', exact: true }).click(); await expect(page.locator('#reference-empty')).toBeVisible();
@@ -299,7 +299,7 @@ test('complete-file read staging preserves invalid note drafts, input-only inten
   await expect(page.getByLabel('Track name')).toHaveValue('Unsent title while reading'); await expect(page.getByLabel('Duration (beats)')).toHaveValue('');
   expect((await backup(page)).assets).toEqual(prior.assets);
   await page.getByLabel('Open project file').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"melody-studio-project","version":7}') });
-  await expect(page.getByRole('status')).toContainText(/Could not open|invalid|unsupported/i);
+  await expect(page.locator('#notice')).toContainText(/Could not open|invalid|unsupported/i);
   await expect(page.getByLabel('Duration (beats)')).toHaveValue(''); await expect(page.getByLabel('Track name')).toHaveValue('Unsent title while reading');
   const beforeHide = await backup(page); await saved(page); const stored = await idb(page);
   await gate(page, 'file');
@@ -372,7 +372,7 @@ test('bounded audio history rejects a tenth eight-take document without losing c
   for (let generation = 1; generation <= 9; generation++) await open(page, literalProject(generation, 8, 20));
   const before = await backup(page); expect(before.assets).toHaveLength(8);
   await page.getByLabel('Open project file').setInputFiles({ name: 'overflow.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(literalProject(10, 8, 20))) });
-  await expect(page.getByRole('status')).toContainText(/history|64 MiB|capacity|budget/i); expect(await backup(page)).toEqual(before);
+  await expect(page.locator('#notice')).toContainText(/history|64 MiB|capacity|budget/i); expect(await backup(page)).toEqual(before);
   await page.locator('#clear-history').click(); await open(page, literalProject(10, 8, 20)); expect((await backup(page)).document.composition.title).toBe('Original reference 10');
 });
 
@@ -401,12 +401,12 @@ test('demo and an actual MediaRecorder tone each retain their own audible take i
     } });
   });
   await page.goto('/'); await page.getByRole('button', { name: 'Try demo melody', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Detected', { timeout: 20000 });
+  await expect(page.locator('#notice')).toContainText('Detected', { timeout: 20000 });
   const demo = await backup(page); expect(demo.assets).toHaveLength(1); expect(demo.assets[0].kind).toBe('demo');
   await page.getByRole('button', { name: 'Record melody', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Finish recording', exact: true })).toBeVisible();
   await page.waitForTimeout(1300); await page.getByRole('button', { name: 'Finish recording', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Detected', { timeout: 20000 });
+  await expect(page.locator('#notice')).toContainText('Detected', { timeout: 20000 });
   const recorded = await backup(page); expect(recorded.assets[0].kind).toBe('microphone');
   expect(recorded.assets[0].frameCount).toBeGreaterThan(22050); expect(recorded.assets[0].sha256).not.toBe(demo.assets[0].sha256);
   expect(pcmFloats(recorded.assets[0]).some(value => Math.abs(value) > .1)).toBe(true);
@@ -433,7 +433,7 @@ test('declined replacement and failed capture preserve the visible learned propo
   await page.locator('.note-event').first().click(); await page.getByLabel('Duration (beats)').fill('0.2500');
   // Note selection itself must not discard an existing proposal; typed scratch is kept.
   const proposalBeforeCapture = await page.locator('#proposal-notes').textContent();
-  await importTone(page, 48000, 440, 2, true); await expect(page.getByRole('status')).toContainText(/No clear notes/i);
+  await importTone(page, 48000, 440, 2, true); await expect(page.locator('#notice')).toContainText(/No clear notes/i);
   await expect(page.getByLabel('Duration (beats)')).toHaveValue('0.2500');
   expect(await page.locator('#proposal-notes').textContent()).toBe(proposalBeforeCapture);
   expect(await backup(page)).toEqual(before); expect(proposed).toBeTruthy();
@@ -455,7 +455,7 @@ test('fifty prior edits trim oldest history while every remaining state retains 
 
 test('track selection stops only its owning comparison audition and preserves unrelated ordinary playback', async ({ page }) => {
   await installProbe(page); page.on('dialog', dialog => dialog.accept()); await page.goto('/'); await importTone(page);
-  await expect(page.getByRole('status')).toContainText('Detected');
+  await expect(page.locator('#notice')).toContainText('Detected');
   await page.getByRole('button', { name: 'Duplicate track', exact: true }).click();
   await page.locator('#play-reference').click(); await expect.poll(async () => (await sources(page)).length).toBe(1);
   const stops = await page.evaluate(() => (window as unknown as ProbeWindow).__referenceAcceptance.stops);
