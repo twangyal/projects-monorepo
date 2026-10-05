@@ -102,7 +102,7 @@ Issue [#68](https://github.com/twangyal/projects-monorepo/issues/68) guards fail
 Issue [#116](https://github.com/twangyal/projects-monorepo/issues/116) prevents a
 reproduced stale-tab overwrite of complete photos, ratings and saved looks.
 Version 0.2.0 passes **51 unit and 56 production Chromium cases**, lint, type
-checking and build locally. Native checks exercise actual transaction aborts,
+checking and build locally and in both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37248358130) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37248361845) CI at `285266b`. The [CI receipt](docs/2026-10-05-saved-copy-ci.json) verifies the actual PR checkout has the identical implementation tree. Native checks exercise actual transaction aborts,
 old-client fencing, corrupt/missing records, ten-second deadlines, competing
 writers, reviewed replacement and preserved editor drafts. The [verification
 receipt](docs/2026-10-05-saved-copy-verification.json) retains the original data-loss

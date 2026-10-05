@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 116,
-  "status": "Local complete:51 units, lint/type/build,56 native, first original full-capacity/restart runtime passed. Exact published-head CI pending.",
+  "status": "Complete: local51 units/full56 native/original maximum/restart, and both first-attempt published-head CI runs passed.",
   "baseline": "2026-10-05-saved-copy-baseline.json",
   "rootCheck": {
     "units": 51,
@@ -88,7 +88,13 @@
     },
     "preservedArtifacts": "/workspace/style116-full-native-final-artifacts"
   },
-  "ci": "pending",
+  "ci": {
+    "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+    "push": 37248358130,
+    "pullRequest": 37248361845,
+    "both": "51 units,56 browser,lint/type/build; no failures or reruns",
+    "receipt": "2026-10-05-saved-copy-ci.json"
+  },
   "startupRerun": {
     "stats": {
       "startTime": "2026-10-05T00:22:51.923Z",

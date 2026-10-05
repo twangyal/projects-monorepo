@@ -6,7 +6,7 @@
     "src/main.ts",
     "src/style.css"
   ],
-  "status": "coherent UI implementation; independent native acceptance pending",
+  "status": "Root integration accepted:51 units, full56 native and original maximum/restart passed; producer checkpoint evidence retained.",
   "source": [
     {
       "path": "src/main.ts",
@@ -27,7 +27,7 @@
   "beforeImplementation": {
     "receipt": "docs/2026-10-05-saved-copy-baseline.json",
     "owner": "root",
-    "result": "Original real two-page stale autosave lost the winner’s photo/piece/opinion/look graph; protection assertion RED. UI producer did not rerun this baseline."
+    "result": "Original real two-page stale autosave lost the winner\u2019s photo/piece/opinion/look graph; protection assertion RED. UI producer did not rerun this baseline."
   },
   "checks": [
     {
@@ -69,5 +69,36 @@
   "claimsExcluded": [
     "No build, browser run, persistent service or Git mutation by this UI producer.",
     "No independent native or maximum proof claimed; those belong to root and separate acceptance owners."
-  ]
+  ],
+  "authorCheckpointStatus": "coherent UI implementation; independent native acceptance pending",
+  "rootIntegration": {
+    "sourceUnchangedSinceReviewedImplementation": true,
+    "fullNative": {
+      "stats": {
+        "startTime": "2026-10-05T00:33:24.089Z",
+        "duration": 65168.94299999999,
+        "expected": 56,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/style116-full-native-final.log",
+        "bytes": 9529,
+        "sha256": "96b44d043899d0d56390d1180c2b7ec951ed55e359467b9a28b057dee4558c0b"
+      },
+      "results": {
+        "path": "/tmp/style116-full-native-results-final.json",
+        "bytes": 63667,
+        "sha256": "9ace59df8319f656562490048385650a496aa1c0b7a3c6deda5ea6f5e1917dac"
+      },
+      "preservedArtifacts": "/workspace/style116-full-native-final-artifacts"
+    },
+    "maximumReceipt": "2026-10-05-saved-copy-maximum.json",
+    "exactHeadCi": {
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "bothRunsPassed": true,
+      "receipt": "2026-10-05-saved-copy-ci.json"
+    }
+  }
 }

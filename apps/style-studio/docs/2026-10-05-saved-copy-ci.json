@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "issue": 116,
+  "status": "Both first-attempt published-head CI runs passed",
+  "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+  "tree": "3d7e27576fd8c6c081f95ba56ab1d29a0643c746",
+  "actualPrCheckout": {
+    "sha": "72899799b8d1a8bcb04a799378e7a596e5380a9f",
+    "tree": "3d7e27576fd8c6c081f95ba56ab1d29a0643c746",
+    "sameImplementationTree": true
+  },
+  "runs": [
+    {
+      "runId": 37248358130,
+      "jobId": 111570697695,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37248358130",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "startedAt": "2026-10-05T00:39:28Z",
+      "completedAt": "2026-10-05T00:41:07Z",
+      "checkout": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "checks": {
+        "unitPassed": 51,
+        "nativePassed": 56,
+        "failed": 0,
+        "skipped": 0,
+        "lint": "passed",
+        "typeCheck": "passed",
+        "build": "passed"
+      },
+      "logExcerpts": [
+        "2026-10-05T00:39:31.8358493Z node: v24.21.0",
+        "2026-10-05T00:39:31.8359538Z npm: 11.19.0",
+        "2026-10-05T00:39:35.0051365Z > style-studio@0.2.0 check",
+        "2026-10-05T00:39:35.1165541Z > style-studio@0.2.0 test",
+        "2026-10-05T00:39:41.8040908Z \u2139 tests 51",
+        "2026-10-05T00:39:41.8041724Z \u2139 pass 51",
+        "2026-10-05T00:39:41.8042127Z \u2139 fail 0",
+        "2026-10-05T00:39:41.8042975Z \u2139 skipped 0",
+        "2026-10-05T00:39:41.8043953Z \u2139 duration_ms 6639.963593",
+        "2026-10-05T00:39:41.9099447Z > style-studio@0.2.0 lint",
+        "2026-10-05T00:39:44.0542097Z > style-studio@0.2.0 build",
+        "2026-10-05T00:39:44.0542767Z > tsc --noEmit && vite build",
+        "2026-10-05T00:40:00.3752587Z Downloading Chrome for Testing 153.0.8010.12 (playwright chromium v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
+        "2026-10-05T00:40:09.5578675Z > style-studio@0.2.0 test:browser",
+        "2026-10-05T00:41:05.0894382Z   56 passed (54.9s)"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:28Z",
+          "completedAt": "2026-10-05T00:39:29Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:29Z",
+          "completedAt": "2026-10-05T00:39:31Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:31Z",
+          "completedAt": "2026-10-05T00:39:32Z"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:32Z",
+          "completedAt": "2026-10-05T00:39:34Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:34Z",
+          "completedAt": "2026-10-05T00:39:46Z"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:46Z",
+          "completedAt": "2026-10-05T00:40:09Z"
+        },
+        {
+          "name": "Production browser, local storage, and decoded image exports",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:40:09Z",
+          "completedAt": "2026-10-05T00:41:05Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "skipped",
+          "startedAt": "2026-10-05T00:41:05Z",
+          "completedAt": "2026-10-05T00:41:05Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:41:05Z",
+          "completedAt": "2026-10-05T00:41:06Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:41:06Z",
+          "completedAt": "2026-10-05T00:41:06Z"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:41:06Z",
+          "completedAt": "2026-10-05T00:41:06Z"
+        }
+      ],
+      "localLog": "/tmp/style116-ci-job-111570697695.log",
+      "logIdentity": {
+        "bytes": 47989,
+        "sha256": "2233532b1efaf4c86920c855b4a39cea05a38ec511c93d304cf093922038b851"
+      }
+    },
+    {
+      "runId": 37248361845,
+      "jobId": 111570709415,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37248361845",
+      "event": "pull_request",
+      "attempt": 1,
+      "conclusion": "success",
+      "startedAt": "2026-10-05T00:39:31Z",
+      "completedAt": "2026-10-05T00:41:10Z",
+      "checkout": "72899799b8d1a8bcb04a799378e7a596e5380a9f",
+      "checks": {
+        "unitPassed": 51,
+        "nativePassed": 56,
+        "failed": 0,
+        "skipped": 0,
+        "lint": "passed",
+        "typeCheck": "passed",
+        "build": "passed"
+      },
+      "logExcerpts": [
+        "2026-10-05T00:39:34.8904282Z node: v24.21.0",
+        "2026-10-05T00:39:34.8904858Z npm: 11.19.0",
+        "2026-10-05T00:39:37.8349320Z > style-studio@0.2.0 check",
+        "2026-10-05T00:39:37.9342563Z > style-studio@0.2.0 test",
+        "2026-10-05T00:39:44.2623729Z \u2139 tests 51",
+        "2026-10-05T00:39:44.2624215Z \u2139 pass 51",
+        "2026-10-05T00:39:44.2624448Z \u2139 fail 0",
+        "2026-10-05T00:39:44.2624936Z \u2139 skipped 0",
+        "2026-10-05T00:39:44.2625833Z \u2139 duration_ms 6292.526337",
+        "2026-10-05T00:39:44.3653939Z > style-studio@0.2.0 lint",
+        "2026-10-05T00:39:46.4807315Z > style-studio@0.2.0 build",
+        "2026-10-05T00:39:46.4807860Z > tsc --noEmit && vite build",
+        "2026-10-05T00:40:01.2689023Z Downloading Chrome for Testing 153.0.8010.12 (playwright chromium v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip",
+        "2026-10-05T00:40:09.9273428Z > style-studio@0.2.0 test:browser",
+        "2026-10-05T00:41:08.2912424Z   56 passed (57.8s)"
+      ],
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:32Z",
+          "completedAt": "2026-10-05T00:39:33Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:33Z",
+          "completedAt": "2026-10-05T00:39:34Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:34Z",
+          "completedAt": "2026-10-05T00:39:35Z"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:35Z",
+          "completedAt": "2026-10-05T00:39:37Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:37Z",
+          "completedAt": "2026-10-05T00:39:49Z"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:39:49Z",
+          "completedAt": "2026-10-05T00:40:09Z"
+        },
+        {
+          "name": "Production browser, local storage, and decoded image exports",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:40:09Z",
+          "completedAt": "2026-10-05T00:41:08Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "skipped",
+          "startedAt": "2026-10-05T00:41:08Z",
+          "completedAt": "2026-10-05T00:41:08Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:41:08Z",
+          "completedAt": "2026-10-05T00:41:09Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:41:09Z",
+          "completedAt": "2026-10-05T00:41:09Z"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "startedAt": "2026-10-05T00:41:09Z",
+          "completedAt": "2026-10-05T00:41:09Z"
+        }
+      ],
+      "localLog": "/tmp/style116-ci-job-111570709415.log",
+      "logIdentity": {
+        "bytes": 49038,
+        "sha256": "3eb97b811b261953ee35b79cbf180452e3660af1a85e82e62d0d977ce8ceb113"
+      }
+    }
+  ],
+  "environment": {
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12",
+    "os": "Ubuntu24.04.5"
+  },
+  "allProjectPrWorkflows": [
+    {
+      "name": "Git History",
+      "id": 37248361860,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Lens Studio",
+      "id": 37248361852,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Clothing Studio",
+      "id": 37248361855,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Style Studio",
+      "id": 37248361845,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Melody Studio",
+      "id": 37248361889,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Color Context Lab",
+      "id": 37248361858,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Motion Studio",
+      "id": 37248361864,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Composure",
+      "id": 37248361886,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Stock Notebook",
+      "id": 37248361851,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Friendly Challenges",
+      "id": 37248361893,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Duet",
+      "id": 37248361875,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Shot Studio",
+      "id": 37248361849,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    },
+    {
+      "name": "Karaoke Studio",
+      "id": 37248361876,
+      "status": "completed",
+      "conclusion": "success",
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "attempt": 1
+    }
+  ],
+  "limits": [
+    "CI suites run56 distinct native cases; independent full-capacity/restart acceptance is separately recorded in the maximum receipt.",
+    "Actual local first test-wording failures remain retained; neither CI run needed a rerun.",
+    "No physical-device, model-quality, general latency or peak-memory claim."
+  ],
+  "allThirteenProjectPrWorkflowsPassed": true
+}
