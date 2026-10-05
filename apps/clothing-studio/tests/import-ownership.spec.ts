@@ -17,11 +17,11 @@ async function install(page: Page) {
     const read = File.prototype.text;
     File.prototype.text = function () {
       if (!this.name.startsWith('held-')) return read.call(this);
-      const file = this;
+      const name = this.name, actualRead = read.bind(this);
       return new Promise<string>((resolve, reject) => {
-        gate.releases.set(file.name, () => {
-          gate.releases.delete(file.name);
-          void read.call(file).then(text => { resolve(text); gate.completed.push(file.name); }, reject);
+        gate.releases.set(name, () => {
+          gate.releases.delete(name);
+          void actualRead().then(text => { resolve(text); gate.completed.push(name); }, reject);
         });
       });
     };
