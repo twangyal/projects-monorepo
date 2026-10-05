@@ -642,20 +642,28 @@ cancellation; the adapter now drains pending source adds before closing output.
 Cancellation and failed finalization also wait for every track flush; two reviewed
 regressions cover abort during flush and a failing audio track with a pending video
 flush. The adapter deliberately uses a pinned source-close hook for sibling drain.
-The integrated local suite passes342units plus syntax.25MediaRecorder-specific
+The integrated local suite passes345units plus syntax.25MediaRecorder-specific
 cases were replaced by the timestamped lifecycle/input suite; the original media,
 storage and recovery gates remain. Native cancellation observers retain genuine
 encoders while deliberately delaying zero-time UI yields250ms. This is controlled
 cancellation coverage, not a latency claim.
 
-First integrated PR CI passes103/104native cases: decoded mono pitch/RMS pass,
-then an obsolete live-playback expectation fails. That expectation now requires
-zero live playback; original decoded audio gates remain. The first maximum check
-fails at the post-restart backup download before export, and its [receipt](docs/failures/2026-10-05-first-integration/ci.json)
-is retained. The runner now creates a fresh owned page in the same persistent
-profile, matching the existing passing restart case. Integrated native acceptance
-is pending. CI also runs the unchanged original
-full-minute soundtrack/restart script in a separate job, including forty original
-visual samples, all audio transitions and exact complete backup recovery. Do not
-count production acceptance or close#124 until those checks pass. Earlier capture
-failures remain preserved in the existing failure directory.
+The first integrated failures remain preserved, including the obsolete live-playback
+assertion and full Chromium 153 browser crashes during the maximum post-restart
+download. The maximum harness now inherits Playwright's configured headless
+browser when no explicit CHROMIUM_PATH is provided, matching the normal native
+suite without changing fixtures or acceptance thresholds.
+
+Both first [push](https://github.com/twangyal/projects-monorepo/actions/runs/37321512812)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37321518978)
+checks at `9f4e3b673dd43214b7724a7370896f46dded9d0a` pass 345 units, syntax,
+105 native cases and the original full-minute/restart gate. The actual minute
+contains all 1,800 authored video frames and 2,880,648 decoded PCM frames including
+Opus padding. All 40 original visual samples, 16 audio transitions and exact
+complete backup recovery pass. The 11,554,385-byte sequence archive survives a
+full browser-process restart byte-for-byte; the unrelated scene and silent take
+also remain intact. A separate local FFmpeg reinspection of that captured artifact
+passes the same original gates; its [receipt](docs/2026-10-05-independent-export-decode.json)
+records exact source/artifact provenance and limits. This is an independent decode
+of the same native capture, not another capture or physical-device verification.
+Issue #124 is accepted and closed. Physical WebXR acceptance remains in #21.
