@@ -72,7 +72,7 @@ The adapter talks only to `http://127.0.0.1:11434`. Before inference it requires
 
 The [System One request](https://docs.ollama.com/api/systemone) uses the same typed choice shape as [Jev](https://docs.typesafe.ai/primitives/choice). Only nearby enabled candidate IDs plus an abstention option are supplied. Expected labels, case IDs/titles, camera frames, real drafts, and arbitrary page content are excluded. Confidence is the model's output-concentration score, not a measured chance of correctness on gaze tasks. Mean decision time includes adapter checks/transport and is not webcam latency.
 
-Results show every expected/observed choice alongside the latest baseline. The off-target, disabled-target, and missing-gaze cases have no eligible control, so the local adapter deterministically abstains without contacting the model or running preflight. These three rule-based successes remain in overall adapter agreement/timing, even if the other eleven cases fail. They are not model-inference evidence; per-case rows identify the missing eligible target. Overall agreement uses all 14 cases as the denominator; failed and missing cases do not improve it. Up to eight reports stay in the page; export useful results before refreshing. JSON exports include the suite version, model ID/kind/digest, timestamp, cancellation state, and per-case decision/error/time. Import rejects wrong suites, unknown/duplicate cases, invalid IDs/confidence, disabled or distant selections, and oversized files. Imported results are unverified file data. A partial external report has this shape:
+Results show every expected/observed choice alongside the latest baseline. The selected report also shows eligible agreement versus geometry, policy-only agreement, unexpected selections, errors/untested cases and reported eligible median/p95 adapter time. These values are recomputed from validated result rows, including partial/error reports; imported benchmark metadata cannot change the display. Geometry timing is explicitly unmeasured. The off-target, disabled-target, and missing-gaze cases have no eligible control, so the local adapter deterministically abstains without contacting the model or running preflight. These three rule-based successes remain in overall adapter agreement/timing, even if the other eleven cases fail. They are not model-inference evidence; per-case rows identify the missing eligible target. Overall agreement uses all 14 cases as the denominator; failed and missing cases do not improve it. Up to eight reports stay in the page; export useful results before refreshing. JSON exports include the suite version, model ID/kind/digest, timestamp, cancellation state, and per-case decision/error/time. Import rejects wrong suites, unknown/duplicate cases, invalid IDs/confidence, disabled or distant selections, and oversized files. Imported results are unverified file data. A partial external report has this shape:
 
 ```json
 {
@@ -182,3 +182,10 @@ Twenty automated tests and syntax checks passed, including caret insertion, sele
 ### Camera session isolation — 2026-10-03
 
 Camera callbacks now verify both the active mode and the exact registered handler. A regression test proved that an old callback could update the cursor after camera-to-camera restart; it is now ignored. Twenty tests and lint/build syntax checks passed. Remaining high-value work: physical browser/webcam verification, calibration quality across viewport sizes, and a decision-model/browser-controller integration.
+
+### Browser report breakdown — 2026-10-05
+
+The decision lab separates model-eligible results from policy-only rule abstentions,
+including imported real measurements. Fresh local verification passes 61 unit and
+56 native browser cases plus lint/build syntax checks. [Verification record](docs/2026-10-05-lab-metrics-verification.md)
+records the tests, independent review and browser limits.

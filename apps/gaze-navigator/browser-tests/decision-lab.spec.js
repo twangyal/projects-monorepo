@@ -1,6 +1,42 @@
 import { test, expect } from '@playwright/test';
 import { CASES } from '../src/decision-fixtures.js';
 import { eligibleTargets } from '../src/decision-contract.js';
+import {readFile} from 'node:fs/promises';
+
+test('actual retained model report separates eligible decisions from policy rules without trusting benchmark metadata',async({page})=>{
+  const report=JSON.parse(await readFile(new URL('../docs/2026-10-03-tev1-report.json',import.meta.url),'utf8'));
+  report.benchmark.summary.modelEligible.correct=11;
+  report.benchmark.summary.timing.eligibleMedianElapsedMs=0;
+  await page.locator('#importReport').setInputFiles({name:'measured-with-untrusted-metadata.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(report))});
+  await expect(page.locator('#runStatus')).toContainText('Imported');
+  await expect(page.locator('#eligibleSummary')).toContainText('6/11 eligible cases correct');
+  await expect(page.locator('#eligibleSummary')).toContainText('Geometry: 6/11');
+  await expect(page.locator('#eligibleSummary')).toContainText('3 unexpected selections');
+  await expect(page.locator('#policySummary')).toContainText('3/3 policy-only cases correct');
+  await expect(page.locator('#policySummary')).toContainText('not model inference');
+  await expect(page.locator('#eligibleTiming')).toContainText('Median: 3219.3 ms');
+  await expect(page.locator('#eligibleTiming')).toContainText('p95: 4341.2 ms');
+  await expect(page.locator('#eligibleTiming')).toContainText('not webcam latency');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.locator('#runBaseline').click();
+  await expect(page.locator('#eligibleTiming')).toContainText('Geometry timing was not measured');
+  await expect(page.locator('#eligibleSummary')).toContainText('1 unexpected selection');
+});
+
+test('partial error report retains eligible and policy denominators and unavailable timing',async({page})=>{
+  const report={format:'gaze-decision-report',version:1,suite:'gaze-targets-v1',model:{id:'Partial external report',kind:'external',digest:null},createdAt:'2026-10-05T00:00:00.000Z',cancelled:true,results:[
+    {caseId:'compose-hit',decision:null,elapsedMs:20,error:'Controlled transport refusal'},
+    {caseId:'missing-gaze',decision:{targetId:null,confidence:null},elapsedMs:0,error:null},
+  ]};
+  await page.locator('#importReport').setInputFiles({name:'partial.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(report))});
+  await expect(page.locator('#runStatus')).toContainText('Imported');
+  await expect(page.locator('#eligibleSummary')).toContainText('0/11 eligible cases correct');
+  await expect(page.locator('#eligibleSummary')).toContainText('1 error');
+  await expect(page.locator('#eligibleSummary')).toContainText('10 untested');
+  await expect(page.locator('#policySummary')).toContainText('1/3 policy-only cases correct');
+  await expect(page.locator('#policySummary')).toContainText('2 untested');
+  await expect(page.locator('#eligibleTiming')).toContainText('No successful eligible timing available');
+});
 
 const evidence = new WeakMap();
 const BASE = 'http://127.0.0.1:4173';

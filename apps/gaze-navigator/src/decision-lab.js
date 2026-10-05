@@ -2,6 +2,7 @@ import { CASES, SUITE_VERSION } from './decision-fixtures.js';
 import { geometricDecision, eligibleTargets, targetDistance } from './decision-contract.js';
 import { runSuite, summarize, validateReport } from './decision-evaluation.js';
 import { createLocalDecisionModel } from './local-decision-model.js';
+import { summarizeBenchmark } from './decision-benchmark.js';
 
 const node = id => document.querySelector(`#${id}`);
 const reports = [];
@@ -97,6 +98,15 @@ function renderResults(report = selected?.report) {
   const summary = summarize(CASES, report.results);
   node('summary').textContent = `${summary.correct}/${summary.total} correct (${(summary.accuracy * 100).toFixed(1)}%) · ${summary.valid}/${summary.total} valid · ${summary.errors} errors · ${summary.missing} untested · ${summary.abstained} abstentions · ${summary.unexpectedSelections} unexpected selection${summary.unexpectedSelections === 1 ? '' : 's'}.` +
     (summary.meanElapsedMs === null ? '' : ` Mean decision time: ${summary.meanElapsedMs.toFixed(1)} ms (includes adapter checks and transport).`);
+  // Recompute from validated rows; imported benchmark metadata is untrusted.
+  const metrics=summarizeBenchmark(report),eligible=metrics.modelEligible,policy=metrics.policyOnly;
+  node('reportBreakdown').hidden=false;
+  node('eligibleSummary').textContent=`${eligible.correct}/${eligible.total} eligible cases correct · ${eligible.errors} error${eligible.errors===1?'':'s'} · ${eligible.missing} untested · ${eligible.unexpectedSelections} unexpected selection${eligible.unexpectedSelections===1?'':'s'}. Geometry: ${metrics.baseline.modelEligible.correct}/${eligible.total}.`;
+  node('policySummary').textContent=`${policy.correct}/${policy.total} policy-only cases correct · ${policy.errors} error${policy.errors===1?'':'s'} · ${policy.missing} untested. These cases have no eligible target; local adapter abstentions follow rules, not model inference.`;
+  const timing=metrics.timing;
+  node('eligibleTiming').textContent=report.model.kind==='baseline'?'Geometry timing was not measured.':
+    timing.eligibleMedianElapsedMs===null?'No successful eligible timing available. Errors and untested cases remain in the agreement denominator.':
+    `Reported eligible adapter time · Median: ${timing.eligibleMedianElapsedMs.toFixed(1)} ms · p95: ${timing.eligibleP95ElapsedMs.toFixed(1)} ms · ${eligible.valid}/${eligible.total} successful cases timed. Includes adapter checks, transport and possible cold loading; not webcam latency.`;
 }
 
 function setBusy(value, cancelable = active !== null) {
@@ -150,11 +160,14 @@ async function run(adapter) {
   node('runStatus').textContent = `Running ${adapter.id}: 0/${CASES.length} cases.`;
   node('selectedColumn').textContent = `Running: ${adapter.id}`;
   node('reportProvenance').textContent = `Running ${adapter.id}. Completed results will become a new report.`;
+  const progressReport={format:'gaze-decision-report',version:1,suite:SUITE_VERSION,
+    model:{id:adapter.id,kind:adapter.kind,digest:adapter.digest??null},
+    createdAt:new Date().toISOString(),cancelled:false};
   try {
     const report = await runSuite(CASES, adapter, { signal: job.controller.signal, onProgress: rows => {
       if (active !== job) return;
       node('runStatus').textContent = `Running ${adapter.id}: ${rows.length}/${CASES.length} cases.`;
-      renderResults({ results: rows });
+      renderResults({ ...progressReport, results: rows });
     } });
     if (active !== job) return;
     addReport(report);
