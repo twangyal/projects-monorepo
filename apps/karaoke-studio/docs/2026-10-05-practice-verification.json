@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "issue": 125,
+  "status": "local-verification-passed-ci-pending",
+  "baseCommit": "6f4a7fca76cee747afb8ad1f90fa9fbbded5c574",
+  "scope": [
+    "Explicit selected-lyric once/repeat playback at native 1x with exact admitted cue endpoints and instrumental gaps.",
+    "Transient owned playback controller preserves raw editor text, Undo/Redo, saved revisions and original audio.",
+    "No new inference, model download, microphone recording, persistence schema or dependency."
+  ],
+  "python": {
+    "interpreter": "/tmp/karaoke-env/bin/python",
+    "version": "3.11.16",
+    "tests": 166,
+    "pass": 166,
+    "seconds": 55.564,
+    "logSha256": "389226d6d5eec0bcee46a366acbd06963d0f33841ddc84d5ab37c6b548dc0a18",
+    "supplementarySystemRun": {
+      "version": "3.12.14",
+      "tests": 166,
+      "pass": 166,
+      "seconds": 54.585,
+      "claim": "Supplementary observation; supported validation is Python3.11 above."
+    }
+  },
+  "static": {
+    "pythonCompileall": true,
+    "ruff": true,
+    "firstNpmCheck": {
+      "tests": 116,
+      "pass": 116,
+      "milliseconds": 1948.872599,
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true,
+      "logSha256": "3fb8db40d85bbcd02d5e47e0bdaf22619148da0541bf853f56080e072d03098b"
+    },
+    "afterUiCorrectionsNpmCheck": {
+      "tests": 116,
+      "pass": 116,
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true,
+      "logSha256": "ac8fd0ea94734fcce8c2db65de8459d6aa849f80d5e2acae11e3999c5bddde95"
+    }
+  },
+  "nativeRuns": [
+    {
+      "name": "native-missing",
+      "stats": {
+        "startTime": "2026-10-05T05:13:09.174Z",
+        "duration": 10047.028,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "failures": [
+        {
+          "test": "original WAV reaches loaded native audio and exposes an explicit single-cue practice range",
+          "status": "failed",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#practice-first')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" locator('#practice-first') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#practice-first')\u001b[22m\n"
+        }
+      ],
+      "rawReportSha256": "46ab866588034ceb250415410095afb5a9cb88845b385cfa3b5b7ac9473932a3"
+    },
+    {
+      "name": "native-first",
+      "stats": {
+        "startTime": "2026-10-05T05:27:48.025Z",
+        "duration": 49768.351,
+        "expected": 9,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "failures": [
+        {
+          "test": "Play line uses one cue only and preserves exact unsaved raw spelling paste caret Redo saved SRT and original bytes",
+          "status": "failed",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Play line 2', exact: true })\nExpected: enabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" getByRole('button', { name: 'Play line 2', exact: true }) with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Play line 2', exact: true })\u001b[22m\n"
+        },
+        {
+          "test": "controlled hidden pagehide and media-error lifecycle events retire practice and never restart it",
+          "status": "failed",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('#practice-once')\nExpected: enabled\nReceived: disabled\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" locator('#practice-once') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('#practice-once')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <button disabled id=\"practice-once\">Play once</button>\u001b[22m\n\u001b[2m       - unexpected value \"disabled\"\u001b[22m\n"
+        },
+        {
+          "test": "genuine native play rejection and held real play completion cannot revive or pause a newer ordinary playback owner",
+          "status": "failed",
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"AbortError\"\u001b[39m\nReceived: \u001b[31m\"\"\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+        }
+      ],
+      "rawReportSha256": "4f47378630af095817338c14294f21b97e4dc4fe2c3e6f7ac00866b97e02cb33"
+    },
+    {
+      "name": "full-regression-after-repairs",
+      "stats": {
+        "startTime": "2026-10-05T05:33:27.991Z",
+        "duration": 227035.86000000002,
+        "expected": 91,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "failures": [],
+      "rawReportSha256": "6169cfd01c110cceb320d2812bd4660ab95ed2055d820b09b5f9bedb4f6ac461"
+    }
+  ],
+  "diagnoses": [
+    "Initial command selected no tests because its grep did not match; not counted as a feature failure.",
+    "Actual missing-controls baseline failed on the absent selector after genuine loaded PCM. It used inherited Backing despite the Original title; ordinary setup was corrected to explicitly choose Original before the first integrated run.",
+    "First integrated run found the inherited duplicate Play line line N accessible label and disabled controls after visibility returned. Both are corrected without playback or timing changes.",
+    "Immediate native play then pause fulfilled and retained paused practice; it did not produce the assumed AbortError. Refusal coverage now explicitly injects a controlled NotAllowedError; the later held genuine native-play completion remains unchanged and passes."
+  ],
+  "reviews": [
+    "Independent domain/oracle authored before producer source reads.",
+    "Independent producer source review found no further material ownership defects; explicit pause-at-end priority was corrected before first runtime."
+  ],
+  "maximumReceipt": "2026-10-05-practice-maximum.json",
+  "visuals": {
+    "rootViewed": [
+      "/workspace/karaoke125-practice-first/desktop.png",
+      "/workspace/karaoke125-practice-first/mobile-390.png"
+    ],
+    "result": "Practice selectors, interval summary and explicit controls fit at desktop and390px; no horizontal overflow."
+  },
+  "limits": [
+    "Fast browser separator is explicitly fake and copies supplied original WAV; native audio playback is real. Existing real-model results are not rerun or expanded.",
+    "Maximum uses a full-capacity300s project and two actual297..300s repeats, not a new full300s playback/video export.",
+    "Native loop endpoints use bounded observed timing; no sample-exact repeat or hardware audible-output claim.",
+    "Maximum precedes only the later accessible-label and visible-controls fixes; those are separately covered by focused/full native validation."
+  ],
+  "ci": null,
+  "files": [
+    {
+      "path": "src/practice.ts",
+      "sha256": "e2d5042a08c14a6b02614a65d582102b2e142efa577ec9c33beabd76a88975eb",
+      "bytes": 2402
+    },
+    {
+      "path": "src/practice-controller.ts",
+      "sha256": "12a2a835e05b5fedd6564885754e6898d09ccda740a4013c90713d8cf137f5b0",
+      "bytes": 10861
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "99cdb6f11ab02f0a65a69e636c644c5c13507e87e2b910332df3cfe2d95a16ad",
+      "bytes": 86937
+    },
+    {
+      "path": "src/style.css",
+      "sha256": "045a10c4321c93171d8622d96720a1740e54d9dc7ab2c8e131e04b975bd01968",
+      "bytes": 17688
+    },
+    {
+      "path": "tests/practice.spec.ts",
+      "sha256": "683efe90a511a3661735fa68253eb0b24282e23b2302a36461d9b9681460e0ec",
+      "bytes": 19720
+    },
+    {
+      "path": "tests/practice-fixtures.ts",
+      "sha256": "6a8b909e7ac6cee4f416dd022c1161045be9e8a3639c83dd1b2743f6ef786f31",
+      "bytes": 5614
+    },
+    {
+      "path": "scripts/smoke_practice.mjs",
+      "sha256": "46a30f212949d2961843e66cf1e812e67bdf004a45e6e4f947d11ca5d7711584",
+      "bytes": 28529
+    }
+  ]
+}

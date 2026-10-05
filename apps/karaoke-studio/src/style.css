@@ -804,3 +804,12 @@ button {
 #timing-review-list strong { font-size:.75rem; font-variant-numeric:tabular-nums; }
 #timing-review-list pre { white-space:pre-wrap; margin:.5rem 0 0; font:inherit; }
 @media(max-width:700px) { .sequential-timing { padding:1rem .8rem; } .timing-actions button { flex:1 1 145px; } }
+
+.practice-panel { padding:1rem 1.15rem; border-top:1px solid #e3e7dc; border-bottom:1px solid #e3e7dc; min-width:0; }
+.practice-panel h4 { margin:0 0 .6rem; font-size:.9rem; color:#436158; }
+.practice-selection { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.8rem; margin:.8rem 0; }
+.practice-selection select { min-height:44px; width:100%; }
+.practice-actions { display:flex; flex-wrap:wrap; gap:.6rem; margin:.8rem 0; }
+.practice-actions button { min-height:44px; white-space:normal; }
+#practice-status,#practice-range-summary { overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+@media(max-width:700px) { .practice-panel { padding:1rem .8rem; } .practice-actions button { flex:1 1 125px; } }

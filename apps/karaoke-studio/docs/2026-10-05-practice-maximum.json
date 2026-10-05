@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "issue": 125,
+  "status": "first-root-run-passed",
+  "runner": "scripts/smoke_practice.mjs",
+  "runnerSha256": "46a30f212949d2961843e66cf1e812e67bdf004a45e6e4f947d11ca5d7711584",
+  "independence": {
+    "authoredBeforePracticeSourceReads": true,
+    "authorExecutedFixtureOrBrowser": false,
+    "producerImports": [],
+    "allowedPriorReferences": [
+      "scripts/smoke_sequential_timing.mjs",
+      "tests/srt_smoke_server.py"
+    ],
+    "expectations": "Literal original cues, fixed PCM dimensions, independently written SRT serialization, native media samples and complete file comparisons. No production practice parser or controller supplies expected values.",
+    "freeze": "Prepare creates a new isolated directory with exclusive file creation, freezes all input expectations and tolerances before execution, invokes only the existing original-PCM seed mode, and saves hashes of the runner, seed helper, metadata and original WAV files. Capture refuses a changed runner or fixture."
+  },
+  "capacity": {
+    "projects": 1,
+    "durationSeconds": 300,
+    "audioFiles": 3,
+    "audioRoles": [
+      "original",
+      "vocals",
+      "backing"
+    ],
+    "format": "PCM16 little-endian WAV",
+    "sampleRate": 44100,
+    "channels": 2,
+    "framesEach": 13230000,
+    "wavBytesEach": 52920044,
+    "totalOriginalWavBytes": 158760132,
+    "cues": 200,
+    "lyricUnicodeCodePoints": 20000,
+    "revision": 7
+  },
+  "nativePlayback": {
+    "zeroBasedFirst": 198,
+    "zeroBasedLast": 199,
+    "startSeconds": 297,
+    "endSeconds": 300,
+    "lastCueEndsExactlyAtNativeDuration": true,
+    "repeatBoundariesRequired": 2,
+    "playbackRate": 1,
+    "sourceOfObservedTime": "Read-only currentTime from the existing native #audio element on requestAnimationFrame and native media events.",
+    "boundaryToleranceSeconds": 0.15,
+    "maximumBoundarySamplingGapMs": 150,
+    "repeatPeriodExpectedMs": 3000,
+    "repeatPeriodToleranceMs": 150,
+    "pausedObservationDriftSeconds": 0.001,
+    "fitOrWidenAfterExecution": false,
+    "checks": [
+      "Reversed selection stays visible and disables Play once and Repeat without starting native playback.",
+      "Two genuine 297..300-second repeat boundaries at 1x. The actual event receipt records pause/seeking/seeked/play/playing transitions; natural pause-before-ended ordering is not independently established by this capacity run.",
+      "Each observed previous position is within 150 ms of 300, each landing is within 150 ms of 297, and the observed boundary sample gap is at most 150 ms.",
+      "Two boundary landing times are separated by 3000 ± 150 ms without fitting an offset.",
+      "Pause remains stationary, Resume advances from that position, and Stop retains its observed position and drops playback.",
+      "Switching to Vocals, Backing and Original during active practice leaves the new native source paused.",
+      "At 390 px, readiness and focus are checked before trusted keyboard activation; Play once reaches the true song end and does not repeat.",
+      "All observed playbackRate values stay at 1, the native loop property remains false, and no media error is observed."
+    ]
+  },
+  "preservation": [
+    "All 600 raw cue editor field values, title, unapplied paste and Undo/Redo availability remain unchanged.",
+    "No mutating HTTP request occurs during practice.",
+    "Complete saved metadata, revision and exact server/disk bytes remain unchanged.",
+    "Each original WAV is hashed before, after and after fresh-browser reopening, both from served bytes and actual served-library files.",
+    "Before and fresh-browser-after SRT bytes match the independent literal-cue serialization exactly.",
+    "Before and fresh-browser-after complete archive files compare byte for byte in bounded chunks. The first archive receives independent member, CRC, metadata and all-audio-hash inspection.",
+    "Fresh browser means a distinct Chromium process, default 0..0 selection, no resumed practice, and exact saved data reopening."
+  ],
+  "artifacts": [
+    "fixture-receipt.json and frozen-expectations.json in the new fixture directory",
+    "verification.json retaining partial native observations on failure",
+    "before.srt and after.srt",
+    "before.karaoke.zip and after.karaoke.zip",
+    "archive-expectations.json",
+    "desktop.png limited to 1280 by 960",
+    "mobile-390.png limited to 390 by 844"
+  ],
+  "commands": {
+    "prepare": "KARAOKE_PRACTICE_FIXTURES=/workspace/karaoke125-practice-fixtures KARAOKE_PYTHON=/path/to/project/python node scripts/smoke_practice.mjs --prepare",
+    "rootOwnedService": "Root separately starts the existing tests/srt_smoke_server.py --serve /workspace/karaoke125-practice-fixtures/library --port PORT using the built production app, and retains ownership of its PID.",
+    "capture": "CHROMIUM_PATH=/usr/bin/chromium KARAOKE_PRACTICE_FIXTURES=/workspace/karaoke125-practice-fixtures KARAOKE_PRACTICE_OUTPUT=/workspace/karaoke125-practice-first KARAOKE_PRACTICE_ORIGIN=http://127.0.0.1:PORT KARAOKE_PRACTICE_LIBRARY=/workspace/karaoke125-practice-fixtures/library KARAOKE_PYTHON=/path/to/project/python node scripts/smoke_practice.mjs --capture"
+  },
+  "costEstimate": {
+    "wallTime": "Author estimate was approximately 1–2 minutes excluding build and service startup. Actual first root capture completed in 22.655782917 seconds.",
+    "diskBytesUpperEstimate": 750000000,
+    "maximumIndividualOriginalWavBytes": 52920044,
+    "archiveComparisonBufferBytes": 2097152,
+    "network": "Only the root-supplied explicit 127.0.0.1 service; no external HTTP requests, inference or model download.",
+    "serviceControl": "None: runner owns and closes only its own browser processes."
+  },
+  "limits": [
+    "This is full-capacity late-range practice acceptance, not another 300-second full-song playback or video-export run.",
+    "No physical-device, audible-output quality, separation accuracy or worst-case memory claim.",
+    "The root-owned production service remains running throughout both browser processes; a service restart is not claimed or required for transient practice state.",
+    "Root executed the first prepare/capture acceptance; this receipt does not independently claim build, lint, syntax or unrelated suite results.",
+    "No native ended event was recorded in the observed repeat or Play once event sequences. The player reached currentTime 300, and the final Play once state was paused=true and ended=true. Separate event-ordering tests are needed for the natural pause-before-ended path.",
+    "This accepted capacity run applies to the listed source hashes. Subsequent control-label and visibility corrections are outside this captured build; the original report is retained without assigning its result to changed source.",
+    "The author did not visually inspect the screenshots; root owns visual review. PNG dimensions and file hashes are recorded here."
+  ],
+  "runtime": {
+    "status": "passed",
+    "attempt": "first",
+    "executionOwner": "root",
+    "startedAt": "2026-10-05T05:26:50.728Z",
+    "wallMs": 22655.782916999997,
+    "origin": "http://127.0.0.1:4326",
+    "servedLibrary": "/workspace/karaoke125-practice-fixtures/library",
+    "browserVersion": "151.0.7922.173",
+    "testedSourceSha256": {
+      "src/main.ts": "dcc6c6d9c0f28085ecbc372b3307b520d785c79a30569a6c37b4ab81e60ae35e",
+      "src/practice-controller.ts": "e9782bcda5370ed16336e7502603c9a25582279180d732e8cf7b8e5e6472792d",
+      "src/style.css": "045a10c4321c93171d8622d96720a1740e54d9dc7ab2c8e131e04b975bd01968"
+    },
+    "runnerSha256": "46a30f212949d2961843e66cf1e812e67bdf004a45e6e4f947d11ca5d7711584",
+    "seedHelperSha256": "70047989d2c9a4f7e1d5a57f55e64d4204ecf214a931c15ceac80d6c5a837a55",
+    "frozenFixtureSha256": "037ce9d3d9d444ca002851cbbfadd5c4e1835c9ebd7cb19e87f0547481558aff",
+    "reports": [
+      {
+        "path": "/workspace/karaoke125-practice-first/verification.json",
+        "bytes": 427899,
+        "sha256": "7481ef42ca0566a911ae3404c88cc0d0dfd6c7ed668e4afb7cd82fbaa3926141"
+      },
+      {
+        "path": "/workspace/karaoke125-practice-fixtures/fixture-receipt.json",
+        "bytes": 2668,
+        "sha256": "711f79a8e450da61ca01bff9d7d2eb52ea9d5409337a4084329a05a36e766bc0"
+      },
+      {
+        "path": "/workspace/karaoke125-practice-fixtures/frozen-expectations.json",
+        "bytes": 41147,
+        "sha256": "037ce9d3d9d444ca002851cbbfadd5c4e1835c9ebd7cb19e87f0547481558aff"
+      },
+      {
+        "path": "/workspace/karaoke125-practice-first/archive-expectations.json",
+        "bytes": 28603,
+        "sha256": "5bd25e5e2592f9ffa1cd91b50b483869ec0e597f50a0a8d02f4ba7081f811f52"
+      }
+    ],
+    "native": {
+      "repeatBoundaryCount": 2,
+      "boundaries": [
+        {
+          "beforeSeconds": 300,
+          "afterSeconds": 297,
+          "beforeWallMs": 6951.9000000059605,
+          "afterWallMs": 6977.100000008941,
+          "observationGapMs": 25.200000002980232,
+          "landingPaused": false
+        },
+        {
+          "beforeSeconds": 300,
+          "afterSeconds": 297,
+          "beforeWallMs": 10068.79999999702,
+          "afterWallMs": 10092.40000000596,
+          "observationGapMs": 23.600000008940697,
+          "landingPaused": true
+        }
+      ],
+      "repeatPeriodMs": 3115.2999999970198,
+      "repeatPeriodDeviationMs": 115.29999999701977,
+      "allFrozenTolerancesRetained": true,
+      "fittedOffsets": false,
+      "samples": 812,
+      "mediaEvents": 108,
+      "trustedControlActions": 14,
+      "observationOverflow": false,
+      "repeatEventCounts": {
+        "seeking": 3,
+        "timeupdate": 28,
+        "seeked": 3,
+        "play": 3,
+        "playing": 3,
+        "pause": 3
+      },
+      "onceEventCounts": {
+        "seeking": 2,
+        "timeupdate": 14,
+        "seeked": 2,
+        "play": 1,
+        "playing": 1,
+        "pause": 1
+      },
+      "capturedEndedEvents": 0,
+      "invalidRange": {
+        "first": 199,
+        "last": 198,
+        "refused": true,
+        "positionBefore": 0,
+        "positionAfter": 0
+      },
+      "pause": {
+        "positionSeconds": 297.573812,
+        "driftSeconds": 0.0,
+        "observationMs": 250
+      },
+      "resume": {
+        "positionSeconds": 297.861237,
+        "paused": false
+      },
+      "stop": {
+        "positionSeconds": 297.914927,
+        "driftSeconds": 0.0,
+        "positionAtTrustedAction": 297.914868,
+        "actionToStoppedPositionDeltaSeconds": 5.899999996472616e-05
+      },
+      "trackSwitches": [
+        {
+          "role": "vocals",
+          "positionSeconds": 297.046236,
+          "paused": true,
+          "driftSeconds": 0.0
+        },
+        {
+          "role": "backing",
+          "positionSeconds": 297.02444,
+          "paused": true,
+          "driftSeconds": 0.0
+        },
+        {
+          "role": "original",
+          "positionSeconds": 297.018069,
+          "paused": true,
+          "driftSeconds": 0.0
+        }
+      ],
+      "playOnceFinal": {
+        "positionSeconds": 300,
+        "paused": true,
+        "ended": true,
+        "driftSeconds": 0
+      },
+      "playbackRate": 1,
+      "nativeLoop": false
+    },
+    "preservation": {
+      "editorUnchanged": true,
+      "rawCueFields": 600,
+      "revision": 7,
+      "checkedPhases": [
+        "before",
+        "after",
+        "fresh-browser"
+      ],
+      "savedResponse": {
+        "bytes": 30199,
+        "sha256": "492c13deffbfc3736b7d3061dbaa55c077ea74cdaef160004dcd82ecd59cb4a6"
+      },
+      "savedDiskMetadata": {
+        "bytes": 29797,
+        "sha256": "9b562f7dfe0f73dcff9b3d331e35d1a3a51da9959b7c7e369e6f60fdb715d162"
+      },
+      "originalAudio": {
+        "source.wav": {
+          "bytes": 52920044,
+          "sha256": "f188df06d06ec41bb99e47189c58e742a22cd73867103a3a8bb1c6b08fe025d9"
+        },
+        "vocals.wav": {
+          "bytes": 52920044,
+          "sha256": "fd6a717ff0d8e323d396ea651ceecc6763c9531b09cc7f719b38ab2fc2c285df"
+        },
+        "backing.wav": {
+          "bytes": 52920044,
+          "sha256": "1f2c52614a2c120458eb3caca731329feea2efbc8743dca97cae7935f9d87374"
+        }
+      },
+      "archiveAndSrtByteExact": true,
+      "archiveInspection": "Independent first-archive member/CRC/metadata/audio verification; full second-archive byte equality extends that validation to the fresh-browser result.",
+      "archiveMembers": [
+        {
+          "name": "project.json",
+          "bytes": 28989,
+          "sha256": "23d2af5ab584ba7dde9fd94c2b1c9af9b359acb7c2485fe143664fe967e6fb7b"
+        },
+        {
+          "name": "source.wav",
+          "bytes": 52920044,
+          "sha256": "f188df06d06ec41bb99e47189c58e742a22cd73867103a3a8bb1c6b08fe025d9"
+        },
+        {
+          "name": "vocals.wav",
+          "bytes": 52920044,
+          "sha256": "fd6a717ff0d8e323d396ea651ceecc6763c9531b09cc7f719b38ab2fc2c285df"
+        },
+        {
+          "name": "backing.wav",
+          "bytes": 52920044,
+          "sha256": "1f2c52614a2c120458eb3caca731329feea2efbc8743dca97cae7935f9d87374"
+        },
+        {
+          "name": "processing.json",
+          "bytes": 3,
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        },
+        {
+          "name": "manifest.json",
+          "bytes": 735,
+          "sha256": "486aa3334113bd2e9d16adfccd74407d538879b1450401966ae85e0bd3560192"
+        }
+      ]
+    },
+    "requests": {
+      "archivePostsBeforePractice": 1,
+      "mutatingRequestsDuringPractice": [],
+      "archivePostsAfterPracticeForFreshBrowserExport": 1,
+      "scope": "One archive POST before practice and one after reopening generate the compared backups. There are zero mutating HTTP requests during practice itself.",
+      "externalRequests": []
+    },
+    "browserProcesses": [
+      914968,
+      915198
+    ],
+    "firstBrowserClosed": true,
+    "finalBrowserClosed": true,
+    "serviceRestartClaimed": false,
+    "pageErrors": [],
+    "artifacts": [
+      {
+        "path": "/workspace/karaoke125-practice-first/before.srt",
+        "bytes": 29891,
+        "sha256": "9afd0be22b231924623ef95e2d5aeae28b971ae248159954d402e68b53639def"
+      },
+      {
+        "path": "/workspace/karaoke125-practice-first/before.karaoke.zip",
+        "bytes": 158790479,
+        "sha256": "c2830f05459be4c35ef6e1ab92802af9ce9a1fe58da60d3e84d91539fdefbd38"
+      },
+      {
+        "path": "/workspace/karaoke125-practice-first/mobile-390.png",
+        "bytes": 57299,
+        "sha256": "c221cde3ca7053cb234f263f5cad26a35dc3b395fa34c6412b96fda4b11981b9",
+        "dimensions": [
+          390,
+          844
+        ]
+      },
+      {
+        "path": "/workspace/karaoke125-practice-first/desktop.png",
+        "bytes": 112850,
+        "sha256": "1de43808268bc9fcb2455f4a41a3f88132c0194844291525b3a489d224d244ce",
+        "dimensions": [
+          1280,
+          960
+        ]
+      },
+      {
+        "path": "/workspace/karaoke125-practice-first/after.srt",
+        "bytes": 29891,
+        "sha256": "9afd0be22b231924623ef95e2d5aeae28b971ae248159954d402e68b53639def"
+      },
+      {
+        "path": "/workspace/karaoke125-practice-first/after.karaoke.zip",
+        "bytes": 158790479,
+        "sha256": "c2830f05459be4c35ef6e1ab92802af9ce9a1fe58da60d3e84d91539fdefbd38"
+      }
+    ]
+  }
+}

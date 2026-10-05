@@ -39,7 +39,7 @@ Startup never downloads models. Missing/corrupt weights disable new separation w
 1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
 2. Wait for separation, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
 3. Paste your lyrics, one line per cue, and press **Create draft timings**, or choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues. Even spacing is only a starting point; it does not detect singing or identify words.
-4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** seeks to its start. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
+4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
 5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
 
 Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
@@ -65,6 +65,27 @@ unapplied pasted words keep their separate unsaved warning. A new edit after und
 clears redo. Saving successfully, opening another clip, deleting the selected clip,
 or reloading resets this session-only history. Failed requests retain it. History
 does not undo saved server revisions, media jobs, or permanent clip deletion.
+
+### Practice a lyric range
+
+Choose **Original**, **Vocals**, or **Backing**, then select a **First line** and
+**Last line** under **Practice a lyric range**. **Play once** seeks to the first
+cue's exact start and pauses at the last cue's end. **Repeat range** returns to
+that start until you pause or stop. Instrumental gaps between selected lines are
+included and shown in the range summary. Playback stays at normal 1× speed;
+native media seeking can leave a short gap between repeats.
+
+**Pause practice** retains the range and position; **Resume practice** continues
+from there. **Stop practice** leaves the playhead where it is. Changing the
+range, track, clip, lyrics, playback position or speed stops practice. Leaving
+the page also stops it; returning never starts playback automatically.
+
+Practice uses valid current cue edits, including unsaved timings. Unapplied
+pasted words remain separate. It changes no lyric text, Undo/Redo history,
+saved revision, original audio, SRT or exported video. Choose **Save lyrics**
+separately when you want to retain edits. A reversed range or invalid cue graph
+must be corrected before practice can start. This flow does not record your
+voice, score singing, change pitch or stretch audio.
 
 ### Time supplied lines while listening
 
@@ -214,6 +235,32 @@ Worker limits are ten minutes of wall time, ten minutes of CPU time and 3 GiB ob
 Uploads/exports require at least 1 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum song's three WAV files use about 151.4 MiB. Temporary float stems add about 201.9 MiB, with a conservative maximum separation working set around 417.3 MiB on disk including a 64 MiB upload, before small headers. Twenty maximum-duration projects need about 2.96 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
 
 Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain. The default Spleeter configuration estimates a limited frequency range, so high-frequency content can also be affected. Synthetic smoke audio validates inference plumbing, not real-song accuracy. A real singing smoke provides additional runtime evidence but no reference-stem quality score or guarantee. Automatic transcription/alignment, songs longer than five minutes, broader device testing, subjective boundary listening and reference-stem separation-quality evaluation remain future work.
+
+## Lyric practice acceptance (#125)
+
+Local verification passes **166 Python tests** on Python 3.11, **116 TypeScript
+tests**, lint/type/build and **all 91 production Chromium cases** in one full
+regression. Twelve practice cases cover actual PCM playback, strict fractional
+ranges, instrumental gaps, native controls, late responses/completions, raw
+drafts and saved-byte preservation. Controlled lifecycle and play-refusal faults
+are labeled separately from actual native playback. Published CI is pending.
+
+An independent maximum uses three original five-minute stereo WAVs, 200 cues
+and 20,000 lyric code points. Two real 297–300 second repeats, pause/resume,
+track switching and 390 px keyboard operation pass the frozen 150 ms observation
+limits. Exact **158,790,479-byte archives**, **29,891-byte SRTs** and all three
+**52,920,044-byte WAVs** survive fresh-browser reopening unchanged. This is a
+full-capacity short-range practice check, not another five-minute playback or
+video-export run; no new model inference is claimed.
+
+The [verification receipt](docs/2026-10-05-practice-verification.json),
+[native oracle](docs/2026-10-05-practice-oracle.json) and
+[maximum receipt](docs/2026-10-05-practice-maximum.json) retain original failures,
+measurements and hashes. The first native run exposed a duplicated accessibility
+label and controls remaining disabled after visibility returned; both are fixed.
+It also disproved a fixture assumption: immediate native play/pause fulfilled
+instead of raising an error. The refusal subcase now uses explicitly controlled
+injection while delayed genuine play completion is still checked independently.
 
 ## Fast verification and CI
 

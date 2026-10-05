@@ -6,6 +6,8 @@ import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
 import { splitCue, mergeCue } from './cue-edit.ts';
+import { createPracticeRange, type PracticeMode } from './practice.ts';
+import { PracticeController } from './practice-controller.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
 interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
@@ -38,6 +40,7 @@ app.innerHTML = `
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
         <div class="transport"><div class="track-picker" aria-label="Audition track"><button data-track="original" aria-pressed="false">Original</button><button data-track="vocals" aria-pressed="false">Vocals</button><button data-track="backing" aria-pressed="true">Backing</button></div><span id="clock">0:00.00 / 0:00.00</span></div>
         <audio id="audio" controls preload="metadata" aria-label="Clip playback"></audio><p class="fine playback-tip">Play the backing and use “Mark start” or “Mark end” to place a line at the current playback time.</p>
+        <section class="practice-panel" aria-labelledby="practice-heading"><h4 id="practice-heading">Practice a lyric range</h4><p class="fine">Listen to the current Original, Vocals or Backing track at normal 1× speed. Existing lyric cues define the range; instrumental gaps stay included. Unsaved valid cues can be practiced. Unapplied pasted words are kept and are not included.</p><div class="practice-selection"><label class="field">First line<select id="practice-first" disabled></select></label><label class="field">Last line<select id="practice-last" disabled></select></label></div><p id="practice-range-summary" class="fine">Choose a clip with valid lyric cues.</p><div class="practice-actions"><button id="practice-once" disabled>Play once</button><button id="practice-repeat" disabled>Repeat range</button><button id="practice-pause" class="quiet" disabled>Pause practice</button><button id="practice-stop" class="quiet" disabled>Stop practice</button></div><p id="practice-status" class="fine" role="status" aria-live="polite">Choose a lyric range, then Play once or Repeat range. Nothing is saved.</p></section>
         <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div>
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
@@ -94,6 +97,10 @@ let pollEpoch = 0;
 let pollInFlight: string | null = null;
 let ownedJob = false;
 let archiveJobRevision: number | null = null;
+let practiceEpoch = 0;
+let practiceProject = -1;
+let practiceCount = -1;
+const practice = new PracticeController(audio, () => practiceControls());
 interface ArchiveFocus {
   node: HTMLInputElement | HTMLTextAreaElement;
   projectId: string;
@@ -129,11 +136,12 @@ document.addEventListener('pointerdown', event => {
 });
 window.addEventListener('blur', () => { archiveFocus = null; });
 const timeline = mountTimeline(element('timing-workbench'), {
-  onSeek(time) { retireTiming('Seeking cancelled the timing session. Staged times were not applied.'); if (working) { audio.currentTime = time; draw(); } },
+  onSeek(time) { retirePractice('Seeking stopped practice. The selected range is kept.'); retireTiming('Seeking cancelled the timing session. Staged times were not applied.'); if (working) { audio.currentTime = time; draw(); } },
   onSelectCue(index) {
     for (const row of element('cue-list').querySelectorAll<HTMLElement>('[data-cue]')) row.classList.toggle('timing-selected', Number(row.dataset.cue) === index);
   },
   onGestureStart() {
+    retirePractice('A timing gesture stopped practice.');
     if (!working || currentJob || loading || requestingJob || saving || archiveChecking || timingError(working.cues, working.duration)) return false;
     retireSrt('A timing gesture cancelled the lyric import review.');
     retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -179,6 +187,7 @@ function validateWorking(): string {
   } catch (error) { return error instanceof Error ? error.message : 'Check the lyric timing.'; }
 }
 function controls() {
+  if (practice.active && timingBusy()) retirePractice('Other studio work stopped practice.');
   if (timingOwner && timingBusy()) retireTiming('Other studio work cancelled the timing session. Staged times were not applied.');
   const busy = currentJob !== null || loading || requestingJob || archiveChecking, invalid = validateWorking();
   element<HTMLInputElement>('audio-file').disabled = !session?.modelReady || busy || saving;
@@ -201,7 +210,7 @@ function controls() {
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy || !!timingOwner;
-  srtControls(); timingControls();
+  srtControls(); timingControls(); practiceControls();
   updateTimeline();
   archiveControls();
   restoreArchiveFocus();
@@ -210,6 +219,7 @@ function draftSnapshot(): LyricDraft {
   return { title: working!.title, cues: working!.cues, pastedText: element<HTMLTextAreaElement>('lyric-draft').value, pastedDirty: draftDirty, rawTimings: captureTimingDrafts() };
 }
 function changed(group: string | null = null) {
+  retirePractice('The lyric editor changed. Practice stopped.');
   if (!working) return;
   retireSrt('The lyric editor changed. Choose the SRT file again to review current work.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -218,6 +228,7 @@ function changed(group: string | null = null) {
   dirty = lyricHistory?.dirty ?? true; videoUrl = null; controls(); draw();
 }
 function restoreDraft(direction: 'undo' | 'redo') {
+  retirePractice('Undo or Redo stopped practice.');
   if (!working || !lyricHistory || currentJob || loading || requestingJob || saving || archiveChecking) return;
   retireSrt('Undo or Redo cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -292,7 +303,7 @@ function draw() {
   const upcoming = working?.cues.find(cue => cue.start > time);
   drawBlock(current, 320, 44, 24, 300, index >= 0 ? '#e4b77d' : '#f7f5ed');
   if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, 26, 18, 80, '#9dafbb');
-  context.font = '20px KaraokeSans'; context.fillStyle = '#9dafbb'; context.fillText('Karaoke Studio · Backing track', 640, 660);
+  context.font = '20px KaraokeSans'; context.fillStyle = '#9dafbb'; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
   stage.dataset.activeCue = String(index);
   if (element('current-line').textContent !== current) element('current-line').textContent = current;
   element('clock').textContent = `${formatTime(time)} / ${formatTime(working?.duration || 0)}`;
@@ -306,6 +317,9 @@ void document.fonts.ready.then(draw);
 
 function track(kind: string) {
   if (!working) return;
+  // Retire before capturing ordinary playback intent: switching away from a
+  // practice session must never resume that retired session on another track.
+  retirePractice('Changing track stopped practice. Choose Play once or Repeat range when ready.');
   retireTiming('Changing track cancelled the timing session. Staged times were not applied.'); timingWaiting = false;
   timeline.cancelGesture();
   const position = audio.currentTime || 0, playing = !audio.paused;
@@ -322,6 +336,82 @@ function track(kind: string) {
   audio.load(); draw();
 }
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-track]')) button.addEventListener('click', () => track(button.dataset.track!));
+
+function retirePractice(text = 'Practice stopped. The playhead and lyric edits are kept.'): void {
+  practiceEpoch++; practice.stop(text);
+}
+function selectedPracticeRange() {
+  if (!working) throw new Error('Choose a clip with valid lyric cues.');
+  const first = element<HTMLSelectElement>('practice-first').value, last = element<HTMLSelectElement>('practice-last').value;
+  if (first === '' || last === '') throw new Error('Choose a valid first and last lyric line.');
+  return createPracticeRange(working.cues, working.duration, Number(first), Number(last));
+}
+function practiceMediaReady(): boolean {
+  if (!working || timingBusy() || timingOwner || validateWorking() || document.hidden) return false;
+  const source = new URL(`/api/projects/${working.id}/audio/${currentTrack}`, location.href).href;
+  return audio.src === source && audio.currentSrc === source && !audio.error && !audio.seeking
+    && audio.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && Number.isFinite(audio.duration)
+    && Math.abs(audio.duration - working.duration) <= 1 / 44100 && audio.playbackRate === 1 && !audio.loop;
+}
+function practiceControls(): void {
+  const first = element<HTMLSelectElement>('practice-first'), last = element<HTMLSelectElement>('practice-last');
+  const count = working?.cues.length ?? 0, newProject = practiceProject !== loadedProjectGeneration;
+  if (newProject || practiceCount !== count) {
+    const oldFirst = first.value, oldLast = last.value;
+    for (const select of [first, last]) {
+      select.replaceChildren();
+      for (let index = 0; index < count; index++) select.append(new Option(`Line ${index + 1}`, String(index)));
+    }
+    const initialRange = newProject || practiceCount === 0;
+    first.value = initialRange ? '0' : oldFirst; last.value = initialRange ? '0' : oldLast;
+    practiceProject = loadedProjectGeneration; practiceCount = count;
+  }
+  const busy = timingBusy(); first.disabled = last.disabled = !working || !count || busy;
+  let valid = false;
+  try {
+    const range = selectedPracticeRange();
+    const gaps = working!.cues.slice(range.firstIndex + 1, range.lastIndex + 1)
+      .map((cue, index) => ({ start: working!.cues[range.firstIndex + index].end, end: cue.start }))
+      .filter(gap => gap.end > gap.start);
+    element('practice-range-summary').textContent = `Lines ${range.firstIndex + 1}–${range.lastIndex + 1} · ${range.start} → ${range.end} seconds of the ${currentTrack} track. `
+      + (gaps.length ? `Included instrumental gaps: ${gaps.map(gap => `${gap.start} → ${gap.end} seconds`).join('; ')}.` : 'No instrumental gaps between these selected lines.');
+    valid = true;
+  } catch (error) { element('practice-range-summary').textContent = error instanceof Error ? error.message : 'Choose a valid lyric range.'; }
+  const ready = valid && practiceMediaReady();
+  element<HTMLButtonElement>('practice-once').disabled = !ready;
+  element<HTMLButtonElement>('practice-repeat').disabled = !ready;
+  element<HTMLButtonElement>('practice-pause').disabled = !practice.active || busy;
+  element('practice-pause').textContent = practice.paused ? 'Resume practice' : 'Pause practice';
+  element<HTMLButtonElement>('practice-stop').disabled = !practice.active;
+  element('practice-status').textContent = practice.status;
+}
+function startPractice(mode: PracticeMode, singleLine?: number): void {
+  if (!practiceMediaReady() || !working) { practiceControls(); return; }
+  if (singleLine !== undefined) {
+    element<HTMLSelectElement>('practice-first').value = String(singleLine);
+    element<HTMLSelectElement>('practice-last').value = String(singleLine);
+  }
+  try {
+    const range = selectedPracticeRange();
+    retirePractice();
+    const epoch = practiceEpoch, id = working.id, project = loadedProjectGeneration, edit = editGeneration;
+    const media = mediaGeneration, trackName = currentTrack, source = audio.src, duration = working.duration;
+    timeline.cancelGesture();
+    practice.start(range, mode, () => practiceEpoch === epoch && working?.id === id
+      && loadedProjectGeneration === project && editGeneration === edit && mediaGeneration === media
+      && currentTrack === trackName && working.duration === duration && audio.src === source && audio.currentSrc === source
+      && Number.isFinite(audio.duration) && Math.abs(audio.duration - duration) <= 1 / 44100
+      && !timingBusy() && !timingOwner);
+  } catch { practiceControls(); }
+}
+for (const id of ['practice-first', 'practice-last']) element(id).addEventListener('change', () => {
+  retirePractice('The selected range changed. Choose Play once or Repeat range when ready.'); practiceControls();
+});
+element('practice-once').addEventListener('click', () => startPractice('once'));
+element('practice-repeat').addEventListener('click', () => startPractice('repeat'));
+element('practice-pause').addEventListener('click', () => { if (practice.paused) practice.resume(); else practice.pause(); });
+element('practice-stop').addEventListener('click', () => retirePractice());
+for (const event of ['loadedmetadata', 'loadeddata', 'canplay', 'seeked', 'emptied', 'ratechange']) audio.addEventListener(event, practiceControls);
 
 function cueInput(label: string, value: string, type: string, onInput: (value: string) => void): HTMLLabelElement {
   const wrapper = document.createElement('label'); wrapper.textContent = label;
@@ -395,6 +485,7 @@ element<HTMLInputElement>('srt-file').addEventListener('change', async event => 
 });
 element('srt-cancel').addEventListener('click', () => retireSrt('Lyric import cancelled. Current lyrics and editor values were kept.'));
 element('srt-apply').addEventListener('click', () => {
+  retirePractice('Replacing lyric cues stopped practice.');
   const review = srtReview;
   if (!review || !srtCurrent(review.owner) || !srtAllowed() || !working || !lyricHistory) return;
   timeline.cancelGesture();
@@ -407,6 +498,7 @@ element('srt-apply').addEventListener('click', () => {
   message(draftDirty ? 'Timed lyrics imported. Your unapplied pasted words are kept; create draft timings or discard that paste before saving.' : 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.');
 });
 function editCueStructure(index: number, kind: 'split' | 'merge'): void {
+  retirePractice('Changing cue structure stopped practice.');
   if (!working || currentJob || loading || requestingJob || saving || archiveChecking) return;
   try {
     const raw = captureTimingDrafts(), current = working.cues[index];
@@ -447,11 +539,11 @@ function renderCues(rawTimings: RawTiming[] = []) {
       ['Select timing', () => timeline.selectCue(index)],
       ['Mark start', () => { cue.start = Math.round(audio.currentTime * 1000) / 1000; renderCues(); changed(); }],
       ['Mark end', () => { cue.end = Math.min(working!.duration, Math.round(audio.currentTime * 1000) / 1000); renderCues(); changed(); }],
-      ['Play line', () => { if (Number.isFinite(cue.start)) { audio.currentTime = cue.start; void audio.play().catch(() => message('Press play in the audio controls.')); } }],
+      ['Play line', () => startPractice('once', index)],
       ['Remove', () => { working!.cues.splice(index, 1); renderCues(); changed(); }],
     ] as const) {
       const button = document.createElement('button'); button.className = 'text-button'; button.textContent = label;
-      button.setAttribute('aria-label', `${label} line ${index + 1}`); button.addEventListener('click', () => { if (label !== 'Select timing') retireTiming('A lyric action cancelled the timing session. Staged times were not applied.'); action(); }); actions.append(button);
+      button.setAttribute('aria-label', `${label === 'Play line' ? 'Play' : label} line ${index + 1}`); button.addEventListener('click', () => { if (label !== 'Select timing') { retirePractice('A lyric action stopped practice.'); retireTiming('A lyric action cancelled the timing session. Staged times were not applied.'); } action(); }); actions.append(button);
     }
     const split = document.createElement('button'); split.className = 'text-button'; split.textContent = 'Split at caret and playhead';
     split.setAttribute('aria-label', `Split at caret and playhead line ${index + 1}`);
@@ -483,6 +575,7 @@ async function refreshProjects(isCurrent: () => boolean = () => true): Promise<b
   return true;
 }
 async function openProject(id: string) {
+  retirePractice('Opening a clip stopped practice.');
   retireSrt('Opening a clip cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   timeline.stopWaveform(); timeline.cancelGesture(); editGeneration++; mediaGeneration++;
@@ -506,6 +599,7 @@ async function openProject(id: string) {
 }
 function mayLeave(): boolean { return !(dirty || draftDirty) || window.confirm('Discard unsaved lyric edits and open a different clip?'); }
 element<HTMLSelectElement>('projects').addEventListener('change', async event => {
+  retirePractice('Choosing a clip stopped practice.');
   retireSrt('Choosing a clip cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   const select = event.target as HTMLSelectElement;
@@ -517,17 +611,20 @@ element<HTMLTextAreaElement>('lyric-draft').addEventListener('input', event => {
   draftDirty = (event.target as HTMLTextAreaElement).value !== (working?.cues.map(cue => cue.text).join('\n') || ''); changed('paste');
 });
 element('discard-draft').addEventListener('click', () => {
+  retirePractice('Discarding pasted words stopped practice.');
   retireTiming('Discarding pasted words cancelled the timing session. Staged times were not applied.');
   element<HTMLTextAreaElement>('lyric-draft').value = working?.cues.map(cue => cue.text).join('\n') || '';
   draftDirty = false; changed();
 });
 element('draft-timings').addEventListener('click', () => {
+  retirePractice('Creating draft timings stopped practice.');
   retireTiming('Creating draft timings cancelled the timing session. Staged times were not applied.');
   if (!working) return;
   try { working.cues = draftCues(element<HTMLTextAreaElement>('lyric-draft').value, working.duration); draftDirty = false; renderCues(); changed(); message('Draft timings are evenly spaced. Listen and adjust each line before saving.'); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not create draft timings.', true); }
 });
 element('save').addEventListener('click', async () => {
+  retirePractice('Saving lyrics stopped practice.');
   timeline.cancelGesture();
   if (!working || saving || archiveChecking || timingOwner || draftDirty || validateWorking()) return;
   retireSrt('Saving lyrics cancelled the lyric import review.');
@@ -551,6 +648,7 @@ element('backing-download').addEventListener('click', () => { if (working) downl
 element('lyrics-download').addEventListener('click', () => { if (working && !dirty && !timingOwner) download(`/api/projects/${working.id}/lyrics`, '.srt'); });
 element('video-download').addEventListener('click', () => { if (videoUrl && !timingOwner) download(videoUrl, '.mp4'); });
 element('delete-project').addEventListener('click', async () => {
+  retirePractice('Deleting a clip stopped practice.');
   timeline.cancelGesture();
   if (!working || currentJob || saving || loading || archiveChecking) return;
   retireSrt('Deleting a clip cancelled the lyric import review.');
@@ -571,6 +669,7 @@ element('delete-project').addEventListener('click', async () => {
 });
 
 function showJob(job: Job | null) {
+  if (job) retirePractice('Studio media work stopped practice.');
   currentJob = job; element('job-panel').hidden = !job;
   if (job) {
     const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'archive-import': 'Restoring a project archive' };
@@ -625,6 +724,7 @@ async function pollJob(id: string, epoch = pollEpoch) {
   } finally { if (pollInFlight === key) pollInFlight = null; }
 }
 function startPolling(job: Job, follow = true, owned = true, savedRevision: number | null = null) {
+  retirePractice('Studio media work stopped practice.');
   retireSrt('Studio media work cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   if (currentJob?.id === job.id) { void pollJob(job.id); return; }
@@ -653,6 +753,7 @@ element('cancel-job').addEventListener('click', async () => {
   catch (error) { if (ownsPoll(id, epoch)) message(error instanceof Error ? error.message : 'Could not cancel this job.', true); }
 });
 element('export-video').addEventListener('click', async () => {
+  retirePractice('Exporting video stopped practice.');
   if (!working || timingOwner || dirty || draftDirty || currentJob || requestingJob || loading || saving || archiveChecking) return;
   retireSrt('Exporting video cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -699,6 +800,7 @@ async function loadArchiveInfo(): Promise<void> {
 }
 function archiveBusy(): boolean { return !!currentJob || requestingJob || loading || saving || archiveChecking; }
 element('archive-backup').addEventListener('click', async () => {
+  retirePractice('Backing up the clip stopped practice.');
   if (!working || !session || archiveInfoState !== 'ready' || archiveBusy()) return;
   retireSrt('Backing up the clip cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -748,6 +850,7 @@ element<HTMLInputElement>('archive-file').addEventListener('change', async event
 });
 element('archive-upload-cancel').addEventListener('click', () => archiveUpload?.abort());
 element('open-imported').addEventListener('click', async () => {
+  retirePractice('Opening an imported clip stopped practice.');
   if (!importedResult || archiveBusy()) return;
   retireSrt('Opening an imported clip cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
@@ -757,6 +860,7 @@ element('open-imported').addEventListener('click', async () => {
   catch (error) { message(error instanceof Error ? error.message : 'Could not open the restored clip. Your previous editor is still here.', true); }
 });
 element('archive-recheck').addEventListener('click', async () => {
+  retirePractice('Checking studio jobs stopped practice.');
   retireTiming('Checking studio jobs cancelled the timing session. Staged times were not applied.');
   if (!session || requestingJob || loading || saving || archiveChecking) return;
   rememberArchiveFocus();
@@ -786,6 +890,7 @@ element('archive-recheck').addEventListener('click', async () => {
 });
 
 async function refresh() {
+  retirePractice('Refreshing clips stopped practice.');
   try {
     session = await request<Session>('/api/session');
     element('upload-limits').textContent = `1–${session.maxDuration} seconds · up to ${session.maxUploadBytes / 1024 / 1024} MiB`;
@@ -903,6 +1008,7 @@ for (const id of ['timing-begin', 'timing-apply', 'timing-cancel']) element(id).
   if (event.isPrimary && event.button === 0) event.preventDefault();
 });
 element('timing-begin').addEventListener('click', () => {
+  retirePractice('Beginning a timing session stopped practice.');
   if (!working || !lyricHistory || timingBusy() || timingOwner) return;
   const source = new URL(`/api/projects/${working.id}/audio/${currentTrack}`, location.href).href;
   const owner: TimingOwner = { epoch: ++timingEpoch, projectId: working.id, project: loadedProjectGeneration, edit: editGeneration,
@@ -923,8 +1029,14 @@ element('timing-begin').addEventListener('click', () => {
 app.addEventListener('input', event => {
   const node = event.target;
   if ((node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)
-      && (node.id === 'title' || node.id === 'lyric-draft' || element('cue-list').contains(node)))
+      && (node.id === 'title' || node.id === 'lyric-draft' || element('cue-list').contains(node))) {
+    retirePractice('The lyric editor changed. Practice stopped.');
     retireTiming('The lyric editor changed. Staged times were not applied.');
+  }
+}, true);
+app.addEventListener('change', event => {
+  if (event.target instanceof HTMLInputElement && ['srt-file', 'audio-file', 'archive-file'].includes(event.target.id))
+    retirePractice('Choosing a file stopped practice.');
 }, true);
 element('timing-mark').addEventListener('click', () => markTiming());
 element('timing-end-final').addEventListener('click', () => markTiming(true));

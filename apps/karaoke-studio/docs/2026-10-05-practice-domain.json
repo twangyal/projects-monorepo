@@ -1,0 +1,81 @@
+{
+  "issue": 125,
+  "date": "2026-10-05",
+  "scope": "Pure practice-range admission and exact playback-boundary decisions; no media, editor history, storage, or service changes.",
+  "files": {
+    "src/practice.ts": "e2d5042a08c14a6b02614a65d582102b2e142efa577ec9c33beabd76a88975eb",
+    "tests/practice.test.ts": "be45961cd3227bdc6df0675b61e64ca066553600a91a47059a658858a996f84b"
+  },
+  "contract": {
+    "createPracticeRange": "Validate the complete supplied cue graph using validateCues; refuse omitted lines and empty, fractional, reversed, or outside selections. Return a frozen scalar snapshot containing firstIndex, lastIndex, exact selected start/end, and clipDuration. Intervening instrumental gaps are included. Inputs and literal text remain unchanged.",
+    "practiceBoundary": "Validate scalar range invariants, once/repeat mode, and a finite position within the existing clip duration. Refuse a position before the range start. Return continue for [start,end), then finish or repeat at or after end. No epsilon, rounding, timestamp fitting, or media effects. The caller owns seeking and calls only after its seek settles."
+  },
+  "first_failures": [
+    {
+      "command": "node --experimental-strip-types --test tests/practice.test.ts",
+      "log": "/tmp/karaoke125-domain-missing-first.log",
+      "sha256": "643f129463167de2c39616e6a05cac33820f69693afa147f0fe2784714ed08c5",
+      "exit_code": 1,
+      "result": "ERR_MODULE_NOT_FOUND for the not-yet-created src/practice.ts; this is preserved as a module-load absence, not claimed as a behavioral assertion failure.",
+      "duration_ms": 78.964812
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/practice.test.ts",
+      "log": "/tmp/karaoke125-domain-stub-first.log",
+      "sha256": "0bbd81abf0de03380557dd07914139a7c2c535d62ae8d788b46b9f178aa5522b",
+      "exit_code": 1,
+      "tests": 13,
+      "passed": 4,
+      "failed": 9,
+      "result": "The exported API skeleton threw explicit not-implemented errors. The four refusal cases passing against a throwing stub do not establish validation behavior.",
+      "duration_ms": 106.143817
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/practice.test.ts",
+      "log": "/tmp/karaoke125-domain-stub-boundary.log",
+      "sha256": "1c202b01e158bcbbefa7387061b521d0dba4f09cd2cafd157b40e0bef0c140ea",
+      "exit_code": 1,
+      "tests": 13,
+      "passed": 4,
+      "failed": 9,
+      "result": "Before implementation, the half-open boundary test was changed to use a literal valid range so it reached the boundary stub directly, instead of failing earlier in range creation. Both missing behaviors produced their own not-implemented failure.",
+      "duration_ms": 101.259558
+    }
+  ],
+  "verification": [
+    {
+      "command": "node --experimental-strip-types --test tests/practice.test.ts",
+      "log": "/tmp/karaoke125-domain-first-green.log",
+      "sha256": "8aaeadc784a44443d7cccc835ffc82c77ce180626e30313147f8d5c7404db9c5",
+      "exit_code": 0,
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "duration_ms": 171.881527,
+      "result": "First run of the complete implementation passed without fixture corrections."
+    },
+    {
+      "command": "./node_modules/.bin/eslint src/practice.ts tests/practice.test.ts",
+      "log": "/tmp/karaoke125-domain-eslint.log",
+      "exit_code": 0
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --strict --skipLibCheck --types node src/practice.ts tests/practice.test.ts",
+      "log": "/tmp/karaoke125-domain-types.log",
+      "exit_code": 0
+    }
+  ],
+  "coverage": [
+    "Exact fractional single-line and inclusive multiline endpoints; instrumental gaps remain inside the range.",
+    "Frozen detached snapshots, frozen input admission, unchanged literal multiline/Unicode text, and later input mutation isolation.",
+    "Empty, sparse, malformed, invalid-index, reversed-index, nonfinite and invalid-duration refusal.",
+    "Complete-graph timing and text validation even when the invalid cue lies outside the selected interval.",
+    "Exact 200-cue, 20,000-Unicode-code-point, 300-second graph and final-line selection; one-extra-character and 201-cue refusals.",
+    "Exact half-open interval, boundary decisions at offsets of 1e-12 seconds, natural clip end, once/repeat modes, invalid modes, external positions and malformed scalar ranges."
+  ],
+  "limitations": [
+    "This receipt covers focused domain verification only. The coordinating root agent owns full TypeScript/Python suites, native browsers, services, builds, Git and GitHub; those results are recorded separately.",
+    "The range snapshot cannot prove a media player's current ownership or seek state. The UI must cancel stale sessions and call practiceBoundary only after the owned seek has settled."
+  ]
+}

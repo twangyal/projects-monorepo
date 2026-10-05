@@ -1,0 +1,94 @@
+{
+  "issue": 125,
+  "scope": "Independent native cue-range practice oracle",
+  "status": "First root integrated run passed 9 of 12; bounded corrections are frozen for root-owned verification",
+  "independence": {
+    "producerModulesReadOrImportedWhileAuthoring": [],
+    "postFreezeReview": "After authoring and freezing expectations, root separately authorized a read-only review of practice-controller.ts, practice.ts and main.ts. No producer modules are imported by the oracle.",
+    "inputs": "Existing public browser fixtures and tests, plus root-approved selector and behavior contract",
+    "fixtureReuse": "sequential-timing-fixtures.ts owns real isolated server project creation and cleanup only; practice cues and expected ranges are independent literals",
+    "realMedia": "Original generated six-second PCM16 stereo WAV at 44100 Hz, independent 277 Hz and 415 Hz sine channels; existing explicitly fake separator copies the original bytes to stems",
+    "modelQualityClaimed": false,
+    "physicalSynchronizationMeasured": false,
+    "fabricatedPlaybackClock": false,
+    "controlledFaults": [
+      "Actual Backing HTTP response held and released after a later Original selection",
+      "Labeled visibilitychange, persisted pagehide, and media error event dispatches",
+      "Explicitly labeled controlled Promise rejection at play admission, with original WAV source, native pause and actual media clock unchanged; not claimed as browser-generated policy or decoder refusal",
+      "Genuine native play promise fulfillment held while actual audio runs; later released after ownership retirement and ordinary playback"
+    ]
+  },
+  "frozenAcceptance": {
+    "boundaryObservationToleranceSeconds": 0.15,
+    "repeatBoundariesRequired": 2,
+    "repeatRangeSeconds": [0.35, 2.25],
+    "literalGapSeconds": [1.05, 1.6],
+    "finalSongEndpointSeconds": 6,
+    "unsavedSingleCueRangeSeconds": [1.625, 2.325],
+    "nativeObservation": "requestAnimationFrame and native media events sample actual HTMLAudioElement currentTime, rate, seeking, paused and ended properties; backward jumps and literal gap observations are independently asserted",
+    "fittedOffsetsOrWidenedLimits": false,
+    "globalTimeoutChanged": false
+  },
+  "nativeCases": 12,
+  "coverage": [
+    "Loaded original native audio, explicit controls, default first and last cue zero",
+    "Two actual Original repeat boundaries with 150 ms bound, gap preview, normal rate, unchanged server and all audio hashes",
+    "Backing Once stops and seeks exactly to the final six-second song endpoint",
+    "Vocals Pause holds actual time, Resume is explicit, Stop keeps position and ordinary native controls still work",
+    "Play line uses the current unsaved single cue and preserves numeric spelling, unapplied paste, node identity, caret, Redo, server revision, saved SRT and all audio bytes",
+    "Reversed range and invalid timing refusal, active range change retirement, changed-back title input retirement",
+    "Actual native external seek and rate change retirement without resetting the user's position or rate",
+    "Delayed genuine audio response cannot revive an old practice owner",
+    "Clearly labeled controlled lifecycle retirement without later automatic restart",
+    "390 px keyboard flow with explicit readiness and focus gates, viewport screenshot and overflow assertion",
+    "Undo, explicit Save, timing capture, project replacement and failed import each retire practice",
+    "Controlled play-admission rejection and delayed genuine native fulfillment preserve a newer ordinary playback owner and newer messages"
+  ],
+  "firstMissingFeatureRun": {
+    "owner": "root",
+    "results": "/tmp/karaoke125-native-missing-results.json",
+    "artifacts": "/workspace/karaoke125-native-missing-artifacts",
+    "passed": 0,
+    "failed": 1,
+    "durationMs": 10047.028,
+    "actualFailure": "Missing #practice-first after the genuine WAV fixture reached native readiness. The existing openTiming fixture selected the default Backing role despite this first test's Original title; the explicit test separator copies original WAV bytes to both stems.",
+    "precedingHarnessError": "Root's first command selected no tests because its grep string did not match; /tmp/karaoke125-native-red.log is preserved as a harness-selection error and is not feature RED"
+  },
+  "authorVerification": {
+    "scopedEslint": "PASS: tests/practice.spec.ts and tests/practice-fixtures.ts",
+    "scopedTypeScript": "PASS: noEmit, strict, ES2022, bundler resolution; only practice tests and their fixture dependencies",
+    "preflightCorrections": [
+      "First scoped ESLint run caught a missing closing brace in the newly authored audioHashes helper; corrected before native integrated execution",
+      "Root/UI review identified that reused openTiming defaults to Backing. Before the first implementation browser run, openPractice now explicitly selects Original and waits for matching currentSrc, loaded readiness, no native seek and no error. This corrects the declared source role without changing timing or data assertions. The first missing-control RED's role mismatch is disclosed above.",
+      "Root/UI review identified that restoring controlled visibility within the same task could let a queued native pause event mask disabled-control recovery. Before the first integrated run, the hidden case now retains hidden state until native pause settles and controls are disabled, then restores visibility and requires enabled practice controls without autoplay. No native observation tolerance or timeout changed."
+    ],
+    "browserOrServicesRunByAuthor": false
+  },
+  "firstIntegratedNativeRun": {
+    "owner": "root",
+    "results": "/tmp/karaoke125-native-first-results.json",
+    "passed": 9,
+    "failed": 3,
+    "failures": [
+      "Play line accessible name was duplicated as Play line line 2; root/UI owner is correcting the product label",
+      "Returning from settled hidden state did not re-enable practice controls; root/UI owner is correcting visibility recovery",
+      "The fixture incorrectly assumed native play followed immediately by native pause must reject AbortError; actual native play fulfilled and the controller correctly displayed its paused state"
+    ],
+    "playRefusalOriginalEvidence": {
+      "trace": "/workspace/karaoke125-native-first-artifacts/practice-genuine-native-pl-75a4f-wer-ordinary-playback-owner/trace.zip",
+      "wrapperInstalledAtMs": 44879.289,
+      "repeatClickCompletedAtMs": 44920.818,
+      "seekStatusSnapshotAtMs": 44922.377,
+      "postFulfillmentPausedStatusSnapshotAtMs": 45036.629,
+      "actualStatus": "Practice paused. Choose Resume practice when ready.",
+      "rejectionObservations": "Every actual evaluation call@422 through call@436 returned the empty rejection string, from 44926.256 through 49830.903 ms",
+      "browserAbortErrorObserved": false,
+      "classification": "Fixture premise failure, not a product refusal-handling failure"
+    },
+    "boundedCorrection": "After root approval, replace only the refusal subcase with a clearly labeled controlled NotAllowedError Promise rejection at play admission. Preserve the loaded original WAV, native pause, actual clock, all timing bounds, and the separate held genuine fulfilled-play subcase unchanged."
+  },
+  "frozenFiles": {
+    "tests/practice.spec.ts": "683efe90a511a3661735fa68253eb0b24282e23b2302a36461d9b9681460e0ec",
+    "tests/practice-fixtures.ts": "6a8b909e7ac6cee4f416dd022c1161045be9e8a3639c83dd1b2743f6ef786f31"
+  }
+}
