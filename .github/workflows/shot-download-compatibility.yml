@@ -1,0 +1,35 @@
+name: Shot download compatibility experiment
+on:
+  push:
+    paths: ['apps/shot-studio/scripts/download-compatibility.mjs', '.github/workflows/shot-download-compatibility.yml']
+  pull_request:
+    paths: ['apps/shot-studio/scripts/download-compatibility.mjs', '.github/workflows/shot-download-compatibility.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Measure neutral downloads in distinct browser environments
+        run: |
+          mkdir -p test-results
+          DEBUG=pw:browser node scripts/download-compatibility.mjs --output test-results/download-compatibility 2>test-results/download-compatibility-browser.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-download-compatibility-measurement
+          path: |
+            apps/shot-studio/test-results/download-compatibility/report.json
+            apps/shot-studio/test-results/download-compatibility-browser.log
+          retention-days: 1
