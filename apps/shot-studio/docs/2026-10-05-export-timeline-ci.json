@@ -1,0 +1,41 @@
+{
+  "implementationHead": "fe47c5cd6541c7912886138a5fcee67027dfd9fe",
+  "implementationTree": "e047e8a83a59d032a18c5e7b330d4feedad2f9ee",
+  "pr": {
+    "run": 37284548478,
+    "job": 111680216002,
+    "checkout": "fc5badebd5e21256b4f05e3c8ee92058caaa480f",
+    "checkoutTree": "e047e8a83a59d032a18c5e7b330d4feedad2f9ee",
+    "units": {
+      "pass": 349,
+      "fail": 0
+    },
+    "native": {
+      "pass": 99,
+      "fail": 0
+    },
+    "syntaxPassed": true,
+    "allThirteenProjectWorkflowsPassed": true
+  },
+  "push": {
+    "supersededRun": 37284545646,
+    "run": 37284588486,
+    "job": 111680398239,
+    "units": {
+      "pass": 349,
+      "fail": 0
+    },
+    "native": {
+      "pass": 99,
+      "fail": 0
+    },
+    "syntaxPassed": true
+  },
+  "precedingFailures": {
+    "implementation": "4c06bddbdfec22eadef70f0c40bb55400c46df2e",
+    "pushNative": "98/99",
+    "prNative": "98/99",
+    "originalCaptures": "failures/2026-10-05-deadline-ci/"
+  },
+  "acceptanceLimit": "A later green run does not fix or disprove earlier measured real-time startup frame gaps. Timestamped input helpers are not production encoder integration. #124 remains open."
+}

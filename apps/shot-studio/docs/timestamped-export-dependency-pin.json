@@ -1,0 +1,29 @@
+{
+  "dependency": "mediabunny",
+  "version": "1.61.1",
+  "license": "MPL-2.0",
+  "sourceCommit": "922054aaac0bfe5e48545a46205038d6e73dc0d1",
+  "sourceTag": "v1.61.1",
+  "releasePublishedAt": "2026-10-03T20:02:06Z",
+  "primaryRelease": "https://github.com/Vanilagy/mediabunny/releases/tag/v1.61.1",
+  "asset": {
+    "id": 608447329,
+    "name": "mediabunny.min.mjs",
+    "bytes": 690410,
+    "publisherReportedDigest": "sha256:652fbe9226e55cb0c0784aaba6b4b73fea4fc0df498f62050cdc617a4bd97ca2",
+    "url": "https://github.com/Vanilagy/mediabunny/releases/download/v1.61.1/mediabunny.min.mjs"
+  },
+  "sourceLicense": "https://github.com/Vanilagy/mediabunny/blob/922054aaac0bfe5e48545a46205038d6e73dc0d1/LICENSE",
+  "verification": {
+    "releaseMetadataRead": true,
+    "tagResolvedToCommit": true,
+    "licenseTextRead": true,
+    "bundleBytesDownloaded": false,
+    "bundleChecksumLocallyVerified": false,
+    "bundleInstalled": false,
+    "nativeEncoderAcceptance": false
+  },
+  "blocker": "The release download GET returned404 through the GitHub connector; no bundle bytes were received. A file download/build transport is required. No local tsc/esbuild command or installed Chromium was found.",
+  "next": "Acquire this exact immutable release, verify its690410bytes and SHA256, retain matching unmodified source/LICENSE, serve it locally, then implement and natively validate the pipeline described in timestamped-export-inputs.md. Do not report publisher metadata as locally verified bundle bytes."
+}
+
