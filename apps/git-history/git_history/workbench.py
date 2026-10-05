@@ -91,9 +91,14 @@ def _comparison_side(value: object) -> dict:
 def _job_args(value: object) -> tuple[str, dict]:
     request = _keys(value, {'operation', 'args'})
     operation = request['operation']
-    if type(operation) is not str or operation not in ('files', 'source', 'functions', 'report', 'comparison'):
+    if type(operation) is not str or operation not in ('files', 'source', 'functions', 'report', 'comparison', 'changed-files'):
         raise ValueError('Unknown operation.')
-    if operation == 'comparison':
+    if operation == 'changed-files':
+        args = _keys(request['args'], {'left_ref', 'right_ref', 'directory'})
+        _text(args['left_ref'], 1024)
+        _text(args['right_ref'], 1024)
+        _text(args['directory'], 4096, empty=True)
+    elif operation == 'comparison':
         args = _keys(request['args'], {'left', 'right'})
         _comparison_side(args['left'])
         _comparison_side(args['right'])
@@ -183,7 +188,15 @@ def _execute_operation(repo: Path, operation: str, args: dict) -> object:
             raise _ActionableError(str(error)) from None
 
     check_work_budget()
-    if operation == 'comparison':
+    if operation == 'changed-files':
+        from .changed_files import list_changed_files, render_changed_files_json
+
+        catalog = read(list_changed_files, repo, args['left_ref'], args['right_ref'],
+                       directory=args['directory'])
+        check_work_budget()
+        # The public serializer is the single catalog validation/byte authority.
+        result = json.loads(validated(render_changed_files_json, catalog))
+    elif operation == 'comparison':
         from .comparison import CompareSelection, CompareTarget, compare_repository
         from .comparison_render import render_comparison_html, render_comparison_json
 
@@ -379,7 +392,7 @@ class _Handler(BaseHTTPRequestHandler):
         if self.command != 'POST' and size:
             self._reject(400, 'Unexpected request body.')
             return
-        if self.path not in ('/', '/workbench.js', '/workbench.css', '/context-editor.js',
+        if self.path not in ('/', '/workbench.js', '/workbench.css', '/context-editor.js', '/changed-files.js',
                              '/api/session', '/api/jobs', '/api/result', '/api/cancel'):
             self._reject(404, 'Unknown route.')
             return
@@ -390,6 +403,7 @@ class _Handler(BaseHTTPRequestHandler):
             name, mime = {'/': ('workbench.html', 'text/html; charset=utf-8'),
                           '/workbench.js': ('workbench.js', 'text/javascript; charset=utf-8'),
                           '/context-editor.js': ('context-editor.js', 'text/javascript; charset=utf-8'),
+                          '/changed-files.js': ('changed-files.js', 'text/javascript; charset=utf-8'),
                           '/workbench.css': ('workbench.css', 'text/css; charset=utf-8')}[self.path]
             try:
                 raw = (Path(__file__).resolve().parent / 'web' / name).read_bytes()

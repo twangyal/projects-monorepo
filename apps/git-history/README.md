@@ -63,6 +63,25 @@ The same bounds apply: at most **50 records**, **256 KiB** of UTF-8 JSON, title 
 
 Drafts are session-only. Download validated context to retain it; unaccepted form text is not included. The page warns before leaving with unsaved authoring. Reloading does not restore local records and requires the original private launch URL, as with the rest of the workbench. There is no browser storage or automatic discussion retrieval.
 
+### Discover files changed between two commits
+
+Choose **Compare revisions**, then use **Discover changed files** to compare two committed tree snapshots. Enter Left ref, Right ref and an optional literal directory prefix, then discover explicitly. Both refs resolve once; the catalog displays their complete immutable IDs and continues to refer to those snapshots even if a branch moves. It does not inspect your working tree or choose a merge base.
+
+Rows show literal paths, change categories, old/new modes and object IDs. Additions, deletions, content changes, executable-mode changes and entry-type changes are distinct. Rename inference is disabled: moving a file appears as a deletion and an addition. Symlinks and gitlinks remain visible metadata; the tool never follows their targets or opens submodules. A regular blob is an **uninspected text candidate**, not a promise that it is UTF-8, nonbinary or within the source limits. The existing explicit Open source action checks those properties.
+
+Browse 100 rows per page or filter the captured catalog locally. **Use these comparison paths** deliberately fills both comparison sides with the same exact path and the captured IDs. A missing endpoint selects Missing path; a present regular endpoint selects Whole file. This does not fetch source or generate a comparison. If either side already has entered selections, confirm replacement or cancel to retain its fields and report exactly. After handoff, explicitly open the available source and use the existing comparison controls; large files still require a bounded manual range or function.
+
+**Download changed-file JSON** saves complete metadata for the captured catalog using the same canonical UTF-8 serialization as the CLI. Typing or changing discovery input, Stop, workspace changes and page departure retire stale publication/download authority. Literal paths are displayed with visible escaping; control characters are not interpreted as markup. Git paths that the existing source API cannot address stay visible with handoff disabled. Non-UTF-8 path bytes are omitted with an explicit count, never replacement characters or invented names.
+
+```sh
+python3 -m git_history changes --repo /path/to/repository \
+  --left-ref HEAD~1 --right-ref HEAD --directory src --format text
+python3 -m git_history changes --repo /path/to/repository \
+  --left-ref LEFT_FULL_ID --right-ref RIGHT_FULL_ID --format json > changed-files.json
+```
+
+The optional directory is an exact subtree prefix: `src` includes `src/file.py`, not `src-extra/file.py`. Paths retain their exact UTF-8 bytes and sort by those bytes, rather than locale order. A valid same-revision comparison is empty; missing revisions/objects and command failures remain errors. The complete catalog is refused if it exceeds **10,000 raw changed entries**, **2 MiB** per-command output, or **8 MiB** serialized JSON. Paths/directories are at most 4,096 UTF-8 bytes and refs 1,024. The existing **45-second / 32 MiB** aggregate job budget also applies; narrow the directory when a tighter bound dominates. No partial authoritative list is published.
+
 ### Compare two committed selections
 
 Choose **Compare revisions** in **Workspace**. The Left and Right sides are
@@ -424,3 +443,34 @@ checks and all 35 browser cases (52.2 seconds). The PR run independently passes
 the same checks against its merge checkout. All thirteen project PR workflows
 passed. The [CI receipt](docs/2026-10-04-context-authoring-ci.json) distinguishes
 those checkouts and retains actual job counts/timings.
+
+
+### Measured changed-file discovery verification
+
+The 0.8.0 milestone (#123) discovers changed committed-tree paths before either
+source selection is opened. All 357 Python cases are discovered locally: the
+core environment passes 331 with 26 intentional optional-parser skips, and the
+native-parser environment passes 355 with two intentional core-only skips.
+All 17 Node cases, Ruff, JavaScript lint, compilation, wheel build and all 46
+source browser cases pass. All 46 cases also pass against fresh installed wheels,
+using 44 native-parser cases and two dependency-failure cases in the parser-free
+environment. An initial native-wheel invocation mistakenly included one of the
+core-only cases; its expected dependency error required the documented parser-free
+environment, with no product or assertion changes. The eleven new browser cases cover exact catalog
+exports, addition/deletion handoff, unsupported kinds, literal paths, paging,
+raw draft ownership, cancellation, confirmation and immutable revision pins.
+
+An independent original fixture has exactly 10,000 changed paths. Its complete
+3,890,122-byte metadata catalog matches source CLI, freshly installed parser-free
+wheel CLI and native browser download byte for byte. The 10,001st change is
+refused without partial JSON. Actual page-two handoff and explicit source loads
+produce exact CLI/browser comparison HTML and JSON; dirty tracked files, staged
+content, untracked files and the Git index remain byte-identical. This is a count
+maximum with small paths, not simultaneous saturation of every byte limit.
+Separate controlled fixtures cover the exact raw 2 MiB and JSON 8 MiB limits and
+one-byte overflow. The 0.8.0 wheel packages byte-identical browser assets.
+
+The [verification record](docs/2026-10-05-changed-files-verification.json),
+[independent oracle](docs/2026-10-05-changed-files-oracle.json) and
+[maximum fixture receipt](docs/2026-10-05-changed-files-maximum.json) retain
+original expectations, actual attempts, source/artifact hashes and limitations.

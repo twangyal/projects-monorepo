@@ -1,0 +1,436 @@
+{
+  "issue": 123,
+  "milestone": "Changed-file discovery to existing pinned comparison",
+  "status": "first-actual-native-11-pass-independent-source-review-clear",
+  "authoredAt": "2026-10-05T03:05:28.062875+00:00",
+  "caseCount": 11,
+  "ownedFiles": {
+    "tests/browser/changed-files.spec.js": {
+      "sha256": "5f968ee71d909a7a3d602e42ebe817bc41aea4fa3039dcf112aabf935af5290a",
+      "bytes": 17118
+    },
+    "tests/browser/changed-files-fixtures.js": {
+      "sha256": "e3b22f73d0d1c96c8d0b1297626dbde9fabf6fd4951fcac5cfd4b98517ba5cd5",
+      "bytes": 9434
+    }
+  },
+  "independence": {
+    "producerReads": "No new changed-files producer source or tests read. Read approved design, existing native fixture/comparison harness, and existing comparison missing-source representation only.",
+    "expectedMetadata": "Explicit original path/change/kind/mode/absence facts. SHA1 Git blob IDs independently calculated from literal blob header and original bytes. Full commit IDs acquired only from author-created temporary fixture commits.",
+    "expectedComparison": "Original content/counts, explicit present/missing status and complete immutable IDs, plus actual downloaded JSON/HTML exact equality with actual CLI using same explicit pins. CLI parity is supplementary to literal facts.",
+    "fixtureExecution": "No temporary repository, service or browser started by author. Runtime fixture uses only base-owned mkdtemp repository and ephemeral authenticated loopback server."
+  },
+  "fixtureFacts": [
+    {
+      "path": "added.txt",
+      "change": "added",
+      "left": null,
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "120c417b763e55f749412109f6fb2c22b8c58c48"
+      },
+      "addressable": true
+    },
+    {
+      "path": "binary.dat",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "8352675d67aed6625ece79af41c27fdb4ee2e867"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "6d5b70e046595c49ed0f36eddbd2b2f5e6714087"
+      },
+      "addressable": true
+    },
+    {
+      "path": "deleted.txt",
+      "change": "deleted",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "2d199ef3e1251b336d94bbabb4c328880ae424d3"
+      },
+      "right": null,
+      "addressable": true
+    },
+    {
+      "path": "empty.txt",
+      "change": "added",
+      "left": null,
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      },
+      "addressable": true
+    },
+    {
+      "path": "executable.txt",
+      "change": "mode-changed",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "2f959684d3d00bb9de3130e1638a1be0d4d62c39"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100755",
+        "object_id": "2f959684d3d00bb9de3130e1638a1be0d4d62c39"
+      },
+      "addressable": true
+    },
+    {
+      "path": "large.txt",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "cde811ef443a4bf2a7a2085a2f7d5e4ece82cf3f"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "55b8464fa0445cc4f65d94b6466e1f9368d27f29"
+      },
+      "addressable": true
+    },
+    {
+      "path": "link",
+      "change": "type-changed",
+      "left": {
+        "kind": "symlink",
+        "mode": "120000",
+        "object_id": "7c7eea627959fec36fe50a842e7fb0639cdf2725"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "eaf00e7eaa0633d4ac90582dfc178c7413be6252"
+      },
+      "addressable": true
+    },
+    {
+      "path": "mode-and-content.txt",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "1db13b0e95325929ca895cde85dc30350d172e45"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100755",
+        "object_id": "bcfac0494c59b913ae00d71af9e1c2e553d32838"
+      },
+      "addressable": true
+    },
+    {
+      "path": "moved/from.txt",
+      "change": "deleted",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "cbc42741d418af252d50bae5cac7ea846736742a"
+      },
+      "right": null,
+      "addressable": true
+    },
+    {
+      "path": "moved/to.txt",
+      "change": "added",
+      "left": null,
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "cbc42741d418af252d50bae5cac7ea846736742a"
+      },
+      "addressable": true
+    },
+    {
+      "path": "src-extra/neighbor.txt",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "2af01b8d763ca4a133f73cc3f44ef3e32fc940ac"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "5223903ff07f44be03d7c5c202e73b5fb548c5aa"
+      },
+      "addressable": true
+    },
+    {
+      "path": "src/edited.txt",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "a7080d76b3eb5d66a9fa408dde4d56eea48d954f"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "21496897e44b691ef330a2c70de996d8d5a20c96"
+      },
+      "addressable": true
+    },
+    {
+      "path": "src/literal\tline\n雪[one]<img onerror=OWNED>.txt",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "4cb9c3cc3dbb82e01c123c327be1c62225d0548f"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "4eb70dec4b9d0bb240caecc84c08c1521908c885"
+      },
+      "addressable": true
+    },
+    {
+      "path": "submodule",
+      "change": "modified",
+      "left": {
+        "kind": "gitlink",
+        "mode": "160000",
+        "object_id": "1111111111111111111111111111111111111111"
+      },
+      "right": {
+        "kind": "gitlink",
+        "mode": "160000",
+        "object_id": "2222222222222222222222222222222222222222"
+      },
+      "addressable": true
+    },
+    {
+      "path": "swap",
+      "change": "deleted",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "a463e4612ee5cc613470099114285814b3745ec3"
+      },
+      "right": null,
+      "addressable": true
+    },
+    {
+      "path": "swap/child.txt",
+      "change": "added",
+      "left": null,
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "035fcc446a53f5d0d247a9b303aa4fc1ab69443e"
+      },
+      "addressable": true
+    },
+    {
+      "path": "utf8-invalid.txt",
+      "change": "modified",
+      "left": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "29e181ebb88626236ef10f2af5bc94781c8061f1"
+      },
+      "right": {
+        "kind": "regular",
+        "mode": "100644",
+        "object_id": "081c298f731f9f38128b521b8560b81360c35549"
+      },
+      "addressable": true
+    }
+  ],
+  "fixtureGitlinkPlaceholderExplanation": "Illustrative placeholders replaced only by original fixture commit IDs at runtime; no Git invocation performed.",
+  "paging": {
+    "smallRows": 17,
+    "largeRows": 122,
+    "firstPage": 100,
+    "secondPage": 22,
+    "addedPagingRows": 105,
+    "pathPattern": "pages/000.txt through pages/104.txt",
+    "deletedFilterRows": 3,
+    "sort": "Exact UTF8 bytes, independently Buffer.compare",
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "tests": [
+    "explicit discovery produces literal complete endpoint metadata and exact token-free CLI JSON",
+    "added deleted present-empty and modified rows explicitly hand off into exact source comparisons",
+    "symlink and gitlink rows are honest metadata while binary reads and oversized whole selection fail explicitly",
+    "literal directory boundary, quoted tab/newline Unicode path and safe DOM remain exact",
+    "390px keyboard paging keeps 100 DOM rows and downloads all122 exact entries",
+    "changed-back discovery input preserves native node focus and caret while rejecting a held actual result",
+    "Stop drains a real delayed202 before the replacement changed-file job and keeps comparison drafts",
+    "handoff confirmation refusal keeps raw selections and completed report; acceptance invalidates without auto-reading",
+    "captured full revisions survive branch movement, staged edits and dirty worktree without metadata repinning",
+    "workspace retirement preserves history drafts and prevents stale catalog publication or silent session replay",
+    "same committed tree yields a valid empty catalog while a missing revision leaves stale evidence and side drafts intact"
+  ],
+  "controlledBoundaries": [
+    "Playwright routes fetch genuine /api/jobs and /api/result responses then hold delivery; no invented job/report objects.",
+    "Cancel recording delegates actual /api/cancel to service.",
+    "All Git writes/config/chmod/symlink operations occur only in original disposable test-owned repo when root executes.",
+    "Native dialogs explicitly accepted or dismissed; no global product state injection."
+  ],
+  "privacy": [
+    "Launch fragment capability remains local fixture memory only. Download assertions exclude capability and absolute repo path.",
+    "No capabilities or private startup URLs emitted in this receipt or authored fixture logs.",
+    "Existing service fixture closes its own process and removes temporary directory in finally."
+  ],
+  "coverageLimits": [
+    "No simultaneous maximum10k/count/raw2MiB/JSON8MiB assertion; separate domain/max owners cover limits.",
+    "This browser fixture intentionally contains only UTF8 paths; omitted_non_utf8_paths literal0. NonUTF8 file contents are independent and must fail only explicit source reading.",
+    "390px native browser viewport is not a physical-device claim.",
+    "No parser dependency/model/network download or global Git mutation.",
+    "Only the independently verified first11 root-run native outcomes are recorded; full source/install-wheel gates remain unclaimed."
+  ],
+  "staticChecks": {
+    "nodeSyntax": "PASS both new .js files",
+    "eslint": "PASS using temporary standard recommended node+browser globals config; no tracked config modification",
+    "pureOriginalFacts": "PASS direct originalFacts invocation only; no fixture service or Git calls"
+  },
+  "runCommand": "CHROMIUM_PATH=/usr/bin/chromium GIT_HISTORY_PYTHON=<root-selected-python> npm run test:browser -- tests/browser/changed-files.spec.js",
+  "nativeResults": {
+    "executedBy": "root; independent author verified actual report and log files read-only",
+    "firstRun": {
+      "reportPath": "/tmp/git123-native-first-results.json",
+      "reportSha256": "972f347a1b7ecee44978895495bb97b16051149b280b5e977bbd5db75e766f5f",
+      "logPath": "/tmp/git123-native-first.log",
+      "logSha256": "32f99535579afca77ee75d3c913248e06cda92ba75005d3aeef4bac114776b6b",
+      "stats": {
+        "startTime": "2026-10-05T03:13:13.371Z",
+        "duration": 15194.842,
+        "expected": 11,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "explicit discovery produces literal complete endpoint metadata and exact token-free CLI JSON",
+          "status": "passed",
+          "durationMs": 1690,
+          "retry": 0
+        },
+        {
+          "title": "added deleted present-empty and modified rows explicitly hand off into exact source comparisons",
+          "status": "passed",
+          "durationMs": 5943,
+          "retry": 0
+        },
+        {
+          "title": "symlink and gitlink rows are honest metadata while binary reads and oversized whole selection fail explicitly",
+          "status": "passed",
+          "durationMs": 3104,
+          "retry": 0
+        },
+        {
+          "title": "literal directory boundary, quoted tab/newline Unicode path and safe DOM remain exact",
+          "status": "passed",
+          "durationMs": 2478,
+          "retry": 0
+        },
+        {
+          "title": "changed-back discovery input preserves native node focus and caret while rejecting a held actual result",
+          "status": "passed",
+          "durationMs": 2093,
+          "retry": 0
+        },
+        {
+          "title": "Stop drains a real delayed202 before the replacement changed-file job and keeps comparison drafts",
+          "status": "passed",
+          "durationMs": 1547,
+          "retry": 0
+        },
+        {
+          "title": "handoff confirmation refusal keeps raw selections and completed report; acceptance invalidates without auto-reading",
+          "status": "passed",
+          "durationMs": 2139,
+          "retry": 0
+        },
+        {
+          "title": "captured full revisions survive branch movement, staged edits and dirty worktree without metadata repinning",
+          "status": "passed",
+          "durationMs": 2719,
+          "retry": 0
+        },
+        {
+          "title": "workspace retirement preserves history drafts and prevents stale catalog publication or silent session replay",
+          "status": "passed",
+          "durationMs": 1532,
+          "retry": 0
+        },
+        {
+          "title": "same committed tree yields a valid empty catalog while a missing revision leaves stale evidence and side drafts intact",
+          "status": "passed",
+          "durationMs": 1696,
+          "retry": 0
+        },
+        {
+          "title": "390px keyboard paging keeps 100 DOM rows and downloads all122 exact entries",
+          "status": "passed",
+          "durationMs": 1576,
+          "retry": 0
+        }
+      ],
+      "caseDurationSumMs": 26517,
+      "artifacts": "/workspace/git123-native-first-artifacts"
+    },
+    "noManufacturedRed": true,
+    "firstRunFixtureOrOracleCorrections": [],
+    "broaderSourceAndWheelGates": "Not claimed; running separately under root."
+  },
+  "sourceReview": {
+    "status": "clear-no-actionable-finding",
+    "performedAfterOriginalFixtureFreeze": true,
+    "scope": [
+      "static raw input nodes and changed-back intent",
+      "catalog URL/authority retirement on input, Stop, workspace and pagehide",
+      "matching global generation and existing single request pump",
+      "native confirmation captures catalog, generation and comparison input epoch",
+      "full immutable pinned IDs and JSON-quoted exact paths on handoff",
+      "explicit source opening only; no handoff fetch",
+      "regular/addressable eligibility; symlink/gitlink metadata only",
+      "exact bounded metadata validation and UTF8 byte sorting",
+      "safe literal text DOM and canonical sorted metadata JSON"
+    ],
+    "limitations": "Read-only source review plus the actual first11 native gate; no claim of new broad security audit or subsequent full/install-wheel gates."
+  },
+  "finalInspectedSourceHashes": {
+    "git_history/web/workbench.js": {
+      "sha256": "828da925340fe029f3b229e52363cde5029f0cf925183f37e19e32ff270f1ac6",
+      "bytes": 66301
+    },
+    "git_history/web/changed-files.js": {
+      "sha256": "4f89c19745a269bd937802d924d347787c8e763673c5b2f0db3d32d2048d2a95",
+      "bytes": 5948
+    },
+    "git_history/web/workbench.html": {
+      "sha256": "cf5aac85b304488e57b5277fcddb902ff807a4f3107d6c1b31d11e359e967ba7",
+      "bytes": 26208
+    },
+    "git_history/web/workbench.css": {
+      "sha256": "3aba4a9d0cb1624352c653e05a309ed17022b2155bfa3895cf9bdb9d330dfcdd",
+      "bytes": 15630
+    },
+    "tests/browser/changed-files.spec.js": {
+      "sha256": "5f968ee71d909a7a3d602e42ebe817bc41aea4fa3039dcf112aabf935af5290a",
+      "bytes": 17118
+    },
+    "tests/browser/changed-files-fixtures.js": {
+      "sha256": "e3b22f73d0d1c96c8d0b1297626dbde9fabf6fd4951fcac5cfd4b98517ba5cd5",
+      "bytes": 9434
+    }
+  }
+}

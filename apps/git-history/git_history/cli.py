@@ -11,6 +11,7 @@ import sys
 import tempfile
 import threading
 
+from .changed_files import list_changed_files, render_changed_files_json
 from .comparison import CompareSelection, CompareTarget, compare_repository
 from .comparison_render import render_comparison_html, render_comparison_json
 from .context import ContextRecords, load_context
@@ -127,8 +128,50 @@ def main(argv: list[str] | None = None) -> int:
     compare.add_argument("--format", choices=("html", "json"), default="html")
     compare.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
     compare.add_argument("--force", action="store_true", help="Replace an existing report output file.")
+    changes = commands.add_parser("changes", help="Discover changed leaf paths between two committed trees.")
+    changes.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
+    changes.add_argument("--left-ref", default="HEAD~1", help="Left committed revision (default: HEAD~1).")
+    changes.add_argument("--right-ref", default="HEAD", help="Right committed revision (default: HEAD).")
+    changes.add_argument("--directory", default="", help="Exact repository-relative subtree (default: whole tree).")
+    changes.add_argument("--format", choices=("text", "json"), default="text")
     args = parser.parse_args(argv)
     try:
+        if args.command == "changes":
+            with work_budget(timeout=45, max_output_bytes=32 * 1024 * 1024):
+                catalog = list_changed_files(args.repo, args.left_ref, args.right_ref,
+                                             directory=args.directory)
+                check_work_budget()
+                # Shared admission and serialization bound both output formats.
+                canonical = render_changed_files_json(catalog)
+                check_work_budget()
+                if args.format == "json":
+                    text = canonical
+                else:
+                    value = json.loads(canonical)
+                    rows = [f"{json.dumps(value['repo_name'])}: committed-tree changes (no rename detection)",
+                            f"Left {json.dumps(value['left_requested_ref'])}: {value['left_revision']}",
+                            f"Right {json.dumps(value['right_requested_ref'])}: {value['right_revision']}",
+                            "Paths sorted by exact UTF-8 bytes; regular entries are comparison candidates only."]
+                    for item in value['entries']:
+                        check_work_budget()
+                        endpoints = []
+                        for side in ('left', 'right'):
+                            endpoint = item[side]
+                            endpoints.append('absent' if endpoint is None else
+                                             f"{endpoint['kind']} {endpoint['mode']} {endpoint['object_id']}")
+                        rows.append(f"{item['change']}\t{json.dumps(item['path'])}\t"
+                                    f"{endpoints[0]} -> {endpoints[1]}"
+                                    + (" (not addressable for comparison)" if not item['addressable'] else ""))
+                    if not value['entries']:
+                        rows.append("No changed leaf paths found for these trees and directory.")
+                    if value['omitted_non_utf8_paths']:
+                        rows.append(f"Omitted {value['omitted_non_utf8_paths']} non-UTF-8 changed paths.")
+                    text = "\n".join(rows) + "\n"
+                    if len(text.encode('utf-8')) > MAX_REPORT_BYTES:
+                        raise ValueError("Changed-file listing exceeds 8 MiB; narrow --directory.")
+                check_work_budget()
+                sys.stdout.write(text)
+            return 0
         if args.command == "compare":
             targets = []
             for name in ("left", "right"):

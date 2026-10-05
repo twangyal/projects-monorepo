@@ -1,5 +1,6 @@
 'use strict';
 import { createContextDraft, addContextRecord, updateContextRecord, removeContextRecord, rebindContextDraft, serializeContextDraft, evidenceCommits } from './context-editor.js';
+import { validateChangedCatalog, changedPage, changedHandoff, changedJson, CHANGES_PAGE_SIZE } from './changed-files.js';
 // The capability never enters a request URL, DOM text, storage, or a log.
 const launch = new URLSearchParams(location.hash.slice(1));
 let capability = launch.getAll('session').length === 1 ? launch.get('session') : null;
@@ -18,6 +19,7 @@ let contextMode = 'none', evidence = null, authored = null, authoredEpoch = 0, i
 let rowKeys = [], nextRowKey = 0, editingKey = null, rawDirty = false, downloadedEpoch = -1;
 let contextReceipt = null, contextUrl = null;
 const authoredRows = new Map();
+let changes = null, changesCurrent = false, changesPage = 0, changesUrl = null, comparisonInputEpoch = 0;
 const visible = text => JSON.stringify(text).slice(1, -1);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 function node(tag, text, className) {
@@ -29,6 +31,7 @@ function node(tag, text, className) {
 function error(text) { $('error').textContent = text; $('error').hidden = !text; }
 function status(text) { $('status').textContent = text; }
 function expire() {
+  retireChanges();
   ready = false; capability = null; generation++; desired = null; revokeDownloads();
   error('This session is missing or expired. Reopen the original URL printed by git-history serve in your terminal. Reloading this page does not retain access.');
   status('Local session unavailable.'); controls();
@@ -60,6 +63,7 @@ function controls() {
   $('end-line').disabled = $('selection-mode').value === 'function';
   contextControls();
   comparisonControls();
+  changesControls();
 }
 function revokeDownloads() {
   revokeComparisonDownloads();
@@ -152,7 +156,7 @@ async function pump() {
     }
   } finally { pumping = false; controls(); }
 }
-$('stop-button').addEventListener('click', () => { invalidate(); status(pumping ? 'Stopping work and waiting for cleanup…' : 'Stopped.'); });
+$('stop-button').addEventListener('click', () => { retireChanges(); invalidate(); status(pumping ? 'Stopping work and waiting for cleanup…' : 'Stopped.'); });
 function pager(prefix, page, count, size, noun) {
   $(prefix + '-prev').disabled = page === 0;
   $(prefix + '-next').disabled = (page + 1) * size >= count;
@@ -455,6 +459,7 @@ $('report-form').addEventListener('submit', event => {
   } catch (failure) { error(failure.message); }
 });
 window.addEventListener('pagehide', () => {
+  retireChanges();
   generation++; contextGeneration++; contextLoading = false; desired = null; ready = false; revokeDownloads();
   if (active && capability) void fetch('/api/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Git-History-Token': capability }, body: JSON.stringify({ id: active.id }), credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true }).catch(() => {});
   capability = null;
@@ -484,7 +489,7 @@ window.addEventListener('hashchange', () => {
     error('The pasted session link was removed from the address bar. Wait for current work and cleanup to finish before reopening it, or open the terminal URL in a new tab.');
     return;
   }
-  invalidate(); ready = false; capability = token;
+  retireChanges(); invalidate(); ready = false; capability = token;
   snapshot = null; files = []; filePage = 0; clearSource(); renderFiles();
   for (const side of Object.values(comparisonSides)) unpinSide(side);
   $('revision').textContent = 'Discover a revision first';
@@ -777,10 +782,107 @@ $('comparison-prev').addEventListener('click', () => { comparisonPage--; renderC
 $('comparison-next').addEventListener('click', () => { comparisonPage++; renderComparisonRows(); });
 for (const id of ['comparison-download-html', 'comparison-download-json']) $(id).addEventListener('click', event => { if ($(id).getAttribute('aria-disabled') === 'true') event.preventDefault(); });
 for (const event of ['input', 'change']) $('workspace-mode').addEventListener(event, () => {
+  retireChanges();
   invalidate();
   const comparing = $('workspace-mode').value === 'comparison';
   $('history-workspace').hidden = comparing; $('comparison-workspace').hidden = !comparing;
   status(pumping ? 'Workspace changed. Stopping previous work and waiting for cleanup…' : 'Workspace changed. Drafts and pinned revisions are kept.');
 });
 
+// Catalog metadata has its own immutable receipt. Side editing may keep that
+// receipt, but every pending job still uses the single global pump above.
+function retireChanges() {
+  changesCurrent = false;
+  if (changesUrl) URL.revokeObjectURL(changesUrl);
+  changesUrl = null;
+  $('changes-download-json').removeAttribute('href');
+  $('changes-download-json').setAttribute('aria-disabled', 'true');
+  $('changes-stale').hidden = !changes;
+  changesControls();
+}
+function changesControls() {
+  const unavailable = !ready || uncertainJob;
+  $('changes-discover').disabled = unavailable;
+  for (const button of $('changes-table').querySelectorAll('[data-use-change]')) {
+    button.disabled = unavailable || !changesCurrent || !changedHandoff(changes, Number(button.dataset.useChange));
+  }
+  $('changes-download-json').setAttribute('aria-disabled', String(unavailable || !changesCurrent || !changesUrl));
+}
+function renderChanges() {
+  const body = $('changes-table').tBodies[0]; body.replaceChildren();
+  const page = changes ? changedPage(changes, $('changes-filter').value, $('changes-status-filter').value, changesPage) : { rows: [], total: 0, page: 0 };
+  changesPage = page.page;
+  for (const { entry, index } of page.rows) {
+    const row = node('tr'); row.dataset.changeIndex = String(index);
+    row.append(node('th', visible(entry.path), 'changes-path'), node('td', entry.change)); row.firstChild.scope = 'row';
+    for (const endpoint of [entry.left, entry.right]) {
+      const cell = node('td');
+      if (!endpoint) cell.textContent = 'Absent';
+      else cell.append(node('span', `${endpoint.kind} · ${endpoint.mode}`), node('code', endpoint.object_id));
+      row.append(cell);
+    }
+    const action = node('td'), choice = node('button', 'Use these comparison paths'); choice.type = 'button'; choice.dataset.useChange = String(index);
+    choice.addEventListener('click', () => useChangedPath(index)); action.append(choice);
+    const eligible = changedHandoff(changes, index);
+    action.append(node('p', eligible ? 'Regular blob candidate; text support is checked only when you open source.' : entry.addressable ? 'Symlink or gitlink metadata only. Its target is not opened.' : 'This literal path cannot be addressed by the source comparison API.', 'hint'));
+    row.append(action); body.append(row);
+  }
+  pager('changes', page.page, page.total, CHANGES_PAGE_SIZE, 'matches');
+  $('changes-page').textContent += ` · ${changes?.entries.length ?? 0} total changed paths`;
+  changesControls();
+}
+function comparisonHasSelections() {
+  return comparisonInputEpoch > 0 || comparison !== null || Object.values(comparisonSides).some(side => side.pin || side.source || side.selectedFunction || sideElement(side, 'ref').value !== 'HEAD' || sideElement(side, 'path').value !== '' || sideElement(side, 'start-line').value !== '1' || sideElement(side, 'end-line').value !== '1' || sideElement(side, 'selection-mode').value !== 'whole');
+}
+function useChangedPath(index) {
+  if (!ready || uncertainJob || !changesCurrent) return;
+  const captured = changes, handoff = changedHandoff(captured, index), owner = generation, input = comparisonInputEpoch;
+  if (!handoff) return;
+  if (comparisonHasSelections() && !window.confirm(`Replace the current comparison paths and selections with ${JSON.stringify(handoff.path)}?\nLeft: ${handoff.left.revision}\nRight: ${handoff.right.revision}\nSource will not be opened until you explicitly choose Open source.`)) return;
+  if (!ready || uncertainJob || !changesCurrent || changes !== captured || generation !== owner || comparisonInputEpoch !== input || $('workspace-mode').value !== 'comparison') return;
+  invalidate();
+  for (const key of ['left', 'right']) {
+    const side = comparisonSides[key], target = handoff[key]; unpinSide(side);
+    side.pin = { revision: target.revision, requested_ref: target.requested_ref };
+    sideElement(side, 'ref').value = target.revision;
+    sideElement(side, 'directory').value = ''; sideElement(side, 'language').value = 'all';
+    sideElement(side, 'path').value = JSON.stringify(handoff.path);
+    sideElement(side, 'selection-mode').value = target.selection;
+    sideElement(side, 'start-line').value = '1'; sideElement(side, 'end-line').value = '1';
+    sideElement(side, 'revision').textContent = target.revision;
+    sideElement(side, 'catalog-summary').textContent = `Changed-file catalog pin · requested ref ${visible(target.requested_ref)}. No source has been opened.`;
+  }
+  comparisonInputEpoch++;
+  status(pumping ? 'Comparison paths prepared. Previous work is stopping; open each present source explicitly after cleanup.' : 'Comparison paths prepared. Open each present source explicitly; missing paths are verified by comparison.');
+  controls();
+}
+for (const side of Object.values(comparisonSides)) {
+  for (const suffix of ['ref', 'directory', 'language', 'path', 'start-line', 'end-line', 'selection-mode']) {
+    for (const event of ['input', 'change']) sideElement(side, suffix).addEventListener(event, () => { comparisonInputEpoch++; });
+  }
+}
+for (const id of ['changes-left-ref', 'changes-right-ref', 'changes-directory']) {
+  for (const event of ['input', 'change']) $(id).addEventListener(event, () => { retireChanges(); invalidate(); });
+}
+$('changes-form').addEventListener('submit', event => {
+  event.preventDefault();
+  retireChanges(); invalidate();
+  try {
+    const args = { left_ref: boundedText($('changes-left-ref').value, 1024, 'Left ref'), right_ref: boundedText($('changes-right-ref').value, 1024, 'Right ref'), directory: boundedText(exactText($('changes-directory').value, 'Directory'), 4096, 'Directory', true) };
+    queueJob('changed-files', args, result => {
+      const completed = validateChangedCatalog(result), text = changedJson(completed);
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+      retireChanges(); changes = completed; changesCurrent = true; changesPage = 0; changesUrl = url;
+      $('changes-summary').textContent = `${completed.entries.length} changed paths · ${completed.omitted_non_utf8_paths} non-UTF-8 paths omitted. Left requested ${visible(completed.left_requested_ref)} → ${completed.left_revision}. Right requested ${visible(completed.right_requested_ref)} → ${completed.right_revision}. Directory: ${completed.directory ? visible(completed.directory) : '(entire tree)'}.`;
+      $('changes-stale').hidden = true;
+      $('changes-download-json').href = url; $('changes-download-json').download = 'git-changed-files.json';
+      renderChanges();
+    }, 'Discovering changed committed paths.');
+  } catch (failure) { error(failure.message); }
+});
+for (const id of ['changes-filter', 'changes-status-filter']) $(id).addEventListener(id === 'changes-filter' ? 'input' : 'change', () => { changesPage = 0; renderChanges(); });
+$('changes-prev').addEventListener('click', () => { changesPage--; renderChanges(); });
+$('changes-next').addEventListener('click', () => { changesPage++; renderChanges(); });
+$('changes-download-json').addEventListener('click', event => { if ($('changes-download-json').getAttribute('aria-disabled') === 'true') event.preventDefault(); });
+renderChanges();
 void connectSession();

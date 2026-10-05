@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "issue": 123,
+  "scope": "Browser changed-file discovery and deliberate existing-comparison handoff",
+  "date": "2026-10-05",
+  "status": "producer-verified; independent native and installed-package acceptance pending",
+  "sources": {
+    "git_history/web/workbench.js": {
+      "bytes": 66301,
+      "sha256": "828da925340fe029f3b229e52363cde5029f0cf925183f37e19e32ff270f1ac6"
+    },
+    "git_history/web/workbench.html": {
+      "bytes": 26208,
+      "sha256": "cf5aac85b304488e57b5277fcddb902ff807a4f3107d6c1b31d11e359e967ba7"
+    },
+    "git_history/web/workbench.css": {
+      "bytes": 15630,
+      "sha256": "3aba4a9d0cb1624352c653e05a309ed17022b2155bfa3895cf9bdb9d330dfcdd"
+    },
+    "git_history/web/changed-files.js": {
+      "bytes": 5948,
+      "sha256": "4f89c19745a269bd937802d924d347787c8e763673c5b2f0db3d32d2048d2a95"
+    },
+    "tests/changed-files.test.js": {
+      "bytes": 5116,
+      "sha256": "2b901cae05e2b3442e7cc4d623bfcafabe18b866208253427facb05d40fd5156"
+    }
+  },
+  "verification": [
+    {
+      "command": "node --test tests/changed-files.test.js",
+      "log": "/tmp/git123-ui-unit-red.log",
+      "phase": "callable helper stubs before implementation",
+      "tests": 7,
+      "passed": 1,
+      "failed": 6,
+      "durationMs": 62.973733,
+      "outcome": "RED; successful-path expectations failed pending implementation"
+    },
+    {
+      "command": "node --test tests/changed-files.test.js",
+      "log": "/tmp/git123-ui-unit-first-green.log",
+      "phase": "first actual helper",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "durationMs": 63.552637,
+      "outcome": "GREEN"
+    },
+    {
+      "command": "node --test tests/changed-files.test.js",
+      "log": "/tmp/git123-ui-admission-red.log",
+      "phase": "additional exact primitive/invalid tree metadata expectation before tightening admission",
+      "tests": 8,
+      "passed": 7,
+      "failed": 1,
+      "durationMs": 67.277912,
+      "outcome": "RED; numeric Git mode was coerced as an object key"
+    },
+    {
+      "command": "node --test tests/changed-files.test.js",
+      "log": "/tmp/git123-ui-unit-final.log",
+      "phase": "final strict helper",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "durationMs": 62.0935,
+      "outcome": "GREEN"
+    },
+    {
+      "command": "node --check git_history/web/workbench.js",
+      "outcome": "PASS"
+    },
+    {
+      "command": "npx eslint git_history/web/workbench.js git_history/web/changed-files.js tests/changed-files.test.js",
+      "log": "/tmp/git123-ui-lint-final.log",
+      "outcome": "PASS"
+    }
+  ],
+  "implementation": {
+    "request": "changed-files with exact left_ref/right_ref/directory using the existing shared queueJob/pump",
+    "pumpBodyChanged": false,
+    "catalog": "detached deeply frozen, exact fields/mode/kind/OID/categories/UTF8 byte order/prefix/canonical paths; same revision cannot have changes",
+    "bounds": {
+      "rawPaths": 10000,
+      "jsonUtf8Bytes": 8388608,
+      "pathUtf8Bytes": 4096,
+      "refUtf8Bytes": 1024,
+      "rowsPerPage": 100
+    },
+    "json": "ASCII schema keys sorted recursively; arrays retained; JSON.stringify indent 2 plus LF, matching frozen Python recipe",
+    "metadataDownload": "git-changed-files.json",
+    "handoff": "captured global catalog index, exact JSON-quoted path, both immutable full pins; Whole file for regular present endpoints and Missing path for absent endpoints; no source fetch",
+    "confirmation": "names exact path and both pins whenever comparison sides have edited inputs, including changed-back input, or loaded selections; rechecks global generation, input watermark, catalog identity and session after consent",
+    "unsupported": "symlink, gitlink and reader-unaddressable paths visible as metadata with disabled handoff; regular blobs are candidates only",
+    "ownership": "catalog input/workspace/Stop/session/pagehide retire rows/download authority; comparison side edits retain captured catalog pins but invalidate any pending job through existing global generation; local filters/page never submit or repin",
+    "rawControls": "static discovery/side/context inputs are retained; filters/paging rebuild only metadata rows; history authoring untouched"
+  },
+  "fixtureCorrection": "Before first helper GREEN, a symlink-to-regular fixture was classified type-changed instead of modified, matching the frozen endpoint-kind rule. No runtime expectation was changed.",
+  "limits": [
+    "This producer ran no browser, service, build, wheel installation, Git or broad test gate.",
+    "No source-admission or working-tree claim is inferred from metadata; existing explicit source reads and comparison remain authoritative.",
+    "Native raw-field, job cancellation, CLI byte parity and mobile acceptance are independent pending gates."
+  ]
+}
