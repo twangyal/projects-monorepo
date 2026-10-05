@@ -604,7 +604,7 @@ the original recorded video for independent inspection, and needs FFmpeg/FFprobe
 Physical headset acceptance remains separate in #21.
 
 
-## Timestamped export work in progress (#124)
+## Earlier timestamped input milestone (#124)
 
 The absolute deadline guard refuses expired encoder payloads, frames and Blob
 publication even when browser timers arrive late. Its published push and PR CI
@@ -667,3 +667,17 @@ passes the same original gates; its [receipt](docs/2026-10-05-independent-export
 records exact source/artifact provenance and limits. This is an independent decode
 of the same native capture, not another capture or physical-device verification.
 Issue #124 is accepted and closed. Physical WebXR acceptance remains in #21.
+
+The [complete CI receipt](docs/2026-10-05-timestamped-export-ci.json) records the
+identical branch and actual PR checkout trees and all thirteen passing project
+workflows. Original [push](docs/2026-10-05-timestamped-maximum-push.json) and
+[PR](docs/2026-10-05-timestamped-maximum-pr.json) maximum receipts retain full
+archive/media hashes and finite fixture limits. Both captured WebMs have the same
+9,879,042 bytes and SHA256; this is a measured observation, not a general
+deterministic-encoder claim. The largest audio transition error is 10 ms.
+
+An independent [comparison of all 1,800 video timestamps](docs/2026-10-05-timestamped-maximum-pts.json)
+to `index / 30`, from a fixed zero origin without fitting, finds maximum error
+below 0.334 ms and maximum gap 34 ms. Full/headed Chromium compatibility is not
+established by these software-WebGL headless checks; the forced full-Chromium153
+`SIGTRAP` process log remains preserved alongside the original failed captures.

@@ -16,7 +16,7 @@
     "genuine native encoder cancellation"
   ],
   "localIntegrated": {
-    "unitCases": 342,
+    "unitCases": 345,
     "syntax": "pass",
     "node": "24.19.0",
     "native": "not executed: socket permissions prevent browser launch"
@@ -32,8 +32,8 @@
     "newAdapter": "pending source adds drain before output.cancel; all codecs close",
     "sourceArchive": "now also retains unchanged shared source dependencies"
   },
-  "productionIntegration": "all film/take/sequence callers use timestamped pipeline; awaiting exact-head native/full-minute CI",
-  "acceptance": "pending; do not close issue or count integrated native success",
+  "productionIntegration": "accepted: all film/take/sequence callers use timestamped pipeline; both implementation-head native and original full-minute/restart checks pass",
+  "acceptance": "2026-10-05-timestamped-export-ci.json",
   "firstIntegratedCi": {
     "head": "24733168bbcf94b7307786cf86a2e3cd1462fdf0",
     "prRun": 37317646100,

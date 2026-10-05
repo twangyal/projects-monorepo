@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "implementationHead": "9f4e3b673dd43214b7724a7370896f46dded9d0a",
+  "implementationTree": "64e3be8f582c8f76d0f9cea8a59a591c16b01929",
+  "prCheckout": "c0e1535dd8addd39e7d9b3f34218296d943531db",
+  "prCheckoutTree": "64e3be8f582c8f76d0f9cea8a59a591c16b01929",
+  "local": {
+    "unitsPassed": 345,
+    "syntax": "pass",
+    "nativeBrowser": "not launched: local socket permissions prevent Chromium startup",
+    "downloadedPrArtifactReinspection": "pass: all original FFprobe/FFmpeg pixel, PCM, audio transition gates",
+    "allMaximumPts": "1800 frames compared independently to index/30 from zero origin; maximum absolute error0.000334seconds; maximum frame gap0.034seconds; no fitted offset"
+  },
+  "push": {
+    "run": 37321512812,
+    "verifyJob": 111801466402,
+    "native": "pass",
+    "maximumJob": 111801466126,
+    "maximum": "pass",
+    "artifact": 11350296267,
+    "artifactSha256": "7e447c0c994f0d41cd0e4f5268c005ed04ec95e740d4b0df9b96aa6f34b9f71d",
+    "unitCases": 345,
+    "nativeCases": 105,
+    "syntax": "pass"
+  },
+  "pullRequest": {
+    "run": 37321518978,
+    "verifyJob": 111801488785,
+    "native": "pass",
+    "maximumJob": 111801488219,
+    "maximum": "pass",
+    "artifact": 11350556173,
+    "artifactSha256": "bbc51c5fcff80d2b183b4e13d19b69781693b0664ab21405acaa3bc8d924404f",
+    "unitCases": 345,
+    "nativeCases": 105,
+    "syntax": "pass"
+  },
+  "maximum": {
+    "videoBytes": 9879042,
+    "videoSha256": "e9dde7296c21688951129293cd7fb040c0b1c7e35ccfb48cb4cb749adbe49467",
+    "videoFrames": 1800,
+    "decodedStereoAudioFrames": 2880648,
+    "landmarks": 40,
+    "audioTransitionChecks": 16,
+    "maximumTransitionDeltaSeconds": 0.010000000000001563,
+    "completeArchiveBytes": 11554385,
+    "completeArchiveSha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "restart": "different real browser-process IDs; exact complete archive, ordinary scene and silent retained take unchanged",
+    "browser": "Playwright default pinned headless-shell153.0.8010.12",
+    "pushCaptureAndDownloadMs": 58316.84112499999,
+    "prCaptureAndDownloadMs": 48436.690511,
+    "recordedWebmBytes": "independently hash-checked push/PR video bytes have the same SHA256; no general deterministic-encoder claim"
+  },
+  "repairs": [
+    "Authored30Hz VideoFrame/WebCodecs plus bounded original48kHz PCM and a locally served checksum-pinned unmodified muxer replace live capture.",
+    "Startup query, cancellation/finalization and sibling-flush error regressions retain native ownership until drain.",
+    "Rounded microsecond timeline endpoints exclude zero-duration frames.",
+    "Maximum driver uses the same pinned default browser as the suite; full Chromium153 post-restart download SIGTRAP remains separately preserved."
+  ],
+  "preservedFailures": "failures/2026-10-05-first-integration/",
+  "limits": [
+    "CI uses software WebGL on Linux; no physical headset/device acceptance.",
+    "Full Chromium153 forced-executable SIGTRAP is a measured browser-environment failure; these passing checks do not establish full/headed Chromium compatibility.",
+    "48kHz linear resampling is explicit; codec padding yields2880648 decoded frames, not a sample-exact 2880000 claim.",
+    "Synthetic stereo tones and literal maximum films establish finite gates, not subjective audio quality, worst-case RAM or a latency guarantee.",
+    "Only forty landmark frames are pixel-inspected; all1800 PTS and all decoded PCM samples are inspected."
+  ],
+  "acceptance": "passed in both first implementation-head events",
+  "projectPrWorkflows": {
+    "passed": 13,
+    "failed": 0,
+    "head": "9f4e3b673dd43214b7724a7370896f46dded9d0a"
+  }
+}
