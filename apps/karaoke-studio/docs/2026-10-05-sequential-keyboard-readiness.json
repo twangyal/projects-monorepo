@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "scope": "Existing sequential-timing keyboard admission readiness; test and evidence only.",
+  "status": "scoped static checks and root affected native case passed; full suite not run for this receipt",
+  "firstFailure": {
+    "runId": 37255169395,
+    "jobId": 111590570826,
+    "testedCheckoutSha": "aa96bbf860765157c282e10be8504f161df888b4",
+    "sourceContextReportedByRoot": {
+      "karaokeSourceHeadPrefix": "c5067e6",
+      "duetHeadPrefix": "8dfcf68"
+    },
+    "log": {
+      "path": "/tmp/karaoke121-duet-head-ci-first.log",
+      "sha256": "94f415c156085449b87f26f3485556bb5a2d98b5fb0c878b4b8a9b6ebe28d76b"
+    },
+    "nativeCounts": {
+      "total": 79,
+      "passed": 78,
+      "failed": 1
+    },
+    "nativeReportedDuration": "3.0m",
+    "test": "controlled persisted page departure retires marks and blocked held keys cannot activate a fresh session",
+    "location": "tests/sequential-timing.spec.ts:42:913",
+    "failure": "Final fresh Enter expected Mark line end; received Mark line start.",
+    "artifact": {
+      "id": 11321988828,
+      "name": "karaoke-studio-browser-results",
+      "bytes": 5595750,
+      "sha256": "bef95b671bc5be7879f4490a4e56a62c8982b7dc6f80f3bbaf14f15dbc8c72ce",
+      "traceMember": "sequential-timing-controll-7751d-ot-activate-a-fresh-session/trace.zip",
+      "extractedTracePath": "/tmp/karaoke121-original-trace.zip",
+      "extractedTraceSha256": "152447e177335e368fd156d6751622a960c04738179c61c61d45d6a405635359"
+    }
+  },
+  "diagnosis": {
+    "helper": "nativeToggle polls only audio.paused, not timing button readiness or focus.",
+    "observations": [
+      {
+        "traceTimeMs": 104980.172,
+        "call": "call@5448 after",
+        "markDisabled": true,
+        "status": "Paused. Resume playback to continue; your pending start and completed lines are kept."
+      },
+      {
+        "traceTimeMs": 104981.756,
+        "call": "call@5452 starts",
+        "action": "focus #timing-mark"
+      },
+      {
+        "traceTimeMs": 104982.534,
+        "call": "call@5452 before snapshot",
+        "markDisabled": true
+      },
+      {
+        "traceTimeMs": 104989.832,
+        "call": "call@5452 after snapshot",
+        "markDisabled": false,
+        "status": "Listening · 0/2 lines completed. Mark the next line’s start when you hear it."
+      },
+      {
+        "traceTimeMs": 104990.392,
+        "call": "call@5454 starts",
+        "action": "held Enter down"
+      },
+      {
+        "traceTimeMs": 104997.204,
+        "call": "call@5458 starts",
+        "action": "Enter up"
+      },
+      {
+        "traceTimeMs": 104999.478,
+        "call": "call@5460 starts",
+        "action": "fresh Enter press"
+      },
+      {
+        "traceTimeMs": 105001.901,
+        "call": "call@5460 after snapshot",
+        "markText": "Mark line start"
+      }
+    ],
+    "conclusion": "Original trace directly observes disabled-at-focus admission. Resumed playback readiness/focus is a plausible cause of the unchanged phase.",
+    "limit": "Trace contains no activeElement or actual key-event target receipt; exact keyboard delivery and complete causal attribution are not proven. No production defect established."
+  },
+  "repair": {
+    "file": "tests/sequential-timing.spec.ts",
+    "newAssertions": 4,
+    "description": "At both explicit keyboard admission points in the failing case, await actual timing-mark enabled before focus and assert actual focus before Enter down.",
+    "preserved": [
+      "held Enter repeat rejection",
+      "actual Enter release",
+      "fresh Enter phase change",
+      "initial exact cue assertion",
+      "original native media actions",
+      "original time and clock tolerances",
+      "all other test cases"
+    ],
+    "originalCiTestSha256": "444cadda0161ce70efe74062c01fe0d282f3adc0aad93537d893f0fb898f7c19",
+    "repairedTestSha256": "5ed3cb4396a825e111d21b53e59e6554401ee0a5dc36b209b501b5feb3cbc725",
+    "exactDiffCheck": "Removing exactly the four added enabled/focused assertions restores byte-for-byte original CI trace test source."
+  },
+  "validation": {
+    "nodeVersion": "v24.19.0",
+    "checks": [
+      {
+        "command": "./node_modules/.bin/eslint tests/sequential-timing.spec.ts",
+        "cwd": "apps/karaoke-studio",
+        "exitCode": 0
+      },
+      {
+        "command": "./node_modules/.bin/tsc --noEmit --target ES2022 --lib ES2022,DOM,DOM.Iterable --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --strict --noUnusedLocals --noUnusedParameters --noFallthroughCasesInSwitch --skipLibCheck --types node,vite/client tests/sequential-timing.spec.ts",
+        "cwd": "apps/karaoke-studio",
+        "exitCode": 0
+      }
+    ],
+    "rootRuntime": {
+      "runner": "root",
+      "scope": "One existing affected pagehide/held-key case only; no full-suite claim.",
+      "command": "playwright test tests/sequential-timing.spec.ts --grep \"controlled persisted page departure\" --reporter=line,json --output=/workspace/karaoke121-keyboard-readiness-artifacts",
+      "cwd": "apps/karaoke-studio",
+      "sourceTestSha256": "5ed3cb4396a825e111d21b53e59e6554401ee0a5dc36b209b501b5feb3cbc725",
+      "suiteStartTime": "2026-10-05T02:51:18.024Z",
+      "suiteDurationMs": 6060.672,
+      "caseStartTime": "2026-10-05T02:51:21.417Z",
+      "caseDurationMs": 2024,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "retries": 0,
+      "playwrightVersion": "1.63.0",
+      "results": {
+        "path": "/tmp/karaoke121-keyboard-readiness-native-results.json",
+        "sha256": "2d8c8c3806f6fa5cc79d4ea3a64da5b6c9e3a932f9f2497c0501581deaf86d4c"
+      },
+      "log": {
+        "path": "/tmp/karaoke121-keyboard-readiness-native.log",
+        "sha256": "717bb2889cf7540d6ad78628de6e6ff3a01996cc157d232247008e605e54f67e"
+      },
+      "artifactDirectory": "/workspace/karaoke121-keyboard-readiness-artifacts",
+      "caseAttachments": [],
+      "normalBuild": {
+        "performedBy": "Root-run Playwright webServer prerequisite",
+        "command": "npm run build",
+        "configuredServiceCommand": "npm run build && python3 tests/browser_server.py",
+        "result": "completed before the passing native case; no build executed by receipt author"
+      },
+      "ownedService": {
+        "port": 4322,
+        "reuseExistingServer": false,
+        "gracefulShutdown": {
+          "signal": "SIGINT",
+          "timeout": 10000
+        },
+        "cleanup": "Root reports managed SIGINT shutdown completed successfully."
+      },
+      "productionSourceChanged": false
+    },
+    "browserRunByAuthor": false,
+    "buildRunByAuthor": false,
+    "productionChanges": false,
+    "gitMutation": false
+  }
+}

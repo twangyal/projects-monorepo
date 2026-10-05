@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 122,
   "date": "2026-10-05",
-  "status": "local complete acceptance passed; published CI pending",
+  "status": "local and both first published CI events passed",
   "version": "0.6.0",
   "design": "docs/superpowers/specs/2026-10-05-motion-stroke-editing-design.md",
   "behavior": "Select and correct individual retained strokes using existing schema-2 graphs, renderers, history and library ownership. Canvas/list selection, transformed rigid translation, stage-axis keyboard movement, explicit appearance Apply/Discard and deletion.",
@@ -185,6 +185,7 @@
     "Maximum counts and actual artwork editing use an unpadded graph. Exact file capacity separately uses declared legal PNG ancillary padding; it is not a peak-memory or typical-file-size claim.",
     "Maximum selected layer has24cels and project27total cels; this does not claim simultaneous192cels with incompatible point/stroke limits.",
     "Same-machine Chromium verification does not establish physical touch hardware, arbitrary browser support or performance guarantees.",
-    "Published CI is pending; final receipt will identify actual branch and merge checkouts."
-  ]
+    "Both first published Motion CI events pass on identical implementation and actual PR merge trees; the CI receipt records the unrelated Karaoke failure honestly."
+  ],
+  "publishedCI": "2026-10-05-stroke-edit-ci.json"
 }
