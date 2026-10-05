@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "status": "blocked",
+  "payload": {
+    "bytes": 11554385,
+    "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6",
+    "source": "original deterministic byte pattern; size matches accepted complete archive"
+  },
+  "cases": [
+    {
+      "mode": "full-temporary",
+      "status": "failed",
+      "sessions": [
+        {
+          "version": "153.0.8010.12",
+          "pids": [
+            3048
+          ]
+        }
+      ],
+      "downloads": [
+        {
+          "stage": "initial",
+          "index": 0,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 1,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 2,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 3,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 4,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 5,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 6,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 7,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 8,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 9,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        }
+      ],
+      "events": [
+        {
+          "stage": "initial",
+          "type": "harness-close-request"
+        },
+        {
+          "stage": "initial",
+          "type": "page-close"
+        },
+        {
+          "stage": "initial",
+          "type": "context-close"
+        },
+        {
+          "stage": "initial",
+          "type": "browser-disconnected"
+        }
+      ],
+      "failure": {
+        "stage": "initial",
+        "message": "page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================",
+        "eventsBeforeCleanup": []
+      }
+    },
+    {
+      "mode": "full-persistent",
+      "status": "failed",
+      "sessions": [
+        {
+          "version": "153.0.8010.12",
+          "pids": [
+            3165
+          ]
+        }
+      ],
+      "downloads": [
+        {
+          "stage": "initial",
+          "index": 0,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 1,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 2,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 3,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 4,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 5,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 6,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 7,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 8,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 9,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        }
+      ],
+      "events": [
+        {
+          "stage": "initial",
+          "type": "harness-close-request"
+        },
+        {
+          "stage": "initial",
+          "type": "page-close"
+        },
+        {
+          "stage": "initial",
+          "type": "context-close"
+        },
+        {
+          "stage": "initial",
+          "type": "browser-disconnected"
+        }
+      ],
+      "failure": {
+        "stage": "initial",
+        "message": "page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================",
+        "eventsBeforeCleanup": []
+      }
+    },
+    {
+      "mode": "headless-temporary",
+      "status": "failed",
+      "sessions": [
+        {
+          "version": "153.0.8010.12",
+          "pids": [
+            3282
+          ]
+        }
+      ],
+      "downloads": [
+        {
+          "stage": "initial",
+          "index": 0,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 1,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 2,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 3,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 4,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 5,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 6,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 7,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 8,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        },
+        {
+          "stage": "initial",
+          "index": 9,
+          "bytes": 11554385,
+          "sha256": "76034dedb8a2181a023d00b7c57ba5c27049052b86bac9e08c30081c1169a0d6"
+        }
+      ],
+      "events": [
+        {
+          "stage": "initial",
+          "type": "harness-close-request"
+        },
+        {
+          "stage": "initial",
+          "type": "page-close"
+        },
+        {
+          "stage": "initial",
+          "type": "context-close"
+        },
+        {
+          "stage": "initial",
+          "type": "browser-disconnected"
+        }
+      ],
+      "failure": {
+        "stage": "initial",
+        "message": "page.waitForEvent: Timeout 15000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================",
+        "eventsBeforeCleanup": []
+      }
+    }
+  ],
+  "limits": [
+    "Neutral memory-backed Blob outside the app; no IndexedDB/archive decoder/rendering/encoder.",
+    "Each case uses a fresh synthetic profile;16 initial downloads then one after an actual browser-process restart. No retry.",
+    "Full Chromium and headless-shell are distinct measured browser environments, not interchangeable compatibility claims.",
+    "Only root-owned synthetic directories are removed. No user profile or data is accessed."
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 3
+  }
+}

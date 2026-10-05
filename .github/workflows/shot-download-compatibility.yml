@@ -1,16 +1,16 @@
 name: Shot download compatibility experiment
 on:
   push:
-    paths: ['apps/shot-studio/scripts/download-compatibility.mjs', '.github/workflows/shot-download-compatibility.yml']
+    paths: ['apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
   pull_request:
-    paths: ['apps/shot-studio/scripts/download-compatibility.mjs', '.github/workflows/shot-download-compatibility.yml']
+    paths: ['apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   measure:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: apps/shot-studio
@@ -21,6 +21,11 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Install isolated pinned post-fix browser
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/browser-155
+          node scripts/browser-155/node_modules/playwright/cli.js install --with-deps chromium
+          node --input-type=module -e "import {chromium} from './scripts/browser-155/node_modules/playwright/index.mjs'; console.log('SHOT_POSTFIX_CHROMIUM_PATH='+chromium.executablePath())" >> "$GITHUB_ENV"
       - name: Measure neutral downloads in distinct browser environments
         run: |
           mkdir -p test-results
@@ -32,4 +37,46 @@ jobs:
           path: |
             apps/shot-studio/test-results/download-compatibility/report.json
             apps/shot-studio/test-results/download-compatibility-browser.log
+          retention-days: 1
+  postfix-maximum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Install isolated pinned post-fix browser
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/browser-155
+          node scripts/browser-155/node_modules/playwright/cli.js install --with-deps chromium
+          node --input-type=module -e "import {chromium} from './scripts/browser-155/node_modules/playwright/index.mjs'; console.log('SHOT_POSTFIX_CHROMIUM_PATH='+chromium.executablePath())" >> "$GITHUB_ENV"
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Unchanged original maximum gates with full Chromium 155
+        run: |
+          set -euo pipefail
+          export CHROMIUM_PATH="$SHOT_POSTFIX_CHROMIUM_PATH"
+          python3 -m http.server 4174 --bind 127.0.0.1 > /tmp/shot-155-server.log 2>&1 &
+          shot_server_pid=$!
+          trap 'kill "$shot_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --silent --fail http://127.0.0.1:4174/ > /dev/null; then break; fi
+            sleep .1
+          done
+          mkdir -p test-results
+          node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-155-fixtures
+          DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-155-fixtures --output test-results/maximum-155 --origin http://127.0.0.1:4174 2>test-results/maximum-155-browser.log
+          node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/maximum-155
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-full-chromium-155-maximum
+          path: |
+            apps/shot-studio/test-results/maximum-155/**
+            !apps/shot-studio/test-results/maximum-155/profile/**
+            apps/shot-studio/test-results/maximum-155-browser.log
           retention-days: 1

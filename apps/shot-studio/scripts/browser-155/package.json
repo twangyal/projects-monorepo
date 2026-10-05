@@ -1,0 +1,8 @@
+{
+  "name": "shot-studio-browser-155-experiment",
+  "private": true,
+  "description": "Isolated post-fix browser installer for issue 128; not an application dependency.",
+  "dependencies": {
+    "playwright": "1.64.0-alpha-2026-10-02"
+  }
+}
