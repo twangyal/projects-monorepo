@@ -135,6 +135,7 @@ function cancelGesture() {
 }
 
 function commit(next: Project) {
+  retireLoad();
   try {
     if (!history.commit(next)) { project = history.current; updateControls(); return; }
     project = history.current;
@@ -146,22 +147,37 @@ function commit(next: Project) {
   }
 }
 
-function cancelLoad() {
-  loadGeneration++; loadBusy = false; element('load-state').hidden = true; updateControls();
+function updateLoadControls() {
+  element('load-state').hidden = !loadBusy;
+  element<HTMLButtonElement>('replace-saved').disabled = replacingSaved || loadBusy || exportBusy || !!gesture;
 }
+function retireLoad() {
+  loadGeneration++; loadBusy = false;
+  // Retiring an import never syncs raw controls, redraws or touches a gesture.
+  updateLoadControls();
+}
+function cancelLoad() { retireLoad(); }
 function beginLoad() {
-  cancelGesture(); loadBusy = true; element('load-state').hidden = false; updateControls();
-  return ++loadGeneration;
+  retireLoad(); cancelGesture(); loadBusy = true; updateLoadControls();
+  return loadGeneration;
 }
 function finishLoad(generation: number) {
-  if (generation === loadGeneration) { loadBusy = false; element('load-state').hidden = true; updateControls(); }
+  if (generation !== loadGeneration) return;
+  loadBusy = false; updateLoadControls();
+}
+function adoptLoad(generation: number, transform: (current: Project) => Project, text: string) {
+  if (generation !== loadGeneration) return;
+  // Consume the admitted token before shared edit/commit retires old imports.
+  retireLoad(); edit(transform); message(text);
 }
 
 function edit(transform: (current: Project) => Project) {
-  startupTouched = true;
+  startupTouched = true; retireLoad();
   cancelGesture(); commit(transform(project));
 }
-app.addEventListener('input', () => { startupTouched = true; }, true);
+function editorInputIntent() { startupTouched = true; retireLoad(); }
+app.addEventListener('input', editorInputIntent, true);
+app.addEventListener('change', editorInputIntent, true);
 for (const id of ['title', 'note']) input(id).addEventListener('input', () => {
   const value = input(id).value;
   edit(current => ({ ...current, [id]: id === 'title' && !value.trim() ? 'Untitled concept' : value }));
@@ -216,6 +232,7 @@ sketch.addEventListener('pointerdown', event => {
   if (event.button !== 0 || gesture) return;
   if (project.strokes.length >= MAX_STROKES || project.strokes.reduce((sum, stroke) => sum + stroke.points.length, 0) >= MAX_TOTAL_POINTS) { message('Sketch limit reached. Clear some marks or start another concept.', true); return; }
   if (!input('pen-size').checkValidity() || !input('pen-size').value) { message('Pen size must be between 1 and 20.', true); return; }
+  retireLoad();
   event.preventDefault(); sketch.focus({ preventScroll: true });
   startupTouched = true;
   const start = point(event, sketch);
@@ -235,6 +252,7 @@ sketch.addEventListener('pointermove', event => {
 });
 preview.addEventListener('pointerdown', event => {
   if (event.button !== 0 || gesture) return;
+  retireLoad();
   event.preventDefault(); preview.focus({ preventScroll: true });
   startupTouched = true;
   gesture = { type: 'placement', pointer: event.pointerId, base: history.current, start: point(event, preview) };
@@ -272,7 +290,7 @@ input('photo-file').addEventListener('change', async () => {
   try {
     const photo = await importPhoto(file);
     if (generation !== loadGeneration) return;
-    edit(current => ({ ...current, photo })); message('Photo opened locally. Drag the overlay to position your concept.');
+    adoptLoad(generation, current => ({ ...current, photo }), 'Photo opened locally. Drag the overlay to position your concept.');
   } catch (error) {
     if (generation === loadGeneration) message(`Could not open image: ${error instanceof Error ? error.message : 'Unsupported image.'}`, true);
   } finally { finishLoad(generation); }
@@ -282,9 +300,10 @@ input('project-file').addEventListener('change', async () => {
   const generation = beginLoad();
   try {
     if (file.size > MAX_PROJECT_BYTES) throw new Error('Project backup exceeds 6 MiB.');
-    const restored = parseProject(await file.text()); await validatePhoto(restored.photo);
+    const text = await file.text(); if (generation !== loadGeneration) return;
+    const restored = parseProject(text); await validatePhoto(restored.photo);
     if (generation !== loadGeneration) return;
-    edit(() => restored); message('Project backup restored. Undo returns to your previous concept.');
+    adoptLoad(generation, () => restored, 'Project backup restored. Undo returns to your previous concept.');
   } catch (error) {
     if (generation === loadGeneration) message(`Could not open project: ${error instanceof Error ? error.message : 'Invalid backup.'}`, true);
   } finally { finishLoad(generation); }
@@ -331,6 +350,7 @@ element('replace-saved').addEventListener('click', async () => {
   finally { replacingSaved = false; updateControls(); }
 });
 
+window.addEventListener('pagehide', retireLoad);
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;

@@ -89,10 +89,11 @@ test('keyboard vector download retires an unfinished sketch and preserves redo',
   await expect(page.locator('#stroke-count')).toHaveText('0 strokes');
 });
 
-test('vector download is available on a narrow screen without external requests', async ({ page }) => {
+test('vector download is available on a narrow screen without external requests', async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const external: string[] = [], errors: string[] = [];
-  page.on('request', request => { if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== 'http://127.0.0.1:4186') external.push(request.url()); });
+  const origin = new URL(baseURL!).origin;
+  page.on('request', request => { if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== origin) external.push(request.url()); });
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/'); await download(page, 'Export garment SVG');
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);

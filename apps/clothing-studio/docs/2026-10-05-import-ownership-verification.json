@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "issue": 118,
+  "status": "Local complete; published CI pending.",
+  "source": {
+    "main": {
+      "path": "apps/clothing-studio/src/main.ts",
+      "bytes": 26932,
+      "sha256": "497114d2d8c1cc1bc3f450d9831d28d317624a26cc5395e93403e76d8f616988"
+    },
+    "storage": {
+      "path": "apps/clothing-studio/src/storage.ts",
+      "bytes": 4377,
+      "sha256": "87bf0b9afe806e896b549eb050680e8e7526403e098122388a59bff1c02dea43"
+    },
+    "independentOracle": {
+      "path": "apps/clothing-studio/tests/import-ownership.spec.ts",
+      "bytes": 16407,
+      "sha256": "042106832b7749e3703f73208dcc158f62d2c3c5f75e91d2e476536af206d7e2"
+    }
+  },
+  "baseline": "2026-10-05-import-ownership-baseline.json",
+  "review": "2026-10-05-import-ownership-review.json",
+  "unitAndLint": {
+    "unitsPassed": 39,
+    "unitsFailed": 0,
+    "durationMs": 293.01449,
+    "lint": "passed",
+    "command": "npm run test && npm run lint",
+    "record": "Root execution chunk a6205c/session45075, exited0. Unit output was returned directly and is not represented as a retained log file."
+  },
+  "nativeFirst": {
+    "stats": {
+      "startTime": "2026-10-05T01:29:50.161Z",
+      "duration": 35074.998,
+      "expected": 37,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "results": {
+      "path": "/tmp/clothing118-full-native-first-results.json",
+      "bytes": 53013,
+      "sha256": "54ed77d565a15693b78e118bdc855af965094a28d25117937384678d179ecec3"
+    },
+    "log": {
+      "path": "/tmp/clothing118-full-native-first.log",
+      "bytes": 10187,
+      "sha256": "aecac7c7848ad2a6792039958c43848a851ad7a9dc3833c51956fb08f751a55e"
+    },
+    "artifacts": "/workspace/clothing118-full-native-first-artifacts"
+  },
+  "firstFailureDiagnosis": "All8 new independent native cases and29 prior cases passed. Two existing narrow-layout external-request tests hardcoded port4186 and classified root-owned4317 assets as external after the configurable test port was added. Actual layout/page-error/export assertions passed. Source product and new oracle unchanged.",
+  "testCorrection": "Both existing request observers now compare the exact URL(baseURL).origin from the configured root-owned service. The expected external-request list remains empty.",
+  "nativeFinal": {
+    "stats": {
+      "startTime": "2026-10-05T01:31:10.813Z",
+      "duration": 34289.364,
+      "expected": 39,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "results": {
+      "path": "/tmp/clothing118-full-native-final-results.json",
+      "bytes": 44642,
+      "sha256": "a949bf7657616b9999e5d8e91d6e18f196ead2acca891cdb91e48075bf825515"
+    },
+    "log": {
+      "path": "/tmp/clothing118-full-native-final.log",
+      "bytes": 6193,
+      "sha256": "8019b1a968729f10fd824ceab3d8b65fdc7ac4d930ac326711b72cc5eb3dfff2"
+    },
+    "artifacts": "/workspace/clothing118-full-native-final-artifacts"
+  },
+  "testConfigLint": {
+    "path": "/tmp/clothing118-root-test-config-lint.log",
+    "bytes": 208,
+    "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+  },
+  "normalProductionBuild": {
+    "passed": true,
+    "log": {
+      "path": "/tmp/clothing118-normal-production-build.log",
+      "bytes": 612,
+      "sha256": "138223eae97107cb00a80a5a3057a985f0c18f94110269f0e9eecacf312bb5f3"
+    },
+    "testHarnessOmitted": true
+  },
+  "ci": "pending",
+  "limitations": [
+    "Held genuine File.text/createImageBitmap completions establish import ownership and actual bitmap cleanup; no fake decoder output.",
+    "Controlled persisted pagehide/pageshow is policy coverage, not actual BFCache or physical navigation.",
+    "Existing cross-tab last-successful-write policy is unchanged; #118 concerns one editor pending imports.",
+    "No formats/image/history/capacity or storage/media/model/renderer changes."
+  ]
+}

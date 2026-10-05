@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "issue": 118,
+  "reviewedAt": "2026-10-05T01:30:45.731999+00:00",
+  "status": "source-review-clear",
+  "reviewer": "independent-read-only-integration-review",
+  "scope": "Frozen main.ts import-ownership diff against the accepted design, with read-only examination of existing image cleanup, model/history and storage integration.",
+  "sourceSha256": {
+    "apps/clothing-studio/src/main.ts": "497114d2d8c1cc1bc3f450d9831d28d317624a26cc5395e93403e76d8f616988",
+    "apps/clothing-studio/src/media.ts": "3c76cdf636fc8a144b9591fd6d800d5fd7f65f1512787e6da8d447c20af5d23b",
+    "apps/clothing-studio/src/model.ts": "49807a6d96464a4113dd62bc5e19f1d4fa0b2283b8cc613fa0a701492937b2a9",
+    "apps/clothing-studio/src/storage.ts": "87bf0b9afe806e896b549eb050680e8e7526403e098122388a59bff1c02dea43",
+    "docs/superpowers/specs/2026-10-05-clothing-import-ownership-design.md": "7ef53713ab33e94420bc122356b738fe43c8253507234bfdf9e688b5cd469067",
+    "apps/clothing-studio/docs/2026-10-05-import-ownership-baseline.json": "07949d1e9ea441d419b08912ca16888a74799bbe02f2ec836548774b0f06cf8e"
+  },
+  "findings": [],
+  "checks": [
+    {
+      "source": "apps/clothing-studio/src/main.ts:149",
+      "behavior": "updateLoadControls only changes import busy visibility and the dependent replacement button; retireLoad increments ownership and calls that narrow helper. No raw control normalization, rendering, gesture cancellation or history/save mutation occurs in retirement."
+    },
+    {
+      "source": "apps/clothing-studio/src/main.ts:178",
+      "behavior": "Captured input and change retire pending imports before normal field handlers. Raw and changed-back input represent newer intent even without a committed model change; invalid raw number input has no asynchronous retirement-induced normalization."
+    },
+    {
+      "source": "apps/clothing-studio/src/main.ts:138",
+      "behavior": "edit and commit provide command/no-op backstops. Undo/Redo, New concept and sample actions retain existing cancellation; admitted pointer starts retire before creating the new gesture. Import generation changes do not themselves create history entries."
+    },
+    {
+      "source": "apps/clothing-studio/src/main.ts:160",
+      "behavior": "A newer import retires the earlier generation and begins a new busy owner. Existing beginLoad cancellation of an older transient gesture is retained as deliberate import admission behavior; stale completion cannot finish the new busy slot."
+    },
+    {
+      "source": "apps/clothing-studio/src/main.ts:168",
+      "behavior": "adoptLoad checks and consumes current import ownership before shared edit/commit. A valid current complete backup or photo still follows the existing one-edit reversible history/save path."
+    },
+    {
+      "source": "apps/clothing-studio/src/main.ts:298",
+      "behavior": "Complete-backup import checks its token immediately after genuine File.text before parsing/native photo validation, and again after photo validation. Photo import checks after native normalization. Both late rejection and finally paths are generation guarded."
+    },
+    {
+      "source": "apps/clothing-studio/src/media.ts:165",
+      "behavior": "Existing importPhoto closes the acquired ImageBitmap in finally after normalization; validatePhoto likewise closes its acquired bitmap in finally. Retired UI ownership does not bypass those private resource-cleanup paths or publish stale photo data."
+    },
+    {
+      "source": "apps/clothing-studio/src/main.ts:353",
+      "behavior": "pagehide retires import publication authority using the same non-normalizing helper. A delayed result cannot adopt or replace status after this transition. Existing startup generation/startupTouched checks conservatively preserve any saved concept rather than adopting it after intervening intent/lifetime change."
+    },
+    {
+      "source": "apps/clothing-studio/src/storage.ts",
+      "behavior": "Storage, existing terminal-gated transaction deadlines, record schema, quotas and cross-tab policy are unchanged. Existing committed snapshot autosave remains separate from transient sketch/placement previews."
+    }
+  ],
+  "baseline": {
+    "status": "root-observed-all-three-protection-failures-before-production-change",
+    "receipt": "apps/clothing-studio/docs/2026-10-05-import-ownership-baseline.json",
+    "reviewerRanBaseline": false
+  },
+  "verificationPerformedByReviewer": [
+    "Read accepted frozen design and root baseline receipt.",
+    "Read frozen main.ts diff and relevant current source handlers.",
+    "Read existing native bitmap cleanup paths and ordinary persistence integration.",
+    "Pin exact SHA256 of reviewed source and contract."
+  ],
+  "limitations": [
+    "This receipt is a source review, not an independent runtime pass. No browser, server, build, test rerun, Git mutation or production edit was performed by this reviewer.",
+    "Native eight-case oracle and existing regression gates are owned by other agents/root; their outcomes must be recorded separately.",
+    "Controlled pagehide coverage establishes ownership retirement only, not actual BFCache eligibility or physical navigation behavior."
+  ]
+}

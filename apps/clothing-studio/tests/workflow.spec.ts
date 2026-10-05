@@ -103,11 +103,12 @@ test('exports transparent garment and opaque preview PNGs', async ({ page }) => 
   }
 });
 
-test('works on a narrow screen without external requests or page errors', async ({ page }) => {
+test('works on a narrow screen without external requests or page errors', async ({ page, baseURL }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [], external: string[] = [];
+  const origin = new URL(baseURL!).origin;
   page.on('pageerror', error => errors.push(error.message));
-  page.on('request', request => { if (/^https?:/.test(request.url()) && !request.url().startsWith('http://127.0.0.1:4186/')) external.push(request.url()); });
+  page.on('request', request => { if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== origin) external.push(request.url()); });
   await page.goto('/');
   await expect(page.getByText('Approximate photo overlay', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Ink blue' }).click();

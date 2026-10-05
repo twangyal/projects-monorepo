@@ -1,0 +1,182 @@
+{
+  "issue": 118,
+  "status": "All8 frozen independent native cases passed in both root full runs; complete final39-case suite passes.",
+  "frozenAt": "2026-10-05T01:26:17.481458+00:00",
+  "ownership": [
+    "tests/import-ownership.spec.ts",
+    "docs/2026-10-05-import-ownership-oracle.json"
+  ],
+  "source": {
+    "path": "tests/import-ownership.spec.ts",
+    "sha256": "042106832b7749e3703f73208dcc158f62d2c3c5f75e91d2e476536af206d7e2",
+    "bytes": 16407
+  },
+  "independence": {
+    "newProducerExpectedImports": false,
+    "productionChanges": false,
+    "old31TestsChanged": false,
+    "browserBuildOrServerStarted": false,
+    "expectations": "Literal independent complete Project1 graph authored from baseline model/README. Runtime original JPEG bytes captured before storage/import; no producer serializer supplies expected graph."
+  },
+  "fixture": {
+    "dimensions": [
+      320,
+      400
+    ],
+    "backgroundRGB": [
+      45,
+      115,
+      129
+    ],
+    "bottomRightRect": [
+      260,
+      340,
+      50,
+      50
+    ],
+    "rectangleRGB": [
+      234,
+      198,
+      68
+    ],
+    "jpegQuality": 0.9,
+    "title": "Original retained concept",
+    "note": "Original note\nSecond literal line \ud83c\udf3f",
+    "garment": {
+      "bodyWidth": 210,
+      "bodyLength": 240,
+      "sleeveLength": 35,
+      "neckline": "v",
+      "color": "#3f5468",
+      "pattern": "stripe",
+      "patternColor": "#ebce9b"
+    },
+    "strokes": [
+      {
+        "id": "literal-left-stroke",
+        "color": "#ef233c",
+        "width": 7,
+        "points": [
+          [
+            0.4,
+            0.4
+          ],
+          [
+            0.48,
+            0.48
+          ]
+        ]
+      },
+      {
+        "id": "literal-right-stroke",
+        "color": "#fff3dc",
+        "width": 4,
+        "points": [
+          [
+            0.55,
+            0.42
+          ],
+          [
+            0.6,
+            0.55
+          ]
+        ]
+      }
+    ],
+    "placement": {
+      "x": 0.48,
+      "y": 0.43,
+      "width": 0.57,
+      "height": 0.49,
+      "rotation": 7,
+      "opacity": 0.85
+    }
+  },
+  "assertionScopes": {
+    "completeGraph": "Actual normal Export project backup native download, parsed full graph equality and original full JPEG dataURL equality where unchanged; new-photo normalization captured before old completion and verified retained",
+    "pixels": "Actual exported preview PNG decoded with genuine createImageBitmap;320\u00d7400;corner4,4 originalRGB45/115/129 tolerance3 and newRGB115/60/145 tolerance4 for JPEG loss",
+    "gesture": "Actual mouse pointerdown/move/up and capture, same in-progress SVG before/after stale completion; original full graph except one new stroke or placement change; one Undo restores original",
+    "draft": "Actual changed-back rotation input with no blur; identical DOM node, focus and raw numeric value, no numeric-caret claim. Committed note retains native selection6..10 and focus before backup click",
+    "controlled": "Only genuine File.text result delivery and native createImageBitmap result delivery are gated. Actual native bitmap closes are counted; no fake pixel output or fake file read. Optional persisted pagehide/pageshow is a controlled PageTransitionEvent policy subcase, not actual navigation/BFCache."
+  },
+  "cases": [
+    "newer committed name and note survive delayed backup with focus and complete Undo history",
+    "changed-back raw placement input without blur retires pending backup and preserves its actual node",
+    "delayed backup cannot cancel an active native sketch and its single release commit",
+    "delayed backup cannot replace an active native placement drag or its original full base",
+    "real backup bitmap completing after a newer photo import closes without replacing newer complete work",
+    "real photo bitmap finishing after committed note cannot erase note or replace original photo",
+    "old malformed read cannot overwrite status or release a newer pending import finalizer",
+    "explicit Cancel and controlled pagehide retire reads while same-file fresh retry remains available"
+  ],
+  "checks": [
+    {
+      "command": "eslint tests/import-ownership.spec.ts",
+      "exitCode": 0,
+      "log": "/tmp/clothing118-oracle-lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "tsc --noEmit --strict --target ES2022 --lib ES2022,DOM,DOM.Iterable --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --skipLibCheck tests/import-ownership.spec.ts",
+      "exitCode": 0,
+      "log": "/tmp/clothing118-oracle-typecheck.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "firstNativeOutcome": {
+    "rootRun": {
+      "stats": {
+        "startTime": "2026-10-05T01:29:50.161Z",
+        "duration": 35074.998,
+        "expected": 37,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/clothing118-full-native-first-results.json",
+        "bytes": 53013,
+        "sha256": "54ed77d565a15693b78e118bdc855af965094a28d25117937384678d179ecec3"
+      },
+      "log": {
+        "path": "/tmp/clothing118-full-native-first.log",
+        "bytes": 10187,
+        "sha256": "aecac7c7848ad2a6792039958c43848a851ad7a9dc3833c51956fb08f751a55e"
+      },
+      "artifacts": "/workspace/clothing118-full-native-first-artifacts"
+    },
+    "ownedCasesPassed": 8,
+    "ownedCasesFailed": 0
+  },
+  "finalNativeOutcome": {
+    "rootRun": {
+      "stats": {
+        "startTime": "2026-10-05T01:31:10.813Z",
+        "duration": 34289.364,
+        "expected": 39,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/clothing118-full-native-final-results.json",
+        "bytes": 44642,
+        "sha256": "a949bf7657616b9999e5d8e91d6e18f196ead2acca891cdb91e48075bf825515"
+      },
+      "log": {
+        "path": "/tmp/clothing118-full-native-final.log",
+        "bytes": 6193,
+        "sha256": "8019b1a968729f10fd824ceab3d8b65fdc7ac4d930ac326711b72cc5eb3dfff2"
+      },
+      "artifacts": "/workspace/clothing118-full-native-final-artifacts"
+    },
+    "ownedCasesPassed": 8,
+    "ownedCasesFailed": 0
+  },
+  "limits": [
+    "Root owns initial native baseline and all runtime leases. No RED or GREEN native outcome is claimed by this preparation receipt.",
+    "Synthetic original color photos test ownership/pixel preservation, not human-photo realism or garment fit.",
+    "No real BFCache or physical navigation claim."
+  ],
+  "runtimeAttribution": "All browser execution/build/server ownership belongs to root. Original frozen oracle file is unchanged."
+}

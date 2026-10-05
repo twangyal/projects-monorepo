@@ -42,7 +42,7 @@ Undo/redo keeps the latest **40 edits** in this session. It includes sketch gest
 - Invalid containers, unsupported types, conflicting dimensions and undecodable data are rejected without replacing the active concept. Browsers can recover some damaged JPEGs, so successful decoding does not guarantee that every source pixel was intact; review the resulting preview.
 - Backups are capped at **6 MiB**. Embedded photos must be bounded normalized JPEG data with dimensions matching the image. Names/notes, numeric ranges, colors, stroke data and version are validated; imported markup and external image URLs are not accepted.
 - Sketches allow **100 strokes**, at most **1000 points per stroke**, and **12,000 total points**. Garment PNGs are 400×440; preview PNGs follow the resized photo dimensions, or 600×800 for the sample. No export exceeds 2048 pixels on an edge.
-- Cancelled or superseded imports cannot replace your current work. Startup restore cannot overwrite editing that begins while a saved photo is decoding.
+- Cancelled or superseded imports cannot replace your current work. Typing (even a changed-back draft), editing controls, starting a sketch/placement gesture, undo/redo, another import or leaving the page retires a pending photo/backup import. Late completion preserves current fields, focus, artwork and history. Start the import again when you want to replace that newer work. Startup restore cannot overwrite editing that begins while a saved photo is decoding.
 
 ## Verify
 
@@ -74,3 +74,20 @@ Vector illustration export (#92) is complete: [PR #94](https://github.com/twangy
 Held transaction recovery (#101) now preserves the native saved record and releases ordered autosaves after rollback. The four original #102 regression cases remain unchanged. Three independent native cases verify complete photo/sketch retention during timed-out clear, synchronous failure after a real `put`, and a deliberately delayed rollback callback. The complete local gate passes **39 unit and 31 Chromium cases**, lint, type checking and production build. The test harness is excluded from ordinary production builds. See [verification record](docs/2026-10-05-storage-deadline-verification.json) for first failures, CI status and timing limits.
 
 Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37250018943) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37250023195) CI pass the full 39-unit/31-browser gate at implementation `cdfcc3545ed880f99a7276d1b73aeb9e5f7b8d48`.
+
+
+Pending import ownership (#118) fixes three reproduced whole-concept data-loss paths:
+an older backup could replace a newer committed title, unblurred placement draft
+or active sketch, then autosave itself. Imports now retire on newer editing intent
+without normalizing controls or canceling the new gesture. Native photo processing
+still closes its real bitmaps; old success/error/finalization cannot publish or
+release a newer operation. Normal imports remain single reversible edits.
+
+The local gate passes **39 units and 39 native browser cases**, lint, type checking
+and normal production build. Eight independently authored cases verify complete
+original JPEG/stroke/placement graphs, actual downloads and PNG pixels, raw fields,
+text selection, Undo/Redo, native pointer gestures, held genuine file/image results,
+cancellation and fresh retry. Controlled page-transition events verify ownership
+policy only. The first full run's two hardcoded-test-port failures remain preserved;
+only those tests' exact origin was corrected. See the [verification receipt](docs/2026-10-05-import-ownership-verification.json)
+for original failures and published CI status.
