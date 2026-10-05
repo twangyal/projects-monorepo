@@ -1,7 +1,7 @@
 {
   "issue": 124,
   "milestone": "Complete sequence soundtrack",
-  "status": "Root corrected native12/12 verified; newly strengthened full-film audio-tail regression pending root execution",
+  "status": "Original corrected12 native cases and first PR99/99 verified; root-approved startup-readiness/readback fixture correction awaiting focused runtime",
   "authoredAt": "2026-10-05T03:41:52.272016+00:00",
   "ownership": "Only new independent unit/native tests, uniquely named original fixture helper and this receipt; no production/config/old tests edits.",
   "independence": {
@@ -24,8 +24,8 @@
       "bytes": 4450
     },
     "tests/browser/sequence-soundtrack.spec.js": {
-      "sha256": "8601808bfb1d14742a7edda916dd708f75034c5f57fb83c6b7a3f77e1b740ce1",
-      "bytes": 33717
+      "sha256": "be095ba750c8bb74149d54cc56c1ad33dfe8669a1706285284673bd8cb2503c6",
+      "bytes": 34341
     }
   },
   "frozenOriginalFixture": {
@@ -242,7 +242,9 @@
   "approvedFixtureCorrections": [
     "setSequenceSoundtrack called with exact label/inFrame/outFrame/startTime/gain only, removing unintended descriptor property from test argument.",
     "Existing model.js rejects controls including NUL; legacy UTF16 roundtrip fixture retains accepted lone surrogate without inadmissible NUL. No domain requirement weakened.",
-    "Convert actual immutable Blob ArrayBuffer to Buffer for Node SHA helper; every original byte/hash/budget expectation retained."
+    "Convert actual immutable Blob ArrayBuffer to Buffer for Node SHA helper; every original byte/hash/budget expectation retained.",
+    "After trace-proven first push startup race, begin awaits exact completed startup save-status before ordinary import. Existing default assertion deadlines and every complete byte/document comparison remain unchanged; deliberately held startup stays a separate protected-state product flow.",
+    "Both independent IDB readback helpers now abort onupgradeneeded, preventing observation from creating an absent empty database. A supposedly initialized absent database remains an explicit error; no fallback, fabricated absence or automatic repair is introduced."
   ],
   "nativePlan": {
     "caseCount": 12,
@@ -273,7 +275,8 @@
       "complete Chromium persistent process close/relaunch under root runtime",
       "Compact polling parses literal SHOTSEQ1 header, exact extents and document in the real browser after native transaction complete, hashes actual full archive and WAV there, and returns metadata/hashes instead of hundreds thousands traced JSON byte values. Existing explicit whole-byte checks remain outside polling; no timeout increase.",
       "Actual mono44100Hz/44100frame source buffer exported through native MediaRecorder Opus48000Hz; independent ffprobe audio-frame sample counts and monotonic PTS match all finite ffmpeg decoded PCM frames, with fixed330Hz/RMS plateau.",
-      "Actual audio+video MediaRecorder recording and positive video progress precede explicit Cancel; actual stop event, both owned streams ended and AudioContext closed precede complete backup/stored row/ordinary scene identity checks and no-download assertion."
+      "Actual audio+video MediaRecorder recording and positive video progress precede explicit Cancel; actual stop event, both owned streams ended and AudioContext closed precede complete backup/stored row/ordinary scene identity checks and no-download assertion.",
+      "Ordinary begin waits exact completed startup admission before import. Independent IDB readers abort unexpected upgrade and report an explicit absent-database error without committing observer-created schema."
     ],
     "audioOracle": {
       "originalSignal": {
@@ -343,7 +346,7 @@
         ],
         "maximumRms": 0.001
       },
-      "newRegression": "Root-approved after actual six-second mono export decoded95040samples=1.98s, matching audible cutoff2s. Maximum independent60s export decoded45s ending at audible cutoff45s. New unchanged six-second fixture now requires5.9..6.2s decoded audio and fixed2.15..5.8s silence. This stronger test has not yet run; no invented RED or passing outcome."
+      "newRegression": "Added after actual original six-second export decoded95040samples=1.98s at soundtrack cutoff2s. Strengthened full-film5.9..6.2s and fixed2.15..5.8s silence assertions subsequently passed in both first published CI runs; neither failure concerned this mono case."
     },
     "cancellationOracle": {
       "observe": "Native canvas capture streams, native AudioContext media destination, native MediaRecorder.start and stop event; all methods delegate unmodified input/output.",
@@ -555,6 +558,81 @@
         },
         "scope": "Actual mono44.1k original source frames and native Opus48k resampling; fixed interior plateau, no fitted timeline offset"
       }
+    },
+    "firstPublishedCI": {
+      "sourceSha256": "8601808bfb1d14742a7edda916dd708f75034c5f57fb83c6b7a3f77e1b740ce1",
+      "push": {
+        "run": 37266477524,
+        "job": 111624287583,
+        "passed": 97,
+        "failed": 2,
+        "log": {
+          "path": "/tmp/shot124-ci-111624287583.log",
+          "sha256": "fee96f83daff140fe0ec047af819adf66448a2e1df8fde49e0988130f0985253",
+          "bytes": 524562
+        },
+        "failingCases": [
+          "full persistent Chromium restart restores exact complete sequence metadata and original WAV bytes",
+          "actual six-second trimmed WebM preserves original source phases and repeated excerpts"
+        ]
+      },
+      "pullRequest": {
+        "run": 37266480303,
+        "job": 111624296311,
+        "passed": 99,
+        "failed": 0,
+        "log": {
+          "path": "/tmp/shot124-ci-111624296311.log",
+          "sha256": "ae403e79c55928981cb2b0710958f1b4c647baf942a18c9122e9af43d2968cf1",
+          "bytes": 518363
+        },
+        "sameTree": "Root verified push and PR implementation tree identity; oracle author independently read both downloaded job outcomes."
+      },
+      "startupFailure": {
+        "trace": {
+          "path": "/workspace/shot124-ci-first-push/sequence-soundtrack-full-p-05936-data-and-original-WAV-bytes/trace.zip",
+          "sha256": "6e8b63dbbf85be42a8723aeef111af4832cbea4273fed8774aa01600894d8a09",
+          "bytes": 218461
+        },
+        "embeddedSourceSha256": "8601808bfb1d14742a7edda916dd708f75034c5f57fb83c6b7a3f77e1b740ce1",
+        "events": [
+          {
+            "timeMs": 132887.855,
+            "observation": "Actual page snapshot: Reading saved sequence\u2026"
+          },
+          {
+            "timeMs": 132974.423,
+            "observation": "#sequence-open enabled assertion completed; this control intentionally remains usable during startup."
+          },
+          {
+            "timeMs": 132985.463,
+            "observation": "setInputFiles begins before startup-read admission has completed."
+          },
+          {
+            "timeMs": 133219.747,
+            "observation": "Actual page snapshot: Sequence browser record protected \u00b7 work stays in memory; import retired pending startup."
+          },
+          {
+            "timeMs": 133276.602,
+            "observation": "Replacement confirmation accepted."
+          },
+          {
+            "timeMs": 133485.743,
+            "observation": "Original imported title present and Complete sequence opened; save status still explicitly protected."
+          },
+          {
+            "timeMs": 133492.126,
+            "observation": "First independent storedSummary indexedDB.open begins."
+          },
+          {
+            "timeMs": 133507.096,
+            "observation": "Independent helper rejects Document state store missing; no polling deadline was exceeded."
+          }
+        ],
+        "cause": "The ordinary persistence fixture mistook an enabled import control for completed startup admission. Product startOperation/retire aborts a pending load, retains imported memory, and protects storage; persist refuses an unauthorized save. This behavior is intentional. The unguarded observer open could create an absent empty version1 database.",
+        "evidenceLimit": "Trace directly records startup/import/protected-state ordering and helper failure. Empty-database creation is inferred from native IDB open/upgrade semantics and source, not directly instrumented native IDB events."
+      },
+      "otherFailureScope": "Independent trimmed-video timing failure is separately owned by root; no video thresholds, producer source or corresponding fixture were changed here."
     }
   },
   "staticVerification": {
@@ -566,7 +644,7 @@
     "native": "CHROMIUM_PATH=/usr/bin/chromium SHOT_TEST_PORT=<root-reserved> npm run test:browser -- tests/browser/sequence-soundtrack.spec.js"
   },
   "limitsAndNonClaims": [
-    "Actual first native8/10 and corrected12/12 are preserved. New full-film audio-tail assertions expose a previously unasserted behavior in actual original exports; root execution of those new assertions remains pending, with no invented RED or passing claim.",
+    "Actual first8/10, corrected12/12, first published push97/99 and same-tree PR99/99 are retained. Trace proves the ordinary restart fixture imported before startup admission, triggering expected protected state. The latest two fixture corrections have fresh static checks only; native verification remains root-owned.",
     "Unit64MiB gate uses five distinct exact12MiB valid WAV containers (60MiB) then refuses sixth (72MiB), and proves redo truncation reclaims unique assets. Ancillary JUNK padding is legal container bytes, not extra audio payload.",
     "Stereo4s source768044B; mono1s44.1k88244B. Neither is claimed to be maximum60s sample payload.",
     "Root/maximum owner separately verifies full60s audiovisual alignment and maximum media.",
@@ -598,7 +676,13 @@
     "syntax": "PASS both owned native JS files after repair",
     "scopedRecommendedESLint": "PASS after new12 cases, with existing temporary Node/browser globals config; no tracked configuration change",
     "nativeRunByAuthor": false,
-    "nativeFollowupPending": "Root owns all browser/runtime execution. No repaired or additional native passing result claimed.",
-    "strengthenedAudioTail": "Fresh node --check and scoped recommended ESLint PASS; native runtime remains root-only."
+    "nativeFollowupPending": "Root executed corrected12 and published full CI. Newly corrected startup-readiness/readback fixture awaits root focused runtime; no passing repair claim.",
+    "strengthenedAudioTail": "Fresh node --check and scoped recommended ESLint PASS; native runtime remains root-only.",
+    "ciReadinessCorrection": {
+      "syntax": "PASS node --check tests/browser/sequence-soundtrack.spec.js",
+      "scopedRecommendedESLint": "PASS with existing temporary recommended Node/browser config",
+      "nativeRunByAuthor": false,
+      "runtimeStatus": "Corrected readiness/readback source awaits root focused execution. Original push97/99 and same-tree PR99/99 remain preserved; CI was not rerun by author."
+    }
   }
 }

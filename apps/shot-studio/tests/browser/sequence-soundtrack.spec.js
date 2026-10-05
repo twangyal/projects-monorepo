@@ -9,13 +9,17 @@ const WAV = originalWave(), DOCUMENT = literalDocument(WAV), ARCHIVE = literalAr
 async function downloaded(page, selector = '#sequence-save') { const ready = page.waitForEvent('download'); await page.locator(selector).click(); const result = await ready, path = await result.path(); if (!path) throw Error('Native soundtrack download absent'); return { bytes: await readFile(path), name: result.suggestedFilename() }; }
 async function backup(page) { const result = await downloaded(page); if (result.bytes.subarray(0, 8).toString() === 'SHOTSEQ1') return readLiteralArchive(result.bytes); return { document: { schemaVersion: 1, kind: 'shot-studio-sequence-document', sequence: JSON.parse(result.bytes.toString()), soundtrack: null }, wav: Buffer.alloc(0) }; }
 async function stored(page) { return page.evaluate(() => new Promise((resolve, reject) => {
-  const opened = indexedDB.open('shot-studio-sequence-documents', 1); opened.onerror = () => reject(opened.error);
+  let absent = false; const opened = indexedDB.open('shot-studio-sequence-documents', 1);
+  opened.onupgradeneeded = () => { absent = true; opened.transaction.abort(); };
+  opened.onerror = () => reject(absent ? Error('Document database missing; readback refused to create it') : opened.error);
   opened.onsuccess = () => { const db = opened.result; if (!db.objectStoreNames.contains('state')) { db.close(); reject(Error('Document state store missing')); return; } const tx = db.transaction('state'), request = tx.objectStore('state').get('sequence'), key = tx.objectStore('state').getKey('sequence');
     tx.oncomplete = () => { const value = request.result; db.close(); resolve(key.result === undefined ? { present: false } : { present: true, revision: value.revision, legacyRaw: value.legacyRaw, archive: value.archive instanceof ArrayBuffer ? Array.from(new Uint8Array(value.archive)) : null }); }; tx.onabort = () => { db.close(); reject(tx.error); };
   };
 })); }
 async function storedSummary(page) { return page.evaluate(() => new Promise((resolve, reject) => {
-  const opened = indexedDB.open('shot-studio-sequence-documents', 1); opened.onerror = () => reject(opened.error);
+  let absent = false; const opened = indexedDB.open('shot-studio-sequence-documents', 1);
+  opened.onupgradeneeded = () => { absent = true; opened.transaction.abort(); };
+  opened.onerror = () => reject(absent ? Error('Document database missing; readback refused to create it') : opened.error);
   opened.onsuccess = () => {
     const db = opened.result; if (!db.objectStoreNames.contains('state')) { db.close(); reject(Error('Document state store missing')); return; }
     const tx = db.transaction('state'), request = tx.objectStore('state').get('sequence'), key = tx.objectStore('state').getKey('sequence');
@@ -44,7 +48,11 @@ async function durable(page, expected) {
   await expect(page.locator('#sequence-save-status')).toHaveText('Sequence saved in this browser');
 }
 async function begin(page, complete = true) {
-  await page.goto('/'); await expect(page.locator('#sequence-open')).toBeEnabled(); const accept = dialog => dialog.accept(); page.on('dialog', accept);
+  await page.goto('/'); await expect(page.locator('#sequence-open')).toBeEnabled();
+  // These scenarios start after ordinary storage admission. Importing while the
+  // deliberately editable startup is pending correctly protects the saved copy.
+  await expect(page.locator('#sequence-save-status')).toHaveText('Sequence saved in this browser');
+  const accept = dialog => dialog.accept(); page.on('dialog', accept);
   try { await page.locator('#sequence-open').setInputFiles({ name: complete ? 'original.shot-sequence' : 'original.shot-sequence.json', mimeType: 'application/octet-stream', buffer: complete ? ARCHIVE : Buffer.from(JSON.stringify(originalSoundSequence())) }); await expect(page.locator('#sequence-title')).toHaveValue(DOCUMENT.sequence.title); await durable(page, complete ? DOCUMENT : literalDocument()); }
   finally { page.off('dialog', accept); }
 }

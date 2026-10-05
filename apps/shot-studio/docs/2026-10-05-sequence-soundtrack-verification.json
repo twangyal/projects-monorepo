@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 124,
-  "status": "local-verification-passed-ci-pending",
+  "status": "local-verification-passed-first-ci-diagnosed-followup-pending",
   "recordedAt": "2026-10-05T05:04:31.455279+00:00",
   "baseCommit": "34b64dd78811185c002643f88850d6bf5f7dee31",
   "changes": [
@@ -110,6 +110,20 @@
       },
       "failures": [],
       "rawReportSha256": "dc9d5fa3e1a417ffddffef1a04ad24530fad5a73bf063defc89bdc1eaa0b0c2c"
+    },
+    {
+      "name": "ci-focused-followup",
+      "stats": {
+        "startTime": "2026-10-05T05:25:38.018Z",
+        "duration": 25984.134,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "failures": [],
+      "rawReportSha256": "f3bf818ea4d128f57bf96faccd979400166f997ce8331face74f7084e4fd3114",
+      "scope": "Corrected persistent startup fixture plus unchanged six-second trimmed-video gate; producer and tolerance unchanged."
     }
   ],
   "sourceReview": [
@@ -206,5 +220,6 @@
     "Maximum screenshot and decode failures, independentdiagnostics and final unchangedgates are preserved in the linkedmaximumreceipt."
   ],
   "verifiedAt": "2026-10-05T05:06:55.745731+00:00",
-  "serviceCleanup": "Root maximum service PID893645 on4324 stopped after screenshot verification; Playwright owns and terminates its4323 server. All root-owned new browsers closed."
+  "serviceCleanup": "Root maximum service PID893645 on4324 stopped after screenshot verification; Playwright owns and terminates its4323 server. All root-owned new browsers closed.",
+  "ciReceipt": "2026-10-05-sequence-soundtrack-ci.json"
 }

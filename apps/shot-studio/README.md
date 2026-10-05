@@ -546,6 +546,16 @@ native browser cases** in one regression. See the [root verification](docs/2026-
 Native cases exercise real WAV selection, raw drafts, complete backup/restart,
 two-tab conflicts, mono 44.1 kHz resampling, stereo tones and encoder cancellation.
 
+The first published PR run passed all **328 units and 99 browser cases** on the
+same tree as the push run, which passed 97/99 browser cases. One test imported
+before startup storage admission; its ordinary-import fixture now waits for
+completed admission, and readback refuses to create an absent database. The
+other recording contained an initial 361 ms frame gap. Its original pixels and
+timeline origin were correct, so the production scheduler and 150 ms timing gate
+remain unchanged. Both focused checks pass after that diagnosis. The
+[CI receipt](docs/2026-10-05-sequence-soundtrack-ci.json) preserves the first
+failures and hashes; follow-up publication checks are pending.
+
 The independent maximum uses four complete 20-shot scenes, 256 performer cues,
 twenty clips and 60 seconds of stereo PCM. Its complete **11,554,385-byte** archive
 survives a full browser restart byte-for-byte, alongside an unchanged ordinary
