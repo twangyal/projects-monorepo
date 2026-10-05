@@ -94,7 +94,7 @@ npm run test:browser
 
 With an existing system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The production browser suite reserves port 4261 (`LENS_TEST_PORT` selects another unused port) and builds its image, worker and storage harnesses only for tests. Normal production builds include only the application.
 
-Tests cover strict project/mask validation, bounded history, actual source image formats and orientations, worker cancellation, IndexedDB recovery and the complete editor/export/reopen flow. A separately derived scalar renderer checks focal geometry, subject anchoring, occlusion, alpha edges and missing coverage. An independent PNG decoder checks exported bytes, including colors at low alpha. See `docs/runtime-verification.json` for measured runtime evidence. The local unit gate has 67 tests, including 24 independent numerical cases; the browser suite now has 32 cases, including 48 source-orientation combinations inside the image test. The complete remote CI gate passed all 30 browser cases together at commit `c63ac79`; the independent numerical and source-orientation checks passed as well.
+Tests cover strict project/mask validation, bounded history, actual source image formats and orientations, worker cancellation, IndexedDB recovery and the complete editor/export/reopen flow. A separately derived scalar renderer checks focal geometry, subject anchoring, occlusion, alpha edges and missing coverage. An independent PNG decoder checks exported bytes, including colors at low alpha. See `docs/runtime-verification.json` for measured runtime evidence. The local unit gate has 67 tests, including 24 independent numerical cases; the current browser suite has 65 cases, including 48 source-orientation combinations inside the image test. The complete remote CI gate passed all 30 browser cases together at commit `c63ac79`; the independent numerical and source-orientation checks passed as well.
 
 ## Project status
 
@@ -124,7 +124,11 @@ Chromium153. All thirteen project PR workflows pass. See the [exact CI receipt](
 Issue [#117](https://github.com/twangyal/projects-monorepo/issues/117) protects the
 complete saved study after reproducing a stale tab erasing another tab's painted
 mask and framing settings. Version 0.2.0 passes **67 unit and 65 production
-Chromium cases**, lint, type checking and build locally. The 33 new cases cover
+Chromium cases**, lint, type checking and build locally and in both
+[push](https://github.com/twangyal/projects-monorepo/actions/runs/37250786108) and
+[PR](https://github.com/twangyal/projects-monorepo/actions/runs/37250789487) CI at
+`d2dc7560bbb5f7c111f5389c12cc760cd1149fed`. The [CI receipt](docs/2026-10-05-saved-copy-ci.json)
+verifies the identical implementation and actual PR checkout trees. The 33 new cases cover
 competing native writers, complete PNG/mask/settings identity, accepted-load and
 replacement authority, older-client fencing, actual ten-second transaction and
 thirty-second image deadlines, late cleanup and preserved editor drafts/history.
@@ -137,8 +141,18 @@ narrow corrections retain all complete-record, raw-field and pixel assertions.
 Synthetic persisted-page events test ownership rules; they do not establish
 physical device behavior or actual browser back/forward-cache eligibility.
 
-An independently authored full-size fixture contains a 1280 × 1280 original PNG,
-all 1,638,400 authored labels and distinct complete saved-copy variants. Its
-runtime/restart acceptance and exact published-head CI are tracked separately in
-the [maximum receipt](docs/2026-10-05-saved-copy-maximum.json) and issue #117;
-fixture generation alone is not an acceptance result.
+The independent maximum run passed with a 1280 × 1280 original PNG and all
+1,638,400 authored depth labels. Actual normalization checks every RGBA byte;
+exact 12 MiB input is accepted and one extra byte is refused. Competing tabs retain
+the complete photo, mask, settings, raw fields and painting history; a third writer
+invalidates stale replacement approval. Fifteen retained edit states produce
+14 Undo and 14 Redo transitions within the 32 MiB history budget. The complete
+10,926,179-byte backup and native saved revision survive a new browser process
+exactly. Four PNG exports pass independent scalar samples within one RGBA level.
+
+The [maximum receipt](docs/2026-10-05-saved-copy-maximum.json) preserves the first
+failed run: the fixture used a five-decimal shift where the existing contract
+permits four. Only that declaration changed to -0.0312 before the successful
+367.7-second run; original files, image/mask bounds and tolerances are retained.
+Raw-input capacity includes disclosed trailing whitespace. These measurements
+do not establish peak memory or general latency.

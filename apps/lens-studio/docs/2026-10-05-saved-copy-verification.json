@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "issue": 117,
-  "status": "Core local gate complete:67units,lint/type/build and65nativepassed; originalfailuresretained. Maximumruntime andCIpending.",
+  "status": "Complete: 67 unit and 65 native browser tests, lint/type/build, independent maximum runtime/restart, and both published CI gates pass.",
   "baseline": "2026-10-05-saved-copy-baseline.json",
   "design": "../../../docs/superpowers/specs/2026-10-05-lens-saved-copy-conflicts-design.md",
   "compatibilityChanges": [
@@ -65,21 +65,15 @@
     },
     "artifacts": "/workspace/lens117-full-native-final-artifacts"
   },
-  "maximum": {
-    "fixtureGeneration": "passed",
-    "log": {
-      "path": "/tmp/lens117-maximum-fixtures.log",
-      "bytes": 536,
-      "sha256": "0b4a9fe947c14096e97c4def35c442cc9cd256f83fa93ef911902ced79b50055"
-    },
-    "fixtures": "/workspace/lens117-maximum-fixtures",
-    "photoBytes": 6555943,
-    "completeProjectBytes": 10926180,
-    "editStateBytes": 2184742,
-    "expectedHistoryStates": 15,
-    "runtime": "pending"
+  "ci": {
+    "status": "passed",
+    "receipt": "2026-10-05-saved-copy-ci.json",
+    "implementation": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+    "tree": "e1fd0f261835b65f8f74914aa40452833dc665ed",
+    "push": "https://github.com/twangyal/projects-monorepo/actions/runs/37250786108",
+    "pullRequest": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789487",
+    "all13ProjectPullRequests": "passed"
   },
-  "ci": "pending",
   "nativeFirst": {
     "stats": {
       "startTime": "2026-10-05T00:56:27.322Z",
@@ -147,5 +141,64 @@
       "sha256": "895aba6e0cf52b22b3080ec0a859b1155e4f75a71fa24701848fe26c6ab51e7e"
     },
     "testHarnessOmitted": true
+  },
+  "maximumFirstFixtureGeneration": {
+    "fixtureGeneration": "passed",
+    "log": {
+      "path": "/tmp/lens117-maximum-fixtures.log",
+      "bytes": 536,
+      "sha256": "0b4a9fe947c14096e97c4def35c442cc9cd256f83fa93ef911902ced79b50055"
+    },
+    "fixtures": "/workspace/lens117-maximum-fixtures",
+    "photoBytes": 6555943,
+    "completeProjectBytes": 10926180,
+    "editStateBytes": 2184742,
+    "expectedHistoryStates": 15,
+    "runtime": "First actual run failed: original shift -.03125 exceeded the existing four-decimal contract. See preserved maximum receipt."
+  },
+  "maximum": {
+    "status": "passed",
+    "wallMs": 367672.29994000006,
+    "fixtureDirectory": "/workspace/lens117-maximum-valid-fixtures",
+    "output": "/workspace/lens117-maximum-second",
+    "receipt": "2026-10-05-saved-copy-maximum.json",
+    "nativeReceipt": {
+      "path": "/workspace/lens117-maximum-second/verification.json",
+      "bytes": 8307,
+      "sha256": "d13ecb4be831492ef17f2e313628cb77563470c4a627c5d5eed7b82efdccef48"
+    },
+    "log": {
+      "path": "/tmp/lens117-maximum-second.log",
+      "bytes": 409,
+      "sha256": "6f856a651c11de5675d317aa4ae6261fe82f151c062a6639edec8ed9bc4e15c9"
+    },
+    "finalStoredReceipt": {
+      "schemaVersion": 2,
+      "revision": "7c481a37-ea14-4b7f-a6f3-14b4c22640c3",
+      "projectSha256": "9558f7200575f624d2769f3565d5cf30b6b1d3d3fea5eb16cc48854340c39b20",
+      "completeProjectBytes": 10926179,
+      "editStateBytes": 2184741,
+      "wrapperBytes": 10926259,
+      "wrapperSha256": "9f8eb45fef246f7d52bab60f4d47b1414db5d4d00bc499c3b4115117e6cec873"
+    },
+    "history": {
+      "photoStoredSeparately": true,
+      "editStateBytes": 2184741,
+      "expectedRetainedSnapshots": 15,
+      "budgetBytes": 33554432,
+      "provesByteCap": true,
+      "undoTransitions": 14,
+      "redoTransitions": 14,
+      "distinctNativeTitleCommits": 20,
+      "exactPhotoSha256": "eeba28f7087aba19e59729d5eb04155dd8e781c00712fb64921eca542e508d22"
+    },
+    "browserProcesses": [
+      795215,
+      795981
+    ],
+    "pageErrors": [],
+    "externalRequests": [],
+    "rootVisualReview": "390px full-page screenshot inspected; no horizontal overflow; values/source/projection/recovery visible.",
+    "rootOwnedServer": "4315 / PID793981 stopped after run."
   }
 }
