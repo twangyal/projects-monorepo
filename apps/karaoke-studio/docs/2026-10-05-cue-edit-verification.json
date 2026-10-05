@@ -51,7 +51,15 @@
     "apps/karaoke-studio/tests/cue-edit.spec.ts": "00d5d1f8230ad3a9bbd532eb4c174418bce2be93e473ed3c8e0066e96d3d19a2",
     "apps/karaoke-studio/tests/cue-structure.test.ts": "30050edca654422aa140cac7b29ba726aff27e47e5b54cc5c8fd8c213c9a2e5f"
   },
-  "published_ci": "pending; issue remains open",
+  "published_ci": {
+    "status": "accepted",
+    "receipt": "2026-10-05-cue-edit-acceptance.json",
+    "head": "29dd9066b51eef096b595852b6b5d0d17c8b8c89",
+    "python": 166,
+    "typescript": 116,
+    "nativeBrowser": 91,
+    "reconfirmedHead": "d076b3e27a198a7a6073ed96990497b0b5c3033f"
+  },
   "verification_corrections": {
     "first_extended_browser_run": {
       "passed": 77,

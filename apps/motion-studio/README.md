@@ -325,3 +325,16 @@ Exact corrected-head [push CI](https://github.com/twangyal/projects-monorepo/act
 Version 0.6 adds whole-stroke selection, movement, appearance changes and deletion without changing the saved format or renderer. Local acceptance passes **225 unit tests and all 141 native browser cases**, plus lint, type checking and production build. The [verification receipt](docs/2026-10-05-stroke-edit-verification.json) preserves original failures and the narrow repairs for unchanged uppercase color values consuming Redo and explicit pose Discard committing on blur. Independent native tests cover transformed geometry, dots/overlaps, raw fields, cancellation, touch/list/keyboard authoring, real PNGs and every frame of an exported GIF. Both first published [push](https://github.com/twangyal/projects-monorepo/actions/runs/37257098966) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37257103189) CI runs pass the same 225 unit and 141 native cases at `6dc7571aef7959d8dbb117b03326506976a320bd`. The actual PR merge has the identical source tree; the [CI receipt](docs/2026-10-05-stroke-edit-ci.json) records checkouts, logs and the unrelated Karaoke failure in the wider PR run.
 
 The [maximum run](docs/2026-10-05-stroke-edit-maximum.json) verifies eight layers, four original embedded PNGs, 100 strokes, 10,000 points, a 1,000-point stroke and 24 drawings in the selected layer. An exact **6,291,624-byte** project survives complete Chromium restart; one extra input byte is refused. Separate unpadded artwork permits real edits without artificial numeric-size restrictions. Its **223,074-byte** edited backup survives another restart byte for byte, with exact unrelated artwork, images and pose keys. All **96 GIF frames / 8 seconds** and original/edited PNG checks match independent geometry and color expectations. Capacity PNG padding is declared; these checks do not establish peak memory, physical touch hardware or a combined 192-cel maximum.
+
+## PNG frame archive acceptance (#127)
+
+The [verification receipt](docs/2026-10-05-png-frames-verification.json) records
+237 unit cases, lint/type/build and all 146 native browser cases locally and in
+both first published push/PR runs at `d076b3e`. The actual PR merge has the same
+verified implementation tree. An independent reader checks ZIP headers, CRCs,
+manifest and every PNG, including the 96-frame/eight-layer/four-image/100-stroke/
+10,000-point maximum. Separate original artwork preserves 1,024 exact colors,
+held-cel boundaries and poses. Both editor and HTTPS private viewer release real
+workers on cancellation after frame progress and controlled page departure.
+Valid ancillary padding admits the exact 96 MiB cap and rejects +1; this byte
+capacity check does not establish general latency or peak memory.

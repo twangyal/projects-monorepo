@@ -1,0 +1,71 @@
+{
+  "issue": 121,
+  "date": "2026-10-05",
+  "status": "published product acceptance verified",
+  "acceptedHead": "29dd9066b51eef096b595852b6b5d0d17c8b8c89",
+  "currentDomainUnchangedSince": "f1bd5300f52cc872769fafd6d6365cabfff038d7",
+  "latestObservedCi": {
+    "event": "pull_request",
+    "runId": 37272869841,
+    "jobId": 111643410838,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272869841",
+    "conclusion": "success",
+    "python": 166,
+    "typescript": 116,
+    "browser": 91,
+    "staticAndBuild": "passed",
+    "evidence": "Directly fetched run/job metadata and original decoded job log during this run."
+  },
+  "originalCorrectedCi": [
+    {
+      "event": "push",
+      "runId": 37257768827,
+      "jobId": 111598407615,
+      "python": 166,
+      "typescript": 103,
+      "browser": 79,
+      "conclusion": "success"
+    },
+    {
+      "event": "pull_request",
+      "runId": 37257771610,
+      "jobId": 111598415806,
+      "python": 166,
+      "typescript": 103,
+      "browser": 79,
+      "conclusion": "success"
+    }
+  ],
+  "scope": [
+    "Literal Split at caret/playhead preserves original outer times and exact Unicode text.",
+    "Adjacent Merge joins one newline and deliberately covers the original gap.",
+    "Atomic whole-proposal validation, raw drafts and one-action Undo/Redo.",
+    "Genuine native Save/reopen/API/SRT with supplied original PCM; CRLF textarea-coordinate translation.",
+    "Full200-cue split refusal, deliberate199-cue merge and200-cue Undo restoration."
+  ],
+  "sourceSha256": {
+    "src/cue-edit.ts": "087c6d874b873706dafdee56bc0e21ca83a19f53ce7b814dfb7296a56454b58a",
+    "src/cue-structure.ts": "d77d6a1e7c1c4cacd48bf70736c3a62272efb99835ac44459a3cc28931ca7b4b",
+    "tests/cue-edit.spec.ts": "00d5d1f8230ad3a9bbd532eb4c174418bce2be93e473ed3c8e0066e96d3d19a2",
+    "tests/cue-edit.test.ts": "ce9bf5faa0bf54757040128ff7a5d6940a9c1e1db0eb6c2c352d7dcc0e6ebed9",
+    "tests/cue-structure.test.ts": "30050edca654422aa140cac7b29ba726aff27e47e5b54cc5c8fd8c213c9a2e5f"
+  },
+  "limitations": [
+    "This reconciliation does not add new production behavior or claim fresh local Python/browser execution.",
+    "Unpublished complementary tests described in earlier issue comments are excluded. The four published native cue-edit cases meet the product acceptance contract.",
+    "Original local RSS/fixture/readiness failures remain in previous receipts; Linux CI acceptance does not rewrite those observations."
+  ],
+  "currentReconfirmation": {
+    "head": "d076b3e27a198a7a6073ed96990497b0b5c3033f",
+    "actualCheckout": "6387ecbc021afbb07f566d23e116e018407d93a3",
+    "tree": "38b6c0661300a41d80c397ae10098a1f44b5591e",
+    "runId": 37277987691,
+    "jobId": 111659227903,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37277987691",
+    "conclusion": "success",
+    "python": 166,
+    "typescript": 116,
+    "browser": 91,
+    "evidence": "Original job log and completed steps fetched directly."
+  }
+}

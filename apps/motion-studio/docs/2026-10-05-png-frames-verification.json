@@ -63,7 +63,29 @@
       "sha256": "364d3291bffb08aad31af26a46c7aaa35086fb8bed4ef7fb1a5fa84f9ebc671c"
     }
   ],
-  "ci": "pending published-head acceptance",
+  "ci": {
+    "status": "both first published events passed",
+    "push": {
+      "runId": 37277981373,
+      "jobId": 111659207516,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37277981373",
+      "checkout": "d076b3e27a198a7a6073ed96990497b0b5c3033f",
+      "unit": 237,
+      "browser": 146,
+      "conclusion": "success"
+    },
+    "pullRequest": {
+      "runId": 37277987673,
+      "jobId": 111659228088,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37277987673",
+      "checkout": "6387ecbc021afbb07f566d23e116e018407d93a3",
+      "unit": 237,
+      "browser": 146,
+      "conclusion": "success",
+      "tree": "38b6c0661300a41d80c397ae10098a1f44b5591e"
+    },
+    "evidence": "Original job logs, run/job metadata and actual PR merge Git tree read directly; identical local/push/merge implementation trees."
+  },
   "limits": [
     "The archive carries rendered frames rather than editable project data.",
     "Ancillary capacity padding tests bounded byte admission, not peak memory or general encoding latency."
@@ -71,5 +93,7 @@
   "review": {
     "method": "independent read-only reviewer",
     "actionableFindings": 0
-  }
+  },
+  "implementationCommit": "d076b3e27a198a7a6073ed96990497b0b5c3033f",
+  "verifiedTree": "38b6c0661300a41d80c397ae10098a1f44b5591e"
 }

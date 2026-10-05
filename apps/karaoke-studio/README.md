@@ -54,7 +54,10 @@ intervals, including any instrumental gap. These actions validate the entire
 proposal before changing the editor, preserve unrelated numeric spellings and
 pasted drafts, and make one unsaved Undo/Redo edit. Save lyrics when ready.
 The last line has no next line to merge. Existing cue and character limits apply
-to the complete result. See [issue #121](https://github.com/twangyal/projects-monorepo/issues/121).
+to the complete result. [Published acceptance](docs/2026-10-05-cue-edit-acceptance.json)
+records the original corrected push/PR checks and the later successful
+166 Python / 116 TypeScript / 91 native-case PR gate, including all four supplied-text
+cue-edit cases. Complementary unpublished tests are excluded from these counts.
 
 **Undo lyric edit** and **Redo lyric edit** recover up to **30 unsaved edits**:
 title/text/timing corrections, removed lines, pasted words, draft generation, and
