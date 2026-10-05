@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 123,
   "version": "0.8.0",
-  "status": "local acceptance passed; publication and CI pending",
+  "status": "local acceptance and first exact-head push/PR CI passed",
   "date": "2026-10-05",
   "scope": "Metadata-only changed-file discovery between two pinned committed trees, explicit source-comparison handoff, canonical portable catalog JSON and CLI. No rename inference or source fetch during discovery.",
   "python": {
@@ -235,7 +235,7 @@
     "Renames intentionally appear as deletion plus addition; symlink and gitlink rows do not hand off or follow targets.",
     "No network access, repository writes, worktree reads or automatic source loading during discovery.",
     "Count-maximum native fixture uses small paths; controlled raw 2 MiB and canonical JSON 8 MiB boundaries are separate and not simultaneous reachable-max claims.",
-    "No browser engine/device claims beyond measured local Chromium; CI pending."
+    "Local Chromium and CI Chromium measured; no physical device or other browser engine claims."
   ],
   "frozenSources": [
     {
@@ -313,5 +313,11 @@
       "bytes": 7877,
       "sha256": "1b27192336edebfc57802f3968380e9c351bb6ea1d3414e698449e726718a47e"
     }
-  ]
+  ],
+  "publication": {
+    "head": "f5260240986b238f7af2bcc3449cabb37d7fc246",
+    "tree": "7ae86dc8cc1a2dff8faa6ed6663ce52e9aec7734",
+    "ciReceipt": "2026-10-05-changed-files-ci.json",
+    "all13PRWorkflowsPassed": true
+  }
 }

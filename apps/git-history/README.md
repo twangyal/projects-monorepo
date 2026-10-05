@@ -474,3 +474,12 @@ The [verification record](docs/2026-10-05-changed-files-verification.json),
 [independent oracle](docs/2026-10-05-changed-files-oracle.json) and
 [maximum fixture receipt](docs/2026-10-05-changed-files-maximum.json) retain
 original expectations, actual attempts, source/artifact hashes and limitations.
+
+
+Both first [push](https://github.com/twangyal/projects-monorepo/actions/runs/37258931787)
+and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37258934438)
+CI runs pass at `f5260240986b238f7af2bcc3449cabb37d7fc246`: all 357 Python cases
+on Python 3.11–3.13 in core/native environments with the same intentional skips,
+17 Node cases, lint, wheel/installed checks and 46 browser cases. The actual PR
+merge has the identical tree; all thirteen project PR workflows pass. The
+[CI receipt](docs/2026-10-05-changed-files-ci.json) records first-run job evidence.
