@@ -88,7 +88,7 @@ Results show every expected/observed choice alongside the latest baseline. The o
 }
 ```
 
-Actual local-model quality, a Jev comparison, and applying context decisions to live navigation remain unverified/unimplemented. CI's controlled local API responses test integration boundaries; they are not model-quality measurements.
+The first real local Tev1 measurement is retained in [the evaluation record](docs/2026-10-03-tev1-evaluation.md) and [importable report](docs/2026-10-03-tev1-report.json): 6/11 eligible cases agree, equal to geometry, with three unexpected selections versus geometry's one and 3.22-second median adapter time. This candidate stays in the optional lab. A Jev comparison and applying context decisions to live navigation remain unverified/unimplemented. Controlled CI responses test integration boundaries separately.
 
 ### Command-line local benchmark
 
@@ -103,7 +103,7 @@ The CLI prints only one importable report to stdout; case progress goes to stder
 
 The report's optional `benchmark` metadata separates all 14 cases from the eleven model-eligible cases and three policy-only cases, compares each result with geometry, and records median/p95 eligible-case adapter time. Errors and missing rows remain in their subset's denominator. Times include transport, first-call preflight and cold loading; they are not webcam latency or inference-only timing. The browser imports the ordinary report fields and does not authenticate extra benchmark metadata.
 
-The **Gaze decision model benchmark** workflow is repeatable through GitHub Actions' **Run workflow** button. It runs only on explicit dispatch or edits to its own workflow, rather than every app change. It uses a pinned, SHA-256-verified Ollama v0.35.1 archive, temporary model storage, a verified cloud-disabled loopback server, and one explicit `tev1:0.8b-q8_0` pull. The standard public runner has a 15-minute limit and uploads no artifacts/caches. The workflow logs contain the full JSON report and runtime verification; actual model results are still pending.
+The **Gaze decision model benchmark** workflow is repeatable through GitHub Actions' **Run workflow** button. It runs only on explicit dispatch or edits to its own workflow, rather than every app change. It uses a pinned, SHA-256-verified Ollama v0.35.1 archive, temporary model storage, a verified cloud-disabled loopback server, and one explicit `tev1:0.8b-q8_0` pull. The standard public runner has a 15-minute limit and uploads no artifacts/caches. The workflow logs contain the full JSON report and runtime verification; the first actual result is recorded in [the evaluation](docs/2026-10-03-tev1-evaluation.md). The job completed on 2026-10-03; its successful exit means a complete measurement, not acceptable model quality.
 
 ## Verification
 
