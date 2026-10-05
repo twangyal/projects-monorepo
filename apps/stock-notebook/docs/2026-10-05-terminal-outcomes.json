@@ -31,5 +31,34 @@
     "apps/stock-notebook/src/storage.ts": "b2708821e32e2a95ac5c4b649cdc6f0b34a3a0963fe3c3df1ce65b415c21067a",
     "apps/stock-notebook/tests/browser/terminal-outcomes.spec.ts": "9acd3a76b26df0a8d68e2fda9f6a19f15ec804bd6f956d1aa1345d864d08c70b"
   },
-  "published_ci": "pending; issue stays open until exact implementation-head CI"
+  "published_ci": {
+    "implementation": "31d1152f0eb63efc26d926772af2e70809cc459c",
+    "push": {
+      "run": 37252198397,
+      "job": 111581950080,
+      "head": "31d1152f0eb63efc26d926772af2e70809cc459c",
+      "conclusion": "success",
+      "units": 231,
+      "browser": 59
+    },
+    "original_pr": {
+      "run": 37252202412,
+      "conclusion": "cancelled",
+      "reason": "superseded by a concurrent Clothing documentation commit"
+    },
+    "verified_pr": {
+      "run": 37252296542,
+      "job": 111582292755,
+      "head": "9f4768045fccfdfb9b40ae3bb1564b36664091d7",
+      "conclusion": "success",
+      "units": 231,
+      "browser": 59
+    },
+    "source_equivalence": "GitHub compare from implementation to verified PR head changes only PROJECT_IDEAS.md and Clothing README/receipts; Stock source, tests, lockfile and workflow unchanged.",
+    "additional_gates": [
+      "31 isolated experiment invariant tests",
+      "frozen failed-development diagnostic parity; no learned helper enabled",
+      "maximum annual-history and reviewed-refresh probes"
+    ]
+  }
 }
