@@ -36,11 +36,11 @@ export const nativeExportBackend={
   let retired=false,closing;const pending=new Set();
   const active=()=>{if(retired)throw Error('Export cancelled.');};
   const track=work=>{active();const promise=work();pending.add(promise);promise.then(()=>pending.delete(promise),()=>pending.delete(promise));return promise;};
-  // Native support queries cannot be cancelled. Drain any source add before
-  // cancelling the muxer, so an encoder created after that query is also closed.
+  // Native support queries and finalization flushes cannot be cancelled. Drain
+  // every owned operation before retiring output, including a late encoder.
   const cancel=()=>{retired=true;return closing??=(async()=>{await Promise.allSettled([...pending]);await output.cancel();})();};
   return {
-   start:()=>{active();return output.start();},finalize:()=>{active();return output.finalize();},cancel,
+   start:()=>track(()=>output.start()),finalize:()=>track(()=>output.finalize()),cancel,
    video(canvas,frame){
     active();const native=new VideoFrame(canvas,{timestamp:frame.timestamp,duration:frame.duration});
     try{return new bunny.VideoSample(native);}catch(error){native.close();throw error;}

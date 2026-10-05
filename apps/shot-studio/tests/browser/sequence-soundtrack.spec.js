@@ -214,7 +214,9 @@ test('actual mono 44.1 kHz WAV keeps original frames and pitch through native Op
   expect(allFinite).toBe(true);
   const rms = Math.sqrt(squared / (end - start)), expectedRms = 4096 / 32768 * 0.5 / Math.sqrt(2), frequency = crossings / ((end - start) / 48000);
   expect(Math.abs(rms / expectedRms - 1)).toBeLessThan(0.05); expect(Math.abs(frequency - 330)).toBeLessThan(2);
-  const starts = await page.evaluate(() => window.soundOracle.starts); expect(starts).toHaveLength(1); expect(starts[0]).toMatchObject({ channels: 1, frames: 44100, rate: 44100 }); expect(starts[0].args.slice(1)).toEqual([0, 1]);
+  // Timestamped export reads original PCM directly, without live playback.
+  expect(await page.evaluate(() => window.soundOracle.starts)).toEqual([]);
+  expect(await page.evaluate(() => window.soundOracle.contexts.length)).toBe(0);
   // A one-second soundtrack must leave a real silent audio tail through the
   // six-second film, rather than truncate the audio stream at its two-second cut.
   expect(decodedFrames).toBeGreaterThanOrEqual(283200); expect(decodedFrames).toBeLessThanOrEqual(297600);
