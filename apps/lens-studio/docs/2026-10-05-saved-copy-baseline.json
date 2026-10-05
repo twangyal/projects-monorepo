@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "status": "Original native complete-project overwrite reproduced before product edits.",
+  "baselineHead": "14c8c2a136c85b8e24e014a5689f6aa1b695b264",
+  "source": {
+    "src/storage.ts": {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/storage.ts",
+      "bytes": 4072,
+      "sha256": "b1e9b0886c16a9e9d0ca5ed7f7775fb75dfc0a31f8c66027b2cad255fb6196cc"
+    },
+    "src/main.ts": {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/main.ts",
+      "bytes": 29998,
+      "sha256": "d178decb703c1e44f2e962930a460213a418927ce624d6232902f7027134687d"
+    }
+  },
+  "baselineBuild": {
+    "path": "/tmp/lens117-baseline-build.log",
+    "bytes": 678,
+    "sha256": "a6cfbc4cbd2c30c3a45a83456d80b37d2309a7b167e0fc47ab129260f7b946e2"
+  },
+  "normalProductionDist": "/workspace/lens117-baseline-dist",
+  "firstRun": {
+    "verification": {
+      "path": "/workspace/lens117-baseline-stale-save/verification.json",
+      "bytes": 12810,
+      "sha256": "fc3813202924adc5d489242d14efb8a9843ed6d65925fe79e58b3c1999020d20"
+    },
+    "output": "/workspace/lens117-baseline-stale-save",
+    "actualElapsedMs": 2720.3226630000004,
+    "actualFailure": "Final exact durable-winner assertion failed: actual row equals complete stale project; no earlier fixture or UI assertion failed.",
+    "classificationCorrection": "Original result field mislabeled setup-or-admission-failure because JSON.stringify used photo property order. Subsequent classifier-only change uses node:util isDeepStrictEqual. Frozen pixels/settings/mask and final deep equality oracle unchanged. Original evidence preserved."
+  },
+  "correctedClassifierRun": {
+    "verification": {
+      "path": "/workspace/lens117-baseline-stale-save-corrected/verification.json",
+      "bytes": 12819,
+      "sha256": "7d6b9f45d5093e57d7a4882b4cb28b89297e2c8fd06f4029edb4917b89f3d0db"
+    },
+    "output": "/workspace/lens117-baseline-stale-save-corrected",
+    "log": {
+      "path": "/tmp/lens117-baseline-native-corrected.log",
+      "bytes": 226,
+      "sha256": "b6701bfd401c97c805d4df60d162ab721ca963fb76c3dd1a0b4db881fe537fd9"
+    },
+    "runner": {
+      "path": "/tmp/lens117-baseline-stale-save.mjs",
+      "bytes": 10751,
+      "sha256": "c52b3b2031c31f9de686ab7e32f3ec39330ae3de2f5107c6fb02508ae7f4b2de"
+    },
+    "elapsedMs": 2579.0067950000002,
+    "result": "expected-baseline-protection-failure",
+    "downloads": {
+      "original-project.json": {
+        "bytes": 1732,
+        "sha256": "7d2705c0ec62559859bb7e826997cdc6860c829dad4e7ef5347199b9576e289b",
+        "filename": "lens-studio-project.json"
+      },
+      "b-restored-original.json": {
+        "bytes": 1732,
+        "sha256": "7d2705c0ec62559859bb7e826997cdc6860c829dad4e7ef5347199b9576e289b",
+        "filename": "lens-studio-project.json"
+      },
+      "a-complete-winner.json": {
+        "bytes": 1752,
+        "sha256": "cdbe187364a1e5130a41ae7df7e8c3ffba14e6ccb2c869de0a18eb45c4c66db7",
+        "filename": "lens-studio-project.json"
+      },
+      "b-complete-stale.json": {
+        "bytes": 1740,
+        "sha256": "1eef8342a8a3feeead5e8692a57baa6f2c616ba68c03a01ae0449d89acbd6181",
+        "filename": "lens-studio-project.json"
+      }
+    },
+    "statuses": {
+      "a": "Saved locally \u00b7 browser storage",
+      "b": "Saved locally \u00b7 browser storage"
+    },
+    "fixtures": {
+      "originalPngBytes": 230,
+      "originalPngSha256": "39b7eff755cfa00559f21aed6bd6c4c0c31cf4508877e176fe126f70c79a3a93",
+      "rgbaSha256": "bcf4518ead4d24f42760284a678c294dd52ff02a898e5de95a2b9a1712a0c183",
+      "nearIndices": [
+        71,
+        72,
+        86,
+        87,
+        88,
+        89,
+        102,
+        103,
+        104,
+        105,
+        119,
+        120
+      ]
+    },
+    "errors": [],
+    "externalRequests": []
+  },
+  "independentFacts": {
+    "originalPhotoPixels": 192,
+    "originalPhotoRgbaSha256": "bcf4518ead4d24f42760284a678c294dd52ff02a898e5de95a2b9a1712a0c183",
+    "winnerNearPixels": 12,
+    "staleNearPixels": 0,
+    "winnerSettings": {
+      "mode": "fixed",
+      "sourceFocal": 50,
+      "targetFocal": 100,
+      "shiftX": 0.125,
+      "shiftY": -0.125,
+      "near": 0.7,
+      "far": 3
+    },
+    "staleSettings": {
+      "mode": "fixed",
+      "sourceFocal": 50,
+      "targetFocal": 50,
+      "shiftX": 0,
+      "shiftY": 0,
+      "near": 0.6,
+      "far": 2
+    },
+    "completeWinnerBeforeStale": true,
+    "completeStaleDurableAfterTitleSave": true,
+    "bothPagesReportedSaved": true,
+    "photoPixelChecks": "All192 original decoded RGBA pixels exactly matched original/winner/stale/native records; native UUID/container bytes bound only after independent original pixel comparison."
+  },
+  "limitations": [
+    "Original synthetic image proves storage/pixel preservation behavior, not photographic or physical lens accuracy.",
+    "No product source edits preceded the reproduction."
+  ]
+}

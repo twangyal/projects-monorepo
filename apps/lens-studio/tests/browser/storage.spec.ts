@@ -10,21 +10,26 @@ test.beforeEach(async ({ page }) => {
 test('native storage round-trip validates decoded images and returns detached records', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.lensStorage;
-    const missing = await h.loadProject();
+    const store = await h.openProjectStore(), initial = await store.load();
+    store.acceptLoad(initial.receipt);
+    const missing = initial.project;
     const project = h.fixture();
-    await h.saveProject(project);
-    const loaded = (await h.loadProject())!;
+    await store.save(project);
+    const loaded = (await store.load()).project!;
     const equal = JSON.stringify(loaded) === JSON.stringify(project);
     loaded.title = 'Detached edit';
-    const savedTitle = (await h.loadProject())!.title;
-    await h.clearProject();
-    return { missing, equal, savedTitle, cleared: await h.loadProject() };
+    const savedTitle = (await store.load()).project!.title;
+    await store.clear();
+    const cleared = (await store.load()).project; await store.close();
+    return { missing, equal, savedTitle, cleared };
   });
   expect(result).toEqual({ missing: null, equal: true, savedTitle: 'Captured study', cleared: null });
 });
 
 test('queued saves capture immediately and complete only after their ordered native transactions', async ({ page }) => {
   const result = await page.evaluate(async () => {
+    const store = await window.lensStorage.openProjectStore();
+    store.acceptLoad((await store.load()).receipt);
     const original = IDBDatabase.prototype.transaction;
     let hold = true;
     let first = true;
@@ -52,21 +57,21 @@ test('queued saves capture immediately and complete only after their ordered nat
     };
     try {
       const project = window.lensStorage.fixture('First snapshot');
-      const firstSave = window.lensStorage.saveProject(project).then(() => { firstCompleted = true; });
+      const firstSave = store.save(project).then(() => { firstCompleted = true; });
       project.title = 'Second snapshot';
-      const secondSave = window.lensStorage.saveProject(project);
+      const secondSave = store.save(project);
       project.title = 'Unsaved mutation';
       // Image validation precedes the transaction; elapsed time does not prove it started.
       await firstRequest;
       const pending = !firstCompleted && started === 1;
       hold = false;
       await Promise.all([firstSave, secondSave]);
-      const title = (await window.lensStorage.loadProject())!.title;
-      const third = window.lensStorage.saveProject(project);
-      const clear = window.lensStorage.clearProject();
+      const title = (await store.load()).project!.title;
+      const third = store.save(project);
+      const clear = store.clear();
       await Promise.all([third, clear]);
-      return { pending, title, cleared: await window.lensStorage.loadProject() };
-    } finally { hold = false; IDBDatabase.prototype.transaction = original; }
+      return { pending, title, cleared: (await store.load()).project };
+    } finally { hold = false; IDBDatabase.prototype.transaction = original; await store.close(); }
   });
   expect(result).toEqual({ pending: true, title: 'Second snapshot', cleared: null });
 });
@@ -74,8 +79,9 @@ test('queued saves capture immediately and complete only after their ordered nat
 test('aborted native save rejects, leaves prior record intact and allows subsequent saves', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.lensStorage;
+    const store = await h.openProjectStore(); store.acceptLoad((await store.load()).receipt);
     const project = h.fixture('Last good');
-    await h.saveProject(project);
+    await store.save(project);
     const original = IDBDatabase.prototype.transaction;
     let once = true;
     IDBDatabase.prototype.transaction = function (...args: Parameters<typeof original>) {
@@ -87,12 +93,13 @@ test('aborted native save rejects, leaves prior record intact and allows subsequ
       return tx;
     };
     let error = '';
-    try { await h.saveProject({ ...project, title: 'Aborted edit' }); }
+    try { await store.save({ ...project, title: 'Aborted edit' }); }
     catch (value) { error = (value as Error).message; }
     finally { IDBDatabase.prototype.transaction = original; }
-    const retained = (await h.loadProject())!.title;
-    await h.saveProject({ ...project, title: 'Retry worked' });
-    return { error, retained, retry: (await h.loadProject())!.title };
+    const retained = (await store.load()).project!.title;
+    await store.save({ ...project, title: 'Retry worked' });
+    const retry = (await store.load()).project!.title; await store.close();
+    return { error, retained, retry };
   });
   expect(result.error).toMatch(/storage.*download.*project.*retry/i);
   expect(result.retained).toBe('Last good');
@@ -105,7 +112,9 @@ test('corrupt and explicitly undefined records are reported without replacement'
     const messages: string[] = [];
     for (const raw of [{ unexpected: 'Corrupt record' }, undefined]) {
       await h.rawRecord(raw, true);
-      try { await h.loadProject(); } catch (value) { messages.push((value as Error).message); }
+      const store = await h.openProjectStore();
+      try { await store.load(); } catch (value) { messages.push((value as Error).message); }
+      finally { await store.close(); }
       const retained = await h.rawRecord();
       if (JSON.stringify(retained) !== JSON.stringify(raw)) throw new Error('Corrupt record was replaced');
     }
@@ -118,15 +127,20 @@ test('corrupt and explicitly undefined records are reported without replacement'
 test('a native image decode failure prevents restore and retains the stored record', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const h = window.lensStorage;
+    const store = await h.openProjectStore(); store.acceptLoad((await store.load()).receipt);
     const project = h.fixture('Recoverable record');
-    await h.saveProject(project);
+    await store.save(project);
+    const saved = await h.rawRecord();
     const original = window.createImageBitmap;
     let calls = 0;
     window.createImageBitmap = (() => { calls++; return Promise.reject(new DOMException('Fixture decode failure', 'InvalidStateError')); }) as typeof createImageBitmap;
     let message = '';
-    try { await h.loadProject(); } catch (error) { message = (error as Error).message; }
+    try { await store.load(); } catch (error) { message = (error as Error).message; }
     finally { window.createImageBitmap = original; }
-    return { calls, message, retained: JSON.stringify(await h.rawRecord()) === JSON.stringify(project), retry: (await h.loadProject())!.title };
+    await store.close();
+    const reopened = await h.openProjectStore();
+    const retry = (await reopened.load()).project!.title; await reopened.close();
+    return { calls, message, retained: JSON.stringify(await h.rawRecord()) === JSON.stringify(saved), retry };
   });
   expect(result.calls).toBeGreaterThan(0);
   expect(result.message).toMatch(/saved.*project.*invalid|decode|image/i);
@@ -138,12 +152,14 @@ test('header-valid undecodable image cannot overwrite a good saved project', asy
   const badPhoto = 'data:image/png;base64,' + Buffer.from(pngHeader(4, 3)).toString('base64');
   const result = await page.evaluate(async (dataUrl) => {
     const h = window.lensStorage;
+    const store = await h.openProjectStore(); store.acceptLoad((await store.load()).receipt);
     const project = h.fixture('Valid saved study');
-    await h.saveProject(project);
+    await store.save(project);
     let rejected = false;
-    try { await h.saveProject({ ...project, title: 'Broken replacement', photo: { ...project.photo, dataUrl } }); }
+    try { await store.save({ ...project, title: 'Broken replacement', photo: { ...project.photo, dataUrl } }); }
     catch { rejected = true; }
-    return { rejected, title: (await h.loadProject())!.title };
+    const title = (await store.load()).project!.title; await store.close();
+    return { rejected, title };
   }, badPhoto);
   expect(result).toEqual({ rejected: true, title: 'Valid saved study' });
 });
@@ -156,12 +172,18 @@ test('private storage failure gives backup guidance, does not expose errors and 
     indexedDB.open = () => { throw new DOMException('Private fixture value must never be copied', 'SecurityError'); };
     const messages: string[] = [];
     try {
-      for (const operation of [() => h.saveProject(project), h.loadProject, h.clearProject]) {
-        try { await operation(); } catch (error) { messages.push((error as Error).message); }
+      for (const operation of ['save', 'load', 'clear'] as const) {
+        try {
+          const store = await h.openProjectStore();
+          try { if (operation === 'save') await store.save(project); else await store[operation](); }
+          finally { await store.close(); }
+        } catch (error) { messages.push((error as Error).message); }
       }
     } finally { indexedDB.open = original; }
-    await h.saveProject(project);
-    return { messages, title: (await h.loadProject())!.title };
+    const store = await h.openProjectStore(); store.acceptLoad((await store.load()).receipt);
+    await store.save(project);
+    const title = (await store.load()).project!.title; await store.close();
+    return { messages, title };
   });
   expect(result.messages).toHaveLength(3);
   for (const message of result.messages) {
@@ -177,11 +199,13 @@ test('schema creation failure has no uncaught page error and native setup can re
     const h = window.lensStorage, original = IDBDatabase.prototype.createObjectStore;
     IDBDatabase.prototype.createObjectStore = () => { throw new DOMException('Private setup detail', 'QuotaExceededError'); };
     let message = '';
-    try { await h.loadProject(); } catch (error) { message = (error as Error).message; }
+    try { await h.openProjectStore(); } catch (error) { message = (error as Error).message; }
     finally { IDBDatabase.prototype.createObjectStore = original; }
-    const empty = await h.loadProject();
-    await h.saveProject(h.fixture('After setup retry'));
-    return { message, empty, title: (await h.loadProject())!.title };
+    const store = await h.openProjectStore(), initial = await store.load();
+    store.acceptLoad(initial.receipt);
+    await store.save(h.fixture('After setup retry'));
+    const title = (await store.load()).project!.title; await store.close();
+    return { message, empty: initial.project, title };
   });
   expect(result.message).toMatch(/storage.*download.*project.*retry/i);
   expect(result.message).not.toContain('Private setup detail');
@@ -198,12 +222,10 @@ test('blocked native opening rejects visibly and closes the connection that open
       request.onerror = () => reject(request.error);
     });
     blocker.onversionchange = () => { /* Keep the real native version upgrade blocked. */ };
-    const original = indexedDB.open;
-    indexedDB.open = (name: string) => original.call(indexedDB, name, 2);
     let message = '';
-    try { await window.lensStorage.loadProject(); }
+    try { await window.lensStorage.openProjectStore(); }
     catch (error) { message = (error as Error).message; }
-    finally { indexedDB.open = original; blocker.close(); }
+    finally { blocker.close(); }
     await Promise.race([
       new Promise<void>((resolve, reject) => {
         const request = indexedDB.deleteDatabase('lens-studio.v1');
@@ -212,7 +234,9 @@ test('blocked native opening rejects visibly and closes the connection that open
       }),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Late connection was leaked')), 3000)),
     ]);
-    return { message, reset: await window.lensStorage.loadProject() };
+    const store = await window.lensStorage.openProjectStore();
+    const reset = (await store.load()).project; await store.close();
+    return { message, reset };
   });
   expect(result.message).toMatch(/storage.*blocked.*download.*project.*retry/i);
   expect(result.reset).toBeNull();
@@ -233,13 +257,16 @@ test('authored demo has independently known three-plane geometry and normalizes 
       const expected = foreground ? 0 : subject ? 1 : 2;
       if (sample(x, y) !== expected) maskErrors++;
     }
-    await h.saveProject(project);
+    const store = await h.openProjectStore(); store.acceptLoad((await store.load()).receipt);
+    await store.save(project);
+    const restored = JSON.stringify((await store.load()).project) === JSON.stringify(project);
+    await store.close();
     return {
       width: frame.width, height: frame.height, mode: project.settings.mode, maskErrors,
       planes: Array.from(new Set(mask)).sort(), samples: [sample(20, 20), sample(360, 220), sample(20, 440)],
       colorSamples: [rgba(20, 20), rgba(360, 220), rgba(20, 440)],
       normalized: project.photo.dataUrl.startsWith('data:image/png;base64,'),
-      restored: JSON.stringify(await h.loadProject()) === JSON.stringify(project),
+      restored,
     };
   });
   expect(result).toMatchObject({ width: 720, height: 480, mode: 'fixed', maskErrors: 0, planes: [0, 1, 2], samples: [2, 1, 0], normalized: true, restored: true });

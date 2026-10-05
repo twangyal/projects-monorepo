@@ -31,6 +31,7 @@ async function settings(page: Page, patch: Record<string, string>) {
 
 async function importPhoto(page: Page, source: Raster) {
   await page.goto('/');
+  await expect(page.locator('#save-status')).not.toContainText('Checking local saved study');
   await page.getByLabel('Import photo', { exact: true }).setInputFiles({ name: 'original-authored-scene.png', mimeType: 'image/png', buffer: independentPng(source) });
   await expect(page.locator('#source-canvas')).toBeVisible();
   await rendered(page);
@@ -147,6 +148,7 @@ test('authored imported planes retain transparency and independently computed pe
   const { source, labels } = authoredScene();
   const project = fixtureProject(source, labels, { mode: 'perspective', targetFocal: 40 });
   await page.goto('/');
+  await expect(page.locator('#save-status')).toContainText('Local storage ready');
   page.once('dialog', dialog => dialog.accept());
   await page.getByLabel('Import project', { exact: true }).setInputFiles({ name: 'authored.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(project)) });
   await rendered(page);
@@ -171,7 +173,8 @@ test('authored imported planes retain transparency and independently computed pe
 
 test('mobile editing and keyboard history preserve numeric input shortcuts and layout', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/'); await page.getByRole('button', { name: 'Try authored demo', exact: true }).click(); await rendered(page);
+  await page.goto('/'); await expect(page.locator('#save-status')).toContainText('Local storage ready');
+  await page.getByRole('button', { name: 'Try authored demo', exact: true }).click(); await rendered(page);
   const initial = await backup(page);
   await settings(page, { targetFocal: '75' });
   await page.locator('#result-canvas').click();
@@ -191,12 +194,16 @@ test('unavailable storage remains visible while the real editor and portable bac
   page.once('dialog', dialog => dialog.accept());
   await importPhoto(page, authoredScene().source);
   await settings(page, { targetFocal: '75', shiftX: '.1' });
-  await expect(page.locator('#save-status')).toContainText(/not saved|failed|unavailable/i);
+  await expect(page.locator('#save-status')).toContainText(/not saved|failed|unavailable|memory/i);
   const current = await backup(page);
   expect(current.settings).toMatchObject({ targetFocal: 75, shiftX: .1 });
   await checkPng(page, current);
-  await page.getByRole('button', { name: 'Retry saving', exact: true }).click();
-  await expect(page.locator('#save-status')).toContainText(/not saved|failed|unavailable/i);
+  await expect(page.locator('#retry-save')).toBeHidden();
+  await expect(page.locator('#retry-load')).toBeEnabled();
+  await expect(page.locator('#replace-saved-copy')).toBeEnabled();
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#retry-load').click();
+  await expect(page.locator('#save-status')).toContainText(/not saved|failed|unavailable|memory/i);
   expect(await backup(page)).toEqual(current);
 });
 

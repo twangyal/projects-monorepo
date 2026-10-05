@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "status": "First root runtime failed on inadmissible original A fixture shift; corrected fixture source ready for new generation and runtime, not executed by author",
+  "script": "scripts/smoke_saved_copy_conflicts.mjs",
+  "scope": "Independent complete maximum Lens photo/mask/settings conflict, artifact, bounded history and persistent Chromium restart acceptance",
+  "independence": {
+    "productionImports": [],
+    "readBeforeFreeze": [
+      "README.md",
+      "src/types.ts",
+      "unchanged src/model.ts",
+      "unchanged src/history.ts",
+      "unchanged src/photo-header.ts",
+      "unchanged public UI and tests",
+      "pending saved-copy design"
+    ],
+    "newStorageImplementationRead": false,
+    "expectedPixels": "Literal original RGBA arithmetic and independent scalar inversion/tent contributions/near-over-far composition at nine declared coordinates",
+    "decoders": "pngjs independently decodes hand-encoded PNG and later actual downloaded PNG"
+  },
+  "frozenFixture": {
+    "width": 1280,
+    "height": 1280,
+    "pixels": 1638400,
+    "photo": "Full opaque RGBA integer texture, stored DEFLATE without ancillary padding, within 7340032 byte normalized PNG cap",
+    "mask": "Exactly one byte per source pixel; three original vertical near/subject/far regions with different A/B/C boundaries",
+    "identity": "A/B/C same project/photo IDs, title, dimensions; B changes photo bytes, full mask and settings; C changes mask/settings again",
+    "manualSettingsA": {
+      "mode": "perspective",
+      "sourceFocal": 50,
+      "targetFocal": 75,
+      "shiftX": 0.0625,
+      "shiftY": -0.0312,
+      "near": 0.5,
+      "far": 2
+    },
+    "localChange": "A targetFocal 80 plus one radius-2 near stamp at source (640.25,640.25); unchanged original A PNG and independently predicted full mask",
+    "rgbaTolerance": 1,
+    "rawInput": "12582912 bytes complete JSON plus disclosed trailing whitespace; 12582913 rejects atomically",
+    "history": "Measure literal title/settings/depth edit bytes, excluding immutable photo; full mask reaches 33554432 byte cap before 30 states"
+  },
+  "plannedActualRuntime": [
+    "Fresh persistent Chromium process with two pages on a root-owned external production origin",
+    "Complete A load/save, true 12 MiB JSON admission and +1 refusal retaining complete current project",
+    "B durable exact whole native wrapper winner, stale A edited locally without winner overwrite",
+    "Local Undo/Redo and exact portable backup, actual PNG scalar check, unchanged raw title/numeric field nodes and title caret",
+    "A reviewed replacement held at genuine confirm while another actual tab writes C; stale review refuses, fresh confirmed replacement saves local complete project",
+    "Twenty real title commits followed by exact measured byte-budget history Undo/Redo; wait truthful save-pump idle before capturing final native wrapper UUID",
+    "Close full Chromium process and reopen fresh process on same origin/profile; exact complete native wrapper and project backup unchanged",
+    "Original and result PNG decode with declared normalized source pixels and scalar samples; no source metadata, depth-inference or calibrated-camera claims"
+  ],
+  "execution": {
+    "fixtures": "LENS_CONFLICT_FIXTURES=/workspace/lens117-maximum-fixtures-corrected node scripts/smoke_saved_copy_conflicts.mjs --fixtures-only",
+    "runtime": "LENS_CONFLICT_FIXTURES=/workspace/lens117-maximum-fixtures-corrected LENS_CONFLICT_OUTPUT=/workspace/lens117-maximum-second LENS_CONFLICT_ORIGIN=http://127.0.0.1:4315 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_saved_copy_conflicts.mjs --run-prepared",
+    "runtimeCost": "Estimated 2\u20134 minutes; measured outcome only after actual execution",
+    "disk": "Allow 400 MiB workspace for complete fixtures/backups/profile/artifacts; no peak-memory guarantee",
+    "serviceOwnership": "No build/start/stop; only own fresh browser processes and output directories",
+    "workingDirectory": "apps/lens-studio",
+    "dependencies": "Existing app-local @playwright/test and pngjs; Node >=22.18, installed Chromium. No Python or generator installation needed."
+  },
+  "limitations": [
+    "Not executed; no PASS or manufactured RED claim",
+    "Original texture is not worst-case photographic complexity",
+    "Raw cap uses disclosed whitespace; canonical content and actual PNG bytes will be measured",
+    "No binary fixture or private user data committed"
+  ],
+  "scriptSha256": "1b257013efa7c8932ac8ff9fb30e802944b4fd491fea535a2a42f80bd14e1541",
+  "staticChecks": {
+    "commands": [
+      "node --check scripts/smoke_saved_copy_conflicts.mjs",
+      "node_modules/.bin/eslint scripts/smoke_saved_copy_conflicts.mjs"
+    ],
+    "exitCodes": [
+      0,
+      0
+    ],
+    "scope": "Source-only; no fixture generation, browser, service, build or test execution by author",
+    "declarationCheck": "Python decimal source-only check: A/B/C/local precision, ratio and near-plane clearance; no generated fixture or browser run"
+  },
+  "bindingPolicy": "Exact empty startup status before first File input; current Saved locally status and enabled Reload before final raw native wrapper read; actual restored status before restart assertions",
+  "preRuntimeCorrections": [
+    {
+      "originalScriptSha256": "c8b709f2d5b0e2ff5ba208ed2ee3ec89c8b0a354593e34e979e36a1aca8ee400",
+      "correctedScriptSha256": "5a829dafed1c73d2577777f6faab74d312cf2ad02df60993391fb2ff118d4d70",
+      "reason": "Root static preflight identified BrowserContext has no newBrowserCDPSession; use context.browser().newBrowserCDPSession, matching Playwright Browser API",
+      "runtimeExecuted": false,
+      "fixturesExpectedValuesTolerancesChanged": false
+    },
+    {
+      "originalScriptSha256": "5a829dafed1c73d2577777f6faab74d312cf2ad02df60993391fb2ff118d4d70",
+      "correctedScriptSha256": "1b257013efa7c8932ac8ff9fb30e802944b4fd491fea535a2a42f80bd14e1541",
+      "reason": "Actual first root runtime A import correctly rejected five-decimal shiftY -0.03125 under unchanged four-decimal policy; use equally-nearest four-decimal -0.0312 (local inherits A)",
+      "changedDeclaredValues": {
+        "A.settings.shiftY": {
+          "before": -0.03125,
+          "after": -0.0312
+        },
+        "local.settings.shiftY": {
+          "before": -0.03125,
+          "after": -0.0312
+        }
+      },
+      "scalarExpectedPixels": "New generator computes A/local expected samples using the unchanged independent scalar oracle and corrected valid settings; no scalar function, sample coordinates or tolerance changed",
+      "remainingABCSettings": "B/C unchanged; all declared focal/depth/shift values independently checked against 2/3/4 decimal precision, ratios and plane clearance",
+      "imageMaskCapacityRuntimeAssertionsChanged": false
+    }
+  ],
+  "firstActualRuntime": {
+    "executor": "Root, not this author",
+    "status": "failed",
+    "wallMs": 70194.33034500001,
+    "receiptPath": "/workspace/lens117-maximum-first/verification.json",
+    "receiptSha256": "bcef6da4c6714b6bec9a5366f443cbd7705ef8dc37c8acebb33a2103391092aa",
+    "logPath": "/tmp/lens117-maximum-first.log",
+    "scriptSha256": "5a829dafed1c73d2577777f6faab74d312cf2ad02df60993391fb2ff118d4d70",
+    "originalFixturesPreserved": "/workspace/lens117-maximum-fixtures",
+    "originalFixtureReceiptSha256": "306169b9a88239b1e6a90be841fc83046e20f862a41bc88808847eb0d1955133",
+    "successfulNormalizationArtifact": {
+      "name": "normalized-photo-native.json",
+      "bytes": 10925488,
+      "sha256": "96ae99118741a3f5b06df872cc82463936994aad8f3b2f2d44a6c265d45dc556",
+      "checkedRgbaBytes": 6553600
+    },
+    "failureClassification": "Acceptance fixture invalid before A adoption; no product defect. Existing four-decimal validator refusal is correct.",
+    "expectedSuccessAssertion": "Study loaded message timed out because actual input was rejected",
+    "productChanged": false
+  }
+}

@@ -49,12 +49,40 @@ The displayed missing percentage estimates **sampled geometric coverage** at out
 - Each source-pixel brush gesture is bounded at 2,048 points and 8,192 pixels of path. Brush radius is 1–100 source pixels. Each completed gesture is one undo step; canceling a pointer gesture discards it.
 - History retains up to 30 edit states within 32 MiB. The fixed photo is stored once outside history. Importing another photo or project starts new history.
 - A project backup contains one embedded normalized photo, settings and one depth-label mask. JSON is limited to 12 MiB and validated before replacement. It contains no original EXIF metadata.
-- One project is saved locally in IndexedDB after completed edits. Save success is reported only after the transaction finishes. Failed storage keeps current work editable and exposes retry/backup actions. Corrupt saved work is not silently replaced by a default project.
+- One project is saved locally in IndexedDB after completed edits. Before writing, the app compares the complete saved photo, mask and settings with the copy this page accepted. Save success is reported only after the transaction finishes. Conflicts and failed storage keep current work editable, with explicit recovery and backup actions.
 - Rendering and export run in cancellable workers with a 30-second deadline. A newer valid job supersedes the older one. PNG output is bounded at 7 MiB; the image contains no checkerboard, painted labels or interface overlays.
 
 PNG export preserves the pixel kernel's exact straight RGBA bytes using a lossless encoder. Browser Canvas presentation can quantize very low-alpha colors, so Canvas readback is not used as the export source. Original image decoding and downsampling use the browser's color conversion and sampling; an exported simulation is based on that normalized raster.
 
 Keep downloaded backups for work you need to retain. Browser storage can be cleared or unavailable, and it is not cross-device synchronization.
+
+If another tab changes the saved study, autosave stops. This page retains its
+photo, authored mask, session history, unapplied numeric/title fields and local
+PNG/project exports. Further edits remain in memory until you deliberately
+resolve the saved copy.
+
+**Reload saved study** asks before discarding this page's unsaved study, fields
+and history. It admits the complete saved photo and mask before replacing the
+editor. **Replace saved copy** reviews the current saved study, then asks to
+replace it with this page's committed study. Unapplied fields and unfinished
+strokes are excluded. If another tab saves during review or image validation,
+replacement refuses and requires a fresh review. Importing a photo/project or
+starting the demo does not bypass protection of a conflicting or unreadable
+saved study. Recovery controls remain visible even when startup has no photo.
+
+A confirmed rolled-back save can offer **Retry saving**. Unknown results,
+canceled restores and storage deadlines keep the saved copy protected. Local
+opening has a five-second limit, native transactions ten seconds, and storage
+image validation thirty seconds; browser scheduling can delay these checks.
+If native image decoding is already underway, the browser cannot cancel it.
+Recovery waits for its cleanup before opening another storage operation, while
+the current editor and backups remain usable. A browser decoder that never
+returns requires reopening the page after keeping a backup.
+
+Version 0.2.0 upgrades the existing local database to version 2 to fence older
+clients that lack these checks. Close older tabs if the upgrade is blocked.
+The upgrade preserves existing saved data without rewriting it, and portable
+project JSON remains schema 1.
 
 ## Verification
 
@@ -64,7 +92,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-With an existing system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The production browser suite reserves port 4261 and builds its image, worker and storage harnesses only for tests. Normal production builds include only the application.
+With an existing system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The production browser suite reserves port 4261 (`LENS_TEST_PORT` selects another unused port) and builds its image, worker and storage harnesses only for tests. Normal production builds include only the application.
 
 Tests cover strict project/mask validation, bounded history, actual source image formats and orientations, worker cancellation, IndexedDB recovery and the complete editor/export/reopen flow. A separately derived scalar renderer checks focal geometry, subject anchoring, occlusion, alpha edges and missing coverage. An independent PNG decoder checks exported bytes, including colors at low alpha. See `docs/runtime-verification.json` for measured runtime evidence. The local unit gate has 67 tests, including 24 independent numerical cases; the browser suite now has 32 cases, including 48 source-orientation combinations inside the image test. The complete remote CI gate passed all 30 browser cases together at commit `c63ac79`; the independent numerical and source-orientation checks passed as well.
 
@@ -92,3 +120,25 @@ and 32 browser cases**, lint, type checking and build in both
 [push](https://github.com/twangyal/projects-monorepo/actions/runs/37224210032) and
 [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37224213108) CI on
 Chromium153. All thirteen project PR workflows pass. See the [exact CI receipt](docs/2026-10-04-storage-readiness-ci.json).
+
+Issue [#117](https://github.com/twangyal/projects-monorepo/issues/117) protects the
+complete saved study after reproducing a stale tab erasing another tab's painted
+mask and framing settings. Version 0.2.0 passes **67 unit and 65 production
+Chromium cases**, lint, type checking and build locally. The 33 new cases cover
+competing native writers, complete PNG/mask/settings identity, accepted-load and
+replacement authority, older-client fencing, actual ten-second transaction and
+thirty-second image deadlines, late cleanup and preserved editor drafts/history.
+Existing independent numerical, decoded PNG and orientation checks remain intact.
+
+The [verification receipt](docs/2026-10-05-saved-copy-verification.json) preserves
+the original data-loss reproduction and the first run's three test-flow failures:
+canceled-replacement wording and two unhandled local-import confirmations. The
+narrow corrections retain all complete-record, raw-field and pixel assertions.
+Synthetic persisted-page events test ownership rules; they do not establish
+physical device behavior or actual browser back/forward-cache eligibility.
+
+An independently authored full-size fixture contains a 1280 × 1280 original PNG,
+all 1,638,400 authored labels and distinct complete saved-copy variants. Its
+runtime/restart acceptance and exact published-head CI are tracked separately in
+the [maximum receipt](docs/2026-10-05-saved-copy-maximum.json) and issue #117;
+fixture generation alone is not an acceptance result.

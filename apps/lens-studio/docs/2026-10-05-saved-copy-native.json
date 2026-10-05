@@ -1,0 +1,447 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "project": "Lens Studio",
+  "status": "final-full65-pass-including-all13-independent-editor-cases",
+  "updatedAt": "2026-10-05T01:04:57.649787+00:00",
+  "independence": {
+    "expectedInputsFrozenBeforeNewProducerRead": true,
+    "newProductionImplementationRead": "Only after the first native outcome, narrow main.ts consent/protection lines inspected to diagnose recorded failures; original fixtures/numerical expectations unchanged.",
+    "runtimeExpectedImports": [
+      "existing independent tests/oracle/scalar.ts",
+      "type-only src/types.ts"
+    ],
+    "fixtureOrigin": "Unchanged pre-change native baseline; fixed original pixel formula,12 literal near labels and complete nondefault settings; normalized container and UUIDs bound only after independent pixel admission."
+  },
+  "fixture": {
+    "width": 16,
+    "height": 12,
+    "rgbaFormula": [
+      "(13*x+17)%256",
+      "(19*y+23)%256",
+      "(7*x+11*y+31)%256",
+      "255"
+    ],
+    "rgbaSha256": "bcf4518ead4d24f42760284a678c294dd52ff02a898e5de95a2b9a1712a0c183",
+    "sourceOriginalEncodedPng": {
+      "path": "/workspace/lens117-baseline-stale-save-corrected/original-photo.png",
+      "bytes": 230,
+      "sha256": "39b7eff755cfa00559f21aed6bd6c4c0c31cf4508877e176fe126f70c79a3a93"
+    },
+    "retainedNormalizedPng": {
+      "bytes": 848,
+      "sha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392"
+    },
+    "originalProject": {
+      "path": "/workspace/lens117-baseline-stale-save-corrected/original-project.json",
+      "bytes": 1732,
+      "sha256": "7d2705c0ec62559859bb7e826997cdc6860c829dad4e7ef5347199b9576e289b"
+    },
+    "boundExpectedProjects": {
+      "path": "/workspace/lens117-baseline-stale-save-corrected/bound-expected-projects.json",
+      "bytes": 5945,
+      "sha256": "77d6d05ed2ba50c32263dc6f6aa0f106f320a3bcc3da0998c0f1b96860cccf88"
+    },
+    "nearPixelIndices": [
+      71,
+      72,
+      86,
+      87,
+      88,
+      89,
+      102,
+      103,
+      104,
+      105,
+      119,
+      120
+    ],
+    "winnerMaskSha256": "910927a4049ab17dac941e631acd0b67f8812c928a00d87b68c9ed5d42795296",
+    "winnerSettings": {
+      "mode": "fixed",
+      "sourceFocal": 50,
+      "targetFocal": 100,
+      "shiftX": 0.125,
+      "shiftY": -0.125,
+      "near": 0.7,
+      "far": 3
+    },
+    "comparisonPolicy": "Deep structural complete Project1 equality (object insertion order is not semantic); unchanged encoded retained PNG and all192 mask labels; independently computed exported RGBA maximum channel error<=1."
+  },
+  "cases": [
+    "two actual pages retain the complete winner while stale raw fields history and PNG remain local",
+    "a conflict during a genuine unfinished brush gesture does not cancel its one local history edit",
+    "Reload requires discard consent and restores exact saved photo mask settings with a fresh history",
+    "reviewed replacement names the saved winner and writes committed memory only without clearing raw fields",
+    "a third actual writer during native confirmation defeats the reviewed copy without changing local memory",
+    "actual put success followed by transaction abort preserves both studies until a fresh reviewed retry",
+    "cancelled actual startup PNG decode cannot grant overwrite or open recovery before native drain",
+    "a held genuine File read cannot replace protected memory after changed-back numeric input",
+    "newer committed and raw input during held native replacement stays unsaved until manual Retry",
+    "controlled persisted return prevents an older save callback claiming newer raw input is Saved",
+    "changed-back input during actual replacement review suppresses obsolete consent and preserves caret",
+    "corrupt saved data with no photo exposes recovery and imported memory cannot silently overwrite it",
+    "changed-back raw input during an actual reload bitmap keeps the prior study and cannot accept saved authority"
+  ],
+  "distinctCaseCount": 13,
+  "checks": [
+    {
+      "kind": "ESLint scoped",
+      "command": "npx eslint tests/browser/saved-copy-editor.spec.ts tests/browser/saved-copy-fixtures.ts",
+      "exitCode": 0
+    },
+    {
+      "kind": "isolated strict TypeScript",
+      "command": "npx tsc --noEmit --allowImportingTsExtensions --target ES2022 --module ESNext --moduleResolution Bundler --strict --noUnusedLocals --noUnusedParameters --skipLibCheck --lib ES2022,DOM,DOM.Iterable --types node tests/browser/saved-copy-editor.spec.ts tests/browser/saved-copy-fixtures.ts",
+      "exitCode": 0
+    },
+    {
+      "kind": "original fixture admission",
+      "exitCode": 0,
+      "observed": "Embedded original complete project deep-equals pre-change bound fixture; independent PNG decode exact16x12 RGBA formula and original all-subject mask."
+    },
+    {
+      "kind": "post-diagnosis three narrow test corrections",
+      "ESLintScopedExitCode": 0,
+      "isolatedStrictTypeScriptExitCode": 0,
+      "runtimeExecutedByAuthor": false
+    }
+  ],
+  "baseline": {
+    "receipt": {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4945,
+      "sha256": "a895e90ce52a884e851c312cfe6f95b0db1b10489f283081b9d0c10fa24f45f0"
+    },
+    "verification": {
+      "path": "/workspace/lens117-baseline-stale-save-corrected/verification.json",
+      "bytes": 12819,
+      "sha256": "7d6b9f45d5093e57d7a4882b4cb28b89297e2c8fd06f4029edb4917b89f3d0db"
+    },
+    "meaningfulPreChangeResult": "Root-owned actual two-tab baseline demonstrated unconditional overwrite; no new browser execution by this author."
+  },
+  "sourceFiles": [
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/saved-copy-editor.spec.ts",
+      "bytes": 18589,
+      "sha256": "bc0006ca14473d75e094c592d8a1cfd8dc1e6dc7f70289c473437d3b622fedf9"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/saved-copy-fixtures.ts",
+      "bytes": 12312,
+      "sha256": "1f518e07beab8f5072e13c86b6079ecb014dc32703d87e80316180ac49eb8cb9"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/oracle/scalar.ts",
+      "bytes": 3073,
+      "sha256": "6328eaf3097a1d80f8d13ee1a489e4cd997244889bbddc9b66415ede657ff5c7"
+    }
+  ],
+  "nativeRuns": [
+    {
+      "label": "first full root-coordinated native gate",
+      "stats": {
+        "startTime": "2026-10-05T00:56:27.322Z",
+        "duration": 133487.954,
+        "expected": 62,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "newEditor": {
+        "passed": 10,
+        "failed": 3,
+        "distinct": 13
+      },
+      "independentStorage": {
+        "passed": 20,
+        "failed": 0
+      },
+      "priorRegression": {
+        "passed": 32,
+        "failed": 0
+      },
+      "log": {
+        "path": "/tmp/lens117-full-native-first.log",
+        "bytes": 23269,
+        "sha256": "b1e18b58f8a3e12a9be67072325984d832aa88853fca454cb7e06a3840178de2"
+      },
+      "json": {
+        "path": "/tmp/lens117-full-native-results-first.json",
+        "bytes": 98575,
+        "sha256": "03b4d8a59f1deeb09413642b11c9b3e3c668071df4d44362ed8f463601c8490b"
+      },
+      "preservedArtifactDirectory": "/workspace/lens117-full-native-first-artifacts",
+      "classification": "Three fixture mistakes; no demonstrated product defect in these failures. No thresholds or full graph/pixel assertions changed."
+    },
+    {
+      "label": "focused three corrected test checkpoints",
+      "stats": {
+        "startTime": "2026-10-05T01:00:33.035Z",
+        "duration": 8109.650000000001,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/lens117-focused-native.log",
+        "bytes": 2130,
+        "sha256": "664ba34b157aed0ed0685e84d4772a8164b57a0c4fcdb5b05dba82e3e0afcc1d"
+      },
+      "json": {
+        "path": "/tmp/lens117-focused-native-results.json",
+        "bytes": 5655,
+        "sha256": "874575f7abb59609d4ab85f2f61c61a64e65e8bacd25284857fe1a2c2ad628e6"
+      },
+      "preservedArtifactDirectory": "/workspace/lens117-focused-native-artifacts",
+      "productionChangeSinceFirstRun": false
+    },
+    {
+      "label": "final full native gate",
+      "stats": {
+        "startTime": "2026-10-05T01:01:51.866Z",
+        "duration": 115540.41900000001,
+        "expected": 65,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/lens117-full-native-final.log",
+        "bytes": 10745,
+        "sha256": "94765233fe606d3b10266340e85f12326bf47455fdc1b1988915661b1e88e6e1"
+      },
+      "json": {
+        "path": "/tmp/lens117-full-native-results-final.json",
+        "bytes": 72951,
+        "sha256": "befc7fe90de9b42f130d75a65e0cc036658ccd992bd4189c0aac87621205b04b"
+      },
+      "preservedArtifactDirectory": "/workspace/lens117-full-native-final-artifacts",
+      "productionChangeSinceFirstRun": false,
+      "newEditor": {
+        "passed": 13,
+        "failed": 0,
+        "distinct": 13
+      },
+      "independentStorage": {
+        "passed": 20,
+        "failed": 0
+      },
+      "priorRegression": {
+        "passed": 32,
+        "failed": 0
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-cancelle-a9290-ecovery-before-native-drain/error-context.md",
+      "bytes": 20751,
+      "sha256": "4b802e3c1169c7e92f4b5c52b6fca4063fc51176721d2d46251f15a977aed57c"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-cancelle-a9290-ecovery-before-native-drain/trace.zip",
+      "bytes": 440474,
+      "sha256": "4107be83a87f1bd2305ef78dd93c6de0cb88056a14065c82a1815be0e866ffcb"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-corrupt--d7b29-annot-silently-overwrite-it/error-context.md",
+      "bytes": 20747,
+      "sha256": "12bf2fc2d349fb8af81c1341357d53f3fb7e864239b09416e9dd38d1f0f84dd8"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-corrupt--d7b29-annot-silently-overwrite-it/trace.zip",
+      "bytes": 234738,
+      "sha256": "4231ff8b2947c237d2ff5be6386797e32768e12322fe953f888b8e65a29f3c64"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-reviewed-37991-without-clearing-raw-fields/error-context.md",
+      "bytes": 14274,
+      "sha256": "52911b1a25e1d60c4e8c0dae7ccbf9b4d60506dac83f93240385eabd879ef776"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-reviewed-37991-without-clearing-raw-fields/trace.zip",
+      "bytes": 1322326,
+      "sha256": "de59609dc5efd4481a7fd2bae4ef0dbe2427ac253f76e32fc95d676549626ae9"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/local-complete-study.json",
+      "bytes": 1746,
+      "sha256": "2ef648f051735d1ea078a680414c02500d23770d5b87d3fbaab28f07bb3e2746"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/local-projection.png",
+      "bytes": 848,
+      "sha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/original-image-and-projection-receipt.json",
+      "bytes": 572,
+      "sha256": "d624fc31a4c6e774d9b36f4b8b161bcbb1e9100af45c521441809ee7ccc84f90"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/protected-study-390.png",
+      "bytes": 197801,
+      "sha256": "03e02b8ac18176ff6220de8170b572ca01276a4b17e3eeafcb2cc8bd12bc88b2"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/winner-complete-study.json",
+      "bytes": 1752,
+      "sha256": "cdbe187364a1e5130a41ae7df7e8c3ffba14e6ccb2c869de0a18eb45c4c66db7"
+    },
+    {
+      "path": "/workspace/lens117-full-native-first-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/winner-projection.png",
+      "bytes": 848,
+      "sha256": "ab7c36a5eb24d03a0399dbb4f9f3fe29a08a5272d05f0cc23b1e3e74be3dec05"
+    }
+  ],
+  "scopeLimits": [
+    "Root executed first65, focused3 and final65 native runs. This author updated tests after trace diagnosis and performed scoped static checks only; no additional runtime was executed for this receipt.",
+    "Controlled actual transaction keepalive, native put-success abort, held genuine bitmap/File delivery and synthetic persisted page lifecycle are explicitly identified; no fabricated product state or fake storage implementation.",
+    "Corrupt row fixture is an explicit native IndexedDB write, not a claimed UI-generated valid project.",
+    "This compact fixture proves exact image/mask/settings preservation, not maximum1280-square capacity or complete browser-process restart; those remain separately owned.",
+    "All full-run browser and service lifecycle ownership belongs to root. Maximum1280-square and persistent-process restart acceptance remains separately owned and is not claimed by these13 editor cases."
+  ],
+  "preRunSourceFiles": [
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/saved-copy-editor.spec.ts",
+      "bytes": 17829,
+      "sha256": "293b959fcc6ebc9bd438079e38ed5a30af15f3dac2711387abe63e6845e368b1"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/saved-copy-fixtures.ts",
+      "bytes": 12312,
+      "sha256": "1f518e07beab8f5072e13c86b6079ecb014dc32703d87e80316180ac49eb8cb9"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/oracle/scalar.ts",
+      "bytes": 3073,
+      "sha256": "6328eaf3097a1d80f8d13ee1a489e4cd997244889bbddc9b66415ede657ff5c7"
+    }
+  ],
+  "firstFailureCorrections": [
+    {
+      "case": "reviewed replacement names the saved winner and writes committed memory only without clearing raw fields",
+      "actual": "Actual native winner review followed by deliberate Dialog.dismiss. Status said Saved-copy replacement was retired or canceled. Current work was kept. Current work stays in memory.",
+      "correction": "Only cancellation checkpoint now asserts exact canceled/current-memory guidance plus Retry hidden and Replace enabled. Global foreign-conflict matcher unchanged."
+    },
+    {
+      "case": "cancelled actual startup PNG decode cannot grant overwrite or open recovery before native drain",
+      "actual": "Trace records real in-memory import confirmation. Test had no handler; default dialog dismissal kept title empty. Original decode cancellation/drain and durable row assertions passed.",
+      "correction": "Await actual import dialog, assert A protected saved copy is not replaced by this action., explicitly accept, then retain all original complete-memory/durable/reload checks."
+    },
+    {
+      "case": "corrupt saved data with no photo exposes recovery and imported memory cannot silently overwrite it",
+      "actual": "Trace records same real in-memory import confirmation. Test had no handler; default dismissal kept empty workspace. Original corrupt-record/recovery control checks passed.",
+      "correction": "Await actual import dialog, assert protected saved copy excluded, explicitly accept. All original complete project, original corrupt row and reviewed replacement assertions retained."
+    }
+  ],
+  "actualNumericalReceipt": {
+    "originalRgbaSha256": "bcf4518ead4d24f42760284a678c294dd52ff02a898e5de95a2b9a1712a0c183",
+    "originalPhotoSha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392",
+    "winnerMaskSha256": "910927a4049ab17dac941e631acd0b67f8812c928a00d87b68c9ed5d42795296",
+    "localPng": {
+      "sha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392",
+      "bytes": 848,
+      "maximumRgbaError": 0
+    },
+    "winnerPng": {
+      "sha256": "ab7c36a5eb24d03a0399dbb4f9f3fe29a08a5272d05f0cc23b1e3e74be3dec05",
+      "bytes": 848,
+      "maximumRgbaError": 0
+    }
+  },
+  "coverageAccounting": "65 distinct final cases:13 new editor,20 independent storage,32 prior. Focused3 are repeats, not additional distinct coverage. First62/65 retained; only three diagnosed test-fixture checkpoints changed.",
+  "finalSourceFiles": [
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/saved-copy-editor.spec.ts",
+      "bytes": 18589,
+      "sha256": "bc0006ca14473d75e094c592d8a1cfd8dc1e6dc7f70289c473437d3b622fedf9"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/saved-copy-fixtures.ts",
+      "bytes": 12312,
+      "sha256": "1f518e07beab8f5072e13c86b6079ecb014dc32703d87e80316180ac49eb8cb9"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/main.ts",
+      "bytes": 42972,
+      "sha256": "636aa04b08b06fb16c4d11935f09f35f96d7aa0b019b6f9b303084695e9235ab"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/storage.ts",
+      "bytes": 23021,
+      "sha256": "629cf513bb3891b77a306aa3ccc19263c0afcfd1dd25eb0bde2b6dda2563d521"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/style.css",
+      "bytes": 5882,
+      "sha256": "6fcd5c3d3bf0c753dc057fb9dbb7ba365846976a1b2224816058206b9be20444"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/oracle/scalar.ts",
+      "bytes": 3073,
+      "sha256": "6328eaf3097a1d80f8d13ee1a489e4cd997244889bbddc9b66415ede657ff5c7"
+    }
+  ],
+  "finalArtifacts": [
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/local-complete-study.json",
+      "bytes": 1746,
+      "sha256": "2ef648f051735d1ea078a680414c02500d23770d5b87d3fbaab28f07bb3e2746"
+    },
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/local-projection.png",
+      "bytes": 848,
+      "sha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392"
+    },
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/original-image-and-projection-receipt.json",
+      "bytes": 572,
+      "sha256": "d624fc31a4c6e774d9b36f4b8b161bcbb1e9100af45c521441809ee7ccc84f90"
+    },
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/protected-study-390.png",
+      "bytes": 200761,
+      "sha256": "5bc2706b3e9a05dc03f0b35a6bc0dd1c6883fd8db6d44cb2fbe79660c386ac00"
+    },
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/winner-complete-study.json",
+      "bytes": 1752,
+      "sha256": "cdbe187364a1e5130a41ae7df7e8c3ffba14e6ccb2c869de0a18eb45c4c66db7"
+    },
+    {
+      "path": "/workspace/lens117-full-native-final-artifacts/saved-copy-editor-two-actu-36269-istory-and-PNG-remain-local/winner-projection.png",
+      "bytes": 848,
+      "sha256": "ab7c36a5eb24d03a0399dbb4f9f3fe29a08a5272d05f0cc23b1e3e74be3dec05"
+    }
+  ],
+  "focusedArtifacts": [
+    {
+      "path": "/workspace/lens117-focused-native-artifacts/.last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    }
+  ],
+  "finalNumericalReceipt": {
+    "originalRgbaSha256": "bcf4518ead4d24f42760284a678c294dd52ff02a898e5de95a2b9a1712a0c183",
+    "originalPhotoSha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392",
+    "winnerMaskSha256": "910927a4049ab17dac941e631acd0b67f8812c928a00d87b68c9ed5d42795296",
+    "localPng": {
+      "sha256": "0461d4950d3a47aa2dfa8999ac9647c75a91c16accf2910385d648a5b4f9a392",
+      "bytes": 848,
+      "maximumRgbaError": 0
+    },
+    "winnerPng": {
+      "sha256": "ab7c36a5eb24d03a0399dbb4f9f3fe29a08a5272d05f0cc23b1e3e74be3dec05",
+      "bytes": 848,
+      "maximumRgbaError": 0
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { loadProject, saveProject, clearProject } from '../src/storage.ts';
+import { openProjectStore, SavedCopyConflict, SavedCopyProtected, STORAGE_OPERATION_MS, STORAGE_IMAGE_MS, MAX_STORED_BYTES } from '../src/storage.ts';
 import { createDemoProject } from '../src/demo.ts';
 import { decodeMask } from '../src/model.ts';
 import { decodePhoto } from '../src/images.ts';
@@ -19,9 +19,9 @@ function fixture(title = 'Captured study'): Project {
   };
 }
 
-async function rawRecord(value?: unknown, write = false): Promise<unknown> {
+async function rawRecord(value?: unknown, write = false, version = 2): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const open = indexedDB.open('lens-studio.v1', 1);
+    const open = indexedDB.open('lens-studio.v1', version);
     open.onupgradeneeded = () => open.result.createObjectStore('projects');
     open.onerror = () => reject(open.error);
     open.onsuccess = () => {
@@ -34,6 +34,6 @@ async function rawRecord(value?: unknown, write = false): Promise<unknown> {
   });
 }
 
-export const harness = { loadProject, saveProject, clearProject, createDemoProject, decodeMask, decodePhoto, fixture, rawRecord };
+export const harness = { openProjectStore, SavedCopyConflict, SavedCopyProtected, STORAGE_OPERATION_MS, STORAGE_IMAGE_MS, MAX_STORED_BYTES, createDemoProject, decodeMask, decodePhoto, fixture, rawRecord };
 declare global { interface Window { lensStorage: typeof harness } }
 window.lensStorage = harness;

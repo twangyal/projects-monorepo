@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "status": "Core local gate complete:67units,lint/type/build and65nativepassed; originalfailuresretained. Maximumruntime andCIpending.",
+  "baseline": "2026-10-05-saved-copy-baseline.json",
+  "design": "../../../docs/superpowers/specs/2026-10-05-lens-saved-copy-conflicts-design.md",
+  "compatibilityChanges": [
+    "Existing storage tests own explicit ProjectStore instances, accept actual initial load receipts before normal save/clear, unwrap loaded projects, and close owned handles. No implicit legacy writer remains in the harness.",
+    "Raw helper defaults to database2 with optional explicitversion1 for actual legacy fixtures. Blocked upgrade now directly exercises the genuine1\u21922 upgrade.",
+    "Prior exact queued/request-abort/image-decode/completeproject values retained. Image-failure test compares the complete original stored wrapper, then explicitly closes/reopens before another load.",
+    "Ordinary workflow imports wait for initial storage read before supplying the fixture, avoiding an accidental intentional-startup-cancel path. Unavailable storage uses protected Reload rather than unauthorized Retry-saving; full current JSON and independent PNG checks retained."
+  ],
+  "rootScopedLint": {
+    "path": "/tmp/lens117-root-compat-lint.log",
+    "bytes": 208,
+    "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+  },
+  "rootCheck": {
+    "units": {
+      "passed": 67,
+      "failed": 0,
+      "durationMs": 1204.636821,
+      "log": {
+        "path": "/tmp/lens117-root-unit-first.log",
+        "bytes": 7515,
+        "sha256": "56bd5099b85fb7cafe4eb49b4050da0d47f043e06ae099297c69a5c9ffaf877b"
+      }
+    },
+    "lint": {
+      "passed": true,
+      "log": {
+        "path": "/tmp/lens117-root-lint-first.log",
+        "bytes": 246,
+        "sha256": "699b60389f3fe962f24001aadda1aecfcbf7fa46755b04c0e3614d755986f4cb"
+      }
+    },
+    "typeBuild": {
+      "passed": true,
+      "log": {
+        "path": "/tmp/lens117-root-build-first.log",
+        "bytes": 678,
+        "sha256": "8c97044bf336936a9d469083bdc85c015a2552b1beae5d77282de7bce05a788a"
+      }
+    },
+    "sourceTiming": "First root unit/build began at storage c0a58d086ce86daeaf63c8c26a3770d5d3a1744eb69004ae00e5349468819260. Final629cf513 only captures executing-save expected identity before async decode instead of reading mutable expectation afterward; producer final3units/lint/TS pass, and native harness rebuild checks finalsource. Final root check remains planned after narrowed fixture repairs."
+  },
+  "native": {
+    "stats": {
+      "startTime": "2026-10-05T01:01:51.866Z",
+      "duration": 115540.41900000001,
+      "expected": 65,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/lens117-full-native-final.log",
+      "bytes": 10745,
+      "sha256": "94765233fe606d3b10266340e85f12326bf47455fdc1b1988915661b1e88e6e1"
+    },
+    "results": {
+      "path": "/tmp/lens117-full-native-results-final.json",
+      "bytes": 72951,
+      "sha256": "befc7fe90de9b42f130d75a65e0cc036658ccd992bd4189c0aac87621205b04b"
+    },
+    "artifacts": "/workspace/lens117-full-native-final-artifacts"
+  },
+  "maximum": {
+    "fixtureGeneration": "passed",
+    "log": {
+      "path": "/tmp/lens117-maximum-fixtures.log",
+      "bytes": 536,
+      "sha256": "0b4a9fe947c14096e97c4def35c442cc9cd256f83fa93ef911902ced79b50055"
+    },
+    "fixtures": "/workspace/lens117-maximum-fixtures",
+    "photoBytes": 6555943,
+    "completeProjectBytes": 10926180,
+    "editStateBytes": 2184742,
+    "expectedHistoryStates": 15,
+    "runtime": "pending"
+  },
+  "ci": "pending",
+  "nativeFirst": {
+    "stats": {
+      "startTime": "2026-10-05T00:56:27.322Z",
+      "duration": 133487.954,
+      "expected": 62,
+      "skipped": 0,
+      "unexpected": 3,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/lens117-full-native-first.log",
+      "bytes": 23269,
+      "sha256": "b1e18b58f8a3e12a9be67072325984d832aa88853fca454cb7e06a3840178de2"
+    },
+    "results": {
+      "path": "/tmp/lens117-full-native-results-first.json",
+      "bytes": 98575,
+      "sha256": "03b4d8a59f1deeb09413642b11c9b3e3c668071df4d44362ed8f463601c8490b"
+    },
+    "artifacts": "/workspace/lens117-full-native-first-artifacts",
+    "source": {
+      "storage": "629cf513bb3891b77a306aa3ccc19263c0afcfd1dd25eb0bde2b6dda2563d521",
+      "main": "636aa04b08b06fb16c4d11935f09f35f96d7aa0b019b6f9b303084695e9235ab"
+    },
+    "diagnosis": "All20new storage+10of13neweditor+all32priornative passed. Three editor fixturefailures under trace review: cancel-replacementstatusexpectedforeignconflictwording; canceled-startup/corruptno-photo imports omitted existing explicit localreplacementconfirmation soPlaywrightdismissedthem. Exactdraft/completeimage-mask/durable assertions retained for corrections."
+  },
+  "focusedRerun": {
+    "stats": {
+      "startTime": "2026-10-05T01:00:33.035Z",
+      "duration": 8109.650000000001,
+      "expected": 3,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/lens117-focused-native.log",
+      "bytes": 2130,
+      "sha256": "664ba34b157aed0ed0685e84d4772a8164b57a0c4fcdb5b05dba82e3e0afcc1d"
+    },
+    "results": {
+      "path": "/tmp/lens117-focused-native-results.json",
+      "bytes": 5655,
+      "sha256": "874575f7abb59609d4ab85f2f61c61a64e65e8bacd25284857fe1a2c2ad628e6"
+    },
+    "artifacts": "/workspace/lens117-focused-native-artifacts",
+    "productSourceUnchanged": true
+  },
+  "rootFinalStatic": {
+    "unitsPassed": 67,
+    "unitDurationMs": 1167.41393,
+    "lint": "passed",
+    "log": {
+      "path": "/tmp/lens117-root-unit-lint-final.log",
+      "bytes": 7767,
+      "sha256": "db2803bb19240756b046dec767db4c9c3bbf1b75b50dd7a87f22703515c4d988"
+    },
+    "typeBuild": "Final native harness rebuild and normal production build passed final source."
+  },
+  "normalProductionBuild": {
+    "passed": true,
+    "log": {
+      "path": "/tmp/lens117-normal-production-build.log",
+      "bytes": 678,
+      "sha256": "895aba6e0cf52b22b3080ec0a859b1155e4f75a71fa24701848fe26c6ab51e7e"
+    },
+    "testHarnessOmitted": true
+  }
+}

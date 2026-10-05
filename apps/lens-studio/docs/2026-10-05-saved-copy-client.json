@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "createdAt": "2026-10-05T00:55:06.687647+00:00",
+  "scope": [
+    "src/main.ts",
+    "src/style.css"
+  ],
+  "status": "Root coreintegration passed67units,lint/type/build,65native. Maximum/CIpending.",
+  "sources": [
+    {
+      "path": "src/main.ts",
+      "bytes": 42972,
+      "sha256": "636aa04b08b06fb16c4d11935f09f35f96d7aa0b019b6f9b303084695e9235ab"
+    },
+    {
+      "path": "src/style.css",
+      "bytes": 5882,
+      "sha256": "6fcd5c3d3bf0c753dc057fb9dbb7ba365846976a1b2224816058206b9be20444"
+    },
+    {
+      "path": "docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4945,
+      "sha256": "a895e90ce52a884e851c312cfe6f95b0db1b10489f283081b9d0c10fa24f45f0"
+    }
+  ],
+  "originalFailure": {
+    "owner": "root",
+    "receipt": "docs/2026-10-05-saved-copy-baseline.json",
+    "result": "Original unchanged two-tab stale-save protection failed with actual PNG/mask/settings loss. First whole-value classifier had an object-order issue; corrected classifier run retained the identical fixture/actions and reproduced the actual failure. This UI producer did not rerun either baseline."
+  },
+  "checks": [
+    {
+      "command": "npx eslint src/main.ts",
+      "cwd": "apps/lens-studio",
+      "exitCode": 0,
+      "log": "/tmp/lens117-ui-lint-final.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "cwd": "apps/lens-studio",
+      "exitCode": 0,
+      "log": "/tmp/lens117-ui-typecheck-final.log",
+      "result": "Whole-project strict TypeScript passed against actual peer storage APIs and adapted old call sites. Earlier first checkpoint had only in-flight peer storage/old harness diagnostics; no owned main diagnostic."
+    },
+    {
+      "command": "git diff --check -- apps/lens-studio/src/main.ts apps/lens-studio/src/style.css",
+      "exitCode": 0
+    }
+  ],
+  "implementation": {
+    "savePump": "Existing 180ms debounce, one active captured complete save plus one latest detached committed History snapshot. Any old active conflict protects newest memory and drops pending writes; successful completion acknowledges only captured committed generation and live page lifetime.",
+    "acceptedLoad": "Storage supplies actual decoded detached Raster and opaque receipt. UI admits temporary History and rechecks committed generation, editorIntent, controller and page lifetime immediately before synchronous acceptLoad/publication. Proven absence is accepted separately without invented study.",
+    "recovery": "Stable #save-status/#retry-save/#retry-load/#replace-saved-copy outside hidden workspace, below canvas to avoid moving its top when status wraps. Reload uses explicit memory/raw/history loss consent; Replace uses fresh native summary and committed-only exclusion confirmation plus reviewed CAS token. Newer work after native replacement requires deliberate Retry, never automatic replay.",
+    "protectedData": "Photo/project/demo staging remains an in-memory replacement and never clears unknown/conflict authority. Portable Project1/normalized PNG/mask/history/render algorithms unchanged. Status-only storage callbacks never install source/result pixels, force-sync raw controls, cancel an unfinished stroke, or reset History.",
+    "decodeDrain": "Prompt cancelled/protected storage result detaches instance and starts close(). Separate identity-owned storageDrainPending blocks every fresh recovery open until close physically settles native and image work. Visible cleanup guidance; ordinary memory editing and bounded existing PNG/project exports remain usable.",
+    "lifetime": "Every raw input/change, gesture start and editor action retires stale startup/reload/review/File publication. Persisted pagehide retains current project/source/result/raw/History/live ordinary store while retiring transient jobs and save-status ownership. Nonpersisted teardown closes storage; owned download URLs revoked."
+  },
+  "limits": {
+    "activeWrites": 1,
+    "pendingCommittedSnapshots": 1,
+    "saveDebounceMs": 180,
+    "storageOpenMs": 5000,
+    "nativeStorageOperationMs": 10000,
+    "storageImagePreflightMs": 30000,
+    "portableBytes": 12582912,
+    "storedWrapperBytes": 12582992,
+    "normalizedPhotoBytes": 7340032,
+    "normalizedPhotoSide": 1280,
+    "historyStates": 30,
+    "historyBytes": 33554432,
+    "rendererWorkerMs": 30000
+  },
+  "selectors": {
+    "saved": "Saved locally \u00b7 browser storage",
+    "restored": "Saved locally \u00b7 restored this study",
+    "absence": "Local storage ready \u00b7 import a photo or study",
+    "reload": "#retry-load",
+    "replacement": "#replace-saved-copy",
+    "ordinaryRetry": "#retry-save",
+    "cancel": "#cancel-operation",
+    "drainGuidance": "#storage-drain-status"
+  },
+  "claimsExcluded": [
+    "No build/browser/server/Git operation by this UI producer.",
+    "No native decode, save-race or maximum-runtime acceptance claim; separate root/oracle owners execute those gates."
+  ],
+  "producerCheckpointStatus": "coherent UI frozen against actual storage API; independent native acceptance pending",
+  "rootIntegration": {
+    "verification": "2026-10-05-saved-copy-verification.json",
+    "sourceUnchangedDuringNativeRuns": true
+  }
+}
