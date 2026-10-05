@@ -62,8 +62,7 @@ jobs:
           done
           mkdir -p test-results
           node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-maximum-fixtures
-          shot_chromium_path=$(node --input-type=module -e "import {chromium} from '@playwright/test'; process.stdout.write(chromium.executablePath())")
-          DEBUG=pw:browser CHROMIUM_PATH="$shot_chromium_path" node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-maximum-fixtures --output test-results/maximum --origin http://127.0.0.1:4174 2>test-results/maximum-browser.log
+          DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-maximum-fixtures --output test-results/maximum --origin http://127.0.0.1:4174 2>test-results/maximum-browser.log
           node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/maximum
       - uses: actions/upload-artifact@v4
         if: always()
