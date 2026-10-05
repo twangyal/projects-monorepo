@@ -22,11 +22,13 @@
     ]
   },
   "local_final_gate": {
-    "typescript_units": 96,
+    "typescript_units": 103,
     "lint": "passed",
     "typecheck": "passed",
     "production_build": "passed",
-    "native_browser": "repaired complete 79-case run pending"
+    "native_browser": 79,
+    "native_browser_seconds": 174,
+    "chromium": "153.0.8010.0"
   },
   "local_python": {
     "run": 166,
@@ -44,8 +46,10 @@
   "source_sha256": {
     "apps/karaoke-studio/src/main.ts": "b8f406357defa53216e94050b855fcb635c13c57f783649bed276fb3b87126b6",
     "apps/karaoke-studio/src/cue-edit.ts": "087c6d874b873706dafdee56bc0e21ca83a19f53ce7b814dfb7296a56454b58a",
+    "apps/karaoke-studio/src/cue-structure.ts": "d77d6a1e7c1c4cacd48bf70736c3a62272efb99835ac44459a3cc28931ca7b4b",
     "apps/karaoke-studio/tests/cue-edit.test.ts": "ce9bf5faa0bf54757040128ff7a5d6940a9c1e1db0eb6c2c352d7dcc0e6ebed9",
-    "apps/karaoke-studio/tests/cue-edit.spec.ts": "687250a036fbcfdf21a364ac08c42049cfac037c84a8a1f16716d63f31fb50dd"
+    "apps/karaoke-studio/tests/cue-edit.spec.ts": "00d5d1f8230ad3a9bbd532eb4c174418bce2be93e473ed3c8e0066e96d3d19a2",
+    "apps/karaoke-studio/tests/cue-structure.test.ts": "30050edca654422aa140cac7b29ba726aff27e47e5b54cc5c8fd8c213c9a2e5f"
   },
   "published_ci": "pending; issue remains open",
   "verification_corrections": {
@@ -59,6 +63,13 @@
       "failed": 2,
       "cause": "Four new test clips consumed bounded shared-service slots; the last two unchanged uploads correctly hit the 20-project capacity."
     },
-    "fix": "Each new case deletes only its own original clip after verification using existing token-protected JSON DELETE. Production limits and all old assertions retained."
+    "fix": "Each new case deletes only its own original clip after verification using existing token-protected JSON DELETE. Production limits and all old assertions retained.",
+    "intermediate_cleanup_run": "An in-flight invocation retained cleanup callbacks without a JSON body; native DELETE returned 411. A fresh invocation using the committed JSON-body cleanup passed all 79 cases. No old assertion or production capacity changed."
+  },
+  "concurrency_reconciliation": {
+    "preserved_commit": "fda0c2e886996b454203708bdd2b495f43db9124",
+    "preserved_original_domain_cases": 7,
+    "change": "Keep its selection-range API and original cases through a thin adapter to the production CRLF-safe algorithm. No duplicate implementation and no production UI behavior change.",
+    "independent_review": "No additional findings; read-only review, no independent test execution."
   }
 }
