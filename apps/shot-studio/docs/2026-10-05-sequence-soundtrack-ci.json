@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 124,
   "date": "2026-10-05",
-  "status": "followup-push-initial-media-gap-reproduced-investigation-open",
+  "status": "third-push-raf-gap-reproduced-heartbeat-diagnostic-pending-ci",
   "scope": "Actual first push and same-tree pull-request CI results; original failed media and trace analysis. No production correction or tolerance change based on these CI failures.",
   "firstCi": {
     "push": {
@@ -656,5 +656,213 @@
       "scope": "Test-only transparent wrappers record bounded first1000ms/1500events plus totals for draw/RAF/requestFrame/recorder; save even when original decode fails, restore wrappers. Production code, fixture,45s timeout and150ms gate unchanged.",
       "publishedCi": "pending"
     }
+  },
+  "instrumentedThirdCi": {
+    "schemaVersion": 1,
+    "runId": 37270053634,
+    "jobId": 111634938494,
+    "head": "675afe9b55d6c37a37450e0abb9c92ca89ddf9a2",
+    "attempt": 1,
+    "sameTreePullRequestRun": {
+      "id": 37270057530,
+      "conclusion": "success",
+      "basis": "Root reported completed passing PR; this agent monitored only the push."
+    },
+    "actualResult": {
+      "unitPassed": 328,
+      "unitFailed": 0,
+      "unitDurationMs": 1643.082418,
+      "browserPassed": 98,
+      "browserFailed": 1,
+      "browserReportedDuration": "6.2m",
+      "failedGate": "Nearest frame at target 0.2 seconds differs by 0.165 seconds, required strictly less than 0.15."
+    },
+    "artifacts": {
+      "artifactId": 11328630638,
+      "zip": {
+        "path": "/workspace/attachments/2db39745-fe7e-45d6-b289-99ce46826bc3/shot124-ci-instrumented-push.zip",
+        "bytes": 6408746,
+        "sha256": "127d55069f6c91ce17b30a89b630483dccfdea0fcb19f2bf918512b168bc84e8"
+      },
+      "video": {
+        "path": "/workspace/shot124-ci-instrumented-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-six-seconds.webm",
+        "bytes": 425743,
+        "sha256": "cbdbba530d35ca0a58fe3e535896424e32df8b9a7520d0268fef58f14644aa1f"
+      },
+      "trace": {
+        "path": "/workspace/shot124-ci-instrumented-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/trace.zip",
+        "bytes": 1939478,
+        "sha256": "963931b1a7882821954bbdb61f58cc0c1fa94eecb12c938b3f7b9564957f9acd"
+      },
+      "timing": {
+        "path": "/workspace/shot124-ci-instrumented-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-capture-timing.json",
+        "bytes": 27503,
+        "sha256": "adf3e1330032d5e112fb2a64ffedb2fc90d55b36c9e509f9aafca6c656a12888"
+      },
+      "log": {
+        "path": "/tmp/shot124-ci-instrumented-push.log",
+        "bytes": 521896,
+        "sha256": "2c6e6049bea5b6555035499977c0b4fab21f4539c6a8209efda1c32087efa5e9"
+      }
+    },
+    "media": {
+      "frames": 104,
+      "firstPTS": [
+        0,
+        0.027,
+        0.365,
+        0.477,
+        0.557,
+        0.565
+      ],
+      "lastPTS": 5.919,
+      "gap": {
+        "fromIndex": 1,
+        "toIndex": 2,
+        "fromPTS": 0.027,
+        "toPTS": 0.365,
+        "gap": 0.33799999999999997
+      },
+      "targets": [
+        {
+          "target": 0.2,
+          "index": 2,
+          "actualPTS": 0.365,
+          "error": 0.16499999999999998,
+          "limit": 0.15,
+          "passes": false
+        },
+        {
+          "target": 1.1,
+          "index": 15,
+          "actualPTS": 1.086,
+          "error": 0.014000000000000012,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 1.8,
+          "index": 28,
+          "actualPTS": 1.797,
+          "error": 0.0030000000000001137,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 2.3,
+          "index": 38,
+          "actualPTS": 2.277,
+          "error": 0.022999999999999687,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 3.6,
+          "index": 61,
+          "actualPTS": 3.602,
+          "error": 0.0019999999999997797,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 4.2,
+          "index": 72,
+          "actualPTS": 4.184,
+          "error": 0.016000000000000014,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 5.8,
+          "index": 101,
+          "actualPTS": 5.815,
+          "error": 0.015000000000000568,
+          "limit": 0.15,
+          "passes": true
+        }
+      ],
+      "independentPixelSamples": 10,
+      "independentPixelFailures": 0,
+      "pixelLimitPx": 16,
+      "originalTemporalLimitSec": 0.15,
+      "temporalGateChanged": false
+    },
+    "observedTimingMs": {
+      "recorderStartBegin": 826.9,
+      "recorderStartEnd": 828,
+      "recorderStartEvent": 1280.6,
+      "requestFrames": [
+        828,
+        863.6,
+        1201.8
+      ],
+      "requestGap": 338.2,
+      "rafTimestampsBeforeAfterGap": [
+        862,
+        1195.3
+      ],
+      "rafActualBeforeAfterGap": [
+        863.2,
+        1200.8
+      ],
+      "lastPreGapDrawDuration": 0.3,
+      "postGapDrawDuration": 0.4,
+      "captureStreamDuration": 2.4,
+      "recordStartSyncDuration": 1.1,
+      "traceScreencastGap": 359.082,
+      "visibility": "visible",
+      "focused": true,
+      "canvasYBeforeClick": -976.375,
+      "requestFrameCount": 106,
+      "decodedFrameCount": 104,
+      "wrappersRestored": true
+    },
+    "supportedConclusion": "The failed 338 ms media gap corresponds to a 338.2 ms gap in producer frame requests because both RAF callback streams were absent. Three export RAFs ran before the gap. Synchronous setup, draw, and requestFrame did not account for the stall; recorder start EVENT occurred after three requests and is not a justified clock origin.",
+    "limits": "Playwright trace has no longtask, timer heartbeat, or CPU task records. No evidence yet distinguishes whole JS event-loop blocking from compositor-only RAF starvation. Passing independent pixels does not satisfy the failed temporal gate. No production scheduler or clock correction is justified yet.",
+    "nextDiagnostic": {
+      "implementation": "Only capture-timing-fixtures.js: native 25 ms timer heartbeat, supported PerformanceObserver longtasks, visibility/focus observations during first second. One final heartbeat may report a task spanning the observation deadline. Observer/timer clear at deadline, recorder stop, and finally; all listeners/wrappers restore in finally.",
+      "staticVerification": "node --check tests/browser/capture-timing-fixtures.js passed; no browser/test/server run by this agent.",
+      "pending": "Root to run one focused native verification, then ordinary CI publication.",
+      "interpretation": "Heartbeat continuity through a RAF gap supports testing an export-owned timer scheduler. Matching heartbeat starvation or longtask means a timer cannot fill the blocked interval."
+    },
+    "frozenFileSHA256": {
+      "tests/browser/capture-timing-fixtures.js": "9bbc098bfa37cc47383bcb234254dc450edbcc01f3641612321d204be663cf44",
+      "tests/browser/sequence-trim.spec.js": "965fb12e0bdcec0ce35b8cb2b85d1dd4e59cbcd4405dc833eb5c0d38293e2fed",
+      "tests/browser/sequence-trim-fixtures.js": "8d8fb4e9c00cbf1097cd69e357eba9986b8905e381d837a9013cdaf51770f368",
+      "src/export.js": "93351f6dd837a1b49a2261d2b37d4f3f966f14a8e8f6682898eb21da482fcc5c",
+      "src/renderer.js": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9"
+    },
+    "detailedSupplement": {
+      "path": "/tmp/shot124-ci-instrumented-trim-media-diagnosis.json",
+      "bytes": 22785,
+      "sha256": "19a18099d71e88c19bb0c5bf1149072eba746260b0310bdc6b0a1a9635439969"
+    }
+  },
+  "heartbeatLocalVerification": {
+    "result": "passed",
+    "stats": {
+      "startTime": "2026-10-05T06:14:14.320Z",
+      "duration": 10333.798,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": "/tmp/shot124-heartbeat-native.log",
+    "timing": {
+      "path": "/workspace/shot124-heartbeat-native-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-capture-timing.json",
+      "bytes": 41758,
+      "sha256": "d8da720bf3e031070b1acdbb530899e56f35debe54e26c401febd7dd9fededd5"
+    },
+    "heartbeat": {
+      "count": 34,
+      "first": 1095.7000000029802,
+      "last": 2082.300000011921,
+      "maxGap": 150.70000000298023
+    },
+    "wrappersRestored": true,
+    "longtaskSupported": true,
+    "longtaskEntries": 0,
+    "limits": "Local diagnostic pass does not resolve the original CI temporal failure. Production, literal fixtures and timing/pixel gates remain unchanged."
   }
 }

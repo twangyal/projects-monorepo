@@ -558,7 +558,13 @@ failures and hashes. The follow-up PR passes 328/99, but its push run
 passes 328/98 and repeats a 352 ms initial frame gap. The storage case is fixed;
 video startup investigation remains open. A bounded test-only observer now saves
 first-second draw/RAF/capture/encoder timings in CI while retaining every original
-acceptance gate. The local instrumented case passes.
+acceptance gate. The local instrumented case passes. A third push reproduces a
+338 ms gap between requested frames, matching the media gap; short draw/setup
+calls do not explain the absent animation-frame callbacks. A bounded timer
+heartbeat, long-task and visibility observer now distinguishes renderer-thread
+blocking from compositor-only starvation. Its focused local case passes;
+production timing and the original acceptance gates remain unchanged pending
+that evidence.
 
 The independent maximum uses four complete 20-shot scenes, 256 performer cues,
 twenty clips and 60 seconds of stereo PCM. Its complete **11,554,385-byte** archive
