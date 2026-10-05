@@ -63,7 +63,7 @@ jobs:
           mkdir -p test-results
           node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-maximum-fixtures
           shot_chromium_path=$(node --input-type=module -e "import {chromium} from '@playwright/test'; process.stdout.write(chromium.executablePath())")
-          CHROMIUM_PATH="$shot_chromium_path" node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-maximum-fixtures --output test-results/maximum --origin http://127.0.0.1:4174
+          DEBUG=pw:browser CHROMIUM_PATH="$shot_chromium_path" node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-maximum-fixtures --output test-results/maximum --origin http://127.0.0.1:4174 2>test-results/maximum-browser.log
           node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/maximum
       - uses: actions/upload-artifact@v4
         if: always()
@@ -72,4 +72,5 @@ jobs:
           path: |
             apps/shot-studio/test-results/maximum/**
             !apps/shot-studio/test-results/maximum/profile/**
+            apps/shot-studio/test-results/maximum-browser.log
           retention-days: 1
