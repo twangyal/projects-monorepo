@@ -11,4 +11,4 @@ Execution: native implementation under the standing autonomous instruction.
 - [x] Add independent native clear and synchronous partial-write rollback coverage, including original photo/sketch retention.
 - [x] Implement transaction-local deadline/terminal ordering in src/storage.ts, keeping load/save/clear APIs.
 - [x] Run the full unit/lint/type/build/browser suite; review the diff and publish a coherent commit on Astra.
-- [ ] Verify exact published-head CI; document limits, close #101 only when acceptance is established.
+- [x] Verify exact published-head CI; document limits, close #101 only when acceptance is established.

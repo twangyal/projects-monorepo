@@ -42,7 +42,24 @@
     "throw after native put aborts and retains exact original",
     "delayed rollback handler keeps queue blocked"
   ],
-  "published_head_ci": "pending",
+  "published_head_ci": {
+    "implementation": "cdfcc3545ed880f99a7276d1b73aeb9e5f7b8d48",
+    "push": {
+      "run": 37250018943,
+      "job": 111575589200,
+      "unit": 39,
+      "browser": 31,
+      "conclusion": "success"
+    },
+    "pull_request": {
+      "run": 37250023195,
+      "job": 111575601541,
+      "unit": 39,
+      "browser": 31,
+      "conclusion": "success"
+    },
+    "lint_typecheck_build": "passed on both events"
+  },
   "limits": [
     "Deadline starts at transaction creation, not database-open or photo-validation time.",
     "Timers and terminal callbacks depend on browser scheduling.",

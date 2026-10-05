@@ -72,3 +72,5 @@ Vector illustration export (#92) is complete: [PR #94](https://github.com/twangy
 
 
 Held transaction recovery (#101) now preserves the native saved record and releases ordered autosaves after rollback. The four original #102 regression cases remain unchanged. Three independent native cases verify complete photo/sketch retention during timed-out clear, synchronous failure after a real `put`, and a deliberately delayed rollback callback. The complete local gate passes **39 unit and 31 Chromium cases**, lint, type checking and production build. The test harness is excluded from ordinary production builds. See [verification record](docs/2026-10-05-storage-deadline-verification.json) for first failures, CI status and timing limits.
+
+Both [push](https://github.com/twangyal/projects-monorepo/actions/runs/37250018943) and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37250023195) CI pass the full 39-unit/31-browser gate at implementation `cdfcc3545ed880f99a7276d1b73aeb9e5f7b8d48`.
