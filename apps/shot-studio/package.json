@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/model.js && node --check src/performer.js && node --check src/math.js && node --check src/draft.js && node --check src/history.js && node --check src/app.js && node --check src/renderer.js && node --check src/xr.js && node --check src/export.js && node --check src/takes.js && node --check src/take-archive.js && node --check src/take-store.js && node --check src/take-video.js && node --check src/take-ui.js && node --check src/sequence.js && node --check src/sequence-store.js && node --check src/sequence-ui.js && node --check src/sequence-document.js && node --check src/sequence-archive.js && node --check src/sequence-document-store.js && node --check src/sequence-audio.js && node --check src/sequence-audio-session.js",
+    "check": "node --check src/model.js && node --check src/performer.js && node --check src/math.js && node --check src/draft.js && node --check src/history.js && node --check src/app.js && node --check src/renderer.js && node --check src/xr.js && node --check src/export.js && node --check src/takes.js && node --check src/take-archive.js && node --check src/take-store.js && node --check src/take-video.js && node --check src/take-ui.js && node --check src/sequence.js && node --check src/sequence-store.js && node --check src/sequence-ui.js && node --check src/sequence-document.js && node --check src/sequence-archive.js && node --check src/sequence-document-store.js && node --check src/sequence-audio.js && node --check src/sequence-audio-session.js && node --check src/export-timeline.js",
     "test:browser": "playwright test",
     "dev": "python3 -m http.server 4173 --bind 127.0.0.1"
   },

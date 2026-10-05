@@ -602,3 +602,22 @@ node scripts/smoke_sequence_soundtrack.mjs --inspect --output /tmp/shot-soundtra
 The runner starts no server. It owns and closes fresh browser processes, retains
 the original recorded video for independent inspection, and needs FFmpeg/FFprobe.
 Physical headset acceptance remains separate in #21.
+
+
+## Timestamped export work in progress (#124)
+
+The absolute deadline guard refuses expired encoder payloads, frames and Blob
+publication even when browser timers arrive late. Its published push and PR CI
+both pass 335 unit cases and syntax checks, but each still fails one of 99
+native cases at the original 150 ms video timing gate. The actual source and
+trim recordings are preserved with hashes and decoded PTS in
+[the failure directory](docs/failures/2026-10-05-deadline-ci/).
+
+A separate [input module](src/export-timeline.js) provides complete 30 Hz video
+timestamps and bounded 48 kHz planar PCM blocks, with explicit linear resampling,
+source trim/gain and leading/trailing silence. Fourteen original fixture tests
+include a complete stereo minute, cancellation and late-read refusal; the full
+local suite passes 349 cases plus syntax checks. This module is a prerequisite,
+not a production export replacement. The [input contract](docs/timestamped-export-inputs.md)
+and [verification receipt](docs/2026-10-05-export-timeline-verification.json)
+record numerical semantics and unfinished muxer/native acceptance work.
