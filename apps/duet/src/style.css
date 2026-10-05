@@ -152,3 +152,19 @@ footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1
 #retry-transport-status { min-height:44px; }
 #setup-key-field .fine { font-weight:normal; line-height:1.45; }
 #setup-key { max-width:100%; font-family:monospace; }
+
+.saved-mixes { margin-top: 25px; padding-top: 20px; border-top: 1px solid #dedfd3; }
+.saved-mixes h4 { margin: 0; font: 22px Georgia, serif; }
+.saved-mixes h5 { margin: 20px 0 8px; font-size: 15px; overflow-wrap: anywhere; }
+#save-mix-form, #rename-mix-form { display: flex; flex-direction: column; gap: 10px; }
+#save-mix-form button, #rename-mix-form button { align-self: flex-start; }
+#saved-mixes-list { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.saved-mix-row { text-align: left; overflow-wrap: anywhere; }
+.saved-mix-row[aria-pressed=true] { background: #e5ead8; border-color: #8c9a7d; }
+#saved-mix-preview { padding-left: 23px; font-size: 12px; line-height: 1.8; }
+#saved-mix-preview li { overflow-wrap: anywhere; white-space: pre-wrap; }
+#saved-mix-preview li[data-available=false] { color: #855633; }
+.saved-mix-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 13px; }
+#mix-status { white-space: pre-wrap; overflow-wrap: anywhere; }
+.order-buttons .text-button { margin-top: 6px; max-width: 95px; line-height: 1.4; }
+@media (max-width: 520px) { .saved-mix-actions > button { max-width: 100%; white-space: normal; } }

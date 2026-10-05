@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "status": "new-http-contract-green-existing-schema-compatibility-adaptation-pending",
+  "recordedAt": "2026-10-05T01:50:50.458357+00:00",
+  "scope": "Five saved-mix HTTP routes in the existing authenticated Duet handler; no Store/archive/UI/security transport changes.",
+  "runtime": {
+    "python": "3.12.14",
+    "service": "Actual create_server, real loopback HTTP sockets, real SQLite Store, owned ephemeral ports and temporary directories; no media worker used."
+  },
+  "sources": {
+    "duet/server.py": {
+      "path": "/workspace/projects-monorepo/apps/duet/duet/server.py",
+      "bytes": 35563,
+      "sha256": "81f4981c46458d9750fb1ce5bb5899bdf81b95bb85824febfbd34619aa9769ca"
+    },
+    "tests/test_saved_mix_http.py": {
+      "path": "/workspace/projects-monorepo/apps/duet/tests/test_saved_mix_http.py",
+      "bytes": 15114,
+      "sha256": "a8ac0110a57c57a332416738b4ee574b086d00f916ae61725f093f7e29a68ec3"
+    }
+  },
+  "contractSha256": "a53916165c0a4331fbb1e6452c8c25ecd18a592976d5e7081d6631620edc002f",
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/api/rooms/{roomId}/mixes",
+      "body": [
+        "name",
+        "playlistRevision",
+        "savedMixesRevision"
+      ],
+      "success": 201,
+      "response": "exact {mixId,room}"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/rooms/{roomId}/mixes/{mixId}/playlist",
+      "body": [
+        "playlistRevision",
+        "savedMixesRevision"
+      ],
+      "success": 200,
+      "response": "Room"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/rooms/{roomId}/mixes/{mixId}/name",
+      "body": [
+        "name",
+        "savedMixesRevision"
+      ],
+      "success": 200,
+      "response": "Room"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/rooms/{roomId}/mixes/{mixId}",
+      "body": [
+        "savedMixesRevision"
+      ],
+      "success": 200,
+      "response": "Room"
+    },
+    {
+      "method": "POST",
+      "path": "/api/rooms/{roomId}/mixes/{mixId}/load",
+      "body": [
+        "savedMixesRevision",
+        "playlistRevision",
+        "playbackRevision",
+        "availableOnly"
+      ],
+      "success": 200,
+      "response": "Room"
+    }
+  ],
+  "admission": {
+    "authorization": "Existing participant Bearer authentication before JSON body parsing; media cookies do not authorize mutations. Store reauth remains unchanged.",
+    "jsonBytes": 65536,
+    "json": "Existing exact-key JSON parser, duplicate-key/nonfinite rejection and framing policy reused.",
+    "revisions": "Actual int, excluding bool/float/string/null, in 0..2^53-1.",
+    "name": "Literal 1..80 Unicode code points, non-whitespace-only, NUL-free and UTF-8 encodable; no trim or HTML interpretation.",
+    "availableOnly": "Actual bool only.",
+    "transport": "Existing Host/Origin/setup/TLS/CSRF/body deadlines and bounded private-safe error envelopes unchanged.",
+    "retry": "No automatic conflict replay."
+  },
+  "verification": [
+    {
+      "command": "python3 -B -m unittest discover -s tests -p test_saved_mix_http.py",
+      "phase": "genuine-before-production-RED",
+      "tests": 9,
+      "assertionFailuresIncludingSubtests": 30,
+      "errors": 0,
+      "seconds": 4.592,
+      "reason": "New routes absent:404 where the frozen success/admission contract requires 201/400/413.",
+      "log": {
+        "path": "/tmp/duet119-http-red.log",
+        "bytes": 20848,
+        "sha256": "863b06a48ede5153ed1a8e8006c166a6448815629f078aa083f4c6d418a1b261"
+      }
+    },
+    {
+      "command": "python3 -B -m unittest discover -s tests -p test_saved_mix_http.py",
+      "phase": "intermediate-incomplete-dependency",
+      "tests": 9,
+      "assertionFailuresIncludingSubtests": 11,
+      "seconds": 4.617,
+      "reason": "Routes and strict admission present; valid requests 500 while Store saved-mix methods were still missing. This was an unpublished in-progress dependency state, not a published regression.",
+      "log": {
+        "path": "/tmp/duet119-http-first-integration.log",
+        "bytes": 8302,
+        "sha256": "c9eb1dbbff750b7ab6ba3ca799773fbaca2fc32c3c343c1d1ff910ab2289954d"
+      }
+    },
+    {
+      "command": "python3 -B -m unittest discover -s tests -p test_saved_mix_http.py",
+      "phase": "actual-Store-GREEN",
+      "tests": 9,
+      "passed": 9,
+      "seconds": 4.685,
+      "log": {
+        "path": "/tmp/duet119-http-green.log",
+        "bytes": 107,
+        "sha256": "eacef6ac19e63d21367e621b919d060183d4f90ea6e753b6b57d0f286862c87f"
+      }
+    },
+    {
+      "command": "python3 -B -m unittest discover -s tests -p test_server.py",
+      "phase": "relevant-existing-server-gate",
+      "tests": 26,
+      "passed": 25,
+      "failed": 1,
+      "seconds": 15.089,
+      "failure": {
+        "test": "test_metadata_export_and_memory_survive_audio_deletion_without_credentials",
+        "location": "tests/test_server.py:245",
+        "assertion": "Expected exported.schemaVersion 1, actual 2.",
+        "classification": "Approved new export schema; existing compatibility assertion requires root-owned adaptation. Old test was not edited by route owner."
+      },
+      "log": {
+        "path": "/tmp/duet119-existing-http.log",
+        "bytes": 735,
+        "sha256": "d0437f931e29e981108e230028d7870b24a99f5e5ec7ca3fa360519ed991436f"
+      }
+    },
+    {
+      "command": "/tmp/duet-service-checks/bin/ruff check duet/server.py tests/test_saved_mix_http.py",
+      "status": "passed"
+    },
+    {
+      "command": "Python ast.parse on duet/server.py and tests/test_saved_mix_http.py",
+      "status": "passed"
+    }
+  ],
+  "coverage": [
+    "Two-seat real save/update/rename/delete lifecycle and literal captured labels.",
+    "Metadata commands preserve current playlist/playback/tracks/memories.",
+    "Explicit load pauses at first available entry/zero, increments current revisions and rejects old transport command.",
+    "Deleted references require explicit boolean consent; saved original labels/order remain unchanged; all-unavailable refuses.",
+    "Stale expected library/playlist revisions refuse without snapshot mutation or automatic retry.",
+    "Exact keys, duplicate JSON keys, safe integers, malformed Unicode/NUL/whitespace/+1 names, exact 80-emoji admission.",
+    "Eight distinct saved mixes with repeated names accepted; ninth and empty-current update refuse atomically.",
+    "Capability and same-origin requirements,64 KiB + 1 body refusal, no-store response and unknown well-formed mix 404."
+  ],
+  "limitations": [
+    "Only new focused HTTP tests and relevant existing server tests were run by this owner. Root owns whole Python/static/browser/maximum/CI gates.",
+    "The focused tests use loopback mode; existing TLS transport is untouched, and new route TLS end-to-end acceptance is a separate root/native gate.",
+    "No source media decode or encoding is needed for route tests; actual audio/archive acceptance is separate.",
+    "Existing suite mixed result is preserved honestly until root adapts the intentional schema assertion."
+  ],
+  "cleanup": "Each unittest owns its temporary library and ephemeral service, calls shutdown/server_close and joins/asserts thread termination. No pre-existing service/browser/data directory was touched."
+}

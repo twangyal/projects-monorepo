@@ -162,7 +162,9 @@ class StoreTests(unittest.TestCase):
         for date in ['2023-02-29', '1899-12-31', '2101-01-01', '20240101']:
             self.failure(400, self.store.add_memory, self.room_id, guest, track, date, 'Words')
         exported = self.store.export_room(self.room_id, guest)
-        self.assertEqual(exported['schemaVersion'], 1)
+        self.assertEqual(exported['schemaVersion'], 2)
+        self.assertEqual(exported['savedMixes'], [])
+        self.assertEqual(exported['savedMixesRevision'], 0)
         self.assertNotIn('myRole', exported)
         self.assertNotIn('serverTime', exported)
         self.assertEqual(exported['memories'][0]['text'], memory['text'])

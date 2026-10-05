@@ -10,9 +10,10 @@ import zlib
 from threading import Event
 
 from .archive_common import (
-    ARCHIVE_KIND, BLOCK_BYTES, MANIFEST_NAME, MAX_ARCHIVE_BYTES, MAX_AUDIO_BYTES,
+    ACCEPTED_SCHEMA_VERSIONS, ARCHIVE_KIND, BLOCK_BYTES, MANIFEST_NAME, MAX_ARCHIVE_BYTES,
+    MAX_AUDIO_BYTES, MAX_LEGACY_ROOMS_JSON_BYTES,
     MAX_CENTRAL_BYTES, MAX_MANIFEST_BYTES, MAX_MEMBERS, MAX_ROOMS_JSON_BYTES,
-    PLAYBACK_POLICY, ROOMS_MEMBER, SCHEMA_VERSION, ArchiveError,
+    PLAYBACK_POLICY, RECORDS_KIND, ROOMS_MEMBER, SCHEMA_VERSION, ArchiveError,
     canonical_json, check_archive, parse_json,
 )
 
@@ -43,6 +44,7 @@ class ArchiveIndex:
     created_at_ms: float
     entries: tuple[ArchiveEntry, ...]
     members: tuple[ArchiveMember, ...]
+    schema_version: int = SCHEMA_VERSION
 
 
 @dataclass(frozen=True)
@@ -142,6 +144,8 @@ def _admit_index(fd, index, cancel, deadline):
     check_archive(cancel, deadline)
     info = _regular(fd, MAX_ARCHIVE_BYTES)
     if (type(index) is not ArchiveIndex or not _timestamp(index.created_at_ms)
+            or type(index.schema_version) is not int
+            or index.schema_version not in ACCEPTED_SCHEMA_VERSIONS
             or type(index.entries) is not tuple or type(index.members) is not tuple
             or not 2 <= len(index.entries) <= MAX_MEMBERS
             or len(index.members) != len(index.entries) - 1):
@@ -161,6 +165,8 @@ def _admit_index(fd, index, cancel, deadline):
             _reject('input')
         cursor = entry.offset + entry.size
     _names(names)
+    if index.schema_version == 1 and index.entries[1].size > MAX_LEGACY_ROOMS_JSON_BYTES:
+        _reject('limit')
     for member, entry in zip(index.members, index.entries[1:]):
         if (type(member) is not ArchiveMember or type(member.name) is not str
                 or member.name != entry.name or type(member.size) is not int
@@ -228,11 +234,14 @@ def read_index(fd: int, *, cancel: Event, deadline: float) -> ArchiveIndex:
         manifest = parse_json(manifest_bytes, MAX_MANIFEST_BYTES, cancel=cancel, deadline=deadline)
         if (type(manifest) is not dict
                 or set(manifest) != {'schemaVersion', 'kind', 'createdAtMs', 'playbackPolicy', 'members'}
-                or type(manifest['schemaVersion']) is not int or manifest['schemaVersion'] != SCHEMA_VERSION
+                or type(manifest['schemaVersion']) is not int
+                or manifest['schemaVersion'] not in ACCEPTED_SCHEMA_VERSIONS
                 or manifest['kind'] != ARCHIVE_KIND or manifest['playbackPolicy'] != PLAYBACK_POLICY
                 or not _timestamp(manifest['createdAtMs']) or type(manifest['members']) is not list
                 or len(manifest['members']) != len(entries) - 1):
             _reject('metadata')
+        if manifest['schemaVersion'] == 1 and entries[1].size > MAX_LEGACY_ROOMS_JSON_BYTES:
+            _reject('limit')
         members = []
         for declared, entry in zip(manifest['members'], entries[1:]):
             check_archive(cancel, deadline)
@@ -245,7 +254,8 @@ def read_index(fd: int, *, cancel: Event, deadline: float) -> ArchiveIndex:
         check_archive(cancel, deadline)
         if _identity(os.fstat(fd)) != _identity(before):
             _reject()
-        return ArchiveIndex(manifest['createdAtMs'], tuple(entries), tuple(members))
+        return ArchiveIndex(manifest['createdAtMs'], tuple(entries), tuple(members),
+                            manifest['schemaVersion'])
     except OSError:
         _reject('storage')
 
@@ -334,6 +344,14 @@ def write_archive(output_fd: int, created_at_ms: float, rooms_json: bytes,
                 or not 1 <= len(rooms_json) <= MAX_ROOMS_JSON_BYTES
                 or type(media) is not tuple or len(media) > MAX_MEMBERS - 2):
             _reject('input')
+        # New output always uses a version2 manifest and records envelope.
+        # Domain/media relationships remain the orchestrator's responsibility.
+        records = parse_json(rooms_json, MAX_ROOMS_JSON_BYTES, cancel=cancel, deadline=deadline)
+        if (type(records) is not dict or set(records) != {'schemaVersion', 'kind', 'rooms'}
+                or type(records['schemaVersion']) is not int
+                or records['schemaVersion'] != SCHEMA_VERSION
+                or records['kind'] != RECORDS_KIND or type(records['rooms']) is not list):
+            _reject('metadata')
         names, crc_values, identities = [MANIFEST_NAME, ROOMS_MEMBER], [], []
         for source in media:
             check_archive(cancel, deadline)

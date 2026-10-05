@@ -1,0 +1,83 @@
+{
+  "milestone": 119,
+  "date": "2026-10-05",
+  "scope": "Duet named saved mixes browser implementation and focused pure tests",
+  "contract": "docs/superpowers/specs/2026-10-05-duet-saved-mixes-design.md",
+  "status": "producer source and static checks complete; independent native acceptance is separately owned and was not run by this producer",
+  "source": {
+    "src/main.ts": {
+      "bytes": 54455,
+      "sha256": "ef2dc721f8cb0ae87380f6ae6294a0001b198200bdb57255065d1715c11e4607"
+    },
+    "src/style.css": {
+      "bytes": 16031,
+      "sha256": "7fecb41ba03aee23611d3ccab2c39c2396844aa367950021c29bb251e60afdab"
+    },
+    "src/saved-mixes.ts": {
+      "bytes": 5674,
+      "sha256": "b1e53dea0fdf0b73badd545c5ff1b20fb5983c284772465ea7d213f1b0029f97"
+    },
+    "tests/saved-mixes.test.ts": {
+      "bytes": 4680,
+      "sha256": "65ee45084e15d3b4cb36c88599fc36845b7beebb400064b791f0668fd7bc87b7"
+    }
+  },
+  "verification": [
+    {
+      "command": "node --experimental-strip-types --test tests/saved-mixes.test.ts",
+      "phase": "deliberate callable stub RED",
+      "tests": 6,
+      "passed": 1,
+      "failed": 5,
+      "durationMs": 96.443177,
+      "log": "/tmp/duet119-ui-unit-red.log",
+      "meaning": "Successful-path admission, maximum accepted graph, captured commands and membership operations failed the stubs; malformed-data rejection passed."
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/saved-mixes.test.ts",
+      "phase": "final actual GREEN",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "durationMs": 104.29737,
+      "log": "/tmp/duet119-ui-unit-final.log"
+    },
+    {
+      "command": "npx eslint src/main.ts src/saved-mixes.ts tests/saved-mixes.test.ts",
+      "phase": "final scoped lint",
+      "result": "passed",
+      "log": "/tmp/duet119-ui-lint-final.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "phase": "first integration",
+      "result": "one in-flight independent browser-test unused helper diagnostic; no owned source diagnostics",
+      "log": "/tmp/duet119-ui-typecheck-first.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "phase": "final full project typecheck",
+      "result": "passed",
+      "log": "/tmp/duet119-ui-typecheck-second.log"
+    }
+  ],
+  "implemented": [
+    "Exact saved mix field admission: 0–8 mixes, 1–12 unique track references, lowercase32hex IDs, safe revisions, exact entry keys, detached graphs and Unicode80-codepoint literal text.",
+    "Current playlist membership and reorder capture displayed order and revision; votes, audio deletion and saved copies are separate actions.",
+    "Static Save-as and Rename fields, keyed selected rows, missing/deleted selection disclosure, preview-only selection and no automatic audio enablement.",
+    "Save/update capture playlist and saved-library revisions; delete/update/available-only confirmation retains captured requests and checks current input/selection/lifetime before dispatch.",
+    "Explicit named load binds saved-library, playlist and playback revisions; missing labels remain visible, available-only choice is separate, all-missing load disabled.",
+    "Late success/errors/finally cannot publish across retired room/page lifetime; changed-back input watermarks preserve name drafts;409 refreshes room without mutation replay."
+  ],
+  "limits": {
+    "savedMixesPerRoom": 8,
+    "entriesPerSavedMix": 12,
+    "nameCodePoints": 80,
+    "nativeNameMaxUtf16Units": 160
+  },
+  "unchanged": "AudioSync, server/store/archive producers, dependencies, existing tests, configuration, portable audio, local audio permission and current playback policy were not edited by this owner.",
+  "notClaimed": [
+    "No browser, service, build, hardware or physical synchronization verification was performed by this producer.",
+    "Focus/caret, actual paused native playback and restart/archive acceptance require the separately owned native gate."
+  ]
+}

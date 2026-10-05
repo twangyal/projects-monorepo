@@ -396,6 +396,25 @@ class Handler(BaseHTTPRequestHandler):
         role = self.server.store.authenticate(room_id, token)
         return token, role
 
+    def _mix_object(self, keys):
+        body = self._object(keys)
+        for key, value in body.items():
+            if key.endswith('Revision'):
+                if type(value) is not int or not 0 <= value <= 2**53 - 1:
+                    raise DomainError(400, 'Mix revisions must be nonnegative safe integers.')
+            elif key == 'availableOnly':
+                if type(value) is not bool:
+                    raise DomainError(400, 'Available-only consent must be a boolean.')
+            elif key == 'name':
+                if (type(value) is not str or not value.strip() or len(value) > 80
+                        or '\0' in value):
+                    raise DomainError(400, 'Mix name must contain 1–80 valid Unicode characters.')
+                try:
+                    value.encode('utf-8')
+                except UnicodeError:
+                    raise DomainError(400, 'Mix name must contain 1–80 valid Unicode characters.') from None
+        return body
+
     def _cookie(self, room_id, token):
         secure = '; Secure' if self.server.transport is not None else ''
         return {'Set-Cookie': f'duet_{room_id}={token}; Path=/api/rooms/{room_id}; HttpOnly; SameSite=Strict{secure}'}
@@ -494,6 +513,30 @@ class Handler(BaseHTTPRequestHandler):
         if tail == '/playlist' and method == 'PUT':
             body = self._object('trackIds revision')
             return self._json(200, store.set_playlist(room_id, token, body['trackIds'], body['revision']))
+        if tail == '/mixes' and method == 'POST':
+            body = self._mix_object('name playlistRevision savedMixesRevision')
+            return self._json(201, store.save_mix(room_id, token, body['name'],
+                                                body['playlistRevision'], body['savedMixesRevision']))
+        mix = re.fullmatch(r'/mixes/(' + ID + r')(?P<action>/(?:playlist|name|load))?', tail)
+        if mix:
+            mix_id, action = mix.group(1), mix.group('action')
+            if action == '/playlist' and method == 'PUT':
+                body = self._mix_object('playlistRevision savedMixesRevision')
+                return self._json(200, store.update_mix(room_id, token, mix_id,
+                                                       body['playlistRevision'], body['savedMixesRevision']))
+            if action == '/name' and method == 'PUT':
+                body = self._mix_object('name savedMixesRevision')
+                return self._json(200, store.rename_mix(room_id, token, mix_id, body['name'],
+                                                       body['savedMixesRevision']))
+            if action is None and method == 'DELETE':
+                body = self._mix_object('savedMixesRevision')
+                return self._json(200, store.delete_mix(room_id, token, mix_id,
+                                                       body['savedMixesRevision']))
+            if action == '/load' and method == 'POST':
+                body = self._mix_object('savedMixesRevision playlistRevision playbackRevision availableOnly')
+                return self._json(200, store.load_mix(room_id, token, mix_id,
+                                                     body['savedMixesRevision'], body['playlistRevision'],
+                                                     body['playbackRevision'], body['availableOnly']))
         if tail == '/playback' and method == 'PUT':
             body = self._object('trackId playing position revision')
             return self._json(200, store.set_playback(room_id, token, body['trackId'], body['playing'], body['position'], body['revision']))

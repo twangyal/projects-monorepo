@@ -208,7 +208,9 @@ class ArchiveStateTests(unittest.TestCase):
         self.assertEqual((target / 'rooms.sqlite3').stat().st_mode & 0o777, 0o600)
         fd = os.open(target / 'rooms.sqlite3', os.O_RDONLY)
         self.addCleanup(os.close, fd)
-        self.assertEqual(read_library(fd, **self.kw).rooms_json, paused)
+        # Re-export upgrades only the envelope, preserving all restored room values.
+        self.assertEqual(read_library(fd, **self.kw).rooms_json,
+                         canonical_json({**json.loads(paused), 'schemaVersion': 2}))
         before = hashlib.sha256((target / 'rooms.sqlite3').read_bytes()).digest()
         self.rejects(write_database, directory_fd, paused, **self.kw)
         self.assertEqual(hashlib.sha256((target / 'rooms.sqlite3').read_bytes()).digest(), before)

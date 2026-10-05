@@ -79,22 +79,50 @@ HTTPS requires TLS 1.2 or newer, the exact configured Host, and the exact Origin
 - Playlist playback advances to the next song and stops after the final song; it does not loop. A song outside the playlist stops at its end. Server restart preserves room data and pauses playback rather than starting it automatically.
 - Choose a song, date, and memory text, then press **Keep this memory**. Each person can delete their own memories. Removing a song preserves memories with its recorded title and marks the audio unavailable.
 
+## Keep mixes for different occasions
+
+The current mix is the editable sequence used by the shared player. Add songs
+from the library, remove them from this mix, or move them up/down without
+changing either person's votes or deleting audio. **Build our mix** replaces
+only the current order using the existing rating rules.
+
+Keep up to **eight named mixes per room**, each with **one to twelve songs**:
+
+1. Arrange the current mix and use **Save as named mix** with a name of up to
+   80 characters. Saved copies reference the existing audio; they do not copy it.
+2. Select a saved mix to inspect its order. Selection, saving, renaming and
+   deleting a saved copy leave the shared player alone. Later current-mix edits
+   and rebuilds never silently update a saved copy.
+3. **Update from current mix** deliberately replaces the selected saved order.
+   Rename changes only its name. Delete removes only that saved copy; songs,
+   ratings, memories and the current sequence remain.
+4. **Load into shared player** deliberately replaces the current sequence and
+   pauses at the first song at time zero. Each device's existing audio permission
+   still applies; choose Play separately when ready.
+
+Removing audio from the library leaves its captured title/artist in saved mixes,
+marked unavailable. Review those entries and explicitly choose **Load available
+songs only** to omit them from the current sequence. The saved copy remains
+intact. A mix with no available songs cannot load. A concurrent change can reject
+an outdated action; drafts stay in place and the action is never automatically
+replayed. Review the current state before trying again.
+
 The uploader or host can **Remove** a track after confirmation. Only the host can **Delete this room**, also after explicit confirmation. Deletion frees the relevant quota and affects the selected track/room only. These removals are not undoable.
 
 ## Limits and processing
 
-- **5 rooms**, **2 participants per room**, **12 tracks per room**, and **100 memories per room**.
+- **5 rooms**, **2 participants per room**, **12 tracks per room**, **8 saved mixes per room** with up to **12 song references each**, and **100 memories per room**.
 - Uploaded audio: **25 MiB**, **1–300 seconds**, 8–192 kHz sampling, and 1–8 channels. Inputs must have one audio stream; remote references, playlists, video streams, and unsupported containers are rejected.
 - Stored media: stereo **48 kHz Opus in Ogg**, at most **8 MiB per track**. Original uploads are temporary; normalized audio is retained. Opus is lossy, so this is not an archive of the original recording.
 - One active conversion job across the service, up to 50 retained job statuses; conversion is bounded to 45 seconds and 512 MiB of worker memory, with output/log limits. Slow machines may time out. Failed/cancelled conversions preserve completed tracks.
-- JSON request bodies: **64 KiB**; exported metadata: **256 KiB**.
+- JSON request bodies: **64 KiB**; exported metadata: **384 KiB**. Saved mixes reference the same bounded audio library.
 - Participant names: 1–40 characters; room/song titles: 1–80; artist: 0–80; memory text: 1–500; valid memory dates: 1900–2100.
 
 Room data lives in SQLite, with normalized media stored separately inside the supplied data directory. An exclusive lifetime lock prevents two service instances from using that directory at once. Closing the service cancels active jobs and releases the lock.
 
 ## Backups and private access
 
-**Export room notes** downloads readable JSON containing the room's tracks, votes, mix, playback metadata, and memories. It contains **no access credentials or audio** and cannot restore an editable room.
+**Export room notes** downloads readable JSON containing the room's tracks, votes, current mix, saved mixes, playback metadata, and memories. It contains **no access credentials or audio** and cannot restore an editable room.
 
 For a complete library archive, first **stop the service gracefully** and retain **each participant's private access link** separately. Run these commands from `apps/duet`:
 
@@ -109,13 +137,13 @@ python3 -m duet --data-dir "$HOME/.local/share/duet-restored" --port 8766
 
 The output file and restore directory must **not already exist**; their parent directories must exist. The archive must be outside the source library. There is no overwrite or merge option. A running service, an unfinished database journal, invalid records, missing audio, or unexpected media files cause rejection without repairing or changing the source. Preserve database sidecars if recovery is needed; do not delete them to bypass a rejection.
 
-Create, inspect, and restore validate the complete library, including every audio file's checksum, Ogg structure, and full stereo 48 kHz Opus decode. The portable archive contains the original room IDs, private credential/invitation **hashes**, profiles, individual ratings, playlist order, dated memories (including removed songs), and exact stored Opus bytes. It excludes temporary uploads and runtime jobs. Stored Opus is lossy; the archive does not recover original uploads.
+Create, inspect, and restore validate the complete library, including every audio file's checksum, Ogg structure, and full stereo 48 kHz Opus decode. The portable archive contains the original room IDs, private credential/invitation **hashes**, profiles, individual ratings, current playlist order, saved mixes (including unavailable song references), dated memories (including removed songs), and exact stored Opus bytes. It excludes temporary uploads and runtime jobs. Stored Opus is lossy; the archive does not recover original uploads.
 
-Use the original private link to return to the corresponding host or guest seat; change only its origin if the service address/port changed. A used invitation stays used, and an unused invitation still requires its original link. The archive never recovers lost raw credentials or creates replacement seats. Browser storage alone is not a backup. Restored records form an independent library; edits do not synchronize back to the source, and archived ratings/memories are not new participant approvals.
+Use the original private link to return to the corresponding host or guest seat; change only its origin if the service address/port changed. A used invitation stays used, and an unused invitation still requires its original link. The archive never recovers lost raw credentials or creates replacement seats. Version 0.4 writes archive format 2 and also reads original format-1 archives. Older Duet versions cannot read the new format; retain original backups when upgrading. Archive inspection does not rewrite the source library or migrate its saved room records. Browser storage alone is not a backup. Restored records form an independent library; edits do not synchronize back to the source, and archived ratings/memories are not new participant approvals.
 
 Playback resumes **paused at the last saved anchor**, which can precede the last audible position. Offline time is never replayed. An originally playing anchor advances its playback revision once, so an old playing command cannot resume it; originally paused revisions stay unchanged.
 
-Archives are **unencrypted private data**. Keep the file and separately saved access links private. Limits are five rooms, sixty tracks, 8 MiB per track, 256 KiB per room record, and 512 MiB per archive. Each command has a five-minute total deadline; each decoder retains its 45-second/512-MiB limits. Slow machines can reject a valid large library safely. Cancellation before publication removes only owned temporary output. If the final durability sync fails after publication, the command reports that the complete output exists; preserve and inspect it before retrying.
+Archives are **unencrypted private data**. Keep the file and separately saved access links private. Limits are five rooms, sixty tracks, 8 MiB per track, and 512 MiB per archive. The existing room core remains limited to 256 KiB; version-2 records allow 365,429 bytes including saved mixes, with at most 1,828,169 bytes for the complete records envelope. Each command has a five-minute total deadline; each decoder retains its 45-second/512-MiB limits. Slow machines can reject a valid large library safely. Cancellation before publication removes only owned temporary output. If the final durability sync fails after publication, the command reports that the complete output exists; preserve and inspect it before retrying.
 
 ## Synchronization scope
 
@@ -188,3 +216,10 @@ A separate [private-interface check](docs/2026-10-04-https-lan-private-interface
 At the first published HTTPS head `6bc47b265338cd95acd90239bcb5d77083f8aa4b`, PR CI passes **183 Python, six TypeScript and all 30 browser cases**; all thirteen project PR workflows pass. Push passes the same Python/TypeScript checks but exposes a browser-test ordering error (29/30): the guest's native clock had naturally passed 2.8 seconds before receiving the host's seek revision, so its pause correctly received a stale-revision 409. The [first CI receipt](docs/2026-10-04-https-lan-ci-first.json) retains the actual request timeline. The test now waits for the partner's completed snapshot carrying the seek revision and asserts the pause uses it. The affected case passes against the unchanged normal bundle, with all original media/restart assertions and tolerances preserved. Final [push CI](https://github.com/twangyal/projects-monorepo/actions/runs/37233367305) and [PR CI](https://github.com/twangyal/projects-monorepo/actions/runs/37233369756) at `880070a6ee83707434e293a986a9d6aedaa6522d` each pass **183 Python, six TypeScript and all 30 native browser cases**, plus static/build checks. The actual PR merge has the identical source tree, and all thirteen project PR workflows pass. The [final CI receipt](docs/2026-10-04-https-lan-ci.json) preserves actual checkouts, timings and log hashes. Physical two-device acceptance remains open in [#109](https://github.com/twangyal/projects-monorepo/issues/109).
 
 Version 0.3.1 rejects bare hexadecimal final hostname labels such as `0x`, `127.0.0x` and `name.0x` before TLS configuration is admitted (#112). Browsers normalize or reject these spellings, so accepting them produced unusable exact-origin links. Canonical private/loopback IPv4 and ordinary lowercase DNS remain supported. Actual helper/config regressions cover default and explicit ports with valid controls; the [shared verification receipt](../../docs/2026-10-04-canonical-https-origins.json) retains the targeted checks and original failures. Both push and PR CI at `76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f` pass 185 Python, 6 TypeScript and all 30 native cases, plus lint, compilation, type checking and build. All thirteen project PR workflows pass; [final CI evidence](../../docs/2026-10-04-canonical-https-origins-ci.json) verifies the actual identical branch/merge trees.
+
+
+## Named mixes acceptance (#119)
+
+Version 0.4 completes reusable occasion mixes with guarded save/update/rename/delete, current-list membership controls, explicit paused loading and reviewed missing-song omissions. Local verification passes **219 Python, 12 TypeScript and all 40 native browser cases**, plus Ruff, compilation, ESLint, type checking and production build. Independent reviews and the [verification receipt](docs/2026-10-05-saved-mixes-verification.json) preserve original feature-absence failures, old-schema fixture updates and the two browser-fixture repairs; those repairs did not change production behavior. Published CI is pending.
+
+The [maximum graph check](docs/2026-10-05-saved-mixes-maximum.json) retains five original paired rooms, forty named mixes, 480 saved references, sixty distinct playable audio files and 500 memories through a graceful service restart and real archive create/inspect/restore. Both original seats recover exact public metadata and audio after each restart. The 2,511,756-byte archive preserves source database bytes and private identities; no credentials are published. Its audio uses original two-second tones, so this checks graph capacity, not the earlier full-media byte limit or physical device synchronization. Separate literal fixtures verify the exact core, saved-mix and aggregate metadata bounds and genuine format-1 compatibility.

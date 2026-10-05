@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "reviewedAt": "2026-10-05T01:54:05.916551+00:00",
+  "kind": "independent-read-only-source-review",
+  "result": "No actionable finding in the reviewed saved-mix UI/backend integration.",
+  "files": [
+    {
+      "path": "apps/duet/src/main.ts",
+      "bytes": 54455,
+      "sha256": "ef2dc721f8cb0ae87380f6ae6294a0001b198200bdb57255065d1715c11e4607"
+    },
+    {
+      "path": "apps/duet/src/saved-mixes.ts",
+      "bytes": 5674,
+      "sha256": "b1e53dea0fdf0b73badd545c5ff1b20fb5983c284772465ea7d213f1b0029f97"
+    },
+    {
+      "path": "apps/duet/src/sync.ts",
+      "bytes": 9817,
+      "sha256": "7cf87816835aabcf0bff72e7e0e03986f4f18169801d66a95e09cf926b97ff1b"
+    },
+    {
+      "path": "apps/duet/duet/store.py",
+      "bytes": 35901,
+      "sha256": "95268be61a1f3805c9b84cf5331d6b416c08b769ee50576ac75a556de45356e2"
+    },
+    {
+      "path": "apps/duet/duet/server.py",
+      "bytes": 35563,
+      "sha256": "81f4981c46458d9750fb1ce5bb5899bdf81b95bb85824febfbd34619aa9769ca"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-05-duet-saved-mixes-design.md",
+      "bytes": 15718,
+      "sha256": "a53916165c0a4331fbb1e6452c8c25ecd18a592976d5e7081d6631620edc002f"
+    }
+  ],
+  "checks": [
+    {
+      "area": "Raw field and selection ownership",
+      "evidence": "Static name inputs are not recreated or assigned during polling. Surviving saved-row buttons remain keyed. Deleted selected IDs remain explicit unavailable selections rather than falling back. Changed-back input increments separate save/rename watermarks; changing selection increments its own watermark.",
+      "locations": [
+        "src/main.ts:241",
+        "src/main.ts:259",
+        "src/main.ts:288",
+        "src/main.ts:341"
+      ]
+    },
+    {
+      "area": "Delayed success, failure and conflict",
+      "evidence": "Requests capture room generation, copied credentials, operation ID, selection and both input watermarks. Terminal success/error/finally requires the original room and pending owner; submitted name cleanup requires its unchanged watermark, and automatic created-row selection additionally requires unchanged selection/rename ownership. Errors preserve raw fields and request a read refresh without replaying the mutation.",
+      "locations": [
+        "src/main.ts:297",
+        "src/main.ts:318",
+        "src/main.ts:329",
+        "src/main.ts:335"
+      ]
+    },
+    {
+      "area": "Room and page lifecycle",
+      "evidence": "Opening another room/home retires mix operation and resets that intentionally left editor. pagehide retires pending operation and room generation and disables local audio; pageshow re-reads rather than replaying the old mutation. Old callbacks cannot clear newer fields or unlock another pending owner.",
+      "locations": [
+        "src/main.ts:154",
+        "src/main.ts:243",
+        "src/main.ts:458",
+        "src/main.ts:497"
+      ]
+    },
+    {
+      "area": "Displayed order and revision admission",
+      "evidence": "Current playlist membership/reorder handlers close over copied displayed IDs and displayed revision. Named commands capture snapshot revisions and selected ID before any native confirmation; no later poll is consulted to replace that payload. Save/update capture live labels only in the backend after both CAS checks.",
+      "locations": [
+        "src/main.ts:189",
+        "src/main.ts:298",
+        "src/saved-mixes.ts:39",
+        "duet/store.py:605"
+      ]
+    },
+    {
+      "area": "Explicit paused load and omissions",
+      "evidence": "Preview selection has no transport command. Missing captured labels are shown literally and listed in the available-only native confirmation. Commands carry saved-library, playlist and effective playback revisions. Backend rejects missing consent/all-unavailable, filters available references in saved order, advances both active revisions and sets first track paused at zero without modifying the saved copy. Track deletion always advances playlistRevision, invalidating an older confirmed omission list.",
+      "locations": [
+        "src/main.ts:274",
+        "src/main.ts:308",
+        "src/saved-mixes.ts:58",
+        "duet/store.py:673",
+        "duet/store.py:545"
+      ]
+    },
+    {
+      "area": "Audio consent and server transport",
+      "evidence": "Named metadata commands never call sync.enable. A loaded paused snapshot flows through the existing AudioSync apply path; playback requires the separate Play command and local audio consent. HTTP routes require exact mix payload keys, safe revisions and actual boolean availableOnly before dispatch.",
+      "locations": [
+        "src/main.ts:129",
+        "src/main.ts:350",
+        "src/sync.ts:80",
+        "duet/server.py:399",
+        "duet/server.py:516"
+      ]
+    }
+  ],
+  "findings": [],
+  "limits": [
+    "Source review only: no new browser, service, build, runtime mutation or test execution.",
+    "This receipt does not replace the separately owned native delayed-response, real media, restart or maximum-capacity acceptance.",
+    "No claim of a complete application-wide audit; review focused on new named-mix UI/backend ownership and transport contracts."
+  ]
+}

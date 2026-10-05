@@ -1,11 +1,12 @@
 import './style.css';
+import { mixCommand, playlistChange, validateSavedMixFields, type SavedMixFields } from './saved-mixes.ts';
 import { AudioSync, clockOffset, estimatedPosition, type Playback, type Track } from './sync.ts';
 
 type Role = 'host' | 'guest';
 interface Job { id: string; roomId: string; trackId: string; uploadedBy: Role; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string }
 interface Memory { id: string; trackId: string; trackTitle: string; date: string; text: string; author: Role; createdAt: number }
 interface Blend { trackId: string; category: string; reason: string }
-interface Room { id: string; title: string; createdAt: number; profiles: { host: { name: string }; guest: { name: string } | null }; myRole: Role; serverTime: number; tracks: Track[]; ratings: Record<string, { host: number; guest: number }>; blend: Blend[]; playlist: string[]; playlistRevision: number; playback: Playback; memories: Memory[]; activeJob?: Job | null }
+interface Room extends SavedMixFields { id: string; title: string; createdAt: number; profiles: { host: { name: string }; guest: { name: string } | null }; myRole: Role; serverTime: number; tracks: Track[]; ratings: Record<string, { host: number; guest: number }>; blend: Blend[]; playlist: string[]; playlistRevision: number; playback: Playback; memories: Memory[]; activeJob?: Job | null }
 interface Credentials { roomId: string; token: string }
 interface Created extends Credentials { inviteToken?: string; room: Room }
 interface Transport { mode: 'https-lan' | 'http-loopback'; origin: string; setupRequired: boolean }
@@ -17,7 +18,7 @@ app.innerHTML = `
 <section id="room-view" hidden><div class="room-intro"><div><p class="eyebrow">THE SOUNDTRACK WE'RE MAKING</p><h2 id="room-heading"></h2><div id="participants" class="participants"></div></div><div class="room-actions"><button id="invite" class="quiet">Invite your partner</button><button id="access-link" class="quiet">My private access link</button><button id="room-export" class="quiet">Export room notes</button><button id="leave-room" class="text-button">Back to rooms</button></div></div>
 <div id="link-panel" class="link-panel panel" hidden><strong id="link-heading"></strong><p id="link-help" class="fine"></p><div><input id="share-link" readonly aria-label="Room link"><button id="copy-link">Copy link</button><button id="close-link" class="text-button">Close</button></div></div>
 <div class="room-grid" id="room-main"><section class="library panel"><div class="section-heading"><div><span class="section-no">01</span><h3>What we bring</h3></div><span id="track-count" class="small-tag">0 / 12 SONGS</span></div><div class="library-body"><p class="section-description">Your favorites, their favorites, and the space in between.</p><form id="upload-form" class="upload-form"><label class="file-zone"><strong>Choose a song to share</strong><span id="audio-file-name">WAV, MP3, FLAC or Ogg · 1–300 seconds · 25 MiB</span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Choose song file"></label><div class="pair"><label>Song title<input id="track-title" required maxlength="80" placeholder="A song that feels like you"></label><label>Artist <span class="optional">optional</span><input id="track-artist" maxlength="80" placeholder="Artist name"></label></div><button id="upload" type="submit">Add to our library</button></form><div id="upload-job" class="upload-job" hidden><span id="job-stage"></span><button id="cancel-job">Cancel upload</button></div><div id="library-list"></div></div></section>
-<section class="mix panel"><div class="section-heading"><div><span class="section-no">02</span><h3>Somewhere in the middle</h3></div><span class="small-tag">OUR MIX</span></div><div class="mix-body"><p class="section-description">A blend of what you've each told us you like.</p><button id="build-mix" class="primary full">Build our mix</button><p id="blend-help" class="fine"></p><div id="playlist"></div><details class="blend-details"><summary>How the blend is ranked</summary><div id="blend-reasons"></div><p class="fine">This ranking uses your submitted ratings, not musical similarity or a streaming profile.</p></details></div></section>
+<section class="mix panel"><div class="section-heading"><div><span class="section-no">02</span><h3>Somewhere in the middle</h3></div><span class="small-tag">OUR MIX</span></div><div class="mix-body"><p class="section-description">A blend of what you've each told us you like.</p><button id="build-mix" class="primary full">Build our mix</button><p id="blend-help" class="fine"></p><div id="playlist"></div><p class="fine">Adding, removing or reordering songs here does not change votes, delete audio or update saved mixes.</p><section class="saved-mixes" aria-labelledby="saved-mixes-heading"><h4 id="saved-mixes-heading">Named mixes</h4><p id="saved-mix-count" class="fine">0 / 8 saved mixes</p><form id="save-mix-form"><label>New mix name<input id="mix-name" maxlength="160" autocomplete="off" placeholder="Date night or the long way home"></label><button id="save-mix" type="submit">Save as named mix</button></form><p id="mix-status" class="fine" aria-live="polite"></p><div id="saved-mixes-list"></div><div id="saved-mix-detail" hidden><h5 id="saved-mix-heading"></h5><p class="fine">This is a saved copy. Selecting it does not change the current mix or play audio.</p><ol id="saved-mix-preview"></ol><form id="rename-mix-form"><label>Selected mix name<input id="saved-mix-name" maxlength="160" autocomplete="off"></label><button id="rename-mix" type="submit">Rename saved mix</button></form><div class="saved-mix-actions"><button id="update-mix">Update from current mix</button><button id="delete-mix" class="text-button">Delete saved mix</button><button id="load-mix" class="primary">Load into shared player</button><button id="load-available-mix" hidden>Load available songs only</button></div><p id="saved-mix-availability" class="fine"></p><p class="fine">Loading replaces the current mix and pauses at the first song at 0:00. Press Play separately to listen.</p></div></section><details class="blend-details"><summary>How the blend is ranked</summary><div id="blend-reasons"></div><p class="fine">This ranking uses your submitted ratings, not musical similarity or a streaming profile.</p></details></div></section>
 <section class="memories panel"><div class="section-heading"><div><span class="section-no">03</span><h3>Songs with a story</h3></div><span id="memory-count" class="small-tag">OUR MEMORIES</span></div><div class="memory-body"><div class="memory-intro"><div><h4>Some songs take you right back.</h4><p>Give a moment a place in your soundtrack.</p></div><form id="memory-form"><div class="pair"><label>A song from our library<select id="memory-track" required></select></label><label>The date<input id="memory-date" type="date" min="1900-01-01" max="2100-12-31" required></label></div><label>The memory<textarea id="memory-text" maxlength="500" rows="3" required placeholder="The long way home. The windows down. This song."></textarea></label><button id="add-memory" type="submit">Keep this memory</button></form></div><div id="memory-list"></div></div></section></div>
 <section class="player panel" aria-label="Shared music player"><div class="now-playing"><span class="mini-record" aria-hidden="true"></span><div><strong id="playing-title">Choose a song</strong><p id="playing-artist">Your shared soundtrack starts here.</p></div></div><div class="shared-controls"><div class="play-buttons"><button id="previous" aria-label="Previous song">Previous</button><button id="play" class="primary">Play together</button><button id="next" aria-label="Next song">Next</button></div><div class="seek"><span id="position">0:00</span><input id="seek" type="range" min="0" max="1" step="0.1" value="0" aria-label="Shared playback position"><span id="duration">0:00</span></div></div><div class="local-audio"><button id="enable-audio">Enable audio on this device</button><p id="audio-status" role="status">Each person enables their own audio.</p><label>Volume <input id="volume" type="range" min="0" max="1" step="0.05" value="0.8"></label></div><audio id="audio" preload="auto"></audio></section><div class="room-footer"><p>Shared controls affect both seats. Audio enablement and volume are only for this device.</p><button id="delete-room" class="text-button">Delete this room</button></div></section>
 <footer><span>A room for the two of you.</span><span>Local audio library · no external music service</span></footer></main>`;
@@ -30,6 +31,9 @@ let invite: { roomId: string; token: string } | null = null, incomingAccess: Cre
 let generation = 0, offset = 0, latestServerTime = 0, contentSignature = '', busy = false;
 let transport: Transport | null = null, transportEpoch = 0, transportLoading = false;
 let identityRequest = 0, pendingIdentity: number | null = null;
+let selectedMixId: string | null = null, selectionIntent = 0, saveNameIntent = 0, renameNameIntent = 0, renameBaseline = '';
+let mixOperation = 0, pendingMix: number | null = null;
+const mixRows = new Map<string, HTMLButtonElement>();
 let polling: ReturnType<typeof setTimeout> | undefined, job: Job | null = null;
 let file: File | null = null, seeking: Playback | null = null, connected = true, requestOrder = 0, appliedOrder = 0;
 class ApiError extends Error { constructor(message: string, readonly status: number) { super(message); } }
@@ -86,6 +90,7 @@ function controls() {
   for (const id of ['access-link', 'room-export', 'previous', 'next', 'play']) el<HTMLButtonElement>(id).disabled = busy || !room || (['previous', 'next', 'play'].includes(id) && !room.tracks.length);
   el<HTMLButtonElement>('cancel-job').disabled = busy || !job || (job.uploadedBy !== room?.myRole && room?.myRole !== 'host');
   for (const button of document.querySelectorAll<HTMLButtonElement>('#library-list button,#playlist button,#memory-list button')) button.disabled = busy || button.dataset.boundary === 'true';
+  mixControls();
 }
 async function loadTransportStatus() {
   const owner = ++transportEpoch; transport = null; transportLoading = true; controls();
@@ -115,14 +120,16 @@ async function loadTransportStatus() {
 el('retry-transport-status').addEventListener('click', () => void loadTransportStatus());
 function accept(snapshot: Room, start: number, end: number, order: number) {
   if (snapshot.id !== credentials?.roomId || snapshot.serverTime < latestServerTime || (snapshot.serverTime === latestServerTime && order < appliedOrder)) return;
+  const saved = validateSavedMixFields({ savedMixes: snapshot.savedMixes, savedMixesRevision: snapshot.savedMixesRevision });
+  snapshot = { ...snapshot, ...saved };
   latestServerTime = snapshot.serverTime; appliedOrder = order; room = snapshot; offset = clockOffset(snapshot.serverTime, start, end); connected = true;
   el('connection').textContent = 'Connected to your shared room'; el('connection').classList.remove('offline');
   el('welcome').hidden = true; el('room-view').hidden = false; el('room-heading').textContent = room.title;
-  const signature = JSON.stringify([room.title, room.profiles, room.tracks, room.ratings, room.blend, room.playlist, room.memories, room.myRole]);
+  const signature = JSON.stringify([room.title, room.profiles, room.tracks, room.ratings, room.blend, room.playlist, room.playlistRevision, room.memories, room.myRole]);
   if (signature !== contentSignature) { contentSignature = signature; renderContent(); }
   if (snapshot.activeJob) job = snapshot.activeJob;
   sync.apply(snapshot, id => `/api/rooms/${snapshot.id}/tracks/${id}/audio`, offset);
-  renderJob(); renderPlayer(); controls();
+  renderSavedMixes(); renderJob(); renderPlayer(); controls();
 }
 async function poll() {
   clearTimeout(polling); if (!credentials) return;
@@ -154,6 +161,7 @@ async function poll() {
 async function open(auth: Credentials, identityOwner?: number) {
   if (pendingIdentity !== null && pendingIdentity !== identityOwner) { pendingIdentity = null; identityRequest++; busy = false; }
   el<HTMLInputElement>('setup-key').value = '';
+  resetMixEditor();
   generation++; clearTimeout(polling); sync.disable(); credentials = auth; room = null; job = null; latestServerTime = 0; appliedOrder = 0; contentSignature = ''; el('link-panel').hidden = true; el<HTMLInputElement>('share-link').value = ''; el('room-view').hidden = true; el('welcome').hidden = false;
   const current = generation, order = ++requestOrder;
   const result = await api<Room>(roomPath('/access'), 'POST', {}, undefined, auth);
@@ -178,6 +186,7 @@ function renderContent() {
   const participants = el('participants'); participants.replaceChildren();
   for (const role of ['host', 'guest'] as const) { const badge = node('span', room.profiles[role]?.name || 'Waiting for your partner', `participant ${role}`); if (role === room.myRole) badge.append(node('small', 'YOU')); participants.append(badge); }
   el('track-count').textContent = `${room.tracks.length} / 12 SONGS`;
+  const displayedPlaylist = [...room.playlist], displayedRevision = room.playlistRevision;
   const list = el('library-list'); list.replaceChildren();
   if (!room.tracks.length) list.append(node('p', 'An empty sleeve, waiting for your first song.', 'empty'));
   for (const track of room.tracks) {
@@ -191,6 +200,10 @@ function renderContent() {
       const button = action(label, () => void mutate(`/ratings/${track.id}`, 'PUT', { rating }));
       button.setAttribute('aria-label', `${label} ${track.title}`); button.setAttribute('aria-pressed', String(ratings[room.myRole] === rating)); buttons.append(button);
     }
+    const membership = action(room.playlist.includes(track.id) ? 'In current mix' : 'Add to current mix', () => {
+      const body = playlistChange(displayedPlaylist, displayedRevision, track.id, 'add'); if (body) void mutate('/playlist', 'PUT', body);
+    });
+    membership.setAttribute('aria-label', `Add to current mix ${track.title}`); membership.dataset.boundary = String(room.playlist.includes(track.id)); buttons.append(membership);
     buttons.append(action('Listen', () => void playTrack(track.id), 'listen-button'));
     if (room.myRole === 'host' || room.myRole === track.uploadedBy) buttons.append(action('Remove', () => {
       if (window.confirm(`Remove “${track.title}” from this room? Its audio and ratings will be deleted; dated memories keep the song title.`)) void mutate(`/tracks/${track.id}`, 'DELETE', {});
@@ -207,9 +220,10 @@ function renderContent() {
     const copy = node('div'); copy.append(action(track.title, () => void playTrack(id), 'song-link'), node('p', room!.blend.find(item => item.trackId === id)?.reason || 'Added to your shared mix')); row.append(copy);
     const arrows = node('div', '', 'order-buttons');
     for (const [label, delta] of [['Up', -1], ['Down', 1]] as const) { const button = action(label, () => {
-      const ids = [...room!.playlist], target = index + delta; if (target < 0 || target >= ids.length) return;
-      [ids[index], ids[target]] = [ids[target], ids[index]]; void mutate('/playlist', 'PUT', { trackIds: ids, revision: room!.playlistRevision });
+      const body = playlistChange(displayedPlaylist, displayedRevision, id, delta < 0 ? 'up' : 'down'); if (body) void mutate('/playlist', 'PUT', body);
     }); button.setAttribute('aria-label', `${label} ${track.title}`); button.dataset.boundary = String(index + delta < 0 || index + delta >= room!.playlist.length); button.disabled = button.dataset.boundary === 'true'; arrows.append(button); }
+    const remove = action('Remove from current mix', () => { const body = playlistChange(displayedPlaylist, displayedRevision, id, 'remove'); if (body) void mutate('/playlist', 'PUT', body); }, 'text-button');
+    remove.setAttribute('aria-label', `Remove from current mix ${track.title}`); arrows.append(remove);
     row.append(arrows); playlist.append(row);
   });
   const reasons = el('blend-reasons'); reasons.replaceChildren();
@@ -226,6 +240,113 @@ function renderContent() {
     memories.append(card);
   }
 }
+function resetMixEditor() {
+  if (pendingMix !== null) busy = false;
+  pendingMix = null; mixOperation++; selectedMixId = null; selectionIntent++; saveNameIntent++; renameNameIntent++; renameBaseline = '';
+  el<HTMLInputElement>('mix-name').value = ''; el<HTMLInputElement>('saved-mix-name').value = '';
+  el('mix-status').textContent = ''; el('saved-mixes-list').replaceChildren(); mixRows.clear(); el('saved-mix-detail').hidden = true;
+}
+function selectedMix() { return room?.savedMixes.find(mix => mix.id === selectedMixId); }
+function mixControls() {
+  const selected = selectedMix(), available = selected?.entries.filter(entry => room?.tracks.some(track => track.id === entry.trackId)).length || 0;
+  el<HTMLButtonElement>('save-mix').disabled = busy || !room?.playlist.length || room.savedMixes.length >= 8;
+  el<HTMLButtonElement>('update-mix').disabled = busy || !selected || !room?.playlist.length;
+  for (const id of ['rename-mix', 'delete-mix']) el<HTMLButtonElement>(id).disabled = busy || !selected;
+  el<HTMLButtonElement>('load-mix').disabled = busy || !selected || !available || available !== selected.entries.length;
+  el('load-available-mix').hidden = !selected || available === selected.entries.length;
+  el<HTMLButtonElement>('load-available-mix').disabled = busy || !selected || !available;
+}
+function renderSavedMixes() {
+  if (!room) return;
+  el('saved-mix-count').textContent = `${room.savedMixes.length} / 8 saved mixes`;
+  const host = el('saved-mixes-list'), admittedIds = new Set(room.savedMixes.map(mix => mix.id));
+  for (const [id, button] of mixRows) if (!admittedIds.has(id)) { button.remove(); mixRows.delete(id); }
+  for (const mix of room.savedMixes) {
+    let button = mixRows.get(mix.id);
+    if (!button) { button = action('', () => selectMix(mix.id), 'saved-mix-row'); button.dataset.savedMixId = mix.id; mixRows.set(mix.id, button); }
+    button.textContent = `${mix.name} · ${mix.entries.length} ${mix.entries.length === 1 ? 'song' : 'songs'}`;
+    button.setAttribute('aria-pressed', String(selectedMixId === mix.id));
+    // Surviving keyed buttons retain their native focus; create/delete is the only topology change.
+    if (button.parentElement !== host) host.append(button);
+  }
+  const selected = selectedMix(); el('saved-mix-detail').hidden = selectedMixId === null;
+  const preview = el('saved-mix-preview'); preview.replaceChildren();
+  if (selected) {
+    el('saved-mix-heading').textContent = selected.name;
+    let missing = 0;
+    for (const entry of selected.entries) {
+      const available = room.tracks.some(track => track.id === entry.trackId), row = node('li', `${entry.title}${entry.artist ? ` — ${entry.artist}` : ''}${available ? '' : ' · Audio unavailable'}`);
+      row.dataset.savedTrackId = entry.trackId; row.dataset.available = String(available); preview.append(row); if (!available) missing++;
+    }
+    el('saved-mix-availability').textContent = missing ? `${missing} of ${selected.entries.length} saved songs are unavailable. The saved copy keeps their names. Review these omissions before loading only the available songs.` : 'Every saved song is available.';
+  } else if (selectedMixId) {
+    el('saved-mix-heading').textContent = 'Selected saved mix unavailable';
+    el('saved-mix-availability').textContent = 'The selected mix was removed from this room. Your name draft is kept. Select another mix deliberately.';
+  }
+  mixControls();
+}
+function selectMix(id: string) {
+  if (selectedMixId === id || !room?.savedMixes.some(mix => mix.id === id)) return;
+  const owner = generation, intent = renameNameIntent;
+  if (el<HTMLInputElement>('saved-mix-name').value !== renameBaseline && !window.confirm('Select another mix and discard the unsaved selected-mix name?')) return;
+  if (owner !== generation || intent !== renameNameIntent) return;
+  const selected = room?.savedMixes.find(mix => mix.id === id); if (!selected) return;
+  selectedMixId = id; selectionIntent++; renameNameIntent++; renameBaseline = selected.name; el<HTMLInputElement>('saved-mix-name').value = selected.name;
+  renderSavedMixes();
+}
+async function changeSavedMix(kind: 'save' | 'update' | 'rename' | 'delete' | 'load', availableOnly = false) {
+  if (busy || !room || !credentials) return;
+  const snapshot = room, current = generation, auth = { ...credentials }, selection = selectionIntent, saveInput = saveNameIntent, renameInput = renameNameIntent;
+  const name = el<HTMLInputElement>(kind === 'save' ? 'mix-name' : 'saved-mix-name').value;
+  let command;
+  try { command = mixCommand(snapshot, kind, selectedMixId || undefined, name, availableOnly); }
+  catch (error) { el('mix-status').textContent = message(error); return; }
+  const selected = selectedMix();
+  let confirmation = '';
+  if (kind === 'delete') confirmation = `Delete saved mix “${selected!.name}”? Its songs, votes and the current mix are kept.`;
+  if (kind === 'update') confirmation = `Replace the saved order in “${selected!.name}” with the ${snapshot.playlist.length} songs in the displayed current mix? Its name is kept.`;
+  if (kind === 'load' && availableOnly) {
+    const missing = selected!.entries.filter(entry => !snapshot.tracks.some(track => track.id === entry.trackId));
+    confirmation = `Load only the available songs from “${selected!.name}”? Omitted songs:\n${missing.map(entry => `${entry.title}${entry.artist ? ` — ${entry.artist}` : ''}`).join('\n')}\nThe current mix will be replaced and shared playback paused at 0:00. The saved copy is unchanged.`;
+  }
+  if (confirmation && !window.confirm(confirmation)) return;
+  if (current !== generation || credentials.roomId !== auth.roomId || credentials.token !== auth.token || selection !== selectionIntent || saveInput !== saveNameIntent || renameInput !== renameNameIntent || busy) return;
+  const request = ++mixOperation; pendingMix = request; busy = true; controls();
+  el('mix-status').textContent = kind === 'load' ? 'Loading the saved mix; shared playback will be paused…' : 'Saving the named mix change…';
+  const order = ++requestOrder;
+  try {
+    const result = await api<Room | { mixId: string; room: Room }>(`/api/rooms/${auth.roomId}${command.suffix}`, command.method, command.body, undefined, auth);
+    if (current !== generation || pendingMix !== request || credentials?.roomId !== auth.roomId || credentials.token !== auth.token) return;
+    let incoming: Room, createdId: string | null = null;
+    if (kind === 'save') {
+      const value = result.value as { mixId: string; room: Room };
+      if (!value || Object.keys(value).sort().join(',') !== 'mixId,room' || !/^[a-f0-9]{32}$/.test(value.mixId)) throw new Error('The saved mix response was invalid. Refresh the room before trying again.');
+      const fields = validateSavedMixFields({ savedMixes: value.room?.savedMixes, savedMixesRevision: value.room?.savedMixesRevision });
+      if (!fields.savedMixes.some(mix => mix.id === value.mixId)) throw new Error('The saved mix response was incomplete. Refresh the room before trying again.');
+      incoming = value.room; createdId = value.mixId;
+    } else incoming = result.value as Room;
+    accept(incoming, result.start, result.end, order);
+    if (kind === 'save' && saveInput === saveNameIntent) {
+      el<HTMLInputElement>('mix-name').value = '';
+      if (createdId && selection === selectionIntent && renameInput === renameNameIntent && el<HTMLInputElement>('saved-mix-name').value === renameBaseline) selectMix(createdId);
+    }
+    if (kind === 'rename' && renameInput === renameNameIntent && selection === selectionIntent) renameBaseline = name;
+    el('mix-status').textContent = kind === 'load' ? 'Saved mix loaded. Shared playback is paused at the first available song at 0:00. Press Play to listen.' : kind === 'delete' ? 'Saved mix deleted. The current mix, votes and audio are unchanged.' : 'Named mix saved. The current mix and playback were not switched.';
+  } catch (error) {
+    if (current !== generation || pendingMix !== request) return;
+    el('mix-status').textContent = error instanceof TypeError ? 'The response was interrupted. The change may have completed. Check the refreshed saved mixes before another deliberate attempt; nothing is repeated automatically. Your name draft is kept.' : `${message(error)} Your name draft and selection are kept. Review the refreshed room before another deliberate attempt.`;
+    void poll();
+  } finally { if (current === generation && pendingMix === request) { pendingMix = null; busy = false; controls(); } }
+}
+el<HTMLInputElement>('mix-name').addEventListener('input', () => { saveNameIntent++; });
+el<HTMLInputElement>('saved-mix-name').addEventListener('input', () => { renameNameIntent++; });
+el('save-mix-form').addEventListener('submit', event => { event.preventDefault(); void changeSavedMix('save'); });
+el('rename-mix-form').addEventListener('submit', event => { event.preventDefault(); void changeSavedMix('rename'); });
+el('update-mix').addEventListener('click', () => void changeSavedMix('update'));
+el('delete-mix').addEventListener('click', () => void changeSavedMix('delete'));
+el('load-mix').addEventListener('click', () => void changeSavedMix('load'));
+el('load-available-mix').addEventListener('click', () => void changeSavedMix('load', true));
+
 function ratingName(value: number) { return value === 1 ? 'likes it' : value === -1 ? 'passes' : 'unrated'; }
 function renderJob() { el('upload-job').hidden = !job; if (job) el('job-stage').textContent = job.stage; }
 function renderPlayer() {
@@ -333,15 +454,15 @@ el('room-export').addEventListener('click', async () => {
   try { const { value } = await api<unknown>(roomPath('/export')); const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = 'duet-room-notes.json'; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); notify('Room notes exported without access credentials. Keep a server data-directory backup to preserve the audio.'); }
   catch (error) { notify(message(error), true); }
 });
-function hasDraft() { return !!file || !!el<HTMLTextAreaElement>('memory-text').value.trim(); }
+function hasDraft() { return !!file || !!el<HTMLTextAreaElement>('memory-text').value.trim() || !!el<HTMLInputElement>('mix-name').value || el<HTMLInputElement>('saved-mix-name').value !== renameBaseline; }
 function home() {
   el<HTMLInputElement>('setup-key').value = '';
-  pendingIdentity = null; identityRequest++;
+  pendingIdentity = null; identityRequest++; resetMixEditor();
   generation++; clearTimeout(polling); sync.disable(); credentials = null; room = null; job = null; busy = false; seeking = null; contentSignature = ''; file = null;
   el<HTMLFormElement>('upload-form').reset(); el<HTMLTextAreaElement>('memory-text').value = ''; el('audio-file-name').textContent = 'WAV, MP3, FLAC or Ogg · 1–300 seconds · 25 MiB'; el<HTMLInputElement>('share-link').value = ''; el('link-panel').hidden = true;
   el('welcome').hidden = false; el('room-view').hidden = true; el('create-view').hidden = false; el('join-view').hidden = true; el('access-view').hidden = true; el('connection').textContent = 'Your songs. Your space.'; el('connection').classList.remove('offline'); history.replaceState(null, '', location.pathname); renderSaved(); controls();
 }
-el('leave-room').addEventListener('click', () => { if (!hasDraft() || window.confirm('Leave this room and discard your unsaved song selection or memory draft?')) home(); });
+el('leave-room').addEventListener('click', () => { if (!hasDraft() || window.confirm('Leave this room and discard your unsaved song selection, memory or mix-name draft?')) home(); });
 el('delete-room').addEventListener('click', async () => {
   if (!credentials || !window.confirm('Delete this room, its audio, ratings and memories for both people? This cannot be undone.')) return;
   const id = credentials.roomId;
@@ -376,6 +497,7 @@ setInterval(() => { if (room) { renderPlayer(); if (!connected) el('connection')
 window.addEventListener('pagehide', () => {
   el<HTMLInputElement>('setup-key').value = ''; transportEpoch++; transport = null; transportLoading = false;
   if (pendingIdentity !== null) { pendingIdentity = null; identityRequest++; busy = false; }
+  if (pendingMix !== null) { pendingMix = null; mixOperation++; busy = false; }
   generation++; clearTimeout(polling); sync.disable();
 });
 window.addEventListener('pageshow', event => { if (event.persisted) { controls(); void loadTransportStatus(); if (credentials) void poll(); } });

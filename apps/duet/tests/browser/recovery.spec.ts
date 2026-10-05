@@ -17,6 +17,7 @@ async function fixture(page: Page) {
       id, title: `Song ${index + 1}`, artist: '', duration: 100, uploadedBy: 'host', createdAt: index,
     })),
     ratings: {}, blend: [], playlist: [firstTrack, secondTrack], playlistRevision: 0,
+    savedMixes: [], savedMixesRevision: 0,
     playback: { ...playback }, memories: [], activeJob: null,
   });
   await page.addInitScript(({ firstRoom, secondRoom, token }) => {

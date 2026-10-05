@@ -18,7 +18,11 @@ import uuid
 MAX_ROOMS = 5
 MAX_TRACKS = 12
 MAX_MEMORIES = 100
-MAX_EXPORT_BYTES = 256 * 1024
+MAX_SAVED_MIXES = 8
+MAX_REVISION = 2**53 - 1
+MAX_LEGACY_ROOM_BYTES = 256 * 1024
+MAX_ROOM_BYTES = 365429
+MAX_EXPORT_BYTES = 384 * 1024
 _ID = re.compile(r'[0-9a-f]{32}\Z')
 _TOKEN = re.compile(r'[0-9a-f]{64}\Z')
 
@@ -79,6 +83,23 @@ def _date(value):
     return value
 
 
+def _room_json(room, *, status=500):
+    """Bound the complete record and its unchanged schema-1 core separately."""
+    encoded = json.dumps(room, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+    version = room['schemaVersion']
+    maximum = MAX_ROOM_BYTES if version == 2 else MAX_LEGACY_ROOM_BYTES
+    if len(encoded.encode('utf-8')) > maximum:
+        raise DomainError(status, 'Room metadata exceeds its bounded storage limit.')
+    if version == 2:
+        core = {key: value for key, value in room.items()
+                if key not in ('savedMixes', 'savedMixesRevision')}
+        core['schemaVersion'] = 1
+        core_encoded = json.dumps(core, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+        if len(core_encoded.encode('utf-8')) > MAX_LEGACY_ROOM_BYTES:
+            raise DomainError(status, 'The room metadata core exceeds the 256 KiB limit.')
+    return encoded
+
+
 def _validate_record(room, expected_id):
     """Reject corrupt on-disk state without repairing, dropping, or exposing it."""
     def require(condition):
@@ -95,8 +116,12 @@ def _validate_record(room, expected_id):
         _number(value, 0, 1e15, 'Timestamp')
 
     try:
-        fields(room, 'schemaVersion id title createdAt profiles capabilities inviteHash tracks ratings playlist playlistRevision playback memories')
-        require(type(room['schemaVersion']) is int and room['schemaVersion'] == 1)
+        require(type(room) is dict)
+        require(type(room.get('schemaVersion')) is int and room['schemaVersion'] in (1, 2))
+        names = 'schemaVersion id title createdAt profiles capabilities inviteHash tracks ratings playlist playlistRevision playback memories'
+        if room['schemaVersion'] == 2:
+            names += ' savedMixes savedMixesRevision'
+        fields(room, names)
         require(_id(room['id']) == expected_id)
         _text(room['title'], 80, 'Room title')
         timestamp(room['createdAt'])
@@ -161,6 +186,27 @@ def _validate_record(room, expected_id):
             require(memory['author'] in ('host', 'guest'))
             require(room['profiles'][memory['author']] is not None)
             timestamp(memory['createdAt'])
+        if room['schemaVersion'] == 2:
+            require(type(room['savedMixesRevision']) is int
+                    and 0 <= room['savedMixesRevision'] <= MAX_REVISION)
+            require(type(room['savedMixes']) is list and len(room['savedMixes']) <= MAX_SAVED_MIXES)
+            mixes = set()
+            for mix in room['savedMixes']:
+                fields(mix, 'id name entries')
+                mix_id = _id(mix['id'], 'Mix ID')
+                require(mix_id not in mixes)
+                mixes.add(mix_id)
+                _text(mix['name'], 80, 'Mix name')
+                require(type(mix['entries']) is list and 1 <= len(mix['entries']) <= MAX_TRACKS)
+                references = set()
+                for entry in mix['entries']:
+                    fields(entry, 'trackId title artist')
+                    track_id = _id(entry['trackId'], 'Track ID')
+                    require(track_id not in references)
+                    references.add(track_id)
+                    _text(entry['title'], 80, 'Captured track title')
+                    _text(entry['artist'], 80, 'Captured artist', empty=True)
+        _room_json(room)
     except (ValueError, KeyError, TypeError, RecursionError):
         raise DomainError(500, 'Saved room metadata is invalid. Preserve rooms.sqlite3 and recover a valid backup before starting the service.') from None
     return room
@@ -277,7 +323,7 @@ class Store:
             raise DomainError(404, 'Room not found.')
         row = self.database.execute(
             'SELECT CASE WHEN length(CAST(document AS BLOB)) <= ? THEN document ELSE NULL END FROM rooms WHERE id=?',
-            (MAX_EXPORT_BYTES, room_id)).fetchone()
+            (MAX_ROOM_BYTES, room_id)).fetchone()
         if row is None:
             raise DomainError(404, 'Room not found.')
         try:
@@ -291,13 +337,16 @@ class Store:
             room = json.loads(row[0], object_pairs_hook=pairs)
         except (ValueError, TypeError, RecursionError):
             raise DomainError(500, 'Saved room metadata is invalid or too large; existing data was preserved.') from None
-        return _validate_record(room, room_id)
+        room = _validate_record(room, room_id)
+        if room['schemaVersion'] == 1 and len(row[0].encode('utf-8')) > MAX_LEGACY_ROOM_BYTES:
+            raise DomainError(500, 'Saved room metadata is invalid or too large; existing data was preserved.')
+        return room
 
-    def _write(self, room):
+    def _write(self, room, *, promote=False):
+        if promote and room['schemaVersion'] == 1:
+            room.update(schemaVersion=2, savedMixes=[], savedMixesRevision=0)
+        encoded = _room_json(room, status=400)
         _validate_record(room, room['id'])
-        encoded = json.dumps(room, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
-        if len(encoded.encode('utf-8')) > MAX_EXPORT_BYTES:
-            raise DomainError(400, 'Room metadata exceeds the 256 KiB storage limit.')
         self.database.execute('INSERT INTO rooms(id, document) VALUES (?, ?) '
                               'ON CONFLICT(id) DO UPDATE SET document=excluded.document', (room['id'], encoded))
 
@@ -322,7 +371,8 @@ class Store:
         result = {key: room[key] for key in ('id', 'title', 'createdAt', 'profiles', 'tracks',
                                             'ratings', 'playlist', 'playlistRevision', 'memories')}
         result.update(myRole=role, serverTime=now * 1000, blend=rank_tracks(room['tracks'], room['ratings']),
-                      playback=playback)
+                      playback=playback, savedMixes=room.get('savedMixes', []),
+                      savedMixesRevision=room.get('savedMixesRevision', 0))
         return json.loads(json.dumps(result, ensure_ascii=False, allow_nan=False))
 
     @staticmethod
@@ -350,10 +400,11 @@ class Store:
                 raise DomainError(409, 'The five-room limit has been reached. Delete a room you own before creating another.')
             now = self._clock()
             room_id, token, invite = uuid.uuid4().hex, secrets.token_hex(32), secrets.token_hex(32)
-            room = {'schemaVersion': 1, 'id': room_id, 'title': title, 'createdAt': now * 1000,
+            room = {'schemaVersion': 2, 'id': room_id, 'title': title, 'createdAt': now * 1000,
                     'profiles': {'host': {'name': name}, 'guest': None},
                     'capabilities': {'host': _hash(token), 'guest': None}, 'inviteHash': _hash(invite),
                     'tracks': [], 'ratings': {}, 'playlist': [], 'playlistRevision': 0, 'memories': [],
+                    'savedMixes': [], 'savedMixesRevision': 0,
                     'playback': {'trackId': None, 'playing': False, 'position': 0.0, 'revision': 0, 'updatedAt': now * 1000}}
             self._write(room)
             return {'roomId': room_id, 'token': token, 'inviteToken': invite, 'room': self._snapshot(room, 'host', now)}
@@ -370,7 +421,7 @@ class Store:
             room['profiles']['guest'] = {'name': name}
             room['capabilities']['guest'] = _hash(token)
             room['inviteHash'] = None
-            self._write(room)
+            self._write(room, promote=True)
             return {'roomId': room_id, 'token': token, 'room': self._snapshot(room, 'guest', self._clock())}
 
     def authenticate(self, room_id, token):
@@ -391,7 +442,7 @@ class Store:
                 raise DomainError(409, 'Both participant places are already occupied.')
             invite = secrets.token_hex(32)
             room['inviteHash'] = _hash(invite)
-            self._write(room)
+            self._write(room, promote=True)
             return {'inviteToken': invite}
 
     def rate(self, room_id, token, track_id, rating):
@@ -401,7 +452,7 @@ class Store:
             if type(rating) is not int or rating not in (-1, 0, 1):
                 raise DomainError(400, 'Rating must be -1 (dislike), 0 (unrated), or 1 (like).')
             room['ratings'][track_id][role] = rating
-            self._write(room)
+            self._write(room, promote=True)
             return self._snapshot(room, role, self._clock())
 
     def _playlist(self, room_id, token, track_ids, revision, build):
@@ -421,7 +472,7 @@ class Store:
             self._anchor(room, now)
             room['playlist'] = list(track_ids)
             room['playlistRevision'] += 1
-            self._write(room)
+            self._write(room, promote=True)
             return self._snapshot(room, role, now)
 
     def build_playlist(self, room_id, token, revision):
@@ -457,7 +508,7 @@ class Store:
                     raise DomainError(400, 'Playback without a selected track must be paused at position zero.')
                 room['playback'] = {'trackId': track_id, 'playing': playing, 'position': position,
                                     'revision': revision + 1, 'updatedAt': now * 1000}
-                self._write(room)
+                self._write(room, promote=True)
                 return self._snapshot(room, role, now)
         raise conflict
 
@@ -475,7 +526,7 @@ class Store:
             room['tracks'].append({'id': track_id, 'title': title, 'artist': artist, 'duration': duration,
                                    'uploadedBy': role, 'createdAt': now * 1000})
             room['ratings'][track_id] = {'host': 0, 'guest': 0}
-            self._write(room)
+            self._write(room, promote=True)
             return self._snapshot(room, role, now)
 
     def delete_track(self, room_id, token, track_id):
@@ -493,7 +544,7 @@ class Store:
             del room['ratings'][track_id]
             room['playlist'] = [item for item in room['playlist'] if item != track_id]
             room['playlistRevision'] += 1
-            self._write(room)
+            self._write(room, promote=True)
             return self._snapshot(room, role, now)
 
     def add_memory(self, room_id, token, track_id, date, text):
@@ -507,7 +558,7 @@ class Store:
             now = self._clock()
             room['memories'].append({'id': uuid.uuid4().hex, 'trackId': track_id, 'trackTitle': track['title'],
                                      'date': date, 'text': text, 'author': role, 'createdAt': now * 1000})
-            self._write(room)
+            self._write(room, promote=True)
             return self._snapshot(room, role, now)
 
     def delete_memory(self, room_id, token, memory_id):
@@ -519,16 +570,148 @@ class Store:
             if memory['author'] != role:
                 raise DomainError(403, 'Only the author can delete this memory.')
             room['memories'].remove(memory)
-            self._write(room)
+            self._write(room, promote=True)
             return self._snapshot(room, role, self._clock())
 
     def export_room(self, room_id, token):
         snapshot = self.snapshot(room_id, token)
         del snapshot['myRole'], snapshot['serverTime']
-        exported = {'schemaVersion': 1, **snapshot}
+        exported = {'schemaVersion': 2, **snapshot}
         if len(json.dumps(exported, ensure_ascii=False).encode('utf-8')) > MAX_EXPORT_BYTES:
-            raise DomainError(400, 'Room export exceeds the 256 KiB limit.')
+            raise DomainError(400, 'Room export exceeds the 384 KiB limit.')
         return exported
+
+    @staticmethod
+    def _mix_revision(value):
+        if type(value) is not int or not 0 <= value <= MAX_REVISION:
+            raise DomainError(400, 'Mix command revisions must be safe nonnegative integers.')
+        return value
+
+    @staticmethod
+    def _headroom(revision):
+        if revision >= MAX_REVISION:
+            raise DomainError(409, 'This room revision cannot advance safely. Preserve a complete library backup.')
+
+    @staticmethod
+    def _mix(room, mix_id):
+        _id(mix_id, 'Mix ID')
+        for mix in room.get('savedMixes', []):
+            if mix['id'] == mix_id:
+                return mix
+        raise DomainError(404, 'Saved mix not found in this room.')
+
+    @staticmethod
+    def _capture_mix_entries(room):
+        if not room['playlist']:
+            raise DomainError(409, 'Add at least one song to the current mix before saving or updating it.')
+        tracks = {track['id']: track for track in room['tracks']}
+        return [{'trackId': track_id, 'title': tracks[track_id]['title'],
+                 'artist': tracks[track_id]['artist']} for track_id in room['playlist']]
+
+    def save_mix(self, room_id, token, name, playlist_revision, saved_mixes_revision):
+        with self._transaction():
+            room, role = self._authorized(room_id, token)
+            name = _text(name, 80, 'Mix name')
+            self._mix_revision(playlist_revision)
+            self._mix_revision(saved_mixes_revision)
+            self._revision(playlist_revision, room['playlistRevision'])
+            self._revision(saved_mixes_revision, room.get('savedMixesRevision', 0))
+            self._headroom(saved_mixes_revision)
+            mixes = room.get('savedMixes', [])
+            if len(mixes) >= MAX_SAVED_MIXES:
+                raise DomainError(409, 'This room already has eight saved mixes. Delete a saved copy before adding another.')
+            entries = self._capture_mix_entries(room)
+            mix_id = uuid.uuid4().hex
+            room.update(schemaVersion=2, savedMixes=[*mixes, {'id': mix_id, 'name': name, 'entries': entries}],
+                        savedMixesRevision=saved_mixes_revision + 1)
+            self._write(room)
+            return {'mixId': mix_id, 'room': self._snapshot(room, role, self._clock())}
+
+    def update_mix(self, room_id, token, mix_id, playlist_revision, saved_mixes_revision):
+        with self._transaction():
+            room, role = self._authorized(room_id, token)
+            _id(mix_id, 'Mix ID')
+            self._mix_revision(playlist_revision)
+            self._mix_revision(saved_mixes_revision)
+            mix = self._mix(room, mix_id)
+            self._revision(playlist_revision, room['playlistRevision'])
+            self._revision(saved_mixes_revision, room.get('savedMixesRevision', 0))
+            self._headroom(saved_mixes_revision)
+            entries = self._capture_mix_entries(room)
+            mix['entries'] = entries
+            room['savedMixesRevision'] += 1
+            self._write(room)
+            return self._snapshot(room, role, self._clock())
+
+    def rename_mix(self, room_id, token, mix_id, name, saved_mixes_revision):
+        with self._transaction():
+            room, role = self._authorized(room_id, token)
+            name = _text(name, 80, 'Mix name')
+            _id(mix_id, 'Mix ID')
+            self._mix_revision(saved_mixes_revision)
+            mix = self._mix(room, mix_id)
+            self._revision(saved_mixes_revision, room.get('savedMixesRevision', 0))
+            self._headroom(saved_mixes_revision)
+            mix['name'] = name
+            room['savedMixesRevision'] += 1
+            self._write(room)
+            return self._snapshot(room, role, self._clock())
+
+    def delete_mix(self, room_id, token, mix_id, saved_mixes_revision):
+        with self._transaction():
+            room, role = self._authorized(room_id, token)
+            _id(mix_id, 'Mix ID')
+            self._mix_revision(saved_mixes_revision)
+            mix = self._mix(room, mix_id)
+            self._revision(saved_mixes_revision, room.get('savedMixesRevision', 0))
+            self._headroom(saved_mixes_revision)
+            room['savedMixes'].remove(mix)
+            room['savedMixesRevision'] += 1
+            self._write(room)
+            return self._snapshot(room, role, self._clock())
+
+    def load_mix(self, room_id, token, mix_id, saved_mixes_revision, playlist_revision,
+                 playback_revision, available_only):
+        conflict = None
+        with self._transaction():
+            room, role = self._authorized(room_id, token)
+            _id(mix_id, 'Mix ID')
+            for revision in (saved_mixes_revision, playlist_revision, playback_revision):
+                self._mix_revision(revision)
+            if type(available_only) is not bool:
+                raise DomainError(400, 'Available-only loading must be an explicit boolean choice.')
+            mix = self._mix(room, mix_id)
+            now = self._clock()
+            effective = effective_playback(room, now)
+            try:
+                self._revision(saved_mixes_revision, room.get('savedMixesRevision', 0))
+                self._revision(playlist_revision, room['playlistRevision'])
+                self._revision(playback_revision, effective['revision'])
+            except DomainError as error:
+                if error.status != 409:
+                    raise
+                # Persist only the observed natural transition, not this stale
+                # load. Old schema and saved copies remain exactly unchanged.
+                if effective['revision'] != room['playback']['revision']:
+                    room['playback'] = {**effective, 'updatedAt': now * 1000}
+                    self._write(room)
+                conflict = error
+            else:
+                self._headroom(room['playlistRevision'])
+                self._headroom(effective['revision'])
+                tracks = {track['id'] for track in room['tracks']}
+                resolved = [entry['trackId'] for entry in mix['entries'] if entry['trackId'] in tracks]
+                if not resolved:
+                    raise DomainError(409, 'None of this saved mix’s songs remain available. Its captured labels were preserved.')
+                if len(resolved) != len(mix['entries']) and not available_only:
+                    raise DomainError(409, 'Some saved songs are unavailable. Review their captured labels and explicitly choose available-only loading.')
+                room['playlist'] = resolved
+                room['playlistRevision'] += 1
+                room['playback'] = {'trackId': resolved[0], 'playing': False, 'position': 0.0,
+                                    'revision': effective['revision'] + 1, 'updatedAt': now * 1000}
+                self._write(room, promote=True)
+                return self._snapshot(room, role, now)
+        raise conflict
 
     def delete_room(self, room_id, token):
         with self._transaction():

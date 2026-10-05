@@ -8,7 +8,8 @@ import stat
 from threading import Event
 
 from .archive_common import (
-    ArchiveError, BLOCK_BYTES, DATABASE_NAME, MAX_DATABASE_BYTES, MAX_REVISION,
+    ACCEPTED_SCHEMA_VERSIONS, ArchiveError, BLOCK_BYTES, DATABASE_NAME, MAX_DATABASE_BYTES,
+    MAX_LEGACY_ROOM_BYTES, MAX_LEGACY_ROOMS_JSON_BYTES, MAX_REVISION,
     MAX_ROOM_BYTES, MAX_ROOMS, MAX_ROOMS_JSON_BYTES, RECORDS_KIND, SCHEMA_VERSION,
     canonical_json, check_archive, parse_json,
 )
@@ -30,6 +31,7 @@ class LibraryRecords:
     memory_count: int
     paired_rooms: int
     pending_invites: int
+    schema_version: int = SCHEMA_VERSION
 
 
 _METADATA = 'Library metadata is invalid. Preserve the original library and recover a valid backup.'
@@ -48,7 +50,9 @@ def _identity(info):
     return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
 
 
-def _records(rooms, *, cancel, deadline):
+def _records(rooms, *, cancel, deadline, schema_version=SCHEMA_VERSION):
+    if type(schema_version) is not int or schema_version not in ACCEPTED_SCHEMA_VERSIONS:
+        raise ArchiveError('metadata', _METADATA)
     if type(rooms) is not list or len(rooms) > MAX_ROOMS:
         raise ArchiveError('metadata', _METADATA)
     ids = set()
@@ -60,6 +64,8 @@ def _records(rooms, *, cancel, deadline):
             if type(room) is not dict:
                 raise ValueError()
             _validate_record(room, room.get('id'))
+            if schema_version == 1 and room['schemaVersion'] != 1:
+                raise ValueError()
             if room['id'] in ids or room['playlistRevision'] > MAX_REVISION:
                 raise ValueError()
             playback = room['playback']
@@ -67,31 +73,37 @@ def _records(rooms, *, cancel, deadline):
                 raise ValueError()
         except (DomainError, ValueError, KeyError, TypeError, RecursionError):
             raise ArchiveError('metadata', _METADATA) from None
-        if len(canonical_json(room)) > MAX_ROOM_BYTES:
-            raise ArchiveError('limit', 'A private room document exceeds the 256 KiB limit.')
+        maximum = MAX_LEGACY_ROOM_BYTES if room['schemaVersion'] == 1 else MAX_ROOM_BYTES
+        if len(canonical_json(room)) > maximum:
+            raise ArchiveError('limit', 'A private room document exceeds its versioned byte limit.')
         ids.add(room['id'])
         tracks.extend(TrackRecord(room['id'], track['id'], float(track['duration']))
                       for track in room['tracks'])
         memories += len(room['memories'])
         paired += room['profiles']['guest'] is not None
         pending += room['inviteHash'] is not None
-    encoded = canonical_json({'schemaVersion': SCHEMA_VERSION, 'kind': RECORDS_KIND,
+    encoded = canonical_json({'schemaVersion': schema_version, 'kind': RECORDS_KIND,
                               'rooms': sorted(rooms, key=lambda room: room['id'])})
-    if len(encoded) > MAX_ROOMS_JSON_BYTES:
+    maximum = MAX_LEGACY_ROOMS_JSON_BYTES if schema_version == 1 else MAX_ROOMS_JSON_BYTES
+    if len(encoded) > maximum:
         raise ArchiveError('limit', 'Library room records exceed the archive metadata limit.')
     check_archive(cancel, deadline)
     return LibraryRecords(encoded, tuple(sorted(ids)),
                           tuple(sorted(tracks, key=lambda track: (track.room_id, track.track_id))),
-                          memories, paired, pending)
+                          memories, paired, pending, schema_version)
 
 
 def validate_rooms(data: bytes, *, cancel: Event, deadline: float) -> LibraryRecords:
     value = parse_json(data, MAX_ROOMS_JSON_BYTES, cancel=cancel, deadline=deadline)
     if (type(value) is not dict or set(value) != {'schemaVersion', 'kind', 'rooms'}
-            or type(value['schemaVersion']) is not int or value['schemaVersion'] != SCHEMA_VERSION
+            or type(value['schemaVersion']) is not int
+            or value['schemaVersion'] not in ACCEPTED_SCHEMA_VERSIONS
             or value['kind'] != RECORDS_KIND):
         raise ArchiveError('metadata', _METADATA)
-    return _records(value['rooms'], cancel=cancel, deadline=deadline)
+    if value['schemaVersion'] == 1 and len(data) > MAX_LEGACY_ROOMS_JSON_BYTES:
+        raise ArchiveError('limit', 'Legacy library room records exceed their byte limit.')
+    return _records(value['rooms'], cancel=cancel, deadline=deadline,
+                    schema_version=value['schemaVersion'])
 
 
 def _admit_schema(database, cancel, deadline):
@@ -171,7 +183,9 @@ def read_library(database_fd: int, *, cancel: Event, deadline: float) -> Library
             if type(room_id) is not str or type(document) is not str:
                 raise ArchiveError('metadata', _METADATA)
             room = parse_json(document.encode('utf-8'), MAX_ROOM_BYTES, cancel=cancel, deadline=deadline)
-            if type(room) is not dict or room.get('id') != room_id:
+            if (type(room) is not dict or room.get('id') != room_id
+                    or room.get('schemaVersion') == 1
+                    and len(document.encode('utf-8')) > MAX_LEGACY_ROOM_BYTES):
                 raise ArchiveError('metadata', _METADATA)
             rooms.append(room)
         result = _records(rooms, cancel=cancel, deadline=deadline)
@@ -207,7 +221,8 @@ def paused_rooms(records: LibraryRecords, restored_at_ms: float,
             anchor['revision'] += 1
         anchor['playing'] = False
         anchor['updatedAt'] = restored_at_ms
-    return _records(value['rooms'], cancel=cancel, deadline=deadline).rooms_json
+    return _records(value['rooms'], cancel=cancel, deadline=deadline,
+                    schema_version=validated.schema_version).rooms_json
 
 
 def _remove_owned(directory_fd, file_fd):

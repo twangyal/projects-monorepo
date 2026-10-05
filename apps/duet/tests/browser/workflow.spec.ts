@@ -83,7 +83,7 @@ test('two independent seats share real audio, ratings, a mix, playback, memories
     await expect(page.locator('#enable-audio')).toHaveText('Enable audio on this device'); expect((await media(page)).paused).toBe(true);
     const downloaded = page.waitForEvent('download'); await page.locator('#room-export').click(); const download = await downloaded;
     const exported = await readFile((await download.path())!, 'utf8'), notes = JSON.parse(exported);
-    expect(notes.schemaVersion).toBe(1); expect(exported).toContain('The windows down.');
+    expect(notes.schemaVersion).toBe(2); expect(notes.savedMixes).toEqual([]); expect(notes.savedMixesRevision).toBe(0); expect(exported).toContain('The windows down.');
     const credentials = await page.evaluate(() => localStorage.getItem('duet-participants-v1')!);
     for (const item of Object.values(JSON.parse(credentials)) as { token: string }[]) expect(exported.includes(item.token)).toBe(false);
     expect(exported).not.toMatch(/token|hash|invite/i); expect(failures).toEqual([]); expect(external).toEqual([]);

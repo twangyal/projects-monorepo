@@ -384,7 +384,8 @@ class ArchiveOracle(unittest.TestCase):
         before = checkpoint(source)
         with (source / "rooms.sqlite3").open("rb") as stream:
             result = archive_state.read_library(stream.fileno(), **self.options)
-        self.assertEqual(result.rooms_json, encoded(records()))
+        # New archive output has envelope2; every literal legacy room stays1.
+        self.assertEqual(result.rooms_json, encoded({**records(), "schemaVersion": 2}))
         self.assertEqual(checkpoint(source), before)
         target = self.root / "new"
         target.mkdir()
@@ -481,7 +482,7 @@ class ArchiveOracle(unittest.TestCase):
         self.assertEqual(created.playback_policy, "saved-anchor-paused")
         self.assertEqual(checkpoint(source), before)
         with zipfile.ZipFile(output) as container:
-            self.assertEqual(container.read("rooms.json"), encoded(records()))
+            self.assertEqual(container.read("rooms.json"), encoded({**records(), "schemaVersion": 2}))
             self.assertEqual(
                 container.namelist(),
                 ["manifest.json", "rooms.json", f"media/{ROOM}/{T1}.ogg", f"media/{ROOM}/{T2}.ogg"],

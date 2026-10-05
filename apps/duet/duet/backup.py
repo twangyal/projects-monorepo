@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import errno
 import fcntl
 import hashlib
+import json
 import os
 from pathlib import Path
 import secrets
@@ -343,12 +344,14 @@ def _hash(pin, files):
 
 
 def _summary(records, media_bytes, archive_bytes):
-    return ArchiveSummary(SCHEMA_VERSION, len(records.room_ids), len(records.tracks),
+    return ArchiveSummary(records.schema_version, len(records.room_ids), len(records.tracks),
                           records.memory_count, records.paired_rooms, records.pending_invites,
                           media_bytes, archive_bytes, PLAYBACK_POLICY)
 
 
 def _relationship(index, records):
+    if index.schema_version != records.schema_version:
+        raise _error('metadata', 'Archive manifest and room record versions do not match.')
     expected = (ROOMS_MEMBER,) + tuple(f'media/{track.room_id}/{track.track_id}.ogg' for track in records.tracks)
     if tuple(member.name for member in index.members) != expected:
         raise _error('metadata', 'Archive media members do not match all active room tracks.')
@@ -529,7 +532,12 @@ def _restore(files, path, data_dir):
     write_database(stage.pin.fd, paused, cancel=files.cancel, deadline=files.deadline)
     database = files.file(stage.pin.fd, DATABASE_NAME, MAX_DATABASE_BYTES)
     checked = read_library(database.fd, cancel=files.cancel, deadline=files.deadline)
-    if checked.rooms_json != paused:
+    # read_library emits the current envelope without promoting room objects;
+    # an old input retains version1 for its summary and paused records. Compare
+    # the same complete room values under the current verification envelope.
+    expected = json.loads(paused)
+    expected['schemaVersion'] = SCHEMA_VERSION
+    if checked.rooms_json != canonical_json(expected):
         raise _error('metadata', 'The trusted restored database does not match the admitted private records.')
     os.fsync(database.fd)
     for room in rooms.values():

@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "status": "independent-source-review-clear",
+  "reviewedAt": "2026-10-05T01:55:24.381380+00:00",
+  "scope": "Final saved-mix Store and archive cross-seam source review against the approved contract; route author reviewed these independently owned backend/archive changes.",
+  "sourceSha256": {
+    "apps/duet/duet/store.py": "95268be61a1f3805c9b84cf5331d6b416c08b769ee50576ac75a556de45356e2",
+    "apps/duet/duet/archive_common.py": "c2991b73a5015c9123f39fc4e1d55d032ebe05612a2f936388106e3df6938a0c",
+    "apps/duet/duet/archive_state.py": "19e5ff0f1b20e9c2dc4bd089c5b4de61b8d4f0758cc73313e96e257d11c05e76",
+    "apps/duet/duet/archive_format.py": "50630c6e16bdbc9dada3cdfe12f1f4881319108121ed4831d00737ccc9be1051",
+    "apps/duet/duet/backup.py": "e2c0772a615ae1beb7a7b60b5d310ad95266b9be11f5c5503922fb2610577219",
+    "apps/duet/tests/test_saved_mixes.py": "69ea06d7b008a89a9294e286107b401fedde8d1e50b5fee458d1334ab53866aa",
+    "apps/duet/tests/test_saved_mix_archive.py": "e0fca5eae620b6372df78fee0ca52be3606f532950a8e7987338a4ffefdb122a",
+    "docs/superpowers/specs/2026-10-05-duet-saved-mixes-design.md": "a53916165c0a4331fbb1e6452c8c25ecd18a592976d5e7081d6631620edc002f"
+  },
+  "findings": [],
+  "checks": [
+    {
+      "path": "apps/duet/duet/store.py:673",
+      "conclusion": "load_mix authenticates and admits all primitive expected revisions and actual available_only boolean before obtaining command authority. It reads the saved mix/current room inside one BEGIN IMMEDIATE and compares saved-library, playlist and effective playback revisions before command changes."
+    },
+    {
+      "path": "apps/duet/duet/store.py:690",
+      "conclusion": "On stale revision conflict, only a changed effective natural playback transition is written; the conflict is raised after the transaction commits. This follows the existing set_playback pattern, retaining the newer anchor/revision across a later backward clock rather than rolling it back."
+    },
+    {
+      "path": "apps/duet/duet/store.py:702",
+      "conclusion": "Successful load checks playlist/effective-playback headroom, resolves available track IDs in captured entry order, requires explicit consent for a partial subset and refuses an empty subset before changing the playlist. It then advances playlist once, pauses the first available track at zero with effective revision plus one and leaves the saved library untouched."
+    },
+    {
+      "path": "apps/duet/duet/store.py:611",
+      "conclusion": "Save/update capture exact live title/artist only after both expected revisions match. Metadata commands advance savedMixesRevision once, preserve unrelated playlist/playback/private fields, and use normal detached public snapshots. Repeated names are allowed; IDs, mix capacity and per-mix unique entry quotas remain strictly admitted."
+    },
+    {
+      "path": "apps/duet/duet/store.py:300",
+      "conclusion": "All room changes are inside the existing transaction boundary. Rejected malformed/stale/quota commands raise before mutation or roll back the complete native transaction. Only the special stale-load natural transition is intentionally committed before its conflict is raised."
+    },
+    {
+      "path": "apps/duet/duet/store.py:345",
+      "conclusion": "Legacy promotion is explicit at accepted mutation call sites. Validation, constructor reads, ordinary public snapshot reads and startup pause/natural-transition writes do not add schema-2 mix fields to schema-1 rooms. Rejected old-room commands do not promote; new rooms are schema 2."
+    },
+    {
+      "path": "apps/duet/duet/store.py:86",
+      "conclusion": "Schema-1 compact/core budget remains 262144 bytes independently from the schema-2 aggregate 365429 bytes. SQL reads gate allocation at the aggregate cap, then enforce the original raw schema-1 cap and strict per-version shapes. Public exports are separately bounded at 393216 bytes and omit private capabilities/invite hashes."
+    },
+    {
+      "path": "apps/duet/duet/archive_state.py:53",
+      "conclusion": "LibraryRecords carries the admitted outer version. Old envelope 1 permits only room 1, whereas envelope 2 permits exact rooms 1 or 2; the old raw envelope cap remains independent. Missing saved-mix references are metadata and never added to the live TrackRecord/media list."
+    },
+    {
+      "path": "apps/duet/duet/archive_format.py:179",
+      "conclusion": "ArchiveIndex carries manifest version 1 or 2 under strict primitive/version admission and retains the existing bounded physical ZIP_STORED/CRC/SHA dialect. New writers require the current version-2 records envelope and emit manifest 2; old readers retain their old records-member byte limit."
+    },
+    {
+      "path": "apps/duet/duet/backup.py:352",
+      "conclusion": "Orchestration compares manifest version with admitted records-envelope version and requires exact ordered media membership from current room.tracks. Crossed/future containers refuse before publication; summaries reflect actual admitted input version rather than blindly using the current constant."
+    },
+    {
+      "path": "apps/duet/duet/archive_state.py:153",
+      "conclusion": "Offline create reads the acquired original SQLite FD through readonly immutable mode, performs bounded schema/document checks and retains file identity checks; it neither constructs Store nor runs startup pause/promotion. Canonical output emits envelope 2 while preserving original room values/versions."
+    },
+    {
+      "path": "apps/duet/duet/backup.py:505",
+      "conclusion": "Restore retains original room versions, seats/invite hashes, mix labels and exact media bytes apart from the established paused-anchor policy. Verification compares trusted reconstructed room values under the current read_library envelope without falsely requiring old SQL whitespace preservation. Existing no-replace staging/publication and post-publication durability semantics are unchanged."
+    },
+    {
+      "path": "apps/duet/tests/test_saved_mixes.py",
+      "conclusion": "Read-only producer-test inspection includes two-connection CAS/real trigger rollback, natural transition/backward clock, rejected legacy nonpromotion, Unicode/revision exhaustion and exact core/aggregate byte boundaries. No tests were copied or rerun by this review task."
+    },
+    {
+      "path": "apps/duet/tests/test_saved_mix_archive.py",
+      "conclusion": "Read-only producer-test inspection includes literal manual old/new ZIPs, crossed/future refusal, mixed-room preservation, original source SQL/audio immutability, exact metadata bounds and missing-reference media membership. Runtime evidence is separately owned."
+    }
+  ],
+  "verificationPerformed": [
+    "Read frozen approved contract.",
+    "Read final backend/archive diffs and their transaction, version/budget and publication call sites.",
+    "Read relevant existing effective playback and readonly/native resource paths.",
+    "Read producer assertions for coverage context; compute exact reviewed file hashes."
+  ],
+  "limitations": [
+    "Source-only review: no new source/test edits, test reruns, browser, service, build, Git or GitHub mutation.",
+    "Root and independent producer/native owners record actual full runtime/maximum/CI outcomes separately.",
+    "Legacy archive compatibility preserves parsed room values and original source bytes during offline operations; canonical archive/restore does not promise original SQL TEXT whitespace/property ordering.",
+    "Existing natural playback/startup pause semantics may update room anchors independently of named metadata commands; this receipt does not attribute those automatic transitions to saving or renaming a mix."
+  ]
+}

@@ -242,7 +242,9 @@ class ServerTests(unittest.TestCase):
         status, headers, exported = self.request('GET', self.endpoint + '/export', token=self.host)
         self.assertEqual(status, 200)
         self.assertIn('attachment', headers['Content-Disposition'])
-        self.assertEqual(exported['schemaVersion'], 1)
+        self.assertEqual(exported['schemaVersion'], 2)
+        self.assertEqual(exported['savedMixes'], [])
+        self.assertEqual(exported['savedMixesRevision'], 0)
         serialized = json.dumps(exported)
         for secret in (self.host, self.guest, self.invite):
             self.assertNotIn(secret, serialized)

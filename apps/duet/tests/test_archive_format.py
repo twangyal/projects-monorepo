@@ -16,6 +16,7 @@ from duet.archive_common import ArchiveError
 from duet import archive_format as fmt
 
 ROOMS = b'{"kind":"duet-library-records","rooms":[],"schemaVersion":1}'
+WRITE_ROOMS = b'{"kind":"duet-library-records","rooms":[],"schemaVersion":2}'
 AUDIO_NAME = 'media/' + '1' * 32 + '/' + '2' * 32 + '.ogg'
 AUDIO = b'Opaque format-only fixture bytes; not a playable-media claim.'
 LOCAL = struct.Struct('<IHHHHHIIIHH')
@@ -250,9 +251,10 @@ class ArchiveFormatTests(unittest.TestCase):
             sources = tuple(fmt.ArchiveSource(name, self.file(data).fileno(), len(data), digest(data))
                             for name, data in media)
             output = self.file()
-            fmt.write_archive(output.fileno(), 1234.5, ROOMS, sources, **self.kw)
+            fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, sources, **self.kw)
             output.seek(0)
-            self.assertEqual(output.read(), archive(audio=media)[0])
+            self.assertEqual(output.read(), archive(rooms=WRITE_ROOMS, audio=media,
+                                                  manifest=lambda item: {**item, 'schemaVersion': 2})[0])
 
     def test_writer_rejects_declared_source_changes_and_bad_inputs_before_output(self):
         original = self.file(AUDIO)
@@ -262,11 +264,11 @@ class ArchiveFormatTests(unittest.TestCase):
         for sources in variants:
             output = self.file()
             with self.subTest(sources=sources), self.assertRaises(ArchiveError):
-                fmt.write_archive(output.fileno(), 1234.5, ROOMS, sources, **self.kw)
+                fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, sources, **self.kw)
             self.assertEqual(os.fstat(output.fileno()).st_size, 0)
         output = self.file()
         with self.assertRaises(ArchiveError):
-            fmt.write_archive(output.fileno(), True, ROOMS, (), **self.kw)
+            fmt.write_archive(output.fileno(), True, WRITE_ROOMS, (), **self.kw)
         self.assertEqual(os.fstat(output.fileno()).st_size, 0)
 
     def test_block_bounded_streams_and_cancel_between_blocks(self):
@@ -311,7 +313,7 @@ class ArchiveFormatTests(unittest.TestCase):
             return original(fd, size, offset)
         with patch.object(fmt.os, 'pread', side_effect=changing):
             with self.assertRaises(ArchiveError):
-                fmt.write_archive(output.fileno(), 1234.5, ROOMS, (source,), **self.kw)
+                fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, (source,), **self.kw)
         self.assertEqual(calls, 2)
 
     def test_writer_cancellation_after_last_write_is_not_success(self):
@@ -324,7 +326,7 @@ class ArchiveFormatTests(unittest.TestCase):
             return count
         with patch.object(fmt.os, 'write', side_effect=cancelling):
             with self.assertRaises(ArchiveError) as raised:
-                fmt.write_archive(output.fileno(), 1234.5, ROOMS, (), **self.kw)
+                fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, (), **self.kw)
         self.assertEqual(raised.exception.code, 'cancelled')
 
     def test_literal_byte_caps_are_inclusive_and_admit_before_output(self):
@@ -337,12 +339,12 @@ class ArchiveFormatTests(unittest.TestCase):
         media = (fmt.ArchiveSource(AUDIO_NAME, self.file(AUDIO).fileno(), len(AUDIO), digest(AUDIO)),)
         output = self.file()
         with patch.object(fmt, 'MAX_ARCHIVE_BYTES', len(data)):
-            fmt.write_archive(output.fileno(), 1234.5, ROOMS, media, **self.kw)
+            fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, media, **self.kw)
         self.assertEqual(os.fstat(output.fileno()).st_size, len(data))
         output = self.file()
         with patch.object(fmt, 'MAX_ARCHIVE_BYTES', len(data) - 1):
             with self.assertRaises(ArchiveError):
-                fmt.write_archive(output.fileno(), 1234.5, ROOMS, media, **self.kw)
+                fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, media, **self.kw)
         self.assertEqual(os.fstat(output.fileno()).st_size, 0)
         with patch.object(fmt, 'MAX_AUDIO_BYTES', len(AUDIO)):
             self.index(data)
@@ -368,7 +370,7 @@ class ArchiveFormatTests(unittest.TestCase):
             read_sizes.append(count)
             return original(fd, count, offset)
         with patch.object(fmt.os, 'pread', side_effect=bounded):
-            fmt.write_archive(output.fileno(), 1234.5, ROOMS, media, **self.kw)
+            fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, media, **self.kw)
             index = fmt.read_index(output.fileno(), **self.kw)
             destination = self.file()
             fmt.copy_member(output.fileno(), index, AUDIO_NAME, destination.fileno(), **self.kw)
@@ -384,7 +386,7 @@ class ArchiveFormatTests(unittest.TestCase):
         excess = replace(media[0], size=size + 1)
         output = self.file()
         with self.assertRaises(ArchiveError):
-            fmt.write_archive(output.fileno(), 1234.5, ROOMS, (excess,), **self.kw)
+            fmt.write_archive(output.fileno(), 1234.5, WRITE_ROOMS, (excess,), **self.kw)
         self.assertEqual(os.fstat(output.fileno()).st_size, 0)
 
     def test_actual_manifest_and_rooms_caps_are_inclusive(self):
@@ -432,7 +434,7 @@ class ArchiveFormatTests(unittest.TestCase):
             calls = [lambda: fmt.read_index(source.fileno(), **kw),
                      lambda: fmt.read_rooms(source.fileno(), index, **kw),
                      lambda: fmt.copy_member(source.fileno(), index, AUDIO_NAME, self.file().fileno(), **kw),
-                     lambda: fmt.write_archive(self.file().fileno(), 1, ROOMS, (), **kw)]
+                     lambda: fmt.write_archive(self.file().fileno(), 1, WRITE_ROOMS, (), **kw)]
             for call in calls:
                 with self.subTest(mode=mode), self.assertRaises(ArchiveError) as raised:
                     call()
