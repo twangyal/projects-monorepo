@@ -2,7 +2,7 @@
   "issue": 126,
   "date": "2026-10-05",
   "role": "independent native acceptance author",
-  "status": "locally-verified-published-ci-pending",
+  "status": "local-and-first-push-pr-ci-verified",
   "ownership": [
     "tests/library-fixtures.ts",
     "tests/library.spec.ts",
@@ -119,5 +119,6 @@
     },
     "artifacts": "/workspace/melody126-native-complete-artifacts",
     "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
-  }
+  },
+  "publishedCiReceipt": "2026-10-05-composition-library-ci.json"
 }

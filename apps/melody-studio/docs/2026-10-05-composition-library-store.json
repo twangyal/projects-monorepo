@@ -1,6 +1,6 @@
 {
   "issue": 126,
-  "status": "locally-verified-published-ci-pending",
+  "status": "local-and-first-push-pr-ci-verified",
   "scope": "Independent composition library storage; existing complete-project validators, backup format, history and current-workspace persistence are consumed unchanged.",
   "api": [
     "CompositionLibrary",
@@ -128,5 +128,6 @@
     },
     "artifacts": "/workspace/melody126-native-complete-artifacts",
     "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
-  }
+  },
+  "publishedCiReceipt": "2026-10-05-composition-library-ci.json"
 }

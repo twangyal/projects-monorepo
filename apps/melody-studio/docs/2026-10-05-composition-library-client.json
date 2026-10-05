@@ -2,7 +2,7 @@
   "issue": 126,
   "date": "2026-10-05",
   "owner": "library_ui",
-  "status": "locally-verified-published-ci-pending",
+  "status": "local-and-first-push-pr-ci-verified",
   "spec": "docs/superpowers/specs/2026-10-05-melody-composition-library-design.md",
   "ownedFiles": [
     "apps/melody-studio/src/library-view.ts",
@@ -107,5 +107,6 @@
     },
     "artifacts": "/workspace/melody126-native-complete-artifacts",
     "unchangedNewOracle": "All22independentlibrarycases retain original assertions, fixtures and timeouts."
-  }
+  },
+  "publishedCiReceipt": "2026-10-05-composition-library-ci.json"
 }

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "issue": 126,
   "date": "2026-10-05",
-  "status": "local-acceptance-passed-ci-pending",
+  "status": "local-and-first-push-pr-ci-verified",
   "scope": "Explicit saved complete-composition copies, separate from current-workspace autosave; eight-copy bounded IndexedDB library with exact backup recovery and guarded reversible Open.",
   "version": "0.7.0",
   "dependenciesChanged": false,
@@ -216,5 +216,6 @@
     "tests/library.spec.ts": "0f64579ec83160179cf9ca000f7b26a6928978a9e4e15641f382b40ac050870d",
     "scripts/smoke_library.mjs": "33c1037f7125d0dea73b5f6898a161222ea2321d11fb54818ce79bd2e1f159b4",
     "vite.config.ts": "e98e89488caba45a862ebef6ab8cbc793eb4cbaa2c6cee967ee577060b9bd70e"
-  }
+  },
+  "publishedCiReceipt": "2026-10-05-composition-library-ci.json"
 }
