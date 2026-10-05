@@ -1,4 +1,6 @@
 import { writeFile } from 'node:fs/promises';
+import { PNG } from 'pngjs';
+import { inspectFrames } from './png-archive-oracle.ts';
 import { test, expect, originalProject, openOriginal, publish, view, frame, download, assertPng, assertGif, inspectLibrary, authorized, sha } from './private-links-fixtures.ts';
 
 test('HTTPS snapshot exports original cels and poses and opens only an explicit independent local copy', async ({lan},info)=>{
@@ -12,6 +14,13 @@ test('HTTPS snapshot exports original cels and poses and opens only an explicit 
     const received=await authorized(viewer,links.id,links.readToken);expect(received.status).toBe(200);expect(Buffer.from(received.bytes)).toEqual(project);
     for(const number of [0,5,6,11]){await frame(viewer,number);const png=await download(viewer,'#snapshot-png');assertPng(png,number);await writeFile(info.outputPath(`original-frame-${number}.png`),png);}
     const gif=await download(viewer,'#snapshot-gif');assertGif(gif);await writeFile(info.outputPath('original-private.gif'),gif);await writeFile(info.outputPath('original-private.motion.json'),project);
+    const archive=await download(viewer,'#snapshot-png-frames'), pngFrames=inspectFrames(archive);
+    expect(pngFrames.manifest.title).toBe(original.title);expect(pngFrames.frames).toHaveLength(12);
+    pngFrames.frames.forEach((png,i)=>{ // Same original geometric oracle as single-frame PNG, with actual independent decode.
+      assertPng(PNG.sync.write(png),i);
+    });
+    for(const secret of [links.id,links.readToken,links.revokeToken,lan.setup]) expect(archive.includes(Buffer.from(secret))).toBe(false);
+    await writeFile(info.outputPath('original-private-frames.zip'),archive);
     await frame(viewer,0);await viewer.locator('#snapshot-play').click();await expect.poll(()=>viewer.locator('#snapshot-frame').inputValue()).not.toBe('0');await viewer.locator('#snapshot-play').click();
     await viewer.locator('#snapshot-open-local').click();await expect.poll(async()=>(await inspectLibrary(viewer)).rows.length).toBe(1);const local=await inspectLibrary(viewer);expect(local.rows[0].project).toEqual(original);expect(await inspectLibrary(owner)).toEqual(ownerBefore);
     await viewer.getByRole('link',{name:'Open local studio',exact:true}).click();await expect(viewer.locator('#project-title')).toHaveValue(original.title);await expect(viewer.locator('#save-status')).toHaveText('Saved in this browser');await viewer.locator('#project-title').fill('Recipient independent edit');await viewer.locator('#project-title').press('Tab');await expect(viewer.locator('#save-status')).toHaveText('Saved in this browser');expect(JSON.parse(Buffer.from((await authorized(owner,links.id,links.readToken)).bytes).toString())).toEqual(original);
@@ -20,6 +29,30 @@ test('HTTPS snapshot exports original cels and poses and opens only an explicit 
     await viewer.screenshot({path:info.outputPath('private-view-desktop.png'),fullPage:true});await viewer.setViewportSize({width:390,height:844});expect(await viewer.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await viewer.screenshot({path:info.outputPath('private-view-390.png'),fullPage:true});
     await writeFile(info.outputPath('independent-media-receipt.json'),JSON.stringify({projectBytes:project.length,projectSha256:sha(project),gifBytes:gif.length,gifSha256:sha(gif),pngFrames:[0,5,6,11],gifFrames:12,delaysMs:[80,90,80,80,90,80,80,90,80,80,90,80],actualProcessRestart:true,physicalDevices:false},null,2));
   }finally{await operator.close();await recipient.close();}
+});
+test('private PNG archive cancellation and departure retire actual worker progress without downloads',async({lan})=>{
+  const context=await lan.browser.newContext(),owner=await context.newPage(),viewer=await context.newPage();let downloads=0;
+  try{
+    await openOriginal(owner,lan);const links=await publish(owner,lan);await view(viewer,links.read);viewer.on('download',()=>downloads++);
+    await viewer.evaluate(()=>{
+      const Native=window.Worker,state={mode:'cancel',workers:[] as {ended:boolean;progress:boolean}[]};Object.assign(window,{pngPrivate127:state});
+      window.Worker=class extends Native{
+        ended=false;progress=false;
+        constructor(...args:ConstructorParameters<typeof Worker>){super(...args);state.workers.push(this);this.addEventListener('message',event=>{
+          if(event.data.type!=='progress'||event.data.fraction<=0||this.progress)return;this.progress=true;
+          if(state.mode==='cancel')document.getElementById('snapshot-cancel-export')!.click();
+          else dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));
+        });}
+        terminate(){this.ended=true;super.terminate();}
+      };
+    });
+    await viewer.locator('#snapshot-png-frames').click();await expect(viewer.locator('#snapshot-status')).toContainText('cancelled');await expect(viewer.locator('#snapshot-png-frames')).toBeEnabled();expect(downloads).toBe(0);
+    expect(JSON.parse((await download(viewer,'#snapshot-project')).toString())).toEqual(originalProject());downloads=0;
+    await viewer.evaluate(()=>(window as unknown as {pngPrivate127:{mode:string}}).pngPrivate127.mode='departure');
+    await viewer.locator('#snapshot-png-frames').click();await expect(viewer.locator('#snapshot-status')).toContainText('Private access was cleared');
+    await expect.poll(()=>viewer.evaluate(()=>(window as unknown as {pngPrivate127:{workers:{ended:boolean;progress:boolean}[]}}).pngPrivate127.workers.every(worker=>worker.ended&&worker.progress))).toBe(true);
+    expect(downloads).toBe(0);await expect(viewer.locator('#snapshot-png-frames')).toBeDisabled();
+  }finally{await context.close();}
 });
 
 test('read and revoke authorities differ, cancel preserves access and revocation survives restart',async({lan})=>{

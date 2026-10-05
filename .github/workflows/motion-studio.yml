@@ -38,7 +38,7 @@ jobs:
       - run: npm run check
       - run: npm run typecheck
       - run: npx playwright install --with-deps chromium
-      - name: Production Chromium workflow and real GIF verification
+      - name: Production Chromium workflows and decoded GIF/PNG archive verification
         run: npm run test:browser
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -4,6 +4,7 @@ import { createFrameRenderer, loadAssets, closeAssets, type Assets, type FrameRe
 import { validateProjectImages } from './images.ts';
 import { History } from './history.ts';
 import { exportGif } from './export.ts';
+import { exportPngFrames } from './png-export.ts';
 import { ProjectLibrary } from './library-storage.ts';
 import { fetchSnapshot, parsePrivateFragment, revokeSnapshot, type PrivateCredential, type SnapshotReceipt } from './private-api.ts';
 
@@ -11,7 +12,7 @@ import { fetchSnapshot, parsePrivateFragment, revokeSnapshot, type PrivateCreden
 const originalFragment = location.hash;
 history.replaceState(null, '', location.pathname);
 const host = document.querySelector<HTMLElement>('#snapshot-app')!;
-host.innerHTML = `<header><a class="brand" href="/">Motion Studio</a><span>Private captured animation</span></header><main class="snapshot-page"><section class="panel" aria-label="Private snapshot"><h1 id="snapshot-title">Private snapshot</h1><p id="snapshot-status" role="status" aria-live="polite">Reading the original private link…</p><p class="hint">This is an immutable captured copy. It never follows later editor changes. Private links grant access, not proof of authorship.</p><button id="snapshot-cancel-read" hidden>Cancel private snapshot read</button><div id="snapshot-content" hidden><div class="canvas-surround"><canvas id="snapshot-stage" width="640" height="360" aria-label="Captured animation" tabindex="0"></canvas></div><div class="snapshot-controls"><button id="snapshot-play">Play snapshot</button><label class="field">Snapshot frame <output id="snapshot-frame-label"></output><input id="snapshot-frame" type="range" min="0" value="0"></label></div><div class="snapshot-actions"><button id="snapshot-png">Save frame PNG</button><button id="snapshot-gif">Export animation GIF</button><button id="snapshot-cancel-export" hidden>Cancel export</button><button id="snapshot-project">Save project file</button><button id="snapshot-open-local">Save as new local project</button></div><progress id="snapshot-progress" max="1" hidden aria-label="Snapshot export progress"></progress><p id="snapshot-local-status" aria-live="polite"></p><a id="snapshot-open-studio" href="/" hidden>Open local studio</a><p class="hint">Save as new local project creates an independent editable copy in this browser. It preserves other saved projects; later edits do not change the shared snapshot.</p></div><button id="snapshot-revoke" hidden>Revoke this private snapshot</button><p id="snapshot-revoke-hint" hidden>Revocation prevents future authorized reads. Copies already received and downloads remain outside its control. This management link cannot view the project.</p></section></main>`;
+host.innerHTML = `<header><a class="brand" href="/">Motion Studio</a><span>Private captured animation</span></header><main class="snapshot-page"><section class="panel" aria-label="Private snapshot"><h1 id="snapshot-title">Private snapshot</h1><p id="snapshot-status" role="status" aria-live="polite">Reading the original private link…</p><p class="hint">This is an immutable captured copy. It never follows later editor changes. Private links grant access, not proof of authorship.</p><button id="snapshot-cancel-read" hidden>Cancel private snapshot read</button><div id="snapshot-content" hidden><div class="canvas-surround"><canvas id="snapshot-stage" width="640" height="360" aria-label="Captured animation" tabindex="0"></canvas></div><div class="snapshot-controls"><button id="snapshot-play">Play snapshot</button><label class="field">Snapshot frame <output id="snapshot-frame-label"></output><input id="snapshot-frame" type="range" min="0" value="0"></label></div><div class="snapshot-actions"><button id="snapshot-png">Save frame PNG</button><button id="snapshot-gif">Export animation GIF</button><button id="snapshot-png-frames">Export PNG frames ZIP</button><button id="snapshot-cancel-export" hidden>Cancel export</button><button id="snapshot-project">Save project file</button><button id="snapshot-open-local">Save as new local project</button></div><progress id="snapshot-progress" max="1" hidden aria-label="Snapshot export progress"></progress><p id="snapshot-local-status" aria-live="polite"></p><a id="snapshot-open-studio" href="/" hidden>Open local studio</a><p class="hint">Save as new local project creates an independent editable copy in this browser. It preserves other saved projects; later edits do not change the shared snapshot.</p></div><button id="snapshot-revoke" hidden>Revoke this private snapshot</button><p id="snapshot-revoke-hint" hidden>Revocation prevents future authorized reads. Copies already received and downloads remain outside its control. This management link cannot view the project.</p></section></main>`;
 const node = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const status = node('snapshot-status'), canvas = node<HTMLCanvasElement>('snapshot-stage'), ctx = canvas.getContext('2d')!;
 const slider = node<HTMLInputElement>('snapshot-frame'), play = node<HTMLButtonElement>('snapshot-play');
@@ -25,7 +26,7 @@ const urls = new Set<string>();
 function stop() { playing = false; cancelAnimationFrame(animation); play.textContent = 'Play snapshot'; }
 function draw() { if (!renderer) return; renderer.render(ctx, frame); canvas.dataset.frame = String(frame); slider.value = String(frame); node('snapshot-frame-label').textContent = `${frame + 1} / ${renderer.frameCount}`; }
 function controls() {
-  for (const id of ['snapshot-play','snapshot-frame','snapshot-png','snapshot-gif','snapshot-project','snapshot-open-local']) node<HTMLButtonElement>(id).disabled = !receipt || busy || suspended;
+  for (const id of ['snapshot-play','snapshot-frame','snapshot-png','snapshot-gif','snapshot-png-frames','snapshot-project','snapshot-open-local']) node<HTMLButtonElement>(id).disabled = !receipt || busy || suspended;
   node('snapshot-cancel-read').hidden = !controller;
   node('snapshot-cancel-export').hidden = !exportController;
   node<HTMLButtonElement>('snapshot-revoke').disabled = busy || suspended;
@@ -109,12 +110,13 @@ node('snapshot-png').addEventListener('click',()=> {
   const output = document.createElement('canvas'); output.width = WIDTH; output.height = HEIGHT; renderer.render(output.getContext('2d')!,captured);
   output.toBlob(blob=> { if (blob && token === epoch && !suspended) download(blob,`snapshot-frame-${captured+1}.png`); },'image/png');
 });
-node('snapshot-gif').addEventListener('click',()=> { void gif(); });
-async function gif() {
+node('snapshot-gif').addEventListener('click',()=> { void exportAnimation(false); });
+node('snapshot-png-frames').addEventListener('click',()=> { void exportAnimation(true); });
+async function exportAnimation(pngFrames: boolean) {
   if (!receipt || busy) return; stop(); const captured = receipt.project, token = epoch, request = ++exportEpoch;
   const owner = new AbortController(); exportController = owner; busy = true; controls(); const progress = node<HTMLProgressElement>('snapshot-progress'); progress.hidden = false; progress.value = 0;
-  try { const blob = await exportGif(captured,fraction=> { if (token === epoch && request === exportEpoch) progress.value = fraction; },owner.signal); if (token === epoch && request === exportEpoch && !owner.signal.aborted && !suspended) { download(blob,'private-snapshot.gif'); status.textContent = 'Captured animation GIF exported. No editor overlays or private credentials are included.'; } }
-  catch (error) { if (token === epoch && request === exportEpoch) status.textContent = owner.signal.aborted ? 'Snapshot GIF export cancelled.' : error instanceof Error ? error.message : 'Snapshot export failed.'; }
+  try { const blob = await (pngFrames ? exportPngFrames : exportGif)(captured,fraction=> { if (token === epoch && request === exportEpoch) progress.value = fraction; },owner.signal); if (token === epoch && request === exportEpoch && !owner.signal.aborted && !suspended) { download(blob,pngFrames ? 'private-snapshot-frames.zip' : 'private-snapshot.gif'); status.textContent = pngFrames ? 'Captured full-color PNG frames exported at exactly 12 fps.' : 'Captured animation GIF exported. No editor overlays or private credentials are included.'; } }
+  catch (error) { if (token === epoch && request === exportEpoch) status.textContent = owner.signal.aborted ? 'Snapshot export cancelled.' : error instanceof Error ? error.message : 'Snapshot export failed.'; }
   finally { if (token === epoch && exportController === owner) { exportController = null; busy = false; progress.hidden = true; controls(); } }
 }
 node('snapshot-cancel-export').addEventListener('click',()=>exportController?.abort());

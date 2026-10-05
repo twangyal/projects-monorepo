@@ -22,7 +22,23 @@ Open the localhost URL printed by Vite. No account, backend, API key, paid servi
 4. Select a drawing button to revisit its boundary. **Delete active drawing** removes a later drawing and extends the preceding hold; the first drawing remains. Undo restores deleted artwork. Blank/duplicate refuse occupied boundaries. In **Move** mode, drag the selected layer to place a pose at the current frame. Releasing a gesture records one history entry; cancellation discards its preview.
 5. Adjust **Position X**, **Position Y**, **Scale**, **Rotation (degrees)**, or **Opacity**. Committing a numeric change creates or replaces a keyframe at the current frame. Changing **Motion to next pose** does the same; **Set keyframe** also records the current values explicitly. The first keyframe always remains; later keys can be removed with **Remove this keyframe**.
 6. Select a keyframe diamond to revisit its pose. Press **Play animation**, optionally enable **Loop**, and scrub to inspect the in-between frames. Choose **Duration** to change the timeline length.
-7. Download **Save project file**, **Save frame PNG**, or **Export animation**. GIF export reports progress; **Cancel export** discards that export and preserves the editable project.
+7. Download **Save project file**, **Save frame PNG**, **Export animation** (GIF), or **Export PNG frames ZIP**. Animation exports report progress; **Cancel export** discards that export and preserves the editable project.
+
+**Export PNG frames ZIP** saves every committed 640×360 frame in full color,
+including held drawings, imported images and pose movement. It is also available
+in a private snapshot viewer. The archive contains `manifest.json` and ordered
+`frames/frame-0001.png` files. Frame 1 is time 0; each next frame is exactly 1/12
+second later. The manifest records an exact 12/1 fps and the captured project title.
+PNG images have the project's opaque background; editor overlays and private links
+are excluded. Extract the ZIP to use the PNG sequence in another animation tool.
+This is rendered artwork, while **Save project file** preserves editable layers.
+
+ZIP entries are stored without compression. Limits are 1 MiB per PNG, 16 KiB for
+the manifest and 96 MiB for the complete archive. Rendering runs one frame at a
+time in an owned worker with a 30-second deadline. Any encoding/size failure
+refuses the complete result. Cancellation and page departure release the worker;
+no partial archive downloads. GIF retains its existing 256-color palette and
+rounded centisecond timing.
 
 Undo/Redo retain up to 30 project snapshots within a 20 MiB history budget; large projects may retain fewer. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text fields. With the canvas focused, Space toggles playback. History is session-only and is not included in backups.
 

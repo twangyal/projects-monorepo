@@ -1,4 +1,5 @@
 import { exportGif } from '../src/export.ts';
+import { exportPngFrames } from '../src/png-export.ts';
 import { createProject, type DrawingLayer, type Project } from '../src/model.ts';
 
 function fixture(frameCount = 12): Project {
@@ -31,7 +32,7 @@ function imageFixture(): Project {
   return project;
 }
 
-const harness = { exportGif, fixture, imageFixture };
+const harness = { exportGif, exportPngFrames, fixture, imageFixture };
 declare global { interface Window { exportHarness: typeof harness } }
 window.exportHarness = harness;
 document.querySelector('#ready')!.textContent = 'Actual export modules ready';
