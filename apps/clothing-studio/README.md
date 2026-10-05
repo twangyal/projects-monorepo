@@ -97,3 +97,5 @@ and [PR](https://github.com/twangyal/projects-monorepo/actions/runs/37251970510)
 pass the complete 39-unit/39-browser gate at
 `0c249520c7d3de30096f81335d4329793aa3e855`. The [CI receipt](docs/2026-10-05-import-ownership-ci.json)
 confirms the actual PR checkout has the identical implementation tree.
+
+Independent #118 retention acceptance adds an original 1200×1200 photo and 100-stroke/12,000-point complete graph. A held exact 6 MiB File read cannot replace a newer title; complete native backups and three actual garment PNG downloads remain byte-identical through a fresh Chromium process. Input whitespace padding tests file admission, not artwork size or peak memory. The published implementation is preserved. The local full gate passes **39 units and 40 browser cases**, lint/typecheck/build. See [retention evidence](docs/2026-10-05-import-retention.json); the added check's published CI is pending.

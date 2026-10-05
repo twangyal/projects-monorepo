@@ -1,0 +1,74 @@
+{
+  "issue": 118,
+  "date": "2026-10-05",
+  "baseline": "64b518847b15ed18069709eda69335d0cec19c3d",
+  "publishedImplementation": "0c249520c7d3de30096f81335d4329793aa3e855",
+  "implementationPreserved": true,
+  "independentVerification": {
+    "unit": 39,
+    "browser": {
+      "cases": 40,
+      "version": "Chromium 153.0.8010.0"
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "fullNativeSeconds": 17.5
+  },
+  "red": {
+    "sourceSha256": "0efa974e01e47c5477b3c95727952dfd10cdc6ea5cd631c0f3570e9ab7322184",
+    "localFailures": 8,
+    "localControlsPassed": 1,
+    "remoteRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37251856996",
+    "remoteFailed": 8,
+    "remotePassed": 32,
+    "remoteCommit": "72057674ddb7883489a5228c42980983f6af4df0",
+    "maximumRed": "original production replaces the entire 100-stroke/photo graph after newer title editing",
+    "correctedCleanupOracle": "specific held-bitmap closure excludes independent autosave validation decodes; unchanged production still fails complete graph retention"
+  },
+  "maximum": {
+    "photoWidth": 1200,
+    "photoHeight": 1200,
+    "strokes": 100,
+    "points": 12000,
+    "heldInputBytes": 6291456,
+    "inputPadding": "ASCII whitespace pads the foreign backup to exactly the existing 6 MiB input cap; this is input admission, not artwork payload size",
+    "retained": "complete photo data URL, garment, note, all stroke points, placement and newer title",
+    "png": "three actual garment PNG downloads compare byte-exactly before race, after race and after full persistent browser process restart",
+    "restart": "first Chromium context/process is closed, then a new persistent Chromium process reads the original profile and exact native stored record",
+    "scope": "retention and deterministic export equivalence; no universal peak-memory, latency, cross-browser or physical-device claim"
+  },
+  "firstFailures": [
+    "test-only native-read alias failed ESLint and was corrected before behavioral RED",
+    "first green cleanup assertion counted an unrelated autosave validation bitmap; narrowed to the held bitmap then rechecked RED",
+    "command run from wrong working directory produced ENOENT before rerun; no production change"
+  ],
+  "logs": [
+    {
+      "path": "/tmp/clothing118-red.log",
+      "bytes": 28717,
+      "sha256": "a29a6a01bb48101e7d36fdd70e503d8956f8276642795c24fc368663a6a72a57"
+    },
+    {
+      "path": "/tmp/clothing118-corrected-red.log",
+      "bytes": 6214,
+      "sha256": "360bb9cc9738041617f059bd1a6a833d0b472f7c5ce59f68978408331e92b5ce"
+    },
+    {
+      "path": "/tmp/clothing118-maximum-red.log",
+      "bytes": 1794580,
+      "sha256": "8f4bb0dfc059db8feb1c960af67b39964509a78c97f48c064c063ae7fb71ef33"
+    },
+    {
+      "path": "/tmp/clothing118-adopted-check.log",
+      "bytes": 4913,
+      "sha256": "d70d8ba75060b62710095be20d838a7405ec44c35111c484a01eba028f75a128"
+    },
+    {
+      "path": "/tmp/clothing118-adopted-full.log",
+      "bytes": 6796,
+      "sha256": "29ac0d3a0d9246de67beeb261ad62c4869b59ca9b965873fd5d048d5f6cf1845"
+    }
+  ],
+  "ci": "new retention test pending published CI"
+}
