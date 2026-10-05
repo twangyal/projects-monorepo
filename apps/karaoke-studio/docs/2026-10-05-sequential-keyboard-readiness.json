@@ -57,7 +57,7 @@
         "traceTimeMs": 104989.832,
         "call": "call@5452 after snapshot",
         "markDisabled": false,
-        "status": "Listening · 0/2 lines completed. Mark the next line’s start when you hear it."
+        "status": "Listening \u00b7 0/2 lines completed. Mark the next line\u2019s start when you hear it."
       },
       {
         "traceTimeMs": 104990.392,
@@ -161,5 +161,13 @@
     "buildRunByAuthor": false,
     "productionChanges": false,
     "gitMutation": false
+  },
+  "publishedCI": {
+    "status": "both corrected events passed",
+    "receipt": "2026-10-05-sequential-keyboard-readiness-ci.json",
+    "head": "f1bd5300f52cc872769fafd6d6365cabfff038d7",
+    "python": 166,
+    "typescript": 103,
+    "native": 79
   }
 }
