@@ -47,7 +47,10 @@
         <p id="accuracyResult" role="status"></p>
         <details><summary>Local measurement JSON</summary><pre id="accuracyData"></pre></details>
       </div>
-      <button id="cancelAccuracy" data-gaze-target>Close / cancel check</button>
+      <div class="accuracy-actions">
+        <button id="downloadAccuracy" data-gaze-target disabled>Download measurement</button>
+        <button id="cancelAccuracy" data-gaze-target>Close / cancel check</button>
+      </div>
     </section>
     <section id="playground" class="panel hidden" aria-labelledby="playgroundTitle">
       <div class="section-heading">

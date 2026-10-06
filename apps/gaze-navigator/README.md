@@ -189,3 +189,16 @@ The decision lab separates model-eligible results from policy-only rule abstenti
 including imported real measurements. Fresh local verification passes 61 unit and
 56 native browser cases plus lint/build syntax checks. [Verification record](docs/2026-10-05-lab-metrics-verification.md)
 records the tests, independent review and browser limits.
+
+### Portable accuracy receipts — 2026-10-06
+
+Completed held-out checks offer **Download measurement**, also reachable by gaze.
+The versioned local JSON matches the displayed data and includes tracking mode,
+start/completion timestamps, viewport/device pixel ratio, measurement-area bounds
+and the five-target/two-second/500-ms settling protocol. Errors use CSS pixels;
+sample intervals remain distinct from end-to-end latency. Missing measurements
+stay null, and simulation receipts explicitly do not establish webcam accuracy.
+No camera frames or raw prediction streams are included or stored. Starting or
+cancelling a check disables downloading and clears the previous report. The
+receipt prepares physical measurement handoff without claiming hardware acceptance.
+Issue #131 tracks verification.

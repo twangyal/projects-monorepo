@@ -167,6 +167,8 @@ test('held-out report can be closed through gaze without manually scrolling its 
   await simulate(page);
   await hold(page, page.locator('#checkAccuracy'), { scroll: false });
   await expect(page.locator('#accuracyPanel')).toBeVisible();
+  await expect(page.locator('#downloadAccuracy')).toBeDisabled();
+  const area = await page.locator('#accuracyStage').boundingBox();
   for (let i = 0; i < 5; i++) {
     const visible = await page.locator('#accuracyDot').evaluate(dot => {
       const bounds = dot.getBoundingClientRect();
@@ -177,8 +179,37 @@ test('held-out report can be closed through gaze without manually scrolling its 
     await page.clock.runFor(2100);
   }
   await expect(page.locator('#accuracyResult')).toContainText('SIMULATION');
+  const displayed = JSON.parse(await page.locator('#accuracyData').textContent());
+  expect(displayed).toMatchObject({format:'gaze-accuracy-report',schemaVersion:1,mode:'simulation',
+    viewport:{width:page.viewportSize().width,height:page.viewportSize().height},
+    measurementArea:{left:area.x,top:area.y,width:area.width,height:area.height},
+    protocol:{targetMs:2000,settleMs:500,targetCount:5,units:'CSS pixels'}});
+  expect(displayed.targets).toHaveLength(5);
+  expect(displayed.limitations.join(' ')).toContain('not webcam accuracy');
+  const pending = page.waitForEvent('download');
+  await hold(page, page.locator('#downloadAccuracy'), {scroll:false});
+  const downloaded = await pending;
+  const stream = await downloaded.createReadStream();
+  const chunks=[];for await(const chunk of stream)chunks.push(chunk);
+  expect(JSON.parse(Buffer.concat(chunks).toString())).toEqual(displayed);
+  expect(downloaded.suggestedFilename()).toBe('gaze-accuracy-simulation.json');
   await hold(page, page.locator('#cancelAccuracy'), { scroll: false });
   await expect(page.locator('#accuracyPanel')).toBeHidden();
+});
+
+test('new and cancelled accuracy checks cannot download an earlier report',async({page})=>{
+  await simulate(page);
+  await page.locator('#checkAccuracy').click();
+  await page.clock.runFor(10500);
+  await expect(page.locator('#downloadAccuracy')).toBeEnabled();
+  await page.locator('#cancelAccuracy').click();
+  await page.locator('#checkAccuracy').click();
+  await expect(page.locator('#downloadAccuracy')).toBeDisabled();
+  await expect(page.locator('#accuracyData')).toBeEmpty();
+  await page.locator('#pauseTracking').click();
+  await expect(page.locator('#accuracyResult')).toContainText('cancelled');
+  await expect(page.locator('#downloadAccuracy')).toBeDisabled();
+  await expect(page.locator('#accuracyData')).toBeEmpty();
 });
 
 test('resize restarts partial calibration and disables navigation', async ({ page }) => {
