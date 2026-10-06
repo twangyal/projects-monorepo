@@ -341,7 +341,7 @@ const keyboard = setupKeyboard(document, () => resetTracking(true));
 setupWorkspace(document, () => {
   keyboard.sync();
   resetTracking(true);
-});
+}, keyboard.close);
 simulateButton.addEventListener('click', enableSimulation);
 recalibrateButton.addEventListener('click', () => {
   accuracyButton.disabled = true;

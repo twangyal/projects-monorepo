@@ -70,6 +70,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 #messageList { max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 .message-target { min-height: 90px; text-align: left; flex-shrink: 0; }
 #messageDetail, #draftList { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+#draftList article { margin: 16px 0; padding: 12px; border: 1px solid #456b5c; border-radius: 12px; }
+#draftList button { display: block; width: 100%; margin-top: 8px; white-space: normal; overflow-wrap: anywhere; }
+#draftReview { margin: 16px 0; padding: 12px; border: 2px solid #75e5b4; border-radius: 12px; }
+#draftReview button { margin: 4px; }
 .workspace button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #75e5b4; outline-offset: 3px; }
 @media (max-width: 650px) { .inbox-layout { grid-template-columns: 1fr; } }

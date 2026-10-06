@@ -98,7 +98,13 @@
           </div>
         </section>
         <h3>Session drafts</h3>
-        <p>Drafts clear when you refresh. Nothing is sent.</p>
+        <p>Keep up to 20 drafts in this session. Reopen one to update it. Drafts clear when you refresh. Nothing is sent.</p>
+        <button id="newDraft" data-gaze-target>New draft</button>
+        <section id="draftReview" class="hidden" aria-label="Review composer replacement">
+          <p id="draftReviewText" role="status"></p>
+          <button id="keepComposer" data-gaze-target>Keep current composer</button>
+          <button id="replaceComposer" data-gaze-target>Replace composer</button>
+        </section>
         <div id="draftList"></div>
       </div>
       <p id="result" role="status" class="result">Hold your gaze on a control for 0.9 seconds.</p>

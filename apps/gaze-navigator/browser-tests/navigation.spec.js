@@ -128,7 +128,8 @@ test('gaze keyboard reaches lower keys and saves a complete session draft', asyn
   await hold(page, page.locator('#keyboardKeys').getByRole('button', { name: 'b', exact: true }), { scroll: false });
   await hold(page, page.locator('#closeKeyboard'), { scroll: false });
   await hold(page, page.locator('#saveDraft'));
-  await expect(page.locator('#draftList')).toHaveText('a: b');
+  await expect(page.locator('#draftList article')).toHaveText('a: bOpen draft: a');
+  await expect(page.getByRole('button', { name: 'Open draft: a', exact: true })).toBeVisible();
   await expect(page.locator('#composer')).toBeHidden();
   await expect(page.locator('#result')).toContainText('Nothing was sent');
 });
@@ -210,6 +211,65 @@ test('new and cancelled accuracy checks cannot download an earlier report',async
   await expect(page.locator('#accuracyResult')).toContainText('cancelled');
   await expect(page.locator('#downloadAccuracy')).toBeDisabled();
   await expect(page.locator('#accuracyData')).toBeEmpty();
+});
+
+test('gaze reopens a saved draft and updates the same record',async({page})=>{
+ await simulate(page);await page.locator('#composeButton').click();
+ await page.locator('#draftSubject').fill('Original subject');await page.locator('#draftBody').fill('Original body');
+ await page.locator('#saveDraft').click();
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await expect(page.locator('#draftSubject')).toHaveValue('Original subject');
+ await expect(page.locator('#saveDraft')).toHaveText('Update draft');
+ await page.locator('#draftBody').fill('Changed body');
+ await hold(page,page.locator('#saveDraft'));
+ await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(1);
+ await expect(page.locator('#draftList')).toContainText('Changed body');
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await expect(page.locator('#draftBody')).toHaveValue('Changed body');
+});
+
+test('dirty draft switches require gaze review and retain the current composer on Keep',async({page})=>{
+ await simulate(page);await page.locator('#composeButton').click();
+ await page.locator('#draftSubject').fill('Saved');await page.locator('#draftBody').fill('Retained');await page.locator('#saveDraft').click();
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unsaved');await page.locator('#draftBody').fill('Latest text');
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await expect(page.locator('#draftReview')).toBeVisible();
+ await page.locator('#draftBody').fill('Typed after review appeared');
+ await hold(page,page.locator('#keepComposer'));
+ await expect(page.locator('#draftBody')).toHaveValue('Typed after review appeared');
+ await page.locator('#cancelDraft').click();await page.locator('#composeButton').click();
+ await expect(page.locator('#draftSubject')).toHaveValue('Unsaved');
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await hold(page,page.locator('#replaceComposer'));
+ await expect(page.locator('#draftBody')).toHaveValue('Retained');
+ await page.locator('#draftBody').fill('Uncommitted correction');
+ await hold(page,page.locator('#newDraft'));
+ await hold(page,page.locator('#replaceComposer'));
+ await expect(page.locator('#draftBody')).toBeEmpty();
+ await expect(page.locator('#saveDraft')).toHaveText('Save draft');
+ await expect(page.locator('#draftList')).toContainText('Retained');
+});
+
+test('twenty maximum session drafts retain full text and refuse a new record without losing fields',async({page})=>{
+ await simulate(page);
+ const body='字'.repeat(10000),title='题'.repeat(199);
+ for(let i=0;i<20;i++){
+  await page.locator('#composeButton').click();
+  await page.locator('#draftSubject').fill(title+String.fromCharCode(65+i));
+  await page.locator('#draftBody').fill(body);await page.locator('#saveDraft').click();
+ }
+ await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(20);
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Overflow draft stays here');
+ await page.locator('#saveDraft').click();
+ await expect(page.locator('#result')).toContainText('20');
+ await expect(page.locator('#draftBody')).toHaveValue('Overflow draft stays here');
+ await page.locator('[data-draft-id="draft-1"] button').click();await page.locator('#replaceComposer').click();
+ await expect(page.locator('#draftSubject')).toHaveValue(title+'A');await expect(page.locator('#draftBody')).toHaveValue(body);
+ await page.locator('#draftBody').fill('Updated first maximum');await page.locator('#saveDraft').click();
+ await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(20);
+ await page.locator('[data-draft-id="draft-20"] button').click();
+ await expect(page.locator('#draftSubject')).toHaveValue(title+'T');await expect(page.locator('#draftBody')).toHaveValue(body);
+ await page.reload();await simulate(page);await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(0);
 });
 
 test('resize restarts partial calibration and disables navigation', async ({ page }) => {

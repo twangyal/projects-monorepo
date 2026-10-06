@@ -7,6 +7,12 @@ const MESSAGES = [
 
 export function createWorkspace() {
   const saved = [];
+  const content = (subject,body) => {
+    if(typeof subject!=='string'||typeof body!=='string')throw new Error('Write a text subject and message.');
+    if(subject.length>200||body.length>10000)throw new Error('Draft limits are 200 subject characters and 10000 message characters.');
+    if (!subject.trim() && !body.trim()) throw new Error('Write a subject or message before saving.');
+    return {subject:subject.trim()||'Untitled draft',body:body.trim()};
+  };
   return {
     search(query = '') {
       const term = query.trim().toLowerCase();
@@ -18,10 +24,17 @@ export function createWorkspace() {
       return message ? { ...message } : null;
     },
     saveDraft(subject, body) {
-      if (!subject.trim() && !body.trim()) throw new Error('Write a subject or message before saving.');
-      const draft = { id: `draft-${saved.length + 1}`, subject: subject.trim() || 'Untitled draft', body: body.trim() };
+      const fields=content(subject,body);
+      if(saved.length>=20)throw new Error('Keep at most 20 session drafts. Reopen a draft to update it.');
+      const draft = { id: `draft-${saved.length + 1}`, ...fields };
       saved.push(draft);
       return { ...draft };
+    },
+    draft(id) {const draft=saved.find(item=>item.id===id);return draft?{...draft}:null;},
+    updateDraft(id,subject,body) {
+      const index=saved.findIndex(item=>item.id===id);
+      if(index<0)throw new Error('Saved draft was not found.');
+      const draft={id,...content(subject,body)};saved[index]=draft;return {...draft};
     },
     drafts: () => saved.map(draft => ({ ...draft })),
   };
