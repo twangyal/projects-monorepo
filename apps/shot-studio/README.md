@@ -690,3 +690,19 @@ fixture and passes with the repair; complete browser-process restart and indepen
 stored-archive assertions remain intact. Fresh local checks pass 345 unit and 106
 browser cases plus syntax checks. [Verification and retained first failures](docs/2026-10-05-sequence-startup-verification.md)
 record the browser provenance and exact limits; separate compatibility #128 remains open.
+
+### Passive maximum-export diagnostics — 2026-10-06
+
+The independent maximum probe now retains at most 24 DOM snapshots, sampled
+every five seconds during export and at the first failure before cleanup. Each
+records visible status, rendered progress, control availability and tab visibility.
+Renderer reads expire after 500 ms; unavailable diagnostics preserve the original
+error. The 95-second download gate, exporter deadline and independent media gates
+remain unchanged, with no retries or production instrumentation. These samples
+describe the interface, not internal encoder state or physical performance.
+
+The [local receipt](docs/2026-10-06-export-diagnostics-local.json) retains exact
+archive restart, all 1,800 decoded video frames and 2,880,648 audio frames with
+the observer enabled. That software-WebGL Chromium153 run does not resolve the
+original full Chromium155 timeout. Issue #128 remains open pending its diagnosis;
+the compatibility workflow also runs when the maximum probe or observer changes.
