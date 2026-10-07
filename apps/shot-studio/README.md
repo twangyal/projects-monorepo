@@ -836,3 +836,9 @@ in both first standard push and PR CI. The [paired full155 receipts](docs/2026-1
 retain successful push exports and PR deadline failures. Native dequeue waits
 dominate the failed diagnostic's awaited video path; this is measured
 backpressure, not exclusive CPU time or a production throughput fix.
+
+The [process CPU extension](docs/2026-10-07-process-cpu/README.md) to the labelled
+stage diagnostic brackets export with native cumulative counters, excludes
+lifetime usage/churn/invalid or zero-only counters, and reports unavailable
+rather than inventing zero CPU. It measures whole observed process work, not
+exclusive codec CPU. Production settings and original media gates are unchanged.

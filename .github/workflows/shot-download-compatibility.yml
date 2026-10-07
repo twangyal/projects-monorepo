@@ -1,9 +1,9 @@
 name: Shot download compatibility experiment
 on:
   push:
-    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
+    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/browser-cpu-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
   pull_request:
-    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
+    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/browser-cpu-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
   workflow_dispatch:
 permissions:
   contents: read
