@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "parentHead": "6e8432dc2282280ff3b3cdacfc2177679c58b5e7",
+  "sources": [
+    {
+      "path": "apps/shot-studio/src/export-video-policy.js",
+      "sha256": "45cdb68155ca23576e23013691fb558349e22c917b5eaed2ae48a24c0d0d360f"
+    },
+    {
+      "path": "apps/shot-studio/src/timestamped-export.js",
+      "sha256": "7a397fe161ca9b98370237f5d2b9bd5cf05a9c29c2ec9378f93577e61f68e868"
+    }
+  ],
+  "browser": "153.0.8010.0 software WebGL",
+  "controlledOmission": "One actual native VideoEncoder output callback at33333us is withheld. This is admission regression coverage, not observed browser overload.",
+  "nativeLogs": [
+    {
+      "path": "apps/shot-studio/docs/2026-10-07-complete-frame-admission/native-full-green.log",
+      "filter": "Only webserver HTTP request log lines removed; all Playwright results/errors preserved.",
+      "originalBytes": 296800,
+      "originalSha256": "404967f1a9b12bd3366cfb12072276e904598890ea189814f5cd7d925bc282c5",
+      "savedSha256": "de3076a583bd211de7a5123d24c5ecc531f37253495206981311feed8060fc87"
+    },
+    {
+      "path": "apps/shot-studio/docs/2026-10-07-complete-frame-admission/native-focused-green.log",
+      "filter": "Only webserver HTTP request log lines removed; all Playwright results/errors preserved.",
+      "originalBytes": 21324,
+      "originalSha256": "905d0b3c5a0a2863156fff3f66dc6a27437698b4761d96fce41c1fe8473d06e8",
+      "savedSha256": "076ccd516e77f29649cd679419d1d760c00396974c544cf1b5fc86ff7ebfe619"
+    }
+  ],
+  "maximum": {
+    "receiptSha256": "9def6c26af6948313b8823c810a6dfe6ebb16bade89e2c403efafe4a00e6664b",
+    "allCaptureArtifactHashesVerified": true
+  }
+}

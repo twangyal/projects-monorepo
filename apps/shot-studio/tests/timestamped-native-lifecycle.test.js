@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {planExportFrames} from '../src/export-timeline.js';
 import {nativeExportBackend,createBoundedVideoSink,createTimestampedExporter} from '../src/timestamped-export.js';
 function replace(t,key,value){const old=Object.getOwnPropertyDescriptor(globalThis,key);Object.defineProperty(globalThis,key,{value,configurable:true});t.after(()=>{if(old)Object.defineProperty(globalThis,key,old);else delete globalThis[key];});}
 test('cancellation drains late native encoder initialization before releasing output ownership',async t=>{
@@ -14,7 +15,7 @@ test('cancellation drains late native encoder initialization before releasing ou
   configure(){this.state='configured';}close(){this.state='closed';}encode(){}addEventListener(){}removeEventListener(){}
  }
  replace(t,'VideoFrame',Frame);replace(t,'VideoEncoder',Encoder);
- const sink=createBoundedVideoSink(1024*1024,()=>{}),native=nativeExportBackend.create(sink,'vp9',null);await native.start();
+ const sink=createBoundedVideoSink(1024*1024,()=>{}),native=nativeExportBackend.create(sink,'vp9',null,planExportFrames(1/30));await native.start();
  const sample=native.video({}, {timestamp:0,duration:33333}),add=native.addVideo(sample);
  await Promise.resolve();assert.equal(requested,true);
  const closing=native.cancel();await Promise.resolve();release();await Promise.allSettled([closing,add]);sample.close();
@@ -35,7 +36,7 @@ test('failed audiovisual finalization still drains the sibling native flush',asy
  }
  class AudioEncoder extends Encoder{async flush(){throw Error('audio flush failed');}}
  replace(t,'VideoFrame',Frame);replace(t,'VideoEncoder',Encoder);replace(t,'AudioData',Audio);replace(t,'AudioEncoder',AudioEncoder);t.after(()=>release());
- const native=nativeExportBackend.create(createBoundedVideoSink(1024*1024,()=>{}),'vp9',{});await native.start();
+ const native=nativeExportBackend.create(createBoundedVideoSink(1024*1024,()=>{}),'vp9',{},planExportFrames(1/30));await native.start();
  const video=native.video({}, {timestamp:0,duration:33333});await native.addVideo(video);video.close();
  const audio=native.audio({numberOfChannels:1,numberOfFrames:960,sampleRate:48000,timestamp:0,data:new Float32Array(960)});await native.addAudio(audio);audio.close();
  const finalizing=assert.rejects(native.finalize(),/audio flush failed/).finally(()=>settled=true);

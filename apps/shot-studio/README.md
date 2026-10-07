@@ -792,3 +792,23 @@ video frames and unchanged media/archive gates. This is a separate experiment,
 not a controlled speed benchmark or production change. Full155 CI additionally
 requires exact complete-frame count. Realtime mode can permit drops, so adoption
 requires bounded complete-frame accounting before any movie publication.
+Its first full155 PR passes all1,800 frames in46.439s; push times out before
+finalization after1,670 submissions/67.666s addVideo waits. This mixed evidence
+rejects production adoption. Both raw receipts/provenance are retained; the two
+inconclusive source-copy candidate jobs are retired. Original155 maximum and
+separately labelled diagnostic jobs remain, now triggered by export source/tests.
+
+Native output admission now compares bounded timestamp sets against the complete
+immutable authored frame plan before movie publication. It refuses missing,
+duplicate, unexpected or malformed output after native flushes drain, then clears
+accounting; cancellation preserves owned cleanup. It retains no packets/frames.
+The actual native controlled omission regression previously downloaded an
+incomplete sequence; now it refuses publication, closes native encoders and
+preserves the exact saved scene and complete sequence. This is export safety,
+with original quality/VP9-first preference, limits and deadlines unchanged.
+The remaining155 throughput timeout remains open in#128.
+
+[Complete-frame admission verification](docs/2026-10-07-complete-frame-admission/README.md)
+passes357local units/syntax and all111native browser cases. The unchanged original
+maximum independently decodes all1,800video/2,880,648audio frames, all40 original
+visual/audio gates and exact complete archive restart. Published-head CI is pending.

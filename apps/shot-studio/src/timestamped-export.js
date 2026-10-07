@@ -1,3 +1,5 @@
+import {createFrameCompleteness} from './export-video-policy.js';
+export {createFrameCompleteness} from './export-video-policy.js';
 import {planExportFrames,prepareExportPcm} from './export-timeline.js';
 import * as bunny from '../vendor/mediabunny/mediabunny.min.mjs';
 const CAP=32*1024*1024;
@@ -28,10 +30,12 @@ export const nativeExportBackend={
   for(const codec of ['vp9','vp8'])if(await bunny.canEncodeVideo(codec,options))return codec;
   return null;
  },
- create(sink,codec,pcm){
+ create(sink,codec,pcm,plan){
+  // Packet accounting proves native output coverage, not independent decoding.
+  const completeness=createFrameCompleteness(plan);
   const target=new bunny.StreamTarget(new WritableStream({write:chunk=>sink.write(chunk)}));
   const output=new bunny.Output({format:new bunny.WebMOutputFormat(),target});
-  const video=new bunny.VideoSampleSource({codec,bitrate:2500000});output.addVideoTrack(video,{frameRate:30});
+  const video=new bunny.VideoSampleSource({codec,bitrate:2500000,onEncodedPacket:packet=>completeness.observe(packet.timestamp)});output.addVideoTrack(video,{frameRate:30});
   const audio=pcm?new bunny.AudioSampleSource({codec:'opus',bitrate:128000}):null;if(audio)output.addAudioTrack(audio);
   let retired=false,closing;const pending=new Set();
   const active=()=>{if(retired)throw Error('Export cancelled.');};
@@ -43,9 +47,9 @@ export const nativeExportBackend={
   const drainSources=()=>Promise.allSettled([video,...(audio?[audio]:[])].map(source=>source._flushOrWaitForOngoingClose(true)));
   // Native support queries and finalization flushes cannot be cancelled. Drain
   // every owned operation before retiring output, including a late encoder.
-  const cancel=()=>{retired=true;return closing??=(async()=>{await Promise.allSettled([...pending]);await drainSources();await output.cancel();})();};
+  const cancel=()=>{retired=true;return closing??=(async()=>{await Promise.allSettled([...pending]);try{await drainSources();await output.cancel();}finally{completeness.retire();}})();};
   return {
-   start:()=>track(()=>output.start()),finalize:()=>track(async()=>{try{await output.finalize();}finally{await drainSources();}}),cancel,
+   start:()=>track(()=>output.start()),finalize:()=>track(async()=>{try{try{await output.finalize();}finally{await drainSources();}completeness.verify();}finally{completeness.retire();}}),cancel,
    video(canvas,frame){
     active();const native=new VideoFrame(canvas,{timestamp:frame.timestamp,duration:frame.duration});
     try{return new bunny.VideoSample(native);}catch(error){native.close();throw error;}
@@ -85,7 +89,7 @@ export function createTimestampedExporter(backend){
     if(soundtrack&&soundtrack.plan.sequenceDuration!==duration)throw Error('Use the soundtrack plan for this complete sequence.');
     const codec=await wait(backend.probe(canvas,pcm));
     if(!codec)throw Error('This browser cannot encode this WebM. Save a complete backup instead.');
-    sink=createBoundedVideoSink(maxBytes,check);check();encoder=backend.create(sink,codec,pcm);check();await wait(encoder.start());
+    sink=createBoundedVideoSink(maxBytes,check);check();encoder=backend.create(sink,codec,pcm,frames);check();await wait(encoder.start());
     let vi=0,ai=0;
     while(vi<frames.frameCount||pcm&&ai<pcm.blockCount){
      check();const frame=vi<frames.frameCount?frames.frame(vi):null;

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "mode": "isolated-vp9-realtime-latency-candidate",
+  "checkoutSha": "6e8432dc2282280ff3b3cdacfc2177679c58b5e7",
+  "sourcePath": "apps/shot-studio/src/timestamped-export.js",
+  "originalSourceSha256": "ee9c6fff57e4f7a5ff484b7fc44b8081e196c14665aea78155f0323fd5ff294e",
+  "candidateSourceSha256": "b6d03d6ccfd16c6c4a0be24dc3aff4dcd45df7c289189576b4948f97d7843fe6",
+  "change": {
+    "before": "new bunny.VideoSampleSource({codec,bitrate:2500000})",
+    "after": "new bunny.VideoSampleSource({codec,bitrate:2500000,latencyMode:'realtime'})"
+  },
+  "limits": [
+    "Only the isolated served source copy changes. Production retains its original quality mode.",
+    "Native resolution, bitrate, authored frame plan, deadlines and independent media gates remain unchanged.",
+    "A separate candidate result cannot clear an original maximum failure.",
+    "Realtime mode may drop frames; this experiment additionally requires all1800decoded video frames."
+  ]
+}

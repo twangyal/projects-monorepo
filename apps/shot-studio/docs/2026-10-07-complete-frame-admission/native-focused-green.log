@@ -1,0 +1,22 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> shot-studio@0.7.0 test:browser
+> playwright test tests/browser/complete-native-export.spec.js tests/browser/timestamped-export.spec.js tests/browser/stage-timing-diagnostics.spec.js
+
+
+Running 8 tests using 1 worker
+
+(node:595) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring (3.4s)
+  ✓  2 tests/browser/stage-timing-diagnostics.spec.js:5:1 › native stage timing retains original WebM export and restores methods (5.4s)
+  ✓  3 tests/browser/stage-timing-diagnostics.spec.js:30:1 › native stage timing observes genuine cancellation and retires without changing saved authoring (822ms)
+
+  ✓  4 tests/browser/timestamped-export.spec.js:26:33 › native timestamped silent export preserves every frame through a350ms main-thread stall (1.5s)
+
+  ✓  5 tests/browser/timestamped-export.spec.js:26:33 › native timestamped audiovisual export preserves every frame through a350ms main-thread stall (1.4s)
+  ✓  6 tests/browser/timestamped-export.spec.js:41:1 › native timestamped cancellation closes real encoder ownership and publishes no output (441ms)
+  ✓  7 tests/browser/timestamped-export.spec.js:51:1 › native startup cancellation waits for the pending support query and closes the late encoder (226ms)
+  ✓  8 tests/browser/timestamped-export.spec.js:68:1 › native finalization cancellation retains ownership until a real encoder flush drains (413ms)
+
+  8 passed (14.4s)

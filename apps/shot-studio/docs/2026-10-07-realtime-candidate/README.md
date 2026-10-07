@@ -24,4 +24,18 @@ The separate full155 realtime-candidate CI job uses the same pinned browser,
 frozen fixture, bit rate/resolution/frame plan/deadlines/original media inspector,
 with source patch provenance and separately named artifacts. It additionally
 requires actual VP9 and all1,800 decoded frames. A candidate pass cannot clear an
-original maximum failure. First full155 results remain pending; #128 stays open.
+original maximum failure. First full155 results are mixed at6e8432d. PR run37603173373 passes the original
+media gates with all1,800 video/2,880,648 audio frames and46.439s click-to-download;
+44.216s is observed in addVideo. Push run37603167624 times out with1,670 completed
+video submissions,67.666s addVideo waits, no finalization and15.9ms drained cancel.
+The page remains alive, with no page errors/external requests; no movie is published.
+Submission counts do not establish decoded frame counts on a failed export.
+
+Both raw receipts/browser logs/source patches are retained here. Artifact IDs,
+ZIP digests and byte lengths are in155-artifact-provenance.json; every listed
+capture artifact was independently rehashed after download. The candidate fails
+to establish reliable throughput repair, so production is not switched to realtime.
+The VP8 and realtime source-copy jobs are retired after retaining their first
+results; original155 acceptance and separately labelled stage timing remain.
+The normal13portfolio PR workflows and both Shot350unit/110native workflows pass
+at6e8432d; the separate compatibility workflows fail. #128 stays open.

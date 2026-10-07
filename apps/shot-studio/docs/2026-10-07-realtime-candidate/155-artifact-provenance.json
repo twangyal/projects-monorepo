@@ -1,0 +1,28 @@
+[
+  {
+    "event": "push",
+    "run": 37603167624,
+    "artifact": 11473284901,
+    "zipBytes": 1033831,
+    "zipSha256": "dd6a03e6511210050ca4ae834e9e9a883e4890c010fe0dfbbbffd780421b5f1a",
+    "sourceHead": "6e8432dc2282280ff3b3cdacfc2177679c58b5e7",
+    "status": "failed",
+    "allReceiptArtifactHashesVerified": true,
+    "checkoutSha": "6e8432dc2282280ff3b3cdacfc2177679c58b5e7",
+    "originalSourceMatchesHead": true,
+    "candidateSourcePatchVerified": true
+  },
+  {
+    "event": "pr",
+    "run": 37603173373,
+    "artifact": 11474061153,
+    "zipBytes": 11372500,
+    "zipSha256": "d8bca4ceb0642d4ca7834326df34371712d9b87c68fa2799336d01c99808d6d1",
+    "sourceHead": "6e8432dc2282280ff3b3cdacfc2177679c58b5e7",
+    "status": "passed",
+    "allReceiptArtifactHashesVerified": true,
+    "checkoutSha": "af4ddd294ba0595f71d0833f38bb158779ac850e",
+    "originalSourceMatchesHead": true,
+    "candidateSourcePatchVerified": true
+  }
+]

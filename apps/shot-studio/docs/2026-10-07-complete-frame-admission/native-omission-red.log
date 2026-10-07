@@ -1,0 +1,80 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> shot-studio@0.7.0 test:browser
+> playwright test tests/browser/complete-native-export.spec.js
+
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:41] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:34) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /style.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/xr.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/renderer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/draft.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/history.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/model.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/take-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/takes.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/take-video.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/timestamped-export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/performer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/take-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/math.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence-document.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence-audio.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/take-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence-document-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/sequence-audio-session.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/export-timeline.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /vendor/mediabunny/mediabunny.min.mjs HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:01:42] "GET /src/export-video-policy.js HTTP/1.1" 200 -
+  ✘  1 tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring (6.1s)
+
+
+  1) tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#sequence-status')
+    Expected substring: "Encoder dropped video frames"
+    Received string:    "Sequence WebM downloaded. No ordinary take was added."
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#sequence-status') with timeout 5000ms
+      - waiting for locator('#sequence-status')
+        10 × locator resolved to <p role="status" aria-live="polite" id="sequence-status">Encoding sequence WebM. Keep this tab visible. Th…</p>
+           - unexpected value "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes."
+        4 × locator resolved to <p role="status" aria-live="polite" id="sequence-status">Sequence WebM downloaded. No ordinary take was ad…</p>
+          - unexpected value "Sequence WebM downloaded. No ordinary take was added."
+
+
+      23 |  const downloads=[];page.on('download',file=>downloads.push(file.suggestedFilename()));
+      24 |  await page.locator('#sequence-export').click();
+    > 25 |  await expect(page.locator('#sequence-status')).toContainText('Encoder dropped video frames');
+         |                                                 ^
+      26 |  await expect(page.locator('#sequence-export')).toBeEnabled();
+      27 |  const native=await page.evaluate(()=>({omitted:completeFrameTest.omitted,states:completeFrameTest.encoders.map(e=>e.state)}));
+      28 |  expect(native.omitted).toBe(1);expect(native.states.length).toBeGreaterThan(0);expect(native.states.every(s=>s==='closed')).toBe(true);
+        at /workspace/scratch/dea0b0842cca/portfolio-sync/apps/shot-studio/tests/browser/complete-native-export.spec.js:25:49
+
+    Error Context: test-results/complete-native-export-nat-b4922-d-preserves-saved-authoring/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/complete-native-export-nat-b4922-d-preserves-saved-authoring/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/complete-native-export-nat-b4922-d-preserves-saved-authoring/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring 
