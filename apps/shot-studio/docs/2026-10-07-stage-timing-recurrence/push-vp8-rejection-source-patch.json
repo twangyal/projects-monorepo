@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "mode": "isolated-vp8-first-codec-order-candidate",
+  "checkoutSha": "2cfc610ec3a723fa29d4ef73898c50ef57f2e257",
+  "sourcePath": "apps/shot-studio/src/timestamped-export.js",
+  "originalSourceSha256": "ee9c6fff57e4f7a5ff484b7fc44b8081e196c14665aea78155f0323fd5ff294e",
+  "candidateSourceSha256": "810859256e260993d29e33f6ccfe87cecccf409703e2d7ae33c86ba44cf5abb6",
+  "change": {
+    "before": "for(const codec of ['vp9','vp8'])",
+    "after": "for(const codec of ['vp8','vp9'])"
+  },
+  "limits": [
+    "Only the isolated served source copy changes. Production remains VP9-first.",
+    "Native quality mode, resolution, bitrate, authored frame plan, deadlines and independent media gates remain unchanged.",
+    "A separate candidate result cannot clear an original maximum failure."
+  ]
+}

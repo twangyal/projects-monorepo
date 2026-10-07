@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "movieSha256": "7a9a4bf13405ddad12dc728b939fa5026f337e403722bf21befc0f5366c62136",
+  "stream": {
+    "codec_name": "vp8",
+    "color_range": "tv",
+    "color_space": "bt709",
+    "color_transfer": "iec61966-2-1",
+    "color_primaries": "bt709"
+  },
+  "frame202": {
+    "best_effort_timestamp_time": "6.733000",
+    "color_range": "tv",
+    "color_space": "bt470bg",
+    "color_primaries": "bt709",
+    "color_transfer": "iec61966-2-1"
+  },
+  "pixelDiagnostic": {
+    "x": 524,
+    "y": 258,
+    "defaultRgb": [
+      14,
+      197,
+      6
+    ],
+    "explicitBt709Rgb": [
+      0,
+      168,
+      0
+    ],
+    "expectedRgb": [
+      0,
+      169,
+      0
+    ]
+  },
+  "limits": [
+    "Decoder interpretation comparison only; no frozen gate or production change.",
+    "Native comparison verifies one fixed control point, not an independent native inspection of all frames."
+  ]
+}

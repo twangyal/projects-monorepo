@@ -770,3 +770,17 @@ production remains VP9-first. Candidate CI keeps source patch provenance and
 failures separately. Native cancellation now has an observer regression;110cases
 pass locally. These passing timing observations do not explain the prior timeout
 or establish a production fix, so #128 remains open.
+
+
+The [first stage-timed155 timeout](docs/2026-10-07-stage-timing-recurrence/README.md)
+now reproduces at2cfc610:1,794 video submissions complete with67.451s addVideo waits,
+zero finalization calls and a completed26.3ms cancel. The product deadline expires
+before movie publication while the browser stays alive; six samples remain
+unconstructed. Both VP8-first155 candidates reject the original visual gate and
+show no clear portable speed benefit. Separate local decoder comparisons identify
+BT709 stream versus BT470BG FFmpeg-frame interpretation; a native fixed-pixel
+check and separately labelled explicit-matrix inspection support further diagnosis,
+without replacing the original rejection. All13normal portfolio checks and both
+standard Shot350unit/110native workflows pass; the separate push155 experiment
+fails. Production and all original gates remain unchanged; #128 stays open for a
+safe measured throughput repair and independent decoder discrepancy verification.
