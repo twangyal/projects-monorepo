@@ -47,3 +47,5 @@ Original maximum fixture/media inspection/production settings/deadlines are
 unchanged. Issue128 remains open; adding a CPU observation is not a throughput
 repair. First CI must preserve both original acceptance and separate diagnostic
 results, including failures, before interpreting CPU coverage.
+
+A fresh targeted native invocation on the final helper passes the actual one-second/30-frame export. final-local-native-receipt.json retains the current unavailable receipt with four zero-only pairs, zero churn/invalid pairs and no fabricated CPU delta. The earlier local receipt is retained unchanged.

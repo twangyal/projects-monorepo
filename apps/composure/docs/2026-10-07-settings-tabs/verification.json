@@ -57,5 +57,19 @@
     "browserCases": 36,
     "fullCachedHistory": "passed",
     "limits": "Initial implementation before the additional in-memory best adoption safeguard; latest103-unit source still needs its own CI."
+  },
+  "finalPublishedCI": {
+    "sourceCommit": "71dc8abecff949b35e8ca18d05b84a480b9ddca5",
+    "runId": 37690512372,
+    "jobId": 113029170423,
+    "event": "pull_request",
+    "conclusion": "success",
+    "unitTests": 103,
+    "browserCases": 36,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "pushRun": 37690504532,
+    "pushStateAtCheckpoint": "browser installation in progress; no pass claim"
   }
 }
