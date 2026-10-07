@@ -1,0 +1,303 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "mode": "isolated-local-vp8-first-codec-order-candidate",
+  "sourceBase": "0f4c1def55ec34516946352332f928265616ac39",
+  "originalSourceSha256": "ee9c6fff57e4f7a5ff484b7fc44b8081e196c14665aea78155f0323fd5ff294e",
+  "candidateSourceSha256": "810859256e260993d29e33f6ccfe87cecccf409703e2d7ae33c86ba44cf5abb6",
+  "receiptSha256": "272c2fddf949d71203272ad05c0d3ccf9c8628413d5c68f5f8155b79a88d9012",
+  "probeCodecs": [
+    "vp8",
+    "opus"
+  ],
+  "decodedVideoFrameHeaders": 1800,
+  "environment": "Software-WebGL153 alongside110-case browser suite; elapsed timings are not a benchmark.",
+  "failedControlPatch": {
+    "frameIndex": 202,
+    "authoredSeconds": 6.733,
+    "expectedRgb": [
+      0,
+      169,
+      0
+    ],
+    "requiredMatches": 23,
+    "tolerance": 24,
+    "actualMatches": 0,
+    "readings": [
+      {
+        "x": 511,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 512,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 513,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 511,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 512,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 513,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 511,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 512,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 513,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 523,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 524,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 525,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 523,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 524,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 525,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 523,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 524,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 525,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 536,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 537,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 538,
+        "y": 257,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 536,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 537,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 538,
+        "y": 258,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 536,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 537,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      },
+      {
+        "x": 538,
+        "y": 259,
+        "rgb": [
+          14,
+          197,
+          6
+        ],
+        "maxError": 28
+      }
+    ]
+  },
+  "limits": [
+    "Candidate failed unchanged media gates; do not switch production preference or widen gates based on this result.",
+    "The fixed-patch failure is observed; its underlying codec/rendering cause is not established."
+  ]
+}

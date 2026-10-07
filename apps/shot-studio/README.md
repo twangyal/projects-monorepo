@@ -757,3 +757,16 @@ the app locally, then capture with `--capture --stage-timing --fixtures NEW_FIXT
 --output NEW_CAPTURE --origin LOCAL_APP_URL`. Run the same driver's `--inspect
 --output NEW_CAPTURE` to apply the original independent media gates. Without
 `--stage-timing`, the original passive probe remains unchanged.
+
+
+The [first full155 stage receipts](docs/2026-10-07-stage-timing-155/README.md)
+preserve successful original/diagnostic push and PR pairs at0f4c1de. Diagnostic
+exports take44.965s/69.798s, including43.100s/66.966s addVideo elapsed waits.
+All four complete archive/restart and independent media gates pass; all13normal
+portfolio PR workflows and both Shot workflows pass350units/109native cases.
+The near-deadline PR observation motivates a separately labelled VP8-first
+source-copy experiment. Its first local candidate fails the unchanged color gate;
+production remains VP9-first. Candidate CI keeps source patch provenance and
+failures separately. Native cancellation now has an observer regression;110cases
+pass locally. These passing timing observations do not explain the prior timeout
+or establish a production fix, so #128 remains open.
