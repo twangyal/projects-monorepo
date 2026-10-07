@@ -56,7 +56,7 @@ export async function stopStageTiming(page){let timer;try{await Promise.race([pa
 // listener or any native result. Counts include only encoders seen by encode.
 export function instrumentCodecQueues(codecs,now=()=>performance.now()){
  let active=true;const restore=[],owned=new Set();
- const rows=Object.fromEntries(['video','audio'].map(key=>[key,{encodeCalls:0,maxQueue:0,waits:0,completed:0,waitMs:0,maxWaitMs:0,pending:0,tracked:0,unobserved:0}]));
+ const rows=Object.fromEntries(['video','audio'].map(key=>[key,{encodeCalls:0,maxQueue:0,waits:0,completed:0,waitMs:0,maxWaitMs:0,pending:0,retiredWaits:0,tracked:0,unobserved:0}]));
  function replace(proto,key,fn){const own=Object.getOwnPropertyDescriptor(proto,key);proto[key]=fn;restore.push(()=>{if(proto[key]===fn){if(own)Object.defineProperty(proto,key,own);else delete proto[key];}});}
  for(const [name,key] of [['VideoEncoder','video'],['AudioEncoder','audio']]){
   const proto=codecs[name]?.prototype;if(!proto)continue;
@@ -64,7 +64,7 @@ export function instrumentCodecQueues(codecs,now=()=>performance.now()){
   if(![encode,listen,remove,close].every(fn=>typeof fn==='function'))continue;
   const row=rows[key],records=new WeakMap();
   const sample=encoder=>{row.maxQueue=Math.max(row.maxQueue,encoder.encodeQueueSize);};
-  const clear=record=>{for(const waiter of record.waiters){remove.call(record.encoder,'dequeue',waiter.listener);row.pending--;}record.waiters.clear();owned.delete(record);row.tracked--;records.delete(record.encoder);};
+  const clear=record=>{for(const waiter of record.waiters){remove.call(record.encoder,'dequeue',waiter.listener);row.pending--;row.retiredWaits++;}record.waiters.clear();owned.delete(record);row.tracked--;records.delete(record.encoder);};
   replace(proto,'encode',function(...args){
    const result=encode.apply(this,args);if(!active)return result;
    row.encodeCalls++;let record=records.get(this);
@@ -72,13 +72,16 @@ export function instrumentCodecQueues(codecs,now=()=>performance.now()){
    sample(this);return result;
   });
   replace(proto,'addEventListener',function(type,callback,options){
-   const result=listen.call(this,type,callback,options);const record=records.get(this);
-   if(!active||!record||type!=='dequeue'||options?.once!==true)return result;
-   // Bound pending listener observations even for unexpected external callers.
-   if(record.waiters.size>=8){row.unobserved++;return result;}
+   const record=records.get(this);
+   if(!active||!record||type!=='dequeue'||options?.once!==true||typeof callback!=='function')return listen.call(this,type,callback,options);
+   if(record.waiters.size>=8){row.unobserved++;return listen.call(this,type,callback,options);}
    const began=now(),waiter={listener:null};row.waits++;row.pending++;
    waiter.listener=()=>{record.waiters.delete(waiter);row.pending--;if(!active)return;const elapsed=Math.max(0,now()-began);row.completed++;row.waitMs+=elapsed;row.maxWaitMs=Math.max(row.maxWaitMs,elapsed);sample(this);};
-   record.waiters.add(waiter);listen.call(this,type,waiter.listener,{once:true});return result;
+   // Native event dispatch can checkpoint microtasks between callbacks. Observe
+   // before resolving the exporter's wait, so its next render is not timed here.
+   record.waiters.add(waiter);listen.call(this,type,waiter.listener,{once:true});
+   try{return listen.call(this,type,callback,options);}
+   catch(error){remove.call(this,type,waiter.listener);record.waiters.delete(waiter);row.waits--;row.pending--;throw error;}
   });
   replace(proto,'close',function(...args){try{return close.apply(this,args);}finally{const record=records.get(this);if(record)clear(record);}});
  }

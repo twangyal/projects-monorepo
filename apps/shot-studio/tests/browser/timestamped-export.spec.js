@@ -123,3 +123,16 @@ test('native queue diagnostics retain audiovisual samples and measure both codec
  const pcm=execFileSync('ffmpeg',['-v','error','-i',file,'-vn','-ar','48000','-ac','1','-f','f32le','pipe:1'],{maxBuffer:1024*1024});expect(Math.abs(pcm.length/4-96000)).toBeLessThan(961);
  await writeFile(info.outputPath('diagnostic-audiovisual-receipt.json'),JSON.stringify({decodedVideoFrames:probe.frames.length,decodedAudioFrames:pcm.length/4,report,limits:['Small real audiovisual boundary validation, not maximum throughput acceptance.']},null,2));
 });
+
+test('native dequeue timing settles before the exporter Promise continuation',async({page})=>{
+ await page.goto('/');const result=await page.evaluate(async()=>{
+  const {instrumentCodecQueues}=await import('/scripts/stage-timing-diagnostics.mjs');
+  const observer=instrumentCodecQueues({VideoEncoder}),canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
+  const encoder=new VideoEncoder({output(){},error(error){throw error;}});encoder.configure({codec:'vp8',width:64,height:64,bitrate:2500000});
+  try{
+   for(let i=0;i<8;i++){const frame=new VideoFrame(canvas,{timestamp:i*33333,duration:33333});try{encoder.encode(frame);}finally{frame.close();}}
+   await new Promise(resolve=>encoder.addEventListener('dequeue',resolve,{once:true}));
+   const report=observer.snapshot();await encoder.flush();return report;
+  }finally{encoder.close();observer.stop();}
+ });expect(result.video.completed).toBe(1);expect(result.video.pending).toBe(0);
+});

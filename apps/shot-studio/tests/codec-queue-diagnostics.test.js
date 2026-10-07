@@ -43,3 +43,11 @@ test('native encode errors are unchanged and retirement respects a later method 
  assert.throws(()=>encoder.encode(),error=>error===failure);assert.equal(observer.snapshot().video.encodeCalls,0);
  const later=function(){return 'later owner';};Codec.prototype.encode=later;observer.stop();assert.equal(Codec.prototype.encode,later);
 });
+
+test('failed original listener registration removes the owned probe and preserves the native error',()=>{
+ const Codec=nativeBoundary(),callback=()=>{},failure=Error('native listener refusal'),listen=Codec.prototype.addEventListener;
+ Codec.prototype.addEventListener=function(type,fn,options){if(fn===callback)throw failure;return listen.call(this,type,fn,options);};
+ const observer=diagnostic.instrumentCodecQueues({VideoEncoder:Codec},()=>0),encoder=new Codec();encoder.encode('original sample','original options');
+ assert.throws(()=>encoder.addEventListener('dequeue',callback,{once:true}),error=>error===failure);
+ encoder.dispatchEvent(new Event('dequeue'));assert.equal(observer.snapshot().video.pending,0);assert.equal(observer.snapshot().video.completed,0);observer.stop();
+});

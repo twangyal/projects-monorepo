@@ -10,8 +10,29 @@ This distinguishes once-dequeue wall waits from sink write duration. It does **n
 
 Missing queue instrumentation and missing sink timing fail their new regressions first. Full361 units and syntax checks pass. Independent review identifies a stale ten-stage browser assertion; updating it to the actual eleven stages preserves its bounded-observation check. The native timestamped-export and stage-diagnostic subset passes9 cases, including real finalization/cancellation ownership and saved-authoring preservation.
 
-Retained small native receipts independently decode all30 video frames of a64x64 one-second export and all60 video frames plus approximately96,000 audio frames of an original two-second audiovisual export. Both codec boundaries retain no outstanding listeners/encoders and have no observation overflow; native method restoration is verified. These are small boundary checks, not maximum acceptance or a full155 throughput result. Source hashes and the temporary runtime limitation are in source-provenance.json. Full native project acceptance and first published diagnostic CI are pending at this checkpoint.
+Retained small native receipts independently decode all30 video frames of a64x64 one-second export and all60 video frames plus approximately96,000 audio frames of an original two-second audiovisual export. Both codec boundaries retain no outstanding listeners/encoders and have no observation overflow; native method restoration is verified. These are small boundary checks, not maximum acceptance or a full155 throughput result. Source hashes and the temporary runtime limitation are in source-provenance.json. Full local project acceptance also passes **all113 native cases** (3.6minutes), alongside361 units and syntax checks. First published standard/full155 diagnostic CI remains pending at this checkpoint.
 
 ## Continue
 
 Run the existing isolated full155 original maximum unchanged, then the separately labelled `--stage-timing` variation. Preserve paired first results and exact source/runtime before interpretation. Issue128 stays open until a safe throughput repair passes original gates or the concrete residual cause/acceptance is established. PhysicalXR and decoder interpretation remain separate.
+
+## Corrected earlier harness head
+
+[The four first corrected-head7e results](corrected-head7e/README.md) preserve
+both full155 original and diagnostic failures with literal receipts/browser
+logs and independently recomputed ZIP/file hashes. Both diagnostic attempts
+complete1,800 video submissions, then finalize with an error around the product
+deadline; addVideo waits consume67.435s push /67.353s PR. This extends the earlier
+pre-finalize recurrence evidence. It does not establish decoded movie coverage
+on these failures or attribute native CPU.
+
+## First CI and listener-order correction
+
+Both first standardfc819bd CI runs pass361units,113native cases and configured
+original maxima. The [paired full155 results](first-fc819bd/README.md) remain
+mixed: originals fail; diagnostic push passes all independently decoded gates,
+PR times out. Its first queue timing includes exporter continuation work and
+must not be interpreted as isolated native wait attribution. The real-UA
+[listener-order regression and correction](listener-order/README.md) retain
+that defect and move only the owned probe ahead of the unchanged original
+callback. Production and original acceptance remain unchanged.

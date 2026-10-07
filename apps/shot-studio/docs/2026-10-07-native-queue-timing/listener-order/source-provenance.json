@@ -1,0 +1,9 @@
+{
+  "baseCommit": "fc819bd59f666d1cf87b5939e4d40edc916d7488",
+  "sha256": {
+    "scripts/stage-timing-diagnostics.mjs": "b2983a1ee7b2a69f0b0a9d120be48b3419e8bb299671b731830cd8c0991de10a",
+    "tests/browser/timestamped-export.spec.js": "daf04f3437c4f51a10d8f6fd9a41bd989676a42b72eaf2e7a8a4cc7c01f3081e",
+    "tests/codec-queue-diagnostics.test.js": "53a3d6f49a62fd3516314b005cfa49b0af5e9d46d0e5b61ade268577be1d3f1a"
+  },
+  "firstFailure": "Real UA native dequeue observed0 timing completions before exporter continuation instead of1."
+}

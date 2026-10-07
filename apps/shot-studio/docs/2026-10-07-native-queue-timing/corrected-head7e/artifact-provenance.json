@@ -1,0 +1,453 @@
+{
+  "sourceHead": "7e316fb5d71fe8100f840a126fd574b7f144aa17",
+  "artifacts": [
+    {
+      "label": "pr-original",
+      "artifactId": 11475393345,
+      "runId": 37607028881,
+      "headSha": "7e316fb5d71fe8100f840a126fd574b7f144aa17",
+      "zip": {
+        "bytes": 1032437,
+        "sha256": "2f27240812311525a2c262a1f128bfbfe1753e2a9b94aba3d8d706e80045d04a"
+      },
+      "status": "failed",
+      "lastStatus": "Export timed out. Try a shorter film.",
+      "lastProgress": 0.9627777777777777,
+      "addVideo": null,
+      "finalize": null,
+      "cancel": null,
+      "archiveRestartByteIdentical": true,
+      "files": {
+        "maximum-155/adjustment-redo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/adjustment-undo.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "maximum-155/after-over-16MiB.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/after-over-324KiB-metadata.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/after-padded-undo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/after-wav-refusal.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "maximum-155/full-source-range.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "maximum-155/legacy-inner-sequence.json": {
+          "bytes": 33978,
+          "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+        },
+        "maximum-155/metadata-admission.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/ordinary-after-restart.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "maximum-155/ordinary-before.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "maximum-155/ordinary-silent-take.webm": {
+          "bytes": 15023,
+          "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+        },
+        "maximum-155/padded-container-complete.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "maximum-155/padded-container.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "maximum-155/take-after-restart.shot-take": {
+          "bytes": 15700,
+          "sha256": "d05a36edf078eb8240a65eb820133f927308738b3b500c89d19e5ef8cb3bb70f"
+        },
+        "maximum-155/take-before.shot-take": {
+          "bytes": 15700,
+          "sha256": "d05a36edf078eb8240a65eb820133f927308738b3b500c89d19e5ef8cb3bb70f"
+        },
+        "maximum-155/trimmed-after-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/trimmed-before-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/verification.json": {
+          "bytes": 14393,
+          "sha256": "c27c4d38cc62cfe5b6f057e4082dce443819a61e6fa0293ddaa87860f084d124"
+        },
+        "maximum-155-browser.log": {
+          "bytes": 15789,
+          "sha256": "93b577ae0db1f420fba268d45478fdbb518f306a25905f9ed6f41fd1e066491e"
+        }
+      }
+    },
+    {
+      "label": "pr-stage",
+      "artifactId": 11475144015,
+      "runId": 37607028881,
+      "headSha": "7e316fb5d71fe8100f840a126fd574b7f144aa17",
+      "zip": {
+        "bytes": 1033201,
+        "sha256": "5e492bb3894bf3622306807c1a9f6c5ccc7a303fc408b4536c9d3a24c284cf01"
+      },
+      "status": "failed",
+      "lastStatus": "Export timed out. Try a shorter film.",
+      "lastProgress": 0.9994444444444445,
+      "addVideo": {
+        "calls": 1800,
+        "completed": 1800,
+        "errors": 0,
+        "totalMs": 67353.10000000213,
+        "maxMs": 124.40000000002328,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "finalize": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 1,
+        "totalMs": 98.5,
+        "maxMs": 98.5,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "cancel": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 8.600000000034925,
+        "maxMs": 8.600000000034925,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "archiveRestartByteIdentical": true,
+      "files": {
+        "stage-timing-155/adjustment-redo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/adjustment-undo.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "stage-timing-155/after-over-16MiB.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/after-over-324KiB-metadata.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/after-padded-undo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/after-wav-refusal.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "stage-timing-155/full-source-range.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "stage-timing-155/legacy-inner-sequence.json": {
+          "bytes": 33978,
+          "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+        },
+        "stage-timing-155/metadata-admission.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/ordinary-after-restart.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "stage-timing-155/ordinary-before.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "stage-timing-155/ordinary-silent-take.webm": {
+          "bytes": 15023,
+          "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+        },
+        "stage-timing-155/padded-container-complete.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "stage-timing-155/padded-container.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "stage-timing-155/take-after-restart.shot-take": {
+          "bytes": 15700,
+          "sha256": "b04429240462eae7cc71e06ce872c649be6ef7899ccf812cf4858ba9be03122a"
+        },
+        "stage-timing-155/take-before.shot-take": {
+          "bytes": 15700,
+          "sha256": "b04429240462eae7cc71e06ce872c649be6ef7899ccf812cf4858ba9be03122a"
+        },
+        "stage-timing-155/trimmed-after-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/trimmed-before-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/verification.json": {
+          "bytes": 17052,
+          "sha256": "746bb4c528423920b011ebfe730febae87ee467cc9e844909b3b987821512cc6"
+        },
+        "stage-timing-155-browser.log": {
+          "bytes": 15799,
+          "sha256": "6351cd876cd01accb61399ce390079b2438b7c576c49dc2030fee2d73598612a"
+        }
+      }
+    },
+    {
+      "label": "push-original",
+      "artifactId": 11475288537,
+      "runId": 37607024080,
+      "headSha": "7e316fb5d71fe8100f840a126fd574b7f144aa17",
+      "zip": {
+        "bytes": 1032435,
+        "sha256": "4ea93fc53d857acda3821193a31b4722c0cad4a5bc74add8ea45cafe9b163381"
+      },
+      "status": "failed",
+      "lastStatus": "Export timed out. Try a shorter film.",
+      "lastProgress": 0.9933333333333334,
+      "addVideo": null,
+      "finalize": null,
+      "cancel": null,
+      "archiveRestartByteIdentical": true,
+      "files": {
+        "maximum-155/adjustment-redo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/after-over-16MiB.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/adjustment-undo.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "maximum-155/after-over-324KiB-metadata.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/after-padded-undo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/after-wav-refusal.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "maximum-155/full-source-range.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "maximum-155/legacy-inner-sequence.json": {
+          "bytes": 33978,
+          "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+        },
+        "maximum-155/metadata-admission.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/ordinary-after-restart.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "maximum-155/ordinary-before.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "maximum-155/ordinary-silent-take.webm": {
+          "bytes": 15023,
+          "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+        },
+        "maximum-155/padded-container-complete.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "maximum-155/padded-container.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "maximum-155/take-after-restart.shot-take": {
+          "bytes": 15700,
+          "sha256": "aa58dcd4de8ea0d6873d89020a3dbfa6ff175f745204fe52a23747fd36f74bf3"
+        },
+        "maximum-155/take-before.shot-take": {
+          "bytes": 15700,
+          "sha256": "aa58dcd4de8ea0d6873d89020a3dbfa6ff175f745204fe52a23747fd36f74bf3"
+        },
+        "maximum-155/trimmed-after-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/trimmed-before-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "maximum-155/verification.json": {
+          "bytes": 14427,
+          "sha256": "80b0d4e47c4c342ebef7a1be1b4f5589c4b29c00e6fdb0346b96792acb7b52dd"
+        },
+        "maximum-155-browser.log": {
+          "bytes": 15789,
+          "sha256": "6b65e85308b97090588c60a4dd8641a2921350f60aeb149485d3e81c24b6b342"
+        }
+      }
+    },
+    {
+      "label": "push-stage",
+      "artifactId": 11475338249,
+      "runId": 37607024080,
+      "headSha": "7e316fb5d71fe8100f840a126fd574b7f144aa17",
+      "zip": {
+        "bytes": 1033124,
+        "sha256": "562581d6e96d74ff4827a6f96bcce2a8b1beb3ad352b43125f58f64ef388662b"
+      },
+      "status": "failed",
+      "lastStatus": "Export timed out. Try a shorter film.",
+      "lastProgress": 0.9994444444444445,
+      "addVideo": {
+        "calls": 1800,
+        "completed": 1800,
+        "errors": 0,
+        "totalMs": 67434.99999999942,
+        "maxMs": 126.29999999998836,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "finalize": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 1,
+        "totalMs": 97.89999999996508,
+        "maxMs": 97.89999999996508,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "cancel": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 31,
+        "maxMs": 31,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "archiveRestartByteIdentical": true,
+      "files": {
+        "stage-timing-155/adjustment-redo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/after-over-16MiB.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/adjustment-undo.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "stage-timing-155/after-over-324KiB-metadata.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/after-padded-undo.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/full-source-range.shot-sequence": {
+          "bytes": 11554363,
+          "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+        },
+        "stage-timing-155/after-wav-refusal.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "stage-timing-155/legacy-inner-sequence.json": {
+          "bytes": 33978,
+          "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+        },
+        "stage-timing-155/metadata-admission.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/ordinary-after-restart.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "stage-timing-155/ordinary-before.json": {
+          "bytes": 669,
+          "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+        },
+        "stage-timing-155/ordinary-silent-take.webm": {
+          "bytes": 15023,
+          "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+        },
+        "stage-timing-155/padded-container-complete.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "stage-timing-155/padded-container.shot-sequence": {
+          "bytes": 12617223,
+          "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+        },
+        "stage-timing-155/take-after-restart.shot-take": {
+          "bytes": 15700,
+          "sha256": "ca17275f1fc495ede3a2f850f542f3074a59a7227b105e0d75b2d697bcf9b04f"
+        },
+        "stage-timing-155/take-before.shot-take": {
+          "bytes": 15700,
+          "sha256": "ca17275f1fc495ede3a2f850f542f3074a59a7227b105e0d75b2d697bcf9b04f"
+        },
+        "stage-timing-155/trimmed-after-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/trimmed-before-restart.shot-sequence": {
+          "bytes": 11554385,
+          "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+        },
+        "stage-timing-155/verification.json": {
+          "bytes": 17103,
+          "sha256": "608f5da47af58ac5e52e7fb74aa3942838535118a54ec11645e8f5b46796de5c"
+        },
+        "stage-timing-155-browser.log": {
+          "bytes": 15422,
+          "sha256": "25184e6154523bc8829388439bde829c8ae6249ca3042c9280aa9c4857d1cada"
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Raw receipt/browser log retained; binary originals are identified by independently recomputed hashes, not copied into repository.",
+    "Submitted samples on a failed export are not independently decoded movie frames."
+  ]
+}
