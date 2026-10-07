@@ -1,0 +1,15 @@
+2026-10-07T10:09:23.9556829Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-07T10:09:27.2991231Z [command]/usr/bin/git log -1 --format=%H
+2026-10-07T10:09:27.3021864Z 771e17b990c0c7f7632a17f368377c26de48d10e
+2026-10-07T10:09:34.2073966Z # tests 357
+2026-10-07T10:09:34.2075005Z # pass 357
+2026-10-07T10:09:34.2075340Z # fail 0
+2026-10-07T10:17:44.0261859Z   1) tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring 
+2026-10-07T10:17:44.0283738Z         at /home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/tests/browser/complete-native-export.spec.js:25:49
+2026-10-07T10:17:44.0285538Z     Error Context: test-results/complete-native-export-nat-b4922-d-preserves-saved-authoring/error-context.md
+2026-10-07T10:17:44.0288145Z     test-results/complete-native-export-nat-b4922-d-preserves-saved-authoring/trace.zip
+2026-10-07T10:17:44.0289779Z         npx playwright show-trace test-results/complete-native-export-nat-b4922-d-preserves-saved-authoring/trace.zip
+2026-10-07T10:17:44.0292642Z   1 failed
+2026-10-07T10:17:44.0293734Z     tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring 
+2026-10-07T10:17:44.0294659Z   110 passed (7.5m)
+2026-10-07T10:17:45.6476188Z SHA256 digest of uploaded artifact zip is e78057280f149d0f8a8a717a7d4e23d6b46dec8f0d36cb8184837fced472e2a5

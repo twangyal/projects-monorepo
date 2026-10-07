@@ -30,7 +30,10 @@ Packet coverage does not replace independent decoding or prove universal fidelit
 The local raw maximum receipt and source/artifact hashes are retained. Native
 result logs omit only HTTP request boilerplate; provenance records original and
 saved digests. The omission RED log is unfiltered. Independently reviewed code
-has no actionable correctness/lifecycle findings. Published-head CI is pending.
+has no actionable correctness/lifecycle findings. First published maximum results at771e17b are mixed; raw paired receipts and
+artifact provenance are retained here. Both357-unit/syntax jobs pass; PR111native pass and push110pass/1new harness
+assertion failure are retained. PR checkoutaef3ef1 has the exact published guard
+tree1682685. All13normal portfolio PR workflows pass; push maxima remain failed.
 
 Both paired full155 realtime candidate artifacts from6e8432d are preserved in
 ../2026-10-07-realtime-candidate: PR passes all1,800frames, push times out before
@@ -40,3 +43,44 @@ original155 acceptance and separate stage timing remain and now trigger on sourc
 and test changes. #128 remains open for a safe throughput repair/further native
 backpressure isolation. PhysicalXR and independent VP8 decoder interpretation
 remain separate; no hardware completion is claimed.
+
+## First published maximum receipts (771e17b)
+
+| Environment / event | Result | Export/download | Evidence |
+| --- | --- | --- | --- |
+| Configured Chromium153 / PR | Pass |32.964s |1,800 video/2,880,648 audio frames; original gates |
+| Configured Chromium153 / push | Product timeout | No movie | Last DOM progress0.999444; alive page/browser |
+| Full155 original / PR | Pass |58.854s |1,800 video/2,880,648 audio frames; original gates |
+| Full155 diagnostic / PR | Pass |58.415s |56.073s addVideo waits; original gates |
+| Full155 original / push | Product timeout | No movie | Last DOM progress0.990556; alive page/browser |
+| Full155 diagnostic / push | Product timeout | No movie |1,796 submissions;67.456s addVideo; no finalize;20.7ms cancel |
+
+Every complete archive survives restart with original exact bytes before any
+export attempt. All listed capture artifact hashes and restart archive hashes are
+independently verified after download. Both original failed jobs remain failed;
+a separate diagnostic pass cannot clear them. Failed submission counts are not
+decoded frame counts. The standard153 DOM-only timeout cannot locate its exact
+last stage. These results neither establish that guard overhead caused the
+recurrences nor prove the residual native-wait timeout repaired. No retries.
+
+Next diagnosis should separately observe native WebCodecs dequeue waits and
+muxer/writer backpressure with bounded test-only aggregates and restored original
+methods/callback behavior. Do not infer CPU attribution from elapsed addVideo
+waits. Preserve original acceptance and every first failure. #128 stays open.
+
+
+## First native harness timing failure and correction
+
+Push run37605499998 fails the new omission assertion after its default5-second
+wait while the ordinary four-second shot is still encoding. PR111native passes;
+push110native passes/one test fails. The first DOM context/trace and artifact
+hash are preserved, and filtered GitHub verification excerpts retain counts.
+The trace excerpt is a diagnostic record, without screenshot/resource payloads.
+This does not demonstrate wrong publication or a production guard defect.
+
+The corrected admission fixture explicitly authors a legal one-second shot, then
+waits12seconds for the refusal, through the existing11-second product deadline.
+All no-download/native-closed/exact-saved-authoring assertions remain. Focused
+native correction passes locally. Production source, original maximum fixture,
+70/95second maximum limits and independent media gates are unchanged.
+Corrected-head CI remains pending; no rerun erased the first failed artifact.

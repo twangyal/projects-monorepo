@@ -1,0 +1,41 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> shot-studio@0.7.0 test:browser
+> playwright test tests/browser/complete-native-export.spec.js
+
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:20] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:34) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /style.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/renderer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/model.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/xr.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/history.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/draft.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/take-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/math.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/performer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/timestamped-export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/takes.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/take-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/take-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence-document.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/take-video.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence-audio-session.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/export-timeline.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence-document-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence-audio.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/export-video-policy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /src/sequence-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 18:19:21] "GET /vendor/mediabunny/mediabunny.min.mjs HTTP/1.1" 200 -
+  ✓  1 tests/browser/complete-native-export.spec.js:5:1 › native output omission refuses publication and preserves saved authoring (2.1s)
+
+  1 passed (2.9s)

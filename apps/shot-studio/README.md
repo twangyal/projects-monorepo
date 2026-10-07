@@ -811,4 +811,12 @@ The remaining155 throughput timeout remains open in#128.
 [Complete-frame admission verification](docs/2026-10-07-complete-frame-admission/README.md)
 passes357local units/syntax and all111native browser cases. The unchanged original
 maximum independently decodes all1,800video/2,880,648audio frames, all40 original
-visual/audio gates and exact complete archive restart. Published-head CI is pending.
+visual/audio gates and exact complete archive restart. First771e17b PR configured153
+and full155 original/diagnostic maxima pass all1,800frames; push153 and155 maxima
+recur at the product deadline. Paired raw receipts are retained. Native regression
+CI passes357units/syntax in push and PR,111native in PR,110native plus one new
+five-second omission-harness timing failure in push. That fixture is corrected
+to a legal one-second shot and waits through its unchanged product deadline;
+focused local verification passes. First context/trace is preserved. All13normal
+portfolio PR workflows pass; push maxima stay red. The guard is not claimed as a
+throughput fix; corrected-head CI is pending.

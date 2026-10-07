@@ -1,0 +1,3417 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "status": "passed",
+  "fixtureOracleSha256": "cdd5c771017e5e39480a2284b23c1bdd4b147243dc130fd7f3aebd673ec680b7",
+  "fixtureFiles": [
+    {
+      "name": "maximum-sequence.json",
+      "bytes": 33978,
+      "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+    },
+    {
+      "name": "ordinary-scene.json",
+      "bytes": 400,
+      "sha256": "0093c25a7f3d2bb8f4ba0a501ab3b195ac6a25f673f1856b6f3a5cab3280c178"
+    },
+    {
+      "name": "original-60s-stereo.wav",
+      "bytes": 11520044,
+      "sha256": "b383ee88c15caccdbb0368044148df8e3ff5fea53a35e024e6793eed36ceb32c"
+    },
+    {
+      "name": "exact-12MiB.wav",
+      "bytes": 12582912,
+      "sha256": "a55fce05fc496c94c159a6f138dbc5584491ba1a9bad5142ac75b9f00f922ef2"
+    },
+    {
+      "name": "over-12MiB.wav",
+      "bytes": 12582913,
+      "sha256": "255e82845eea1a4f8a90211e98cbd64d71a76a612176a57aac7dd4b83853d84c"
+    },
+    {
+      "name": "exact-324KiB-metadata.shot-sequence",
+      "bytes": 11851836,
+      "sha256": "3d10effbfb87699636488d2a3a9858ff64b46184b9c66787490c15d1ba303419"
+    },
+    {
+      "name": "over-324KiB-metadata.shot-sequence",
+      "bytes": 11851837,
+      "sha256": "019f0b75c6aa7a319eb0b93d0e4fedfb4f777028c890012e28667096c82c525d"
+    },
+    {
+      "name": "over-16MiB.shot-sequence",
+      "bytes": 16777217,
+      "sha256": "1003b1b5dc078189799a1216ce0f9fbcebb94e8b6b83c58c4b03345f07f94ced"
+    }
+  ],
+  "checks": [
+    "Four complete original sources, twenty full-shot clips,256 cues and sixty-second PCM retain exact film/WAV bytes. Trim/offset/gain is one Undo/Redo edit. Separate exact12MiB ancillary WAV and324KiB raw metadata admit; +1 refuses atomically;16MiB+1 whole-file refuses.",
+    "Fresh persistent browser process restores byte-identical complete archive and unrelated original scene/silent retained take. Full authored-timestamp export leaves all three complete backups unchanged."
+  ],
+  "artifacts": [
+    {
+      "name": "trimmed-before-restart.shot-sequence",
+      "bytes": 11554385,
+      "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+    },
+    {
+      "name": "trimmed-after-restart.shot-sequence",
+      "bytes": 11554385,
+      "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+    },
+    {
+      "name": "soundtrack-60s.webm",
+      "bytes": 9879042,
+      "sha256": "e9dde7296c21688951129293cd7fb040c0b1c7e35ccfb48cb4cb749adbe49467"
+    },
+    {
+      "name": "ordinary-before.json",
+      "bytes": 669,
+      "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+    },
+    {
+      "name": "take-before.shot-take",
+      "bytes": 15700,
+      "sha256": "8741af52764e48b85906039c891e2a90b5e79323d2549fec9ec767ca5352b5b1"
+    },
+    {
+      "name": "ordinary-silent-take.webm",
+      "bytes": 15023,
+      "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+    },
+    {
+      "name": "desktop.png",
+      "bytes": 606227,
+      "sha256": "e8f16a7ab6d7c6d6bd34ec628afe09b8b521343a46902711d5148eb726d5249d"
+    },
+    {
+      "name": "390px.png",
+      "bytes": 55155,
+      "sha256": "fbd5c9376de8a162195fb507bffc9542a3f46df13f921998d511a66d27d444ee"
+    }
+  ],
+  "browsers": [
+    [
+      4185
+    ],
+    [
+      4348
+    ]
+  ],
+  "browserEvents": [
+    {
+      "index": 0,
+      "event": "harness-close-request",
+      "stage": "whole-browser restart",
+      "wallMs": 12901.661892,
+      "reason": "deliberate full-process restart"
+    },
+    {
+      "index": 0,
+      "event": "page-close",
+      "stage": "whole-browser restart",
+      "wallMs": 12920.509444
+    },
+    {
+      "index": 0,
+      "event": "context-close",
+      "stage": "whole-browser restart",
+      "wallMs": 12972.438624
+    },
+    {
+      "index": 0,
+      "event": "browser-disconnected",
+      "stage": "whole-browser restart",
+      "wallMs": 12972.562435
+    },
+    {
+      "index": 1,
+      "event": "harness-close-request",
+      "stage": "layout and final native persistence",
+      "wallMs": 74784.41161000001,
+      "reason": "final cleanup"
+    },
+    {
+      "index": 1,
+      "event": "page-close",
+      "stage": "layout and final native persistence",
+      "wallMs": 74794.2682
+    },
+    {
+      "index": 1,
+      "event": "context-close",
+      "stage": "layout and final native persistence",
+      "wallMs": 74830.710106
+    },
+    {
+      "index": 1,
+      "event": "browser-disconnected",
+      "stage": "layout and final native persistence",
+      "wallMs": 74830.826427
+    }
+  ],
+  "limits": [
+    "Exact12MiB WAV has legal JUNK padding, not a larger PCM payload or worst-case decoding/RAM.",
+    "Metadata exact324KiB uses trailing JSON whitespace. No claim that canonical topology reaches that metadata cap.",
+    "16MiB+1 is an early whole-file refusal; valid component maxima total12,914,704B and cannot produce a valid exact16MiB artifact.",
+    "All256 performer cues are blocking; this graph does not claim simultaneous loop-mode or heterogeneous camera-axis maxima.",
+    "Forty landmark frames are independently pixel-checked; full video timestamps and all decoded PCM frames are inspected, not all video pixels.",
+    "The original constant-frequency PCM is synthetic test audio, not a microphone/physical-device claim."
+  ],
+  "browserVersion": "155.0.8059.12",
+  "browserSelection": "explicit CHROMIUM_PATH override",
+  "saved": {
+    "schemaVersion": 1,
+    "revision": 3,
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "legacyRaw": null
+  },
+  "beforeRestart": {
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+  },
+  "afterRestart": {
+    "schemaVersion": 1,
+    "revision": 8,
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "legacyRaw": null
+  },
+  "exportObservations": [
+    {
+      "reason": "before-click",
+      "wallMs": 2.3985310000007303,
+      "status": "Downloaded the complete committed sequence with its original WAV.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0,
+      "progressMax": 1,
+      "exportDisabled": false,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 5002.245129999999,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.07444444444444445,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 10004.382399000002,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.15888888888888889,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 15015.298490000001,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.24555555555555555,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 20014.085974,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.33222222222222225,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 25019.515007,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.41888888888888887,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 30024.993247,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.5055555555555555,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 35025.068699,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.5916666666666667,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 40029.253434,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.6788888888888889,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 45034.682870000004,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.7655555555555555,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 50041.195562,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.8522222222222222,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 55043.258001999995,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.9383333333333332,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "download-event",
+      "wallMs": 58726.376876999995,
+      "status": "Sequence WebM downloaded with its soundtrack. No ordinary take was added.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 1,
+      "progressMax": 1,
+      "exportDisabled": false,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    }
+  ],
+  "recordAndDownloadWallMs": 58853.923186,
+  "pageErrors": [],
+  "externalRequests": [],
+  "captureWallMs": 74731.238442,
+  "closedOwnedBrowsers": true,
+  "inspection": {
+    "status": "passed",
+    "wallMs": 3957.1329429999996,
+    "videoCodec": "vp9",
+    "audioCodec": "opus",
+    "decodedVideoFrames": 1800,
+    "decodedAudioFrames": 2880648,
+    "decodedPcmBytes": 23045184,
+    "sharedOrigin": 0,
+    "firstVideoPts": 0,
+    "firstAudioPts": 0.007,
+    "lastSharedVideoTime": 59.967,
+    "plateaus": [
+      {
+        "start": 6,
+        "end": 7,
+        "channels": [
+          {
+            "rms": 0.14130488026596721,
+            "firstFrame": 287664,
+            "frames": 48000,
+            "hz": 440,
+            "wrongToneAmplitude": 0.000014864506617254546
+          },
+          {
+            "rms": 0.14159089975726386,
+            "firstFrame": 287664,
+            "frames": 48000,
+            "hz": 880,
+            "wrongToneAmplitude": 0.0000215776160576131
+          }
+        ]
+      },
+      {
+        "start": 16,
+        "end": 17,
+        "channels": [
+          {
+            "rms": 0.1412644181982069,
+            "firstFrame": 767664,
+            "frames": 47999,
+            "hz": 440.00916685764287,
+            "wrongToneAmplitude": 0.000014986399836597061
+          },
+          {
+            "rms": 0.14148803053907005,
+            "firstFrame": 767664,
+            "frames": 47999,
+            "hz": 880.0183337152857,
+            "wrongToneAmplitude": 0.000015482205370826223
+          }
+        ]
+      },
+      {
+        "start": 26,
+        "end": 27,
+        "channels": [
+          {
+            "rms": 0.14132183549460053,
+            "firstFrame": 1247664,
+            "frames": 48000,
+            "hz": 440,
+            "wrongToneAmplitude": 0.000012772918038958
+          },
+          {
+            "rms": 0.1415658643452674,
+            "firstFrame": 1247664,
+            "frames": 48000,
+            "hz": 880,
+            "wrongToneAmplitude": 0.00002099908142718728
+          }
+        ]
+      },
+      {
+        "start": 36,
+        "end": 37,
+        "channels": [
+          {
+            "rms": 0.14127953823845552,
+            "firstFrame": 1727664,
+            "frames": 48000,
+            "hz": 440,
+            "wrongToneAmplitude": 0.000011559163743433233
+          },
+          {
+            "rms": 0.14159281367283438,
+            "firstFrame": 1727664,
+            "frames": 48000,
+            "hz": 880,
+            "wrongToneAmplitude": 0.000019330654556107195
+          }
+        ]
+      }
+    ],
+    "quiet": [
+      {
+        "start": 0.2,
+        "end": 4.85,
+        "channel": 0,
+        "rms": 0,
+        "firstFrame": 9264,
+        "frames": 223200
+      },
+      {
+        "start": 0.2,
+        "end": 4.85,
+        "channel": 1,
+        "rms": 0,
+        "firstFrame": 9264,
+        "frames": 223200
+      },
+      {
+        "start": 13.15,
+        "end": 14.85,
+        "channel": 0,
+        "rms": 0.000011400925575777884,
+        "firstFrame": 630864,
+        "frames": 81600
+      },
+      {
+        "start": 13.15,
+        "end": 14.85,
+        "channel": 1,
+        "rms": 0.000005700661879013348,
+        "firstFrame": 630864,
+        "frames": 81600
+      },
+      {
+        "start": 23.15,
+        "end": 24.85,
+        "channel": 0,
+        "rms": 0.00001143566905243686,
+        "firstFrame": 1110864,
+        "frames": 81600
+      },
+      {
+        "start": 23.15,
+        "end": 24.85,
+        "channel": 1,
+        "rms": 0.000005715864101959329,
+        "firstFrame": 1110864,
+        "frames": 81600
+      },
+      {
+        "start": 33.15,
+        "end": 34.85,
+        "channel": 0,
+        "rms": 0.000011435644263734768,
+        "firstFrame": 1590864,
+        "frames": 81600
+      },
+      {
+        "start": 33.15,
+        "end": 34.85,
+        "channel": 1,
+        "rms": 0.000005715851350654692,
+        "firstFrame": 1590864,
+        "frames": 81600
+      },
+      {
+        "start": 45.15,
+        "end": 59,
+        "channel": 0,
+        "rms": 0.000004006463224004446,
+        "firstFrame": 2166864,
+        "frames": 664800
+      },
+      {
+        "start": 45.15,
+        "end": 59,
+        "channel": 1,
+        "rms": 0.0000020025411870652913,
+        "firstFrame": 2166864,
+        "frames": 664800
+      }
+    ],
+    "markers": [
+      {
+        "target": 5,
+        "on": true,
+        "channel": 0,
+        "observed": 5,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 5,
+        "on": true,
+        "channel": 1,
+        "observed": 5,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 13,
+        "on": false,
+        "channel": 0,
+        "observed": 13.01,
+        "deltaSeconds": 0.009999999999999787
+      },
+      {
+        "target": 13,
+        "on": false,
+        "channel": 1,
+        "observed": 13.01,
+        "deltaSeconds": 0.009999999999999787
+      },
+      {
+        "target": 15,
+        "on": true,
+        "channel": 0,
+        "observed": 15,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 15,
+        "on": true,
+        "channel": 1,
+        "observed": 15,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 23,
+        "on": false,
+        "channel": 0,
+        "observed": 23.01,
+        "deltaSeconds": 0.010000000000001563
+      },
+      {
+        "target": 23,
+        "on": false,
+        "channel": 1,
+        "observed": 23.01,
+        "deltaSeconds": 0.010000000000001563
+      },
+      {
+        "target": 25,
+        "on": true,
+        "channel": 0,
+        "observed": 25,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 25,
+        "on": true,
+        "channel": 1,
+        "observed": 25,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 33,
+        "on": false,
+        "channel": 0,
+        "observed": 33.01,
+        "deltaSeconds": 0.00999999999999801
+      },
+      {
+        "target": 33,
+        "on": false,
+        "channel": 1,
+        "observed": 33.01,
+        "deltaSeconds": 0.00999999999999801
+      },
+      {
+        "target": 35,
+        "on": true,
+        "channel": 0,
+        "observed": 35,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 35,
+        "on": true,
+        "channel": 1,
+        "observed": 35,
+        "deltaSeconds": 0
+      },
+      {
+        "target": 45,
+        "on": false,
+        "channel": 0,
+        "observed": 45.01,
+        "deltaSeconds": 0.00999999999999801
+      },
+      {
+        "target": 45,
+        "on": false,
+        "channel": 1,
+        "observed": 45.01,
+        "deltaSeconds": 0.00999999999999801
+      }
+    ],
+    "landmarks": [
+      {
+        "target": 0.75,
+        "frame": 22,
+        "pts": 0.733,
+        "sharedTime": 0.733,
+        "clip": 0,
+        "local": 0.733,
+        "source": 0,
+        "sourceGlobal": 6.733,
+        "cameraX": 0.2966,
+        "light": 0.75,
+        "movingX": -1.1158375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 2.25,
+        "frame": 67,
+        "pts": 2.233,
+        "sharedTime": 2.233,
+        "clip": 0,
+        "local": 2.233,
+        "source": 0,
+        "sourceGlobal": 8.233,
+        "cameraX": 0.5966,
+        "light": 0.75,
+        "movingX": -1.0970875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 3.75,
+        "frame": 112,
+        "pts": 3.733,
+        "sharedTime": 3.733,
+        "clip": 1,
+        "local": 0.7330000000000001,
+        "source": 1,
+        "sourceGlobal": 21.733,
+        "cameraX": 0.5966,
+        "light": 0.9,
+        "movingX": -0.9283374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 5.25,
+        "frame": 157,
+        "pts": 5.233,
+        "sharedTime": 5.233,
+        "clip": 1,
+        "local": 2.2329999999999997,
+        "source": 1,
+        "sourceGlobal": 23.233,
+        "cameraX": 0.8965999999999998,
+        "light": 0.9,
+        "movingX": -0.9095875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 6.75,
+        "frame": 202,
+        "pts": 6.733,
+        "sharedTime": 6.733,
+        "clip": 2,
+        "local": 0.7329999999999997,
+        "source": 2,
+        "sourceGlobal": 33.733,
+        "cameraX": 0.5965999999999999,
+        "light": 1.05,
+        "movingX": -0.7783375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 8.25,
+        "frame": 247,
+        "pts": 8.233,
+        "sharedTime": 8.233,
+        "clip": 2,
+        "local": 2.2330000000000005,
+        "source": 2,
+        "sourceGlobal": 35.233000000000004,
+        "cameraX": 0.8966000000000001,
+        "light": 1.05,
+        "movingX": -0.7595874999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 9.75,
+        "frame": 292,
+        "pts": 9.733,
+        "sharedTime": 9.733,
+        "clip": 3,
+        "local": 0.7330000000000005,
+        "source": 3,
+        "sourceGlobal": 48.733000000000004,
+        "cameraX": -0.30339999999999984,
+        "light": 1.2,
+        "movingX": -0.5908374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 11.25,
+        "frame": 337,
+        "pts": 11.233,
+        "sharedTime": 11.233,
+        "clip": 3,
+        "local": 2.2330000000000005,
+        "source": 3,
+        "sourceGlobal": 50.233000000000004,
+        "cameraX": -0.0033999999999998476,
+        "light": 1.2,
+        "movingX": -0.5720874999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 12.75,
+        "frame": 382,
+        "pts": 12.733,
+        "sharedTime": 12.733,
+        "clip": 4,
+        "local": 0.7330000000000005,
+        "source": 0,
+        "sourceGlobal": 6.7330000000000005,
+        "cameraX": 0.2966000000000001,
+        "light": 0.75,
+        "movingX": -1.1158375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 14.25,
+        "frame": 427,
+        "pts": 14.233,
+        "sharedTime": 14.233,
+        "clip": 4,
+        "local": 2.2330000000000005,
+        "source": 0,
+        "sourceGlobal": 8.233,
+        "cameraX": 0.5966000000000001,
+        "light": 0.75,
+        "movingX": -1.0970875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 15.75,
+        "frame": 472,
+        "pts": 15.733,
+        "sharedTime": 15.733,
+        "clip": 5,
+        "local": 0.7330000000000005,
+        "source": 1,
+        "sourceGlobal": 21.733,
+        "cameraX": 0.5966,
+        "light": 0.9,
+        "movingX": -0.9283374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 17.25,
+        "frame": 517,
+        "pts": 17.233,
+        "sharedTime": 17.233,
+        "clip": 5,
+        "local": 2.2330000000000005,
+        "source": 1,
+        "sourceGlobal": 23.233,
+        "cameraX": 0.8966000000000001,
+        "light": 0.9,
+        "movingX": -0.9095875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 18.75,
+        "frame": 562,
+        "pts": 18.733,
+        "sharedTime": 18.733,
+        "clip": 6,
+        "local": 0.7330000000000005,
+        "source": 2,
+        "sourceGlobal": 33.733000000000004,
+        "cameraX": 0.5966,
+        "light": 1.05,
+        "movingX": -0.7783374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 20.25,
+        "frame": 607,
+        "pts": 20.233,
+        "sharedTime": 20.233,
+        "clip": 6,
+        "local": 2.2330000000000005,
+        "source": 2,
+        "sourceGlobal": 35.233000000000004,
+        "cameraX": 0.8966000000000001,
+        "light": 1.05,
+        "movingX": -0.7595874999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 21.75,
+        "frame": 652,
+        "pts": 21.733,
+        "sharedTime": 21.733,
+        "clip": 7,
+        "local": 0.7330000000000005,
+        "source": 3,
+        "sourceGlobal": 48.733000000000004,
+        "cameraX": -0.30339999999999984,
+        "light": 1.2,
+        "movingX": -0.5908374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 23.25,
+        "frame": 697,
+        "pts": 23.233,
+        "sharedTime": 23.233,
+        "clip": 7,
+        "local": 2.2330000000000005,
+        "source": 3,
+        "sourceGlobal": 50.233000000000004,
+        "cameraX": -0.0033999999999998476,
+        "light": 1.2,
+        "movingX": -0.5720874999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 24.75,
+        "frame": 742,
+        "pts": 24.733,
+        "sharedTime": 24.733,
+        "clip": 8,
+        "local": 0.7330000000000005,
+        "source": 0,
+        "sourceGlobal": 6.7330000000000005,
+        "cameraX": 0.2966000000000001,
+        "light": 0.75,
+        "movingX": -1.1158375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 26.25,
+        "frame": 787,
+        "pts": 26.233,
+        "sharedTime": 26.233,
+        "clip": 8,
+        "local": 2.2330000000000005,
+        "source": 0,
+        "sourceGlobal": 8.233,
+        "cameraX": 0.5966000000000001,
+        "light": 0.75,
+        "movingX": -1.0970875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 27.75,
+        "frame": 832,
+        "pts": 27.733,
+        "sharedTime": 27.733,
+        "clip": 9,
+        "local": 0.7330000000000005,
+        "source": 1,
+        "sourceGlobal": 21.733,
+        "cameraX": 0.5966,
+        "light": 0.9,
+        "movingX": -0.9283374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 29.25,
+        "frame": 877,
+        "pts": 29.233,
+        "sharedTime": 29.233,
+        "clip": 9,
+        "local": 2.2330000000000005,
+        "source": 1,
+        "sourceGlobal": 23.233,
+        "cameraX": 0.8966000000000001,
+        "light": 0.9,
+        "movingX": -0.9095875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 30.75,
+        "frame": 922,
+        "pts": 30.733,
+        "sharedTime": 30.733,
+        "clip": 10,
+        "local": 0.7330000000000005,
+        "source": 2,
+        "sourceGlobal": 33.733000000000004,
+        "cameraX": 0.5966,
+        "light": 1.05,
+        "movingX": -0.7783374999999999,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 32.25,
+        "frame": 967,
+        "pts": 32.233,
+        "sharedTime": 32.233,
+        "clip": 10,
+        "local": 2.232999999999997,
+        "source": 2,
+        "sourceGlobal": 35.233,
+        "cameraX": 0.8965999999999994,
+        "light": 1.05,
+        "movingX": -0.7595875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 33.75,
+        "frame": 1012,
+        "pts": 33.733,
+        "sharedTime": 33.733,
+        "clip": 11,
+        "local": 0.732999999999997,
+        "source": 3,
+        "sourceGlobal": 48.733,
+        "cameraX": -0.30340000000000056,
+        "light": 1.2,
+        "movingX": -0.5908375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 35.25,
+        "frame": 1057,
+        "pts": 35.233,
+        "sharedTime": 35.233,
+        "clip": 11,
+        "local": 2.232999999999997,
+        "source": 3,
+        "sourceGlobal": 50.233,
+        "cameraX": -0.0034000000000005137,
+        "light": 1.2,
+        "movingX": -0.5720875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 36.75,
+        "frame": 1102,
+        "pts": 36.733,
+        "sharedTime": 36.733,
+        "clip": 12,
+        "local": 0.732999999999997,
+        "source": 0,
+        "sourceGlobal": 6.732999999999997,
+        "cameraX": 0.2965999999999994,
+        "light": 0.75,
+        "movingX": -1.1158375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 38.25,
+        "frame": 1147,
+        "pts": 38.233,
+        "sharedTime": 38.233,
+        "clip": 12,
+        "local": 2.232999999999997,
+        "source": 0,
+        "sourceGlobal": 8.232999999999997,
+        "cameraX": 0.5965999999999995,
+        "light": 0.75,
+        "movingX": -1.0970875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 39.75,
+        "frame": 1192,
+        "pts": 39.733,
+        "sharedTime": 39.733,
+        "clip": 13,
+        "local": 0.732999999999997,
+        "source": 1,
+        "sourceGlobal": 21.732999999999997,
+        "cameraX": 0.5965999999999994,
+        "light": 0.9,
+        "movingX": -0.9283375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 41.25,
+        "frame": 1237,
+        "pts": 41.233,
+        "sharedTime": 41.233,
+        "clip": 13,
+        "local": 2.232999999999997,
+        "source": 1,
+        "sourceGlobal": 23.232999999999997,
+        "cameraX": 0.8965999999999994,
+        "light": 0.9,
+        "movingX": -0.9095875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 42.75,
+        "frame": 1282,
+        "pts": 42.733,
+        "sharedTime": 42.733,
+        "clip": 14,
+        "local": 0.732999999999997,
+        "source": 2,
+        "sourceGlobal": 33.733,
+        "cameraX": 0.5965999999999994,
+        "light": 1.05,
+        "movingX": -0.7783375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 44.25,
+        "frame": 1327,
+        "pts": 44.233,
+        "sharedTime": 44.233,
+        "clip": 14,
+        "local": 2.232999999999997,
+        "source": 2,
+        "sourceGlobal": 35.233,
+        "cameraX": 0.8965999999999994,
+        "light": 1.05,
+        "movingX": -0.7595875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 45.75,
+        "frame": 1372,
+        "pts": 45.733,
+        "sharedTime": 45.733,
+        "clip": 15,
+        "local": 0.732999999999997,
+        "source": 3,
+        "sourceGlobal": 48.733,
+        "cameraX": -0.30340000000000056,
+        "light": 1.2,
+        "movingX": -0.5908375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 47.25,
+        "frame": 1417,
+        "pts": 47.233,
+        "sharedTime": 47.233,
+        "clip": 15,
+        "local": 2.232999999999997,
+        "source": 3,
+        "sourceGlobal": 50.233,
+        "cameraX": -0.0034000000000005137,
+        "light": 1.2,
+        "movingX": -0.5720875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 48.75,
+        "frame": 1462,
+        "pts": 48.733,
+        "sharedTime": 48.733,
+        "clip": 16,
+        "local": 0.732999999999997,
+        "source": 0,
+        "sourceGlobal": 6.732999999999997,
+        "cameraX": 0.2965999999999994,
+        "light": 0.75,
+        "movingX": -1.1158375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 50.25,
+        "frame": 1507,
+        "pts": 50.233,
+        "sharedTime": 50.233,
+        "clip": 16,
+        "local": 2.232999999999997,
+        "source": 0,
+        "sourceGlobal": 8.232999999999997,
+        "cameraX": 0.5965999999999995,
+        "light": 0.75,
+        "movingX": -1.0970875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              121,
+              61,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              121,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 51.75,
+        "frame": 1552,
+        "pts": 51.733,
+        "sharedTime": 51.733,
+        "clip": 17,
+        "local": 0.732999999999997,
+        "source": 1,
+        "sourceGlobal": 21.732999999999997,
+        "cameraX": 0.5965999999999994,
+        "light": 0.9,
+        "movingX": -0.9283375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 53.25,
+        "frame": 1597,
+        "pts": 53.233,
+        "sharedTime": 53.233,
+        "clip": 17,
+        "local": 2.232999999999997,
+        "source": 1,
+        "sourceGlobal": 23.232999999999997,
+        "cameraX": 0.8965999999999994,
+        "light": 0.9,
+        "movingX": -0.9095875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              0,
+              73,
+              145
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              145,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 54.75,
+        "frame": 1642,
+        "pts": 54.733,
+        "sharedTime": 54.733,
+        "clip": 18,
+        "local": 0.732999999999997,
+        "source": 2,
+        "sourceGlobal": 33.733,
+        "cameraX": 0.5965999999999994,
+        "light": 1.05,
+        "movingX": -0.7783375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 56.25,
+        "frame": 1687,
+        "pts": 56.233,
+        "sharedTime": 56.233,
+        "clip": 18,
+        "local": 2.232999999999997,
+        "source": 2,
+        "sourceGlobal": 35.233,
+        "cameraX": 0.8965999999999994,
+        "light": 1.05,
+        "movingX": -0.7595875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              169,
+              169,
+              0
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              169,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 57.75,
+        "frame": 1732,
+        "pts": 57.733,
+        "sharedTime": 57.733,
+        "clip": 19,
+        "local": 0.732999999999997,
+        "source": 3,
+        "sourceGlobal": 48.733,
+        "cameraX": -0.30340000000000056,
+        "light": 1.2,
+        "movingX": -0.5908375,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      },
+      {
+        "target": 59.25,
+        "frame": 1777,
+        "pts": 59.233,
+        "sharedTime": 59.233,
+        "clip": 19,
+        "local": 2.232999999999997,
+        "source": 3,
+        "sourceGlobal": 50.233,
+        "cameraX": -0.0034000000000005137,
+        "light": 1.2,
+        "movingX": -0.5720875,
+        "pixels": {
+          "moving": {
+            "expectedRgb": [
+              193,
+              0,
+              193
+            ],
+            "matches": 27
+          },
+          "control": {
+            "expectedRgb": [
+              0,
+              193,
+              0
+            ],
+            "matches": 27
+          }
+        }
+      }
+    ],
+    "ordinaryTakeAudioStreams": 0,
+    "method": "One common first-decoded-stream timestamp origin. Fixed gates/guards; no fitted audio/video offsets. Full finite PCM and frame PTS; forty original torso landmarks."
+  },
+  "inspectionAttempts": [
+    {
+      "status": "passed",
+      "wallMs": 3957.1329429999996,
+      "videoCodec": "vp9",
+      "audioCodec": "opus",
+      "decodedVideoFrames": 1800,
+      "decodedAudioFrames": 2880648,
+      "decodedPcmBytes": 23045184,
+      "sharedOrigin": 0,
+      "firstVideoPts": 0,
+      "firstAudioPts": 0.007,
+      "lastSharedVideoTime": 59.967,
+      "plateaus": [
+        {
+          "start": 6,
+          "end": 7,
+          "channels": [
+            {
+              "rms": 0.14130488026596721,
+              "firstFrame": 287664,
+              "frames": 48000,
+              "hz": 440,
+              "wrongToneAmplitude": 0.000014864506617254546
+            },
+            {
+              "rms": 0.14159089975726386,
+              "firstFrame": 287664,
+              "frames": 48000,
+              "hz": 880,
+              "wrongToneAmplitude": 0.0000215776160576131
+            }
+          ]
+        },
+        {
+          "start": 16,
+          "end": 17,
+          "channels": [
+            {
+              "rms": 0.1412644181982069,
+              "firstFrame": 767664,
+              "frames": 47999,
+              "hz": 440.00916685764287,
+              "wrongToneAmplitude": 0.000014986399836597061
+            },
+            {
+              "rms": 0.14148803053907005,
+              "firstFrame": 767664,
+              "frames": 47999,
+              "hz": 880.0183337152857,
+              "wrongToneAmplitude": 0.000015482205370826223
+            }
+          ]
+        },
+        {
+          "start": 26,
+          "end": 27,
+          "channels": [
+            {
+              "rms": 0.14132183549460053,
+              "firstFrame": 1247664,
+              "frames": 48000,
+              "hz": 440,
+              "wrongToneAmplitude": 0.000012772918038958
+            },
+            {
+              "rms": 0.1415658643452674,
+              "firstFrame": 1247664,
+              "frames": 48000,
+              "hz": 880,
+              "wrongToneAmplitude": 0.00002099908142718728
+            }
+          ]
+        },
+        {
+          "start": 36,
+          "end": 37,
+          "channels": [
+            {
+              "rms": 0.14127953823845552,
+              "firstFrame": 1727664,
+              "frames": 48000,
+              "hz": 440,
+              "wrongToneAmplitude": 0.000011559163743433233
+            },
+            {
+              "rms": 0.14159281367283438,
+              "firstFrame": 1727664,
+              "frames": 48000,
+              "hz": 880,
+              "wrongToneAmplitude": 0.000019330654556107195
+            }
+          ]
+        }
+      ],
+      "quiet": [
+        {
+          "start": 0.2,
+          "end": 4.85,
+          "channel": 0,
+          "rms": 0,
+          "firstFrame": 9264,
+          "frames": 223200
+        },
+        {
+          "start": 0.2,
+          "end": 4.85,
+          "channel": 1,
+          "rms": 0,
+          "firstFrame": 9264,
+          "frames": 223200
+        },
+        {
+          "start": 13.15,
+          "end": 14.85,
+          "channel": 0,
+          "rms": 0.000011400925575777884,
+          "firstFrame": 630864,
+          "frames": 81600
+        },
+        {
+          "start": 13.15,
+          "end": 14.85,
+          "channel": 1,
+          "rms": 0.000005700661879013348,
+          "firstFrame": 630864,
+          "frames": 81600
+        },
+        {
+          "start": 23.15,
+          "end": 24.85,
+          "channel": 0,
+          "rms": 0.00001143566905243686,
+          "firstFrame": 1110864,
+          "frames": 81600
+        },
+        {
+          "start": 23.15,
+          "end": 24.85,
+          "channel": 1,
+          "rms": 0.000005715864101959329,
+          "firstFrame": 1110864,
+          "frames": 81600
+        },
+        {
+          "start": 33.15,
+          "end": 34.85,
+          "channel": 0,
+          "rms": 0.000011435644263734768,
+          "firstFrame": 1590864,
+          "frames": 81600
+        },
+        {
+          "start": 33.15,
+          "end": 34.85,
+          "channel": 1,
+          "rms": 0.000005715851350654692,
+          "firstFrame": 1590864,
+          "frames": 81600
+        },
+        {
+          "start": 45.15,
+          "end": 59,
+          "channel": 0,
+          "rms": 0.000004006463224004446,
+          "firstFrame": 2166864,
+          "frames": 664800
+        },
+        {
+          "start": 45.15,
+          "end": 59,
+          "channel": 1,
+          "rms": 0.0000020025411870652913,
+          "firstFrame": 2166864,
+          "frames": 664800
+        }
+      ],
+      "markers": [
+        {
+          "target": 5,
+          "on": true,
+          "channel": 0,
+          "observed": 5,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 5,
+          "on": true,
+          "channel": 1,
+          "observed": 5,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 13,
+          "on": false,
+          "channel": 0,
+          "observed": 13.01,
+          "deltaSeconds": 0.009999999999999787
+        },
+        {
+          "target": 13,
+          "on": false,
+          "channel": 1,
+          "observed": 13.01,
+          "deltaSeconds": 0.009999999999999787
+        },
+        {
+          "target": 15,
+          "on": true,
+          "channel": 0,
+          "observed": 15,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 15,
+          "on": true,
+          "channel": 1,
+          "observed": 15,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 23,
+          "on": false,
+          "channel": 0,
+          "observed": 23.01,
+          "deltaSeconds": 0.010000000000001563
+        },
+        {
+          "target": 23,
+          "on": false,
+          "channel": 1,
+          "observed": 23.01,
+          "deltaSeconds": 0.010000000000001563
+        },
+        {
+          "target": 25,
+          "on": true,
+          "channel": 0,
+          "observed": 25,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 25,
+          "on": true,
+          "channel": 1,
+          "observed": 25,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 33,
+          "on": false,
+          "channel": 0,
+          "observed": 33.01,
+          "deltaSeconds": 0.00999999999999801
+        },
+        {
+          "target": 33,
+          "on": false,
+          "channel": 1,
+          "observed": 33.01,
+          "deltaSeconds": 0.00999999999999801
+        },
+        {
+          "target": 35,
+          "on": true,
+          "channel": 0,
+          "observed": 35,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 35,
+          "on": true,
+          "channel": 1,
+          "observed": 35,
+          "deltaSeconds": 0
+        },
+        {
+          "target": 45,
+          "on": false,
+          "channel": 0,
+          "observed": 45.01,
+          "deltaSeconds": 0.00999999999999801
+        },
+        {
+          "target": 45,
+          "on": false,
+          "channel": 1,
+          "observed": 45.01,
+          "deltaSeconds": 0.00999999999999801
+        }
+      ],
+      "landmarks": [
+        {
+          "target": 0.75,
+          "frame": 22,
+          "pts": 0.733,
+          "sharedTime": 0.733,
+          "clip": 0,
+          "local": 0.733,
+          "source": 0,
+          "sourceGlobal": 6.733,
+          "cameraX": 0.2966,
+          "light": 0.75,
+          "movingX": -1.1158375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 2.25,
+          "frame": 67,
+          "pts": 2.233,
+          "sharedTime": 2.233,
+          "clip": 0,
+          "local": 2.233,
+          "source": 0,
+          "sourceGlobal": 8.233,
+          "cameraX": 0.5966,
+          "light": 0.75,
+          "movingX": -1.0970875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 3.75,
+          "frame": 112,
+          "pts": 3.733,
+          "sharedTime": 3.733,
+          "clip": 1,
+          "local": 0.7330000000000001,
+          "source": 1,
+          "sourceGlobal": 21.733,
+          "cameraX": 0.5966,
+          "light": 0.9,
+          "movingX": -0.9283374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 5.25,
+          "frame": 157,
+          "pts": 5.233,
+          "sharedTime": 5.233,
+          "clip": 1,
+          "local": 2.2329999999999997,
+          "source": 1,
+          "sourceGlobal": 23.233,
+          "cameraX": 0.8965999999999998,
+          "light": 0.9,
+          "movingX": -0.9095875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 6.75,
+          "frame": 202,
+          "pts": 6.733,
+          "sharedTime": 6.733,
+          "clip": 2,
+          "local": 0.7329999999999997,
+          "source": 2,
+          "sourceGlobal": 33.733,
+          "cameraX": 0.5965999999999999,
+          "light": 1.05,
+          "movingX": -0.7783375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 8.25,
+          "frame": 247,
+          "pts": 8.233,
+          "sharedTime": 8.233,
+          "clip": 2,
+          "local": 2.2330000000000005,
+          "source": 2,
+          "sourceGlobal": 35.233000000000004,
+          "cameraX": 0.8966000000000001,
+          "light": 1.05,
+          "movingX": -0.7595874999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 9.75,
+          "frame": 292,
+          "pts": 9.733,
+          "sharedTime": 9.733,
+          "clip": 3,
+          "local": 0.7330000000000005,
+          "source": 3,
+          "sourceGlobal": 48.733000000000004,
+          "cameraX": -0.30339999999999984,
+          "light": 1.2,
+          "movingX": -0.5908374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 11.25,
+          "frame": 337,
+          "pts": 11.233,
+          "sharedTime": 11.233,
+          "clip": 3,
+          "local": 2.2330000000000005,
+          "source": 3,
+          "sourceGlobal": 50.233000000000004,
+          "cameraX": -0.0033999999999998476,
+          "light": 1.2,
+          "movingX": -0.5720874999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 12.75,
+          "frame": 382,
+          "pts": 12.733,
+          "sharedTime": 12.733,
+          "clip": 4,
+          "local": 0.7330000000000005,
+          "source": 0,
+          "sourceGlobal": 6.7330000000000005,
+          "cameraX": 0.2966000000000001,
+          "light": 0.75,
+          "movingX": -1.1158375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 14.25,
+          "frame": 427,
+          "pts": 14.233,
+          "sharedTime": 14.233,
+          "clip": 4,
+          "local": 2.2330000000000005,
+          "source": 0,
+          "sourceGlobal": 8.233,
+          "cameraX": 0.5966000000000001,
+          "light": 0.75,
+          "movingX": -1.0970875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 15.75,
+          "frame": 472,
+          "pts": 15.733,
+          "sharedTime": 15.733,
+          "clip": 5,
+          "local": 0.7330000000000005,
+          "source": 1,
+          "sourceGlobal": 21.733,
+          "cameraX": 0.5966,
+          "light": 0.9,
+          "movingX": -0.9283374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 17.25,
+          "frame": 517,
+          "pts": 17.233,
+          "sharedTime": 17.233,
+          "clip": 5,
+          "local": 2.2330000000000005,
+          "source": 1,
+          "sourceGlobal": 23.233,
+          "cameraX": 0.8966000000000001,
+          "light": 0.9,
+          "movingX": -0.9095875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 18.75,
+          "frame": 562,
+          "pts": 18.733,
+          "sharedTime": 18.733,
+          "clip": 6,
+          "local": 0.7330000000000005,
+          "source": 2,
+          "sourceGlobal": 33.733000000000004,
+          "cameraX": 0.5966,
+          "light": 1.05,
+          "movingX": -0.7783374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 20.25,
+          "frame": 607,
+          "pts": 20.233,
+          "sharedTime": 20.233,
+          "clip": 6,
+          "local": 2.2330000000000005,
+          "source": 2,
+          "sourceGlobal": 35.233000000000004,
+          "cameraX": 0.8966000000000001,
+          "light": 1.05,
+          "movingX": -0.7595874999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 21.75,
+          "frame": 652,
+          "pts": 21.733,
+          "sharedTime": 21.733,
+          "clip": 7,
+          "local": 0.7330000000000005,
+          "source": 3,
+          "sourceGlobal": 48.733000000000004,
+          "cameraX": -0.30339999999999984,
+          "light": 1.2,
+          "movingX": -0.5908374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 23.25,
+          "frame": 697,
+          "pts": 23.233,
+          "sharedTime": 23.233,
+          "clip": 7,
+          "local": 2.2330000000000005,
+          "source": 3,
+          "sourceGlobal": 50.233000000000004,
+          "cameraX": -0.0033999999999998476,
+          "light": 1.2,
+          "movingX": -0.5720874999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 24.75,
+          "frame": 742,
+          "pts": 24.733,
+          "sharedTime": 24.733,
+          "clip": 8,
+          "local": 0.7330000000000005,
+          "source": 0,
+          "sourceGlobal": 6.7330000000000005,
+          "cameraX": 0.2966000000000001,
+          "light": 0.75,
+          "movingX": -1.1158375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 26.25,
+          "frame": 787,
+          "pts": 26.233,
+          "sharedTime": 26.233,
+          "clip": 8,
+          "local": 2.2330000000000005,
+          "source": 0,
+          "sourceGlobal": 8.233,
+          "cameraX": 0.5966000000000001,
+          "light": 0.75,
+          "movingX": -1.0970875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 27.75,
+          "frame": 832,
+          "pts": 27.733,
+          "sharedTime": 27.733,
+          "clip": 9,
+          "local": 0.7330000000000005,
+          "source": 1,
+          "sourceGlobal": 21.733,
+          "cameraX": 0.5966,
+          "light": 0.9,
+          "movingX": -0.9283374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 29.25,
+          "frame": 877,
+          "pts": 29.233,
+          "sharedTime": 29.233,
+          "clip": 9,
+          "local": 2.2330000000000005,
+          "source": 1,
+          "sourceGlobal": 23.233,
+          "cameraX": 0.8966000000000001,
+          "light": 0.9,
+          "movingX": -0.9095875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 30.75,
+          "frame": 922,
+          "pts": 30.733,
+          "sharedTime": 30.733,
+          "clip": 10,
+          "local": 0.7330000000000005,
+          "source": 2,
+          "sourceGlobal": 33.733000000000004,
+          "cameraX": 0.5966,
+          "light": 1.05,
+          "movingX": -0.7783374999999999,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 32.25,
+          "frame": 967,
+          "pts": 32.233,
+          "sharedTime": 32.233,
+          "clip": 10,
+          "local": 2.232999999999997,
+          "source": 2,
+          "sourceGlobal": 35.233,
+          "cameraX": 0.8965999999999994,
+          "light": 1.05,
+          "movingX": -0.7595875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 33.75,
+          "frame": 1012,
+          "pts": 33.733,
+          "sharedTime": 33.733,
+          "clip": 11,
+          "local": 0.732999999999997,
+          "source": 3,
+          "sourceGlobal": 48.733,
+          "cameraX": -0.30340000000000056,
+          "light": 1.2,
+          "movingX": -0.5908375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 35.25,
+          "frame": 1057,
+          "pts": 35.233,
+          "sharedTime": 35.233,
+          "clip": 11,
+          "local": 2.232999999999997,
+          "source": 3,
+          "sourceGlobal": 50.233,
+          "cameraX": -0.0034000000000005137,
+          "light": 1.2,
+          "movingX": -0.5720875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 36.75,
+          "frame": 1102,
+          "pts": 36.733,
+          "sharedTime": 36.733,
+          "clip": 12,
+          "local": 0.732999999999997,
+          "source": 0,
+          "sourceGlobal": 6.732999999999997,
+          "cameraX": 0.2965999999999994,
+          "light": 0.75,
+          "movingX": -1.1158375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 38.25,
+          "frame": 1147,
+          "pts": 38.233,
+          "sharedTime": 38.233,
+          "clip": 12,
+          "local": 2.232999999999997,
+          "source": 0,
+          "sourceGlobal": 8.232999999999997,
+          "cameraX": 0.5965999999999995,
+          "light": 0.75,
+          "movingX": -1.0970875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 39.75,
+          "frame": 1192,
+          "pts": 39.733,
+          "sharedTime": 39.733,
+          "clip": 13,
+          "local": 0.732999999999997,
+          "source": 1,
+          "sourceGlobal": 21.732999999999997,
+          "cameraX": 0.5965999999999994,
+          "light": 0.9,
+          "movingX": -0.9283375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 41.25,
+          "frame": 1237,
+          "pts": 41.233,
+          "sharedTime": 41.233,
+          "clip": 13,
+          "local": 2.232999999999997,
+          "source": 1,
+          "sourceGlobal": 23.232999999999997,
+          "cameraX": 0.8965999999999994,
+          "light": 0.9,
+          "movingX": -0.9095875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 42.75,
+          "frame": 1282,
+          "pts": 42.733,
+          "sharedTime": 42.733,
+          "clip": 14,
+          "local": 0.732999999999997,
+          "source": 2,
+          "sourceGlobal": 33.733,
+          "cameraX": 0.5965999999999994,
+          "light": 1.05,
+          "movingX": -0.7783375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 44.25,
+          "frame": 1327,
+          "pts": 44.233,
+          "sharedTime": 44.233,
+          "clip": 14,
+          "local": 2.232999999999997,
+          "source": 2,
+          "sourceGlobal": 35.233,
+          "cameraX": 0.8965999999999994,
+          "light": 1.05,
+          "movingX": -0.7595875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 45.75,
+          "frame": 1372,
+          "pts": 45.733,
+          "sharedTime": 45.733,
+          "clip": 15,
+          "local": 0.732999999999997,
+          "source": 3,
+          "sourceGlobal": 48.733,
+          "cameraX": -0.30340000000000056,
+          "light": 1.2,
+          "movingX": -0.5908375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 47.25,
+          "frame": 1417,
+          "pts": 47.233,
+          "sharedTime": 47.233,
+          "clip": 15,
+          "local": 2.232999999999997,
+          "source": 3,
+          "sourceGlobal": 50.233,
+          "cameraX": -0.0034000000000005137,
+          "light": 1.2,
+          "movingX": -0.5720875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 48.75,
+          "frame": 1462,
+          "pts": 48.733,
+          "sharedTime": 48.733,
+          "clip": 16,
+          "local": 0.732999999999997,
+          "source": 0,
+          "sourceGlobal": 6.732999999999997,
+          "cameraX": 0.2965999999999994,
+          "light": 0.75,
+          "movingX": -1.1158375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 50.25,
+          "frame": 1507,
+          "pts": 50.233,
+          "sharedTime": 50.233,
+          "clip": 16,
+          "local": 2.232999999999997,
+          "source": 0,
+          "sourceGlobal": 8.232999999999997,
+          "cameraX": 0.5965999999999995,
+          "light": 0.75,
+          "movingX": -1.0970875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                121,
+                61,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                121,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 51.75,
+          "frame": 1552,
+          "pts": 51.733,
+          "sharedTime": 51.733,
+          "clip": 17,
+          "local": 0.732999999999997,
+          "source": 1,
+          "sourceGlobal": 21.732999999999997,
+          "cameraX": 0.5965999999999994,
+          "light": 0.9,
+          "movingX": -0.9283375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 53.25,
+          "frame": 1597,
+          "pts": 53.233,
+          "sharedTime": 53.233,
+          "clip": 17,
+          "local": 2.232999999999997,
+          "source": 1,
+          "sourceGlobal": 23.232999999999997,
+          "cameraX": 0.8965999999999994,
+          "light": 0.9,
+          "movingX": -0.9095875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                0,
+                73,
+                145
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                145,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 54.75,
+          "frame": 1642,
+          "pts": 54.733,
+          "sharedTime": 54.733,
+          "clip": 18,
+          "local": 0.732999999999997,
+          "source": 2,
+          "sourceGlobal": 33.733,
+          "cameraX": 0.5965999999999994,
+          "light": 1.05,
+          "movingX": -0.7783375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 56.25,
+          "frame": 1687,
+          "pts": 56.233,
+          "sharedTime": 56.233,
+          "clip": 18,
+          "local": 2.232999999999997,
+          "source": 2,
+          "sourceGlobal": 35.233,
+          "cameraX": 0.8965999999999994,
+          "light": 1.05,
+          "movingX": -0.7595875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                169,
+                169,
+                0
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                169,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 57.75,
+          "frame": 1732,
+          "pts": 57.733,
+          "sharedTime": 57.733,
+          "clip": 19,
+          "local": 0.732999999999997,
+          "source": 3,
+          "sourceGlobal": 48.733,
+          "cameraX": -0.30340000000000056,
+          "light": 1.2,
+          "movingX": -0.5908375,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        },
+        {
+          "target": 59.25,
+          "frame": 1777,
+          "pts": 59.233,
+          "sharedTime": 59.233,
+          "clip": 19,
+          "local": 2.232999999999997,
+          "source": 3,
+          "sourceGlobal": 50.233,
+          "cameraX": -0.0034000000000005137,
+          "light": 1.2,
+          "movingX": -0.5720875,
+          "pixels": {
+            "moving": {
+              "expectedRgb": [
+                193,
+                0,
+                193
+              ],
+              "matches": 27
+            },
+            "control": {
+              "expectedRgb": [
+                0,
+                193,
+                0
+              ],
+              "matches": 27
+            }
+          }
+        }
+      ],
+      "ordinaryTakeAudioStreams": 0,
+      "method": "One common first-decoded-stream timestamp origin. Fixed gates/guards; no fitted audio/video offsets. Full finite PCM and frame PTS; forty original torso landmarks."
+    }
+  ]
+}

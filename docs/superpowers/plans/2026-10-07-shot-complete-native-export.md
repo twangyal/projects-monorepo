@@ -44,5 +44,15 @@
 
 **Files:** README/PROJECT_IDEAS.md, exact-head receipts and compatibility workflow.
 - [x] Retire isolated candidate patch jobs when their constructors no longer match production; preserve historical results and original/pinned155 maximum jobs.
-- [ ] Inspect first published push/PR units/native/maximum and pinned155original/diagnostic runs; retain any first failures.
-- [ ] Record exact counts/heads and limits; update#128 with actual completion or remaining blocker. Keep decoder/physical work separate.
+- [x] Inspect first published push/PR units/native/maximum and pinned155original/diagnostic runs; retain any first failures.
+- [x] Record exact counts/heads and limits; update#128 with actual completion or remaining blocker. Keep decoder/physical work separate.
+
+
+First published771e17b results: all13normal PR workflows pass; PR357unit/111native
+and all original configured153/full155 media gates pass. Push357unit/110native
+pass, one new omission harness assertion expires at5s before completion, and
+153/155maximum product timeouts recur. Raw paired first outcomes are retained.
+The harness correction pins a legal one-second shot and waits through its11s
+product deadline, with all safety/preservation assertions unchanged. Focused
+native correction passes locally; corrected published CI is pending. Throughput
+repair remains explicitly unfinished in#128, without realtime adoption/retries.
