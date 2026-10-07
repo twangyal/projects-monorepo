@@ -18,7 +18,7 @@ test('Bluetooth source requires explicit native connection and received calibrat
 });
 
 test('five actual spaced packets drive a real keyboard escape and private source-labeled JSON without changing simulated best',async({page},testInfo)=>{
-  await setup(page);await page.locator('#save').click();const before=await page.evaluate(()=>localStorage.getItem('composure-settings-v1'));
+  await setup(page);await page.locator('#save').click();await expect(page.locator('#storage-status')).toContainText('Preferences saved locally');const before=await page.evaluate(()=>localStorage.getItem('composure-settings-v1'));
   await startBle(page);await expect(page.locator('#run-source')).toContainText(/bluetooth/i);await expect(page.locator('#baseline')).toHaveValue('70');
   expect((await report(page)).value.samples).toEqual([]);await page.clock.runFor(1);await emit(page,[2,80]);
   await page.screenshot({path:testInfo.outputPath('desktop-bluetooth-run.png'),fullPage:true});

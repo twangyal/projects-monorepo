@@ -1,0 +1,139 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 check
+> npm run test && npm run lint && npm run build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+✔ Bluetooth origin is detached and runtime immutable without freezing gameplay (2.939767ms)
+✔ Bluetooth construction revalidates calibration shape, bounds, spacing, mean and age (5.353338ms)
+✔ simulator source and schema1 report remain compatible and refuse Bluetooth injection (3.531881ms)
+✔ Bluetooth has no initial game reading and refuses simulator injection (1.324281ms)
+✔ source connection, final calibration sequence and strict run-start receipt are pinned (0.417868ms)
+✔ bursts and ineligible BPM consume sequence without changing the usable sample (0.259267ms)
+✔ contact loss bypasses burst and BPM admission and immediately clears only usable state (0.773271ms)
+✔ receipt clock freshness is exact even when active time is stalled or capped (0.320557ms)
+✔ a zero-elapsed frame still exposes exact receipt-time staleness (0.196447ms)
+✔ a maximum legal RR tail remains ignored metadata rather than rejecting the game input (0.472739ms)
+✔ disconnect and contact-loss transitions are recorded even before any game reading (0.409316ms)
+✔ a pause with no usable Bluetooth reading records the pause without a redundant signal event (0.203612ms)
+✔ invalid clocks fail atomically before sub-step advance or resume and do not consume sequence (0.683873ms)
+✔ pause/resume retains history but requires a strictly later new notification (0.705491ms)
+✔ all invalidation reasons retain samples and prevent the historical sample from returning (0.46112ms)
+✔ malformed measurements cannot refresh a Bluetooth reading or contaminate reports (0.736729ms)
+✔ Bluetooth report has detached relative calibration/game receipts without transport identity (0.989858ms)
+✔ Bluetooth histories stay capped and terminal runs cannot accept more readings (2.772984ms)
+✔ requestDevice runs synchronously, exact service subscription emits no cached value (26.599924ms)
+✔ unavailable provider and disposed transport fail closed without native calls (0.386195ms)
+✔ Cancel settles promptly at chooser, blocks a replacement until native drainage (1.851464ms)
+✔ Cancel settles promptly at connect, blocks a replacement until native drainage (5.425558ms)
+✔ Cancel settles promptly at service, blocks a replacement until native drainage (1.332144ms)
+✔ Cancel settles promptly at characteristic, blocks a replacement until native drainage (0.872468ms)
+✔ Cancel settles promptly at start, blocks a replacement until native drainage (1.228082ms)
+✔ dispose is terminal and promptly resolves a never-settling native connect (1.336564ms)
+✔ absolute startup deadline is checked after connect even before timer delivery (3.309591ms)
+✔ absolute startup deadline is checked after service even before timer delivery (1.302405ms)
+✔ absolute startup deadline is checked after characteristic even before timer delivery (7.11671ms)
+✔ absolute startup deadline is checked after start even before timer delivery (0.785788ms)
+✔ timer timeout settles public false while pending native operation remains draining (1.714145ms)
+✔ chooser time is excluded; startup shares one deadline across all subsequent stages (0.825733ms)
+✔ early packets are suppressed; real DataView packets stamp sequence and fresh receipt clock (2.287974ms)
+✔ queued disconnect is ignored while connected; actual disconnect retires readiness and listeners (0.780653ms)
+✔ subscription failure contains native secrets and disconnects before cleanup (1.069995ms)
+✔ stop cleanup is serialized, disconnect immediate, rejection contained and reuse blocked (0.935169ms)
+✔ invalid startup/receipt clock NaN cannot publish a measurement (0.838731ms)
+✔ invalid startup/receipt clock Infinity cannot publish a measurement (0.950979ms)
+✔ invalid startup/receipt clock -1 cannot publish a measurement (0.73382ms)
+✔ invalid startup/receipt clock 99 cannot publish a measurement (2.829345ms)
+✔ snapshot and callback states are detached; reconnection obtains a new logical ID (1.269118ms)
+✔ native chooser rejection is bounded and leaves no live listeners (0.692394ms)
+✔ native connect rejection is bounded and leaves no live listeners (0.542593ms)
+✔ native service rejection is bounded and leaves no live listeners (2.516494ms)
+✔ native characteristic rejection is bounded and leaves no live listeners (0.595528ms)
+✔ native start rejection is bounded and leaves no live listeners (1.079591ms)
+✔ indicate-only characteristics work; unsupported notification properties fail closed (0.84799ms)
+✔ retired callback closures cannot mutate a newer connection on the same objects (0.960084ms)
+✔ startup clock reversal/nonfinite clock fails before another stage and readiness publication (0.975065ms)
+✔ settled startup timers cannot retire a subscribed connection later (0.766345ms)
+✔ synchronous chooser failure returns false without exposing the thrown native error (0.504234ms)
+✔ calibration rejects entirely sparse five-slot arrays (2.969069ms)
+✔ calibration rejects a missing own reading even when other readings are valid (0.298245ms)
+✔ inherited numeric entries cannot stand in for an actual calibration reading (0.546653ms)
+✔ five own finite readings retain the exact mean and do not mutate the input (1.51802ms)
+✔ independent packet oracle: literal contact flags distinguish unsupported from supported loss (1.769691ms)
+✔ independent packet oracle: offset views and little-endian optional fields have exact extents (0.825965ms)
+✔ independent packet oracle: malformed lengths, reserved flags and payload ceiling reject (0.699599ms)
+✔ independent calibration oracle: five actual spaced samples average70 and snapshots are detached (0.591619ms)
+✔ independent calibration oracle: bursts and duplicates cannot manufacture five samples (0.363498ms)
+✔ independent calibration oracle: exact window and readiness age boundaries are inclusive (1.488421ms)
+✔ independent calibration oracle: clock floor is shared and wrong identity/duplicates precede clocks (0.316819ms)
+✔ independent calibration oracle: contact loss invalidates ready and burst collection before BPM filtering (0.322066ms)
+✔ independent calibration oracle: spread failure requires recollection and gameplay-only BPM cannot count (0.231828ms)
+✔ independent model oracle: BLE starts empty, pins detached immutable origin and refuses simulator samples (0.760971ms)
+✔ independent model oracle: BLE freshness uses10000 receipt milliseconds rather than active seconds (0.759507ms)
+✔ independent model oracle: every model clock operation shares floor before any mutation (0.306277ms)
+✔ independent model oracle: contact loss invalidates within throttling window without deleting evidence (0.402333ms)
+✔ independent model oracle: paused packets cannot be replayed after resume or resurrect old reading (0.260797ms)
+✔ independent report oracle: live provenance has relative receipts and simulator keeps schema1 (0.830152ms)
+✔ SIG contact flags include valid unsupported contact bit 0x02 (2.151169ms)
+✔ reads only DataView and Uint8Array offsets and leaves backing bytes untouched (0.963243ms)
+✔ energy and RR fields require exact structural lengths (1.136505ms)
+✔ all defined flag combinations preserve exact optional-field counts (5.828707ms)
+✔ rejects reserved bits and enforces packet maximum before optional parsing (3.541933ms)
+✔ detached buffers reject with the bounded packet error (0.62483ms)
+✔ five actual spaced readings produce a detached arithmetic mean (0.665115ms)
+✔ bursts, duplicate sequence and ineligible BPM do not count or roll samples (0.292566ms)
+✔ accepted readings consume their sequence and rejected readings consume observation watermarks (0.210692ms)
+✔ constructor and applicable sequences validate safe generation IDs (0.507781ms)
+✔ wrong connection and old sequence cannot invalidate or advance clock (0.389403ms)
+✔ observe and snapshot share one monotonic clock and clock errors leave sequences reusable (0.666733ms)
+✔ contact loss invalidates collecting before BPM bounds and spacing (0.212795ms)
+✔ contact loss invalidates a ready result even during a burst (0.464665ms)
+✔ collection window is inclusive and expiration retains accepted count (0.604702ms)
+✔ spread at 12 BPM is valid; excessive spread fails without rolling replacement (0.303337ms)
+✔ ready freshness is inclusive, expires permanently and cannot refresh through packets (0.113662ms)
+✔ explicit invalidation is irreversible for collecting, ready, failed and expired (0.19564ms)
+✔ fractional receipt times and inclusive BPM bounds are not rounded or quantized (0.154283ms)
+✔ calibration requires five bounded consistent simulated readings (1.133677ms)
+✔ sample freshness, tension bounds, invalid rejection and pause use active time (6.424663ms)
+✔ fixed simulation steps preserve movement at 30, 60 and 120 Hz and cap stalls (1.794411ms)
+✔ full escape needs fuse, power, key and a steady lock before exit (1.991116ms)
+✔ timer/noise can lose, reset is detached, and report streams are bounded (0.808159ms)
+✔ steady has a real bounded aim and noise effect without altering the simulated source (1.053241ms)
+✔ invalid frame inputs preserve the model and capped events keep the latest terminal report (0.63178ms)
+✔ settings validate exact bounded state and retain failed raw records (3.107604ms)
+✔ an old preference snapshot cannot erase a newer completed best time (0.337114ms)
+✔ automatic best updates keep the latest comfort preferences and the faster completed result (1.628433ms)
+✔ corruption after initial load refuses both manual and automatic writes without changing raw bytes (1.500975ms)
+✔ explicit unreadable reset refuses a repaired record and removes only still-unreadable data (2.156313ms)
+✔ best-time updates require an actual bounded numeric result before reading or writing storage (0.313326ms)
+ℹ tests 102
+ℹ suites 0
+ℹ pass 102
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 347.596701
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 lint
+> eslint .
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 8 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                  0.48 kB │ gzip:  0.33 kB
+dist/assets/index-7ROK7JA2.css   4.34 kB │ gzip:  1.57 kB
+dist/assets/index-BCeYq7UY.js   43.54 kB │ gzip: 14.77 kB
+✓ built in 366ms

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "issue": 138,
+  "baseCommit": "4a5222d040828fb19c2b7acb62cf2ba6c80ecc94",
+  "local": {
+    "node": "24.19.0",
+    "browser": "temporary Chromium 153.0.8010.0 with owned SwiftShader ICD",
+    "unitTests": 102,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "browserInvocation": {
+      "passed": 35,
+      "failed": 1,
+      "failedCase": "real cached history return retains the heap and allows deliberate sensor connection"
+    },
+    "newSettingsBrowserCases": 4,
+    "unchangedBaselineCachedHistory": "Same cached-history failure reproduced at unchanged 4a5222d040828fb19c2b7acb62cf2ba6c80ecc94 with the same temporary Chromium/runtime; no application settings changes."
+  },
+  "sourceSha256": {
+    "src/main.ts": "f4b3d719a4ecddf0157312fe0ea17184d5014753ab1e82acc363099febc77798",
+    "src/settings.ts": "4ab4bad9e56af54320f933acc75ec87704cfd63dd46b2ed9a1b271bc8e2bbcd4",
+    "tests/settings.test.ts": "a084a7aa9318e0a8259cfb0d07250e3c4f24cf8b5d6f4fad5d363cc3939d61f1",
+    "tests/browser/settings-tabs.spec.ts": "d474f96c2be045d51bc391362f282f5612b2f736a93d9bc24d5d465775645a9e",
+    "tests/browser/bluetooth.spec.ts": "d82bb885ea64a044825ca077915bf60392a28e12d5c4e4e37229174574bbebce"
+  },
+  "limits": [
+    "Actual native Web Locks and localStorage; clock controls elapsed gameplay; no production game-state injection.",
+    "Web Bluetooth provider is controlled for software acceptance; physical sensor and watch accuracy remain unverified.",
+    "Older clients ignoring this lock are outside coordination guarantees.",
+    "Cached-history assertion is retained and requires full Chromium CI acceptance."
+  ]
+}

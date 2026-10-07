@@ -9,4 +9,33 @@ export function validateSettings(value:unknown):Settings {
   return {...r} as unknown as Settings;
 }
 export function loadSettings(store:Store):{value:Settings;error:boolean} {try{const raw=store.getItem(SETTINGS_KEY);if(raw===null)return{value:defaults(),error:false};if(raw.length>1024)throw Error('Bound');return{value:validateSettings(JSON.parse(raw)),error:false};}catch{return{value:defaults(),error:true};}}
-export function saveSettings(store:Store,value:Settings):void {store.setItem(SETTINGS_KEY,JSON.stringify(validateSettings(value)));}
+export function saveSettings(store:Store,value:Settings):Settings {const next=validateSettings(value),current=currentSettings(store);next.bestSeconds=faster(current.bestSeconds,next.bestSeconds);store.setItem(SETTINGS_KEY,JSON.stringify(next));return next;}
+
+export class UnreadableSettingsError extends Error {}
+function currentSettings(store:Store):Settings {
+  try{const raw=store.getItem(SETTINGS_KEY);if(raw===null)return defaults();if(raw.length>1024)throw Error('Bound');return validateSettings(JSON.parse(raw));}
+  catch{throw new UnreadableSettingsError('Saved preferences are unreadable. Their raw record was kept.');}
+}
+function faster(a:number|null,b:number|null):number|null {return a===null?b:b===null?a:Math.min(a,b);}
+// The browser caller holds the origin-wide write lock through this synchronous
+// read/merge/write section. Preserve the newest observed best on manual saves.
+export function recordBestTime(store:Store,seconds:number):Settings {
+  if(typeof seconds!=='number')throw Error('Use a bounded numeric completion time.');
+  validateSettings({...defaults(),bestSeconds:seconds});
+  const current=currentSettings(store),bestSeconds=faster(current.bestSeconds,seconds);
+  if(bestSeconds===current.bestSeconds)return current;
+  const next={...current,bestSeconds};store.setItem(SETTINGS_KEY,JSON.stringify(next));return next;
+}
+export function resetUnreadableSettings(store:Store):void {
+  const raw=store.getItem(SETTINGS_KEY);if(raw===null)return;
+  let readable=false;try{if(raw.length<=1024){validateSettings(JSON.parse(raw));readable=true;}}catch{/* Preserve until this explicit reset. */}
+  if(readable)throw Error('Saved preferences changed and are now readable. Reload to use them; no record was reset.');
+  store.removeItem(SETTINGS_KEY);
+}
+export async function withSettingsLock<T extends Settings|void>(locks:LockManager|undefined,update:()=>T):Promise<T> {
+  if(!locks)throw Error('Coordinated preference saving is unavailable. Use a supported browser on localhost or HTTPS.');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);
+  try{return await locks.request(SETTINGS_KEY,{mode:'exclusive',signal:controller.signal},()=>update());}
+  catch(error){if(controller.signal.aborted)throw Error('Preference saving waited too long. Try again; the saved record was kept.');throw error;}
+  finally{clearTimeout(timer);}
+}

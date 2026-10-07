@@ -1,0 +1,177 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+✔ Bluetooth origin is detached and runtime immutable without freezing gameplay (2.618709ms)
+✔ Bluetooth construction revalidates calibration shape, bounds, spacing, mean and age (0.761173ms)
+✔ simulator source and schema1 report remain compatible and refuse Bluetooth injection (26.402345ms)
+✔ Bluetooth has no initial game reading and refuses simulator injection (0.435394ms)
+✔ source connection, final calibration sequence and strict run-start receipt are pinned (0.209466ms)
+✔ bursts and ineligible BPM consume sequence without changing the usable sample (0.289314ms)
+✔ contact loss bypasses burst and BPM admission and immediately clears only usable state (2.164634ms)
+✔ receipt clock freshness is exact even when active time is stalled or capped (0.789946ms)
+✔ a zero-elapsed frame still exposes exact receipt-time staleness (0.214352ms)
+✔ a maximum legal RR tail remains ignored metadata rather than rejecting the game input (0.425976ms)
+✔ disconnect and contact-loss transitions are recorded even before any game reading (0.3817ms)
+✔ a pause with no usable Bluetooth reading records the pause without a redundant signal event (0.190424ms)
+✔ invalid clocks fail atomically before sub-step advance or resume and do not consume sequence (1.803071ms)
+✔ pause/resume retains history but requires a strictly later new notification (0.284181ms)
+✔ all invalidation reasons retain samples and prevent the historical sample from returning (1.891873ms)
+✔ malformed measurements cannot refresh a Bluetooth reading or contaminate reports (0.281484ms)
+✔ Bluetooth report has detached relative calibration/game receipts without transport identity (0.416171ms)
+✔ Bluetooth histories stay capped and terminal runs cannot accept more readings (2.883368ms)
+✔ requestDevice runs synchronously, exact service subscription emits no cached value (18.934504ms)
+✔ unavailable provider and disposed transport fail closed without native calls (0.564839ms)
+✔ Cancel settles promptly at chooser, blocks a replacement until native drainage (2.926734ms)
+✔ Cancel settles promptly at connect, blocks a replacement until native drainage (6.588584ms)
+✔ Cancel settles promptly at service, blocks a replacement until native drainage (1.558628ms)
+✔ Cancel settles promptly at characteristic, blocks a replacement until native drainage (1.510403ms)
+✔ Cancel settles promptly at start, blocks a replacement until native drainage (2.923743ms)
+✔ dispose is terminal and promptly resolves a never-settling native connect (2.997294ms)
+✔ absolute startup deadline is checked after connect even before timer delivery (4.055319ms)
+✔ absolute startup deadline is checked after service even before timer delivery (0.879888ms)
+✔ absolute startup deadline is checked after characteristic even before timer delivery (0.473521ms)
+✔ absolute startup deadline is checked after start even before timer delivery (1.526201ms)
+✔ timer timeout settles public false while pending native operation remains draining (1.61094ms)
+✔ chooser time is excluded; startup shares one deadline across all subsequent stages (0.522743ms)
+✔ early packets are suppressed; real DataView packets stamp sequence and fresh receipt clock (1.250367ms)
+✔ queued disconnect is ignored while connected; actual disconnect retires readiness and listeners (2.15421ms)
+✔ subscription failure contains native secrets and disconnects before cleanup (1.484584ms)
+✔ stop cleanup is serialized, disconnect immediate, rejection contained and reuse blocked (0.691471ms)
+✔ invalid startup/receipt clock NaN cannot publish a measurement (0.698985ms)
+✔ invalid startup/receipt clock Infinity cannot publish a measurement (0.926303ms)
+✔ invalid startup/receipt clock -1 cannot publish a measurement (0.517899ms)
+✔ invalid startup/receipt clock 99 cannot publish a measurement (0.677325ms)
+✔ snapshot and callback states are detached; reconnection obtains a new logical ID (1.430078ms)
+✔ native chooser rejection is bounded and leaves no live listeners (0.90804ms)
+✔ native connect rejection is bounded and leaves no live listeners (0.449851ms)
+✔ native service rejection is bounded and leaves no live listeners (0.490643ms)
+✔ native characteristic rejection is bounded and leaves no live listeners (0.573838ms)
+✔ native start rejection is bounded and leaves no live listeners (0.661419ms)
+✔ indicate-only characteristics work; unsupported notification properties fail closed (0.777958ms)
+✔ retired callback closures cannot mutate a newer connection on the same objects (2.824988ms)
+✔ startup clock reversal/nonfinite clock fails before another stage and readiness publication (0.771603ms)
+✔ settled startup timers cannot retire a subscribed connection later (1.114302ms)
+✔ synchronous chooser failure returns false without exposing the thrown native error (0.369537ms)
+✔ calibration rejects entirely sparse five-slot arrays (1.33733ms)
+✔ calibration rejects a missing own reading even when other readings are valid (0.197893ms)
+✔ inherited numeric entries cannot stand in for an actual calibration reading (0.19232ms)
+✔ five own finite readings retain the exact mean and do not mutate the input (1.326129ms)
+✔ independent packet oracle: literal contact flags distinguish unsupported from supported loss (6.281237ms)
+✔ independent packet oracle: offset views and little-endian optional fields have exact extents (0.898134ms)
+✔ independent packet oracle: malformed lengths, reserved flags and payload ceiling reject (1.258232ms)
+✔ independent calibration oracle: five actual spaced samples average70 and snapshots are detached (0.919744ms)
+✔ independent calibration oracle: bursts and duplicates cannot manufacture five samples (0.761671ms)
+✔ independent calibration oracle: exact window and readiness age boundaries are inclusive (0.597446ms)
+✔ independent calibration oracle: clock floor is shared and wrong identity/duplicates precede clocks (0.4686ms)
+✔ independent calibration oracle: contact loss invalidates ready and burst collection before BPM filtering (0.573375ms)
+✔ independent calibration oracle: spread failure requires recollection and gameplay-only BPM cannot count (0.843017ms)
+✔ independent model oracle: BLE starts empty, pins detached immutable origin and refuses simulator samples (2.449704ms)
+✔ independent model oracle: BLE freshness uses10000 receipt milliseconds rather than active seconds (1.068309ms)
+✔ independent model oracle: every model clock operation shares floor before any mutation (1.38616ms)
+✔ independent model oracle: contact loss invalidates within throttling window without deleting evidence (0.682345ms)
+✔ independent model oracle: paused packets cannot be replayed after resume or resurrect old reading (0.520697ms)
+✔ independent report oracle: live provenance has relative receipts and simulator keeps schema1 (1.69363ms)
+✔ SIG contact flags include valid unsupported contact bit 0x02 (9.014295ms)
+✔ reads only DataView and Uint8Array offsets and leaves backing bytes untouched (0.581735ms)
+✔ energy and RR fields require exact structural lengths (1.873665ms)
+✔ all defined flag combinations preserve exact optional-field counts (2.864438ms)
+✔ rejects reserved bits and enforces packet maximum before optional parsing (11.251528ms)
+✔ detached buffers reject with the bounded packet error (5.359361ms)
+✔ five actual spaced readings produce a detached arithmetic mean (1.021808ms)
+✔ bursts, duplicate sequence and ineligible BPM do not count or roll samples (0.398741ms)
+✔ accepted readings consume their sequence and rejected readings consume observation watermarks (0.393485ms)
+✔ constructor and applicable sequences validate safe generation IDs (1.162502ms)
+✔ wrong connection and old sequence cannot invalidate or advance clock (0.427408ms)
+✔ observe and snapshot share one monotonic clock and clock errors leave sequences reusable (0.460686ms)
+✔ contact loss invalidates collecting before BPM bounds and spacing (3.341589ms)
+✔ contact loss invalidates a ready result even during a burst (0.204471ms)
+✔ collection window is inclusive and expiration retains accepted count (2.045815ms)
+✔ spread at 12 BPM is valid; excessive spread fails without rolling replacement (2.099804ms)
+✔ ready freshness is inclusive, expires permanently and cannot refresh through packets (0.20298ms)
+✔ explicit invalidation is irreversible for collecting, ready, failed and expired (0.369069ms)
+✔ fractional receipt times and inclusive BPM bounds are not rounded or quantized (0.478049ms)
+✔ calibration requires five bounded consistent simulated readings (1.655904ms)
+✔ sample freshness, tension bounds, invalid rejection and pause use active time (22.369207ms)
+✔ fixed simulation steps preserve movement at 30, 60 and 120 Hz and cap stalls (6.023992ms)
+✔ full escape needs fuse, power, key and a steady lock before exit (1.928265ms)
+✔ timer/noise can lose, reset is detached, and report streams are bounded (0.57924ms)
+✔ steady has a real bounded aim and noise effect without altering the simulated source (1.209682ms)
+✔ invalid frame inputs preserve the model and capped events keep the latest terminal report (0.646007ms)
+✔ settings validate exact bounded state and retain failed raw records (2.780732ms)
+✖ an old preference snapshot cannot erase a newer completed best time (1.736748ms)
+✖ automatic best updates keep the latest comfort preferences and the faster completed result (0.762009ms)
+✖ corruption after initial load refuses both manual and automatic writes without changing raw bytes (0.347727ms)
+✖ explicit unreadable reset refuses a repaired record and removes only still-unreadable data (0.29641ms)
+ℹ tests 101
+ℹ suites 0
+ℹ pass 97
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 443.612142
+
+✖ failing tests:
+
+test at tests/settings.test.ts:12:1
+✖ an old preference snapshot cannot erase a newer completed best time (1.736748ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  null !== 12
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/composure/tests/settings.test.ts:16:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 12,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/settings.test.ts:18:1
+✖ automatic best updates keep the latest comfort preferences and the faster completed result (0.762009ms)
+  TypeError: settings.recordBestTime is not a function
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/composure/tests/settings.test.ts:21:24)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+
+test at tests/settings.test.ts:25:1
+✖ corruption after initial load refuses both manual and automatic writes without changing raw bytes (0.347727ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/composure/tests/settings.test.ts:28:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }
+
+test at tests/settings.test.ts:31:1
+✖ explicit unreadable reset refuses a repaired record and removes only still-unreadable data (0.29641ms)
+  TypeError: settings.resetUnreadableSettings is not a function
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/composure/tests/settings.test.ts:35:25)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
