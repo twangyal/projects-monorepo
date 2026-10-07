@@ -40,7 +40,9 @@ one-second export submits all30 authored frames and produces a WebM. The literal
 local-native-receipt.json retains four zero-only pairs and unavailable CPU.
 No environment wrapper, rendering library or browser binary is committed.
 
-Full native suite and first published CI remain pending at this checkpoint.
+The full local native suite passes115 cases. Published normal Shot PR CI passes373 units and115 native cases at `4a5222d040828fb19c2b7acb62cf2ba6c80ecc94` ([run37687493850](https://github.com/twangyal/projects-monorepo/actions/runs/37687493850)). Its one-second native receipt measures6529.999999999998 process CPU ms over1679.121285000001 wall ms, with one zero-only pair excluded (incomplete coverage). This confirms observable counters in full CI Chromium, not codec-only attribution.
+
+First maximum receipts are retained verbatim in `first-ci`, with verified archive/entry hashes. Push run37687485937 fails both unchanged original and separately labelled stage variation at the original95000ms download deadline. The latter measures315390 process CPU ms over95022.619323 wall ms, including285580 GPU-process CPU ms and29480 renderer CPU ms; one zero-only pair makes coverage incomplete. Queue wait67266.4ms overlaps the observation and cannot be subtracted from CPU. The first PR original passes; its stage variation captures successfully but CI is cancelled before independent decode, so that workflow is not declared green. Separate local inspection of both exact PR media copies passes the unchanged gates:1800 video frames and2880648 decoded stereo audio frames each. These independent inspections are retained separately and do not rewrite first CI outcomes. Normal push CI is cancelled; no pass is claimed for it.
 Original maximum fixture/media inspection/production settings/deadlines are
 unchanged. Issue128 remains open; adding a CPU observation is not a throughput
 repair. First CI must preserve both original acceptance and separate diagnostic

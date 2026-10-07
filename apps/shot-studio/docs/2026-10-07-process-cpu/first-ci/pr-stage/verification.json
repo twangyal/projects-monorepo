@@ -1,0 +1,548 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "status": "capture-passed-awaiting-independent-decode",
+  "fixtureOracleSha256": "cdd5c771017e5e39480a2284b23c1bdd4b147243dc130fd7f3aebd673ec680b7",
+  "fixtureFiles": [
+    {
+      "name": "maximum-sequence.json",
+      "bytes": 33978,
+      "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+    },
+    {
+      "name": "ordinary-scene.json",
+      "bytes": 400,
+      "sha256": "0093c25a7f3d2bb8f4ba0a501ab3b195ac6a25f673f1856b6f3a5cab3280c178"
+    },
+    {
+      "name": "original-60s-stereo.wav",
+      "bytes": 11520044,
+      "sha256": "b383ee88c15caccdbb0368044148df8e3ff5fea53a35e024e6793eed36ceb32c"
+    },
+    {
+      "name": "exact-12MiB.wav",
+      "bytes": 12582912,
+      "sha256": "a55fce05fc496c94c159a6f138dbc5584491ba1a9bad5142ac75b9f00f922ef2"
+    },
+    {
+      "name": "over-12MiB.wav",
+      "bytes": 12582913,
+      "sha256": "255e82845eea1a4f8a90211e98cbd64d71a76a612176a57aac7dd4b83853d84c"
+    },
+    {
+      "name": "exact-324KiB-metadata.shot-sequence",
+      "bytes": 11851836,
+      "sha256": "3d10effbfb87699636488d2a3a9858ff64b46184b9c66787490c15d1ba303419"
+    },
+    {
+      "name": "over-324KiB-metadata.shot-sequence",
+      "bytes": 11851837,
+      "sha256": "019f0b75c6aa7a319eb0b93d0e4fedfb4f777028c890012e28667096c82c525d"
+    },
+    {
+      "name": "over-16MiB.shot-sequence",
+      "bytes": 16777217,
+      "sha256": "1003b1b5dc078189799a1216ce0f9fbcebb94e8b6b83c58c4b03345f07f94ced"
+    }
+  ],
+  "checks": [
+    "Four complete original sources, twenty full-shot clips,256 cues and sixty-second PCM retain exact film/WAV bytes. Trim/offset/gain is one Undo/Redo edit. Separate exact12MiB ancillary WAV and324KiB raw metadata admit; +1 refuses atomically;16MiB+1 whole-file refuses.",
+    "Fresh persistent browser process restores byte-identical complete archive and unrelated original scene/silent retained take. Full authored-timestamp export leaves all three complete backups unchanged."
+  ],
+  "artifacts": [
+    {
+      "name": "trimmed-before-restart.shot-sequence",
+      "bytes": 11554385,
+      "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+    },
+    {
+      "name": "trimmed-after-restart.shot-sequence",
+      "bytes": 11554385,
+      "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+    },
+    {
+      "name": "soundtrack-60s.webm",
+      "bytes": 9879042,
+      "sha256": "e9dde7296c21688951129293cd7fb040c0b1c7e35ccfb48cb4cb749adbe49467"
+    },
+    {
+      "name": "ordinary-before.json",
+      "bytes": 669,
+      "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+    },
+    {
+      "name": "take-before.shot-take",
+      "bytes": 15700,
+      "sha256": "5dfbb283c164fd001d6b2b7e1826dbbae8b85141828567291f89f3bceeacab29"
+    },
+    {
+      "name": "ordinary-silent-take.webm",
+      "bytes": 15023,
+      "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+    },
+    {
+      "name": "desktop.png",
+      "bytes": 605995,
+      "sha256": "2dde87ac9e732b4599c55afa375559a9cab86426d4bf326519714ff7810918bc"
+    },
+    {
+      "name": "390px.png",
+      "bytes": 55155,
+      "sha256": "fbd5c9376de8a162195fb507bffc9542a3f46df13f921998d511a66d27d444ee"
+    }
+  ],
+  "browsers": [
+    [
+      4887
+    ],
+    [
+      5068
+    ]
+  ],
+  "browserEvents": [
+    {
+      "index": 0,
+      "event": "harness-close-request",
+      "stage": "whole-browser restart",
+      "wallMs": 14966.130056,
+      "reason": "deliberate full-process restart"
+    },
+    {
+      "index": 0,
+      "event": "page-close",
+      "stage": "whole-browser restart",
+      "wallMs": 14980.917846
+    },
+    {
+      "index": 0,
+      "event": "context-close",
+      "stage": "whole-browser restart",
+      "wallMs": 15020.816852
+    },
+    {
+      "index": 0,
+      "event": "browser-disconnected",
+      "stage": "whole-browser restart",
+      "wallMs": 15020.984776000001
+    },
+    {
+      "index": 1,
+      "event": "harness-close-request",
+      "stage": "layout and final native persistence",
+      "wallMs": 87657.766018,
+      "reason": "final cleanup"
+    },
+    {
+      "index": 1,
+      "event": "page-close",
+      "stage": "layout and final native persistence",
+      "wallMs": 87668.800743
+    },
+    {
+      "index": 1,
+      "event": "context-close",
+      "stage": "layout and final native persistence",
+      "wallMs": 87716.361244
+    },
+    {
+      "index": 1,
+      "event": "browser-disconnected",
+      "stage": "layout and final native persistence",
+      "wallMs": 87716.542527
+    }
+  ],
+  "limits": [
+    "Exact12MiB WAV has legal JUNK padding, not a larger PCM payload or worst-case decoding/RAM.",
+    "Metadata exact324KiB uses trailing JSON whitespace. No claim that canonical topology reaches that metadata cap.",
+    "16MiB+1 is an early whole-file refusal; valid component maxima total12,914,704B and cannot produce a valid exact16MiB artifact.",
+    "All256 performer cues are blocking; this graph does not claim simultaneous loop-mode or heterogeneous camera-axis maxima.",
+    "Forty landmark frames are independently pixel-checked; full video timestamps and all decoded PCM frames are inspected, not all video pixels.",
+    "The original constant-frequency PCM is synthetic test audio, not a microphone/physical-device claim."
+  ],
+  "browserVersion": "155.0.8059.12",
+  "browserSelection": "explicit CHROMIUM_PATH override",
+  "saved": {
+    "schemaVersion": 1,
+    "revision": 3,
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "legacyRaw": null
+  },
+  "beforeRestart": {
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+  },
+  "afterRestart": {
+    "schemaVersion": 1,
+    "revision": 8,
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "legacyRaw": null
+  },
+  "diagnosticVariation": "native-stage-timing",
+  "exportObservations": [
+    {
+      "reason": "before-click",
+      "wallMs": 2.4374320000024454,
+      "status": "Downloaded the complete committed sequence with its original WAV.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0,
+      "progressMax": 1,
+      "exportDisabled": false,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 5002.331580000002,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.06833333333333333,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 10004.848928,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.14,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 15007.284026000001,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.2122222222222222,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 20010.649527,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.28444444444444444,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 25014.638717,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.35666666666666663,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 30018.104268000003,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.42888888888888893,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 35020.534857,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.5016666666666667,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 40027.865832,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.5738888888888888,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 45031.476755,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.6461111111111111,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 50033.532313,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.7188888888888889,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 55041.831749000004,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.7916666666666666,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 60048.042208,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.8638888888888889,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 65048.53453800001,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.9355555555555556,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "download-event",
+      "wallMs": 69651.899107,
+      "status": "Sequence WebM downloaded with its soundtrack. No ordinary take was added.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 1,
+      "progressMax": 1,
+      "exportDisabled": false,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    }
+  ],
+  "stageTiming": {
+    "schemaVersion": 1,
+    "mode": "stage-timing-diagnostic-variation",
+    "active": true,
+    "nativeQueues": {
+      "video": {
+        "encodeCalls": 1800,
+        "maxQueue": 4,
+        "waits": 1797,
+        "completed": 1797,
+        "waitMs": 66858.5999999966,
+        "maxWaitMs": 107.09999999997672,
+        "pending": 0,
+        "retiredWaits": 0,
+        "tracked": 0,
+        "unobserved": 0
+      },
+      "audio": {
+        "encodeCalls": 3000,
+        "maxQueue": 4,
+        "waits": 1,
+        "completed": 1,
+        "waitMs": 9.300000000046566,
+        "maxWaitMs": 9.300000000046566,
+        "pending": 0,
+        "retiredWaits": 0,
+        "tracked": 0,
+        "unobserved": 0
+      }
+    },
+    "stages": {
+      "probe": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 34.70000000006985,
+        "maxMs": 34.70000000006985,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "create": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 6.300000000046566,
+        "maxMs": 6.300000000046566,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "draw": {
+        "calls": 1805,
+        "completed": 1805,
+        "errors": 0,
+        "totalMs": 1337.3999999959487,
+        "maxMs": 5.900000000023283,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "start": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 4.299999999930151,
+        "maxMs": 4.299999999930151,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "video": {
+        "calls": 1800,
+        "completed": 1800,
+        "errors": 0,
+        "totalMs": 306.30000000225846,
+        "maxMs": 45.5,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "audio": {
+        "calls": 3000,
+        "completed": 3000,
+        "errors": 0,
+        "totalMs": 87.00000000360887,
+        "maxMs": 1.7000000000698492,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "addVideo": {
+        "calls": 1800,
+        "completed": 1800,
+        "errors": 0,
+        "totalMs": 66985.99999999348,
+        "maxMs": 107.19999999995343,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "addAudio": {
+        "calls": 3000,
+        "completed": 3000,
+        "errors": 0,
+        "totalMs": 244.80000000318978,
+        "maxMs": 9.5,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "finalize": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 97,
+        "maxMs": 97,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "cancel": {
+        "calls": 0,
+        "completed": 0,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "sinkWrite": {
+        "calls": 1834,
+        "completed": 1834,
+        "errors": 0,
+        "totalMs": 20.29999999946449,
+        "maxMs": 2.5,
+        "pending": 0,
+        "pendingMs": 0
+      }
+    },
+    "limits": [
+      "Observer elapsed times include scheduling/native waits; stages may overlap and are not additive CPU time.",
+      "Draw timing excludes later GPU work; VideoFrame snapshots may synchronize rendering.",
+      "All renderer draw calls in this window are counted; draw timing is not export-only attribution.",
+      "Native once-dequeue waits measure the pinned encoder backpressure boundary, not exclusive encoder CPU time.",
+      "Sink writes exclude upstream muxer scheduling/serialization and do not account for all writer backpressure.",
+      "Queue observations retain at most8 active encoders and8 pending listeners per encoder; unobserved counts disclose overflow.",
+      "A separate diagnostic variation, not the unchanged original acceptance run."
+    ]
+  },
+  "processCpu": {
+    "schemaVersion": 1,
+    "status": "measured",
+    "wallMs": 69650.81678,
+    "matchedCpuMs": 266790,
+    "matchedProcesses": 6,
+    "newProcesses": 0,
+    "missingProcesses": 0,
+    "invalidPairs": 0,
+    "zeroCounterPairs": 2,
+    "complete": false,
+    "byType": {
+      "browser": {
+        "processes": 1,
+        "cpuMs": 129.9999999999999
+      },
+      "renderer": {
+        "processes": 3,
+        "cpuMs": 23980
+      },
+      "GPU": {
+        "processes": 1,
+        "cpuMs": 242660
+      },
+      "network.mojom.NetworkService": {
+        "processes": 1,
+        "cpuMs": 20.000000000000004
+      }
+    },
+    "limits": [
+      "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+      "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+      "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+      "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+      "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+    ]
+  },
+  "recordAndDownloadWallMs": 69663.30771600001,
+  "pageErrors": [],
+  "externalRequests": [],
+  "captureWallMs": 87567.27544699999,
+  "closedOwnedBrowsers": true
+}
