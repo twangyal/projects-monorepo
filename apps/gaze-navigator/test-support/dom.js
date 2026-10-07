@@ -3,7 +3,7 @@ export function element() {
   const listeners = new Map();
   return {
     style: {}, children: [], textContent: '', disabled: false, value: '', dataset: {},
-    classList: { add: value => classes.add(value), remove: value => classes.delete(value), contains: value => classes.has(value) },
+    classList: { add: value => classes.add(value), remove: (...values) => values.forEach(value => classes.delete(value)), contains: value => classes.has(value), toggle: (value, on) => (on ? classes.add(value) : classes.delete(value)) },
     addEventListener(name, callback) { listeners.set(name, callback); },
     removeEventListener(name) { listeners.delete(name); },
     emit(name, event = {}) { return listeners.get(name)?.(event); },
@@ -13,13 +13,14 @@ export function element() {
     append(child) { this.children.push(child); },
     remove() {},
     contains(target) { return this.children.includes(target); },
+    querySelectorAll() { return []; },
     closest() { return this; },
     getBoundingClientRect() { return { left: 10, top: 20, width: 400, height: 400 }; },
   };
 }
 
 export async function appHarness(api) {
-  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'dwellDefault', 'dwellSlow', 'dwellVerySlow', 'dwellDuration', 'newDraft', 'draftReview', 'draftReviewText', 'keepComposer', 'replaceComposer', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'downloadAccuracy', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview', 'keyboardUp', 'keyboardDown', 'webgazerVideoFeed'];
+  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'dwellDefault', 'dwellSlow', 'dwellVerySlow', 'dwellDuration', 'assistOff', 'assistStandard', 'assistWide', 'assistDescription', 'newDraft', 'draftReview', 'draftReviewText', 'keepComposer', 'replaceComposer', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'downloadAccuracy', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview', 'keyboardUp', 'keyboardDown', 'webgazerVideoFeed'];
   ids.push('navigationRoot', 'trackingControls', 'pageUp', 'pageDown');
   const nodes = Object.fromEntries(ids.map(id => [id, element()]));
   for (const id of ['calibration', 'playground', 'accuracyPanel', 'composer', 'textKeyboard']) nodes[id].classList.add('hidden');

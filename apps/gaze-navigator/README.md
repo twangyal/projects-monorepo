@@ -18,6 +18,8 @@ Open `http://localhost:4173`.
 - **Start camera** requests webcam access and loads WebGazer from jsDelivr on demand.
 - **Pointer simulation** runs the same target resolver/dwell logic with pointer coordinates, making the interaction testable without a webcam.
 - Hold for **0.9 seconds** by default, or choose **1.5 seconds** or **2.5 seconds** with the gaze-reachable confirmation controls. The setting lasts for this page session and applies to navigation and safety controls; Escape still pauses immediately. Changing timing clears unfinished progress. A control confirms once until you leave it and return, including after a timing change. Refresh restores 0.9 seconds.
+- **Nearby assist** (default Standard) lets gaze that lands just outside a control select it: within 48 pixels, or 96 pixels with **Wide assist**. Exact hits always win, two similarly close controls are skipped (the cursor ring turns dashed), and assisted controls show a dashed amber outline and still need the full hold. **Assist off** requires a direct hit. While paused only Resume and Stop are eligible, and held-out accuracy checks never use assist. The choice is gaze-reachable and lasts for the page session.
+- Camera samples are smoothed with an adaptive One Euro filter so small fixation jitter does not restart a hold, while large gaze shifts follow quickly. Pointer simulation and held-out accuracy measurements use unsmoothed coordinates.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
 - In camera mode, only physical pointer clicks on the dot add samples. Keyboard/synthetic clicks and clicks without a recorded eye sample do not advance calibration. Simulation permits ordinary keyboard activation.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
@@ -31,6 +33,8 @@ Open `http://localhost:4173`.
 - `index.html` — demo UI and explicit gaze targets.
 - `src/app.js` — calibration, WebGazer adapter and animation-frame sampling for simulation.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
+- `src/gaze-filter.js` — adaptive One Euro smoothing for camera samples, reset on gaps and tracking changes.
+- `src/target-assist.js` — bounded nearby-target selection with ambiguity abstention, occlusion checks, eligibility and hysteresis.
 - `src/dwell.js` — shared, deterministic dwell state machine; prevents repeated confirmations and rejects sample gaps over 250 ms.
 - `tests/` — dependency-free unit and app integration tests.
 - `src/text-entry.js` / `src/keyboard.js` — explicit-field gaze typing, selection replacement, backspace, case toggle, and field limits.
@@ -203,3 +207,12 @@ No camera frames or raw prediction streams are included or stored. Starting or
 cancelling a check disables downloading and clears the previous report. The
 receipt prepares physical measurement handoff without claiming hardware acceptance.
 Issue #131 tracks verification.
+
+### Stabilized gaze and nearby assist — 2026-10-07
+
+Camera samples pass through a One Euro filter and live navigation can select the
+uniquely closest control within 48/96 pixels when gaze misses it slightly, with
+ambiguity abstention, visible assisted outlines and unchanged hold confirmation.
+79 unit and 84 native Chromium cases pass locally. Filter constants and radii are
+untuned defaults pending physical webcam checks (#132).
+[Verification record](docs/2026-10-07-nearby-assist-verification.md); issue #137.

@@ -1,5 +1,7 @@
 import { createDwellTracker } from './dwell.js';
 import { resolveTarget } from './resolver.js';
+import { createGazeFilter } from './gaze-filter.js';
+import { ASSIST_RADIUS, resolveAssistedTarget } from './target-assist.js';
 import { setupWorkspace } from './workspace-view.js';
 import { setupAccuracyCheck } from './accuracy-view.js';
 import { createCameraLoader } from './camera-loader.js';
@@ -9,6 +11,7 @@ import { releaseCamera } from './camera-cleanup.js';
 import { identifyCamera, retireCamera, retireCameraModel } from './camera-retirement.js';
 
 const dwell = createDwellTracker();
+const stabilizer = createGazeFilter();
 const loadCamera = createCameraLoader(document, window);
 const CALIBRATION_CLICKS = 3;
 const CALIBRATION_POINTS = [
@@ -50,6 +53,9 @@ let cameraApi = null;
 let cameraStartup = null;
 let needsFreshCamera = false;
 let paused = false;
+let assistRadius = ASSIST_RADIUS.standard;
+let resolvedTarget = null;
+const safetyTarget = target => target === pauseButton || target === stopButton;
 const pointerHandler = event => {
   simulationPoint = { x: event.clientX, y: event.clientY };
 };
@@ -64,9 +70,15 @@ function moveCursor(x, y) {
 }
 
 function clearFocus() {
-  currentTarget?.classList.remove('gaze-focus');
+  currentTarget?.classList.remove('gaze-focus', 'gaze-assisted');
   currentTarget = null;
+  resolvedTarget = null;
+  cursor.classList.remove('ambiguous');
   dwellFill.style.width = '0%';
+}
+
+function hideCursor() {
+  cursor.classList.remove('visible', 'ambiguous');
 }
 
 function activate(target) {
@@ -78,41 +90,52 @@ function activate(target) {
 }
 
 function consumePoint(x, y, now = performance.now()) {
+  // Held-out checks measure the estimator itself, so they keep raw camera predictions.
+  const point = trackingMode === 'camera' ? stabilizer.filter(x, y, now) : { x, y };
   if (accuracy.active && !paused && trackingMode && !document.hidden) {
     accuracy.sample({ x, y }, now);
-    const safetyTarget = resolveTarget(document, trackingControls, x, y);
-    if (safetyTarget !== pauseButton && safetyTarget !== stopButton) {
+    // No nearby assist here: a measurement dot near the toolbar must not cancel the check.
+    const target = point && resolveTarget(document, trackingControls, point.x, point.y);
+    if (!safetyTarget(target)) {
       dwell.update(null, now);
       clearFocus();
-      cursor.classList.remove('visible');
+      hideCursor();
       return;
     }
   }
-  if (!trackingMode || document.hidden || (!paused && playground.classList.contains('hidden')) ||
-      !Number.isFinite(x) || !Number.isFinite(y)) {
+  if (!point || !trackingMode || document.hidden || (!paused && playground.classList.contains('hidden'))) {
     dwell.reset({ preserveConfirmation: paused });
+    stabilizer.reset();
     clearFocus();
-    cursor.classList.remove('visible');
+    hideCursor();
     return;
   }
-  const target = resolveTarget(document, paused ? trackingControls : navigationRoot, x, y);
-  if (paused && target !== pauseButton && target !== stopButton) {
+  const resolution = resolveAssistedTarget(document, paused ? trackingControls : navigationRoot, point.x, point.y, {
+    radius: accuracy.active ? 0 : assistRadius,
+    current: resolvedTarget,
+    eligible: paused || accuracy.active ? safetyTarget : () => true,
+  });
+  if (paused && !resolution.target && !resolution.ambiguous) {
     dwell.update(null, now);
     clearFocus();
-    cursor.classList.remove('visible');
+    hideCursor();
     return;
   }
-  moveCursor(x, y);
-  const selection = dwell.update(target, now);
+  moveCursor(point.x, point.y);
+  const selection = dwell.update(resolution.target, now);
   if (selection.target !== currentTarget) {
     clearFocus();
     currentTarget = selection.target;
     currentTarget?.classList.add('gaze-focus');
   }
+  resolvedTarget = resolution.target;
+  currentTarget?.classList.toggle('gaze-assisted', resolution.assisted);
+  cursor.classList.toggle('ambiguous', resolution.ambiguous);
   dwellFill.style.width = `${selection.progress * 100}%`;
   if (selection.activated) {
     activate(selection.activated);
     clearFocus();
+    resolvedTarget = selection.activated;
   }
 }
 
@@ -156,7 +179,7 @@ function beginCalibration() {
   dwell.reset({ preserveConfirmation: paused });
   clearFocus();
   simulationPoint = null;
-  cursor.classList.remove('visible');
+  hideCursor();
   calibrationIndex = 0;
   calibrationClicks = 0;
   playground.classList.add('hidden');
@@ -255,10 +278,11 @@ async function enableCamera() {
 
 function resetTracking(preserveConfirmation = false) {
   accuracy.cancel();
+  stabilizer.reset();
   dwell.reset({ preserveConfirmation: preserveConfirmation === true || paused });
   clearFocus();
   simulationPoint = null;
-  cursor.classList.remove('visible');
+  hideCursor();
 }
 
 function stopTracking() {
@@ -345,6 +369,24 @@ for (const [id, milliseconds] of dwellChoices) {
       document.querySelector(`#${choiceId}`).setAttribute('aria-pressed', String(choiceId === id));
     }
     document.querySelector('#dwellDuration').textContent = `Hold for ${milliseconds / 1000} seconds to confirm. Look away before confirming again.`;
+  });
+}
+
+const assistChoices = [['assistOff', 'off'], ['assistStandard', 'standard'], ['assistWide', 'wide']];
+const assistDescriptions = {
+  off: 'Nearby assist is off. Only the control directly under your gaze can be confirmed.',
+  standard: 'Standard nearby assist. Gaze within 48 pixels of one control selects it; similarly close controls are skipped.',
+  wide: 'Wide nearby assist. Gaze within 96 pixels of one control selects it; similarly close controls are skipped.',
+};
+for (const [id, level] of assistChoices) {
+  document.querySelector(`#${id}`).addEventListener('click', () => {
+    if (assistRadius === ASSIST_RADIUS[level]) return;
+    assistRadius = ASSIST_RADIUS[level];
+    resetTracking(true);
+    for (const [choiceId] of assistChoices) {
+      document.querySelector(`#${choiceId}`).setAttribute('aria-pressed', String(choiceId === id));
+    }
+    document.querySelector('#assistDescription').textContent = assistDescriptions[level];
   });
 }
 
