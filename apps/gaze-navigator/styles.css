@@ -70,6 +70,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 #messageList { max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 .message-target { min-height: 90px; text-align: left; flex-shrink: 0; }
 #messageDetail, #draftList { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+#draftList article { margin: 16px 0; padding: 12px; border: 1px solid #456b5c; border-radius: 12px; }
+#draftList button { display: block; width: 100%; margin-top: 8px; white-space: normal; overflow-wrap: anywhere; }
+#draftReview { margin: 16px 0; padding: 12px; border: 2px solid #75e5b4; border-radius: 12px; }
+#draftReview button { margin: 4px; }
 .workspace button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #75e5b4; outline-offset: 3px; }
 @media (max-width: 650px) { .inbox-layout { grid-template-columns: 1fr; } }
@@ -82,8 +86,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 #accuracyPanel.report-complete #accuracyStage, #accuracyPanel.report-complete .accuracy-description { display: none; }
 #accuracyDot { display: grid; place-items: center; pointer-events: none; }
 #accuracyData { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }
-#cancelAccuracy { flex-shrink: 0; min-height: 54px; margin-top: 8px; padding: 16px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; }
-#cancelAccuracy.gaze-focus { outline: 3px solid #75e5b4; }
+.accuracy-actions { display: flex; gap: 8px; flex-shrink: 0; margin-top: 8px; }
+.accuracy-actions button { flex: 1; min-width: 0; min-height: 54px; padding: 12px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; }
+.accuracy-actions button.gaze-focus { outline: 3px solid #75e5b4; }
 @media (max-height: 650px) { #accuracyPanel { padding: 12px; } .accuracy-description { display: none; } }
 
 #textKeyboard { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(940px, calc(100% - 32px)); max-height: min(55vh, calc(100dvh - 180px)); overflow: hidden; display: flex; flex-direction: column; z-index: 4000; border: 1px solid #456b5c; border-radius: 20px; background: #0a1b16; padding: 18px; box-shadow: 0 10px 60px #0008; }
@@ -99,3 +104,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 @media (max-height: 650px) { .keyboard-help { display: none; } #textKeyboard { padding: 10px; } }
 
 .lab-link a { color: #75e5b4; display: inline-block; padding: 8px 0; text-underline-offset: 3px; }
+
+.confirmation-settings { margin: 16px 0; }
+.confirmation-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirmation-choices button { flex: 1; min-width: 90px; min-height: 54px; padding: 12px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; cursor: pointer; }
+.confirmation-choices button[aria-pressed="true"] { background: #285743; outline: 2px solid #75e5b4; }
+
+.confirmation-choices button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }

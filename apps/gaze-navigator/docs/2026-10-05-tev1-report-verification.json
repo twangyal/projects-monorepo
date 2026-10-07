@@ -1,0 +1,32 @@
+{
+  "runtime": "v24.19.0",
+  "browser": "153.0.8010.0",
+  "inferenceRerun": false,
+  "ordinaryReportSummaryRecomputedExactly": true,
+  "observations": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "rows": 14,
+      "correct": 9,
+      "unexpectedSelections": 3,
+      "reexportPreservesOriginalResults": true,
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 480
+      },
+      "rows": 14,
+      "correct": 9,
+      "unexpectedSelections": 3,
+      "reexportPreservesOriginalResults": true,
+      "pageErrors": [],
+      "externalRequests": []
+    }
+  ]
+}

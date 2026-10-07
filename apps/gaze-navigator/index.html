@@ -47,7 +47,10 @@
         <p id="accuracyResult" role="status"></p>
         <details><summary>Local measurement JSON</summary><pre id="accuracyData"></pre></details>
       </div>
-      <button id="cancelAccuracy" data-gaze-target>Close / cancel check</button>
+      <div class="accuracy-actions">
+        <button id="downloadAccuracy" data-gaze-target disabled>Download measurement</button>
+        <button id="cancelAccuracy" data-gaze-target>Close / cancel check</button>
+      </div>
     </section>
     <section id="playground" class="panel hidden" aria-labelledby="playgroundTitle">
       <div class="section-heading">
@@ -56,6 +59,15 @@
           <h2 id="playgroundTitle">Try the demo controls without touching the mouse.</h2>
         </div>
         <div class="dwell-meter" aria-label="Dwell progress"><span id="dwellFill"></span></div>
+      </div>
+      <div class="confirmation-settings" role="group" aria-label="Confirmation hold duration">
+        <p id="dwellDuration" role="status">Hold for 0.9 seconds to confirm. Look away before confirming again.</p>
+        <div class="confirmation-choices">
+          <button id="dwellDefault" data-gaze-target aria-pressed="true">0.9 seconds</button>
+          <button id="dwellSlow" data-gaze-target aria-pressed="false">1.5 seconds</button>
+          <button id="dwellVerySlow" data-gaze-target aria-pressed="false">2.5 seconds</button>
+        </div>
+        <p>Choose a comfortable timing for this session. Escape pauses immediately.</p>
       </div>
       <div class="target-grid">
         <button id="composeButton" class="demo-target" data-gaze-target data-action="compose">Compose</button>
@@ -95,7 +107,13 @@
           </div>
         </section>
         <h3>Session drafts</h3>
-        <p>Drafts clear when you refresh. Nothing is sent.</p>
+        <p>Keep up to 20 drafts in this session. Reopen one to update it. Drafts clear when you refresh. Nothing is sent.</p>
+        <button id="newDraft" data-gaze-target>New draft</button>
+        <section id="draftReview" class="hidden" aria-label="Review composer replacement">
+          <p id="draftReviewText" role="status"></p>
+          <button id="keepComposer" data-gaze-target>Keep current composer</button>
+          <button id="replaceComposer" data-gaze-target>Replace composer</button>
+        </section>
         <div id="draftList"></div>
       </div>
       <p id="result" role="status" class="result">Hold your gaze on a control for 0.9 seconds.</p>

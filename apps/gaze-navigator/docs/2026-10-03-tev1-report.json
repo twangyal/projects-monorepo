@@ -1,0 +1,311 @@
+{
+  "format": "gaze-decision-report",
+  "version": 1,
+  "suite": "gaze-targets-v1",
+  "model": {
+    "id": "Ollama/tev1:0.8b-q8_0",
+    "kind": "local",
+    "digest": "d45e875d63fed9465390a4eb9e55f51f470390a446667b55d0a075a15e0336bf"
+  },
+  "createdAt": "2026-10-03T16:56:31.628Z",
+  "cancelled": false,
+  "results": [
+    {
+      "caseId": "compose-hit",
+      "decision": {
+        "targetId": "t1",
+        "confidence": 0.9567225501902701
+      },
+      "elapsedMs": 4341.205897000001,
+      "error": null
+    },
+    {
+      "caseId": "search-hit",
+      "decision": {
+        "targetId": null,
+        "confidence": 0.012339718844653125
+      },
+      "elapsedMs": 2532.819737,
+      "error": null
+    },
+    {
+      "caseId": "compose-near",
+      "decision": {
+        "targetId": "t1",
+        "confidence": 0.9858945249893026
+      },
+      "elapsedMs": 2597.1845649999996,
+      "error": null
+    },
+    {
+      "caseId": "ambiguous",
+      "decision": {
+        "targetId": "t1",
+        "confidence": 0.12820354404243317
+      },
+      "elapsedMs": 3180.3712450000003,
+      "error": null
+    },
+    {
+      "caseId": "compose-context",
+      "decision": {
+        "targetId": "t1",
+        "confidence": 0.8980815325628502
+      },
+      "elapsedMs": 3259.4831560000002,
+      "error": null
+    },
+    {
+      "caseId": "search-context",
+      "decision": {
+        "targetId": null,
+        "confidence": 0.7174909368479703
+      },
+      "elapsedMs": 3221.901022,
+      "error": null
+    },
+    {
+      "caseId": "off-target",
+      "decision": {
+        "targetId": null,
+        "confidence": null
+      },
+      "elapsedMs": 0.057207000001653796,
+      "error": null
+    },
+    {
+      "caseId": "disabled-target",
+      "decision": {
+        "targetId": null,
+        "confidence": null
+      },
+      "elapsedMs": 0.0374100000008184,
+      "error": null
+    },
+    {
+      "caseId": "missing-gaze",
+      "decision": {
+        "targetId": null,
+        "confidence": null
+      },
+      "elapsedMs": 0.02899500000057742,
+      "error": null
+    },
+    {
+      "caseId": "pause-hit",
+      "decision": {
+        "targetId": "t3",
+        "confidence": 0.9360545614187437
+      },
+      "elapsedMs": 2633.1132259999977,
+      "error": null
+    },
+    {
+      "caseId": "unsupported-goal",
+      "decision": {
+        "targetId": "t1",
+        "confidence": 0.08974291858207595
+      },
+      "elapsedMs": 3219.3083540000007,
+      "error": null
+    },
+    {
+      "caseId": "stop-context",
+      "decision": {
+        "targetId": "t4",
+        "confidence": 0.870975532502855
+      },
+      "elapsedMs": 3319.667666999998,
+      "error": null
+    },
+    {
+      "caseId": "swapped-context",
+      "decision": {
+        "targetId": "t2",
+        "confidence": 0.860308920020374
+      },
+      "elapsedMs": 3269.811791,
+      "error": null
+    },
+    {
+      "caseId": "conflicting-goal",
+      "decision": {
+        "targetId": "t1",
+        "confidence": 0.10387287605678164
+      },
+      "elapsedMs": 2547.9809170000008,
+      "error": null
+    }
+  ],
+  "benchmark": {
+    "format": "gaze-decision-benchmark",
+    "version": 1,
+    "summary": {
+      "complete": true,
+      "overall": {
+        "total": 14,
+        "attempted": 14,
+        "valid": 14,
+        "errors": 0,
+        "correct": 9,
+        "incorrect": 5,
+        "abstained": 5,
+        "unexpectedSelections": 3,
+        "missing": 0,
+        "accuracy": 0.6428571428571429,
+        "coverage": 1,
+        "meanElapsedMs": 2437.3550849285716
+      },
+      "modelEligible": {
+        "total": 11,
+        "attempted": 11,
+        "valid": 11,
+        "errors": 0,
+        "correct": 6,
+        "incorrect": 5,
+        "abstained": 2,
+        "unexpectedSelections": 3,
+        "missing": 0,
+        "accuracy": 0.5454545454545454,
+        "coverage": 1,
+        "meanElapsedMs": 3102.0770524545455,
+        "caseIds": [
+          "compose-hit",
+          "search-hit",
+          "compose-near",
+          "ambiguous",
+          "compose-context",
+          "search-context",
+          "pause-hit",
+          "unsupported-goal",
+          "stop-context",
+          "swapped-context",
+          "conflicting-goal"
+        ]
+      },
+      "policyOnly": {
+        "total": 3,
+        "attempted": 3,
+        "valid": 3,
+        "errors": 0,
+        "correct": 3,
+        "incorrect": 0,
+        "abstained": 3,
+        "unexpectedSelections": 0,
+        "missing": 0,
+        "accuracy": 1,
+        "coverage": 1,
+        "meanElapsedMs": 0.04120400000101654,
+        "caseIds": [
+          "off-target",
+          "disabled-target",
+          "missing-gaze"
+        ]
+      },
+      "baseline": {
+        "overall": {
+          "total": 14,
+          "attempted": 14,
+          "valid": 14,
+          "errors": 0,
+          "correct": 9,
+          "incorrect": 5,
+          "abstained": 9,
+          "unexpectedSelections": 1,
+          "missing": 0,
+          "accuracy": 0.6428571428571429,
+          "coverage": 1,
+          "meanElapsedMs": null
+        },
+        "modelEligible": {
+          "total": 11,
+          "attempted": 11,
+          "valid": 11,
+          "errors": 0,
+          "correct": 6,
+          "incorrect": 5,
+          "abstained": 6,
+          "unexpectedSelections": 1,
+          "missing": 0,
+          "accuracy": 0.5454545454545454,
+          "coverage": 1,
+          "meanElapsedMs": null,
+          "caseIds": [
+            "compose-hit",
+            "search-hit",
+            "compose-near",
+            "ambiguous",
+            "compose-context",
+            "search-context",
+            "pause-hit",
+            "unsupported-goal",
+            "stop-context",
+            "swapped-context",
+            "conflicting-goal"
+          ]
+        },
+        "policyOnly": {
+          "total": 3,
+          "attempted": 3,
+          "valid": 3,
+          "errors": 0,
+          "correct": 3,
+          "incorrect": 0,
+          "abstained": 3,
+          "unexpectedSelections": 0,
+          "missing": 0,
+          "accuracy": 1,
+          "coverage": 1,
+          "meanElapsedMs": null,
+          "caseIds": [
+            "off-target",
+            "disabled-target",
+            "missing-gaze"
+          ]
+        }
+      },
+      "comparison": {
+        "improved": [
+          "compose-context",
+          "stop-context",
+          "swapped-context"
+        ],
+        "regressed": [
+          "search-hit",
+          "ambiguous",
+          "unsupported-goal"
+        ],
+        "unchangedCorrect": [
+          "compose-hit",
+          "compose-near",
+          "off-target",
+          "disabled-target",
+          "missing-gaze",
+          "pause-hit"
+        ],
+        "unchangedIncorrect": [
+          "search-context",
+          "conflicting-goal"
+        ],
+        "errors": [],
+        "missing": []
+      },
+      "timing": {
+        "firstSuccessfulEligibleElapsedMs": 4341.205897000001,
+        "eligibleMedianElapsedMs": 3219.3083540000007,
+        "eligibleP95ElapsedMs": 4341.205897000001
+      }
+    },
+    "environment": {
+      "node": "v24.21.0",
+      "platform": "linux",
+      "arch": "x64",
+      "cpuModel": "AMD EPYC 7763 64-Core Processor",
+      "logicalCpus": 4,
+      "memoryBytes": 16766414848,
+      "declaredOllamaRelease": "v0.35.1",
+      "sourceCommit": "d36b8970b28ff59e694341af772c6c2ee016ccea",
+      "workflowRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37138639061"
+    }
+  }
+}

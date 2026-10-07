@@ -50,3 +50,31 @@ test('layout reset can preserve confirmation until the user leaves', () => {
   for (let time = 2800; time < 3600; time += 100) dwell.update('compose', time);
   assert.equal(dwell.update('compose', 3600).activated, 'compose');
 });
+
+test('changing confirmation timing retires partial progress and preserves confirmed latches', () => {
+  const dwell = createDwellTracker();
+  for (let now = 0; now <= 800; now += 100) dwell.update('compose', now);
+  assert.equal(dwell.setDwellMs(1500), true);
+  assert.equal(dwell.update('compose', 900).progress, 0);
+  for (let now = 1000; now < 2400; now += 100) assert.equal(dwell.update('compose', now).activated, null);
+  assert.equal(dwell.update('compose', 2400).activated, 'compose');
+  dwell.setDwellMs(900);
+  for (let now = 2500; now <= 3600; now += 100) assert.equal(dwell.update('compose', now).activated, null);
+  dwell.update(null, 3700);
+  for (let now = 3800; now < 4700; now += 100) assert.equal(dwell.update('compose', now).activated, null);
+  assert.equal(dwell.update('compose', 4700).activated, 'compose');
+});
+
+test('unchanged or invalid timing does not reset progress; slow holds still reject sample gaps', () => {
+  const dwell = createDwellTracker();
+  for (let now = 0; now <= 800; now += 100) dwell.update('compose', now);
+  assert.equal(dwell.setDwellMs(900), false);
+  for (const value of [0, -1, NaN, Infinity, '1500', 901]) assert.throws(() => dwell.setDwellMs(value), RangeError);
+  assert.equal(dwell.update('compose', 900).activated, 'compose');
+  dwell.update(null, 1000);
+  dwell.setDwellMs(2500);
+  for (let now = 1100; now <= 3500; now += 100) assert.equal(dwell.update('compose', now).activated, null);
+  assert.equal(dwell.update('compose', 4000).progress, 0);
+  for (let now = 4100; now < 6500; now += 100) assert.equal(dwell.update('compose', now).activated, null);
+  assert.equal(dwell.update('compose', 6500).activated, 'compose');
+});

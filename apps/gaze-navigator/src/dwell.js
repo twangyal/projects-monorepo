@@ -40,5 +40,15 @@ export function createDwellTracker({ dwellMs = 900, maxGapMs = 250 } = {}) {
     return { target, progress, activated };
   }
 
-  return { update, reset };
+  function setDwellMs(milliseconds) {
+    if (![900, 1500, 2500].includes(milliseconds)) {
+      throw new RangeError('Choose a confirmation hold of 900, 1500 or 2500 milliseconds.');
+    }
+    if (milliseconds === dwellMs) return false;
+    dwellMs = milliseconds;
+    reset({ preserveConfirmation: true });
+    return true;
+  }
+
+  return { update, reset, setDwellMs };
 }

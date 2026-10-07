@@ -39,7 +39,7 @@ async function hit(locator) {
   });
 }
 
-async function hold(page, locator, { scroll = true } = {}) {
+async function hold(page, locator, { scroll = true, duration = 1100 } = {}) {
   if (scroll) await locator.evaluate(element => new Promise(resolve => {
     const ancestors = [];
     for (let node = element.parentElement; node; node = node.parentElement) ancestors.push(node);
@@ -60,7 +60,7 @@ async function hold(page, locator, { scroll = true } = {}) {
   expect(await hit(locator), `control center must be visible and unobstructed: ${JSON.stringify(geometry)}`).toBe(true);
   const bounds = await locator.boundingBox();
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-  await page.clock.runFor(1100);
+  await page.clock.runFor(duration);
 }
 
 async function reachKey(page, key, direction) {
@@ -85,6 +85,41 @@ test('real pointer dwell confirms once until looking away', async ({ page }) => 
   await expect(compose).toHaveAttribute('data-confirmations', '1');
   await hold(page, compose);
   await expect(compose).toHaveAttribute('data-confirmations', '2');
+});
+
+test('confirmation timing is gaze reachable and slower holds cannot activate prematurely', async ({ page }) => {
+  await simulate(page);
+  const target = page.locator('#selectButton');
+  await target.evaluate(button => {
+    button.dataset.confirmations = '0';
+    button.addEventListener('click', () => { button.dataset.confirmations = String(Number(button.dataset.confirmations) + 1); });
+  });
+  await hold(page, page.locator('#dwellSlow'));
+  await expect(page.locator('#dwellSlow')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, target);
+  await expect(target).toHaveAttribute('data-confirmations', '0');
+  await page.clock.runFor(600);
+  await expect(target).toHaveAttribute('data-confirmations', '1');
+  await page.clock.runFor(3500);
+  await expect(target).toHaveAttribute('data-confirmations', '1');
+  await hold(page, page.locator('#dwellVerySlow'), { duration: 1700 });
+  await expect(page.locator('#dwellVerySlow')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, target);
+  await expect(target).toHaveAttribute('data-confirmations', '1');
+  await page.clock.runFor(1600);
+  await expect(target).toHaveAttribute('data-confirmations', '2');
+  await page.clock.runFor(3500);
+  await expect(target).toHaveAttribute('data-confirmations', '2');
+  await hold(page, page.locator('#dwellDefault'), { duration: 2700 });
+  await expect(page.locator('#dwellDefault')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, target);
+  await expect(target).toHaveAttribute('data-confirmations', '3');
+  await page.locator('#dwellSlow').focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#dwellSlow')).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await simulate(page);
+  await expect(page.locator('#dwellDefault')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('gaze safety controls stay reachable through pause, scrolling, and stop', async ({ page }) => {
@@ -128,7 +163,8 @@ test('gaze keyboard reaches lower keys and saves a complete session draft', asyn
   await hold(page, page.locator('#keyboardKeys').getByRole('button', { name: 'b', exact: true }), { scroll: false });
   await hold(page, page.locator('#closeKeyboard'), { scroll: false });
   await hold(page, page.locator('#saveDraft'));
-  await expect(page.locator('#draftList')).toHaveText('a: b');
+  await expect(page.locator('#draftList article')).toHaveText('a: bOpen draft: a');
+  await expect(page.getByRole('button', { name: 'Open draft: a', exact: true })).toBeVisible();
   await expect(page.locator('#composer')).toBeHidden();
   await expect(page.locator('#result')).toContainText('Nothing was sent');
 });
@@ -167,6 +203,8 @@ test('held-out report can be closed through gaze without manually scrolling its 
   await simulate(page);
   await hold(page, page.locator('#checkAccuracy'), { scroll: false });
   await expect(page.locator('#accuracyPanel')).toBeVisible();
+  await expect(page.locator('#downloadAccuracy')).toBeDisabled();
+  const area = await page.locator('#accuracyStage').boundingBox();
   for (let i = 0; i < 5; i++) {
     const visible = await page.locator('#accuracyDot').evaluate(dot => {
       const bounds = dot.getBoundingClientRect();
@@ -177,8 +215,96 @@ test('held-out report can be closed through gaze without manually scrolling its 
     await page.clock.runFor(2100);
   }
   await expect(page.locator('#accuracyResult')).toContainText('SIMULATION');
+  const displayed = JSON.parse(await page.locator('#accuracyData').textContent());
+  expect(displayed).toMatchObject({format:'gaze-accuracy-report',schemaVersion:1,mode:'simulation',
+    viewport:{width:page.viewportSize().width,height:page.viewportSize().height},
+    measurementArea:{left:area.x,top:area.y,width:area.width,height:area.height},
+    protocol:{targetMs:2000,settleMs:500,targetCount:5,units:'CSS pixels'}});
+  expect(displayed.targets).toHaveLength(5);
+  expect(displayed.limitations.join(' ')).toContain('not webcam accuracy');
+  const pending = page.waitForEvent('download');
+  await hold(page, page.locator('#downloadAccuracy'), {scroll:false});
+  const downloaded = await pending;
+  const stream = await downloaded.createReadStream();
+  const chunks=[];for await(const chunk of stream)chunks.push(chunk);
+  expect(JSON.parse(Buffer.concat(chunks).toString())).toEqual(displayed);
+  expect(downloaded.suggestedFilename()).toBe('gaze-accuracy-simulation.json');
   await hold(page, page.locator('#cancelAccuracy'), { scroll: false });
   await expect(page.locator('#accuracyPanel')).toBeHidden();
+});
+
+test('new and cancelled accuracy checks cannot download an earlier report',async({page})=>{
+  await simulate(page);
+  await page.locator('#checkAccuracy').click();
+  await page.clock.runFor(10500);
+  await expect(page.locator('#downloadAccuracy')).toBeEnabled();
+  await page.locator('#cancelAccuracy').click();
+  await page.locator('#checkAccuracy').click();
+  await expect(page.locator('#downloadAccuracy')).toBeDisabled();
+  await expect(page.locator('#accuracyData')).toBeEmpty();
+  await page.locator('#pauseTracking').click();
+  await expect(page.locator('#accuracyResult')).toContainText('cancelled');
+  await expect(page.locator('#downloadAccuracy')).toBeDisabled();
+  await expect(page.locator('#accuracyData')).toBeEmpty();
+});
+
+test('gaze reopens a saved draft and updates the same record',async({page})=>{
+ await simulate(page);await page.locator('#composeButton').click();
+ await page.locator('#draftSubject').fill('Original subject');await page.locator('#draftBody').fill('Original body');
+ await page.locator('#saveDraft').click();
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await expect(page.locator('#draftSubject')).toHaveValue('Original subject');
+ await expect(page.locator('#saveDraft')).toHaveText('Update draft');
+ await page.locator('#draftBody').fill('Changed body');
+ await hold(page,page.locator('#saveDraft'));
+ await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(1);
+ await expect(page.locator('#draftList')).toContainText('Changed body');
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await expect(page.locator('#draftBody')).toHaveValue('Changed body');
+});
+
+test('dirty draft switches require gaze review and retain the current composer on Keep',async({page})=>{
+ await simulate(page);await page.locator('#composeButton').click();
+ await page.locator('#draftSubject').fill('Saved');await page.locator('#draftBody').fill('Retained');await page.locator('#saveDraft').click();
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unsaved');await page.locator('#draftBody').fill('Latest text');
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await expect(page.locator('#draftReview')).toBeVisible();
+ await page.locator('#draftBody').fill('Typed after review appeared');
+ await hold(page,page.locator('#keepComposer'));
+ await expect(page.locator('#draftBody')).toHaveValue('Typed after review appeared');
+ await page.locator('#cancelDraft').click();await page.locator('#composeButton').click();
+ await expect(page.locator('#draftSubject')).toHaveValue('Unsaved');
+ await hold(page,page.locator('[data-draft-id="draft-1"] button'));
+ await hold(page,page.locator('#replaceComposer'));
+ await expect(page.locator('#draftBody')).toHaveValue('Retained');
+ await page.locator('#draftBody').fill('Uncommitted correction');
+ await hold(page,page.locator('#newDraft'));
+ await hold(page,page.locator('#replaceComposer'));
+ await expect(page.locator('#draftBody')).toBeEmpty();
+ await expect(page.locator('#saveDraft')).toHaveText('Save draft');
+ await expect(page.locator('#draftList')).toContainText('Retained');
+});
+
+test('twenty maximum session drafts retain full text and refuse a new record without losing fields',async({page})=>{
+ await simulate(page);
+ const body='字'.repeat(10000),title='题'.repeat(199);
+ for(let i=0;i<20;i++){
+  await page.locator('#composeButton').click();
+  await page.locator('#draftSubject').fill(title+String.fromCharCode(65+i));
+  await page.locator('#draftBody').fill(body);await page.locator('#saveDraft').click();
+ }
+ await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(20);
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Overflow draft stays here');
+ await page.locator('#saveDraft').click();
+ await expect(page.locator('#result')).toContainText('20');
+ await expect(page.locator('#draftBody')).toHaveValue('Overflow draft stays here');
+ await page.locator('[data-draft-id="draft-1"] button').click();await page.locator('#replaceComposer').click();
+ await expect(page.locator('#draftSubject')).toHaveValue(title+'A');await expect(page.locator('#draftBody')).toHaveValue(body);
+ await page.locator('#draftBody').fill('Updated first maximum');await page.locator('#saveDraft').click();
+ await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(20);
+ await page.locator('[data-draft-id="draft-20"] button').click();
+ await expect(page.locator('#draftSubject')).toHaveValue(title+'T');await expect(page.locator('#draftBody')).toHaveValue(body);
+ await page.reload();await simulate(page);await expect(page.locator('#draftList [data-draft-id]')).toHaveCount(0);
 });
 
 test('resize restarts partial calibration and disables navigation', async ({ page }) => {

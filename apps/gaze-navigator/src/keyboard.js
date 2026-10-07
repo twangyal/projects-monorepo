@@ -66,6 +66,7 @@ export function setupKeyboard(document, onChange) {
     keys.append(button);
   }
   return {
+    close,
     sync() {
       if (fieldId && fieldId !== 'searchInput' && node('composer').classList.contains('hidden')) close();
     },

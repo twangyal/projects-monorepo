@@ -57,6 +57,11 @@
       <select id="reportSelect" disabled><option>No reports yet</option></select>
       <p id="reportProvenance" class="report-provenance">Reports stay in this page until you export them.</p>
       <p id="summary" class="summary">Run a comparison to see agreement with the task labels.</p>
+      <div id="reportBreakdown" hidden aria-label="Eligible decisions and policy rules">
+        <p id="eligibleSummary"></p>
+        <p id="policySummary" class="privacy"></p>
+        <p id="eligibleTiming" class="privacy"></p>
+      </div>
       <p class="privacy">Agreement on these synthetic tasks is not webcam accuracy or proof of model reliability. A model's confidence score describes its output distribution; it does not guarantee correctness. Imported reports are unverified file data. In local runs, the three tasks with no eligible target abstain by rule before inference; their agreement and near-zero times describe the complete adapter, not model evidence.</p>
       <div class="lab-actions"><button id="exportReport" disabled>Export selected report</button></div>
       <label for="importReport">Load a comparison report (JSON, up to 256 KiB)</label>

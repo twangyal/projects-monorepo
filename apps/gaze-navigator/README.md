@@ -17,13 +17,14 @@ Open `http://localhost:4173`.
 
 - **Start camera** requests webcam access and loads WebGazer from jsDelivr on demand.
 - **Pointer simulation** runs the same target resolver/dwell logic with pointer coordinates, making the interaction testable without a webcam.
-- Hold a pointer still for 0.9 seconds to confirm. A control confirms once until you leave it and return.
+- Hold for **0.9 seconds** by default, or choose **1.5 seconds** or **2.5 seconds** with the gaze-reachable confirmation controls. The setting lasts for this page session and applies to navigation and safety controls; Escape still pauses immediately. Changing timing clears unfinished progress. A control confirms once until you leave it and return, including after a timing change. Refresh restores 0.9 seconds.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
 - In camera mode, only physical pointer clicks on the dot add samples. Keyboard/synthetic clicks and clicks without a recorded eye sample do not advance calibration. Simulation permits ordinary keyboard activation.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.
 - Stop is available during camera startup and returns without waiting for the dependency. A pending browser permission request may still finish; its late stream is released. Simulation and camera retry remain available. Every camera restart uses a fresh estimator instance with separate video elements so old initialization or inference cannot interfere with the new session. Retired model resources are released after any active inference finishes.
 - A fixed toolbar supports gaze Pause/Resume/Stop, Recalibrate, Check accuracy, and Page up/down after calibration. While paused, only Resume and Stop accept gaze; looking away before reusing Pause prevents an accidental toggle. Escape pauses navigation. During an accuracy check, gaze Pause/Stop remain available and cancel the measurement; the completed report can be closed with gaze.
 - The gaze keyboard keeps Earlier keys, Later keys, case, and Close controls outside its scrolling grid. Use those controls to reach lower keys on short screens; opening another field returns to the first row.
+- Session drafts have large **Open draft** controls. Reopening then **Update draft** changes that saved record without adding another copy. **Compose** reopens your current unsaved fields; **New draft** starts blank. Switching away from changed text requires the inline **Keep current composer** or **Replace composer** decision, reachable by gaze. A switch closes the gaze keyboard before replacing fields. Keep up to 20 drafts, with the existing 200-character subject and 10,000-character message limits. Previews are shortened; reopening retains the full text. Refresh clears the notebook, and nothing is sent or stored.
 
 ## Architecture
 
@@ -72,7 +73,7 @@ The adapter talks only to `http://127.0.0.1:11434`. Before inference it requires
 
 The [System One request](https://docs.ollama.com/api/systemone) uses the same typed choice shape as [Jev](https://docs.typesafe.ai/primitives/choice). Only nearby enabled candidate IDs plus an abstention option are supplied. Expected labels, case IDs/titles, camera frames, real drafts, and arbitrary page content are excluded. Confidence is the model's output-concentration score, not a measured chance of correctness on gaze tasks. Mean decision time includes adapter checks/transport and is not webcam latency.
 
-Results show every expected/observed choice alongside the latest baseline. The off-target, disabled-target, and missing-gaze cases have no eligible control, so the local adapter deterministically abstains without contacting the model or running preflight. These three rule-based successes remain in overall adapter agreement/timing, even if the other eleven cases fail. They are not model-inference evidence; per-case rows identify the missing eligible target. Overall agreement uses all 14 cases as the denominator; failed and missing cases do not improve it. Up to eight reports stay in the page; export useful results before refreshing. JSON exports include the suite version, model ID/kind/digest, timestamp, cancellation state, and per-case decision/error/time. Import rejects wrong suites, unknown/duplicate cases, invalid IDs/confidence, disabled or distant selections, and oversized files. Imported results are unverified file data. A partial external report has this shape:
+Results show every expected/observed choice alongside the latest baseline. The selected report also shows eligible agreement versus geometry, policy-only agreement, unexpected selections, errors/untested cases and reported eligible median/p95 adapter time. These values are recomputed from validated result rows, including partial/error reports; imported benchmark metadata cannot change the display. Geometry timing is explicitly unmeasured. The off-target, disabled-target, and missing-gaze cases have no eligible control, so the local adapter deterministically abstains without contacting the model or running preflight. These three rule-based successes remain in overall adapter agreement/timing, even if the other eleven cases fail. They are not model-inference evidence; per-case rows identify the missing eligible target. Overall agreement uses all 14 cases as the denominator; failed and missing cases do not improve it. Up to eight reports stay in the page; export useful results before refreshing. JSON exports include the suite version, model ID/kind/digest, timestamp, cancellation state, and per-case decision/error/time. Import rejects wrong suites, unknown/duplicate cases, invalid IDs/confidence, disabled or distant selections, and oversized files. Imported results are unverified file data. A partial external report has this shape:
 
 ```json
 {
@@ -88,7 +89,7 @@ Results show every expected/observed choice alongside the latest baseline. The o
 }
 ```
 
-Actual local-model quality, a Jev comparison, and applying context decisions to live navigation remain unverified/unimplemented. CI's controlled local API responses test integration boundaries; they are not model-quality measurements.
+The first real local Tev1 measurement is retained in [the evaluation record](docs/2026-10-03-tev1-evaluation.md) and [importable report](docs/2026-10-03-tev1-report.json): 6/11 eligible cases agree, equal to geometry, with three unexpected selections versus geometry's one and 3.22-second median adapter time. This candidate stays in the optional lab. A Jev comparison and applying context decisions to live navigation remain unverified/unimplemented. Controlled CI responses test integration boundaries separately.
 
 ### Command-line local benchmark
 
@@ -103,7 +104,7 @@ The CLI prints only one importable report to stdout; case progress goes to stder
 
 The report's optional `benchmark` metadata separates all 14 cases from the eleven model-eligible cases and three policy-only cases, compares each result with geometry, and records median/p95 eligible-case adapter time. Errors and missing rows remain in their subset's denominator. Times include transport, first-call preflight and cold loading; they are not webcam latency or inference-only timing. The browser imports the ordinary report fields and does not authenticate extra benchmark metadata.
 
-The **Gaze decision model benchmark** workflow is repeatable through GitHub Actions' **Run workflow** button. It runs only on explicit dispatch or edits to its own workflow, rather than every app change. It uses a pinned, SHA-256-verified Ollama v0.35.1 archive, temporary model storage, a verified cloud-disabled loopback server, and one explicit `tev1:0.8b-q8_0` pull. The standard public runner has a 15-minute limit and uploads no artifacts/caches. The workflow logs contain the full JSON report and runtime verification; actual model results are still pending.
+The **Gaze decision model benchmark** workflow is repeatable through GitHub Actions' **Run workflow** button. It runs only on explicit dispatch or edits to its own workflow, rather than every app change. It uses a pinned, SHA-256-verified Ollama v0.35.1 archive, temporary model storage, a verified cloud-disabled loopback server, and one explicit `tev1:0.8b-q8_0` pull. The standard public runner has a 15-minute limit and uploads no artifacts/caches. The workflow logs contain the full JSON report and runtime verification; the first actual result is recorded in [the evaluation](docs/2026-10-03-tev1-evaluation.md). The job completed on 2026-10-03; its successful exit means a complete measurement, not acceptable model quality.
 
 ## Verification
 
@@ -182,3 +183,23 @@ Twenty automated tests and syntax checks passed, including caret insertion, sele
 ### Camera session isolation — 2026-10-03
 
 Camera callbacks now verify both the active mode and the exact registered handler. A regression test proved that an old callback could update the cursor after camera-to-camera restart; it is now ignored. Twenty tests and lint/build syntax checks passed. Remaining high-value work: physical browser/webcam verification, calibration quality across viewport sizes, and a decision-model/browser-controller integration.
+
+### Browser report breakdown — 2026-10-05
+
+The decision lab separates model-eligible results from policy-only rule abstentions,
+including imported real measurements. Fresh local verification passes 61 unit and
+56 native browser cases plus lint/build syntax checks. [Verification record](docs/2026-10-05-lab-metrics-verification.md)
+records the tests, independent review and browser limits.
+
+### Portable accuracy receipts — 2026-10-06
+
+Completed held-out checks offer **Download measurement**, also reachable by gaze.
+The versioned local JSON matches the displayed data and includes tracking mode,
+start/completion timestamps, viewport/device pixel ratio, measurement-area bounds
+and the five-target/two-second/500-ms settling protocol. Errors use CSS pixels;
+sample intervals remain distinct from end-to-end latency. Missing measurements
+stay null, and simulation receipts explicitly do not establish webcam accuracy.
+No camera frames or raw prediction streams are included or stored. Starting or
+cancelling a check disables downloading and clears the previous report. The
+receipt prepares physical measurement handoff without claiming hardware acceptance.
+Issue #131 tracks verification.
