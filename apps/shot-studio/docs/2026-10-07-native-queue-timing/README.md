@@ -36,3 +36,13 @@ must not be interpreted as isolated native wait attribution. The real-UA
 [listener-order regression and correction](listener-order/README.md) retain
 that defect and move only the owned probe ahead of the unchanged original
 callback. Production and original acceptance remain unchanged.
+
+## Corrected native timing acceptance
+
+At447a6f7, both first standard CI runs pass362 units/syntax and114 native cases;
+all13 normal portfolio PR workflows pass. [The four first corrected full155
+results](corrected-447a6f7/README.md) preserve push success and PR failure.
+The failed PR diagnostic spends67.552s in native video dequeue waits within
+67.676s of addVideo waits, while exact sink writes take26.8ms. This identifies
+the dominant observed awaited boundary, without assigning CPU or all muxer
+scheduling. Issue128 remains open; no production throughput repair is claimed.

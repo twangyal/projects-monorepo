@@ -1,0 +1,148 @@
+{
+  "decodedVideoFrames": 60,
+  "decodedAudioFrames": 96648,
+  "report": {
+    "schemaVersion": 1,
+    "mode": "stage-timing-diagnostic-variation",
+    "active": true,
+    "nativeQueues": {
+      "video": {
+        "encodeCalls": 60,
+        "maxQueue": 2,
+        "waits": 0,
+        "completed": 0,
+        "waitMs": 0,
+        "maxWaitMs": 0,
+        "pending": 0,
+        "retiredWaits": 0,
+        "tracked": 0,
+        "unobserved": 0
+      },
+      "audio": {
+        "encodeCalls": 100,
+        "maxQueue": 5,
+        "waits": 20,
+        "completed": 20,
+        "waitMs": 62.299999999813735,
+        "maxWaitMs": 16.699999999720603,
+        "pending": 0,
+        "retiredWaits": 0,
+        "tracked": 0,
+        "unobserved": 0
+      }
+    },
+    "stages": {
+      "probe": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 20.899999999906868,
+        "maxMs": 20.899999999906868,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "create": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 1.2999999998137355,
+        "maxMs": 1.2999999998137355,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "draw": {
+        "calls": 0,
+        "completed": 0,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "start": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 0.900000000372529,
+        "maxMs": 0.900000000372529,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "video": {
+        "calls": 60,
+        "completed": 60,
+        "errors": 0,
+        "totalMs": 2.099999999627471,
+        "maxMs": 0.39999999990686774,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "audio": {
+        "calls": 100,
+        "completed": 100,
+        "errors": 0,
+        "totalMs": 1.3999999999068677,
+        "maxMs": 0.2999999998137355,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "addVideo": {
+        "calls": 60,
+        "completed": 60,
+        "errors": 0,
+        "totalMs": 26.000000000931323,
+        "maxMs": 22.100000000093132,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "addAudio": {
+        "calls": 100,
+        "completed": 100,
+        "errors": 0,
+        "totalMs": 65.09999999962747,
+        "maxMs": 16.799999999813735,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "finalize": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 27,
+        "maxMs": 27,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "cancel": {
+        "calls": 0,
+        "completed": 0,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "sinkWrite": {
+        "calls": 115,
+        "completed": 115,
+        "errors": 0,
+        "totalMs": 0.5999999991618097,
+        "maxMs": 0.10000000009313226,
+        "pending": 0,
+        "pendingMs": 0
+      }
+    },
+    "limits": [
+      "Observer elapsed times include scheduling/native waits; stages may overlap and are not additive CPU time.",
+      "Draw timing excludes later GPU work; VideoFrame snapshots may synchronize rendering.",
+      "All renderer draw calls in this window are counted; draw timing is not export-only attribution.",
+      "Native once-dequeue waits measure the pinned encoder backpressure boundary, not exclusive encoder CPU time.",
+      "Sink writes exclude upstream muxer scheduling/serialization and do not account for all writer backpressure.",
+      "Queue observations retain at most8 active encoders and8 pending listeners per encoder; unobserved counts disclose overflow.",
+      "A separate diagnostic variation, not the unchanged original acceptance run."
+    ]
+  },
+  "limits": [
+    "Small real audiovisual boundary validation, not maximum throughput acceptance."
+  ]
+}

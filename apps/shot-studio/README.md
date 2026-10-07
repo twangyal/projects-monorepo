@@ -830,3 +830,9 @@ the separate stage variation. Small independently decoded audiovisual/video
 exports verify behavior and retirement; it does not assign exclusive CPU time
 or cover all upstream muxer backpressure. Original production and maximum gates
 remain unchanged. Issue128 remains open for the full155 timeout.
+
+Corrected queue-observer head447a6f7 passes362 units/syntax and114 native cases
+in both first standard push and PR CI. The [paired full155 receipts](docs/2026-10-07-native-queue-timing/corrected-447a6f7/README.md)
+retain successful push exports and PR deadline failures. Native dequeue waits
+dominate the failed diagnostic's awaited video path; this is measured
+backpressure, not exclusive CPU time or a production throughput fix.

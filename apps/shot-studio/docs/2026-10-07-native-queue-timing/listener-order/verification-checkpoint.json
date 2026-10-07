@@ -1,0 +1,43 @@
+{
+  "sourceCommit": "447a6f708ec513a79ba60a0d3ab14413356a9e94",
+  "checks": [
+    {
+      "command": "npm --prefix apps/shot-studio test",
+      "tests": 362,
+      "pass": 362,
+      "fail": 0
+    },
+    {
+      "command": "npm --prefix apps/shot-studio run check; node --check apps/shot-studio/scripts/stage-timing-diagnostics.mjs",
+      "result": "passed"
+    },
+    {
+      "command": "native timestamped-export and stage-timing browser subset",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "command": "npm --prefix apps/shot-studio run test:browser",
+      "tests": 114,
+      "pass": 114,
+      "fail": 0,
+      "duration": "4.1minutes"
+    }
+  ],
+  "nativeOrderingRed": {
+    "expectedCompleted": 1,
+    "actualCompleted": 0,
+    "log": "first-native-failure.log"
+  },
+  "nativeOrderingGreen": {
+    "completed": 1,
+    "pending": 0
+  },
+  "review": "Independent review: no blocking findings after probe-first registration and original-error cleanup.",
+  "limits": [
+    "Temporary local Chromium153 software-rendering runtime is not committed.",
+    "Independent small media receipts do not establish full155 maximum throughput.",
+    "First corrected standard push and PR CI both pass 362 units/syntax and 114 native cases; full155 push passes and PR fails. See ../corrected-447a6f7/README.md."
+  ]
+}
