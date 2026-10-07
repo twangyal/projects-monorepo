@@ -1,0 +1,46 @@
+{
+  "issue": 128,
+  "runId": 37569571709,
+  "jobId": 112624908139,
+  "head": "04ead28ae30c465acc6fb48be3a667aabd523098",
+  "artifactId": 11460182465,
+  "artifactBytes": 1032322,
+  "artifactSha256": "07d4da378abdaf1f212e9de796cf2ff8943e1368bbc641580c1ce4d1dd1032ea",
+  "retainedFiles": [
+    {
+      "name": "verification.json",
+      "bytes": 14398,
+      "sha256": "ec6a51086bf8695da1214de6ebdc78d60d755d4454c58989c4235f878849ad2d"
+    },
+    {
+      "name": "browser.log",
+      "bytes": 15412,
+      "sha256": "c7406138d262cdfe2a0775bcd4d4421f57ac6b04048bcb5fce4914684e6a0382"
+    }
+  ],
+  "lastEncodingObservation": {
+    "reason": "poll",
+    "wallMs": 70062.99695700001,
+    "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+    "saveStatus": "Sequence saved in this browser",
+    "progress": 0.9816666666666667,
+    "progressMax": 1,
+    "exportDisabled": true,
+    "cancelDisabled": false,
+    "visibility": "visible",
+    "focused": true
+  },
+  "firstObservedProductTimeout": {
+    "reason": "poll",
+    "wallMs": 75066.547143,
+    "status": "Export timed out. Try a shorter film.",
+    "saveStatus": "Sequence saved in this browser",
+    "progress": 0.9816666666666667,
+    "progressMax": 1,
+    "exportDisabled": false,
+    "cancelDisabled": false,
+    "visibility": "visible",
+    "focused": true
+  },
+  "classification": "product deadline observed before download waiter expired; no browser disconnect before harness cleanup; bottleneck not yet isolated"
+}

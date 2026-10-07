@@ -706,3 +706,19 @@ archive restart, all 1,800 decoded video frames and 2,880,648 audio frames with
 the observer enabled. That software-WebGL Chromium153 run does not resolve the
 original full Chromium155 timeout. Issue #128 remains open pending its diagnosis;
 the compatibility workflow also runs when the maximum probe or observer changes.
+
+### Instrumented full Chromium timeout recurrence — 2026-10-07 (#128)
+
+The [first instrumented recurrence](docs/failures/2026-10-07-chromium-155/README.md)
+is retained from PR run37569571709 at04ead28. The original complete archive survives
+browser restart exactly. Full Chromium155.0.8059.12 renders to58.9 seconds of the
+sixty-second authored timeline at70.063 wall seconds, then the application reports
+its export timeout before the unchanged95-second download waiter expires. The
+page remains visible/focused and the browser connected, with no page errors.
+DOM progress is not a completed encoded-frame count. This localizes this attempt
+to the70-second product deadline; render/encoder cost is still unisolated. It does
+not prove the earlier uninstrumented timeout had the same cause. No gate increase,
+retry or production fix is claimed. Raw verification, browser log and artifact
+hashes are committed. All thirteen normal portfolio checks, including the separate
+standard configured Shot maximum, pass at the same integration head. The separate
+full-Chromium experiment is failed and #128 remains open.
