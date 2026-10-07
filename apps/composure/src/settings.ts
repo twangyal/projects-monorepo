@@ -17,6 +17,7 @@ function currentSettings(store:Store):Settings {
   catch{throw new UnreadableSettingsError('Saved preferences are unreadable. Their raw record was kept.');}
 }
 function faster(a:number|null,b:number|null):number|null {return a===null?b:b===null?a:Math.min(a,b);}
+export function retainInMemoryBest(saved:Settings,bestSeconds:number|null):Settings {return {...saved,bestSeconds:faster(saved.bestSeconds,bestSeconds)};}
 // The browser caller holds the origin-wide write lock through this synchronous
 // read/merge/write section. Preserve the newest observed best on manual saves.
 export function recordBestTime(store:Store,seconds:number):Settings {

@@ -29,5 +29,33 @@
     "Web Bluetooth provider is controlled for software acceptance; physical sensor and watch accuracy remain unverified.",
     "Older clients ignoring this lock are outside coordination guarantees.",
     "Cached-history assertion is retained and requires full Chromium CI acceptance."
-  ]
+  ],
+  "followUp": {
+    "unitTests": 103,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "sourceSha256": {
+      "src/main.ts": "4e12ddd598891bec464bdc8ad16b5b4ad58646067c5735af65e6eb0a08be1d62",
+      "src/settings.ts": "bcbd8345b6dbbdf25e63101c362cfa34f3cd95956f191954b8bdcffbefc01953",
+      "tests/settings.test.ts": "2e82cbcdc13e65993d60db1f433445ab4050c31035e02eb590bf15f5aba970aa"
+    },
+    "browserGate": {
+      "passed": 35,
+      "failed": 1,
+      "failedCase": "unchanged cached-history retention; also reproduced on baseline"
+    },
+    "mutation": "Returning accepted save unchanged fails actual12/expected8",
+    "review": "No implementation blocker"
+  },
+  "firstPublishedCI": {
+    "sourceCommit": "d17c732652cf2b5cac041d29bde35a19614f4b20",
+    "runId": 37689739690,
+    "jobId": 113026558320,
+    "conclusion": "success",
+    "unitTests": 102,
+    "browserCases": 36,
+    "fullCachedHistory": "passed",
+    "limits": "Initial implementation before the additional in-memory best adoption safeguard; latest103-unit source still needs its own CI."
+  }
 }

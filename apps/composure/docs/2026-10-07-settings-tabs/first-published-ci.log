@@ -1,0 +1,561 @@
+﻿2026-10-07T21:29:17.6369796Z Current runner version: '2.337.0'
+2026-10-07T21:29:17.6390238Z ##[group]Runner Image Provisioner
+2026-10-07T21:29:17.6391020Z Hosted Compute Agent
+2026-10-07T21:29:17.6391520Z Version: 20261002.596
+2026-10-07T21:29:17.6392079Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-07T21:29:17.6392760Z Build Date: 2026-10-02T22:28:27Z
+2026-10-07T21:29:17.6393326Z Worker ID: {c33523c4-51b9-4dca-9fa0-65a0a3bdcac0}
+2026-10-07T21:29:17.6393945Z Region: westus
+2026-10-07T21:29:17.6394429Z Cloud: Azure
+2026-10-07T21:29:17.6394938Z ##[endgroup]
+2026-10-07T21:29:17.6396124Z ##[group]Operating System
+2026-10-07T21:29:17.6396643Z Ubuntu
+2026-10-07T21:29:17.6397100Z 24.04.5
+2026-10-07T21:29:17.6397596Z LTS
+2026-10-07T21:29:17.6398160Z ##[endgroup]
+2026-10-07T21:29:17.6398732Z ##[group]Runner Image
+2026-10-07T21:29:17.6399234Z Image: ubuntu-24.04
+2026-10-07T21:29:17.6399718Z Version: 20261004.327.1
+2026-10-07T21:29:17.6400825Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-07T21:29:17.6402123Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-07T21:29:17.6402991Z ##[endgroup]
+2026-10-07T21:29:17.6404243Z ##[group]GITHUB_TOKEN Permissions
+2026-10-07T21:29:17.6406025Z Contents: read
+2026-10-07T21:29:17.6406504Z Metadata: read
+2026-10-07T21:29:17.6407040Z ##[endgroup]
+2026-10-07T21:29:17.6409052Z Secret source: Actions
+2026-10-07T21:29:17.6409925Z Cache mode: write
+2026-10-07T21:29:17.6410677Z Prepare workflow directory
+2026-10-07T21:29:17.6717138Z Prepare all required actions
+2026-10-07T21:29:17.6756481Z Getting action download info
+2026-10-07T21:29:18.0219701Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-07T21:29:18.1029573Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-07T21:29:18.2162936Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-07T21:29:18.4303246Z Complete job name: verify
+2026-10-07T21:29:18.4910280Z ##[group]Run actions/checkout@v4
+2026-10-07T21:29:18.4911033Z with:
+2026-10-07T21:29:18.4911391Z   repository: twangyal/projects-monorepo
+2026-10-07T21:29:18.4914456Z   token: ***
+2026-10-07T21:29:18.4914807Z   ssh-strict: true
+2026-10-07T21:29:18.4915145Z   ssh-user: git
+2026-10-07T21:29:18.4915496Z   persist-credentials: true
+2026-10-07T21:29:18.4915885Z   clean: true
+2026-10-07T21:29:18.4916231Z   sparse-checkout-cone-mode: true
+2026-10-07T21:29:18.4916635Z   fetch-depth: 1
+2026-10-07T21:29:18.4916965Z   fetch-tags: false
+2026-10-07T21:29:18.4917305Z   show-progress: true
+2026-10-07T21:29:18.4917648Z   lfs: false
+2026-10-07T21:29:18.4918221Z   submodules: false
+2026-10-07T21:29:18.4918618Z   set-safe-directory: true
+2026-10-07T21:29:18.4919010Z   allow-unsafe-pr-checkout: false
+2026-10-07T21:29:18.4919606Z ##[endgroup]
+2026-10-07T21:29:18.5736637Z Syncing repository: twangyal/projects-monorepo
+2026-10-07T21:29:18.5738949Z ##[group]Getting Git version info
+2026-10-07T21:29:18.5740016Z Working directory is '/home/runner/work/projects-monorepo/projects-monorepo'
+2026-10-07T21:29:18.5741438Z [command]/usr/bin/git version
+2026-10-07T21:29:18.5767515Z git version 2.55.0
+2026-10-07T21:29:18.5790441Z ##[endgroup]
+2026-10-07T21:29:18.5795511Z Temporarily overriding HOME='/home/runner/work/_temp/9252f575-423a-4b5d-911e-f0fbe029cdde' before making global git config changes
+2026-10-07T21:29:18.5797233Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T21:29:18.5799286Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/projects-monorepo/projects-monorepo
+2026-10-07T21:29:18.6211762Z Deleting the contents of '/home/runner/work/projects-monorepo/projects-monorepo'
+2026-10-07T21:29:18.6219463Z ##[group]Initializing the repository
+2026-10-07T21:29:18.6220536Z [command]/usr/bin/git init /home/runner/work/projects-monorepo/projects-monorepo
+2026-10-07T21:29:18.6297256Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-07T21:29:18.6299083Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-07T21:29:18.6300467Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-07T21:29:18.6301551Z hint: call:
+2026-10-07T21:29:18.6302142Z hint:
+2026-10-07T21:29:18.6302889Z hint: 	git config --global init.defaultBranch <name>
+2026-10-07T21:29:18.6303805Z hint:
+2026-10-07T21:29:18.6304608Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-07T21:29:18.6305783Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-07T21:29:18.6306696Z hint:
+2026-10-07T21:29:18.6307193Z hint: 	git branch -m <name>
+2026-10-07T21:29:18.6307766Z hint:
+2026-10-07T21:29:18.6308660Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-07T21:29:18.6310057Z Initialized empty Git repository in /home/runner/work/projects-monorepo/projects-monorepo/.git/
+2026-10-07T21:29:18.6312278Z [command]/usr/bin/git remote add origin https://github.com/twangyal/projects-monorepo
+2026-10-07T21:29:18.6402362Z ##[endgroup]
+2026-10-07T21:29:18.6403309Z ##[group]Disabling automatic garbage collection
+2026-10-07T21:29:18.6406211Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-07T21:29:18.6442838Z ##[endgroup]
+2026-10-07T21:29:18.6443779Z ##[group]Setting up auth
+2026-10-07T21:29:18.6448911Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T21:29:18.6480094Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-07T21:29:18.6752940Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T21:29:18.6784646Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-07T21:29:18.6979727Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T21:29:18.7016373Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-07T21:29:18.7224577Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-07T21:29:18.7261782Z ##[endgroup]
+2026-10-07T21:29:18.7262723Z ##[group]Fetching the repository
+2026-10-07T21:29:18.7270711Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +d17c732652cf2b5cac041d29bde35a19614f4b20:refs/remotes/origin/Astra
+2026-10-07T21:29:19.8298399Z From https://github.com/twangyal/projects-monorepo
+2026-10-07T21:29:19.8299918Z  * [new ref]         d17c732652cf2b5cac041d29bde35a19614f4b20 -> origin/Astra
+2026-10-07T21:29:19.8311266Z ##[endgroup]
+2026-10-07T21:29:19.8312210Z ##[group]Determining the checkout info
+2026-10-07T21:29:19.8313217Z ##[endgroup]
+2026-10-07T21:29:19.8313853Z [command]/usr/bin/git sparse-checkout disable
+2026-10-07T21:29:19.8359806Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-07T21:29:19.8387651Z ##[group]Checking out the ref
+2026-10-07T21:29:19.8424981Z [command]/usr/bin/git checkout --progress --force -B Astra refs/remotes/origin/Astra
+2026-10-07T21:29:19.9503542Z Switched to a new branch 'Astra'
+2026-10-07T21:29:19.9506118Z branch 'Astra' set up to track 'origin/Astra'.
+2026-10-07T21:29:19.9516317Z ##[endgroup]
+2026-10-07T21:29:19.9557067Z [command]/usr/bin/git log -1 --format=%H
+2026-10-07T21:29:19.9579913Z d17c732652cf2b5cac041d29bde35a19614f4b20
+2026-10-07T21:29:19.9885569Z ##[group]Run actions/setup-node@v4
+2026-10-07T21:29:19.9886525Z with:
+2026-10-07T21:29:19.9887219Z   node-version: 24
+2026-10-07T21:29:19.9888087Z   cache: npm
+2026-10-07T21:29:19.9889190Z   cache-dependency-path: apps/composure/package-lock.json
+2026-10-07T21:29:19.9890351Z   always-auth: false
+2026-10-07T21:29:19.9891165Z   check-latest: false
+2026-10-07T21:29:19.9898398Z   token: ***
+2026-10-07T21:29:19.9899118Z ##[endgroup]
+2026-10-07T21:29:20.1096936Z Found in cache @ /opt/hostedtoolcache/node/24.21.0/x64
+2026-10-07T21:29:20.1101075Z (node:2078) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-07T21:29:20.1103543Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-07T21:29:20.1105451Z ##[group]Environment details
+2026-10-07T21:29:20.3934424Z node: v24.21.0
+2026-10-07T21:29:20.3934858Z npm: 11.19.0
+2026-10-07T21:29:20.3935127Z yarn: 1.22.22
+2026-10-07T21:29:20.3936022Z ##[endgroup]
+2026-10-07T21:29:20.3970570Z [command]/opt/hostedtoolcache/node/24.21.0/x64/bin/npm config get cache
+2026-10-07T21:29:20.4829523Z /home/runner/.npm
+2026-10-07T21:29:20.7731089Z Cache hit for: node-cache-Linux-x64-npm-ffea1d1aac26a82e62d1114d2b189ff737c68730a12f03338075afff6990decc
+2026-10-07T21:29:20.7810628Z (node:2078) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-07T21:29:22.0498919Z Received 4194304 of 20889979 (20.1%), 4.0 MBs/sec
+2026-10-07T21:29:22.2268288Z Received 20889979 of 20889979 (100.0%), 16.9 MBs/sec
+2026-10-07T21:29:22.2268951Z Cache Size: ~20 MB (20889979 B)
+2026-10-07T21:29:22.2289915Z [command]/usr/bin/tar -xf /home/runner/work/_temp/edcfd4fd-3374-4cf0-b35a-79c6d7e6c734/cache.tzst -P -C /home/runner/work/projects-monorepo/projects-monorepo --use-compress-program unzstd
+2026-10-07T21:29:22.2747493Z Cache restored successfully
+2026-10-07T21:29:22.2759421Z Cache restored from key: node-cache-Linux-x64-npm-ffea1d1aac26a82e62d1114d2b189ff737c68730a12f03338075afff6990decc
+2026-10-07T21:29:22.2916513Z ##[group]Run npm ci
+2026-10-07T21:29:22.2916787Z [36;1mnpm ci[0m
+2026-10-07T21:29:22.3120580Z shell: /usr/bin/bash -e {0}
+2026-10-07T21:29:22.3120859Z ##[endgroup]
+2026-10-07T21:29:23.7705632Z npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+2026-10-07T21:29:24.1097172Z 
+2026-10-07T21:29:24.1098469Z added 124 packages, and audited 125 packages in 2s
+2026-10-07T21:29:24.1098953Z 
+2026-10-07T21:29:24.1099300Z 41 packages are looking for funding
+2026-10-07T21:29:24.1099744Z   run `npm fund` for details
+2026-10-07T21:29:24.1107267Z 
+2026-10-07T21:29:24.1107463Z found 0 vulnerabilities
+2026-10-07T21:29:24.1118620Z npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
+2026-10-07T21:29:24.1119576Z npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+2026-10-07T21:29:24.1120107Z npm warn install-scripts
+2026-10-07T21:29:24.1121032Z npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+2026-10-07T21:29:24.1593106Z ##[group]Run npm run check
+2026-10-07T21:29:24.1593385Z [36;1mnpm run check[0m
+2026-10-07T21:29:24.1654001Z shell: /usr/bin/bash -e {0}
+2026-10-07T21:29:24.1654239Z ##[endgroup]
+2026-10-07T21:29:24.2477355Z 
+2026-10-07T21:29:24.2478157Z > composure@0.2.0 check
+2026-10-07T21:29:24.2478603Z > npm run test && npm run lint && npm run build
+2026-10-07T21:29:24.2478801Z 
+2026-10-07T21:29:24.3265460Z 
+2026-10-07T21:29:24.3266061Z > composure@0.2.0 test
+2026-10-07T21:29:24.3266520Z > node --experimental-strip-types --test tests/*.test.ts
+2026-10-07T21:29:24.3266758Z 
+2026-10-07T21:29:24.5241236Z ✔ Bluetooth origin is detached and runtime immutable without freezing gameplay (6.880913ms)
+2026-10-07T21:29:24.5260281Z ✔ Bluetooth construction revalidates calibration shape, bounds, spacing, mean and age (0.765627ms)
+2026-10-07T21:29:24.5292026Z ✔ simulator source and schema1 report remain compatible and refuse Bluetooth injection (1.556213ms)
+2026-10-07T21:29:24.5319906Z ✔ Bluetooth has no initial game reading and refuses simulator injection (0.382157ms)
+2026-10-07T21:29:24.5349601Z ✔ source connection, final calibration sequence and strict run-start receipt are pinned (0.222736ms)
+2026-10-07T21:29:24.5358973Z ✔ bursts and ineligible BPM consume sequence without changing the usable sample (0.213042ms)
+2026-10-07T21:29:24.5391881Z ✔ contact loss bypasses burst and BPM admission and immediately clears only usable state (1.485877ms)
+2026-10-07T21:29:24.5411058Z ✔ receipt clock freshness is exact even when active time is stalled or capped (0.366053ms)
+2026-10-07T21:29:24.5439246Z ✔ a zero-elapsed frame still exposes exact receipt-time staleness (0.218741ms)
+2026-10-07T21:29:24.5468689Z ✔ a maximum legal RR tail remains ignored metadata rather than rejecting the game input (0.66158ms)
+2026-10-07T21:29:24.5470158Z ✔ disconnect and contact-loss transitions are recorded even before any game reading (0.334746ms)
+2026-10-07T21:29:24.5471704Z ✔ a pause with no usable Bluetooth reading records the pause without a redundant signal event (0.194644ms)
+2026-10-07T21:29:24.5473054Z ✔ invalid clocks fail atomically before sub-step advance or resume and do not consume sequence (0.441197ms)
+2026-10-07T21:29:24.5474311Z ✔ pause/resume retains history but requires a strictly later new notification (1.530294ms)
+2026-10-07T21:29:24.5475553Z ✔ all invalidation reasons retain samples and prevent the historical sample from returning (1.135106ms)
+2026-10-07T21:29:24.5476859Z ✔ malformed measurements cannot refresh a Bluetooth reading or contaminate reports (0.265832ms)
+2026-10-07T21:29:24.5478340Z ✔ Bluetooth report has detached relative calibration/game receipts without transport identity (0.484543ms)
+2026-10-07T21:29:24.5479664Z ✔ Bluetooth histories stay capped and terminal runs cannot accept more readings (1.6732ms)
+2026-10-07T21:29:24.5481447Z ✔ requestDevice runs synchronously, exact service subscription emits no cached value (13.171675ms)
+2026-10-07T21:29:24.5482755Z ✔ unavailable provider and disposed transport fail closed without native calls (0.289137ms)
+2026-10-07T21:29:24.5483922Z ✔ Cancel settles promptly at chooser, blocks a replacement until native drainage (2.040465ms)
+2026-10-07T21:29:24.5485424Z ✔ Cancel settles promptly at connect, blocks a replacement until native drainage (1.464244ms)
+2026-10-07T21:29:24.5486652Z ✔ Cancel settles promptly at service, blocks a replacement until native drainage (1.259834ms)
+2026-10-07T21:29:24.5488027Z ✔ Cancel settles promptly at characteristic, blocks a replacement until native drainage (0.827771ms)
+2026-10-07T21:29:24.5489538Z ✔ Cancel settles promptly at start, blocks a replacement until native drainage (0.836955ms)
+2026-10-07T21:29:24.5490706Z ✔ dispose is terminal and promptly resolves a never-settling native connect (0.95928ms)
+2026-10-07T21:29:24.5491888Z ✔ absolute startup deadline is checked after connect even before timer delivery (1.598847ms)
+2026-10-07T21:29:24.5493135Z ✔ absolute startup deadline is checked after service even before timer delivery (2.154557ms)
+2026-10-07T21:29:24.5520181Z ✔ absolute startup deadline is checked after characteristic even before timer delivery (2.277583ms)
+2026-10-07T21:29:24.5539947Z ✔ absolute startup deadline is checked after start even before timer delivery (1.294407ms)
+2026-10-07T21:29:24.5559361Z ✔ timer timeout settles public false while pending native operation remains draining (1.500689ms)
+2026-10-07T21:29:24.5589193Z ✔ chooser time is excluded; startup shares one deadline across all subsequent stages (1.260756ms)
+2026-10-07T21:29:24.5617703Z ✔ early packets are suppressed; real DataView packets stamp sequence and fresh receipt clock (1.344633ms)
+2026-10-07T21:29:24.5642931Z ✔ queued disconnect is ignored while connected; actual disconnect retires readiness and listeners (0.580197ms)
+2026-10-07T21:29:24.5659213Z ✔ subscription failure contains native secrets and disconnects before cleanup (1.634842ms)
+2026-10-07T21:29:24.5689242Z ✔ stop cleanup is serialized, disconnect immediate, rejection contained and reuse blocked (0.573868ms)
+2026-10-07T21:29:24.5698928Z ✔ invalid startup/receipt clock NaN cannot publish a measurement (0.534878ms)
+2026-10-07T21:29:24.5729034Z ✔ invalid startup/receipt clock Infinity cannot publish a measurement (1.758288ms)
+2026-10-07T21:29:24.5749031Z ✔ invalid startup/receipt clock -1 cannot publish a measurement (1.007143ms)
+2026-10-07T21:29:24.5789104Z ✔ invalid startup/receipt clock 99 cannot publish a measurement (1.684367ms)
+2026-10-07T21:29:24.5790557Z ✔ snapshot and callback states are detached; reconnection obtains a new logical ID (0.920752ms)
+2026-10-07T21:29:24.5818933Z ✔ native chooser rejection is bounded and leaves no live listeners (0.983978ms)
+2026-10-07T21:29:24.5838128Z ✔ native connect rejection is bounded and leaves no live listeners (0.846911ms)
+2026-10-07T21:29:24.5849182Z ✔ native service rejection is bounded and leaves no live listeners (3.585601ms)
+2026-10-07T21:29:24.5850403Z ✔ native characteristic rejection is bounded and leaves no live listeners (0.468208ms)
+2026-10-07T21:29:24.5851565Z ✔ native start rejection is bounded and leaves no live listeners (0.451683ms)
+2026-10-07T21:29:24.5852830Z ✔ indicate-only characteristics work; unsupported notification properties fail closed (0.602621ms)
+2026-10-07T21:29:24.5854152Z ✔ retired callback closures cannot mutate a newer connection on the same objects (1.240285ms)
+2026-10-07T21:29:24.5855491Z ✔ startup clock reversal/nonfinite clock fails before another stage and readiness publication (1.332445ms)
+2026-10-07T21:29:24.5856715Z ✔ settled startup timers cannot retire a subscribed connection later (0.487497ms)
+2026-10-07T21:29:24.5858093Z ✔ synchronous chooser failure returns false without exposing the thrown native error (0.952009ms)
+2026-10-07T21:29:24.6035819Z ✔ calibration rejects entirely sparse five-slot arrays (1.445595ms)
+2026-10-07T21:29:24.6039072Z ✔ calibration rejects a missing own reading even when other readings are valid (0.19174ms)
+2026-10-07T21:29:24.6099252Z ✔ inherited numeric entries cannot stand in for an actual calibration reading (0.234625ms)
+2026-10-07T21:29:24.6146656Z ✔ five own finite readings retain the exact mean and do not mutate the input (3.260119ms)
+2026-10-07T21:29:24.6700105Z ✔ independent packet oracle: literal contact flags distinguish unsupported from supported loss (1.576113ms)
+2026-10-07T21:29:24.6719124Z ✔ independent packet oracle: offset views and little-endian optional fields have exact extents (0.254145ms)
+2026-10-07T21:29:24.6767299Z ✔ independent packet oracle: malformed lengths, reserved flags and payload ceiling reject (2.114407ms)
+2026-10-07T21:29:24.6779533Z ✔ independent calibration oracle: five actual spaced samples average70 and snapshots are detached (0.659027ms)
+2026-10-07T21:29:24.6804466Z ✔ independent calibration oracle: bursts and duplicates cannot manufacture five samples (0.227974ms)
+2026-10-07T21:29:24.6829550Z ✔ independent calibration oracle: exact window and readiness age boundaries are inclusive (0.255035ms)
+2026-10-07T21:29:24.6831696Z ✔ independent calibration oracle: clock floor is shared and wrong identity/duplicates precede clocks (0.242306ms)
+2026-10-07T21:29:24.6833355Z ✔ independent calibration oracle: contact loss invalidates ready and burst collection before BPM filtering (0.418272ms)
+2026-10-07T21:29:24.6834854Z ✔ independent calibration oracle: spread failure requires recollection and gameplay-only BPM cannot count (0.9057ms)
+2026-10-07T21:29:24.6836320Z ✔ independent model oracle: BLE starts empty, pins detached immutable origin and refuses simulator samples (1.132803ms)
+2026-10-07T21:29:24.6837852Z ✔ independent model oracle: BLE freshness uses10000 receipt milliseconds rather than active seconds (0.863976ms)
+2026-10-07T21:29:24.6839505Z ✔ independent model oracle: every model clock operation shares floor before any mutation (0.477612ms)
+2026-10-07T21:29:24.6840873Z ✔ independent model oracle: contact loss invalidates within throttling window without deleting evidence (1.038029ms)
+2026-10-07T21:29:24.6842427Z ✔ independent model oracle: paused packets cannot be replayed after resume or resurrect old reading (0.321456ms)
+2026-10-07T21:29:24.6844266Z ✔ independent report oracle: live provenance has relative receipts and simulator keeps schema1 (0.564754ms)
+2026-10-07T21:29:24.7000089Z ✔ SIG contact flags include valid unsupported contact bit 0x02 (2.365056ms)
+2026-10-07T21:29:24.7029339Z ✔ reads only DataView and Uint8Array offsets and leaves backing bytes untouched (0.386244ms)
+2026-10-07T21:29:24.7030807Z ✔ energy and RR fields require exact structural lengths (2.590016ms)
+2026-10-07T21:29:24.7059077Z ✔ all defined flag combinations preserve exact optional-field counts (1.036437ms)
+2026-10-07T21:29:24.7085130Z ✔ rejects reserved bits and enforces packet maximum before optional parsing (3.661796ms)
+2026-10-07T21:29:24.7110043Z ✔ detached buffers reject with the bounded packet error (0.453455ms)
+2026-10-07T21:29:24.7139567Z ✔ five actual spaced readings produce a detached arithmetic mean (0.927332ms)
+2026-10-07T21:29:24.7149302Z ✔ bursts, duplicate sequence and ineligible BPM do not count or roll samples (0.28396ms)
+2026-10-07T21:29:24.7169366Z ✔ accepted readings consume their sequence and rejected readings consume observation watermarks (0.219903ms)
+2026-10-07T21:29:24.7199017Z ✔ constructor and applicable sequences validate safe generation IDs (0.503411ms)
+2026-10-07T21:29:24.7211193Z ✔ wrong connection and old sequence cannot invalidate or advance clock (0.236428ms)
+2026-10-07T21:29:24.7212619Z ✔ observe and snapshot share one monotonic clock and clock errors leave sequences reusable (0.377751ms)
+2026-10-07T21:29:24.7213809Z ✔ contact loss invalidates collecting before BPM bounds and spacing (0.213423ms)
+2026-10-07T21:29:24.7214861Z ✔ contact loss invalidates a ready result even during a burst (0.175165ms)
+2026-10-07T21:29:24.7215909Z ✔ collection window is inclusive and expiration retains accepted count (0.225842ms)
+2026-10-07T21:29:24.7217050Z ✔ spread at 12 BPM is valid; excessive spread fails without rolling replacement (0.246473ms)
+2026-10-07T21:29:24.7218477Z ✔ ready freshness is inclusive, expires permanently and cannot refresh through packets (0.159381ms)
+2026-10-07T21:29:24.7219843Z ✔ explicit invalidation is irreversible for collecting, ready, failed and expired (0.243558ms)
+2026-10-07T21:29:24.7221071Z ✔ fractional receipt times and inclusive BPM bounds are not rounded or quantized (0.173963ms)
+2026-10-07T21:29:24.7603999Z ✔ calibration requires five bounded consistent simulated readings (1.213004ms)
+2026-10-07T21:29:24.7612645Z ✔ sample freshness, tension bounds, invalid rejection and pause use active time (9.098647ms)
+2026-10-07T21:29:24.7639136Z ✔ fixed simulation steps preserve movement at 30, 60 and 120 Hz and cap stalls (4.199349ms)
+2026-10-07T21:29:24.7658603Z ✔ full escape needs fuse, power, key and a steady lock before exit (1.916157ms)
+2026-10-07T21:29:24.7687315Z ✔ timer/noise can lose, reset is detached, and report streams are bounded (0.653608ms)
+2026-10-07T21:29:24.7714803Z ✔ steady has a real bounded aim and noise effect without altering the simulated source (1.193915ms)
+2026-10-07T21:29:24.7739024Z ✔ invalid frame inputs preserve the model and capped events keep the latest terminal report (0.678335ms)
+2026-10-07T21:29:24.8046486Z ✔ settings validate exact bounded state and retain failed raw records (1.713741ms)
+2026-10-07T21:29:24.8064421Z ✔ an old preference snapshot cannot erase a newer completed best time (0.26448ms)
+2026-10-07T21:29:24.8079867Z ✔ automatic best updates keep the latest comfort preferences and the faster completed result (1.049437ms)
+2026-10-07T21:29:24.8081247Z ✔ corruption after initial load refuses both manual and automatic writes without changing raw bytes (0.409018ms)
+2026-10-07T21:29:24.8082525Z ✔ explicit unreadable reset refuses a repaired record and removes only still-unreadable data (0.33667ms)
+2026-10-07T21:29:24.8083849Z ✔ best-time updates require an actual bounded numeric result before reading or writing storage (0.279442ms)
+2026-10-07T21:29:24.8191602Z ℹ tests 102
+2026-10-07T21:29:24.8198736Z ℹ suites 0
+2026-10-07T21:29:24.8198985Z ℹ pass 102
+2026-10-07T21:29:24.8199177Z ℹ fail 0
+2026-10-07T21:29:24.8199360Z ℹ cancelled 0
+2026-10-07T21:29:24.8199565Z ℹ skipped 0
+2026-10-07T21:29:24.8199750Z ℹ todo 0
+2026-10-07T21:29:24.8199971Z ℹ duration_ms 463.630239
+2026-10-07T21:29:24.9097483Z 
+2026-10-07T21:29:24.9097861Z > composure@0.2.0 lint
+2026-10-07T21:29:24.9098490Z > eslint .
+2026-10-07T21:29:24.9098670Z 
+2026-10-07T21:29:26.3746452Z 
+2026-10-07T21:29:26.3746933Z > composure@0.2.0 build
+2026-10-07T21:29:26.3747226Z > tsc --noEmit && vite build
+2026-10-07T21:29:26.3747376Z 
+2026-10-07T21:29:28.0687847Z [36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+2026-10-07T21:29:28.1266086Z transforming...
+2026-10-07T21:29:28.2419871Z [32m✓[39m 8 modules transformed.
+2026-10-07T21:29:28.2693788Z rendering chunks...
+2026-10-07T21:29:28.2734103Z computing gzip size...
+2026-10-07T21:29:28.2826573Z [2mdist/[22m[32mindex.html                 [39m[1m[2m 0.48 kB[22m[1m[22m[2m │ gzip:  0.33 kB[22m
+2026-10-07T21:29:28.2827746Z [2mdist/[22m[2massets/[22m[35mindex-7ROK7JA2.css  [39m[1m[2m 4.34 kB[22m[1m[22m[2m │ gzip:  1.57 kB[22m
+2026-10-07T21:29:28.2829095Z [2mdist/[22m[2massets/[22m[36mindex-BCeYq7UY.js   [39m[1m[2m43.54 kB[22m[1m[22m[2m │ gzip: 14.77 kB[22m
+2026-10-07T21:29:28.2830713Z [32m✓ built in 194ms[39m
+2026-10-07T21:29:28.3085519Z ##[group]Run npx playwright install --with-deps chromium
+2026-10-07T21:29:28.3085890Z [36;1mnpx playwright install --with-deps chromium[0m
+2026-10-07T21:29:28.3144452Z shell: /usr/bin/bash -e {0}
+2026-10-07T21:29:28.3144675Z ##[endgroup]
+2026-10-07T21:29:28.9007516Z Installing dependencies...
+2026-10-07T21:29:28.9074956Z Switching to root user to install dependencies...
+2026-10-07T21:29:28.9790515Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-07T21:29:29.0053686Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-10-07T21:29:29.0072135Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-10-07T21:29:29.0120459Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-10-07T21:29:29.0129132Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-10-07T21:29:29.1176534Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-10-07T21:29:29.1189043Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1375 kB]
+2026-10-07T21:29:29.1315782Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [306 kB]
+2026-10-07T21:29:29.1325393Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1702 kB]
+2026-10-07T21:29:29.1399375Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [341 kB]
+2026-10-07T21:29:29.1418519Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1730 kB]
+2026-10-07T21:29:29.1489377Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [396 kB]
+2026-10-07T21:29:29.1510469Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [13.3 kB]
+2026-10-07T21:29:29.2141604Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1073 kB]
+2026-10-07T21:29:29.2187138Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [223 kB]
+2026-10-07T21:29:29.2201292Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1218 kB]
+2026-10-07T21:29:29.2546509Z Get:19 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [519 kB]
+2026-10-07T21:29:29.2595037Z Get:20 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [463 kB]
+2026-10-07T21:29:29.2665257Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [245 kB]
+2026-10-07T21:29:29.2680557Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-security/multiverse Translation-en [11.6 kB]
+2026-10-07T21:29:35.7814120Z Fetched 9996 kB in 1s (11.7 MB/s)
+2026-10-07T21:29:36.4737225Z Reading package lists...
+2026-10-07T21:29:36.4972234Z Reading package lists...
+2026-10-07T21:29:36.7062917Z Building dependency tree...
+2026-10-07T21:29:36.7068859Z Reading state information...
+2026-10-07T21:29:36.8432722Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).
+2026-10-07T21:29:36.8433404Z libasound2t64 set to manually installed.
+2026-10-07T21:29:36.8434063Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-07T21:29:36.8434640Z libatk-bridge2.0-0t64 set to manually installed.
+2026-10-07T21:29:36.8435179Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-07T21:29:36.8435710Z libatk1.0-0t64 set to manually installed.
+2026-10-07T21:29:36.8436293Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-07T21:29:36.8436917Z libatspi2.0-0t64 set to manually installed.
+2026-10-07T21:29:36.8437496Z libcairo2 is already the newest version (1.18.0-3build1).
+2026-10-07T21:29:36.8438335Z libcairo2 set to manually installed.
+2026-10-07T21:29:36.8439141Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).
+2026-10-07T21:29:36.8439700Z libcups2t64 set to manually installed.
+2026-10-07T21:29:36.8440232Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).
+2026-10-07T21:29:36.8441217Z libdbus-1-3 set to manually installed.
+2026-10-07T21:29:36.8441831Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).
+2026-10-07T21:29:36.8442375Z libdrm2 set to manually installed.
+2026-10-07T21:29:36.8442758Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.4).
+2026-10-07T21:29:36.8443073Z libgbm1 set to manually installed.
+2026-10-07T21:29:36.8443399Z libglib2.0-0t64 is already the newest version (2.80.0-6ubuntu3.9).
+2026-10-07T21:29:36.8443728Z libglib2.0-0t64 set to manually installed.
+2026-10-07T21:29:36.8444070Z libnspr4 is already the newest version (2:4.35-1.1build1).
+2026-10-07T21:29:36.8444398Z libnspr4 set to manually installed.
+2026-10-07T21:29:36.8444718Z libnss3 is already the newest version (2:3.98-1ubuntu0.2).
+2026-10-07T21:29:36.8445019Z libnss3 set to manually installed.
+2026-10-07T21:29:36.8445352Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).
+2026-10-07T21:29:36.8445684Z libpango-1.0-0 set to manually installed.
+2026-10-07T21:29:36.8446012Z libx11-6 is already the newest version (2:1.8.7-1build1).
+2026-10-07T21:29:36.8446310Z libx11-6 set to manually installed.
+2026-10-07T21:29:36.8446604Z libxcb1 is already the newest version (1.15-1ubuntu2).
+2026-10-07T21:29:36.8446897Z libxcb1 set to manually installed.
+2026-10-07T21:29:36.8447234Z libxcomposite1 is already the newest version (1:0.4.5-1build3).
+2026-10-07T21:29:36.8447571Z libxcomposite1 set to manually installed.
+2026-10-07T21:29:36.8448134Z libxdamage1 is already the newest version (1:1.1.6-1build1).
+2026-10-07T21:29:36.8448468Z libxdamage1 set to manually installed.
+2026-10-07T21:29:36.8448784Z libxext6 is already the newest version (2:1.3.4-1build2).
+2026-10-07T21:29:36.8449076Z libxext6 set to manually installed.
+2026-10-07T21:29:36.8449393Z libxfixes3 is already the newest version (1:6.0.0-2build1).
+2026-10-07T21:29:36.8449699Z libxfixes3 set to manually installed.
+2026-10-07T21:29:36.8450010Z libxkbcommon0 is already the newest version (1.6.0-1build1).
+2026-10-07T21:29:36.8450335Z libxkbcommon0 set to manually installed.
+2026-10-07T21:29:36.8450653Z libxrandr2 is already the newest version (2:1.5.2-2build1).
+2026-10-07T21:29:36.8450949Z libxrandr2 set to manually installed.
+2026-10-07T21:29:36.8451272Z xvfb is already the newest version (2:21.1.12-1ubuntu1.8).
+2026-10-07T21:29:36.8451702Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).
+2026-10-07T21:29:36.8452148Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).
+2026-10-07T21:29:36.8452489Z libfontconfig1 set to manually installed.
+2026-10-07T21:29:36.8452814Z fonts-liberation is already the newest version (1:2.1.5-3).
+2026-10-07T21:29:36.8453328Z fonts-liberation set to manually installed.
+2026-10-07T21:29:36.8453644Z The following additional packages will be installed:
+2026-10-07T21:29:36.8453949Z   xfonts-encodings xfonts-utils
+2026-10-07T21:29:36.8454178Z Recommended packages:
+2026-10-07T21:29:36.8454403Z   fonts-ipafont-mincho fonts-tlwg-loma
+2026-10-07T21:29:37.0623851Z The following NEW packages will be installed:
+2026-10-07T21:29:37.0624673Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont
+2026-10-07T21:29:37.0631094Z   fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable
+2026-10-07T21:29:37.0631640Z   xfonts-utils
+2026-10-07T21:29:37.0635152Z The following packages will be upgraded:
+2026-10-07T21:29:37.0639165Z   libfreetype6
+2026-10-07T21:29:37.0782604Z 1 upgraded, 9 newly installed, 0 to remove and 10 not upgraded.
+2026-10-07T21:29:37.0782966Z Need to get 21.5 MB of archives.
+2026-10-07T21:29:37.0783326Z After this operation, 79.5 MB of additional disk space will be used.
+2026-10-07T21:29:37.0783994Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-07T21:30:09.1493593Z Ign:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1
+2026-10-07T21:30:39.1764514Z Ign:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2
+2026-10-07T21:31:11.2373163Z Ign:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1
+2026-10-07T21:31:44.6149913Z Ign:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1
+2026-10-07T21:31:44.6150766Z Ign:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8
+2026-10-07T21:31:44.6151437Z Ign:7 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libfreetype6 amd64 2.13.2+dfsg-1ubuntu0.2
+2026-10-07T21:31:44.6152068Z Ign:8 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2
+2026-10-07T21:31:44.6152672Z Ign:9 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3
+2026-10-07T21:31:44.6153233Z Ign:10 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1
+2026-10-07T21:31:44.6153780Z Ign:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3
+2026-10-07T21:31:44.6170412Z Ign:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1
+2026-10-07T21:31:44.6236453Z Ign:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2
+2026-10-07T21:31:44.6237441Z Ign:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1
+2026-10-07T21:31:45.6154229Z Ign:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1
+2026-10-07T21:31:45.6155124Z Ign:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8
+2026-10-07T21:31:45.6155808Z Ign:7 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libfreetype6 amd64 2.13.2+dfsg-1ubuntu0.2
+2026-10-07T21:31:45.6156425Z Ign:8 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2
+2026-10-07T21:31:45.6157014Z Ign:9 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3
+2026-10-07T21:31:45.6157583Z Ign:10 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1
+2026-10-07T21:31:45.6158381Z Ign:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3
+2026-10-07T21:31:46.6060202Z Get:2 https://archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]
+2026-10-07T21:31:48.2682221Z Get:3 https://archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+2026-10-07T21:31:48.7337650Z Get:4 https://archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]
+2026-10-07T21:31:48.8730036Z Get:5 https://archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]
+2026-10-07T21:31:49.0646181Z Get:6 https://archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]
+2026-10-07T21:31:49.4002668Z Get:7 https://archive.ubuntu.com/ubuntu noble-updates/main amd64 libfreetype6 amd64 2.13.2+dfsg-1ubuntu0.2 [403 kB]
+2026-10-07T21:31:49.5421221Z Get:8 https://archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]
+2026-10-07T21:31:49.6862346Z Get:9 https://archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]
+2026-10-07T21:31:49.8248448Z Get:10 https://archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]
+2026-10-07T21:31:49.9664331Z Get:11 https://archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]
+2026-10-07T21:31:50.1939613Z Fetched 21.5 MB in 2min 13s (162 kB/s)
+2026-10-07T21:31:50.2131895Z Selecting previously unselected package fonts-ipafont-gothic.
+2026-10-07T21:31:50.2333309Z (Reading database ... 
+2026-10-07T21:31:50.2333686Z (Reading database ... 5%
+2026-10-07T21:31:50.2334079Z (Reading database ... 10%
+2026-10-07T21:31:50.2334367Z (Reading database ... 15%
+2026-10-07T21:31:50.2334857Z (Reading database ... 20%
+2026-10-07T21:31:50.2335070Z (Reading database ... 25%
+2026-10-07T21:31:50.2335265Z (Reading database ... 30%
+2026-10-07T21:31:50.2335462Z (Reading database ... 35%
+2026-10-07T21:31:50.2335668Z (Reading database ... 40%
+2026-10-07T21:31:50.2335864Z (Reading database ... 45%
+2026-10-07T21:31:50.2336147Z (Reading database ... 50%
+2026-10-07T21:31:50.2373596Z (Reading database ... 55%
+2026-10-07T21:31:50.3463029Z (Reading database ... 60%
+2026-10-07T21:31:50.5369472Z (Reading database ... 65%
+2026-10-07T21:31:50.7423031Z (Reading database ... 70%
+2026-10-07T21:31:50.9437408Z (Reading database ... 75%
+2026-10-07T21:31:51.0444352Z (Reading database ... 80%
+2026-10-07T21:31:51.1556820Z (Reading database ... 85%
+2026-10-07T21:31:51.2910007Z (Reading database ... 90%
+2026-10-07T21:31:51.4089659Z (Reading database ... 95%
+2026-10-07T21:31:51.4090076Z (Reading database ... 100%
+2026-10-07T21:31:51.4090621Z (Reading database ... 203191 files and directories currently installed.)
+2026-10-07T21:31:51.4132274Z Preparing to unpack .../0-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...
+2026-10-07T21:31:51.4281189Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-07T21:31:51.6564084Z Selecting previously unselected package fonts-freefont-ttf.
+2026-10-07T21:31:51.6676402Z Preparing to unpack .../1-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...
+2026-10-07T21:31:51.6683048Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-07T21:31:51.7906552Z Selecting previously unselected package fonts-tlwg-loma-otf.
+2026-10-07T21:31:51.8018787Z Preparing to unpack .../2-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...
+2026-10-07T21:31:51.8025336Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-07T21:31:51.8484685Z Selecting previously unselected package fonts-unifont.
+2026-10-07T21:31:51.8599110Z Preparing to unpack .../3-fonts-unifont_1%3a15.1.01-1build1_all.deb ...
+2026-10-07T21:31:51.8606658Z Unpacking fonts-unifont (1:15.1.01-1build1) ...
+2026-10-07T21:31:52.0492738Z Selecting previously unselected package fonts-wqy-zenhei.
+2026-10-07T21:31:52.0604459Z Preparing to unpack .../4-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+2026-10-07T21:31:52.0690081Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-07T21:31:52.5312178Z Preparing to unpack .../5-libfreetype6_2.13.2+dfsg-1ubuntu0.2_amd64.deb ...
+2026-10-07T21:31:52.5341692Z Unpacking libfreetype6:amd64 (2.13.2+dfsg-1ubuntu0.2) over (2.13.2+dfsg-1ubuntu0.1) ...
+2026-10-07T21:31:52.5581409Z Selecting previously unselected package xfonts-encodings.
+2026-10-07T21:31:52.5695337Z Preparing to unpack .../6-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...
+2026-10-07T21:31:52.5701560Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-07T21:31:52.5969434Z Selecting previously unselected package xfonts-utils.
+2026-10-07T21:31:52.6081038Z Preparing to unpack .../7-xfonts-utils_1%3a7.7+6build3_amd64.deb ...
+2026-10-07T21:31:52.6088348Z Unpacking xfonts-utils (1:7.7+6build3) ...
+2026-10-07T21:31:52.6385404Z Selecting previously unselected package xfonts-cyrillic.
+2026-10-07T21:31:52.6497303Z Preparing to unpack .../8-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...
+2026-10-07T21:31:52.6504723Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-07T21:31:52.6823457Z Selecting previously unselected package xfonts-scalable.
+2026-10-07T21:31:52.6934625Z Preparing to unpack .../9-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...
+2026-10-07T21:31:52.6940019Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-07T21:31:52.7548231Z Setting up fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-07T21:31:52.7642922Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-07T21:31:52.7662888Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-07T21:31:52.7676794Z Setting up libfreetype6:amd64 (2.13.2+dfsg-1ubuntu0.2) ...
+2026-10-07T21:31:52.7693797Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-07T21:31:52.7708481Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-07T21:31:52.7764081Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode
+2026-10-07T21:31:52.7776070Z Setting up fonts-unifont (1:15.1.01-1build1) ...
+2026-10-07T21:31:52.7789590Z Setting up xfonts-utils (1:7.7+6build3) ...
+2026-10-07T21:31:52.7821862Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-07T21:31:52.8057299Z Setting up xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-07T21:31:52.8286914Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...
+2026-10-07T21:31:53.0102361Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-10-07T21:31:53.0120442Z Not building database; man-db/auto-update is not 'true'.
+2026-10-07T21:31:53.0133004Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+2026-10-07T21:31:53.7545540Z 
+2026-10-07T21:31:53.7546119Z Running kernel seems to be up-to-date.
+2026-10-07T21:31:53.7546432Z 
+2026-10-07T21:31:53.7546531Z Restarting services...
+2026-10-07T21:31:53.7615908Z  systemctl restart php8.3-fpm.service
+2026-10-07T21:31:53.8600519Z 
+2026-10-07T21:31:53.8601817Z No containers need to be restarted.
+2026-10-07T21:31:53.8602123Z 
+2026-10-07T21:31:53.8602432Z No user sessions are running outdated binaries.
+2026-10-07T21:31:53.8602768Z 
+2026-10-07T21:31:53.8603237Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-10-07T21:31:54.7570339Z Downloading Chrome for Testing 153.0.8010.12 (playwright chromium v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip
+2026-10-07T21:31:55.2845816Z |                                                                                |   0% of 186.8 MiB
+2026-10-07T21:31:55.6343272Z |■■■■■■■■                                                                        |  10% of 186.8 MiB
+2026-10-07T21:31:55.7051815Z |■■■■■■■■■■■■■■■■                                                                |  20% of 186.8 MiB
+2026-10-07T21:31:55.7699494Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 186.8 MiB
+2026-10-07T21:31:55.8494543Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 186.8 MiB
+2026-10-07T21:31:55.9271944Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 186.8 MiB
+2026-10-07T21:31:55.9896912Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 186.8 MiB
+2026-10-07T21:31:56.0822754Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 186.8 MiB
+2026-10-07T21:31:56.1279546Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 186.8 MiB
+2026-10-07T21:31:56.2114059Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 186.8 MiB
+2026-10-07T21:31:56.3100258Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 186.8 MiB
+2026-10-07T21:31:58.7041427Z Chrome for Testing 153.0.8010.12 (playwright chromium v1243) downloaded to /home/runner/.cache/ms-playwright/chromium-1243
+2026-10-07T21:31:58.7044838Z Downloading FFmpeg (playwright ffmpeg v1011) from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip
+2026-10-07T21:31:59.0023282Z |                                                                                |   0% of 2.3 MiB
+2026-10-07T21:31:59.0052659Z |■■■■■■■■                                                                        |  10% of 2.3 MiB
+2026-10-07T21:31:59.0079222Z |■■■■■■■■■■■■■■■■                                                                |  20% of 2.3 MiB
+2026-10-07T21:31:59.0095216Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 2.3 MiB
+2026-10-07T21:31:59.0107310Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 2.3 MiB
+2026-10-07T21:31:59.0119092Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 2.3 MiB
+2026-10-07T21:31:59.0128161Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 2.3 MiB
+2026-10-07T21:31:59.0137797Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 2.3 MiB
+2026-10-07T21:31:59.0146832Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 2.3 MiB
+2026-10-07T21:31:59.0165289Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 2.3 MiB
+2026-10-07T21:31:59.0173135Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 2.3 MiB
+2026-10-07T21:31:59.0634788Z FFmpeg (playwright ffmpeg v1011) downloaded to /home/runner/.cache/ms-playwright/ffmpeg-1011
+2026-10-07T21:31:59.0638552Z Downloading Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-headless-shell-linux64.zip
+2026-10-07T21:31:59.4530451Z |                                                                                |   0% of 114.3 MiB
+2026-10-07T21:31:59.7501085Z |■■■■■■■■                                                                        |  10% of 114.3 MiB
+2026-10-07T21:31:59.8059742Z |■■■■■■■■■■■■■■■■                                                                |  20% of 114.3 MiB
+2026-10-07T21:31:59.8651049Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 114.3 MiB
+2026-10-07T21:31:59.9165345Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 114.3 MiB
+2026-10-07T21:31:59.9619769Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 114.3 MiB
+2026-10-07T21:32:00.0067612Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 114.3 MiB
+2026-10-07T21:32:00.0550111Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 114.3 MiB
+2026-10-07T21:32:00.0933180Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 114.3 MiB
+2026-10-07T21:32:00.1349958Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 114.3 MiB
+2026-10-07T21:32:00.2212001Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 114.3 MiB
+2026-10-07T21:32:01.9803604Z Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243) downloaded to /home/runner/.cache/ms-playwright/chromium_headless_shell-1243
+2026-10-07T21:32:02.0036965Z ##[group]Run npm run test:browser
+2026-10-07T21:32:02.0037227Z [36;1mnpm run test:browser[0m
+2026-10-07T21:32:02.0092741Z shell: /usr/bin/bash -e {0}
+2026-10-07T21:32:02.0092988Z ##[endgroup]
+2026-10-07T21:32:02.0912670Z 
+2026-10-07T21:32:02.0913302Z > composure@0.2.0 test:browser
+2026-10-07T21:32:02.0913673Z > playwright test
+2026-10-07T21:32:02.0913794Z 
+2026-10-07T21:32:05.6359634Z 
+2026-10-07T21:32:05.6360249Z Running 36 tests using 1 worker
+2026-10-07T21:34:27.0125188Z ····································
+2026-10-07T21:34:27.0128972Z   36 passed (2.4m)
+2026-10-07T21:34:27.0406973Z Post job cleanup.
+2026-10-07T21:34:27.1456464Z (node:3689) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-07T21:34:27.1457212Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-07T21:34:27.1459295Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-ffea1d1aac26a82e62d1114d2b189ff737c68730a12f03338075afff6990decc, not saving cache.
+2026-10-07T21:34:27.1588489Z Post job cleanup.
+2026-10-07T21:34:27.2267590Z [command]/usr/bin/git version
+2026-10-07T21:34:27.2302617Z git version 2.55.0
+2026-10-07T21:34:27.2334274Z Temporarily overriding HOME='/home/runner/work/_temp/44f97cab-b60d-4dec-a960-3cc506171a99' before making global git config changes
+2026-10-07T21:34:27.2335433Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-07T21:34:27.2339562Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/projects-monorepo/projects-monorepo
+2026-10-07T21:34:27.2373327Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-07T21:34:27.2403675Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-07T21:34:27.2614347Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-07T21:34:27.2642673Z http.https://github.com/.extraheader
+2026-10-07T21:34:27.2652290Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-07T21:34:27.2683349Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-07T21:34:27.2903284Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-07T21:34:27.2936752Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-07T21:34:27.3285265Z Cleaning up orphan processes
+2026-10-07T21:34:27.3579588Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

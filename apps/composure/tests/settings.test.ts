@@ -39,3 +39,11 @@ test('best-time updates require an actual bounded numeric result before reading 
  let touches=0;const store={getItem:()=>{touches++;return null;},setItem:()=>{touches++;},removeItem:()=>{touches++;}};
  for(const value of [null,'12',NaN,Infinity,-1,181])assert.throws(()=>settings.recordBestTime(store,value as never));assert.equal(touches,0);
 });
+
+test('adopting an older completed save preserves a faster result earned while the write was waiting',()=>{
+ const accepted={schemaVersion:1 as const,baseline:90,scares:false,reducedMotion:true,muted:false,bestSeconds:12};
+ const before=JSON.stringify(accepted);
+ assert.deepEqual(settings.retainInMemoryBest(accepted,8),{schemaVersion:1,baseline:90,scares:false,reducedMotion:true,muted:false,bestSeconds:8});
+ assert.equal(settings.retainInMemoryBest(accepted,20).bestSeconds,12);assert.equal(settings.retainInMemoryBest(accepted,null).bestSeconds,12);
+ assert.equal(settings.retainInMemoryBest({...accepted,bestSeconds:null},8).bestSeconds,8);assert.equal(JSON.stringify(accepted),before);
+});

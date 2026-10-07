@@ -1,0 +1,47 @@
+✔ settings validate exact bounded state and retain failed raw records (4.041331ms)
+✔ an old preference snapshot cannot erase a newer completed best time (0.321362ms)
+✔ automatic best updates keep the latest comfort preferences and the faster completed result (1.267028ms)
+✔ corruption after initial load refuses both manual and automatic writes without changing raw bytes (0.382393ms)
+✔ explicit unreadable reset refuses a repaired record and removes only still-unreadable data (0.32515ms)
+✔ best-time updates require an actual bounded numeric result before reading or writing storage (0.471544ms)
+✖ adopting an older completed save preserves a faster result earned while the write was waiting (1.958423ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 201.609694
+
+✖ failing tests:
+
+test at ../../../../tmp/composure-best-mutant.test.ts:43:1
+✖ adopting an older completed save preserves a faster result earned while the write was waiting (1.958423ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      baseline: 90,
+  +   bestSeconds: 12,
+  -   bestSeconds: 8,
+      muted: false,
+      reducedMotion: true,
+      scares: false,
+      schemaVersion: 1
+    }
+  
+      at TestContext.<anonymous> (file:///tmp/composure-best-mutant.test.ts:46:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { schemaVersion: 1, baseline: 90, scares: false, reducedMotion: true, muted: false, bestSeconds: 12 },
+    expected: { schemaVersion: 1, baseline: 90, scares: false, reducedMotion: true, muted: false, bestSeconds: 8 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
