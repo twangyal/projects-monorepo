@@ -722,3 +722,38 @@ retry or production fix is claimed. Raw verification, browser log and artifact
 hashes are committed. All thirteen normal portfolio checks, including the separate
 standard configured Shot maximum, pass at the same integration head. The separate
 full-Chromium experiment is failed and #128 remains open.
+
+
+### Separate native stage timing — 2026-10-07 (#128)
+
+The maximum driver accepts explicit `--stage-timing` only for a separately
+labelled diagnostic variation. Test-only observers measure ten fixed aggregate
+buckets: capability probe, encoder creation/start, renderer draw, native video/audio
+sample construction, addVideo/addAudio waits, finalize and cancel. They preserve
+original encoder objects, receivers, return values, promise identity and errors;
+shared methods restore after capture. No frame, PCM block or promise result is
+retained. Reads remain bounded; no production source, deadline, fixture or media
+acceptance gate changes. The compatibility workflow keeps the original maximum
+and diagnostic artifacts separate. A successful diagnostic cannot clear an
+original maximum failure.
+
+The [local raw receipt](docs/2026-10-07-stage-timing-local.json) and
+[provenance](docs/2026-10-07-stage-timing-local-provenance.json) preserve a successful
+software-WebGL Chromium153.0.8010.0 variation: exact11,554,385-byte archive across
+full browser restart,1,800 decoded video frames and2,880,648 decoded audio frames.
+Export/download took40.885 seconds;1,800 addVideo operations observed38.678 seconds
+in total elapsed waits (largest575.7ms), versus1.107 seconds across1,805 draw calls,
+246.6ms constructing1,800 video samples and74ms finalization. All observed operations
+completed without errors. These are elapsed waits including scheduling/native work,
+not additive CPU times; draw can exclude later GPU work and includes UI draws.
+The standard browser suite ran concurrently, so this is not a performance baseline.
+It identifies native video backpressure as the next investigation target in this
+environment; it does not explain the full155 timeout or establish a production fix.
+Issue #128 remains open pending full155 evidence and a safe repair if warranted.
+
+To reproduce the diagnostic, prepare the unchanged fixture with
+`node scripts/smoke_sequence_soundtrack.mjs --prepare --output NEW_FIXTURES`, serve
+the app locally, then capture with `--capture --stage-timing --fixtures NEW_FIXTURES
+--output NEW_CAPTURE --origin LOCAL_APP_URL`. Run the same driver's `--inspect
+--output NEW_CAPTURE` to apply the original independent media gates. Without
+`--stage-timing`, the original passive probe remains unchanged.
