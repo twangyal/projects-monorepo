@@ -179,3 +179,79 @@ jobs:
             apps/shot-studio/test-results/vp8-first-155-browser.log
             apps/shot-studio/test-results/vp8-first-155-provenance.json
           retention-days: 1
+
+  realtime-candidate-maximum:
+    # An isolated source-copy experiment, never a production/default acceptance result.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Install isolated pinned post-fix browser
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/browser-155
+          node scripts/browser-155/node_modules/playwright/cli.js install --with-deps chromium
+          node --input-type=module -e "import {chromium} from './scripts/browser-155/node_modules/playwright/index.mjs'; console.log('SHOT_POSTFIX_CHROMIUM_PATH='+chromium.executablePath())" >> "$GITHUB_ENV"
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Prepare isolated VP9 realtime-latency source copy
+        run: |
+          set -euo pipefail
+          mkdir /tmp/shot-realtime-candidate
+          git -C ../.. archive HEAD apps/shot-studio | tar -x -C /tmp/shot-realtime-candidate
+          mkdir -p test-results
+          python3 - <<'PYTHON'
+          import hashlib,json,os
+          from pathlib import Path
+          target=Path('/tmp/shot-realtime-candidate/apps/shot-studio/src/timestamped-export.js')
+          original=target.read_text()
+          before="new bunny.VideoSampleSource({codec,bitrate:2500000})"
+          after="new bunny.VideoSampleSource({codec,bitrate:2500000,latencyMode:'realtime'})"
+          assert original.count(before)==1, 'Candidate requires the exact original encoder configuration.'
+          candidate=original.replace(before,after)
+          target.write_text(candidate)
+          assert candidate.replace(after,before)==original
+          Path('test-results/realtime-155-provenance.json').write_text(json.dumps({
+            'schemaVersion':1,'issue':128,'mode':'isolated-vp9-realtime-latency-candidate',
+            'checkoutSha':os.environ['GITHUB_SHA'],
+            'sourcePath':'apps/shot-studio/src/timestamped-export.js',
+            'originalSourceSha256':hashlib.sha256(original.encode()).hexdigest(),
+            'candidateSourceSha256':hashlib.sha256(candidate.encode()).hexdigest(),
+            'change':{'before':before,'after':after},
+            'limits':['Only the isolated served source copy changes. Production retains its original quality mode.',
+              'Native resolution, bitrate, authored frame plan, deadlines and independent media gates remain unchanged.',
+              'A separate candidate result cannot clear an original maximum failure.',
+              'Realtime mode may drop frames; this experiment additionally requires all1800decoded video frames.']
+          },indent=2)+'\n')
+          PYTHON
+      - name: Measure original maximum gates on the isolated VP9 realtime-latency candidate
+        run: |
+          set -euo pipefail
+          export CHROMIUM_PATH="$SHOT_POSTFIX_CHROMIUM_PATH"
+          python3 -m http.server 4179 --bind 127.0.0.1 --directory /tmp/shot-realtime-candidate/apps/shot-studio > /tmp/shot-realtime-server.log 2>&1 &
+          shot_realtime_server_pid=$!
+          trap 'kill "$shot_realtime_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --silent --fail http://127.0.0.1:4179/ > /dev/null; then break; fi
+            sleep .1
+          done
+          node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-realtime-fixtures
+          DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --stage-timing --fixtures /tmp/shot-realtime-fixtures --output test-results/realtime-155 --origin http://127.0.0.1:4179 2>test-results/realtime-155-browser.log
+          node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/realtime-155
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; import assert from 'node:assert/strict'; const r=JSON.parse(readFileSync('test-results/realtime-155/verification.json')); assert.equal(r.inspection.videoCodec,'vp9','Candidate must actually encode VP9.'); assert.equal(r.inspection.decodedVideoFrames,1800,'Candidate must retain every planned video frame.');"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-full-chromium-155-realtime-candidate
+          path: |
+            apps/shot-studio/test-results/realtime-155/**
+            !apps/shot-studio/test-results/realtime-155/profile/**
+            apps/shot-studio/test-results/realtime-155-browser.log
+            apps/shot-studio/test-results/realtime-155-provenance.json
+          retention-days: 1

@@ -784,3 +784,11 @@ without replacing the original rejection. All13normal portfolio checks and both
 standard Shot350unit/110native workflows pass; the separate push155 experiment
 fails. Production and all original gates remain unchanged; #128 stays open for a
 safe measured throughput repair and independent decoder discrepancy verification.
+
+
+The [isolated realtime-latency candidate](docs/2026-10-07-realtime-candidate/README.md)
+passes the local original maximum in26.069s, including all1,800 planned decoded
+video frames and unchanged media/archive gates. This is a separate experiment,
+not a controlled speed benchmark or production change. Full155 CI additionally
+requires exact complete-frame count. Realtime mode can permit drops, so adoption
+requires bounded complete-frame accounting before any movie publication.
