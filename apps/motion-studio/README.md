@@ -338,3 +338,11 @@ held-cel boundaries and poses. Both editor and HTTPS private viewer release real
 workers on cancellation after frame progress and controlled page departure.
 Valid ancillary padding admits the exact 96 MiB cap and rejects +1; this byte
 capacity check does not establish general latency or peak memory.
+
+## Playback startup clock repair (#136)
+
+Editor and private viewer playback now guard an early first animation callback
+against negative elapsed time. The [verification record](docs/2026-10-07-snapshot-playback/verification.md)
+retains the original native failure, clock regression, and current validation
+limits. Authored frames, endpoint/loop behavior, export formats and HTTPS
+authority remain unchanged.

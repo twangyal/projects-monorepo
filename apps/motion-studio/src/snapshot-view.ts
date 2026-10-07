@@ -1,3 +1,4 @@
+import { playbackFrame } from './playback.ts';
 import './style.css';
 import { FPS, HEIGHT, WIDTH, validateProject, type Project } from './model.ts';
 import { createFrameRenderer, loadAssets, closeAssets, type Assets, type FrameRenderer } from './render.ts';
@@ -100,7 +101,7 @@ play.addEventListener('click',()=> {
   playing = true; from = frame; started = performance.now(); play.textContent = 'Stop snapshot';
   const tick = (now:number) => {
     if (!playing || !renderer) return;
-    frame = Math.min(renderer.frameCount-1,from+Math.floor((now-started)*FPS/1000)); draw();
+    frame = Math.min(renderer.frameCount - 1, playbackFrame(from, now - started)); draw();
     if (frame === renderer.frameCount-1) stop(); else animation = requestAnimationFrame(tick);
   }; animation = requestAnimationFrame(tick);
 });

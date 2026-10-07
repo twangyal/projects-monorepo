@@ -125,3 +125,46 @@ test('corrupt local library refuses snapshot adoption without overwriting recove
     const durable=await reader.evaluate(()=>new Promise<unknown>((resolve,reject)=>{const req=indexedDB.open('motion-studio');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction('library','readonly'),value=tx.objectStore('library').get('current');tx.oncomplete=()=>{db.close();resolve(value.result);};tx.onabort=()=>{db.close();reject(tx.error);};};}));expect(durable).toEqual(corrupt);expect(JSON.parse((await download(reader,'#snapshot-project')).toString())).toEqual(originalProject());
   }finally{await context.close();}
 });
+
+
+test('snapshot playback survives an earlier first native animation timestamp and pauses',async({lan})=>{
+ const context=await lan.browser.newContext(),owner=await context.newPage(),viewer=await context.newPage();
+ const errors:string[]=[];viewer.on('pageerror',error=>errors.push(error.message));
+ try{
+  await openOriginal(owner,lan);const links=await publish(owner,lan);await view(viewer,links.read);
+  const before=await inspectLibrary(viewer);
+  // Controlled reproduction of timestamp ordering from the retained native CI error.
+  await viewer.evaluate(()=>{
+   const native=requestAnimationFrame.bind(window);let first=true;
+   window.requestAnimationFrame=callback=>native(timestamp=>{const adjusted=first;first=false;callback(adjusted?Math.min(0,timestamp-1000):timestamp);});
+  });
+  await viewer.locator('#snapshot-play').click();
+  await expect.poll(()=>viewer.locator('#snapshot-frame').inputValue(),{intervals:[20,50,100]}).not.toBe('0');
+  await expect(viewer.locator('#snapshot-play')).toHaveText('Stop snapshot');await viewer.locator('#snapshot-play').click();
+  const paused=await viewer.locator('#snapshot-frame').inputValue();
+  await viewer.evaluate(()=>new Promise<void>(resolve=>{let left=6;const tick=()=>{if(--left===0)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);}));
+  expect(await viewer.locator('#snapshot-frame').inputValue()).toBe(paused);expect(errors).toEqual([]);
+  expect(await inspectLibrary(viewer)).toEqual(before);
+  expect(JSON.parse((await download(viewer,'#snapshot-project')).toString())).toEqual(originalProject());
+ }finally{await context.close();}
+});
+
+
+test('editor playback survives an earlier first native animation timestamp and pauses',async({lan})=>{
+ const context=await lan.browser.newContext(),page=await context.newPage();
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ try{
+  await openOriginal(page,lan);
+  await page.evaluate(()=>{
+   const native=requestAnimationFrame.bind(window);let first=true;
+   window.requestAnimationFrame=callback=>native(timestamp=>{const adjusted=first;first=false;callback(adjusted?Math.min(0,timestamp-1000):timestamp);});
+  });
+  await page.locator('#play').click();
+  await expect.poll(()=>page.locator('#frame').inputValue(),{intervals:[20,50,100]}).not.toBe('0');
+  await expect(page.locator('#play')).toHaveText('Pause animation');await page.locator('#play').click();
+  const paused=await page.locator('#frame').inputValue();
+  await page.evaluate(()=>new Promise<void>(resolve=>{let left=6;const tick=()=>{if(--left===0)resolve();else requestAnimationFrame(tick);};requestAnimationFrame(tick);}));
+  expect(await page.locator('#frame').inputValue()).toBe(paused);expect(errors).toEqual([]);
+  expect((await inspectLibrary(page)).rows[0].project).toEqual(originalProject());
+ }finally{await context.close();}
+});

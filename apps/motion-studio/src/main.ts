@@ -1,4 +1,5 @@
 import './style.css';
+import { playbackFrame } from './playback.ts';
 import { createStrokeEditor, StrokeDrag, uniformCanvas } from './stroke-editor.ts';
 import { hitStroke, translateStroke, type StrokeTarget } from './stroke-edit.ts';
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
@@ -306,7 +307,7 @@ function changeLayer(action: (chosen: Layer) => Layer) {
 }
 function seek(next: number) { if (busy || exporting || gesture || !admitDrafts()) { el<HTMLInputElement>('frame').value = String(frame); return; } pause(); intent(); frame = Math.max(0, Math.min(project.frameCount - 1, next)); renderTimeline(); poseFields(); controls(); draw(); }
 function tick(now: number) {
-  const next = playFrom + Math.floor((now - playStarted) * FPS / 1000);
+  const next = playbackFrame(playFrom, now - playStarted);
   if (next >= project.frameCount && !el<HTMLInputElement>('loop').checked) { frame = project.frameCount - 1; pause(); }
   else frame = next % project.frameCount;
   renderTimeline(); poseFields(); controls(); draw();
