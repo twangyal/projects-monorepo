@@ -19,7 +19,10 @@ test('native stage timing retains original WebM export and restores methods',asy
   expect(report.stages.addVideo.completed).toBe(report.stages.video.completed);
   expect(report.stages.finalize.completed).toBe(1);
   expect(report.stages.finalize.errors).toBe(0);
-  expect(Object.keys(report.stages)).toHaveLength(10);
+  expect(report.nativeQueues.video.encodeCalls).toBe(report.stages.video.completed);
+  expect(report.nativeQueues.video.pending).toBe(0);expect(report.nativeQueues.video.tracked).toBe(0);
+  expect(report.nativeQueues.video.unobserved).toBe(0);expect(report.stages.sinkWrite.completed).toBeGreaterThan(0);
+  expect(Object.keys(report.stages)).toHaveLength(11);
  }finally{await stopStageTiming(page);}
  expect(await sampleStageTiming(page)).toEqual({unavailable:'stage timing not installed'});
  const next=page.waitForEvent('download');await page.locator('#sequence-export').click();await next;

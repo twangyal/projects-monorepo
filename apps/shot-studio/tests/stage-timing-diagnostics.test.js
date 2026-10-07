@@ -35,7 +35,15 @@ test('rejected native promises stay rejected, snapshots detach, and observation 
  assert.equal(timer.snapshot().stages.probe.calls,1);
  assert.equal(timer.snapshot().stages.probe.errors,1);
  for(let i=0;i<10000;i++)backend.create();
- assert.equal(Object.keys(timer.snapshot().stages).length,10);
+ assert.equal(Object.keys(timer.snapshot().stages).length,11);
  assert.equal(timer.snapshot().stages.create.calls,10000);
  timer.stop();
+});
+
+test('sink write timing preserves the exact sink, chunk and native write result then restores it',()=>{
+ let now=0;const chunk={position:0,data:new Uint8Array([1,2,3])},sink={write(value){assert.equal(this,sink);assert.equal(value,chunk);now+=7;return 'native write';}};
+ const original=sink.write,backend={create(value){assert.equal(value,sink);return {start(){return sink.write(chunk);}};}};
+ const observer=instrumentStages(backend,{draw(){}},()=>now);assert.equal(backend.create(sink).start(),'native write');
+ assert.equal(observer.snapshot().stages.sinkWrite?.totalMs,7);
+ observer.stop();assert.equal(sink.write,original);
 });

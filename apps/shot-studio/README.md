@@ -819,4 +819,14 @@ five-second omission-harness timing failure in push. That fixture is corrected
 to a legal one-second shot and waits through its unchanged product deadline;
 focused local verification passes. First context/trace is preserved. All13normal
 portfolio PR workflows pass; push maxima stay red. The guard is not claimed as a
-throughput fix; corrected-head CI is pending.
+throughput fix. Corrected-head7e316fb push37607024055 and PR37607028764
+pass357 units/syntax,111 native cases and configured maximum gates; separate
+full155 original maxima remain red in push37607024080 and PR37607028881.
+
+
+The [native queue diagnostic](docs/2026-10-07-native-queue-timing/README.md)
+adds bounded once-dequeue timing for both real codecs and exact sink writes to
+the separate stage variation. Small independently decoded audiovisual/video
+exports verify behavior and retirement; it does not assign exclusive CPU time
+or cover all upstream muxer backpressure. Original production and maximum gates
+remain unchanged. Issue128 remains open for the full155 timeout.

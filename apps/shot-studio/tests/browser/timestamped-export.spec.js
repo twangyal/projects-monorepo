@@ -84,3 +84,42 @@ test('native finalization cancellation retains ownership until a real encoder fl
  });expect(result.published).toBe(false);expect(result.error).toMatch(/cancelled/);expect(result.settledBeforeRelease).toBe(false);
  expect(result.statesBeforeRelease).toContain('configured');expect(result.encoders.length).toBeGreaterThan(0);expect(result.encoders.every(x=>x==='closed')).toBe(true);
 });
+
+test('native stage diagnostics preserve a complete real export and restore codec methods',async({page},info)=>{
+ await page.goto('/');const result=await page.evaluate(async()=>{
+  const [{instrumentStages},{nativeExportBackend,exportTimestampedFilm}]=await Promise.all([import('/scripts/stage-timing-diagnostics.mjs'),import('/src/timestamped-export.js')]);
+  const original={encode:VideoEncoder.prototype.encode,listen:VideoEncoder.prototype.addEventListener,close:VideoEncoder.prototype.close,create:nativeExportBackend.create};
+  const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;const context=canvas.getContext('2d');
+  const renderer={draw(){context.fillStyle='#d41414';context.fillRect(0,0,64,64);}};
+  const observer=instrumentStages(nativeExportBackend,renderer,()=>performance.now(),{VideoEncoder,AudioEncoder});
+  try{
+   const blob=await exportTimestampedFilm(canvas,()=>renderer.draw(),1),report=observer.snapshot();observer.stop();
+   return{report,bytes:[...new Uint8Array(await blob.arrayBuffer())],restored:original.encode===VideoEncoder.prototype.encode&&original.listen===VideoEncoder.prototype.addEventListener&&original.close===VideoEncoder.prototype.close&&original.create===nativeExportBackend.create};
+  }finally{observer.stop();}
+ });
+ expect(result.restored).toBe(true);expect(result.report.stages.addVideo.completed).toBe(30);
+ expect(result.report.nativeQueues.video.encodeCalls).toBe(30);expect(result.report.nativeQueues.video.maxQueue).toBeGreaterThan(0);
+ expect(result.report.nativeQueues.video.pending).toBe(0);expect(result.report.nativeQueues.video.tracked).toBe(0);
+ expect(result.report.nativeQueues.video.unobserved).toBe(0);expect(result.report.stages.sinkWrite.calls).toBeGreaterThan(0);
+ const file=info.outputPath('diagnostic-native.webm');await writeFile(file,Buffer.from(result.bytes));
+ const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_frames','-show_entries','frame=best_effort_timestamp_time','-of','json',file],{encoding:'utf8'}));
+ expect(probe.frames).toHaveLength(30);for(let i=0;i<30;i++)expect(Math.abs(Number(probe.frames[i].best_effort_timestamp_time)-i/30)).toBeLessThan(.002);
+ await writeFile(info.outputPath('diagnostic-native-receipt.json'),JSON.stringify({source:'real64x64oneSecondNativeExport',decodedFrames:probe.frames.length,restored:result.restored,report:result.report,limits:['Small native boundary validation, not maximum throughput acceptance.']},null,2));
+});
+
+test('native queue diagnostics retain audiovisual samples and measure both codec boundaries',async({page},info)=>{
+ await page.goto('/');await page.evaluate(async()=>{
+  const [{instrumentStages},{nativeExportBackend}]=await Promise.all([import('/scripts/stage-timing-diagnostics.mjs'),import('/src/timestamped-export.js')]);
+  window.__queueObserver=instrumentStages(nativeExportBackend,{draw(){}},()=>performance.now(),{VideoEncoder,AudioEncoder});
+ });
+ let result,report;
+ try{result=await encode(page,{audio:true});report=await page.evaluate(()=>window.__queueObserver.snapshot());}
+ finally{await page.evaluate(()=>{window.__queueObserver.stop();delete window.__queueObserver;});}
+ expect(report.nativeQueues.video.encodeCalls).toBe(60);expect(report.nativeQueues.audio.encodeCalls).toBeGreaterThan(0);
+ for(const row of Object.values(report.nativeQueues)){expect(row.pending).toBe(0);expect(row.tracked).toBe(0);expect(row.unobserved).toBe(0);expect(row.completed).toBe(row.waits);}
+ const file=info.outputPath('diagnostic-audiovisual.webm');await writeFile(file,Buffer.from(result.bytes));
+ const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-select_streams','v:0','-show_frames','-show_entries','frame=best_effort_timestamp_time','-of','json',file],{encoding:'utf8'}));
+ expect(probe.frames).toHaveLength(60);
+ const pcm=execFileSync('ffmpeg',['-v','error','-i',file,'-vn','-ar','48000','-ac','1','-f','f32le','pipe:1'],{maxBuffer:1024*1024});expect(Math.abs(pcm.length/4-96000)).toBeLessThan(961);
+ await writeFile(info.outputPath('diagnostic-audiovisual-receipt.json'),JSON.stringify({decodedVideoFrames:probe.frames.length,decodedAudioFrames:pcm.length/4,report,limits:['Small real audiovisual boundary validation, not maximum throughput acceptance.']},null,2));
+});

@@ -1,0 +1,147 @@
+{
+  "source": "real64x64oneSecondNativeExport",
+  "decodedFrames": 30,
+  "restored": true,
+  "report": {
+    "schemaVersion": 1,
+    "mode": "stage-timing-diagnostic-variation",
+    "active": true,
+    "nativeQueues": {
+      "video": {
+        "encodeCalls": 30,
+        "maxQueue": 4,
+        "waits": 4,
+        "completed": 4,
+        "waitMs": 14.600000000093132,
+        "maxWaitMs": 11.800000000046566,
+        "pending": 0,
+        "tracked": 0,
+        "unobserved": 0
+      },
+      "audio": {
+        "encodeCalls": 0,
+        "maxQueue": 0,
+        "waits": 0,
+        "completed": 0,
+        "waitMs": 0,
+        "maxWaitMs": 0,
+        "pending": 0,
+        "tracked": 0,
+        "unobserved": 0
+      }
+    },
+    "stages": {
+      "probe": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 5.800000000046566,
+        "maxMs": 5.800000000046566,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "create": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 1.1999999999534339,
+        "maxMs": 1.1999999999534339,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "draw": {
+        "calls": 30,
+        "completed": 30,
+        "errors": 0,
+        "totalMs": 0.20000000018626451,
+        "maxMs": 0.20000000018626451,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "start": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 0.8999999999068677,
+        "maxMs": 0.8999999999068677,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "video": {
+        "calls": 30,
+        "completed": 30,
+        "errors": 0,
+        "totalMs": 1.5000000002328306,
+        "maxMs": 0.39999999990686774,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "audio": {
+        "calls": 0,
+        "completed": 0,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "addVideo": {
+        "calls": 30,
+        "completed": 30,
+        "errors": 0,
+        "totalMs": 29.50000000023283,
+        "maxMs": 15.100000000093132,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "addAudio": {
+        "calls": 0,
+        "completed": 0,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "finalize": {
+        "calls": 1,
+        "completed": 1,
+        "errors": 0,
+        "totalMs": 32.199999999953434,
+        "maxMs": 32.199999999953434,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "cancel": {
+        "calls": 0,
+        "completed": 0,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      },
+      "sinkWrite": {
+        "calls": 35,
+        "completed": 35,
+        "errors": 0,
+        "totalMs": 0,
+        "maxMs": 0,
+        "pending": 0,
+        "pendingMs": 0
+      }
+    },
+    "limits": [
+      "Observer elapsed times include scheduling/native waits; stages may overlap and are not additive CPU time.",
+      "Draw timing excludes later GPU work; VideoFrame snapshots may synchronize rendering.",
+      "All renderer draw calls in this window are counted; draw timing is not export-only attribution.",
+      "Native once-dequeue waits measure the pinned encoder backpressure boundary, not exclusive encoder CPU time.",
+      "Sink writes exclude upstream muxer scheduling/serialization and do not account for all writer backpressure.",
+      "Queue observations retain at most8 active encoders and8 pending listeners per encoder; unobserved counts disclose overflow.",
+      "A separate diagnostic variation, not the unchanged original acceptance run."
+    ]
+  },
+  "limits": [
+    "Small native boundary validation, not maximum throughput acceptance."
+  ]
+}
