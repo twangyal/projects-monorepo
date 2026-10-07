@@ -17,7 +17,7 @@ Open `http://localhost:4173`.
 
 - **Start camera** requests webcam access and loads WebGazer from jsDelivr on demand.
 - **Pointer simulation** runs the same target resolver/dwell logic with pointer coordinates, making the interaction testable without a webcam.
-- Hold a pointer still for 0.9 seconds to confirm. A control confirms once until you leave it and return.
+- Hold for **0.9 seconds** by default, or choose **1.5 seconds** or **2.5 seconds** with the gaze-reachable confirmation controls. The setting lasts for this page session and applies to navigation and safety controls; Escape still pauses immediately. Changing timing clears unfinished progress. A control confirms once until you leave it and return, including after a timing change. Refresh restores 0.9 seconds.
 - Calibration asks for three clicks at each of nine screen positions before enabling targets.
 - In camera mode, only physical pointer clicks on the dot add samples. Keyboard/synthetic clicks and clicks without a recorded eye sample do not advance calibration. Simulation permits ordinary keyboard activation.
 - Resizing restarts calibration from the first point and suspends navigation and accuracy checks until it completes. Pause also pauses calibration; resume before collecting more clicks.

@@ -336,6 +336,18 @@ window.addEventListener('resize', () => {
 });
 window.addEventListener('scroll', () => resetTracking(true), true);
 
+const dwellChoices = [['dwellDefault', 900], ['dwellSlow', 1500], ['dwellVerySlow', 2500]];
+for (const [id, milliseconds] of dwellChoices) {
+  document.querySelector(`#${id}`).addEventListener('click', () => {
+    if (!dwell.setDwellMs(milliseconds)) return;
+    resetTracking(true);
+    for (const [choiceId] of dwellChoices) {
+      document.querySelector(`#${choiceId}`).setAttribute('aria-pressed', String(choiceId === id));
+    }
+    document.querySelector('#dwellDuration').textContent = `Hold for ${milliseconds / 1000} seconds to confirm. Look away before confirming again.`;
+  });
+}
+
 startButton.addEventListener('click', enableCamera);
 const keyboard = setupKeyboard(document, () => resetTracking(true));
 setupWorkspace(document, () => {

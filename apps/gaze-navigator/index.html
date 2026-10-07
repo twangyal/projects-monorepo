@@ -60,6 +60,15 @@
         </div>
         <div class="dwell-meter" aria-label="Dwell progress"><span id="dwellFill"></span></div>
       </div>
+      <div class="confirmation-settings" role="group" aria-label="Confirmation hold duration">
+        <p id="dwellDuration" role="status">Hold for 0.9 seconds to confirm. Look away before confirming again.</p>
+        <div class="confirmation-choices">
+          <button id="dwellDefault" data-gaze-target aria-pressed="true">0.9 seconds</button>
+          <button id="dwellSlow" data-gaze-target aria-pressed="false">1.5 seconds</button>
+          <button id="dwellVerySlow" data-gaze-target aria-pressed="false">2.5 seconds</button>
+        </div>
+        <p>Choose a comfortable timing for this session. Escape pauses immediately.</p>
+      </div>
       <div class="target-grid">
         <button id="composeButton" class="demo-target" data-gaze-target data-action="compose">Compose</button>
         <button id="searchButton" class="demo-target" data-gaze-target data-action="search">Search</button>

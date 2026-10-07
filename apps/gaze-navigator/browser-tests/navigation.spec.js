@@ -39,7 +39,7 @@ async function hit(locator) {
   });
 }
 
-async function hold(page, locator, { scroll = true } = {}) {
+async function hold(page, locator, { scroll = true, duration = 1100 } = {}) {
   if (scroll) await locator.evaluate(element => new Promise(resolve => {
     const ancestors = [];
     for (let node = element.parentElement; node; node = node.parentElement) ancestors.push(node);
@@ -60,7 +60,7 @@ async function hold(page, locator, { scroll = true } = {}) {
   expect(await hit(locator), `control center must be visible and unobstructed: ${JSON.stringify(geometry)}`).toBe(true);
   const bounds = await locator.boundingBox();
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-  await page.clock.runFor(1100);
+  await page.clock.runFor(duration);
 }
 
 async function reachKey(page, key, direction) {
@@ -85,6 +85,41 @@ test('real pointer dwell confirms once until looking away', async ({ page }) => 
   await expect(compose).toHaveAttribute('data-confirmations', '1');
   await hold(page, compose);
   await expect(compose).toHaveAttribute('data-confirmations', '2');
+});
+
+test('confirmation timing is gaze reachable and slower holds cannot activate prematurely', async ({ page }) => {
+  await simulate(page);
+  const target = page.locator('#selectButton');
+  await target.evaluate(button => {
+    button.dataset.confirmations = '0';
+    button.addEventListener('click', () => { button.dataset.confirmations = String(Number(button.dataset.confirmations) + 1); });
+  });
+  await hold(page, page.locator('#dwellSlow'));
+  await expect(page.locator('#dwellSlow')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, target);
+  await expect(target).toHaveAttribute('data-confirmations', '0');
+  await page.clock.runFor(600);
+  await expect(target).toHaveAttribute('data-confirmations', '1');
+  await page.clock.runFor(3500);
+  await expect(target).toHaveAttribute('data-confirmations', '1');
+  await hold(page, page.locator('#dwellVerySlow'), { duration: 1700 });
+  await expect(page.locator('#dwellVerySlow')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, target);
+  await expect(target).toHaveAttribute('data-confirmations', '1');
+  await page.clock.runFor(1600);
+  await expect(target).toHaveAttribute('data-confirmations', '2');
+  await page.clock.runFor(3500);
+  await expect(target).toHaveAttribute('data-confirmations', '2');
+  await hold(page, page.locator('#dwellDefault'), { duration: 2700 });
+  await expect(page.locator('#dwellDefault')).toHaveAttribute('aria-pressed', 'true');
+  await hold(page, target);
+  await expect(target).toHaveAttribute('data-confirmations', '3');
+  await page.locator('#dwellSlow').focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#dwellSlow')).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await simulate(page);
+  await expect(page.locator('#dwellDefault')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('gaze safety controls stay reachable through pause, scrolling, and stop', async ({ page }) => {

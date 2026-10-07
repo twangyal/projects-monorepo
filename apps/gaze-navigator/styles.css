@@ -104,3 +104,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 @media (max-height: 650px) { .keyboard-help { display: none; } #textKeyboard { padding: 10px; } }
 
 .lab-link a { color: #75e5b4; display: inline-block; padding: 8px 0; text-underline-offset: 3px; }
+
+.confirmation-settings { margin: 16px 0; }
+.confirmation-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirmation-choices button { flex: 1; min-width: 90px; min-height: 54px; padding: 12px; border: 1px solid #456b5c; border-radius: 12px; background: #102820; color: #eef8f3; cursor: pointer; }
+.confirmation-choices button[aria-pressed="true"] { background: #285743; outline: 2px solid #75e5b4; }
+
+.confirmation-choices button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }
