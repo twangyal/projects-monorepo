@@ -343,6 +343,7 @@ capacity check does not establish general latency or peak memory.
 
 Editor and private viewer playback now guard an early first animation callback
 against negative elapsed time. The [verification record](docs/2026-10-07-snapshot-playback/verification.md)
-retains the original native failure, clock regression, and current validation
-limits. Authored frames, endpoint/loop behavior, export formats and HTTPS
+retains the original native failure and clock regression. All239 units,
+lint/type/build and148 native cases pass locally and in both first published
+push/PR CI runs at64f19f7. Authored frames, endpoint/loop behavior, export formats and HTTPS
 authority remain unchanged.
