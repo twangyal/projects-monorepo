@@ -1469,7 +1469,7 @@ referenceHost.addEventListener('click', event => {
     }
   }
 });
-window.addEventListener('beforeunload', event => { if (saving || unsaved) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (saving || unsaved || scratchExists()) { event.preventDefault(); event.returnValue = ''; } });
 
 // Every external input/action is a new dependent library intent, including MIDI
 // review choices which do not increment compositionGeneration/editorIntent.
