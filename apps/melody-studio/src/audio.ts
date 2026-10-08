@@ -1,3 +1,4 @@
+import { MAX_COMPOSITION_BEATS, MAX_RENDER_FRAMES } from './limits.ts';
 import type { Composition, Note } from './types.ts';
 
 const MIN_HZ = 440 * 2 ** ((36 - 69) / 12);
@@ -149,7 +150,7 @@ export function transcribe(samples: Float32Array, sampleRate: number, tempo: num
     const endSeconds = Math.min(reduced.samples.length / reduced.rate, (frames[end - 1].time + hop / reduced.rate / 2));
     if (pitch !== null && endSeconds - startSeconds >= 0.06) {
       let start = quarterBeat(startSeconds);
-      const finish = Math.min(128, Math.max(start + 0.25, quarterBeat(endSeconds)));
+      const finish = Math.min(MAX_COMPOSITION_BEATS, Math.max(start + 0.25, quarterBeat(endSeconds)));
       const velocity = Math.max(0.1, Math.min(1, level / (end - first) * 2));
       while (start < finish && notes.length < 256) {
         const duration = Math.min(16, finish - start);
@@ -170,9 +171,11 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
   let endBeat = 0;
   for (const track of project.tracks) for (const note of track.notes) endBeat = Math.max(endBeat, note.start + note.duration);
   // The caller supplies a validated Composition; guard allocation nonetheless.
-  if (!Number.isFinite(endBeat) || endBeat < 0 || endBeat > 128) throw new RangeError('Composition exceeds 128 beats.');
+  if (!Number.isFinite(endBeat) || endBeat < 0 || endBeat > MAX_COMPOSITION_BEATS) throw new RangeError(`Composition exceeds ${MAX_COMPOSITION_BEATS} beats.`);
   if (endBeat === 0) return new Float32Array();
-  const result = new Float32Array(Math.ceil((endBeat * secondsPerBeat + RELEASE) * sampleRate));
+  const frames = Math.ceil((endBeat * secondsPerBeat + RELEASE) * sampleRate);
+  if (!Number.isSafeInteger(frames) || frames > MAX_RENDER_FRAMES) throw new RangeError('Rendered audio exceeds the frame budget. Lower the sample rate or shorten the composition.');
+  const result = new Float32Array(frames);
   const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; gain: number }>();
   for (const track of project.tracks) {
     if (track.muted || track.volume === 0) continue;

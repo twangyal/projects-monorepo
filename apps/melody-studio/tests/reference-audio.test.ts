@@ -160,7 +160,7 @@ test('comparison crop copies frame interval, preserves silence and pads only mis
   assert.deepEqual(cropComparison(new Float32Array(0), { startFrame: 1, endFrame: 3 }), new Float32Array(2));
   assert.deepEqual(cropComparison(source, { startFrame: 5, endFrame: 8 }), new Float32Array(3));
   assert.throws(() => cropComparison(Float32Array.of(NaN), { startFrame: 0, endFrame: 1 }));
-  assert.throws(() => cropComparison(new Float32Array(4235365), { startFrame: 0, endFrame: 1 }));
+  assert.throws(() => cropComparison(new Float32Array(16936165), { startFrame: 0, endFrame: 1 }));
 });
 
 test('full solo render crop retains phase before window and crops release without restarting envelopes', () => {

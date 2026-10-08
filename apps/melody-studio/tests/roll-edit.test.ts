@@ -64,11 +64,11 @@ test('add snaps absolute start and duration and appends without sorting existing
 
 test('move and resize candidate pitch/time/duration/end bounds refuse atomically without clipping', () => {
   const input = fixture();
-  for (const action of [edit(-3, 0), edit(128, 0), edit(0, 0, -25), edit(0, 0, 37), edit(0, .25, .5),
+  for (const action of [edit(-3, 0), edit(512, 0), edit(0, 0, -25), edit(0, 0, 37), edit(0, .25, .5),
     { kind: 'resize', noteId: 'edit', deltaBeats: -1.25, snap: 0 },
     { kind: 'resize', noteId: 'edit', deltaBeats: 15, snap: 0 },
     { kind: 'resize', noteId: 'edit', deltaBeats: Infinity, snap: 0 }] as RollEdit[]) fails(input, 't1', action);
-  input.tracks[0].notes[1] = { id: 'edit', pitch: 96, start: 127.75, duration: .25, velocity: 1 };
+  input.tracks[0].notes[1] = { id: 'edit', pitch: 96, start: 511.75, duration: .25, velocity: 1 };
   assert.deepEqual(proposeRollEdit(input, 't1', edit(0, .25)), input);
   fails(input, 't1', edit(.125, .25));
   fails(input, 't1', { kind: 'resize', noteId: 'edit', deltaBeats: .125, snap: .25 });

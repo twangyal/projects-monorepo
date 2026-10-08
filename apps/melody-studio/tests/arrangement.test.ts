@@ -160,7 +160,7 @@ test('repeat accepts exactly 256 resulting notes and an end at beat 128', () => 
 });
 
 test('repeat rejects empty tracks, note overflow and beat overflow without partial changes', () => {
-  for (const notes of [[], Array.from({ length: 129 }, (_, index) => note(`note-${index}`)), [note('late', 60, 96.25, 16)]]) {
+  for (const notes of [[], Array.from({ length: 129 }, (_, index) => note(`note-${index}`)), [note('late', 60, 480.25, 16)]]) {
     const project = fixture();
     project.tracks[0].notes = notes;
     const before = structuredClone(project);

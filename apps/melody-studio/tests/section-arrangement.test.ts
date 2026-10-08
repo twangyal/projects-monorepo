@@ -41,8 +41,8 @@ test('empty selected section and malformed range refuse atomically',()=>{
 test('late-track quotas and global end guard refuse without partial edits',()=>{
  const input=fixture();input.tracks[1].notes=Array.from({length:256},(_,i)=>note(`many-${i}`,1.5));const before=structuredClone(input);
  assert.throws(()=>duplicateSection(input,range),/256/);assert.deepEqual(input,before);
- const far=fixture();far.tracks[1].notes.push(note('far',127,.5));const original=structuredClone(far);
- assert.throws(()=>duplicateSection(far,range),/128/);assert.deepEqual(far,original);
+ const far=fixture();far.tracks[1].notes.push(note('far',511,.5));const original=structuredClone(far);
+ assert.throws(()=>duplicateSection(far,range),/512/);assert.deepEqual(far,original);
 });
 
 test('eight tracks expand to exactly2048 notes ending at128 with preserved originals', () => {

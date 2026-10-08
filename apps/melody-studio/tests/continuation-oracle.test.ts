@@ -181,7 +181,7 @@ test('oracle accepts exact64-note seed,256-note output and128-beat endpoint toge
   tooMany.tracks[0].notes.unshift({ id: 'extra', pitch: 48, start: 0, duration: 0.25, velocity: 0.5 });
   assert.throws(() => suggestEnding(tooMany, 'lead', 64, 8, 1), /256|capacity|notes|limit/i);
   const tooLate = structuredClone(project);
-  tooLate.tracks[0].notes.slice(-64).forEach(note => { note.start += 0.25; });
+  tooLate.tracks[0].notes.slice(-64).forEach(note => { note.start += 384.25; });
   assert.throws(() => suggestEnding(tooLate, 'lead', 64, 8, 1), /time|beat|bound|continuation|eligible/i);
 });
 

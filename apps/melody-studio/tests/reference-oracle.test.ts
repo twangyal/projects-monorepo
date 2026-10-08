@@ -78,7 +78,7 @@ test('oracle: rounded physical frame windows are detached exact-length copies wi
   const cropped = cropComparison(input, { startFrame: 1, endFrame: 6 });
   assert.deepEqual(cropped, Float32Array.from([-.25, .5, 0, 0, 0]));
   cropped[0] = 99; assert.equal(input[1], -.25);
-  assert.throws(() => cropComparison(new Float32Array(4235365), { startFrame: 0, endFrame: 1 }));
+  assert.throws(() => cropComparison(new Float32Array(16936165), { startFrame: 0, endFrame: 1 }));
 });
 
 test('oracle: comparison solo uses capture BPM and keeps pre-window phase, release and zero padded tail', () => {

@@ -18,7 +18,7 @@ test('factories produce independent valid compositions, tracks and notes', () =>
   assert.notEqual(track.id, createTrack().id);
   assert.notEqual(project.tracks[0].id, createComposition().tracks[0].id);
   assert.throws(() => createNote(128));
-  assert.throws(() => createNote(60, 128));
+  assert.throws(() => createNote(60, 512));
 });
 
 test('demo contains distinct layered musical tracks and has an actual duration', () => {
@@ -80,7 +80,7 @@ test('validation rejects malformed structures, duplicate IDs and every numeric b
       invalid.push(project);
     }
   }
-  for (const [field, values] of Object.entries({ id: ['', 'x'.repeat(101)], pitch: [35, 97, 60.5, NaN], start: [-0.01, 128, Infinity], duration: [0, 0.24, 16.01, NaN], velocity: [-0.01, 1.01, Infinity] })) {
+  for (const [field, values] of Object.entries({ id: ['', 'x'.repeat(101)], pitch: [35, 97, 60.5, NaN], start: [-0.01, 512, Infinity], duration: [0, 0.24, 16.01, NaN], velocity: [-0.01, 1.01, Infinity] })) {
     for (const value of values) {
       const project = fixture();
       Object.assign(project.tracks[0].notes[0], { [field]: value });
@@ -88,7 +88,7 @@ test('validation rejects malformed structures, duplicate IDs and every numeric b
     }
   }
   const beyondEnd = fixture();
-  Object.assign(beyondEnd.tracks[0].notes[0], { start: 127.9, duration: 0.25 });
+  Object.assign(beyondEnd.tracks[0].notes[0], { start: 511.9, duration: 0.25 });
   invalid.push(beyondEnd);
   const duplicate = fixture();
   duplicate.tracks[0].notes[0].id = 'track';

@@ -104,7 +104,7 @@ test('independent refusal oracle: crossing bounds rejects rather than clamping, 
   for (const edit of [move(-.125, 0, .25), move(0, -1), move(0, 61), resize(-.125, .25), resize(16)]) {
     assert.throws(() => proposeRollEdit(input, 'lead', edit)); assert.deepEqual(input, before);
   }
-  const end = composition(); Object.assign(end.tracks[0].notes[0], { start: 127.75, duration: .25 });
+  const end = composition(); Object.assign(end.tracks[0].notes[0], { start: 511.75, duration: .25 });
   assert.throws(() => proposeRollEdit(end, 'lead', move(.0000000000001)));
   const wide = composition(); Object.assign(wide.tracks[0].notes[0], { start: 0, duration: 16 });
   assert.throws(() => proposeRollEdit(wide, 'lead', resize(.000000000000004)));

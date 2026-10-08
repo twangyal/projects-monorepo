@@ -1,3 +1,4 @@
+import { MAX_COMPOSITION_BEATS } from './limits.ts';
 /** Session-only, one-based beat range; the end is exclusive. */
 export interface SectionRange { start: string; end: string }
 export interface SectionFrames { startFrame: number; endFrame: number }
@@ -6,7 +7,7 @@ export function sectionWindow(start: string, end: string, tempo: number, duratio
   const first = Number(start), last = Number(end);
   if (!Number.isFinite(first) || !Number.isFinite(last) || first < 1 || last <= first) throw new Error('Section end must be after start; use finite beats starting at 1.');
   if (!Number.isFinite(tempo) || tempo < 40 || tempo > 240 || !Number.isInteger(sampleRate) || sampleRate < 8000 || sampleRate > 192000) throw new Error('Invalid section audio settings.');
-  if (!Number.isFinite(durationBeats) || durationBeats <= 0 || durationBeats > 128 || last > durationBeats + 1) throw new Error(`Section must fit the composition (end beat at most ${durationBeats + 1}).`);
+  if (!Number.isFinite(durationBeats) || durationBeats <= 0 || durationBeats > MAX_COMPOSITION_BEATS || last > durationBeats + 1) throw new Error(`Section must fit the composition (end beat at most ${durationBeats + 1}).`);
   const startFrame = Math.round((first - 1) * 60 / tempo * sampleRate);
   const endFrame = Math.round((last - 1) * 60 / tempo * sampleRate);
   if (endFrame <= startFrame) throw new Error('Section must contain at least one audio frame.');

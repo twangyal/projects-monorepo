@@ -1,3 +1,4 @@
+import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition, Note, Track } from './types.ts';
 
 const MAX_JSON_BYTES = 1_048_576;
@@ -37,7 +38,7 @@ export function createNote(pitch = 60, start = 0): Note {
   return {
     id: crypto.randomUUID(),
     pitch: number(pitch, 'Pitch', 36, 96, true),
-    start: number(start, 'Start beat', 0, 127),
+    start: number(start, 'Start beat', 0, MAX_COMPOSITION_BEATS - 1),
     duration: 1,
     velocity: 0.8,
   };
@@ -85,9 +86,9 @@ export function validateComposition(value: unknown): Composition {
       const note = record(value, notePath);
       const noteId = id(note.id, `${notePath} ID`);
       const pitch = number(note.pitch, `${notePath} pitch`, 36, 96, true);
-      const start = number(note.start, `${notePath} start`, 0, 128);
+      const start = number(note.start, `${notePath} start`, 0, MAX_COMPOSITION_BEATS);
       const duration = number(note.duration, `${notePath} duration`, 0.25, 16);
-      if (start + duration > 128) throw new Error(`${notePath} must end by beat 128.`);
+      if (start + duration > MAX_COMPOSITION_BEATS) throw new Error(`${notePath} must end by beat ${MAX_COMPOSITION_BEATS}.`);
       const velocity = number(note.velocity, `${notePath} velocity`, 0, 1);
       return { id: noteId, pitch, start, duration, velocity };
     });

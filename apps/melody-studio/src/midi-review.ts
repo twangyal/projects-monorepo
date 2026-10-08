@@ -1,3 +1,4 @@
+import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition, Instrument } from './types.ts';
 import type { MidiPreview, MidiLane, MidiName } from './midi-import.ts';
 import { MidiImportError, MIDI_IMPORT_LIMITS as LIMITS } from './midi-import.ts';
@@ -124,7 +125,7 @@ function composition(value: unknown): Composition {
     number(track.volume, 0, 1); boolean(track.muted);
     for (const item of array(track.notes, 256)) {
       const note = object(item, ['id', 'pitch', 'start', 'duration', 'velocity']);
-      string(note.id, 100, 1); integer(note.pitch, 36, 96); number(note.start, 0, 128);
+      string(note.id, 100, 1); integer(note.pitch, 36, 96); number(note.start, 0, MAX_COMPOSITION_BEATS);
       number(note.duration, .25, 16); number(note.velocity, 0, 1);
     }
   }
@@ -209,7 +210,7 @@ function preview(value: unknown): MidiPreview {
 function selection(value: unknown, maximumEnd = LIMITS.maxTick + 1): MidiImportChoices {
   const data = object(value, ['title', 'startBeat', 'endBeat', 'lanes']);
   const title = chosenText(data.title), startBeat = integer(data.startBeat, 0, maximumEnd), endBeat = integer(data.endBeat, 1, maximumEnd);
-  if (endBeat <= startBeat || endBeat - startBeat > 128) invalid('Choose a whole-beat source window spanning 1–128 beats.');
+  if (endBeat <= startBeat || endBeat - startBeat > MAX_COMPOSITION_BEATS) invalid(`Choose a whole-beat source window spanning 1–${MAX_COMPOSITION_BEATS} beats.`);
   const seen = new Set<string>();
   const lanes = array(data.lanes, 8, 1).map(value => {
     const lane = object(value, ['laneId', 'name', 'instrument']);

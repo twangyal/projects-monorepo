@@ -1,3 +1,4 @@
+import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import { validateComposition } from './model.ts';
 import type { Composition, Track } from './types.ts';
 
@@ -40,7 +41,7 @@ export function repeatTrack(project: Composition, trackId: string): Composition 
   const lastEnd = Math.max(...track.notes.map(note => note.start + note.duration));
   // The initial rest is outside the phrase, so it occurs only once.
   const span = lastEnd - firstStart;
-  if (lastEnd + span > 128) throw new Error('Repeated notes must end by beat 128.');
+  if (lastEnd + span > MAX_COMPOSITION_BEATS) throw new Error(`Repeated notes must end by beat ${MAX_COMPOSITION_BEATS}.`);
   const copies = track.notes.map(note => ({ ...note, id: crypto.randomUUID(), start: note.start + span }));
   track.notes.push(...copies);
   return validateComposition(composition);

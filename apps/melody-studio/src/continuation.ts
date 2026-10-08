@@ -1,3 +1,4 @@
+import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition, Note } from './types.ts';
 import { validateComposition } from './model.ts';
 
@@ -192,7 +193,7 @@ export function suggestEnding(project: Composition, trackId: string, count: numb
   const history = [...fitted.tokens];
   const notes: Omit<Note, 'id'>[] = [];
   const steps: StepSupport[] = [];
-  const maximumEnd = Math.min(512, selection.endTick + 64);
+  const maximumEnd = Math.min(MAX_COMPOSITION_BEATS * 4, selection.endTick + 64);
   let cursor = selection.endTick;
   let pitch = selection.notes[selection.notes.length - 1].pitch;
   let state = randomSeed;

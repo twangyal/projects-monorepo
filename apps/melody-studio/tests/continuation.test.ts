@@ -149,7 +149,7 @@ test('fails atomically when pitch or end-beat bounds remove all observed events'
   const before = structuredClone(ascending);
   assert.throws(() => suggestEnding(ascending, 'melody', 8, 4, 1), /pitch|range/i);
   assert.deepEqual(ascending, before);
-  assert.throws(() => suggestEnding(fixture(8, 123.75), 'melody', 8, 4, 1), /time|beat|space/i);
+  assert.throws(() => suggestEnding(fixture(8, 507.75), 'melody', 8, 4, 1), /time|beat|space/i);
 });
 
 test('rejects insufficient note capacity before generating', () => {
