@@ -147,6 +147,8 @@ Playback resumes **paused at the last saved anchor**, which can precede the last
 
 Archives are **unencrypted private data**. Keep the file and separately saved access links private. Limits are five rooms, sixty tracks, 8 MiB per track, and 512 MiB per archive. The existing room core remains limited to 256 KiB; version-2 records allow 365,429 bytes including saved mixes, with at most 1,828,169 bytes for the complete records envelope. Each command has a five-minute total deadline; each decoder retains its 45-second/512-MiB limits. Slow machines can reject a valid large library safely. Cancellation before publication removes only owned temporary output. If the final durability sync fails after publication, the command reports that the complete output exists; preserve and inspect it before retrying.
 
+Room deletion completion belongs to the room and session that admitted it. If you leave and open another room while deletion is pending, a late success removes only the deleted room’s saved seat entry and refreshes the room list; it keeps the current room, memory/mix drafts and notice. A late failure also cannot replace a newer session’s notice. Reopening the same room creates a new session. Current-session deletion still returns home after success. See [deletion ownership evidence](docs/2026-10-08-delete-ownership.md); stopping or navigating away does not undo a server deletion.
+
 ## Synchronization scope
 
 The app polls shared state approximately once a second, estimates server clock offset, and corrects substantial playback drift. It uses actual native media playback and authenticated range-capable audio responses. Pauses and seeks apply to both seats; conflicting stale commands report an error instead of silently overwriting newer state.

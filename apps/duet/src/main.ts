@@ -465,9 +465,13 @@ function home() {
 el('leave-room').addEventListener('click', () => { if (!hasDraft() || window.confirm('Leave this room and discard your unsaved song selection, memory or mix-name draft?')) home(); });
 el('delete-room').addEventListener('click', async () => {
   if (!credentials || !window.confirm('Delete this room, its audio, ratings and memories for both people? This cannot be undone.')) return;
-  const id = credentials.roomId;
-  try { await api(roomPath(), 'DELETE', {}); try { const saved = savedCredentials(); delete saved[id]; localStorage.setItem(storageKey, JSON.stringify(saved)); } catch { /* The server deletion remains valid if local storage is blocked. */ } home(); notify('The selected room was deleted. Other rooms are unchanged.'); }
-  catch (error) { notify(message(error), true); }
+  const id = credentials.roomId, current = generation;
+  try {
+    await api(roomPath(), 'DELETE', {});
+    try { const saved = savedCredentials(); delete saved[id]; localStorage.setItem(storageKey, JSON.stringify(saved)); } catch { /* The server deletion remains valid if local storage is blocked. */ }
+    if (current !== generation || credentials?.roomId !== id) { renderSaved(); return; }
+    home(); notify('The selected room was deleted. Other rooms are unchanged.');
+  } catch (error) { if (current === generation && credentials?.roomId === id) notify(message(error), true); }
 });
 function renderSaved() {
   const saved = el('saved-rooms'); saved.replaceChildren(); const entries = Object.entries(savedCredentials());
