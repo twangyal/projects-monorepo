@@ -4,6 +4,10 @@ An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized
 
 The [product direction](docs/PRODUCT_DIRECTION.md) records the revised visions and completion standard. All implemented apps remain in active development; working prototypes and completed first milestones do not establish readiness for maintenance.
 
+## Development branch
+
+`main` contains the complete portfolio and is the canonical base for new work. Follow `docs/PRODUCT_DIRECTION.md` before resuming an older task. Historical branch snapshots are retained as archive tags; short-lived task branches may be used for isolated changes.
+
 ## Projects
 
 | Project | Status | Path |

@@ -2,10 +2,10 @@ name: Gaze Navigator checks
 
 on:
   push:
-    branches: [main]
     paths: ['apps/gaze-navigator/**', '.github/workflows/gaze-navigator.yml']
   pull_request:
     paths: ['apps/gaze-navigator/**', '.github/workflows/gaze-navigator.yml']
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -27,7 +27,7 @@ Before implementation, state the intended user outcome, the gap between the curr
 
 After urgent correctness or data-loss problems, prioritize meaningful missing capabilities and usable end-to-end experiences. Do not repeatedly select peripheral hardening or additional verification while the defining experience remains unimplemented. Real quality, accessibility and relevant domain validation remain part of delivering the vision; do not weaken safety or erase failed evidence to claim progress.
 
-Read the current target branch's direction before starting work; a stale checkout is not evidence that the older scope still applies. Keep the shared direction and agent instructions consistent across `Astra` and `main` when publishing direction changes, without merging unrelated application changes between branches.
+`main` is the canonical development and integration branch for all fourteen applications. Read its current direction before starting or resuming work; a stale checkout or archived branch is not evidence that an older scope still applies. Base new work on current `main`, use short-lived task branches when useful, and integrate verified work back into `main`. Do not revive `Astra` as a parallel long-lived product branch. Archive tags preserve historical or superseded work and do not establish current product direction.
 
 ## Pull request authorization
 

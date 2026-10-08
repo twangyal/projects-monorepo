@@ -50,6 +50,22 @@ async function backup(page: Page): Promise<Project> {
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name:'Export project backup', exact:true }).click()]);
   return JSON.parse(await readFile((await download.path())!, 'utf8')) as Project;
 }
+async function stored(page: Page): Promise<unknown> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('clothing-studio', 1);
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    try {
+      return await new Promise<unknown>((resolve, reject) => {
+        const tx = db.transaction('project', 'readonly'), request = tx.objectStore('project').get('current');
+        let result: unknown;
+        request.onsuccess = () => { result = request.result; };
+        tx.oncomplete = () => resolve(result); tx.onabort = () => reject(tx.error);
+      });
+    } finally { db.close(); }
+  });
+}
 async function installGates(page: Page) {
   await page.evaluate(() => {
     const gate = (): Gate => {
@@ -146,6 +162,15 @@ test('changed-back raw placement input without blur retires pending backup and p
   await page.getByRole('button',{name:'Undo',exact:true}).click(); expect(await backup(page)).toEqual(base);
 });
 
+test('changed-back decimal placement draft retains trailing zeros after a delayed backup', async ({ page }) => {
+  const base = await setup(page); await heldFile(page, incoming(base));
+  const field = page.getByLabel('Rotation', {exact:true}); await field.fill('17.250'); await field.fill('7.000');
+  await field.evaluate(node => { window.importOracle.focused = node; });
+  await releaseFile(page);
+  expect(await field.evaluate(node => ({same:node===window.importOracle.focused,focused:document.activeElement===node,value:(node as HTMLInputElement).value}))).toEqual({same:true,focused:true,value:'7.000'});
+  expect(await stored(page)).toEqual(base); expect(await backup(page)).toEqual(base);
+});
+
 test('delayed backup cannot cancel an active native sketch and its single release commit', async ({ page }) => {
   const base = await setup(page); await heldFile(page,incoming(base));
   const surface = page.locator('#sketch-surface'); await surface.scrollIntoViewIfNeeded(); const box = (await surface.boundingBox())!;
@@ -192,6 +217,18 @@ test('real photo bitmap finishing after committed note cannot erase note or repl
   await page.getByLabel('Concept note').fill('Note written after choosing photo'); await releaseBitmap(page);
   expect(await backup(page)).toEqual({...base,note:'Note written after choosing photo'});
   await page.getByRole('button',{name:'Undo',exact:true}).click(); expect(await backup(page)).toEqual(base);
+});
+
+test('real photo bitmap finishing after an empty raw placement draft preserves its field and complete saved concept', async ({ page }) => {
+  const base = await setup(page), image = await jpeg(page,'#ad2d5e'); await page.evaluate(() => window.importOracle.holdBitmap());
+  await page.getByLabel('Upload body photo').setInputFiles({name:'pending-raw-draft.jpg',mimeType:'image/jpeg',buffer:Buffer.from(image.split(',')[1],'base64')});
+  await expect.poll(() => page.evaluate(() => window.importOracle.bitmap!.waiting)).toBe(true);
+  const field = page.getByLabel('Rotation', {exact:true}); await field.fill('');
+  await field.evaluate(node => { window.importOracle.focused = node; });
+  await releaseBitmap(page);
+  expect(await field.evaluate(node => ({same:node===window.importOracle.focused,focused:document.activeElement===node,value:(node as HTMLInputElement).value}))).toEqual({same:true,focused:true,value:''});
+  expect(await stored(page)).toEqual(base); expect(await backup(page)).toEqual(base);
+  expect(await stored(page)).toEqual(base);
 });
 
 test('old malformed read cannot overwrite status or release a newer pending import finalizer', async ({ page }) => {
