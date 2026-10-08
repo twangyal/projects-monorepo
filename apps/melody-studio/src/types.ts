@@ -7,6 +7,7 @@ export interface Note {
   velocity: number;
 }
 export interface SoundEnvelope { attack: number; decay: number; sustain: number; release: number }
+export interface SoundFilter { cutoff: number; resonance: number }
 export interface Track {
   id: string;
   name: string;
@@ -14,6 +15,7 @@ export interface Track {
   volume: number;
   muted: boolean;
   envelope?: SoundEnvelope;
+  filter?: SoundFilter;
   notes: Note[];
 }
 export interface Composition {

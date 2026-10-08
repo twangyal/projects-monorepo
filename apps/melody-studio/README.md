@@ -34,7 +34,17 @@ Edit the fields, then choose **Apply sound envelope** for one undoable, autosave
 
 Applied settings survive complete project backups, saved compositions, track duplication, Undo/Redo and reload. All synthesized playback, backing, edited-note comparison and WAV exports use the same renderer. Whole-song WAV and aligned stems include the complete release tail; section exports retain their exclusive crop bounds. MIDI keeps its existing note/program representation and does **not** carry custom envelopes. Earlier projects retain their original 0.01-second attack, full sustain and 0.08-second release, with unchanged rendered PCM.
 
-This provides per-track amplitude shaping for the three existing waveform instruments. Filters, sample instruments, effects and mixer routing remain future DAW work. See [sound-envelope verification](docs/2026-10-08-sound-envelope.md).
+This provides per-track amplitude shaping for the three existing waveform instruments. Sample instruments, effects and mixer routing remain future DAW work. See [sound-envelope verification](docs/2026-10-08-sound-envelope.md).
+
+### Shape the tone with a resonant filter
+
+Enable **low-pass filter**, set **Filter cutoff (Hz)** from 20–10,000 and **Filter resonance (Q)** from 0.5–8, then choose **Apply sound filter**. Lower cutoff softens bright harmonics; higher Q emphasizes frequencies near the cutoff. Disable Enable and Apply to bypass the filter and restore the unfiltered oscillator sound. Bypass removes the saved filter settings; re-enabling starts from 8,000 Hz and Q 0.707.
+
+Filter changes are explicit, undoable, autosaved track edits. Blank, nonfinite and out-of-range drafts remain editable and do not change playback or exports. Track selection retains each track's raw filter drafts. **Discard filter edits** restores only that track's committed filter. Finish other raw editor fields, envelope drafts, suggestions and piano-roll gestures before Apply; these are never silently committed by the sound button.
+
+Projects, saved compositions, duplicated tracks, Undo/Redo and reload retain applied filters. Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share the renderer. MIDI does not carry this custom filter. Older projects bypass filtering and retain their original PCM. The two-pole filter processes each oscillator voice before its amplitude envelope; state starts fresh with each note and release length is unchanged. At lower render sample rates the effective cutoff is capped at 45% of the rate. Existing mix peak limiting remains active; strong resonance can make it reduce the whole mix's gain.
+
+Coefficients follow the [W3C Audio EQ Cookbook low-pass filter](https://www.w3.org/TR/audio-eq-cookbook/). This is static subtractive sound shaping, not filter automation, a filter envelope, a track effects bus or musician-quality evaluation. Those remain part of the ACTIVE full-DAW destination.
 
 ## Audition an arrangement section
 
