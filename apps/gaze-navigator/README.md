@@ -1,5 +1,7 @@
 # Gaze Navigator
 
+**Product direction (2026-10-08): ACTIVE.** The destination is gaze context plus spoken instructions interpreted with Jev on real websites. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+
 A small browser-first vertical slice for project #1, **Eye detector with agentic AI**.
 
 The current milestone deliberately isolates gaze estimation from action execution. WebGazer provides webcam-based gaze coordinates; a tiny resolver maps those coordinates only to explicit `[data-gaze-target]` controls; a dwell timer confirms the selection and invokes the same local action as a normal click. No arbitrary browser clicking is implemented yet.

@@ -2,6 +2,8 @@
 
 An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized backlog and `AGENTS.md` defines the development policy.
 
+The [current product direction](docs/PRODUCT_DIRECTION.md) and agent instructions apply on this branch. All fourteen implemented portfolio apps remain ACTIVE; [Astra](https://github.com/twangyal/projects-monorepo/tree/Astra) contains the other thirteen apps. The table below lists only the implementation present on this branch.
+
 ## Projects
 
 | Project | Status | Path |

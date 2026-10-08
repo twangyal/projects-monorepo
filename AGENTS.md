@@ -8,6 +8,7 @@ You have broad autonomy to develop, improve, create, and maintain projects withi
 
 Read these first on every run:
 
+- `docs/PRODUCT_DIRECTION.md`
 - `PROJECT_IDEAS.md`
 - this `AGENTS.md`
 - project-specific README or AGENTS.md files
@@ -16,7 +17,21 @@ Read these first on every run:
 
 `PROJECT_IDEAS.md` describes the general product ideas and their status. It is direction, not a detailed implementation plan.
 
-You are expected to make reasonable product and engineering decisions independently.
+You are expected to make reasonable product and engineering decisions independently within the stated product direction. Preserve the owner's destination when defining milestones; do not silently narrow it to the existing prototype.
+
+## Direction precedence and next-task selection
+
+Read `docs/PRODUCT_DIRECTION.md` before choosing or resuming work. Its revised visions and completion standard take precedence over older project descriptions, README scope statements, design plans, issue acceptance criteria and historical completion labels wherever they conflict. A newer explicit instruction from the owner takes precedence over repository documents.
+
+Before implementation, state the intended user outcome, the gap between the current application and that vision, and how the selected milestone closes the gap. Reconcile an older plan with the revised destination before continuing it. Prototype caps, local-only architecture and manual substitutes are current implementation constraints, not permanent product requirements.
+
+After urgent correctness or data-loss problems, prioritize meaningful missing capabilities and usable end-to-end experiences. Do not repeatedly select peripheral hardening or additional verification while the defining experience remains unimplemented. Real quality, accessibility and relevant domain validation remain part of delivering the vision; do not weaken safety or erase failed evidence to claim progress.
+
+Read the current target branch's direction before starting work; a stale checkout is not evidence that the older scope still applies. Keep the shared direction and agent instructions consistent across `Astra` and `main` when publishing direction changes, without merging unrelated application changes between branches.
+
+## Pull request authorization
+
+Create a pull request, including a draft, only when the owner explicitly asks for one for the current work. Implementation, review, completion or push requests do not authorize PR creation. Identify the explicit request before creating a PR, and carry this boundary into delegated tasks. Without that request, complete the authorized work and verification without opening a PR.
 
 ## Every run
 
@@ -66,7 +81,7 @@ Prefer work in roughly this order:
 10. new projects
 11. minor cosmetic work
 
-Prefer finishing useful projects over endlessly polishing one project.
+Prefer finishing useful projects over endlessly polishing one project. Select coherent milestones against the intended user experience and its major missing capabilities. Storage, recovery, exports and test coverage support that experience; their completion alone does not complete the product.
 
 Avoid repeatedly switching between projects without completing coherent work.
 
@@ -75,12 +90,12 @@ Avoid repeatedly switching between projects without completing coherent work.
 Use these statuses in `PROJECT_IDEAS.md`:
 
 - `IDEA` — not started
-- `ACTIVE` — currently under development
-- `MAINTENANCE` — core product works; only meaningful improvements remain
+- `ACTIVE` — meaningful product development remains against the intended vision
+- `MAINTENANCE` — the intended product experience is substantially delivered and evaluated in relevant real use; no major capability gap remains that requires active development
 - `BLOCKED` — cannot reasonably proceed without external information or resources
 - `DONE` — fulfills its intended purpose and has no obvious high-value missing work
 
-You may change statuses based on repository evidence.
+All fourteen implemented apps are ACTIVE under the 2026-10-08 direction reset. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
 
 ## Independence
 
