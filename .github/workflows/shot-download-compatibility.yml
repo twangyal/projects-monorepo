@@ -101,6 +101,34 @@ jobs:
           done
           DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --media-trace --fixtures /tmp/shot-155-fixtures --output test-results/media-trace-155 --origin http://127.0.0.1:4176 2>test-results/media-trace-155-browser.log
           node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/media-trace-155
+      - name: Summarize original and separate diagnostic receipts
+        if: always()
+        run: |
+          python3 - <<'PY_SUMMARY'
+          import json, os
+          from pathlib import Path
+          lines = ['## Full Chromium 155 first capture outcomes', '',
+                   'Diagnostic steps allow errors. A successful job does not mean each diagnostic capture passed.', '',
+                   '| Variation | Capture | Independent media inspection |',
+                   '| --- | --- | --- |']
+          for label, directory in [('Original acceptance', 'maximum-155'), ('Stage diagnostic', 'stage-timing-155'), ('Media trace diagnostic', 'media-trace-155')]:
+              path = Path('test-results') / directory / 'verification.json'
+              try:
+                  if path.stat().st_size > 2 * 1024 * 1024:
+                      raise ValueError('receipt too large')
+                  receipt = json.loads(path.read_text())
+                  capture = {'passed': 'passed', 'failed': 'failed', 'capture-passed-awaiting-independent-decode': 'passed', 'decode-failed': 'passed', 'running': 'not completed'}.get(receipt.get('status'), 'unavailable')
+                  inspection = receipt.get('inspection', {}).get('status')
+                  inspection = inspection if inspection in ('passed', 'failed') else 'not completed'
+              except (OSError, ValueError, TypeError, AttributeError):
+                  capture, inspection = 'unavailable', 'not completed'
+              lines.append(f'| {label} | {capture} | {inspection} |')
+          lines.extend(['', 'Trace counters cover selected native events, not complete authored output or exclusive codec CPU. Original gates and deadlines are unchanged.', ''])
+          summary = '\n'.join(lines)
+          print(summary)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as destination:
+              destination.write(summary)
+          PY_SUMMARY
       - uses: actions/upload-artifact@v4
         if: always()
         with:

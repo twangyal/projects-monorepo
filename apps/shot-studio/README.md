@@ -848,5 +848,7 @@ adds an explicit `--media-trace` maximum-probe variation, separate from original
 acceptance and stage timing. It retains fixed event aggregates with loss,
 missing-counter and ownership disclosures, rather than raw trace payloads.
 Native emitting-thread CPU excludes worker threads and does not partition GPU
-process work. The first local maximum passes unchanged media gates; full155 CI
-remains pending and issue128 remains open for throughput repair.
+process work. The first local maximum passes unchanged media gates. First full155 originals
+pass, but push diagnostic captures fail while PR variations pass; all six first
+receipts and independent inspections are retained. Normal CI passes387 units and
+116 native cases. Issue128 remains open for throughput repair.

@@ -214,6 +214,6 @@ download and reveal import controls; the browser file chooser requires ordinary
 mouse/keyboard activation. No camera/calibration data or unsaved composer text
 enters backups, and no automatic storage or sending is added. Full local
 verification passes69 units and88 native cases across four viewport sizes, plus
-lint/build. [Verification record](docs/2026-10-08-draft-backups/README.md) retains
+lint/build. First [CI run37718757731](https://github.com/twangyal/projects-monorepo/actions/runs/37718757731) passes the same69 units and88 native cases. [Verification record](docs/2026-10-08-draft-backups/README.md) retains
 first failures, corrections and limitations. Physical webcam acceptance remains
 separate in issue132.

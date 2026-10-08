@@ -49,7 +49,7 @@ browser binary is committed.
 The compatibility workflow preserves the original acceptance and existing stage
 variation, then runs a separately labelled media variation with its own artifact.
 Production export settings, original fixture, media gates and95000ms deadline
-are unchanged. First full155 CI outcomes remain pending at this checkpoint.
+are unchanged. First full155 CI outcomes are retained below, including failed diagnostic variations.
 Issue128 stays open: tracing is diagnosis, not a demonstrated throughput repair.
 
 To reproduce, prepare the original fixture with
@@ -58,3 +58,48 @@ serve this app and run
 `node scripts/smoke_sequence_soundtrack.mjs --capture --media-trace --fixtures NEW_FIXTURES --output NEW_CAPTURE --origin http://127.0.0.1:4176`,
 then `node scripts/smoke_sequence_soundtrack.mjs --inspect --output NEW_CAPTURE`.
 Use a separate capture directory for each original/stage/media variation.
+
+## First full Chromium155 push/PR evidence
+
+At source165efad5e8f5506e161a430e705a40daeaf85e7a, normal Shot
+[push37717777898](https://github.com/twangyal/projects-monorepo/actions/runs/37717777898)
+and [PR37717782206](https://github.com/twangyal/projects-monorepo/actions/runs/37717782206)
+pass387 units, syntax and116 native cases. All13 ordinary portfolio PR
+workflows pass on that source. Native event tests therefore pass on the final
+collector, including the independent-clock and bounded-cleanup corrections.
+
+The six first compatibility receipts remain verbatim in `first-ci`, alongside
+verified artifact ZIP/per-entry hashes and raw browser logs. Artifact transfer
+initially returned403 using Python urllib; curl retrieves the same first ZIPs
+without any CI rerun or alteration.
+
+| First run | Original maximum | Stage diagnostic | Media diagnostic |
+| --- | --- | --- | --- |
+| [Push37717777750](https://github.com/twangyal/projects-monorepo/actions/runs/37717777750) | Passed,69.561s | Failed,95000ms download deadline | Failed,95000ms download deadline |
+| [PR37717782106](https://github.com/twangyal/projects-monorepo/actions/runs/37717782106) | Passed,43.013s | Passed,43.660s | Passed,44.186s |
+
+Both first workflows have successful job conclusions because diagnostic steps
+explicitly allow errors. That conclusion does not override the raw failed push
+receipts. The workflow now prints a separate capture/inspection table for every
+variation in its job summary; running that summary against these exact six
+receipts reproduces the table above (`push-summary.md`/`pr-summary.md`). Missing
+or malformed receipts show unavailable, not passed. Known capture-awaiting-decode
+and decode-failed states separately disclose capture success and incomplete/failed
+inspection; a controlled state check is retained in `controlled-incomplete-summary.md`.
+Original gates remain intact.
+
+Independent local reinspection of all four successful exact media files passes
+unchanged gates:1800 video frames,2880648 decoded stereo audio frames and original
+visual/audio landmarks. Those separate inspection receipts do not rewrite first
+CI outcomes. Failed diagnostic captures have no decoded-output acceptance.
+
+PR media tracing observes1800 codec events,10.766s inclusive event wall and5.238s
+emitting-thread CPU; separate process counters observe168.06 CPU seconds over
+43.769 wall seconds,151.72s in the GPU process. Failed push media tracing
+observes1771 codec events,15.183s inclusive wall and8.196s emitting-thread CPU,
+with310.23 total process CPU seconds over95.793 wall seconds (282.75 GPU). Selected
+event counters have no reported loss; `complete` describes selected trace
+counter coverage, not1800 authored frames, successful export, worker-thread CPU
+or an exclusive codec/GPU partition. Process coverage is incomplete on both.
+These observations do not identify a safe production throughput repair. Issue128
+remains open, and original successes do not erase prior or current failures.

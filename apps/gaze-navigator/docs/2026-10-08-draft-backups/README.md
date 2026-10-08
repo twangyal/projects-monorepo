@@ -46,6 +46,9 @@ malformed, oversized and over-capacity input preserves the composer/notebook.
 A controlled delayed File.text boundary proves newer selection wins while
 ordinary saved edits and unsaved fields remain. This boundary test is distinct
 from the genuine file reads/downloads. Independent review found no further
-important parser/atomicity issue. Full CI Chromium verification is pending at
-this checkpoint; local software tests do not establish physical webcam accuracy
+important parser/atomicity issue. First full CI Chromium verification at source03b8e090bafa9d290bcd5c644b435bcbfe608910
+passes69 units, lint/build and88 native cases
+([run37718757731](https://github.com/twangyal/projects-monorepo/actions/runs/37718757731));
+timestamped first log excerpts are retained in `first-ci-receipt.json`.
+These software tests do not establish physical webcam accuracy
 or arbitrary hands-free control of the operating-system chooser.
