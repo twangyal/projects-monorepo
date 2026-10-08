@@ -33,6 +33,8 @@ The built `dist/` directory can be served by a static web server. Use a current 
 
 **Export garment SVG** downloads the same 400×440 transparent garment illustration as vector paths: silhouette, plain/striped/woven pattern and clipped sketch strokes. Open it in a vector editor to recolor or continue drawing. The file has no external resources and is bounded at 1 MiB, including the maximum 100 strokes and 12,000 points. Geometry uses the renderer's six-decimal drawing precision; drawing units are not physical measurements. Its escaped title is accessible text. Photos, placement, the sample figure and concept notes remain in the complete JSON backup. SVG is an illustration export; use JSON to reopen editable work in Clothing Studio. Export cancels an unfinished sketch/placement preview and uses committed art without adding a history edit.
 
+PNG exports retain the artwork and filename from the concept snapshot captured when export starts. You can rename, start a new concept or open a backup while encoding finishes; the pending download remains named for its original concept. See [snapshot verification](docs/2026-10-08-png-snapshot.md).
+
 Undo/redo keeps the latest **40 edits** in this session. It includes sketch gestures, placement, clear, photo replacement and starting a new concept. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text/number fields; those fields retain native editing shortcuts. A blank concept name becomes “Untitled concept.” New edits after undo discard the redo branch.
 
 ## Local saving and image handling

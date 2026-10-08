@@ -309,9 +309,9 @@ input('project-file').addEventListener('change', async () => {
   } finally { finishLoad(generation); }
 });
 
-function download(blob: Blob, suffix: string) {
+function download(blob: Blob, suffix: string, title = project.title) {
   const url = URL.createObjectURL(blob), link = document.createElement('a');
-  const name = project.title.replace(/[^a-zA-Z0-9 _-]/g, '').trim().slice(0, 50) || 'clothing-concept';
+  const name = title.replace(/[^a-zA-Z0-9 _-]/g, '').trim().slice(0, 50) || 'clothing-concept';
   link.href = url; link.download = `${name}${suffix}`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -330,7 +330,7 @@ for (const [id, kind] of [['garment-png', 'garment'], ['preview-png', 'preview']
   if (exportBusy) return;
   cancelGesture(); exportBusy = true; updateControls();
   element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = element<HTMLButtonElement>('garment-svg').disabled = true;
-  try { download(await exportPng(validateProject(project), kind), `-${kind}.png`); message(`${kind === 'garment' ? 'Garment' : 'Preview'} PNG downloaded.`); }
+  try { const snapshot = validateProject(project); download(await exportPng(snapshot, kind), `-${kind}.png`, snapshot.title); message(`${kind === 'garment' ? 'Garment' : 'Preview'} PNG downloaded.`); }
   catch (error) { message(`Could not export PNG: ${error instanceof Error ? error.message : 'Image rendering failed.'}`, true); }
   finally { exportBusy = false; element<HTMLButtonElement>('garment-png').disabled = element<HTMLButtonElement>('preview-png').disabled = element<HTMLButtonElement>('garment-svg').disabled = false; updateControls(); }
 });
