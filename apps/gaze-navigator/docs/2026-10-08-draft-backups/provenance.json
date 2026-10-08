@@ -1,0 +1,38 @@
+{
+  "sourceParent": "165efad5e8f5506e161a430e705a40daeaf85e7a",
+  "browser": "Chromium153.0.8010.0, owned native runtime wrapper; full CI Chromium remains separate",
+  "files": {
+    "missing-api-red.log": {
+      "bytes": 1548,
+      "sha256": "0586be2a0fbcdcd01c1589073b6bd406e895ffbdb3a53373b24b520e078732d3"
+    },
+    "first-unit-harness-failure.log": {
+      "bytes": 7356,
+      "sha256": "bcb7ada73611651d75d2745caaeab0e6a5ea493dc367ec29861fd64e0b3b4624"
+    },
+    "first-browser-server-failure.log": {
+      "bytes": 861,
+      "sha256": "63fd657370ff0877db940154b11ecd8b77b0965caf5a634429b7bc42211ffc7d"
+    },
+    "first-native-oracle-failure.log": {
+      "bytes": 34784,
+      "sha256": "ccef37ca3b8b95d69d4d7b0720d4227e14387b6da9c350417233d71b6219b0bb"
+    },
+    "final-unit.log": {
+      "bytes": 6498,
+      "sha256": "e07be79a53590b49b935fa98f19bf6547572431a971d5822ef44d9609ff03e19"
+    },
+    "final-native.log": {
+      "bytes": 137431,
+      "sha256": "67c7649b893aa857683b9c301a6468dddf8ef0cb9376deab468fb50c05fd3b10"
+    },
+    "lint.log": {
+      "bytes": 1022,
+      "sha256": "5f19cd6f608e6743d20939d535d0e143188592d6d8337d201a6452c53734e53c"
+    },
+    "build.log": {
+      "bytes": 1146,
+      "sha256": "dde9bb2f72466a43be25e88ee34cc28a2541d1d449803736c458824945734b51"
+    }
+  }
+}

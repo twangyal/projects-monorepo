@@ -107,8 +107,16 @@
           </div>
         </section>
         <h3>Session drafts</h3>
-        <p>Keep up to 20 drafts in this session. Reopen one to update it. Drafts clear when you refresh. Nothing is sent.</p>
+        <p>Keep up to 20 drafts in this session. Reopen one to update it. Drafts clear when you refresh. Download a backup to keep saved drafts; import appends them without replacing your composer. Nothing is sent.</p>
         <button id="newDraft" data-gaze-target>New draft</button>
+        <button id="downloadDrafts" data-gaze-target disabled>Download saved drafts</button>
+        <button id="importDrafts" data-gaze-target>Import draft backup</button>
+        <section id="draftBackupChooser" hidden aria-label="Import draft backup file">
+          <label for="draftBackupFile">Choose draft backup with a mouse or keyboard</label>
+          <input id="draftBackupFile" type="file" accept=".json,application/json" />
+          <p>Your browser requires mouse or keyboard activation for the system file chooser. Gaze can reveal this control.</p>
+        </section>
+        <p>Backups include saved drafts only, not unsaved composer text. Import uses your browser's file chooser and accepts up to 20 drafts in a 2 MiB JSON file.</p>
         <section id="draftReview" class="hidden" aria-label="Review composer replacement">
           <p id="draftReviewText" role="status"></p>
           <button id="keepComposer" data-gaze-target>Keep current composer</button>

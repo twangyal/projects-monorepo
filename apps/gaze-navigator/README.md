@@ -24,7 +24,7 @@ Open `http://localhost:4173`.
 - Stop is available during camera startup and returns without waiting for the dependency. A pending browser permission request may still finish; its late stream is released. Simulation and camera retry remain available. Every camera restart uses a fresh estimator instance with separate video elements so old initialization or inference cannot interfere with the new session. Retired model resources are released after any active inference finishes.
 - A fixed toolbar supports gaze Pause/Resume/Stop, Recalibrate, Check accuracy, and Page up/down after calibration. While paused, only Resume and Stop accept gaze; looking away before reusing Pause prevents an accidental toggle. Escape pauses navigation. During an accuracy check, gaze Pause/Stop remain available and cancel the measurement; the completed report can be closed with gaze.
 - The gaze keyboard keeps Earlier keys, Later keys, case, and Close controls outside its scrolling grid. Use those controls to reach lower keys on short screens; opening another field returns to the first row.
-- Session drafts have large **Open draft** controls. Reopening then **Update draft** changes that saved record without adding another copy. **Compose** reopens your current unsaved fields; **New draft** starts blank. Switching away from changed text requires the inline **Keep current composer** or **Replace composer** decision, reachable by gaze. A switch closes the gaze keyboard before replacing fields. Keep up to 20 drafts, with the existing 200-character subject and 10,000-character message limits. Previews are shortened; reopening retains the full text. Refresh clears the notebook, and nothing is sent or stored.
+- Session drafts have large **Open draft** controls. Reopening then **Update draft** changes that saved record without adding another copy. **Compose** reopens your current unsaved fields; **New draft** starts blank. Switching away from changed text requires the inline **Keep current composer** or **Replace composer** decision, reachable by gaze. A switch closes the gaze keyboard before replacing fields. Keep up to 20 drafts, with the existing 200-character subject and 10,000-character message limits. Previews are shortened; reopening retains the full text. Refresh clears the notebook. **Download saved drafts** explicitly keeps a local JSON backup of saved records, excluding current unsaved composer text. **Import draft backup** reveals a visible file chooser; your browser requires a mouse or keyboard to choose a file. Valid backups append up to the combined 20-draft limit without replacing current drafts or composer fields. Files are versioned and limited to 2 MiB; malformed, stale or excessive imports leave current work untouched. There is no automatic storage or sending.
 
 ## Architecture
 
@@ -40,6 +40,7 @@ Open `http://localhost:4173`.
 - `src/camera-retirement.js` — camera-instance DOM isolation, delayed-stream release, and safe disposal of retired model resources.
 - `src/accuracy.js` / `src/accuracy-view.js` — timed held-out measurement and local result display.
 - `src/workspace.js` — local sample inbox, search, selection, and session drafts.
+- `src/draft-backup.js` — strict portable saved-draft format and byte/record limits.
 - `src/workspace-view.js` — renders the workspace using textContent and wires ordinary click actions.
 - `styles.css` — responsive presentation.
 - `src/decision-contract.js` / `src/decision-fixtures.js` — bounded nearby-target decisions and a versioned synthetic task suite.
@@ -203,3 +204,16 @@ No camera frames or raw prediction streams are included or stored. Starting or
 cancelling a check disables downloading and clears the previous report. The
 receipt prepares physical measurement handoff without claiming hardware acceptance.
 Issue #131 tracks verification.
+
+### Portable saved drafts — 2026-10-08
+
+Explicit JSON backups preserve the saved notebook across refresh. Import appends
+with fresh session IDs and atomic capacity validation, retaining unsaved fields
+and edits made during reading. Latest file selection owns publication. Gaze can
+download and reveal import controls; the browser file chooser requires ordinary
+mouse/keyboard activation. No camera/calibration data or unsaved composer text
+enters backups, and no automatic storage or sending is added. Full local
+verification passes69 units and88 native cases across four viewport sizes, plus
+lint/build. [Verification record](docs/2026-10-08-draft-backups/README.md) retains
+first failures, corrections and limitations. Physical webcam acceptance remains
+separate in issue132.

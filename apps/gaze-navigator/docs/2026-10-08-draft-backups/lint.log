@@ -1,0 +1,5 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lint
+> node --check src/app.js && node --check src/dwell.js && node --check src/resolver.js && node --check src/draft-backup.js && node --check src/workspace.js && node --check src/workspace-view.js && node --check src/accuracy.js && node --check src/accuracy-view.js && node --check src/camera-loader.js && node --check src/camera-calibration.js && node --check src/camera-cleanup.js && node --check src/camera-retirement.js && node --check src/text-entry.js && node --check src/keyboard.js && node --check playwright.config.js && node --check browser-tests/navigation.spec.js && node --check src/decision-contract.js && node --check src/decision-fixtures.js && node --check src/decision-evaluation.js && node --check src/local-decision-model.js && node --check src/decision-lab.js && node --check browser-tests/decision-lab.spec.js && node --check src/decision-benchmark.js && node --check scripts/benchmark-local.js
+
