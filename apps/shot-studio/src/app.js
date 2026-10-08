@@ -10,7 +10,7 @@ import {createSequenceUI} from './sequence-ui.js';
 const $=id=>document.getElementById(id),draft=new DraftStore();
 let project=draft.project,selected=0,actor=0,time=0,playing=false,start=0,revision=0,editIntent=0;
 let exporting=false,xr=null,xrPending=false,xrAbort=null,abort=null,frame=0;
-let endpoint='start',previewMode='film',previewEndpoint='start',storageWarning='';
+let endpoint='start',previewMode='film',previewEndpoint='start',storageWarning='',sceneUnsaved=false;
 let importEpoch=0,pendingImport=false,takeRecording=false,takeUI,sequenceRecording=false,sequenceUI;
 const unsent=new Set(),downloadUrls=new Set();
 const cueSelection=[0,0];
@@ -22,8 +22,8 @@ const history=new ProjectHistory(project);
 try{renderer=new StageRenderer($('stage'));}catch(e){status(e.message);for(const b of document.querySelectorAll('button'))b.disabled=true;throw e;}
 const busy=()=>exporting||takeRecording||sequenceRecording||xrPending||!!xr;
 function persist(){
-  try{draft.save(project);storageWarning='';status('Saved in this browser.');}
-  catch(e){storageWarning=draft.blocked?e.message:'Browser storage is unavailable. Use Save project to keep a backup.';status(storageWarning);}
+  try{draft.save(project);sceneUnsaved=false;storageWarning='';status('Saved in this browser.');}
+  catch(e){sceneUnsaved=true;storageWarning=draft.blocked?e.message:'Browser storage is unavailable. Use Save project to keep a backup.';status(storageWarning);}
 }
 function stop(){playing=false;$('play').textContent='Rehearse';}
 function shotStart(index){return project.shots.slice(0,index).reduce((sum,shot)=>sum+shot.duration,0);}
@@ -225,7 +225,7 @@ $('rawDraft').onclick=()=>{if(busy()||draft.raw===null)return;download(new Blob(
 $('replaceDraft').onclick=()=>{
   if(guarded()||!draft.blocked)return;
   if(!confirm('Replace the saved browser draft with the current scene? '+(draft.raw!==null?'Download the unreadable draft and save your current project first.':'No recovery download is available because the saved contents could not be read. Save your current project first.')+' This will replace the old browser draft.')){status('Saved draft was not replaced. Automatic saving remains blocked.');return;}
-  try{draft.replace(project);storageWarning='';status('Browser draft explicitly replaced with the current scene. Automatic saving is enabled.');}catch{status('Could not replace the browser draft. The old contents remain protected; save a project backup.');}refresh();
+  try{draft.replace(project);sceneUnsaved=false;storageWarning='';status('Browser draft explicitly replaced with the current scene. Automatic saving is enabled.');}catch{status('Could not replace the browser draft. The old contents remain protected; save a project backup.');}refresh();
 };
 $('save').onclick=()=>{download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),'shot-studio.json');if(unsent.size)status('Downloaded the committed film. Unsent fields are not included.');};
 $('import').onchange=async()=>{
@@ -283,7 +283,7 @@ function loop(now){
   $('shotLabel').textContent=`CAMERA ${String(view.index+1).padStart(2,'0')} · ${view.shot.name}${previewMode==='endpoint'?` · ${previewEndpoint.toUpperCase()} endpoint preview — not the film cut at this position`:' · Film'}${unsent.size?' · committed preview':''}`;
   $('usePreview').disabled=view.index!==selected;
 }
-window.addEventListener('beforeunload',e=>{if(unsent.size||pendingImport||takeUI?.hasPendingWork()||sequenceUI?.hasPendingWork()){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(sceneUnsaved||unsent.size||pendingImport||takeUI?.hasPendingWork()||sequenceUI?.hasPendingWork()){e.preventDefault();e.returnValue='';}});
 window.addEventListener('pagehide',()=>{for(const url of downloadUrls)URL.revokeObjectURL(url);downloadUrls.clear();importEpoch++;pendingImport=false;abort?.abort();xrAbort?.abort();stop();cancelAnimationFrame(frame);xr?.end();});
 window.addEventListener('pageshow',()=>{stop();cancelAnimationFrame(frame);frame=requestAnimationFrame(loop);});
 $('stage').addEventListener('webglcontextlost',e=>{e.preventDefault();graphicsLost=true;stop();sequenceUI?.cancelExport('Sequence recording cancelled because the graphics context was lost. Save a sequence backup.');takeUI?.cancelRecording('Take recording cancelled because the graphics context was lost. Existing takes are unchanged.');abort?.abort();xrAbort?.abort();xr?.end();refresh();status('The graphics context was lost. Save your project backup, then reload.');});

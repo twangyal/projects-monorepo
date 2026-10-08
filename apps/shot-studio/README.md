@@ -24,6 +24,8 @@ draft** asks for confirmation and enables autosave only after a successful write
 cancellation or failure preserves the old record. Reloading preserves the
 film, not the current playhead, selected camera endpoint, performer or cue.
 
+If a committed scene cannot be saved, including edits while an old draft is protected, reload/navigation requests the browser's departure warning. A later successful automatic write or confirmed replacement clears that obligation. **Save project** keeps the warning active: starting a backup download does not prove a file was retained or the browser draft was saved. Native browsers can suppress departure dialogs without prior interaction; forced closure/crash is not recoverable through this guard. See [scene departure evidence](docs/2026-10-08-scene-departure.md).
+
 New saves use schema 3. Genuine schema-1 static films and schema-2 camera-travel
 films migrate to explicit looping performers without changing their existing
 composition or animation formulas. Loading an old draft does not write storage;
