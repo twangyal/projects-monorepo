@@ -1,0 +1,7 @@
+# Phrase dynamics verification — 2026-10-08
+
+Issue #157 adds onset-based linear velocity ramps on one selected track within the existing one-based/end-exclusive section range. It does not alter timing, pitch, note identity, other tracks, track sound settings or retained reference takes. At least two distinct onsets are required. Parameters are session-only; Apply is one saved history edit.
+
+Four new domain tests pass, covering chords, fractional bounds, descending/flat ramps, exact endpoints, sound-setting retention, detached output and atomic refusal. All 357 unit tests, lint and production type/build checks pass locally. Three new native production-browser cases pass: exact full reference-bearing backup through Undo/Redo/reload; independently decoded MIDI and sine-envelope PCM amplitude; invalid/empty/single-onset refusals retaining Redo; silent zero endpoint; and 390px pointer/keyboard protection of unapplied drafts. Valid fields retain the pre-existing commit-on-change semantics when focus is deliberately transferred.
+
+Independent review found no critical or important issues. The full 181-case native suite passes locally (2.1 minutes) after correcting three pre-existing loose Velocity label selectors to select the exact note field. The inspected native 390px screenshot shows readable, contained controls. Hosted CI remains to be confirmed in the issue. Local Chromium is the temporary available Chromium153 binary; CI uses the repository's pinned Playwright browser. Physical microphone/device quality and the larger DAW product remain outstanding.

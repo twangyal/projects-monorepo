@@ -3,6 +3,7 @@ import { DEFAULT_FILTER, validateFilter } from './sound-filter.ts';
 import { isolatedTrack } from './track-render.ts';
 import { createTimingView } from './timing-view.ts';
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
+import { applyVelocityRamp } from './velocity-ramp.ts';
 import { duplicateSection, removeSection } from './section-arrangement.ts';
 import { sectionWindow, type SectionRange } from './section.ts';
 import './style.css';
@@ -82,6 +83,7 @@ let playbackGeneration = 0;
 let playing = false;
 let sectionStart = '1';
 let sectionEnd = '5';
+let rampStart = '0.3', rampEnd = '0.9';
 let compositionGeneration = 0;
 let proposal: ContinuationProposal | null = null;
 let proposalGeneration = -1;
@@ -376,6 +378,7 @@ function render() {
       <p id="roll-status" class="small" aria-live="polite">${escape(rollMessage)}</p>
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${escape(draft?.pitch ?? '60')}" /></label><label>Start beat<input name="start" type="number" min="1" max="${MAX_COMPOSITION_BEATS + .75}" step="any" value="${escape(draft?.start ?? '1')}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${escape(draft?.duration ?? '1')}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${escape(draft?.velocity ?? '0.8')}" /></label><button type="submit">Apply note</button><button type="button" class="quiet" data-action="discard-note-edits">Discard note edits</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form>${continuationPanel(selection, seedError)}</div></section>
       <section class="save-panel" aria-labelledby="section-heading"><div><p class="eyebrow">ARRANGEMENT AUDITION</p><h2 id="section-heading">Work on a section.</h2><p id="section-help" class="small">Beats start at 1; the end is exclusive. Committed synthesized mix only. Session-only range; hard loop boundaries can click. Duplicate inserts after the end. Remove deletes the section and closes the gap on all tracks. Crossing notes must be included whole; reference recordings stay unchanged. Both edits support Undo. End beat at most ${compositionDurationBeats(project) + 1}.</p></div><div class="export-actions"><label for="section-start">Section start beat<input id="section-start" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionStart)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><label for="section-end">Section end beat (exclusive)<input id="section-end" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionEnd)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><button data-action="play-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Play section</button><button data-action="loop-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Loop section</button><button data-action="duplicate-section" ${busy || !totalNotes ? 'disabled' : ''}>Duplicate section</button><button data-action="remove-section" ${busy || !totalNotes ? 'disabled' : ''}>Remove section and close gap</button><button data-action="wav-section" ${busy || !totalNotes ? 'disabled' : ''}>Export section WAV</button></div></section>
+      <section class="save-panel" aria-labelledby="dynamics-heading"><div><p class="eyebrow">PHRASE DYNAMICS</p><h2 id="dynamics-heading">Shape a crescendo.</h2><p id="dynamics-help" class="small">Use the section range above on the selected track. Ramp from the first to the last distinct note onset; chords share a velocity. At least two onsets are needed. Values 0–1; zero is silent and omitted from MIDI. Timing, other tracks and reference recordings stay unchanged. Parameters are session-only; Apply is one reversible saved edit.</p></div><div class="export-actions"><label for="ramp-start">Ramp start velocity<input id="ramp-start" type="text" inputmode="decimal" maxlength="40" value="${escape(rampStart)}" aria-describedby="dynamics-help" ${disabled()} /></label><label for="ramp-end">Ramp end velocity<input id="ramp-end" type="text" inputmode="decimal" maxlength="40" value="${escape(rampEnd)}" aria-describedby="dynamics-help" ${disabled()} /></label><button data-action="apply-velocity-ramp" ${busy || !track.notes.length ? 'disabled' : ''}>Apply velocity ramp</button></div></section>
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button><button data-action="wav-track" ${busy || !track.notes.length ? 'disabled' : ''}>Export track WAV</button></div></section>
       <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Successful takes retain a normalized listen-back copy on this device. Export a project backup before clearing browser data.</p></footer>
     </main>`;
@@ -804,10 +807,10 @@ root.addEventListener('pointerdown', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || button.hasAttribute('data-note') || !root.contains(button)) return;
   if (libraryHost.contains(button)) event.preventDefault();
-  if (['duplicate-section', 'remove-section'].includes(button.dataset.action ?? '') && !sectionArrangementGuard()) {
+  if (['duplicate-section', 'remove-section', 'apply-velocity-ramp'].includes(button.dataset.action ?? '') && !sectionArrangementGuard()) {
     event.preventDefault(); event.stopImmediatePropagation(); return;
   }
-  if (['apply-envelope', 'discard-envelope', 'apply-filter', 'discard-filter'].includes(button.dataset.action ?? '')) event.preventDefault();
+  if (['apply-velocity-ramp', 'apply-envelope', 'discard-envelope', 'apply-filter', 'discard-filter'].includes(button.dataset.action ?? '')) event.preventDefault();
   if (button.dataset.action === 'apply-envelope' && !soundDraftGuard()) { event.stopImmediatePropagation(); return; }
   if (button.dataset.action === 'apply-filter' && !soundDraftGuard(filterFields)) { event.stopImmediatePropagation(); return; }
   if (button.dataset.action === 'record-backed') {
@@ -847,11 +850,17 @@ app.addEventListener('click', event => {
   if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
-  if (['duplicate-section', 'remove-section'].includes(action ?? '') && !sectionArrangementGuard()) return;
+  if (['duplicate-section', 'remove-section', 'apply-velocity-ramp'].includes(action ?? '') && !sectionArrangementGuard()) return;
   if (action === 'apply-envelope' && !soundDraftGuard()) return;
   if (action === 'apply-filter' && !soundDraftGuard(filterFields)) return;
   if (action && !['record-backed', 'save', 'midi', 'wav', 'wav-section', 'wav-track', 'solo-track', 'duplicate-section', 'remove-section', 'play-section', 'loop-section', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
   switch (action) {
+    case 'apply-velocity-ramp': {
+      try {
+        commit(applyVelocityRamp(project, currentTrack().id, selectedSection(), numericDraft(rampStart, 'Ramp start velocity'), numericDraft(rampEnd, 'Ramp end velocity')), 'Velocity ramp applied to selected track note onsets. Undo restores the previous dynamics; reference recordings are unchanged.');
+      } catch (error) { announce(error instanceof Error ? error.message : 'Could not apply velocity ramp.'); }
+      break;
+    }
     case 'apply-filter': {
       try {
         const track = currentTrack(), enabled = fieldValue('filter-enabled', !!track.filter) === true;
@@ -955,6 +964,10 @@ app.addEventListener('click', event => {
 app.addEventListener('input', event => {
   if (startup) return;
   const input = event.target as HTMLInputElement;
+  if (input.id === 'ramp-start' || input.id === 'ramp-end') {
+    if (input.id === 'ramp-start') rampStart = input.value; else rampEnd = input.value;
+    return;
+  }
   if (input.id === 'section-start' || input.id === 'section-end') {
     if (input.id === 'section-start') sectionStart = input.value; else sectionEnd = input.value;
     if (playing || playbackJob) {

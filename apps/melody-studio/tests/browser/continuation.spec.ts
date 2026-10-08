@@ -148,9 +148,9 @@ test('note drafts and invalid seed count survive guards and asynchronous playbac
   await generate(page);
   await audition(page).click();
   await expect.poll(async () => (await audioProbe(page)).starts.length).toBe(2);
-  await page.getByLabel('Velocity').fill('2');
+  await page.getByLabel('Velocity', {exact:true}).fill('2');
   await expect(action(page, 'Stop playback')).toBeDisabled({ timeout: 8000 });
-  await expect(page.getByLabel('Velocity')).toHaveValue('2');
+  await expect(page.getByLabel('Velocity', {exact:true})).toHaveValue('2');
   await expect(proposalRows(page)).toHaveCount(4);
   expect(await savedProject(page)).toEqual(original);
 });

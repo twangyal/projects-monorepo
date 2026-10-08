@@ -47,7 +47,7 @@ test('native touch movement and 390px keyboard controls retain reference and avo
 });
 
 test('new changed-back raw input cancels an already visible preview without replacing its native field',async({page})=>{
-  await openRoll(page);await page.locator('[data-note="fractional-low"]').click();const original=await readRoll(page),field=page.getByLabel('Velocity');await dragNote(page,'fractional-low',.5,1,false,false);await expect(page.locator('.roll-preview')).toBeVisible();await field.fill('.7');await field.fill('0.5');await field.evaluate(n=>n.dataset.original='retained');await page.mouse.up();await expect(field).toHaveValue('0.5');await expect(field).toHaveAttribute('data-original','retained');expect(await readRoll(page)).toEqual(original);
+  await openRoll(page);await page.locator('[data-note="fractional-low"]').click();const original=await readRoll(page),field=page.getByLabel('Velocity', {exact:true});await dragNote(page,'fractional-low',.5,1,false,false);await expect(page.locator('.roll-preview')).toBeVisible();await field.fill('.7');await field.fill('0.5');await field.evaluate(n=>n.dataset.original='retained');await page.mouse.up();await expect(field).toHaveValue('0.5');await expect(field).toHaveAttribute('data-original','retained');expect(await readRoll(page)).toEqual(original);
 });
 
 test('a genuine late project-file read cannot overwrite a newer committed roll gesture',async({page})=>{

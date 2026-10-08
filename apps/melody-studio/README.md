@@ -403,3 +403,9 @@ CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_library.mjs
 ```
 
 The runner owns its two browser processes, requires fresh directories and retains first results; it does not start or stop the preview server. Allow 768 MiB of free disk for fixtures, downloads and browser storage. Its 240-second deadline and payload bounds are limits, not a measured peak-memory guarantee.
+
+## Phrase dynamics
+
+Choose a section range (one-based beats, end exclusive), select a track, then enter start/end velocities from 0 to 1 under **Shape a crescendo** and Apply. The first and last distinct note onsets receive the exact endpoints; intermediate onsets interpolate by musical time, and simultaneous chord notes share a velocity. Notes crossing a boundary remain whole; membership uses the onset. Other tracks, timing, sound settings and retained references are unchanged. Zero velocity is silent and omitted from MIDI. Empty and single-onset selections refuse without changing the project.
+
+The range and ramp parameters are session-only; Apply produces one Undo/Redo step and autosaves the resulting notes. Apply guards unapplied fields, continuation suggestions and active piano-roll edits before pointer blur and click activation. Ordinary focus transfer still follows the editor's existing valid-field commit behavior. Native tests verify actual project downloads, MIDI velocities, independent PCM amplitude, Undo/Redo, IndexedDB reload, invalid-input refusal and 390px draft protection. See [verification evidence](docs/2026-10-08-velocity-ramp.md).
