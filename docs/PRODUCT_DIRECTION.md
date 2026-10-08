@@ -2,6 +2,8 @@
 
 This document records the owner's revised product direction following a review of all seventeen project ideas. It defines destinations and acceptance expectations, not delivered functionality or an approved technical implementation plan. Read it alongside `PROJECT_IDEAS.md` and each application's current implementation documentation.
 
+This is the current product-direction source of truth. Where earlier descriptions, design plans, issue scopes, README limitations or milestone completion labels conflict with it, follow this direction and reconcile the older plan before continuing. Newer explicit owner instructions supersede this document. Keep this direction available on both `Astra` (the broader portfolio development branch) and `main` (which currently contains Gaze Navigator), without treating documentation synchronization as authorization to merge application code.
+
 ## Portfolio-wide development standard
 
 All fourteen implemented applications remain ACTIVE. The eleven previously marked MAINTENANCE have meaningful product development ahead of them. The phone-restriction and handwriting projects retain their recorded BLOCKED status; paper trading remains explicitly skipped. ACTIVE identifies unfinished product development, not a requirement to develop every application concurrently.
