@@ -42,6 +42,12 @@ Choose bounds that include whole notes. A note crossing either boundary refuses 
 
 Success is one **Undo/Redo** edit and autosaves through the existing complete-project flow. Reference takes and bindings keep their original bytes and capture timing; they are not duplicated or shifted audio regions. Full MIDI/WAV/project exports include the resulting committed synthesized arrangement. This adds an arrangement building block; editable audio clips, playlist/section management and broader DAW production controls remain to be built.
 
+### Trim a layered song
+
+**Remove section and close gap** removes whole notes in the selected range on **every track**, including muted tracks, then moves notes starting at or after the exclusive end left by the exact range length. For start 9 and end 17, the eight selected beats disappear and a note at beat 17 moves to beat 9. Surviving IDs, order, pitch, duration, velocity and sound settings remain unchanged. An empty rest can be removed when later notes move; a range beyond the last note refuses under the existing section bounds.
+
+Choose whole-note boundaries: any crossing note on any track refuses the entire edit. Apply/discard raw editor fields and continuation suggestions and finish roll gestures first. Pointer admission protects focused unsent fields; keyboard actions refuse retained drafts. Blank or invalid range text stays available for correction. Success is one complete-project **Undo/Redo** edit and autosaves, stopping old playback and timing review. Removing the entire song keeps empty tracks and original reference captures; captured audio is never cut or time-shifted. Save a project backup for longer-term recovery. See [section-removal evidence](docs/2026-10-08-section-removal.md).
+
 ## Record with backing
 
 Select the destination track, apply or discard unfinished editor fields and suggestions, then choose **Record with backing**. Confirm replacing that track when it already contains notes or a reference. Use headphones: speaker playback can leak into your microphone and confuse single-voice pitch detection.

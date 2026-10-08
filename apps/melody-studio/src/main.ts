@@ -1,7 +1,7 @@
 import { isolatedTrack } from './track-render.ts';
 import { createTimingView } from './timing-view.ts';
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
-import { duplicateSection } from './section-arrangement.ts';
+import { duplicateSection, removeSection } from './section-arrangement.ts';
 import { sectionWindow, type SectionRange } from './section.ts';
 import './style.css';
 import { createLibraryView } from './library-view.ts';
@@ -357,7 +357,7 @@ function render() {
       <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div><div class="roll-controls"><label for="roll-tool">Piano roll tool<select id="roll-tool" ${disabled()}><option value="move" ${rollTool === 'move' ? 'selected' : ''}>Move notes</option><option value="draw" ${rollTool === 'draw' ? 'selected' : ''}>Draw note</option></select></label><label for="roll-snap">Snap movement<select id="roll-snap" ${disabled()}><option value="0.25" ${rollSnap === .25 ? 'selected' : ''}>Quarter beat</option><option value="0.125" ${rollSnap === .125 ? 'selected' : ''}>Eighth beat</option><option value="0" ${rollSnap === 0 ? 'selected' : ''}>Off</option></select></label></div><p id="roll-help" class="small">Move or resize in increments from the original timing; fractional offsets stay intact. Drawing snaps the start and duration. Focus a note: arrows move; Shift+Left/Right resize; Enter opens its numeric fields. Draw on empty space, or use Add note.</p><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid ${rollTool === 'draw' ? 'is-draw' : ''}" data-beats="${beats}" data-top="${top}" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''} ${seedIds.has(item.id) ? 'is-seed' : ''}" data-note="${escape(item.id)}" aria-describedby="roll-help" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span><span data-roll-resize aria-hidden="true" title="Drag to resize"></span></button>`).join('')}${proposedNotes.map((item, index) => `<span class="note-event proposal-note" data-proposal-index="${index}" role="img" aria-label="Suggested ${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}; not saved" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px">${noteName(item.pitch)}</span>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
       <p id="roll-status" class="small" aria-live="polite">${escape(rollMessage)}</p>
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${escape(draft?.pitch ?? '60')}" /></label><label>Start beat<input name="start" type="number" min="1" max="${MAX_COMPOSITION_BEATS + .75}" step="any" value="${escape(draft?.start ?? '1')}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${escape(draft?.duration ?? '1')}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${escape(draft?.velocity ?? '0.8')}" /></label><button type="submit">Apply note</button><button type="button" class="quiet" data-action="discard-note-edits">Discard note edits</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form>${continuationPanel(selection, seedError)}</div></section>
-      <section class="save-panel" aria-labelledby="section-heading"><div><p class="eyebrow">ARRANGEMENT AUDITION</p><h2 id="section-heading">Work on a section.</h2><p id="section-help" class="small">Beats start at 1; the end is exclusive. Committed synthesized mix only. Session-only range; hard loop boundaries can click. Duplicate inserts after the end and shifts later notes on all tracks; crossing notes must be included whole. End beat at most ${compositionDurationBeats(project) + 1}.</p></div><div class="export-actions"><label for="section-start">Section start beat<input id="section-start" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionStart)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><label for="section-end">Section end beat (exclusive)<input id="section-end" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionEnd)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><button data-action="play-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Play section</button><button data-action="loop-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Loop section</button><button data-action="duplicate-section" ${busy || !totalNotes ? 'disabled' : ''}>Duplicate section</button><button data-action="wav-section" ${busy || !totalNotes ? 'disabled' : ''}>Export section WAV</button></div></section>
+      <section class="save-panel" aria-labelledby="section-heading"><div><p class="eyebrow">ARRANGEMENT AUDITION</p><h2 id="section-heading">Work on a section.</h2><p id="section-help" class="small">Beats start at 1; the end is exclusive. Committed synthesized mix only. Session-only range; hard loop boundaries can click. Duplicate inserts after the end. Remove deletes the section and closes the gap on all tracks. Crossing notes must be included whole; reference recordings stay unchanged. Both edits support Undo. End beat at most ${compositionDurationBeats(project) + 1}.</p></div><div class="export-actions"><label for="section-start">Section start beat<input id="section-start" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionStart)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><label for="section-end">Section end beat (exclusive)<input id="section-end" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionEnd)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><button data-action="play-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Play section</button><button data-action="loop-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Loop section</button><button data-action="duplicate-section" ${busy || !totalNotes ? 'disabled' : ''}>Duplicate section</button><button data-action="remove-section" ${busy || !totalNotes ? 'disabled' : ''}>Remove section and close gap</button><button data-action="wav-section" ${busy || !totalNotes ? 'disabled' : ''}>Export section WAV</button></div></section>
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button><button data-action="wav-track" ${busy || !track.notes.length ? 'disabled' : ''}>Export track WAV</button></div></section>
       <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Successful takes retain a normalized listen-back copy on this device. Export a project backup before clearing browser data.</p></footer>
     </main>`;
@@ -716,7 +716,7 @@ function exportTrackWav() {
 
 function sectionArrangementGuard(): boolean {
   if (scratchExists() || roll.active) {
-    announce('Apply or discard all unapplied fields and the continuation suggestion, and finish the piano roll edit before duplicating a section. Your drafts are kept.');
+    announce('Apply or discard all unapplied fields and the continuation suggestion, and finish the piano roll edit before changing a section arrangement. Your drafts are kept.');
     return false;
   }
   return true;
@@ -728,6 +728,13 @@ function duplicateSelectedSection(): void {
     const next = duplicateSection(project, range);
     commit(next, `Section duplicated after beat ${range.end}; later notes on all tracks shifted by ${Number(range.end) - Number(range.start)} beats. Undo restores the complete arrangement.`);
   } catch (error) { announce(error instanceof Error ? error.message : 'Could not duplicate section.'); }
+}
+function removeSelectedSection(): void {
+  if (!sectionArrangementGuard()) return;
+  try {
+    const range = selectedSection();
+    commit(removeSection(project, range), `Section removed; later notes on all tracks shifted left by ${Number(range.end) - Number(range.start)} beats. Reference recordings are unchanged. Undo restores the complete arrangement.`);
+  } catch (error) { announce(error instanceof Error ? error.message : 'Could not remove section.'); }
 }
 function selectedSection(): SectionRange {
   sectionWindow(sectionStart, sectionEnd, project.tempo, compositionDurationBeats(project), 22050);
@@ -779,7 +786,7 @@ root.addEventListener('pointerdown', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || button.hasAttribute('data-note') || !root.contains(button)) return;
   if (libraryHost.contains(button)) event.preventDefault();
-  if (button.dataset.action === 'duplicate-section' && !sectionArrangementGuard()) {
+  if (['duplicate-section', 'remove-section'].includes(button.dataset.action ?? '') && !sectionArrangementGuard()) {
     event.preventDefault(); event.stopImmediatePropagation(); return;
   }
   if (button.dataset.action === 'record-backed') {
@@ -819,8 +826,8 @@ app.addEventListener('click', event => {
   if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
-  if (action === 'duplicate-section' && !sectionArrangementGuard()) return;
-  if (action && !['record-backed', 'save', 'midi', 'wav', 'wav-section', 'wav-track', 'solo-track', 'duplicate-section', 'play-section', 'loop-section', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
+  if (['duplicate-section', 'remove-section'].includes(action ?? '') && !sectionArrangementGuard()) return;
+  if (action && !['record-backed', 'save', 'midi', 'wav', 'wav-section', 'wav-track', 'solo-track', 'duplicate-section', 'remove-section', 'play-section', 'loop-section', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
   switch (action) {
     case 'suggest-continuation': suggestContinuation(); break;
     case 'audition-continuation': auditionProposal(); break;
@@ -843,6 +850,7 @@ app.addEventListener('click', event => {
     case 'solo-track': void playIsolatedTrack(); break;
     case 'wav-track': exportTrackWav(); break;
     case 'duplicate-section': duplicateSelectedSection(); break;
+    case 'remove-section': removeSelectedSection(); break;
     case 'play-section': void playSection(false); break;
     case 'loop-section': void playSection(true); break;
     case 'wav-section':

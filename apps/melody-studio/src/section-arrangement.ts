@@ -2,6 +2,24 @@ import { validateComposition, compositionDurationBeats } from './model.ts';
 import { sectionWindow, type SectionRange } from './section.ts';
 import type { Composition } from './types.ts';
 
+/** Remove whole notes and close the all-track gap; original references are external. */
+export function removeSection(project: Composition, range: SectionRange): Composition {
+  const next = validateComposition(project);
+  sectionWindow(range.start, range.end, next.tempo, compositionDurationBeats(next), 22050);
+  const start = Number(range.start) - 1, end = Number(range.end) - 1, span = end - start;
+  for (const track of next.tracks) {
+    for (const note of track.notes) {
+      const stop = note.start + note.duration;
+      if (note.start < start && stop > start || note.start < end && stop > end) throw new Error(`A note in ${track.name} crosses a section boundary. Choose bounds that include whole notes.`);
+    }
+  }
+  for (const track of next.tracks) {
+    track.notes = track.notes.filter(note => note.start < start || note.start >= end)
+      .map(note => note.start >= end ? { ...note, start: note.start - span } : note);
+  }
+  return validateComposition(next);
+}
+
 /** Insert a detached all-track section copy; refuse any note split atomically. */
 export function duplicateSection(project: Composition, range: SectionRange): Composition {
   const next = validateComposition(project);
