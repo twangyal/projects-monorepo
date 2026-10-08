@@ -544,6 +544,10 @@ class Handler(BaseHTTPRequestHandler):
             body = self._object('trackId date text')
             return self._json(200, store.add_memory(room_id, token, body['trackId'], body['date'], body['text']))
         memory = re.fullmatch(r'/memories/(' + ID + r')', tail)
+        if memory and method == 'PUT':
+            body = self._object('date text expectedDate expectedText')
+            return self._json(200, store.update_memory(room_id, token, memory.group(1), body['date'],
+                                                     body['text'], body['expectedDate'], body['expectedText']))
         if memory and method == 'DELETE':
             self._object('')
             return self._json(200, store.delete_memory(room_id, token, memory.group(1)))

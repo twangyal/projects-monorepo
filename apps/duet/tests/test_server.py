@@ -80,6 +80,26 @@ class ServerTests(unittest.TestCase):
         finally:
             connection.close()
 
+    def test_memory_edit_http_requires_exact_body_and_author_baseline(self):
+        self.join()
+        track = 'a' * 32
+        self.server.store.add_track(self.room, self.host, track, 'Original song', '', 12)
+        original = self.server.store.add_memory(self.room, self.host, track, '2026-10-01',
+                                                'Original words')['memories'][0]
+        path = self.endpoint + '/memories/' + original['id']
+        body = {'date': '2026-10-08', 'text': 'Corrected café 🌓',
+                'expectedDate': original['date'], 'expectedText': original['text']}
+        for invalid in [{}, {**body, 'extra': True}, {**body, 'expectedText': None}]:
+            status, _, _ = self.request('PUT', path, invalid, self.host)
+            self.assertEqual(status, 400)
+        status, _, _ = self.request('PUT', path, body, self.guest)
+        self.assertEqual(status, 403)
+        status, _, result = self.request('PUT', path, body, self.host)
+        self.assertEqual(status, 200)
+        self.assertEqual(result['memories'], [{**original, 'date': body['date'], 'text': body['text']}])
+        status, _, _ = self.request('PUT', path, body, self.host)
+        self.assertEqual(status, 409)
+
     def join(self):
         status, headers, joined = self.request('POST', self.endpoint + '/join',
                                               {'inviteToken': self.invite, 'name': 'Guest'})

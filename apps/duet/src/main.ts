@@ -6,6 +6,9 @@ import { AudioSync, clockOffset, estimatedPosition, type Playback, type Track } 
 type Role = 'host' | 'guest';
 interface Job { id: string; roomId: string; trackId: string; uploadedBy: Role; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string }
 interface Memory { id: string; trackId: string; trackTitle: string; date: string; text: string; author: Role; createdAt: number }
+let memoryEdit: Memory | null = null;
+let pendingMutation: number | null = null, mutationOperation = 0;
+function retireMutation() { if (pendingMutation !== null) { pendingMutation = null; busy = false; } }
 interface Blend { trackId: string; category: string; reason: string }
 interface Room extends SavedMixFields { id: string; title: string; createdAt: number; profiles: { host: { name: string }; guest: { name: string } | null }; myRole: Role; serverTime: number; tracks: Track[]; ratings: Record<string, { host: number; guest: number }>; blend: Blend[]; playlist: string[]; playlistRevision: number; playback: Playback; memories: Memory[]; activeJob?: Job | null }
 interface Credentials { roomId: string; token: string }
@@ -20,7 +23,7 @@ app.innerHTML = `
 <div id="link-panel" class="link-panel panel" hidden><strong id="link-heading"></strong><p id="link-help" class="fine"></p><div><input id="share-link" readonly aria-label="Room link"><button id="copy-link">Copy link</button><button id="close-link" class="text-button">Close</button></div></div>
 <div class="room-grid" id="room-main"><section class="library panel"><div class="section-heading"><div><span class="section-no">01</span><h3>What we bring</h3></div><span id="track-count" class="small-tag">0 / 12 SONGS</span></div><div class="library-body"><p class="section-description">Your favorites, their favorites, and the space in between.</p><form id="upload-form" class="upload-form"><label class="file-zone"><strong>Choose a song to share</strong><span id="audio-file-name">WAV, MP3, FLAC or Ogg · 1–300 seconds · 25 MiB</span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Choose song file"></label><div class="pair"><label>Song title<input id="track-title" required maxlength="80" placeholder="A song that feels like you"></label><label>Artist <span class="optional">optional</span><input id="track-artist" maxlength="80" placeholder="Artist name"></label></div><button id="upload" type="submit">Add to our library</button></form><div id="upload-job" class="upload-job" hidden><span id="job-stage"></span><button id="cancel-job">Cancel upload</button></div><div id="library-list"></div></div></section>
 <section class="mix panel"><div class="section-heading"><div><span class="section-no">02</span><h3>Somewhere in the middle</h3></div><span class="small-tag">OUR MIX</span></div><div class="mix-body"><p class="section-description">A blend of what you've each told us you like.</p><button id="build-mix" class="primary full">Build our mix</button><p id="blend-help" class="fine"></p><div id="playlist"></div><p class="fine">Adding, removing or reordering songs here does not change votes, delete audio or update saved mixes.</p><section class="saved-mixes" aria-labelledby="saved-mixes-heading"><h4 id="saved-mixes-heading">Named mixes</h4><p id="saved-mix-count" class="fine">0 / 8 saved mixes</p><form id="save-mix-form"><label>New mix name<input id="mix-name" maxlength="160" autocomplete="off" placeholder="Date night or the long way home"></label><button id="save-mix" type="submit">Save as named mix</button></form><p id="mix-status" class="fine" aria-live="polite"></p><div id="saved-mixes-list"></div><div id="saved-mix-detail" hidden><h5 id="saved-mix-heading"></h5><p class="fine">This is a saved copy. Selecting it does not change the current mix or play audio.</p><ol id="saved-mix-preview"></ol><form id="rename-mix-form"><label>Selected mix name<input id="saved-mix-name" maxlength="160" autocomplete="off"></label><button id="rename-mix" type="submit">Rename saved mix</button></form><div class="saved-mix-actions"><button id="update-mix">Update from current mix</button><button id="delete-mix" class="text-button">Delete saved mix</button><button id="load-mix" class="primary">Load into shared player</button><button id="load-available-mix" hidden>Load available songs only</button></div><p id="saved-mix-availability" class="fine"></p><p class="fine">Loading replaces the current mix and pauses at the first song at 0:00. Press Play separately to listen.</p></div></section><details class="blend-details"><summary>How the blend is ranked</summary><div id="blend-reasons"></div><p class="fine">This ranking uses your submitted ratings, not musical similarity or a streaming profile.</p></details></div></section>
-<section class="memories panel"><div class="section-heading"><div><span class="section-no">03</span><h3>Songs with a story</h3></div><span id="memory-count" class="small-tag">OUR MEMORIES</span></div><div class="memory-body"><div class="memory-intro"><div><h4>Some songs take you right back.</h4><p>Give a moment a place in your soundtrack.</p></div><form id="memory-form"><div class="pair"><label>A song from our library<select id="memory-track" required></select></label><label>The date<input id="memory-date" type="date" min="1900-01-01" max="2100-12-31" required></label></div><label>The memory<textarea id="memory-text" maxlength="500" rows="3" required placeholder="The long way home. The windows down. This song."></textarea></label><button id="add-memory" type="submit">Keep this memory</button></form></div><div id="memory-list"></div></div></section></div>
+<section class="memories panel"><div class="section-heading"><div><span class="section-no">03</span><h3>Songs with a story</h3></div><span id="memory-count" class="small-tag">OUR MEMORIES</span></div><div class="memory-body"><div class="memory-intro"><div><h4>Some songs take you right back.</h4><p>Give a moment a place in your soundtrack.</p></div><form id="memory-form"><div class="pair"><label>A song from our library<select id="memory-track" required></select></label><label>The date<input id="memory-date" type="date" min="1900-01-01" max="2100-12-31" required></label></div><label>The memory<textarea id="memory-text" maxlength="500" rows="3" required placeholder="The long way home. The windows down. This song."></textarea></label><button id="add-memory" type="submit">Keep this memory</button></form></div><form id="memory-edit" class="panel" hidden><h4>Edit memory: <span id="memory-edit-song"></span></h4><label for="memory-edit-date">Edit memory date</label><input id="memory-edit-date" type="date" min="1900-01-01" max="2100-12-31" required /><label for="memory-edit-text">Edit memory text</label><textarea id="memory-edit-text" maxlength="500" rows="4" required></textarea><p class="fine">Save corrects this memory’s words and date. Its song and author are kept. If another tab edits it first, your draft stays here.</p><button id="save-memory-edit" type="submit">Save memory edit</button><button id="cancel-memory-edit" type="button" class="quiet">Cancel memory edit</button></form><div id="memory-list"></div></div></section></div>
 <section class="player panel" aria-label="Shared music player"><div class="now-playing"><span class="mini-record" aria-hidden="true"></span><div><strong id="playing-title">Choose a song</strong><p id="playing-artist">Your shared soundtrack starts here.</p></div></div><div class="shared-controls"><div class="play-buttons"><button id="previous" aria-label="Previous song">Previous</button><button id="play" class="primary">Play together</button><button id="next" aria-label="Next song">Next</button></div><div class="seek"><span id="position">0:00</span><input id="seek" type="range" min="0" max="1" step="0.1" value="0" aria-label="Shared playback position"><span id="duration">0:00</span></div></div><div class="local-audio"><button id="enable-audio">Enable audio on this device</button><p id="audio-status" role="status">Each person enables their own audio.</p><label>Volume <input id="volume" type="range" min="0" max="1" step="0.05" value="0.8"></label></div><audio id="audio" preload="auto"></audio></section><div class="room-footer"><p>Shared controls affect both seats. Audio enablement and volume are only for this device.</p><button id="delete-room" class="text-button">Delete this room</button></div></section>
 <footer><span>A room for the two of you.</span><span>Local audio library · no external music service</span></footer></main>`;
 
@@ -74,7 +77,7 @@ function roomPath(suffix = '') { if (!credentials) throw new Error('Open your ro
 function localLink(fragment: string) { const url = new URL(location.href); url.search = `?room=${credentials!.roomId}`; url.hash = fragment; return url.toString(); }
 function showLink(url: string, heading: string, help: string) { el<HTMLInputElement>('share-link').value = url; el('link-heading').textContent = heading; el('link-help').textContent = help; el('link-panel').hidden = false; }
 function controls() {
-  for (const form of ['create-form', 'join-form', 'upload-form', 'memory-form']) for (const input of el(form).querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>('input,button,select,textarea')) input.disabled = busy;
+  for (const form of ['create-form', 'join-form', 'upload-form', 'memory-form', 'memory-edit']) for (const input of el(form).querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement | HTMLTextAreaElement>('input,button,select,textarea')) input.disabled = busy;
   el<HTMLFormElement>('create-form').querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled = busy || !transport;
   el<HTMLButtonElement>('retry-transport-status').disabled = transportLoading;
   const creating = !el('create-view').hidden && !el('welcome').hidden;
@@ -166,6 +169,8 @@ async function open(auth: Credentials, identityOwner?: number) {
   if (pendingIdentity !== null && pendingIdentity !== identityOwner) { pendingIdentity = null; identityRequest++; busy = false; }
   el<HTMLInputElement>('setup-key').value = '';
   resetMixEditor();
+  closeMemoryEdit();
+  retireMutation();
   generation++; clearTimeout(polling); sync.disable(); credentials = auth; room = null; job = null; latestServerTime = 0; appliedOrder = 0; contentSignature = ''; el('link-panel').hidden = true; el<HTMLInputElement>('share-link').value = ''; el('room-view').hidden = true; el('welcome').hidden = false;
   const current = generation, order = ++requestOrder;
   const result = await api<Room>(roomPath('/access'), 'POST', {}, undefined, auth);
@@ -175,8 +180,10 @@ async function open(auth: Credentials, identityOwner?: number) {
 }
 async function mutate(suffix: string, method: string, body: unknown) {
   if (busy || !credentials) return false;
+  const request = ++mutationOperation; pendingMutation = request;
   busy = true; controls(); const current = generation, order = ++requestOrder;
   const previousMemories = new Set(room?.memories.map(memory => memory.id));
+  const editedMemory = method === 'PUT' && /^\/memories\/[a-f0-9]{32}$/.test(suffix) ? room?.memories.find(memory => memory.id === suffix.split('/')[2]) : undefined;
   try {
     const result = await api<Room>(roomPath(suffix), method, body);
     if (current === generation) {
@@ -185,11 +192,15 @@ async function mutate(suffix: string, method: string, body: unknown) {
         const sent = body as {trackId:string;date:string;text:string};
         if (!result.value.memories.some(memory => !previousMemories.has(memory.id) && memory.trackId === sent.trackId && memory.date === sent.date && memory.text === sent.text && memory.author === room?.myRole)) throw new UnconfirmedReplyError();
       }
+      if (method === 'PUT' && /^\/memories\/[a-f0-9]{32}$/.test(suffix)) {
+        const sent = body as {date:string;text:string}, id = suffix.split('/')[2];
+        if (!editedMemory || !result.value.memories.some(memory => memory.id === id && memory.date === sent.date && memory.text === sent.text && memory.author === editedMemory.author && memory.trackId === editedMemory.trackId && memory.trackTitle === editedMemory.trackTitle && memory.createdAt === editedMemory.createdAt)) throw new UnconfirmedReplyError();
+      }
       if (!accept(result.value, result.start, result.end, order)) throw new UnconfirmedReplyError();
       notify(''); return true;
     }
   } catch (error) { if (current === generation) { notify(`${message(error)} Your input is still available.`, true); void poll(); } }
-  finally { if (current === generation) { busy = false; controls(); } }
+  finally { if (pendingMutation === request) { pendingMutation = null; if (current === generation) { busy = false; controls(); } } }
   return false;
 }
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', className = '') { const element = document.createElement(tag); element.textContent = text; element.className = className; return element; }
@@ -250,7 +261,10 @@ function renderContent() {
   for (const memory of [...room.memories].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt)) {
     const card = node('article', '', 'memory-card'); card.append(node('time', memory.date), node('h4', memory.trackTitle), node('p', memory.text), node('small', `Saved by ${roleName(memory.author)}`));
     if (room.tracks.some(track => track.id === memory.trackId)) card.append(action('Play this song', () => void playTrack(memory.trackId), 'text-button')); else card.append(node('small', 'Audio removed; this memory is kept.'));
-    if (memory.author === room.myRole) card.append(action('Delete memory', () => { if (window.confirm('Delete this saved memory?')) void mutate(`/memories/${memory.id}`, 'DELETE', {}); }, 'text-button'));
+    if (memory.author === room.myRole) {
+      card.append(action('Edit memory', () => beginMemoryEdit(memory.id), 'text-button'));
+      card.append(action('Delete memory', () => { if (window.confirm('Delete this saved memory?')) void mutate(`/memories/${memory.id}`, 'DELETE', {}); }, 'text-button'));
+    }
     memories.append(card);
   }
 }
@@ -484,10 +498,33 @@ el('room-export').addEventListener('click', async () => {
   try { const { value } = await api<unknown>(roomPath('/export')); if (current !== generation) return; validateRoomExport(value, id); const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = 'duet-room-notes.json'; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); notify('Room notes exported without access credentials. Keep a server data-directory backup to preserve the audio.'); }
   catch (error) { if (current === generation) notify(message(error), true); }
 });
-function hasDraft() { return !!file || !!el<HTMLTextAreaElement>('memory-text').value.trim() || !!el<HTMLInputElement>('mix-name').value || el<HTMLInputElement>('saved-mix-name').value !== renameBaseline; }
+function memoryEditDirty() { return !!memoryEdit && (el<HTMLInputElement>('memory-edit-date').value !== memoryEdit.date || el<HTMLTextAreaElement>('memory-edit-text').value !== memoryEdit.text); }
+function closeMemoryEdit() { memoryEdit = null; el('memory-edit').hidden = true; el<HTMLFormElement>('memory-edit').reset(); }
+function beginMemoryEdit(id:string) {
+  if (busy || !room || !credentials) return;
+  const current = generation;
+  if (memoryEditDirty() && !window.confirm('Discard your unsaved memory edit and edit another memory?')) return;
+  if (current !== generation) return;
+  const active = room; if (!active) return;
+  const memory = active.memories.find(memory => memory.id === id && memory.author === active.myRole);
+  if (!memory) return;
+  memoryEdit = structuredClone(memory); el('memory-edit-song').textContent = memory.trackTitle;
+  el<HTMLInputElement>('memory-edit-date').value = memory.date; el<HTMLTextAreaElement>('memory-edit-text').value = memory.text;
+  el('memory-edit').hidden = false; el<HTMLTextAreaElement>('memory-edit-text').focus();
+}
+el('cancel-memory-edit').addEventListener('click', () => { if (!busy) closeMemoryEdit(); });
+el('memory-edit').addEventListener('submit', async event => {
+  event.preventDefault(); if (busy || !memoryEdit) return;
+  const baseline = memoryEdit, current = generation, text = el<HTMLTextAreaElement>('memory-edit-text').value, date = el<HTMLInputElement>('memory-edit-date').value;
+  const saved = await mutate(`/memories/${baseline.id}`, 'PUT', { date, text, expectedDate:baseline.date, expectedText:baseline.text });
+  if (saved && current === generation && memoryEdit === baseline && el<HTMLTextAreaElement>('memory-edit-text').value === text && el<HTMLInputElement>('memory-edit-date').value === date) { closeMemoryEdit(); notify('Memory updated. Its song and original identity are kept.'); }
+});
+function hasDraft() { return memoryEditDirty() || !!file || !!el<HTMLTextAreaElement>('memory-text').value.trim() || !!el<HTMLInputElement>('mix-name').value || el<HTMLInputElement>('saved-mix-name').value !== renameBaseline; }
 function home() {
   el<HTMLInputElement>('setup-key').value = '';
   pendingIdentity = null; identityRequest++; resetMixEditor();
+  closeMemoryEdit();
+  retireMutation();
   generation++; clearTimeout(polling); sync.disable(); credentials = null; room = null; job = null; busy = false; seeking = null; contentSignature = ''; file = null;
   el<HTMLFormElement>('upload-form').reset(); el<HTMLTextAreaElement>('memory-text').value = ''; el('audio-file-name').textContent = 'WAV, MP3, FLAC or Ogg · 1–300 seconds · 25 MiB'; el<HTMLInputElement>('share-link').value = ''; el('link-panel').hidden = true;
   el('welcome').hidden = false; el('room-view').hidden = true; el('create-view').hidden = false; el('join-view').hidden = true; el('access-view').hidden = true; el('connection').textContent = 'Your songs. Your space.'; el('connection').classList.remove('offline'); history.replaceState(null, '', location.pathname); renderSaved(); controls();
@@ -520,7 +557,10 @@ function readLocation() {
     else { incomingAccess = { roomId, token: accessToken! }; el('access-view').hidden = false; }
   } else {
     const saved = savedCredentials()[roomId];
-    if (saved) void open({ roomId, token: saved.token }).catch(error => notify(`${message(error)} You can retry from your saved rooms.`, true));
+    if (saved) {
+      if (credentials && hasDraft() && !window.confirm('Open this room and discard your unsaved draft?')) { history.replaceState(null, '', `?room=${credentials.roomId}`); return; }
+      void open({ roomId, token: saved.token }).catch(error => notify(`${message(error)} You can retry from your saved rooms.`, true));
+    }
     else notify('This room needs your private access link or a partner invitation.', true);
   }
 }
@@ -532,6 +572,7 @@ window.addEventListener('pagehide', () => {
   el<HTMLInputElement>('setup-key').value = ''; transportEpoch++; transport = null; transportLoading = false;
   if (pendingIdentity !== null) { pendingIdentity = null; identityRequest++; busy = false; }
   if (pendingMix !== null) { pendingMix = null; mixOperation++; busy = false; }
+  if (pendingMutation !== null) { retireMutation(); notify('The pending change result is unconfirmed. Your input is kept. Review the latest room before another deliberate attempt; nothing was repeated automatically.', true); }
   generation++; clearTimeout(polling); sync.disable();
 });
 window.addEventListener('pageshow', event => { if (event.persisted) { controls(); void loadTransportStatus(); if (credentials) void poll(); } });

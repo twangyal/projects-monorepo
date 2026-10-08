@@ -85,6 +85,14 @@ HTTPS requires TLS 1.2 or newer, the exact configured Host, and the exact Origin
 - Playlist playback advances to the next song and stops after the final song; it does not loop. A song outside the playlist stops at its end. Server restart preserves room data and pauses playback rather than starting it automatically.
 - Choose a song, date, and memory text, then press **Keep this memory**. Each person can delete their own memories. Removing a song preserves memories with its recorded title and marks the audio unavailable.
 
+## Correct a saved song memory
+
+Each author can choose **Edit memory** on their own saved memory, correct its date or text, and choose **Save memory edit** or **Cancel memory edit**. The song association, original ID, author and creation time stay unchanged. Memories whose audio has been removed remain editable. Both private seats see accepted corrections, and room-note exports and archives retain them.
+
+The edit form retains raw text, its DOM nodes and focus while room polling updates the surrounding list. Save compares the exact displayed baseline atomically: a newer edit in another tab produces a conflict and keeps your draft. Cancel, review the latest memory and open Edit again before another deliberate attempt. An unreadable or mismatched acknowledgment also keeps the draft; no PUT repeats automatically. Dirty edits participate in leave/link/departure protection. Navigation or a suspended page retires only its pending operation's controls, so a late response cannot publish into another room or clear the retained form.
+
+This delivers manual text-memory curation. Spotify ingestion, automatic timeline events, shared-event curation and photo associations remain unfinished parts of the revised destination.
+
 ## Keep mixes for different occasions
 
 The current mix is the editable sequence used by the shared player. Add songs

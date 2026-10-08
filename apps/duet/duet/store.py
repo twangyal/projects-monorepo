@@ -561,6 +561,23 @@ class Store:
             self._write(room, promote=True)
             return self._snapshot(room, role, now)
 
+    def update_memory(self, room_id, token, memory_id, date, text, expected_date, expected_text):
+        date, text = _date(date), _text(text, 500, 'Memory')
+        expected_date = _date(expected_date)
+        expected_text = _text(expected_text, 500, 'Previous memory')
+        with self._transaction():
+            room, role = self._authorized(room_id, token)
+            memory = next((item for item in room['memories'] if item['id'] == memory_id), None)
+            if memory is None:
+                raise DomainError(404, 'Memory not found in this room. Your edit is kept.')
+            if memory['author'] != role:
+                raise DomainError(403, 'Only the author can edit this memory.')
+            if memory['date'] != expected_date or memory['text'] != expected_text:
+                raise DomainError(409, 'This memory changed. Your draft is kept; cancel to review its latest words before editing again.')
+            memory.update(date=date, text=text)
+            self._write(room, promote=True)
+            return self._snapshot(room, role, self._clock())
+
     def delete_memory(self, room_id, token, memory_id):
         with self._transaction():
             room, role = self._authorized(room_id, token)
