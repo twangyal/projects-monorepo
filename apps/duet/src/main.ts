@@ -29,6 +29,8 @@ const audio = el<HTMLAudioElement>('audio'); audio.volume = .8;
 const sync = new AudioSync(audio, status => { el('audio-status').textContent = status; });
 let credentials: Credentials | null = null, room: Room | null = null;
 let invite: { roomId: string; token: string } | null = null, incomingAccess: Credentials | null = null;
+const pendingInvitations = new Set<string>();
+function privateSeatKey(auth: Credentials) { return `${auth.roomId}:${auth.token}`; }
 let generation = 0, offset = 0, latestServerTime = 0, contentSignature = '', busy = false;
 let transport: Transport | null = null, transportEpoch = 0, transportLoading = false;
 let identityRequest = 0, pendingIdentity: number | null = null;
@@ -84,7 +86,7 @@ function controls() {
   el<HTMLInputElement>('audio-file').disabled = busy || !!job || !room || room.tracks.length >= 12;
   el<HTMLButtonElement>('build-mix').disabled = busy || !room?.tracks.length;
   el<HTMLButtonElement>('add-memory').disabled = busy || !room?.tracks.length || room.memories.length >= 100;
-  el<HTMLButtonElement>('invite').disabled = busy || room?.myRole !== 'host' || !!room.profiles.guest;
+  el<HTMLButtonElement>('invite').disabled = busy || room?.myRole !== 'host' || !!room.profiles.guest || !!(credentials && pendingInvitations.has(privateSeatKey(credentials)));
   el('invite').hidden = room?.myRole !== 'host' || !!room.profiles.guest;
   el('delete-room').hidden = room?.myRole !== 'host';
   el<HTMLButtonElement>('delete-room').disabled = busy || !!job;
@@ -429,9 +431,24 @@ el('create-form').addEventListener('submit', event => { event.preventDefault(); 
 el('join-form').addEventListener('submit', event => { event.preventDefault(); if (invite) void submitIdentity('join'); });
 el('restore-access').addEventListener('click', () => { if (incomingAccess) void open(incomingAccess).catch(error => notify(message(error), true)); });
 el('invite').addEventListener('click', async () => {
-  const current = generation;
-  try { const { value } = await api<{ inviteToken: string }>(roomPath('/invite'), 'POST', {}); if (current === generation) showLink(localLink(`invite=${value.inviteToken}`), 'A fresh invitation for your partner', 'This one-use invitation replaces any earlier unclaimed invitation.'); }
-  catch (error) { if (current === generation) notify(message(error), true); }
+  if (busy || !credentials || room?.myRole !== 'host' || room.profiles.guest) return;
+  const current = generation, auth = { ...credentials }, key = privateSeatKey(auth);
+  if (pendingInvitations.has(key)) return;
+  pendingInvitations.add(key); controls();
+  // Rotation can invalidate the previous invitation even if its reply is lost.
+  if (el<HTMLInputElement>('share-link').value.includes('#invite=')) {
+    el<HTMLInputElement>('share-link').value = ''; el('link-panel').hidden = true;
+  }
+  const ownsRoom = () => current === generation && credentials?.roomId === auth.roomId && credentials.token === auth.token;
+  try {
+    const { value } = await api<{ inviteToken: string }>(`/api/rooms/${auth.roomId}/invite`, 'POST', {}, undefined, auth);
+    if (!ownsRoom()) return;
+    if (!value || Object.keys(value).sort().join(',') !== 'inviteToken' || typeof value.inviteToken !== 'string' || !/^[a-f0-9]{64}$/.test(value.inviteToken)) throw new UnconfirmedReplyError();
+    if (room?.profiles.guest) { notify('Your partner has already joined this room.'); return; }
+    showLink(localLink(`invite=${value.inviteToken}`), 'A fresh invitation for your partner', 'This one-use invitation replaces any earlier unclaimed invitation.');
+  } catch (error) {
+    if (ownsRoom()) notify(error instanceof TypeError ? 'Invitation result is unconfirmed. The previous invitation may have been replaced. Check your room before another deliberate invitation; nothing was repeated automatically.' : message(error), true);
+  } finally { pendingInvitations.delete(key); controls(); }
 });
 el('access-link').addEventListener('click', () => { if (credentials) showLink(localLink(`access=${credentials.token}`), 'Your private seat', 'Keep this link for your own recovery. Anyone with it can act as you. Share the partner invitation instead.'); });
 el('copy-link').addEventListener('click', async () => {
