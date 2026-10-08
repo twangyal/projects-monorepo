@@ -24,6 +24,14 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 4. Add tracks to layer parts. Each track has a name, volume, mute switch, and one of three synthesized instruments: **Soft keys** (sine), **Warm flute** (triangle), or **Bright synth** (sawtooth). These are simple waveform sounds, not sampled acoustic instruments. Play and stop the combined composition.
 5. Save a project backup or export MIDI/WAV. Recording, importing, or trying the demo on a populated track asks before replacing its notes and reference take. Opening a project, loading an example, or starting a new composition also asks before replacing existing notes.
 
+## Audition an arrangement section
+
+Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.
+
+**Stop playback** stops either mode. Changing a bound or committing a composition edit stops playback and retires pending rendering/resume work. **Export section WAV** downloads one pass as `-section.wav`; ordinary Play composition, Export WAV and Export MIDI still use the whole composition. The range is session-only and is not saved in project files, autosave or undo history.
+
+Sections crop the fully rendered committed synthesized mix, using the nearest audio-frame boundaries. Crossing notes retain their existing phase/envelopes, and peak limiting uses the whole composition. Reference takes and unapplied edits are excluded. A section omits the release tail beyond its exclusive end. Loops use native audio-buffer repetition with hard boundaries; abrupt waveform joins can click. There is no crossfade, tempo automation, section arrangement, or measured musician-quality claim in this milestone. These remain intermediate controls toward the full DAW destination.
+
 ## Record with backing
 
 Select the destination track, apply or discard unfinished editor fields and suggestions, then choose **Record with backing**. Confirm replacing that track when it already contains notes or a reference. Use headphones: speaker playback can leak into your microphone and confuse single-voice pitch detection.

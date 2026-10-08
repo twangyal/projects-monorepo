@@ -1,3 +1,4 @@
+import { sectionWindow, type SectionRange } from './section.ts';
 import './style.css';
 import { createLibraryView } from './library-view.ts';
 import { createComposition, createDemoComposition, createNote, createTrack, validateComposition, compositionDurationBeats } from './model.ts';
@@ -70,6 +71,8 @@ let audioContext: AudioContext | null = null;
 let source: AudioBufferSourceNode | null = null;
 let playbackGeneration = 0;
 let playing = false;
+let sectionStart = '1';
+let sectionEnd = '5';
 let compositionGeneration = 0;
 let proposal: ContinuationProposal | null = null;
 let proposalGeneration = -1;
@@ -346,6 +349,7 @@ function render() {
       <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div><div class="roll-controls"><label for="roll-tool">Piano roll tool<select id="roll-tool" ${disabled()}><option value="move" ${rollTool === 'move' ? 'selected' : ''}>Move notes</option><option value="draw" ${rollTool === 'draw' ? 'selected' : ''}>Draw note</option></select></label><label for="roll-snap">Snap movement<select id="roll-snap" ${disabled()}><option value="0.25" ${rollSnap === .25 ? 'selected' : ''}>Quarter beat</option><option value="0.125" ${rollSnap === .125 ? 'selected' : ''}>Eighth beat</option><option value="0" ${rollSnap === 0 ? 'selected' : ''}>Off</option></select></label></div><p id="roll-help" class="small">Move or resize in increments from the original timing; fractional offsets stay intact. Drawing snaps the start and duration. Focus a note: arrows move; Shift+Left/Right resize; Enter opens its numeric fields. Draw on empty space, or use Add note.</p><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid ${rollTool === 'draw' ? 'is-draw' : ''}" data-beats="${beats}" data-top="${top}" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''} ${seedIds.has(item.id) ? 'is-seed' : ''}" data-note="${escape(item.id)}" aria-describedby="roll-help" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span><span data-roll-resize aria-hidden="true" title="Drag to resize"></span></button>`).join('')}${proposedNotes.map((item, index) => `<span class="note-event proposal-note" data-proposal-index="${index}" role="img" aria-label="Suggested ${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}; not saved" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px">${noteName(item.pitch)}</span>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
       <p id="roll-status" class="small" aria-live="polite">${escape(rollMessage)}</p>
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${escape(draft?.pitch ?? '60')}" /></label><label>Start beat<input name="start" type="number" min="1" max="128.75" step="any" value="${escape(draft?.start ?? '1')}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${escape(draft?.duration ?? '1')}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${escape(draft?.velocity ?? '0.8')}" /></label><button type="submit">Apply note</button><button type="button" class="quiet" data-action="discard-note-edits">Discard note edits</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form>${continuationPanel(selection, seedError)}</div></section>
+      <section class="save-panel" aria-labelledby="section-heading"><div><p class="eyebrow">ARRANGEMENT AUDITION</p><h2 id="section-heading">Work on a section.</h2><p id="section-help" class="small">Beats start at 1; the end is exclusive. Committed synthesized mix only. Session-only range; hard loop boundaries can click. End beat at most ${compositionDurationBeats(project) + 1}.</p></div><div class="export-actions"><label for="section-start">Section start beat<input id="section-start" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionStart)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><label for="section-end">Section end beat (exclusive)<input id="section-end" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionEnd)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><button data-action="play-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Play section</button><button data-action="loop-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Loop section</button><button data-action="wav-section" ${busy || !totalNotes ? 'disabled' : ''}>Export section WAV</button></div></section>
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button></div></section>
       <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Successful takes retain a normalized listen-back copy on this device. Export a project backup before clearing browser data.</p></footer>
     </main>`;
@@ -648,10 +652,14 @@ function syncTransport() {
   const playButton = app.querySelector<HTMLButtonElement>('[data-action=play]');
   const stopButton = app.querySelector<HTMLButtonElement>('[data-action=stop]');
   if (playButton) playButton.disabled = !!busy || playing || !project.tracks.some(track => track.notes.length);
+  for (const action of ['play-section', 'loop-section']) {
+    const button = app.querySelector<HTMLButtonElement>(`[data-action=${action}]`);
+    if (button) button.disabled = !!busy || playing || !project.tracks.some(track => track.notes.length);
+  }
   if (stopButton) stopButton.disabled = !playing && !playbackJob && !capture?.backed;
 }
 
-async function playSnapshot(snapshot: Composition, label: string, owner: ContinuationProposal | null = null) {
+async function playSnapshot(snapshot: Composition, label: string, owner: ContinuationProposal | null = null, section?: SectionRange, loop = false) {
   stopPlayback(false);
   const generation = playbackGeneration;
   const token = ++operation;
@@ -662,12 +670,12 @@ async function playSnapshot(snapshot: Composition, label: string, owner: Continu
     audioContext ??= new AudioContext();
     await audioContext.resume();
     if (!current()) return;
-    const samples = await runWorker<Float32Array>('render', { project: snapshot, wav: false });
+    const samples = await runWorker<Float32Array>('render', { project: snapshot, wav: false, section });
     if (!current()) return;
     const buffer = audioContext.createBuffer(1, samples.length, 22050);
     buffer.copyToChannel(new Float32Array(samples), 0);
     const playingSource = audioContext.createBufferSource();
-    playingSource.buffer = buffer; playingSource.connect(audioContext.destination);
+    playingSource.buffer = buffer; playingSource.loop = loop; playingSource.connect(audioContext.destination);
     playingSource.onended = () => {
       playingSource.disconnect();
       if (source !== playingSource) return;
@@ -684,17 +692,28 @@ async function playSnapshot(snapshot: Composition, label: string, owner: Continu
 }
 async function play() { await playSnapshot(validateComposition(project), 'Playing your composition.'); }
 
-async function exportWav() {
+function selectedSection(): SectionRange {
+  sectionWindow(sectionStart, sectionEnd, project.tempo, compositionDurationBeats(project), 22050);
+  return { start: sectionStart, end: sectionEnd };
+}
+async function playSection(loop: boolean) {
+  try {
+    const section = selectedSection();
+    const frames = sectionWindow(section.start, section.end, project.tempo, compositionDurationBeats(project), 22050);
+    await playSnapshot(validateComposition(project), `${loop ? 'Looping' : 'Playing'} section beats ${section.start}–${section.end} (end exclusive), ${((frames.endFrame - frames.startFrame) / 22050).toFixed(4)} seconds.`, null, section, loop);
+  } catch (error) { announce(error instanceof Error ? error.message : 'Invalid section.'); }
+}
+async function exportWav(section?: SectionRange) {
   stopPlayback(false);
   const token = ++operation;
   busy = 'rendering';
   message = 'Rendering WAV…';
   render();
   try {
-    const bytes = await runWorker<Uint8Array>('render', { project, wav: true });
+    const bytes = await runWorker<Uint8Array>('render', { project, wav: true, section });
     if (token !== operation) return;
-    download(new Uint8Array(bytes), '.wav', 'audio/wav');
-    message = 'WAV exported with the current instruments and mix.';
+    download(new Uint8Array(bytes), section ? '-section.wav' : '.wav', 'audio/wav');
+    message = section ? `Section WAV exported: beats ${section.start}–${section.end} (end exclusive), rounded to 22,050 Hz frames.` : 'WAV exported with the current instruments and mix.';
   } catch (error) { if (token === operation) message = `Could not export WAV: ${error instanceof Error ? error.message : 'Try again.'}`; }
   finally { if (token === operation) { busy = null; render(); } }
 }
@@ -760,7 +779,7 @@ app.addEventListener('click', event => {
   if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
-  if (action && !['record-backed', 'save', 'midi', 'wav', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
+  if (action && !['record-backed', 'save', 'midi', 'wav', 'wav-section', 'play-section', 'loop-section', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
   switch (action) {
     case 'suggest-continuation': suggestContinuation(); break;
     case 'audition-continuation': auditionProposal(); break;
@@ -780,6 +799,11 @@ app.addEventListener('click', event => {
     case 'transpose:1':
     case 'transpose:12': arrange(action); break;
     case 'play': void play(); break;
+    case 'play-section': void playSection(false); break;
+    case 'loop-section': void playSection(true); break;
+    case 'wav-section':
+      try { void exportWav(selectedSection()); } catch (error) { announce(error instanceof Error ? error.message : 'Invalid section.'); }
+      break;
     case 'stop':
       if (capture?.backed) cancelCapture();
       else { message = 'Playback stopped.'; stopPlayback(); }
@@ -834,6 +858,15 @@ app.addEventListener('click', event => {
 app.addEventListener('input', event => {
   if (startup) return;
   const input = event.target as HTMLInputElement;
+  if (input.id === 'section-start' || input.id === 'section-end') {
+    if (input.id === 'section-start') sectionStart = input.value; else sectionEnd = input.value;
+    if (playing || playbackJob) {
+      const pending = !!playbackJob;
+      stopPlayback(false); announce('Playback stopped because the section bounds changed.');
+      if (pending) render();
+    }
+    return;
+  }
   if (projectFields.has(input.id) || trackFields.has(input.id) || input.closest('#note-form') || ['continuation-count', 'continuation-length', 'roll-tool', 'roll-snap'].includes(input.id)) newEditorIntent();
   if (projectFields.has(input.id) || trackFields.has(input.id)) {
     const raw = input.type === 'checkbox' ? input.checked : input.value;

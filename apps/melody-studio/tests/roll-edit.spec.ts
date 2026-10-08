@@ -29,7 +29,7 @@ for(const reason of ['escape','pagehide','resize','scroll','pointercancel','lost
 });
 
 test('focused invalid raw note inputs refuse pointer admission before blur',async({page})=>{
-  await openRoll(page);await page.locator('[data-note="fractional-low"]').click();const original=await readRoll(page),field=page.getByLabel('Start beat');await field.fill('');await field.evaluate(n=>n.dataset.original='retained');await dragNote(page,'fractional-low',.5,1);await expect(field).toHaveValue('');await expect(field).toBeFocused();await expect(field).toHaveAttribute('data-original','retained');expect(await readRoll(page)).toEqual(original);
+  await openRoll(page);await page.locator('[data-note="fractional-low"]').click();const original=await readRoll(page),field=page.getByLabel('Start beat',{exact:true});await field.fill('');await field.evaluate(n=>n.dataset.original='retained');await dragNote(page,'fractional-low',.5,1);await expect(field).toHaveValue('');await expect(field).toBeFocused();await expect(field).toHaveAttribute('data-original','retained');expect(await readRoll(page)).toEqual(original);
 });
 
 test('edited notes export exact independently decoded MIDI and scalar sine audio while retained PCM stays immutable',async({page},info)=>{
