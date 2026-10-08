@@ -39,7 +39,7 @@ test('commands send exact reviewed revision and proposal identities without cred
     assert.ok(headers.get('Authorization') === `Bearer ${TOKEN}`);
     assert.equal(headers.get('Content-Type'), 'application/json'); assert.equal(headers.get('Accept'), 'application/json');
     assert.equal(options?.cache, 'no-store'); assert.equal(options?.credentials, 'omit'); assert.equal(options?.redirect, 'error');
-    assert.equal(options?.signal, abort.signal);
+    assert.ok(options?.signal instanceof AbortSignal); assert.equal(options.signal.aborted, false);
     assert.ok(!String(url).includes(TOKEN)); assert.ok(!String(options?.body).includes(TOKEN));
     return json(snapshot());
   };

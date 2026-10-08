@@ -155,6 +155,16 @@ unconfirmed; it preserves that complete result for inspection.
 
 The service takes a lifetime lock on its data directory. A second process cannot use it while the first service or its in-flight requests are still active. It rejects symlink data/lock/database paths at startup. It does not promise isolation from a malicious user who already controls the same operating-system account and database files. Corrupt stored records fail visibly instead of being replaced with an empty notebook.
 
+## Stalled JSON request recovery
+
+Ordinary JSON reads and commands have one nominal **15-second client deadline** covering connection, headers and complete body consumption. Timeout cancels the fetch/body reader and releases busy controls; browser scheduling can delay the timer. Server outcome is **unknown**, and cancellation does not roll back a command that already arrived. No POST is automatically replayed. Raw form drafts remain available, including text entered while waiting.
+
+After a selected-record JSON mutation times out, **Refresh challenge** must succeed before another mutation is enabled. Automatic polling and leaving/reopening the same private seat in this page do not clear that review requirement. Inspect the authoritative record, then choose another action deliberately. A failed refresh leaves the requirement active. Other private seats remain independent. The requirement is session-only; it does not persist across page reloads.
+
+Creation and seat-claim timeouts release their controls and keep drafts with an unknown-outcome warning. Check private access or ask for a fresh invitation before another deliberate attempt; a lost returned access credential cannot be reconstructed by this client. Late responses cannot activate over current work. Binary image uploads/downloads retain their separate cancellation and explicit image-review flow; this deadline does not cover that transport.
+
+See [verification evidence](docs/2026-10-08-json-deadline.md).
+
 ## Bounds
 
 One data directory holds at most 20 challenges, including completed records; nothing is silently evicted. Start a separate directory for another notebook after retaining backups and exports. Each challenge allows 10 terms edits, 40 evidence entries, 10 result proposals, 5 arbiter nominations, and at most 10 invitations per seat category. Responses to permitted proposals and the mutual void route remain available when proposal/evidence quotas are reached.

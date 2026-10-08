@@ -1,5 +1,5 @@
 import './style.css';
-import { ApiError, request, postImageEvidence, fetchEvidenceImage, fetchImageExport } from './api.ts';
+import { ApiError, RequestTimeoutError, request, postImageEvidence, fetchEvidenceImage, fetchImageExport } from './api.ts';
 import { normalizeEvidenceImage } from './evidence-image.ts';
 import { loadSessions, readLink, removeSession, saveSession } from './session.ts';
 import type { PrivateLink } from './session.ts';
@@ -84,6 +84,7 @@ const workspace = el('div', '', 'workspace'); workspace.hidden = true; main.appe
 const toolbar = el('div', '', 'toolbar'); toolbar.append(button('Back to challenges', () => { if (leaveDrafts()) showDashboard(); }), button('My private access link', () => { if (selected) reveal(selected.id, 'access', selected.token); }), button('Refresh challenge', () => { void refreshSelected(true); }));
 const exportButton = button('Export record', () => { void exportRecord(); });
 const exportImagesButton = button('Export record with images', () => { void exportImages(); }); exportImagesButton.id = 'export-images'; toolbar.append(exportButton, exportImagesButton); workspace.append(toolbar);
+const commandReview = el('p', 'The previous action may have arrived. Use Refresh challenge and inspect the record before another deliberate action. Nothing is automatically replayed.', 'warning'); commandReview.id = 'command-review'; commandReview.hidden = true; workspace.append(commandReview);
 const challengeHeader = el('div', '', 'challenge-header'); const status = el('span', '', 'badge'); status.id = 'challenge-status'; const revision = el('span', '', 'hint'); revision.id = 'challenge-revision'; const title = el('h1'); const people = el('p'); const deadlineText = el('p', '', 'hint'); challengeHeader.append(status, revision, title, people, deadlineText); workspace.append(challengeHeader);
 const finalPanel = section('Final record'); const finalText = el('p'); finalPanel.append(finalText); finalPanel.hidden = true; workspace.append(finalPanel);
 const columns = el('div', '', 'workspace-grid'); const left = el('div', '', 'column'); const right = el('div', '', 'column'); columns.append(left, right); workspace.append(columns);
@@ -164,8 +165,10 @@ let snapshot: Snapshot | null = null;
 let reviewed: { version: number; revision: number; terms: Terms } | null = null;
 let pendingLink: PrivateLink | null = null;
 let deferredLink: PrivateLink | null = null;
-let generation = 0; let readController: AbortController | null = null; let mutationController: AbortController | null = null; let pollTimer: ReturnType<typeof setTimeout> | undefined; let busy = false;
+let generation = 0; let readController: AbortController | null = null; let mutationController: AbortController | null = null; let pollTimer: ReturnType<typeof setTimeout> | undefined; let busy = false; let commandReviewRequired = false;
 const unsavedSeats = new Set<string>();
+const commandReviews = new Set<string>();
+function reviewKey(credential: { id: string; token: string }): string { return `${credential.id}:${credential.token}`; }
 type ImageDraft = { blob: Blob; width: number; height: number; url: string | null };
 type RetainedImageView = { card: HTMLElement; image: HTMLImageElement; status: HTMLParagraphElement; view: HTMLButtonElement; close: HTMLButtonElement; controller: AbortController | null; url: string | null; epoch: number };
 let imageDraft: ImageDraft | null = null; let imageEpoch = 0; let evidenceInputIntent = 0; let imageNormalizing = false;
@@ -176,7 +179,7 @@ const records = new Map<string, Snapshot>(); const evidenceNodes = new Map<strin
 function hasDrafts(exclude?: HTMLFormElement): boolean { return !!imageDraft || imageNormalizing || [...main.querySelectorAll<HTMLFormElement>('form')].some((f) => f !== exclude && !f.closest('[hidden]') && f.dataset.dirty === 'true'); }
 function leaveDrafts(exclude?: HTMLFormElement): boolean { if (busy) { announce('Wait for your current action to finish before changing seats or challenges.', true); return false; } return !hasDrafts(exclude) || confirm('Leave your unsent draft? It will not be saved in the shared record.'); }
 window.addEventListener('beforeunload', (e) => { if (hasDrafts() || busy || unsavedSeats.size > 0) { e.preventDefault(); e.returnValue = ''; } });
-function clearEditors(): void { clearImageDraft(); closeRetainedImages(); imageReviewRequired = false; for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) reset(f); evidenceNodes.clear(); eventNodes.clear(); evidenceList.replaceChildren(); activityList.replaceChildren(); reviewed = null; }
+function clearEditors(): void { clearImageDraft(); closeRetainedImages(); imageReviewRequired = false; commandReviewRequired = false; commandReview.hidden = true; for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) reset(f); evidenceNodes.clear(); eventNodes.clear(); evidenceList.replaceChildren(); activityList.replaceChildren(); reviewed = null; }
 function updateAccessRecovery(): void {
   accessRecovery.hidden = unsavedSeats.size === 0;
   accessRecoveryText.textContent = `${unsavedSeats.size} ${unsavedSeats.size === 1 ? 'seat has' : 'seats have'} access held only in this page. Keep My private access link before closing or refreshing. You can retry saving access; if the browser has twenty saved seats, forget an obsolete saved seat first. Forgetting does not delete a shared challenge.`;
@@ -205,7 +208,7 @@ window.addEventListener('hashchange', captureIncoming);
 window.addEventListener('popstate', captureIncoming);
 function current(epoch: number, credential: { id: string; token: string }): boolean { return !pageSuspended && epoch === generation && selected?.id === credential.id && selected?.token === credential.token; }
 async function selectChallenge(id: string, token: string, initial?: Snapshot): Promise<void> {
-  stopSelection(); clearEditors(); selected = { id, token }; updateAccessRecovery(); dashboard.hidden = true; creationControls(); workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
+  stopSelection(); clearEditors(); selected = { id, token }; commandReviewRequired = commandReviews.has(reviewKey(selected)); updateAccessRecovery(); dashboard.hidden = true; creationControls(); workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
 }
 function apply(next: Snapshot): void {
   if (!selected || next.id !== selected.id || snapshot && next.revision < snapshot.revision) return;
@@ -217,11 +220,12 @@ function apply(next: Snapshot): void {
 function schedule(): void { clearTimeout(pollTimer); if (selected) pollTimer = setTimeout(() => { void refreshSelected(); }, 1100); }
 async function refreshSelected(manual = false): Promise<void> {
   if (!selected || busy) { schedule(); return; } const credential = { ...selected }; const epoch = generation; clearTimeout(pollTimer); readController?.abort(); const controller = new AbortController(); readController = controller;
-  try { const next = await request<Snapshot>('GET', `/api/challenges/${credential.id}`, undefined, credential.token, controller.signal); if (!current(epoch, credential)) return; apply(next); connection.textContent = `Connected · updated ${new Date().toLocaleTimeString()}`; if (manual && imageReviewRequired) { imageReviewRequired = false; imageControls(); announce('Record refreshed. Review the evidence feed before explicitly trying another append. No image upload was replayed.'); } }
+  try { const next = await request<Snapshot>('GET', `/api/challenges/${credential.id}`, undefined, credential.token, controller.signal); if (!current(epoch, credential)) return; apply(next); connection.textContent = `Connected · updated ${new Date().toLocaleTimeString()}`; if (manual && (imageReviewRequired || commandReviewRequired)) { imageReviewRequired = false; commandReviewRequired = false; commandReviews.delete(reviewKey(credential)); render(); announce('Record refreshed. Inspect the authoritative record before another deliberate action. No request was replayed.'); } }
   catch (error) { if (!current(epoch, credential) || controller.signal.aborted) return; connection.textContent = 'Connection interrupted · drafts kept · reconnecting'; if (error instanceof ApiError && (error.status === 401 || error.status === 404)) announce('This seat could not open the challenge. Check your private link or connect to the correct notebook.', true); }
   finally { if (current(epoch, credential) && readController === controller) schedule(); }
 }
 function errorText(error: unknown): string {
+  if (error instanceof RequestTimeoutError) return 'Stopped waiting after 15 seconds. The action may have arrived. Your draft is kept. Use Refresh challenge and inspect the record before another deliberate action; no request is replayed.';
   if (error instanceof ApiError) {
     if (error.code === 'conflict') return 'The record changed before your action arrived. Your draft is kept. Review the updated record and choose your action again.';
     if (error.code === 'limit') return 'This notebook or action has reached its limit. Existing records are kept. You can still agree to a result or void an accepted challenge.';
@@ -232,9 +236,9 @@ function errorText(error: unknown): string {
   } return 'Could not confirm whether the action arrived. Your draft is kept. Refresh the record before trying again.';
 }
 async function command(suffix: string, fields: Record<string, unknown>, f?: HTMLFormElement, success = 'Record updated.', captured?: Snapshot): Promise<void> {
-  const s = captured ?? snapshot; if (!s || !selected || busy) return; const sentDraft = f ? draft(f) : null; const sentEvidenceIntent = evidenceInputIntent; const credential = { ...selected }; const epoch = generation; busy = true; render(); clearTimeout(pollTimer); readController?.abort(); const controller = new AbortController(); mutationController = controller;
+  const s = captured ?? snapshot; if (!s || !selected || busy || commandReviewRequired) return; const sentDraft = f ? draft(f) : null; const sentEvidenceIntent = evidenceInputIntent; const credential = { ...selected }; const epoch = generation; busy = true; render(); clearTimeout(pollTimer); readController?.abort(); const controller = new AbortController(); mutationController = controller;
   try { const next = await request<Snapshot>('POST', `/api/challenges/${credential.id}${suffix}`, { revision: s.revision, ...fields }, credential.token, controller.signal); if (!current(epoch, credential)) return; if (f && draft(f) === sentDraft && (f !== evidenceForm || evidenceInputIntent === sentEvidenceIntent)) reset(f); apply(next); announce(success); }
-  catch (error) { if (current(epoch, credential) && !controller.signal.aborted) announce(errorText(error), true); }
+  catch (error) { if (current(epoch, credential) && !controller.signal.aborted) { if (error instanceof RequestTimeoutError) { commandReviewRequired = true; commandReviews.add(reviewKey(credential)); } announce(errorText(error), true); } }
   finally { if (current(epoch, credential)) { busy = false; render(); flushIncoming(); await refreshSelected(); } }
 }
 function creationPayload(): { name: string; terms: Terms } {
@@ -294,9 +298,9 @@ async function acceptTerms(): Promise<void> {
   await command('/accept', { termsVersion: r.version }, undefined, 'Challenge accepted. The agreement is now fixed.', { ...s, revision: r.revision });
 }
 async function issueInvite(seat: 'opponent' | 'arbiter'): Promise<void> {
-  const s = snapshot; if (!s || !selected || busy) return; const credential = { ...selected }; const epoch = generation; busy = true; render(); readController?.abort(); clearTimeout(pollTimer); const controller = new AbortController(); mutationController = controller;
+  const s = snapshot; if (!s || !selected || busy || commandReviewRequired) return; const credential = { ...selected }; const epoch = generation; busy = true; render(); readController?.abort(); clearTimeout(pollTimer); const controller = new AbortController(); mutationController = controller;
   try { const next = await request<Invitation>('POST', `/api/challenges/${credential.id}/invite`, { revision: s.revision, seat }, credential.token, controller.signal); if (!current(epoch, credential)) return; apply(next.challenge); reveal(credential.id, seat === 'opponent' ? 'invite' : 'arbiter', next.inviteToken, next.challenge.arbiterNomination?.id); announce('New invitation created. Previous invitations for this seat no longer work.'); }
-  catch (error) { if (current(epoch, credential) && !controller.signal.aborted) announce(errorText(error), true); }
+  catch (error) { if (current(epoch, credential) && !controller.signal.aborted) { if (error instanceof RequestTimeoutError) { commandReviewRequired = true; commandReviews.add(reviewKey(credential)); } announce(errorText(error), true); } }
   finally { if (current(epoch, credential)) { busy = false; render(); flushIncoming(); await refreshSelected(); } }
 }
 function outcomeLabel(outcome: string, s: Snapshot): string { return outcome === 'void' ? 'Void — no winner' : `${s.profiles[outcome as 'proposer' | 'opponent']?.name ?? outcome} (${outcome})`; }
@@ -394,25 +398,25 @@ function eventText(e: ChallengeEvent, s: Snapshot): string {
   }
 }
 function render(): void {
-  const s = snapshot; if (!s) return; updateAccessRecovery(); const party = s.myRole !== 'arbiter'; const proposed = s.status === 'proposed'; const running = s.status === 'active' || s.status === 'disputed'; const disputed = s.status === 'disputed'; const terminal = !proposed && !running; const n = s.arbiterNomination; const p = s.resultProposal;
+  const s = snapshot; if (!s) return; updateAccessRecovery(); commandReview.hidden = !commandReviewRequired; const mutationBlocked = busy || commandReviewRequired; const party = s.myRole !== 'arbiter'; const proposed = s.status === 'proposed'; const running = s.status === 'active' || s.status === 'disputed'; const disputed = s.status === 'disputed'; const terminal = !proposed && !running; const n = s.arbiterNomination; const p = s.resultProposal;
   title.textContent = s.terms.title; status.textContent = s.status; status.dataset.status = s.status; revision.textContent = `Revision ${s.revision} · ${s.myRole} seat`;
   people.textContent = `${s.profiles.proposer.name} (proposer) · ${s.profiles.opponent ? `${s.profiles.opponent.name} (opponent)` : 'Opponent has not joined'}${s.profiles.arbiter ? ` · ${s.profiles.arbiter.name} (arbiter)` : ''}`;
   deadlineText.textContent = `${s.deadlinePassed ? 'Deadline passed' : 'Deadline'}: ${when(s.terms.deadline)}. ${s.deadlinePassed ? 'Time alone does not decide a winner. New evidence is marked late; settlement remains available.' : 'Passing the deadline does not automatically decide a winner.'}`;
   const pin = s.myRole === 'opponent' && proposed ? reviewed : null; displayTerms(pin?.terms ?? s.terms, pin?.version ?? s.termsVersion); const changed = !!pin && pin.version !== s.termsVersion;
   reviewWarning.hidden = !changed; reviewWarning.textContent = 'The proposer changed the terms. You are still viewing the agreement you reviewed. Review updated terms before accepting.'; reviewButton.hidden = !changed;
-  acceptButton.hidden = !(proposed && s.myRole === 'opponent'); acceptButton.disabled = busy || changed || s.deadlinePassed; inviteOpponent.hidden = !(proposed && s.myRole === 'proposer' && !s.profiles.opponent); inviteOpponent.disabled = busy || s.limitsUsed.opponentInvites >= 10; editPanel.hidden = !(proposed && s.myRole === 'proposer');
+  acceptButton.hidden = !(proposed && s.myRole === 'opponent'); acceptButton.disabled = mutationBlocked || changed || s.deadlinePassed; inviteOpponent.hidden = !(proposed && s.myRole === 'proposer' && !s.profiles.opponent); inviteOpponent.disabled = mutationBlocked || s.limitsUsed.opponentInvites >= 10; editPanel.hidden = !(proposed && s.myRole === 'proposer');
   evidencePanel.hidden = proposed && s.evidence.length === 0; evidenceForm.hidden = !running || !party; resultPanel.hidden = !running; resultForm.hidden = !party || p?.status === 'pending'; resultResponse.hidden = !party || !p || p.status !== 'pending' || p.proposedBy === s.myRole;
   resultSummary.textContent = p ? `${roleName(s, p.proposedBy)} proposed ${outcomeLabel(p.outcome, s)} as winner. ${p.reason} · ${p.status}` : 'No result is proposed yet.';
   voidPanel.hidden = !running; voidForm.hidden = !party || !!s.voidProposal; voidConfirm.hidden = !party || !s.voidProposal || s.voidProposal.proposedBy === s.myRole; voidSummary.textContent = s.voidProposal ? `${roleName(s, s.voidProposal.proposedBy)} offered to void: ${s.voidProposal.reason}. This offer stays open until the challenge ends and cannot be withdrawn.` : 'No offer to void has been made.';
   arbiterPanel.hidden = !disputed && !s.profiles.arbiter; arbiterSummary.textContent = s.profiles.arbiter ? `${s.profiles.arbiter.name} claimed the arbiter seat. This seat cannot be replaced.` : n ? `${n.name} · ${n.status}. Nominated by ${roleName(s, n.proposedBy)}: ${n.reason}` : 'No arbiter nominated.';
-  arbiterForm.hidden = !disputed || !party || !!s.profiles.arbiter || !!n && (n.status === 'pending' || n.status === 'approved'); arbiterResponse.hidden = !disputed || !party || !!s.profiles.arbiter || n?.status !== 'pending' || n.proposedBy === s.myRole; arbiterWithdraw.hidden = !disputed || !party || !!s.profiles.arbiter || !n || n.status !== 'pending' && n.status !== 'approved'; inviteArbiter.hidden = !disputed || !party || !!s.profiles.arbiter || n?.status !== 'approved'; inviteArbiter.disabled = busy || s.limitsUsed.arbiterInvites >= 10; decisionForm.hidden = !disputed || s.myRole !== 'arbiter';
+  arbiterForm.hidden = !disputed || !party || !!s.profiles.arbiter || !!n && (n.status === 'pending' || n.status === 'approved'); arbiterResponse.hidden = !disputed || !party || !!s.profiles.arbiter || n?.status !== 'pending' || n.proposedBy === s.myRole; arbiterWithdraw.hidden = !disputed || !party || !!s.profiles.arbiter || !n || n.status !== 'pending' && n.status !== 'approved'; inviteArbiter.hidden = !disputed || !party || !!s.profiles.arbiter || n?.status !== 'approved'; inviteArbiter.disabled = mutationBlocked || s.limitsUsed.arbiterInvites >= 10; decisionForm.hidden = !disputed || s.myRole !== 'arbiter';
   exitPanel.hidden = !proposed; declineForm.hidden = s.myRole !== 'opponent'; withdrawForm.hidden = s.myRole !== 'proposer'; finalPanel.hidden = !terminal;
   if (s.resolution) finalText.textContent = `${outcomeLabel(s.resolution.outcome, s)} · ${s.resolution.method === 'arbiter' ? 'Arbiter decision' : 'Mutually agreed'}. ${s.resolution.reason} · ${when(s.resolution.decidedAt)}. This record is final.`;
   else if (terminal) { const e = [...s.events].reverse().find((event) => event.kind === 'declined' || event.kind === 'withdrawn'); finalText.textContent = `Challenge ${s.status}. No winner.${e && (e.kind === 'declined' || e.kind === 'withdrawn') ? ` ${e.details.reason}` : ''} This record is final.`; }
   quotaText.textContent = `Terms edits ${s.limitsUsed.termsEdits}/10 · Evidence ${s.evidence.length}/40 · Result proposals ${s.limitsUsed.resultProposals}/10 · Arbiter nominations ${s.limitsUsed.arbiterNominations}/5 · Opponent invitations ${s.limitsUsed.opponentInvites}/10 · Arbiter invitations ${s.limitsUsed.arbiterInvites}/10. A single irrevocable offer to void remains available until used.`;
-  for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) for (const b of f.querySelectorAll<HTMLButtonElement>('button')) b.disabled = busy;
-  const disable = (f: HTMLFormElement, blocked: boolean): void => { for (const b of f.querySelectorAll<HTMLButtonElement>('button')) b.disabled = busy || blocked; };
-  disable(termsForm, s.limitsUsed.termsEdits >= 10); disable(evidenceForm, s.evidence.length >= 40); disable(resultForm, s.limitsUsed.resultProposals >= 10); disable(arbiterForm, s.limitsUsed.arbiterNominations >= 5); voidConfirm.disabled = busy; exportButton.disabled = busy; exportImagesButton.disabled = busy;
+  for (const f of workspace.querySelectorAll<HTMLFormElement>('form')) for (const b of f.querySelectorAll<HTMLButtonElement>('button')) b.disabled = mutationBlocked;
+  const disable = (f: HTMLFormElement, blocked: boolean): void => { for (const b of f.querySelectorAll<HTMLButtonElement>('button')) b.disabled = mutationBlocked || blocked; };
+  disable(termsForm, s.limitsUsed.termsEdits >= 10); disable(evidenceForm, s.evidence.length >= 40); disable(resultForm, s.limitsUsed.resultProposals >= 10); disable(arbiterForm, s.limitsUsed.arbiterNominations >= 5); voidConfirm.disabled = mutationBlocked; exportButton.disabled = busy; exportImagesButton.disabled = busy;
   for (const node of [resultOutcome, decisionOutcome]) for (const option of node.options) if (option.value !== 'void') option.textContent = outcomeLabel(option.value, s);
   if (!s.evidence.length && !evidenceList.children.length) evidenceList.append(el('p', 'No evidence yet.', 'empty')); if (s.evidence.length && evidenceNodes.size === 0) evidenceList.replaceChildren();
   for (const evidence of s.evidence) { if (evidenceNodes.has(evidence.id)) continue; const node = el('article', '', 'evidence-card'); node.dataset.evidenceId = evidence.id; node.append(el('p', `${roleName(s, evidence.author)} · ${when(evidence.createdAt)}${evidence.late ? ' · Late evidence' : ''}`, 'hint'), el('p', evidence.text)); if (evidence.url) { const link = el('a', 'Supplied link; not fetched or verified.'); link.href = evidence.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; node.append(link); } if ('image' in evidence) addRetainedImageControls(node, evidence.id, evidence.image); evidenceNodes.set(evidence.id, node); evidenceList.append(node); }
@@ -427,7 +431,7 @@ function imageControls(): void {
   imageFile.disabled = !canAppend; removeImageButton.disabled = !imageDraft && !imageNormalizing;
   textEvidenceButton.hidden = !!imageDraft || imageNormalizing;
   imageAddButton.hidden = !imageDraft || imageNormalizing;
-  imageAddButton.disabled = busy || !canAppend || imageReviewRequired;
+  imageAddButton.disabled = busy || commandReviewRequired || !canAppend || imageReviewRequired;
   if (imageDraft && !pageSuspended) {
     imageDraft.url ??= URL.createObjectURL(imageDraft.blob);
     if (imagePreview.getAttribute('src') !== imageDraft.url) imagePreview.src = imageDraft.url;
@@ -471,7 +475,7 @@ async function chooseEvidenceImage(): Promise<void> {
   } finally { if (token === imageEpoch && imageNormalizeController === controller) { imageNormalizeController = null; imageNormalizing = false; imageControls(); } }
 }
 async function addImageEvidence(): Promise<void> {
-  const s = snapshot, sentImage = imageDraft; if (!s || !sentImage || !selected || busy || imageNormalizing || imageReviewRequired || !mayAppendImage()) return;
+  const s = snapshot, sentImage = imageDraft; if (!s || !sentImage || !selected || busy || commandReviewRequired || imageNormalizing || imageReviewRequired || !mayAppendImage()) return;
   const credential = { ...selected }, owner = generation, sentEpoch = imageEpoch, sentIntent = evidenceInputIntent, sentDraft = draft(evidenceForm);
   const payload = { revision: s.revision, text: value(evidenceForm, 'text'), url: value(evidenceForm, 'url') || null };
   const controller = new AbortController(); mutationController = controller; busy = true; imageUploading = true; readController?.abort(); clearTimeout(pollTimer); render();

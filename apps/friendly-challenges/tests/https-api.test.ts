@@ -17,7 +17,7 @@ test('creation sends setup authority only in its dedicated header with unchanged
     assert.equal(headers.get('X-Friendly-Setup-Key'), setup);
     assert.equal(headers.has('Authorization'), false);
     assert.equal(options?.body, JSON.stringify(payload));
-    assert.equal(options?.signal, controller.signal);
+    assert.ok(options?.signal instanceof AbortSignal); assert.equal(options.signal.aborted, false);
     assert.equal(options?.credentials, 'omit'); assert.equal(options?.redirect, 'error'); assert.equal(options?.cache, 'no-store');
     assert.ok(!String(options?.body).includes(setup));
     return response();

@@ -9,6 +9,26 @@ export class ApiError extends Error {
   }
 }
 
+export class RequestTimeoutError extends ApiError {
+  constructor() {
+    super('The local request stopped waiting after 15 seconds. Its outcome is unknown; keep your draft and refresh the record before another deliberate action.', 0, 'internal_error');
+    this.name = 'RequestTimeoutError';
+  }
+}
+
+/** One budget for connection, headers and the complete JSON body; never retries. */
+async function boundedJSON<T>(action: (signal: AbortSignal) => Promise<T>, caller?: AbortSignal): Promise<T> {
+  const controller = new AbortController();
+  let interrupt!: (reason: unknown) => void;
+  const interrupted = new Promise<never>((_resolve, reject) => { interrupt = reject; });
+  const cancel = (): void => { interrupt(new DOMException('Request cancelled.', 'AbortError')); controller.abort(); };
+  if (caller?.aborted) throw new DOMException('Request cancelled.', 'AbortError');
+  caller?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => { interrupt(new RequestTimeoutError()); controller.abort(); }, 15000);
+  try { return await Promise.race([action(controller.signal), interrupted]); }
+  finally { clearTimeout(timer); caller?.removeEventListener('abort', cancel); }
+}
+
 const MAX_REQUEST = 16 * 1024;
 const MAX_RESPONSE = 1024 * 1024;
 const PATH = /^\/api\/(?:status|challenges(?:\/[0-9a-f]{32}(?:\/(?:join|terms|invite|accept|decline|withdraw|evidence|result(?:\/respond)?|void(?:\/confirm)?|arbiter\/(?:join|nominate|respond|withdraw|decide)|export))?)?)$(?![\s\S])/;
@@ -77,22 +97,26 @@ function validateValues(value: unknown): void {
   }
 }
 
-async function readJSON(response: Response): Promise<Record<string, unknown>> {
+async function readJSON(response: Response, signal?: AbortSignal): Promise<Record<string, unknown>> {
   if (!/^application\/json(?:\s*;|$)/i.test(response.headers.get('Content-Type') || '')) throw new Error();
   const reader = response.body?.getReader();
   if (!reader) throw new Error();
   const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
   let text = '', bytes = 0;
+  const cancel = (): void => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener('abort', cancel, { once: true });
   try {
     for (;;) {
+      if (signal?.aborted) throw new DOMException('Request cancelled.', 'AbortError');
       const chunk = await reader.read();
+      if (signal?.aborted) throw new DOMException('Request cancelled.', 'AbortError');
       if (chunk.done) break;
       bytes += chunk.value.byteLength;
       if (bytes > MAX_RESPONSE) { await reader.cancel(); throw new Error(); }
       text += decoder.decode(chunk.value, { stream: true });
     }
     text += decoder.decode();
-  } finally { reader.releaseLock(); }
+  } finally { signal?.removeEventListener('abort', cancel); reader.releaseLock(); }
   const value: unknown = JSON.parse(text);
   uniqueKeys(text); validateValues(value);
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error();
@@ -115,26 +139,32 @@ export async function request<T>(method: string, path: string, body?: unknown, t
     if (serialized === undefined || new TextEncoder().encode(serialized).byteLength > MAX_REQUEST) throw invalidRequest();
     headers['Content-Type'] = 'application/json';
   }
-  let response: Response;
-  try {
-    response = await fetch(path, { method, headers, body: serialized, signal, cache: 'no-store', credentials: 'omit', redirect: 'error' });
-  } catch (error) {
-    if (aborted(error)) throw error;
-    throw new ApiError('Could not connect to the local Friendly Challenges service. Keep your draft and try again.', 0, 'internal_error');
-  }
-  let parsed: Record<string, unknown>;
-  try { parsed = await readJSON(response); }
-  catch (error) { if (aborted(error)) throw error; throw invalidResponse(response.status); }
-  const envelope = Object.hasOwn(parsed, 'error') || Object.hasOwn(parsed, 'code');
-  if (!response.ok || envelope) {
-    if (response.ok || Object.keys(parsed).length !== 2 || typeof parsed.error !== 'string'
-      || !parsed.error.trim() || /[0-9a-f]{64}/.test(parsed.error)
-      || typeof parsed.code !== 'string' || !ERROR_CODES.includes(parsed.code as ErrorCode)) throw invalidResponse(response.status);
-    let message = parsed.error.trim().slice(0, 500);
-    if (/[\ud800-\udbff]$/.test(message)) message = message.slice(0, -1);
-    throw new ApiError(message, response.status, parsed.code as ErrorCode);
-  }
-  return parsed as T;
+  return boundedJSON(async transportSignal => {
+    let response: Response;
+    try {
+      response = await fetch(path, { method, headers, body: serialized, signal: transportSignal, cache: 'no-store', credentials: 'omit', redirect: 'error' });
+      if (transportSignal.aborted) {
+        void response.body?.cancel().catch(() => {});
+        throw new DOMException('Request cancelled.', 'AbortError');
+      }
+    } catch (error) {
+      if (aborted(error)) throw error;
+      throw new ApiError('Could not connect to the local Friendly Challenges service. Keep your draft and try again.', 0, 'internal_error');
+    }
+    let parsed: Record<string, unknown>;
+    try { parsed = await readJSON(response, transportSignal); }
+    catch (error) { if (aborted(error)) throw error; throw invalidResponse(response.status); }
+    const envelope = Object.hasOwn(parsed, 'error') || Object.hasOwn(parsed, 'code');
+    if (!response.ok || envelope) {
+      if (response.ok || Object.keys(parsed).length !== 2 || typeof parsed.error !== 'string'
+        || !parsed.error.trim() || /[0-9a-f]{64}/.test(parsed.error)
+        || typeof parsed.code !== 'string' || !ERROR_CODES.includes(parsed.code as ErrorCode)) throw invalidResponse(response.status);
+      let message = parsed.error.trim().slice(0, 500);
+      if (/[\ud800-\udbff]$/.test(message)) message = message.slice(0, -1);
+      throw new ApiError(message, response.status, parsed.code as ErrorCode);
+    }
+    return parsed as T;
+  }, signal);
 }
 
 export interface ImageEvidencePayload { revision: number; text: string; url: string | null }
