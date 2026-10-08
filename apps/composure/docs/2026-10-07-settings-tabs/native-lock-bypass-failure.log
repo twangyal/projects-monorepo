@@ -1,0 +1,60 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 test:browser
+> playwright test tests/browser/settings-tabs.spec.ts -g native shared write lock
+
+[WebServer] (node:34) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:55) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:79) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:92) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:104) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/settings-tabs.spec.ts:32:1 › native shared write lock queues a preference save and cancels a stalled request before any write (5.5s)
+
+
+  1) tests/browser/settings-tabs.spec.ts:32:1 › native shared write lock queues a preference save and cancels a stalled request before any write 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  locator('#save')
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" locator('#save') with timeout 5000ms
+      - waiting for locator('#save')
+        14 × locator resolved to <button id="save">Save preferences</button>
+           - unexpected value "enabled"
+
+
+      33 |  await page.goto('/');const holder=await context.newPage();await holder.goto('/');await hold(holder);
+      34 |  try{
+    > 35 |   await page.locator('#baseline').fill('80');await page.locator('#save').click();await expect(page.locator('#save')).toBeDisabled();expect(await raw(page)).toBeNull();
+         |                                                                                                                      ^
+      36 |   await release(holder);await expect(page.locator('#storage-status')).toContainText('saved locally');expect(JSON.parse((await raw(page))!).baseline).toBe(80);
+      37 |   await hold(holder);await page.locator('#baseline').fill('95');const before=await raw(page);await page.locator('#save').click();await expect(page.locator('#storage-status')).toContainText('waited too long',{timeout:8000});await expect(page.locator('#save')).toBeEnabled();expect(await raw(page)).toBe(before);
+      38 |   await release(holder);await page.waitForTimeout(100);expect(await raw(page)).toBe(before);await expect(page.locator('#baseline')).toHaveValue('95');
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/composure/tests/browser/settings-tabs.spec.ts:35:118
+
+    Error Context: test-results/settings-tabs-native-share-f14a7-ed-request-before-any-write/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/settings-tabs-native-share-f14a7-ed-request-before-any-write/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/settings-tabs-native-share-f14a7-ed-request-before-any-write/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/settings-tabs.spec.ts:32:1 › native shared write lock queues a preference save and cancels a stalled request before any write 

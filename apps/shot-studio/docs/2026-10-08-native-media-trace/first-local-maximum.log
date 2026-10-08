@@ -1,0 +1,24 @@
+{
+  "status": "capture-passed-awaiting-independent-decode",
+  "output": "/tmp/shot-media-trace-first-maximum",
+  "browsers": [
+    [
+      635
+    ],
+    [
+      748
+    ]
+  ],
+  "recordAndDownloadWallMs": 17314.880987999997,
+  "archive": {
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+  }
+}
+{
+  "status": "passed",
+  "output": "/tmp/shot-media-trace-first-maximum",
+  "inspectionWallMs": 4499.746749,
+  "videoFrames": 1800,
+  "audioFrames": 2880648
+}

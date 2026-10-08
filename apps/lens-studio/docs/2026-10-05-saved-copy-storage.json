@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "date": "2026-10-05",
+  "status": "Root coreintegration passed67units,lint/type/build,65native. Maximum/CIpending.",
+  "scope": [
+    "src/storage.ts",
+    "tests/storage.test.ts",
+    "docs/2026-10-05-saved-copy-storage.json"
+  ],
+  "sources": {
+    "src/storage.ts": {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/storage.ts",
+      "bytes": 23021,
+      "sha256": "629cf513bb3891b77a306aa3ccc19263c0afcfd1dd25eb0bde2b6dda2563d521"
+    },
+    "tests/storage.test.ts": {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/storage.test.ts",
+      "bytes": 1509,
+      "sha256": "5959a2e31e34b12b4fd876ed263b98e6c45cb0cbd41bf18463c8d1e0ceccbf37"
+    }
+  },
+  "actualBaseline": {
+    "owner": "root; not executed by this producer",
+    "receipt": {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4945,
+      "sha256": "a895e90ce52a884e851c312cfe6f95b0db1b10489f283081b9d0c10fa24f45f0"
+    },
+    "correctedClassifierElapsedMs": 2579.0067950000002,
+    "result": "expected-baseline-protection-failure",
+    "facts": "Two actual pages reported Saved while B stale title autosave replaced A complete mask/settings. Original source PNG pixels were unchanged. Both original and corrected-classifier failures retained.",
+    "classificationLimit": "The first result classifier also mistook JSON property order for inequality; only classification was corrected before the repeat, not fixture or UI actions."
+  },
+  "producerRuns": [
+    {
+      "phase": "first actual Node admission check",
+      "command": "node --experimental-strip-types --test tests/storage.test.ts",
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "durationMs": 104.969507,
+      "log": {
+        "path": "/tmp/lens117-storage-unit-first.log",
+        "bytes": 399,
+        "sha256": "f1178c33df952b971cb12769bbd714aba90d3b41ebd7fd30d5b41c480f136f61"
+      }
+    },
+    {
+      "phase": "final Node admission check after self-review refinements",
+      "command": "node --experimental-strip-types --test tests/storage.test.ts",
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0,
+      "durationMs": 215.060486,
+      "log": {
+        "path": "/tmp/lens117-storage-unit-final.log",
+        "bytes": 399,
+        "sha256": "5b73d1dd9af9a47f563316affd8f347687725de1a470549aef9abd80a8517a6d"
+      }
+    },
+    {
+      "phase": "final scoped ESLint",
+      "command": "./node_modules/.bin/eslint src/storage.ts tests/storage.test.ts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/lens117-storage-lint-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "phase": "final isolated strict TypeScript",
+      "command": "./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --lib ES2022,DOM src/storage.ts tests/storage.test.ts",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/lens117-storage-tsc-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "implementation": {
+    "database": {
+      "name": "lens-studio.v1",
+      "version": 2,
+      "store": "projects",
+      "key": "current",
+      "legacyReadOnly": true,
+      "newRow": "{schemaVersion:2,revision:UUIDv4,project:portableProject1}"
+    },
+    "bounds": {
+      "nativeOpenMs": 5000,
+      "nativeTransactionMs": 10000,
+      "imageDecodeMs": 30000,
+      "portableJsonBytes": 12582912,
+      "storedWrapperBytes": 12582992,
+      "identityDepth": 24,
+      "identityNodes": 100000
+    },
+    "authority": "Instance-private purpose/epoch/one-use receipts. Actual PNG decode and owned UI acceptance precede ordinary authority. Full raw key existence/value identity is compared inside the same native readwrite transaction before put/delete; only native complete advances the expected copy.",
+    "rawIdentity": "Bounded deterministic expanded UTF-8 JSON plus distinct finite negative-zero positions. Present undefined differs from absence. Raw title/settings decimal spellings, complete PNG, IDs, mask, revision and ordinary extra fields participate before canonical model admission.",
+    "drain": "Load AbortError, image deadline, transaction deadline and versionchange retire the instance promptly. Private actual native/decoder drain remains held by idempotent close(), and late completion cannot mint authority or begin a write.",
+    "rollback": "Confirmed timely native readwrite abort remains ordinary retryable Error and retains previous expectation; mismatch uses SavedCopyConflict, unknown or protected outcomes use SavedCopyProtected.",
+    "selfReviewRefinements": [
+      "Preserved precise conflict/corrupt failure after its epoch retirement while still checking rollback deadline.",
+      "Captured each queued save expectation at execution before asynchronous image preflight."
+    ]
+  },
+  "testCompatibility": {
+    "retired": "Old module-global loadProject/saveProject/clearProject calls were intentionally removed from the owned test file, matching the approved per-instance API.",
+    "nodeCoverage": [
+      "Denied indexedDB getter: safe protected guidance without raw exception details.",
+      "Missing IndexedDB: protected backup and retry guidance.",
+      "Failed open does not poison subsequent independent admission."
+    ],
+    "nativeCoverageOwner": "Independent native oracle; no fake IndexedDB architecture or claimed Node CAS/bitmap/deadline verification."
+  },
+  "limitations": [
+    "No native browser, shared build, service or full project suite was run by this producer.",
+    "Root and independent owners control actual IndexedDB/bitmap/CAS/deadline and full-capacity verification.",
+    "A never-returning native decoder intentionally keeps close/reopen blocked; committed memory and backups remain the UI owner responsibility.",
+    "A legal normalized project occupying exactly the 12 MiB parser cap is not claimed.",
+    "Storage conflict protection is not a boundary against arbitrary same-origin scripts or developer-tools changes."
+  ],
+  "producerCheckpointStatus": "Producer implementation and scoped static/admission checks complete; independent native verification pending.",
+  "rootIntegration": {
+    "verification": "2026-10-05-saved-copy-verification.json",
+    "sourceUnchangedDuringNativeRuns": true
+  }
+}

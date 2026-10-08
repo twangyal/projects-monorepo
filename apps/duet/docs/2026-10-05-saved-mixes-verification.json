@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "date": "2026-10-05",
+  "status": "local and both first published CI events passed",
+  "version": "0.4.0",
+  "feature": "Up to eight reusable named mixes per room, explicit current-list membership editing, revision-safe paused loading and complete version-2 archive preservation",
+  "design": "docs/superpowers/specs/2026-10-05-duet-saved-mixes-design.md",
+  "sourceSha256": {
+    "apps/duet/duet/__init__.py": "678f78e915169a70e42b6b1bdbb9c790f937ae3f18dfad4b7781eac5629ebd8f",
+    "apps/duet/duet/__main__.py": "cfc5aa8dce26d2653a2eb75ae756dea0e7c3709c8bd4c1424ce62d9cfeef36f7",
+    "apps/duet/duet/archive_common.py": "c2991b73a5015c9123f39fc4e1d55d032ebe05612a2f936388106e3df6938a0c",
+    "apps/duet/duet/archive_format.py": "50630c6e16bdbc9dada3cdfe12f1f4881319108121ed4831d00737ccc9be1051",
+    "apps/duet/duet/archive_media.py": "3e5a36e4a96ee836b60a8ec3824844b7207da2108fca5fe504bd770071f74116",
+    "apps/duet/duet/archive_state.py": "19e5ff0f1b20e9c2dc4bd089c5b4de61b8d4f0758cc73313e96e257d11c05e76",
+    "apps/duet/duet/backup.py": "e2c0772a615ae1beb7a7b60b5d310ad95266b9be11f5c5503922fb2610577219",
+    "apps/duet/duet/https_server.py": "380abf20ba5461122fc612fc9559383c405674d7b6664006fc5890a2a6582c5c",
+    "apps/duet/duet/jobs.py": "faf72999c123f9723a3e226dd59255e84c394bd23934fd088e36a4dfdd7c97db",
+    "apps/duet/duet/media.py": "d2a65cf50b475a0debfda9434e2fbd074940959120f3a777f6b89169f33d1a85",
+    "apps/duet/duet/server.py": "81f4981c46458d9750fb1ce5bb5899bdf81b95bb85824febfbd34619aa9769ca",
+    "apps/duet/duet/store.py": "95268be61a1f3805c9b84cf5331d6b416c08b769ee50576ac75a556de45356e2",
+    "apps/duet/duet/transport.py": "8d28fe00626a6c39c1c8ac96ba8ab92e44904f899c0bd5975c275b4ac7e25894",
+    "apps/duet/src/main.ts": "ef2dc721f8cb0ae87380f6ae6294a0001b198200bdb57255065d1715c11e4607",
+    "apps/duet/src/style.css": "7fecb41ba03aee23611d3ccab2c39c2396844aa367950021c29bb251e60afdab",
+    "apps/duet/src/saved-mixes.ts": "b1e53dea0fdf0b73badd545c5ff1b20fb5983c284772465ea7d213f1b0029f97",
+    "apps/duet/scripts/smoke_saved_mixes.py": "45fe9a6cf0af5c136b3185e97b6324a40fbf383b9263347165b984e4f282a7fb"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "node": "24.19.0",
+    "npm": "11.9.0",
+    "chromium": "151.0.7922.173",
+    "playwright": "1.63.0",
+    "vite": "7.3.6",
+    "system": "Linux"
+  },
+  "producerEvidence": {
+    "backend": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-backend.json",
+      "sha256": "9685021dec2c270b7a00105091a800653d6ed85019fcada27b33f583c9070333",
+      "bytes": 6784
+    },
+    "http": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-http.json",
+      "sha256": "ea4bf39df00ff66a22f2bb2a2d71b6a4b5d0d0cd57e6d89f00f5b3b60234805d",
+      "bytes": 7272
+    },
+    "archive": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-archive.json",
+      "sha256": "633f0359fd4f6d40a09b79811732fac00495114202c02d4939964bce1a065d3e",
+      "bytes": 4589
+    },
+    "ui": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-ui.json",
+      "sha256": "75ca183db5796fef719f3854c5619ac5b44dd90768cfaf51b43cd17cf1be9c71",
+      "bytes": 3960
+    },
+    "browser-oracle": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-browser-oracle.json",
+      "sha256": "1428ec7743ecc2e28f277617a2fcefaaab5de7b6bd7b50bc36ffc72f96738e69",
+      "bytes": 26248
+    },
+    "backend-review": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-backend-review.json",
+      "sha256": "a36eef7b2e78cec142c99030ab5c0c36ccb7562bb303803f763c7b8fa6703dac",
+      "bytes": 7722
+    },
+    "ui-review": {
+      "path": "/workspace/projects-monorepo/apps/duet/docs/2026-10-05-saved-mixes-ui-review.json",
+      "sha256": "f4226e61c818e9f9e09612e7a989d38e9da3cb0bd42bcb5af99d2e19c8a7566e",
+      "bytes": 5210
+    }
+  },
+  "python": {
+    "first": {
+      "tests": 219,
+      "passed": 216,
+      "failures": 3,
+      "seconds": 69.249,
+      "log": {
+        "path": "/tmp/duet119-full-python-first.log",
+        "sha256": "672de47770bbd794b7ce56337351d7b892996b173e352423c56f6c76429e3d06",
+        "bytes": 38782
+      },
+      "diagnosis": "Old archive output expectations still required envelope version 1. New writes correctly use version 2 while genuine room-1 payloads and legacy-reader fixtures remain unchanged."
+    },
+    "second": {
+      "tests": 219,
+      "passed": 217,
+      "failures": 2,
+      "seconds": 70.187,
+      "log": {
+        "path": "/tmp/duet119-full-python-second.log",
+        "sha256": "1eb1b29d069a495e0c6658b7b191d8f2054d9641efb1ebbb8bfab4ea5c0c3384",
+        "bytes": 38062
+      },
+      "diagnosis": "Root applied one compatibility expectation to the wrong matching assertion: a literal legacy validator was changed instead of the new writer. Restored the legacy expectation and targeted the writer; no production changes."
+    },
+    "final": {
+      "tests": 219,
+      "passed": 219,
+      "seconds": 70.375,
+      "log": {
+        "path": "/tmp/duet119-full-python-final.log",
+        "sha256": "b55e3ccd287e86ab0cfbf702fab8b3366edebf24eaa387f715d01d8afcd21d9a",
+        "bytes": 36517
+      }
+    },
+    "compatibility": "New output envelope expectations changed to 2. Original literal legacy archives, room objects, exact bytes/checksums, nonmutation, capacity and failure assertions remain."
+  },
+  "typescript": {
+    "tests": 12,
+    "passed": 12,
+    "durationMs": 132.665844,
+    "lint": "passed",
+    "typecheck": "passed",
+    "normalBuild": "passed",
+    "log": {
+      "path": "/tmp/duet119-node-check-first.log",
+      "sha256": "174fb4006b98293e47dd4ee561ec60e6298d787214e3777f871c9102e3f88f3d",
+      "bytes": 2652
+    }
+  },
+  "static": {
+    "ruff": "passed",
+    "compileall": "passed",
+    "log": {
+      "path": "/tmp/duet119-full-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19
+    },
+    "compatRuff": {
+      "path": "/tmp/duet119-root-compat-ruff.log",
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19
+    },
+    "compatLint": {
+      "path": "/tmp/duet119-root-compat-lint.log",
+      "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d",
+      "bytes": 208
+    }
+  },
+  "native": {
+    "first": {
+      "stats": {
+        "startTime": "2026-10-05T01:55:32.972Z",
+        "duration": 282967.23899999994,
+        "expected": 34,
+        "skipped": 0,
+        "unexpected": 6,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/duet119-full-native-first-results.json",
+        "sha256": "4ec1893e3788b9e4e20af553b0203883ce163838d0c44545a13c591b778810f1",
+        "bytes": 76824
+      },
+      "log": {
+        "path": "/tmp/duet119-full-native-first.log",
+        "sha256": "5c4542f70f632e3710f60f8157008fe17df4066466d0d6cac3d8875c49e705cf",
+        "bytes": 23395
+      },
+      "artifacts": "/workspace/duet119-full-native-first-artifacts",
+      "diagnosis": [
+        "Four old recovery snapshot fixtures lacked required savedMixes and savedMixesRevision fields; added empty defaults only.",
+        "The external-delete case omitted explicit acceptance of the existing discard-rename prompt after all preservation assertions.",
+        "The missing-reference third-writer fixture asked a guest to delete a host-owned track and correctly received 403. Only that case now uses the guest as original uploader of the identical WAV; actual consent/revision/order assertions remain."
+      ]
+    },
+    "focused": {
+      "stats": {
+        "startTime": "2026-10-05T02:05:16.775Z",
+        "duration": 33537.667,
+        "expected": 7,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/duet119-focused-native-results.json",
+        "sha256": "4e2f143c40eed40c112b1e7079657b70a36908010615ed9f118742d370047de5",
+        "bytes": 10389
+      }
+    },
+    "final": {
+      "stats": {
+        "startTime": "2026-10-05T02:06:25.523Z",
+        "duration": 165577.612,
+        "expected": 40,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/duet119-full-native-final-results.json",
+        "sha256": "2a906688756b9dcfd3b346c29005c3d9b516ec5a8822b936756df27230e2cd99",
+        "bytes": 47006
+      },
+      "log": {
+        "path": "/tmp/duet119-full-native-final.log",
+        "sha256": "91be7074b6b7cd1dc84c2f63ffb648cee87456ab0052ad3a62a2c3fbd9d1cec1",
+        "bytes": 6589
+      },
+      "artifacts": "/workspace/duet119-full-native-final-artifacts"
+    },
+    "productionChangedForFixtureRepairs": false
+  },
+  "maximum": {
+    "status": "passed",
+    "receipt": "2026-10-05-saved-mixes-maximum.json",
+    "runtimeEvidence": {
+      "path": "/workspace/duet119-maximum-fixtures-corrected/verification.json",
+      "sha256": "ea84b5306bf9f90da9ee418a70f7be7bff286b125df9f704c170625f10264bfc",
+      "bytes": 84885
+    },
+    "counts": {
+      "rooms": 5,
+      "savedMixes": 40,
+      "savedReferences": 480,
+      "tracks": 60,
+      "memories": 500
+    },
+    "archiveBytes": 2511756,
+    "archiveSha256": "7f9e514076514eb3236caaa1147263106cb78db6ab1838353f8edb101d228160",
+    "normalBuild": {
+      "path": "/tmp/duet119-normal-production-build.log",
+      "sha256": "6db5952f563cca16e5ddf8f0825edd4477b96477a33666127a9dceb085b58e87",
+      "bytes": 598
+    },
+    "distCopy": "/workspace/duet119-maximum-dist"
+  },
+  "limits": [
+    "Maximum runtime covers graph counts using short original two-second audio and readable labels; exact metadata caps are independently covered by literal Python fixtures. It does not repeat the earlier sixty 8 MiB/300-second media gate.",
+    "Physical two-device setup and listening remain unverified in issue 109. No streaming catalog, recommendation-learning, public hosting or network-discovery claim.",
+    "Private raw seat credentials and archived credential/invite hashes stay in local private fixtures and are not published.",
+    "Both first published Duet CI events passed; the CI receipt identifies exact branch and identical actual PR merge trees and records the unrelated Karaoke failure."
+  ],
+  "publishedCI": "2026-10-05-saved-mixes-ci.json"
+}

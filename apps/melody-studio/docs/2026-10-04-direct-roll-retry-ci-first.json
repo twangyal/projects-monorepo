@@ -1,0 +1,39 @@
+{
+  "head": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+  "runId": 37222152754,
+  "jobId": 111494491245,
+  "checkoutSha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+  "conclusion": "failure",
+  "test": "tests/roll-edit.spec.ts:60 aborted save and Retry save publishes roll edit",
+  "assertionLine": 63,
+  "browserPassed": 79,
+  "browserFailed": 1,
+  "browserDuration": "44.5s",
+  "error": "After retry then reload, received original pitch60/start1/3 instead of expected61/start7/12.",
+  "log": {
+    "path": "/workspace/shot99-melody-failure.log",
+    "bytes": 81285,
+    "sha256": "c09d34c73bd90585db65c25db13648103dc786109be876d9eccb9e306f340954"
+  },
+  "artifact": {
+    "id": 11310826315,
+    "zip": {
+      "path": "/workspace/attachments/48064655-3caf-44ab-8f7f-3345032fb3cf/melody99-retry-failure.zip",
+      "bytes": 1071572,
+      "sha256": "862ce7e92902a3ae7925028a9d00ab4b6a9b2f9987d70eef27ab8a6b2df142a9"
+    },
+    "trace": {
+      "path": "/workspace/melody99-retry-failure/trace.zip",
+      "bytes": 750431,
+      "sha256": "d4900468946e283418cabd8db99ef69d7c4badf2d8e607dca1b5b1c1ca5e139c"
+    },
+    "selectedEvents": {
+      "path": "/workspace/melody99-retry-failure/save-retry-trace-events.json",
+      "bytes": 5636,
+      "sha256": "2e5bb9cea4a44ae8a290db6de0d77c7c7ed69339f25acd2080655d169d2c1d74"
+    }
+  },
+  "traceEvidence": "Retry click ends42532.118ms; /Saved/i assertion succeeds42536.378ms; reload begins42537.588ms. Successful expectation does not log resolved status text; no transaction-completion event present. /Saved/i also matches not saved, so actual persistence cause remains unproven by trace alone.",
+  "ownerNotified": true,
+  "rerunPerformed": false
+}

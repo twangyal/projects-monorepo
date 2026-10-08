@@ -1,0 +1,110 @@
+{
+  "issue": 113,
+  "scope": "Existing save-conflicts helper native file-input readiness repair; no production change.",
+  "originalRun": {
+    "stats": {
+      "startTime": "2026-10-04T22:43:49.891Z",
+      "duration": 112700.106,
+      "expected": 115,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "passed": 115,
+    "failed": 1,
+    "newBackedRecordingAndWorkletCasesPassed": 19,
+    "log": {
+      "path": "/tmp/melody113-full-native-first.log",
+      "bytes": 20322,
+      "sha256": "906ea7a150f0dd8af64d306f6c76e498e0015f33ce98f157fe8c05b550003391"
+    },
+    "results": {
+      "path": "/tmp/melody113-full-native-results-first.json",
+      "bytes": 134999,
+      "sha256": "d671166549bb70212900483acca2cfa635e379fa174cf8c9671213e9aaf92716"
+    },
+    "trace": {
+      "path": "/workspace/melody113-full-native-first-artifacts/browser-save-conflicts-dir-006e8-r-damage-its-Undo-reference/trace.zip",
+      "bytes": 140780,
+      "sha256": "ebe113a69613bf307fc90fca62182f3abfad3ced35e1a11437215a3c0be5a176"
+    },
+    "errorContext": {
+      "path": "/workspace/melody113-full-native-first-artifacts/browser-save-conflicts-dir-006e8-r-damage-its-Undo-reference/error-context.md",
+      "bytes": 10701,
+      "sha256": "d2a288d3a205cc0991323fa19dd68769e8860d57a53a5a8607483ade02c99eb2"
+    }
+  },
+  "evidence": {
+    "test": "direct piano-roll editing on a stale tab cannot bypass protected storage or damage its Undo reference",
+    "failedBeforeRollOperation": true,
+    "traceSteps": [
+      {
+        "callId": "call@3256",
+        "phase": "goto after",
+        "timestampMs": 85526.049,
+        "fileInput": "disabled",
+        "notice": "Loading the complete saved project\u2026",
+        "saveStatus": "Loading saved project\u2026"
+      },
+      {
+        "callId": "call@3258",
+        "phase": "setInputFiles starts",
+        "timestampMs": 85532.124
+      },
+      {
+        "callId": "call@3258",
+        "phase": "before snapshot",
+        "timestampMs": 85538.25,
+        "fileInput": "same disabled startup DOM retained by trace snapshot reference"
+      },
+      {
+        "callId": "call@3258",
+        "phase": "action snapshot",
+        "timestampMs": 85603.642,
+        "fileInput": "empty and enabled",
+        "notice": "Start with a melody. Successful takes retain a normalized listen-back copy on this device.",
+        "saveStatus": "No complete saved copy yet. Edit or Retry save to save this project."
+      }
+    ],
+    "observedFailure": "Expected imported Original roll audio; project title remained Untitled composition. Playwright setInputFiles does not wait for native enabled admission.",
+    "sourceGuard": "The existing main input/change handlers return during startup or busy. No import is admitted during that barrier."
+  },
+  "repair": {
+    "change": "Wait for the exact Open project file input to be enabled before the existing native setInputFiles call.",
+    "timeoutChange": false,
+    "assertionsChanged": false,
+    "fixturesChanged": false,
+    "productionChanged": false,
+    "source": {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/browser/save-conflicts.spec.ts",
+      "bytes": 15680,
+      "sha256": "e9361cadaa44b32852a361dd8084d8eaa17ded058a28ebb90aac36f75be6d8d2"
+    }
+  },
+  "validation": {
+    "scopedEslint": "passed",
+    "focusedNative": "Passed in root-owned execution; see rootFocusedVerification for the unchanged original case and exact evidence."
+  },
+  "rootFocusedVerification": {
+    "stats": {
+      "startTime": "2026-10-04T22:48:18.908Z",
+      "duration": 8229.050000000001,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "result": "passed",
+    "log": {
+      "path": "/tmp/melody113-readiness-native.log",
+      "bytes": 1782,
+      "sha256": "19d588f98ebefa1c3327d4274de15a8505d37348e2ec0fa930ea7a2b3fcee6c2"
+    },
+    "results": {
+      "path": "/tmp/melody113-readiness-native-results.json",
+      "bytes": 3404,
+      "sha256": "c0fad4fe6945f4be9cb1e7a787273eac69c4caf849899134a33e0588edefa60b"
+    },
+    "originalAssertionsAndTimeoutsUnchanged": true
+  }
+}

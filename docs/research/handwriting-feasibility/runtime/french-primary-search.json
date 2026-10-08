@@ -1,0 +1,26 @@
+{
+  "searchScope": "One bounded GitHub search for French historical HTR primary assets; followed FoNDUE-HTR/ScrabbleGAN official README and releases only",
+  "candidateRepository": "https://github.com/FoNDUE-HTR/ScrabbleGAN",
+  "recognizerNameMentioned": "fondue_archimed_v4.mlmodel",
+  "availableReleaseAssets": [
+    {
+      "tag": "v1",
+      "assets": [
+        {
+          "name": "IAM_data_reshaped.pt",
+          "size": 255795795,
+          "url": "https://github.com/FoNDUE-HTR/ScrabbleGAN/releases/download/v1/IAM_data_reshaped.pt"
+        },
+        {
+          "name": "RIMES_data_reshaped.pt",
+          "size": 275834244,
+          "url": "https://github.com/FoNDUE-HTR/ScrabbleGAN/releases/download/v1/RIMES_data_reshaped.pt"
+        }
+      ]
+    }
+  ],
+  "outcome": "No licensed recognizer checkpoint found in followed primary assets. Release IAM/RIMES checkpoints are handwriting generators, not HTR recognizers. README licenses pipeline Apache2.0, not an absent Kraken recognizer weight file.",
+  "downloads": [],
+  "extraPackagesInstalled": false,
+  "inferenceRun": false
+}

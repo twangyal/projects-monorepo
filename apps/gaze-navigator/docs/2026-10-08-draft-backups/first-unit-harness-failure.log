@@ -1,0 +1,95 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> test
+> node --test
+
+✔ timed accuracy view downloads contextualized missing measurements and retires cancelled reports (4.087952ms)
+✔ excludes settling samples and measures held-out points in pixels (1.470835ms)
+✔ empty and partial checks explicitly report unmeasured targets (0.180326ms)
+✔ invalid clocks are ignored and cannot crash or add measurements (0.51639ms)
+✔ stationary pointer confirms once, resets on leave, and ignores calibration (13.005824ms)
+✔ fresh loading replaces a retired estimator instance (1.90217ms)
+✔ loads camera only on demand and shares pending requests (0.720211ms)
+✔ failed and timed-out loads remove the script and can retry (0.798215ms)
+✔ retirement waits for active inference and disposes only its owned model resources (2.40488ms)
+✔ a model loaded after retirement is disposed without starting inference (0.224691ms)
+✔ stop releases every media track even if dependency cleanup throws (9.115037ms)
+✔ canceling a pending library load prevents begin and permits simulation (3.006416ms)
+✔ late begin after stop releases tracks without reopening calibration (2.300076ms)
+✔ late camera startup cannot reset a newly calibrated simulation (4.63302ms)
+✔ stop settles the app startup even when the dependency never finishes video readiness (2.093371ms)
+✔ a late stream is released before a canceled dependency begin resolves (2.101353ms)
+✔ retry uses an isolated instance while a retired camera still awaits permission (3.165119ms)
+✔ a completed camera is also replaced instead of reusing its pending inference loop (1.930542ms)
+✖ camera stop releases tracking and failed startup permits retry (8.178859ms)
+✔ benchmark separates actual model-eligible tasks from deterministic boundary cases (4.831722ms)
+✔ partial, failed, cancelled, and missing-provenance reports cannot become a complete benchmark (3.544247ms)
+✔ eligible-case timing excludes policy shortcuts and failed requests (2.775005ms)
+✔ real benchmark pipeline uses the existing local adapter and emits a lab-importable report (15.481018ms)
+✔ whole-run cancellation retains completed rows after an entered uncooperative transport and ignores its late response (6.520669ms)
+✔ CLI help and invalid/cloud arguments finish without contacting a local server (241.048364ms)
+✔ tasks require finite bounded coordinates and unique opaque target IDs (2.670811ms)
+✔ eligible targets are nearby and enabled; missing gaze cannot choose a target (0.488419ms)
+✔ baseline chooses a unique nearby target and abstains on a tie independent of order (0.469321ms)
+✔ closed decisions reject disabled, distant, invented IDs and malformed confidence (0.460008ms)
+✔ model input contains the goal and eligible controls, without answer labels or fixture metadata (0.484323ms)
+✔ typed choice responses validate probabilities and cannot turn invalid output into abstention (0.627724ms)
+✔ versioned synthetic cases are valid, frozen, and cover context plus abstention (0.788521ms)
+✔ a complete geometric run reports real mismatches, abstentions, and unexpected selections (9.033247ms)
+✔ errors and missing rows never count as correct abstentions or inflate overall accuracy (0.341223ms)
+✔ import validation rejects suite changes, duplicates, unknown cases, and impossible decisions (3.464409ms)
+✔ bad model output becomes an error row, while later cases still run (1.461451ms)
+✔ cancel settles a run even when an adapter ignores AbortSignal, preserving only completed rows (9.996675ms)
+✔ backup round trip preserves exact Unicode, whitespace, order and detached saved text (2.356298ms)
+✔ unknown schemas, fields, types and invalid records refuse the whole backup (0.738718ms)
+✔ complete twenty-draft escaped maximum fits, but UTF8 bytes and count caps are enforced (21.835426ms)
+✔ append allocates distinct identities and refuses invalid or excess input atomically (0.599503ms)
+✔ requires continuous residence before confirming exactly once (1.280365ms)
+✔ switching targets and losing gaze restart dwell (0.260674ms)
+✔ a gap in samples cannot count as continuous gaze (0.195659ms)
+✔ reset clears progress and permits a fresh selection (0.215247ms)
+✔ layout reset can preserve confirmation until the user leaves (0.2243ms)
+✔ changing confirmation timing retires partial progress and preserves confirmed latches (0.23786ms)
+✔ unchanged or invalid timing does not reset progress; slow holds still reject sample gaps (0.639361ms)
+✔ gaze pause stays latched, permits only safety actions, and resumes after leaving (12.412962ms)
+✔ pointer simulation can resume and stop through the paused safety controls (3.072843ms)
+✔ gaze can pause an accuracy check and close its completed report (7.417688ms)
+✔ accuracy safety confirmation requires uninterrupted gaze on the safety control (3.77723ms)
+✔ gaze keyboard controls scroll the key grid without changing the edited text (1.682617ms)
+✔ opening another field returns to the first keyboard row (0.288134ms)
+✔ local model preflight and choice use only fixed loopback and force local source, without credentials (6.964372ms)
+✔ cloud names are rejected before any network operation (0.344227ms)
+✔ cloud-enabled/unknown servers and remote or non-decision models cannot reach inference (5.185583ms)
+✔ no eligible target abstains without any model request (0.178733ms)
+✔ invalid local choice and oversized metadata responses fail closed (1.696017ms)
+✔ request timeout and cancellation settle even when the transport ignores the signal (6.443254ms)
+✔ resolves nested content only inside the allowed root (1.030426ms)
+✔ rejects invalid coordinates before hit testing and empty space (0.247123ms)
+✔ inserts at the caret and replaces selected text (1.181078ms)
+✔ backspace removes a selection or previous Unicode code point (0.156991ms)
+✔ respects field limits without splitting a surrogate pair (0.195077ms)
+✔ search and selection operate on messages without changing their content (0.824213ms)
+✔ drafts validate content and return detached snapshots (0.66589ms)
+✔ updating a reopened draft keeps its identity, order and unrelated records (0.823171ms)
+✔ notebook capacity and field limits refuse atomically while updates remain available (0.421771ms)
+ℹ tests 69
+ℹ suites 0
+ℹ pass 68
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 469.423378
+
+✖ failing tests:
+
+test at tests/camera.test.js:26:1
+✖ camera stop releases tracking and failed startup permits retry (8.178859ms)
+  TypeError: Cannot read properties of undefined (reading 'addEventListener')
+      at setupWorkspace (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/src/workspace-view.js:117:25)
+      at file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/src/app.js:353:1
+      at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+      at async node:internal/modules/esm/loader:643:26
+      at async TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/tests/camera.test.js:81:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

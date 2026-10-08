@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "status": "measured",
+  "observedEvents": 292,
+  "invalidEvents": 0,
+  "unsupportedPhases": 0,
+  "eventLimitReached": false,
+  "dataLossOccurred": false,
+  "bufferFull": false,
+  "complete": true,
+  "buckets": {
+    "vpx_codec_encode": {
+      "events": 30,
+      "wallMs": 6.625,
+      "maxWallMs": 2.589,
+      "threadCpuMs": 2.414,
+      "threadCpuEvents": 30,
+      "missingThreadCpuEvents": 0,
+      "invalidThreadCpuEvents": 0
+    },
+    "VideoEncoder::Ouput": {
+      "events": 30,
+      "wallMs": 3.328,
+      "maxWallMs": 1.963,
+      "threadCpuMs": 3.313,
+      "threadCpuEvents": 30,
+      "missingThreadCpuEvents": 0,
+      "invalidThreadCpuEvents": 0
+    }
+  },
+  "limits": [
+    "Each named bucket is inclusive native event time; buckets can overlap and must not be added or subtracted into a CPU budget.",
+    "Thread CPU covers only the emitting thread, not codec/raster worker threads or exclusive encoder CPU; missing counters are null, not zero. Wall and thread durations use independently reported native clocks.",
+    "Only selected complete media/GPU events are admitted. Native buffer loss/fullness, unsupported phases, invalid counters and event caps disclose incomplete coverage.",
+    "This separately labelled tracing variation has observer overhead and cannot clear an unchanged original acceptance failure.",
+    "No raw arguments, URLs, identities, process/thread IDs, timestamps or media are retained."
+  ]
+}

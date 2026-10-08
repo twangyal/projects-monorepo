@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "issue": 121,
+  "scope": "Narrow native timing-keyboard readiness repair only; concurrent cue-edit product milestone remains independently tracked",
+  "status": "both first corrected published events passed",
+  "commit": "f1bd5300f52cc872769fafd6d6365cabfff038d7",
+  "tree": "3b7e9e790b55e238a5656b2e2c6d68598d8c077d",
+  "actualPrMerge": {
+    "commit": "6f9e04b1fcbb0ed9fa6ec86a564d8e899c619f79",
+    "tree": "3b7e9e790b55e238a5656b2e2c6d68598d8c077d",
+    "identical": true
+  },
+  "checks": [
+    {
+      "event": "push",
+      "runId": 37257768827,
+      "jobId": 111598407615,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37257768827",
+      "conclusion": "success",
+      "actualCheckout": "f1bd5300f52cc872769fafd6d6365cabfff038d7",
+      "tree": "3b7e9e790b55e238a5656b2e2c6d68598d8c077d",
+      "pythonTests": 166,
+      "pythonSeconds": 63.197,
+      "typescriptTests": 103,
+      "typescriptDurationMs": 1580.130411,
+      "nativeCases": 79,
+      "browserDisplayedDuration": "3.1m",
+      "otherChecks": [
+        "Ruff",
+        "compileall",
+        "ESLint",
+        "TypeScript",
+        "normal build"
+      ],
+      "log": {
+        "path": "/tmp/karaoke121-keyboard-fixed-ci-push.log",
+        "bytes": 157956,
+        "sha256": "7b1b36701000c837cba337f87a935fed44c6df8ecd3159d0b437d8af6a5a13f6"
+      }
+    },
+    {
+      "event": "pr",
+      "runId": 37257771610,
+      "jobId": 111598415806,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37257771610",
+      "conclusion": "success",
+      "actualCheckout": "6f9e04b1fcbb0ed9fa6ec86a564d8e899c619f79",
+      "tree": "3b7e9e790b55e238a5656b2e2c6d68598d8c077d",
+      "pythonTests": 166,
+      "pythonSeconds": 62.874,
+      "typescriptTests": 103,
+      "typescriptDurationMs": 1463.173997,
+      "nativeCases": 79,
+      "browserDisplayedDuration": "3.1m",
+      "otherChecks": [
+        "Ruff",
+        "compileall",
+        "ESLint",
+        "TypeScript",
+        "normal build"
+      ],
+      "log": {
+        "path": "/tmp/karaoke121-keyboard-fixed-ci-pr.log",
+        "bytes": 159006,
+        "sha256": "8a72809a54c009e15216c2bb716cfc60ccdfd33a88919617d85d12a4b3e4226c"
+      }
+    }
+  ],
+  "allThirteenProjectPrWorkflows": {
+    "passed": true,
+    "head": "f1bd5300f52cc872769fafd6d6365cabfff038d7",
+    "runs": [
+      {
+        "name": "Clothing Studio",
+        "id": 37257771672,
+        "conclusion": "success"
+      },
+      {
+        "name": "Style Studio",
+        "id": 37257771684,
+        "conclusion": "success"
+      },
+      {
+        "name": "Git History",
+        "id": 37257771617,
+        "conclusion": "success"
+      },
+      {
+        "name": "Color Context Lab",
+        "id": 37257771656,
+        "conclusion": "success"
+      },
+      {
+        "name": "Lens Studio",
+        "id": 37257771615,
+        "conclusion": "success"
+      },
+      {
+        "name": "Melody Studio",
+        "id": 37257771657,
+        "conclusion": "success"
+      },
+      {
+        "name": "Stock Notebook",
+        "id": 37257771632,
+        "conclusion": "success"
+      },
+      {
+        "name": "Motion Studio",
+        "id": 37257771647,
+        "conclusion": "success"
+      },
+      {
+        "name": "Composure",
+        "id": 37257771593,
+        "conclusion": "success"
+      },
+      {
+        "name": "Friendly Challenges",
+        "id": 37257771644,
+        "conclusion": "success"
+      },
+      {
+        "name": "Shot Studio",
+        "id": 37257771687,
+        "conclusion": "success"
+      },
+      {
+        "name": "Duet",
+        "id": 37257771668,
+        "conclusion": "success"
+      },
+      {
+        "name": "Karaoke Studio",
+        "id": 37257771610,
+        "conclusion": "success"
+      }
+    ]
+  },
+  "originalFailure": {
+    "receipt": "2026-10-05-sequential-keyboard-readiness.json",
+    "firstHead": "8dfcf68b4387e6da07d5f3b0080afd2ed402b0db",
+    "firstRun": 37255169395,
+    "repeatHead": "6dc7571aef7959d8dbb117b03326506976a320bd",
+    "repeatRun": 37257103207,
+    "repeatLogSha256": "4191840fde550a5538b0a8b380139713832b634ccd70de265b8ae7dbec17cd3c",
+    "result": "Both original PR runs passed78/79; exact same resumed keyboard mark expected end but stayed start."
+  },
+  "preservation": "Only four enabled/focused assertions at two explicit keyboard admissions were added. Original held-key rejection, key release/fresh press, cue graph and time bounds unchanged; no Karaoke production modifications.",
+  "limits": [
+    "This establishes the published103-TypeScript/79-native implementation, not the separate actor's complementary unpublished seven-case coverage.",
+    "No model rerun, production deployment or main merge."
+  ]
+}

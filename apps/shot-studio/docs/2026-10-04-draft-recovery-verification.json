@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-04",
+  "issue": 44,
+  "verifiedSourceCommit": "cae7d16d09b011b60a0057895c705497116a08ba",
+  "workflowRun": 37172319440,
+  "job": 111347627301,
+  "unitTests": 28,
+  "productionChromiumFlows": 9,
+  "syntaxChecks": "passed",
+  "regressionBeforeFix": {
+    "commit": "f727f58b4a42e09f511b1518a48ff41778e7e31f",
+    "run": 37172102207,
+    "existingFlowsPassed": 7,
+    "newPreservationRegression": "failed"
+  },
+  "evidence": [
+    "Invalid draft exact contents survive editing, undo/redo, valid import and reload",
+    "Current in-memory project downloads independently of protected saved draft",
+    "Actual raw recovery JSON round-trips original string",
+    "Cancel preserves raw record; confirmed replacement re-enables normal native save/reload",
+    "Denied startup reads prevent automatic writes; failed quota replacement retains protection",
+    "Existing real WebGL/film flows pass, including WebM decoded with FFprobe/FFmpeg"
+  ],
+  "review": {
+    "independent": true,
+    "critical": 0,
+    "important": 0,
+    "minor": 1,
+    "ruling": "Unavailable-download guidance was corrected and its browser assertion passes. Reviewer independently ran all four new unit cases."
+  },
+  "limits": [
+    "No physical XR verification; controlled existing XR coverage only",
+    "Protection addresses failed startup reads, not concurrent edits from separate tabs"
+  ],
+  "sha256": {
+    "src/draft.js": "27fbaeb6f405e2a63f8283cfab660c3a52d60b92deac6af32dc1366144fd4686",
+    "src/app.js": "4e191fcb78139fd61e47496d25c393f1b062352d5e331e585f186b6ac7bd73fc",
+    "index.html": "c3b060e6e81b1a60218df99c08bbf915284fed221e8ddfe6eef68061155e1156",
+    "package.json": "82c2ac7cd4ded1754ee1e3f46469a0fb93ae1e2021eb474a263940acea4fd05f",
+    "tests/draft.test.js": "ff8a58d91cd484e67ef17c649b84472f10be5626143481bd90d9b9007ad9fdf5",
+    "tests/browser/studio.spec.js": "1aabd27e6e051ebd9d0385edd8ced155dff665b0b15ddc4a809e13808f85d096"
+  }
+}

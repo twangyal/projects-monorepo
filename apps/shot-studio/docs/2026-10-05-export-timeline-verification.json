@@ -1,0 +1,32 @@
+{
+  "issue": 124,
+  "base": "4c06bddbdfec22eadef70f0c40bb55400c46df2e",
+  "scope": "Dependency-free timestamped encoder input prerequisite, not a production exporter switch.",
+  "interfaces": {
+    "planExportFrames(duration)": "Frozen frameCount/frame(index): source time in seconds; timestamp/duration in integer microseconds. 30Hz; rounded final endpoint; no duplicate terminal frame.",
+    "prepareExportPcm(asset, plan, options)": "Admitted original WAV and bound soundtrack plan; frozen frameCount/blockCount/block(index). 48kHz planar Float32; at most960frames per call; original channel count. Timestamp in microseconds. Cancellation and absolute ten-second byte-read deadline."
+  },
+  "numericalContract": [
+    "Video endpoint is nearest microsecond; positive durations below one microsecond refuse.",
+    "PCM covers ceil(sequenceDuration*48000) sample frames. Final partial sample adds less than one sample interval of represented coverage.",
+    "PCM16 normalization divides by32768; source sample frames are linearly interpolated at their original rate, multiplied by authored gain, and quantized only by Float32 storage.",
+    "Source In is inclusive, Out exclusive. Interpolation clamps at the last included source sample; excluded original neighbors cannot leak.",
+    "Sequence-time placement preserves fractional source phase. Leading/trailing silence and zero-gain/nonoverlapping soundtracks cover the complete timeline."
+  ],
+  "local": {"runtime": "Node.js v24.19.0", "focused": {"pass":14,"fail":0}, "full": {"pass":349,"fail":0}, "syntax": "npm run check"},
+  "independentMaximum": {"videoFrames":1800,"videoEndMicros":60000000,"stereoAudioFrames":2880000,"blocks":3000,"blockFrames":960,"originalSignedMarkers":4,"exactOriginalWavPreserved":true},
+  "precedingDeadlineCI": {
+    "head": "4c06bddbdfec22eadef70f0c40bb55400c46df2e",
+    "push": {"run":37282901583,"job":111674891329,"units":335,"nativePassed":98,"nativeFailed":1,"failedCase":"real six-second sequence WebM contains both immutable sources and repeats the original source clock","errorSeconds":0.17},
+    "pr": {"run":37282906954,"job":111674909915,"checkout":"92311bf","units":335,"nativePassed":98,"nativeFailed":1,"failedCase":"actual six-second trimmed WebM preserves original source phases and repeated excerpts","errorSeconds":0.155},
+    "unchangedTemporalGateSeconds":0.15,
+    "durableOriginalMedia": "failures/2026-10-05-deadline-ci/",
+    "ptsReceipt":"failures/2026-10-05-deadline-ci/decoded-pts.json"
+  },
+  "limits": [
+    "No WebCodecs or muxer is called by this module; the production MediaRecorder path is unchanged by this prerequisite.",
+    "Linear resampling is an explicit conversion, not a native resampler equivalence or quality claim.",
+    "Decoded frame gaps remain a reproduced unfinished defect. These unit inputs do not establish native output acceptance.",
+    "Maintained locally served muxer, native capability checks/backpressure/cancellation, production integration and stalled/native full-minute decoding remain required before closing #124."
+  ]
+}

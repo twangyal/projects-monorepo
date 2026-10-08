@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "milestone": 115,
+  "status": "source review clear; reported network-stall latch corrected",
+  "scope": "Independent read-only source review. No browser, event injection, playback, build or service run by reviewer.",
+  "sources": [
+    {
+      "path": "src/main.ts",
+      "bytes": 75240,
+      "sha256": "6c312a471e2d35c8e2f8fc87ea39fb3ae7b597981296ad855ff6e53cea5a6172"
+    },
+    {
+      "path": "src/style.css",
+      "bytes": 16958,
+      "sha256": "58f3ad92192f1d778876615264f45a9d0dfa2f157b2a9dc4ca3d3737f0b4804f"
+    },
+    {
+      "path": "src/sequential-timing.ts",
+      "bytes": 3636,
+      "sha256": "f57fc02993062f8471cffc363eb32768c0fdf0f9eced66bd62bb4e472f53625e"
+    },
+    {
+      "path": "src/draft-history.ts",
+      "bytes": 2577,
+      "sha256": "6f536be4d2ae38332b01169d73fd842522931fc8266da826ac85586ed030d18f"
+    }
+  ],
+  "findings": [
+    {
+      "id": "stalled-latch",
+      "severity": "P2",
+      "status": "resolved in source; no native network-stall reproduction claimed",
+      "file": "src/main.ts",
+      "linesAtReview": [
+        925,
+        926
+      ],
+      "reproductionByControlFlow": "During active loaded playback, native stalled can indicate unavailable network data while existing buffers keep audio moving. Handler sets timingWaiting=true unconditionally. Only playing clears it; uninterrupted buffered playback need not emit another playing event. Mark remains disabled although currentTime advances and readyState is usable.",
+      "evidenceLimit": "Source/event-contract reasoning only; no native network-stall reproduction performed.",
+      "recommendation": "Use actual waiting to suspend, or distinguish network stalled from playback starvation with a verified readiness/resumption condition.",
+      "resolution": "Only actual waiting sets timingWaiting; stalled no longer latches disabled playback. Actual readyState separately gates marking and playing clears the waiting flag."
+    }
+  ],
+  "endedEndpointAssessment": {
+    "status": "approved source semantics",
+    "rule": "finite nonnegative position<=projectduration OR ended and currentTime===audio.duration with admitted duration difference<=1/44100; existing guard also requires source/identity/rate/no-loop/no-seek/error/readiness checks",
+    "consequence": "Explicit final-line closure uses exact projectduration, and shared validity allows its completed review to Apply. Ordinary marks reject ended playback and never clamp observed times.",
+    "notClaimed": "No physical playback accuracy, automatic vocal end or general duration mismatch tolerance."
+  },
+  "reviewedClear": [
+    "Project/edit/media generations, selected track, URL and duration captured; synchronous Mark/Apply state guards reject queued seek/rate/source changes.",
+    "Backward finite clock observations retire owner; equal observations permitted but pureEnd must advance.",
+    "Every actual editor input intent, changed-back edits, waveform boundary gesture, history and competing operations retire staged timings before their ordinary effects.",
+    "Apply validates full candidate before mutation; exact pre-Apply rawTiming strings captured, previous field group ended, only cues replaced and one ordinary history edit recorded.",
+    "No-op Apply avoids renderCues/changed/history record, preserving raw spellings, video and redo.",
+    "Cancel/retirement does not replace working fields or record history; transient DOM list only.",
+    "Focused Mark keydown prevents native duplicate click, rejects repeats/modifiers/composition, tracks held keys and carries blocked-until-keyup across blur/owner retirement. No global typing shortcut.",
+    "Natural end never auto-completes; explicit closure available only for last pendingline. Completion pauses owned media; Save remains separate.",
+    "Safe textContent/pre rendering, stable mark button node, wrapped44px controls and review bounds visible in CSS.",
+    "Final narrow repair removes stalled listener; existing actual waiting/playing suspension and synchronous native readyState guards remain unchanged."
+  ],
+  "nativeStatus": "Owned native tests and maximum media verification belong to separate root-coordinated owners, not this source review."
+}

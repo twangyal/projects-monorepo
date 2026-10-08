@@ -1,0 +1,490 @@
+{
+  "schemaVersion": 1,
+  "issue": 66,
+  "version": "0.4.0",
+  "status": "verified",
+  "baseline": {
+    "units": 173,
+    "browser": 35,
+    "browserSeconds": 27.6,
+    "unchanged": true,
+    "evidence": "/tmp/melody66-baseline-evidence.json"
+  },
+  "verification": {
+    "units": 233,
+    "unitDurationMs": 5558.51265,
+    "browser": 58,
+    "browserDuration": "58.4s",
+    "lint": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "coreFocused": 60,
+    "independentNumerical": 14
+  },
+  "implementationHistory": [
+    "Shared project/history, audio and persistence APIs had meaningful initial stub failures before implementation; the independent numerical oracle was authored before producer source review.",
+    "A valid near-1MiB legacy source expands after canonical numeric serialization. Its actual failure led to a reviewed 2MiB document bound; raw legacy input stays1MiB. All supported engine values fit below a conservative1612877-byte document bound.",
+    "Audio constructor failure, storage close-after-open and a stale released-connection versionchange event each received a failing lifecycle regression before correction.",
+    "First browser integration exposed stale controls after complete-project replacement and missing contextual error prefixes. Exact native source.stop evidence reproduced comparison playback surviving track selection.",
+    "Initial new browser helpers needed to await enabled File controls during startup and explicitly select notes before editing; these were harness corrections, not relaxed product assertions.",
+    "A held real IndexedDB transaction reproduced capture Cancel unlocking editing during startup. Startup ownership is preserved across Cancel/pagehide, and mutation guards retain the load barrier.",
+    "A real Save pointer click after a track-name blur moved21 pixels before mouseup and failed to download. Native pointer capture preserves first-click behavior; a further real note-selection focus regression ensures capture retirement precedes handler rendering/focus.",
+    "The portable reference probe first corrected a notice-copy expectation and the existing documented MIDI same-pitch overlap merge expectation. All original audio thresholds stayed fixed."
+  ],
+  "existingTests": {
+    "preservedMusicalAssertions": true,
+    "intentionalAdaptations": [
+      "Complete versioned backup envelope replaces bare Composition output.",
+      "Saved-project helpers await asynchronous saves and read actual IndexedDB, using legacy only when the new current record is absent.",
+      "Storage fault fixtures target real IndexedDB requests/transactions; recording-cancel assertions no longer compare two empty localStorage values."
+    ],
+    "legacyEngineFilesUnchanged": [
+      "types.ts",
+      "model.ts",
+      "history.ts",
+      "storage.ts",
+      "audio.ts",
+      "transcribe.worker.ts",
+      "render.worker.ts"
+    ]
+  },
+  "referenceProbe": {
+    "schemaVersion": 1,
+    "baseOrigin": "http://127.0.0.1:54083",
+    "output": "/workspace/melody66-reference-native-final",
+    "thresholds": {
+      "frequencyErrorHz": 3,
+      "relativeRmsError": 0.02,
+      "dcLsbError": 3,
+      "impulseFrameError": 2,
+      "interiorEdgeFrames": 512,
+      "auditionSampleError": 2e-06
+    },
+    "measured": {
+      "maximum": {
+        "assets": 8,
+        "framesPerAsset": 441000,
+        "totalPcmBytes": 7056000,
+        "backupBytes": 9412621,
+        "sha256": "a26827734cd34bd5994a429ff165897f9c045742519300e7f3054ad94cb7dd99",
+        "completeProcessRestartByteExact": true
+      },
+      "audition": {
+        "captureTempo": 40,
+        "projectTempo": 120,
+        "windowFrames": [
+          438795,
+          441000
+        ],
+        "frames": 2205,
+        "fullSoloExpectedFrames": 4235364,
+        "maximumAnalyticError": 4.2939636929473224e-08,
+        "referencePcmExact": true,
+        "outsideWindowLoudNotes": 8
+      },
+      "ordinaryExports": {
+        "midi": {
+          "division": 480,
+          "tempos": [
+            500000
+          ],
+          "notes": [
+            {
+              "tick": 0,
+              "pitch": 69,
+              "velocity": 127
+            },
+            {
+              "tick": 53760,
+              "pitch": 69,
+              "velocity": 127
+            }
+          ],
+          "noteOffs": [
+            {
+              "tick": 7680,
+              "pitch": 69
+            },
+            {
+              "tick": 61440,
+              "pitch": 69
+            }
+          ]
+        },
+        "wavFrames": 1412964,
+        "wavRate": 22050,
+        "frequencyHz": 440.0000215655998,
+        "referenceNotMixed": true
+      },
+      "zeroPadding": {
+        "captureTempo": 40,
+        "noteEndSeconds": 0.375,
+        "releaseEndSeconds": 0.455,
+        "windowFrames": [
+          13230,
+          15435
+        ],
+        "outputFrames": 2205,
+        "allSamplesZero": true
+      },
+      "nativeNormalization": [
+        {
+          "kind": "tone",
+          "sourceRate": 44100,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 44100,
+          "retainedFrames": 22050,
+          "sha256": "9c517af53ab6f134877264cf5bb6ae00d1e492da8c7161d5573c20612ed329d8",
+          "frequencyHz": 440.0000085315098,
+          "rms": 0.21214856297280685,
+          "frequencyErrorHz": 8.531509820386418e-06,
+          "relativeRmsError": 7.791664702039292e-05
+        },
+        {
+          "kind": "tone",
+          "sourceRate": 44100,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 44100,
+          "retainedFrames": 22050,
+          "sha256": "cc351cea8d872133b8165b9827d409fd04003a09788591aa8a601627c77782fb",
+          "frequencyHz": 1000.0001232903701,
+          "rms": 0.21213883313615084,
+          "frequencyErrorHz": 0.00012329037008385058,
+          "relativeRmsError": 3.204975715842551e-05
+        },
+        {
+          "kind": "dc",
+          "sourceRate": 44100,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 88200,
+          "retainedFrames": 44100,
+          "sha256": "1fe6ccc64bbcba64e050503b574c931db7ea4c90828d66d34306925ec0d1faf0",
+          "maximumLsbError": 0.24999237060546875
+        },
+        {
+          "kind": "impulse",
+          "sourceRate": 44100,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 88200,
+          "retainedFrames": 44100,
+          "sha256": "2a44ecbaa35bfa6852bf3d5ccaeaed4488987b87293ba31e5cf7abae05e20ed0",
+          "peakFrame": 24255,
+          "expectedFrame": 24255,
+          "frameError": 0
+        },
+        {
+          "kind": "tone",
+          "sourceRate": 48000,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 44099,
+          "retainedFrames": 22049,
+          "sha256": "8a63f5ce8be64ca29541d5df0feff19e2dd658af4940566d48bacd412afdcf4d",
+          "frequencyHz": 440.0000085315098,
+          "rms": 0.21213763719527018,
+          "frequencyErrorHz": 8.531509820386418e-06,
+          "relativeRmsError": 2.6412037780865205e-05
+        },
+        {
+          "kind": "tone",
+          "sourceRate": 48000,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 44099,
+          "retainedFrames": 22049,
+          "sha256": "a4a30c1a858ede0c8aad303775eabb022f59d6fcea88c233b3f88d86f783af3a",
+          "frequencyHz": 1000.000130186538,
+          "rms": 0.2121339440557422,
+          "frequencyErrorHz": 0.00013018653794460988,
+          "relativeRmsError": 9.00241108703348e-06
+        },
+        {
+          "kind": "dc",
+          "sourceRate": 48000,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 88199,
+          "retainedFrames": 44099,
+          "sha256": "909794033aba4fd8035316fe259028bcc2cc4e83635ee9f7654056fb14e65c28",
+          "maximumLsbError": 0.7499771118164062
+        },
+        {
+          "kind": "impulse",
+          "sourceRate": 48000,
+          "decodedRate": 44100,
+          "decodedChannels": 2,
+          "decodedFrames": 88199,
+          "retainedFrames": 44099,
+          "sha256": "f5f01d0dc3f9e801946c57aad931372b3828883240c2c7b317d4cfea8bfb5642",
+          "peakFrame": 24255,
+          "expectedFrame": 24255,
+          "frameError": 0
+        }
+      ]
+    },
+    "limitations": [
+      "Synthetic fixtures validate software behavior, not physical microphone quality.",
+      "AudioBufferSourceNode.start is observed while forwarding to the real native method; storage, decoder, workers and audio rendering are not replaced.",
+      "Reported decoded sample rates describe native AudioContext output, not original WAV rates; resampling is not claimed bit-exact across browsers."
+    ],
+    "appScripts": [
+      "/assets/index-uXq5OLeU.js"
+    ],
+    "chromium": "151.0.7922.173",
+    "success": true,
+    "durationSeconds": 30.510111258000002,
+    "pageErrors": [],
+    "externalRequests": []
+  },
+  "midiCompatibilityProbe": {
+    "schemaVersion": 1,
+    "success": true,
+    "fixturesOriginal": true,
+    "noStorageInjection": true,
+    "noProductParserImports": true,
+    "thresholds": {
+      "fftWindow": 4096,
+      "frequencyToleranceHz": 5.38330078125,
+      "rmsRelativeTolerance": 0.02,
+      "silence": "Exactly zero PCM samples"
+    },
+    "browser": "151.0.7922.173",
+    "fixtureBytes": {
+      "phrase": 152,
+      "maximum": 1048576
+    },
+    "timingsSeconds": {
+      "phraseImportApply": 0.41272225899999965,
+      "maximumImportArtifactsReload": 3.22392468,
+      "total": 8.809088133000001
+    },
+    "limitations": [
+      "Synthetic MIDI validates interchange and synthesis, not General MIDI/DAW sound fidelity.",
+      "MIDI export 480-tick rounding and omitted trailing-window/EOT rest are intentional.",
+      "Browser audio playback controls are exercised; exported PCM is the independent audible-signal evidence."
+    ],
+    "phrase": {
+      "frames": 36273,
+      "midiNotes": [
+        {
+          "pitch": 69,
+          "onTick": 62,
+          "offTick": 542,
+          "velocity": 96,
+          "channel": 0
+        },
+        {
+          "pitch": 72,
+          "onTick": 1022,
+          "offTick": 1502,
+          "velocity": 32,
+          "channel": 0
+        }
+      ],
+      "metrics": [
+        {
+          "time": 0.165,
+          "expectedHz": 440,
+          "measuredHz": 441.4306640625,
+          "expectedRms": 0.10774292426338018,
+          "measuredRms": 0.10771786724740218
+        },
+        {
+          "time": 1.165,
+          "expectedHz": 523.2511306011972,
+          "measuredHz": 522.18017578125,
+          "expectedRms": 0.035914308087793397,
+          "measuredRms": 0.03590126490695021
+        }
+      ],
+      "jsonSha256": "67c6c8969d691ab2058fd82fa9f6048726e402c563bbc1b7d21bd9f08858a1b4",
+      "midiSha256": "7b4544865233c4c4b89f5a73f7c8ae6e8d2d32ddb948a43c7ad3f60591769058",
+      "wavSha256": "549501f8430226f9dc38a9f580cc17d0602060722d337d20a7aaca217b789496",
+      "nativeReloadExact": true,
+      "actualIndexedDBExact": true
+    },
+    "nativeProcessRestart": {
+      "persistentProfile": "/workspace/melody66-midi-native-final/native-profile-qdIzrC",
+      "exactJsonBytes": true,
+      "sameProjectId": true,
+      "all2048NotesExact": true,
+      "actualIndexedDBExact": true,
+      "legacyLocalStorageUnchanged": true
+    },
+    "persistence": {
+      "database": "melody-studio.projects",
+      "version": 1,
+      "readonlyInspection": true,
+      "midiImportsHaveNoReferences": true,
+      "phraseRecordSha256": "443ce00d4684bb17c9006c742ea0881a76695b9d31f400c94dc26a73e8aace36",
+      "maximumRecordSha256": "f2849c6a6ff1c8b3f1e6d6eddbff9ddd357a0122cbf90dfb6ddebe130d34253a"
+    },
+    "maximum": {
+      "bytes": 1048576,
+      "tracks": 8,
+      "notes": 2048,
+      "jsonBytes": 237158,
+      "midiBytes": 16766,
+      "wavBytes": 2820460,
+      "frames": 1410208,
+      "peak": 0.876068115234375,
+      "jsonSha256": "ff1df15fd19acd744783e41eb7a3bc30111a2a69b7c383a6afd8e9f450dac56e",
+      "midiSha256": "b04addb16d8be6c2a16b9b5669c36e9c70dcc191dc784206991f54bb36bb6e55",
+      "wavSha256": "cffca030176d97d111a8873ad050c96248ade5533d1e00cc91766e3e1277cd43",
+      "nativeReloadExact": true
+    },
+    "screenshots": {
+      "desktop": "/workspace/melody66-midi-native-final/desktop.png",
+      "mobile": "/workspace/melody66-midi-native-final/mobile.png",
+      "mobileWidth": 390,
+      "noHorizontalOverflow": true
+    },
+    "confirmations": [
+      "Replace the composition with 2 notes in 1 parts (Imported scalar sine)? 3 source note attacks are excluded. Source beats 3 to 7 (end exclusive). Names and fallback choices are those shown in the review. Undo restores the previous committed composition, not discarded raw edits or an unsaved suggestion.",
+      "Replace the composition with 2048 notes in 8 parts (Maximum channel 0, Maximum channel 1, Maximum channel 2, Maximum channel 3, Maximum channel 4, Maximum channel 5, Maximum channel 6, Maximum channel 7)? 0 source note attacks are excluded. Source beats 1 to 129 (end exclusive). Names and fallback choices are those shown in the review. Undo restores the previous committed composition, not discarded raw edits or an unsaved suggestion."
+    ],
+    "pageErrors": [],
+    "externalRequests": []
+  },
+  "measuredLimits": {
+    "documentBytes": 2097152,
+    "legacySourceBytes": 1048576,
+    "completeBackupBytes": 12582912,
+    "currentAssets": 8,
+    "framesPerAsset": 441000,
+    "assetBytes": 882000,
+    "historyUniquePcmBytes": 67108864,
+    "historyPriorEdits": 50
+  },
+  "sourceSha256": {
+    "src/arrangement.ts": "4c44fb0b7f7de3e86b483793649baecd576cb2a9340e9c7aec4976d0f32f58e7",
+    "src/audio.ts": "dc44b7f1d1ad9c95fe1a65fcff2659f26ed8da4552062791af2879f184ea3957",
+    "src/continuation.ts": "eb2f75dea1b171264c996eeed8035a3bae9df36ebf5f282f8d5cff7413057761",
+    "src/history.ts": "24c76b9ce016f4678068a7d76a791707db105031bd31da3845bb9ad4bdc0c400",
+    "src/main.ts": "6fd431edd632c973a5b3328e30b348cb84916050afe6d1b99fb44af86c109742",
+    "src/midi-import.ts": "f66db857f23279bdd2dd93526cf8aadd4e84b706b49b93287052b5e667d025ca",
+    "src/midi-review.ts": "0f67f5bed7270306c001a21a5daffb5bed9311206be3f9444f1364effff69bd4",
+    "src/midi.ts": "36aa942085253047512b5605225b876a92bef5f40b92b668cdcb2e9c7f4ce84a",
+    "src/model.ts": "eefc74999619b6eca3c5a466fef08a730fed1aa56e13d2e9c69ca1bf906f4530",
+    "src/recorder.ts": "138e22d1b9d7b82123016298f933882e3cac7b567d41f382d975f9b07eb2c06c",
+    "src/reference-audio.ts": "34315f751c6986a6b9b2e9f933b20505d20c28f15e941a3e01a2e53f66237486",
+    "src/reference-backup.ts": "e52de7a507d5db9bd9490d5eda06d24b894dc7292d1cdd679a87b81fc27c3dfb",
+    "src/reference-project.ts": "8924a56ffb19414f012f6287fd2c1b517769fb0e1e2a014ca1367844c6a4e430",
+    "src/reference-storage.ts": "de4f51a6cb35418538f3e1cbe55f0d3df17a06d2a82595bf11e89e1f7be7573b",
+    "src/reference-types.ts": "8a8d1adec6ca68dabb4d16f04c14a884b78c182f350613b0f7b53238f7d45024",
+    "src/render.worker.ts": "ff743b0b413d24e7946bcc7101894cef09740144f15fbda47620ac894d9361d3",
+    "src/storage.ts": "6403a40d395e0440843c07e9653d13716ce0aa66bca29ddbd52e3489d1effd19",
+    "src/style.css": "ab604424c281718aa6a313d9c78b4bf14c7e4184cfc85aa2da3ffe407ab549d8",
+    "src/transcribe.worker.ts": "fd385f87d04778622e8e926877d31dd94dbf5015a3d1b6cc896b655d41de2b09",
+    "src/types.ts": "595876d3b43e8268873ef5d98cb4eda516ddf7c183b3fd6f01858573f02d6275",
+    "src/wav.ts": "eb6d81d84c53be5d2c6def7db023f77d4699c2aa9d1345f0a9f09966357b0ea9"
+  },
+  "scriptSha256": {
+    "scripts/smoke_midi_import.mjs": "65ffceeb57d28719caddd0b44d15e433d64c3b7273756a753f9d822e21366551",
+    "scripts/smoke_reference_takes.mjs": "653d7672ce9e24eb9ed42b488f579802a370bfd225706010ecae57044bb6a775"
+  },
+  "ci": {
+    "status": "success",
+    "commit": "6169ade9a15fcb412223326e95fad3c565615392",
+    "allWorkflowCount": 12,
+    "workflows": [
+      {
+        "name": "Clothing Studio",
+        "runId": 37197627285,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Motion Studio",
+        "runId": 37197627271,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Stock Notebook",
+        "runId": 37197627211,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Friendly Challenges",
+        "runId": 37197627288,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Melody Studio",
+        "runId": 37197627280,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Shot Studio",
+        "runId": 37197627197,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Git History",
+        "runId": 37197627347,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Style Studio",
+        "runId": 37197627366,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Lens Studio",
+        "runId": 37197627201,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Composure",
+        "runId": 37197627324,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Duet",
+        "runId": 37197627196,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Karaoke Studio",
+        "runId": 37197627214,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "melody": {
+      "runId": 37197627280,
+      "jobId": 111422651512,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37197627280",
+      "unitTests": 233,
+      "unitDurationMs": 4745.733644,
+      "browserTests": 58,
+      "browserSeconds": 40.4,
+      "chromium": "153.0.8010.12",
+      "lint": true,
+      "typecheck": true,
+      "productionBuild": true
+    }
+  },
+  "limitations": [
+    "Synthetic tones and a native synthetic MediaRecorder stream do not measure real vocal accuracy or physical device behavior.",
+    "Both44.1kHz and48kHz source containers decoded at44.1kHz in this Chromium runtime; this does not establish separate48kHz-decoded normalizer measurements.",
+    "Native resampling and PCM16 quantization are lossy and are not claimed bit-identical across browser engines.",
+    "The complete backup preserves current committed data; raw drafts, proposals, history, window settings and original encoded recordings are excluded.",
+    "SHA-256 checks integrity, not source authenticity. Browser storage belongs to the exact origin/profile and uses last-completed-save behavior across tabs.",
+    "Strict duplicate-key/depth admission also applies to legacy syntax; compatibility preserves old saved/exported engine values, not arbitrary ignored extension or duplicate-key syntax."
+  ]
+}

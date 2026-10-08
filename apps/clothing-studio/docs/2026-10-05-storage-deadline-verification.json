@@ -1,0 +1,74 @@
+{
+  "issue": 101,
+  "baseline": "72f62f6",
+  "original_tests_commit": "570a8f0ce87cbe824c153ed33122ede845ab500e",
+  "original_test_prefix_unchanged": true,
+  "published_baseline_ci": {
+    "run": 37220300240,
+    "job": 111489101329,
+    "passed": 25,
+    "failed": 3,
+    "failed_behaviors": [
+      "held autosave never reports failure",
+      "queued edit remains blocked",
+      "startup read remains pending"
+    ],
+    "delayed_actual_commit": "passed"
+  },
+  "local_baseline": {
+    "browser": "Chromium 153.0.8010.0 (@sparticuz/chromium, extracted without package installer chown)",
+    "first_six_cases": {
+      "passed": 1,
+      "failed": 5
+    },
+    "delayed_rollback_case": "failed awaiting nonexistent native abort",
+    "corrected_sync_observer_case": "failed: save rejected before native rollback"
+  },
+  "test_correction": "Initial synchronous-failure observer was attached after the production handler; promise microtasks can run between event listeners. Attach it when transaction is created, before production handlers. Corrected assertion failed on baseline and passed on implementation.",
+  "local_final": {
+    "unit": 39,
+    "browser": 31,
+    "lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed",
+    "browser_duration_seconds": 11.5
+  },
+  "native_checks": [
+    "held write rollback and deliberate retry",
+    "ordered queued edits after rollback",
+    "blocked startup read preserves original and explicit replacement",
+    "delayed committed write reports success",
+    "timed-out clear retains exact original JPEG and stroke graph",
+    "throw after native put aborts and retains exact original",
+    "delayed rollback handler keeps queue blocked"
+  ],
+  "published_head_ci": {
+    "implementation": "cdfcc3545ed880f99a7276d1b73aeb9e5f7b8d48",
+    "push": {
+      "run": 37250018943,
+      "job": 111575589200,
+      "unit": 39,
+      "browser": 31,
+      "conclusion": "success"
+    },
+    "pull_request": {
+      "run": 37250023195,
+      "job": 111575601541,
+      "unit": 39,
+      "browser": 31,
+      "conclusion": "success"
+    },
+    "lint_typecheck_build": "passed on both events"
+  },
+  "limits": [
+    "Deadline starts at transaction creation, not database-open or photo-validation time.",
+    "Timers and terminal callbacks depend on browser scheduling.",
+    "If native abort is too late, await real terminal callback; never claim committed data rolled back.",
+    "Portable schema stays 1; last-writer cross-tab behavior is unchanged.",
+    "No physical device, worst-case latency or memory claim."
+  ],
+  "source_sha256": {
+    "apps/clothing-studio/src/storage.ts": "87bf0b9afe806e896b549eb050680e8e7526403e098122388a59bff1c02dea43",
+    "apps/clothing-studio/tests/storage-deadline.spec.ts": "c953bfda570d55ddc7be100d6b2b432460c089ccbdfdb837aee0775a80157abf"
+  }
+}

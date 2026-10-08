@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Melody #113 record with backing",
+  "reviewDate": "2026-10-04",
+  "status": "Source findings repaired; all five originally failing native editor cases pass unchanged in the root-operated affected-case gate.",
+  "reviewMethod": {
+    "scope": [
+      "Browser recorder and worklet lifecycle, cancellation, native draining, deadlines, bounded completion and progress",
+      "UI ownership, raw draft guards, target replacement, history and saved-copy conflict integration"
+    ],
+    "excluded": [
+      "Independent review of backing.ts and backed-frames.ts, which this reviewer authored"
+    ],
+    "reviewerExecution": "Read-only source and producer log inspection. No reviewer test, browser, build or runtime execution."
+  },
+  "sources": [
+    {
+      "path": "src/backed-recorder.ts",
+      "sha256": "7fdeaebd8c37ec03a336a01be1eee2786feacf5a0311c6efcbebc44ae412dcab"
+    },
+    {
+      "path": "src/backed-capture.worklet.ts",
+      "sha256": "ea9ab8b0cf6d43bca5eb53b6569cf0f8ac1b1f002395f83cd01a687c12f1aa2a"
+    },
+    {
+      "path": "src/main.ts",
+      "sha256": "1658de54ede1438d64b90ee2082472d8249f1ea52eb86edc837eac3d4195c8ff"
+    }
+  ],
+  "resolvedFinding": {
+    "description": "Successful completion checked the deadline before bounded sample validation and copying, but not at the final publication boundary. Synchronous work could cross the deadline before the watchdog task ran.",
+    "repair": "After copying the accepted sample interval, #message invokes #checkCapture(session) immediately before #settle(success). This rechecks deadline and context state at the final publication boundary.",
+    "sourceReviewResult": "The narrow repair addresses the identified source gap.",
+    "producerExecution": {
+      "attribution": "Executed by the recorder producer, not this reviewer.",
+      "focusedRed": {
+        "tests": 1,
+        "passed": 0,
+        "failed": 1,
+        "durationMs": 141.511967,
+        "failure": "Missing expected rejection /too long/i"
+      },
+      "green": {
+        "tests": 16,
+        "passed": 16,
+        "failed": 0,
+        "durationMs": 259.096982
+      }
+    },
+    "logs": [
+      {
+        "path": "/tmp/melody113-final-deadline-red.log",
+        "sha256": "06dbd97ca2ce27975fa2f9d669569ec425eac24a37d67742fb6f3b9eb901bd6a"
+      },
+      {
+        "path": "/tmp/melody113-recorder-deadline-green.log",
+        "sha256": "11d8e1a699e639aeaa88254a9b4d85cf8252ab09a0f8f766d34896e883793b4d"
+      }
+    ]
+  },
+  "remainingIntegrationFinding": {
+    "description": "The traced pre-arm startup failure was repaired by the owned pure kernel change. All five originally failing editor cases now pass unchanged.",
+    "status": "No remaining known startup defect after this repair.",
+    "qualification": "Affected-case acceptance does not establish completion of the final full browser gate, maximum probe or CI."
+  },
+  "otherSourceFindings": "No further actionable finding in the reviewed lifecycle and UI scope.",
+  "limits": [
+    "No physical microphone latency, vocal accuracy or device compatibility claim.",
+    "No independent runtime verification by this reviewer."
+  ],
+  "ownedKernelRepair": {
+    "description": "Reviewer also owns the BackedFrames pre-arm continuity repair; this is producer work, not an independent review of that kernel.",
+    "receipt": "docs/2026-10-04-backed-recording-kernel.json",
+    "nativeDiagnosticStatus": "Cause identified, pure repair verified and all five unchanged affected native cases accepted by root. This remains owned producer work, not independent review of the kernel."
+  },
+  "rootRuntimeEvidence": {
+    "attribution": "Executed by root, not this reviewer. The reviewer inspected the result artifact and refreshed source hashes without repeating runtime.",
+    "completeRepairedCheck": {
+      "passed": 301,
+      "result": "GREEN",
+      "source": "Parent-reported complete repaired check."
+    },
+    "affectedNativeCases": {
+      "passed": 5,
+      "failed": 0,
+      "expectations": "Originally failing editor cases unchanged.",
+      "durationMs": 18281.863,
+      "artifact": "/tmp/melody113-affected-native-results.json",
+      "artifactBytes": 7872,
+      "artifactSha256": "894249bce5c5ab57363cd662b6e5a7782bd3ae8178f5c8781fbeb4e4ca0bf67c",
+      "actualStats": {
+        "startTime": "2026-10-04T22:37:52.493Z",
+        "duration": 18281.862999999998,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    },
+    "notClaimed": [
+      "Final full 116-case browser gate",
+      "Maximum acceptance probe",
+      "CI"
+    ]
+  }
+}

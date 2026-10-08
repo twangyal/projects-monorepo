@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "milestone": 123,
+  "role": "independent literal Git oracle",
+  "authorship": {
+    "first16CasesFrozenBeforeNewProducerSourceRead": true,
+    "expectedHashes": "SHA-1 over original blob header plus bytes, independently checked against fixture Git hash-object; no catalog-derived expectations",
+    "firstActualOutcome": "GREEN: implementation had landed; no oracle RED claim",
+    "firstFrozenTestSha256": "3d5befd085e8d5bfc982b067a19e71c384ca2968e19abeaa8b1a4e45713eb044",
+    "subsequentScope": "After first GREEN and separate source review, tightened raw count rejection fixture from 10,002 to exactly 10,001; added controlled raw 2 MiB/+1 and independent canonical JSON 8 MiB/+1. Original numerical/status/path expectations unchanged."
+  },
+  "runs": [
+    {
+      "command": "python -m unittest tests.test_changed_files_oracle -v",
+      "workingDirectory": "/workspace/projects-monorepo/apps/git-history",
+      "passed": 16,
+      "tests": 16,
+      "unittestSeconds": 1.347,
+      "log": "/tmp/git123-changed-files-oracle-first.log",
+      "logSha256": "ddb8e712f3b27c04e2f6b4b49bef2cefe8c9de553a27eda0084f03da0a522112"
+    },
+    {
+      "command": "python -m unittest tests.test_changed_files_oracle -v",
+      "workingDirectory": "/workspace/projects-monorepo/apps/git-history",
+      "passed": 17,
+      "tests": 17,
+      "unittestSeconds": 1.524,
+      "log": "/tmp/git123-changed-files-oracle-final.log",
+      "logSha256": "c8760f9dbf5cc59844bb6ab015d3316fc40e4545fe76d1b64c7280a4067c0341"
+    },
+    {
+      "command": "python -m unittest tests.test_changed_files_oracle -v",
+      "workingDirectory": "/workspace/projects-monorepo/apps/git-history",
+      "passed": 18,
+      "tests": 18,
+      "unittestSeconds": 2.469,
+      "log": "/tmp/git123-changed-files-oracle-final-boundaries.log",
+      "logSha256": "2920a8256effc153a99eca220a463811cc85a24325042b9f082fb9689e33bdb8"
+    },
+    {
+      "command": "python -m unittest tests.test_changed_files_oracle -v",
+      "workingDirectory": "/workspace/projects-monorepo/apps/git-history",
+      "passed": 18,
+      "tests": 18,
+      "unittestSeconds": 2.343,
+      "log": "/tmp/git123-changed-files-oracle-frozen-kernel.log",
+      "logSha256": "b1da6eb1c5b0603983b4b06029c02bd8463e13b93a12825ee2f0715b34d43190",
+      "reason": "Producer final immutable-nested-record admission refinement landed after earlier review; unchanged independent tests rerun on exact frozen hash."
+    }
+  ],
+  "staticChecks": {
+    "ruff": {
+      "command": "/tmp/duet-service-checks/bin/ruff check tests/test_changed_files_oracle.py",
+      "result": "All checks passed"
+    },
+    "compile": {
+      "command": "python -m py_compile tests/test_changed_files_oracle.py",
+      "result": "passed"
+    }
+  },
+  "coverage": {
+    "realOriginalGitTrees": [
+      "added, modified, deleted and unchanged omission",
+      "empty added file; binary and invalid UTF-8 contents still regular candidates",
+      "mode-only versus simultaneous mode/content changes",
+      "regular/symlink/gitlink type transitions and symlink/gitlink object updates",
+      "directory-to-file represented by changed leaves",
+      "identical-content rename remains deletion plus addition",
+      "space, tab, newline, Unicode, glob and option-looking paths retained exactly",
+      "leading-backslash and drive-looking paths visible but unaddressable",
+      "two invalid-UTF8 path names omitted with exact count",
+      "literal directory prefix and glob directory boundary",
+      "dirty index, working tree, untracked and HEAD bytes unchanged",
+      "moving right ref at diff invocation preserves both original full pins",
+      "same revision empty; nonexistent ref and partial clone refused",
+      "hostile external diff/textconv configuration does not execute helper",
+      "metadata catalog does not fetch blob contents"
+    ],
+    "controlledRawInputs": [
+      "NUL framing, malformed columns/status/OID/mode, duplicate path and traversal refusal",
+      "returned path outside requested prefix refuses whole catalog",
+      "10,000 raw records inclusive including one omission, exact 10,001 refusal",
+      "4096 path bytes inclusive, 4097 refusal",
+      "2,097,152 raw bytes inclusive, 2,097,153 refusal"
+    ],
+    "directStructuralCatalogs": [
+      "exact JSON schema and canonical serialization",
+      "forged category/addressability/count/width/unknown field refusal",
+      "escaped path growth greater than 8 MiB refused",
+      "exact 8,388,608-byte independent canonical metadata JSON accepted, +1 refused"
+    ],
+    "aggregateBudget": "Existing cancellation context propagates before any Git invocation"
+  },
+  "originalBlobFacts": [
+    {
+      "bytes_hex": "",
+      "blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "bytes_hex": "6c6566740a",
+      "blob_sha1": "45cf141ba67d59203f02a54f03162f3fcef57830"
+    },
+    {
+      "bytes_hex": "72696768740a",
+      "blob_sha1": "c376d892e8b105bd712d06ec5162b5f31ce949c3"
+    },
+    {
+      "bytes_hex": "6964656e746963616c2072656e616d65206279746573",
+      "blob_sha1": "7db73888e7f46f1e3334c4a11cf05b1d6d36510a"
+    },
+    {
+      "bytes_hex": "00ff01",
+      "blob_sha1": "046f393ee9d8a6a0754b8ddadce727b4ce35f272"
+    },
+    {
+      "bytes_hex": "fffe",
+      "blob_sha1": "46b134b197f35e75e0784bedbf94a8dd124693b1"
+    },
+    {
+      "bytes_hex": "6c69746572616c",
+      "blob_sha1": "de5445a9e5e031f38ad2dc347be2ced6ce7abbd5"
+    }
+  ],
+  "readOnlyReview": {
+    "performedAfterFirstFrozenOracleRun": true,
+    "result": "clear; no actionable issue",
+    "scope": "pinned ref resolution, admitted raw endpoint/status framing, raw count/omission/prefix and UTF-8 byte ordering, exact public schema and incremental output bounds, inherited aggregate work budget",
+    "initialProducerSha256": "879e822b8314742cbb4f9bba5c85c7c4585b5bf10f46749f1719ea2f58fd6460",
+    "finalProducerSha256": "c8efe77263f9bcd38e7fac7a64b35ef3dc05f72449ce08ad40e1f9ef6280cf59",
+    "finalRefinement": "Reviewed producer-owned rejection of mutable dict children within immutable dataclass records; exact decoded JSON admission remains detached. Clear."
+  },
+  "files": [
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/tests/test_changed_files_oracle.py",
+      "sha256": "d0446a126d549aea6a2bf6ab0daba2de5c1a012229f8990a0df41db79a87612c"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/git_history/changed_files.py",
+      "sha256": "c8efe77263f9bcd38e7fac7a64b35ef3dc05f72449ce08ad40e1f9ef6280cf59"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/git_history/reader.py",
+      "sha256": "a016ffa2efb77105dd138615a0280ef087bfd465c5d19817cfa4a2b81d2570ec"
+    }
+  ],
+  "limitations": [
+    "Controlled raw fixtures replace GitRunner diff-tree output; they prove parser admission, not the native subprocess stdout/stderr cap.",
+    "Direct structural 8 MiB fixtures bypass the tighter 2 MiB raw-Git source limit; this is not a simultaneous reachable native maximum claim.",
+    "No CLI, HTTP, browser, installed-wheel or live-service acceptance run by this owner.",
+    "Structural validation does not authenticate externally supplied metadata provenance.",
+    "No monorepo Git/index/branch operations or production file edits by this owner."
+  ],
+  "python": "3.12.14"
+}

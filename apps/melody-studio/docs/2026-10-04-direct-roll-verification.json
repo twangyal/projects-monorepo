@@ -1,0 +1,56 @@
+{
+  "issue": 99,
+  "date": "2026-10-04",
+  "version": "0.5.0",
+  "status": "complete; exact published-head Melody push and PR CI passed; separate Shot fixture repair follows",
+  "contract": "docs/superpowers/specs/2026-10-04-melody-direct-piano-roll-design.md",
+  "unit": {
+    "passed": 252,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 5143.459159,
+    "logSha256": "6ef85c95849adb48c06ef035c4fbdf7126f3aba94adb7a5dee6c8c5b3145820f"
+  },
+  "checks": {
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "finalProductionScript": "index-BcyIN1-j.js",
+    "finalProductionCss": "index-BhGR5Dnv.css",
+    "repairBuildLogSha256": "73cc83cc374abb1016855c6dcc67a016074b2196703806cc471015e26c62050e"
+  },
+  "nativeReceipt": "2026-10-04-direct-roll-native.json",
+  "maximumReceipt": "2026-10-04-direct-roll-maximum.json",
+  "independentOracles": {
+    "producerCases": 7,
+    "scalarCases": 12,
+    "combinedPassed": 19,
+    "firstScalarRun": "9 expected successful-path stub failures and3 negative-only passes; unchanged12 passed after implementation",
+    "nativeExpectations": "Original fractional/polyphonic fixture, referencePCM and independent480tick MIDI/direct sine+envelope WAV scalar expectations authored before new producer inspection.",
+    "maximumExpectations": "Original2048notes/eight20s reference fixture and closed-form edit/tick/PCM expectations frozen before new producer inspection. All hashes/thresholds unchanged."
+  },
+  "repairs": [
+    "Independent review caught second-pointer takeover, stale click suppression affecting keyboard activation, and rejected-keyboard edit leaving an older staged File read current.",
+    "Actual390px touch telemetry proved preview feedback above grid moved it18.234375px midgesture; moving feedback below the roll fixes this without weakening geometry guards.",
+    "Actual minimum-duration note center hit a9px resizehandle; proportional handle plus reduced padding restores original center move and right-edge resize."
+  ],
+  "sourceSha256": {
+    "src/roll-edit.ts": "40d01db52104e5a29acf742c1de8facc70d70a21dffd3f715b108598b1cfeeb4",
+    "src/roll-controller.ts": "92a9f4b446607a6c1037ffda2c3a77e9f44b54d6f9d85e342dcd8607908c1bf6",
+    "src/main.ts": "c29e3ff67bf94c049030b91cf232b9bd7dab4b1f5d790a6abbcbd3abc6e3d390",
+    "src/style.css": "4fce5a9064a35cef88e28e8ba41750eff1012d7d7d2fcce06629fd71861714a4",
+    "tests/roll-edit.test.ts": "c7ca86b52d7a17112b54a7686bc14004437bd4ce9110369193d33d3f8e4c1e73",
+    "tests/roll-oracle.test.ts": "27b9e7fb64e4bbc38ec43f861e288f49a6e6239ad1c9f9dc8418fad3c011e1ef",
+    "tests/roll-edit.spec.ts": "80356139d1b459d83a0d74342df652d61a609bfb9d87048f44130ae7ed8614fa",
+    "tests/roll-edit-fixtures.ts": "caa6289f943ebadd6173f2485742da8db08543bad603ebf3533980937bf880e9",
+    "scripts/smoke_direct_roll.mjs": "e2ff7a84bd1f731216d220b417a1da03e9e7300520aef07bbf21934ee92568c2"
+  },
+  "limitations": [
+    "Local Chromium151 and independent CI Chromium153 pass. Local80 distinct includes targeted fixture/environment corrections; both CI runs pass all80 in one run.",
+    "Maximum count/reference topology is9,580,720 canonical bytes, not the12MiB file ceiling or peak-memory measurement.",
+    "WAV samples and MIDI are local deterministic synthesis/export acceptance, not real humming transcription accuracy or artistic-quality evidence.",
+    "Controlled Chromium touch and390px layout are not physical mobile/browser compatibility.",
+    "Concurrent stale-tab storage #98/PR100 remains separately in progress; direct editor delegates existing commit/history/storage authorities and does not change saved-row formats."
+  ],
+  "ciReceipt": "2026-10-04-direct-roll-ci.json"
+}

@@ -1,0 +1,174 @@
+{
+  "issue": 122,
+  "date": "2026-10-05",
+  "scope": "Retained-stroke editor UI, controller and gesture integration; independent native verification is separately owned.",
+  "contract": "docs/superpowers/specs/2026-10-05-motion-stroke-editing-design.md",
+  "source": {
+    "src/main.ts": {
+      "bytes": 79362,
+      "sha256": "2d1329860af1e539a1689d142fd77481188c40569d6b5650f13848c1df3d9f0f"
+    },
+    "src/style.css": {
+      "bytes": 17574,
+      "sha256": "a3a233b2e835fead1235197e8acc3080e4d95ba75c0328bd4f6f3cc7aa74dd5c"
+    },
+    "src/stroke-editor.ts": {
+      "bytes": 12227,
+      "sha256": "d903636f217d61ad506654e076b5eafaff8d6bbe2eed96988b7820e33ab5dda6"
+    },
+    "tests/stroke-controller.test.ts": {
+      "bytes": 1667,
+      "sha256": "e507ea1f7fce58a6a891f5dfccb8582bd56467708396724a473c001b2898f1a3"
+    }
+  },
+  "verification": [
+    {
+      "command": "node --experimental-strip-types --test tests/stroke-controller.test.ts",
+      "result": "3/3 passed on first actual run",
+      "durationMs": 93.229989,
+      "log": "/tmp/motion122-ui-unit-first.log"
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/stroke-controller.test.ts",
+      "result": "3/3 passed at coherent integration",
+      "durationMs": 103.270556,
+      "log": "/tmp/motion122-ui-unit-final.log"
+    },
+    {
+      "command": "npx eslint src/main.ts src/stroke-editor.ts tests/stroke-controller.test.ts",
+      "result": "passed final owned scope",
+      "log": "/tmp/motion122-ui-lint-final.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "result": "passed full current project",
+      "log": "/tmp/motion122-ui-typecheck-final.log"
+    },
+    {
+      "command": "git diff --check -- src/main.ts src/style.css",
+      "result": "passed; read-only diff check, no Git mutation"
+    },
+    {
+      "command": "npx eslint src/main.ts src/stroke-editor.ts tests/stroke-controller.test.ts",
+      "result": "passed after two native-reproduced repairs",
+      "log": "/tmp/motion122-ui-repair-lint.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "result": "passed after two native-reproduced repairs",
+      "log": "/tmp/motion122-ui-repair-typecheck.log"
+    }
+  ],
+  "firstOutcomes": "No controller RED is claimed: its first execution passed. Kernel actual stub RED and independent native capability/behavioral gates are separately owned; this producer ran no native gate.",
+  "implemented": [
+    "Edit strokes mode and bounded keyed native Stroke N list for the active held cel, including offstage/transparent paths.",
+    "Exact text width/color scratch with explicit Apply/Discard, native caret/node retention through metadata callbacks, whole-editor admission and preblur refusal of unrelated raw values.",
+    "Rigid same-base drag preview with three CSS pixel admission, captured pose/geometry/target/operation, inverse stage axes, final pointerup recomputation and atomic invalid-movement cancellation.",
+    "Arrow/ShiftArrow keyboard translation and narrow-focus Delete/Backspace; repeats ignored, inputs retain native keyboard behavior.",
+    "One existing history commit per accepted edit; true no-op retains Redo; own edits explicitly rebind selection while unrelated topology/frame/history/lifetime invalidates it.",
+    "Selection canvas overlay is separate from renderFrame and all committed graph/PNG/GIF/private snapshot exports.",
+    "Pointercancel/lost capture/Escape/blur/hidden/pagehide/resize/scroll/new raw input retire previews without publishing, saving or closing borrowed image assets."
+  ],
+  "limits": {
+    "selectionPaddingCssPixels": 6,
+    "dragThresholdCssPixels": 3,
+    "keyboardStageStep": 1,
+    "shiftStageStep": 10,
+    "nonuniformCanvas": "refuse when aspect-ratio difference exceeds0.001",
+    "existingModelAndHistoryLimits": "unchanged"
+  },
+  "unchanged": [
+    "No project/library/storage/history/render/schema/dependency changes by this owner.",
+    "Existing Draw and whole-layer Move, committed export and optional private-link flows retained."
+  ],
+  "pending": [
+    "Published CI/final merge acceptance is tracked by root; local native and maximum acceptance have passed."
+  ],
+  "nativeReviewRepairs": {
+    "reportedBy": "root/independent native oracle; no browser run by this producer",
+    "firstRun": {
+      "cases": 11,
+      "passed": 8,
+      "failed": 3,
+      "durationMs": 45103.262,
+      "results": "/tmp/motion122-native-first-results.json",
+      "artifacts": "/workspace/motion122-native-first-artifacts"
+    },
+    "actualProductRED": [
+      "Unchanged native color Apply rewrote retained #0000FF to #0000ff, admitting an unintended history/save edit.",
+      "Explicit Discard pose edits clicked after raw211 caused native blur change to commit211 instead of keeping original200."
+    ],
+    "repairs": [
+      "Appearance Apply preserves committed color spelling when the native chosen RGB equals its lowercase representation.",
+      "Discard pose pointerdown prevents default focus/blur before the existing click discards raw fields; other normal blur commits are unchanged."
+    ],
+    "separateFixtureFailure": "A third failure tried filling a disabled title during an active gesture; independent owner is adapting the admission sequence, not weakening product assertions.",
+    "nativeGREEN": "Root complete141-case native suite passed117301.111ms with both genuine repaired assertions retained."
+  },
+  "rootFinalAcceptance": {
+    "owner": "root and independent native/max owners; this UI producer did not run the gates",
+    "receipt": "2026-10-05-stroke-edit-verification.json",
+    "node": {
+      "tests": 225,
+      "passed": 225,
+      "durationMs": 27762.415369,
+      "lint": "passed",
+      "typecheck": "passed",
+      "normalProductionBuild": "passed",
+      "log": {
+        "path": "/tmp/motion122-node-check-final.log",
+        "sha256": "929da0bcee2337d6643cf509568f3b61f6baf945d356cfd330d982b1ce656345",
+        "bytes": 24118
+      }
+    },
+    "native": {
+      "stats": {
+        "startTime": "2026-10-05T02:45:05.974Z",
+        "duration": 117301.111,
+        "expected": 141,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "results": {
+        "path": "/tmp/motion122-full-native-first-results.json",
+        "sha256": "d3909041844a784e3af81b35897c34d16a9de73f29e59614a0dfe7c2e8861175",
+        "bytes": 156232
+      },
+      "log": {
+        "path": "/tmp/motion122-full-native-first.log",
+        "sha256": "6d60ad83fc10af0f7a901fedb63c66dddbd7aa7e6831061437b7727a42555dc9",
+        "bytes": 20980
+      },
+      "artifacts": "/workspace/motion122-full-native-first-artifacts"
+    },
+    "maximum": {
+      "status": "passed",
+      "wallMs": 86569.363247,
+      "runtime": {
+        "path": "/workspace/motion122-maximum-fixtures/verification.json",
+        "sha256": "f367e76515232b4a9e1dcdd586548dde761b7f6ca203cdb29e9a4fdf06edf2e1",
+        "bytes": 14660
+      },
+      "receipt": "2026-10-05-stroke-edit-maximum.json",
+      "capacityBytes": 6291624,
+      "editedBackup": {
+        "capacityByteExact": true,
+        "editedArtworkByteExact": true,
+        "backupBytes": 223074,
+        "backupSha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      "gif": {
+        "bytes": 121922,
+        "sha256": "fe94702444d7bf1f15a8dadf6c8dfb9d205fcc4bc05e6ea9a1ad44f61da8ce54",
+        "frames": 96,
+        "durationMs": 8000,
+        "encodeAndDownloadWallMs": 2178.820332999996,
+        "independentDecodeWallMs": 1083.5787649999984
+      },
+      "browsersClosed": true,
+      "previewStopped": true
+    },
+    "sourceHashesMatch": true
+  }
+}

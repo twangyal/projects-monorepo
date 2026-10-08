@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-04T13:51:38.053Z",
+  "repository": "twangyal/projects-monorepo",
+  "requestedHead": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+  "status": "all-thirteen-pr-workflows-and-motion-push-success",
+  "source": "Authorized GitHub connector REST metadata and decoded complete job logs",
+  "motion": {
+    "pullRequest": {
+      "runId": 37206793216,
+      "jobId": 111449536308,
+      "conclusion": "success",
+      "headSha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "checkoutSha": "c97184d448c5b8532d6f62b63dc6694ea0d3dc27",
+      "checkoutKind": "GitHub pull request merge",
+      "unitTests": {
+        "total": 63,
+        "passed": 63,
+        "failed": 0,
+        "durationMs": 1133.785764
+      },
+      "browserTests": {
+        "passed": 61,
+        "durationSeconds": 35.6,
+        "workers": 2
+      },
+      "lint": "success",
+      "typecheck": "success",
+      "build": {
+        "conclusion": "success",
+        "viteDurationMs": 383
+      },
+      "logPath": "/tmp/motion84-remote-ci.log",
+      "job": {
+        "id": 111449536308,
+        "name": "verify",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37206793216,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run npm ci",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run npm run check",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Run npm run typecheck",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Production Chromium workflow and real GIF verification",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 9
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          }
+        ]
+      },
+      "logBytes": 50748,
+      "logSha256": "18fe0cab01cbd6c938ae7096fd9c1d546fed0c6ec0faff0cd18dfa9f7201eacb"
+    },
+    "push": {
+      "runId": 37206790092,
+      "jobId": 111449527713,
+      "conclusion": "success",
+      "headSha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "checkoutSha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "checkoutKind": "Exact published branch head",
+      "unitTests": {
+        "total": 63,
+        "passed": 63,
+        "failed": 0,
+        "durationMs": 1308.823141
+      },
+      "browserTests": {
+        "passed": 61,
+        "durationSeconds": 36.5,
+        "workers": 2
+      },
+      "lint": "success",
+      "typecheck": "success",
+      "build": {
+        "conclusion": "success",
+        "viteDurationMs": 398
+      },
+      "logPath": "/tmp/motion84-remote-push-ci.log",
+      "job": {
+        "id": 111449527713,
+        "name": "verify",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 37206790092,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run npm ci",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run npm run check",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Run npm run typecheck",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Production Chromium workflow and real GIF verification",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 9
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          }
+        ]
+      },
+      "logBytes": 49763,
+      "logSha256": "c29cb652b5235624a5230913d8d044195f86ad80ed3604ee9e959262bd67c033"
+    }
+  },
+  "pullRequestWorkflows": [
+    {
+      "id": 37206793199,
+      "name": "Clothing Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793199",
+      "updated_at": "2026-10-04T13:46:56Z"
+    },
+    {
+      "id": 37206793195,
+      "name": "Style Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793195",
+      "updated_at": "2026-10-04T13:47:14Z"
+    },
+    {
+      "id": 37206793219,
+      "name": "Lens Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793219",
+      "updated_at": "2026-10-04T13:47:22Z"
+    },
+    {
+      "id": 37206793216,
+      "name": "Motion Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793216",
+      "updated_at": "2026-10-04T13:47:27Z"
+    },
+    {
+      "id": 37206793257,
+      "name": "Melody Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793257",
+      "updated_at": "2026-10-04T13:48:01Z"
+    },
+    {
+      "id": 37206793170,
+      "name": "Friendly Challenges",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793170",
+      "updated_at": "2026-10-04T13:48:07Z"
+    },
+    {
+      "id": 37206793196,
+      "name": "Shot Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793196",
+      "updated_at": "2026-10-04T13:48:01Z"
+    },
+    {
+      "id": 37206793177,
+      "name": "Git History",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793177",
+      "updated_at": "2026-10-04T13:47:50Z"
+    },
+    {
+      "id": 37206793172,
+      "name": "Color Context Lab",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793172",
+      "updated_at": "2026-10-04T13:47:50Z"
+    },
+    {
+      "id": 37206793202,
+      "name": "Duet",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793202",
+      "updated_at": "2026-10-04T13:48:35Z"
+    },
+    {
+      "id": 37206793206,
+      "name": "Stock Notebook",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793206",
+      "updated_at": "2026-10-04T13:48:56Z"
+    },
+    {
+      "id": 37206793187,
+      "name": "Composure",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793187",
+      "updated_at": "2026-10-04T13:49:32Z"
+    },
+    {
+      "id": 37206793176,
+      "name": "Karaoke Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206793176",
+      "updated_at": "2026-10-04T13:50:14Z"
+    }
+  ],
+  "additionalPushRuns": [
+    {
+      "id": 37206790092,
+      "name": "Motion Studio",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "3ea4707d80fa8c3fee8ae163273d6152b99700b5",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37206790092",
+      "updated_at": "2026-10-04T13:47:32Z"
+    }
+  ],
+  "limits": [
+    "Read-only inspection: no workflow rerun, repository mutation, build, or Git command performed.",
+    "Thirteen pull-request workflows are distinct from the additional Motion push run.",
+    "Only Motion job logs were inspected for exact test counts; other workflow conclusions are metadata only.",
+    "CI does not establish the separately running local maximum-capacity smoke outcome.",
+    "Passing-job artifact upload was intentionally skipped by workflow conditions.",
+    "One direct gh metadata request returned Forbidden; it was not retried. Authorized connector reads succeeded."
+  ]
+}

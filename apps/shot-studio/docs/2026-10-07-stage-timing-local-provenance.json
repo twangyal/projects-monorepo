@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "variation": "native-stage-timing",
+  "sourceBase": "96a4989c2894d9085789cadb8f2df6974e02569d",
+  "sourceFiles": {
+    "scripts/stage-timing-diagnostics.mjs": "b2f37c6e170b48109fff1d400d6a13c8441765d88834852ba18bd344f0bf51d8",
+    "scripts/smoke_sequence_soundtrack.mjs": "3b1648055d9661742dd42b616d91ee4c15df4ca6425e28c7886ff9e5eb536999"
+  },
+  "receiptSha256": "6d4fa88ccec6980449c8947f7b01502768fb403e67662add3f3c82f240341bc3",
+  "browserVersion": "153.0.8010.0",
+  "environment": "Local software WebGL Chromium 153, alongside the standard native browser suite. Not a benchmark and not the failing full Chromium155 environment.",
+  "limits": [
+    "Observer elapsed times include scheduling/native waits; stages may overlap and are not additive CPU time.",
+    "Draw timing excludes later GPU work; VideoFrame snapshots may synchronize rendering.",
+    "All renderer draw calls in this window are counted; draw timing is not export-only attribution.",
+    "A separate diagnostic variation, not the unchanged original acceptance run."
+  ]
+}

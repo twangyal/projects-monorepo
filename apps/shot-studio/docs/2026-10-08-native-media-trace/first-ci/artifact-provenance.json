@@ -1,0 +1,1122 @@
+[
+  {
+    "artifact": {
+      "id": 11525205005,
+      "name": "shot-studio-full-chromium-155-media-trace",
+      "size_in_bytes": 11371427,
+      "url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11525205005",
+      "archive_download_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11525205005/zip",
+      "expired": false,
+      "created_at": "2026-10-08T02:29:54Z",
+      "expires_at": "2026-10-09T02:29:52Z",
+      "updated_at": "2026-10-08T02:29:54Z",
+      "digest": "sha256:062bd9c40bc270b78fcbcef91fb96b3d65f86da84220c8516a741194d8c98a70",
+      "workflow_run": {
+        "id": 37717782106,
+        "repository_id": 1402513181,
+        "head_repository_id": 1402513181,
+        "head_branch": "Astra",
+        "head_sha": "165efad5e8f5506e161a430e705a40daeaf85e7a"
+      }
+    },
+    "zipSha256": "062bd9c40bc270b78fcbcef91fb96b3d65f86da84220c8516a741194d8c98a70",
+    "entries": [
+      {
+        "path": "media-trace-155/390px.png",
+        "bytes": 55155,
+        "sha256": "fbd5c9376de8a162195fb507bffc9542a3f46df13f921998d511a66d27d444ee"
+      },
+      {
+        "path": "media-trace-155/adjustment-undo.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "media-trace-155/adjustment-redo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-export.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-over-16MiB.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-padded-undo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-over-324KiB-metadata.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-wav-refusal.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "media-trace-155/desktop.png",
+        "bytes": 606306,
+        "sha256": "904a1fd4cf6b30433ab138ef45f503c40c52b4f0104284171e789755a9d6b179"
+      },
+      {
+        "path": "media-trace-155/full-source-range.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "media-trace-155/legacy-inner-sequence.json",
+        "bytes": 33978,
+        "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+      },
+      {
+        "path": "media-trace-155/metadata-admission.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/ordinary-after-export.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "media-trace-155/ordinary-after-restart.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "media-trace-155/ordinary-silent-take.webm",
+        "bytes": 15023,
+        "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+      },
+      {
+        "path": "media-trace-155/padded-container-complete.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "media-trace-155/ordinary-before.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "media-trace-155/padded-container.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "media-trace-155/soundtrack-60s.webm",
+        "bytes": 9879042,
+        "sha256": "e9dde7296c21688951129293cd7fb040c0b1c7e35ccfb48cb4cb749adbe49467"
+      },
+      {
+        "path": "media-trace-155/take-after-export.shot-take",
+        "bytes": 15700,
+        "sha256": "2581035b68f0b425710b85356ad284ed90ae75869722dbcfd7742ee4cc059276"
+      },
+      {
+        "path": "media-trace-155/take-after-restart.shot-take",
+        "bytes": 15700,
+        "sha256": "2581035b68f0b425710b85356ad284ed90ae75869722dbcfd7742ee4cc059276"
+      },
+      {
+        "path": "media-trace-155/take-before.shot-take",
+        "bytes": 15700,
+        "sha256": "2581035b68f0b425710b85356ad284ed90ae75869722dbcfd7742ee4cc059276"
+      },
+      {
+        "path": "media-trace-155/trimmed-after-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/trimmed-before-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/verification.json",
+        "bytes": 83132,
+        "sha256": "d01984e46a440fe38a497e1077583bcb229374b303def475f5d51aa68371a392"
+      },
+      {
+        "path": "media-trace-155-browser.log",
+        "bytes": 15760,
+        "sha256": "3b6c8c4a9e0d6c1a2a8897bdd916b72149c06512ff0bc6e5902f937bfddb824d"
+      }
+    ],
+    "captureStatus": "passed",
+    "inspectionStatus": "passed",
+    "recordAndDownloadWallMs": 44186.285844,
+    "mediaTrace": {
+      "schemaVersion": 1,
+      "status": "measured",
+      "observedEvents": 46924,
+      "invalidEvents": 0,
+      "unsupportedPhases": 0,
+      "eventLimitReached": false,
+      "dataLossOccurred": false,
+      "bufferFull": false,
+      "complete": true,
+      "buckets": {
+        "vpx_codec_encode": {
+          "events": 1800,
+          "wallMs": 10765.519,
+          "maxWallMs": 22.225,
+          "threadCpuMs": 5238.36,
+          "threadCpuEvents": 1800,
+          "missingThreadCpuEvents": 0,
+          "invalidThreadCpuEvents": 0
+        },
+        "VideoEncoder::Ouput": {
+          "events": 1800,
+          "wallMs": 261.542,
+          "maxWallMs": 3.513,
+          "threadCpuMs": 237.713,
+          "threadCpuEvents": 1800,
+          "missingThreadCpuEvents": 0,
+          "invalidThreadCpuEvents": 0
+        }
+      },
+      "limits": [
+        "Each named bucket is inclusive native event time; buckets can overlap and must not be added or subtracted into a CPU budget.",
+        "Thread CPU covers only the emitting thread, not codec/raster worker threads or exclusive encoder CPU; missing counters are null, not zero. Wall and thread durations use independently reported native clocks.",
+        "Only selected complete media/GPU events are admitted. Native buffer loss/fullness, unsupported phases, invalid counters and event caps disclose incomplete coverage.",
+        "This separately labelled tracing variation has observer overhead and cannot clear an unchanged original acceptance failure.",
+        "No raw arguments, URLs, identities, process/thread IDs, timestamps or media are retained."
+      ]
+    },
+    "processCpu": {
+      "schemaVersion": 1,
+      "status": "measured",
+      "wallMs": 43769.446425,
+      "matchedCpuMs": 168060,
+      "matchedProcesses": 6,
+      "newProcesses": 1,
+      "missingProcesses": 0,
+      "invalidPairs": 0,
+      "zeroCounterPairs": 2,
+      "complete": false,
+      "byType": {
+        "browser": {
+          "processes": 1,
+          "cpuMs": 99.99999999999997
+        },
+        "renderer": {
+          "processes": 3,
+          "cpuMs": 16220
+        },
+        "GPU": {
+          "processes": 1,
+          "cpuMs": 151720
+        },
+        "network.mojom.NetworkService": {
+          "processes": 1,
+          "cpuMs": 20.000000000000004
+        }
+      },
+      "limits": [
+        "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+        "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+        "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+        "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+        "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+      ]
+    }
+  },
+  {
+    "artifact": {
+      "id": 11525075412,
+      "name": "shot-studio-full-chromium-155-stage-timing",
+      "size_in_bytes": 11371396,
+      "url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11525075412",
+      "archive_download_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11525075412/zip",
+      "expired": false,
+      "created_at": "2026-10-08T02:29:56Z",
+      "expires_at": "2026-10-09T02:29:54Z",
+      "updated_at": "2026-10-08T02:29:56Z",
+      "digest": "sha256:80d9c70ddc22fcc28fca5c07dbe18f295c4f1fb2b04a9b95b1836c686502db31",
+      "workflow_run": {
+        "id": 37717782106,
+        "repository_id": 1402513181,
+        "head_repository_id": 1402513181,
+        "head_branch": "Astra",
+        "head_sha": "165efad5e8f5506e161a430e705a40daeaf85e7a"
+      }
+    },
+    "zipSha256": "80d9c70ddc22fcc28fca5c07dbe18f295c4f1fb2b04a9b95b1836c686502db31",
+    "entries": [
+      {
+        "path": "stage-timing-155/adjustment-redo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/adjustment-undo.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "stage-timing-155/390px.png",
+        "bytes": 55155,
+        "sha256": "fbd5c9376de8a162195fb507bffc9542a3f46df13f921998d511a66d27d444ee"
+      },
+      {
+        "path": "stage-timing-155/after-export.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-over-16MiB.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-over-324KiB-metadata.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-padded-undo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-wav-refusal.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "stage-timing-155/desktop.png",
+        "bytes": 606119,
+        "sha256": "30a801ba3011b12f39932e5ea7ab7b5a3e0d3476ef5264dc7a41f5cdac10c3f5"
+      },
+      {
+        "path": "stage-timing-155/full-source-range.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "stage-timing-155/legacy-inner-sequence.json",
+        "bytes": 33978,
+        "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+      },
+      {
+        "path": "stage-timing-155/metadata-admission.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/ordinary-after-export.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "stage-timing-155/ordinary-after-restart.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "stage-timing-155/ordinary-before.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "stage-timing-155/ordinary-silent-take.webm",
+        "bytes": 15023,
+        "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+      },
+      {
+        "path": "stage-timing-155/padded-container-complete.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "stage-timing-155/padded-container.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "stage-timing-155/soundtrack-60s.webm",
+        "bytes": 9879042,
+        "sha256": "e9dde7296c21688951129293cd7fb040c0b1c7e35ccfb48cb4cb749adbe49467"
+      },
+      {
+        "path": "stage-timing-155/take-after-export.shot-take",
+        "bytes": 15700,
+        "sha256": "0673e7c24735aa290d97adeb20383716a21249ea56c906dc4e7de820984dcee6"
+      },
+      {
+        "path": "stage-timing-155/take-after-restart.shot-take",
+        "bytes": 15700,
+        "sha256": "0673e7c24735aa290d97adeb20383716a21249ea56c906dc4e7de820984dcee6"
+      },
+      {
+        "path": "stage-timing-155/trimmed-after-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/take-before.shot-take",
+        "bytes": 15700,
+        "sha256": "0673e7c24735aa290d97adeb20383716a21249ea56c906dc4e7de820984dcee6"
+      },
+      {
+        "path": "stage-timing-155/trimmed-before-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/verification.json",
+        "bytes": 85350,
+        "sha256": "71d95f6f8e962c24e185bfe3a4303e0cb61f9bb0894ee5074863c2175015737d"
+      },
+      {
+        "path": "stage-timing-155-browser.log",
+        "bytes": 15565,
+        "sha256": "3e2f67cf161639fd01ee24c452da56c2dedf0c87ed8486a9351038763696b871"
+      }
+    ],
+    "captureStatus": "passed",
+    "inspectionStatus": "passed",
+    "recordAndDownloadWallMs": 43659.558909,
+    "mediaTrace": {},
+    "processCpu": {
+      "schemaVersion": 1,
+      "status": "measured",
+      "wallMs": 43629.827617,
+      "matchedCpuMs": 167380,
+      "matchedProcesses": 5,
+      "newProcesses": 0,
+      "missingProcesses": 0,
+      "invalidPairs": 0,
+      "zeroCounterPairs": 3,
+      "complete": false,
+      "byType": {
+        "browser": {
+          "processes": 1,
+          "cpuMs": 79.99999999999996
+        },
+        "renderer": {
+          "processes": 2,
+          "cpuMs": 16359.999999999998
+        },
+        "GPU": {
+          "processes": 1,
+          "cpuMs": 150930
+        },
+        "network.mojom.NetworkService": {
+          "processes": 1,
+          "cpuMs": 10.000000000000009
+        }
+      },
+      "limits": [
+        "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+        "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+        "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+        "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+        "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+      ]
+    }
+  },
+  {
+    "artifact": {
+      "id": 11524701981,
+      "name": "shot-studio-full-chromium-155-maximum",
+      "size_in_bytes": 11370262,
+      "url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11524701981",
+      "archive_download_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11524701981/zip",
+      "expired": false,
+      "created_at": "2026-10-08T02:29:58Z",
+      "expires_at": "2026-10-09T02:29:56Z",
+      "updated_at": "2026-10-08T02:29:58Z",
+      "digest": "sha256:894e04d600df9bbf2be732d67c8cc128d5380c10ae00ef5e9e95bb8fdb9ed41b",
+      "workflow_run": {
+        "id": 37717782106,
+        "repository_id": 1402513181,
+        "head_repository_id": 1402513181,
+        "head_branch": "Astra",
+        "head_sha": "165efad5e8f5506e161a430e705a40daeaf85e7a"
+      }
+    },
+    "zipSha256": "894e04d600df9bbf2be732d67c8cc128d5380c10ae00ef5e9e95bb8fdb9ed41b",
+    "entries": [
+      {
+        "path": "maximum-155/adjustment-redo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/adjustment-undo.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "maximum-155/390px.png",
+        "bytes": 55155,
+        "sha256": "fbd5c9376de8a162195fb507bffc9542a3f46df13f921998d511a66d27d444ee"
+      },
+      {
+        "path": "maximum-155/after-export.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-over-16MiB.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-over-324KiB-metadata.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-padded-undo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-wav-refusal.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "maximum-155/desktop.png",
+        "bytes": 606373,
+        "sha256": "160911cd7aa46c4b4b7961b569dcc1fb308be801f43f5324d4398f9ee7e75b63"
+      },
+      {
+        "path": "maximum-155/full-source-range.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "maximum-155/legacy-inner-sequence.json",
+        "bytes": 33978,
+        "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+      },
+      {
+        "path": "maximum-155/metadata-admission.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/ordinary-after-export.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "maximum-155/ordinary-after-restart.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "maximum-155/ordinary-before.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "maximum-155/ordinary-silent-take.webm",
+        "bytes": 15023,
+        "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+      },
+      {
+        "path": "maximum-155/padded-container-complete.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "maximum-155/padded-container.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "maximum-155/soundtrack-60s.webm",
+        "bytes": 9879042,
+        "sha256": "e9dde7296c21688951129293cd7fb040c0b1c7e35ccfb48cb4cb749adbe49467"
+      },
+      {
+        "path": "maximum-155/take-after-export.shot-take",
+        "bytes": 15700,
+        "sha256": "ffbcf712ee34b91b87e9c6d479de7b52a3c71d8656c84b76a722eb03541e0d22"
+      },
+      {
+        "path": "maximum-155/take-after-restart.shot-take",
+        "bytes": 15700,
+        "sha256": "ffbcf712ee34b91b87e9c6d479de7b52a3c71d8656c84b76a722eb03541e0d22"
+      },
+      {
+        "path": "maximum-155/take-before.shot-take",
+        "bytes": 15700,
+        "sha256": "ffbcf712ee34b91b87e9c6d479de7b52a3c71d8656c84b76a722eb03541e0d22"
+      },
+      {
+        "path": "maximum-155/trimmed-before-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/verification.json",
+        "bytes": 80239,
+        "sha256": "55e971985cc2645831493f27fc5ae6fe4e3ab715ea3b0058c673ffc92e7378c6"
+      },
+      {
+        "path": "maximum-155/trimmed-after-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155-browser.log",
+        "bytes": 15757,
+        "sha256": "7755a8100cdaaf88f280bc16a98e7e278a74eff238be089616a143b8695dc771"
+      }
+    ],
+    "captureStatus": "passed",
+    "inspectionStatus": "passed",
+    "recordAndDownloadWallMs": 43012.885857,
+    "mediaTrace": {},
+    "processCpu": {}
+  },
+  {
+    "artifact": {
+      "id": 11525150496,
+      "name": "shot-studio-full-chromium-155-media-trace",
+      "size_in_bytes": 1033610,
+      "url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11525150496",
+      "archive_download_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11525150496/zip",
+      "expired": false,
+      "created_at": "2026-10-08T02:31:35Z",
+      "expires_at": "2026-10-09T02:31:33Z",
+      "updated_at": "2026-10-08T02:31:35Z",
+      "digest": "sha256:d15a4f0f0946c2589e69b87f5ec48ce250c2fd55c251398317dd3ba6a9ad0583",
+      "workflow_run": {
+        "id": 37717777750,
+        "repository_id": 1402513181,
+        "head_repository_id": 1402513181,
+        "head_branch": "Astra",
+        "head_sha": "165efad5e8f5506e161a430e705a40daeaf85e7a"
+      }
+    },
+    "zipSha256": "d15a4f0f0946c2589e69b87f5ec48ce250c2fd55c251398317dd3ba6a9ad0583",
+    "entries": [
+      {
+        "path": "media-trace-155/adjustment-undo.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "media-trace-155/adjustment-redo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-over-16MiB.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-over-324KiB-metadata.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-padded-undo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/after-wav-refusal.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "media-trace-155/full-source-range.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "media-trace-155/legacy-inner-sequence.json",
+        "bytes": 33978,
+        "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+      },
+      {
+        "path": "media-trace-155/metadata-admission.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/ordinary-after-restart.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "media-trace-155/ordinary-before.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "media-trace-155/ordinary-silent-take.webm",
+        "bytes": 15023,
+        "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+      },
+      {
+        "path": "media-trace-155/padded-container-complete.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "media-trace-155/padded-container.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "media-trace-155/take-after-restart.shot-take",
+        "bytes": 15700,
+        "sha256": "11336735359c13d6c686041424680bc1b55401d10c6a222ae4d6598d6455286e"
+      },
+      {
+        "path": "media-trace-155/take-before.shot-take",
+        "bytes": 15700,
+        "sha256": "11336735359c13d6c686041424680bc1b55401d10c6a222ae4d6598d6455286e"
+      },
+      {
+        "path": "media-trace-155/trimmed-after-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/trimmed-before-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "media-trace-155/verification.json",
+        "bytes": 17427,
+        "sha256": "80bf4e22bf77d4879098a422e5ef011da3854bb6fb7191ee0031573b500fbc6d"
+      },
+      {
+        "path": "media-trace-155-browser.log",
+        "bytes": 15829,
+        "sha256": "04fa841a6df35a0eb2de3873b29ac7199bf11ed517d49883cb10b9d01ed522d2"
+      }
+    ],
+    "captureStatus": "failed",
+    "inspectionStatus": null,
+    "recordAndDownloadWallMs": null,
+    "mediaTrace": {
+      "schemaVersion": 1,
+      "status": "measured",
+      "observedEvents": 46291,
+      "invalidEvents": 0,
+      "unsupportedPhases": 0,
+      "eventLimitReached": false,
+      "dataLossOccurred": false,
+      "bufferFull": false,
+      "complete": true,
+      "buckets": {
+        "vpx_codec_encode": {
+          "events": 1771,
+          "wallMs": 15182.595,
+          "maxWallMs": 28.372,
+          "threadCpuMs": 8195.921,
+          "threadCpuEvents": 1771,
+          "missingThreadCpuEvents": 0,
+          "invalidThreadCpuEvents": 0
+        },
+        "VideoEncoder::Ouput": {
+          "events": 1770,
+          "wallMs": 338.09,
+          "maxWallMs": 7.876,
+          "threadCpuMs": 291.773,
+          "threadCpuEvents": 1770,
+          "missingThreadCpuEvents": 0,
+          "invalidThreadCpuEvents": 0
+        }
+      },
+      "limits": [
+        "Each named bucket is inclusive native event time; buckets can overlap and must not be added or subtracted into a CPU budget.",
+        "Thread CPU covers only the emitting thread, not codec/raster worker threads or exclusive encoder CPU; missing counters are null, not zero. Wall and thread durations use independently reported native clocks.",
+        "Only selected complete media/GPU events are admitted. Native buffer loss/fullness, unsupported phases, invalid counters and event caps disclose incomplete coverage.",
+        "This separately labelled tracing variation has observer overhead and cannot clear an unchanged original acceptance failure.",
+        "No raw arguments, URLs, identities, process/thread IDs, timestamps or media are retained."
+      ]
+    },
+    "processCpu": {
+      "schemaVersion": 1,
+      "status": "measured",
+      "wallMs": 95793.215386,
+      "matchedCpuMs": 310230,
+      "matchedProcesses": 8,
+      "newProcesses": 1,
+      "missingProcesses": 0,
+      "invalidPairs": 0,
+      "zeroCounterPairs": 0,
+      "complete": false,
+      "byType": {
+        "browser": {
+          "processes": 1,
+          "cpuMs": 520
+        },
+        "renderer": {
+          "processes": 3,
+          "cpuMs": 26890
+        },
+        "GPU": {
+          "processes": 1,
+          "cpuMs": 282750
+        },
+        "network.mojom.NetworkService": {
+          "processes": 1,
+          "cpuMs": 39.99999999999999
+        },
+        "storage.mojom.StorageService": {
+          "processes": 1,
+          "cpuMs": 20
+        },
+        "device.mojom.XRDeviceService": {
+          "processes": 1,
+          "cpuMs": 10
+        }
+      },
+      "limits": [
+        "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+        "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+        "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+        "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+        "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+      ]
+    }
+  },
+  {
+    "artifact": {
+      "id": 11524981203,
+      "name": "shot-studio-full-chromium-155-maximum",
+      "size_in_bytes": 11372489,
+      "url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11524981203",
+      "archive_download_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11524981203/zip",
+      "expired": false,
+      "created_at": "2026-10-08T02:31:39Z",
+      "expires_at": "2026-10-09T02:31:37Z",
+      "updated_at": "2026-10-08T02:31:39Z",
+      "digest": "sha256:3f95f9ff86fa40e1ed55c331a98a26f7f0e72b7d9e8bbbc1fa86f8012003650e",
+      "workflow_run": {
+        "id": 37717777750,
+        "repository_id": 1402513181,
+        "head_repository_id": 1402513181,
+        "head_branch": "Astra",
+        "head_sha": "165efad5e8f5506e161a430e705a40daeaf85e7a"
+      }
+    },
+    "zipSha256": "3f95f9ff86fa40e1ed55c331a98a26f7f0e72b7d9e8bbbc1fa86f8012003650e",
+    "entries": [
+      {
+        "path": "maximum-155/390px.png",
+        "bytes": 55155,
+        "sha256": "fbd5c9376de8a162195fb507bffc9542a3f46df13f921998d511a66d27d444ee"
+      },
+      {
+        "path": "maximum-155/adjustment-undo.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "maximum-155/adjustment-redo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-export.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-over-16MiB.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-over-324KiB-metadata.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-padded-undo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/after-wav-refusal.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "maximum-155/desktop.png",
+        "bytes": 606251,
+        "sha256": "3f78e8a854d373c90d2f8afa30ceaac967f2d921341ddedcc948e72c28f1554c"
+      },
+      {
+        "path": "maximum-155/full-source-range.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "maximum-155/legacy-inner-sequence.json",
+        "bytes": 33978,
+        "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+      },
+      {
+        "path": "maximum-155/metadata-admission.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/ordinary-after-export.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "maximum-155/ordinary-after-restart.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "maximum-155/ordinary-before.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "maximum-155/ordinary-silent-take.webm",
+        "bytes": 15023,
+        "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+      },
+      {
+        "path": "maximum-155/padded-container-complete.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "maximum-155/padded-container.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "maximum-155/soundtrack-60s.webm",
+        "bytes": 9879042,
+        "sha256": "ad831343a6d91f083d9a12a756c46d8498860838ad056ae5b4533568715fd3b4"
+      },
+      {
+        "path": "maximum-155/take-after-restart.shot-take",
+        "bytes": 15700,
+        "sha256": "60f7b1cc357f93ee89901fec854cef9f531f6d3d3744efe5a7ce48f365da0b99"
+      },
+      {
+        "path": "maximum-155/take-after-export.shot-take",
+        "bytes": 15700,
+        "sha256": "60f7b1cc357f93ee89901fec854cef9f531f6d3d3744efe5a7ce48f365da0b99"
+      },
+      {
+        "path": "maximum-155/take-before.shot-take",
+        "bytes": 15700,
+        "sha256": "60f7b1cc357f93ee89901fec854cef9f531f6d3d3744efe5a7ce48f365da0b99"
+      },
+      {
+        "path": "maximum-155/trimmed-after-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/trimmed-before-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "maximum-155/verification.json",
+        "bytes": 82318,
+        "sha256": "e1117f76716e374e151e1200d11e176846eb960d0f2e32cb6e0286e17c1b12e8"
+      },
+      {
+        "path": "maximum-155-browser.log",
+        "bytes": 15757,
+        "sha256": "073a7dd90e453132c6aa5ecde55e7b83f468099d60364ad96151c3ccc776bddf"
+      }
+    ],
+    "captureStatus": "passed",
+    "inspectionStatus": "passed",
+    "recordAndDownloadWallMs": 69560.681084,
+    "mediaTrace": {},
+    "processCpu": {}
+  },
+  {
+    "artifact": {
+      "id": 11524811744,
+      "name": "shot-studio-full-chromium-155-stage-timing",
+      "size_in_bytes": 1033926,
+      "url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11524811744",
+      "archive_download_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/artifacts/11524811744/zip",
+      "expired": false,
+      "created_at": "2026-10-08T02:31:36Z",
+      "expires_at": "2026-10-09T02:31:35Z",
+      "updated_at": "2026-10-08T02:31:36Z",
+      "digest": "sha256:6d58d09f6b7a734b3e045d500c727b36ea62201cda3371dd931684004c84d706",
+      "workflow_run": {
+        "id": 37717777750,
+        "repository_id": 1402513181,
+        "head_repository_id": 1402513181,
+        "head_branch": "Astra",
+        "head_sha": "165efad5e8f5506e161a430e705a40daeaf85e7a"
+      }
+    },
+    "zipSha256": "6d58d09f6b7a734b3e045d500c727b36ea62201cda3371dd931684004c84d706",
+    "entries": [
+      {
+        "path": "stage-timing-155/adjustment-redo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/adjustment-undo.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "stage-timing-155/after-over-16MiB.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-over-324KiB-metadata.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-padded-undo.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/after-wav-refusal.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "stage-timing-155/full-source-range.shot-sequence",
+        "bytes": 11554363,
+        "sha256": "014fe3b6da2652e85674ae33ab195e78a8c752705bde6b5be092fe1e3188bd91"
+      },
+      {
+        "path": "stage-timing-155/legacy-inner-sequence.json",
+        "bytes": 33978,
+        "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+      },
+      {
+        "path": "stage-timing-155/metadata-admission.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/ordinary-after-restart.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "stage-timing-155/ordinary-before.json",
+        "bytes": 669,
+        "sha256": "3c9a8aadfb9e81b0d62e2bb32a4be2bacf11ed93414b2d2c1a050cc9f11307bd"
+      },
+      {
+        "path": "stage-timing-155/ordinary-silent-take.webm",
+        "bytes": 15023,
+        "sha256": "51e8e2926616830ca06ae0b48d59de3176a2024981d340aa4527bf7b2429969b"
+      },
+      {
+        "path": "stage-timing-155/padded-container-complete.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "stage-timing-155/padded-container.shot-sequence",
+        "bytes": 12617223,
+        "sha256": "784cd740afe2ccbcfe850a0c8a9c7543b8f356941d03573a5213d9d2c6727b90"
+      },
+      {
+        "path": "stage-timing-155/take-after-restart.shot-take",
+        "bytes": 15700,
+        "sha256": "92c3b485f550e828a71b4823b6346477b5fe01b078ffa50a0d63a4a4033b2110"
+      },
+      {
+        "path": "stage-timing-155/take-before.shot-take",
+        "bytes": 15700,
+        "sha256": "92c3b485f550e828a71b4823b6346477b5fe01b078ffa50a0d63a4a4033b2110"
+      },
+      {
+        "path": "stage-timing-155/trimmed-after-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/trimmed-before-restart.shot-sequence",
+        "bytes": 11554385,
+        "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+      },
+      {
+        "path": "stage-timing-155/verification.json",
+        "bytes": 19547,
+        "sha256": "8409461592f5d34667b0afb8d9343200e5ad5ca4c57c9e0bf38c0edc509caad1"
+      },
+      {
+        "path": "stage-timing-155-browser.log",
+        "bytes": 15831,
+        "sha256": "42892a3e15560a6cdf90814291f1220c8ad9045521cbb7dfc8190d0b6751d503"
+      }
+    ],
+    "captureStatus": "failed",
+    "inspectionStatus": null,
+    "recordAndDownloadWallMs": null,
+    "mediaTrace": {},
+    "processCpu": {
+      "schemaVersion": 1,
+      "status": "measured",
+      "wallMs": 95014.95352099999,
+      "matchedCpuMs": 310360,
+      "matchedProcesses": 6,
+      "newProcesses": 0,
+      "missingProcesses": 0,
+      "invalidPairs": 0,
+      "zeroCounterPairs": 2,
+      "complete": false,
+      "byType": {
+        "browser": {
+          "processes": 1,
+          "cpuMs": 229.99999999999997
+        },
+        "renderer": {
+          "processes": 3,
+          "cpuMs": 26600
+        },
+        "GPU": {
+          "processes": 1,
+          "cpuMs": 283500
+        },
+        "network.mojom.NetworkService": {
+          "processes": 1,
+          "cpuMs": 30
+        }
+      },
+      "limits": [
+        "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+        "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+        "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+        "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+        "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+      ]
+    }
+  }
+]

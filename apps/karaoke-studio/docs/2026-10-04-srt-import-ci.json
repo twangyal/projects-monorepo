@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "issue": 105,
+  "stage": "final corrected maximum-runner tools and Motion readiness head",
+  "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+  "headTree": "776426bceb92fff56793bb62ffe07e1158d9152a",
+  "complete": true,
+  "karaokeRuns": [
+    {
+      "event": "push",
+      "runId": 37230574750,
+      "jobId": 111519173984,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230574750",
+      "conclusion": "success",
+      "attempt": 1,
+      "reportedHeadSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "actualCheckout": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "actualTree": "776426bceb92fff56793bb62ffe07e1158d9152a",
+      "python": {
+        "passed": 166,
+        "seconds": 63.665
+      },
+      "typescript": {
+        "passed": 66,
+        "failed": 0,
+        "durationMs": 1204.204973
+      },
+      "browser": {
+        "passed": 61,
+        "failed": 0,
+        "reportedDuration": "2.3m",
+        "chrome": "153.0.8010.12",
+        "playwrightChromiumRevision": 1243,
+        "scope": "Fake separator, real HTTP/audio/video/archive workflows; no learned separator inference"
+      },
+      "staticChecks": {
+        "pythonCompileall": "success",
+        "ruff": "success",
+        "eslint": "success",
+        "typescript": "success"
+      },
+      "productionBuild": {
+        "success": true,
+        "milliseconds": 395
+      },
+      "jobSteps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install local video tools",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install core test dependencies only",
+          "conclusion": "success"
+        },
+        {
+          "name": "Python unit, HTTP, and real video tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m compileall -q karaoke scripts tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run ruff check .",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run lint",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run typecheck",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "conclusion": "success"
+        },
+        {
+          "name": "Production browser workflow with fake separator and real video export",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "decodedJobLog": {
+        "localPath": "/workspace/karaoke105-final-ci-push.log",
+        "bytes": 153305,
+        "sha256": "8aac49bd18f17ac62d6920b40180ab576564b84f5e5bcaa41d76cbe2df8a7bd6",
+        "hashScope": "Exact UTF-8 encoding of decoded GitHub connector job log, without newline normalization"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37230577550,
+      "jobId": 111519182204,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577550",
+      "conclusion": "success",
+      "attempt": 1,
+      "reportedHeadSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+      "actualCheckout": "82a70950ff7a20a70279f36f448e828cf814bd82",
+      "actualTree": "776426bceb92fff56793bb62ffe07e1158d9152a",
+      "python": {
+        "passed": 166,
+        "seconds": 62.86
+      },
+      "typescript": {
+        "passed": 66,
+        "failed": 0,
+        "durationMs": 1194.594238
+      },
+      "browser": {
+        "passed": 61,
+        "failed": 0,
+        "reportedDuration": "2.3m",
+        "chrome": "153.0.8010.12",
+        "playwrightChromiumRevision": 1243,
+        "scope": "Fake separator, real HTTP/audio/video/archive workflows; no learned separator inference"
+      },
+      "staticChecks": {
+        "pythonCompileall": "success",
+        "ruff": "success",
+        "eslint": "success",
+        "typescript": "success"
+      },
+      "productionBuild": {
+        "success": true,
+        "milliseconds": 347
+      },
+      "jobSteps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install local video tools",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install core test dependencies only",
+          "conclusion": "success"
+        },
+        {
+          "name": "Python unit, HTTP, and real video tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m compileall -q karaoke scripts tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run ruff check .",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run lint",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run typecheck",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "conclusion": "success"
+        },
+        {
+          "name": "Production browser workflow with fake separator and real video export",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "decodedJobLog": {
+        "localPath": "/workspace/karaoke105-final-ci-pr.log",
+        "bytes": 154367,
+        "sha256": "3c091dc081e22734009ae67a6eeb69370122028854e2c55cf586841bdc29467e",
+        "hashScope": "Exact UTF-8 encoding of decoded GitHub connector job log, without newline normalization"
+      }
+    }
+  ],
+  "pullRequestMerge": {
+    "sha": "82a70950ff7a20a70279f36f448e828cf814bd82",
+    "tree": "776426bceb92fff56793bb62ffe07e1158d9152a",
+    "parents": [
+      "d36b8970b28ff59e694341af772c6c2ee016ccea",
+      "6ec2f2cf827c16eb591d5721a87ac50813b73b49"
+    ]
+  },
+  "allProjectPullRequestSnapshot": {
+    "total": 13,
+    "success": 12,
+    "failure": 1,
+    "runs": [
+      {
+        "id": 37230577499,
+        "name": "Clothing Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577499",
+        "attempt": 1
+      },
+      {
+        "id": 37230577534,
+        "name": "Style Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577534",
+        "attempt": 1
+      },
+      {
+        "id": 37230577521,
+        "name": "Motion Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "failure",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577521",
+        "attempt": 1
+      },
+      {
+        "id": 37230577555,
+        "name": "Lens Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577555",
+        "attempt": 1
+      },
+      {
+        "id": 37230577519,
+        "name": "Melody Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577519",
+        "attempt": 1
+      },
+      {
+        "id": 37230577539,
+        "name": "Git History",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577539",
+        "attempt": 1
+      },
+      {
+        "id": 37230577536,
+        "name": "Duet",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577536",
+        "attempt": 1
+      },
+      {
+        "id": 37230577518,
+        "name": "Color Context Lab",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577518",
+        "attempt": 1
+      },
+      {
+        "id": 37230577506,
+        "name": "Shot Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577506",
+        "attempt": 1
+      },
+      {
+        "id": 37230577522,
+        "name": "Composure",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577522",
+        "attempt": 1
+      },
+      {
+        "id": 37230577542,
+        "name": "Friendly Challenges",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577542",
+        "attempt": 1
+      },
+      {
+        "id": 37230577512,
+        "name": "Stock Notebook",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577512",
+        "attempt": 1
+      },
+      {
+        "id": 37230577550,
+        "name": "Karaoke Studio",
+        "event": "pull_request",
+        "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+        "conclusion": "success",
+        "status": "completed",
+        "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37230577550",
+        "attempt": 1
+      }
+    ]
+  },
+  "firstReceipt": {
+    "path": "docs/2026-10-04-srt-import-ci-first.json",
+    "sha256": "905a297d8de410226f09873a267f595b539f1141411bbc034967acb2bae45a85",
+    "unchanged": true
+  },
+  "scope": [
+    "Both Karaoke workflows pass the full166Python/66TypeScript/61browser gates at this exact final tools head.",
+    "The complete13-project PR snapshot has12successes and one Motion failure (37230577521), which is being investigated independently under issue106. No all-project-green claim is made.",
+    "Karaoke CI uses deterministic fake separation and actual native browser/media operations; local trained-model and maximum acceptance are documented separately.",
+    "No workflow reruns, builds, browser runs, Git mutations, or production edits were performed to collect this receipt."
+  ]
+}

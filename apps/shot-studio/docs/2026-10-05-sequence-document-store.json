@@ -1,0 +1,99 @@
+{
+  "milestone": 124,
+  "scope": "Sequence complete-document persistence; controlled native-event unit fixtures, no browser or broad suite claim.",
+  "source": {
+    "path": "src/sequence-document-store.js",
+    "sha256": "8555fb86b049296a68eeaf96312d4c28c7458b777d6c601d5a64c7b580a6d819"
+  },
+  "tests": {
+    "path": "tests/sequence-document-store.test.js",
+    "sha256": "e57eef2d1af7750ac8379409f0127a4238d4b8f4119cb835ba4bb5a00e3517c3"
+  },
+  "runtime": {
+    "node": "v24.19.0"
+  },
+  "red": {
+    "command": "node --test tests/sequence-document-store.test.js",
+    "tests": 11,
+    "passed": 0,
+    "failed": 11,
+    "cause": "Actual deliberate implementation stubs rejected all original cases.",
+    "path": "/tmp/shot124-store-feature-red.log",
+    "sha256": "29534f295eb5bd5bc5c2041408ab93f44b3388494b1a24e0f25c7dc7ddcfffea",
+    "durationMs": 69.978002
+  },
+  "firstIntegration": {
+    "tests": 11,
+    "passed": 11,
+    "failed": 0,
+    "path": "/tmp/shot124-store-first-integration.log",
+    "sha256": "978edc90fa43a1bcea31d7e1688ffe76adf873cffb1c87c841f59bdd7fd0394a",
+    "durationMs": 89.148989
+  },
+  "fixtureCorrection": {
+    "initialLog": {
+      "path": "/tmp/shot124-store-boundary-first.log",
+      "sha256": "d6ba7e89c03ffe60b3bd37db760c405d198b7184f7d59c113927df4d88a20ec5",
+      "durationMs": 131.146791
+    },
+    "explanation": "An added native-put fault initially replaced an objectStore method after admission had already captured its object; that case exercised success, so its first pass does not prove write-failure handling. The final fixture injects the fault in the captured put function before request callbacks and asserts protected state, unchanged old row, actual rollback, and explicit successful reload/retry. A wrong-working-directory edit attempt was a setup error and did not modify tracked files."
+  },
+  "finalFocused": {
+    "command": "node --test tests/sequence-document-store.test.js",
+    "cwd": "/workspace/projects-monorepo/apps/shot-studio",
+    "tests": 18,
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "path": "/tmp/shot124-store-final-focused.log",
+    "sha256": "c22a7497fe9d326af0d775e7a91d760b8afff15ea46fc970f48502a327772c91",
+    "durationMs": 207.922906
+  },
+  "static": {
+    "commands": [
+      "node --check src/sequence-document-store.js",
+      "node --check tests/sequence-document-store.test.js"
+    ],
+    "exitCode": 0
+  },
+  "verified": [
+    "Proven absence versus present undefined; no startup write or corrupt fallback",
+    "Exact complete archive-byte and row CAS, including semantically equivalent but reordered archive bytes",
+    "Legacy migration in memory and exact original localStorage retention; pre/inside/post-transaction fencing",
+    "Accepted-load-only authority, forged/cloned/superseded receipt rejection",
+    "Fresh third-writer-safe one-shot replacement and bounded corrupt archive recovery",
+    "Unknown and oversized opaque rows refuse blind replacement",
+    "Detached candidate publication and failed validation preserving accepted authority",
+    "Native put failure waits actual rollback and preserves old complete row",
+    "Prompt cancellation/timeout retains native slot until terminal, including late open",
+    "Already committed withheld completion retains durable row without falsely claiming rollback or authority"
+  ],
+  "limits": {
+    "archiveBytes": 16777216,
+    "legacyRawUtf8Bytes": 1048576,
+    "legacyRecoveryJsonUtf8Bytes": 2097152,
+    "nativeOperationDeadlineMs": 10000
+  },
+  "ui": {
+    "getters": [
+      "protected",
+      "hasRecoveryArchive",
+      "hasRecoveryLegacy",
+      "nativePending"
+    ],
+    "replacementSummary": [
+      "present",
+      "revision",
+      "archiveBytes",
+      "readable",
+      "title",
+      "legacyChanged"
+    ],
+    "notes": "load is nonauthorizing until acceptLoad; save/replace resolve only after actual complete. Prompt rejected operations retain nativePending until drain; close awaits it. UI owns save coalescing and matching-generation Saved presentation."
+  },
+  "limitations": [
+    "Controlled unit fixture is not physical or real IndexedDB runtime evidence; independent native coverage is parent-coordinated.",
+    "No atomic transaction spans localStorage and IndexedDB; a post-complete foreign legacy change protects the already durable new row.",
+    "Unsupported raw shapes remain protected; recovery is only offered for bounded known data."
+  ]
+}

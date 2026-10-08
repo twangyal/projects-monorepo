@@ -1,0 +1,470 @@
+{
+  "schemaVersion": 1,
+  "issue": 107,
+  "repository": "twangyal/projects-monorepo",
+  "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+  "treeSha": "4bccfb3463ad72a697f5f6971a2dee49c44fdd15",
+  "collectedAt": "2026-10-04T20:42:03.785Z",
+  "conclusion": "Push browser fixture failed; PR and all thirteen PR workflows succeeded. Do not treat both Duet runs as passing.",
+  "duet": [
+    {
+      "event": "push",
+      "runId": 37232599312,
+      "jobId": 111525280967,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232599312",
+      "checkoutSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "checkoutKind": "branch head",
+      "treeSha": "4bccfb3463ad72a697f5f6971a2dee49c44fdd15",
+      "conclusion": "failure",
+      "python": {
+        "passed": 183,
+        "failed": 0,
+        "seconds": 60.857,
+        "version": "3.11.16"
+      },
+      "typescript": {
+        "passed": 6,
+        "failed": 0,
+        "milliseconds": 100.722976
+      },
+      "browser": {
+        "passed": 29,
+        "failed": 1,
+        "total": 30,
+        "reportedDuration": "1.1m",
+        "chromium": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "node": "24.21.0",
+      "npm": "11.19.0",
+      "ruff": "success",
+      "compile": "success",
+      "eslint": "success",
+      "typecheck": "success",
+      "build": "success",
+      "buildMilliseconds": 151,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install local media tools",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip install -r requirements-dev.txt",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Python domain, HTTP, and real media tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m compileall -q duet tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run ruff check .",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run typecheck",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Production Chromium with real normalization and native audio",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "log": {
+        "path": "/workspace/duet107-ci-first-push-failure.log",
+        "bytes": 155237,
+        "sha256": "f863d29c95e9a54d568f5a1c8a473c54f1cc83a4ecaa2e5ef6ff58ad4419ae39"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37232602034,
+      "jobId": 111525288478,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232602034",
+      "checkoutSha": "ddca9a5bd3e25de916d926b1f147fdd5452c9719",
+      "checkoutKind": "synthetic PR merge",
+      "treeSha": "4bccfb3463ad72a697f5f6971a2dee49c44fdd15",
+      "conclusion": "success",
+      "python": {
+        "passed": 183,
+        "failed": 0,
+        "seconds": 61.482,
+        "version": "3.11.16"
+      },
+      "typescript": {
+        "passed": 6,
+        "failed": 0,
+        "milliseconds": 128.099839
+      },
+      "browser": {
+        "passed": 30,
+        "failed": 0,
+        "total": 30,
+        "reportedDuration": "1.3m",
+        "chromium": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "node": "24.21.0",
+      "npm": "11.19.0",
+      "ruff": "success",
+      "compile": "success",
+      "eslint": "success",
+      "typecheck": "success",
+      "build": "success",
+      "buildMilliseconds": 203,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install local media tools",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip install -r requirements-dev.txt",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Python domain, HTTP, and real media tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m compileall -q duet tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run ruff check .",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run check",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npm run typecheck",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Production Chromium with real normalization and native audio",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "log": {
+        "path": "/workspace/duet107-ci-pr.log",
+        "bytes": 150246,
+        "sha256": "51ab609c2c0e74d90919307df60cf797711345d20e02ee6a473abc0f424b74dd"
+      }
+    }
+  ],
+  "prMerge": {
+    "sha": "ddca9a5bd3e25de916d926b1f147fdd5452c9719",
+    "treeSha": "4bccfb3463ad72a697f5f6971a2dee49c44fdd15",
+    "parents": [
+      "d36b8970b28ff59e694341af772c6c2ee016ccea",
+      "6bc47b265338cd95acd90239bcb5d77083f8aa4b"
+    ]
+  },
+  "failure": {
+    "file": "apps/duet/tests/browser/https-lan.spec.ts",
+    "testLine": 22,
+    "assertionLine": 34,
+    "assertionColumn": 442,
+    "test": "two HTTPS seats retain actual Opus, secure media, independent ratings, consent, mix and memories across service restart",
+    "assertion": "Both native audio elements paused after guest presses Pause",
+    "expected": true,
+    "received": false,
+    "timeoutMilliseconds": 5000,
+    "traceClock": "Shared Playwright monotonic milliseconds",
+    "timeline": [
+      {
+        "milliseconds": 27612.213,
+        "event": "Guest GET returns playback revision1, playingtrue, position1.966894287109375"
+      },
+      {
+        "milliseconds": 27671.354,
+        "event": "Host seek PUT sends revision1 position3; HTTP200 reply playback revision2 position3"
+      },
+      {
+        "milliseconds": 28178.926,
+        "event": "Host GET already sees revision2; guest has not yet polled it"
+      },
+      {
+        "milliseconds": 28554.188,
+        "event": "Guest Pause together label remains visible; label is identical for both playing revisions"
+      },
+      {
+        "milliseconds": 28559.295,
+        "event": "Guest clicks #play after native currentTime naturally passes2.8"
+      },
+      {
+        "milliseconds": 28578.597,
+        "event": "Guest pause PUT sends playingfalse position2.930394287109375 revision1; HTTP409 stale revision"
+      },
+      {
+        "milliseconds": 28593.671,
+        "event": "Guest refresh GET receives revision2 still playingtrue; failed consent command is not replayed"
+      }
+    ],
+    "error": "The room changed. Refresh its latest state before retrying this command.",
+    "classification": "Native fixture omitted guest adoption of the host seek revision; service correctly refuses stale mutation.",
+    "productDefectEstablished": false,
+    "recommendation": "Bind the pause action to actual guest consumption/publication of the successful host seek revision. Keep real seek/pause assertions, strict stale refusal and original deadlines; no fixed sleeps or automatic command retry."
+  },
+  "artifact": {
+    "id": 11314059057,
+    "bytes": 2310638,
+    "sha256": "b065a55a797880428b7523f5fed3ce967a40c88d6387dae06a66a068c45bb916",
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232599312/artifacts/11314059057",
+    "path": "/workspace/attachments/b3ddc768-d0fc-4e71-8c8b-a5248e1915f9/duet107-first-push-failure.zip",
+    "traceMember": "browser-https-lan-two-HTTP-ce8d2-ries-across-service-restart/trace.zip",
+    "privacy": "Trace includes private fixture seat/setup data; only sanitized playback timing/status/revisions are reproduced here."
+  },
+  "allProjectPrWorkflows": [
+    {
+      "name": "Style Studio",
+      "runId": 37232602119,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232602119"
+    },
+    {
+      "name": "Clothing Studio",
+      "runId": 37232601985,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601985"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37232601972,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601972"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37232601986,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601986"
+    },
+    {
+      "name": "Git History",
+      "runId": 37232601989,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601989"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37232601980,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601980"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37232601990,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601990"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37232601976,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601976"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37232601981,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601981"
+    },
+    {
+      "name": "Composure",
+      "runId": 37232602008,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232602008"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37232602016,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232602016"
+    },
+    {
+      "name": "Duet",
+      "runId": 37232602034,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232602034"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37232601994,
+      "headSha": "6bc47b265338cd95acd90239bcb5d77083f8aa4b",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37232601994"
+    }
+  ],
+  "allProjectPrSummary": {
+    "total": 13,
+    "success": 13,
+    "failure": 0,
+    "pending": 0
+  },
+  "limitations": [
+    "No test rerun, build, new browser/service process, source change or Git mutation during collection.",
+    "The successful PR checkout tree was independently fetched and matches the expected exact head tree.",
+    "Durations are preserved at each log's reported precision.",
+    "No signed artifact URLs or participant/setup credential values are stored in this receipt."
+  ]
+}

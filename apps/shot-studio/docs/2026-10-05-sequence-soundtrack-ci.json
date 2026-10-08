@@ -1,0 +1,868 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "date": "2026-10-05",
+  "status": "third-push-raf-gap-reproduced-heartbeat-diagnostic-pending-ci",
+  "scope": "Actual first push and same-tree pull-request CI results; original failed media and trace analysis. No production correction or tolerance change based on these CI failures.",
+  "firstCi": {
+    "push": {
+      "run": 37266477524,
+      "job": 111624287583,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37266477524/job/111624287583",
+      "checkedOutCommit": "0a07a91a55c75c7ed44b0ed1cd90811e9028c44c",
+      "result": "failed",
+      "units": {
+        "passed": 328,
+        "failed": 0,
+        "durationMs": 1448.647526
+      },
+      "native": {
+        "passed": 97,
+        "failed": 2,
+        "total": 99,
+        "reportedDuration": "5.6m"
+      },
+      "log": {
+        "path": "/tmp/shot124-ci-111624287583.log",
+        "bytes": 524562,
+        "sha256": "fee96f83daff140fe0ec047af819adf66448a2e1df8fde49e0988130f0985253"
+      }
+    },
+    "pullRequest": {
+      "run": 37266480303,
+      "job": 111624296311,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37266480303/job/111624296311",
+      "checkedOutMergeCommit": "bedb1496680e581a09d1f5e9ee284c7352f3eefa",
+      "headCommit": "0a07a91a55c75c7ed44b0ed1cd90811e9028c44c",
+      "sameTree": "Root verified the merge tree equals the pushed implementation tree. This passing run does not erase the first push failures.",
+      "result": "passed",
+      "units": {
+        "passed": 328,
+        "failed": 0,
+        "durationMs": 1638.568235
+      },
+      "native": {
+        "passed": 99,
+        "failed": 0,
+        "total": 99,
+        "reportedDuration": "6.0m"
+      },
+      "log": {
+        "path": "/tmp/shot124-ci-111624296311.log",
+        "bytes": 518363,
+        "sha256": "ae403e79c55928981cb2b0710958f1b4c647baf942a18c9122e9af43d2968cf1"
+      }
+    },
+    "retainedFailureArtifact": {
+      "id": 11326816949,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37266477524/artifacts/11326816949",
+      "uploadedZipSha256": "67d036111d988bd48844a1907b37d4fd98c8aed2d8d5973b169a50629d82f7c5"
+    }
+  },
+  "persistentStartupFailure": {
+    "test": "full persistent Chromium restart restores exact complete sequence metadata and original WAV bytes",
+    "trace": {
+      "path": "/workspace/shot124-ci-first-push/sequence-soundtrack-full-p-05936-data-and-original-WAV-bytes/trace.zip",
+      "bytes": 218461,
+      "sha256": "6e8b63dbbf85be42a8723aeef111af4832cbea4273fed8774aa01600894d8a09"
+    },
+    "observed": [
+      {
+        "traceMs": 132887.855,
+        "event": "Startup snapshot says Reading saved sequence."
+      },
+      {
+        "traceMs": 132898.249,
+        "event": "Fixture checks only that sequence-open is enabled; this does not establish completed storage admission."
+      },
+      {
+        "traceMs": 132985.463,
+        "event": "Fixture imports original.shot-sequence while startup is still pending."
+      },
+      {
+        "traceMs": 133219.747,
+        "event": "Snapshot says Sequence browser record protected; work stays in memory."
+      },
+      {
+        "traceMs": 133485.743,
+        "event": "Import is accepted into memory; status says Complete sequence opened while browser record remains protected."
+      },
+      {
+        "traceMs": 133492.126,
+        "event": "storedSummary starts native IndexedDB readback."
+      },
+      {
+        "traceMs": 133507.096,
+        "event": "Readback rejects: Document state store missing."
+      }
+    ],
+    "classification": "Fixture started a persistence-dependent flow before storage startup admission. User edits are deliberately available during startup; they retire the pending load and keep saved data protected. The observed protected state is correct product behavior.",
+    "inferenceNotTraceProof": "The old readback helper opened the database without aborting onupgradeneeded. After startup retirement aborted initial creation, that readback could itself create an empty version-1 database. The trace proves the missing store and the startup/import ordering; it does not directly record which open request performed schema creation.",
+    "fixtureCorrection": {
+      "file": "tests/browser/sequence-soundtrack.spec.js",
+      "sha256": "be095ba750c8bb74149d54cc56c1ad33dfe8669a1706285284673bd8cb2503c6",
+      "changes": [
+        "begin waits for the exact Sequence saved in this browser status before importing in these post-startup scenarios.",
+        "Both stored and storedSummary abort an unexpected onupgradeneeded and refuse to create a database while reading.",
+        "Both readbacks explicitly refuse a missing state store."
+      ],
+      "unchanged": "Production startup remains editable and protected on retirement; existing exact archive, descriptor, WAV, restart and readback assertions remain. No timeout was increased.",
+      "verification": "Root-owned focused corrected-startup verification passed; see nextVerification.targetedLocal."
+    }
+  },
+  "trimmedVideoFailure": {
+    "test": "actual six-second trimmed WebM preserves original source phases and repeated excerpts",
+    "trace": {
+      "path": "/workspace/shot124-ci-first-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/trace.zip",
+      "bytes": 1939098,
+      "sha256": "786bc2d4eb3b048aec6586f3984d0f04edd8b163ccca7fa8b83c3cecbcf71fca"
+    },
+    "media": {
+      "path": "/workspace/shot124-ci-first-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-six-seconds.webm",
+      "bytes": 426882,
+      "sha256": "33485770f22c5a1a6dfd7310b6f7d4a3c68b623725f2372595667bb80eb54238"
+    },
+    "codec": "vp9",
+    "width": 960,
+    "height": 540,
+    "decodedFrames": 104,
+    "firstPts": 0.0,
+    "lastPts": 5.903,
+    "spanSeconds": 5.903,
+    "medianGapSeconds": 0.054,
+    "initialPts": [
+      0.0,
+      0.361,
+      0.509,
+      0.582,
+      0.604,
+      0.679,
+      0.74,
+      0.799,
+      0.847,
+      0.895,
+      0.942,
+      0.997,
+      1.046,
+      1.098,
+      1.146
+    ],
+    "onlyGapOver150ms": {
+      "fromFrame": 0,
+      "toFrame": 1,
+      "fromPts": 0.0,
+      "toPts": 0.361,
+      "gapSeconds": 0.361
+    },
+    "unchangedGate": {
+      "file": "tests/browser/sequence-trim-fixtures.js",
+      "sha256": "8d8fb4e9c00cbf1097cd69e357eba9986b8905e381d837a9013cdaf51770f368",
+      "nearestPtsErrorMustBeLessThanSeconds": 0.15,
+      "targets": [
+        0.2,
+        1.1,
+        1.8,
+        2.3,
+        3.6,
+        4.2,
+        5.8
+      ]
+    },
+    "selectedFrames": [
+      {
+        "target": 0.2,
+        "frame": 1,
+        "pts": 0.361,
+        "absoluteErrorSeconds": 0.16099999999999998,
+        "gate": "failed"
+      },
+      {
+        "target": 1.1,
+        "frame": 13,
+        "pts": 1.098,
+        "absoluteErrorSeconds": 0.002,
+        "gate": "passed"
+      },
+      {
+        "target": 1.8,
+        "frame": 26,
+        "pts": 1.793,
+        "absoluteErrorSeconds": 0.007,
+        "gate": "passed"
+      },
+      {
+        "target": 2.3,
+        "frame": 35,
+        "pts": 2.286,
+        "absoluteErrorSeconds": 0.014,
+        "gate": "passed"
+      },
+      {
+        "target": 3.6,
+        "frame": 60,
+        "pts": 3.626,
+        "absoluteErrorSeconds": 0.026,
+        "gate": "passed"
+      },
+      {
+        "target": 4.2,
+        "frame": 71,
+        "pts": 4.213,
+        "absoluteErrorSeconds": 0.013,
+        "gate": "passed"
+      },
+      {
+        "target": 5.8,
+        "frame": 101,
+        "pts": 5.794,
+        "absoluteErrorSeconds": 0.006,
+        "gate": "passed"
+      }
+    ],
+    "traceCorroboration": {
+      "file": "1-trace.trace",
+      "exportClickBeginMs": 143667.05,
+      "performingClickMs": 143715.098,
+      "initialScreencastFrameMs": 143731.255,
+      "nextScreencastFrameMs": 144089.299,
+      "screencastGapMs": 358.044,
+      "downloadEventMs": 149799.494,
+      "interpretation": "The compositor trace contains a startup gap matching the media gap; it does not identify whether initial scheduling, GPU work or encoder delivery caused it."
+    },
+    "independentPixelEvidence": {
+      "artifact": {
+        "path": "/tmp/shot124-ci-trim-media-diagnosis.json",
+        "bytes": 6010,
+        "sha256": "3ec5ae8f85a39a6ce4b4546f60d705dbbd699f23f7f3862bc71b2b716cb41654"
+      },
+      "method": "Decode original frames 0,1,2,3 plus all seven nearest-target frames. Apply the existing unmodified literal trim pixel oracle at each actual PTS, without shifting any timeline or deriving expectations from producer code.",
+      "result": "All ten distinct inspected frames pass the unchanged pixel assertions. This additional diagnosis does not turn the failed temporal gate into a pass.",
+      "samples": [
+        {
+          "index": 0,
+          "pts": 0,
+          "green": {
+            "count": 3607,
+            "x": 695.0651510950929,
+            "minX": 658,
+            "maxX": 733,
+            "mean": 151.99722761297477
+          },
+          "red": {
+            "count": 3057,
+            "x": 516.774288518155,
+            "minX": 482,
+            "maxX": 551,
+            "mean": 154.40464507687275
+          },
+          "unchangedPixelOracle": {
+            "index": 0,
+            "local": 0,
+            "shotLocal": 1,
+            "sourceGlobal": 3.3,
+            "cameraX": -1,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 1,
+          "pts": 0.361,
+          "green": {
+            "count": 3584,
+            "x": 669.3914620535714,
+            "minX": 632,
+            "maxX": 707,
+            "mean": 150.88895089285714
+          },
+          "red": {
+            "count": 3116,
+            "x": 490.42233632862644,
+            "minX": 454,
+            "maxX": 525,
+            "mean": 154.1068677792041
+          },
+          "unchangedPixelOracle": {
+            "index": 0,
+            "local": 0.361,
+            "shotLocal": 1.361,
+            "sourceGlobal": 3.6609999999999996,
+            "cameraX": -0.639,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 2,
+          "pts": 0.509,
+          "green": {
+            "count": 3519,
+            "x": 658.5291275930662,
+            "minX": 622,
+            "maxX": 697,
+            "mean": 151.33873259448708
+          },
+          "red": {
+            "count": 2876,
+            "x": 479.01112656467313,
+            "minX": 430,
+            "maxX": 528,
+            "mean": 154.93706536856746
+          },
+          "unchangedPixelOracle": {
+            "index": 0,
+            "local": 0.509,
+            "shotLocal": 1.509,
+            "sourceGlobal": 3.8089999999999997,
+            "cameraX": -0.491,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 3,
+          "pts": 0.582,
+          "green": {
+            "count": 3518,
+            "x": 654.5520181921546,
+            "minX": 618,
+            "maxX": 693,
+            "mean": 150.984366117112
+          },
+          "red": {
+            "count": 2803,
+            "x": 475.5162326079201,
+            "minX": 424,
+            "maxX": 526,
+            "mean": 156.88726364609346
+          },
+          "unchangedPixelOracle": {
+            "index": 0,
+            "local": 0.582,
+            "shotLocal": 1.5819999999999999,
+            "sourceGlobal": 3.8819999999999997,
+            "cameraX": -0.41800000000000004,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 13,
+          "pts": 1.098,
+          "green": {
+            "count": 3251,
+            "x": 614.9923100584435,
+            "minX": 580,
+            "maxX": 653,
+            "mean": 150.78837280836666
+          },
+          "red": {
+            "count": 2934,
+            "x": 436.3517382413088,
+            "minX": 390,
+            "maxX": 483,
+            "mean": 154.61588275391955
+          },
+          "unchangedPixelOracle": {
+            "index": 0,
+            "local": 1.098,
+            "shotLocal": 2.098,
+            "sourceGlobal": 4.398,
+            "cameraX": 0.09800000000000009,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 26,
+          "pts": 1.793,
+          "green": {
+            "count": 2787,
+            "x": 564.0904198062433,
+            "minX": 532,
+            "maxX": 603,
+            "mean": 153.60064585575887
+          },
+          "red": {
+            "count": 0,
+            "x": null,
+            "minX": 960,
+            "maxX": -1,
+            "mean": null
+          },
+          "unchangedPixelOracle": {
+            "index": 0,
+            "local": 1.793,
+            "shotLocal": 2.793,
+            "sourceGlobal": 5.093,
+            "cameraX": 0.7929999999999999,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 35,
+          "pts": 2.286,
+          "green": {
+            "count": 3145,
+            "x": 621.4912559618442,
+            "minX": 588,
+            "maxX": 659,
+            "mean": 83.86550079491256
+          },
+          "red": {
+            "count": 0,
+            "x": null,
+            "minX": 960,
+            "maxX": -1,
+            "mean": null
+          },
+          "unchangedPixelOracle": {
+            "index": 1,
+            "local": 0.28600000000000003,
+            "shotLocal": 0.786,
+            "sourceGlobal": 1.786,
+            "cameraX": 0,
+            "kind": "blue"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 60,
+          "pts": 3.626,
+          "green": {
+            "count": 3134,
+            "x": 621.5660497766432,
+            "minX": 588,
+            "maxX": 659,
+            "mean": 84.0022335673261
+          },
+          "red": {
+            "count": 0,
+            "x": null,
+            "minX": 960,
+            "maxX": -1,
+            "mean": null
+          },
+          "unchangedPixelOracle": {
+            "index": 1,
+            "local": 1.626,
+            "shotLocal": 2.126,
+            "sourceGlobal": 3.126,
+            "cameraX": 0,
+            "kind": "blue"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 71,
+          "pts": 4.213,
+          "green": {
+            "count": 3592,
+            "x": 680.2566815144767,
+            "minX": 644,
+            "maxX": 717,
+            "mean": 152.37889755011136
+          },
+          "red": {
+            "count": 3031,
+            "x": 500.64896073903003,
+            "minX": 466,
+            "maxX": 535,
+            "mean": 155.68162322665788
+          },
+          "unchangedPixelOracle": {
+            "index": 2,
+            "local": 0.21300000000000008,
+            "shotLocal": 1.213,
+            "sourceGlobal": 3.513,
+            "cameraX": -0.7869999999999999,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        },
+        {
+          "index": 101,
+          "pts": 5.794,
+          "green": {
+            "count": 2788,
+            "x": 564.1592539454806,
+            "minX": 532,
+            "maxX": 603,
+            "mean": 153.49928263988522
+          },
+          "red": {
+            "count": 0,
+            "x": null,
+            "minX": 960,
+            "maxX": -1,
+            "mean": null
+          },
+          "unchangedPixelOracle": {
+            "index": 2,
+            "local": 1.7939999999999996,
+            "shotLocal": 2.7939999999999996,
+            "sourceGlobal": 5.093999999999999,
+            "cameraX": 0.7939999999999996,
+            "kind": "red"
+          },
+          "pixelStatus": "pass"
+        }
+      ],
+      "initialGreenLandmarkDisplacement": {
+        "literalProjectionPixelsPerSourceSecond": 71.76164460354475,
+        "frame1": {
+          "pts": 0.361,
+          "inferredDisplacementSeconds": 0.3577633871597933
+        },
+        "frame2": {
+          "pts": 0.509,
+          "inferredDisplacementSeconds": 0.5091302422606687
+        },
+        "scope": "Independent spatial corroboration of source-clock advance, not a fitted oracle offset or a new acceptance test."
+      }
+    },
+    "diagnosis": "A real initial delivery gap leaves no encoded frame sufficiently near 0.2s. First PTS is exactly zero, first-frame pixels match source start, and later pixels track actual PTS. A delayed first-frame/global-origin explanation is not supported.",
+    "correction": "No specific production correction is justified by the original artifact. The 0.15s threshold, target times, original source clocks and frame-density requirements remain unchanged. The root-owned unchanged focused video follow-up passed, without replacing or relabeling the first failed temporal gate."
+  },
+  "nextVerification": {
+    "targetedLocal": {
+      "status": "passed",
+      "startedAt": "2026-10-05T05:25:38.018Z",
+      "durationMs": 25984.134,
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "scope": [
+        "Persistent-browser restart with corrected startup readiness and non-creating readback helpers.",
+        "Unchanged six-second trimmed-video source, target times, 0.15s temporal tolerance and pixel oracle."
+      ],
+      "results": {
+        "path": "/tmp/shot124-ci-focused-results.json",
+        "bytes": 4764,
+        "sha256": "f3bf818ea4d128f57bf96faccd979400166f997ce8331face74f7084e4fd3114"
+      },
+      "log": {
+        "path": "/tmp/shot124-ci-focused.log",
+        "bytes": 5806,
+        "sha256": "bdb467c55b5f1651e9af230893365199b8c730d2a49fd8f440414c0f65bd2907"
+      },
+      "videoReceipt": {
+        "path": "/workspace/shot124-ci-focused-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-video.json",
+        "bytes": 4879,
+        "sha256": "cca34a228d41c7899b15552d4e4928bf94ccc5f221945705cd2376b3f926d059"
+      },
+      "videoArtifact": {
+        "path": "/workspace/shot124-ci-focused-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-six-seconds.webm",
+        "bytes": 480138,
+        "sha256": "775f4d9af2338c3d3c6273285332a431ffafe813eaf98da114ce94fcd5a00782"
+      },
+      "videoFacts": {
+        "decodedFrames": 115,
+        "spanSeconds": 5.947,
+        "thresholds": {
+          "projection": 16,
+          "hiddenPixels": 20,
+          "nearbyPTS": 0.15
+        }
+      },
+      "interpretation": "The targeted correction and the unchanged media gate pass this follow-up. The first push remains recorded as 97/99, and no encoder change is claimed to fix a transient startup delivery stall."
+    },
+    "republicationCi": "pending",
+    "owner": "root",
+    "rule": "Append actual results without replacing or relabeling the original failed push."
+  },
+  "reviewLimits": [
+    "No browser, service, Git operation or production edit was performed by this receipt author.",
+    "Artifact analysis uses original retained WebM and Playwright traces. A same-tree passing CI run is evidence of variability, not proof that the initial temporal gate passed."
+  ],
+  "followupCi": {
+    "head": "6f4a7fca76cee747afb8ad1f90fa9fbbded5c574",
+    "tree": "bf0876dceffb3f52c5962db69613f8265a25f121",
+    "pullRequest": {
+      "run": 37268119795,
+      "job": 111629143639,
+      "checkout": "fddac1aa86c163160d2c021c650cbbaf0e05cd7d",
+      "sameTree": true,
+      "unitPass": 328,
+      "nativePass": 99,
+      "nativeFail": 0,
+      "logSha256": "97895c4a5a2245261a9d33b59c3919a9ed48af371d7668e619a16429321ddc09"
+    },
+    "push": {
+      "run": 37268116208,
+      "job": 111629133074,
+      "unitPass": 328,
+      "nativePass": 98,
+      "nativeFail": 1,
+      "failure": "Unchanged sequence-trim decode target0.2 missed by0.171s against<0.15s gate.",
+      "logSha256": "11d21e4bbe2bb445a30aef3db7ff759785e66cae3153c6c70dffd013b79a6ab9"
+    },
+    "originalFailedMedia": {
+      "bytes": 461252,
+      "sha256": "8f12ecac7c58efa556bb2977a509e4ea9a064d2d1fd21249b642552c0e7ba9ba",
+      "frames": 109,
+      "lastPts": 5.933,
+      "firstPts": [
+        0,
+        0.029,
+        0.381,
+        0.479
+      ],
+      "soleGapOver150ms": {
+        "from": 0.029,
+        "to": 0.381,
+        "seconds": 0.352
+      },
+      "nearestToPoint2": {
+        "pts": 0.029,
+        "error": 0.171
+      },
+      "otherTargetsMaximumError": 0.03,
+      "traceSha256": "84b0f1f7711137bbd3600fe8ae0f734724c437f4b1884721e0a5c5e75a5baa1f",
+      "artifactZipSha256": "02db5b5783203052019af7b38f1cdb7566a241565be850671a167c685cd3b8a3"
+    },
+    "interpretation": "Startup storage repair passes. A repeated initial native frame gap remains unresolved; at least one subsequent frame existed before the second stall, so delaying only the first RAF is not yet a justified fix. Original timing gate and producer scheduler remain unchanged. Root instrumented capture is next; issue124 stays open."
+  },
+  "diagnosticFollowup": {
+    "localBaseline": {
+      "browser": "Chromium151.0.7922.173",
+      "originalReceiptSha256": "fbaf1c9559c0f87e4babc6be63e38be77e21762fe856677513e484c52a502ef0",
+      "originalFailure": "Diagnostic postprocess referenced undefined index; original media and instrumentation were already saved. No producer failure is claimed.",
+      "offlineSameArtifact": {
+        "receiptSha256": "da43d262a9d549643ee7dd81626f97427e823632c69392bf494cdac030458104",
+        "path": "/workspace/shot124-capture-baseline/offline-postprocess.json",
+        "unchangedDecode": "pass116frames5.951s, original0.15s gate and pixels; no recapture"
+      },
+      "finding": "Setup draw/captureStream/constructor/start cost about2ms. No350ms local stall. RAF timestamp may precede first origin and is already clamped to0; delayed recorder start event is not a suitable origin."
+    },
+    "matchingBrowserAttempt": {
+      "command": "PLAYWRIGHT_BROWSERS_PATH=/workspace/.cache/ms-playwright node node_modules/playwright/cli.js install chromium --only-shell",
+      "target": "Chrome Headless Shell153.0.8010.12",
+      "outcome": "One installer invocation failed after its automatic download attempts:403Domain forbidden under enforced network policy. No alternate mirror or bypass attempted.",
+      "logSha256": "d218d994ff47ae693bf4cee9c16cac3d20a1a4e1864222f497c5345f704d4f67"
+    },
+    "instrumentedExistingCase": {
+      "stats": {
+        "startTime": "2026-10-05T05:53:42.163Z",
+        "duration": 10549.352,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "rawReportSha256": "1eb09fc783ce2206ce4d400ae5bddaadb8ab23d97daf3c3d0f47b0b969b5f4e0",
+      "scope": "Test-only transparent wrappers record bounded first1000ms/1500events plus totals for draw/RAF/requestFrame/recorder; save even when original decode fails, restore wrappers. Production code, fixture,45s timeout and150ms gate unchanged.",
+      "publishedCi": "pending"
+    }
+  },
+  "instrumentedThirdCi": {
+    "schemaVersion": 1,
+    "runId": 37270053634,
+    "jobId": 111634938494,
+    "head": "675afe9b55d6c37a37450e0abb9c92ca89ddf9a2",
+    "attempt": 1,
+    "sameTreePullRequestRun": {
+      "id": 37270057530,
+      "conclusion": "success",
+      "basis": "Root reported completed passing PR; this agent monitored only the push."
+    },
+    "actualResult": {
+      "unitPassed": 328,
+      "unitFailed": 0,
+      "unitDurationMs": 1643.082418,
+      "browserPassed": 98,
+      "browserFailed": 1,
+      "browserReportedDuration": "6.2m",
+      "failedGate": "Nearest frame at target 0.2 seconds differs by 0.165 seconds, required strictly less than 0.15."
+    },
+    "artifacts": {
+      "artifactId": 11328630638,
+      "zip": {
+        "path": "/workspace/attachments/2db39745-fe7e-45d6-b289-99ce46826bc3/shot124-ci-instrumented-push.zip",
+        "bytes": 6408746,
+        "sha256": "127d55069f6c91ce17b30a89b630483dccfdea0fcb19f2bf918512b168bc84e8"
+      },
+      "video": {
+        "path": "/workspace/shot124-ci-instrumented-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-six-seconds.webm",
+        "bytes": 425743,
+        "sha256": "cbdbba530d35ca0a58fe3e535896424e32df8b9a7520d0268fef58f14644aa1f"
+      },
+      "trace": {
+        "path": "/workspace/shot124-ci-instrumented-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/trace.zip",
+        "bytes": 1939478,
+        "sha256": "963931b1a7882821954bbdb61f58cc0c1fa94eecb12c938b3f7b9564957f9acd"
+      },
+      "timing": {
+        "path": "/workspace/shot124-ci-instrumented-push/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-capture-timing.json",
+        "bytes": 27503,
+        "sha256": "adf3e1330032d5e112fb2a64ffedb2fc90d55b36c9e509f9aafca6c656a12888"
+      },
+      "log": {
+        "path": "/tmp/shot124-ci-instrumented-push.log",
+        "bytes": 521896,
+        "sha256": "2c6e6049bea5b6555035499977c0b4fab21f4539c6a8209efda1c32087efa5e9"
+      }
+    },
+    "media": {
+      "frames": 104,
+      "firstPTS": [
+        0,
+        0.027,
+        0.365,
+        0.477,
+        0.557,
+        0.565
+      ],
+      "lastPTS": 5.919,
+      "gap": {
+        "fromIndex": 1,
+        "toIndex": 2,
+        "fromPTS": 0.027,
+        "toPTS": 0.365,
+        "gap": 0.33799999999999997
+      },
+      "targets": [
+        {
+          "target": 0.2,
+          "index": 2,
+          "actualPTS": 0.365,
+          "error": 0.16499999999999998,
+          "limit": 0.15,
+          "passes": false
+        },
+        {
+          "target": 1.1,
+          "index": 15,
+          "actualPTS": 1.086,
+          "error": 0.014000000000000012,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 1.8,
+          "index": 28,
+          "actualPTS": 1.797,
+          "error": 0.0030000000000001137,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 2.3,
+          "index": 38,
+          "actualPTS": 2.277,
+          "error": 0.022999999999999687,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 3.6,
+          "index": 61,
+          "actualPTS": 3.602,
+          "error": 0.0019999999999997797,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 4.2,
+          "index": 72,
+          "actualPTS": 4.184,
+          "error": 0.016000000000000014,
+          "limit": 0.15,
+          "passes": true
+        },
+        {
+          "target": 5.8,
+          "index": 101,
+          "actualPTS": 5.815,
+          "error": 0.015000000000000568,
+          "limit": 0.15,
+          "passes": true
+        }
+      ],
+      "independentPixelSamples": 10,
+      "independentPixelFailures": 0,
+      "pixelLimitPx": 16,
+      "originalTemporalLimitSec": 0.15,
+      "temporalGateChanged": false
+    },
+    "observedTimingMs": {
+      "recorderStartBegin": 826.9,
+      "recorderStartEnd": 828,
+      "recorderStartEvent": 1280.6,
+      "requestFrames": [
+        828,
+        863.6,
+        1201.8
+      ],
+      "requestGap": 338.2,
+      "rafTimestampsBeforeAfterGap": [
+        862,
+        1195.3
+      ],
+      "rafActualBeforeAfterGap": [
+        863.2,
+        1200.8
+      ],
+      "lastPreGapDrawDuration": 0.3,
+      "postGapDrawDuration": 0.4,
+      "captureStreamDuration": 2.4,
+      "recordStartSyncDuration": 1.1,
+      "traceScreencastGap": 359.082,
+      "visibility": "visible",
+      "focused": true,
+      "canvasYBeforeClick": -976.375,
+      "requestFrameCount": 106,
+      "decodedFrameCount": 104,
+      "wrappersRestored": true
+    },
+    "supportedConclusion": "The failed 338 ms media gap corresponds to a 338.2 ms gap in producer frame requests because both RAF callback streams were absent. Three export RAFs ran before the gap. Synchronous setup, draw, and requestFrame did not account for the stall; recorder start EVENT occurred after three requests and is not a justified clock origin.",
+    "limits": "Playwright trace has no longtask, timer heartbeat, or CPU task records. No evidence yet distinguishes whole JS event-loop blocking from compositor-only RAF starvation. Passing independent pixels does not satisfy the failed temporal gate. No production scheduler or clock correction is justified yet.",
+    "nextDiagnostic": {
+      "implementation": "Only capture-timing-fixtures.js: native 25 ms timer heartbeat, supported PerformanceObserver longtasks, visibility/focus observations during first second. One final heartbeat may report a task spanning the observation deadline. Observer/timer clear at deadline, recorder stop, and finally; all listeners/wrappers restore in finally.",
+      "staticVerification": "node --check tests/browser/capture-timing-fixtures.js passed; no browser/test/server run by this agent.",
+      "pending": "Root to run one focused native verification, then ordinary CI publication.",
+      "interpretation": "Heartbeat continuity through a RAF gap supports testing an export-owned timer scheduler. Matching heartbeat starvation or longtask means a timer cannot fill the blocked interval."
+    },
+    "frozenFileSHA256": {
+      "tests/browser/capture-timing-fixtures.js": "9bbc098bfa37cc47383bcb234254dc450edbcc01f3641612321d204be663cf44",
+      "tests/browser/sequence-trim.spec.js": "965fb12e0bdcec0ce35b8cb2b85d1dd4e59cbcd4405dc833eb5c0d38293e2fed",
+      "tests/browser/sequence-trim-fixtures.js": "8d8fb4e9c00cbf1097cd69e357eba9986b8905e381d837a9013cdaf51770f368",
+      "src/export.js": "93351f6dd837a1b49a2261d2b37d4f3f966f14a8e8f6682898eb21da482fcc5c",
+      "src/renderer.js": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9"
+    },
+    "detailedSupplement": {
+      "path": "/tmp/shot124-ci-instrumented-trim-media-diagnosis.json",
+      "bytes": 22785,
+      "sha256": "19a18099d71e88c19bb0c5bf1149072eba746260b0310bdc6b0a1a9635439969"
+    }
+  },
+  "heartbeatLocalVerification": {
+    "result": "passed",
+    "stats": {
+      "startTime": "2026-10-05T06:14:14.320Z",
+      "duration": 10333.798,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": "/tmp/shot124-heartbeat-native.log",
+    "timing": {
+      "path": "/workspace/shot124-heartbeat-native-artifacts/sequence-trim-actual-six-s-3ca91-hases-and-repeated-excerpts/original-trim-capture-timing.json",
+      "bytes": 41758,
+      "sha256": "d8da720bf3e031070b1acdbb530899e56f35debe54e26c401febd7dd9fededd5"
+    },
+    "heartbeat": {
+      "count": 34,
+      "first": 1095.7000000029802,
+      "last": 2082.300000011921,
+      "maxGap": 150.70000000298023
+    },
+    "wrappersRestored": true,
+    "longtaskSupported": true,
+    "longtaskEntries": 0,
+    "limits": "Local diagnostic pass does not resolve the original CI temporal failure. Production, literal fixtures and timing/pixel gates remain unchanged."
+  }
+}

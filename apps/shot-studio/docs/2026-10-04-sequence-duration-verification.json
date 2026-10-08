@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "issue": 90,
+  "status": "core-fix-complete",
+  "scope": "Sequence duration admission only; complete UI/native/max/restart acceptance remains with PR93.",
+  "base": "f9e0a28457c3f04647b4a8d3bdbc0dfa1f0d57ff",
+  "reviewFinding": "Moving clip11 later in20 alternating1.3/4.7-second clips changes naive60-second sum to60.00000000000001; the returned cut becomes invalid. A tiny actual excess can also be concealed by summation order.",
+  "correction": "Canonical sorted Neumaier compensated total; no epsilon, rounding of authored durations or quota widening. moveClip revalidates returned result. Chronological cut/source clocks preserved.",
+  "verification": {
+    "newCases": 3,
+    "beforeFailures": 3,
+    "afterTotalUnitPassed": 169,
+    "syntaxPassed": true,
+    "covered": [
+      "Every adjacent move, grouped/reversed order, full60-second endpoint, unchanged sources/input and Undo/Redo.",
+      "Near-excess second duration4.700000000000001 is rejected in all tested orders."
+    ]
+  },
+  "limits": [
+    "All53 existing native regression cases pass; complete new sequence UI/native/max/restart acceptance remains open in issue90.",
+    "No physical headset acceptance or main merge/deployment."
+  ],
+  "implementation": "d6bbbaf710a39cafb213ebe5f20fcc6e2807acec",
+  "merge": "a302f671e60db09912d2e3f98f8bb9069dc71cb5",
+  "ci": {
+    "run": 37218681542,
+    "job": 111484377472,
+    "checkout": "eb06558445273b1b0abc5f1e794b8fc170fd0345",
+    "head": "d6bbbaf710a39cafb213ebe5f20fcc6e2807acec",
+    "base": "f9e0a28457c3f04647b4a8d3bdbc0dfa1f0d57ff",
+    "unitPassed": 169,
+    "browserPassed": 53,
+    "syntax": "passed"
+  }
+}

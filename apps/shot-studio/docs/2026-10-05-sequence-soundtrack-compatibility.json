@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "phase": "full-native-regression-passed",
+  "notProductFailure": "No fabricated RED: these old tests inspected localStorage writes that the approved complete-row IndexedDB architecture intentionally replaces.",
+  "changes": [
+    "Independent native IDB readback parses literal SHOTSEQ1 framing without producer imports, waits for visible initial read/save completion, and preserves canonical inner sequence comparisons.",
+    "Old malformed-legacy recovery uses the explicit retained-legacy download; native IDB put throws quota error rather than obsolete localStorage setItem. Legacy text must stay byte-identical after successful promotion.",
+    "Saved conflict recovery checks actual complete archive bytes. Replacement now explicitly reviews the freshest saved title before consent; old two-click stale-review behavior is obsolete. New independent native cases separately gate a third writer after fresh review.",
+    "All original scene/source graphs, camera/performer pixel oracles, clocks, ranges, bounds, raw values, Undo/Redo and restart expectations remain unchanged."
+  ],
+  "checks": "node syntax passed for all three touched fixture sources",
+  "files": [
+    {
+      "path": "tests/browser/sequence-storage-fixtures.js",
+      "bytes": 2207,
+      "sha256": "f5b19f6a83b7f819090f3f13044cb175218477f20aaec54fac634f2463e3967d"
+    },
+    {
+      "path": "tests/browser/sequence.spec.js",
+      "bytes": 22955,
+      "sha256": "47148287596f5ffb85c2388e8068649aa1844fb8a32cb38508834e5329b7328a"
+    },
+    {
+      "path": "tests/browser/sequence-trim.spec.js",
+      "bytes": 16585,
+      "sha256": "ddc4c5f0c098cced164395c6d92d870eb84b8365cb36ef4d596e621a099b0439"
+    }
+  ],
+  "fullNativeResult": {
+    "startTime": "2026-10-05T05:00:36.904Z",
+    "duration": 341523.74,
+    "expected": 99,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "additionalCompatibilityChanges": "Exporter controlled AudioContext fixture now supplies createConstantSource for the capture-only silent source; original stream/cleanup assertions retained."
+}

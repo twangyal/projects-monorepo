@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 1,
+  "issue": 115,
+  "status": "passed",
+  "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+  "treeSha": "af95d036ac9c5655e34a18c5e7f2fb67c7d75372",
+  "collectedAtUtc": "2026-10-05T00:05:49.918Z",
+  "verificationScope": "Actual first-attempt Karaoke push and PR logs/checkouts plus all thirteen exact-head PR workflow conclusions. No reruns, local tests, builds, browsers, servers or Git mutations during collection.",
+  "checkouts": {
+    "push": {
+      "sha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "tree": "af95d036ac9c5655e34a18c5e7f2fb67c7d75372"
+    },
+    "pull_request": {
+      "sha": "b6804e75d33e6eac0b0d2e409dab50f23ac577b4",
+      "tree": "af95d036ac9c5655e34a18c5e7f2fb67c7d75372",
+      "parents": [
+        "d36b8970b28ff59e694341af772c6c2ee016ccea",
+        "54e1f7b8b93549a3e38af8848d9e6df4597f4856"
+      ],
+      "treeEqualsPublishedHead": true
+    }
+  },
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37245698770,
+      "runAttempt": 1,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245698770",
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T23:59:07Z",
+      "updatedAt": "2026-10-05T00:04:12Z",
+      "job": {
+        "id": 111563053852,
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install local video tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install core test dependencies only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Python unit, HTTP, and real video tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m compileall -q karaoke scripts tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run ruff check .",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm ci",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run lint",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run typecheck",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run build",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "conclusion": "success"
+          },
+          {
+            "name": "Production browser workflow with fake separator and real video export",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      "actualCheckoutShaFromLog": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "runtime": {
+        "python": "3.11.16",
+        "node": "24.21.0",
+        "npm": "11.19.0",
+        "browser": "Chrome for Testing 153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "python": {
+        "tests": 166,
+        "passed": 166,
+        "result": "OK",
+        "seconds": 61.984,
+        "scope": "Python unit, actual HTTP and real video tests; core dependencies only"
+      },
+      "typescript": {
+        "tests": 86,
+        "pass": 86,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 1400.468968
+      },
+      "native": {
+        "tests": 75,
+        "passed": 75,
+        "workers": 1,
+        "reportedDuration": "3.0m",
+        "commandStartedAt": "2026-10-05T00:01:09.2608215Z",
+        "successOutputAt": "2026-10-05T00:04:07.3972611Z",
+        "commandToSuccessSeconds": 178.13644,
+        "scope": "Production browser workflow with fake separator and real video export"
+      },
+      "checks": {
+        "compileall": "success",
+        "ruff": "success",
+        "eslint": "success",
+        "typecheck": "success",
+        "productionBuild": "success",
+        "viteBuildMs": 357
+      },
+      "decodedLog": {
+        "path": "/tmp/karaoke115-ci-push.log",
+        "bytes": 155456,
+        "sha256": "95507b69c16aa724de6c114ab64f80c24cbc196622b7e45ddd6eac8d197e78c9"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37245701949,
+      "runAttempt": 1,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701949",
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T23:59:10Z",
+      "updatedAt": "2026-10-05T00:04:32Z",
+      "job": {
+        "id": 111563086554,
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install local video tools",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install core test dependencies only",
+            "conclusion": "success"
+          },
+          {
+            "name": "Python unit, HTTP, and real video tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run python -m compileall -q karaoke scripts tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run ruff check .",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm ci",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run test",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run lint",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run typecheck",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run build",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "conclusion": "success"
+          },
+          {
+            "name": "Production browser workflow with fake separator and real video export",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      "actualCheckoutShaFromLog": "b6804e75d33e6eac0b0d2e409dab50f23ac577b4",
+      "runtime": {
+        "python": "3.11.16",
+        "node": "24.21.0",
+        "npm": "11.19.0",
+        "browser": "Chrome for Testing 153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "python": {
+        "tests": 166,
+        "passed": 166,
+        "result": "OK",
+        "seconds": 62.972,
+        "scope": "Python unit, actual HTTP and real video tests; core dependencies only"
+      },
+      "typescript": {
+        "tests": 86,
+        "pass": 86,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 1500.833489
+      },
+      "native": {
+        "tests": 75,
+        "passed": 75,
+        "workers": 1,
+        "reportedDuration": "3.0m",
+        "commandStartedAt": "2026-10-05T00:01:26.2480143Z",
+        "successOutputAt": "2026-10-05T00:04:27.6154343Z",
+        "commandToSuccessSeconds": 181.36742,
+        "scope": "Production browser workflow with fake separator and real video export"
+      },
+      "checks": {
+        "compileall": "success",
+        "ruff": "success",
+        "eslint": "success",
+        "typecheck": "success",
+        "productionBuild": "success",
+        "viteBuildMs": 379
+      },
+      "decodedLog": {
+        "path": "/tmp/karaoke115-ci-pull_request.log",
+        "bytes": 156601,
+        "sha256": "14681c955457885aa1124e3c1b0b3953f2ccab57b737144d56e203db92f172e3"
+      }
+    }
+  ],
+  "allPrWorkflows": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37245702027,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245702027"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37245702006,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245702006"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37245702054,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245702054"
+    },
+    {
+      "name": "Git History",
+      "runId": 37245702003,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245702003"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37245702028,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245702028"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37245701947,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701947"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37245702057,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245702057"
+    },
+    {
+      "name": "Composure",
+      "runId": 37245701994,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701994"
+    },
+    {
+      "name": "Duet",
+      "runId": 37245701971,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701971"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37245701959,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701959"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37245701974,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701974"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37245701983,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701983"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37245701949,
+      "runAttempt": 1,
+      "headSha": "54e1f7b8b93549a3e38af8848d9e6df4597f4856",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37245701949"
+    }
+  ],
+  "allPrSnapshot": {
+    "completed": 13,
+    "success": 13,
+    "failure": 0,
+    "cancelled": 0,
+    "pending": 0
+  },
+  "limitations": [
+    "The independently authored maximum sequential-timing run is separate local evidence, not part of or attributed to these CI jobs.",
+    "CI uses a fake separator for browser fixtures, with actual native media/video export; no real model inference or physical singing recognition quality is claimed.",
+    "Native duration is reported rounded to minutes; command timestamps are retained independently."
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "issue": 108,
+  "evidenceDate": "2026-10-04",
+  "scope": "Friendly-local opt-in HTTPS configuration, bounded request runtime and authoritative server integration; no Store/domain/image/archive schema changes.",
+  "sourceFiles": [
+    {
+      "path": "apps/friendly-challenges/challenges/transport.py",
+      "bytes": 7318,
+      "sha256": "13e9682d8ceb05bb563a61b35a11043cb48060308aa359efec7efd8273f2477c"
+    },
+    {
+      "path": "apps/friendly-challenges/challenges/https_server.py",
+      "bytes": 7560,
+      "sha256": "5ef9a8c33799758c1216f419eda84b82580bb5150cc68aa2908bdf04d7a5fac6"
+    },
+    {
+      "path": "apps/friendly-challenges/challenges/server.py",
+      "bytes": 26359,
+      "sha256": "3525c9ff1247f287be14ee6214827a3a56ee316b91dab10c3d68c0e3565bdcf2"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_transport_config.py",
+      "bytes": 6584,
+      "sha256": "fd2645831b1b857e59b1e46892701a8a853614b7c3d77db36ce8625216d229e5"
+    },
+    {
+      "path": "apps/friendly-challenges/tests/test_https_server.py",
+      "bytes": 9843,
+      "sha256": "297124d693bc2a9911c3c8f9602d831c7e2ce6e231678ed9392b7c41c4c8c160"
+    }
+  ],
+  "ownedRuns": [
+    {
+      "command": "python3 -m unittest tests.test_transport_config",
+      "result": "expected deliberate prepare_transport stub errors",
+      "tests": 4,
+      "elapsedSeconds": 0.027,
+      "logPath": "/tmp/friendly108-config-red.log",
+      "logSha256": "6d12298eda178914f90e2e3327bc7d29056b0cdc02549dc32f6738250ee42f46",
+      "errors": 4
+    },
+    {
+      "command": "python3 -m unittest tests.test_https_server",
+      "result": "expected deliberate configuration stub errors; runtime not exercised",
+      "tests": 7,
+      "elapsedSeconds": 0.066,
+      "logPath": "/tmp/friendly108-runtime-red.log",
+      "logSha256": "71089d545d0891ebbd7eb29cd16c9cdfeb9465bc907b54071394486de4535b7d",
+      "errors": 7
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config tests.test_https_server",
+      "result": "four configuration passes, seven expected deliberate create_server stub errors",
+      "tests": 11,
+      "elapsedSeconds": 0.144,
+      "logPath": "/tmp/friendly108-server-stub-red.log",
+      "logSha256": "aa7e278d5d810fc34e353bd45b0bb2bcdcad1372982506606fee68096f0d2ff3",
+      "passed": 4,
+      "errors": 7
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config tests.test_https_server",
+      "result": "pass actual configuration and runtime",
+      "tests": 11,
+      "elapsedSeconds": 3.235,
+      "logPath": "/tmp/friendly108-producer-first.log",
+      "logSha256": "2153698107c09e73b83a4e2460c06db449286788c79b808ee1c05f61407e36d2",
+      "configurationTests": 4,
+      "httpsRuntimeTests": 7
+    },
+    {
+      "command": "python3 -m unittest tests.test_transport_config tests.test_https_server",
+      "result": "pass final producer source including unsupported-platform admission",
+      "tests": 12,
+      "elapsedSeconds": 3.219,
+      "logPath": "/tmp/friendly108-producer-final.log",
+      "logSha256": "05aa8c1af630cc72c63596b9fe3dde26dcf70ee246e222d19cc28f577e43835f",
+      "configurationTests": 5,
+      "httpsRuntimeTests": 7
+    },
+    {
+      "command": "python3 -m unittest tests.test_server",
+      "result": "21 pass; one old exact-status fixture mismatch",
+      "tests": 22,
+      "elapsedSeconds": 21.092,
+      "logPath": "/tmp/friendly108-loopback-first.log",
+      "logSha256": "95885bd1e10cf1c71ef85d0572b72e9be2237dd51ebec0ba72101c23369ccbc6",
+      "passed": 21,
+      "failed": 1
+    }
+  ],
+  "historicalFailureDistinctions": [
+    {
+      "kind": "deliberate-stub RED",
+      "description": "The producer deliberately published callable configuration/runtime seams, observed expected errors on real successful-path fixtures, then implemented them. These were missing-feature failures, not discovered production defects."
+    },
+    {
+      "kind": "compatible existing fixture mismatch",
+      "test": "test_private_capabilities_and_status_do_not_leak_a_directory_or_cookie_access",
+      "description": "Existing loopback test expected exactly schemaVersion and maxChallenges; approved transport status is additive. The first existing-suite run failed only that equality. Root updated the expected fixture, without weakening private-cookie/Bearer or domain assertions."
+    },
+    {
+      "kind": "verified precedent adapted, not new Friendly failures",
+      "description": "The actual Duet hexadecimal-origin, shared-lock shutdown and same-port reuse-address repairs were retained in app-local Friendly code. Friendly tests verify those boundaries; this receipt does not falsely label them newly observed Friendly defects."
+    },
+    {
+      "kind": "independent oracle fixture corrections",
+      "description": "Independent first integration had expected-status/body-size/cleanup fixture mistakes. The separate oracle owner retained those logs and corrected fixture expectations against existing Friendly semantics. No producer source repair was required."
+    }
+  ],
+  "relatedOwnerEvidence": [
+    {
+      "command": "root full Python suite (runner is in the retained log)",
+      "result": "pass after root additive status fixture adaptation",
+      "tests": 194,
+      "elapsedSeconds": 53.74,
+      "logPath": "/tmp/friendly108-root-python-first.log",
+      "logSha256": "e92c10bbba60d88c2fc7ab6046640842720a018c624ad7e4ee0b7c6102e7ff90",
+      "owner": "root"
+    },
+    {
+      "command": "independent tests.test_https_oracle suite",
+      "result": "pass separate independent protocol verification",
+      "tests": 21,
+      "elapsedSeconds": 26.039,
+      "logPath": "/tmp/friendly108-oracle-final.log",
+      "logSha256": "188cbb0308513004b1ad53cb0d8038a43411eb3a900e9fcacf228ee5dbbcb690",
+      "owner": "git_history_review"
+    },
+    {
+      "owner": "root maximum verifier",
+      "result": "first actual maximum HTTPS run pass",
+      "elapsedSeconds": 33.88,
+      "records": 20,
+      "retainedImageBytes": 83886080,
+      "receiptPath": "/workspace/friendly108-maximum-fixtures/verification.json",
+      "receiptSha256": "30fdce99feb5848b1ec8e1c2badf25e8742189eb2557bb474331a9e61d272530",
+      "logPath": "/workspace/friendly108-maximum-fixtures/run-first.log",
+      "logSha256": "f7f91a93372021859c1894e292ad258e4e9894ec94309d4b6231220472ee1cc8",
+      "scope": "20 original challenges / 160 retained images / 80 MiB original image bytes; same-port fresh process and original private record/capability retention checked by separate owner.",
+      "browserOrPhysicalDeviceClaim": false
+    }
+  ],
+  "staticChecks": {
+    "ruff": {
+      "command": "/tmp/duet-service-checks/bin/ruff check challenges/transport.py challenges/https_server.py challenges/server.py tests/test_transport_config.py tests/test_https_server.py",
+      "result": "All checks passed on final producer source; directly observed tool result, no separate owned log created."
+    },
+    "compile": {
+      "command": "python3 -m compileall -q challenges/transport.py challenges/https_server.py challenges/server.py",
+      "result": "pass on final producer source; directly observed tool result."
+    }
+  },
+  "verifiedProducerBoundaries": [
+    "prepare_transport and validate_transport require Linux memfd/procfs before HTTPS input/library admission; unsupported-platform test proves no input read.",
+    "Canonical private/loopback IPv4 and exact lowercase HTTPS origin reject numeric/hexadecimal final-label aliases, redundant/default ports, paths and mismatched IP bind origins.",
+    "NOFOLLOW/nonblocking regular-file admission, exact private ownership/mode and declared/actual byte bounds precede native SSL loading of owned memfd byte copies. Source files remain unchanged.",
+    "HTTPS bind/listen precedes data-directory/Store mutation, and TCPServer.server_bind retains reuse-address without reverse DNS. Actual TLS-response immediate same-port restart passes.",
+    "One HTTPS admission pool owns at most 16 accepted sockets. Handshakes run inside admitted workers; one watchdog and raw/buffered/read/write checks enforce phase/total deadlines.",
+    "Setup/header/Origin/framing gates precede body admission. Only X-Friendly-Setup-Key on POST /api/challenges authorizes creation; it grants no participant authority.",
+    "No cookies are minted or accepted as authority. Existing image/JSON/export routes remain Bearer-only; Store/image/domain semantics are unchanged.",
+    "Partial response failures do not append JSON after headers. HTTPS shutdown closes exact sockets and joins requests before Store lock acquisition or library lock release; held-request refusal retains ownership and permits later close."
+  ],
+  "limits": {
+    "connections": 16,
+    "tlsHandshakeSeconds": 5,
+    "headerSeconds": 10,
+    "headerBytes": 16384,
+    "headerFields": 64,
+    "socketIdleSeconds": 5,
+    "bodySeconds": 15,
+    "responseSeconds": 30,
+    "connectionSeconds": 75,
+    "requestJoinSeconds": 5
+  },
+  "limitations": [
+    "No tests, services or builds were rerun to create this receipt; historical stage and ownership are explicit.",
+    "The final producer run is 12 tests: five configuration and seven HTTPS server cases. Root full194, independent21 and maximum33.880-second evidence are separate-owner runs, not claimed as new producer executions.",
+    "Producer held-Store testing scales REQUEST_JOIN_SECONDS to 0.15 and bounds a controlled wait at two seconds. It is a labeled lifecycle branch test, not proof of production five-second wall-clock join.",
+    "Actual production TLS/header deadlines and separately scaled body/response/total branches are documented in the independent oracle receipt.",
+    "TLS pair loading does not establish certificate SAN/expiry/chain/client trust. Operators configure the intended address and normally trusted certificate.",
+    "Software loopback/private-interface checks do not establish two physical devices, verified human identities, evidence authenticity, internet deployment or arbitrary network-latency behavior.",
+    "No raw setup keys, participant capabilities, certificate private keys, source file contents or private links are included."
+  ]
+}

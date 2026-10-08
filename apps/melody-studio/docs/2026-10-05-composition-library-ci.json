@@ -1,0 +1,237 @@
+{
+  "issue": 126,
+  "repository": "twangyal/projects-monorepo",
+  "observedAt": "2026-10-05T06:29:41.217Z",
+  "publishedCommit": "568e29df01f9a454d6436cca0f544466357f6963",
+  "publishedTree": "134f8b28b37b44f7d153591648d7fb57591b4d23",
+  "firstAttempts": true,
+  "source": "GitHub connector GET workflow jobs/logs, workflow runs, and Git commit objects; no API mutations",
+  "cliAttempt": "gh API reads refused by environment network policy; authorized GitHub connector reads succeeded",
+  "melody": [
+    {
+      "event": "push",
+      "runId": 37272014006,
+      "jobId": 111640826854,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272014006/job/111640826854",
+      "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37272014006",
+      "conclusion": "success",
+      "checkoutSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "checkoutTree": "134f8b28b37b44f7d153591648d7fb57591b4d23",
+      "treeEqualsPublished": true,
+      "gitCommitApiUrl": "https://api.github.com/repos/twangyal/projects-monorepo/git/commits/568e29df01f9a454d6436cca0f544466357f6963",
+      "parents": [
+        "9d3bf68ca991797b4fb7a4c1f83ea445d207e139"
+      ],
+      "units": {
+        "tests": 315,
+        "passed": 315,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 8268.560964
+      },
+      "browser": {
+        "tests": 138,
+        "passed": 138,
+        "reportedDuration": "1.9m",
+        "workers": 2,
+        "stepSeconds": 116,
+        "stepStartedAt": "2026-10-05T06:22:23Z",
+        "stepCompletedAt": "2026-10-05T06:24:19Z"
+      },
+      "check": {
+        "conclusion": "success",
+        "stepSeconds": 17
+      },
+      "jobStartedAt": "2026-10-05T06:21:37Z",
+      "jobCompletedAt": "2026-10-05T06:24:22Z",
+      "jobDurationSeconds": 165,
+      "logPath": "/tmp/melody126-ci-push.log",
+      "logSha256": "28852e828c5eb269f23da04983f20958d2f7f1ccca728e7765731d917b4e62f1",
+      "excerpts": [
+        "2026-10-05T06:21:41.1080270Z [command]/usr/bin/git log -1 --format=%H",
+        "2026-10-05T06:21:53.1593894Z \u2139 tests 315",
+        "2026-10-05T06:21:53.1594317Z \u2139 pass 315",
+        "2026-10-05T06:21:53.1594522Z \u2139 fail 0",
+        "2026-10-05T06:21:53.1594726Z \u2139 cancelled 0",
+        "2026-10-05T06:21:53.1594943Z \u2139 skipped 0",
+        "2026-10-05T06:21:53.1595389Z \u2139 duration_ms 8268.560964",
+        "2026-10-05T06:22:29.7597352Z Running 138 tests using 2 workers",
+        "2026-10-05T06:24:19.4506186Z   138 passed (1.9m)"
+      ]
+    },
+    {
+      "event": "pull_request",
+      "runId": 37272019924,
+      "jobId": 111640845694,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019924/job/111640845694",
+      "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019924",
+      "conclusion": "success",
+      "checkoutSha": "66347ef4feec4966cfe54e0177915607262d36af",
+      "checkoutTree": "134f8b28b37b44f7d153591648d7fb57591b4d23",
+      "treeEqualsPublished": true,
+      "gitCommitApiUrl": "https://api.github.com/repos/twangyal/projects-monorepo/git/commits/66347ef4feec4966cfe54e0177915607262d36af",
+      "parents": [
+        "d36b8970b28ff59e694341af772c6c2ee016ccea",
+        "568e29df01f9a454d6436cca0f544466357f6963"
+      ],
+      "units": {
+        "tests": 315,
+        "passed": 315,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 8295.273329
+      },
+      "browser": {
+        "tests": 138,
+        "passed": 138,
+        "reportedDuration": "1.9m",
+        "workers": 2,
+        "stepSeconds": 115,
+        "stepStartedAt": "2026-10-05T06:22:27Z",
+        "stepCompletedAt": "2026-10-05T06:24:22Z"
+      },
+      "check": {
+        "conclusion": "success",
+        "stepSeconds": 17
+      },
+      "jobStartedAt": "2026-10-05T06:21:42Z",
+      "jobCompletedAt": "2026-10-05T06:24:26Z",
+      "jobDurationSeconds": 164,
+      "logPath": "/tmp/melody126-ci-pr.log",
+      "logSha256": "4621362493ff0ce72549dcb5670630289ff6fe1efe9a3ac8fbc1542c6d89dc48",
+      "excerpts": [
+        "2026-10-05T06:21:45.4542363Z [command]/usr/bin/git log -1 --format=%H",
+        "2026-10-05T06:21:58.4165098Z \u2139 tests 315",
+        "2026-10-05T06:21:58.4165525Z \u2139 pass 315",
+        "2026-10-05T06:21:58.4165726Z \u2139 fail 0",
+        "2026-10-05T06:21:58.4165933Z \u2139 cancelled 0",
+        "2026-10-05T06:21:58.4166147Z \u2139 skipped 0",
+        "2026-10-05T06:21:58.4166608Z \u2139 duration_ms 8295.273329",
+        "2026-10-05T06:22:34.7022047Z Running 138 tests using 2 workers",
+        "2026-10-05T06:24:22.3876557Z   138 passed (1.9m)"
+      ]
+    }
+  ],
+  "prWorkflows": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37272019996,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019996",
+      "attempt": 1
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37272019879,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019879",
+      "attempt": 1
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37272019897,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019897",
+      "attempt": 1
+    },
+    {
+      "name": "Git History",
+      "runId": 37272019922,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019922",
+      "attempt": 1
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37272019916,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019916",
+      "attempt": 1
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37272019877,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019877",
+      "attempt": 1
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37272019900,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019900",
+      "attempt": 1
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37272019924,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019924",
+      "attempt": 1
+    },
+    {
+      "name": "Composure",
+      "runId": 37272019908,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019908",
+      "attempt": 1
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37272019889,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019889",
+      "attempt": 1
+    },
+    {
+      "name": "Duet",
+      "runId": 37272019995,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019995",
+      "attempt": 1
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37272019872,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019872",
+      "attempt": 1
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37272019882,
+      "status": "completed",
+      "conclusion": "success",
+      "headSha": "568e29df01f9a454d6436cca0f544466357f6963",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37272019882",
+      "attempt": 1
+    }
+  ],
+  "all13PrWorkflowsSucceeded": true
+}

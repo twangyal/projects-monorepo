@@ -1,0 +1,61 @@
+name: Stock Notebook
+
+on:
+  push:
+    paths:
+      - 'apps/stock-notebook/**'
+      - '.github/workflows/stock-notebook.yml'
+  pull_request:
+    paths:
+      - 'apps/stock-notebook/**'
+      - '.github/workflows/stock-notebook.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/stock-notebook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/stock-notebook/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm run check
+      - name: Verify isolated experiment invariants without ML dependencies
+        run: python -S -B -m unittest discover -s experiments/paraphrase -p 'test_*.py'
+      - name: Reproduce failed experiment diagnostics without opening holdouts
+        run: >-
+          python -S -B experiments/paraphrase/evaluate.py --diagnostic-development
+          --artifact experiments/paraphrase/model.json
+          --development experiments/paraphrase/development.json
+          --parity experiments/paraphrase/development-results.json
+          --output /tmp/stock-paraphrase-diagnostic.json
+      - name: Verify maximum annual-history input and complete report
+        run: node --experimental-strip-types scripts/annual-history-smoke.ts
+      - name: Verify maximum reviewed refresh and retained research
+        run: node --experimental-strip-types scripts/refresh-smoke.ts
+      - run: npx playwright install --with-deps chromium
+      - name: Production financial research, recovery and downloaded reports
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: stock-notebook-browser-results
+          path: apps/stock-notebook/test-results
+          retention-days: 7

@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "issue": 122,
+  "reviewedAt": "2026-10-05T02:36:50.290949+00:00",
+  "kind": "independent-read-only-source-review",
+  "result": "Two actual native defects have narrow source repairs reviewed clear; native GREEN remains pending. Initial missed uppercase edge and first 8/11 run are retained.",
+  "files": [
+    {
+      "path": "apps/motion-studio/src/main.ts",
+      "bytes": 79158,
+      "sha256": "e4a47b522dccdba2e143d75ced2d9d181c7c3ee35c934d06937af757799c6e8d"
+    },
+    {
+      "path": "apps/motion-studio/src/stroke-editor.ts",
+      "bytes": 11986,
+      "sha256": "10ec3fe360eee58dede0b7ad6372719ef607e4da415d58d17b6740001dcf0bd1"
+    },
+    {
+      "path": "apps/motion-studio/src/stroke-edit.ts",
+      "bytes": 5702,
+      "sha256": "f04b9bb2710976ff509659717b8e499b16bd01b7f6d442de020cc65ceb3b871f"
+    },
+    {
+      "path": "apps/motion-studio/src/style.css",
+      "bytes": 17574,
+      "sha256": "a3a233b2e835fead1235197e8acc3080e4d95ba75c0328bd4f6f3cc7aa74dd5c"
+    },
+    {
+      "path": "apps/motion-studio/src/model.ts",
+      "bytes": 21036,
+      "sha256": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc"
+    },
+    {
+      "path": "apps/motion-studio/src/history.ts",
+      "bytes": 1967,
+      "sha256": "f9b8da39214d9196b92760a4fe889808dcd4e5204293ca690f2c7f6fe77b3004"
+    },
+    {
+      "path": "apps/motion-studio/src/render.ts",
+      "bytes": 5810,
+      "sha256": "7f31b3712b1f433feb208e08f76e974c91572f5c9315b7942b7cd584637d4866"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-05-motion-stroke-editing-design.md",
+      "bytes": 16665,
+      "sha256": "31e179f3791bfb35a4a47168890cbd1797aad99eda91060802073d785ded11ac"
+    }
+  ],
+  "checks": [
+    {
+      "area": "Complete graph admission",
+      "evidence": "Pure operations select an exact existing drawing boundary/index in a detached validated graph, change only that stroke or remove it, then validate the complete candidate including coordinate/count/canonical byte limits. Translation never clamps or resamples points. Hit testing traverses reverse paint order and includes round segment endpoints and degenerate paths."
+    },
+    {
+      "area": "Raw drafts and pre-blur admission",
+      "evidence": "Mode/canvas/stroke action pointer handlers prevent native blur when other raw editor fields refuse admission. Current helper additionally protects unrelated raw fields on Discard while allowing deliberate disposal of stroke scratch only. Color/width input retires async/tween intent and explicitly rebinds its selected target; unrelated input retires selection without replacing raw scratch. Width parsing occurs only on explicit Apply."
+    },
+    {
+      "area": "Selection and no-op history",
+      "evidence": "Target identity includes project object, layer, frame, exact cel/index, generation and operation. Own edits explicitly rebind after existing commit; unrelated intent retires the selection. Appearance same-value/return-to-start translation reaches the existing canonical History.commit no-op path, preserving Redo and avoiding scheduleSave. Delete clears selection rather than retargeting the shifted index.",
+      "qualification": "This initial reasoning did not cover native color-input lowercasing of accepted uppercase project strings; see reopened uppercase-color-noop finding."
+    },
+    {
+      "area": "Pointer and keyboard ownership",
+      "evidence": "Gesture captures original project/pose/cel/geometry, derives each rigid delta from original client coordinates, and checks actual pointerup coordinates before commit. Invalid movement cancels the whole gesture. Pointer ID, primary admission, lost capture, canvas/window blur, scroll capture, resize, hidden/pagehide and new input are covered. Keyboard operations are restricted to edit mode with canvas/list focus, ignore repeats and exclude editable fields/modifier shortcuts."
+    },
+    {
+      "area": "Native resource and storage callbacks",
+      "evidence": "New edits use only existing history/commit/autosave/library-conflict boundaries. Generation/operation changes retire pending imported/recovered project publication; save status/catalog updates call controls without rebuilding stroke raw fields. No new storage authority or persistence schema is introduced."
+    },
+    {
+      "area": "Artwork and exports",
+      "evidence": "Selection overlay occupies a separate transparent pointer-events-none canvas. Existing PNG private canvas and GIF worker use committed project plus the untouched shared renderer, so overlay/selection/gesture scratch do not enter artifacts. Preview displacement changes only the selected active cel; layer poses and other cels/images remain in the validated base graph."
+    }
+  ],
+  "initialIntegrationCautions": [
+    "No-op commit refresh and selection rebind",
+    "Appearance input generation ownership",
+    "Pre-blur unrelated-field admission",
+    "Explicit scroll cancellation"
+  ],
+  "lateOwnerClarification": "UI owner independently added the Discard pre-blur guard before final review. Reviewed helper hash is 10ec3fe360eee58dede0b7ad6372719ef607e4da415d58d17b6740001dcf0bd1; initial 8b57527e checkpoint is not the final review target.",
+  "findings": [
+    {
+      "id": "uppercase-color-noop",
+      "status": "native-red-confirmed-source-repair-reviewed-runtime-green-pending",
+      "severity": "P2",
+      "trigger": "Select a stroke with accepted imported color #0000FF, then Apply its unchanged appearance after native color input exposes #0000ff.",
+      "impact": "setStrokeAppearance currently receives the lowercased native value, so canonical project text differs despite unchanged RGB/width. Existing History.commit can create an unintended edit/save and truncate Redo.",
+      "expected": "Unchanged RGB and width preserve the exact committed stroke graph, Redo and save state. Preserve committed color spelling when the selected RGB is equivalent; genuine RGB changes remain explicit edits.",
+      "discovery": "Root identified the omitted edge after initial clear review. Recorder confirmed the source seam and held the fix for an independently authored uppercase native regression.",
+      "runtimeEvidence": "First native uppercase case observed exact #0000FF becoming #0000ff on unchanged Apply.",
+      "repairReview": "stroke-editor.ts compares the native color value with committed.color.toLowerCase(); RGB equality reuses the exact committed string, while different RGB still passes the chosen native value to the original pure candidate validator. No history/save suppression is added; canonical graph equality reaches the established no-op path."
+    },
+    {
+      "id": "discard-pose-blur-commit",
+      "severity": "P2",
+      "status": "native-red-confirmed-source-repair-reviewed-runtime-green-pending",
+      "trigger": "Click Discard pose edits while focused valid raw pose value 211 is pending over committed 200.",
+      "impact": "Native blur/change committed 211 before the discard click, defeating the deliberate discard.",
+      "runtimeEvidence": "First native raw-width/preblur case observed 211 instead of expected original 200.",
+      "repairReview": "main.ts captured primary pointerdown for #discard-pose-edits now prevents default focus/blur before the existing click clears drafts. Other ordinary blur/change behavior remains unchanged.",
+      "scope": "Existing discard boundary exposed by the new stroke integration acceptance."
+    }
+  ],
+  "limits": [
+    "No browser, service, build, tests or Git mutation performed for this review.",
+    "Source review does not establish actual native event ordering, visual geometry, maximum performance, durable restart or exported pixel correctness; these remain separately owned runtime gates.",
+    "Only this review receipt was written; no producer source or test changes."
+  ],
+  "initialReview": {
+    "reviewedAt": "2026-10-05T02:36:50.290949+00:00",
+    "result": "No actionable finding in the frozen retained-stroke kernel/UI integration reviewed here.",
+    "scope": "Initial read-only kernel/UI review did not identify native color-input spelling normalization. The no-op assessment below must not be read as verification of uppercase imported color round trips."
+  },
+  "updatedAt": "2026-10-05T02:44:11.289354+00:00",
+  "firstNativeRun": {
+    "scope": "Root-run first 11 independent native cases; reviewer did not execute them.",
+    "passed": 8,
+    "failed": 3,
+    "skipped": 0,
+    "flaky": 0,
+    "durationMs": 45103.261999999995,
+    "results": {
+      "path": "/tmp/motion122-native-first-results.json",
+      "bytes": 29024,
+      "sha256": "6098e6abb5acd044b98f65ff03f456d63ac202a61524864c2858db28edda5bc4"
+    },
+    "log": {
+      "path": "/tmp/motion122-native-first.log",
+      "bytes": 11484,
+      "sha256": "ea40bb968522568e459b69d5cd8773f270c85e7cb57847b98aa28e1b9cc0c6a4"
+    },
+    "classification": {
+      "productFailures": 2,
+      "testFixtureFailures": 1
+    },
+    "fixtureFailure": "The new-raw-title case attempted fill into an intentionally disabled field while a pointer gesture was active. Root approved actual Escape, then raw input, then old pointerup, retaining original graph/caret assertions."
+  },
+  "repairCheckpoint": {
+    "reviewedFiles": [
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/main.ts",
+        "bytes": 79362,
+        "sha256": "2d1329860af1e539a1689d142fd77481188c40569d6b5650f13848c1df3d9f0f"
+      },
+      {
+        "path": "/workspace/projects-monorepo/apps/motion-studio/src/stroke-editor.ts",
+        "bytes": 12227,
+        "sha256": "d903636f217d61ad506654e076b5eafaff8d6bbe2eed96988b7820e33ab5dda6"
+      }
+    ],
+    "sourceReview": "No actionable remaining concern in these two precise repairs.",
+    "runtimeGreen": null
+  }
+}

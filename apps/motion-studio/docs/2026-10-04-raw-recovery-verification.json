@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-04",
+  "issue": 48,
+  "implementationCommit": "b15b5db0ab5439505c16ed85ecaa38d17236f235",
+  "red": {
+    "commit": "c9c49596d562e36852228eda62a9847874a3b020",
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37173333479",
+    "browserPassed": 31,
+    "browserFailed": 12
+  },
+  "green": {
+    "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37197554658",
+    "unitPassed": 43,
+    "browserPassed": 44,
+    "browserFailed": 0,
+    "checks": [
+      "unit",
+      "eslint",
+      "typecheck",
+      "production build",
+      "production Chromium"
+    ]
+  },
+  "review": {
+    "independent": true,
+    "finding": "Expanded shared raw graphs could exceed memory before the post-serialization cap.",
+    "resolution": "Exact memoized UTF-8 preflight rejects expanded JSON beyond 6 MiB before serialization.",
+    "reproduction": "Parent-enforced 2-second child timeout before correction; passes after correction."
+  },
+  "coverage": [
+    "Exact unknown-property raw JSON and native IndexedDB preservation",
+    "Stored undefined versus absent key",
+    "Denied read and explicit retry/confirmation",
+    "Late read and real image decode retain newer edits and history; bitmaps close",
+    "Cancel/failed/successful deliberate replacement",
+    "Unsafe values and oversized raw record produce no lossy downloads",
+    "Normal authoring, history, import, PNG/GIF and narrow keyboard controls"
+  ],
+  "limits": [
+    "Local Chromium download unavailable; native acceptance used GitHub CI.",
+    "Raw JSON supports only lossless compatible values within 6 MiB and bounded nesting; unsafe records remain protected.",
+    "No cross-tab conflict arbitration or online saving added."
+  ]
+}

@@ -320,3 +320,35 @@ test('resize restarts partial calibration and disables navigation', async ({ pag
   await calibrate(page);
   await expect(page.locator('#checkAccuracy')).toBeEnabled();
 });
+
+test('gaze downloads saved drafts and reopens exact text after refresh without saving the composer',async({page})=>{
+ await simulate(page);await expect(page.locator('#downloadDrafts')).toBeDisabled();
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Original 🦊');const text='Full original\n<script>window.injected=true</script>\n'+ 'Message '.repeat(80).trimEnd();await page.locator('#draftBody').fill(text);await page.locator('#saveDraft').click();
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Keep unsaved composer');
+ const downloadPromise=page.waitForEvent('download');await hold(page,page.locator('#downloadDrafts'));const download=await downloadPromise;const {readFile}=await import('node:fs/promises');const bytes=await readFile(await download.path());
+ expect(JSON.parse(bytes.toString())).toEqual({format:'gaze-session-drafts',version:1,drafts:[{subject:'Original 🦊',body:text}]});await expect(page.locator('#draftBody')).toHaveValue('Keep unsaved composer');
+ await page.reload();await simulate(page);await expect(page.locator('#draftList article')).toHaveCount(0);
+ await new Promise(resolve=>setTimeout(resolve,5500));await hold(page,page.locator('#importDrafts'));await expect(page.locator('#draftBackupFile')).toBeVisible();await expect(page.locator('#result')).toContainText('mouse or keyboard');const chooserPromise=page.waitForEvent('filechooser');await page.locator('#draftBackupFile').click();const chooser=await chooserPromise;await chooser.setFiles({name:'backup.json',mimeType:'application/json',buffer:bytes});
+ await expect(page.locator('#draftList article')).toHaveCount(1);await hold(page,page.locator('[data-draft-id="draft-1"] button'));await expect(page.locator('#draftBody')).toHaveValue(text);expect(await page.evaluate(()=>window.injected)).toBeUndefined();
+ await page.locator('#draftBody').fill(text+' Updated');await hold(page,page.locator('#saveDraft'));await expect(page.locator('#draftList article')).toHaveCount(1);await page.locator('[data-draft-id="draft-1"] button').click();await expect(page.locator('#draftBody')).toHaveValue(text+' Updated');
+});
+
+test('maximum imported notebook and malformed or excessive backups preserve saved and unsaved text',async({page})=>{
+ await simulate(page);const rows=Array.from({length:20},(_,i)=>({subject:`Imported ${i}`.padEnd(200,'x'),body:'🦊'.repeat(5000)}));const payload=drafts=>({name:'backup.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'gaze-session-drafts',version:1,drafts}))});
+ await page.locator('#draftBackupFile').setInputFiles(payload(rows));await expect(page.locator('#draftList article')).toHaveCount(20);
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Latest original composer');
+ for(const file of [payload([{subject:'Extra',body:'Overflow'}]),{name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{')},{name:'huge.json',mimeType:'application/json',buffer:Buffer.alloc(2*1024*1024+1,32)}]){
+  await page.locator('#draftBackupFile').setInputFiles(file);await expect(page.locator('#result')).not.toContainText('Reading draft backup');await expect(page.locator('#draftList article')).toHaveCount(20);await expect(page.locator('#draftBody')).toHaveValue('Latest original composer');
+ }
+ await page.locator('[data-draft-id="draft-20"] button').click();await page.locator('#replaceComposer').click();await expect(page.locator('#draftSubject')).toHaveValue(rows[19].subject);await expect(page.locator('#draftBody')).toHaveValue(rows[19].body);
+});
+
+test('late file read cannot append over a newer selection and current editing remains untouched',async({page})=>{
+ await simulate(page);await page.evaluate(()=>{const original=File.prototype.text;File.prototype.text=function(){return this.name==='slow.json'?new Promise(resolve=>{window.releaseDraftRead=resolve;}):original.call(this);};});
+ const file=(name,subject)=>({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'gaze-session-drafts',version:1,drafts:[{subject,body:subject+' body'}]}))});
+ await page.locator('#draftBackupFile').setInputFiles(file('slow.json','Old'));await expect(page.locator('#result')).toContainText('Reading draft backup');
+ await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('New saved');await page.locator('#draftBody').fill('Typed during read');await page.locator('#saveDraft').click();await page.locator('#composeButton').click();await page.locator('#draftBody').fill('Still unsaved');
+ await page.locator('#draftBackupFile').setInputFiles(file('fast.json','New imported'));await expect(page.locator('#draftList article')).toHaveCount(2);
+ await page.evaluate(()=>window.releaseDraftRead(JSON.stringify({format:'gaze-session-drafts',version:1,drafts:[{subject:'Late stale',body:'Must not publish'}]})));
+ await expect(page.locator('#draftList article')).toHaveCount(2);await expect(page.locator('#draftList')).toContainText('Typed during read');await expect(page.locator('#draftList')).toContainText('New imported');await expect(page.locator('#draftList')).not.toContainText('Late stale');await expect(page.locator('#draftBody')).toHaveValue('Still unsaved');
+});

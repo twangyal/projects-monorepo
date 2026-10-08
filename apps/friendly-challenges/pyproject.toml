@@ -1,0 +1,12 @@
+[project]
+name = "friendly-challenges"
+version = "0.4.1"
+description = "Private local nonmonetary agreements, evidence and mutual outcomes"
+requires-python = ">=3.11"
+dependencies = ["Pillow==12.3.0"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

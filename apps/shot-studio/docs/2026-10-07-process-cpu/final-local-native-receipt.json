@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "status": "unavailable",
+  "reason": "Native process counters remained zero.",
+  "wallMs": 266.297059,
+  "matchedProcesses": 0,
+  "newProcesses": 0,
+  "missingProcesses": 0,
+  "invalidPairs": 0,
+  "zeroCounterPairs": 4,
+  "complete": false,
+  "limits": [
+    "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+    "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+    "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+    "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+    "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+  ]
+}

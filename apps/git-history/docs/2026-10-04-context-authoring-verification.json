@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "issue": 85,
+  "date": "2026-10-04",
+  "packageVersion": "0.7.0",
+  "scope": "Literal revision-bound supplied discussion authoring in the packaged local workbench; existing authoritative report validation and renderers unchanged.",
+  "source": {
+    "git_history/web/context-editor.js": {
+      "bytes": 8787,
+      "sha256": "900964a376450b64c51c977e64aa0b404912d7811a28c1f328f979f5494efb48"
+    },
+    "git_history/web/workbench.js": {
+      "bytes": 58755,
+      "sha256": "4d615e3a5353369302e7ce806ba33ed281cd7759dd27f9c710cf2c84a5f856b3"
+    },
+    "git_history/web/workbench.html": {
+      "bytes": 23161,
+      "sha256": "90dfcd4dfdb1f8757d3b101de7b14f9b2ef8e1f77326c5197d7ffcaf7deedf83"
+    },
+    "git_history/web/workbench.css": {
+      "bytes": 13931,
+      "sha256": "ba2e2c6af800420950bc65ad46be9b6b7e62aa6973e5b50227031b66739290f3"
+    },
+    "git_history/workbench.py": {
+      "bytes": 25757,
+      "sha256": "98068674d0a5bc4061eb4349cc166160bae42bab0bde1f9aec261380c5544cb8"
+    },
+    "tests/context-editor.test.js": {
+      "bytes": 9349,
+      "sha256": "971b1ed42716628b4342612a86eafc07b19ebb9eefef8cc2a78d32f282d90658"
+    },
+    "tests/test_context_authoring_workbench.py": {
+      "bytes": 13446,
+      "sha256": "cc5c8e65c18cc0a67aa3a5d02ade4afc24365e9255c2d1be2f9f0e879f947071"
+    },
+    "tests/browser/context-authoring.spec.js": {
+      "bytes": 22863,
+      "sha256": "f30c207f6c53ba959005efa90033f57c6931d181940d03c98f985f4a383d514c"
+    },
+    "tests/browser/context-authoring-fixtures.js": {
+      "bytes": 5521,
+      "sha256": "08177d63fd9c6982ba6dc2e7ef037f410c048d2408884e894abf8b80cb6379da"
+    }
+  },
+  "verification": {
+    "python": [
+      {
+        "python": "3.11.16",
+        "nativeRequired": true,
+        "discovered": 311,
+        "passed": 309,
+        "expectedSkipped": 2,
+        "seconds": 47.604
+      },
+      {
+        "python": "3.12.14",
+        "nativeRequired": true,
+        "discovered": 311,
+        "passed": 309,
+        "expectedSkipped": 2,
+        "seconds": 48.068
+      },
+      {
+        "python": "3.13.5",
+        "nativeRequired": true,
+        "discovered": 311,
+        "passed": 309,
+        "expectedSkipped": 2,
+        "seconds": 47.922
+      },
+      {
+        "python": "3.11.16",
+        "nativeRequired": false,
+        "discovered": 311,
+        "passed": 285,
+        "expectedSkipped": 26,
+        "seconds": 45.466
+      }
+    ],
+    "node": {
+      "passed": 9,
+      "durationMs": 226.199807
+    },
+    "lint": [
+      "Ruff full app passed",
+      "JavaScript full lint passed",
+      "Python compileall passed"
+    ],
+    "sourceBrowser": {
+      "total": 35,
+      "runs": [
+        {
+          "scope": "existing tests",
+          "passed": 20,
+          "seconds": 28.7
+        },
+        {
+          "scope": "new authoring tests",
+          "passed": 15,
+          "seconds": 37.9
+        }
+      ],
+      "chromium": "151.0.7922.173"
+    },
+    "installedBrowser": {
+      "firstAttempt": {
+        "passed": 33,
+        "failed": 2,
+        "note": "Missing-parser fixtures ran in the optional-parser environment, where the isolated worker re-adds installed package parent to sys.path. These two tests require an actually parser-free installed environment. Separate verification follows; this failed attempt is retained.",
+        "reportedDuration": "1.1m"
+      },
+      "totalDistinctPassed": 35,
+      "optionalInstalledPassed": 33,
+      "parserFreePassed": 2,
+      "parserFreeSeconds": 4.3,
+      "parserFreeProof": {
+        "pythonExecutable": "/tmp/git85-installed-parserfree-fe43q2n0/bin/python",
+        "importedPackage": "/tmp/git85-installed-parserfree-fe43q2n0/lib/python3.12/site-packages/git_history",
+        "version": "0.7.0",
+        "optionalModulesAbsent": [
+          "tree_sitter",
+          "tree_sitter_javascript",
+          "tree_sitter_typescript"
+        ],
+        "installedDistributions": [
+          "local-git-history"
+        ],
+        "wheelSha256": "b4a8a2ed187975bf3f53f4e64c54fbfed799e425c3f356b43a359d8f133f38e8",
+        "byteIdenticalWheelFiles": 22,
+        "cwd": "/tmp"
+      },
+      "note": "Same final wheel, service and CLI loaded outside checkout. Two unchanged missing-parser cases ran separately in a fresh environment containing only local-git-history; no harness or product edits were needed. Not a single-environment 35-case claim."
+    },
+    "installedPackage": {
+      "wheel": "/tmp/git85-final-wheel-34zbmzxz/local_git_history-0.7.0-py3-none-any.whl",
+      "directory": "/tmp/git85-final-wheel-34zbmzxz",
+      "sha256": "b4a8a2ed187975bf3f53f4e64c54fbfed799e425c3f356b43a359d8f133f38e8",
+      "bytes": 81464,
+      "assetSha256": {
+        "workbench.js": "4d615e3a5353369302e7ce806ba33ed281cd7759dd27f9c710cf2c84a5f856b3",
+        "context-editor.js": "900964a376450b64c51c977e64aa0b404912d7811a28c1f328f979f5494efb48",
+        "workbench.css": "ba2e2c6af800420950bc65ad46be9b6b7e62aa6973e5b50227031b66739290f3",
+        "workbench.html": "90dfcd4dfdb1f8757d3b101de7b14f9b2ef8e1f77326c5197d7ffcaf7deedf83"
+      }
+    },
+    "artifactParity": [
+      {
+        "flow": "desktop-literal",
+        "file": "context.json",
+        "bytes": 488,
+        "sha256": "4a230094551c2e5ba55e2eb72041536ec71fc000cc9c00f45a63c92eb8158365",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "desktop-literal",
+        "file": "report.html",
+        "bytes": 16126,
+        "sha256": "7684ed6ce4926d41f04a3dff3c5c59465dc790ad50e578cfa98a25e7077a6085",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "desktop-literal",
+        "file": "report.json",
+        "bytes": 6248,
+        "sha256": "a6c9f335bb4bfe8d196cd6f9b9986b46df1e145d78ea3561b9d97f76c3bb5dd4",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "maximum-50-records",
+        "file": "context.json",
+        "bytes": 11822,
+        "sha256": "916a7030b4ddff668ba3dd29d581905422cf4e79af2f0731ef995b3ec867fc09",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "maximum-50-records",
+        "file": "report.html",
+        "bytes": 37814,
+        "sha256": "d3f06e03b3ad12e3a37e5e324d87bd5b97cc20fe633f31792f293972e635ccb1",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "maximum-50-records",
+        "file": "report.json",
+        "bytes": 19542,
+        "sha256": "082ac241cc82ba85757692d528ec95b01c88613472d1fc2935d88bc71de82001",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "multibyte-envelope-boundary",
+        "file": "context.json",
+        "bytes": 261196,
+        "sha256": "cacc66e1a50e0a1c2ed88f18bb9f7054fd1557332e2fb9b8922b0d42313e8a3a",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "multibyte-envelope-boundary",
+        "file": "report.html",
+        "bytes": 279980,
+        "sha256": "661240738d90a6c53fb56ed78052f50b38a8aa0761536c2952cc28b450255db7",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "multibyte-envelope-boundary",
+        "file": "report.json",
+        "bytes": 267556,
+        "sha256": "a99a415f2cdc64a7a110a32e1ffee8da602bc9d38531cd8706e55b4f8cbbfdb8",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "narrow-keyboard-390px",
+        "file": "context.json",
+        "bytes": 358,
+        "sha256": "8802958b987c65abff8de225cc6f09196b0be741051465463b1c393f9dff8792",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "narrow-keyboard-390px",
+        "file": "report.html",
+        "bytes": 15976,
+        "sha256": "2356cebbafdf74fc902fe927909d91c9d95005a9678c1681dcaa0a3a8adb6775",
+        "sourceInstalledByteEqual": true
+      },
+      {
+        "flow": "narrow-keyboard-390px",
+        "file": "report.json",
+        "bytes": 6118,
+        "sha256": "0789c99148aca76faef7e1b77c1c7c2f3ef1492b04ba65943a480a2302d60a19",
+        "sourceInstalledByteEqual": true
+      }
+    ],
+    "independentDomainReview": {
+      "schemaVersion": 1,
+      "issue": 85,
+      "review": "Independent read-only authoring-domain parity and atomicity review",
+      "verdict": "clear",
+      "findings": [],
+      "sourceHashes": {
+        "apps/git-history/git_history/web/context-editor.js": "900964a376450b64c51c977e64aa0b404912d7811a28c1f328f979f5494efb48",
+        "apps/git-history/tests/context-editor.test.js": "971b1ed42716628b4342612a86eafc07b19ebb9eefef8cc2a78d32f282d90658",
+        "apps/git-history/git_history/context.py": "e8c71905b25eed0d02208697bc52e91be2d5df0a53337b600bdea73b2e3a7aed",
+        "apps/git-history/git_history/model.py": "28c1df17144e88527737501eae9a9d6bdf12fa4d0b3b7dd9a9c78ccdb2219305",
+        "docs/superpowers/specs/2026-10-04-git-discussion-authoring-design.md": "4845a725587e50f9c7b9bfcceefef7c7fa49337404b52c4e9b08429a0a9f3586"
+      },
+      "observations": {
+        "nodeTests": {
+          "command": "node --test tests/context-editor.test.js",
+          "cwd": "/workspace/projects-monorepo/apps/git-history",
+          "tests": 9,
+          "passed": 9,
+          "failed": 0,
+          "durationMs": 109.963928
+        },
+        "literalParity": {
+          "cases": 94,
+          "accepted": 17,
+          "mismatches": 0,
+          "authority": "git_history.context.validate_records; Python3.11 in /tmp/git-history-ts-env",
+          "coverage": [
+            "Python whitespace and literal BOM",
+            "Astral code-point bounds",
+            "Malformed surrogate/control/CR rejection",
+            "Conservative HTTPS GitHub/GitLab routes and fragments",
+            "Exact literal canonical serialization"
+          ]
+        },
+        "byteBoundary": {
+          "bytes": 262144,
+          "records": 50,
+          "pythonAccepted": true,
+          "pythonReencodedByteIdentically": true,
+          "plusOneByteEditRejectedAtomically": true
+        },
+        "atomicOperations": [
+          "Rejected overlong add preserves original",
+          "Rejected unsafe-URL edit preserves original",
+          "Rejected out-of-range removal preserves original"
+        ],
+        "evidencePicker": "Stable blame/change/rename deduplication; no selected-revision-only option"
+      },
+      "reproduction": {
+        "nodeTestLocation": "apps/git-history/tests/context-editor.test.js",
+        "supplementalProbeScriptLocation": null,
+        "note": "Supplemental probes were executed as inline Node heredocs in tool calls; no standalone reproduction script was created. Their observed summaries are preserved here without claiming a saved script."
+      },
+      "limitations": [
+        "Domain review only; no UI lifecycle or native browser claim.",
+        "No source edits, server, build or Git mutation performed."
+      ]
+    },
+    "nativeArtifacts": {
+      "schemaVersion": 1,
+      "result": "passed",
+      "nativeTests": 15,
+      "elapsedSeconds": 37.9,
+      "log": "/tmp/git85-native-final.log",
+      "fixtureOrigin": "Original literal discussion forms and temporary Git repositories; actual authenticated loopback service, Chromium downloads, independent CLI invocation. No remote discussion fetched.",
+      "maxRecordsAccepted": 50,
+      "nextRecordRejected": 51,
+      "multibyteEnvelopeBytes": 261196,
+      "envelopeLimitBytes": 262144,
+      "exactByteLimitClaim": false,
+      "flows": [
+        {
+          "name": "desktop-literal",
+          "recordCount": 1,
+          "revision": "40a408a23b388f5aa30650ca7e9367385dd5eea2",
+          "files": {
+            "context.json": {
+              "bytes": 488,
+              "sha256": "4a230094551c2e5ba55e2eb72041536ec71fc000cc9c00f45a63c92eb8158365"
+            },
+            "report.html": {
+              "bytes": 16126,
+              "sha256": "7684ed6ce4926d41f04a3dff3c5c59465dc790ad50e578cfa98a25e7077a6085"
+            },
+            "report.json": {
+              "bytes": 6248,
+              "sha256": "a6c9f335bb4bfe8d196cd6f9b9986b46df1e145d78ea3561b9d97f76c3bb5dd4"
+            }
+          },
+          "screenshots": {
+            "report-preview.png": {
+              "bytes": 138025,
+              "sha256": "7bda5f679e4623ad95e466301e0be6682af652e8e53486f572be5045f2420780",
+              "width": 1440,
+              "height": 1000
+            },
+            "workbench.png": {
+              "bytes": 110170,
+              "sha256": "d1b44d80ebbfe557d71859c8a6e07a08a3cc9983eb679d858a81742a255b4dc6",
+              "width": 1440,
+              "height": 1000
+            }
+          },
+          "cliJsonByteEquality": true,
+          "cliHtmlByteEquality": true
+        },
+        {
+          "name": "maximum-50-records",
+          "recordCount": 50,
+          "revision": "40a408a23b388f5aa30650ca7e9367385dd5eea2",
+          "files": {
+            "context.json": {
+              "bytes": 11822,
+              "sha256": "916a7030b4ddff668ba3dd29d581905422cf4e79af2f0731ef995b3ec867fc09"
+            },
+            "report.html": {
+              "bytes": 37814,
+              "sha256": "d3f06e03b3ad12e3a37e5e324d87bd5b97cc20fe633f31792f293972e635ccb1"
+            },
+            "report.json": {
+              "bytes": 19542,
+              "sha256": "082ac241cc82ba85757692d528ec95b01c88613472d1fc2935d88bc71de82001"
+            }
+          },
+          "screenshots": {},
+          "cliJsonByteEquality": true,
+          "cliHtmlByteEquality": true
+        },
+        {
+          "name": "multibyte-envelope-boundary",
+          "recordCount": 16,
+          "revision": "40a408a23b388f5aa30650ca7e9367385dd5eea2",
+          "files": {
+            "context.json": {
+              "bytes": 261196,
+              "sha256": "cacc66e1a50e0a1c2ed88f18bb9f7054fd1557332e2fb9b8922b0d42313e8a3a"
+            },
+            "report.json": {
+              "bytes": 267556,
+              "sha256": "a99a415f2cdc64a7a110a32e1ffee8da602bc9d38531cd8706e55b4f8cbbfdb8"
+            },
+            "report.html": {
+              "bytes": 279980,
+              "sha256": "661240738d90a6c53fb56ed78052f50b38a8aa0761536c2952cc28b450255db7"
+            }
+          },
+          "screenshots": {},
+          "cliJsonByteEquality": true,
+          "cliHtmlByteEquality": false
+        },
+        {
+          "name": "narrow-keyboard-390px",
+          "recordCount": 1,
+          "revision": "40a408a23b388f5aa30650ca7e9367385dd5eea2",
+          "files": {
+            "context.json": {
+              "bytes": 358,
+              "sha256": "8802958b987c65abff8de225cc6f09196b0be741051465463b1c393f9dff8792"
+            },
+            "report.html": {
+              "bytes": 15976,
+              "sha256": "2356cebbafdf74fc902fe927909d91c9d95005a9678c1681dcaa0a3a8adb6775"
+            },
+            "report.json": {
+              "bytes": 6118,
+              "sha256": "0789c99148aca76faef7e1b77c1c7c2f3ef1492b04ba65943a480a2302d60a19"
+            }
+          },
+          "screenshots": {
+            "report-preview.png": {
+              "bytes": 54836,
+              "sha256": "af755b07d0012e3aa4c3ee14c8f2ef9c0e9b758f2ac1262e418597a80bc8726f",
+              "width": 390,
+              "height": 844
+            },
+            "workbench.png": {
+              "bytes": 56523,
+              "sha256": "c987c9e2bdb75530f843a5fd8180912ba7dfa23596e12d9139e3e735bcebfa43",
+              "width": 390,
+              "height": 844
+            }
+          },
+          "cliJsonByteEquality": true,
+          "cliHtmlByteEquality": true
+        }
+      ]
+    }
+  },
+  "observedTestHistory": [
+    "Eight domain tests first failed against callable stubs, then passed; the ninth exact-byte case passed on its first actual run.",
+    "Static asset delivery reproduced HTTP 404 before its allowlist entry; seven new real HTTP/Git cases passed after the fix.",
+    "New browser baseline generated a genuine report, then failed because authoring controls were absent.",
+    "First integrated authoring run: 12 passed, three failed. One real stale-upload status defect was repaired: mode retirement preserved bytes/fields but left Reading supplied JSON visible. Status now derives from owned state. The unchanged regression passed.",
+    "Other initial failures were test-only: unsupported locator matcher and an incorrect expected disabled ref field after reload; the existing session contract disables discovery and shows session guidance.",
+    "Concurrent root browser invocations shared the default trace output directory and interfered with trace retention. Subsequent runs used separate output paths, and the real stale-upload regression was repeated with isolated artifacts.",
+    "Final new source authoring suite passed all 15 cases in one invocation."
+  ],
+  "limits": [
+    "No remote discussion fetch, semantic synthesis, browser persistence or repository writes. Claims, attributed authors and links remain unverified.",
+    "Native multibyte fixture is 261196 bytes, 948 below the 262144-byte limit; exact boundary/+1 checks are separate Node/Python cases.",
+    "Near-limit native report JSON was independently compared with CLI bytes; HTML was actually downloaded and hashed but not independently CLI-compared. The other three flows compare both formats.",
+    "Source and installed native exports are byte-identical across all twelve downloaded context/report files.",
+    "Screenshots/media remain local; compact receipts and reproduction tests are committed. No memory or general latency guarantee is claimed.",
+    "Supplemental domain probes were inline commands, not a saved standalone script."
+  ]
+}

@@ -1,0 +1,1698 @@
+{
+  "schemaVersion": 1,
+  "issue": 115,
+  "date": "2026-10-04",
+  "status": "passed with explicitly staged artifact recheck",
+  "independence": {
+    "expectedSource": "Original literal 200-line text, deterministic synthetic PCM, and native event observations; no new timing/UI/core expected-value import.",
+    "serviceOwnership": "Root starts, stops and restarts its own fresh fixture service; runner only observes identity.",
+    "reviewerRuntime": "Acceptance author inspected root runtime artifacts and repaired harness only; no browser/service/media runtime or build executed by author."
+  },
+  "expected": {
+    "durationSeconds": 300,
+    "cueCount": 200,
+    "lyricCodePoints": 20000,
+    "trustedActions": 400,
+    "wavFramesEach": 13230000,
+    "wavBytesEach": 52920044,
+    "videoFrames": 7200,
+    "videoDimensions": [
+      1280,
+      720
+    ],
+    "videoFps": 24,
+    "videoCodecs": [
+      "h264",
+      "aac"
+    ]
+  },
+  "tolerances": {
+    "nativeBoundaryObservationSeconds": 0.02,
+    "actionSchedulingLatenessSeconds": 0.15,
+    "wavDurationSeconds": 2.2675736961451248e-05,
+    "videoPtsSeconds": 1e-05,
+    "videoDurationSeconds": 0.07166666666666666,
+    "aacPaddingMaxFrames": 1024
+  },
+  "sourceHashes": {
+    "scripts/smoke_sequential_timing.mjs": "106f2ed2945671bda09cbcc933965b0ab5977337fa743967588759d71d34a532",
+    "tests/srt_smoke_server.py": "70047989d2c9a4f7e1d5a57f55e64d4204ecf214a931c15ceac80d6c5a837a55",
+    "scripts/smoke_archive.py": "d31ff6e631337b6d39ad0162997f70b946e442c5c37586d88a134f6245c2a339",
+    "assets/DejaVuSans.ttf": "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e"
+  },
+  "checksAuthored": [
+    "Actual uninterrupted 1x native media clock with trusted Start/End actions and explicit natural-end closure.",
+    "Transient full literal review; one cues-only Apply/Undo/Redo preserves raw spelling/title/unapplied paste; manual Save.",
+    "Nearest-millisecond escaped SRT exact bytes; complete saved archive exact project and all original WAV SHA256 values.",
+    "All 7200 decoded video frame PTS, complete FFmpeg audio/video decode, streamed full stereo PCM count, selected independent glyph/cut/final-frame checks and late AAC.",
+    "Distinct full Chromium process plus operator-controlled actual same-origin service restart retain all saved values and original media."
+  ],
+  "authorChecks": {
+    "nodeSyntax": "passed",
+    "scopedEslint": "passed",
+    "embeddedPythonAst": "passed",
+    "runtimeAcceptance": "Root first attempt failed; repaired harness not yet rerun."
+  },
+  "reproduction": {
+    "cwd": "apps/karaoke-studio",
+    "fixtureMode": "node scripts/smoke_sequential_timing.mjs --fixtures-only",
+    "captureMode": "node scripts/smoke_sequential_timing.mjs --capture",
+    "restartMode": "node scripts/smoke_sequential_timing.mjs --verify-restart",
+    "environment": [
+      "KARAOKE_PYTHON",
+      "CHROMIUM_PATH",
+      "KARAOKE_TIMING_FIXTURES",
+      "KARAOKE_TIMING_LIBRARY",
+      "KARAOKE_TIMING_SERVICE_PID",
+      "KARAOKE_TIMING_ORIGIN",
+      "KARAOKE_TIMING_OUTPUT"
+    ],
+    "dependencies": [
+      "Node with installed Playwright",
+      "Chromium",
+      "Core Python with Pillow",
+      "FFmpeg and ffprobe",
+      "Linux procfs for read-only service identity"
+    ],
+    "estimatedWallMinutes": [
+      6,
+      8
+    ],
+    "estimatedDiskGiB": [
+      0.7,
+      1.0
+    ]
+  },
+  "limitations": [
+    "Synthetic periodic PCM does not establish separation quality or subjective vocal alignment.",
+    "No physical-device or worst-case media complexity/RAM claim. This maximum is separate from the CI suite.",
+    "The frozen20ms tolerance is an observation bound, not a human synchronization accuracy claim.",
+    "One original scheduling failure and one FFmpeg CLI duration-literal failure are preserved. The same second-run captured artifact passed the repaired inspection; no uninterrupted all-green second invocation is claimed."
+  ],
+  "firstRootRuntime": {
+    "status": "failed scheduling threshold",
+    "output": "/workspace/karaoke115-maximum-final",
+    "log": "/tmp/karaoke115-maximum-native-first.log",
+    "verificationSha256": "b896bf3173497d0f64084515e56522c935e6e30bd556acbe88af3342350298e4",
+    "retainedTrustedMarks": 148,
+    "failedAction": 149,
+    "failedLine": 75,
+    "failedPhase": "start",
+    "retainedLatenessMs": {
+      "min": 64.60599999999772,
+      "median": 83.76399999999862,
+      "max": 137.9050000000035
+    },
+    "missingEvidence": "Failing event149 was not retained because observation assignment originally followed the assertion; its precise lateness is unavailable.",
+    "classification": "Harness scheduling failure; no observed application data/timing defect.",
+    "correction": "Original fixture and 20ms/150ms tolerances unchanged. Verify real native button label/enabled/visible/hit-test and pre-position trusted mouse before target wait; native click follows actual media threshold. Record current planned target and complete event observations before assertions."
+  },
+  "rootAcceptance": {
+    "result": "passed",
+    "rawReceipt": {
+      "path": "/workspace/karaoke115-maximum-second/verification.json",
+      "bytes": 262265,
+      "sha256": "8e22f2de3417346e29fbbb1046b5e59e4880210c771a22ad59114ee6c2912351"
+    },
+    "originalFixture": {
+      "path": "/workspace/karaoke115-maximum-fixtures/frozen-expectations.json",
+      "bytes": 72567,
+      "sha256": "f1e4c3d59607438f7513b807bae3c29dba534ee5dc3120086e7b6f7f75f8af78"
+    },
+    "fixtureReceipt": {
+      "status": "fixtures-frozen-not-run",
+      "fixtureVersion": 1,
+      "fixtureSha256": "f1e4c3d59607438f7513b807bae3c29dba534ee5dc3120086e7b6f7f75f8af78",
+      "source": "original deterministic PCM and literal texts",
+      "originalAudio": {
+        "55555555555555555555555555555555": {
+          "source.wav": {
+            "bytes": 52920044,
+            "sha256": "f188df06d06ec41bb99e47189c58e742a22cd73867103a3a8bb1c6b08fe025d9",
+            "frames": 13230000,
+            "leftHz": 220,
+            "rightHz": 330
+          },
+          "vocals.wav": {
+            "bytes": 52920044,
+            "sha256": "fd6a717ff0d8e323d396ea651ceecc6763c9531b09cc7f719b38ab2fc2c285df",
+            "frames": 13230000,
+            "leftHz": 330,
+            "rightHz": 440
+          },
+          "backing.wav": {
+            "bytes": 52920044,
+            "sha256": "1f2c52614a2c120458eb3caca731329feea2efbc8743dca97cae7935f9d87374",
+            "frames": 13230000,
+            "leftHz": 440,
+            "rightHz": 550
+          }
+        }
+      },
+      "expected": {
+        "cues": 200,
+        "lyricCodePoints": 20000,
+        "duration": 300,
+        "wavFrames": 13230000,
+        "wavBytesEach": 52920044,
+        "videoFrames": 7200,
+        "videoFps": 24,
+        "videoDimensions": [
+          1280,
+          720
+        ],
+        "codecs": [
+          "h264",
+          "aac"
+        ]
+      },
+      "tolerances": {
+        "markVsNativeEventSeconds": 0.02,
+        "schedulingLateSeconds": 0.15,
+        "projectDurationSeconds": 2.2675736961451248e-05,
+        "videoPtsSeconds": 1e-05,
+        "videoDurationSeconds": 0.07166666666666666,
+        "aacPaddingMaxFrames": 1024
+      },
+      "generatorSha256": "1309c809fc3149870c4d57257b7f909349616d7bed602c53d6001b595b9bb908",
+      "seedHelperSha256": "70047989d2c9a4f7e1d5a57f55e64d4204ecf214a931c15ceac80d6c5a837a55"
+    },
+    "actualListeningWallMs": 300167.73480599996,
+    "actualExportDownloadWallMs": 41909.48289299995,
+    "restartWallMs": 4560.336160999999,
+    "nativeMarks": {
+      "count": 400,
+      "allTrusted": true,
+      "maxSchedulingLatenessMs": 41.95500000000152,
+      "medianSchedulingLatenessMs": 20.826999999997042,
+      "maxObservationErrorMs": 3.742000000000023,
+      "unroundedCapturedIntervals": [
+        {
+          "line": 1,
+          "start": 0.137384,
+          "end": 0.886003
+        },
+        {
+          "line": 2,
+          "start": 1.634892,
+          "end": 2.388921
+        },
+        {
+          "line": 3,
+          "start": 3.134804,
+          "end": 3.885198
+        },
+        {
+          "line": 4,
+          "start": 4.63625,
+          "end": 5.385338
+        },
+        {
+          "line": 5,
+          "start": 6.135081,
+          "end": 6.90038
+        },
+        {
+          "line": 6,
+          "start": 7.638524,
+          "end": 8.385827
+        },
+        {
+          "line": 7,
+          "start": 9.138707,
+          "end": 9.885076
+        },
+        {
+          "line": 8,
+          "start": 10.634724,
+          "end": 11.384842
+        },
+        {
+          "line": 9,
+          "start": 12.137525,
+          "end": 12.885697
+        },
+        {
+          "line": 10,
+          "start": 13.635117,
+          "end": 14.388289
+        },
+        {
+          "line": 11,
+          "start": 15.137784,
+          "end": 15.88707
+        },
+        {
+          "line": 12,
+          "start": 16.634733,
+          "end": 17.387808
+        },
+        {
+          "line": 13,
+          "start": 18.137072,
+          "end": 18.885391
+        },
+        {
+          "line": 14,
+          "start": 19.641374,
+          "end": 20.402919
+        },
+        {
+          "line": 15,
+          "start": 21.136625,
+          "end": 21.886016
+        },
+        {
+          "line": 16,
+          "start": 22.652257,
+          "end": 23.402743
+        },
+        {
+          "line": 17,
+          "start": 24.15467,
+          "end": 24.904127
+        },
+        {
+          "line": 18,
+          "start": 25.650767,
+          "end": 26.402892
+        },
+        {
+          "line": 19,
+          "start": 27.151041,
+          "end": 27.907733
+        },
+        {
+          "line": 20,
+          "start": 28.651582,
+          "end": 29.401323
+        },
+        {
+          "line": 21,
+          "start": 30.151177,
+          "end": 30.900161
+        },
+        {
+          "line": 22,
+          "start": 31.654226,
+          "end": 32.401068
+        },
+        {
+          "line": 23,
+          "start": 33.135661,
+          "end": 33.903165
+        },
+        {
+          "line": 24,
+          "start": 34.65088,
+          "end": 35.404449
+        },
+        {
+          "line": 25,
+          "start": 36.158338,
+          "end": 36.900993
+        },
+        {
+          "line": 26,
+          "start": 37.649121,
+          "end": 38.399813
+        },
+        {
+          "line": 27,
+          "start": 39.149356,
+          "end": 39.901303
+        },
+        {
+          "line": 28,
+          "start": 40.648929,
+          "end": 41.399235
+        },
+        {
+          "line": 29,
+          "start": 42.149901,
+          "end": 42.899442
+        },
+        {
+          "line": 30,
+          "start": 43.65023,
+          "end": 44.405706
+        },
+        {
+          "line": 31,
+          "start": 45.150287,
+          "end": 45.901244
+        },
+        {
+          "line": 32,
+          "start": 46.650083,
+          "end": 47.400184
+        },
+        {
+          "line": 33,
+          "start": 48.151137,
+          "end": 48.899136
+        },
+        {
+          "line": 34,
+          "start": 49.655128,
+          "end": 50.399821
+        },
+        {
+          "line": 35,
+          "start": 51.148974,
+          "end": 51.898926
+        },
+        {
+          "line": 36,
+          "start": 52.655304,
+          "end": 53.399829
+        },
+        {
+          "line": 37,
+          "start": 54.149422,
+          "end": 54.89941
+        },
+        {
+          "line": 38,
+          "start": 55.648421,
+          "end": 56.398884
+        },
+        {
+          "line": 39,
+          "start": 57.149485,
+          "end": 57.898239
+        },
+        {
+          "line": 40,
+          "start": 58.651384,
+          "end": 59.399085
+        },
+        {
+          "line": 41,
+          "start": 60.150024,
+          "end": 60.908545
+        },
+        {
+          "line": 42,
+          "start": 61.653016,
+          "end": 62.399009
+        },
+        {
+          "line": 43,
+          "start": 63.148905,
+          "end": 63.90066
+        },
+        {
+          "line": 44,
+          "start": 64.650613,
+          "end": 65.3979
+        },
+        {
+          "line": 45,
+          "start": 66.149981,
+          "end": 66.89937
+        },
+        {
+          "line": 46,
+          "start": 67.649129,
+          "end": 68.402054
+        },
+        {
+          "line": 47,
+          "start": 69.148413,
+          "end": 69.904183
+        },
+        {
+          "line": 48,
+          "start": 70.651104,
+          "end": 71.40035
+        },
+        {
+          "line": 49,
+          "start": 72.148851,
+          "end": 72.90584
+        },
+        {
+          "line": 50,
+          "start": 73.648909,
+          "end": 74.397175
+        },
+        {
+          "line": 51,
+          "start": 75.14744,
+          "end": 75.899231
+        },
+        {
+          "line": 52,
+          "start": 76.649172,
+          "end": 77.399272
+        },
+        {
+          "line": 53,
+          "start": 78.151363,
+          "end": 78.902245
+        },
+        {
+          "line": 54,
+          "start": 79.647052,
+          "end": 80.400176
+        },
+        {
+          "line": 55,
+          "start": 81.147631,
+          "end": 81.898281
+        },
+        {
+          "line": 56,
+          "start": 82.649689,
+          "end": 83.397781
+        },
+        {
+          "line": 57,
+          "start": 84.139372,
+          "end": 84.897225
+        },
+        {
+          "line": 58,
+          "start": 85.65041,
+          "end": 86.400314
+        },
+        {
+          "line": 59,
+          "start": 87.149371,
+          "end": 87.899323
+        },
+        {
+          "line": 60,
+          "start": 88.655174,
+          "end": 89.398428
+        },
+        {
+          "line": 61,
+          "start": 90.149635,
+          "end": 90.900039
+        },
+        {
+          "line": 62,
+          "start": 91.650932,
+          "end": 92.399065
+        },
+        {
+          "line": 63,
+          "start": 93.147511,
+          "end": 93.901593
+        },
+        {
+          "line": 64,
+          "start": 94.646891,
+          "end": 95.400127
+        },
+        {
+          "line": 65,
+          "start": 96.148093,
+          "end": 96.902206
+        },
+        {
+          "line": 66,
+          "start": 97.64771,
+          "end": 98.397137
+        },
+        {
+          "line": 67,
+          "start": 99.147797,
+          "end": 99.897816
+        },
+        {
+          "line": 68,
+          "start": 100.649247,
+          "end": 101.399098
+        },
+        {
+          "line": 69,
+          "start": 102.152746,
+          "end": 102.899091
+        },
+        {
+          "line": 70,
+          "start": 103.648819,
+          "end": 104.397897
+        },
+        {
+          "line": 71,
+          "start": 105.15183,
+          "end": 105.897683
+        },
+        {
+          "line": 72,
+          "start": 106.646189,
+          "end": 107.398321
+        },
+        {
+          "line": 73,
+          "start": 108.146147,
+          "end": 108.897237
+        },
+        {
+          "line": 74,
+          "start": 109.650221,
+          "end": 110.399801
+        },
+        {
+          "line": 75,
+          "start": 111.150103,
+          "end": 111.898358
+        },
+        {
+          "line": 76,
+          "start": 112.646274,
+          "end": 113.402096
+        },
+        {
+          "line": 77,
+          "start": 114.148856,
+          "end": 114.897926
+        },
+        {
+          "line": 78,
+          "start": 115.64643,
+          "end": 116.396763
+        },
+        {
+          "line": 79,
+          "start": 117.14909,
+          "end": 117.895449
+        },
+        {
+          "line": 80,
+          "start": 118.64671,
+          "end": 119.396251
+        },
+        {
+          "line": 81,
+          "start": 120.148919,
+          "end": 120.902898
+        },
+        {
+          "line": 82,
+          "start": 121.653539,
+          "end": 122.401503
+        },
+        {
+          "line": 83,
+          "start": 123.14774,
+          "end": 123.897888
+        },
+        {
+          "line": 84,
+          "start": 124.646916,
+          "end": 125.38817
+        },
+        {
+          "line": 85,
+          "start": 126.147538,
+          "end": 126.896757
+        },
+        {
+          "line": 86,
+          "start": 127.646252,
+          "end": 128.397381
+        },
+        {
+          "line": 87,
+          "start": 129.147915,
+          "end": 129.901693
+        },
+        {
+          "line": 88,
+          "start": 130.647291,
+          "end": 131.398929
+        },
+        {
+          "line": 89,
+          "start": 132.149533,
+          "end": 132.896075
+        },
+        {
+          "line": 90,
+          "start": 133.645996,
+          "end": 134.396119
+        },
+        {
+          "line": 91,
+          "start": 135.149682,
+          "end": 135.900772
+        },
+        {
+          "line": 92,
+          "start": 136.64691,
+          "end": 137.397012
+        },
+        {
+          "line": 93,
+          "start": 138.146769,
+          "end": 138.897744
+        },
+        {
+          "line": 94,
+          "start": 139.64831,
+          "end": 140.399328
+        },
+        {
+          "line": 95,
+          "start": 141.148243,
+          "end": 141.903058
+        },
+        {
+          "line": 96,
+          "start": 142.65083,
+          "end": 143.39966
+        },
+        {
+          "line": 97,
+          "start": 144.150642,
+          "end": 144.916996
+        },
+        {
+          "line": 98,
+          "start": 145.64713,
+          "end": 146.395393
+        },
+        {
+          "line": 99,
+          "start": 147.145269,
+          "end": 147.89782
+        },
+        {
+          "line": 100,
+          "start": 148.649293,
+          "end": 149.396345
+        },
+        {
+          "line": 101,
+          "start": 150.149704,
+          "end": 150.899444
+        },
+        {
+          "line": 102,
+          "start": 151.658973,
+          "end": 152.395513
+        },
+        {
+          "line": 103,
+          "start": 153.149885,
+          "end": 153.896755
+        },
+        {
+          "line": 104,
+          "start": 154.645859,
+          "end": 155.396207
+        },
+        {
+          "line": 105,
+          "start": 156.14401,
+          "end": 156.900688
+        },
+        {
+          "line": 106,
+          "start": 157.647318,
+          "end": 158.394604
+        },
+        {
+          "line": 107,
+          "start": 159.145033,
+          "end": 159.89466
+        },
+        {
+          "line": 108,
+          "start": 160.646288,
+          "end": 161.397915
+        },
+        {
+          "line": 109,
+          "start": 162.14475,
+          "end": 162.895818
+        },
+        {
+          "line": 110,
+          "start": 163.651083,
+          "end": 164.395273
+        },
+        {
+          "line": 111,
+          "start": 165.144471,
+          "end": 165.894244
+        },
+        {
+          "line": 112,
+          "start": 166.645435,
+          "end": 167.396618
+        },
+        {
+          "line": 113,
+          "start": 168.145863,
+          "end": 168.903402
+        },
+        {
+          "line": 114,
+          "start": 169.64457,
+          "end": 170.396232
+        },
+        {
+          "line": 115,
+          "start": 171.151148,
+          "end": 171.8932
+        },
+        {
+          "line": 116,
+          "start": 172.644277,
+          "end": 173.392968
+        },
+        {
+          "line": 117,
+          "start": 174.146658,
+          "end": 174.893445
+        },
+        {
+          "line": 118,
+          "start": 175.642896,
+          "end": 176.393524
+        },
+        {
+          "line": 119,
+          "start": 177.146699,
+          "end": 177.893915
+        },
+        {
+          "line": 120,
+          "start": 178.643467,
+          "end": 179.399381
+        },
+        {
+          "line": 121,
+          "start": 180.145874,
+          "end": 180.894468
+        },
+        {
+          "line": 122,
+          "start": 181.647057,
+          "end": 182.393308
+        },
+        {
+          "line": 123,
+          "start": 183.144039,
+          "end": 183.894626
+        },
+        {
+          "line": 124,
+          "start": 184.644249,
+          "end": 185.395458
+        },
+        {
+          "line": 125,
+          "start": 186.145153,
+          "end": 186.894589
+        },
+        {
+          "line": 126,
+          "start": 187.645348,
+          "end": 188.394284
+        },
+        {
+          "line": 127,
+          "start": 189.144107,
+          "end": 189.895106
+        },
+        {
+          "line": 128,
+          "start": 190.643692,
+          "end": 191.394626
+        },
+        {
+          "line": 129,
+          "start": 192.146552,
+          "end": 192.893632
+        },
+        {
+          "line": 130,
+          "start": 193.642334,
+          "end": 194.394612
+        },
+        {
+          "line": 131,
+          "start": 195.150239,
+          "end": 195.893964
+        },
+        {
+          "line": 132,
+          "start": 196.644827,
+          "end": 197.395111
+        },
+        {
+          "line": 133,
+          "start": 198.143148,
+          "end": 198.893383
+        },
+        {
+          "line": 134,
+          "start": 199.645788,
+          "end": 200.396355
+        },
+        {
+          "line": 135,
+          "start": 201.143794,
+          "end": 201.89307
+        },
+        {
+          "line": 136,
+          "start": 202.643621,
+          "end": 203.393093
+        },
+        {
+          "line": 137,
+          "start": 204.144771,
+          "end": 204.892802
+        },
+        {
+          "line": 138,
+          "start": 205.644716,
+          "end": 206.394552
+        },
+        {
+          "line": 139,
+          "start": 207.150609,
+          "end": 207.892445
+        },
+        {
+          "line": 140,
+          "start": 208.643265,
+          "end": 209.393342
+        },
+        {
+          "line": 141,
+          "start": 210.146296,
+          "end": 210.893359
+        },
+        {
+          "line": 142,
+          "start": 211.644631,
+          "end": 212.393151
+        },
+        {
+          "line": 143,
+          "start": 213.145567,
+          "end": 213.895122
+        },
+        {
+          "line": 144,
+          "start": 214.642691,
+          "end": 215.395615
+        },
+        {
+          "line": 145,
+          "start": 216.144127,
+          "end": 216.894951
+        },
+        {
+          "line": 146,
+          "start": 217.643387,
+          "end": 218.395674
+        },
+        {
+          "line": 147,
+          "start": 219.144726,
+          "end": 219.897542
+        },
+        {
+          "line": 148,
+          "start": 220.644067,
+          "end": 221.395692
+        },
+        {
+          "line": 149,
+          "start": 222.14454,
+          "end": 222.905194
+        },
+        {
+          "line": 150,
+          "start": 223.643718,
+          "end": 224.397335
+        },
+        {
+          "line": 151,
+          "start": 225.14349,
+          "end": 225.892411
+        },
+        {
+          "line": 152,
+          "start": 226.649782,
+          "end": 227.395926
+        },
+        {
+          "line": 153,
+          "start": 228.142956,
+          "end": 228.895353
+        },
+        {
+          "line": 154,
+          "start": 229.642085,
+          "end": 230.392395
+        },
+        {
+          "line": 155,
+          "start": 231.145501,
+          "end": 231.892297
+        },
+        {
+          "line": 156,
+          "start": 232.642008,
+          "end": 233.391459
+        },
+        {
+          "line": 157,
+          "start": 234.141573,
+          "end": 234.891077
+        },
+        {
+          "line": 158,
+          "start": 235.641262,
+          "end": 236.393085
+        },
+        {
+          "line": 159,
+          "start": 237.140813,
+          "end": 237.89217
+        },
+        {
+          "line": 160,
+          "start": 238.645763,
+          "end": 239.393006
+        },
+        {
+          "line": 161,
+          "start": 240.142045,
+          "end": 240.891309
+        },
+        {
+          "line": 162,
+          "start": 241.641639,
+          "end": 242.398268
+        },
+        {
+          "line": 163,
+          "start": 243.143808,
+          "end": 243.892852
+        },
+        {
+          "line": 164,
+          "start": 244.642178,
+          "end": 245.393784
+        },
+        {
+          "line": 165,
+          "start": 246.141471,
+          "end": 246.890733
+        },
+        {
+          "line": 166,
+          "start": 247.641568,
+          "end": 248.392379
+        },
+        {
+          "line": 167,
+          "start": 249.14501,
+          "end": 249.895112
+        },
+        {
+          "line": 168,
+          "start": 250.640134,
+          "end": 251.392049
+        },
+        {
+          "line": 169,
+          "start": 252.143605,
+          "end": 252.891834
+        },
+        {
+          "line": 170,
+          "start": 253.640083,
+          "end": 254.391568
+        },
+        {
+          "line": 171,
+          "start": 255.14214,
+          "end": 255.892028
+        },
+        {
+          "line": 172,
+          "start": 256.642625,
+          "end": 257.392127
+        },
+        {
+          "line": 173,
+          "start": 258.141357,
+          "end": 258.891979
+        },
+        {
+          "line": 174,
+          "start": 259.643041,
+          "end": 260.393212
+        },
+        {
+          "line": 175,
+          "start": 261.141042,
+          "end": 261.895158
+        },
+        {
+          "line": 176,
+          "start": 262.641412,
+          "end": 263.391716
+        },
+        {
+          "line": 177,
+          "start": 264.140648,
+          "end": 264.890909
+        },
+        {
+          "line": 178,
+          "start": 265.642212,
+          "end": 266.389556
+        },
+        {
+          "line": 179,
+          "start": 267.142053,
+          "end": 267.892608
+        },
+        {
+          "line": 180,
+          "start": 268.640897,
+          "end": 269.390834
+        },
+        {
+          "line": 181,
+          "start": 270.14058,
+          "end": 270.891555
+        },
+        {
+          "line": 182,
+          "start": 271.645569,
+          "end": 272.39037
+        },
+        {
+          "line": 183,
+          "start": 273.141706,
+          "end": 273.892563
+        },
+        {
+          "line": 184,
+          "start": 274.641734,
+          "end": 275.389715
+        },
+        {
+          "line": 185,
+          "start": 276.141143,
+          "end": 276.893283
+        },
+        {
+          "line": 186,
+          "start": 277.64216,
+          "end": 278.39045
+        },
+        {
+          "line": 187,
+          "start": 279.14072,
+          "end": 279.892509
+        },
+        {
+          "line": 188,
+          "start": 280.653118,
+          "end": 281.390915
+        },
+        {
+          "line": 189,
+          "start": 282.139697,
+          "end": 282.895181
+        },
+        {
+          "line": 190,
+          "start": 283.641833,
+          "end": 284.391038
+        },
+        {
+          "line": 191,
+          "start": 285.142021,
+          "end": 285.891666
+        },
+        {
+          "line": 192,
+          "start": 286.640542,
+          "end": 287.388859
+        },
+        {
+          "line": 193,
+          "start": 288.139606,
+          "end": 288.894632
+        },
+        {
+          "line": 194,
+          "start": 289.64308,
+          "end": 290.38997
+        },
+        {
+          "line": 195,
+          "start": 291.14016,
+          "end": 291.896885
+        },
+        {
+          "line": 196,
+          "start": 292.640274,
+          "end": 293.391336
+        },
+        {
+          "line": 197,
+          "start": 294.139365,
+          "end": 294.889788
+        },
+        {
+          "line": 198,
+          "start": 295.640496,
+          "end": 296.390256
+        },
+        {
+          "line": 199,
+          "start": 297.138989,
+          "end": 297.890141
+        },
+        {
+          "line": 200,
+          "start": 298.644977,
+          "end": 300
+        }
+      ]
+    },
+    "artifacts": [
+      {
+        "name": "captured.srt",
+        "bytes": 29891,
+        "sha256": "bd0ae9cea9f4f5642af792936ab0f7cecce52ec14b0c7b6e985e549d257a897c"
+      },
+      {
+        "name": "captured.karaoke.zip",
+        "bytes": 158792632,
+        "sha256": "3ef7e24628fda14c88934e70cb416aeb6185c874360ff823ff083872132a2b47"
+      },
+      {
+        "name": "captured-300s.mp4",
+        "bytes": 12560208,
+        "sha256": "81df739a2a5529ac5d8cd57fd3431c3c43c45dfd1baef2667cb3fd0f24e7dfce"
+      },
+      {
+        "name": "desktop.png",
+        "bytes": 91435,
+        "sha256": "d6b47908c1ac3c2f55a19fbfc74cb9c81a95853a81b8ad9e5c6a742c6a598ece"
+      },
+      {
+        "name": "mobile-390.png",
+        "bytes": 53104,
+        "sha256": "04df3936a239188c110da01ae06eb63f2535330215a6d85d32f895a803c90e37"
+      },
+      {
+        "name": "restart.srt",
+        "bytes": 29891,
+        "sha256": "bd0ae9cea9f4f5642af792936ab0f7cecce52ec14b0c7b6e985e549d257a897c"
+      }
+    ],
+    "video": {
+      "status": "passed",
+      "frames": 7200,
+      "fullDecodeCompleted": true,
+      "pcmFrames": 13230080,
+      "pcmSha256": "d228c6c48fe7a0a065f243058d9998ef4aeb37a95332b3238088b89922377b14",
+      "pcmPeak": 8760,
+      "samples": [
+        {
+          "frame": 0,
+          "time": 0,
+          "active": false,
+          "cue": null,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2989,
+            "coreCoverage": 1,
+            "actualForegroundPixels": 3851,
+            "expectedMaskForegroundPixels": 3851,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 3,
+          "time": 0.125,
+          "active": false,
+          "cue": null,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2989,
+            "coreCoverage": 1,
+            "actualForegroundPixels": 3852,
+            "expectedMaskForegroundPixels": 3852,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 4,
+          "time": 0.16666666666666666,
+          "active": true,
+          "cue": 1,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11867,
+            "matchingCorePixels": 11863,
+            "coreCoverage": 0.9996629308165501,
+            "actualForegroundPixels": 15584,
+            "expectedMaskForegroundPixels": 15584,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 12,
+          "time": 0.5,
+          "active": true,
+          "cue": 1,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11867,
+            "matchingCorePixels": 11864,
+            "coreCoverage": 0.9997471981124125,
+            "actualForegroundPixels": 15584,
+            "expectedMaskForegroundPixels": 15584,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 21,
+          "time": 0.875,
+          "active": true,
+          "cue": 1,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11867,
+            "matchingCorePixels": 11864,
+            "coreCoverage": 0.9997471981124125,
+            "actualForegroundPixels": 15584,
+            "expectedMaskForegroundPixels": 15584,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 22,
+          "time": 0.9166666666666666,
+          "active": false,
+          "cue": null,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2984,
+            "coreCoverage": 0.998327199732352,
+            "actualForegroundPixels": 3854,
+            "expectedMaskForegroundPixels": 3854,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 3567,
+          "time": 148.625,
+          "active": false,
+          "cue": null,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2983,
+            "coreCoverage": 0.9979926396788223,
+            "actualForegroundPixels": 3852,
+            "expectedMaskForegroundPixels": 3852,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 3568,
+          "time": 148.66666666666666,
+          "active": true,
+          "cue": 100,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11867,
+            "matchingCorePixels": 11864,
+            "coreCoverage": 0.9997471981124125,
+            "actualForegroundPixels": 15571,
+            "expectedMaskForegroundPixels": 15571,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 3576,
+          "time": 149,
+          "active": true,
+          "cue": 100,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11867,
+            "matchingCorePixels": 11863,
+            "coreCoverage": 0.9996629308165501,
+            "actualForegroundPixels": 15568,
+            "expectedMaskForegroundPixels": 15568,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 3585,
+          "time": 149.375,
+          "active": true,
+          "cue": 100,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11867,
+            "matchingCorePixels": 11863,
+            "coreCoverage": 0.9996629308165501,
+            "actualForegroundPixels": 15568,
+            "expectedMaskForegroundPixels": 15568,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 3586,
+          "time": 149.41666666666666,
+          "active": false,
+          "cue": null,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2979,
+            "coreCoverage": 0.9966543994647039,
+            "actualForegroundPixels": 3857,
+            "expectedMaskForegroundPixels": 3857,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 7167,
+          "time": 298.625,
+          "active": false,
+          "cue": null,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 2989,
+            "matchingCorePixels": 2983,
+            "coreCoverage": 0.9979926396788223,
+            "actualForegroundPixels": 3855,
+            "expectedMaskForegroundPixels": 3855,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              434,
+              302,
+              850,
+              335
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 7168,
+          "time": 298.6666666666667,
+          "active": true,
+          "cue": 200,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11910,
+            "matchingCorePixels": 11905,
+            "coreCoverage": 0.9995801847187238,
+            "actualForegroundPixels": 15615,
+            "expectedMaskForegroundPixels": 15615,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 7183,
+          "time": 299.2916666666667,
+          "active": true,
+          "cue": 200,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11910,
+            "matchingCorePixels": 11905,
+            "coreCoverage": 0.9995801847187238,
+            "actualForegroundPixels": 15612,
+            "expectedMaskForegroundPixels": 15612,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        },
+        {
+          "frame": 7199,
+          "time": 299.9583333333333,
+          "active": true,
+          "cue": 200,
+          "glyphs": {
+            "passed": true,
+            "expectedCorePixels": 11910,
+            "matchingCorePixels": 11905,
+            "coreCoverage": 0.9995801847187238,
+            "actualForegroundPixels": 15612,
+            "expectedMaskForegroundPixels": 15612,
+            "spatialPrecision": 1,
+            "expectedBounds": [
+              455,
+              190,
+              826,
+              454
+            ]
+          },
+          "wrongTextRejected": true
+        }
+      ],
+      "lateAudioNonSilent": true,
+      "wallSeconds": 16.57686887298769,
+      "fontSha256": "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e"
+    },
+    "audioChecks": [
+      {
+        "source.wav": {
+          "bytes": 52920044,
+          "sha256": "f188df06d06ec41bb99e47189c58e742a22cd73867103a3a8bb1c6b08fe025d9"
+        },
+        "vocals.wav": {
+          "bytes": 52920044,
+          "sha256": "fd6a717ff0d8e323d396ea651ceecc6763c9531b09cc7f719b38ab2fc2c285df"
+        },
+        "backing.wav": {
+          "bytes": 52920044,
+          "sha256": "1f2c52614a2c120458eb3caca731329feea2efbc8743dca97cae7935f9d87374"
+        }
+      },
+      {
+        "source.wav": {
+          "bytes": 52920044,
+          "sha256": "f188df06d06ec41bb99e47189c58e742a22cd73867103a3a8bb1c6b08fe025d9"
+        },
+        "vocals.wav": {
+          "bytes": 52920044,
+          "sha256": "fd6a717ff0d8e323d396ea651ceecc6763c9531b09cc7f719b38ab2fc2c285df"
+        },
+        "backing.wav": {
+          "bytes": 52920044,
+          "sha256": "1f2c52614a2c120458eb3caca731329feea2efbc8743dca97cae7935f9d87374"
+        }
+      },
+      {
+        "source.wav": {
+          "bytes": 52920044,
+          "sha256": "f188df06d06ec41bb99e47189c58e742a22cd73867103a3a8bb1c6b08fe025d9"
+        },
+        "vocals.wav": {
+          "bytes": 52920044,
+          "sha256": "fd6a717ff0d8e323d396ea651ceecc6763c9531b09cc7f719b38ab2fc2c285df"
+        },
+        "backing.wav": {
+          "bytes": 52920044,
+          "sha256": "1f2c52614a2c120458eb3caca731329feea2efbc8743dca97cae7935f9d87374"
+        }
+      }
+    ],
+    "processes": {
+      "browsers": [
+        773501,
+        775132,
+        775514
+      ],
+      "services": [
+        {
+          "pid": 772507,
+          "startTicks": "10748571",
+          "library": "/workspace/karaoke115-maximum-library"
+        },
+        {
+          "pid": 775494,
+          "startTicks": "10859021",
+          "library": "/workspace/karaoke115-maximum-library"
+        }
+      ]
+    },
+    "checks": [
+      "Full 200-line/20,000-code-point actual native capture, explicit final End, one Undo/Redo and manual Save.",
+      "Same original captured video rechecked after only FFmpeg duration argument correction; all7200PTS/fullPCM/glyph/tail checks pass. Separate reopened browser verifies exact complete saved cues and all original WAVs before operator restart.",
+      "Operator service restart plus a distinct full Chromium process preserve exact saved cues/revision, SRT, and all three original WAV hashes."
+    ],
+    "stagedRecheck": {
+      "scope": "Staged completion after exact FFmpeg CLI duration literal repair. Same captured cues, archive and video; original failed receipt preserved. No new recording or product-source change.",
+      "failedReceipt": {
+        "name": "verification-capture-cli-failure.json",
+        "bytes": 262134,
+        "sha256": "8de73d196d2dc61cda5a690d3806bfe5de89d84d9174ceea736f226fa5496a48"
+      },
+      "videoRecheck": {
+        "name": "video-recheck.json",
+        "bytes": 5561,
+        "sha256": "f9dd2f2f639a5e236471cade617f25d39ba23c967d208089e59ded294ca1dfa0"
+      },
+      "postCaptureBrowserProcesses": [
+        775132
+      ],
+      "allOriginalTimingTolerancesRetained": true,
+      "source": "ae7025c1e1ff03f94e7216ecea342d9296276db17f3f788634c1cd5d546d8fb3"
+    },
+    "originalCliFailure": {
+      "path": "/workspace/karaoke115-maximum-second/verification-capture-cli-failure.json",
+      "bytes": 262134,
+      "sha256": "8de73d196d2dc61cda5a690d3806bfe5de89d84d9174ceea736f226fa5496a48"
+    },
+    "originalScheduleFailure": {
+      "path": "/workspace/karaoke115-maximum-final/verification.json",
+      "bytes": 51287,
+      "sha256": "b896bf3173497d0f64084515e56522c935e6e30bd556acbe88af3342350298e4"
+    },
+    "logs": [
+      {
+        "path": "/tmp/karaoke115-maximum-native-first.log",
+        "bytes": 603,
+        "sha256": "a553811d39d5fc70ddaec86bf149d4a14740961f7b542117aaadcec4cf8e5ddd"
+      },
+      {
+        "path": "/tmp/karaoke115-maximum-native-second.log",
+        "bytes": 12628,
+        "sha256": "5444dd69f73cca04760dfc1e83ae338d85f654714d6eaf1f15b7928dd8196083"
+      },
+      {
+        "path": "/tmp/karaoke115-maximum-video-recheck.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "/tmp/karaoke115-capture-tail.log",
+        "bytes": 141,
+        "sha256": "af22de3975f8164330ce65c24a082e483ecde5337d301a7dd06def65ea3ff491"
+      },
+      {
+        "path": "/tmp/karaoke115-maximum-restart.log",
+        "bytes": 168,
+        "sha256": "6e8edd6b032c79e8d13c853f0b05cf2085eb3fc9c1f804ac99b20b6c9f591e65"
+      },
+      {
+        "path": "/tmp/karaoke115-final-maximum-lint.log",
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    ],
+    "pageErrors": [],
+    "externalRequests": []
+  }
+}

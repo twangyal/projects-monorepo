@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/60",
+  "source": {
+    "branch": "Astra",
+    "parserCommit": "8bc7459beef39ed0c99bfbcb436fadc0d581034a",
+    "completeImplementationCommit": "e281bb869fef1ebb284709ca66952c4cabd748f0",
+    "design": "../../../docs/superpowers/specs/2026-10-04-melody-midi-import-design.md"
+  },
+  "scope": "Bounded Standard MIDI 0/1 phrase review and one reversible composition replacement; existing Composition v1, storage key, synthesis, exporter and statistical learner retained.",
+  "localVerification": {
+    "runtime": "Node 24.19.0; Chromium 151.0.7922.173; Playwright 1.63",
+    "unit": {
+      "passed": 173,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 1053.888346,
+      "baseline": 113,
+      "parserCases": 21,
+      "reviewCases": 16,
+      "independentOracleCases": 23
+    },
+    "browser": {
+      "passed": 35,
+      "failed": 0,
+      "baselineUnchangedCases": 20,
+      "newImportCases": 15,
+      "durationSeconds": 36.5,
+      "productionBuild": true
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed as part of native production browser gate",
+    "logs": [
+      "/tmp/melody-midi-full-checks.log",
+      "/tmp/melody-midi-full35.log"
+    ]
+  },
+  "testHistory": {
+    "parser": "Producer observed 15 failures and one pass against the callable placeholder before implementation; no initial RED log was retained. Final 21 cases passed.",
+    "review": "Producer observed eight initial failures. Independent review reproduced acceptance of a mutated public review title after text normalization. Exact raw public receipt comparison fixed that mismatch; the regression passed with the 16-case suite.",
+    "independentOracle": "Expected semantics were derived from the frozen contract and existing destination/export behavior without inspecting producer implementations. The first actual run passed all 23 cases; no claim of an observed initial failure.",
+    "browser": "The initial native-file case failed on the absent import control before UI implementation. The first integrated run passed 13 cases and failed one test-only wording assumption: the UI accurately said multiple raw tracks where the assertion expected shared. The assertion was corrected and a boundary-crossing case added. Final 35-case gate passed."
+  },
+  "contract": {
+    "inputBytes": 1048576,
+    "rawTracks": 32,
+    "events": 32768,
+    "positiveNoteAttacks": 8192,
+    "sourceChannels": 16,
+    "selectedTracks": 8,
+    "notesPerSelectedTrack": 256,
+    "windowBeats": 128,
+    "supportedTiming": "PPQN, one constant 40–240 BPM tempo; exact tick/PPQN arithmetic in composition",
+    "review": "Explicit channel, local instrument and name selection; cross-window notes reject; excluded attacks and omitted data disclosed.",
+    "application": "Exact-object full receipt and current-base check, native replacement confirmation, conditional raw-draft/proposal discard acknowledgement, one history commit. Native File reads guarded by file epoch, editor intent and composition generation.",
+    "unsupported": "Malformed/global unmodeled events reject the file. Ambiguous/shared/percussion/expressive/changing-state lanes stay visible but unselectable."
+  },
+  "nativeArtifactProbe": {
+    "schemaVersion": 1,
+    "success": true,
+    "fixturesOriginal": true,
+    "noStorageInjection": true,
+    "noProductParserImports": true,
+    "thresholds": {
+      "fftWindow": 4096,
+      "frequencyToleranceHz": 5.38330078125,
+      "rmsRelativeTolerance": 0.02,
+      "silence": "Exactly zero PCM samples"
+    },
+    "browser": "151.0.7922.173",
+    "fixtureBytes": {
+      "phrase": 152,
+      "maximum": 1048576
+    },
+    "timingsSeconds": {
+      "phraseImportApply": 0.254706332,
+      "maximumImportArtifactsReload": 1.3806789389999998,
+      "total": 5.44457551
+    },
+    "limitations": [
+      "Synthetic MIDI validates interchange and synthesis, not General MIDI/DAW sound fidelity.",
+      "MIDI export480-tick rounding and omitted trailing-window/EOT rest are intentional.",
+      "Browser audio playback controls are exercised; exported PCM is the independent audible-signal evidence."
+    ],
+    "phrase": {
+      "frames": 36273,
+      "midiNotes": [
+        {
+          "pitch": 69,
+          "onTick": 62,
+          "offTick": 542,
+          "velocity": 96,
+          "channel": 0
+        },
+        {
+          "pitch": 72,
+          "onTick": 1022,
+          "offTick": 1502,
+          "velocity": 32,
+          "channel": 0
+        }
+      ],
+      "metrics": [
+        {
+          "time": 0.165,
+          "expectedHz": 440,
+          "measuredHz": 441.4306640625,
+          "expectedRms": 0.10774292426338018,
+          "measuredRms": 0.10771786724740218
+        },
+        {
+          "time": 1.165,
+          "expectedHz": 523.2511306011972,
+          "measuredHz": 522.18017578125,
+          "expectedRms": 0.035914308087793397,
+          "measuredRms": 0.03590126490695021
+        }
+      ],
+      "jsonSha256": "da7c25564ed5699bd5d1ecc2e6914bd48a612070cd5bc9c01ea0cdf0c5b5d7f6",
+      "midiSha256": "7b4544865233c4c4b89f5a73f7c8ae6e8d2d32ddb948a43c7ad3f60591769058",
+      "wavSha256": "549501f8430226f9dc38a9f580cc17d0602060722d337d20a7aaca217b789496",
+      "nativeReloadExact": true
+    },
+    "nativeProcessRestart": {
+      "persistentProfile": "/tmp/melody-midi-native-final/native-profile",
+      "exactJsonBytes": true,
+      "sameProjectId": true,
+      "all2048NotesExact": true
+    },
+    "maximum": {
+      "bytes": 1048576,
+      "tracks": 8,
+      "notes": 2048,
+      "jsonBytes": 397322,
+      "midiBytes": 16766,
+      "wavBytes": 2820460,
+      "frames": 1410208,
+      "peak": 0.876068115234375,
+      "jsonSha256": "33310daedeb69b34dc92d64fba6c63e7ee490d70d886060100feac6f640f523d",
+      "midiSha256": "b04addb16d8be6c2a16b9b5669c36e9c70dcc191dc784206991f54bb36bb6e55",
+      "wavSha256": "cffca030176d97d111a8873ad050c96248ade5533d1e00cc91766e3e1277cd43",
+      "nativeReloadExact": true
+    },
+    "confirmations": [
+      "Replace the composition with 2 notes in 1 parts (Imported scalar sine)? 3 source note attacks are excluded. Source beats 3 to 7 (end exclusive). Names and fallback choices are those shown in the review. Undo restores the previous committed composition, not discarded raw edits or an unsaved suggestion.",
+      "Replace the composition with 2048 notes in 8 parts (Maximum channel 0, Maximum channel 1, Maximum channel 2, Maximum channel 3, Maximum channel 4, Maximum channel 5, Maximum channel 6, Maximum channel 7)? 0 source note attacks are excluded. Source beats 1 to 129 (end exclusive). Names and fallback choices are those shown in the review. Undo restores the previous committed composition, not discarded raw edits or an unsaved suggestion."
+    ],
+    "pageErrors": [],
+    "externalRequests": [],
+    "screenshots": {
+      "desktop": "/tmp/melody-midi-native-final/desktop.png",
+      "desktopImport": "/tmp/melody-midi-native-final/desktop-import.png",
+      "mobile": "/tmp/melody-midi-native-final/mobile.png",
+      "mobileWidth": 390,
+      "noHorizontalOverflow": true
+    }
+  },
+  "limitations": [
+    "Original synthetic MIDI establishes the supported interchange contract and local oscillator output, not fidelity to General MIDI instruments or arbitrary DAW performance.",
+    "No real microphone, vocal recognition, musical quality or new generative model was evaluated.",
+    "The existing MIDI exporter rounds to 480 PPQN; Composition v1 does not represent trailing window or end-of-track padding. Leading and internal rests remain.",
+    "The short two-note fixture and maximum 2048-note fixture are separate artifacts with their own byte counts, hashes and measurements.",
+    "Local native verification uses Linux Chromium; narrow viewport checks do not establish physical mobile/browser compatibility."
+  ],
+  "remoteVerification": {
+    "commit": "e281bb869fef1ebb284709ca66952c4cabd748f0",
+    "allRepositoryWorkflows": {
+      "passed": 12,
+      "failed": 0
+    },
+    "melody": {
+      "runId": 37186726359,
+      "jobId": 111390108034,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37186726359",
+      "unitPassed": 173,
+      "browserPassed": 35,
+      "browserDurationSeconds": 18.7,
+      "check": "passed",
+      "conclusion": "success"
+    }
+  },
+  "portableSmokeScript": {
+    "path": "../scripts/smoke_midi_import.mjs",
+    "sourceFixtureParity": "Both original fixture files matched the initial independent probe byte-for-byte.",
+    "prepareOnly": "passed",
+    "existingOutputRefusal": "passed; existing fixture hashes unchanged",
+    "lint": "passed",
+    "syntaxCheck": "passed",
+    "nativeRerun": {
+      "schemaVersion": 1,
+      "success": true,
+      "fixturesOriginal": true,
+      "noStorageInjection": true,
+      "noProductParserImports": true,
+      "thresholds": {
+        "fftWindow": 4096,
+        "frequencyToleranceHz": 5.38330078125,
+        "rmsRelativeTolerance": 0.02,
+        "silence": "Exactly zero PCM samples"
+      },
+      "browser": "151.0.7922.173",
+      "fixtureBytes": {
+        "phrase": 152,
+        "maximum": 1048576
+      },
+      "timingsSeconds": {
+        "phraseImportApply": 0.25572056900000006,
+        "maximumImportArtifactsReload": 1.279279511,
+        "total": 4.053445485999999
+      },
+      "limitations": [
+        "Synthetic MIDI validates interchange and synthesis, not General MIDI/DAW sound fidelity.",
+        "MIDI export 480-tick rounding and omitted trailing-window/EOT rest are intentional.",
+        "Browser audio playback controls are exercised; exported PCM is the independent audible-signal evidence."
+      ],
+      "phrase": {
+        "frames": 36273,
+        "midiNotes": [
+          {
+            "pitch": 69,
+            "onTick": 62,
+            "offTick": 542,
+            "velocity": 96,
+            "channel": 0
+          },
+          {
+            "pitch": 72,
+            "onTick": 1022,
+            "offTick": 1502,
+            "velocity": 32,
+            "channel": 0
+          }
+        ],
+        "metrics": [
+          {
+            "time": 0.165,
+            "expectedHz": 440,
+            "measuredHz": 441.4306640625,
+            "expectedRms": 0.10774292426338018,
+            "measuredRms": 0.10771786724740218
+          },
+          {
+            "time": 1.165,
+            "expectedHz": 523.2511306011972,
+            "measuredHz": 522.18017578125,
+            "expectedRms": 0.035914308087793397,
+            "measuredRms": 0.03590126490695021
+          }
+        ],
+        "jsonSha256": "d524ddf248131962abc7716d7c6270bdb850e85f1f72a8446653701ef832197b",
+        "midiSha256": "7b4544865233c4c4b89f5a73f7c8ae6e8d2d32ddb948a43c7ad3f60591769058",
+        "wavSha256": "549501f8430226f9dc38a9f580cc17d0602060722d337d20a7aaca217b789496",
+        "nativeReloadExact": true
+      },
+      "nativeProcessRestart": {
+        "persistentProfile": "/tmp/melody-midi-tracked-smoke/native-profile-HCKdN1",
+        "exactJsonBytes": true,
+        "sameProjectId": true,
+        "all2048NotesExact": true
+      },
+      "maximum": {
+        "bytes": 1048576,
+        "tracks": 8,
+        "notes": 2048,
+        "jsonBytes": 397322,
+        "midiBytes": 16766,
+        "wavBytes": 2820460,
+        "frames": 1410208,
+        "peak": 0.876068115234375,
+        "jsonSha256": "f525e0f75fd5dd0eb8a0e4f485f1d908c08dc15f1bb47196928d08cf238277ae",
+        "midiSha256": "b04addb16d8be6c2a16b9b5669c36e9c70dcc191dc784206991f54bb36bb6e55",
+        "wavSha256": "cffca030176d97d111a8873ad050c96248ade5533d1e00cc91766e3e1277cd43",
+        "nativeReloadExact": true
+      },
+      "screenshots": {
+        "desktop": "/tmp/melody-midi-tracked-smoke/desktop.png",
+        "mobile": "/tmp/melody-midi-tracked-smoke/mobile.png",
+        "mobileWidth": 390,
+        "noHorizontalOverflow": true
+      },
+      "confirmations": [
+        "Replace the composition with 2 notes in 1 parts (Imported scalar sine)? 3 source note attacks are excluded. Source beats 3 to 7 (end exclusive). Names and fallback choices are those shown in the review. Undo restores the previous committed composition, not discarded raw edits or an unsaved suggestion.",
+        "Replace the composition with 2048 notes in 8 parts (Maximum channel 0, Maximum channel 1, Maximum channel 2, Maximum channel 3, Maximum channel 4, Maximum channel 5, Maximum channel 6, Maximum channel 7)? 0 source note attacks are excluded. Source beats 1 to 129 (end exclusive). Names and fallback choices are those shown in the review. Undo restores the previous committed composition, not discarded raw edits or an unsaved suggestion."
+      ],
+      "pageErrors": [],
+      "externalRequests": []
+    }
+  }
+}

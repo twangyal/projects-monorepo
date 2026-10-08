@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 1,
+  "issue": 122,
+  "status": "passed: first actual fixture preparation and first actual maximum runtime",
+  "script": "scripts/smoke_stroke_edit.mjs",
+  "scriptSha256": "b51c9a733b85acd12e444a1f0484e4435bc263869e2be2d69ff01129705c5aa6",
+  "independence": {
+    "productionImports": [],
+    "baselineReads": "Approved design and existing model/render/history contracts plus earlier maximum runner mechanics; no new stroke producer implementation read",
+    "expectedValues": "Original literal complete projects and scalar/pixel facts frozen in runner before any runtime. PNG generated with independent CRC/deflate; actual artifact decoding uses pngjs/gifuct only, no producer transform/render oracle."
+  },
+  "frozenGraph": {
+    "schemaVersion": 2,
+    "frameCount": 96,
+    "layers": 8,
+    "images": 4,
+    "drawings": 4,
+    "totalCels": 27,
+    "selectedDrawingCels": 24,
+    "strokes": 100,
+    "points": 10000,
+    "longestStroke": 1000,
+    "targetStrokePoints": 100,
+    "targetCel": 0,
+    "targetExposureFrames": [
+      0,
+      3
+    ]
+  },
+  "scalarExpectations": {
+    "pose": {
+      "x": 200,
+      "y": 100,
+      "scale": 2,
+      "rotation": 90
+    },
+    "originalLocalEndpoints": [
+      [
+        10,
+        5
+      ],
+      [
+        30,
+        5
+      ]
+    ],
+    "originalStageEndpoints": [
+      [
+        190,
+        120
+      ],
+      [
+        190,
+        160
+      ]
+    ],
+    "trustedKeyboard": "One Shift+ArrowRight on selected stroke list button",
+    "stageDisplacement": [
+      10,
+      0
+    ],
+    "localDisplacement": [
+      0,
+      -5
+    ],
+    "expectedLocalEndpoints": [
+      [
+        10,
+        0
+      ],
+      [
+        30,
+        0
+      ]
+    ],
+    "movedStageEndpoints": [
+      [
+        200,
+        120
+      ],
+      [
+        200,
+        160
+      ]
+    ],
+    "appearanceBefore": {
+      "color": "#FF0000",
+      "width": 8
+    },
+    "appearanceAfter": {
+      "color": "#0000ff",
+      "width": 12
+    },
+    "delete": "Only cel0 stroke removed; cel0 remains blank. Later23 cels and all unrelated layers/images/poses must remain exact."
+  },
+  "pixelExpectations": {
+    "sourceImage": "16\u00d716 opaque cyan original PNG centered at500,40; three independent offstage800\u00d7800 white PNG bindings",
+    "selectedStroke": "3\u00d73 literal interior patches at transformed original/moved coordinates. Blue after appearance; white after deletion in frames0..3. Untouched blue later cel at190,240 in frames4..95.",
+    "control": "Opaque green dot moves400\u2192440 at y300 over frames0..95, sampled from independent scalar400+40*frame/95",
+    "noSelectionOverlay": "Literal white patch at175,140",
+    "pngFrames": [
+      0,
+      3,
+      4,
+      95
+    ],
+    "gif": "All96 actual full640\u00d7360 frames decoded; cumulative8,000ms, per-frame delay10*(round((f+1)*100/12)-round(f*100/12)). Exact primary-color interiors."
+  },
+  "capacity": {
+    "canonicalBytes": 6291624,
+    "method": "Separate same-graph capacity fixture with CRC-correct paDd ancillary padding inside original PNGs; exact capacity and raw+1 tested",
+    "imageDataUrlCeilingBytes": 1572864,
+    "editingFixture": "Same original unpadded graph, leaving honest canonical numeric-spelling headroom",
+    "incompatibleMaxima": "Four images leave only four drawing layers;27 total cels here, not192. No simultaneous eight drawings/four images claim."
+  },
+  "runtimePlan": {
+    "cwd": "apps/motion-studio",
+    "prepare": "node scripts/smoke_stroke_edit.mjs --prepare --output /workspace/motion122-maximum-fixtures",
+    "run": "CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_stroke_edit.mjs --run --output /workspace/motion122-maximum-fixtures --origin http://127.0.0.1:ROOT_PORT",
+    "dependencies": "Existing app-local @playwright/test, pngjs, gifuct-js; Node24+; separately started finished root-owned production preview",
+    "prepareSafety": "Refuses existing output directory; no browser/server/runtime generation occurred during authoring",
+    "runSafety": "Requires prepared exact SHA-checked fixture files; owns and closes only its persistent Chromium processes, never starts/stops service",
+    "identity": "Native full JSON downloads and actual readonly IDB observation; two complete browser process restarts with distinct CDP browser process IDs",
+    "checks": [
+      "Complete exact capacity backup and all images persist byte-identically across first browser process restart",
+      "Capacity+1 native File refuses with complete saved graph unchanged",
+      "List selection is nonmutating; keyboard move, appearance and Delete have exact one-step Undo/Redo; no-op Apply preserves Redo",
+      "All unchanged strokes/points/cels/keys/images deep-equal literal snapshots after every action",
+      "Independent actual PNG/GIF artifact pixels and timings",
+      "Final edited complete backup survives a second full browser process restart byte-identically",
+      "Desktop and390px screenshots with no horizontal overflow; pageerror/external-request absence"
+    ]
+  },
+  "staticChecks": {
+    "commands": [
+      "node --check scripts/smoke_stroke_edit.mjs",
+      "npx eslint scripts/smoke_stroke_edit.mjs"
+    ],
+    "actualOutcome": "Both exit0 after explicitly importing node:url URL. Initial ESLint found three no-undef uses of URL; source-only import corrected before handoff. No fixture/expectation/tolerance change."
+  },
+  "executionOwnership": "Root executed generation and first runtime on its own preview. Runner closed its three browser processes. Author performed source/static checks and evidence inspection only; no service/build/Git ownership.",
+  "limits": [
+    "First actual prepare/runtime passed on frozen repaired UI. This receipt makes no final full-suite or CI claim.",
+    "No worst-case decode complexity, peak-memory, physical-device or inference claim.",
+    "Exact file-size fixture uses disclosed ancillary padding; unpadded editing and count maxima are separate measured artifacts.",
+    "32MiB GIF export cap retained. Worker encode/download time measured separately from independent GIF decoding.",
+    "This runner does not replace broader trusted-touch, stale raw-draft, cancellation or CAS native coverage owned separately."
+  ],
+  "preflightCorrections": [
+    {
+      "originalScriptSha256": "7ae4e5741002f05257be7f4a9e611dc9d48443f6a5efb2677504c89d8728a3ae",
+      "correctedScriptSha256": "c2d0a520aeeb7781eb89da568eb28c2269801f10033615cd874d5e2d8c9a4f5b",
+      "change": "Expected selected user-entered appearance color uses native input[type=color] lowercase #0000ff. Original imported #0000FF later cels remain exact uppercase. No graph, coordinate, width, byte cap or pixel tolerance changed.",
+      "execution": "Source-only root preflight before fixture generation or runtime."
+    },
+    {
+      "change": "Fresh empty-profile mount explicitly waits Original demo \u00b7 saved after your first edit, plus stage aria-disabled=false and enabled project-file. UI owner confirmed the paired stage/File guards become ready after startup resolves. Subsequent restart mounts retain exact project title and graph verification.",
+      "source": "UI owner recorder, public readiness message; no producer code inspection."
+    },
+    {
+      "originalScriptSha256": "c2d0a520aeeb7781eb89da568eb28c2269801f10033615cd874d5e2d8c9a4f5b",
+      "correctedScriptSha256": "b51c9a733b85acd12e444a1f0484e4435bc263869e2be2d69ff01129705c5aa6",
+      "change": "Import captures prior actual active library ID before File admission. Completion polls genuine readonly native IDB transactions for a different active ID and full stored project equality to the original expected fixture. Old same-title/message/Saved predicates cannot satisfy this barrier. No sleeps or replacement request results.",
+      "execution": "Source-only root preflight before runtime; fixture graphs and tolerances unchanged."
+    }
+  ],
+  "runtimeEvidence": {
+    "executor": "Root executed fixture preparation and browser runner on frozen repaired production UI; receipt author only inspected existing safe evidence and artifact bytes",
+    "outputDirectory": "/workspace/motion122-maximum-fixtures",
+    "verificationSha256": "f367e76515232b4a9e1dcdd586548dde761b7f6ca203cdb29e9a4fdf06edf2e1",
+    "fixtureOracleSha256": "ce5631dd2432b28d88efa98ae975705cc0c7fd1b40baf8efd1ac6e1121fe183c",
+    "scriptSha256": "b51c9a733b85acd12e444a1f0484e4435bc263869e2be2d69ff01129705c5aa6",
+    "logs": {
+      "firstPrepare": "/tmp/motion122-maximum-prepare-first.log",
+      "firstRuntime": "/tmp/motion122-maximum-first.log"
+    },
+    "firstPrepare": "passed",
+    "firstRuntime": "passed",
+    "wallMs": 86569.363247,
+    "browserVersion": "151.0.7922.173",
+    "browserPids": [
+      [
+        834562
+      ],
+      [
+        834736
+      ],
+      [
+        839462
+      ]
+    ],
+    "originalFixtures": {
+      "schemaVersion": 1,
+      "issue": 122,
+      "counts": {
+        "layers": 8,
+        "images": 4,
+        "cels": 27,
+        "selectedLayerCels": 24,
+        "strokes": 100,
+        "points": 10000,
+        "longestStroke": 1000
+      },
+      "capacityBytes": 6291624,
+      "scalarExpectation": "Pose(200,100,2,90): local(10,5)\u2192stage(190,120). Shift+Right is stage(+10,0)\u2192local(0,-5); all target y=0, unchanged x/order/count. Blue width12 and deletion affect only boundary0 exposure frames0..3.",
+      "files": {
+        "original": {
+          "file": "original.motion.json",
+          "bytes": 223073,
+          "sha256": "8924f61d5e85eda84c147aa3d24b40387aee35aac12f8f8e1e0f816276b81100"
+        },
+        "moved": {
+          "file": "moved.motion.json",
+          "bytes": 223073,
+          "sha256": "3d499cf09fc81cfb979ce6bf1237253ef81f7afb58fea89bca5e0593c67598ff"
+        },
+        "blue": {
+          "file": "blue.motion.json",
+          "bytes": 223074,
+          "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+        },
+        "deleted": {
+          "file": "deleted.motion.json",
+          "bytes": 221533,
+          "sha256": "0c8b1feca1e0893f0a2da36d943c50faa88159daeda39cc072d3efaa6ecd174f"
+        },
+        "capacity": {
+          "file": "capacity.motion.json",
+          "bytes": 6291624,
+          "sha256": "12c23a58ed3051951d3b672f4a78b7bd058849979f6ebb02a7ff2767e8efd727"
+        }
+      },
+      "limits": [
+        "Graph has four drawings/four images and27 total cels, selected layer24; not eight drawings192 cels.",
+        "Exact6MiB+168 variant uses declared private ancillary paDd capacity bytes, not complex imagery or peak-memory proof.",
+        "Artwork editing uses the identical unpadded graph so longer legal numeric spellings/color/width cannot consume a false capacity claim.",
+        "No photo normalization, inference, native device or server lifecycle claim."
+      ]
+    },
+    "checks": [
+      "Exact capacity embedded images and maximum retained graph survive complete Chromium process restart byte-identically.",
+      "Whole native File capacity+1 refuses without replacing the exact committed or saved project.",
+      "Trusted list/keyboard selection, stage-axis translation, appearance and deletion each preserve literal graph except intended stroke; one-step Undo/Redo and no-op Apply preserve Redo.",
+      "Actual PNG/GIF original cyan image, independent moving dot, held exposure boundary and edited stroke interiors decoded against literal colors; selection overlays excluded."
+    ],
+    "artifacts": [
+      {
+        "file": "capacity-before-restart.motion.json",
+        "bytes": 6291624,
+        "sha256": "12c23a58ed3051951d3b672f4a78b7bd058849979f6ebb02a7ff2767e8efd727"
+      },
+      {
+        "file": "capacity-after-restart.motion.json",
+        "bytes": 6291624,
+        "sha256": "12c23a58ed3051951d3b672f4a78b7bd058849979f6ebb02a7ff2767e8efd727"
+      },
+      {
+        "file": "after-capacity-plus-one.motion.json",
+        "bytes": 6291624,
+        "sha256": "12c23a58ed3051951d3b672f4a78b7bd058849979f6ebb02a7ff2767e8efd727"
+      },
+      {
+        "file": "original-frame-0.png",
+        "bytes": 7067,
+        "sha256": "9f34dfd02e3d34250f35c305ef63db807308eb48f1d245e091be835c66ee85a5"
+      },
+      {
+        "file": "selection-no-mutation.motion.json",
+        "bytes": 223073,
+        "sha256": "8924f61d5e85eda84c147aa3d24b40387aee35aac12f8f8e1e0f816276b81100"
+      },
+      {
+        "file": "after-keyboard-move.motion.json",
+        "bytes": 223073,
+        "sha256": "3d499cf09fc81cfb979ce6bf1237253ef81f7afb58fea89bca5e0593c67598ff"
+      },
+      {
+        "file": "moved-frame-0.png",
+        "bytes": 7045,
+        "sha256": "0ce2efba54b7d7a5ff37563f3471accf41a2634c6a0094c74ab70389a01f6e7e"
+      },
+      {
+        "file": "move-undo.motion.json",
+        "bytes": 223073,
+        "sha256": "8924f61d5e85eda84c147aa3d24b40387aee35aac12f8f8e1e0f816276b81100"
+      },
+      {
+        "file": "move-redo.motion.json",
+        "bytes": 223073,
+        "sha256": "3d499cf09fc81cfb979ce6bf1237253ef81f7afb58fea89bca5e0593c67598ff"
+      },
+      {
+        "file": "after-appearance.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      {
+        "file": "appearance-undo.motion.json",
+        "bytes": 223073,
+        "sha256": "3d499cf09fc81cfb979ce6bf1237253ef81f7afb58fea89bca5e0593c67598ff"
+      },
+      {
+        "file": "appearance-redo.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      {
+        "file": "after-delete.motion.json",
+        "bytes": 221533,
+        "sha256": "0c8b1feca1e0893f0a2da36d943c50faa88159daeda39cc072d3efaa6ecd174f"
+      },
+      {
+        "file": "delete-undo.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      {
+        "file": "delete-redo.motion.json",
+        "bytes": 221533,
+        "sha256": "0c8b1feca1e0893f0a2da36d943c50faa88159daeda39cc072d3efaa6ecd174f"
+      },
+      {
+        "file": "final-blue.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      {
+        "file": "edited-frame-0.png",
+        "bytes": 7189,
+        "sha256": "19bf839c281a5a1903439a123aecab20363b4fe0517e563b54c4d39393c33af7"
+      },
+      {
+        "file": "edited-frame-3.png",
+        "bytes": 7255,
+        "sha256": "e39135a875933a91ec1e7b3f52c99b11afd8d74f8776c01e575ad6299d6d38d8"
+      },
+      {
+        "file": "edited-frame-4.png",
+        "bytes": 7107,
+        "sha256": "12493b828b91fd0d5a4eac6c359e52a5cbfa6d4e640f5ddea88a863d9c82520d"
+      },
+      {
+        "file": "edited-frame-95.png",
+        "bytes": 7033,
+        "sha256": "d64a0ccbf4e027dfaeaf1bb76beac9c01ce604daf45fd7a0e6754cdfac314f55"
+      },
+      {
+        "file": "deleted-frame-0.png",
+        "bytes": 6643,
+        "sha256": "955a13231b9f2f41d977892042c501111540877245bf67e46fc5ac2601eb076d"
+      },
+      {
+        "file": "pre-export-blue.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      {
+        "file": "artwork-before-restart.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      },
+      {
+        "file": "artwork-after-restart.motion.json",
+        "bytes": 223074,
+        "sha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+      }
+    ],
+    "gif": {
+      "bytes": 121922,
+      "sha256": "fe94702444d7bf1f15a8dadf6c8dfb9d205fcc4bc05e6ea9a1ad44f61da8ce54",
+      "encodeAndDownloadWallMs": 2178.820332999996,
+      "frames": 96,
+      "durationMs": 8000,
+      "frameHashes": [
+        "bf278af4a5196a4938c33a296e6750755daf52ef84961d67610fd330fc777d3d",
+        "98a99cdc46bc6af6eb4c3ee3dde2c4b5fd0c81761adb2216b7d12b0f9917b16b",
+        "579227a7f4357e8bdba0208a7a1f40721117a8b1fc299449c743c3a4d590afba",
+        "eeb32cee98cad4eef8f053d410959313b3e2e85ea104bb6475dfdc114272858f",
+        "5803b8d08aabae316723c0abb613c76f9ed7b2e204b1b8e25f45d1d7b4d7132f",
+        "86d07d5efeed9b6805ebd9f77368e06f855038ad85ac5fa3e76ccbad564b9dd4",
+        "189d3537ca7d252b0f91ac2ceb473220685454666aa75509d3c2d1b92a259ea6",
+        "09e9dab803708bf291322c37e2899e0f71990321bf4eb9cd17907a47c8be77ed",
+        "c6e25886008616f59316cabc5c45cbc39992e72e45d271be0b9ce0aee9ad4fac",
+        "88be296789af1e5b1c815b43b1c45c6a7e779ef16efd95bf6fee8f5ad5799b82",
+        "6656512ade563106831487c38645643386ba8351ab26dcd759fdfc59938eb615",
+        "3c521aceea07c75aad7adc5149b359ea43aabe684a111ad912f037a946f55a4e",
+        "ead2a470d925d9bc5cb85dcce111fdb4981b0016291d077488776ce50697807a",
+        "0ae1a56c929c1fde1ac3558db2ee26339d90a244c9f56616e320d691066e6542",
+        "ef99eeddd469b37fe6c651ce481929291b84c162debbb5de9ce3aedd113ad339",
+        "8ba4b1f493ff8dd11ea3e031936697abe6ed17038dbcb37aeab67c262e4a6317",
+        "8dac98fad05b36091e72c14a4015116fff2480084ff04c6b49f543b8553fee5d",
+        "0eeec88eaad448556617c88b7b2666f24ec00f77f9da3fc83ec8130c09a5c435",
+        "9bef7e57bf97702d3eb0f5c9b9a73caaacded454cebef66f4edb19e8ddac9642",
+        "dfb5294546569b4d28c618930bd06a1f7cbd021955f55c075a4a01f8eb5bf08d",
+        "71207d5dda0555c26ec2e2c356e88e53808ce2eca4b7913bd038b77274d1c7cd",
+        "98dcfb9b665b66284f2d82ae086ed40c960bb766f2d3bdbed8dabee599029240",
+        "7679268f7ccce9ddfa59994940ee51a9612b6ab3e5db1438964971dc730edec7",
+        "1bfc4c24a10bf6357b040d668deb254b54da6e6215d31ee57b8c49a01f005ffa",
+        "28f3ade48de992e7fa61089cbe8ad5205c23bdee30e06e7c930dd475ef799bae",
+        "d6547630cfecce7196714e469c4ac25509cae0827d7e6981ef3480c7327edbf5",
+        "a3789157c018c292a2b49620c3dc1aab70c8b53e4ee3bbb9505ce00538722666",
+        "b12a666d151d3754fc946d4f86cfa97e0ade54046845f1e52167e4717237d4d5",
+        "83d810b1f8cf70fb6732eb6d640e933ef7a6b8df3337ef4fcbad75fbd223fd5c",
+        "586a3df7ca7397af73dc252b114057b1abb49278e007349bf25169134255e0f8",
+        "a7ff33be96135e55726ddc7623e4a755bd83f7def65ae5fabc542a8feed42cef",
+        "05d709e4a417457a2401853e0ee676e48b9ee356c154c4aa76f8c8cc86b047d6",
+        "c06b49c86b5c7ed78586a8002104dc6b3ff7cfd0f5afb499392a7b51e81b8d4d",
+        "07b0e275bea75af51d05f974b875127a6c885e2c5e113ba7383ddd175cc73aac",
+        "7eeda712e60fb9631ef70b3007bc07d4394efdcee890e87a50f249ebdf25ec32",
+        "9d0aebf5e842ce1fff30f1961d812fd1e172814da48af2f14d6e88b24276bc63",
+        "8fb43de2e6292552beaa38f6d9395ad2148dcb64f2123c777fc7c880582bfa60",
+        "a1f1b8e0b92bf3c7aa5596d482333d5ddb8ac3f0588162452d5119b2b6b4e924",
+        "85fb7d8a7bf4bd9d2d113cdec93ea7f6324bc52f12e25d3a4f831caeda7435e9",
+        "e66d96b71464719570ac9ad9513f6629b1ee11e2bcf5a69bf0b7b6ac7cd1d1d9",
+        "1c3aa0d315e16c3db06a82aa3c01a9bb02d953777c8032082eb7ad8316f001ea",
+        "784b905ce0d5a55c67d9659e751c1b154ec8a91821751d7eddc8c7a38475a652",
+        "8d9cd3559dd80407c048e1385cc81c8eeabf688f397985adc3bf7ddc59e93b6a",
+        "bf23a7a6b4912cc79f0e9ed79911d122491fd4e09b28edbfcff30eda2cace08b",
+        "ff20dddc4c363ddb82233ff483affe706f9994d72b36c010eb6c384b55f501c0",
+        "c57b8268eb9397b384c04a5a868fcc84797090f3ec44c79b996c4bd91fbb1bf5",
+        "0b6aa9290ed344e1ce82663909d12e889f5095fc455aaac955fe830ded04bbcf",
+        "a160b9ac02d1a53d5b2a95d7b69dfc73a69536905c672b365834176ef7fe7a2d",
+        "f60f77d166cdac710bf970c27fa642109af70a5047bda9c467dc3c9901dc7c24",
+        "e82c182706b855225b33f7681cdccf88bb9d1a732ac1fa06f1c764e36069fff1",
+        "8bd79eb037f01da7ebe8bcf491d08b3819f1bc44fc31621453314089fa2712ee",
+        "53ff64e5fd5481eae908d66474c650834e1783ede680281248ebeff2c902add1",
+        "00051a39e72d8a1c58576eaf43dc0b4cb46761e9d259ab0ffdf0344c4983d4e0",
+        "c27d5d4244e3e5453642b3d0a57b52f281208630953d9f590ae09687df9d603f",
+        "d9a8b548cfbfac3afba194983befc1ef82bdebbdef4090bea74857e6d5e66da8",
+        "0a033a7543622b59131c3f8ea52f843c5fb03ab91ed29d5ff636c74b47423074",
+        "9c347ad37dd7cada87aaff2f10613c7cee2e36b0f08c92e1a7a66b782a7a1118",
+        "08f18a8cefdaa5623165a63a6bc4f5357c4777602781f222fb5a7b90d78ed367",
+        "40461a3f3b1d3db19fff86006979e98b09b1f2156a6971f9902fe2b362ac8c6e",
+        "f30508ccddf2f33633b649f46c2e5e4c5cc90c08551f6bbeea214c0ad9ca0bdc",
+        "a311e1650c093194172d95cd2ca53b36aefd11d24731156f8457b762fd813bb1",
+        "a43d5c82d8ac4ddf739c4719d508dab566357c886892ab546e747d158b9831d5",
+        "63d980ab3ed259e37efc65aec2a246f8afe4dca53d6cf8a5f66a8f3caebaaa60",
+        "e87c90b369e8a2a34338026f60277ae166326a486860106c45f731161c11780e",
+        "2e7e314419e9517906c98c634ecdac6bfba8308a3400d289b0db3ca74168c99b",
+        "bad32252c9bd1db023b1acfdb621251d49370d2f5f002fdc9e02a719d755b7ef",
+        "6ff80e852ad85b63e266c4ca13af5ad9d0d4ea457de7de9e7b972de03c220ce8",
+        "bfb59e640b28e7abf004e7fbc0a028e537ea018851926047f59a901deb37ba4c",
+        "b6a5fbc735f06ee7eb8aaf79751851a87771e31e4d6899680ec27abfb8cbc989",
+        "39723213e344dc0e42f7e78423eaa6e9b9a2ac9289cc28e1f26b7fc6a2c5116d",
+        "b09bfb5b6b63690904665adeaa5c7fb0fe18840829f5113d53b33d32b2c23a74",
+        "e91578318b3485255d5209ac25a1835c7a4a2636f9ffc9f7ba6beaa6482a79e2",
+        "59707d47e3ad06aa25da5fb3d981fcf6d41e05e8e1dfdeb6102c30544e64c568",
+        "a8d9933be211b71cbbeec1daf2842dbe81c9d0622bec53ba7c2a503d44e21604",
+        "2ad1391cc3d25bd13358abb37f94b6299db3e8fbc3e2fd71abc5d271c8ee2183",
+        "3730d47c2621fdd9c70bed22a0523bb1c2b14f55b92f549310b0fe956abfaa77",
+        "34604537ff58e2aeeb046920e7e6c23a3968ff01845e9eb5b3bedaa6436612b8",
+        "f70807cf3a1eb0110e28f85e6d162fa21f902c2da0b43ae2a2a0819c5eb139db",
+        "cee94a7bc0989381fa5ac715a7b6c63a30699cbdc91a1e5faf70f9e79c176659",
+        "37915bf4ba2a024c86253fc3f8d48451aa8baded2ea7866439a308bda72a82e7",
+        "93905b4025a57f0b138f911b80d7c0e9223e3af52b2fab6561b58be28fff0ecf",
+        "9ae4153a3da2768995d3614cfe93ab1c2316e02dd7193dfe593f3c2c317cf92c",
+        "d7f17fcf1507521ee745dc7231e53e760ac3ac2048e2997a62c8d1cf08f19b27",
+        "e4cf5d3347d9b3782a6f2c9f842b3546e23e290211ba3f4bd89165db79cf2ba6",
+        "b94f202ef93700aaba8ad4d9e57792ae4e7da775f0213ab8f4e0d25e1382fee5",
+        "3a30e88bcaa3b8f6fda1e3091877b2e0eb357d3ed26d5202e6416e199c74dd90",
+        "7b3a5ec86f9df86072e2a7c214d5bfbcfcce7324518b14685bebe1f0226fa642",
+        "b10c7047f7f4164dde8a1939edee602788090cabf7b6dc47945ae81b6d439be8",
+        "1372e3ce6d3c3f1438ae4bccadde7f128f0ca619feaf6dfda28da6f4ffee216b",
+        "d5c1698c5def40f04661913b833dac63b32a56096ebfd93097cf8f18f3f238a8",
+        "79e7473622eb1beb568af7d3806a84e379a20d68e001abc3c1298f066db4677c",
+        "aa6f7fedf03d657d59f87c0d2a9510bb77e71c72a0552701514449bae6736d14",
+        "84538c24454c9eadf7ed93d8f903a38c5701d9b251da34c3483bd5e4aa4ffc7a",
+        "8131af8d34988548518cafbf1a8f31ce9810f2ec568839be3da41e40785eea01",
+        "8f2e47b90a838ea2056db17b5ffed9bd1564e7656f0e0abc810614d43c9f924c",
+        "b008a6f1017e79dba28fb1b75dae10903c691936202ae6b529363e6f7ded4ffc"
+      ],
+      "independentDecodeWallMs": 1083.5787649999984
+    },
+    "screenshots": [
+      {
+        "file": "desktop.png",
+        "bytes": 276943,
+        "sha256": "2ddc21433f47208546459140073f1669a45385bcaae00babf51da18b68f9504b"
+      },
+      {
+        "file": "390px.png",
+        "bytes": 244458,
+        "sha256": "cc09e6bbd9de1c273b3354eda6e73b99efcf5289f58c0775c6946d5a60963f94"
+      }
+    ],
+    "restart": {
+      "capacityByteExact": true,
+      "editedArtworkByteExact": true,
+      "backupBytes": 223074,
+      "backupSha256": "197cd0aede51a467dc52f33afcbcea27bca4f0655f284b9876377abc6781e694"
+    },
+    "browsersClosed": true,
+    "pageErrors": [],
+    "externalRequests": [],
+    "service": {
+      "pid": 834525,
+      "origin": "http://127.0.0.1:4321",
+      "stopped": true,
+      "metadataPath": "/tmp/motion122-maximum-server.json",
+      "ownership": "Root-owned preview, never started or stopped by runner"
+    },
+    "rootScreenshotReview": "Root inspected the actual390px screenshot and confirmed no horizontal overflow; runner also asserted document width<=viewport before capture",
+    "artifactReceiptValidation": "Author checked all five original fixture and24 recorded artifact lengths/SHA256 against existing files, plus GIF and both screenshots; no new runtime, decoder, browser or build executed",
+    "interpretation": "100 strokes/10,000 points, selected24 cels,27 total cels,8 layers/4 images. Exact6,291,624-byte capacity and+1 refusal tested separately from unpadded artwork edits. Complete backup/image equality through two real browser-process restarts. No incompatible simultaneous192-cel/image maxima claimed.",
+    "noRuntimeExpectationCorrection": "Preflight color/startup/import identity corrections preserved separately. Original prepared fixture expectations passed on first actual run; no runtime expectation or pixel-tolerance relaxation."
+  }
+}

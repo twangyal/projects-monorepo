@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "status": "passed",
+  "implementation": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+  "tree": "e1fd0f261835b65f8f74914aa40452833dc665ed",
+  "prCheckout": "0dcf7a996b678e98d053fb93703aa1e1a14f48c5",
+  "prTree": "e1fd0f261835b65f8f74914aa40452833dc665ed",
+  "treesIdentical": true,
+  "push": {
+    "run": 37250786108,
+    "job": 111577779100,
+    "attempt": 1,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250786108",
+    "unitPassed": 67,
+    "unitDurationMs": 1584.876054,
+    "browserPassed": 65,
+    "browserDisplayedDuration": "1.8m",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "log": {
+      "path": "/tmp/lens117-ci-job-111577779100.log",
+      "bytes": 51472,
+      "sha256": "37c21180d21bf663b7d4d38113122bfd128af50bd2ccc61068be6c94c89c9517"
+    }
+  },
+  "pullRequest": {
+    "run": 37250789487,
+    "job": 111577788216,
+    "attempt": 1,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789487",
+    "unitPassed": 67,
+    "unitDurationMs": 937.962179,
+    "browserPassed": 65,
+    "browserDisplayedDuration": "1.6m",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "log": {
+      "path": "/tmp/lens117-ci-job-111577788216.log",
+      "bytes": 52514,
+      "sha256": "f2fd37909b41586f22a955a6b59e0a20c83404351a78c1bdea08fb82ba94f61d"
+    }
+  },
+  "allProjectPullRequests": [
+    {
+      "name": "Clothing Studio",
+      "run": 37250789510,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789510"
+    },
+    {
+      "name": "Melody Studio",
+      "run": 37250789436,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789436"
+    },
+    {
+      "name": "Lens Studio",
+      "run": 37250789487,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789487"
+    },
+    {
+      "name": "Git History",
+      "run": 37250789494,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789494"
+    },
+    {
+      "name": "Motion Studio",
+      "run": 37250789607,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789607"
+    },
+    {
+      "name": "Color Context Lab",
+      "run": 37250789506,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789506"
+    },
+    {
+      "name": "Composure",
+      "run": 37250789435,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789435"
+    },
+    {
+      "name": "Stock Notebook",
+      "run": 37250789656,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789656"
+    },
+    {
+      "name": "Duet",
+      "run": 37250789524,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789524"
+    },
+    {
+      "name": "Friendly Challenges",
+      "run": 37250789477,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789477"
+    },
+    {
+      "name": "Shot Studio",
+      "run": 37250789620,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789620"
+    },
+    {
+      "name": "Karaoke Studio",
+      "run": 37250789504,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789504"
+    },
+    {
+      "name": "Style Studio",
+      "run": 37250789475,
+      "head": "d2dc7560bbb5f7c111f5389c12cc760cd1149fed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37250789475"
+    }
+  ],
+  "limitations": [
+    "Actual PR merge checkout and implementation tree are identical; main is not merged.",
+    "Maximum runtime was separately executed on local Chromium151; CI browser evidence is not the same runtime.",
+    "Preserved original local failures remain in their receipts; both published runs pass attempt1."
+  ],
+  "environment": {
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "os": "Ubuntu 24.04.5",
+    "chromium": "153.0.8010.12"
+  }
+}

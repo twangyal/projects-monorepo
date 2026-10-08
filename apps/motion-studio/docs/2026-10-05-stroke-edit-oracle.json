@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "issue": 122,
+  "status": "independent-oracle-and-read-only-kernel-review-clear",
+  "recordedAt": "2026-10-05T02:32:35.976568+00:00",
+  "scope": "Pure retained-stroke kernel only. No UI/render/storage/history/private-link implementation edits or runtime.",
+  "contract": {
+    "path": "/workspace/projects-monorepo/docs/superpowers/specs/2026-10-05-motion-stroke-editing-design.md",
+    "bytes": 16665,
+    "sha256": "31e179f3791bfb35a4a47168890cbd1797aad99eda91060802073d785ded11ac"
+  },
+  "oracle": {
+    "path": "/workspace/projects-monorepo/apps/motion-studio/tests/stroke-edit-oracle.test.ts",
+    "bytes": 13490,
+    "sha256": "b8a25d4bcabda2b8fa133568ccf06b0e2f4ba8d3310aca736c654078aa1a2f09"
+  },
+  "reviewedSources": {
+    "src/stroke-edit.ts": {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/stroke-edit.ts",
+      "bytes": 5702,
+      "sha256": "f04b9bb2710976ff509659717b8e499b16bd01b7f6d442de020cc65ceb3b871f"
+    },
+    "src/model.ts": {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/src/model.ts",
+      "bytes": 21036,
+      "sha256": "5dd18ac9d3503e7e4f2ad202cce1d7e0e2991207342b3e9679cccb4bdc1011bc"
+    }
+  },
+  "independence": {
+    "producerInspectedBeforeFreeze": false,
+    "firstFrozenExecutableOracleSha256": "1ae2898b6772b0fd0869f490b0e5f51b0db025401e4d851791d8e3b00cd07cba",
+    "expectedResults": "Literal paths/paint indices/coordinate arrays/complete graph substitutions and scalar boundaries authored from the approved contract. No production localPoint, edit transformation, hit helper or renderer calculates expected values.",
+    "image": "Original hand-assembled one-pixel PNG with literal RGBA[23,45,67,255], own CRC/chunk construction and zlib encoding. Size-bound fixture uses inert original tEXt padding.",
+    "honestFirstRun": "First actual run was already against actual implementation and passed. No independent oracle before-implementation RED is claimed. Producer-owned stub RED is separate.",
+    "afterFreezeChange": "Only removed unused type-only Point import after scoped lint/type diagnostics. No fixture, numeric tolerance or expected acceptance changed."
+  },
+  "frozenExpectations": {
+    "paintOrder": [
+      "red horizontal(-0,0)..(20,0),width4",
+      "later blue horizontal(10,0)..(30,0),width2",
+      "green dot(50,10),width6",
+      "three coincident points(60,10),width4"
+    ],
+    "overlapChoice": {
+      "at15_0": 1,
+      "at5_0": 0,
+      "at25_0": 1,
+      "at35_35": null
+    },
+    "roundCap": "Width10 segment(0,0)..(10,0):(-3,4)/(13,4)/(5,5) inclusive; y plus1e-8 refuses. Padding6 admits(5,11), y plus1e-8 refuses.",
+    "graph": "Two exact cels at0/8, independent second drawing and original PNG layer. Title/background/poses/keys/image/stroke case/negative-zero/unselected arrays remain exactly equal.",
+    "literalDelta": {
+      "pose": {
+        "x": 200,
+        "y": 100,
+        "scale": 2,
+        "rotation": 90
+      },
+      "localPoint": [
+        10,
+        5
+      ],
+      "stagePoint": [
+        190,
+        120
+      ],
+      "stageDelta": [
+        20,
+        -10
+      ],
+      "localDelta": [
+        -5,
+        -10
+      ],
+      "selectedBlueExpectedPoints": [
+        [
+          5,
+          -10
+        ],
+        [
+          25,
+          -10
+        ]
+      ]
+    },
+    "appearance": {
+      "color": "#aBcDef",
+      "width": 3.25,
+      "preservePoints": [
+        [
+          10,
+          0
+        ],
+        [
+          30,
+          0
+        ]
+      ]
+    },
+    "delete": "Only selected path removed; first cel may become blank while its frame0 boundary and all other graph values remain.",
+    "coordinateLimit": "(1279,1279),(0,-1280) plus(1,0) becomes(1280,1279),(1,-1280); +1e-8 overflow or nonfinite delta refuses whole candidate without input changes.",
+    "counts": {
+      "strokes": 100,
+      "points": 10000,
+      "selectedPointMultiplicity": 100,
+      "editedExpectedRepeatedPoint": [
+        1,
+        -1
+      ]
+    },
+    "serializedLimit": {
+      "capBytes": 6291624,
+      "originalFixtureBytesRange": [
+        6291621,
+        6291624
+      ],
+      "validPNGImages": 4,
+      "maxEachDataUrlChars": 1572864,
+      "selectedPoints": 1000,
+      "candidateDelta": [
+        1e-08,
+        0
+      ],
+      "expected": "Zero-delta admits full detached graph; valid-coordinate nonzero edit exceeds canonical cap and refuses atomically."
+    }
+  },
+  "verification": [
+    {
+      "command": "node --experimental-strip-types --test tests/stroke-edit-oracle.test.ts",
+      "phase": "first-actual",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 512.269893,
+      "log": {
+        "path": "/tmp/motion122-stroke-oracle-first.log",
+        "bytes": 1310,
+        "sha256": "c4de54c23cfb3079cd6ee3aec42bd5ec4e1b64bfbdb9445f738ca604b5b3cb15"
+      }
+    },
+    {
+      "command": "Scoped ESLint and strict tsc",
+      "phase": "first-static",
+      "status": "one unused type-only Point import diagnostic; corrected without acceptance changes"
+    },
+    {
+      "command": "node --experimental-strip-types --test tests/stroke-edit-oracle.test.ts",
+      "phase": "final-current-oracle",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 532.715827,
+      "node": "24.19.0",
+      "log": {
+        "path": "/tmp/motion122-stroke-oracle-final.log",
+        "bytes": 1312,
+        "sha256": "ebdf68b2da4d9a5d4faf0d265659da963808023df02d8499a7c2877e9320a2df"
+      }
+    },
+    {
+      "command": "./node_modules/.bin/eslint tests/stroke-edit-oracle.test.ts",
+      "status": "passed"
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit --strict --noUnusedLocals --noUnusedParameters --skipLibCheck --target ES2022 --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --types node tests/stroke-edit-oracle.test.ts",
+      "status": "passed"
+    }
+  ],
+  "kernelSourceReview": {
+    "status": "clear",
+    "findings": [],
+    "checks": [
+      "Exact plain target/point/appearance admission rejects unsupported/accessor/nonfinite data without mutating input.",
+      "Retained strokes use shared bounded model admission; hit search is reversed paint order with inclusive closed-segment/dot geometry.",
+      "Nonzero segment nearest-point projection is clamped; repeated segments and one-point paths are explicit round targets.",
+      "Exact layer and cel boundary plus integer index are required, with no implicit held-cel fallback.",
+      "All edits start with detached complete model validation and finish with full candidate validation, covering coordinate/count/canonical byte bounds.",
+      "Zero displacement preserves coordinate negative-zero spelling; no incremental/resampled path derivation or unselected graph normalization.",
+      "Appearance updates only selected color/width; Delete splices only selected stroke and preserves empty cel boundaries."
+    ]
+  },
+  "limitations": [
+    "No full suite/build/browser/service/Git actions; root owns broad/native/media/durability acceptance.",
+    "CSS padding conversion, transformed native pointer handling, caret/lifetime/history and PNG/GIF output are outside this pure kernel oracle.",
+    "Original padded PNGs exercise pure retained-project byte admission; no native PNG decode outcome is claimed here."
+  ]
+}

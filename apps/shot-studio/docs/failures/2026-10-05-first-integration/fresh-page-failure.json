@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "status": "failed",
+  "fixtureOracleSha256": "cdd5c771017e5e39480a2284b23c1bdd4b147243dc130fd7f3aebd673ec680b7",
+  "fixtureFiles": [
+    {
+      "name": "maximum-sequence.json",
+      "bytes": 33978,
+      "sha256": "bf0d2e3806af4ac3c2f6b1ec09bce120504189a444b52997de0f0521ba97121a"
+    },
+    {
+      "name": "ordinary-scene.json",
+      "bytes": 400,
+      "sha256": "0093c25a7f3d2bb8f4ba0a501ab3b195ac6a25f673f1856b6f3a5cab3280c178"
+    },
+    {
+      "name": "original-60s-stereo.wav",
+      "bytes": 11520044,
+      "sha256": "b383ee88c15caccdbb0368044148df8e3ff5fea53a35e024e6793eed36ceb32c"
+    },
+    {
+      "name": "exact-12MiB.wav",
+      "bytes": 12582912,
+      "sha256": "a55fce05fc496c94c159a6f138dbc5584491ba1a9bad5142ac75b9f00f922ef2"
+    },
+    {
+      "name": "over-12MiB.wav",
+      "bytes": 12582913,
+      "sha256": "255e82845eea1a4f8a90211e98cbd64d71a76a612176a57aac7dd4b83853d84c"
+    },
+    {
+      "name": "exact-324KiB-metadata.shot-sequence",
+      "bytes": 11851836,
+      "sha256": "3d10effbfb87699636488d2a3a9858ff64b46184b9c66787490c15d1ba303419"
+    },
+    {
+      "name": "over-324KiB-metadata.shot-sequence",
+      "bytes": 11851837,
+      "sha256": "019f0b75c6aa7a319eb0b93d0e4fedfb4f777028c890012e28667096c82c525d"
+    },
+    {
+      "name": "over-16MiB.shot-sequence",
+      "bytes": 16777217,
+      "sha256": "1003b1b5dc078189799a1216ce0f9fbcebb94e8b6b83c58c4b03345f07f94ced"
+    }
+  ],
+  "checks": [
+    "Four complete original sources, twenty full-shot clips,256 cues and sixty-second PCM retain exact film/WAV bytes. Trim/offset/gain is one Undo/Redo edit. Separate exact12MiB ancillary WAV and324KiB raw metadata admit; +1 refuses atomically;16MiB+1 whole-file refuses."
+  ],
+  "artifacts": [],
+  "browsers": [
+    [
+      4186
+    ],
+    [
+      4349
+    ]
+  ],
+  "browserEvents": [
+    {
+      "index": 0,
+      "event": "page-close",
+      "stage": "whole-browser restart"
+    },
+    {
+      "index": 0,
+      "event": "context-close",
+      "stage": "whole-browser restart"
+    },
+    {
+      "index": 0,
+      "event": "browser-disconnected",
+      "stage": "whole-browser restart"
+    },
+    {
+      "index": 1,
+      "event": "page-close",
+      "stage": "restored complete archive download"
+    },
+    {
+      "index": 1,
+      "event": "context-close",
+      "stage": "restored complete archive download"
+    },
+    {
+      "index": 1,
+      "event": "browser-disconnected",
+      "stage": "restored complete archive download"
+    }
+  ],
+  "limits": [
+    "Exact12MiB WAV has legal JUNK padding, not a larger PCM payload or worst-case decoding/RAM.",
+    "Metadata exact324KiB uses trailing JSON whitespace. No claim that canonical topology reaches that metadata cap.",
+    "16MiB+1 is an early whole-file refusal; valid component maxima total12,914,704B and cannot produce a valid exact16MiB artifact.",
+    "All256 performer cues are blocking; this graph does not claim simultaneous loop-mode or heterogeneous camera-axis maxima.",
+    "Forty landmark frames are independently pixel-checked; full video timestamps and all decoded PCM frames are inspected, not all video pixels.",
+    "The original constant-frequency PCM is synthetic test audio, not a microphone/physical-device claim."
+  ],
+  "browserVersion": "153.0.8010.12",
+  "saved": {
+    "schemaVersion": 1,
+    "revision": 3,
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "legacyRaw": null
+  },
+  "beforeRestart": {
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+  },
+  "failure": {
+    "stage": "restored complete archive download",
+    "name": "Error",
+    "message": "#sequence-save -> /home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/test-results/maximum/trimmed-after-restart.shot-sequence: download.saveAs: Target page, context or browser has been closed; download failure=download.failure: Target page, context or browser has been closed; pageClosed=true; browserConnected=false",
+    "stack": "Error: #sequence-save -> /home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/test-results/maximum/trimmed-after-restart.shot-sequence: download.saveAs: Target page, context or browser has been closed; download failure=download.failure: Target page, context or browser has been closed; pageClosed=true; browserConnected=false\n    at download (file:///home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs:54:211)\n    at async capture (file:///home/runner/work/projects-monorepo/projects-monorepo/apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs:78:383)",
+    "pageClosed": true,
+    "browserConnected": false,
+    "eventsBeforeCleanup": [
+      {
+        "index": 0,
+        "event": "page-close",
+        "stage": "whole-browser restart"
+      },
+      {
+        "index": 0,
+        "event": "context-close",
+        "stage": "whole-browser restart"
+      },
+      {
+        "index": 0,
+        "event": "browser-disconnected",
+        "stage": "whole-browser restart"
+      },
+      {
+        "index": 1,
+        "event": "page-close",
+        "stage": "restored complete archive download"
+      },
+      {
+        "index": 1,
+        "event": "context-close",
+        "stage": "restored complete archive download"
+      },
+      {
+        "index": 1,
+        "event": "browser-disconnected",
+        "stage": "restored complete archive download"
+      }
+    ]
+  },
+  "closedOwnedBrowsers": true,
+  "pageErrors": [],
+  "externalRequests": []
+}

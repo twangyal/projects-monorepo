@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "issue": 123,
+  "status": "first push and PR runs passed",
+  "head": "f5260240986b238f7af2bcc3449cabb37d7fc246",
+  "tree": "7ae86dc8cc1a2dff8faa6ed6663ce52e9aec7734",
+  "actualPrMerge": "c3f715a14d832a7fd7ea6ada1ffcce35141567c8",
+  "prMergeTreeIdentical": true,
+  "runs": [
+    {
+      "id": 37258931787,
+      "event": "push",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258931787",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 111601802042,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258931787/job/111601802042",
+          "conclusion": "success",
+          "logSha256": "715f72b9d60b4bd727c9e8578831ac117b70cd5fd00506eb6068887f51150c00",
+          "kind": "browser",
+          "nodePassed": 17,
+          "nodeMilliseconds": 142.632449,
+          "nativePassed": 46,
+          "nativePrintedDuration": "1.3m",
+          "lint": "passed"
+        },
+        {
+          "id": 111601802128,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258931787/job/111601802128",
+          "conclusion": "success",
+          "logSha256": "7720a1aede3914803ceec93915aea64e3ea8bc75574a6efa73527909fe4692c8",
+          "kind": "Python core + native",
+          "discoveredPerRun": 357,
+          "coreSkips": 26,
+          "nativeSkips": 2,
+          "coreSeconds": 45.464,
+          "nativeSeconds": 47.762
+        },
+        {
+          "id": 111601802154,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258931787/job/111601802154",
+          "conclusion": "success",
+          "logSha256": "9c6c9e415c74b4d291e29474916d1bfd771931842d2ec16aacdcc6df367b74b7",
+          "kind": "Python core + native",
+          "discoveredPerRun": 357,
+          "coreSkips": 26,
+          "nativeSkips": 2,
+          "coreSeconds": 53.848,
+          "nativeSeconds": 56.821
+        },
+        {
+          "id": 111601802238,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258931787/job/111601802238",
+          "conclusion": "success",
+          "logSha256": "edbb37fe1dfe8a530cd662167b5264b4a7762d3dddc6886e4c1968cb75d746f3",
+          "kind": "Python core + native",
+          "discoveredPerRun": 357,
+          "coreSkips": 26,
+          "nativeSkips": 2,
+          "coreSeconds": 55.518,
+          "nativeSeconds": 55.994
+        }
+      ]
+    },
+    {
+      "id": 37258934438,
+      "event": "pull_request",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258934438",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "id": 111601809755,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258934438/job/111601809755",
+          "conclusion": "success",
+          "logSha256": "b6b15e4fe95d9bce33062c59916205c742883176bc950925d7cc827b2594d7dc",
+          "kind": "browser",
+          "nodePassed": 17,
+          "nodeMilliseconds": 139.696808,
+          "nativePassed": 46,
+          "nativePrintedDuration": "1.3m",
+          "lint": "passed"
+        },
+        {
+          "id": 111601809885,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258934438/job/111601809885",
+          "conclusion": "success",
+          "logSha256": "dadd620620763931cea57167038010758d8f0012170b18ff9a3b6769a956932f",
+          "kind": "Python core + native",
+          "discoveredPerRun": 357,
+          "coreSkips": 26,
+          "nativeSkips": 2,
+          "coreSeconds": 48.027,
+          "nativeSeconds": 51.415
+        },
+        {
+          "id": 111601809891,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258934438/job/111601809891",
+          "conclusion": "success",
+          "logSha256": "decd555c4fadc5e35b60ad4f48671deaf71e8d594582811fcb571ac43e47709f",
+          "kind": "Python core + native",
+          "discoveredPerRun": 357,
+          "coreSkips": 26,
+          "nativeSkips": 2,
+          "coreSeconds": 54.386,
+          "nativeSeconds": 55.155
+        },
+        {
+          "id": 111601809962,
+          "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37258934438/job/111601809962",
+          "conclusion": "success",
+          "logSha256": "99fc7dc88d27dad236f3b9f24e57f165bb4d6b864da822dbc3004b37761bdb39",
+          "kind": "Python core + native",
+          "discoveredPerRun": 357,
+          "coreSkips": 26,
+          "nativeSkips": 2,
+          "coreSeconds": 54.8,
+          "nativeSeconds": 58.121
+        }
+      ]
+    }
+  ],
+  "matrix": [
+    "3.11",
+    "3.12",
+    "3.13"
+  ],
+  "checks": "Each Python job passes core and native-required suites, Ruff, compilation, wheel build/install and isolated installed CLI/parser checks. Each browser job passes17 Node cases, lint and46 Chromium cases. No retry or CI repair was needed.",
+  "broaderPR": [
+    {
+      "id": 37258934483,
+      "name": "Style Studio",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934434,
+      "name": "Melody Studio",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934444,
+      "name": "Clothing Studio",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934390,
+      "name": "Color Context Lab",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934438,
+      "name": "Git History",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934402,
+      "name": "Lens Studio",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934450,
+      "name": "Stock Notebook",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934392,
+      "name": "Motion Studio",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934411,
+      "name": "Composure",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934417,
+      "name": "Friendly Challenges",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934389,
+      "name": "Karaoke Studio",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934396,
+      "name": "Duet",
+      "conclusion": "success"
+    },
+    {
+      "id": 37258934437,
+      "name": "Shot Studio",
+      "conclusion": "success"
+    }
+  ],
+  "limits": [
+    "CI browser suite uses source package; fresh installed-wheel browser coverage is separately recorded in local verification.",
+    "No physical device or other browser engine claims."
+  ]
+}

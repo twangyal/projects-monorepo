@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-05",
+  "issue": 127,
+  "base": "29dd9066b51eef096b595852b6b5d0d17c8b8c89",
+  "local": {
+    "node": "24.19.0",
+    "browser": "Chromium 153.0.8010.0, @sparticuz/chromium153.0.0, ordinary Playwright launch defaults",
+    "unit": 237,
+    "browserCases": 146,
+    "lint": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "native": {
+    "maximum": {
+      "frames": 96,
+      "layers": 8,
+      "images": 4,
+      "strokes": 100,
+      "points": 10000,
+      "pngs": "every PNG independently decoded, all alpha255, four moving artwork/four image samples in every frame",
+      "editableBackup": "literal complete project unchanged"
+    },
+    "fullColor": {
+      "frames": 12,
+      "exactColors": 1024,
+      "celCutFrame": 6,
+      "poseSamples": "every frame"
+    },
+    "privateViewer": "strict fixture-CA HTTPS native download, all12PNG checked; archive excludes setup/read/revoke capabilities",
+    "lifecycle": "Genuine worker cancellation after frame progress and controlled pagehide in both editor and strict-HTTPS private viewer; owned workers terminate without late downloads. Private complete project backup stays exact.",
+    "capacity": "valid ancillary padding admits an exact96MiB archive and rejects+1 before retaining the final frame"
+  },
+  "failures": [
+    {
+      "stage": "browser provisioning",
+      "detail": "Standard Playwright download returned a truncated ZIP; no product or security flags changed. A separately installed npm Chromium package was decompressed locally for native tests."
+    },
+    {
+      "stage": "PNG admission regression",
+      "detail": "Truncated33-byte PNG and internalCRC damage initially entered writer. Added actual PNG structure/EOF and chunkCRC checks; original regression then passed."
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "editor-frames.zip",
+      "bytes": 1033207,
+      "sha256": "ba073d05014dcc3bff759f47bfee017bc32c3db3adcb4d4a3eaa3e91222d64dd"
+    },
+    {
+      "name": "maximum-96-frames.zip",
+      "bytes": 642668,
+      "sha256": "9baae7551204d1ad356cfe2025b6d461ce8fec3a33d20cfd0c396ef29ca23842"
+    },
+    {
+      "name": "original-full-color-frames.zip",
+      "bytes": 88817,
+      "sha256": "5d477c8576546f172d7648f1c4b285a54437c9cb5407ed74cc2b4e90158b0f47"
+    },
+    {
+      "name": "original-private-frames.zip",
+      "bytes": 85952,
+      "sha256": "364d3291bffb08aad31af26a46c7aaa35086fb8bed4ef7fb1a5fa84f9ebc671c"
+    }
+  ],
+  "ci": {
+    "status": "both first published events passed",
+    "push": {
+      "runId": 37277981373,
+      "jobId": 111659207516,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37277981373",
+      "checkout": "d076b3e27a198a7a6073ed96990497b0b5c3033f",
+      "unit": 237,
+      "browser": 146,
+      "conclusion": "success"
+    },
+    "pullRequest": {
+      "runId": 37277987673,
+      "jobId": 111659228088,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37277987673",
+      "checkout": "6387ecbc021afbb07f566d23e116e018407d93a3",
+      "unit": 237,
+      "browser": 146,
+      "conclusion": "success",
+      "tree": "38b6c0661300a41d80c397ae10098a1f44b5591e"
+    },
+    "evidence": "Original job logs, run/job metadata and actual PR merge Git tree read directly; identical local/push/merge implementation trees."
+  },
+  "limits": [
+    "The archive carries rendered frames rather than editable project data.",
+    "Ancillary capacity padding tests bounded byte admission, not peak memory or general encoding latency."
+  ],
+  "review": {
+    "method": "independent read-only reviewer",
+    "actionableFindings": 0
+  },
+  "implementationCommit": "d076b3e27a198a7a6073ed96990497b0b5c3033f",
+  "verifiedTree": "38b6c0661300a41d80c397ae10098a1f44b5591e"
+}

@@ -1,0 +1,39 @@
+{
+  "issue": 110,
+  "result": "passed",
+  "interfaceIPv4": "172.26.91.247",
+  "port": 35349,
+  "origin": "https://172.26.91.247:35349",
+  "certificate": "Original ephemeral CA with exact actual-interface IP SAN; Python normal chain and hostname verification, no bypass",
+  "project": {
+    "canonicalBytes": 108,
+    "sha256": "da09682e0e90bb89c038ceb3dfa0b896b801830d0b2e5bf9d97c88d02eac6440"
+  },
+  "checks": [
+    "Wrong setup refused before creation",
+    "Read and revoke capabilities are distinct; no cookies",
+    "Original read authority and exact project bytes after same-port CLI restart",
+    "Original revoke authority persists and revoked access remains refused after another CLI restart"
+  ],
+  "restartReadinessMilliseconds": 227.211,
+  "ownedPids": [
+    720535,
+    720551,
+    720567
+  ],
+  "ownedProcessesExited": true,
+  "limits": [
+    "Same host actual private network interface, not physical device or public-internet acceptance",
+    "Empty original 12-frame project exercises transport and durability; media/capacity are separate gates"
+  ],
+  "runner": {
+    "path": "/tmp/motion110-private-interface.py",
+    "bytes": 6240,
+    "sha256": "ddeaa7dc8ff57b780dd4dbfc792e0d0d9310ffed6a107be4e59a8d921985b952"
+  },
+  "log": {
+    "path": "/tmp/motion110-private-interface-first.log",
+    "bytes": 143,
+    "sha256": "3c831ff34d1669e51490f00bb6220bd0239a6e6131d2b793edb4862b81cf2237"
+  }
+}

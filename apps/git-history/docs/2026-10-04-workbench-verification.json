@@ -1,0 +1,135 @@
+{
+  "date": "2026-10-04",
+  "issue": 52,
+  "version": "0.5.0",
+  "environment": {
+    "python311": "Python 3.11.16",
+    "python312": "Python 3.12.14",
+    "python313": "Python 3.13.5",
+    "node": "v24.19.0",
+    "git": "git version 2.52.0"
+  },
+  "verification": {
+    "nativePythonVersions": [
+      "3.11",
+      "3.12",
+      "3.13"
+    ],
+    "discoveredTestsPerVersion": 239,
+    "nativePassedPerVersion": 237,
+    "nativeExpectedSkipsPerVersion": 2,
+    "dependencyFreePython": "3.12",
+    "dependencyFreePassed": 213,
+    "dependencyFreeExpectedSkips": 26,
+    "note": "Complete final dependency-free/native Python matrix and browser job passed in remote CI at the recorded immutable commit.",
+    "sourceBrowserTests": 8,
+    "sourceBrowserSeconds": 11.2,
+    "installedWheelBrowserTests": 7,
+    "installedWheelBrowserSeconds": 9.9,
+    "installedWheelScope": "Service and CLI run outside source tree; enabled Python/TypeScript and other browser flows. The source-tree suite separately verifies actual optional-parser absence with a -S interpreter.",
+    "ruff": "passed",
+    "eslint": "passed",
+    "compile": "passed",
+    "wheelBuild": "passed",
+    "remoteCI": {
+      "conclusion": "success",
+      "commit": "c2bac6c8ef500ea25e346bc1b46646d1f751b48f",
+      "workflowRun": 37175391363,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37175391363",
+      "jobs": [
+        "verify (3.11)",
+        "verify (3.12)",
+        "verify (3.13)",
+        "browser"
+      ]
+    }
+  },
+  "runtimeMaximums": {
+    "browser": "151.0.7922.173",
+    "filesMs": 266.11272299999996,
+    "sourceMs": 220.30927499999984,
+    "functionsMs": 815.78791,
+    "reportMs": 244.5369700000001,
+    "candidateCount": 10000,
+    "fileRows": 50,
+    "physicalSourceLines": 8192,
+    "sourceBytes": 524288,
+    "sourceRows": 100,
+    "functionCount": 10000,
+    "functionRows": 50,
+    "reportBytes": {
+      "json": 4929,
+      "html": 14008
+    },
+    "revision": "dce0489559171b7af777f2331b7e28f48961f1c3",
+    "path": "fixtures/odd\n<script>.py",
+    "anchor": {
+      "hash": "#source",
+      "top": 1326,
+      "target": "source"
+    },
+    "fileFilter": true,
+    "functionFilter": true,
+    "installedWheel": true,
+    "mobileOverflow": false,
+    "errors": [],
+    "external": []
+  },
+  "independentDownloadParity": {
+    "method": "Compare actual browser downloads byte-for-byte to separately invoked installed CLI at identical immutable revision/path/range",
+    "htmlBytes": 14008,
+    "jsonBytes": 4929,
+    "htmlSha256": "8729e8e71b0593bf6f0e9eff8a18f8b293a17deab05f318ab527853ea46a397a",
+    "jsonSha256": "f0e606e25cc0473a09b76b10234806767ddbc7e22ad80f4f9572594767a9c4ce"
+  },
+  "regressionsProvedAndFixed": [
+    "SIGTERM cancels and reaps independently-sessioned active Git child",
+    "Terminal state stays pending until worker cleanup permits replacement",
+    "Same-tab launch-fragment reopening immediately scrubs and restores access",
+    "Report preview uses explicit about:srcdoc internal anchors; real click reaches hash,target,and scroll without weakening opaque sandbox",
+    "Slow-client cap fixture synchronizes actual handler admission before measuring capacity, avoiding unrelated listen-backlog setup race"
+  ],
+  "boundaryEvidence": [
+    "One active job; exact Host/Origin/session access; strict framed bounded JSON; absolute header/body deadline; eight handler cap",
+    "Actual child processes verify cancellation after EOF, deadline, shutdown and aggregate17+17MiB output rejection",
+    "Python AST executes in resource-limited subprocess; large valid source cannot kill service",
+    "Source catalog10000, Python functions10000, root source512KiB/8192lines; persisted browser case524288 physical lines with100-row DOM",
+    "Pinned source/rename history survives moving HEAD and dirty working tree; source and supplied text remain literal",
+    "No browser persistence; stopped/superseded jobs cannot publish downloads; valid report downloads match CLI with supplied context"
+  ],
+  "wheel": {
+    "filename": "local_git_history-0.5.0-py3-none-any.whl",
+    "sha256": "eb23b8b44f1b76aa45f641cf8ea62b3071dec2dc5692fe9243c113fea155894a",
+    "assetsIncluded": true
+  },
+  "limits": [
+    "Linux Chromium runtime; no macOS or physical-mobile acceptance claim",
+    "Read-only local evidence; no semantic generation, source fetching or author-intent inference",
+    "One configured repository and memory-only session; not a multi-user network deployment",
+    "Bounded in-process validation/rendering observes cooperative cancellation between stages"
+  ],
+  "sha256": {
+    "git_history/workbench.py": "1172fbadb4692a2a37f4c580b20180d0ac7c0d82b3b9b08983df9349a93cdb6b",
+    "git_history/work_budget.py": "eb94c4ceb2c5f461544f0c51964a183b7617cc65a8798fec5ce730de9dcf9f1a",
+    "git_history/cli.py": "b329cece39491c0ac6d35a4f1b9ba463e271abbff9a209b5648aa120ca45ff26",
+    "git_history/context.py": "e8c71905b25eed0d02208697bc52e91be2d5df0a53337b600bdea73b2e3a7aed",
+    "git_history/model.py": "f47e8082054eb62bc05c18614dbc5dc095b86eb55faff571470e2c687894a966",
+    "git_history/reader.py": "6e1eb47eeb6f901f5e3322e31dbc95f42b750923af50b7f0954c07e6370d1e99",
+    "git_history/function_parser.py": "fa504db1698b00c6897cb1a38acbb71d5143a57217def7f2fa17033f0e236135",
+    "git_history/runner.py": "15f36bc751f9e117f612319e2d83d0d23ddb2b98628eea2a8892205833af7965",
+    "git_history/native_parser.py": "b9cd98e37bb3cd7d4c00a4729c0219ee4cde7d0ddd0dece7de1cda45856a573a",
+    "git_history/native_protocol.py": "b53cc7c624646ab40b817ee6924ce8badc447e45f920bcc1b07bca6f573147a7",
+    "git_history/native_worker.py": "f2cb0a633185a7695b9dc3826a0cba711745099ffbc25a81b08b739ee1aad0f1",
+    "git_history/web/workbench.html": "f24474f7c4e9b0d84ac1ffb5047bb379f53fa439639417bd9a3f445e08e871a8",
+    "git_history/web/workbench.js": "84af5a853fbd8f1d1dccb40ef284fbba4f80b19db349e67fa526ee4621796616",
+    "git_history/web/workbench.css": "5e4ab22a274f0d3e173f86ad98bef73fbd7019b9e2b163b0adb3e4d7cdd77194",
+    "tests/test_workbench.py": "66185350849565895b5a42f36a0505ecd678f651000896cd5f5dab8ea105a324",
+    "tests/test_workbench_contract.py": "b963d7d5a38c0139af9cfb8b032ec3856839d6f27b7822cce3cb548bc5bcb384",
+    "tests/test_workbench_helpers.py": "ab05099438212b5a3e470a2619a6191c5a4c6edee0f7d7a064c35f6742dab219",
+    "tests/test_work_budget.py": "94d1c2ef923848ae9ea812623bb74fb8ac1e5992c9bf0cfb4a41ecd233aa417b",
+    "tests/browser/workbench.spec.js": "d2c415329af0b1cae7f88d43d6c47125a376b19a11c6721235ef62787b294343",
+    "tests/browser/fixtures.js": "d2e82bd99388e1c3d3a1eb8f56bc40eba0cdf77c1e1d034d7d80ffaa3806387a",
+    "tests/browser/launch_service.py": "778b5a2493c3a608bc05d83541ef23f35b241fd4b68b87236797e685f4c81c44",
+    "tests/browser/python_without_site.py": "7b856e148d3070ee911152d4d1b2177a2908e215c0ae66957603f036d8a66ff5"
+  }
+}

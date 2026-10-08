@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "issue": 123,
+  "version": "0.8.0",
+  "status": "local acceptance and first exact-head push/PR CI passed",
+  "date": "2026-10-05",
+  "scope": "Metadata-only changed-file discovery between two pinned committed trees, explicit source-comparison handoff, canonical portable catalog JSON and CLI. No rename inference or source fetch during discovery.",
+  "python": {
+    "version": "3.12.14",
+    "core": {
+      "discovered": 357,
+      "passed": 331,
+      "intentionalSkips": 26,
+      "seconds": 44.315,
+      "log": {
+        "path": "/tmp/git123-python-core-first.log",
+        "bytes": 64080,
+        "sha256": "a05c90effa6b90a3f167061d3a0ca28b75cd4b3ce00cf2e7d7ae12bd7a2c7d84"
+      }
+    },
+    "nativeRequired": {
+      "discovered": 357,
+      "passed": 355,
+      "intentionalSkips": 2,
+      "seconds": 46.221,
+      "log": {
+        "path": "/tmp/git123-python-native-first.log",
+        "bytes": 62041,
+        "sha256": "329b20ce74271a76a60b46cbe29b54038ab72a2269b3e8f7cd27347a4b8f39c9"
+      }
+    }
+  },
+  "node": {
+    "passed": 17,
+    "milliseconds": 132.264168,
+    "log": {
+      "path": "/tmp/git123-node-first.log",
+      "bytes": 2194,
+      "sha256": "84b21f652c91e200c3f480758ef86becca87d93698aaf5dc48e96b4672c8a4d2"
+    }
+  },
+  "static": {
+    "ruff": {
+      "path": "/tmp/git123-ruff-final.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "eslint": {
+      "path": "/tmp/git123-eslint-first.log",
+      "bytes": 291,
+      "sha256": "972db5032ce2291e2cd43c45731c7a68f80afe234ecc63955c94da9f1544a02c"
+    },
+    "compileall": "passed: git_history and tests; scoped maximum helpers lint/syntax recorded separately"
+  },
+  "browser": {
+    "firstNewCases": {
+      "stats": {
+        "startTime": "2026-10-05T03:13:13.371Z",
+        "duration": 15194.842,
+        "expected": 11,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "result": {
+        "path": "/tmp/git123-native-first-results.json",
+        "bytes": 14323,
+        "sha256": "972f347a1b7ecee44978895495bb97b16051149b280b5e977bbd5db75e766f5f"
+      },
+      "log": {
+        "path": "/tmp/git123-native-first.log",
+        "bytes": 2327,
+        "sha256": "32f99535579afca77ee75d3c913248e06cda92ba75005d3aeef4bac114776b6b"
+      }
+    },
+    "fullSource": {
+      "stats": {
+        "startTime": "2026-10-05T03:13:43.624Z",
+        "duration": 124450.387,
+        "expected": 46,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "result": {
+        "path": "/tmp/git123-full-source-native-results.json",
+        "bytes": 53328,
+        "sha256": "24734571b5aa9320207e078030493e28b7fead7d75648a91e3acf27c9e158c2e"
+      },
+      "log": {
+        "path": "/tmp/git123-full-source-native.log",
+        "bytes": 7514,
+        "sha256": "cd64df102954d0671d1b86a734f172fa0f6cac0a39ef1e1a2df1b689893ec309"
+      }
+    },
+    "installedNativeAttempt": {
+      "stats": {
+        "startTime": "2026-10-05T03:13:55.840Z",
+        "duration": 124900.03,
+        "expected": 44,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "result": {
+        "path": "/tmp/git123-full-wheel-native-results.json",
+        "bytes": 56920,
+        "sha256": "95c236b8b02b35e11ddebf8535b78a7718de168832caaca52547937601d42b39"
+      },
+      "log": {
+        "path": "/tmp/git123-full-wheel-native.log",
+        "bytes": 9885,
+        "sha256": "6ad8c7789a4f418b2960b4139b47b73325853f6e84610c34f300d257ab81dea3"
+      }
+    },
+    "installedCoreCorrection": {
+      "stats": {
+        "startTime": "2026-10-05T03:14:13.519Z",
+        "duration": 10917.846,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "result": {
+        "path": "/tmp/git123-wheel-core-native-results.json",
+        "bytes": 5011,
+        "sha256": "32d975b3695ed692f5ce77b700571e13dc58a0fbf1b7a8a57e13cc4e85f7df82"
+      },
+      "log": {
+        "path": "/tmp/git123-wheel-core-native.log",
+        "bytes": 960,
+        "sha256": "f44d1dc00cd7054541b39544aca2d5e3e94c011e2a49db916c4b215c01b13f74"
+      }
+    },
+    "uniqueInstalledPassingCases": 46,
+    "exactSourceTitleSetMatchesPassingInstalledUnion": true,
+    "runtime": "System Chromium 151.0.7922.173 / Playwright 1.63.0",
+    "firstWheelFailure": "Root grep excluded only one of two controlled missing-native cases, so one existing dependency-failure fixture ran with installed native parsers and failed its expected dependency-error assertion. All 44 applicable native-wheel cases passed; both core fixtures passed in a fresh actually parser-free wheel environment. No test or product expectation changed. Original failed trace retained."
+  },
+  "packaging": {
+    "wheel": {
+      "bytes": 91233,
+      "sha256": "8f2e0b2eea1da10d2910d30218949810d24e42c22e889e38e298fede1384ff50"
+    },
+    "assets": [
+      {
+        "path": "changed-files.js",
+        "bytes": 5948,
+        "sha256": "4f89c19745a269bd937802d924d347787c8e763673c5b2f0db3d32d2048d2a95"
+      },
+      {
+        "path": "context-editor.js",
+        "bytes": 8787,
+        "sha256": "900964a376450b64c51c977e64aa0b404912d7811a28c1f328f979f5494efb48"
+      },
+      {
+        "path": "workbench.css",
+        "bytes": 15630,
+        "sha256": "3aba4a9d0cb1624352c653e05a309ed17022b2155bfa3895cf9bdb9d330dfcdd"
+      },
+      {
+        "path": "workbench.html",
+        "bytes": 26208,
+        "sha256": "cf5aac85b304488e57b5277fcddb902ff807a4f3107d6c1b31d11e359e967ba7"
+      },
+      {
+        "path": "workbench.js",
+        "bytes": 66301,
+        "sha256": "828da925340fe029f3b229e52363cde5029f0cf925183f37e19e32ff270f1ac6"
+      }
+    ],
+    "installedChecks": [
+      {
+        "environment": "core",
+        "version": "0.8.0",
+        "path": "/tmp/git123-installed-core/lib/python3.12/site-packages/git_history/__init__.py",
+        "native": false
+      },
+      {
+        "environment": "native",
+        "version": "0.8.0",
+        "path": "/tmp/git123-installed-native/lib/python3.12/site-packages/git_history/__init__.py",
+        "native": true
+      }
+    ]
+  },
+  "maximum": {
+    "receipt": "2026-10-05-changed-files-maximum.json",
+    "rawChanges": 10000,
+    "overflow": 10001,
+    "catalogBytes": 3890122,
+    "catalogSha256": "48c5b632771029c1f70cef3aa78bf40481792bd52ff9d42448aa6310d4fa820f",
+    "sourceWheelBrowserByteIdentity": true,
+    "actualPinnedComparisonHtmlJsonIdentity": true,
+    "dirtyWorktreeIndexUnchanged": true,
+    "cliMilliseconds": 9595.917427999666,
+    "browserMilliseconds": 9561.537703999998,
+    "ownedServiceStopped": true
+  },
+  "independentEvidence": {
+    "literalOracle": "2026-10-05-changed-files-oracle.json",
+    "browserOracle": "2026-10-05-changed-files-browser-oracle.json",
+    "maximum": "2026-10-05-changed-files-maximum.json",
+    "productionRED": "Kernel, integration and UI receipts retain their actual first missing-feature failures; literal oracle and browser first runtime were green, with no fabricated RED."
+  },
+  "rootInvocationCorrections": [
+    {
+      "attempt": {
+        "path": "/tmp/git123-ruff-first.log",
+        "bytes": 84,
+        "sha256": "7e898f5044bfe0321ece034f65f188b3cd52d76658c57b6b6e93c23984432fe8"
+      },
+      "cause": "Nonexistent Ruff executable; used discovered /tmp/duet-service-checks/bin/ruff."
+    },
+    {
+      "attempt": {
+        "path": "/tmp/git123-install-native-first.log",
+        "bytes": 820,
+        "sha256": "eee7c9323d448da2345d795d365b7f862f66d58025a5a5b4902d7fb5bccc21b0"
+      },
+      "cause": "Root guessed incorrect wheel basename; installed actual built local_git_history wheel with pinned javascript extra."
+    },
+    {
+      "attempt": {
+        "path": "/tmp/git123-maximum-verify-first.log",
+        "bytes": 1672,
+        "sha256": "402b3e15c06af3a5a5f2a0362b9f82a24dcba199edfb34d2ce379295bcddcf69"
+      },
+      "cause": "Root supplied nonexistent interpreter path; corrected to command -v python3 result before producer ran."
+    }
+  ],
+  "limits": [
+    "Metadata regular-file status means uninspected candidate, not valid text or readable source.",
+    "Renames intentionally appear as deletion plus addition; symlink and gitlink rows do not hand off or follow targets.",
+    "No network access, repository writes, worktree reads or automatic source loading during discovery.",
+    "Count-maximum native fixture uses small paths; controlled raw 2 MiB and canonical JSON 8 MiB boundaries are separate and not simultaneous reachable-max claims.",
+    "Local Chromium and CI Chromium measured; no physical device or other browser engine claims."
+  ],
+  "frozenSources": [
+    {
+      "path": "git_history/changed_files.py",
+      "bytes": 13003,
+      "sha256": "c8efe77263f9bcd38e7fac7a64b35ef3dc05f72449ce08ad40e1f9ef6280cf59"
+    },
+    {
+      "path": "git_history/cli.py",
+      "bytes": 16737,
+      "sha256": "68168bc15e9052db45033d82b2931db6ac2028a947af4cf37f903cb41ecb4908"
+    },
+    {
+      "path": "git_history/workbench.py",
+      "bytes": 26586,
+      "sha256": "b554f90648d802030c7b398376faf7748e3b4ef334703aae6e001381811f841e"
+    },
+    {
+      "path": "git_history/web/workbench.js",
+      "bytes": 66301,
+      "sha256": "828da925340fe029f3b229e52363cde5029f0cf925183f37e19e32ff270f1ac6"
+    },
+    {
+      "path": "git_history/web/changed-files.js",
+      "bytes": 5948,
+      "sha256": "4f89c19745a269bd937802d924d347787c8e763673c5b2f0db3d32d2048d2a95"
+    },
+    {
+      "path": "git_history/web/workbench.html",
+      "bytes": 26208,
+      "sha256": "cf5aac85b304488e57b5277fcddb902ff807a4f3107d6c1b31d11e359e967ba7"
+    },
+    {
+      "path": "git_history/web/workbench.css",
+      "bytes": 15630,
+      "sha256": "3aba4a9d0cb1624352c653e05a309ed17022b2155bfa3895cf9bdb9d330dfcdd"
+    },
+    {
+      "path": "tests/test_changed_files.py",
+      "bytes": 13214,
+      "sha256": "7faf7e3d814817bc66daa88eb4b19da64225a0d1e168f7b312a306bc4f037959"
+    },
+    {
+      "path": "tests/test_changed_files_oracle.py",
+      "bytes": 19724,
+      "sha256": "d0446a126d549aea6a2bf6ab0daba2de5c1a012229f8990a0df41db79a87612c"
+    },
+    {
+      "path": "tests/test_changed_files_integration.py",
+      "bytes": 15945,
+      "sha256": "4e771128e6b03b9a9421325ee59405fda10e8024782f942bf9ecddaaa29b82d8"
+    },
+    {
+      "path": "tests/changed-files.test.js",
+      "bytes": 5116,
+      "sha256": "2b901cae05e2b3442e7cc4d623bfcafabe18b866208253427facb05d40fd5156"
+    },
+    {
+      "path": "tests/browser/changed-files.spec.js",
+      "bytes": 17118,
+      "sha256": "5f968ee71d909a7a3d602e42ebe817bc41aea4fa3039dcf112aabf935af5290a"
+    },
+    {
+      "path": "tests/browser/changed-files-fixtures.js",
+      "bytes": 9434,
+      "sha256": "e3b22f73d0d1c96c8d0b1297626dbde9fabf6fd4951fcac5cfd4b98517ba5cd5"
+    },
+    {
+      "path": "scripts/smoke_changed_files.py",
+      "bytes": 13509,
+      "sha256": "cfcea2be28eab7935097abf9d821449c2d0bad2b139a49f4fa27fd46aaacd9dd"
+    },
+    {
+      "path": "scripts/smoke_changed_files_browser.mjs",
+      "bytes": 7877,
+      "sha256": "1b27192336edebfc57802f3968380e9c351bb6ea1d3414e698449e726718a47e"
+    }
+  ],
+  "publication": {
+    "head": "f5260240986b238f7af2bcc3449cabb37d7fc246",
+    "tree": "7ae86dc8cc1a2dff8faa6ed6663ce52e9aec7734",
+    "ciReceipt": "2026-10-05-changed-files-ci.json",
+    "all13PRWorkflowsPassed": true
+  }
+}

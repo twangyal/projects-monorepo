@@ -1,0 +1,459 @@
+{
+  "issue": 113,
+  "scope": "Independent full-editor native backed-recording acceptance; staged distinct coverage, not the full 116-case regression gate.",
+  "recordedAtUtc": "2026-10-04T22:40:35.262278+00:00",
+  "result": {
+    "distinctEditorCases": 10,
+    "passed": 10,
+    "coverageBasis": "Five editor cases passed in the original run; the five original failures passed with unchanged fixtures and assertions after the production pre-arm continuity repair. No claim of a single all-ten repaired run.",
+    "cases": [
+      {
+        "name": "cancelled pending microphone permission releases the actual late stream without notes or reference changes",
+        "passedIn": "first",
+        "durationMs": 1876
+      },
+      {
+        "name": "unapplied raw fields and continuation proposal refuse backed capture before blur without clearing either",
+        "passedIn": "first",
+        "durationMs": 1035
+      },
+      {
+        "name": "declined replacement leaves selected complete take and microphone authority untouched",
+        "passedIn": "first",
+        "durationMs": 2033
+      },
+      {
+        "name": "no eligible unmuted backing refuses with guidance before requesting microphone access",
+        "passedIn": "first",
+        "durationMs": 864
+      },
+      {
+        "name": "390px keyboard capture controls preserve count-in cancellation and fit without horizontal page overflow",
+        "passedIn": "first",
+        "durationMs": 1325
+      },
+      {
+        "name": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+        "passedIn": "affected-after-repair",
+        "durationMs": 8147
+      },
+      {
+        "name": "Finish stays disabled through count-in and Cancel preserves complete project, history and durable PCM",
+        "passedIn": "affected-after-repair",
+        "durationMs": 2715
+      },
+      {
+        "name": "Stop playback and controlled pagehide cancel the whole backed session without publishing partial PCM",
+        "passedIn": "affected-after-repair",
+        "durationMs": 6253
+      },
+      {
+        "name": "silent real microphone completion preserves old notes, reference bytes and redo instead of admitting backing audio",
+        "passedIn": "affected-after-repair",
+        "durationMs": 4556
+      },
+      {
+        "name": "a foreign saved-copy winner during recording retains new complete memory without overwriting durable PCM",
+        "passedIn": "affected-after-repair",
+        "durationMs": 4351
+      }
+    ]
+  },
+  "runs": [
+    {
+      "name": "first",
+      "stats": {
+        "startTime": "2026-10-04T22:23:45.518Z",
+        "duration": 37239.581,
+        "expected": 14,
+        "skipped": 0,
+        "unexpected": 5,
+        "flaky": 0
+      },
+      "totalCases": 19,
+      "editor": {
+        "passed": 5,
+        "failed": 5
+      },
+      "peerLowLevelWorklet": {
+        "passed": 9,
+        "failed": 0,
+        "ownership": "Separate independent worklet owner; not counted as editor cases."
+      },
+      "log": {
+        "path": "/tmp/melody113-new-native-first.log",
+        "bytes": 21676,
+        "sha256": "edf252568d2942bc75a33f31ddd08312867012a5bf91f8ccd8d49e1acee5979e"
+      },
+      "json": {
+        "path": "/tmp/melody113-new-native-results-first.json",
+        "bytes": 56647,
+        "sha256": "23e743c6bf613c99fcc6bbeb9a7cd32e53791102f8ad3c148f4764aa9d458176"
+      },
+      "editorOutcomes": [
+        {
+          "name": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 5897
+            }
+          ]
+        },
+        {
+          "name": "Finish stays disabled through count-in and Cancel preserves complete project, history and durable PCM",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 6229
+            }
+          ]
+        },
+        {
+          "name": "cancelled pending microphone permission releases the actual late stream without notes or reference changes",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1876
+            }
+          ]
+        },
+        {
+          "name": "unapplied raw fields and continuation proposal refuse backed capture before blur without clearing either",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1035
+            }
+          ]
+        },
+        {
+          "name": "declined replacement leaves selected complete take and microphone authority untouched",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 2033
+            }
+          ]
+        },
+        {
+          "name": "no eligible unmuted backing refuses with guidance before requesting microphone access",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 864
+            }
+          ]
+        },
+        {
+          "name": "Stop playback and controlled pagehide cancel the whole backed session without publishing partial PCM",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 6199
+            }
+          ]
+        },
+        {
+          "name": "silent real microphone completion preserves old notes, reference bytes and redo instead of admitting backing audio",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 5908
+            }
+          ]
+        },
+        {
+          "name": "a foreign saved-copy winner during recording retains new complete memory without overwriting durable PCM",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 6234
+            }
+          ]
+        },
+        {
+          "name": "390px keyboard capture controls preserve count-in cancellation and fit without horizontal page overflow",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1325
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "affected-after-repair",
+      "stats": {
+        "startTime": "2026-10-04T22:37:52.493Z",
+        "duration": 18281.862999999998,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "editor": {
+        "passed": 5,
+        "failed": 0
+      },
+      "log": {
+        "path": "/tmp/melody113-affected-native.log",
+        "bytes": 2647,
+        "sha256": "fa163347e033c1367f4708f6688627ad0fd879e901532fd9ad74e6666072d3a7"
+      },
+      "json": {
+        "path": "/tmp/melody113-affected-native-results.json",
+        "bytes": 7872,
+        "sha256": "894249bce5c5ab57363cd662b6e5a7782bd3ae8178f5c8781fbeb4e4ca0bf67c"
+      },
+      "editorOutcomes": [
+        {
+          "name": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 8147
+            }
+          ]
+        },
+        {
+          "name": "Finish stays disabled through count-in and Cancel preserves complete project, history and durable PCM",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 2715
+            }
+          ]
+        },
+        {
+          "name": "Stop playback and controlled pagehide cancel the whole backed session without publishing partial PCM",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 6253
+            }
+          ]
+        },
+        {
+          "name": "silent real microphone completion preserves old notes, reference bytes and redo instead of admitting backing audio",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 4556
+            }
+          ]
+        },
+        {
+          "name": "a foreign saved-copy winner during recording retains new complete memory without overwriting durable PCM",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 4351
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "originalFailure": {
+    "symptom": "Five sessions failed before backing sources were scheduled, with the fixed microphone-capture error; one keyboard/count-in session succeeded.",
+    "diagnosis": "Audio owner instrumented actual startup callbacks: stable stereo blocks of 128 frames with forward pre-arm frame jumps (3584→4224, 3200→3712, 3584→4224). Error preceded arm and backing playback.",
+    "repair": "Production accumulator now permits forward pre-arm gaps only. Armed capture continuity, topology, finite-input and exact frame intersection checks remain strict.",
+    "testChanges": "None between original and affected runs.",
+    "diagnosticOwner": "audio_engine",
+    "diagnosticPath": "/tmp/melody113-diagnostic.json"
+  },
+  "fixtures": {
+    "origin": "Independently authored original four-track composition and distinct reference PCM before producer inspection. Target, muted and zero-volume sentinels distinguish source exclusion; audible two-note backing uses a direct scalar sine/envelope oracle.",
+    "files": [
+      {
+        "path": "/workspace/melody113-native-fixtures/expectations.json",
+        "bytes": 1987,
+        "sha256": "1ecb48f5377063cfc7e17894de516e654b2f4630b79ca106237a7193ccadcef7"
+      },
+      {
+        "path": "/workspace/melody113-native-fixtures/fixture-hashes.json",
+        "bytes": 891,
+        "sha256": "0b9e69c93cddc6cca11c3c73d085cc6969339e00f62db4e35b92320b555d7596"
+      },
+      {
+        "path": "/workspace/melody113-native-fixtures/original-backed.melody.json",
+        "bytes": 120432,
+        "sha256": "85ca0cc1c0c00715f4a2a56af85d3ce160a1b34ee2cdd2f18c7f6f04cceb4cf2"
+      }
+    ]
+  },
+  "actualAudio": {
+    "backingMaxAbsoluteError": 2.5735445177699212e-08,
+    "scheduledClicks": 4,
+    "countInSeconds": 1,
+    "selectedTrackExcluded": true,
+    "otherReferencesExact": true,
+    "oneUndoRedo": true,
+    "rms": 0.1767739368113068,
+    "hz": 440,
+    "frames": 63937,
+    "sha256": "8d489d25000957dcee5ffd0647fa283d5fee3686fa6d1b942d53b37c35073f53",
+    "exports": {
+      "ticksPerBeat": 480,
+      "wavSampleRate": 22050,
+      "wavFrames": 65158,
+      "maximumSignedPcmError": 1
+    },
+    "physicalLatencyMeasured": false
+  },
+  "oracleLimits": {
+    "backingMaximumAbsoluteSampleError": 5e-08,
+    "clickAndBeatZeroScheduleTolerance": "one actual context sample",
+    "microphoneStableInteriorFrequencyToleranceHz": 2,
+    "microphoneStableInteriorRmsExpected": 0.1768,
+    "microphoneStableInteriorRmsTolerance": 0.015,
+    "lastNoteEndToleranceBeats": 0.5,
+    "wavMaximumSignedPcmError": 2,
+    "wavSampling": "Every 37th sample against independently computed full-composition sine/envelope/volume/velocity sum; full frame count and format checked.",
+    "midi": "All note events independently decoded at 480 ticks/beat; 250000 microseconds/beat; mute and velocity checks retained."
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/melody113-native-affected-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/actual-backed-project.melody.json",
+      "bytes": 261095,
+      "sha256": "69f455c339cf473df7b026185913bd374dcdae21c60b6c76f1feba30492cb96e"
+    },
+    {
+      "path": "/workspace/melody113-native-affected-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/actual-backed.mid",
+      "bytes": 277,
+      "sha256": "c5cc4bb4fe1ab360e244f08fb905ce8f43ec99ebfb68cf46754cee0b7f7267dd"
+    },
+    {
+      "path": "/workspace/melody113-native-affected-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/actual-backed.wav",
+      "bytes": 130360,
+      "sha256": "f3d0e3bf7828e65f557410cd531199d6d3f1a7798f20ae3ea34889fc0bc58f9d"
+    },
+    {
+      "path": "/workspace/melody113-native-affected-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/actual-microphone.pcm",
+      "bytes": 127874,
+      "sha256": "8d489d25000957dcee5ffd0647fa283d5fee3686fa6d1b942d53b37c35073f53"
+    },
+    {
+      "path": "/workspace/melody113-native-affected-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/native-audio-receipt.json",
+      "bytes": 494,
+      "sha256": "4e55ba51d2359dbaca8f6a15a4447951077f121cddc7b519ad57a3ea2a344ba1"
+    }
+  ],
+  "originalFailureArtifacts": [
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-Finish-st-b54f8-ect-history-and-durable-PCM/error-context.md",
+      "bytes": 21745,
+      "sha256": "cf62b629b1c60e2de90a1faeb4e56ca4efdb2a6034383cd95cf5b101936e5829"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-Finish-st-b54f8-ect-history-and-durable-PCM/trace.zip",
+      "bytes": 457935,
+      "sha256": "cefa26f9e6d190f4cdadc771ac2a156d83ee7fae20c0726c55cf399a7d37dc76"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-Stop-play-43621-hout-publishing-partial-PCM/error-context.md",
+      "bytes": 26935,
+      "sha256": "c99cbcf39067b55e0ad6ba0b726444361a5f0afc6a52e5ad5df9ec175fa1a438"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-Stop-play-43621-hout-publishing-partial-PCM/trace.zip",
+      "bytes": 446640,
+      "sha256": "921a3b534e29a3f774a0814955588cbc25e14812a6b3078bb6ea43c8d03e94bd"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-a-foreign-e8f90-out-overwriting-durable-PCM/error-context.md",
+      "bytes": 26939,
+      "sha256": "6f7854b6c0a6a530c482e5d9399c63731abe2c74f6bca351fa8b251f98fc2dad"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-a-foreign-e8f90-out-overwriting-durable-PCM/trace.zip",
+      "bytes": 531805,
+      "sha256": "84561d421fb94418005debf189d90e959c3e39c06767c251326f5a318c34afe4"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/error-context.md",
+      "bytes": 21624,
+      "sha256": "7fea2e5d50b02d5f5ee7329f20609e50e02e5cb239bab7688ad718a6fc7de775"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-selected--f49d4-s-all-other-reference-bytes/trace.zip",
+      "bytes": 405171,
+      "sha256": "19bf8e77d474be6f05a1a68340646971b27b715fa8e65e91b6b5bff9c15479d3"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-silent-re-520e6--of-admitting-backing-audio/error-context.md",
+      "bytes": 26949,
+      "sha256": "7ebf7c14e2a187abd24963f9a34641dadb0fbc8af16f658efe256b9822d777c9"
+    },
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-silent-re-520e6--of-admitting-backing-audio/trace.zip",
+      "bytes": 446556,
+      "sha256": "0f16278061181a8afe60ee72a0186b70da94de27fe082d65f392367c0289fd2b"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "/workspace/melody113-native-first-artifacts/backed-recording-390px-key-47865-ut-horizontal-page-overflow/count-in-390.png",
+      "bytes": 312416,
+      "sha256": "0bc406fa7f92e67787c32bb2ae2582f8558bef1560dae8f4d9c44c698dc80c55"
+    }
+  ],
+  "sourceAtReceipt": [
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/backed-recording.spec.ts",
+      "bytes": 12090,
+      "sha256": "99668f08c3e65b7f2a9ef471c81fba243e52b4f450dbb5462f13f449588b36c8"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/tests/backed-recording-fixtures.ts",
+      "bytes": 10229,
+      "sha256": "38af2523f03ec24f0ca311571c7109e96ceb56350eb56a9b349c74a9a5e7dba2"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/backed-frames.ts",
+      "bytes": 5362,
+      "sha256": "3b2e924acb82184db386b4dd9f95a5e6f98258cfe5286544a058ff3079946edf"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/backed-recorder.ts",
+      "bytes": 18252,
+      "sha256": "7fdeaebd8c37ec03a336a01be1eee2786feacf5a0311c6efcbebc44ae412dcab"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/backed-capture.worklet.ts",
+      "bytes": 3338,
+      "sha256": "ea9ab8b0cf6d43bca5eb53b6569cf0f8ac1b1f002395f83cd01a687c12f1aa2a"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/backing.ts",
+      "bytes": 2094,
+      "sha256": "781d58d2c2ca78276cde4169157b12f3a0385e50c8d7ede3599ccc89f41a6381"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/main.ts",
+      "bytes": 104835,
+      "sha256": "1658de54ede1438d64b90ee2082472d8249f1ea52eb86edc837eac3d4195c8ff"
+    }
+  ],
+  "contract": {
+    "path": "/workspace/projects-monorepo/docs/superpowers/specs/2026-10-04-melody-backed-recording-design.md",
+    "bytes": 18413,
+    "sha256": "f4327a6a6d56a7ca134ed9f83ded395cc642b0dc985fcf5306405e4ae4fe7694"
+  },
+  "runtime": {
+    "runner": "Root-owned Playwright 1.63.0 invocation, two workers, Chromium via /usr/bin/chromium, base URL http://127.0.0.1:4306.",
+    "processOwnership": "Root owns these browser/server invocations and their cleanup; this receipt writer started no runtime.",
+    "capture": "Real AudioContext oscillator at 440 Hz through MediaStreamDestination substituted only for microphone permission/input. Native MediaStream source, production AudioWorklet, transcription, normalization, history, IndexedDB and exports ran unchanged. Silent case uses zero gain.",
+    "observation": "BufferSource.start wrapper copies scheduled buffers and timestamps then invokes the original native start unchanged."
+  },
+  "scopeLimits": [
+    "Physical microphone/device latency, acoustic leakage and musical recognition accuracy are not measured. Stream-source buffering is not corrected or shifted.",
+    "Exact graph-frame intersection is covered by the separate nine-case worklet suite, not inferred from editor stream latency.",
+    "Controlled pagehide/pageshow event dispatch is lifecycle simulation, not a claimed native back-forward cache traversal.",
+    "Successful editor persistence was verified through actual completed IndexedDB state and page reload, not a whole-browser process restart in this suite.",
+    "Repeated capture on the shared AudioContext is exercised by Stop followed by a new capture and controlled pagehide.",
+    "This receipt does not claim the maximum-duration probe, full prior regression suite, CI results, or hardware microphone acceptance."
+  ]
+}

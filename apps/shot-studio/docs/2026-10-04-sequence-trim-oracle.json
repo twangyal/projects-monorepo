@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "milestone": 114,
+  "status": "complete:11 independent pure oracle cases pass; no product discrepancy found",
+  "independence": "Literal source films, sample times, camera coordinates and expected schemas authored before reading the new trimming producer. Only baseline source/model/store read. No producer helper computes expected camera/time/migration values.",
+  "test": {
+    "path": "tests/sequence-trim-oracle.test.js",
+    "sha256": "1d80404b258c02061b24883395b5d1cd5ebd7be42e22fa0b86eafd1360227271",
+    "count": 11
+  },
+  "firstActualRun": {
+    "command": "node --test tests/sequence-trim-oracle.test.js",
+    "passed": 1,
+    "failed": 10,
+    "durationMs": 97.867186,
+    "meaning": "Old implementation rejects canonical3 and lacks trimming API/migration. Generic malformed-input rejection passes. No fake stubs or fabricated RED.",
+    "log": "/tmp/shot114-oracle-first.log",
+    "logSha256": "52356e81089ce6e03787456f9affb58d4612720cf8efea6f4bdc393dc2b2cfff"
+  },
+  "preIntegrationFixtureCorrections": [
+    "Removed accidental empty actors assignment from fractional fixture; baseline requires exactly2 actors. Retained original2 actors with legal cues through6seconds within6.3secondfilm.",
+    "Simplified constant100 expression; no numeric expectation changed."
+  ],
+  "scopes": [
+    "Original4secondcamera eyeX -2\u21922 with trim1\u21923 yields -1,0,+1 at selectedlocal0,1,2; sourceprefix2 gives actorclock3,4,5.",
+    "Blocking visibility/action/limb phase and looping originalglobalphase repeat exactly at repeatedclipstart.",
+    "Literal In0.03 Out0.29 explicitend remains0.29 despite reconstructed0.29000000000000004.",
+    "Fractional sourceprefix1.1+1.2 and exactinternaldestinationcuts; selectedEnd distinct from nextStart.",
+    "Literal v2, richv1 and namev1 migrate fullranges, preserve complete source and reject rangefields inlegacy.",
+    "Represented exact0.1 minimum, belowminimum/reversed/nonfinite/outside ranges and negativezero canonicalization.",
+    "20clips alternating1.3/4.7 seconds sum60 underpermutation; real represented excess and21clips reject.",
+    "Atomic detached range/reset/repeat and no-op/failedhistory preserve redo.",
+    "Strictshape/getter rejection withoutinvocation.",
+    "Old rawlocalStorage remainsbyteexact onload; foreignrawprotected andrecoverable.",
+    "Actual300KiB legacyname input and320KiB current input boundaries with +1refusal."
+  ],
+  "limits": [
+    "Pure numerical/state/JSON oracle only; no browser, media pixels, physicalXR or external service execution.",
+    "Source-byte preservation checked by exact original film SHA256; does not claim a simultaneous exact64KiB-per-film maximum."
+  ],
+  "finalIntegration": {
+    "passed": 11,
+    "failed": 0,
+    "durationMs": 99.898381,
+    "evidence": {
+      "path": "/tmp/shot114-oracle-green.log",
+      "bytes": 1221,
+      "sha256": "6ed24907df98118f70c0625e3e23835c88f901f0e9bbd5b6049ec89c4374e25a"
+    },
+    "syntax": "node --check tests/sequence-trim-oracle.test.js exit0",
+    "source": {
+      "path": "src/sequence.js",
+      "bytes": 12900,
+      "sha256": "e9fc3beb5d825b8b2ccb70153d047d25c24e9ba3ae88abc4ab3897cf08fe84f7"
+    },
+    "oracle": {
+      "path": "tests/sequence-trim-oracle.test.js",
+      "bytes": 10842,
+      "sha256": "1d80404b258c02061b24883395b5d1cd5ebd7be42e22fa0b86eafd1360227271"
+    },
+    "unchangedExpectations": "All original scalar/time/coordinate/migration/budget values and exact source-hash assertions unchanged; only documented literal property-order fixture correction after first integration."
+  },
+  "integrationFirst": {
+    "passed": 9,
+    "failed": 2,
+    "durationMs": 96.116289,
+    "evidence": {
+      "path": "/tmp/shot114-oracle-integration.log",
+      "bytes": 3476,
+      "sha256": "ff08b8d5fe49d3bca98ad3254daed4ca2d034ef165ca28e9e31dd851fab7bc66"
+    },
+    "cause": "Fixture property insertion order for loop actor differs from longstanding model canonical order. Exact film values deepStrictEqual and both788bytes; SHA differed only from serialization order.",
+    "correction": "Literal actor keys reordered from name,color,performanceMode,x,z,action to baseline canonical name,x,z,color,action,performanceMode. No production helper used for expected serialization, no numeric/geometry/range values changed and exact SHA assertions retained."
+  }
+}

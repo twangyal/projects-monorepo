@@ -1,0 +1,361 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:12] "GET / HTTP/1.1" 200 -
+
+Running 12 tests using 1 worker
+
+(node:34) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:13] "GET /src/workspace.js HTTP/1.1" 200 -
+  ✘   1 [desktop] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer (1.9s)
+(node:119) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:15] "GET /src/accuracy.js HTTP/1.1" 200 -
+  ✓   2 [desktop] › browser-tests/navigation.spec.js:336:1 › maximum imported notebook and malformed or excessive backups preserve saved and unsaved text (1.7s)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:17] "GET /src/text-entry.js HTTP/1.1" 200 -
+  ✓   3 [desktop] › browser-tests/navigation.spec.js:346:1 › late file read cannot append over a newer selection and current editing remains untouched (1.4s)
+(node:239) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:19] "GET /src/text-entry.js HTTP/1.1" 200 -
+  ✘   4 [narrow] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer (1.7s)
+(node:323) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:21] "GET /src/accuracy.js HTTP/1.1" 200 -
+  ✓   5 [narrow] › browser-tests/navigation.spec.js:336:1 › maximum imported notebook and malformed or excessive backups preserve saved and unsaved text (1.5s)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:22] "GET /src/draft-backup.js HTTP/1.1" 200 -
+  ✓   6 [narrow] › browser-tests/navigation.spec.js:346:1 › late file read cannot append over a newer selection and current editing remains untouched (1.2s)
+(node:437) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:24] "GET /src/text-entry.js HTTP/1.1" 200 -
+  ✘   7 [short] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer (1.6s)
+(node:526) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:26] "GET /src/accuracy.js HTTP/1.1" 200 -
+  ✓   8 [short] › browser-tests/navigation.spec.js:336:1 › maximum imported notebook and malformed or excessive backups preserve saved and unsaved text (1.5s)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:28] "GET /src/text-entry.js HTTP/1.1" 200 -
+  ✓   9 [short] › browser-tests/navigation.spec.js:346:1 › late file read cannot append over a newer selection and current editing remains untouched (1.2s)
+(node:644) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/accuracy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:29] "GET /src/text-entry.js HTTP/1.1" 200 -
+  ✘  10 [compact-boundary] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer (1.6s)
+(node:732) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:31] "GET /src/accuracy.js HTTP/1.1" 200 -
+  ✓  11 [compact-boundary] › browser-tests/navigation.spec.js:336:1 › maximum imported notebook and malformed or excessive backups preserve saved and unsaved text (1.6s)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /styles.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/dwell.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/resolver.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/workspace-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/accuracy-view.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/keyboard.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/workspace.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/draft-backup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/text-entry.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:33] "GET /src/accuracy.js HTTP/1.1" 200 -
+  ✓  12 [compact-boundary] › browser-tests/navigation.spec.js:346:1 › late file read cannot append over a newer selection and current editing remains untouched (1.3s)
+
+
+  1) [desktop] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+    @@ -1,11 +1,11 @@
+      Object {
+        "drafts": Array [
+          Object {
+            "body": "Full original
+      <script>window.injected=true</script>
+    - Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message ",
+    + Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message",
+            "subject": "Original 🦊",
+          },
+        ],
+        "format": "gaze-session-drafts",
+        "version": 1,
+
+      327 |  await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Keep unsaved composer');
+      328 |  const downloadPromise=page.waitForEvent('download');await hold(page,page.locator('#downloadDrafts'));const download=await downloadPromise;const {readFile}=await import('node:fs/promises');const bytes=await readFile(await download.path());
+    > 329 |  expect(JSON.parse(bytes.toString())).toEqual({format:'gaze-session-drafts',version:1,drafts:[{subject:'Original 🦊',body:text}]});await expect(page.locator('#draftBody')).toHaveValue('Keep unsaved composer');
+          |                                       ^
+      330 |  await page.reload();await simulate(page);await expect(page.locator('#draftList article')).toHaveCount(0);
+      331 |  const chooserPromise=page.waitForEvent('filechooser');await hold(page,page.locator('#importDrafts'));const chooser=await chooserPromise;await chooser.setFiles({name:'backup.json',mimeType:'application/json',buffer:bytes});
+      332 |  await expect(page.locator('#draftList article')).toHaveCount(1);await hold(page,page.locator('[data-draft-id="draft-1"] button'));await expect(page.locator('#draftBody')).toHaveValue(text);expect(await page.evaluate(()=>window.injected)).toBeUndefined();
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/browser-tests/navigation.spec.js:329:39
+
+    Error Context: test-results/navigation-gaze-downloads--ef084-without-saving-the-composer-desktop/error-context.md
+
+  2) [narrow] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+    @@ -1,11 +1,11 @@
+      Object {
+        "drafts": Array [
+          Object {
+            "body": "Full original
+      <script>window.injected=true</script>
+    - Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message ",
+    + Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message",
+            "subject": "Original 🦊",
+          },
+        ],
+        "format": "gaze-session-drafts",
+        "version": 1,
+
+      327 |  await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Keep unsaved composer');
+      328 |  const downloadPromise=page.waitForEvent('download');await hold(page,page.locator('#downloadDrafts'));const download=await downloadPromise;const {readFile}=await import('node:fs/promises');const bytes=await readFile(await download.path());
+    > 329 |  expect(JSON.parse(bytes.toString())).toEqual({format:'gaze-session-drafts',version:1,drafts:[{subject:'Original 🦊',body:text}]});await expect(page.locator('#draftBody')).toHaveValue('Keep unsaved composer');
+          |                                       ^
+      330 |  await page.reload();await simulate(page);await expect(page.locator('#draftList article')).toHaveCount(0);
+      331 |  const chooserPromise=page.waitForEvent('filechooser');await hold(page,page.locator('#importDrafts'));const chooser=await chooserPromise;await chooser.setFiles({name:'backup.json',mimeType:'application/json',buffer:bytes});
+      332 |  await expect(page.locator('#draftList article')).toHaveCount(1);await hold(page,page.locator('[data-draft-id="draft-1"] button'));await expect(page.locator('#draftBody')).toHaveValue(text);expect(await page.evaluate(()=>window.injected)).toBeUndefined();
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/browser-tests/navigation.spec.js:329:39
+
+    Error Context: test-results/navigation-gaze-downloads--ef084-without-saving-the-composer-narrow/error-context.md
+
+  3) [short] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+    @@ -1,11 +1,11 @@
+      Object {
+        "drafts": Array [
+          Object {
+            "body": "Full original
+      <script>window.injected=true</script>
+    - Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message ",
+    + Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message",
+            "subject": "Original 🦊",
+          },
+        ],
+        "format": "gaze-session-drafts",
+        "version": 1,
+
+      327 |  await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Keep unsaved composer');
+      328 |  const downloadPromise=page.waitForEvent('download');await hold(page,page.locator('#downloadDrafts'));const download=await downloadPromise;const {readFile}=await import('node:fs/promises');const bytes=await readFile(await download.path());
+    > 329 |  expect(JSON.parse(bytes.toString())).toEqual({format:'gaze-session-drafts',version:1,drafts:[{subject:'Original 🦊',body:text}]});await expect(page.locator('#draftBody')).toHaveValue('Keep unsaved composer');
+          |                                       ^
+      330 |  await page.reload();await simulate(page);await expect(page.locator('#draftList article')).toHaveCount(0);
+      331 |  const chooserPromise=page.waitForEvent('filechooser');await hold(page,page.locator('#importDrafts'));const chooser=await chooserPromise;await chooser.setFiles({name:'backup.json',mimeType:'application/json',buffer:bytes});
+      332 |  await expect(page.locator('#draftList article')).toHaveCount(1);await hold(page,page.locator('[data-draft-id="draft-1"] button'));await expect(page.locator('#draftBody')).toHaveValue(text);expect(await page.evaluate(()=>window.injected)).toBeUndefined();
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/browser-tests/navigation.spec.js:329:39
+
+    Error Context: test-results/navigation-gaze-downloads--ef084-without-saving-the-composer-short/error-context.md
+
+  4) [compact-boundary] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+    @@ -1,11 +1,11 @@
+      Object {
+        "drafts": Array [
+          Object {
+            "body": "Full original
+      <script>window.injected=true</script>
+    - Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message ",
+    + Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message Message",
+            "subject": "Original 🦊",
+          },
+        ],
+        "format": "gaze-session-drafts",
+        "version": 1,
+
+      327 |  await page.locator('#composeButton').click();await page.locator('#draftSubject').fill('Unstored');await page.locator('#draftBody').fill('Keep unsaved composer');
+      328 |  const downloadPromise=page.waitForEvent('download');await hold(page,page.locator('#downloadDrafts'));const download=await downloadPromise;const {readFile}=await import('node:fs/promises');const bytes=await readFile(await download.path());
+    > 329 |  expect(JSON.parse(bytes.toString())).toEqual({format:'gaze-session-drafts',version:1,drafts:[{subject:'Original 🦊',body:text}]});await expect(page.locator('#draftBody')).toHaveValue('Keep unsaved composer');
+          |                                       ^
+      330 |  await page.reload();await simulate(page);await expect(page.locator('#draftList article')).toHaveCount(0);
+      331 |  const chooserPromise=page.waitForEvent('filechooser');await hold(page,page.locator('#importDrafts'));const chooser=await chooserPromise;await chooser.setFiles({name:'backup.json',mimeType:'application/json',buffer:bytes});
+      332 |  await expect(page.locator('#draftList article')).toHaveCount(1);await hold(page,page.locator('[data-draft-id="draft-1"] button'));await expect(page.locator('#draftBody')).toHaveValue(text);expect(await page.evaluate(()=>window.injected)).toBeUndefined();
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/gaze-navigator/browser-tests/navigation.spec.js:329:39
+
+    Error Context: test-results/navigation-gaze-downloads--ef084-without-saving-the-composer-compact-boundary/error-context.md
+
+  4 failed
+    [desktop] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+    [narrow] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+    [short] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+    [compact-boundary] › browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer 
+  8 passed (21.9s)

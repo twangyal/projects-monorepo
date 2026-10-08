@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "output": "/tmp/shot-first-ci-pr-stage/stage-timing-155",
+  "inspectionWallMs": 4497.9348390000005,
+  "videoFrames": 1800,
+  "audioFrames": 2880648
+}

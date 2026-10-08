@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "issue": 110,
+  "scope": "Focused producer project/index/PNG admission only; not complete service acceptance or CI.",
+  "runtime": {
+    "node": "v24.19.0",
+    "pngjs": "7.0.0"
+  },
+  "commands": [
+    "node --experimental-strip-types --test tests/private-admission.test.ts",
+    "node --experimental-strip-types --test --test-name-pattern='shared index' tests/private-admission.test.ts",
+    "node --experimental-strip-types --test --test-name-pattern='high-bit' tests/private-admission.test.ts",
+    "npx eslint server/types.ts server/strict-json.ts server/project-admission.ts server/project.worker.ts server/png-admission.ts tests/private-admission.test.ts",
+    "npx tsc --noEmit"
+  ],
+  "firstObservations": {
+    "callableStubs": "11 tests failed as expected against explicit not-implemented stub; initial cancellation assertion also produced post-test rejection activity because the stub lacked all lifecycle behavior. No missing import/module was counted as an algorithm failure.",
+    "indexStub": "One exact metadata/index test failed against explicit not-implemented index stub.",
+    "firstActual": "11/12 passed; one fixture expected raw input object-key order rather than JSON.stringify(validateProject(input)) canonical order. Changed that assertion to complete detached object equality; image bytes remain exact. No production change for this fixture correction.",
+    "actualDefect": "CRC-valid high-bit ancillary name (0xF4) was masked to ASCII t by Buffer.toString(ascii) and incorrectly admitted. Literal focused case failed with Missing expected rejection. Validate all four raw type bytes as ASCII letters before name decoding. Full suite then passes."
+  },
+  "final": {
+    "tests": 13,
+    "pass": 13,
+    "fail": 0,
+    "durationMs": 3490.761641,
+    "scopedLint": "pass",
+    "typecheck": "Owned modules have no diagnostics; whole-project check at this checkpoint had three in-flight errors in other owners private-api.ts/private-links-fixtures.ts. Root performs final integrated typecheck/build."
+  },
+  "coverage": [
+    "30 fully decoded original PNGs covering all 15 legal type/depth dialects, both ordinary and 5x5 Adam7",
+    "Gray/RGB/palette tRNS and literal unknown ancillary preservation",
+    "Critical and ancillary CRC, complete extents/EOF, contiguous IDAT, APNG/unknown-critical/high-bit-name rejection",
+    "Actual corrupt, short, overinflated, trailing and concatenated zlib streams",
+    "Fatal UTF-8, decoded duplicate keys, finite numbers, depth bounds",
+    "Canonical schema2 JSON/SHA, detached bytes, legal negative-zero model geometry preserved",
+    "Actual singleton worker busy/cancellation/termination and pre-abort",
+    "Exact bounded detached metadata/index validation"
+  ],
+  "limits": {
+    "projectBytes": 6291624,
+    "indexBytes": 8192,
+    "publications": 8,
+    "pngChunks": 4096,
+    "pngAxis": 800,
+    "imageDataUrlBytes": 1572864,
+    "jsonDepth": 32,
+    "jsonValueNodes": 100000,
+    "admissionWorkers": 1,
+    "deadlineMs": 30000,
+    "workerOldGenerationMiB": 64,
+    "workerYoungGenerationMiB": 16
+  },
+  "limitations": [
+    "No measured peak RSS, photographic complexity or general performance claim. Explicit PNG input/inflated/output bounds supplement V8 heap bounds; native buffers are not covered by V8 limits alone.",
+    "Tests use literal zero-filter standard PNG streams; independent oracle adds separate pixel/filter/maximum fixtures.",
+    "Timeout behavior implemented with monotonic success recheck and worker termination; this suite does not claim an observed 30-second timeout.",
+    "No browser, TLS, flock, durable store, maximum service or physical-device acceptance claimed."
+  ],
+  "sources": {
+    "server/types.ts": {
+      "bytes": 4449,
+      "sha256": "70d5aea4aee906d30b5df78582d5534e0519daca7c8eab8c9bfdfec635676a21"
+    },
+    "server/strict-json.ts": {
+      "bytes": 2603,
+      "sha256": "a7e1634cfed1426e855b61210a88420bcba137c988ae69b99fdc68200c12b94d"
+    },
+    "server/project-admission.ts": {
+      "bytes": 2859,
+      "sha256": "16d73b1ab881c28994b945acbf7f160559cec1c1642a2891545f45a8b53eb3a2"
+    },
+    "server/project.worker.ts": {
+      "bytes": 1200,
+      "sha256": "33ea796e25bbf66666dd61f40f43ec8876e988a1183ac5ecc2f55ef0c5ebb898"
+    },
+    "server/png-admission.ts": {
+      "bytes": 4933,
+      "sha256": "f337486b544ca81d34c0ead6a24cf525bef926d6b720a22b4ceef4052b8d7b0e"
+    },
+    "tests/private-admission.test.ts": {
+      "bytes": 8598,
+      "sha256": "be886c7289f8e9804f28b00f343408d35d312bbedd2743a9b6271be1f4689b99"
+    }
+  },
+  "logs": {
+    "motion110-admission-red": {
+      "path": "/tmp/motion110-admission-red.log",
+      "bytes": 15985,
+      "sha256": "97e81b18934cfb596949e78111d2dabcd966e20dcb1b507dd0bd9f3ac45b3398",
+      "observed": {
+        "tests": 11,
+        "pass": 0,
+        "fail": 11,
+        "duration_ms": 103.81516
+      }
+    },
+    "motion110-index-red": {
+      "path": "/tmp/motion110-index-red.log",
+      "bytes": 955,
+      "sha256": "3a957edf456fc1a4be8df27d80c3cdaddf13f0da2ce7e50aa1aca053981eae33",
+      "observed": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "duration_ms": 94.835891
+      }
+    },
+    "motion110-admission-green-first": {
+      "path": "/tmp/motion110-admission-green-first.log",
+      "bytes": 3940,
+      "sha256": "189e7cb3f3560acf424d313e803cf81f25d9ca23a5bb4ca8fb437e2f4cc99c55",
+      "observed": {
+        "tests": 12,
+        "pass": 11,
+        "fail": 1,
+        "duration_ms": 3292.189427
+      }
+    },
+    "motion110-high-bit-red": {
+      "path": "/tmp/motion110-high-bit-red.log",
+      "bytes": 1041,
+      "sha256": "1ba916b5db73b3ab290e73543d5fe1eb178b31ed39ba73366e370d67ce1564c0",
+      "observed": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "duration_ms": 185.245675
+      }
+    },
+    "motion110-admission-green": {
+      "path": "/tmp/motion110-admission-green.log",
+      "bytes": 1429,
+      "sha256": "0e363b2abab5c9b4f9f282f83f023123810e7b086f7f34790f7d41e798346bab",
+      "observed": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "duration_ms": 3490.761641
+      }
+    }
+  }
+}

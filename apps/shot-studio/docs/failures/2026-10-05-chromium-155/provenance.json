@@ -1,0 +1,45 @@
+{
+  "issue": 128,
+  "head": "f00d47d26b388bf47b0327b4a26d47ebefe40779",
+  "status": "open-mixed-full-chromium-results",
+  "push": {
+    "run": 37325505354,
+    "neutralJob": 111815089051,
+    "neutralPassed": 2,
+    "neutralFailed": 2,
+    "maximumJob": 111815088360,
+    "maximum": "pass",
+    "videoFrames": 1800,
+    "decodedStereoAudioFrames": 2880648,
+    "maximumArtifact": 11351468109
+  },
+  "pullRequest": {
+    "run": 37325512881,
+    "neutralJob": 111815116520,
+    "neutralPassed": 4,
+    "neutralFailed": 0,
+    "maximumJob": 111815116937,
+    "maximum": "fail",
+    "failureStage": "actual sixty-second audiovisual export",
+    "failure": "No download within unchanged 95000ms gate; page open and browser connected until harness cleanup",
+    "maximumArtifact": 11351922516,
+    "artifactBytes": 1031742,
+    "artifactSha256": "ce659a546cb8735b09d0d4eaeac1d93f30ad4964e4ff85b9bb7f9b3af741181e"
+  },
+  "preservedFailureFiles": {
+    "first-pr-browser.log": "db0266369d4768a7ee32024ef8414b4cd42d9d26a9d961662d89d586eaf3676f",
+    "first-pr-verification.json": "d30065f0abef9556840c20c958022a22fa15af1e2c01038264bece50aaf76f6a"
+  },
+  "remaining": "Diagnose first PR full Chromium155 export timeout using retained original receipt and browser log. Do not equate successful neutral measurement workflow with all matrix cases passing, widen the original maximum timeout, retry away the first failure, or claim general compatibility. Accepted configured headless #124 gates remain separate.",
+  "wrapUp": {
+    "shotUnitsPassed": 345,
+    "shotUnitDurationMs": 1975.665509,
+    "shotSyntax": "pass",
+    "nativeTests": "Existing accepted CI observed; no additional native run during shutdown",
+    "projectWorkflowsAtHead": {
+      "passed": 13,
+      "failed": 0
+    },
+    "excludedSeparateCompatibilityWorkflow": "PR failure is retained above"
+  }
+}

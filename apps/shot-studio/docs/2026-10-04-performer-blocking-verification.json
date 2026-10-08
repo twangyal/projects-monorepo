@@ -1,0 +1,894 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": 63,
+  "version": "0.3.0",
+  "implementationCommit": "3624f7ebbf8d8e5211a742428d3fedd016ff612b",
+  "scope": "Global timed performer blocking, strict schema3/legacy-loop migration, reversible native cue editing and one shared desktop/export/XR pose evaluator.",
+  "checks": {
+    "unit": {
+      "passed": 107,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 258.986155,
+      "previousCases": 65,
+      "newModel": 14,
+      "newEvaluatorRenderer": 14,
+      "independentOracle": 14,
+      "log": "/tmp/shot-blocking-root-units.log"
+    },
+    "syntax": "npm run check passed including new performer.js",
+    "browser": {
+      "passed": 43,
+      "failed": 0,
+      "previousCases": 29,
+      "new": 14,
+      "reportedDuration": "1.2m",
+      "log": "/tmp/shot-blocking-final43.log",
+      "artifacts": "/tmp/shot-blocking-final43",
+      "port4282Stopped": true
+    },
+    "ci": {
+      "commit": "3624f7ebbf8d8e5211a742428d3fedd016ff612b",
+      "allTwelveProjectWorkflows": "success",
+      "shotRun": 37190620562,
+      "job": 111401828486,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37190620562",
+      "unitPassed": 107,
+      "browserPassed": 43,
+      "browserReportedDuration": "56.9s",
+      "chromium": "153.0.8010.12"
+    }
+  },
+  "environment": {
+    "node": "24.19.0",
+    "localChromium": "151.0.7922.173",
+    "playwright": "1.63.0",
+    "ffmpeg": "7.1.5",
+    "os": "Debian13 Linuxx86_64"
+  },
+  "developmentObservations": [
+    "Model suite first observed 13 meaningful stub failures and one existing-boundary pass; final14 passed. Pure evaluator first observed eight positive stub failures; validation rejection cases could already pass while the stub threw. Two renderer draw-record regressions additionally failed against the old renderer. Final evaluator/renderer suite14 passed.",
+    "Independent oracle14 was authored before reading new producer implementations and passed on its first actual combined execution. No oracle RED or expectation change is claimed.",
+    "Native initial UI RED was the missing Performer motion control. All14 new browser cases passed on their first complete implementation run, including original real-video measurements against predeclared thresholds.",
+    "Root preserved genuine literal schema1/2 inputs and all camera geometry/pixel expectations, updating old canonical output expectations to schema3/loop actors and future-version rejection to4. The old travel helper could no longer relabel a new-format starter as schema2; it now constructs genuine legacy actors.",
+    "First full browser run:40 passed/3 failed, solely remaining old schema2 expected outputs in raw-recovery and XR Undo checks. Literal canonical output mapping corrected those tests; affected3 passed in5.7s, then full43 passed in1.2m. No production change came from those browser failures.",
+    "Independent final source seam review found no additional actionable defect. A separate retained-artifact review decoded original media again without app/test imports; fresh color metrics matched retained measurements exactly and original hashes remained unchanged."
+  ],
+  "nativeMethod": {
+    "originalFixture": "apps/shot-studio/tests/browser/blocking-fixtures.js",
+    "project": "Original arrival and farewell",
+    "durationSeconds": 6,
+    "camera": {
+      "eye": [
+        0,
+        2.2,
+        8
+      ],
+      "target": [
+        0,
+        1.15,
+        0
+      ],
+      "fov": 50
+    },
+    "light": 1,
+    "redCues": [
+      {
+        "time": 0,
+        "x": -1.6,
+        "z": 0,
+        "action": "idle",
+        "visible": true
+      },
+      {
+        "time": 1.5,
+        "x": -0.4,
+        "z": 0,
+        "action": "idle",
+        "visible": true
+      },
+      {
+        "time": 3,
+        "x": -0.4,
+        "z": 0,
+        "action": "wave",
+        "visible": true
+      },
+      {
+        "time": 4.5,
+        "x": -0.4,
+        "z": 0,
+        "action": "idle",
+        "visible": true
+      },
+      {
+        "time": 5.5,
+        "x": 0.8,
+        "z": 0,
+        "action": "idle",
+        "visible": false
+      }
+    ],
+    "greenControl": {
+      "time": 0,
+      "x": 1.8,
+      "z": 0,
+      "action": "idle",
+      "visible": true
+    },
+    "requestedDecodedTimes": [
+      0.3,
+      1.1,
+      1.8,
+      2.6,
+      4.75,
+      5.1,
+      5.75
+    ],
+    "thresholdsFrozenBeforeExports": {
+      "projectionErrorPx": 16,
+      "holdAndControlDriftPx": 4,
+      "arrivalMinimumPx": 32,
+      "departureMinimumPx": 20,
+      "hiddenMaximumRedPixels": 20,
+      "visiblePixelsExclusiveBounds": [
+        400,
+        50000
+      ],
+      "waveEnvelopeErrorPx": 5,
+      "waveWidthDifferenceMinimumPx": 16
+    },
+    "literalWaveTimes": [
+      3.2617993877991496,
+      3.7853981633974483
+    ],
+    "literalWaveArmAngles": [
+      1.3,
+      0.3
+    ],
+    "expectedValues": "Independent scalar pinhole and rotated-box math; no producer pose/projection imports. Actual native canvas PNGs and independently decoded real MediaRecorder WebM frames."
+  },
+  "mediaMeasurements": {
+    "codec": "vp9",
+    "decodedFrames": 173,
+    "span": 5.946,
+    "thresholds": {
+      "projection": 16,
+      "holdControlDrift": 4,
+      "arrival": 32,
+      "departure": 20,
+      "hiddenPixels": 20
+    },
+    "samples": [
+      {
+        "pts": 0.291,
+        "elapsed": 0.291,
+        "red": {
+          "count": 3010,
+          "x": 379.24750830564784,
+          "y": 270.7056478405316,
+          "minX": 344,
+          "maxX": 415,
+          "minY": 246,
+          "maxY": 295
+        },
+        "green": {
+          "count": 3480,
+          "x": 609.539367816092,
+          "y": 270.4471264367816,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": {
+          "x": 381.8874794980336,
+          "y": 270,
+          "minX": 345.4860521756371,
+          "maxX": 417.097239576499,
+          "minY": 245.7315512333273,
+          "maxY": 295.65359532604964
+        }
+      },
+      {
+        "pts": 1.126,
+        "elapsed": 1.126,
+        "red": {
+          "count": 3033,
+          "x": 428.3897131552918,
+          "y": 270.92449719749425,
+          "minX": 394,
+          "maxX": 463,
+          "minY": 246,
+          "maxY": 295
+        },
+        "green": {
+          "count": 3479,
+          "x": 609.5363610232826,
+          "y": 270.43288301235987,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": {
+          "x": 429.8242580932015,
+          "y": 270,
+          "minX": 394.2621444276588,
+          "maxX": 464.19323146497544,
+          "minY": 245.7315512333273,
+          "maxY": 295.65359532604964
+        }
+      },
+      {
+        "pts": 1.793,
+        "elapsed": 1.793,
+        "red": {
+          "count": 3051,
+          "x": 450.4939364142904,
+          "y": 270.8695509668961,
+          "minX": 416,
+          "maxX": 485,
+          "minY": 246,
+          "maxY": 295
+        },
+        "green": {
+          "count": 3479,
+          "x": 609.5363610232826,
+          "y": 270.43288301235987,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": {
+          "x": 451.2953421585821,
+          "y": 270,
+          "minX": 416.1091605980254,
+          "maxX": 485.4763576630264,
+          "minY": 245.7315512333273,
+          "maxY": 295.65359532604964
+        }
+      },
+      {
+        "pts": 2.613,
+        "elapsed": 2.613,
+        "red": {
+          "count": 3051,
+          "x": 450.4939364142904,
+          "y": 270.8695509668961,
+          "minX": 416,
+          "maxX": 485,
+          "minY": 246,
+          "maxY": 295
+        },
+        "green": {
+          "count": 3479,
+          "x": 609.5363610232826,
+          "y": 270.43288301235987,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": {
+          "x": 451.2953421585821,
+          "y": 270,
+          "minX": 416.1091605980254,
+          "maxX": 485.4763576630264,
+          "minY": 245.7315512333273,
+          "maxY": 295.65359532604964
+        }
+      },
+      {
+        "pts": 4.747,
+        "elapsed": 4.747,
+        "red": {
+          "count": 3016,
+          "x": 472.21054376657827,
+          "y": 270.9741379310345,
+          "minX": 438,
+          "maxX": 507,
+          "minY": 246,
+          "maxY": 295
+        },
+        "green": {
+          "count": 3476,
+          "x": 609.5235903337169,
+          "y": 270.43699654775605,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": {
+          "x": 472.56549361907275,
+          "y": 270,
+          "minX": 437.7517260823057,
+          "maxX": 507.1189231473067,
+          "minY": 245.7315512333273,
+          "maxY": 295.65359532604964
+        }
+      },
+      {
+        "pts": 5.113,
+        "elapsed": 5.113,
+        "red": {
+          "count": 3075,
+          "x": 504.88455284552845,
+          "y": 271.0435772357724,
+          "minX": 470,
+          "maxX": 539,
+          "minY": 246,
+          "maxY": 295
+        },
+        "green": {
+          "count": 3474,
+          "x": 609.5437535981578,
+          "y": 270.4504893494531,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": {
+          "x": 504.08320792894966,
+          "y": 270,
+          "minX": 469.8212765569883,
+          "maxX": 539.1884736219893,
+          "minY": 245.7315512333273,
+          "maxY": 295.65359532604964
+        }
+      },
+      {
+        "pts": 5.746,
+        "elapsed": 5.746,
+        "red": {
+          "count": 0,
+          "x": null,
+          "y": null,
+          "minX": 960,
+          "maxX": -1,
+          "minY": 540,
+          "maxY": -1
+        },
+        "green": {
+          "count": 3475,
+          "x": 609.5335251798562,
+          "y": 270.44374100719426,
+          "minX": 574,
+          "maxX": 645,
+          "minY": 246,
+          "maxY": 295
+        },
+        "expectedRed": null
+      }
+    ],
+    "bytes": 168645
+  },
+  "waveMeasurements": [
+    {
+      "time": 3.2617993877991496,
+      "angle": 1.3,
+      "red": {
+        "count": 2723,
+        "x": 450.3492471538744,
+        "y": 269.8369445464561,
+        "minX": 398,
+        "maxX": 503,
+        "minY": 246,
+        "maxY": 294
+      },
+      "green": {
+        "count": 3335,
+        "x": 609.5211394302848,
+        "y": 270.1850074962519,
+        "minX": 574,
+        "maxX": 645,
+        "minY": 245,
+        "maxY": 295
+      }
+    },
+    {
+      "time": 3.7853981633974483,
+      "angle": 0.3,
+      "red": {
+        "count": 2903,
+        "x": 450.34998277643814,
+        "y": 270.42783327592144,
+        "minX": 410,
+        "maxX": 491,
+        "minY": 246,
+        "maxY": 295
+      },
+      "green": {
+        "count": 3335,
+        "x": 609.5211394302848,
+        "y": 270.1850074962519,
+        "minX": 574,
+        "maxX": 645,
+        "minY": 245,
+        "maxY": 295
+      }
+    }
+  ],
+  "separateArtifactReview": {
+    "record": {
+      "path": "/tmp/shot-blocking-artifact-review/verification.json",
+      "bytes": 13397,
+      "sha256": "535cc0d035a767710c7f53fef173d816528adad985601aff2047f1b7eda1da89"
+    },
+    "result": {
+      "schemaVersion": 1,
+      "passedNumerical": true,
+      "sourceCommit": "3624f7ebbf8d8e5211a742428d3fedd016ff612b",
+      "sourceHashes": [
+        {
+          "path": "apps/shot-studio/index.html",
+          "bytes": 7432,
+          "sha256": "08cee111ba06a6c991249bfbb50996399add1bd5b4e26106a7ba1a0d92e25c31"
+        },
+        {
+          "path": "apps/shot-studio/src/app.js",
+          "bytes": 22264,
+          "sha256": "fc848f305ecd6d06ed3595204c3e87e91a6d80cbf2b24bfc2e5252d32d7aae1e"
+        },
+        {
+          "path": "apps/shot-studio/src/draft.js",
+          "bytes": 991,
+          "sha256": "27fbaeb6f405e2a63f8283cfab660c3a52d60b92deac6af32dc1366144fd4686"
+        },
+        {
+          "path": "apps/shot-studio/src/export.js",
+          "bytes": 1885,
+          "sha256": "75105181a4c339d24956fe5e72bdf23033f9d037ee244d43bd301b8e7f67747e"
+        },
+        {
+          "path": "apps/shot-studio/src/history.js",
+          "bytes": 1203,
+          "sha256": "e4d8b52f69a3c14422ecedc81bd33f8eb8921c10df9c28e8e0b6abbada606688"
+        },
+        {
+          "path": "apps/shot-studio/src/math.js",
+          "bytes": 1362,
+          "sha256": "f6ea7af724e074bc435b9ed03ecc15410458542ecce29449cef110deed62542f"
+        },
+        {
+          "path": "apps/shot-studio/src/model.js",
+          "bytes": 12413,
+          "sha256": "6278148fea7e3154f4a9c7255a19237e8ef068ef295c694f5f6388f31d50d771"
+        },
+        {
+          "path": "apps/shot-studio/src/performer.js",
+          "bytes": 3903,
+          "sha256": "02b421fe820d7297d27e4f98477576de572282b60fbd2da608a8df6ff5747c71"
+        },
+        {
+          "path": "apps/shot-studio/src/renderer.js",
+          "bytes": 4281,
+          "sha256": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9"
+        },
+        {
+          "path": "apps/shot-studio/src/xr.js",
+          "bytes": 3288,
+          "sha256": "3dfdef32e90e8932e67bc593e693f1d9a976640f696493e929228f4fb34b81ab"
+        },
+        {
+          "path": "apps/shot-studio/style.css",
+          "bytes": 5230,
+          "sha256": "536e9992baa9f6025fb7f52e3379a6a011a544532b06ee57916cc7d41c3d1897"
+        }
+      ],
+      "inputArtifacts": [
+        {
+          "path": "/tmp/shot-blocking-final43/blocking-actual-decoded-We-4197f-ity-and-control-projections/original-blocking.webm",
+          "bytes": 168645,
+          "sha256": "b52049a8a3b73d3247694994d6be63cb4471bccad9952432b0b4e8a3872afb31"
+        },
+        {
+          "path": "/tmp/shot-blocking-final43/blocking-actual-decoded-We-4197f-ity-and-control-projections/decoded-blocking-measurements.json",
+          "bytes": 4694,
+          "sha256": "27f5d6a86e28f5d70c521c3292d526bb796334d6928cb5a086f2dcfac8b8879f"
+        },
+        {
+          "path": "/tmp/shot-blocking-final43/blocking-literal-wave-phas-6a6cc-ationary-control-stay-fixed/independent-wave-pixels.json",
+          "bytes": 828,
+          "sha256": "07a97d7eda6df201f7f7cc960faab7fe77adf022cbd9815ad6f5e8acc9812f6f"
+        },
+        {
+          "path": "/tmp/shot-blocking-final43/blocking-mobile-keyboard-c-b95d7-thout-changing-preview-time/blocking-mobile.png",
+          "bytes": 181511,
+          "sha256": "8539e178dceeba434ede1fbcca857b2df486ff2b417daed10143027b0b2d2f10"
+        }
+      ],
+      "media": {
+        "codec": "vp9",
+        "width": 960,
+        "height": 540,
+        "decodedFrameCount": 173,
+        "firstPtsSeconds": 0.0,
+        "lastPtsSeconds": 5.946,
+        "presentationSpanSeconds": 5.946,
+        "lastPacketEndSeconds": 5.947,
+        "containerDurationSeconds": null,
+        "note": "Container duration is absent; span and final packet end are independently measured PTS values, not frameIndex/30."
+      },
+      "metrics": {
+        "sixPixelKeys": [
+          "x",
+          "y",
+          "minX",
+          "maxX",
+          "minY",
+          "maxY"
+        ],
+        "maxProjectionErrorPixels": 2.639971192385758,
+        "maxFreshDecodeVsRetainedMetricDelta": 0,
+        "holdMaxDriftPixels": 0.0,
+        "idleControlDriftByKeyPixels": {
+          "x": 0.020163264440839157,
+          "y": 0.01760633709324111,
+          "minX": 0,
+          "maxX": 0,
+          "minY": 0,
+          "maxY": 0
+        },
+        "arrivalDisplacementPixels": 49.142204849643974,
+        "departureDisplacementPixels": 32.67400907895018,
+        "hiddenRedPixelCount": 0,
+        "waveLiteralWidthsPixels": [
+          105,
+          81
+        ],
+        "waveWidthDifferencePixels": 24,
+        "waveLiteralControlMaxDriftPixels": 0.0
+      },
+      "selectedFrames": [
+        {
+          "frameIndex": 6,
+          "pts": 0.291,
+          "image": "/tmp/shot-blocking-artifact-review/frame-01.png",
+          "red": {
+            "count": 3010,
+            "x": 379.24750830564784,
+            "y": 270.7056478405316,
+            "minX": 344,
+            "maxX": 415,
+            "minY": 246,
+            "maxY": 295
+          },
+          "green": {
+            "count": 3480,
+            "x": 609.539367816092,
+            "y": 270.4471264367816,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": {
+            "x": 2.639971192385758,
+            "y": 0.7056478405315829,
+            "minX": 1.4860521756370986,
+            "maxX": 2.097239576499021,
+            "minY": 0.2684487666726909,
+            "maxY": 0.6535953260496399
+          }
+        },
+        {
+          "frameIndex": 30,
+          "pts": 1.126,
+          "image": "/tmp/shot-blocking-artifact-review/frame-02.png",
+          "red": {
+            "count": 3033,
+            "x": 428.3897131552918,
+            "y": 270.92449719749425,
+            "minX": 394,
+            "maxX": 463,
+            "minY": 246,
+            "maxY": 295
+          },
+          "green": {
+            "count": 3479,
+            "x": 609.5363610232826,
+            "y": 270.43288301235987,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": {
+            "x": 1.4345449379096635,
+            "y": 0.9244971974942473,
+            "minX": 0.26214442765882495,
+            "maxX": 1.1932314649754403,
+            "minY": 0.2684487666726909,
+            "maxY": 0.6535953260496399
+          }
+        },
+        {
+          "frameIndex": 48,
+          "pts": 1.793,
+          "image": "/tmp/shot-blocking-artifact-review/frame-03.png",
+          "red": {
+            "count": 3051,
+            "x": 450.4939364142904,
+            "y": 270.8695509668961,
+            "minX": 416,
+            "maxX": 485,
+            "minY": 246,
+            "maxY": 295
+          },
+          "green": {
+            "count": 3479,
+            "x": 609.5363610232826,
+            "y": 270.43288301235987,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": {
+            "x": 0.8014057442917419,
+            "y": 0.8695509668960995,
+            "minX": 0.10916059802542577,
+            "maxX": 0.4763576630264197,
+            "minY": 0.2684487666726909,
+            "maxY": 0.6535953260496399
+          }
+        },
+        {
+          "frameIndex": 73,
+          "pts": 2.613,
+          "image": "/tmp/shot-blocking-artifact-review/frame-04.png",
+          "red": {
+            "count": 3051,
+            "x": 450.4939364142904,
+            "y": 270.8695509668961,
+            "minX": 416,
+            "maxX": 485,
+            "minY": 246,
+            "maxY": 295
+          },
+          "green": {
+            "count": 3479,
+            "x": 609.5363610232826,
+            "y": 270.43288301235987,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": {
+            "x": 0.8014057442917419,
+            "y": 0.8695509668960995,
+            "minX": 0.10916059802542577,
+            "maxX": 0.4763576630264197,
+            "minY": 0.2684487666726909,
+            "maxY": 0.6535953260496399
+          }
+        },
+        {
+          "frameIndex": 136,
+          "pts": 4.747,
+          "image": "/tmp/shot-blocking-artifact-review/frame-07.png",
+          "red": {
+            "count": 3016,
+            "x": 472.21054376657827,
+            "y": 270.9741379310345,
+            "minX": 438,
+            "maxX": 507,
+            "minY": 246,
+            "maxY": 295
+          },
+          "green": {
+            "count": 3476,
+            "x": 609.5235903337169,
+            "y": 270.43699654775605,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": {
+            "x": 0.3549498524944852,
+            "y": 0.9741379310344769,
+            "minX": 0.2482739176942914,
+            "maxX": 0.1189231473067025,
+            "minY": 0.2684487666726909,
+            "maxY": 0.6535953260496399
+          }
+        },
+        {
+          "frameIndex": 147,
+          "pts": 5.113,
+          "image": "/tmp/shot-blocking-artifact-review/frame-08.png",
+          "red": {
+            "count": 3075,
+            "x": 504.88455284552845,
+            "y": 271.0435772357724,
+            "minX": 470,
+            "maxX": 539,
+            "minY": 246,
+            "maxY": 295
+          },
+          "green": {
+            "count": 3474,
+            "x": 609.5437535981578,
+            "y": 270.4504893494531,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": {
+            "x": 0.8013449165787847,
+            "y": 1.043577235772375,
+            "minX": 0.17872344301167686,
+            "maxX": 0.1884736219892602,
+            "minY": 0.2684487666726909,
+            "maxY": 0.6535953260496399
+          }
+        },
+        {
+          "frameIndex": 166,
+          "pts": 5.746,
+          "image": "/tmp/shot-blocking-artifact-review/frame-09.png",
+          "red": {
+            "count": 0,
+            "x": null,
+            "y": null,
+            "minX": 960,
+            "maxX": -1,
+            "minY": 540,
+            "maxY": -1
+          },
+          "green": {
+            "count": 3475,
+            "x": 609.5335251798562,
+            "y": 270.44374100719426,
+            "minX": 574,
+            "maxX": 645,
+            "minY": 246,
+            "maxY": 295
+          },
+          "literalExpectedProjectionErrors": null
+        }
+      ],
+      "additionalWaveFrames": [
+        {
+          "targetSeconds": 3.2617993877991496,
+          "actualPtsSeconds": 3.247,
+          "image": "/tmp/shot-blocking-artifact-review/frame-05.png"
+        },
+        {
+          "targetSeconds": 3.7853981633974483,
+          "actualPtsSeconds": 3.78,
+          "image": "/tmp/shot-blocking-artifact-review/frame-06.png"
+        }
+      ],
+      "method": "Read-only retained artifacts; no app/test imports, server, build or recording. FFprobe actual PTS; FFmpeg existing-video frames; Pillow RGB mask aggregation with R>80,R>2G,R>2B and symmetric green. Six expected values are literal retained JSON numbers; no fit or timing offset.",
+      "hardwareClaims": false,
+      "visualInspection": {
+        "method": "view_image on extracted original-video frames plus retained mobile PNG; no new recording.",
+        "inspectedFrames": [
+          "frame-01.png",
+          "frame-03.png",
+          "frame-05.png",
+          "frame-06.png",
+          "frame-08.png",
+          "frame-09.png"
+        ],
+        "arrivalAndDeparture": "Red performer visibly moves from the left towards center during arrival, holds center, then departs right; green performer and courtyard remain stationary.",
+        "wave": "Frames at actual PTS 3.247 and 3.780 show visibly different raised arm angles without body translation; green performer stays idle.",
+        "hidden": "At actual PTS 5.746 the entire red performer is absent while green performer and courtyard remain visible.",
+        "mobile": "Retained one-column UI is legible; the film position and selected 1.5-second cue are distinct visible controls, with authored blocking, visibility, cue previews and static camera endpoint labels. No obvious clipping/overflow is visible.",
+        "hardwareClaims": false
+      },
+      "passed": true,
+      "thresholds": {
+        "projectionPixels": 16,
+        "holdControlDriftPixels": 4,
+        "arrivalDisplacementPixels": 32,
+        "departureDisplacementPixels": 20,
+        "hiddenPixels": 20,
+        "waveWidthDifferencePixels": 16
+      },
+      "reviewFrameArtifacts": [
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-01.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 102648,
+          "sha256": "44699048ccc4702c8f7f448fe72379b9aa2876874e7283e906aa286a19770a0f"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-02.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 74782,
+          "sha256": "2173c0720f66059e967e636bcece77428c35e3cac10d67c74e92cc646c7ca70d"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-03.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 69680,
+          "sha256": "0051ba1f5bbdf9404d795d124fcf00585a9ce93e1565f16710568560c6da718b"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-04.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 69648,
+          "sha256": "52e30eea3a66ab91691cd2c52a0209844b9d7403dc13033902f40e701da7cc49"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-05.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 70016,
+          "sha256": "b2a62c228e082912929152058ceb22419802e0ac090ac0845e65de1660a861ab"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-06.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 53700,
+          "sha256": "79fa12c2f69726c57b752c43920cce39a89dff372ec58af8201985ef1378f5ed"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-07.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 52586,
+          "sha256": "8d398b1c9791fb18df5de97e23ac3a80d2be6156aeeed6d3bdc1fd86bf1a3a41"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-08.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 52344,
+          "sha256": "f4cd3c2483c882980898153654fb25ba369a85e7516563dae1fd31287f701cda"
+        },
+        {
+          "path": "/tmp/shot-blocking-artifact-review/frame-09.png",
+          "dimensions": [
+            960,
+            540
+          ],
+          "bytes": 45999,
+          "sha256": "1f0f04ea5b3ea66b4387d8fda4a60abee72a6808d221dfe67d7d3307f71486b8"
+        }
+      ]
+    }
+  },
+  "rootVisualInspection": {
+    "path": "/tmp/shot-blocking-final43/blocking-mobile-keyboard-c-b95d7-thout-changing-preview-time/blocking-mobile.png",
+    "observations": "390px native screenshot inspected. Cue list/selection, visible flag, Preview cue focus, camera/performer target labels and exported scene are readable in one column without clipping."
+  },
+  "limits": [
+    "Native WebM requests30fps but does not promise exact frame cadence. The actual file has173 frames and5.946-second first-to-last PTS span, not an invented180frames or container duration. Frame selection uses actual PTS.",
+    "Wave angle equality is independently tested on actual scrubbed WebGL pixels. Existing-video wave frames are separately inspected; the encoded video has ordinary real-time sampling rather than exact requested-angle frames.",
+    "WebXR provider responses are controlled. Shared renderer and captured-cue placement are software acceptance only; physical headset compatibility/comfort/tracking remain open in issue21 and catalog7 remains ACTIVE.",
+    "Blocking has fixed facing, linear positional interpolation and stepped actions/visibility. Limb phase restarts at every cue; no collision avoidance, easing, skeletal rig, generated movement, dialogue/audio, take library or immersive video export.",
+    "Test archives/screenshots in temporary directories are retained session artifacts, while this committed record and test fixtures carry durable provenance and reproducible acceptance."
+  ]
+}

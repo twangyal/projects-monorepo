@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "reviewedAt": "2026-10-05T00:57:28.025747+00:00",
+  "status": "Independent read-only storage/UI cross-seam review clear; no concrete blocker found",
+  "source": [
+    {
+      "path": "apps/lens-studio/src/storage.ts",
+      "bytes": 23021,
+      "sha256": "629cf513bb3891b77a306aa3ccc19263c0afcfd1dd25eb0bde2b6dda2563d521"
+    },
+    {
+      "path": "apps/lens-studio/src/main.ts",
+      "bytes": 42972,
+      "sha256": "636aa04b08b06fb16c4d11935f09f35f96d7aa0b019b6f9b303084695e9235ab"
+    },
+    {
+      "path": "apps/lens-studio/src/images.ts",
+      "bytes": 6209,
+      "sha256": "10bc622ce386264e41c710c9266574fc53d9fbf3e71d4ae9588037aff9aefee9"
+    },
+    {
+      "path": "apps/lens-studio/src/history.ts",
+      "bytes": 2188,
+      "sha256": "d32fdff9022f852f265993caaf4481cad8a58804bdc9339094c29b1659a8909a"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-05-lens-saved-copy-conflicts-design.md",
+      "bytes": 27375,
+      "sha256": "e46316a00e27ed2e8540160c06288f7fc08049c31d20924f7a022e75336053ee"
+    },
+    {
+      "path": "apps/lens-studio/docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4945,
+      "sha256": "a895e90ce52a884e851c312cfe6f95b0db1b10489f283081b9d0c10fa24f45f0"
+    }
+  ],
+  "findings": [],
+  "baseline": {
+    "receipt": "docs/2026-10-05-saved-copy-baseline.json",
+    "classification": "Actual unchanged-build native complete-project overwrite was reproduced by root before production edits. This final source review did not rerun the baseline.",
+    "independentPriorContribution": "Authored the original PNG/settings/literal12-pixel mask runner before runtime; inspected retained decoded pixels and complete stale native values offline. Classifier-only property-order correction left fixture/UI/protection assertions unchanged."
+  },
+  "reviewedInvariants": [
+    {
+      "area": "Whole raw admission and authority",
+      "lines": "storage.ts:58–131,299–332",
+      "result": "Expanded escaped JSON UTF-8 is charged before assembly using separate portable/wrapper caps; depth24/node100000, sorted ordinary data fields, dense arrays and a separate negative-zero position table preserve full original identity. Absent and present undefined differ. Private proof purpose/epoch/used state and caller-signal liveness prevent forged, stale, declined or replacement-purpose load acceptance."
+    },
+    {
+      "area": "Exact complete mutation and queued saves",
+      "lines": "storage.ts:334–388; main.ts:178–214",
+      "result": "Candidate detachment precedes asynchronous admission. Each executing save captures its accepted own expectation before decode, and same-RW-callback native key/value comparison precedes put/delete without await. Only actual complete advances expected state. Third-writer replacement compares the reviewed full value. Conflict retires later queued authority; main drops its debounce/latest pending snapshot, retains memory and does not mark newer generations Saved."
+    },
+    {
+      "area": "Native terminal and proven rollback",
+      "lines": "storage.ts:221–298",
+      "result": "Transaction success requires both callback admission and native complete; held callback cannot fabricate absence and terminal RW callback cannot start a mutation. Absolute checks precede compare/mutation and success/abort. A confirmed ordinary RW abort preserves expectation; unknown outcome, timeout, version change or corrupt read protects/retire authority."
+    },
+    {
+      "area": "Lens actual decode versus logical cancellation",
+      "lines": "storage.ts:133–219,311–329,390–449; images.ts:14–21,86–102",
+      "result": "Storage performs actual bounded PNG decode outside native transactions and load returns the detached raster, avoiding a second UI storage decode. Image timeout or load cancellation promptly rejects and permanently retires the instance. Retained handled actual decoder promises and native terminal promises remain private drains; idempotent close waits the admitted queue and actual drains. Late bitmap closes through existing decoder cleanup and cannot mint authority or dispatch a write. Fresh open retains5s bound and catches upgrade/late-handle cleanup."
+    },
+    {
+      "area": "Independent reopen barrier",
+      "lines": "main.ts:95–134,250–286",
+      "result": "RetireStore detaches the old store from saving and tracks its own target/close promise separately from generation and visible recovery owner. Controls refuse fresh recovery while that exact drain remains. Stale owner finally cannot clear a newer barrier. A decoder that never settles blocks recovery with reload guidance while memory/backup and existing bounded jobs remain usable."
+    },
+    {
+      "area": "Accepted publication and raw/history/gesture preservation",
+      "lines": "main.ts:136–162,243–277,292–369",
+      "result": "Returned project/raster consistency and temporary History admission precede final intent/generation/lifetime checks and synchronous acceptLoad/adoption. Storage-only protection updates controls/status without syncing numeric/title fields, redrawing a source gesture or resetting history. Every raw input/change, button/submit, pointerdown and cancellation retires publication intent, including changed-back text. Explicit successful reload alone intentionally clears local study/history/raw controls, including accepted absence."
+    },
+    {
+      "area": "Replacement and page lifecycle",
+      "lines": "main.ts:317–378",
+      "result": "Replacement is excluded during active scene/gesture/save/recovery/drain work, reviews fresh saved dimensions/title/mode and confirms committed-only exclusion. Failure/cancel remains protected. Successful captured write with newer input requires explicit Retry saving; retired lifetime cannot unprotect or claim Saved. Persisted pagehide cancels transient jobs/gesture without discarding committed source/frame/history/raw fields or automatically reloading; nonpersisted teardown closes the store and owned URLs."
+    },
+    {
+      "area": "Preserved numerical and portable contracts",
+      "result": "Source review found no renderer/model/history/image kernel edit required. Project1 backup, complete normalized PNG, mask/settings, independent numerical tolerances and bounded history stay unchanged; storage wrapper revision is private and not a portable-schema revision."
+    }
+  ],
+  "validation": {
+    "kind": "Read-only source and contract review",
+    "testsRun": false,
+    "browserRun": false,
+    "buildRun": false,
+    "servicesStarted": false,
+    "gitMutation": false,
+    "githubMutation": false,
+    "runtimeClaims": "None by this final reviewer. Root and independent owners provide genuine native, numerical, maximum and restart gates separately."
+  },
+  "limitations": [
+    "Static review does not replace genuine IDB timeout/abort/late-callback, native image drain, focus/caret, BFCache or maximum/restart acceptance.",
+    "Uncancellable native image promises may never settle; the contract intentionally holds recovery behind their actual close drain and offers reload guidance.",
+    "No browser quota/physical RAM/permanent retention, physical lens accuracy or learned depth claim is made."
+  ],
+  "modifiedFiles": [
+    "apps/lens-studio/docs/2026-10-05-saved-copy-review.json"
+  ]
+}

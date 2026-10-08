@@ -1,0 +1,64 @@
+{
+  "issue": 90,
+  "date": "2026-10-04",
+  "status": "complete local acceptance and exact published-head push/PR CI passed",
+  "version": "0.5.0",
+  "sequenceSchemaVersion": 2,
+  "contract": "docs/superpowers/specs/2026-10-04-shot-scene-sequences-design.md",
+  "unit": {
+    "passed": 232,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 870.487207,
+    "logSha256": "63db6bae7c66933ec926620336eb7d3a2198cd9b2176e16c933b2fd3f60d44bf"
+  },
+  "syntax": {
+    "status": "passed",
+    "logSha256": "fcad350ea35ed12952bb97131f8052c6e6f0c034ef8be833d825bee984f12787"
+  },
+  "nativeReceipt": "2026-10-04-scene-sequences-native.json",
+  "maximumReceipt": "2026-10-04-scene-sequences-maximum.json",
+  "historicalNativeReceipt": "2026-10-04-scene-sequences-initial-native.json",
+  "fixtureMigrationReceipt": "2026-10-04-scene-sequences-fixture-migration.json",
+  "sourceSha256": {
+    "src/sequence.js": "c8360cdb5803f0e87aa986929ff604aa5dbba0e9e3a6f459e7b1ab4f5b226f0e",
+    "src/sequence-store.js": "6943e57738f32ee7ef62afc4b59d7d6abbc415179f9bfbf65667d2942f9f2f25",
+    "src/sequence-ui.js": "3210a79b3220a73dc61ecb4dbfb0ea7958720d2a57c44795ba7f70291cbf0134",
+    "src/app.js": "a80b401e16e0b496db3415e8e185cdd587736eadd1ee98cb9b3148bd8deec46f",
+    "src/take-ui.js": "436a43d0a844633725c8445707939dfbfbea77adbb11a17192591edd5e9f7b4e",
+    "index.html": "3aad0d1fddef85a6a7989691a70c3edb1563698d2a89fc56c692fa9d1b00306f",
+    "style.css": "5d453687656bf7ae6df02a2a9ae7a25f5338f2b809c948eb315e1cb1c38601d8",
+    "scripts/smoke_scene_sequences.mjs": "dbebcc8be31d2a9c339dfec1d211648d70c644f1a15b3882159b4a2deb633484",
+    "tests/sequence-duration.test.js": "73d34d6ba4630405f0ba96128e95a4ef9bbd07b0599a8b1504d1f47e9025b284",
+    "tests/sequence-legacy-draft.test.js": "d8581daceed7742f9fc7258dfca4445a3db592d0b6c667e89c6ee68c49326141",
+    "tests/sequence-legacy.test.js": "4a64b71ef200211d77d8b5c3fdac4416d0fa514617b9429bbf929530b50e95ab",
+    "tests/sequence-oracle.test.js": "ece5b7ec30631ccf903bb1e8c317dd4e797b2f28fe6f118e535effe094c48025",
+    "tests/sequence-store.test.js": "ffa2200071984f4dabbbb96acf34c72231a93af78aa00b76aeef96b741bd97b5",
+    "tests/sequence.test.js": "ab2b961ae24a907391421e399d410ebd6faf40554a2857ed720dc469955a596c",
+    "tests/browser/sequence.spec.js": "ed5d5ea69fbba21d38f5cf8563708359353af758b7085d9db5003e0a1f6a828f",
+    "tests/browser/sequence-fixtures.js": "158bfd310bbe770119b36d058d44b26b734c523b51e629e7aea2b6f78d147c96"
+  },
+  "integration": [
+    "Complete detached source films and stable editable clips, original source clocks and selected-shot final camera, fresh silent WebM output.",
+    "Both genuine v1 forms migrate without implicit storage writes. Exact foreign records are protected until deliberate reviewed replacement.",
+    "Concurrent PR95 compensated duration repair retained without epsilon or changing chronological source/cut prefixes. Independent concurrent scalar/draft tests adapted to the sole current implementation.",
+    "Concurrent Color Context and Clothing improvements and prior independent Shot evidence preserved in Git integration."
+  ],
+  "testHistory": [
+    "Original domain/store stubs and absent browser region produced meaningful RED before implementation; independent scalar oracle first actual run was GREEN.",
+    "Initial15 native cases:14 passed; one test omitted required discard confirmation. Corrected only the test interaction and affected case passed.",
+    "Final schema2 native18 passed first run; prior53 passed separately.",
+    "Invalid legacy derived labels preserve exact source films and use a deterministic display fallback; regression reproduced before repair.",
+    "Duration order sensitivity independently reproduced; permanent tests preserve actual excess rejection and original clocks.",
+    "Adapted legacy suite first16/17 and root231/232 failed only guessed default shot labels. Corrected test to literal existing Establishing/Two-shot; all232 then pass."
+  ],
+  "limits": [
+    "Local Chromium151 acceptance is separate from exact published-head Chromium153 CI. Both push and PR CI reran all232 units and71 native cases after the final fractional-quota repair.",
+    "Optimistic localStorage compare-before-write is not atomic cross-tab CAS.",
+    "Maximum topology and exact whitespace raw-file boundary are separate; no maximal canonical/video byte or peak-memory claim.",
+    "40 actual decoded video samples cover all20 clips; no exact30fps/all-frame pixel/device guarantee.",
+    "Physical WebXR headset acceptance remains open in21."
+  ],
+  "publishedHead": "6eef208710871171e8fe78b9ffdf9a2d84aab9be",
+  "ciReceipt": "2026-10-04-scene-sequences-ci.json"
+}

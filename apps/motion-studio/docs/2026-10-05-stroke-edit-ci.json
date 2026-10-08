@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "issue": 122,
+  "status": "both first published events passed",
+  "implementation": {
+    "commit": "6dc7571aef7959d8dbb117b03326506976a320bd",
+    "tree": "6f1787c71987e015e6a6142ec117851bc7730484"
+  },
+  "actualPrMerge": {
+    "commit": "d7b27fec7dc2ca2e05630e07758040d7fd3e43d9",
+    "tree": "6f1787c71987e015e6a6142ec117851bc7730484",
+    "identicalToImplementation": true
+  },
+  "environment": {
+    "os": "Ubuntu 24.04.5",
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12"
+  },
+  "checks": [
+    {
+      "event": "push",
+      "runId": 37257098966,
+      "jobId": 111596428981,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37257098966",
+      "conclusion": "success",
+      "actualCheckout": "6dc7571aef7959d8dbb117b03326506976a320bd",
+      "tree": "6f1787c71987e015e6a6142ec117851bc7730484",
+      "units": 225,
+      "unitDurationMs": 29346.005724,
+      "nativeCases": 141,
+      "browserDisplayedDuration": "1.6m",
+      "otherChecks": [
+        "ESLint",
+        "TypeScript",
+        "normal production build"
+      ],
+      "log": {
+        "path": "/tmp/motion122-ci-push.log",
+        "bytes": 79255,
+        "sha256": "4b77f0319b03a080f7aa7a5f289d5f05374259bb1048c7462d57f7e86efe0b82"
+      }
+    },
+    {
+      "event": "pr",
+      "runId": 37257103189,
+      "jobId": 111596442107,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37257103189",
+      "conclusion": "success",
+      "actualCheckout": "d7b27fec7dc2ca2e05630e07758040d7fd3e43d9",
+      "tree": "6f1787c71987e015e6a6142ec117851bc7730484",
+      "units": 225,
+      "unitDurationMs": 28101.706678,
+      "nativeCases": 141,
+      "browserDisplayedDuration": "1.2m",
+      "otherChecks": [
+        "ESLint",
+        "TypeScript",
+        "normal production build"
+      ],
+      "log": {
+        "path": "/tmp/motion122-ci-pr.log",
+        "bytes": 80292,
+        "sha256": "114f201bd1a88536618466b9bc4c11dbfea2e2fd585ee9330158e56654ffceac"
+      }
+    }
+  ],
+  "widerPr": {
+    "passed": 12,
+    "failed": 1,
+    "runs": [
+      {
+        "name": "Clothing Studio",
+        "id": 37257103240,
+        "conclusion": "success"
+      },
+      {
+        "name": "Melody Studio",
+        "id": 37257103184,
+        "conclusion": "success"
+      },
+      {
+        "name": "Lens Studio",
+        "id": 37257103183,
+        "conclusion": "success"
+      },
+      {
+        "name": "Color Context Lab",
+        "id": 37257103193,
+        "conclusion": "success"
+      },
+      {
+        "name": "Stock Notebook",
+        "id": 37257103215,
+        "conclusion": "success"
+      },
+      {
+        "name": "Motion Studio",
+        "id": 37257103189,
+        "conclusion": "success"
+      },
+      {
+        "name": "Shot Studio",
+        "id": 37257103217,
+        "conclusion": "success"
+      },
+      {
+        "name": "Composure",
+        "id": 37257103218,
+        "conclusion": "success"
+      },
+      {
+        "name": "Karaoke Studio",
+        "id": 37257103207,
+        "conclusion": "failure"
+      },
+      {
+        "name": "Duet",
+        "id": 37257103208,
+        "conclusion": "success"
+      },
+      {
+        "name": "Git History",
+        "id": 37257103179,
+        "conclusion": "success"
+      },
+      {
+        "name": "Style Studio",
+        "id": 37257103177,
+        "conclusion": "success"
+      },
+      {
+        "name": "Friendly Challenges",
+        "id": 37257103180,
+        "conclusion": "success"
+      }
+    ],
+    "limitation": "Concurrent Karaoke CI remains failed at this head. Root preserved the first timing-keyboard readiness trace and a narrow test repair with actual scoped pass under issue121; no all-thirteen-green claim."
+  },
+  "localAndMaximum": "2026-10-05-stroke-edit-verification.json",
+  "limitations": [
+    "Local/CI Chromium and declared fixture capacities do not establish arbitrary browser/device support or peak memory.",
+    "No main merge or deployment."
+  ]
+}

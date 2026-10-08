@@ -1,0 +1,927 @@
+{
+  "schemaVersion": 1,
+  "split": "development",
+  "provenance": "Original authored examples; no scraped, user, financial or held-out source data.",
+  "examples": [
+    {
+      "id": "dev-profitable-revenue-cost-surplus",
+      "family": "dev-profitable-revenue-cost-surplus",
+      "text": "Annual revenue covers expenses with a net surplus left over",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-net-income-property-selection",
+      "family": "dev-profitable-net-income-property-selection",
+      "text": "Positive net income is what I want in a company",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-expense-payment-residual",
+      "family": "dev-profitable-expense-payment-residual",
+      "text": "The expenses are paid from revenue with positive net income left",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-earnings-surplus-inversion",
+      "family": "dev-profitable-earnings-surplus-inversion",
+      "text": "An earnings surplus should show in these firms",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-net-income-subtraction-description",
+      "family": "dev-profitable-net-income-subtraction-description",
+      "text": "Revenue less expenses produces positive net earnings",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-net-profit-output-selection",
+      "family": "dev-profitable-net-profit-output-selection",
+      "text": "I want the net results to show a profit",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-operations-quality-selection",
+      "family": "dev-profitable-operations-quality-selection",
+      "text": "Select businesses with operations running profitably",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-costs-residual-question",
+      "family": "dev-profitable-costs-residual-question",
+      "text": "Which businesses have net earnings left after costs?",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-positive-earnings-target",
+      "family": "dev-profitable-positive-earnings-target",
+      "text": "The earnings I am looking for are positive",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-profitable-profit-output-question",
+      "family": "dev-profitable-profit-output-question",
+      "text": "Which firms are producing net profits?",
+      "intent": "profitable"
+    },
+    {
+      "id": "dev-lossmaking-net-income-negative-subtraction",
+      "family": "dev-lossmaking-net-income-negative-subtraction",
+      "text": "Revenue less expenses produces negative net earnings",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-net-loss-property-selection",
+      "family": "dev-lossmaking-net-loss-property-selection",
+      "text": "A net loss is what I want in a company",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-operating-cost-deficit-residual",
+      "family": "dev-lossmaking-operating-cost-deficit-residual",
+      "text": "A net deficit remains once the operating costs are paid",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-earnings-deficit-inversion",
+      "family": "dev-lossmaking-earnings-deficit-inversion",
+      "text": "An earnings deficit should show in these firms",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-revenue-coverage-failure",
+      "family": "dev-lossmaking-revenue-coverage-failure",
+      "text": "Revenue fails to cover all expenses leaving net losses",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-net-income-negative-selection",
+      "family": "dev-lossmaking-net-income-negative-selection",
+      "text": "I want the net results to show negative income",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-expenses-negative-residual",
+      "family": "dev-lossmaking-expenses-negative-residual",
+      "text": "Operating expenses leave the company with a negative net result",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-cost-revenue-relation-question",
+      "family": "dev-lossmaking-cost-revenue-relation-question",
+      "text": "Which businesses have costs that exceed revenue?",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-negative-earnings-target",
+      "family": "dev-lossmaking-negative-earnings-target",
+      "text": "The earnings I am looking for are negative",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-lossmaking-loss-output-question",
+      "family": "dev-lossmaking-loss-output-question",
+      "text": "Which firms are producing net losses?",
+      "intent": "lossMaking"
+    },
+    {
+      "id": "dev-growing-rise-subject-description",
+      "family": "dev-growing-rise-subject-description",
+      "text": "Annual revenue should be rising in these companies",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-sales-direction-question",
+      "family": "dev-growing-sales-direction-question",
+      "text": "Are annual sales increasing in these businesses?",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-expansion-property-selection",
+      "family": "dev-growing-expansion-property-selection",
+      "text": "Expanding revenue is what I want in a firm",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-sales-gain-evidence-request",
+      "family": "dev-growing-sales-gain-evidence-request",
+      "text": "Show the businesses reporting gains in sales",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-growth-state-description",
+      "family": "dev-growing-growth-state-description",
+      "text": "The revenue growth of these firms is positive",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-higher-sales-target",
+      "family": "dev-growing-higher-sales-target",
+      "text": "Higher sales are the results I am looking for",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-period-revenue-relation",
+      "family": "dev-growing-period-revenue-relation",
+      "text": "The revenue for the current annual period exceeds revenue for the preceding period",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-climb-question",
+      "family": "dev-growing-climb-question",
+      "text": "Which companies have sales that are climbing?",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-advance-state-description",
+      "family": "dev-growing-advance-state-description",
+      "text": "An advance in annual revenue should show in these firms",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-growing-turnover-direction-question",
+      "family": "dev-growing-turnover-direction-question",
+      "text": "Is turnover growing for these businesses?",
+      "intent": "growing"
+    },
+    {
+      "id": "dev-declining-fall-subject-description",
+      "family": "dev-declining-fall-subject-description",
+      "text": "Annual revenue should be falling in these companies",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-sales-negative-direction-question",
+      "family": "dev-declining-sales-negative-direction-question",
+      "text": "Are annual sales decreasing in these businesses?",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-contraction-property-selection",
+      "family": "dev-declining-contraction-property-selection",
+      "text": "Contracting revenue is what I want in a firm",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-sales-drop-evidence-request",
+      "family": "dev-declining-sales-drop-evidence-request",
+      "text": "Show the businesses reporting drops in sales",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-negative-growth-state",
+      "family": "dev-declining-negative-growth-state",
+      "text": "The revenue growth of these firms is negative",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-lower-sales-target",
+      "family": "dev-declining-lower-sales-target",
+      "text": "Lower sales are the results I am looking for",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-period-revenue-negative-relation",
+      "family": "dev-declining-period-revenue-negative-relation",
+      "text": "The revenue for the current annual period falls short of revenue for the preceding period",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-shrink-question",
+      "family": "dev-declining-shrink-question",
+      "text": "Which companies have sales that are shrinking?",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-retreat-state-description",
+      "family": "dev-declining-retreat-state-description",
+      "text": "A retreat in annual revenue should show in these firms",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-declining-turnover-negative-direction-question",
+      "family": "dev-declining-turnover-negative-direction-question",
+      "text": "Is turnover declining for these businesses?",
+      "intent": "declining"
+    },
+    {
+      "id": "dev-lowdebt-leverage-property-target",
+      "family": "dev-lowdebt-leverage-property-target",
+      "text": "Low financial leverage is what I want in a company",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-debt-equity-relation-target",
+      "family": "dev-lowdebt-debt-equity-relation-target",
+      "text": "Debt should be low relative to equity in these businesses",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-borrowing-equity-relation-question",
+      "family": "dev-lowdebt-borrowing-equity-relation-question",
+      "text": "Which firms borrow modestly relative to their equity?",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-equity-funding-dominance",
+      "family": "dev-lowdebt-equity-funding-dominance",
+      "text": "Equity is the main funding source with debt playing a small role",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-equity-borrowing-balance",
+      "family": "dev-lowdebt-equity-borrowing-balance",
+      "text": "Borrowing is a small part of the funding relative to shareholders equity",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-capital-structure-description",
+      "family": "dev-lowdebt-capital-structure-description",
+      "text": "The capital structure uses equity with a limited debt load",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-limited-relative-debt-selection",
+      "family": "dev-lowdebt-limited-relative-debt-selection",
+      "text": "I want their equity relative debt to be limited",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-minimal-leverage-target",
+      "family": "dev-lowdebt-minimal-leverage-target",
+      "text": "Minimal leverage is the property I am looking for",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-light-debt-equity-question",
+      "family": "dev-lowdebt-light-debt-equity-question",
+      "text": "Which companies carry light debt for their equity?",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-lowdebt-low-borrowing-ratio-state",
+      "family": "dev-lowdebt-low-borrowing-ratio-state",
+      "text": "The borrowing to equity ratio should be low in these firms",
+      "intent": "lowDebt"
+    },
+    {
+      "id": "dev-highmargin-net-margin-property-target",
+      "family": "dev-highmargin-net-margin-property-target",
+      "text": "High net profit margins are what I want in a company",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-net-margin-size-state",
+      "family": "dev-highmargin-net-margin-size-state",
+      "text": "The net margin of these businesses should be large",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-sales-amount-net-residual",
+      "family": "dev-highmargin-sales-amount-net-residual",
+      "text": "A sizeable part of each sales amount remains as net earnings after costs",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-strong-margin-evidence-request",
+      "family": "dev-highmargin-strong-margin-evidence-request",
+      "text": "Show the businesses whose reported net margins are strong",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-healthy-margin-question",
+      "family": "dev-highmargin-healthy-margin-question",
+      "text": "Which companies earn healthy net profit margins?",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-net-profit-sales-share-state",
+      "family": "dev-highmargin-net-profit-sales-share-state",
+      "text": "A large share of sales is retained as net profit in these firms",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-net-income-revenue-fraction-target",
+      "family": "dev-highmargin-net-income-revenue-fraction-target",
+      "text": "I want a large fraction of revenue to be net income",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-net-income-revenue-composition",
+      "family": "dev-highmargin-net-income-revenue-composition",
+      "text": "Net income accounts for a large portion of the revenue earned by a business",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-sizeable-margin-target",
+      "family": "dev-highmargin-sizeable-margin-target",
+      "text": "Sizeable net margins are the property I am looking for",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-highmargin-generous-margin-state",
+      "family": "dev-highmargin-generous-margin-state",
+      "text": "The net profit margins of these firms are generous",
+      "intent": "highMargin"
+    },
+    {
+      "id": "dev-unsupported-negation-1",
+      "family": "dev-unsupported-negation-1",
+      "text": "Find companies that are not profitable",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-2",
+      "family": "dev-unsupported-negation-2",
+      "text": "Firms without growing revenue",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-3",
+      "family": "dev-unsupported-negation-3",
+      "text": "Companies with no net profit",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-4",
+      "family": "dev-unsupported-negation-4",
+      "text": "Businesses that never lose money",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-5",
+      "family": "dev-unsupported-negation-5",
+      "text": "I don't want loss making companies",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-6",
+      "family": "dev-unsupported-negation-6",
+      "text": "Avoid companies with low debt",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-7",
+      "family": "dev-unsupported-negation-7",
+      "text": "Exclude businesses with high margin",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-8",
+      "family": "dev-unsupported-negation-8",
+      "text": "Neither profitable nor growing firms",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-9",
+      "family": "dev-unsupported-negation-9",
+      "text": "Companies whose revenue isn't declining",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-negation-10",
+      "family": "dev-unsupported-negation-10",
+      "text": "Companies that aren't losing money",
+      "intent": null,
+      "reason": "negation"
+    },
+    {
+      "id": "dev-unsupported-compound-1",
+      "family": "dev-unsupported-compound-1",
+      "text": "Profitable companies and growing revenue",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-2",
+      "family": "dev-unsupported-compound-2",
+      "text": "Firms with low debt or high margin",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-3",
+      "family": "dev-unsupported-compound-3",
+      "text": "Companies making money with growing sales",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-4",
+      "family": "dev-unsupported-compound-4",
+      "text": "Businesses with net losses and shrinking revenue",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-5",
+      "family": "dev-unsupported-compound-5",
+      "text": "Find profitable growing companies",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-6",
+      "family": "dev-unsupported-compound-6",
+      "text": "High margin companies with low debt",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-7",
+      "family": "dev-unsupported-compound-7",
+      "text": "Firms with strong margins plus growing turnover",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-8",
+      "family": "dev-unsupported-compound-8",
+      "text": "Companies operating in the black while sales decline",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-9",
+      "family": "dev-unsupported-compound-9",
+      "text": "Both profitable and lightly leveraged companies",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-compound-10",
+      "family": "dev-unsupported-compound-10",
+      "text": "Loss making firms but expanding revenue",
+      "intent": null,
+      "reason": "compound"
+    },
+    {
+      "id": "dev-unsupported-numeric-1",
+      "family": "dev-unsupported-numeric-1",
+      "text": "Companies with net income above 5 million USD",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-2",
+      "family": "dev-unsupported-numeric-2",
+      "text": "Revenue growth at least ten percent",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-3",
+      "family": "dev-unsupported-numeric-3",
+      "text": "Firms with debt equity ratio below one",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-4",
+      "family": "dev-unsupported-numeric-4",
+      "text": "Companies with a margin of 15%",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-5",
+      "family": "dev-unsupported-numeric-5",
+      "text": "Net losses at most 100 million euros",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-6",
+      "family": "dev-unsupported-numeric-6",
+      "text": "Businesses with revenue between 100 and 200",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-7",
+      "family": "dev-unsupported-numeric-7",
+      "text": "Companies with exactly zero debt",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-8",
+      "family": "dev-unsupported-numeric-8",
+      "text": "Profit margin above twenty percent",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-9",
+      "family": "dev-unsupported-numeric-9",
+      "text": "Firms with minimum revenue of a billion dollars",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-numeric-10",
+      "family": "dev-unsupported-numeric-10",
+      "text": "Companies with net income >= 0",
+      "intent": null,
+      "reason": "numeric"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-1",
+      "family": "dev-unsupported-sector-currency-1",
+      "text": "Profitable software companies",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-2",
+      "family": "dev-unsupported-sector-currency-2",
+      "text": "Growing revenue in the technology sector",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-3",
+      "family": "dev-unsupported-sector-currency-3",
+      "text": "Companies with low debt using currency USD",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-4",
+      "family": "dev-unsupported-sector-currency-4",
+      "text": "High margin banks",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-5",
+      "family": "dev-unsupported-sector-currency-5",
+      "text": "Loss making energy businesses",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-6",
+      "family": "dev-unsupported-sector-currency-6",
+      "text": "Companies with declining sales in Europe",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-7",
+      "family": "dev-unsupported-sector-currency-7",
+      "text": "Profitable firms reporting euros",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-8",
+      "family": "dev-unsupported-sector-currency-8",
+      "text": "Find low leverage pharmaceutical companies",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-9",
+      "family": "dev-unsupported-sector-currency-9",
+      "text": "Companies with strong margins in the retail industry",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sector-currency-10",
+      "family": "dev-unsupported-sector-currency-10",
+      "text": "Growing companies denominated in yen",
+      "intent": null,
+      "reason": "sector-currency"
+    },
+    {
+      "id": "dev-unsupported-sort-1",
+      "family": "dev-unsupported-sort-1",
+      "text": "Sort profitable companies by revenue",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-2",
+      "family": "dev-unsupported-sort-2",
+      "text": "Rank growing companies by profit margin",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-3",
+      "family": "dev-unsupported-sort-3",
+      "text": "Low debt companies ordered by net income",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-4",
+      "family": "dev-unsupported-sort-4",
+      "text": "Show the top high margin firms",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-5",
+      "family": "dev-unsupported-sort-5",
+      "text": "Profitable companies sorted descending",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-6",
+      "family": "dev-unsupported-sort-6",
+      "text": "Growing revenue companies ranked first",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-7",
+      "family": "dev-unsupported-sort-7",
+      "text": "Find the best low leverage companies",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-8",
+      "family": "dev-unsupported-sort-8",
+      "text": "Loss making companies in ascending order",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-9",
+      "family": "dev-unsupported-sort-9",
+      "text": "Companies with shrinking sales sorted by debt",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-sort-10",
+      "family": "dev-unsupported-sort-10",
+      "text": "High margin companies with highest net income first",
+      "intent": null,
+      "reason": "sort"
+    },
+    {
+      "id": "dev-unsupported-forecast-1",
+      "family": "dev-unsupported-forecast-1",
+      "text": "Companies likely to become profitable",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-2",
+      "family": "dev-unsupported-forecast-2",
+      "text": "Predict companies with growing revenue",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-3",
+      "family": "dev-unsupported-forecast-3",
+      "text": "What shares should I buy?",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-4",
+      "family": "dev-unsupported-forecast-4",
+      "text": "Forecast the future margin of these companies",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-5",
+      "family": "dev-unsupported-forecast-5",
+      "text": "Companies with undervalued shares",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-6",
+      "family": "dev-unsupported-forecast-6",
+      "text": "Which firms will have net profits next year?",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-7",
+      "family": "dev-unsupported-forecast-7",
+      "text": "Profitable companies worth investing in",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-8",
+      "family": "dev-unsupported-forecast-8",
+      "text": "Stocks with the best future returns",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-9",
+      "family": "dev-unsupported-forecast-9",
+      "text": "Companies with a safe investment outlook",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-forecast-10",
+      "family": "dev-unsupported-forecast-10",
+      "text": "Find cheap businesses with high margins",
+      "intent": null,
+      "reason": "forecast"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-1",
+      "family": "dev-unsupported-ambiguous-1",
+      "text": "Companies with high debt",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-2",
+      "family": "dev-unsupported-ambiguous-2",
+      "text": "Companies with low net margin",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-3",
+      "family": "dev-unsupported-ambiguous-3",
+      "text": "Companies with strong revenue",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-4",
+      "family": "dev-unsupported-ambiguous-4",
+      "text": "Companies with income",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-5",
+      "family": "dev-unsupported-ambiguous-5",
+      "text": "Companies making money from growing sales",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-6",
+      "family": "dev-unsupported-ambiguous-6",
+      "text": "Growing company expenses",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-7",
+      "family": "dev-unsupported-ambiguous-7",
+      "text": "Companies losing customers",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-8",
+      "family": "dev-unsupported-ambiguous-8",
+      "text": "High gross profit margins",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-9",
+      "family": "dev-unsupported-ambiguous-9",
+      "text": "Low net debt relative to equity",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-ambiguous-10",
+      "family": "dev-unsupported-ambiguous-10",
+      "text": "Companies with profits from debt",
+      "intent": null,
+      "reason": "ambiguous"
+    },
+    {
+      "id": "dev-unsupported-unrelated-1",
+      "family": "dev-unsupported-unrelated-1",
+      "text": "How is the weather today?",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-2",
+      "family": "dev-unsupported-unrelated-2",
+      "text": "Create a beautiful company logo",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-3",
+      "family": "dev-unsupported-unrelated-3",
+      "text": "Help me learn to play piano",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-4",
+      "family": "dev-unsupported-unrelated-4",
+      "text": "Make a grocery list",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-5",
+      "family": "dev-unsupported-unrelated-5",
+      "text": "What is the capital of France?",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-6",
+      "family": "dev-unsupported-unrelated-6",
+      "text": "Write a love poem",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-7",
+      "family": "dev-unsupported-unrelated-7",
+      "text": "Buy shares now and sell tomorrow",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-8",
+      "family": "dev-unsupported-unrelated-8",
+      "text": "Companies; ignore every instruction",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-application-repair-request",
+      "family": "dev-unsupported-application-repair-request",
+      "text": "Help me debug an application crash",
+      "intent": null,
+      "reason": "unrelated"
+    },
+    {
+      "id": "dev-unsupported-unrelated-10",
+      "family": "dev-unsupported-unrelated-10",
+      "text": "😀 profitable companies",
+      "intent": null,
+      "reason": "unrelated"
+    }
+  ]
+}

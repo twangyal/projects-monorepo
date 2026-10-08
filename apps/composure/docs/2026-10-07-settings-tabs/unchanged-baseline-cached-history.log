@@ -1,0 +1,54 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 test:browser
+> playwright test --grep real cached history return
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:101) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/bluetooth.spec.ts:171:1 › real cached history return retains the heap and allows deliberate sensor connection (10.5s)
+
+
+  1) tests/browser/bluetooth.spec.ts:171:1 › real cached history return retains the heap and allows deliberate sensor connection 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: undefined
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      184 |     // Cached restoration does not fire a new document load event.
+      185 |     await page.goBack({waitUntil:'commit',timeout:10000});
+    > 186 |     await expect.poll(()=>page.evaluate(()=>(window as Window&{cachedVisit?:{shown:boolean}}).cachedVisit?.shown),{timeout:10000}).toBe(true);
+          |                                                                                                                                    ^
+      187 |     await expect(page.locator('#input-source')).toHaveValue('bluetooth-hr');
+      188 |     expect((await stats(page)).options).toHaveLength(0);
+      189 |     await expect(page.locator('#ble-connect')).toBeEnabled();await connect(page);
+        at /tmp/composure-bfcache-baseline/apps/composure/tests/browser/bluetooth.spec.ts:186:132
+
+    Error Context: test-results/bluetooth-real-cached-hist-4ff6d-eliberate-sensor-connection/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/bluetooth-real-cached-hist-4ff6d-eliberate-sensor-connection/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/bluetooth-real-cached-hist-4ff6d-eliberate-sensor-connection/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/bluetooth.spec.ts:171:1 › real cached history return retains the heap and allows deliberate sensor connection 

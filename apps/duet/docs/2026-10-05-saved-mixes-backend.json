@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "date": "2026-10-05",
+  "status": "Backend frozen; scoped producer checks green. Independent/native/full-maximum verification remains separately owned.",
+  "sources": {
+    "duet/store.py": {
+      "path": "/workspace/projects-monorepo/apps/duet/duet/store.py",
+      "bytes": 35901,
+      "sha256": "95268be61a1f3805c9b84cf5331d6b416c08b769ee50576ac75a556de45356e2"
+    },
+    "tests/test_saved_mixes.py": {
+      "path": "/workspace/projects-monorepo/apps/duet/tests/test_saved_mixes.py",
+      "bytes": 15855,
+      "sha256": "69ea06d7b008a89a9294e286107b401fedde8d1e50b5fee458d1334ab53866aa"
+    }
+  },
+  "producerRuns": [
+    {
+      "phase": "First meaningful run against absent feature",
+      "command": "python -m unittest discover -s tests -p test_saved_mixes.py",
+      "log": {
+        "path": "/tmp/duet119-backend-first.log",
+        "bytes": 9166,
+        "sha256": "4ba0e78ad1dd7673bc68fcab8363b894175de2a0d03d3abea116c032009f1579"
+      },
+      "tests": 10,
+      "reportedSeconds": 0.02,
+      "outcome": "RED",
+      "exitCode": 1,
+      "classification": "One actual new-room schema assertion failure and nine missing saved-mix API errors; this is feature absence, not a reproduced data-loss algorithm bug."
+    },
+    {
+      "phase": "First callable implementation",
+      "command": "python -m unittest discover -s tests -p test_saved_mixes.py",
+      "log": {
+        "path": "/tmp/duet119-backend-first-implementation.log",
+        "bytes": 109,
+        "sha256": "1173b97f3b4a9b80377ede8e18f44a77ef68eeaa7f7ab530e66e86335111ef8a"
+      },
+      "tests": 10,
+      "reportedSeconds": 0.036,
+      "outcome": "GREEN",
+      "exitCode": 0
+    },
+    {
+      "phase": "Expanded exact-bound/adversarial cases",
+      "command": "python -m unittest discover -s tests -p test_saved_mixes.py",
+      "log": {
+        "path": "/tmp/duet119-backend-expanded-first.log",
+        "bytes": 112,
+        "sha256": "88d487dc414a75918fa656a16be00516aa76d98a77e8c3dfc740baa47de5ed6b"
+      },
+      "tests": 13,
+      "reportedSeconds": 0.067,
+      "outcome": "GREEN",
+      "exitCode": 0
+    },
+    {
+      "phase": "Final frozen producer suite",
+      "command": "python -m unittest discover -s tests -p test_saved_mixes.py",
+      "log": {
+        "path": "/tmp/duet119-backend-final.log",
+        "bytes": 112,
+        "sha256": "083942298db36f78deff965481032c1f6473e9820a9993bdcd4b58f3708b4fda"
+      },
+      "tests": 13,
+      "reportedSeconds": 0.062,
+      "outcome": "GREEN",
+      "exitCode": 0
+    }
+  ],
+  "staticChecks": [
+    {
+      "command": "/tmp/duet-service-checks/bin/ruff check duet/store.py tests/test_saved_mixes.py",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/duet119-backend-ruff-final.log",
+        "bytes": 19,
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      }
+    },
+    {
+      "command": "python -m py_compile duet/store.py tests/test_saved_mixes.py",
+      "exitCode": 0,
+      "log": {
+        "path": "/tmp/duet119-backend-compile-final.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "contract": {
+    "newRoomSchema": 2,
+    "legacyRoomSchema": 1,
+    "savedMixes": 8,
+    "entriesPerMix": 12,
+    "nameTitleArtistCodePoints": 80,
+    "maxRevision": 9007199254740991,
+    "legacyCoreBytes": 262144,
+    "room2Bytes": 365429,
+    "exportBytes": 393216,
+    "identity": "Mix IDs are fresh32hex; entries preserve exact captured title/artist and missing references. Duplicate names allowed. No media duplication, active-named pointer or persisted availability.",
+    "cas": "Save/update compare displayed playlist and saved-library revisions inside BEGIN IMMEDIATE. Rename/delete compare saved-library revision. Load compares saved-library, playlist and effective playback revisions; it pauses first available at0 and increments both active revisions once.",
+    "compatibility": "Validator admits genuine exact1/2 without mutation. New rooms2; only successful explicit room mutations promote old1. Constructor/read/automatic transition/pause do not independently promote. Archive source rawSQLite is unchanged by archive owners; canonical archive objects do not preserve SQL whitespace.",
+    "rollback": "Owned tests use two real Store connections for one-winner CAS and a real SQLite rejecting trigger for failed-write rawTEXT retention and retry. No fake database."
+  },
+  "exactBoundFixture": {
+    "legacyCoreBytes": 262144,
+    "room2Bytes": 365429,
+    "mixArrayBytes": 103233,
+    "entries": 96,
+    "memories": 100,
+    "description": "Actual valid six-byte escaped C0 names/title/artist reach exact private boundary with16digit saved revision; references may be missing and are metadata only. Complete public export admitted under384KiB. Core+1 refused even with empty saved array; native raw total+1 refused before parse.",
+    "limitations": "This producer fixture does not contain sixty playable media files and is not the separate full-library maximum/native audio gate."
+  },
+  "coverage": [
+    "Detached literal Unicode/whitespace labels and secret exclusion",
+    "Both seats shared metadata editing without transport/vote/current-list changes",
+    "Current Build and explicit membership remain independent from named copies",
+    "Paused first0 loading and stale command rejection even identical order",
+    "Removed captured labels, strict boolean consent and all-missing refusal",
+    "Effective natural-transition revision materialization and backwards-clock monotonicity",
+    "8/+1 capacity, empty update, safe integer/type/name/Unicode/auth boundaries",
+    "Saved and active revision exhaustion before increment",
+    "Legacy raw read/constructor retention, accepted explicit promotion and automatic nonpromotion",
+    "Two real connections and actual SQLite rollback",
+    "Exact aggregate/core byte admission, complete token-free export and strict record corruption refusal"
+  ],
+  "otherOwnersReported": {
+    "archive": "Archive owner reported12 unchanged producer cases GREEN2.839s; not executed by this producer.",
+    "http": "Route owner reported9 unchanged HTTP cases GREEN4.685s; not executed by this producer."
+  },
+  "limitations": [
+    "No broad suite, browser, shared build, live service or Git action by this producer.",
+    "Physical listening/synchronization, music similarity and model accuracy are not claimed.",
+    "SQLite rawTEXT whitespace is preserved on nonmutating reads, but existing authorized service pause/serialization and canonical archive restore do not preserve whitespace.",
+    "Root and independent owners verify complete playable maximum/restart/archive/native outcomes separately."
+  ]
+}

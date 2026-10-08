@@ -1,0 +1,878 @@
+{
+  "schemaVersion": 1,
+  "issue": 86,
+  "date": "2026-10-04",
+  "version": "0.4.0",
+  "scope": "Four bounded retained WebM/immutable-film pairs, native replay and reversible scene restore, atomic local library and complete single-take backup transfer.",
+  "verification": {
+    "unit": {
+      "passed": 146,
+      "failed": 0,
+      "durationMs": 597.8473,
+      "log": "/tmp/shot86-root-unit-final.log"
+    },
+    "syntax": "All production modules and maximum acceptance script passed Node syntax checks. UI/new-browser scoped lint also passed. No bundler required for this native ES-module app.",
+    "browser": {
+      "distinctPassed": 53,
+      "existing": {
+        "passed": 43,
+        "reportedDuration": "1.7m",
+        "log": "/tmp/shot86-existing43.log"
+      },
+      "new": {
+        "schemaVersion": 1,
+        "issue": 86,
+        "createdAt": "2026-10-04T14:46:47.266066+00:00",
+        "browser": "Chromium 151.0.7922.173 built on Debian GNU/Linux 13 (trixie)",
+        "scope": "Independent native browser acceptance for retained takes; two originally authored 2-second films. No actual60-second or synthetic32MiB claim here.",
+        "results": {
+          "initialMissingControlRed": "/tmp/shot86-initial-red.log",
+          "firstIntegratedRun": {
+            "passed": 9,
+            "failed": 1,
+            "log": "/tmp/shot86-native-first.log",
+            "failure": "Test expected video source immediately upon selection; actual interface installs it only after explicit Play. Corrected test ordering; production unchanged."
+          },
+          "contentionRun": {
+            "passed": 0,
+            "failed": 1,
+            "log": "/tmp/shot86-native-playback-green.log",
+            "recording": "/tmp/shot86-native-playback-results/takes-records-two-original-d9d5e-s-and-restores-one-undoably/east.webm",
+            "observedFrames": 16,
+            "observedSpanSeconds": 1.571,
+            "context": "Ran concurrently with existing43-case media suite; no threshold change or product-bug conclusion based on this result."
+          },
+          "isolatedAffectedRun": {
+            "passed": 1,
+            "failed": 0,
+            "seconds": 9.0,
+            "log": "/tmp/shot86-native-isolated-green.log"
+          },
+          "distinctCasesPassed": 10,
+          "sourceChangesRequired": false,
+          "syntaxAndScopedLint": "passed"
+        },
+        "media": {
+          "east": {
+            "codec": "vp9",
+            "frames": 52,
+            "span": 1.942,
+            "samples": [
+              {
+                "time": 0.258,
+                "red": {
+                  "count": 3061,
+                  "x": 424.3966024175106,
+                  "y": 270.9124469127736
+                },
+                "green": {
+                  "count": 3244,
+                  "x": 621.461467324291,
+                  "y": 269.5517879161529
+                }
+              },
+              {
+                "time": 1.02,
+                "red": {
+                  "count": 3035,
+                  "x": 480.3861614497529,
+                  "y": 270.899176276771
+                },
+                "green": {
+                  "count": 3234,
+                  "x": 621.430426716141,
+                  "y": 269.4078540507112
+                }
+              },
+              {
+                "time": 1.718,
+                "red": {
+                  "count": 3096,
+                  "x": 530.8669250645995,
+                  "y": 270.9909560723514
+                },
+                "green": {
+                  "count": 3234,
+                  "x": 621.430426716141,
+                  "y": 269.4078540507112
+                }
+              }
+            ],
+            "sha256": "0682aea363239d04481017006f037e7c7cd9b0523f32305ea4abc0bbb5c3ea02",
+            "bytes": 76457,
+            "maximumCentroidProjectionErrorPixels": 2.3562572866591722,
+            "fixedGreenHorizontalDriftPixels": 0.03104060814996501,
+            "redSignedHorizontalMovementPixels": 106.47032264708889
+          },
+          "west": {
+            "codec": "vp9",
+            "frames": 59,
+            "span": 1.965,
+            "samples": [
+              {
+                "time": 0.315,
+                "red": {
+                  "count": 3062,
+                  "x": 528.7194644023514,
+                  "y": 270.93762246897455
+                },
+                "green": {
+                  "count": 3239,
+                  "x": 621.5158999691263,
+                  "y": 269.47977770916947
+                }
+              },
+              {
+                "time": 1.015,
+                "red": {
+                  "count": 3047,
+                  "x": 478.46997046275027,
+                  "y": 270.8624876928126
+                },
+                "green": {
+                  "count": 3238,
+                  "x": 621.4894996911673,
+                  "y": 269.36812847436687
+                }
+              },
+              {
+                "time": 1.699,
+                "red": {
+                  "count": 3070,
+                  "x": 428.3387622149837,
+                  "y": 270.88273615635177
+                },
+                "green": {
+                  "count": 3237,
+                  "x": 621.444547420451,
+                  "y": 269.38368860055607
+                }
+              }
+            ],
+            "sha256": "be067a42be409af52b54bd1330f21753782cb707faad0154c62d1bed86308585",
+            "bytes": 88560,
+            "maximumCentroidProjectionErrorPixels": 2.0787417866384885,
+            "fixedGreenHorizontalDriftPixels": 0.071352548675236,
+            "redSignedHorizontalMovementPixels": 100.38070218736766
+          },
+          "archives": [
+            {
+              "bytes": 77239,
+              "sha256": "400b6b2a2f344adeaebd1f776d0cda3a0f718da3adef610fe0619f8ac99a949a"
+            },
+            {
+              "bytes": 89342,
+              "sha256": "48453a08061b1a082244ba5fd2b7dacc69b7ff8f78d3eb1500a12a0a61b48472"
+            }
+          ]
+        },
+        "fixedThresholds": {
+          "minimumFramesExclusive": 20,
+          "spanSecondsExclusive": [
+            1.7,
+            3.5
+          ],
+          "sampleTimeToleranceSecondsExclusive": 0.15,
+          "projectionErrorPixelsExclusive": 16,
+          "greenDriftPixelsExclusive": 4,
+          "signedMotionPixelsExclusive": 65
+        },
+        "restart": {
+          "mechanism": "Playwright chromium.launchPersistentContext(profile), await context.close() (closes its dedicated browser process), new launchPersistentContext(same profile), then a distinct fresh profile. No browser PID was captured.",
+          "exactArchiveBytesAfterRestart": true,
+          "exactStoredMetadataAndBlobHashAfterRestart": true,
+          "freshImportPreservesVideoAndFilm": true,
+          "freshImportHasNewLocalIdAndImportedDeclaredOrigin": true,
+          "receipt": {
+            "archiveBytes": 43283,
+            "archiveSha256": "e5c3feb1e6ffb2152df98572b6dfb006e941fd0d51820ebb33ea12b58d5fae97",
+            "receipt": {
+              "schemaVersion": 1,
+              "revision": 1,
+              "records": [
+                {
+                  "metadata": {
+                    "schemaVersion": 1,
+                    "id": "2290bd39-2056-41b5-985a-7d3fa7fc99b0",
+                    "name": "First retained take",
+                    "recordedAt": "2026-10-04T14:41:48.878Z",
+                    "origin": "recorded-here",
+                    "film": {
+                      "schemaVersion": 3,
+                      "title": "Eastward original",
+                      "light": 1,
+                      "actors": [
+                        {
+                          "name": "Scarlet",
+                          "color": "#ff0000",
+                          "performanceMode": "blocking",
+                          "cues": [
+                            {
+                              "time": 0,
+                              "x": -1,
+                              "z": 0,
+                              "action": "idle",
+                              "visible": true
+                            },
+                            {
+                              "time": 2,
+                              "x": 1,
+                              "z": 0,
+                              "action": "idle",
+                              "visible": true
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Green fixed control",
+                          "color": "#00ff00",
+                          "performanceMode": "blocking",
+                          "cues": [
+                            {
+                              "time": 0,
+                              "x": 2,
+                              "z": 0,
+                              "action": "idle",
+                              "visible": true
+                            }
+                          ]
+                        }
+                      ],
+                      "shots": [
+                        {
+                          "name": "Original fixed view",
+                          "duration": 2,
+                          "eye": [
+                            0,
+                            2.2,
+                            8
+                          ],
+                          "target": [
+                            0,
+                            1.15,
+                            0
+                          ],
+                          "fov": 50,
+                          "cameraMode": "static"
+                        }
+                      ]
+                    },
+                    "video": {
+                      "mime": "video/webm;codecs=vp9",
+                      "bytes": 42501,
+                      "sha256": "1b22b744517233cb40e3bf378f8bc241237aba589bb8c132698851b00af8ecac"
+                    }
+                  },
+                  "bytes": 42501,
+                  "sha256": "1b22b744517233cb40e3bf378f8bc241237aba589bb8c132698851b00af8ecac"
+                }
+              ]
+            },
+            "importedReceipt": {
+              "schemaVersion": 1,
+              "revision": 1,
+              "records": [
+                {
+                  "metadata": {
+                    "schemaVersion": 1,
+                    "id": "61728243-dfc3-4e8c-a979-383b73eee073",
+                    "name": "First retained take",
+                    "recordedAt": "2026-10-04T14:41:48.878Z",
+                    "origin": "imported-declared",
+                    "film": {
+                      "schemaVersion": 3,
+                      "title": "Eastward original",
+                      "light": 1,
+                      "actors": [
+                        {
+                          "name": "Scarlet",
+                          "color": "#ff0000",
+                          "performanceMode": "blocking",
+                          "cues": [
+                            {
+                              "time": 0,
+                              "x": -1,
+                              "z": 0,
+                              "action": "idle",
+                              "visible": true
+                            },
+                            {
+                              "time": 2,
+                              "x": 1,
+                              "z": 0,
+                              "action": "idle",
+                              "visible": true
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Green fixed control",
+                          "color": "#00ff00",
+                          "performanceMode": "blocking",
+                          "cues": [
+                            {
+                              "time": 0,
+                              "x": 2,
+                              "z": 0,
+                              "action": "idle",
+                              "visible": true
+                            }
+                          ]
+                        }
+                      ],
+                      "shots": [
+                        {
+                          "name": "Original fixed view",
+                          "duration": 2,
+                          "eye": [
+                            0,
+                            2.2,
+                            8
+                          ],
+                          "target": [
+                            0,
+                            1.15,
+                            0
+                          ],
+                          "fov": 50,
+                          "cameraMode": "static"
+                        }
+                      ]
+                    },
+                    "video": {
+                      "mime": "video/webm;codecs=vp9",
+                      "bytes": 42501,
+                      "sha256": "1b22b744517233cb40e3bf378f8bc241237aba589bb8c132698851b00af8ecac"
+                    }
+                  },
+                  "bytes": 42501,
+                  "sha256": "1b22b744517233cb40e3bf378f8bc241237aba589bb8c132698851b00af8ecac"
+                }
+              ]
+            }
+          }
+        },
+        "otherNativeAssertions": [
+          "Real readwrite put success followed by transaction.abort preserves prior library and retains completed unsaved take backup; retry appends once.",
+          "Two-tab CAS refuses stale rename until explicit reload.",
+          "Present undefined IDB key remains protected; ordinary scene editing remains usable.",
+          "Real delayed Blob.arrayBuffer completion cannot publish after changed-back raw input or controlled persisted page lifecycle; raw caret survives.",
+          "Cancellation and pagehide occur after actual MediaRecorder starts; recorders become inactive and all actual capture tracks end.",
+          "Four actual-video slots refuse a fifth without eviction; truncated, trailing, corrupted hash, oversized declared header and unknown-manifest-key archives reject atomically.",
+          "Native390px keyboard playback and no horizontal page overflow."
+        ],
+        "artifacts": [
+          {
+            "path": "/tmp/shot86-native-isolated-results/takes-records-two-original-d9d5e-s-and-restores-one-undoably/east.shot-take",
+            "bytes": 77239,
+            "sha256": "400b6b2a2f344adeaebd1f776d0cda3a0f718da3adef610fe0619f8ac99a949a"
+          },
+          {
+            "path": "/tmp/shot86-native-isolated-results/takes-records-two-original-d9d5e-s-and-restores-one-undoably/east.webm",
+            "bytes": 76457,
+            "sha256": "0682aea363239d04481017006f037e7c7cd9b0523f32305ea4abc0bbb5c3ea02"
+          },
+          {
+            "path": "/tmp/shot86-native-isolated-results/takes-records-two-original-d9d5e-s-and-restores-one-undoably/take-verification.json",
+            "bytes": 2340,
+            "sha256": "387daca226ed194086e744da3444c4f60f0b7b6c68e74e5ec7683a74da320e16"
+          },
+          {
+            "path": "/tmp/shot86-native-isolated-results/takes-records-two-original-d9d5e-s-and-restores-one-undoably/west.shot-take",
+            "bytes": 89342,
+            "sha256": "48453a08061b1a082244ba5fd2b7dacc69b7ff8f78d3eb1500a12a0a61b48472"
+          },
+          {
+            "path": "/tmp/shot86-native-isolated-results/takes-records-two-original-d9d5e-s-and-restores-one-undoably/west.webm",
+            "bytes": 88560,
+            "sha256": "be067a42be409af52b54bd1330f21753782cb707faad0154c62d1bed86308585"
+          },
+          {
+            "path": "/tmp/shot86-native-results/takes-complete-archives-re-e9caa-esh-profile-declared-import/desktop-take.png",
+            "bytes": 269381,
+            "sha256": "e2fc8d1356ae5ddec4d3615abfa152b7a731fa5de5565601a79c701d29698472"
+          },
+          {
+            "path": "/tmp/shot86-native-results/takes-complete-archives-re-e9caa-esh-profile-declared-import/narrow-imported-take.png",
+            "bytes": 206093,
+            "sha256": "98d6459bb874295fecf0c94eddd49d12aa6f98033e7b1821981eda7058085daa"
+          },
+          {
+            "path": "/tmp/shot86-native-results/takes-complete-archives-re-e9caa-esh-profile-declared-import/restart-verification.json",
+            "bytes": 4654,
+            "sha256": "045a6e7e7043aafb9a7dba5b3d1dc9c655a7359c25dc25839663e0f0a3ac4dad"
+          }
+        ],
+        "sourceHashes": {
+          "src/app.js": "adc1d8748ab81225ae01d026531033a11c7f2aaff4c8917589b1eb2aa7b2a031",
+          "src/draft.js": "27fbaeb6f405e2a63f8283cfab660c3a52d60b92deac6af32dc1366144fd4686",
+          "src/export.js": "8b8a7d38f02af50de05ef71bdbe0a528dd38552c3e70afb93d74d2aae94de299",
+          "src/history.js": "e4d8b52f69a3c14422ecedc81bd33f8eb8921c10df9c28e8e0b6abbada606688",
+          "src/math.js": "f6ea7af724e074bc435b9ed03ecc15410458542ecce29449cef110deed62542f",
+          "src/model.js": "6278148fea7e3154f4a9c7255a19237e8ef068ef295c694f5f6388f31d50d771",
+          "src/performer.js": "02b421fe820d7297d27e4f98477576de572282b60fbd2da608a8df6ff5747c71",
+          "src/renderer.js": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9",
+          "src/take-archive.js": "ff141a9b1ab604eb18089d9c25831f20cbda43c3058c756dec2447ea88aba454",
+          "src/take-store.js": "b3ef6badc3b06f461c69abd4806341e3f7374aa87b8a88bf6e31be939387f11d",
+          "src/take-ui.js": "1b0fafde62fbf1e076f9e10deafac3aab7b9372fc0f940f094e955e2768fa78a",
+          "src/take-video.js": "a0f523ccecbb1ee1965d6dcf1e7e8e846bbfe6be398421c1be24191ed1b683a0",
+          "src/takes.js": "a06e8a21972c8cf678a0f859dea71f89b4315d585656b3618575c878e460d73c",
+          "src/xr.js": "3dfdef32e90e8932e67bc593e693f1d9a976640f696493e929228f4fb34b81ab",
+          "index.html": "4b46589c5c04d8ea74e3ee8ab372de94ee5cf831f7d23f82c05bc61fbdd2ae1e",
+          "style.css": "a0a7131123e9eaa24589442832cfa78a1ed7572b30294119ab197fcd70fd9e91",
+          "tests/browser/takes.spec.js": "658b1f08e3157178bd3bfdeff88947d56d64d1ac0f42395b1fa72ffa85d87717",
+          "tests/browser/take-fixtures.js": "d27cbe0c5a38356ee65513a7d407c89cd87acfcaedc177f5a003f9e0826bd7ab"
+        }
+      }
+    },
+    "maximumNative": {
+      "schemaVersion": 1,
+      "issue": 86,
+      "status": "passed",
+      "fixture": {
+        "shots": 20,
+        "seconds": 60,
+        "performers": 2,
+        "cuesPerPerformer": 32,
+        "canonicalBytes": 6368,
+        "sha256": "91fb792cd559b0f3795e5a762b821fe65b994bee3e9d70b705f554763ce359af"
+      },
+      "checks": [
+        "Four real Blob pairs admitted through native recording/import, each matching the independent film and exact recorded bytes.",
+        "All four full-film pairs and revision survive complete persistent Chromium process restart; original backup bytes identical."
+      ],
+      "limits": [
+        "Original maximum-duration/count fixture; no producer model/math/renderer oracle imports.",
+        "Four slots use one actual sixty-second recording and three imported copies; this is not four separately recorded performances.",
+        "Actual encoded size is measured; this does not claim a32MiB encoded output or128MiB native library. Exact byte limits have separate domain tests.",
+        "Ten decoded landmark samples plus complete decoded frame timestamps; not pixel inspection of every frame."
+      ],
+      "artifacts": [
+        {
+          "name": "maximum-film.json",
+          "bytes": 6368,
+          "sha256": "91fb792cd559b0f3795e5a762b821fe65b994bee3e9d70b705f554763ce359af"
+        },
+        {
+          "name": "maximum-before-restart.shot-take",
+          "bytes": 2185527,
+          "sha256": "63af2819c11553dd9668312e45a3f86c9b7c2b65e41da32fa34a579b2156b202"
+        },
+        {
+          "name": "maximum-after-restart.shot-take",
+          "bytes": 2185527,
+          "sha256": "63af2819c11553dd9668312e45a3f86c9b7c2b65e41da32fa34a579b2156b202"
+        },
+        {
+          "name": "maximum.webm",
+          "bytes": 2178876,
+          "sha256": "1196dd4ea45534267190e9df880dcc6a918d7ac6a778b5508bb91cddbd13a597"
+        },
+        {
+          "name": "desktop.png",
+          "bytes": 301135,
+          "sha256": "3812c2c989f082b6a320b1b5b5275d21ad4de8af64d6c31ef7a5dee88dbb632f"
+        },
+        {
+          "name": "390px.png",
+          "bytes": 255452,
+          "sha256": "cd37261216983c2016bb404b957e0b9e129949e478ce425e75604ac9a8d704e3"
+        }
+      ],
+      "browser": "151.0.7922.173",
+      "firstProcess": [
+        592295
+      ],
+      "recordAndSaveMs": 60764.158455000004,
+      "video": {
+        "bytes": 2178876,
+        "sha256": "1196dd4ea45534267190e9df880dcc6a918d7ac6a778b5508bb91cddbd13a597",
+        "codec": "vp9",
+        "decodedFrames": 1706,
+        "spanSeconds": 59.936,
+        "projectionTolerancePixels": 16,
+        "samples": [
+          {
+            "frame": 40,
+            "pts": 2.003,
+            "elapsed": 2.003,
+            "red": {
+              "count": 3094,
+              "x": 374.6683904330963,
+              "y": 271.96250808015515
+            },
+            "green": {
+              "count": 3303,
+              "x": 604.8673932788374,
+              "y": 268.90311837723283
+            },
+            "expectedRed": {
+              "x": 376.34049767011163,
+              "y": 271.2592232118071
+            },
+            "expectedGreen": {
+              "x": 605.4753718148611,
+              "y": 268.4757644292313
+            }
+          },
+          {
+            "frame": 207,
+            "pts": 8.017,
+            "elapsed": 8.017,
+            "red": {
+              "count": 2971,
+              "x": 391.3147088522383,
+              "y": 269.41400201952206
+            },
+            "green": {
+              "count": 3166,
+              "x": 609.0521162349968,
+              "y": 271.3932406822489
+            },
+            "expectedRed": {
+              "x": 393.516621362005,
+              "y": 268.9494269664744
+            },
+            "expectedGreen": {
+              "x": 610.7429377621538,
+              "y": 271.58822431431344
+            }
+          },
+          {
+            "frame": 377,
+            "pts": 14.008,
+            "elapsed": 14.008,
+            "red": {
+              "count": 3051,
+              "x": 404.4883644706654,
+              "y": 270.8403802032121
+            },
+            "green": {
+              "count": 3486,
+              "x": 609.517785427424,
+              "y": 270.39414802065403
+            },
+            "expectedRed": {
+              "x": 405.865437014898,
+              "y": 270
+            },
+            "expectedGreen": {
+              "x": 609.1709602863805,
+              "y": 270
+            }
+          },
+          {
+            "frame": 553,
+            "pts": 20.007,
+            "elapsed": 20.007,
+            "red": {
+              "count": 2999,
+              "x": 419.1307102367456,
+              "y": 271.1327109036345
+            },
+            "green": {
+              "count": 3308,
+              "x": 604.9703748488513,
+              "y": 268.9718863361548
+            },
+            "expectedRed": {
+              "x": 420.16249986741735,
+              "y": 270.7268872357082
+            },
+            "expectedGreen": {
+              "x": 605.4753718148611,
+              "y": 268.4757644292313
+            }
+          },
+          {
+            "frame": 724,
+            "pts": 26.006,
+            "elapsed": 26.006,
+            "red": {
+              "count": 2916,
+              "x": 433.8357338820302,
+              "y": 269.8782578875171
+            },
+            "green": {
+              "count": 3166,
+              "x": 609.0915982312066,
+              "y": 271.3648136449779
+            },
+            "expectedRed": {
+              "x": 435.28121643450504,
+              "y": 269.45677020433453
+            },
+            "expectedGreen": {
+              "x": 610.7429377621538,
+              "y": 271.58822431431344
+            }
+          },
+          {
+            "frame": 898,
+            "pts": 32.006,
+            "elapsed": 32.006,
+            "red": {
+              "count": 2998,
+              "x": 448.1087391594396,
+              "y": 271.05870580386926
+            },
+            "green": {
+              "count": 3483,
+              "x": 609.5196669537755,
+              "y": 270.40051679586566
+            },
+            "expectedRed": {
+              "x": 448.91763966738466,
+              "y": 270
+            },
+            "expectedGreen": {
+              "x": 609.1709602863805,
+              "y": 270
+            }
+          },
+          {
+            "frame": 1070,
+            "pts": 38.008,
+            "elapsed": 38.008,
+            "red": {
+              "count": 3000,
+              "x": 462.9193333333333,
+              "y": 270.80333333333334
+            },
+            "green": {
+              "count": 3303,
+              "x": 604.8710263396912,
+              "y": 268.91674235543445
+            },
+            "expectedRed": {
+              "x": 463.37499225530917,
+              "y": 270.20195539413226
+            },
+            "expectedGreen": {
+              "x": 605.4753718148611,
+              "y": 268.4757644292313
+            }
+          },
+          {
+            "frame": 1243,
+            "pts": 44.004,
+            "elapsed": 44.004,
+            "red": {
+              "count": 3060,
+              "x": 476.316339869281,
+              "y": 270.5813725490196
+            },
+            "green": {
+              "count": 3168,
+              "x": 609.0732323232323,
+              "y": 271.3926767676768
+            },
+            "expectedRed": {
+              "x": 477.6389918237038,
+              "y": 269.9713192111477
+            },
+            "expectedGreen": {
+              "x": 610.7429377621538,
+              "y": 271.58822431431344
+            }
+          },
+          {
+            "frame": 1414,
+            "pts": 50.006,
+            "elapsed": 50.006,
+            "red": {
+              "count": 2921,
+              "x": 491.79219445395415,
+              "y": 271.0386853817186
+            },
+            "green": {
+              "count": 3476,
+              "x": 609.5201380897583,
+              "y": 270.4203107019563
+            },
+            "expectedRed": {
+              "x": 491.9746264295115,
+              "y": 270
+            },
+            "expectedGreen": {
+              "x": 609.1709602863805,
+              "y": 270
+            }
+          },
+          {
+            "frame": 1647,
+            "pts": 58.005,
+            "elapsed": 58.005,
+            "red": {
+              "count": 3022,
+              "x": 510.75777630708143,
+              "y": 270.93944407677037
+            },
+            "green": {
+              "count": 3480,
+              "x": 609.4666666666667,
+              "y": 270.39310344827584
+            },
+            "expectedRed": {
+              "x": 511.10867293563666,
+              "y": 270
+            },
+            "expectedGreen": {
+              "x": 609.1709602863805,
+              "y": 270
+            }
+          }
+        ],
+        "maximumCentroidProjectionErrorPixels": 2.2019125097667143
+      },
+      "archive": {
+        "bytes": 2185527,
+        "sha256": "63af2819c11553dd9668312e45a3f86c9b7c2b65e41da32fa34a579b2156b202"
+      },
+      "libraryVideoBytes": 8715504,
+      "secondProcess": [
+        592517
+      ],
+      "pageErrors": [],
+      "externalRequests": []
+    },
+    "independentSourceReview": {
+      "schemaVersion": 1,
+      "reviewedAt": "2026-10-04T14:42:28.590896+00:00",
+      "issue": 86,
+      "status": "source-review-clear",
+      "method": "Independent read-only contract and source review; no production/test edits, builds, server or native browser run.",
+      "files": [
+        {
+          "path": "docs/superpowers/specs/2026-10-04-shot-takes-design.md",
+          "bytes": 7210,
+          "sha256": "909962d776ce5d7481efcf715fc087c52c3f286402f5faa55e1d57c5c226b454"
+        },
+        {
+          "path": "apps/shot-studio/src/takes.js",
+          "bytes": 5364,
+          "sha256": "a06e8a21972c8cf678a0f859dea71f89b4315d585656b3618575c878e460d73c"
+        },
+        {
+          "path": "apps/shot-studio/src/take-archive.js",
+          "bytes": 6410,
+          "sha256": "ff141a9b1ab604eb18089d9c25831f20cbda43c3058c756dec2447ea88aba454"
+        },
+        {
+          "path": "apps/shot-studio/src/take-store.js",
+          "bytes": 8162,
+          "sha256": "b3ef6badc3b06f461c69abd4806341e3f7374aa87b8a88bf6e31be939387f11d"
+        },
+        {
+          "path": "apps/shot-studio/src/take-video.js",
+          "bytes": 5537,
+          "sha256": "a0f523ccecbb1ee1965d6dcf1e7e8e846bbfe6be398421c1be24191ed1b683a0"
+        },
+        {
+          "path": "apps/shot-studio/src/take-ui.js",
+          "bytes": 16375,
+          "sha256": "1b0fafde62fbf1e076f9e10deafac3aab7b9372fc0f940f094e955e2768fa78a"
+        },
+        {
+          "path": "apps/shot-studio/src/app.js",
+          "bytes": 23654,
+          "sha256": "adc1d8748ab81225ae01d026531033a11c7f2aaff4c8917589b1eb2aa7b2a031"
+        },
+        {
+          "path": "apps/shot-studio/src/export.js",
+          "bytes": 3430,
+          "sha256": "8b8a7d38f02af50de05ef71bdbe0a528dd38552c3e70afb93d74d2aae94de299"
+        },
+        {
+          "path": "apps/shot-studio/index.html",
+          "bytes": 10069,
+          "sha256": "4b46589c5c04d8ea74e3ee8ab372de94ee5cf831f7d23f82c05bc61fbdd2ae1e"
+        },
+        {
+          "path": "apps/shot-studio/style.css",
+          "bytes": 6640,
+          "sha256": "a0a7131123e9eaa24589442832cfa78a1ed7572b30294119ab197fcd70fd9e91"
+        }
+      ],
+      "findings": [],
+      "resolutions": [
+        {
+          "origin": "storage producer self-review",
+          "description": "A retired IndexedDB open still aborts a later upgrade transaction. Final source verified by inspection; producer test results not independently rerun."
+        }
+      ],
+      "checks": [
+        "Captured canonical schema3 film is detached; paired media Blob is immutable and bounded; rename preserves film and media.",
+        "Archive framing validates exact lengths before bounded reads; strict UTF8/duplicate-key/depth admission; declared media SHA verified; imported provenance forced to imported-declared.",
+        "IndexedDB getKey distinguishes absent from present undefined. Current shape/revision read and candidate put share one readwrite transaction. Async integrity checks precede that transaction.",
+        "Transaction completion gates saved publication; cancellation/timeout/close/versionchange retire owned work and late opens. Failed append retains same-ID completed pair; explicit retry reads durable state and reconciles before append.",
+        "Scene raw input invalidates bound async operations. Scene selection/history intent checked before late completion. Deliberate restore rechecks take receipt, scene revision/input intent and raw/busy guards after native confirmation, then uses one existing history commit.",
+        "Selection/cancel/pagehide retire take operations and release player URLs. Scene field nodes are not rebuilt by library updates.",
+        "Video admission is a bounded EBML/WebM header plus actual first-frame decode contract, with owned source/listener/timer/URL cleanup; unknown duration deliberately allowed.",
+        "Recording bounds actual received chunk bytes before retention and stops recorder/tracks/RAF/timer on cancellation."
+      ],
+      "focusedProbe": {
+        "kind": "Node direct metadata calls, read-only",
+        "cases": {
+          "UUID with trailing LF": "rejected",
+          "SHA256 with trailing LF": "rejected"
+        },
+        "newFinding": false
+      },
+      "limits": [
+        "No independent native execution, whole-process restart, real60-second recording, pixel/duration oracle or capacity smoke performed by this reviewer. Those are separate owners acceptance gates.",
+        "No whole-stream video validity or film/video correspondence authentication inferred from header, first-frame decode or SHA.",
+        "Hashes identify this reviewed source snapshot, not a Git commit; later source changes require affected rereview."
+      ]
+    }
+  },
+  "domainBounds": {
+    "syntheticPayloadBytes": 33554432,
+    "archiveRoundTripAndRealHash": true,
+    "plusOneRejected": true,
+    "libraryCount": 4,
+    "fourUniqueBlobsAggregateBytes": 134217728,
+    "manifestBytes": 81920,
+    "manifestPlusOneRejected": true,
+    "notes": [
+      "Synthetic payloads exercise exact byte/framing/SHA bounds and are not claimed playable.",
+      "Blob copying/aggregate charging does not measure process memory.",
+      "The maximum structural film uses20 shots and32 cues for each performer; its6368 serialized bytes do not establish an exact64KiB film fixture."
+    ]
+  },
+  "observedHistory": [
+    "Six exporter cases plus ten unchanged lifecycle cases pass. Five new exporter cases failed on old behavior; constructor cleanup already passed.",
+    "Initial eight video-inspector cases were developed from six callable-stub failures; eight final cases pass.",
+    "Domain/archive initial nine cases: eight stub failures, one rejection-only pass. First real run: eight pass and one strict extra-field defect; repaired, final thirteen pass.",
+    "Storage initial ten cases: nine stub failures and one generic rejection pass; tightened assertions and implementation passed. A later real controlled late-upgrade case reproduced retirement failing to abort a newly arriving upgrade transaction; repaired, final twelve pass.",
+    "Missing Record take control reproduced native baseline RED. Initial new browser run passed9/10; only a pre-Play mediaURL assumption required test correction. A focused rerun concurrent with old media tests missed unchanged frame/duration limits (16frames/1.571s); isolated unchanged test passed. No media thresholds were weakened.",
+    "First maximum-native probe recorded2,271,097 bytes and decoded1768 frames over59.942s with ten independent projections, then its runner wrongly expected recording enabled after loading four saved takes. The full-library disabled state was correct. After changing readiness to the library-read status, the complete probe passed on a fresh profile.",
+    "Source review caught strict metadata-constructor shape mismatch during integration before native acceptance; UI now supplies exact admitted shapes."
+  ],
+  "firstMaximumAttempt": {
+    "status": "failed-harness-readiness",
+    "directory": "/workspace/shot86-maximum-native",
+    "videoBytes": 2271097,
+    "decodedFrames": 1768,
+    "spanSeconds": 59.942,
+    "recordAndSaveMs": 60762.023959000006,
+    "archiveBytes": 2277748,
+    "archiveSha256": "cd1369f97be451f47de4b1c9758f0c41c4897f58cf17ced9e0c76e3aa87cd85c"
+  },
+  "limits": [
+    "Physical WebXR acceptance remains open in21. No clip splicing or immersive-video claim.",
+    "Imported pairing/timestamp is supplied and unverified; first-frame/header/hash admission is not full-codec validation or authenticity.",
+    "Unknown/infinite container duration is allowed; requested frame rate and timing are hardware-dependent.",
+    "Four maximum-native slots retain one actual sixty-second recording and three imported copies, not four distinct recorded performances.",
+    "Finalactualnative library payload8,715,504 bytes; no native128MiB or exact32MiB recording claim.",
+    "Maximum video has complete decoded timestamps and ten sampled independent landmark projections, not a pixel inspection of every frame.",
+    "Screenshots/native media remain local; committed receipts and reproduction tests/scripts preserve exact hashes and measurements.",
+    "No RAM peak, hardware compatibility or general latency guarantee is inferred."
+  ],
+  "ciFollowup": {
+    "firstHead": "642df9e9d30b67c61fc9a94d2dc13205c8c821c9",
+    "receipt": "2026-10-04-retained-takes-ci-first.json",
+    "status": "Corrected head 6b2efeb3 passed all 13 PR workflows and Shot push. Both Shot runs passed 146 unit tests, syntax checks and 53 browser tests.",
+    "finalReceipt": "2026-10-04-retained-takes-ci.json"
+  }
+}

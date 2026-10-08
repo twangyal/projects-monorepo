@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "milestone": 115,
+  "status": "complete:9 independent cases green; no implementation discrepancy",
+  "independence": "Original text, frame-independent media-position numbers and state expectations authored before producer source inspection. No producer expected-value helper or fixture used.",
+  "oracle": {
+    "path": "tests/sequential-timing-oracle.test.ts",
+    "bytes": 7546,
+    "sha256": "fb82869d31bceb87a6d3900dd5a54f3d488969c263472cf2e8218870744762c5",
+    "cases": 9
+  },
+  "firstActualRun": {
+    "command": "node --experimental-strip-types --test tests/sequential-timing-oracle.test.ts",
+    "passed": 1,
+    "failed": 8,
+    "durationMs": 136.648729,
+    "classification": "Actual deliberate callable-stub RED. Eight semantic cases fail at unimplemented constructor. Generic malformed-input rejection case passes and is not counted as semantic evidence.",
+    "log": "/tmp/karaoke115-oracle-first.log",
+    "logSha256": "b685f8c5a926e8c5cfdf2204f7a27fc80944ce8f43694588e14da6baf89645aa"
+  },
+  "static": "node --check and scoped ESLint pass",
+  "literalScopes": [
+    "Exact intervals .10000000000000002\u2192.3333333333333333; adjacent .3333333333333333\u21921.0000000000000002; gap to4.125\u219210. No rounding.",
+    "Original leading/trailing whitespace, LF/CRLF, literal angles/ampersand and astral text preserved.",
+    "Old numeric start/end getters throw if accessed; constructor and complete review must never access them. Numeric -0 Start canonicalizes to+0.",
+    "Detached state/text/completed/review graphs; caller edits never leak into session.",
+    "Wrong phase, overlap, nonfinite, outside duration and equal/reversed mark rejection is atomic.",
+    "No new minimum duration: 0\u2192Number.MIN_VALUE and .5\u2192.5000000000000001 remain legal represented positive intervals.",
+    "Cancellation at initial/pending/partial/review states is idempotent and terminal, retains completed/texts and clears pendingStart.",
+    "Existing Unicode policy: BOM and non-NUL control characters may remain text; Python-style whitespace-only text, lone surrogates, NUL and241codepoint lines reject.",
+    "Actual200lines of100Unicodecodepoints=20000 total,300seconds, exact1.5secondadjacent intervals;201lines/20001total rejected.",
+    "Sparse/inherited/accessor arrays, missing/nonstring/inherited/getter text refused without executing accessors."
+  ],
+  "limits": [
+    "Pure caller-supplied media-position state-machine tests; no native playback, clock authenticity, keyboard, browser/history/UI, backend Save or media-export claim."
+  ],
+  "finalIntegration": {
+    "passed": 9,
+    "failed": 0,
+    "durationMs": 154.128356,
+    "log": {
+      "path": "/tmp/karaoke115-oracle-green.log",
+      "bytes": 1040,
+      "sha256": "cc21497ca4a060291a5bd00b10c6657d38803bb0f73e57ea03781b28038fb058"
+    },
+    "source": {
+      "path": "src/sequential-timing.ts",
+      "bytes": 3636,
+      "sha256": "f57fc02993062f8471cffc363eb32768c0fdf0f9eced66bd62bb4e472f53625e"
+    },
+    "oracle": {
+      "path": "tests/sequential-timing-oracle.test.ts",
+      "bytes": 7546,
+      "sha256": "fb82869d31bceb87a6d3900dd5a54f3d488969c263472cf2e8218870744762c5"
+    },
+    "unchangedRuntimeAssertions": true,
+    "static": [
+      "Scoped ESLint exit0",
+      "Whole app npm run typecheck exit0"
+    ],
+    "extraRuntime": "No browser, build, service or media run."
+  },
+  "typeOnlyCorrection": "Invalid input test cast value as Cue changed to value as unknown as Cue for TypeScript overlap checking. Runtime fixtures, literal expected values and assertions unchanged."
+}

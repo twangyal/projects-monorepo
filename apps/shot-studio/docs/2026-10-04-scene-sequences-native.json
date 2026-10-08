@@ -1,0 +1,107 @@
+{
+  "feature": "Shot Studio #90 canonical2 compatibility and scene sequence native acceptance",
+  "status": "71 distinct native cases passed across sequence18 and prior53 runs",
+  "results": {
+    "sequenceCases": {
+      "passed": 18,
+      "failed": 0,
+      "seconds": 53.4,
+      "log": "/tmp/shot90-v2-native.log"
+    },
+    "priorCases": {
+      "passed": 53,
+      "failed": 0,
+      "summary": "53 passed (2.5m)",
+      "log": "/tmp/shot90-prior53.log"
+    },
+    "distinctCases": 71
+  },
+  "historicalReceiptPreserved": "/workspace/shot90-native-verification.json",
+  "newCoverage": [
+    "Published name-based schema1 and own rich schema1 complete native imports produce exact canonical2",
+    "80 UTF16 source label retained literally",
+    "Startup oldraw is byte-identical after load, download and reload; no implicit migration write",
+    "Two actual same-origin pages refuse foreign ordinary and stale explicit writes, preserve exact foreign recovery and unsaved memory, then replace only separately reviewed current raw"
+  ],
+  "oracle": {
+    "producerImports": false,
+    "changedThresholds": false,
+    "samples": 7,
+    "maximumObservedProjectionErrorPixels": 3.4070989898025346,
+    "blueToScarletControlMeanRatio": 0.547398156846885,
+    "thresholds": {
+      "projection": 16,
+      "hiddenPixels": 20,
+      "nearbyPTS": 0.15,
+      "waveWidthMin": 85
+    }
+  },
+  "actualVideo": {
+    "bytes": 534012,
+    "sha256": "90e359a7ce361c9d7bd569dbe05463c89dc63f10a70168f40b5e817f838e1f52",
+    "codec": "vp9",
+    "decodedFrames": 154,
+    "span": 5.928
+  },
+  "restart": {
+    "bytes": 2008,
+    "sha256": "fa76c1ca808b657a12270b0e0bba4e37cf30315bc3270f504d4d0c128aa4fc80",
+    "processes": 3,
+    "allClosed": true
+  },
+  "sourceHashes": {
+    "tests/browser/sequence.spec.js": "ed5d5ea69fbba21d38f5cf8563708359353af758b7085d9db5003e0a1f6a828f",
+    "tests/browser/sequence-fixtures.js": "158bfd310bbe770119b36d058d44b26b734c523b51e629e7aea2b6f78d147c96",
+    "src/sequence.js": "fa5a493e51bc8cf3b926f71b1a445e7a9521ee779eb988b4311f9fadabb6e472",
+    "src/sequence-store.js": "6943e57738f32ee7ef62afc4b59d7d6abbc415179f9bfbf65667d2942f9f2f25",
+    "src/sequence-ui.js": "3210a79b3220a73dc61ecb4dbfb0ea7958720d2a57c44795ba7f70291cbf0134",
+    "src/app.js": "a80b401e16e0b496db3415e8e185cdd587736eadd1ee98cb9b3148bd8deec46f",
+    "src/take-ui.js": "436a43d0a844633725c8445707939dfbfbea77adbb11a17192591edd5e9f7b4e",
+    "src/renderer.js": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9",
+    "src/export.js": "8b8a7d38f02af50de05ef71bdbe0a528dd38552c3e70afb93d74d2aae94de299",
+    "index.html": "3aad0d1fddef85a6a7989691a70c3edb1563698d2a89fc56c692fa9d1b00306f",
+    "style.css": "5d453687656bf7ae6df02a2a9ae7a25f5338f2b809c948eb315e1cb1c38601d8"
+  },
+  "artifacts": {
+    "/workspace/shot90-v2-native-artifacts/complete-original.shot-sequence.json": {
+      "bytes": 2008,
+      "sha256": "fa76c1ca808b657a12270b0e0bba4e37cf30315bc3270f504d4d0c128aa4fc80"
+    },
+    "/workspace/shot90-v2-native-artifacts/original-six-second-sequence.webm": {
+      "bytes": 534012,
+      "sha256": "90e359a7ce361c9d7bd569dbe05463c89dc63f10a70168f40b5e817f838e1f52"
+    },
+    "/workspace/shot90-v2-native-artifacts/sequence-390px.png": {
+      "bytes": 328797,
+      "sha256": "d0c0abf329a1f95bb0273b2cc8c1893af38d13559a8b1b727a7f80d3d5749e7b"
+    },
+    "/workspace/shot90-v2-native-artifacts/sequence-browser-lifecycle.json": {
+      "bytes": 307,
+      "sha256": "258afd229dc79aff93fd53e59a03d32227cd55828b88ba78d2cdc1f9bdf3991f"
+    },
+    "/workspace/shot90-v2-native-artifacts/sequence-portable-verification.json": {
+      "bytes": 138,
+      "sha256": "9d279155a077db2ef7e7868e64212dc5f1e187f1257d29e4809f95f2c777498e"
+    },
+    "/workspace/shot90-v2-native-artifacts/sequence-video-verification.json": {
+      "bytes": 5180,
+      "sha256": "4c48e83fb8c0a9d7bba261e6e8c8f69697bed36050102a1896de9fe3134d0b80"
+    }
+  },
+  "logs": {
+    "/tmp/shot90-v2-native.log": {
+      "bytes": 2982,
+      "sha256": "1d12f17e2f78ad5a734bd3f7e40ac00817fecc2b20be89ab5ac02c4d5d4165ac"
+    },
+    "/tmp/shot90-prior53.log": {
+      "bytes": 8560,
+      "sha256": "3b9d266a0a1aae688677c91bf42e6d3399a6cd73b50862d8a710da2ecf0e7529"
+    }
+  },
+  "limitations": [
+    "Local Chromium151.0.7922.173; CI browser acceptance remains separate.",
+    "Source hashes captured after final generated legacy invalid-label fallback; frozen fixtures use valid names and are unaffected.",
+    "Actual6-second native recording; does not claim the separate root maximum sequence capture.",
+    "Two-tab storage is optimistic compare-before-save, not an atomic multi-process CAS."
+  ]
+}

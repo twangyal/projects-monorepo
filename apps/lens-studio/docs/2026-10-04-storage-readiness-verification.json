@@ -1,0 +1,107 @@
+{
+  "issue": 68,
+  "scope": "Only apps/lens-studio/tests/browser/storage.spec.ts changed; no production/config/build/server changes",
+  "ci": {
+    "run": 37223579574,
+    "job": 111498575804,
+    "nativePassed": 31,
+    "nativeFailed": 1,
+    "failure": "pending false; Second snapshot and cleared null correct",
+    "limitation": "Exact CI decode/transaction scheduling interleaving was not observed.",
+    "head": "d9ba7783eb0f4c2a250ff44c7888f9496cf0124f",
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37223579574",
+    "artifact": {
+      "id": 11311590501,
+      "bytes": 19415,
+      "sha256": "7112b51f99e54fce6f89a4c6d6fefe0928245e5baaaff3f531b8b79019473611"
+    },
+    "checkout": "df0403abf8c274d9414485303753a11d5ea46c7d"
+  },
+  "controlledNativeProbe": {
+    "browserVersion": "151.0.7922.173",
+    "result": {
+      "arbitraryDelay": {
+        "started": 0,
+        "firstCompleted": false,
+        "pending": false
+      },
+      "nativeRequestLatch": {
+        "started": 1,
+        "firstCompleted": false,
+        "pending": true
+      },
+      "title": "Second snapshot",
+      "cleared": null,
+      "controlledBoundary": "Original native PNG decode completes, then its return is held; real native IDB request success releases latch"
+    }
+  },
+  "change": "Replace arbitrary50ms sleep with first real keep-alive IDBRequest onsuccess latch; issue next keep-alive request before resolving latch. Existing pending/ordered snapshot/clear assertions and45000ms test timeout unchanged.",
+  "runs": [
+    {
+      "phase": "Unmodified targeted local case (edit attempt had wrong cwd)",
+      "passed": 1,
+      "failed": 0,
+      "seconds": 1.5,
+      "log": "/tmp/lens68-original-targeted.log"
+    },
+    {
+      "phase": "Corrected request-latch targeted test",
+      "passed": 1,
+      "failed": 0,
+      "seconds": 1.4,
+      "log": "/tmp/lens68-readiness-green.log"
+    }
+  ],
+  "checks": {
+    "scopedESLint": "passed",
+    "fullTypeScript": "passed"
+  },
+  "browserCleanup": "Probe browser closed in finally; Playwright process exited. Existing root4264 server untouched.",
+  "artifacts": [
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/browser/storage.spec.ts",
+      "bytes": 13119,
+      "sha256": "d63008c14218fcdb20e75367377c966d8ff059abe5a5e68f118f81a872dac048"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/src/storage.ts",
+      "bytes": 4072,
+      "sha256": "b1e9b0886c16a9e9d0ca5ed7f7775fb75dfc0a31f8c66027b2cad255fb6196cc"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/lens-studio/tests/storage-harness.ts",
+      "bytes": 1830,
+      "sha256": "ee70afd5dd172acfa551a4fef480b5d32fa9efc50045763e9ee700e6f29a18bb"
+    },
+    {
+      "path": "/workspace/lens104-ci-first.log",
+      "bytes": 57484,
+      "sha256": "552452483dee68430ee477396426a637a341492da0a3c671c54cdd2284cc7c46"
+    },
+    {
+      "path": "/workspace/lens68-readiness-probe.json",
+      "bytes": 464,
+      "sha256": "525d70e16685959a32b4cd5c9c4cc28279a4738fc10d660aa2be368f9c3e90d4"
+    },
+    {
+      "path": "/tmp/lens68-readiness-probe.mjs",
+      "bytes": 2842,
+      "sha256": "616540a877c8df4a1f10eb9c9e87261278de6a33718a1795cae3e1fc86f97826"
+    },
+    {
+      "path": "/tmp/lens68-readiness-probe.log",
+      "bytes": 364,
+      "sha256": "3e9572f81441130e80eaab9a60560580e7aa8798ca7d7b71cc4e92923e9e9a5c"
+    },
+    {
+      "path": "/tmp/lens68-original-targeted.log",
+      "bytes": 363,
+      "sha256": "ab3695c1f8f51324e580c03d52a8d8d0eadc5bf180f525eebbec84e12630a99d"
+    },
+    {
+      "path": "/tmp/lens68-readiness-green.log",
+      "bytes": 363,
+      "sha256": "dbccdd5137d33e6de9f271fe2ccb4d8aebcca242bf250fa11ad87dc30a07897f"
+    }
+  ]
+}

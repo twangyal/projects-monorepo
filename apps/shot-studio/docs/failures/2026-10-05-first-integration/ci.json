@@ -1,0 +1,13 @@
+{
+  "head": "24733168bbcf94b7307786cf86a2e3cd1462fdf0",
+  "prRun": 37317646100,
+  "maximumJob": 111788334876,
+  "maximumArtifact": 11349310677,
+  "maximumArtifactSha256": "b23ea034db6210c7f0261b78257005403ef2ab5eaf3d3bf837250a6927114ca5",
+  "verifyJob": 111788335316,
+  "unitsPassed": 340,
+  "nativePassed": 103,
+  "nativeFailed": 1,
+  "nativeFailure": "Obsolete expectation of one AudioBufferSourceNode playback start in mono44.1k export; actual decoded pitch/RMS passed before this assertion.",
+  "maximumFailure": "download.saveAs: Target page, context or browser has been closed after full persistent browser restart, before video export. No maximum output acceptance."
+}

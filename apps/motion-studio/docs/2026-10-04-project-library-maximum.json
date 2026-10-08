@@ -1,0 +1,294 @@
+{
+  "issue": 104,
+  "status": "passed_first_actual_run",
+  "productionOrigin": "http://127.0.0.1:4294",
+  "rootProvidedBundle": "main-Cqx2Ujdw.js",
+  "browserVersion": "151.0.7922.173",
+  "script": {
+    "path": "/workspace/projects-monorepo/apps/motion-studio/scripts/smoke_project_library.mjs",
+    "bytes": 22631,
+    "sha256": "2d1228a0e398a233e1e7c03450afdee648720c8defbe9c4d41682f8133332dc0"
+  },
+  "frozenExpectations": {
+    "path": "/workspace/motion104-frozen-fixtures/frozen-expectations.json",
+    "bytes": 141073,
+    "sha256": "824ae972accd8a076c43f911f88a24e432e592c0005e5b801337b1850d535f75"
+  },
+  "verification": {
+    "path": "/workspace/motion104-maximum-final/verification.json",
+    "bytes": 87618,
+    "sha256": "af74ac5ad41bbd5fb1a346cc23a0a18789b30bbd31024dd3ee0f944fa927e3ca"
+  },
+  "log": {
+    "path": "/tmp/motion104-maximum-first.log",
+    "bytes": 169,
+    "sha256": "5d2d49902e3f28d569b1eb8d0c0d8ddf533fb96d72bca0931aa2bdc166d49dce"
+  },
+  "projectCount": 8,
+  "bytesPerProject": 6291624,
+  "totalCanonicalProjectBytes": 50332992,
+  "allOriginalProjectsByteExactAfterFullProcessRestart": true,
+  "projects": [
+    {
+      "index": 0,
+      "originalSha256": "9c73d866812011e4abfbb18e6a3380589dc76524fd61fb15862870ad23505d90",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-1.motion.json",
+        "bytes": 6291624,
+        "sha256": "9c73d866812011e4abfbb18e6a3380589dc76524fd61fb15862870ad23505d90"
+      }
+    },
+    {
+      "index": 1,
+      "originalSha256": "cf6e99ecd5e7dab5fae720b219dc1e71f1a7b20d97ee4ac6106dd89b689781b8",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-2.motion.json",
+        "bytes": 6291624,
+        "sha256": "cf6e99ecd5e7dab5fae720b219dc1e71f1a7b20d97ee4ac6106dd89b689781b8"
+      }
+    },
+    {
+      "index": 2,
+      "originalSha256": "37ddeb04ca1d28a21dd197b1e1cf75669c1f2687e774f9902193da36f25aec79",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-3.motion.json",
+        "bytes": 6291624,
+        "sha256": "37ddeb04ca1d28a21dd197b1e1cf75669c1f2687e774f9902193da36f25aec79"
+      }
+    },
+    {
+      "index": 3,
+      "originalSha256": "dedd57335f230392aef30634bf2ce5764f40812870cf77a10c4972b41d6c94f3",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-4.motion.json",
+        "bytes": 6291624,
+        "sha256": "dedd57335f230392aef30634bf2ce5764f40812870cf77a10c4972b41d6c94f3"
+      }
+    },
+    {
+      "index": 4,
+      "originalSha256": "e812d90660bc62dfd0818e3da37bd6596d2bef44b6ee9c9b4c283c26dc5cabce",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-5.motion.json",
+        "bytes": 6291624,
+        "sha256": "e812d90660bc62dfd0818e3da37bd6596d2bef44b6ee9c9b4c283c26dc5cabce"
+      }
+    },
+    {
+      "index": 5,
+      "originalSha256": "4661ccf3440067759eac581708bccd9d2e5f9e1cb246e2d37e0ba7bb51967bc6",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-6.motion.json",
+        "bytes": 6291624,
+        "sha256": "4661ccf3440067759eac581708bccd9d2e5f9e1cb246e2d37e0ba7bb51967bc6"
+      }
+    },
+    {
+      "index": 6,
+      "originalSha256": "8cc8bdb60aa07bb88b5837195685a9cf385c284216e35d193a0ce19fe28aa731",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-7.motion.json",
+        "bytes": 6291624,
+        "sha256": "8cc8bdb60aa07bb88b5837195685a9cf385c284216e35d193a0ce19fe28aa731"
+      }
+    },
+    {
+      "index": 7,
+      "originalSha256": "e4c36204c230ea0be19481ed09c84115e708126a7e0ed80971a54ede91317141",
+      "restoredBackup": {
+        "path": "/workspace/motion104-maximum-final/restart-project-8.motion.json",
+        "bytes": 6291624,
+        "sha256": "e4c36204c230ea0be19481ed09c84115e708126a7e0ed80971a54ede91317141"
+      }
+    }
+  ],
+  "capacity": [
+    "duplicate blocked by disabled full-capacity control",
+    "ninth File import attempted and rejected"
+  ],
+  "checks": [
+    "Eight exact-cap originals imported by native File input as separate editable entries.",
+    "Same-length rename is one Undo/Redo, persists only to its owner, and switching resets session history; original title restored before artwork exports.",
+    "Full Chromium process restart preserves all eight IDs/order/active pointer and byte-exact original backups.",
+    "All eight reopened projects produce eight independently checked PNG boundary frames and96 GIF frames with original artwork/pixels and8,000ms timing."
+  ],
+  "pngExports": 64,
+  "gifExports": 8,
+  "gifFrames": 768,
+  "gifDurationMillisecondsEach": [
+    8000,
+    8000,
+    8000,
+    8000,
+    8000,
+    8000,
+    8000,
+    8000
+  ],
+  "pngBytesTotal": 483873,
+  "gifBytesTotal": 1451678,
+  "wallMilliseconds": 346192.18567000004,
+  "browserPidsConfirmedGone": true,
+  "allOwnedContextsClosed": true,
+  "pageErrors": [],
+  "externalRequests": [],
+  "screenshots": {
+    "desktop": {
+      "path": "/workspace/motion104-maximum-final/desktop.png",
+      "bytes": 264781,
+      "sha256": "0395285facc8eeac36defb9ed08b48b3cab6215fc4353c54d0809e1125c2fe4e"
+    },
+    "mobile390": {
+      "path": "/workspace/motion104-maximum-final/mobile-390.png",
+      "bytes": 245742,
+      "sha256": "b83708e9642cc6edc14d03216284e011d23eaad3b1806e91394e357faa28e384"
+    },
+    "visuallyReviewed": true,
+    "horizontalOverflow": false
+  },
+  "limits": [
+    "50,332,992 serialized payload bytes is not an RSS/quota guarantee.",
+    "Original large PNGs contain declared ancillary capacity padding.",
+    "No producer expected-value imports or storage injection; all raster checks use original coordinates/colors.",
+    "Full-capacity duplicate is disabled UI admission, not an attempted native database mutation. Ninth File import was actually attempted and refused.",
+    "No full successful duplicate was needed at capacity; its ordinary independent edit semantics remain the separate native suite scope.",
+    "Runtime includes native keypress timeline navigation and download overhead. No arbitrary machine performance promise.",
+    "Original fixtures, scalar coordinates, exact pixels, frame counts and timing thresholds were never changed after production output.",
+    "Only own persistent Chromium profiles/processes were closed; root preview remains untouched."
+  ],
+  "schemaVersion": 1,
+  "method": "Summarized retained first actual independent normal-build acceptance; no new browser run. Backup hashes and retained verification hash were independently rechecked while recording this receipt.",
+  "sourceReceipt": {
+    "path": "/workspace/motion104-maximum-summary.json",
+    "bytes": 67701,
+    "sha256": "cbe6f55c1a39bf2c46a91bbc309923b7ccf26e2f81ab28722eee9ca261d321bb"
+  },
+  "expectedCountsPerProject": {
+    "layers": 8,
+    "images": 4,
+    "cels": 27,
+    "strokes": 100,
+    "points": 10000,
+    "longestStroke": 1000
+  },
+  "rasterOracle": {
+    "size": [
+      640,
+      360
+    ],
+    "patchSize": [
+      5,
+      5
+    ],
+    "exactRGBA": true,
+    "heldCuts": [
+      24,
+      48,
+      72
+    ],
+    "movingCenterFormula": "400+100*frame/95",
+    "pngFrames": [
+      0,
+      23,
+      24,
+      47,
+      48,
+      71,
+      72,
+      95
+    ],
+    "gifFrames": 96,
+    "gifDurationMs": 8000,
+    "repeat": "infinite"
+  },
+  "gifs": [
+    {
+      "kind": "gif",
+      "file": "project-1-96frames.gif",
+      "bytes": 181786,
+      "sha256": "eb6f1ddb4b88a86f6c0ef90f0f0219e1e1d9cab2a6bf3bfa56dc4557ad7cb357",
+      "encodeAndDownloadMs": 2316.5785280000127,
+      "independentDecodeMs": 498.1027299999987,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-2-96frames.gif",
+      "bytes": 181845,
+      "sha256": "6edb6344ea989d4f65b67ef3424bbe3f245d9e7bdae64659395b2cf3408ebce2",
+      "encodeAndDownloadMs": 2345.9376950000005,
+      "independentDecodeMs": 427.6685889999935,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-3-96frames.gif",
+      "bytes": 181408,
+      "sha256": "4280411381e7753c4793924417db15bd49c3fc957e851f6cb7484760d0c05090",
+      "encodeAndDownloadMs": 2351.5637539999734,
+      "independentDecodeMs": 426.8887560000003,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-4-96frames.gif",
+      "bytes": 180146,
+      "sha256": "e25395f8f856a951b30fb408b544a4b350b75665622aba63cf3d01d010b11799",
+      "encodeAndDownloadMs": 2386.5875820000074,
+      "independentDecodeMs": 430.0135700000101,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-5-96frames.gif",
+      "bytes": 179214,
+      "sha256": "09d66e5e281ddeb7c63590d5a31c5bcf17c8a6afee75797a682bce0af8fc7ec1",
+      "encodeAndDownloadMs": 2417.656090000004,
+      "independentDecodeMs": 417.7884170000034,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-6-96frames.gif",
+      "bytes": 181005,
+      "sha256": "5726350a68bd93dc9a148a8eff1aaa7fd8d500086b3cbfb2297c941c9f8cf5fa",
+      "encodeAndDownloadMs": 2326.9870980000123,
+      "independentDecodeMs": 402.47471199999563,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-7-96frames.gif",
+      "bytes": 184459,
+      "sha256": "1ac2f0a61c7769423b0247ce1ee51a6673e0919ae1e6e462c45d833440dc1595",
+      "encodeAndDownloadMs": 2354.6646380000166,
+      "independentDecodeMs": 404.0960090000299,
+      "frames": 96,
+      "durationMs": 8000
+    },
+    {
+      "kind": "gif",
+      "file": "project-8-96frames.gif",
+      "bytes": 181815,
+      "sha256": "4a6f4d6f70c019b272ce245979137f7a6e4ba0e2e0552e95f3b6f9100c98f29d",
+      "encodeAndDownloadMs": 2369.8497939999797,
+      "independentDecodeMs": 449.96976100001484,
+      "frames": 96,
+      "durationMs": 8000
+    }
+  ],
+  "browserProcessCleanup": {
+    "ownedPids": [
+      678224,
+      678355
+    ],
+    "confirmedGone": true,
+    "allOwnedContextsClosed": true
+  }
+}

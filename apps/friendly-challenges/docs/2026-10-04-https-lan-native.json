@@ -1,0 +1,632 @@
+{
+  "issue": 108,
+  "complete": true,
+  "distinctNativeCases": 6,
+  "runs": [
+    {
+      "name": "first5",
+      "cases": [
+        {
+          "title": "three HTTPS seats explicitly agree, retain exact reviewed images and arbitrate an immutable record across whole service restart",
+          "status": "failed",
+          "durationMs": 13382
+        },
+        {
+          "title": "unknown HTTPS status blocks only creation and explicit retry preserves independent private access",
+          "status": "timedOut",
+          "durationMs": 45137
+        },
+        {
+          "title": "a lost real creation response clears setup immediately without storing the key or replaying authority",
+          "status": "passed",
+          "durationMs": 1518
+        },
+        {
+          "title": "successful creation after changed-back input retains the issued seat without activating over newer form intent",
+          "status": "passed",
+          "durationMs": 1380
+        },
+        {
+          "title": "late actual image append receipt preserves changed-back caption and retained preview without a second append",
+          "status": "passed",
+          "durationMs": 3059
+        }
+      ],
+      "log": {
+        "path": "/tmp/friendly108-native-first.log",
+        "bytes": 6816,
+        "sha256": "edde44c92e1414d752bac144c3eee60aef462925dd3c2f5dd60fbc4f85bba86d"
+      },
+      "structuredReportSha256": "c20b285b37d42a56f3a85826eddb6139b04894feb711d73803285d691bbadcd2"
+    },
+    {
+      "name": "queuedlinkRED",
+      "cases": [
+        {
+          "title": "a genuine private hash link queued during real creation remains explicitly usable after creation completes",
+          "status": "failed",
+          "durationMs": 7196
+        }
+      ],
+      "log": {
+        "path": "/tmp/friendly108-native-queued-red.log",
+        "bytes": 3611,
+        "sha256": "ecf7be93247cb398956bb9de80294077dd27a29f1f65452618ee0431ac987ffc"
+      },
+      "structuredReportSha256": "b6c656b695aab278c462b6ed8e5f705db89d4758ca98c75e99b6ae9aee3cb10f"
+    },
+    {
+      "name": "repairFocused3",
+      "cases": [
+        {
+          "title": "three HTTPS seats explicitly agree, retain exact reviewed images and arbitrate an immutable record across whole service restart",
+          "status": "failed",
+          "durationMs": 17453
+        },
+        {
+          "title": "unknown HTTPS status blocks only creation and explicit retry preserves independent private access",
+          "status": "timedOut",
+          "durationMs": 45134
+        },
+        {
+          "title": "a genuine private hash link queued during real creation remains explicitly usable after creation completes",
+          "status": "passed",
+          "durationMs": 2416
+        }
+      ],
+      "log": {
+        "path": "/tmp/friendly108-native-repaired.log",
+        "bytes": 6621,
+        "sha256": "fc251d36046a87e15349948bbbf0cbd9d1010137bbf61fb87768afa0fc14aab6"
+      },
+      "structuredReportSha256": "3a085f43fc28753bf4fdb6d9b49c0c62c0e560094b5ebfe1dffc604af32285ce"
+    },
+    {
+      "name": "finalFocused2",
+      "cases": [
+        {
+          "title": "three HTTPS seats explicitly agree, retain exact reviewed images and arbitrate an immutable record across whole service restart",
+          "status": "passed",
+          "durationMs": 12943
+        },
+        {
+          "title": "unknown HTTPS status blocks only creation and explicit retry preserves independent private access",
+          "status": "passed",
+          "durationMs": 2412
+        }
+      ],
+      "log": {
+        "path": "/tmp/friendly108-native-focused.log",
+        "bytes": 767,
+        "sha256": "4c54fafeb410ca1f04f57a91bf5ba36c09686059bfbd2c014d9159b9c69dcef7"
+      },
+      "structuredReportSha256": "d6573e7adc66db8490bea6dbd7b2f478c09b724f599cfdb697af7c68ce82efef"
+    }
+  ],
+  "firstGate": {
+    "passed": 3,
+    "failed": 2,
+    "reportedDuration": "1.1m",
+    "fixtureFindings": [
+      "Fresh recovery reused a profile with another seat; native Replace remembered seat confirmation was automatically dismissed. The first immediate role assertion also lacked asynchronous readiness; final test explicitly accepts the existing documented confirmation and awaits the same role.",
+      "Status retry belongs creation dashboard; first attempted hidden retry while selected. First harness correction then used a nonexistent title-named button instead of saved card heading plus Open challenge; final selector matches actual public control. No timeout was widened."
+    ]
+  },
+  "productRepair": {
+    "red": "Actual successfulcreation response held; genuine private hashchange received+scrubbed while busy, but afterreceipt deferred link intent remained hidden.",
+    "fix": "Producer flushes deferred incoming link after successful new-seat setup/reveal. Explicit Use remains required; no automatic activation.",
+    "redCaseRetainedUnchanged": true,
+    "greenRun": "repairFocused3"
+  },
+  "images": [
+    {
+      "file": "reviewed-first.jpg",
+      "bytes": 354,
+      "sha256": "dcb394e5d9305ac1f987a49eb809eaef2bdeb5afd4773e0a6ae84777ffac4dab",
+      "dimensions": [
+        96,
+        64
+      ],
+      "actualInteriorRgb": [
+        [
+          200,
+          30,
+          39
+        ],
+        [
+          20,
+          179,
+          50
+        ],
+        [
+          30,
+          60,
+          210
+        ],
+        [
+          230,
+          199,
+          20
+        ]
+      ],
+      "literalExpectedRgb": [
+        [
+          200,
+          30,
+          40
+        ],
+        [
+          20,
+          180,
+          50
+        ],
+        [
+          30,
+          60,
+          210
+        ],
+        [
+          230,
+          200,
+          20
+        ]
+      ],
+      "maximumChannelError": 1
+    },
+    {
+      "file": "reviewed-second.jpg",
+      "bytes": 553,
+      "sha256": "5f64d4cf5ee6cc6f243f8a72aad0c3b28745738947cb9d02d3f98c27a3aec7ce",
+      "dimensions": [
+        72,
+        48
+      ],
+      "actualInteriorRgb": [
+        [
+          200,
+          30,
+          39
+        ],
+        [
+          20,
+          179,
+          50
+        ],
+        [
+          30,
+          60,
+          210
+        ],
+        [
+          230,
+          199,
+          20
+        ]
+      ],
+      "literalExpectedRgb": [
+        [
+          200,
+          30,
+          40
+        ],
+        [
+          20,
+          180,
+          50
+        ],
+        [
+          30,
+          60,
+          210
+        ],
+        [
+          230,
+          200,
+          20
+        ]
+      ],
+      "maximumChannelError": 1
+    }
+  ],
+  "publicRecord": {
+    "schemaVersion": 2,
+    "termsVersion": 2,
+    "revision": 13,
+    "status": "resolved",
+    "eventKinds": [
+      "created",
+      "opponent_joined",
+      "terms_edited",
+      "accepted",
+      "evidence_image_added",
+      "evidence_image_added",
+      "result_proposed",
+      "result_responded",
+      "arbiter_nominated",
+      "arbiter_responded",
+      "invite_issued",
+      "arbiter_joined",
+      "arbiter_decided"
+    ],
+    "resolution": {
+      "by": "arbiter",
+      "decidedAt": 1791147476002,
+      "method": "arbiter",
+      "outcome": "opponent",
+      "proposalId": null,
+      "reason": "The supplied record supports Mira; this is our agreed decision."
+    }
+  },
+  "trust": {
+    "certificateSha256": "070777bf766a67ac7fe2eb99f22fc6cb96897313addff15e659d2d60f95bd32a",
+    "spki": "2csIQHlBPml8+g5miESYlJdWevwh6O52IPXqfyhu+9g=",
+    "browserVersion": "151.0.7922.173",
+    "trust": "Strict CA readiness; Chromium exact fixture SPKI only",
+    "physicalDevices": false
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/friendly108-native-artifacts/https-agreement-390.png",
+      "bytes": 325092,
+      "sha256": "1aaf471c80b250a4169f05968bfc1411a9ed7d43e0be1a102053a0ef76b31b8b"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/reviewed-first.jpg",
+      "bytes": 354,
+      "sha256": "dcb394e5d9305ac1f987a49eb809eaef2bdeb5afd4773e0a6ae84777ffac4dab"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/complete-images.html",
+      "bytes": 8804,
+      "sha256": "ace8078b01a07a9e6126f25e5d05db38333af0913da178a05bd87a274e503f79"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/public-certificate-receipt.json",
+      "bytes": 285,
+      "sha256": "3c3b5d667f75e7c4063e5c29d13a7903ea0908bd0f00fb00b13d7276b2a6e18d"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/https-agreement-desktop.png",
+      "bytes": 356803,
+      "sha256": "563ec7ad778c3df6535b381b4fd828441adc690e6cdec89ba90664ed35ffffb2"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/public-record.json",
+      "bytes": 7814,
+      "sha256": "db477e36006b213633809ee70386bcd0db0e8d67120b8ca837d845e1494d8228"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/owned-process-closure.json",
+      "bytes": 145,
+      "sha256": "c51dbb6424c9e9a540c58e103e53ecbc03cc2982e8eb579464418570b6dcaf4d"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/media-audit-verification.json",
+      "bytes": 968,
+      "sha256": "05735689ca8e04b671d0a62863bbae04900d375616ea9d0f1e1c87d69e1dad29"
+    },
+    {
+      "path": "/workspace/friendly108-native-artifacts/reviewed-second.jpg",
+      "bytes": 553,
+      "sha256": "5f64d4cf5ee6cc6f243f8a72aad0c3b28745738947cb9d02d3f98c27a3aec7ce"
+    }
+  ],
+  "allObservedProcessClosures": [
+    {
+      "path": "/workspace/friendly108-native-first/https-lan-late-actual-imag-bf464-iew-without-a-second-append/owned-process-closure.json",
+      "servicePids": [
+        707291
+      ],
+      "browserPids": [
+        707294
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-first/https-lan-a-lost-real-crea-f8c3a--key-or-replaying-authority/owned-process-closure.json",
+      "servicePids": [
+        707022
+      ],
+      "browserPids": [
+        707025
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-first/https-lan-successful-creat-bcba4-ting-over-newer-form-intent/owned-process-closure.json",
+      "servicePids": [
+        707154
+      ],
+      "browserPids": [
+        707164
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-first/https-lan-unknown-HTTPS-st-5d7e8--independent-private-access/owned-process-closure.json",
+      "servicePids": [
+        705733
+      ],
+      "browserPids": [
+        705736
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-first/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/owned-process-closure.json",
+      "servicePids": [
+        705000,
+        705501
+      ],
+      "browserPids": [
+        705003
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-queued-red/https-lan-a-genuine-privat-8eace-le-after-creation-completes/owned-process-closure.json",
+      "servicePids": [
+        707747
+      ],
+      "browserPids": [
+        707750
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-repaired/https-lan-a-genuine-privat-8eace-le-after-creation-completes/owned-process-closure.json",
+      "servicePids": [
+        709064
+      ],
+      "browserPids": [
+        709067
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-repaired/https-lan-unknown-HTTPS-st-5d7e8--independent-private-access/owned-process-closure.json",
+      "servicePids": [
+        708796
+      ],
+      "browserPids": [
+        708799
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-repaired/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/owned-process-closure.json",
+      "servicePids": [
+        708348,
+        708667
+      ],
+      "browserPids": [
+        708351
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-focused/https-lan-unknown-HTTPS-st-5d7e8--independent-private-access/owned-process-closure.json",
+      "servicePids": [
+        709827
+      ],
+      "browserPids": [
+        709830
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    },
+    {
+      "path": "/workspace/friendly108-native-focused/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/owned-process-closure.json",
+      "servicePids": [
+        709393,
+        709707
+      ],
+      "browserPids": [
+        709396
+      ],
+      "allObservedPidsExited": true,
+      "noSecretMaterial": true
+    }
+  ],
+  "firstBundleHashes": {
+    "dist/assets/index-BvHlJBz_.js": {
+      "bytes": 62064,
+      "sha256": "d66572e527c5239bfaa896a8892ae2fdb6aff1311625a1db8711707e52968add"
+    },
+    "dist/assets/index-vF3kZ63t.css": {
+      "bytes": 6696,
+      "sha256": "a18ed89cdd4a4e17b1eaec98565c5bf72a4839d12d4df4a690aeac74a19f629c"
+    },
+    "tests/browser/https-lan.spec.ts": {
+      "bytes": 22629,
+      "sha256": "e441a2acdb7261493114a29cb3866543b2b354cd687f453520876291006bde4a"
+    },
+    "tests/browser/https-lan-fixtures.ts": {
+      "bytes": 14049,
+      "sha256": "24665d5617968055de745eab5c39c1db69d858100862c35145eca174bd21defc"
+    }
+  },
+  "finalSourceHashes": [
+    {
+      "path": "tests/browser/https-lan.spec.ts",
+      "bytes": 22934,
+      "sha256": "beb61dd4ac7a8c2352a2afbe006f623cfda024ebe5ea8ced0140cc4cbc7da36e"
+    },
+    {
+      "path": "tests/browser/https-lan-fixtures.ts",
+      "bytes": 14049,
+      "sha256": "24665d5617968055de745eab5c39c1db69d858100862c35145eca174bd21defc"
+    },
+    {
+      "path": "src/main.ts",
+      "bytes": 73643,
+      "sha256": "df30edf8fc033b4424c4d46ee608203354b7c5bdaa695aa14a4aa6498226d14f"
+    },
+    {
+      "path": "src/api.ts",
+      "bytes": 14440,
+      "sha256": "823cee2784d24b9df6769ef437f983eeafa73a7f5f0611100dcf9dd5b395a675"
+    },
+    {
+      "path": "challenges/server.py",
+      "bytes": 26359,
+      "sha256": "3525c9ff1247f287be14ee6214827a3a56ee316b91dab10c3d68c0e3565bdcf2"
+    },
+    {
+      "path": "challenges/https_server.py",
+      "bytes": 7560,
+      "sha256": "5ef9a8c33799758c1216f419eda84b82580bb5150cc68aa2908bdf04d7a5fac6"
+    },
+    {
+      "path": "challenges/transport.py",
+      "bytes": 7318,
+      "sha256": "13e9682d8ceb05bb563a61b35a11043cb48060308aa359efec7efd8273f2477c"
+    },
+    {
+      "path": "challenges/__main__.py",
+      "bytes": 2248,
+      "sha256": "d0049be123c5a548a7a0ae1bc54f601ea0b601ed23056f122c7f1857f9a226e9"
+    },
+    {
+      "path": "dist/assets/index-C3DcWdpJ.js",
+      "bytes": 62069,
+      "sha256": "f32d6046313b937af6d3981d653270141073fef7578a120527ab6932430f081b"
+    },
+    {
+      "path": "dist/assets/index-vF3kZ63t.css",
+      "bytes": 6696,
+      "sha256": "a18ed89cdd4a4e17b1eaec98565c5bf72a4839d12d4df4a690aeac74a19f629c"
+    }
+  ],
+  "originalFixtures": {
+    "issue": 108,
+    "fixtures": [
+      {
+        "file": "original-panels.png",
+        "bytes": 241,
+        "sha256": "bb57f4d182161dce8094355d694c6649add4639755ff08c1cfc15d042d1fcd85",
+        "width": 96,
+        "height": 64,
+        "quadrantRGB": [
+          [
+            200,
+            30,
+            40
+          ],
+          [
+            20,
+            180,
+            50
+          ],
+          [
+            30,
+            60,
+            210
+          ],
+          [
+            230,
+            200,
+            20
+          ]
+        ],
+        "interiorNormalizedJpegMaxChannelError": 12
+      },
+      {
+        "file": "original-panels.jpg",
+        "bytes": 996,
+        "sha256": "4319d9bf2a15edff5819fe1ed492ce11f9e206c95e15f680d8ad33192c011e6f",
+        "width": 72,
+        "height": 48,
+        "quadrantRGB": [
+          [
+            200,
+            30,
+            40
+          ],
+          [
+            20,
+            180,
+            50
+          ],
+          [
+            30,
+            60,
+            210
+          ],
+          [
+            230,
+            200,
+            20
+          ]
+        ],
+        "interiorNormalizedJpegMaxChannelError": 12
+      }
+    ],
+    "terms": {
+      "title": "Original HTTPS color challenge108",
+      "description": "Each participant draws an original four-panel color study.",
+      "successCriteriaBefore": "Share one completed original study.",
+      "successCriteriaAccepted": "Share two completed original studies.",
+      "evidenceRule": "Supply an original image and literal caption; claims remain unverified.",
+      "stake": "pick-a-movie",
+      "deadline": "Native form next-day ISO minute; exact captured milliseconds compared thereafter"
+    },
+    "profiles": {
+      "proposer": "Arden",
+      "opponent": "Mira",
+      "arbiter": "Rowan"
+    },
+    "evidence": [
+      "Original supplied panels <literal> \u03a9",
+      "Second supplied JPEG study"
+    ],
+    "resolution": {
+      "method": "arbiter",
+      "by": "arbiter",
+      "outcome": "opponent",
+      "proposalId": null,
+      "reason": "The supplied record supports Mira; this is our agreed decision."
+    },
+    "auditKinds": [
+      "created",
+      "opponent_joined",
+      "terms_edited",
+      "accepted",
+      "evidence_image_added",
+      "evidence_image_added",
+      "result_proposed",
+      "result_responded",
+      "arbiter_nominated",
+      "arbiter_responded",
+      "invite_issued",
+      "arbiter_joined",
+      "arbiter_decided"
+    ],
+    "frozenAssertions": [
+      "Claim is not acceptance; changedterms stale409 createsnoevent, explicitReview+Acceptrecords termsVersion2 once",
+      "Both independent uploaded sources normalized by nativebrowser, retainedpreviewJPEG exact SHA/size/pixels across allauthorizedroles",
+      "No-cookie privateauthority, absent/wrong/setup-only fail; no setup key persisted or exported",
+      "Exact mutual arbiter nomination ID and fresh independent thirdcapability; proposer cannotdecide",
+      "Actual JSON+HTMLpublicaudit/images byteidentical acrosssame-port wholeCLIrestart; originalprivateaccessrecoversroles andusedinvitesstayused"
+    ],
+    "trust": "Generated pertest exactIP-SAN cert, normallytrusted Node readiness, Chromium onlyexactSPKIflag, strictCA/SAN Pythonoracle separate",
+    "noSecrets": true
+  },
+  "scope": [
+    "Native normalization/real TLS/real Pillow admission/SQLite/auth/consent/export/restart; no mock application state or image bytes.",
+    "Controlled browserfetch completion delays happen only after genuine HTTPS response, used for ownership and uncertainty tests; not a packet-latency claim.",
+    "Chromium trusts only exact originalfixtureSPKI; Node readiness verifies actualcertificate normally. Strict CA/SANnegative protocol cases are independent.",
+    "Samehost isolatedcontexts and actualCLIprocessrestart are not physicalmultidevice/LANcertificate setup acceptance.",
+    "Private failure traces stay local under originalresultdirectories and may contain temporarytestcapabilities; only sanitized publicartifacts promoted.",
+    "Maximum20\u00d78-image transport capacity is separate root-coordinated evidence; these actualsmallimages establish native reviewednormalization/role/outcome flow."
+  ]
+}

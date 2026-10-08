@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "issue": 75,
+  "status": "verified",
+  "failedCi": {
+    "commit": "634c4668da4bf9e45a669bbd0a315abba983ab13",
+    "runId": 37199016441,
+    "jobId": 111426670730,
+    "browserPassed": 42,
+    "browserFailed": 1,
+    "chromium": "153.0.8010.12",
+    "observed": "The old poll accepted the previous 2-second endpoint preview before a new rehearsal animation frame, then failed time < 1."
+  },
+  "sourceComparison": "Shot source, tests, configuration and workflow were byte-unchanged between prior green6169ade and failed634c466.",
+  "nativeControlledReproduction": {
+    "port": 4318,
+    "browser": "/usr/bin/chromium",
+    "timingOnly": true,
+    "before": {
+      "time": 2,
+      "label": "CAMERA 01 \u00b7 Truck study \u00b7 END endpoint preview \u2014 not the film cut at this position",
+      "pngSha256": "6ebb154455d237e3c1db506d758d3c03c97191040660079e59ab5bfcbaab6803"
+    },
+    "held": {
+      "time": 2,
+      "label": "CAMERA 01 \u00b7 Truck study \u00b7 END endpoint preview \u2014 not the film cut at this position",
+      "pngSha256": "6ebb154455d237e3c1db506d758d3c03c97191040660079e59ab5bfcbaab6803",
+      "oldPollPasses": true,
+      "oldUpperBoundPasses": false,
+      "heldFrames": 1
+    },
+    "afterRelease": {
+      "time": 0.06,
+      "label": "CAMERA 01 \u00b7 Truck study \u00b7 Film",
+      "pngSha256": "e9a5b74e350ffb8e6830e07d07c64e1bba757956cbb1123a7efc2d5e116d21d9",
+      "rawPreserved": true
+    },
+    "errors": [],
+    "success": true,
+    "ownedServerClosed": true
+  },
+  "correction": "Poll actual sampled PNG plus display time atomically until 0.1 < time < 1; use that exact admitted frame for the existing independent camera projection assertion. No fixed sleep, relaxed bounds or product changes.",
+  "verification": {
+    "unitPassed": 107,
+    "unitSeconds": 0.265,
+    "syntaxCheck": true,
+    "focusedBrowserPassed": 1,
+    "focusedBrowserSeconds": 4,
+    "fullBrowserPassed": 43,
+    "fullBrowserDuration": "1.3m",
+    "chromium": "151.0.7922.173",
+    "ownedPortsClosed": [
+      4317,
+      4318
+    ]
+  },
+  "sourceSha256": {
+    "apps/shot-studio/tests/browser/travel.spec.js": "b0dd798b86a26eb42da8382f6c6d8721e411e9fd1af5e532684e2f48aeb6d1ef"
+  },
+  "ci": {
+    "status": "success",
+    "commit": "313b20ccf11c3ff45f5927ced6c306a843fabaf5",
+    "runId": 37199574159,
+    "jobId": 111428295871,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37199574159",
+    "unitPassed": 107,
+    "unitDurationMs": 365.797198,
+    "browserPassed": 43,
+    "browserDuration": "1.1m",
+    "chromium": "153.0.8010.12",
+    "syntaxCheck": true,
+    "repositoryNote": "Shot passed; the other project failure at this commit is Melody and is under separate investigation. This is not an all-workflows-green claim."
+  },
+  "limitations": [
+    "The timing-only reproduction deferred a real requestAnimationFrame callback; it did not fabricate rendered pixels, timestamps or saved data.",
+    "Original camera, performer and video numeric assertions remain unchanged. Physical WebXR validation remains outside this test correction."
+  ]
+}

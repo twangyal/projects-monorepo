@@ -1,0 +1,48 @@
+name: Motion Studio
+
+on:
+  push:
+    paths:
+      - 'apps/motion-studio/**'
+      - '.github/workflows/motion-studio.yml'
+  pull_request:
+    paths:
+      - 'apps/motion-studio/**'
+      - '.github/workflows/motion-studio.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/motion-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/motion-studio/package-lock.json
+      - run: npm ci
+      - name: Local private-link transport prerequisites
+        run: sudo apt-get update && sudo apt-get install -y openssl util-linux
+      - run: npm run check
+      - run: npm run typecheck
+      - run: npx playwright install --with-deps chromium
+      - name: Production Chromium workflows and decoded GIF/PNG archive verification
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: motion-studio-browser-results
+          path: apps/motion-studio/test-results
+          retention-days: 7

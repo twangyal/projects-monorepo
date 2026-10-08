@@ -1,0 +1,75 @@
+name: Shot Studio
+on:
+  push:
+    paths: ['apps/shot-studio/**', '.github/workflows/shot-studio.yml']
+  pull_request:
+    paths: ['apps/shot-studio/**', '.github/workflows/shot-studio.yml']
+  workflow_dispatch:
+concurrency:
+  # Automated runs follow the newest ref; manual verification keeps a unique ID.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-browser-review
+          path: apps/shot-studio/test-results/
+          retention-days: 1
+  maximum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/shot-studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Original full-minute soundtrack and complete restart acceptance
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4174 --bind 127.0.0.1 > /tmp/shot-maximum-server.log 2>&1 &
+          shot_server_pid=$!
+          trap 'kill "$shot_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --silent --fail http://127.0.0.1:4174/ > /dev/null; then break; fi
+            sleep .1
+          done
+          mkdir -p test-results
+          node scripts/smoke_sequence_soundtrack.mjs --prepare --output /tmp/shot-maximum-fixtures
+          DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --fixtures /tmp/shot-maximum-fixtures --output test-results/maximum --origin http://127.0.0.1:4174 2>test-results/maximum-browser.log
+          node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/maximum
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-maximum-review
+          path: |
+            apps/shot-studio/test-results/maximum/**
+            !apps/shot-studio/test-results/maximum/profile/**
+            apps/shot-studio/test-results/maximum-browser.log
+          retention-days: 1

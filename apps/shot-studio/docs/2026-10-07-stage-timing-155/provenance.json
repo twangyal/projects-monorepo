@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "artifacts": [
+    {
+      "label": "push-stage",
+      "sourceHead": "0f4c1def55ec34516946352332f928265616ac39",
+      "runId": 37599287274,
+      "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37599287274",
+      "artifactId": 11471684588,
+      "artifactBytes": 11369092,
+      "artifactSha256": "3da74e42a05a29d29a1d57f609326751fe46d3d2bfcc311d28b7b38fff9d8e71",
+      "receiptSha256": "d10dd6768aede26ae5394bf3bf0ed9812e60d245235fff0c6fa6246db7ffcf65",
+      "browserLogSha256": "26ec6c12741eab1a6c05a8f1aa46f08f42e044ecbebc5ea52fb7779e86ac3e6a"
+    },
+    {
+      "label": "push-original",
+      "sourceHead": "0f4c1def55ec34516946352332f928265616ac39",
+      "runId": 37599287274,
+      "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37599287274",
+      "artifactId": 11471789276,
+      "artifactBytes": 11371025,
+      "artifactSha256": "94c7a3317b18b41bc8d75761c497c13dd1141bccf671b3a8dbd66331fbccea44",
+      "receiptSha256": "8c2fd4d8963f43708844df6cb0bdb9ffcfe5c629b0946c1a919cfa239244a9e8",
+      "browserLogSha256": "731eb745d173aeebff3e2ae4dd5f34e2365d090c43ccf0bfe3f208a0761190af"
+    },
+    {
+      "label": "pr-stage",
+      "sourceHead": "0f4c1def55ec34516946352332f928265616ac39",
+      "runId": 37599295042,
+      "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37599295042",
+      "artifactId": 11471209278,
+      "artifactBytes": 11369079,
+      "artifactSha256": "1c2cf01c53dd39b74d70c240f26f3dfdeb42d11d51b6ae6ad71dbfa26a5ba2db",
+      "receiptSha256": "ffcf145fa86a2a6361c3c83fd7bae9215abb951b00ecb705e0bf17e82b45bf89",
+      "browserLogSha256": "f053303858595d3eb580966c5ff27af194ba8ec7ea152c0baf5e35b021d0fbbc"
+    },
+    {
+      "label": "pr-original",
+      "sourceHead": "0f4c1def55ec34516946352332f928265616ac39",
+      "runId": 37599295042,
+      "runUrl": "https://github.com/twangyal/projects-monorepo/actions/runs/37599295042",
+      "artifactId": 11472058189,
+      "artifactBytes": 11370320,
+      "artifactSha256": "db8fc7be1379c689b58078ef2dfdd1471c90faa7871404862b064e7b1b036d1d",
+      "receiptSha256": "afb380db928cc848e430015f52157743ac02dddfaf41d294f7bbdc2c1dbd46ce",
+      "browserLogSha256": "907e8d9ed66e2824c5d837d6eae2cf772aca5d9dc99f5012d0509f389758ddc9"
+    }
+  ],
+  "limits": [
+    "First push and PR runs; no retry or discarded attempt.",
+    "Successful stage observations do not explain the prior timeout.",
+    "Artifact hashes/each retained receipt artifact verified locally; media decode gates executed by CI.",
+    "Elapsed stage timings include native/scheduling waits and may overlap; not additive CPU time."
+  ]
+}

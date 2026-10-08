@@ -1,0 +1,727 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": 61,
+  "physicalVerificationIssue": 62,
+  "scope": "Standard Bluetooth Heart Rate software input, calibrated source-pinned game runs, safe cancellation and identity-free reports. Physical device compatibility and accuracy remain unverified.",
+  "commits": {
+    "sparseCalibrationPrerequisite": "6d2a2012d10758e2080e048d6ee8646d93b4cb7d",
+    "protocol": "233006eb73a7c7c85371624f1c0d65b9c1f44d64",
+    "transportAndModel": "2d33a6cce38767f60b1568881ce5cda1a271bfb3",
+    "completeImplementation": "a73f866a475f775cce4644af49674f7db0c97373"
+  },
+  "environment": {
+    "os": "Debian 13 Linux x86_64",
+    "node": "24.19.0",
+    "playwright": "1.63.0",
+    "localChromium": "151.0.7922.173",
+    "ciChromium": "153.0.8010.12"
+  },
+  "checks": {
+    "unit": {
+      "passed": 97,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 387.020748,
+      "breakdown": {
+        "preservedOriginal": 8,
+        "sparseBaselineRegression": 4,
+        "protocolCalibration": 19,
+        "transport": 33,
+        "bluetoothModel": 18,
+        "independentOracle": 15
+      },
+      "log": "/tmp/composure-ble-final-checks.log"
+    },
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "productionBrowser": {
+      "passed": 23,
+      "preservedOriginal": 6,
+      "new": 17,
+      "reportedDuration": "1.9m",
+      "log": "/tmp/composure-ble-full23.log",
+      "artifacts": "/tmp/composure-ble-full23"
+    },
+    "ci": {
+      "commit": "a73f866a475f775cce4644af49674f7db0c97373",
+      "allTwelveProjectWorkflows": "success",
+      "composureRun": 37189037388,
+      "composureJob": 111397148886,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37189037388",
+      "unitPassed": 97,
+      "browserPassed": 23,
+      "browserReportedDuration": "1.7m"
+    }
+  },
+  "developmentObservations": [
+    "Existing sparse calibration accepted missing or inherited readings. Three of four new regression cases failed before the dense-own-data check; all four passed afterward.",
+    "Protocol/calibration suite grew to 19 cases; 16 meaningful cases failed before implementation. Transport began with 23 failing stub cases and finished with 33. Model began with 14 failing cases and finished with 18.",
+    "Independent oracle expectations were derived before reading producer implementation. First actual run had 13 passes and two overly specific stale-versus-missing label failures. Contract permits either nonfresh state; assertions were corrected to require nonfresh history/neutral behavior and a new receipt. All 15 passed without production changes from those two failures.",
+    "Independent source review produced verified fixes for the valid 255-RR packet count, distinct signal-invalidity events before a first sample, and wall-clock staleness on zero-step advance.",
+    "Initial native UI RED was a missing Next run source control. First full new browser run was 10 passed and seven failed: six exact label/status-copy assumptions and one teardown console observer lost during document replacement. Test selectors/status wording and fixture-only sessionStorage telemetry corrected the harness; affected nine then passed, followed by all 23. No production change came from those browser failures.",
+    "Independent native probe first attempted console, then exposed-binding teardown telemetry; both were dropped during genuine navigation. Failure logs remain retained. Unique probe-owned sessionStorage counters then established synchronous pagehide cleanup without touching app preference or game storage."
+  ],
+  "nativeOriginal": {
+    "verification": {
+      "path": "/tmp/composure-ble-native-evidence/verification.json",
+      "bytes": 7514,
+      "sha256": "a8627a1f5898fea7cd698bfe28283a92a83df67f57fc96a61f85f88718afccfa"
+    },
+    "inspection": {
+      "schemaVersion": 1,
+      "visualInspection": {
+        "method": "view_image on retained actual native PNGs",
+        "images": [
+          "/tmp/composure-ble-native-evidence/unmodified-desktop.png",
+          "/tmp/composure-ble-native-evidence/unmodified-mobile.png",
+          "/tmp/composure-ble-native-evidence/controlled-desktop-final.png",
+          "/tmp/composure-ble-native-evidence/controlled-mobile-running.png"
+        ],
+        "findings": "Unavailable guidance and disabled BLE controls are visible on unmodified profiles. Controlled desktop clearly shows Escaped, 100% lock, completed objectives and Bluetooth source. Mobile is legible in one column without horizontal overflow; running Bluetooth source and 70 BPM notification are visible."
+      },
+      "teardown": {
+        "ownedPreviewPid": 356460,
+        "port4292Free": true,
+        "ownedBrowserProcessesRemaining": []
+      },
+      "timing": {
+        "desktopControlledActiveSeconds": 21.58333333333339,
+        "mobileControlledActiveSeconds": 0.08333333333333333,
+        "calibrationRelativeSeconds": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "postStartReceiptRelativeSeconds": 4.1,
+        "wallRuntime": "Not instrumented; retained durations are controlled performance/active-clock values, not physical elapsed-time measurements."
+      },
+      "instrumentationHistory": {
+        "firstRun": "Console teardown marker was dropped; retained failure report/log.",
+        "secondRun": "Playwright binding teardown marker was dropped; retained failure report/log.",
+        "finalRun": "Approved unique fixture-only sessionStorage counter survived genuine same-origin navigation and observed one owned disconnect per controlled profile."
+      },
+      "limits": "Headless Linux Chromium 151.0.7922.173 with mobile viewport/touch emulation is not a real mobile OS or physical smartwatch. Controlled navigator.bluetooth and page.clock establish software behavior only.",
+      "profiles": "/tmp/composure-ble-native-profiles",
+      "checks": {
+        "unmodifiedProfiles": 2,
+        "controlledProfiles": 2,
+        "pageErrors": [],
+        "pagehideDisconnects": [
+          1,
+          1
+        ],
+        "identityReads": [
+          0,
+          0
+        ]
+      }
+    },
+    "manifest": {
+      "port4292Free": true,
+      "ownedBrowserProcessesRemaining": [],
+      "artifacts": [
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-desktop-baseline.png",
+          "bytes": 284354,
+          "sha256": "f7fe9e4a44681ee2368a7c1796ab619d3790218062ec51e7c079a60991255c85"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-desktop-empty-run.json",
+          "bytes": 1173,
+          "sha256": "b782b6087bda6864d50398640f10d4d76ddba5527af858ac89927c43cb972daa"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-desktop-final.png",
+          "bytes": 290017,
+          "sha256": "00522c8f523d211b90a91d9f21aa24ff6f4da9f69ff11f2c140ad4baa19706dd"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-desktop-run.json",
+          "bytes": 1928,
+          "sha256": "2d8861c051c8164271ebf8b0d4b5251110aed709694cac3f772c4952bce830c1"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-desktop-running.png",
+          "bytes": 291087,
+          "sha256": "e093f7f00f1f7a8c33bb3fd0a18bd7aa61b1bf06def264d5c4cb710bee9fd21b"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-mobile-baseline.png",
+          "bytes": 238325,
+          "sha256": "e89113c8b988f08c095e6da512aa521c4e3d1d4685d9cba392f2de149fb61a89"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-mobile-empty-run.json",
+          "bytes": 1173,
+          "sha256": "b782b6087bda6864d50398640f10d4d76ddba5527af858ac89927c43cb972daa"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-mobile-final.png",
+          "bytes": 243948,
+          "sha256": "6fcfba0e43a32b5fd0ce90f6dcbd1b36dea3c618a1c64faf230805f728236e4b"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-mobile-run.json",
+          "bytes": 1287,
+          "sha256": "6edf0af77d5dc5d1d830bf3986a3e54d27a593ea3961c6b20b7a0b6839631741"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/controlled-mobile-running.png",
+          "bytes": 243948,
+          "sha256": "6fcfba0e43a32b5fd0ce90f6dcbd1b36dea3c618a1c64faf230805f728236e4b"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/inspection.json",
+          "bytes": 2119,
+          "sha256": "45db994caec2eb19d3dfed69bd3afdc97f961f9f4e63352d280b5702e24e4630"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/probe-first-console-observer-failure.log",
+          "bytes": 610,
+          "sha256": "c2b889773722145701bfe6eef0952a7f219f070ba9c1b2b8b51a151127987b96"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/probe-second-binding-observer-failure.log",
+          "bytes": 610,
+          "sha256": "c2b889773722145701bfe6eef0952a7f219f070ba9c1b2b8b51a151127987b96"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/unmodified-desktop.png",
+          "bytes": 279175,
+          "sha256": "04488a5986d4536b8c6edd6b5ade7dc92d7d9cd1ca9a84b9216893e1adbbfff5"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/unmodified-mobile.png",
+          "bytes": 234337,
+          "sha256": "d7b386e6d5d4d9cb4645aec6c2061444ed52db7fa4c48047433e26c93b396638"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/verification-first-console-observer-failure.json",
+          "bytes": 3167,
+          "sha256": "873179b5d02209f6ec2e04ee797d6a2667c2bb4c7d409bc158966430b239a96b"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/verification-second-binding-observer-failure.json",
+          "bytes": 3167,
+          "sha256": "873179b5d02209f6ec2e04ee797d6a2667c2bb4c7d409bc158966430b239a96b"
+        },
+        {
+          "path": "/tmp/composure-ble-native-evidence/verification.json",
+          "bytes": 7514,
+          "sha256": "a8627a1f5898fea7cd698bfe28283a92a83df67f57fc96a61f85f88718afccfa"
+        }
+      ],
+      "productionBuild": [
+        {
+          "path": "/workspace/projects-monorepo/apps/composure/dist/assets/index-DrmJQicq.css",
+          "bytes": 4260,
+          "sha256": "3c55ed0d0ab32001a1cd80bba0e617e1bafe2f678bec382ce0300180dde67d01"
+        },
+        {
+          "path": "/workspace/projects-monorepo/apps/composure/dist/assets/index-Dsa2Rq36.js",
+          "bytes": 41717,
+          "sha256": "e063ca2f5687e8d2252a70aafeedce80c4690cf6704afd2ca412bab1c776b193"
+        },
+        {
+          "path": "/workspace/projects-monorepo/apps/composure/dist/index.html",
+          "bytes": 481,
+          "sha256": "708ca9c0a87d2f9eb1ea59f0ba696398bf7c1c3cc9385afb579e5c92e9948cc0"
+        }
+      ]
+    },
+    "desktopReport": {
+      "schemaVersion": 2,
+      "source": "bluetooth-hr",
+      "scenario": "observatory-escape-v1",
+      "baselineBpm": 70,
+      "scares": false,
+      "outcome": "won",
+      "loss": null,
+      "activeSeconds": 21.58333333333339,
+      "objectives": {
+        "fuse": true,
+        "power": true,
+        "key": true,
+        "unlocked": true
+      },
+      "samples": [
+        {
+          "time": 0.06666666666666667,
+          "bpm": 70,
+          "receivedSeconds": 4.1
+        }
+      ],
+      "events": [
+        {
+          "time": 0,
+          "kind": "start",
+          "text": "Find a fuse and key; restore power, steady the lock and escape."
+        },
+        {
+          "time": 2.666666666666662,
+          "kind": "fuse",
+          "text": "Fuse collected. Restore the lower power panel."
+        },
+        {
+          "time": 7.349999999999979,
+          "kind": "power",
+          "text": "Power restored. Find the key on the upper shelf."
+        },
+        {
+          "time": 11.550000000000153,
+          "kind": "key",
+          "text": "Key collected. Use it at the exit lock once power is restored."
+        },
+        {
+          "time": 19.733333333333494,
+          "kind": "unlock",
+          "text": "Lock opened. Reach the right-hand exit."
+        },
+        {
+          "time": 21.58333333333339,
+          "kind": "win",
+          "text": "You escaped the observatory."
+        }
+      ],
+      "truncatedSamples": false,
+      "truncatedEvents": false,
+      "limitations": "Received standard-HR notifications are game inputs; device compatibility and accuracy are unverified. No emotion or medical inference is made, and this is not a deterministic replay file.",
+      "calibration": {
+        "baselineBpm": 70,
+        "samples": [
+          {
+            "bpm": 68,
+            "receivedSeconds": 0
+          },
+          {
+            "bpm": 69,
+            "receivedSeconds": 1
+          },
+          {
+            "bpm": 70,
+            "receivedSeconds": 2
+          },
+          {
+            "bpm": 71,
+            "receivedSeconds": 3
+          },
+          {
+            "bpm": 72,
+            "receivedSeconds": 4
+          }
+        ],
+        "spanSeconds": 4,
+        "runStartedSeconds": 4
+      }
+    },
+    "mobileReport": {
+      "schemaVersion": 2,
+      "source": "bluetooth-hr",
+      "scenario": "observatory-escape-v1",
+      "baselineBpm": 70,
+      "scares": false,
+      "outcome": "running",
+      "loss": null,
+      "activeSeconds": 0.08333333333333333,
+      "objectives": {
+        "fuse": false,
+        "power": false,
+        "key": false,
+        "unlocked": false
+      },
+      "samples": [
+        {
+          "time": 0.06666666666666667,
+          "bpm": 70,
+          "receivedSeconds": 4.1
+        }
+      ],
+      "events": [
+        {
+          "time": 0,
+          "kind": "start",
+          "text": "Find a fuse and key; restore power, steady the lock and escape."
+        }
+      ],
+      "truncatedSamples": false,
+      "truncatedEvents": false,
+      "limitations": "Received standard-HR notifications are game inputs; device compatibility and accuracy are unverified. No emotion or medical inference is made, and this is not a deterministic replay file.",
+      "calibration": {
+        "baselineBpm": 70,
+        "samples": [
+          {
+            "bpm": 68,
+            "receivedSeconds": 0
+          },
+          {
+            "bpm": 69,
+            "receivedSeconds": 1
+          },
+          {
+            "bpm": 70,
+            "receivedSeconds": 2
+          },
+          {
+            "bpm": 71,
+            "receivedSeconds": 3
+          },
+          {
+            "bpm": 72,
+            "receivedSeconds": 4
+          }
+        ],
+        "spanSeconds": 4,
+        "runStartedSeconds": 4
+      }
+    },
+    "wallRuntime": null
+  },
+  "portableReproduction": {
+    "script": "apps/composure/scripts/smoke_bluetooth_input.mjs",
+    "scriptArtifact": {
+      "path": "/workspace/projects-monorepo/apps/composure/scripts/smoke_bluetooth_input.mjs",
+      "bytes": 18061,
+      "sha256": "78f688436cf535305cc2295d4ea7e260fc46913d51a7e3207d2931df2665cac9"
+    },
+    "command": "COMPOSURE_BLE_BASE_URL=http://127.0.0.1:4292/ CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_bluetooth_input.mjs",
+    "nodeSyntax": "passed",
+    "scopedEslint": "passed",
+    "missingUrlRefusedBeforeBrowser": true,
+    "existingOutputRefusedBeforeBrowser": true,
+    "verificationArtifact": {
+      "path": "/tmp/composure-bluetooth-ZMp79E/verification.json",
+      "bytes": 10104,
+      "sha256": "f39d134b0faa4584b9d7f8719e1123a67ad54c6a47474a15e4310e83fb145fc8"
+    },
+    "verification": {
+      "schemaVersion": 1,
+      "origin": "http://127.0.0.1:4292/",
+      "executablePath": "/usr/bin/chromium",
+      "output": "/tmp/composure-bluetooth-ZMp79E",
+      "profiles": "/tmp/composure-bluetooth-ZMp79E/profiles",
+      "wallStartedAt": "2026-10-04T08:37:53.924Z",
+      "claims": {
+        "physicalDevice": false,
+        "deviceCompatibility": false,
+        "measurementAccuracy": false
+      },
+      "method": {
+        "productionApp": true,
+        "productionImports": false,
+        "gameStateInjection": false,
+        "appStorageInjection": false,
+        "controlledBoundary": "Only navigator.bluetooth uses independent EventTarget/DataView packets.",
+        "cleanupTelemetry": "One unique sessionStorage probe key is incremented synchronously inside controlled GATT disconnect; no app preference or reading key is written.",
+        "controlledTime": "Playwright page.clock pauses and advances performance.now, timers and native animation frames; no wall-time or hardware timing claim.",
+        "keyboard": "Native Playwright keyboard events and displayed coordinates control all escape movement."
+      },
+      "unmodified": [
+        {
+          "name": "unmodified-desktop",
+          "browserVersion": "151.0.7922.173",
+          "secureContext": true,
+          "bluetoothPresent": false,
+          "requestDeviceType": "undefined",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+          "platform": "Linux x86_64",
+          "controls": {
+            "connectEnabled": false,
+            "startEnabled": false,
+            "status": "Web Bluetooth is unavailable in this browser.",
+            "calibration": "Baseline: 0/5 received readings. Choose Collect baseline for a new Bluetooth run."
+          },
+          "simulatorStarted": true,
+          "image": "/tmp/composure-bluetooth-ZMp79E/unmodified-desktop.png"
+        },
+        {
+          "name": "unmodified-mobile",
+          "browserVersion": "151.0.7922.173",
+          "secureContext": true,
+          "bluetoothPresent": false,
+          "requestDeviceType": "undefined",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+          "platform": "Linux x86_64",
+          "controls": {
+            "connectEnabled": false,
+            "startEnabled": false,
+            "status": "Web Bluetooth is unavailable in this browser.",
+            "calibration": "Baseline: 0/5 received readings. Choose Collect baseline for a new Bluetooth run."
+          },
+          "simulatorStarted": true,
+          "image": "/tmp/composure-bluetooth-ZMp79E/unmodified-mobile.png"
+        }
+      ],
+      "controlled": [
+        {
+          "name": "controlled-desktop",
+          "browserVersion": "151.0.7922.173",
+          "readyImage": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-baseline.png",
+          "image": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-running.png",
+          "finalImage": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-final.png",
+          "calibrationStartedAt": 3,
+          "startedAt": 4003,
+          "stats": {
+            "requests": [
+              {
+                "filters": [
+                  {
+                    "services": [
+                      "heart_rate"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "calls": [
+              "chooser",
+              "connect",
+              "service",
+              "characteristic",
+              "start"
+            ],
+            "disconnects": 0,
+            "identityReads": 0,
+            "packets": [
+              {
+                "bytes": [
+                  2,
+                  68
+                ],
+                "at": 3
+              },
+              {
+                "bytes": [
+                  2,
+                  69
+                ],
+                "at": 1003
+              },
+              {
+                "bytes": [
+                  2,
+                  70
+                ],
+                "at": 2003
+              },
+              {
+                "bytes": [
+                  2,
+                  71
+                ],
+                "at": 3003
+              },
+              {
+                "bytes": [
+                  2,
+                  72
+                ],
+                "at": 4003
+              },
+              {
+                "bytes": [
+                  2,
+                  70
+                ],
+                "at": 4103
+              }
+            ],
+            "listeners": 2
+          },
+          "reportPath": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-run.json",
+          "initialReportPath": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-empty-run.json",
+          "outcome": "won",
+          "preferencesExact": true,
+          "onlyPreferencesStored": true,
+          "noAutoReconnectAfterNavigation": true,
+          "genuinePagehideDisconnectSignals": 1,
+          "cleanupTelemetryKey": "composure-native-probe-cleanup-8b0c44cf-d42f-458f-9725-2b10c50eb510",
+          "pageErrors": []
+        },
+        {
+          "name": "controlled-mobile",
+          "browserVersion": "151.0.7922.173",
+          "readyImage": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-baseline.png",
+          "image": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-running.png",
+          "finalImage": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-final.png",
+          "calibrationStartedAt": 2,
+          "startedAt": 4002,
+          "stats": {
+            "requests": [
+              {
+                "filters": [
+                  {
+                    "services": [
+                      "heart_rate"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "calls": [
+              "chooser",
+              "connect",
+              "service",
+              "characteristic",
+              "start"
+            ],
+            "disconnects": 0,
+            "identityReads": 0,
+            "packets": [
+              {
+                "bytes": [
+                  2,
+                  68
+                ],
+                "at": 2
+              },
+              {
+                "bytes": [
+                  2,
+                  69
+                ],
+                "at": 1002
+              },
+              {
+                "bytes": [
+                  2,
+                  70
+                ],
+                "at": 2002
+              },
+              {
+                "bytes": [
+                  2,
+                  71
+                ],
+                "at": 3002
+              },
+              {
+                "bytes": [
+                  2,
+                  72
+                ],
+                "at": 4002
+              },
+              {
+                "bytes": [
+                  2,
+                  70
+                ],
+                "at": 4102
+              }
+            ],
+            "listeners": 2
+          },
+          "reportPath": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-run.json",
+          "initialReportPath": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-empty-run.json",
+          "outcome": "running",
+          "preferencesExact": true,
+          "onlyPreferencesStored": true,
+          "noAutoReconnectAfterNavigation": true,
+          "genuinePagehideDisconnectSignals": 1,
+          "cleanupTelemetryKey": "composure-native-probe-cleanup-98db27a9-13a0-442e-ab40-03532bf2843f",
+          "pageErrors": []
+        }
+      ],
+      "artifacts": [
+        "/tmp/composure-bluetooth-ZMp79E/unmodified-desktop.png",
+        "/tmp/composure-bluetooth-ZMp79E/unmodified-mobile.png",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-baseline.png",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-empty-run.json",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-running.png",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-run.json",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-final.png",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-baseline.png",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-empty-run.json",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-running.png",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-run.json",
+        "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-final.png"
+      ],
+      "errors": [],
+      "passed": true,
+      "ownedBrowserCleanupSucceeded": true,
+      "wallCompletedAt": "2026-10-04T08:38:05.864Z",
+      "wallElapsedSeconds": 11.939634756,
+      "artifactDetails": [
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/unmodified-desktop.png",
+          "bytes": 279175,
+          "sha256": "04488a5986d4536b8c6edd6b5ade7dc92d7d9cd1ca9a84b9216893e1adbbfff5"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/unmodified-mobile.png",
+          "bytes": 234337,
+          "sha256": "d7b386e6d5d4d9cb4645aec6c2061444ed52db7fa4c48047433e26c93b396638"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-baseline.png",
+          "bytes": 284354,
+          "sha256": "f7fe9e4a44681ee2368a7c1796ab619d3790218062ec51e7c079a60991255c85"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-empty-run.json",
+          "bytes": 1173,
+          "sha256": "b782b6087bda6864d50398640f10d4d76ddba5527af858ac89927c43cb972daa"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-running.png",
+          "bytes": 291087,
+          "sha256": "e093f7f00f1f7a8c33bb3fd0a18bd7aa61b1bf06def264d5c4cb710bee9fd21b"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-run.json",
+          "bytes": 1930,
+          "sha256": "b59361563bc7560e8458d20c921bb04b1cd401925eddfbf727d32e338c072d34"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-desktop-final.png",
+          "bytes": 290017,
+          "sha256": "00522c8f523d211b90a91d9f21aa24ff6f4da9f69ff11f2c140ad4baa19706dd"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-baseline.png",
+          "bytes": 238325,
+          "sha256": "e89113c8b988f08c095e6da512aa521c4e3d1d4685d9cba392f2de149fb61a89"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-empty-run.json",
+          "bytes": 1173,
+          "sha256": "b782b6087bda6864d50398640f10d4d76ddba5527af858ac89927c43cb972daa"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-running.png",
+          "bytes": 243948,
+          "sha256": "6fcfba0e43a32b5fd0ce90f6dcbd1b36dea3c618a1c64faf230805f728236e4b"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-run.json",
+          "bytes": 1287,
+          "sha256": "6edf0af77d5dc5d1d830bf3986a3e54d27a593ea3961c6b20b7a0b6839631741"
+        },
+        {
+          "path": "/tmp/composure-bluetooth-ZMp79E/controlled-mobile-final.png",
+          "bytes": 243948,
+          "sha256": "6fcfba0e43a32b5fd0ce90f6dcbd1b36dea3c618a1c64faf230805f728236e4b"
+        }
+      ]
+    },
+    "visualInspection": "Controlled desktop win and mobile running PNGs inspected; controls and source are readable without horizontal overflow.",
+    "teardown": {
+      "ownedPreviewPid": 358603,
+      "port4292Free": true,
+      "ownedProfileBrowserProcessesRemaining": []
+    }
+  },
+  "limits": [
+    "Unmodified secure Linux Chromium exposes no navigator.bluetooth; the real unavailable state and working simulator are verified, not a chooser or adapter.",
+    "Controlled provider uses original EventTarget/DataView notification fixtures and page.clock-controlled performance/timers/animation frames. No production imports, game-state injection or application storage injection. A unique probe-only sessionStorage counter observes navigation cleanup.",
+    "Controlled desktop completes all escape objectives; mobile viewport/touch emulation verifies startup and one reading, not a mobile operating system or complete mobile escape.",
+    "No physical smartwatch, actual broadcasting cadence, device compatibility, measurement accuracy or native hidden-document transition was verified. Issue62 remains open; catalog17 remains ACTIVE.",
+    "Original probe wall runtime was not instrumented. Portable rerun wall time is 11.939634756 seconds. Active game times use controlled clocks and are not physiological timing measurements.",
+    "No medical or emotional-state inference, replay engine, BLE best-time leaderboard, automatic reconnect, or durable sensor reading storage is provided."
+  ]
+}

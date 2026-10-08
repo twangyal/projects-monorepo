@@ -1,0 +1,69 @@
+{
+  "scope": "isolated alternate sequence implementation; not integrated Astra UI acceptance",
+  "primaryTracker": "https://github.com/twangyal/projects-monorepo/issues/90",
+  "supersededPR": "https://github.com/twangyal/projects-monorepo/pull/93",
+  "coreCommit": "6a49d54dccd4d2a63a7fad8c844bdfe8c670091e",
+  "red": {
+    "head": "acc4cbb4476ad737b3b773c8dd2ba5d628a76054",
+    "run": 37217846631,
+    "existingBrowserPassed": 53,
+    "newBrowserFailed": 5,
+    "failure": "missing sequence controls"
+  },
+  "firstUI": {
+    "head": "39463b89b8eb6a9126e35be141edf4188bb99111",
+    "run": 37218310584,
+    "browserPassed": 57,
+    "browserFailed": 1,
+    "cause": "test read storage before async native file publication; added observable title/source publication waits"
+  },
+  "expandedAcceptance": {
+    "branchHead": "6bc192ce1256a55df4b5bcb742cc911b310d45a2",
+    "run": 37218497180,
+    "unitPassed": 168,
+    "browserPassed": 60,
+    "syntaxPassed": true,
+    "maximum": {
+      "sources": 4,
+      "shotsPerSource": 20,
+      "cuesPerSource": 64,
+      "clips": 20,
+      "seconds": 60,
+      "completeBackupBytes": 77478,
+      "wholeBrowserRestartByteIdentical": true,
+      "decodedFrames": 1774,
+      "decodedSpanSeconds": 59.959
+    },
+    "sourcePixels": "FFmpeg raw RGB at 1s and 3s independently verifies red then blue source costume/light; 960x540 pixels decoded",
+    "takeSnapshot": "source unchanged after scene editing and actual saved-take deletion",
+    "actualCheckout": "5dfde3aaaed3208c1b33a8c23821c0eba416e880"
+  },
+  "limits": [
+    "The UI/format branch is intentionally superseded. Do not replace the stable-identity primary implementation.",
+    "Native results apply to this branch only; adapt and rerun fixtures on the integrated implementation.",
+    "Software WebGL, Chromium, and one encoder run do not establish device or headset compatibility.",
+    "No local Chromium executable is installed in this execution environment; native verification was executed in GitHub CI."
+  ],
+  "finalExactHead": {
+    "head": "d03ff3bfd6ba30625de92fba7803c4e3dd95511f",
+    "push": {
+      "run": 37218552553,
+      "actualCheckout": "d03ff3bfd6ba30625de92fba7803c4e3dd95511f",
+      "unitPassed": 168,
+      "browserPassed": 60,
+      "decodedFrames": 1714,
+      "decodedSpanSeconds": 59.885
+    },
+    "pullRequest": {
+      "run": 37218555584,
+      "actualCheckout": "535f0a592d3cbc4a4995e80fc857ee90e37ec68f",
+      "unitPassed": 168,
+      "browserPassed": 60,
+      "decodedFrames": 1720,
+      "decodedSpanSeconds": 59.872
+    },
+    "backupBytes": 77478,
+    "wholeBrowserRestartByteIdentical": true
+  },
+  "integrationFollowup": "PR95 independently repairs fractional quota admission for all clip orders; the stable-identity integration must retain that invariant. No alternate UI merge."
+}

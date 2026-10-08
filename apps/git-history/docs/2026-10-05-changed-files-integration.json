@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-05",
+  "milestone": "Git History #123 changed-file CLI/workbench integration",
+  "status": "owned integration and relevant existing compatibility gates passed; root broad/native/wheel gates pending",
+  "scope": [
+    "git_history/cli.py",
+    "git_history/workbench.py",
+    "tests/test_changed_files_integration.py",
+    "docs/2026-10-05-changed-files-integration.json"
+  ],
+  "sources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/git_history/cli.py",
+      "sha256": "68168bc15e9052db45033d82b2931db6ac2028a947af4cf37f903cb41ecb4908",
+      "bytes": 16737
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/git_history/workbench.py",
+      "sha256": "b554f90648d802030c7b398376faf7748e3b4ef334703aae6e001381811f841e",
+      "bytes": 26586
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/tests/test_changed_files_integration.py",
+      "sha256": "4e771128e6b03b9a9421325ee59405fda10e8024782f942bf9ecddaaa29b82d8",
+      "bytes": 15945
+    }
+  ],
+  "implementation": {
+    "cli": "changes --repo --left-ref --right-ref --directory --format text|json; stdout only, no output/force flags",
+    "job": {
+      "operation": "changed-files",
+      "args": [
+        "left_ref",
+        "right_ref",
+        "directory"
+      ],
+      "result": "one validated catalog object, no added wrapper"
+    },
+    "authority": "CLI and HTTP each call the shared kernel serializer; HTTP decodes its validated canonical string to the existing result object.",
+    "jsonRecipe": "json.dumps(asdict(validated_catalog), ensure_ascii=False, sort_keys=True, indent=2) + newline",
+    "text": "Safely JSON-quoted literal paths/ref labels; full pinned revisions, endpoint kinds/modes/object IDs; no rename inference and regular candidate disclaimer.",
+    "bounds": {
+      "refUtf8Bytes": 1024,
+      "directoryUtf8Bytes": 4096,
+      "catalogUtf8Bytes": 8388608,
+      "aggregateSeconds": 45,
+      "aggregateNativeOutputBytes": 33554432
+    },
+    "staticAddition": "Root-approved exact /changed-files.js route through current packaged static asset mapping and JavaScript MIME/CSP; no generic filesystem serving.",
+    "preserved": "Existing security/Host/Origin/capability/body limits, one job pump, joined cancellation, terminal visibility, trusted ReaderError versus generic unknown/Git errors, old operations/output publication."
+  },
+  "firstFailures": [
+    {
+      "kind": "invocation setup error; not feature RED",
+      "command": "/tmp/git-history-ts-env/bin/python -B -m unittest tests.test_changed_files_integration -v",
+      "cwd": "monorepo root (incorrect)",
+      "outcome": "tests module missing before any test body ran",
+      "log": {
+        "path": "/tmp/git123-integration-red.log",
+        "sha256": "ffd89a5e3b8ba2eb8097c7cb80c3fad52c9e5bda28b260828cec2e3e4f583095",
+        "bytes": 688
+      }
+    },
+    {
+      "kind": "actual missing-feature RED",
+      "command": "/tmp/git-history-ts-env/bin/python -B -m unittest tests.test_changed_files_integration -v",
+      "cwd": "apps/git-history",
+      "cases": 10,
+      "passed": 1,
+      "failed": 9,
+      "durationSeconds": 0.512,
+      "outcome": "changes command rejected by argparse; changed-files job rejected400; authentication case already passes",
+      "log": {
+        "path": "/tmp/git123-integration-feature-red.log",
+        "sha256": "a70ebbd3ff1cb039361db36f069ab0af9bde9991fc498b25289347ce107f30ce",
+        "bytes": 9877
+      }
+    }
+  ],
+  "verification": {
+    "python": "/tmp/git-history-ts-env/bin/python",
+    "pythonVersion": "3.11.16",
+    "integration": {
+      "command": "/tmp/git-history-ts-env/bin/python -B -m unittest tests.test_changed_files_integration -v",
+      "cwd": "apps/git-history",
+      "cases": 13,
+      "passed": 13,
+      "failed": 0,
+      "durationSeconds": 1.201,
+      "log": {
+        "path": "/tmp/git123-integration-first-green.log",
+        "sha256": "28f4ae1460e73fcf8dffcd6a2a4cc1397d86f6861cdf66bf4668eb368706e5d6",
+        "bytes": 2704
+      },
+      "note": "Original10 first-failure cases plus3 subsequent boundary/static/no-partial cases; no retroactive RED claimed for added cases."
+    },
+    "compatibility": {
+      "command": "/tmp/git-history-ts-env/bin/python -B -m unittest tests.test_cli tests.test_workbench tests.test_context_authoring_workbench tests.test_comparison_workbench.ComparisonWorkbenchTests.test_real_comparison_has_exact_independent_pins_sources_hashes_and_portable_outputs tests.test_comparison_workbench.ComparisonWorkbenchTests.test_exact_wire_admission_preserves_completed_result_on_bad_fields_types_and_limits tests.test_comparison_workbench.ComparisonWorkbenchTests.test_comparison_retains_exact_origin_and_capability_authentication -v",
+      "cwd": "apps/git-history",
+      "cases": 31,
+      "passed": 31,
+      "failed": 0,
+      "durationSeconds": 12.467,
+      "log": {
+        "path": "/tmp/git123-integration-compatibility.log",
+        "sha256": "555e89d359c53d8526443450f5d43ddda9fd6a436c7a2ea9edd8b7892adb1b25",
+        "bytes": 5679
+      }
+    },
+    "static": {
+      "command": "/tmp/duet-service-checks/bin/ruff check git_history/cli.py git_history/workbench.py tests/test_changed_files_integration.py",
+      "result": "passed",
+      "log": {
+        "path": "/tmp/git123-integration-static.log",
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "bytes": 19
+      },
+      "pythonAst": "All3 owned Python files parsed successfully without writing bytecode."
+    },
+    "coverage": [
+      "Independent literal Git blob SHA1/status/path facts, empty present file, exact subtree boundary, dirty worktree remains byte unchanged",
+      "Canonical non-ASCII sorted-key JSON byte recipe and CLI/HTTP structural parity",
+      "Safely quoted tab/newline/Unicode/glob-looking text output",
+      "Same-tree empty success, invalid ref/no partial stdout and prohibited output flag refusal",
+      "Exact schema/types/UTF8/surrogate/NUL/+1 limits with previous completed result retained; accepted exact boundaries forwarded without clipping",
+      "Origin/capability/Host/Sec-Fetch authentication before job execution",
+      "Exact packaged static module bytes/MIME/CSP and query/traversal/other path refusal",
+      "Existing comparison consumes full pinned metadata and preserves exact independent source text",
+      "One kernel catalog rendered once; trusted ReaderError visible and raw unknown/Git diagnostics hidden",
+      "Real child cancellation joins/reaps before replacement; actual aggregate deadline test reaps child without partial result"
+    ],
+    "aggregateDeadlineTest": "Reduced test-owned server timeout0.15s; production45s unchanged.",
+    "ownedResources": "Disposable Git fixtures and port0 ephemeral HTTP servers only. Every teardown shutdown/server_close/join asserts no serving thread; child cancellation/deadline tests assert actual PID reaped.",
+    "limitations": [
+      "No full Python version matrix, installed-wheel, maximum or browser gate run by this author.",
+      "Metadata catalog does not establish UTF8/source-size/200-line eligibility until existing explicit source/selection operations.",
+      "No RSS/performance guarantee claimed."
+    ],
+    "repositoryGitMutation": false,
+    "persistentService": false,
+    "browserRun": false,
+    "buildRun": false,
+    "dependencyInstall": false
+  }
+}

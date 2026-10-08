@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "issue": 87,
+  "milestone": "backend-only; original frontend tests, not final image UI acceptance",
+  "repository": "twangyal/projects-monorepo",
+  "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+  "observedAt": "2026-10-04T15:31:31Z",
+  "friendly": [
+    {
+      "event": "push",
+      "runId": 37212865772,
+      "jobId": 111467393202,
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "checkoutSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212865772",
+      "python": {
+        "version": "3.11.16",
+        "tests": 86,
+        "passed": 86,
+        "skipped": 0,
+        "seconds": 27.662
+      },
+      "typescript": {
+        "tests": 22,
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0,
+        "milliseconds": 172.369467
+      },
+      "browser": {
+        "tests": 12,
+        "passed": 12,
+        "seconds": 48,
+        "chromiumInstalled": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "node": "24.21.0",
+      "compile": "success",
+      "ruff": "success",
+      "eslint": "success",
+      "typecheck": "success",
+      "productionBuild": "success",
+      "log": {
+        "path": "/tmp/friendly87-backend-push-job111467393202.log",
+        "sha256": "4df93df116ea900dc7da265bb9398908b321ed24a5281c595e3153394b834116",
+        "encoding": "UTF-8 decoded GitHub job log"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37212869367,
+      "jobId": 111467404289,
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "checkoutSha": "264df7840afcf04241edaa244dba26da50f276af",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869367",
+      "python": {
+        "version": "3.11.16",
+        "tests": 86,
+        "passed": 86,
+        "skipped": 0,
+        "seconds": 25.547
+      },
+      "typescript": {
+        "tests": 22,
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0,
+        "milliseconds": 223.022487
+      },
+      "browser": {
+        "tests": 12,
+        "passed": 12,
+        "seconds": 49.7,
+        "chromiumInstalled": "153.0.8010.12",
+        "playwrightChromiumBuild": 1243
+      },
+      "node": "24.21.0",
+      "compile": "success",
+      "ruff": "success",
+      "eslint": "success",
+      "typecheck": "success",
+      "productionBuild": "success",
+      "log": {
+        "path": "/tmp/friendly87-backend-pr-job111467404289.log",
+        "sha256": "59997faef22e887032082212d6d0d2069acaa5ef7eb819418c449056f4f7d1f5",
+        "encoding": "UTF-8 decoded GitHub job log"
+      }
+    }
+  ],
+  "pullRequestWorkflows": [
+    {
+      "name": "Color Context Lab",
+      "runId": 37212869299,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869299"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37212869290,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869290"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37212869306,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869306"
+    },
+    {
+      "name": "Clothing Studio",
+      "runId": 37212869388,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869388"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37212869502,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869502"
+    },
+    {
+      "name": "Git History",
+      "runId": 37212869446,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869446"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37212869367,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869367"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37212869303,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869303"
+    },
+    {
+      "name": "Duet",
+      "runId": 37212869342,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869342"
+    },
+    {
+      "name": "Composure",
+      "runId": 37212869396,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869396"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37212869335,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869335"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37212869280,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869280"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37212869246,
+      "event": "pull_request",
+      "headSha": "02ca3f7cd7fc8bdc167596e4a9bc85b32ee948d8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37212869246"
+    }
+  ],
+  "summary": {
+    "pullRequestWorkflowCount": 13,
+    "pullRequestSuccessCount": 13
+  },
+  "limitations": [
+    "This receipt describes the backend commit only; it does not establish final new UI/native acceptance.",
+    "Chromium version is the version installed in the CI job log; the old suite does not separately print browser.version()."
+  ]
+}

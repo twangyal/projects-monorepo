@@ -1,3 +1,4 @@
+import {validateBackupDrafts} from './draft-backup.js';
 const MESSAGES = [
   { id: 'welcome', subject: 'Welcome to your practice inbox', body: 'Use the large controls to browse messages. Every action stays on this page.' },
   { id: 'calibration', subject: 'Tips for calibration', body: 'Keep your head still and look at the dot while clicking. Lighting and camera placement affect accuracy.' },
@@ -35,6 +36,12 @@ export function createWorkspace() {
       const index=saved.findIndex(item=>item.id===id);
       if(index<0)throw new Error('Saved draft was not found.');
       const draft={id,...content(subject,body)};saved[index]=draft;return {...draft};
+    },
+    appendDrafts(rows) {
+      const fields=validateBackupDrafts(rows);
+      if(saved.length+fields.length>20)throw new Error('Import would exceed 20 session drafts. Existing drafts were kept.');
+      const added=fields.map((draft,index)=>({id:`draft-${saved.length+index+1}`,...draft}));
+      saved.push(...added);return added.map(draft=>({...draft}));
     },
     drafts: () => saved.map(draft => ({ ...draft })),
   };

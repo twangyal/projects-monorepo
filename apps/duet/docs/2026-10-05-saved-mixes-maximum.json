@@ -1,0 +1,1396 @@
+{
+  "schemaVersion": 1,
+  "issue": 119,
+  "status": "passed",
+  "script": "scripts/smoke_saved_mixes.py",
+  "scriptSha256": "45fe9a6cf0af5c136b3185e97b6324a40fbf383b9263347165b984e4f282a7fb",
+  "independence": {
+    "productionImports": [],
+    "expectedValues": "Literal five-room/eight-mix/twelve-reference quotas, 80-code-point ASCII labels/names, 100×500-character memories per room; expected saved arrays constructed from submitted literal source metadata and only actual newly minted IDs",
+    "audio": "Sixty distinct original two-second PCM16 tones, exact 96,000 frames at 48 kHz mono, independently checked actual normalized 48 kHz stereo full PCM and frequency projection",
+    "archive": "Actual offline CLI plus independent SQLite and stdlib ZIP inspection; never construct Store or use producer domain/archive helpers as expected values",
+    "native": "Dedicated independent native owner covers trusted three-song/two-seat UI/audio flow; this runner does not claim a browser execution"
+  },
+  "frozenExpectations": {
+    "rooms": 5,
+    "mixesPerRoom": 8,
+    "totalMixes": 40,
+    "referencesPerMix": 12,
+    "totalReferences": 480,
+    "finalAvailableTracks": 60,
+    "distinctOriginalWaveforms": 60,
+    "actualUploads": 61,
+    "memoriesPerRoom": 100,
+    "totalMemories": 500,
+    "namesTitleArtistCharacters": 80,
+    "memoryCharacters": 500,
+    "sourceFrames": 96000,
+    "sourceSeconds": 2,
+    "sourceSampleRate": 48000,
+    "sourceAmplitude": 8000,
+    "sourceFrequencies": "220 + 7*n Hz for n=0..59",
+    "toneProjectionMinimum": 0.03,
+    "maximumCoreBytes": 262144,
+    "maximumPrivateRoomBytes": 365429,
+    "maximumExportBytes": 393216,
+    "maximumEnvelopeBytes": 1828169,
+    "escapedC0ByteOracle": {
+      "entry": 1029,
+      "twelveEntryMix": 12903,
+      "eightMixArray": 103233,
+      "compactRootFields": 103285,
+      "spacedRootFields": 103904,
+      "limits": "Worst-case arithmetic uses 80 escaped U+0001 characters and maximum16-digit revision; duplicate IDs only in repeated-shape arithmetic, never admitted runtime data"
+    }
+  },
+  "coverage": [
+    "Eight named copies per room preserve full ordered exact captured labels; ninth refuses without mutation",
+    "Current playlist changes/build and explicit saved update/identical rename have independent library/playlist/transport revisions; stale rename refuses",
+    "One mix delete affects no current playlist/playback/audio/votes/memories; new deliberate save restores eight independent copies",
+    "Deleted source labels remain captured; availableOnly false refuses, explicit true loads available order paused at first/zero without changing saved copy",
+    "One replacement track restores twelve available media files while six saved mixes retain missing historical reference labels; maximum remains40mixes/480refs/60availabletracks",
+    "Two original seat capabilities authenticate every complete snapshot,60audiohashes and five complete exports; wrong credentials and used invitation refuse",
+    "Actual full graceful service restart with original seat links; paused current anchors/playlist/mix/vote/memory identity retained",
+    "Offline create/inspect/restore complete new2/2 archive; exactly62 STORED members,60actualmedia exactbytes, original source database byte identity unchanged",
+    "Restored private roles/capability and invite hashes compared exactly inside private local file; only existing updatedAt pause difference allowed; no individual capability hash in public receipt"
+  ],
+  "phasedExecution": {
+    "cwd": "apps/duet",
+    "prepare": "python3 scripts/smoke_saved_mixes.py prepare --output /workspace/duet119-maximum-fixtures-corrected",
+    "rootStartOriginal": "Start unchanged real service on fresh /workspace/duet119-maximum-fixtures-corrected/original-library using port0; retain its printed numeric origin, not private capability links",
+    "capture": "python3 scripts/smoke_saved_mixes.py capture --output /workspace/duet119-maximum-fixtures-corrected --origin http://127.0.0.1:PORT",
+    "rootRestartOriginal": "Graceful SIGTERM and wait for root-owned process exit, then restart same original-library; no script-owned service",
+    "verifyRestart": "python3 scripts/smoke_saved_mixes.py verify-restart --output /workspace/duet119-maximum-fixtures-corrected --origin http://127.0.0.1:NEW_PORT",
+    "rootStopOriginal": "Graceful stop and wait; archive phase independently requires existing service lock unlocked and no nonempty WAL/rollback journal",
+    "archive": "python3 scripts/smoke_saved_mixes.py archive --output /workspace/duet119-maximum-fixtures-corrected --data-dir /workspace/duet119-maximum-fixtures-corrected/original-library --python python3",
+    "rootStartRestored": "Start restored-library produced by no-clobber actual CLI, fresh port0; no new credentials",
+    "verifyRestored": "python3 scripts/smoke_saved_mixes.py verify-restored --output /workspace/duet119-maximum-fixtures-corrected --origin http://127.0.0.1:RESTORED_PORT",
+    "actualRootOrigin": "http://127.0.0.1:4319 for original, restarted and restored phases; separate root-owned service lifetimes"
+  },
+  "ownership": {
+    "author": "Source/static verification only",
+    "root": "All fixture/audio generation/service control/HTTP and archive CLI execution; preserve first outcomes",
+    "privateFiles": "Fresh0700output; private-state.json and private-original-records.json0600; no tokenURLs, raw credentials, individual capability hashes or private room JSON printed/copied into repository"
+  },
+  "cost": {
+    "estimate": "Several minutes, dominated by61actualnormalizations and180fullshortOpusCLIvalidations; measure actual phases",
+    "disk": "Allow200MiB workspace for60originalWAVs, normalized files, original/restored libraries, archive and outputs; no peakRAM claim",
+    "mediaScope": "Two-second real Opus files, not the previous60×8MiB/300s#65maximum; runtime graph counts and new metadata limits separately verified"
+  },
+  "limitations": [
+    "All four maximum phases passed under root execution; author performed no runtime rerun. These are graph-count maxima with two-second sources, not media byte-cap or physical-device evidence.",
+    "Readable maximum labels/memories do not saturate every raw byte cap; escaped-C0 ceilings are separate literal arithmetic",
+    "No physical-device synchronization, learned taste, inference or subjective emotion claim",
+    "Actual CLI restore intentionally omits runtime lock; offline inspection of uniquely owned never-started restore does not create one",
+    "No server/build/browser/dependency/Git ownership"
+  ],
+  "staticChecks": {
+    "commands": [
+      "Python ast.parse of scripts/smoke_saved_mixes.py",
+      "/tmp/duet-service-checks/bin/ruff check scripts/smoke_saved_mixes.py"
+    ],
+    "scope": "AST and lint only; do not invoke module or generate fixtures"
+  },
+  "preparationFirstFailure": {
+    "executor": "Root, not author",
+    "directory": "/workspace/duet119-maximum-fixtures",
+    "log": "/tmp/duet119-maximum-prepare.log",
+    "originalScriptSha256": "2b2212da4f54b6da1b5280fc4d607d9e88dc556a4a90f5cfe9dad6e091e07a82",
+    "originalDataPreserved": true,
+    "observedCompletedArtifacts": "All60originalWAVs, original-plan.json and original-audio.json; verification.json absent",
+    "cause": "Spaced inserted-root length was incorrectly computed by subtracting1 from standalone extra object bytes",
+    "actualCalculation": {
+      "entry": 1029,
+      "mix": 12903,
+      "eightMixArray": 103233,
+      "compactExtraObject": 103286,
+      "compactInsertedFields": 103285,
+      "spacedExtraObject": 103904,
+      "oldWrongSpacedMinusOne": 103903,
+      "actualInsertedSpacedFields": 103904
+    },
+    "classification": "Independent fixture arithmetic/bookkeeping error, not a production bound defect",
+    "errorTypeDerivedFromSource": "ValueError raised by byte_oracle require; first generic runtime log did not expose type"
+  },
+  "sourceCorrection": {
+    "correctedScriptSha256": "45fe9a6cf0af5c136b3185e97b6324a40fbf383b9263347165b984e4f282a7fb",
+    "changedCalculation": "Measure len(spaced(existingRoot+extra))-len(spaced(existingRoot)) exactly; preserves original frozen103904 bound",
+    "addedDiagnostic": "New owned output prepare-failure.json records phase/stage/errorType and bounded fixed/ValueError guidance without URLs, credentials, raw records or traceback",
+    "sourceMediaGraphLimitsUnchanged": true,
+    "generationOrRuntimeByAuthor": false
+  },
+  "runtimeEvidence": {
+    "executor": "Root executed preparation, HTTP, audio normalization/decode and archive CLI phases; author inspected safe receipts and existing original WAV bytes only",
+    "verificationPath": "/workspace/duet119-maximum-fixtures-corrected/verification.json",
+    "verificationSha256": "ea84b5306bf9f90da9ee418a70f7be7bff286b125df9f704c170625f10264bfc",
+    "scriptSha256": "45fe9a6cf0af5c136b3185e97b6324a40fbf383b9263347165b984e4f282a7fb",
+    "phaseResults": [
+      {
+        "name": "capture",
+        "status": "passed",
+        "httpCalls": 1311,
+        "rooms": 5,
+        "mixes": 40,
+        "references": 480,
+        "audioReads": 120,
+        "exports": 10,
+        "memories": 500,
+        "publicSnapshots": [
+          {
+            "roomNumber": 0,
+            "snapshotSha256": "a5c921fa11f547aa03d6f4bcaef76bc3121785bcad1cb532651a886c939bfaed",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 1,
+            "snapshotSha256": "8219a918bb998e12861737470045cd9a29573b20121afc10fa4be72d448c1c55",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 2,
+            "snapshotSha256": "087ace84309a3eac73e58a9dda91f234ca08abd6dbbb86fee10c040685042f1e",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 3,
+            "snapshotSha256": "9843dcf39e7e0a42a115c5e9b47d595b725bfbe17d3647ac6c2c22bc73834998",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 4,
+            "snapshotSha256": "c7adb7402e9377443a4ea7929af044c5dec5523baa42c03449af52305ba467ea",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          }
+        ],
+        "exportArtifacts": [
+          {
+            "roomNumber": 0,
+            "bytes": 105980,
+            "sha256": "1bbe87dd395fec5655071eb4e0da9b64f53f721b6f20dafada08137bf2e39a84"
+          },
+          {
+            "roomNumber": 1,
+            "bytes": 105984,
+            "sha256": "8efebb6b87478a980571574247da7ed783d5d8321272c0bef640fa6534767cd3"
+          },
+          {
+            "roomNumber": 2,
+            "bytes": 105977,
+            "sha256": "b1dccc4fc8d2fbcde9c46e8947b46a4ed29707f9cbdf2a7d92c3cd86bae4c64c"
+          },
+          {
+            "roomNumber": 3,
+            "bytes": 105984,
+            "sha256": "124c77b7763185fb504b934da54c739a7ff63fddc1f8f0ba069764eb89370463"
+          },
+          {
+            "roomNumber": 4,
+            "bytes": 105984,
+            "sha256": "34a6ccc32cac2ba42be838d42d100d55bc8e2838eee72d4b67db022342815489"
+          }
+        ],
+        "seatChecks": "Original host/guest Bearer credentials retained; wrong capability refused and used invite cannot mint another seat",
+        "wallMs": 38790.09087001032
+      },
+      {
+        "name": "verify-restart",
+        "status": "passed",
+        "httpCalls": 150,
+        "rooms": 5,
+        "mixes": 40,
+        "references": 480,
+        "audioReads": 120,
+        "exports": 10,
+        "memories": 500,
+        "publicSnapshots": [
+          {
+            "roomNumber": 0,
+            "snapshotSha256": "a5c921fa11f547aa03d6f4bcaef76bc3121785bcad1cb532651a886c939bfaed",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 1,
+            "snapshotSha256": "8219a918bb998e12861737470045cd9a29573b20121afc10fa4be72d448c1c55",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 2,
+            "snapshotSha256": "087ace84309a3eac73e58a9dda91f234ca08abd6dbbb86fee10c040685042f1e",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 3,
+            "snapshotSha256": "9843dcf39e7e0a42a115c5e9b47d595b725bfbe17d3647ac6c2c22bc73834998",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 4,
+            "snapshotSha256": "c7adb7402e9377443a4ea7929af044c5dec5523baa42c03449af52305ba467ea",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          }
+        ],
+        "exportArtifacts": [
+          {
+            "roomNumber": 0,
+            "bytes": 105980,
+            "sha256": "1bbe87dd395fec5655071eb4e0da9b64f53f721b6f20dafada08137bf2e39a84"
+          },
+          {
+            "roomNumber": 1,
+            "bytes": 105984,
+            "sha256": "8efebb6b87478a980571574247da7ed783d5d8321272c0bef640fa6534767cd3"
+          },
+          {
+            "roomNumber": 2,
+            "bytes": 105977,
+            "sha256": "b1dccc4fc8d2fbcde9c46e8947b46a4ed29707f9cbdf2a7d92c3cd86bae4c64c"
+          },
+          {
+            "roomNumber": 3,
+            "bytes": 105984,
+            "sha256": "124c77b7763185fb504b934da54c739a7ff63fddc1f8f0ba069764eb89370463"
+          },
+          {
+            "roomNumber": 4,
+            "bytes": 105984,
+            "sha256": "34a6ccc32cac2ba42be838d42d100d55bc8e2838eee72d4b67db022342815489"
+          }
+        ],
+        "seatChecks": "Original host/guest Bearer credentials retained; wrong capability refused and used invite cannot mint another seat",
+        "wallMs": 706.2920449970989
+      },
+      {
+        "name": "archive",
+        "status": "passed",
+        "summaries": [
+          {
+            "archive_bytes": 2511756,
+            "media_bytes": 1964340,
+            "memories": 500,
+            "paired_rooms": 5,
+            "pending_invites": 0,
+            "playback_policy": "saved-anchor-paused",
+            "rooms": 5,
+            "schema_version": 2,
+            "tracks": 60
+          },
+          {
+            "archive_bytes": 2511756,
+            "media_bytes": 1964340,
+            "memories": 500,
+            "paired_rooms": 5,
+            "pending_invites": 0,
+            "playback_policy": "saved-anchor-paused",
+            "rooms": 5,
+            "schema_version": 2,
+            "tracks": 60
+          },
+          {
+            "archive_bytes": 2511756,
+            "media_bytes": 1964340,
+            "memories": 500,
+            "paired_rooms": 5,
+            "pending_invites": 0,
+            "playback_policy": "saved-anchor-paused",
+            "rooms": 5,
+            "schema_version": 2,
+            "tracks": 60
+          }
+        ],
+        "archive": {
+          "file": "complete-saved-mixes.duet.zip",
+          "bytes": 2511756,
+          "sha256": "7f9e514076514eb3236caaa1147263106cb78db6ab1838353f8edb101d228160",
+          "members": 62,
+          "audioMembers": 60,
+          "savedMixes": 40,
+          "references": 480,
+          "recordsBytes": 522778
+        },
+        "sourceDatabaseByteIdentityPreserved": true,
+        "privateOriginalRolesInviteMixesVotesMemoriesAndAnchorsPreserved": true,
+        "privateRecordDigestsPublished": false,
+        "allowedRestoreDifference": "Existing paused-anchor updatedAt changes only; original capability and invite hashes checked exactly inside private local comparison",
+        "wallMs": 33356.9850819913
+      },
+      {
+        "name": "verify-restored",
+        "status": "passed",
+        "httpCalls": 150,
+        "rooms": 5,
+        "mixes": 40,
+        "references": 480,
+        "audioReads": 120,
+        "exports": 10,
+        "memories": 500,
+        "publicSnapshots": [
+          {
+            "roomNumber": 0,
+            "snapshotSha256": "a5c921fa11f547aa03d6f4bcaef76bc3121785bcad1cb532651a886c939bfaed",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 1,
+            "snapshotSha256": "8219a918bb998e12861737470045cd9a29573b20121afc10fa4be72d448c1c55",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 2,
+            "snapshotSha256": "087ace84309a3eac73e58a9dda91f234ca08abd6dbbb86fee10c040685042f1e",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 3,
+            "snapshotSha256": "9843dcf39e7e0a42a115c5e9b47d595b725bfbe17d3647ac6c2c22bc73834998",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          },
+          {
+            "roomNumber": 4,
+            "snapshotSha256": "c7adb7402e9377443a4ea7929af044c5dec5523baa42c03449af52305ba467ea",
+            "mixes": 8,
+            "references": 96,
+            "memories": 100
+          }
+        ],
+        "exportArtifacts": [
+          {
+            "roomNumber": 0,
+            "bytes": 105980,
+            "sha256": "653e83fe546d5d67feb36702ee13c3dc85ca99b4f66cd03a4f0c05bdcea279c7"
+          },
+          {
+            "roomNumber": 1,
+            "bytes": 105984,
+            "sha256": "4b4f8b2b3a023da86aecdb69f3297a56e60e91a5f71c5c14efb0f49bdde740bb"
+          },
+          {
+            "roomNumber": 2,
+            "bytes": 105977,
+            "sha256": "74b925ccd283de5cfec5f191833c491af947118601b00b171f44275f26ed711a"
+          },
+          {
+            "roomNumber": 3,
+            "bytes": 105984,
+            "sha256": "ac5d9217bc2f3bdf8e672d35a080a909dc174af46ceeef5105405b6114db0a8d"
+          },
+          {
+            "roomNumber": 4,
+            "bytes": 105984,
+            "sha256": "bd7df5b12b7b067bdb64e7efc24681a455e119888f1cdf6c824e39d923c7d8ad"
+          }
+        ],
+        "seatChecks": "Original host/guest Bearer credentials retained; wrong capability refused and used invite cannot mint another seat",
+        "wallMs": 705.2382149995537
+      }
+    ],
+    "summedPhaseWallMs": 73558.60621199827,
+    "totals": {
+      "rooms": 5,
+      "savedMixes": 40,
+      "savedReferences": 480,
+      "memories": 500,
+      "finalDistinctAudioFiles": 60,
+      "actualUploads": 61,
+      "authenticatedAudioReads": 360,
+      "actualJsonExports": 30,
+      "httpCalls": 1611
+    },
+    "audioIdentityAcrossThreeHttpPhases": true,
+    "publicSnapshotIdentityAcrossThreeHttpPhases": true,
+    "originalAndRestartExportBytesIdentical": true,
+    "restoredExportNote": "Public snapshots, saved mixes and audio remain exact. Export wire SHA changes after the allowed restored paused-anchor updatedAt rewrite; each phase records actual byte length/SHA without claiming complete export byte identity across restore.",
+    "normalizedAudio": [
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "bcc1a62eb125a282a4d3bb4aea43e9549ed5a01116dbd47a39d7be3a81e269f1",
+        "decodedFrames": 96000,
+        "pcmSha256": "a53859eecdc6f5b5199147ff4521d16daaa8b84f6c4fa5144f4e735d306414ab",
+        "declaredFrequency": 220
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "a20f36f6e8e03f2a18dabb226ce8d50eeb0331db627fce4962f47198e75ce6de",
+        "decodedFrames": 96000,
+        "pcmSha256": "7e9236a8c3e6f8146c7510c9469b47e4de1d5cc03c67f0deadfdcb7baef5c94f",
+        "declaredFrequency": 227
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "2dcfa66e35a236738c446a75712ea6caee8d248118c3c0ce829a460540a07d94",
+        "decodedFrames": 96000,
+        "pcmSha256": "ecfba1e3898d4bdab1dedda3c86c08baf58a300982af79d4f28abd9cf8efec0f",
+        "declaredFrequency": 234
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "eef4034e33cfdc57f0c21e3996b1e1fa63ffb40a29e8ecea6b44b04a61861c5e",
+        "decodedFrames": 96000,
+        "pcmSha256": "f63416dd886f833ef4356dcf71cc9676545b096f016c88c2a9873eaa3220a7f8",
+        "declaredFrequency": 241
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "3a7005fc3ddc8a97ac5fe3f337332c54f35d89006159d07fd8fc562bb5c23786",
+        "decodedFrames": 96000,
+        "pcmSha256": "880871f38b7c889d366435e70f7e9330c9191caa63c5a38b67fbfb2925356d46",
+        "declaredFrequency": 248
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "ed0c44bb3a5f3df0130a66b8ea38630cab80f37518d887c12befb93eaa3d84a4",
+        "decodedFrames": 96000,
+        "pcmSha256": "d68c70a3981e981d7d0b262af92edbcbf50729ec1620eb418e55f10434c976ee",
+        "declaredFrequency": 255
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "b03ca2138c41be21e153822672fb34b0e603745626d2e18237d3f5a77e98835a",
+        "decodedFrames": 96000,
+        "pcmSha256": "326395d8d7a9c36e40c7d816203710508f3cc880847a8acd77553151d37e753c",
+        "declaredFrequency": 262
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "adfd276ad79f76052d57dbbb8c03f85e43da2290c10ff6fd5cd3f6ced86547e6",
+        "decodedFrames": 96000,
+        "pcmSha256": "2076f64a3cf664062180b41641d903f80236e14d1472527c334235c4e5a58afd",
+        "declaredFrequency": 269
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "3ef800f4bb5a1c9fb5471f1bccea72b96c090507780e28059370927d665f66ac",
+        "decodedFrames": 96000,
+        "pcmSha256": "30d9eb4e2a8d9a73e9e07d62933d61c27800997de71cb8853e4cef0d6c2f8b89",
+        "declaredFrequency": 276
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "11baafa66902b72338853118ec7f76f5796f627f6e70637ebf496c3d31cdda01",
+        "decodedFrames": 96000,
+        "pcmSha256": "8f2267eaad6fd7b4baa34f1b6e2731e01b592ae0ffa30c2440da0acabeafb0f3",
+        "declaredFrequency": 283
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "8424e975569f2f4e7389a618da69fa024123960b6819c3168c098551f2a09e21",
+        "decodedFrames": 96000,
+        "pcmSha256": "d8cc599516dad808aa647de79f057e6d42b1ddf74ce1376c42998ed272e340d4",
+        "declaredFrequency": 290
+      },
+      {
+        "roomNumber": 0,
+        "bytes": 32739,
+        "sha256": "1e02eea90139a00221687e4a299f08d1dc26596159ccd985a3c33aa2cfc0639f",
+        "decodedFrames": 96000,
+        "pcmSha256": "a417e0697319ef3c9184d6c2f6555c92cfe0ebd9f96cebb84fa5a6ee3cd97ece",
+        "declaredFrequency": 297
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "f102ccbe686b83ac517bb299a0ce2a7d13a051d5b1cc7f47013b399fb77ebad0",
+        "decodedFrames": 96000,
+        "pcmSha256": "679666878d211eb0849cfda6ac77312c7c6a36c6fe479b0c20aa5290dab6af96",
+        "declaredFrequency": 304
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "2870527c9287b29b4aad55ec86f6019842bf086a2125d2419baf7157a1f2dd7a",
+        "decodedFrames": 96000,
+        "pcmSha256": "69faefaf1a83aa9e652e949d34c6bf462fbdca6dd28870fac0b9f3faa5f15f1d",
+        "declaredFrequency": 311
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "d3569e1af28b7ef22653f03deb3dae0cfbcd847d5745f6ce2b21ece56efaab0d",
+        "decodedFrames": 96000,
+        "pcmSha256": "17caf4e08d5e4526a1dab202c54b63c867603722fb244aa51c5f171b25755f80",
+        "declaredFrequency": 318
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "7d80e3a46ebf08327a77ede2f54b9f4dadd2cf32c15097903cae2c558e9d7063",
+        "decodedFrames": 96000,
+        "pcmSha256": "d9faad19691a76d67dd0c4261966372f94868e9854424b6a2406710c1393b729",
+        "declaredFrequency": 325
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "97abfd5849267c4bef3d8caf7ef1b61ca637b6b5bb04539f2e4e590ce65dcf44",
+        "decodedFrames": 96000,
+        "pcmSha256": "0ad9cf2b1fc1adba829209ff46aa77f2778212152171ac65ae43023a383f5fda",
+        "declaredFrequency": 332
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "1ca97c988f5f89e036cc0aa34c0a88d74be31940d534515ba64b4fd9bff8239b",
+        "decodedFrames": 96000,
+        "pcmSha256": "8bd6958c6d4758650bf11fae28327dba5072064e459bd7c329657c477847c5bf",
+        "declaredFrequency": 339
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "6e163efe995d1d8ccbe25fcee0dba4ece9226663df236af095b7807a38ba2813",
+        "decodedFrames": 96000,
+        "pcmSha256": "32136b29ee690000c184a4a759493aeab2ff0c923d0a44bdf55be12633d03b93",
+        "declaredFrequency": 346
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "e25062d679c99431fd0ba5ecdb7fbe210f0598d6caaf191bd0845ce4ca186a7e",
+        "decodedFrames": 96000,
+        "pcmSha256": "acbf16be96fa0eac1d4dbfaf8997846621db5d344a73fa61804913dda87ce0a7",
+        "declaredFrequency": 353
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "7d0d071d62b2e894e796093987b4fb5186383d1cd3584f2042272b5faa27faeb",
+        "decodedFrames": 96000,
+        "pcmSha256": "14ec28cdb02e5c9f65c62f554268ae0104749ff37510ae8857acdee3e8dcd116",
+        "declaredFrequency": 360
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "0a480d727dade1aa46daba5d145f238603622e1e40d7ae9174d1dafdfca6e2ae",
+        "decodedFrames": 96000,
+        "pcmSha256": "2fe856d0addb010362524ce001b37fbfe79f45e20bc5a60cb398d74d8de3baa7",
+        "declaredFrequency": 367
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "4eff7e54ce51ae0caabf44c8324b1db04546e68c40b4465d2d9ae5d9d9a4da96",
+        "decodedFrames": 96000,
+        "pcmSha256": "df98cb1d3f0798cecb837ab3c597600a29ceef24a0b617a8d5c38041504aa115",
+        "declaredFrequency": 374
+      },
+      {
+        "roomNumber": 1,
+        "bytes": 32739,
+        "sha256": "183d496a64c625fb4b99ea50ae09035d48c2f6cfb1016ac52860d9488d39cea3",
+        "decodedFrames": 96000,
+        "pcmSha256": "bd87b14a7f8bbba829f0cb2591bfad1bdf33be9591c4b7f218a8dae1de04528a",
+        "declaredFrequency": 381
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "6dab1e8f436e59d0eb9b8eccbea7725bd07c5a6bb4b5d1f9e7f5abe4b13773bf",
+        "decodedFrames": 96000,
+        "pcmSha256": "a9ca11a7f3a1fbc5211c43dded28df762f46d37eef5ee951bbbd02884dfb9284",
+        "declaredFrequency": 388
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "60ea01c2f743015829818921c2edeb5b11132e69f9f829100f6d0fa1674574d8",
+        "decodedFrames": 96000,
+        "pcmSha256": "40112f259e60f150f6947fd77b3745345d429c8c74ac5b754b150443d2553349",
+        "declaredFrequency": 395
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "21dc15bcdde660e5510dbf373de2f15856d7781e870aec04a79353df19a9e66d",
+        "decodedFrames": 96000,
+        "pcmSha256": "165743af3f873dc972cf237f45df7e1985bf566042ac22cf243daff4cdfb1330",
+        "declaredFrequency": 402
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "c277a2b55a226a10ab29a87fada79931f6f7c6c801ccdc35b9f96c16f8c77c8c",
+        "decodedFrames": 96000,
+        "pcmSha256": "c477047545363ac6cad605376e931750580f1ee8f64ae3a24fa6e91d414e08b6",
+        "declaredFrequency": 409
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "337f1fb7cc3059be574c890cb137ea23972d8a49bfd17d6a0a32b977f433d816",
+        "decodedFrames": 96000,
+        "pcmSha256": "b03a8fdffaf86193dc80a1c2f52a96f954e000cefbb201d4ad45942501ca5cab",
+        "declaredFrequency": 416
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "8de57ec90c8c934f1beb01013fb1e2280696f2262ccf2b9165645f760f9ecab3",
+        "decodedFrames": 96000,
+        "pcmSha256": "4ee28f594506a70cac80f133e472da49ed1e5fd74e0cd2642b87261a84d4cb4e",
+        "declaredFrequency": 423
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "68cfedae8ba4203b932df7b7f4913bc982212fd7da4685579af830003ee24530",
+        "decodedFrames": 96000,
+        "pcmSha256": "a370c62ae9319df5dfb13e1252b71b762228dec9c6ff56f9f25dcda7eb6100cb",
+        "declaredFrequency": 430
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "76f59d3fb10709605eb5904503650e61abcc2e6f537c82b01dd5f6b2146ee0dc",
+        "decodedFrames": 96000,
+        "pcmSha256": "ffecb3f392a04dc33a555cce57db93113c50c386309eb0d37a88b9ac434f8d10",
+        "declaredFrequency": 437
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "7f7ab9e667427f656da8e8c5c28318e71eff6365c43d440b5154eb604355f303",
+        "decodedFrames": 96000,
+        "pcmSha256": "79b46d84d11d0cba574afa51cf5b0af13274400dbcbf2569cbe3a7fceaee02a5",
+        "declaredFrequency": 444
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "ba52858b06d33f95afb3cb3344ebe82659c96e3e4686539fdeaf7fa51aa1545b",
+        "decodedFrames": 96000,
+        "pcmSha256": "2b0a883a5eae6cc44758895f7e1fb448107cd0cd323714c6b7f223f7fe3e09ee",
+        "declaredFrequency": 451
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "690ed5457483f72fe47e8bfbe0b3e9fa52db40db4e2facd25a067dea52bbc835",
+        "decodedFrames": 96000,
+        "pcmSha256": "a0491a2f03afd17488301df598a817913ef311631c120be6f1c49d22723b21c9",
+        "declaredFrequency": 458
+      },
+      {
+        "roomNumber": 2,
+        "bytes": 32739,
+        "sha256": "7d2cdf244a7c0d1dc5a4a322ebfe97767696549766481f7a41cec94355a7ca78",
+        "decodedFrames": 96000,
+        "pcmSha256": "4cde6b9935770b63180e3ef0349455c84cabe85994106f8a824023f67a6410df",
+        "declaredFrequency": 465
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "3a3e1c5d0f014adae1ede752de675b22dfcafe6faec9e07f46ae8d4371e8ee09",
+        "decodedFrames": 96000,
+        "pcmSha256": "0ad20bb2c58a24cb5d116eadf55f87afa082254103c2a8f223aabef84afc4817",
+        "declaredFrequency": 472
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "f846aa40701e9263cae62f6fcdf46239182bdf0680994a9bb3b3716298237af6",
+        "decodedFrames": 96000,
+        "pcmSha256": "a20a6603a351f2199d59df213d6df9d6312fca6b5667a30fe295b4af43673fc6",
+        "declaredFrequency": 479
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "19f0b631dca1d7c1556c968136ab1c05316af1773e427eaf4ab042fcf7ee7f73",
+        "decodedFrames": 96000,
+        "pcmSha256": "cba070f4ec5db8298a4b780a81c21c1ae9525ca6d1c122e592b8a111a46a796f",
+        "declaredFrequency": 486
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "3e657edb442d6bc92d7513898336641dbdc5a3394b718129c93dfa7ed59d8b40",
+        "decodedFrames": 96000,
+        "pcmSha256": "1c1c3649b6f0be2c787c26bbbeac0d91063ff34dbd00502ce20ed5dc7d55b149",
+        "declaredFrequency": 493
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "4654ec085cc6def4ee4e2ad82bd6c59cbbe725f531d1f79d937945601f8fbc09",
+        "decodedFrames": 96000,
+        "pcmSha256": "43be7b634ac7f02845f51b73b71014bbf3403dfb4ed5018a06e9caba17ac1759",
+        "declaredFrequency": 500
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "0f4e3887df341200dc7ba920c6e73bb3d167c4365f754a8e0931b46e6e68307d",
+        "decodedFrames": 96000,
+        "pcmSha256": "efdd48a9d725d498a018fbe3dbc88106bdc3d8cd21fdc1fbf8c1921b64279c29",
+        "declaredFrequency": 507
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "df45bdb75e4b38e9c722afb3f1f0f3364b2a2b1f4edc25d84b38ffb0fdf653b2",
+        "decodedFrames": 96000,
+        "pcmSha256": "e6fdcac14800b1b5420ad842f419905da337fbd9ef4730754238308a0c3574bf",
+        "declaredFrequency": 514
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "b7c51e7dc4b5e44aea98730dc72c0881481d18766ada8653603c285c27691d68",
+        "decodedFrames": 96000,
+        "pcmSha256": "a62b8e31678560b5b3b0b40d9c807426f348fead5ab5c9fb5ca0d21d1cdf2b70",
+        "declaredFrequency": 521
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "5c4088218d22bb41919590a6d3b3cf97ac989eb79048a6e5ba20694758a5bd9e",
+        "decodedFrames": 96000,
+        "pcmSha256": "8949526a6e9781c815fa1a5d5dfc668195b91f15148348a8b59dbeedac4bee1a",
+        "declaredFrequency": 528
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "bc4c88d797aecde7eafe40c07750da506860674ca37d25a1fb171e72ac4e734d",
+        "decodedFrames": 96000,
+        "pcmSha256": "25e3dfbd01f30b6f29dfa56c3e1b02bd675f188659eed1f1f1dd8f87954c22a3",
+        "declaredFrequency": 535
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "8fe6aaea0c32335568e364c5a0b34432a435808e6ba3a2b8a3edd7c9d65d28c9",
+        "decodedFrames": 96000,
+        "pcmSha256": "d57efc87a0ec410485cb73be15ef686f0ec356252b283f80d0481c7102e0be70",
+        "declaredFrequency": 542
+      },
+      {
+        "roomNumber": 3,
+        "bytes": 32739,
+        "sha256": "ff5b0eb8e3a136036244dcabbae878d876da965355e3ed06bf5ede49bdf65e7a",
+        "decodedFrames": 96000,
+        "pcmSha256": "42038834f95042a511cda76084d3e87cbe03d0d8948958bc805da11755c3895f",
+        "declaredFrequency": 549
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "d09f8aa512f8fd5ce8f62c621e27f2cdfd4d107fab6a2a354a3580480cfbcfff",
+        "decodedFrames": 96000,
+        "pcmSha256": "6f4c607b223e783a25891488c43fd9bac06e8f48a5482071ebf6a8f7ff579be6",
+        "declaredFrequency": 556
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "0a51db9b4aed8870805f7e3fca7ecb15d567038ad37f84073bd521e130b0f4d3",
+        "decodedFrames": 96000,
+        "pcmSha256": "42d95af06cd59c010478a913f9182765a20391ebadd3ffada292378e7aa768b7",
+        "declaredFrequency": 563
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "67489be4be3a4c859be7534c42cf71a4924d27e03aeb9cb245a7da9db607eb7b",
+        "decodedFrames": 96000,
+        "pcmSha256": "c061600626ab376e17ebe448403a35f35495d7fb75895db8eb332fb07ba2e2e3",
+        "declaredFrequency": 570
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "3181dca71446335172a3a6f1b03ff9164a3ab5a445bbbb70ea9a73496961f7bc",
+        "decodedFrames": 96000,
+        "pcmSha256": "5e4be5ae4e8a7a24fd55245524992587771a83be2a8fe75ccd125efe4ceaed49",
+        "declaredFrequency": 577
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "7292063cfe86b15ea0378a4cf97347bbc1bf078a6c5ab818d2863ae80b76676a",
+        "decodedFrames": 96000,
+        "pcmSha256": "57488b9a99c982a271c659597f771633b050a5b52bf4ed6e46fc81f4e7df67da",
+        "declaredFrequency": 584
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "ec6576a28c026f5f71dbbfc57c0274732fac5915a8e5490e80e08898ed5062ee",
+        "decodedFrames": 96000,
+        "pcmSha256": "d78fb53c32d25421d840cb685d2c0926b874d5d8f95e9a284b01caed949160c5",
+        "declaredFrequency": 591
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "f2434f9fcd038b6413ccb0a056dc7a01068aed1801397057f1f03063a2a21102",
+        "decodedFrames": 96000,
+        "pcmSha256": "ff1638bbe4444e7042dbc0ce02248a3ab577cdb4f2e4f137fa8a33b054e900d8",
+        "declaredFrequency": 598
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "f46597c8fce387a33a5c9ad6a55729ee854c263a9af51153517198c74419e4d2",
+        "decodedFrames": 96000,
+        "pcmSha256": "f5c3ba9b4a445dbf880453def70d05b2a666c960f54940e5bbdcee85ebc8a3b4",
+        "declaredFrequency": 605
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "945cf760abf21dbf95d1d187bfb7619b0357c22c39c210d6971350f3bec0051a",
+        "decodedFrames": 96000,
+        "pcmSha256": "ab52bc4bb6df0910eb39e985527ee63b5c9d86b9869c46870a8cd7eb478ea3a9",
+        "declaredFrequency": 612
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "b3c3a921ba95de756161c9e4404a41db5964e79327dfc2a2fab91206ea4829e8",
+        "decodedFrames": 96000,
+        "pcmSha256": "7627951de04a8066242e996f2e4c92b6c44779e1fcb14cb123bb3b0afcd2fcd6",
+        "declaredFrequency": 619
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "8c1c9a0b3dbfdb994d4e493baeac63bb745fa8736bb1117a2ff6837d56adf5ed",
+        "decodedFrames": 96000,
+        "pcmSha256": "b8eeb0965e252a3e3c735416577e6114a338ba153ba8f8e859f9000f9402143e",
+        "declaredFrequency": 626
+      },
+      {
+        "roomNumber": 4,
+        "bytes": 32739,
+        "sha256": "8f3a2f681a56482425e06a8992ea45c5e53928d627e39cd19349075091d29627",
+        "decodedFrames": 96000,
+        "pcmSha256": "692528c659b3265d281353fb963b979bddfa62056e9517fdf6ea5641ee414db9",
+        "declaredFrequency": 633
+      }
+    ],
+    "normalizedAudioTotalBytes": 1964340,
+    "archiveOuterBytesAndShaMatchedExistingArtifact": true,
+    "sourceDatabaseImmutability": "Root archive phase reports unchanged original SQLite bytes before/after actual create/inspect/restore; receipt author did not read or hash private database rows",
+    "originalCapabilities": "Checked privately by actual original host/guest API authentication and archive comparisons; no capability values or individual credential hashes published",
+    "services": [
+      {
+        "phase": "original",
+        "pid": 816555,
+        "origin": "http://127.0.0.1:4319",
+        "stopped": true,
+        "metadataPath": "/tmp/duet119-maximum-original-server.json"
+      },
+      {
+        "phase": "restarted",
+        "pid": 826699,
+        "origin": "http://127.0.0.1:4319",
+        "stopped": true,
+        "metadataPath": "/tmp/duet119-maximum-restarted-server.json"
+      },
+      {
+        "phase": "restored",
+        "pid": 828987,
+        "origin": "http://127.0.0.1:4319",
+        "stopped": true,
+        "metadataPath": "/tmp/duet119-maximum-restored-server.json"
+      }
+    ],
+    "restartDiagnostic": {
+      "executor": "Root",
+      "observation": "Raw socket bind probe returned Errno 98 after original service stop; actual unchanged service restarted on the same port 4319 and restart/restored verification passed",
+      "productRepair": false
+    },
+    "privacy": "No private-state.json or private-original-records.json contents read for this update; no individual capability/invite digest included",
+    "scope": "Count maxima with short real media; no media byte-cap, peak-memory, physical-device, CI or broader final-suite claim."
+  },
+  "correctedPreparation": {
+    "executor": "Root",
+    "directory": "/workspace/duet119-maximum-fixtures-corrected",
+    "status": "passed; all four subsequent phases passed",
+    "planFileSha256": "6050156d28c710fb25fd21c0dd417f62c9b31fc85d3e3b95554ccc19905f2f2d",
+    "canonicalCompactPlanSha256": "2a33a712fdcd68eb1f243662362d7c2c010697d7504da15c99472cac263f90b1",
+    "originalAudioManifestSha256": "c731b22fc53d31e33c0777b725ad7fcec78a817a0453a98bd4c4de76ce370d4d",
+    "planBytesIdenticalToFirstFailedPreparation": true,
+    "audioManifestIdenticalToFirstFailedPreparation": true,
+    "allOriginalWavBytesMatchedFirstFailedPreparationAndDeclaredSha256": true,
+    "wavFiles": 60,
+    "bytesPerWav": 192044,
+    "totalWavBytes": 11522640,
+    "originalAudio": [
+      {
+        "file": "tone-00.wav",
+        "frequency": 220,
+        "bytes": 192044,
+        "sourceSha256": "1b879f976182d521706fc6306c83c5df22a21519735dc5d170d92c2acd517e01",
+        "sourcePcmSha256": "5de03d2fdb831559b16e08d8afacd9580deac66f110b19fa2c394f4dd4c755d4"
+      },
+      {
+        "file": "tone-01.wav",
+        "frequency": 227,
+        "bytes": 192044,
+        "sourceSha256": "1607d811e0898a12887aae0a34e90feff33a268f3184abc2a8189d973746e20f",
+        "sourcePcmSha256": "f9d1d01937723beaf7981fbe6191675d3a3eba24b066ccaa74de6b8d4c3a876e"
+      },
+      {
+        "file": "tone-02.wav",
+        "frequency": 234,
+        "bytes": 192044,
+        "sourceSha256": "50fd73d6921cba6e8bc307cb73da6d9037f9b6feba7cd594c8efc5f91c8ce907",
+        "sourcePcmSha256": "3fe278413393a96d4f77e3bc69d7d22792a8d36293c52b5062ed8983c2f24e2f"
+      },
+      {
+        "file": "tone-03.wav",
+        "frequency": 241,
+        "bytes": 192044,
+        "sourceSha256": "a666a2510de4e5cea1c108b2dd38388d9f8dc5d7cf4356ded6c3ee4a6e2c65aa",
+        "sourcePcmSha256": "d5afd3eab02f90d98b783ad2649dfd5ff207e138590b99e08dee1f04a807e9c3"
+      },
+      {
+        "file": "tone-04.wav",
+        "frequency": 248,
+        "bytes": 192044,
+        "sourceSha256": "e9a0ae791aed62f60f85422756fa7ffca6e97e3a6a15c3d9ff527f7a107fd690",
+        "sourcePcmSha256": "93cfbfc74a1b5dead47f1b4eaa8625e6c6822449c95058e9f3aff41f9680d78a"
+      },
+      {
+        "file": "tone-05.wav",
+        "frequency": 255,
+        "bytes": 192044,
+        "sourceSha256": "2746846e286bdc658a63567e3164aa061953816660ecb6b8d02b0a9a5392b936",
+        "sourcePcmSha256": "a0d48f1e3e2efab2f266c177fe43b8da89aab3e8aa3f952add4f10caa837cdce"
+      },
+      {
+        "file": "tone-06.wav",
+        "frequency": 262,
+        "bytes": 192044,
+        "sourceSha256": "7c05afc1fbf1fc7b56968c7b95cc3430028346553b8ea64459dd3e08e6a19406",
+        "sourcePcmSha256": "e32689a17660b380b723f1b8b6cf9ad6ce215e71adcd957559e5376765b63088"
+      },
+      {
+        "file": "tone-07.wav",
+        "frequency": 269,
+        "bytes": 192044,
+        "sourceSha256": "8ff7dc4051ea7fa5943fd6870749cba36806b0d071e03948240721e6a6012c24",
+        "sourcePcmSha256": "f5355195f0f027f1efa1b812f1894538632d3d366e9195fd2917981b20111317"
+      },
+      {
+        "file": "tone-08.wav",
+        "frequency": 276,
+        "bytes": 192044,
+        "sourceSha256": "524bed28210f4ba78d9931eba49e2525458862a2d94b25a5050b0436421c5c5a",
+        "sourcePcmSha256": "117dacda7fa38eb4d8ec3b729f210e8154f7ceff28f83db5893a74309b2a5784"
+      },
+      {
+        "file": "tone-09.wav",
+        "frequency": 283,
+        "bytes": 192044,
+        "sourceSha256": "ff06c8e2a7f8c1b6aa4a7cdcd60d5a13a3695daa10afaa84fa7cedfac6a31114",
+        "sourcePcmSha256": "e01a43cdb560cb7cb2deb8c461a22823ae4571135a43e90262c2b2006f893a7f"
+      },
+      {
+        "file": "tone-10.wav",
+        "frequency": 290,
+        "bytes": 192044,
+        "sourceSha256": "6b8ec5fb1da027c9646d5f744659cd5eae3d1eabb1e1a4dba974164593ccd653",
+        "sourcePcmSha256": "d3fcf42299f75475a441c3d10e2520183fecaaa3475f4c6f1f134242f6e25779"
+      },
+      {
+        "file": "tone-11.wav",
+        "frequency": 297,
+        "bytes": 192044,
+        "sourceSha256": "5fa60acd5705b063b50d93bef7a8d52c07e2985d0b19e88086b9f5c6bafc4481",
+        "sourcePcmSha256": "df7f9d3bbbba20db5d3bb04fefedae3d6444c72be074be9bc70bb533a61ea252"
+      },
+      {
+        "file": "tone-12.wav",
+        "frequency": 304,
+        "bytes": 192044,
+        "sourceSha256": "2867deec6eb1693fbe9134e4e602aae019141e274b1a4d417d3f3256ecbc16c8",
+        "sourcePcmSha256": "eeb571f1dd362d08e79ab3bc0742def2383ee3f26b523032877386d4b8ad58f4"
+      },
+      {
+        "file": "tone-13.wav",
+        "frequency": 311,
+        "bytes": 192044,
+        "sourceSha256": "f5b933edd8da631ebac8038c9f1a3bd70b123aa313ebf2e105f0483ef38a7d35",
+        "sourcePcmSha256": "3d4bb1e64586c68f5cbe9b2f0dc208fec4c2d9daeb6df124732ed925009062cd"
+      },
+      {
+        "file": "tone-14.wav",
+        "frequency": 318,
+        "bytes": 192044,
+        "sourceSha256": "5859c314b6754e67e14744e73de7cfc0beef5c3f3f8db21fb98c9556a826f80e",
+        "sourcePcmSha256": "72dcf99106822d7cb334144d794848fa31c7c8dd4d3d98c7e9b152f95dc98a1d"
+      },
+      {
+        "file": "tone-15.wav",
+        "frequency": 325,
+        "bytes": 192044,
+        "sourceSha256": "5b0711e65fd037452950eb98a7ed43a9e2ab8675fc550da499a6166969dfe6e4",
+        "sourcePcmSha256": "a3a9aef0b62d58b359ccae46dc1c439b716c74eca484dccbab71df88042f8bcf"
+      },
+      {
+        "file": "tone-16.wav",
+        "frequency": 332,
+        "bytes": 192044,
+        "sourceSha256": "3e946e1866995278cb31f767c32a922bc1c9771d3a266935314577878f51cfe5",
+        "sourcePcmSha256": "5143c80615b451bfb8200d3013b610c664cffa74816795e045b77fc9f880009d"
+      },
+      {
+        "file": "tone-17.wav",
+        "frequency": 339,
+        "bytes": 192044,
+        "sourceSha256": "da9b4dc7d2018b8798b96ffc79c9cdf21d0e20ae10245dbec37cffc9b0051638",
+        "sourcePcmSha256": "4fe9e4631c823af1fbd358eb24f878ca4eeb09645e006bd97f75983214921ff3"
+      },
+      {
+        "file": "tone-18.wav",
+        "frequency": 346,
+        "bytes": 192044,
+        "sourceSha256": "2e8bf955ddc018f93e22dbae7432d8175ed2f82fd58a82b50ce3d6b7576e5d93",
+        "sourcePcmSha256": "82edd487714dcc9fcd8f1867e32623806d3d1304c2c88bf67a56f1630971a4ea"
+      },
+      {
+        "file": "tone-19.wav",
+        "frequency": 353,
+        "bytes": 192044,
+        "sourceSha256": "dc76a67ed5a106939ce84feb124fe59ea4439215e76dd25bc7b28ed639dc8ab0",
+        "sourcePcmSha256": "56e7f9e804afa31c815667f208c776c0881c9e03229acae191d5f629a1bb9482"
+      },
+      {
+        "file": "tone-20.wav",
+        "frequency": 360,
+        "bytes": 192044,
+        "sourceSha256": "847c02a7f82935d1b938f94e5694ad88e9754981f98498a55821b87d5c63672d",
+        "sourcePcmSha256": "fbee843b2b1c1ca65b51484e0ffa42e9464d2c30e642307bdd3bae44cf9d84ad"
+      },
+      {
+        "file": "tone-21.wav",
+        "frequency": 367,
+        "bytes": 192044,
+        "sourceSha256": "3bc7ad9b997c188155c7871cc0abe853a2b2017072918a2057be004ea875fc1c",
+        "sourcePcmSha256": "5197b6b709736c83ffe123ea2a712a1a3cc33e1b01b0f2a7c2c5ac444d53ae20"
+      },
+      {
+        "file": "tone-22.wav",
+        "frequency": 374,
+        "bytes": 192044,
+        "sourceSha256": "3f4f228ebce7772c4717e44fb55bb3193a53a9ed2135e81254c042595436e401",
+        "sourcePcmSha256": "49a571482a15c4bcc63df763b99da5029184e7f8e8158ee05512dc95008d6145"
+      },
+      {
+        "file": "tone-23.wav",
+        "frequency": 381,
+        "bytes": 192044,
+        "sourceSha256": "2b594627bd437dfed2e660a3900ae9fe50ac47bc79d25d93d52b6d3d452fbfad",
+        "sourcePcmSha256": "5a90ca919fb5aa07d70e97849ccb0624adb431cd6996007c1da976a476de63fb"
+      },
+      {
+        "file": "tone-24.wav",
+        "frequency": 388,
+        "bytes": 192044,
+        "sourceSha256": "36b780b4000812f4d941e32f2e0a9f0a9d2e64eba8f1ec04a12fabe8e60181a0",
+        "sourcePcmSha256": "89e48ffcc471e7cd4d7ca44cea0e02437223617af0ecf77e74dd69f610b41e02"
+      },
+      {
+        "file": "tone-25.wav",
+        "frequency": 395,
+        "bytes": 192044,
+        "sourceSha256": "fcce4ac92466a322316cfb1fc292eeb9362584868c7bb084b076bcd77a8e88fc",
+        "sourcePcmSha256": "abad51f969c3223c58f223a82960441c995f69b1d2488683f36edd06c522681a"
+      },
+      {
+        "file": "tone-26.wav",
+        "frequency": 402,
+        "bytes": 192044,
+        "sourceSha256": "ac04db8e866bbe6ad0cbeb6ace39cad6d3776d43be3880c30adb4c6061ba9783",
+        "sourcePcmSha256": "a42ae2e4214ebc77646470d30d1134261d9ba39592906a3b74cdf3d82634cc38"
+      },
+      {
+        "file": "tone-27.wav",
+        "frequency": 409,
+        "bytes": 192044,
+        "sourceSha256": "2d8e80d1a9e580055816f495091a33fe8cc7c2323cc49c4450a7e49184cfb622",
+        "sourcePcmSha256": "d0d97c7349073007ef1acfe628d5777d5b7581f70f7accd34b2484fffe26d8b7"
+      },
+      {
+        "file": "tone-28.wav",
+        "frequency": 416,
+        "bytes": 192044,
+        "sourceSha256": "f863c626b8bdf6c0eb5bec6b18e3e4674d894ba84c192c6b4d0e6a4e6bd267ae",
+        "sourcePcmSha256": "4d954d68ba96b64c4db1a756f1c1fa14e35c1e69132f8b38cfecc1f5ec817c1e"
+      },
+      {
+        "file": "tone-29.wav",
+        "frequency": 423,
+        "bytes": 192044,
+        "sourceSha256": "45abd46a8dbe0b52f6779fa1a9d17a7a08a818c7873e53c3442ccb9d915e3d35",
+        "sourcePcmSha256": "6dd6bfe9d341120f05a304430c647720819e5124179c5ea811fca51fd37ada00"
+      },
+      {
+        "file": "tone-30.wav",
+        "frequency": 430,
+        "bytes": 192044,
+        "sourceSha256": "7166e892ac6f0fd9dbe1b937f22239c23fb4172bee8e4b51e613d7403257786e",
+        "sourcePcmSha256": "69b61d107281193277b34b2f908216399bccf4db780839d8ebf8e0d215811514"
+      },
+      {
+        "file": "tone-31.wav",
+        "frequency": 437,
+        "bytes": 192044,
+        "sourceSha256": "ee2cdff7ea08f276c5d4e4304de77e550360d107d907f76dfd15a0c5dfa8a9fc",
+        "sourcePcmSha256": "6b7c3f823f67059a71174911b8e9c83cc5a29535352aee386382f34cdbca00de"
+      },
+      {
+        "file": "tone-32.wav",
+        "frequency": 444,
+        "bytes": 192044,
+        "sourceSha256": "28ff0e0dfdaf5da1255159df2f27f8749142fccdce49ca8b1ef39869c5de3aa9",
+        "sourcePcmSha256": "f84eb319d0b9643466f4e2a20f500471136dcabd6db266506742f94548758294"
+      },
+      {
+        "file": "tone-33.wav",
+        "frequency": 451,
+        "bytes": 192044,
+        "sourceSha256": "98983ec9483dfd7eef68516d27cf25fb3b0f36f1883c1ee9024cf85f3f1045de",
+        "sourcePcmSha256": "52a10680b8c9364834834284881ef585864c4ce2032e1a82442e9a1a8571c6f6"
+      },
+      {
+        "file": "tone-34.wav",
+        "frequency": 458,
+        "bytes": 192044,
+        "sourceSha256": "360cf1175016861d4df2afc780e185a85dd2689a36e3e1b9620549bb765cf8ec",
+        "sourcePcmSha256": "889f1a7a9e89f938f9d8b5e371823c1c5d6edfa49ba8568ada3081c9affd8b20"
+      },
+      {
+        "file": "tone-35.wav",
+        "frequency": 465,
+        "bytes": 192044,
+        "sourceSha256": "563380da6a77de06ae4cbe2e366142ec91fcc927187db1f8afa522b7c81e7f42",
+        "sourcePcmSha256": "9a56effbe890da6d569e24ceb3f4b380d2e96dd5d3faf59220cfaf7a14b5365c"
+      },
+      {
+        "file": "tone-36.wav",
+        "frequency": 472,
+        "bytes": 192044,
+        "sourceSha256": "e49d718ae1721bc5d8dc571f46ce3a88a2b747d2d8161e85423aa0489fd36cdb",
+        "sourcePcmSha256": "ec8cddeebc1966188d234c9b3d7fbd9e13975e4f3159cb36d9ac32a1efc401fc"
+      },
+      {
+        "file": "tone-37.wav",
+        "frequency": 479,
+        "bytes": 192044,
+        "sourceSha256": "7ed01f649164e279f0dfcaa96acc76ca38da1205781016d78bc75419ad815522",
+        "sourcePcmSha256": "9b072648904ae811488ecf3766f81ee87d998f497268f00a85d9eafc08481da1"
+      },
+      {
+        "file": "tone-38.wav",
+        "frequency": 486,
+        "bytes": 192044,
+        "sourceSha256": "0587f7371c3ce50fc9a0db8ed8bfa77c83d0fc810d7384399998498efc06b085",
+        "sourcePcmSha256": "fec8697e6f3482e51407103c092b4fe12dc17c90bf354aa07d96cdfde463ff8a"
+      },
+      {
+        "file": "tone-39.wav",
+        "frequency": 493,
+        "bytes": 192044,
+        "sourceSha256": "20608c1c0b53cb792bdea893f2de414f01d1e1877474d2daf739f0e7ea50ed4f",
+        "sourcePcmSha256": "26a4b72073f53f64d959ec767d65ae1731229d27508b2bcbd39a91f1fdbe2cc4"
+      },
+      {
+        "file": "tone-40.wav",
+        "frequency": 500,
+        "bytes": 192044,
+        "sourceSha256": "70d0d3591e5852ad0b68ccfa00c774cce10bd35349f61aac8930e4dff3e62dbe",
+        "sourcePcmSha256": "17898bc43f4beef6a9ee73a8d2ef2bfd35d20f6d62b034257f27762e16c301e7"
+      },
+      {
+        "file": "tone-41.wav",
+        "frequency": 507,
+        "bytes": 192044,
+        "sourceSha256": "b0a1570ad5d260ae6669db6bd23124a6376abda2147c7fbaa46261db2a087673",
+        "sourcePcmSha256": "e1397add852279ea030101b009797f2d4498a755c3cb2c33fc15f7e3d6de862a"
+      },
+      {
+        "file": "tone-42.wav",
+        "frequency": 514,
+        "bytes": 192044,
+        "sourceSha256": "f8fa882d7dba470faa6d673cf2569f9315c2bbbc1e433d5c6e134f365e5438a3",
+        "sourcePcmSha256": "4e7fc4886c20ffc2e22c54f197e0c7627d084db4af3fca19450215e967749cdf"
+      },
+      {
+        "file": "tone-43.wav",
+        "frequency": 521,
+        "bytes": 192044,
+        "sourceSha256": "bef5a040f25cda034e2ee3e4053f4ba72c3f79584f0f7339e3f2968e95595381",
+        "sourcePcmSha256": "6a811cd92c541d9ee4b4e8395873e047608dd979d065f22107e4b27f73e68e20"
+      },
+      {
+        "file": "tone-44.wav",
+        "frequency": 528,
+        "bytes": 192044,
+        "sourceSha256": "70a8d61c874dc4d6ea07ed9aa0bc2717acfe6b6c754e8021b6608658faa97cfe",
+        "sourcePcmSha256": "f056ebd4fdd83195b9810b80bf2e02d9b1ce32048936a2373eb7943569cc3613"
+      },
+      {
+        "file": "tone-45.wav",
+        "frequency": 535,
+        "bytes": 192044,
+        "sourceSha256": "4c8193ef242dd97c5436c8bb9ecc20553cf1fb86ce3fbaff758b15d23ffef684",
+        "sourcePcmSha256": "5b7acda510717c288208c9a24c94e9896e3411bd41fdc9ac48f9122bbcd3c35d"
+      },
+      {
+        "file": "tone-46.wav",
+        "frequency": 542,
+        "bytes": 192044,
+        "sourceSha256": "ac0963b65e272d87cc9c91e701b5846fc310e5d1dd5e6529644f1a19dd1b201c",
+        "sourcePcmSha256": "fe451711ab23933c2b96496931e41fd4fdb9e8d30d0f431e54e4830ab65fd2d7"
+      },
+      {
+        "file": "tone-47.wav",
+        "frequency": 549,
+        "bytes": 192044,
+        "sourceSha256": "c1e068f8174609fc5d8491e266e11eded909f6f32746409e7721ebf3fab534a8",
+        "sourcePcmSha256": "cad08fac286fed1124c6a6d3d29240f07b8201b8dadc4e91b40e4eae5a9d3457"
+      },
+      {
+        "file": "tone-48.wav",
+        "frequency": 556,
+        "bytes": 192044,
+        "sourceSha256": "197bdbd598e28164740588684fc7f8a24b3218207d273ae4f13dc05412ad0318",
+        "sourcePcmSha256": "74e96424cef2c8a760b3a3e1e633c0dc1f81fabe98e40612653cd2c9f2bbce87"
+      },
+      {
+        "file": "tone-49.wav",
+        "frequency": 563,
+        "bytes": 192044,
+        "sourceSha256": "a47e544d68fc66c55b8ec09af6e3896fc1e2fbbced451de891f9221fef790157",
+        "sourcePcmSha256": "d949e24f4ac3906bf21c85942f035a04030cda77cb57512ad3fc5129f19200e8"
+      },
+      {
+        "file": "tone-50.wav",
+        "frequency": 570,
+        "bytes": 192044,
+        "sourceSha256": "2a12130e2f4a8b7fd7e75838203d3204171360ac8c0243cdbfadbe5cf6832fb6",
+        "sourcePcmSha256": "5945a5e5bae1c967f8b71c49f31c80a677b27556451d788a5eba1ada83bcf8f1"
+      },
+      {
+        "file": "tone-51.wav",
+        "frequency": 577,
+        "bytes": 192044,
+        "sourceSha256": "875f62b57703e57b09a15010c51b7a12f8e765824bb9ceed77683959d363fc81",
+        "sourcePcmSha256": "4957ba9a7a4ab33db9265e43a2a0c5b13a823f086e67f09e14d78f9ab65a42b3"
+      },
+      {
+        "file": "tone-52.wav",
+        "frequency": 584,
+        "bytes": 192044,
+        "sourceSha256": "18cedd282477473a0696fae174d54b28c6e69ca12190df8c988f764099f134a7",
+        "sourcePcmSha256": "fe88ef55a993060e0272cb0329507d86ab19a8ef9f2a0cb915dcb2c679fce4ce"
+      },
+      {
+        "file": "tone-53.wav",
+        "frequency": 591,
+        "bytes": 192044,
+        "sourceSha256": "f2f08dab55a97ea48f78f1bf398cd1f35b1947cf5566a5f379a044a47126cebc",
+        "sourcePcmSha256": "0416bcc32cbe60a205b849f4af52e06b9ddf32759fabf0d55aeb0e24cde9afb0"
+      },
+      {
+        "file": "tone-54.wav",
+        "frequency": 598,
+        "bytes": 192044,
+        "sourceSha256": "15453f389ba62e18e8600e9becdf888b2b23cbd108a8fc511900af0fef74efd4",
+        "sourcePcmSha256": "3329bd2ac31c73e36a4b6353c5674ab6bac8ee317f84a228d5d930531a316f3f"
+      },
+      {
+        "file": "tone-55.wav",
+        "frequency": 605,
+        "bytes": 192044,
+        "sourceSha256": "e220f189b7372f7a368448b8645ac0ff0cae99c5790fd429dcdd877e7bccfe1b",
+        "sourcePcmSha256": "43e64961d5f79043c9a47cf816a6a4e286142f1dd29e610070f715af0a144ce5"
+      },
+      {
+        "file": "tone-56.wav",
+        "frequency": 612,
+        "bytes": 192044,
+        "sourceSha256": "e86ddf7255e65e3db17270accc680e98e1af543a4c7156de8571b53ce7175bb3",
+        "sourcePcmSha256": "6551eca42cb31f8db7d7dd759a923c0dff3eeffb9d3fbe9494dc075479988fcc"
+      },
+      {
+        "file": "tone-57.wav",
+        "frequency": 619,
+        "bytes": 192044,
+        "sourceSha256": "1adef80b56779105a7b17e2ae9e1463ca258a6f8db43906653072ab6a802bf5b",
+        "sourcePcmSha256": "442d6bfaee06b823acec7587ac48387fb350efcc36f4842fc2d2ae638acea350"
+      },
+      {
+        "file": "tone-58.wav",
+        "frequency": 626,
+        "bytes": 192044,
+        "sourceSha256": "135fab204ce846108cfe4d918dc7b1a9a20f1341a7fb5d85279fbd986cb802d6",
+        "sourcePcmSha256": "e380f70f46962ff3bff1baea7818ac10f0f143ed1162bafdb6b3681e85184af4"
+      },
+      {
+        "file": "tone-59.wav",
+        "frequency": 633,
+        "bytes": 192044,
+        "sourceSha256": "66995e9426ab644bf6ccda68446ae48c46fea7cab5a18981502a99b5d9c84c3c",
+        "sourcePcmSha256": "2610d5100da3a0ba5aacb4fdfc0b444ce8423d926164fa9343f0ff1d052ee71d"
+      }
+    ],
+    "byteOracle": {
+      "entry": 1029,
+      "mix": 12903,
+      "eightMixArray": 103233,
+      "compactRootFields": 103285,
+      "spacedRootFields": 103904,
+      "maximumCoreBytes": 262144,
+      "maximumRoomBytes": 365429,
+      "maximumExportBytes": 393216,
+      "maximumRecordsBytes": 1828169,
+      "method": "Independent literal JSON serialization; duplicate IDs only in arithmetic repeated-shape calculation, never submitted"
+    },
+    "verificationMethod": "Read only both safe original manifests and all sixty existing WAV files from each preparation; compare length and SHA256 without regeneration or decoding"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "baseCommit": "20d2c0d9cb90095ce7dd144bc272fb3bde51149a",
+  "runtime": {
+    "node": "24.19.0",
+    "chromium": "153.0.8010.0",
+    "mode": "temporary multiprocess software rendering; no production/runtime wrapper committed"
+  },
+  "sha256": {
+    "scripts/stage-timing-diagnostics.mjs": "4d3088c6b84fc42cbc276d69744346c0468769c31a9eaee3be1d93ffc9726906",
+    "src/timestamped-export.js": "7a397fe161ca9b98370237f5d2b9bd5cf05a9c29c2ec9378f93577e61f68e868",
+    "tests/browser/timestamped-export.spec.js": "74e5516d72bf778934d32dc502eb4421a5a00042204fdbee33e3873a9f2814b9"
+  },
+  "limits": [
+    "Source hashes identify this diagnostic checkpoint; no claim about full Chromium155 throughput."
+  ]
+}

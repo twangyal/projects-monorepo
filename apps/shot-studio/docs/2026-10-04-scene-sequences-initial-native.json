@@ -1,0 +1,113 @@
+{
+  "feature": "Shot Studio #90 scene sequences",
+  "results": {
+    "distinctCases": 15,
+    "initial": {
+      "passed": 14,
+      "failed": 1,
+      "seconds": 45.9,
+      "log": "/tmp/shot90-native-first.log"
+    },
+    "affectedRerun": {
+      "passed": 1,
+      "failed": 0,
+      "seconds": 4.6,
+      "log": "/tmp/shot90-raw-fields-green.log"
+    },
+    "claim": "All15 distinct cases passed across these two runs, not one final all15 run."
+  },
+  "priorFailures": [
+    {
+      "log": "/tmp/shot90-initial-red.log",
+      "classification": "Meaningful baselineRED: genuine original schema3 film imported; separate Scene sequence region missing."
+    },
+    {
+      "log": "/tmp/shot90-native-first.log",
+      "classification": "Harness failed to accept its requested Discard confirmation, so product correctly preserved invalid drafts and laterUndo required consent. Corrected only test to accept explicit discard and assert original field restoration. No product fix or oracle threshold change."
+    }
+  ],
+  "originalOracle": {
+    "fixture": "/workspace/projects-monorepo/apps/shot-studio/tests/browser/sequence-fixtures.js",
+    "frozenBeforeNewProducerInspection": true,
+    "sequence": "Full original4s Scarlet film middle2s source1..3; full3s Blue film middle2s source1..3; repeatScarlet. Distinctlight/costumes/travel/blockingvisibility/wave/globalclockloop. Seven observed-PTS samples, no productionmodel/evaluator/renderer imports for expectedvalues.",
+    "thresholds": {
+      "projection": 16,
+      "hiddenPixels": 20,
+      "nearbyPTS": 0.15,
+      "waveWidthMin": 85
+    },
+    "maximumObservedProjectionErrorPixels": 4.040759102047446,
+    "blueToScarletControlMeanRatio": 0.5485943723530832
+  },
+  "actualVideo": {
+    "bytes": 580408,
+    "sha256": "f3d2344b5496690ff11ea6a89cc8268249c4478f09724f2afc59dc8a2822d3be",
+    "codec": "vp9",
+    "decodedFrames": 159,
+    "span": 5.942
+  },
+  "restart": {
+    "bytes": 2008,
+    "sha256": "9cec04c3b2f29c9efc1a5a83a42b86e5f50b13fab6769b956bb325e49286a55b",
+    "processes": 3,
+    "allClosed": true
+  },
+  "limitations": [
+    "Small original6s recording, not the separate root maximum60s topology/video gate.",
+    "Native frame cadence is recorder-dependent; verification uses actual decoded timestamps and frozen nearest-sample/projection limits.",
+    "Read-race and lifecycle cases delay genuine File reads and emit disclosed controlled pagehide/pageshow; no fake source frames or product documents injected."
+  ],
+  "sourceHashes": {
+    "tests/browser/sequence.spec.js": "da7664b2361ebcac96435ce31dabdbc2f591eb31178d3dae9166935f4ff7d059",
+    "tests/browser/sequence-fixtures.js": "d0276dcae5766ddfc638d71f86c66d104146d15087b8032e72d61441d1ac4ee4",
+    "src/sequence.js": "a8b715cfbbce10a6d6a67de0e067bb3a6dc8ba7afb2592899afbbbd827402958",
+    "src/sequence-store.js": "a462040f47143f2834cf7f8efa5c6a58503b6710bcd7d9792402d34ab5740fa1",
+    "src/sequence-ui.js": "07b552a48d9b2c9dc220545f5d72b4ce683d898ee6823bec53c757e7e599be55",
+    "src/app.js": "a80b401e16e0b496db3415e8e185cdd587736eadd1ee98cb9b3148bd8deec46f",
+    "src/take-ui.js": "436a43d0a844633725c8445707939dfbfbea77adbb11a17192591edd5e9f7b4e",
+    "src/renderer.js": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9",
+    "src/export.js": "8b8a7d38f02af50de05ef71bdbe0a528dd38552c3e70afb93d74d2aae94de299",
+    "index.html": "d3e74110afdfea49635fb40d2f7bbe476530793d634e06288be33a1897b181e4",
+    "style.css": "5d453687656bf7ae6df02a2a9ae7a25f5338f2b809c948eb315e1cb1c38601d8"
+  },
+  "logs": {
+    "/tmp/shot90-initial-red.log": {
+      "bytes": 2496,
+      "sha256": "7719981319ac4cf47ba7ea933707925ccae3dab7db3701f0016292e766c4657b"
+    },
+    "/tmp/shot90-native-first.log": {
+      "bytes": 5864,
+      "sha256": "ba17f5c7c05e9e3ddc34a8e151fd48244209df8d053be75707cdd1ec8da06553"
+    },
+    "/tmp/shot90-raw-fields-green.log": {
+      "bytes": 370,
+      "sha256": "f6ffe5607d25dca644cf70f2f722f7586079e9c175df43a2562282f5fe261f91"
+    }
+  },
+  "artifacts": {
+    "/workspace/shot90-native-artifacts/sequence-video-verification.json": {
+      "bytes": 5254,
+      "sha256": "3094e4a58b873f6a84efdd5b43f3f1f2e5164138a79102d2ee9cb125c19d53ae"
+    },
+    "/workspace/shot90-native-artifacts/original-six-second-sequence.webm": {
+      "bytes": 580408,
+      "sha256": "f3d2344b5496690ff11ea6a89cc8268249c4478f09724f2afc59dc8a2822d3be"
+    },
+    "/workspace/shot90-native-artifacts/sequence-390px.png": {
+      "bytes": 328797,
+      "sha256": "d0c0abf329a1f95bb0273b2cc8c1893af38d13559a8b1b727a7f80d3d5749e7b"
+    },
+    "/workspace/shot90-native-artifacts/sequence-browser-lifecycle.json": {
+      "bytes": 307,
+      "sha256": "258afd229dc79aff93fd53e59a03d32227cd55828b88ba78d2cdc1f9bdf3991f"
+    },
+    "/workspace/shot90-native-artifacts/complete-original.shot-sequence.json": {
+      "bytes": 2008,
+      "sha256": "9cec04c3b2f29c9efc1a5a83a42b86e5f50b13fab6769b956bb325e49286a55b"
+    },
+    "/workspace/shot90-native-artifacts/sequence-portable-verification.json": {
+      "bytes": 138,
+      "sha256": "b726708f2b7c976de1a60723275d538059753d052f5a9565a6055b441bff5387"
+    }
+  }
+}

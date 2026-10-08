@@ -1,0 +1,385 @@
+{
+  "issue": 122,
+  "milestone": "Retained drawing stroke editing",
+  "status": "final-root-native-141-pass-including-all-11-independent-cases",
+  "authoredAt": "2026-10-05T02:37:49.600915+00:00",
+  "ownership": "Independent browser oracle; no production, existing tests, configuration, Git or runtime changes.",
+  "independence": {
+    "readBeforeFreeze": [
+      "approved stroke-editing design",
+      "existing model/render declarations and baseline native harness/tests"
+    ],
+    "newProducerSourceReadBeforeFreeze": false,
+    "expectedValuesUseProducerHelpers": false,
+    "fixtures": "Original literal schema2 graphs; own CRC32/zlib PNG encoder; literal inverse-transform result and frame pixels. Native storage helper only reads actual durable state."
+  },
+  "files": {
+    "tests/stroke-edit.spec.ts": {
+      "sha256": "cdc3ea50ebec622d3476fb458d08514ca88aba3d92048f17cc73741a30343a6f",
+      "bytes": 19446
+    },
+    "tests/stroke-edit-fixtures.ts": {
+      "sha256": "fa957e8bfec3096ae6d0caa4f6cb87629e7815fe80b78b3a70ca2f8d66f04b86",
+      "bytes": 3851
+    },
+    "tests/native-saved-project.ts": {
+      "sha256": "b281ebf4099eab92e8556bb4aa1de3c50699623d0315610b67dfce32cbee046e",
+      "bytes": 3921
+    }
+  },
+  "fixtureExpectations": {
+    "original": {
+      "bytes": 1488,
+      "sha256": "12713d214b4ebad25ee3032b525a232d8d7b81d9b95a57d2ce3f1000410adbd7"
+    },
+    "media": {
+      "dimensions": [
+        640,
+        360
+      ],
+      "frames": 12,
+      "pngFrames": [
+        0,
+        5,
+        6,
+        11
+      ],
+      "gifDelayMilliseconds": [
+        80,
+        90,
+        80,
+        80,
+        90,
+        80,
+        80,
+        90,
+        80,
+        80,
+        90,
+        80
+      ],
+      "totalMilliseconds": 1000,
+      "checks": "Before cut6 red at(320,180)/blue at(320,220); after cut blue/white. Cyan control(450+4*f,280), magenta image(550,40), green dot(220,120), repeated yellow dot(240,240), red flank(280,180), five white background/outline positions; exact RGBA all frames."
+    },
+    "literalMoved": {
+      "bytes": 1490,
+      "sha256": "a0da907888a16ba84a681ec575ddb620becec27a92a603e8a609949b09b87499"
+    },
+    "literalMediaEdit": {
+      "bytes": 1512,
+      "sha256": "c0b6bdb7979b0cf60ef60e693c07b696cb597370322e5e56dcaa58c325ca1088"
+    },
+    "originalPng": {
+      "bytes": 74,
+      "sha256": "d718f6dd4044299bb0da8c5217bf6bffac0de972f7259214bb92ed59d29d4f67",
+      "pixels": "2x2 opaque magenta"
+    },
+    "geometry": {
+      "pose": [
+        200,
+        100,
+        2,
+        90
+      ],
+      "stageStart": [
+        190,
+        120
+      ],
+      "stageEnd": [
+        210,
+        110
+      ],
+      "localDelta": [
+        -5,
+        -10
+      ],
+      "blueExpectedPoints": [
+        [
+          0,
+          -5
+        ],
+        [
+          10,
+          -5
+        ]
+      ],
+      "predeclaredNativePointTolerance": "Absolute difference <0.005 local units per coordinate (toBeCloseTo precision2), solely native CSS pointer rounding. All unrelated fields/arrays/image bytes exact deep equality; Undo/Redo exact actual graph."
+    }
+  },
+  "cases": [
+    "rotated scaled topmost drag and full graph one Undo/Redo",
+    "overlap/dot/repeated/list selection without history or durable write",
+    "appearance Apply/no-op Redo/delete/last-stroke blank/reversible graphs",
+    "raw width DOM/focus/caret and preblur unrelated pose preservation",
+    "Escape/actual viewport resize/out-of-bounds atomic cancel preserving Redo",
+    "frame/layer/history index retirement",
+    "held genuine File.text superseded by new selection plus changed-back width; fresh import remains possible",
+    "390px trusted touchscreen pick and focused stage-axis keyboard/edit-field isolation",
+    "actual PNG/all12 GIF frames/native storage/reload exact graph",
+    "canceled translation ignores late pointerup while preserving subsequent raw title node/value/caret and title-only history",
+    "unchanged native lowercase color control preserves literal uppercase imported stroke and genuine Redo on another stroke"
+  ],
+  "controlledBoundaries": [
+    "File.text calls original native implementation, then holds its delivery for one named fixture; no fake file contents or image decode",
+    "Frame scrub dispatches native DOM input event on real slider with original integer frame",
+    "After genuine Escape cancels a held mouse drag, title uses Playwright native input before the late native mouseup"
+  ],
+  "actualNativeScopesPlanned": [
+    "normal File import",
+    "actual canvas pointer drag and mobile touchscreen",
+    "native inputs/focus/caret/history",
+    "genuine IndexedDB read completion",
+    "native PNG/GIF downloads and independent decoders",
+    "page reload after exact durable completion"
+  ],
+  "notClaimed": [
+    "No physical mobile device",
+    "No whole Chromium process restart in this suite",
+    "No maximum quotas or broad existing suite outcome",
+    "No fake stub RED; baseline capability evidence owned by root"
+  ],
+  "staticVerification": {
+    "eslint": "PASS: scoped two new TypeScript files",
+    "typescript": "PASS: isolated strict ES2022/Bundler/DOM/node noEmit",
+    "fixtureGeneration": "PASS: pure original fixture JSON/hash computation, no producer imports",
+    "firstTypeFailure": "Uint8ClampedArray from gifuct-js incompatible with Uint8Array parameter; changed parameter to Uint8Array | Uint8ClampedArray only before runtime"
+  },
+  "runCommand": "CHROMIUM_PATH=/usr/bin/chromium MOTION_TEST_PORT=<root-owned-port> npx playwright test tests/stroke-edit.spec.ts --reporter=list,json",
+  "nativeResults": {
+    "executedBy": "root; independent author read actual report only",
+    "first": {
+      "resultsPath": "/tmp/motion122-native-first-results.json",
+      "sha256": "6098e6abb5acd044b98f65ff03f456d63ac202a61524864c2858db28edda5bc4",
+      "stats": {
+        "startTime": "2026-10-05T02:39:39.439Z",
+        "duration": 45103.261999999995,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "rotated scaled overlap drag changes one entire path once and preserves independent cel, keys and PNG",
+          "status": "passed",
+          "durationMs": 2015,
+          "errors": []
+        },
+        {
+          "title": "native overlap, one-point and repeated-point picks plus list selection cause no history or native save",
+          "status": "passed",
+          "durationMs": 1641,
+          "errors": []
+        },
+        {
+          "title": "appearance Apply, same-value no-op and deletion have independent reversible full-graph history",
+          "status": "passed",
+          "durationMs": 2658,
+          "errors": []
+        },
+        {
+          "title": "raw width node and caret survive refused actions; pointer admission preserves unrelated preblur pose",
+          "status": "failed",
+          "durationMs": 1854,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -125,11 +125,11 @@\u001b[39m\n\u001b[2m            \"easing\": \"linear\",\u001b[22m\n\u001b[2m            \"frame\": 0,\u001b[22m\n\u001b[2m            \"opacity\": 1,\u001b[22m\n\u001b[2m            \"rotation\": 90,\u001b[22m\n\u001b[2m            \"scale\": 2,\u001b[22m\n\u001b[32m-           \"x\": 200,\u001b[39m\n\u001b[31m+           \"x\": 211,\u001b[39m\n\u001b[2m            \"y\": 100,\u001b[22m\n\u001b[2m          },\u001b[22m\n\u001b[2m        ],\u001b[22m\n\u001b[2m        \"kind\": \"drawing\",\u001b[22m\n\u001b[2m        \"name\": \"Paint\",\u001b[22m\n\n  93 |   const x = page.locator('#pose-x'); await x.fill('211'); await x.focus(); await x.evaluate(node => node.setAttribute('data-oracle-pose', 'same'));\n  94 |   await select(page, 0); await expect(x).toHaveValue('211'); await expect(x).toHaveAttribute('data-oracle-pose', 'same'); await expect(x).toBeFocused();\n> 95 |   expect(await nativeCurrent(page)).toEqual(original); await page.locator('#discard-pose-edits').click(); expect(await backup(page)).toEqual(original);\n     |                                                                                                                                      ^\n  96 | });\n  97 |\n  98 | test('Escape, actual viewport resize and out-of-bounds motion cancel whole gestures without consuming Redo', async ({ page }) => {\n    at /workspace/projects-monorepo/apps/motion-studio/tests/stroke-edit.spec.ts:95:134"
+          ]
+        },
+        {
+          "title": "Escape, actual viewport resize and out-of-bounds motion cancel whole gestures without consuming Redo",
+          "status": "passed",
+          "durationMs": 3246,
+          "errors": []
+        },
+        {
+          "title": "frame, layer and history replacements retire selected indices instead of deleting a new occupant",
+          "status": "passed",
+          "durationMs": 1857,
+          "errors": []
+        },
+        {
+          "title": "new stroke selection and changed-back input retire a held genuine File read without stale publication",
+          "status": "passed",
+          "durationMs": 1308,
+          "errors": []
+        },
+        {
+          "title": "390px trusted touch selection and focused keyboard correction preserve stage-axis math and field editing",
+          "status": "passed",
+          "durationMs": 2225,
+          "errors": []
+        },
+        {
+          "title": "actual PNG and twelve decoded GIF frames retain held cuts, moving pose, embedded image and reload graph",
+          "status": "passed",
+          "durationMs": 2751,
+          "errors": []
+        },
+        {
+          "title": "new raw title intent retires an in-flight translation without committing a prefix or losing the draft",
+          "status": "timedOut",
+          "durationMs": 30103,
+          "errors": [
+            "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+            "Error: locator.fill: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#project-title')\u001b[22m\n\u001b[2m    - locator resolved to <input disabled maxlength=\"80\" id=\"project-title\"/>\u001b[22m\n\u001b[2m    - fill(\"New raw title <keep>\")\u001b[22m\n\u001b[2m  - attempting fill action\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m      - element is not enabled\u001b[22m\n\u001b[2m    - retrying fill action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    58 \u00d7 waiting for element to be visible, enabled and editable\u001b[22m\n\u001b[2m       - element is not enabled\u001b[22m\n\u001b[2m     - retrying fill action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n\n  168 | test('new raw title intent retires an in-flight translation without committing a prefix or losing the draft', async ({ page }) => {\n  169 |   const original = originalStrokeProject(); await open(page, original); await drag(page, [190, 120], [210, 110], false);\n> 170 |   const title = page.locator('#project-title'); await title.fill('New raw title <keep>'); await title.focus(); await title.evaluate(node => { node.setAttribute('data-oracle-title', 'same'); (node as HTMLInputElement).setSelectionRange(4, 7); }); await page.mouse.up();\n      |                                                             ^\n  171 |   await expect(title).toHaveValue('New raw title <keep>'); await expect(title).toHaveAttribute('data-oracle-title', 'same'); await expect(title).toBeFocused();\n  172 |   expect(await title.evaluate(node => [(node as HTMLInputElement).selectionStart, (node as HTMLInputElement).selectionEnd])).toEqual([4, 7]);\n  173 |   // Inspect durable state without a backup button blur, then explicitly commit only the title.\n    at /workspace/projects-monorepo/apps/motion-studio/tests/stroke-edit.spec.ts:170:61"
+          ]
+        },
+        {
+          "title": "unchanged native color control preserves original uppercase color bytes and Redo",
+          "status": "failed",
+          "durationMs": 1336,
+          "errors": [
+            "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -20,11 +20,11 @@\u001b[39m\n\u001b[2m                  },\u001b[22m\n\u001b[2m                ],\u001b[22m\n\u001b[2m                \"width\": 6,\u001b[22m\n\u001b[2m              },\u001b[22m\n\u001b[2m              Object {\u001b[22m\n\u001b[32m-               \"color\": \"#0000FF\",\u001b[39m\n\u001b[31m+               \"color\": \"#0000ff\",\u001b[39m\n\u001b[2m                \"points\": Array [\u001b[22m\n\u001b[2m                  Object {\u001b[22m\n\u001b[2m                    \"x\": 5,\u001b[22m\n\u001b[2m                    \"y\": 5,\u001b[22m\n\u001b[2m                  },\u001b[22m\n\n  185 |   expect(edited).toEqual(intended); await page.locator('#undo').click(); await durable(page, original); const saved = await nativeCurrentRaw(page);\n  186 |   await select(page, 1); if (await page.locator('#stroke-apply').isEnabled()) await page.locator('#stroke-apply').click();\n> 187 |   expect(await backup(page)).toEqual(original); expect(await nativeCurrentRaw(page)).toEqual(saved); await expect(page.locator('#redo')).toBeEnabled();\n      |                              ^\n  188 |   await page.locator('#redo').click(); expect(await backup(page)).toEqual(intended);\n  189 | });\n  190 |\n    at /workspace/projects-monorepo/apps/motion-studio/tests/stroke-edit.spec.ts:187:30"
+          ]
+        }
+      ],
+      "artifacts": "/workspace/motion122-native-first-artifacts"
+    },
+    "followup": {
+      "executedBy": "root; independent author verified actual JSON and hashes without runtime",
+      "resultsPath": "/tmp/motion122-full-native-first-results.json",
+      "resultsSha256": "d3909041844a784e3af81b35897c34d16a9de73f29e59614a0dfe7c2e8861175",
+      "logPath": "/tmp/motion122-full-native-first.log",
+      "logSha256": "6d60ad83fc10af0f7a901fedb63c66dddbd7aa7e6831061437b7727a42555dc9",
+      "stats": {
+        "startTime": "2026-10-05T02:45:05.974Z",
+        "duration": 117301.111,
+        "expected": 141,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "newCaseCount": 11,
+      "newCases": [
+        {
+          "title": "rotated scaled overlap drag changes one entire path once and preserves independent cel, keys and PNG",
+          "status": "passed",
+          "durationMs": 2147,
+          "retry": 0
+        },
+        {
+          "title": "native overlap, one-point and repeated-point picks plus list selection cause no history or native save",
+          "status": "passed",
+          "durationMs": 1528,
+          "retry": 0
+        },
+        {
+          "title": "appearance Apply, same-value no-op and deletion have independent reversible full-graph history",
+          "status": "passed",
+          "durationMs": 3052,
+          "retry": 0
+        },
+        {
+          "title": "raw width node and caret survive refused actions; pointer admission preserves unrelated preblur pose",
+          "status": "passed",
+          "durationMs": 1703,
+          "retry": 0
+        },
+        {
+          "title": "Escape, actual viewport resize and out-of-bounds motion cancel whole gestures without consuming Redo",
+          "status": "passed",
+          "durationMs": 2781,
+          "retry": 0
+        },
+        {
+          "title": "frame, layer and history replacements retire selected indices instead of deleting a new occupant",
+          "status": "passed",
+          "durationMs": 2306,
+          "retry": 0
+        },
+        {
+          "title": "new stroke selection and changed-back input retire a held genuine File read without stale publication",
+          "status": "passed",
+          "durationMs": 1716,
+          "retry": 0
+        },
+        {
+          "title": "390px trusted touch selection and focused keyboard correction preserve stage-axis math and field editing",
+          "status": "passed",
+          "durationMs": 2227,
+          "retry": 0
+        },
+        {
+          "title": "actual PNG and twelve decoded GIF frames retain held cuts, moving pose, embedded image and reload graph",
+          "status": "passed",
+          "durationMs": 2906,
+          "retry": 0
+        },
+        {
+          "title": "canceled translation ignores late pointerup and preserves subsequent raw title intent",
+          "status": "passed",
+          "durationMs": 1273,
+          "retry": 0
+        },
+        {
+          "title": "unchanged native color control preserves original uppercase color bytes and Redo",
+          "status": "passed",
+          "durationMs": 2045,
+          "retry": 0
+        }
+      ],
+      "newCasesSumMs": 23684,
+      "artifacts": "/workspace/motion122-full-native-first-artifacts"
+    }
+  },
+  "caseCount": 11,
+  "preRuntimeCorrections": [
+    "Approved explicit Discard after all held-File changed-back raw preservation assertions, before fresh import: changed-back intent remains dirty.",
+    "Root-requested eleventh case isolates uppercase unmodified Apply: real width edit on another stroke, Undo, select uppercase target, unchanged Apply must preserve full original/native record/Redo.",
+    "No native run or observed behavior was used to alter the original geometry, pixel or timing expectations."
+  ],
+  "firstNativeDiagnosis": {
+    "productFindings": [
+      "Explicit Discard pose pointerdown allows preblur change commit; existing case unchanged.",
+      "Unchanged Apply rewrites imported uppercase stroke color via native lowercase input value, consuming Redo; existing case unchanged."
+    ],
+    "fixtureError": "Raw title is intentionally disabled during genuine active gesture; original fill timed out. Root authorized asserting disabled, real Escape cancellation, then trusted raw title/caret before late pointerup. All full graph/history/caret expectations remain unchanged.",
+    "productionChangesByOracleAuthor": false,
+    "followupExecutionByAuthor": false
+  },
+  "firstExecutionSourceHashes": {
+    "tests/stroke-edit.spec.ts": {
+      "sha256": "f69d2589bb76a558359d7f86a9502a455e1a2c7d3d56967f899ac3ca54854faa",
+      "bytes": 19350
+    },
+    "tests/stroke-edit-fixtures.ts": {
+      "sha256": "fa957e8bfec3096ae6d0caa4f6cb87629e7815fe80b78b3a70ca2f8d66f04b86",
+      "bytes": 3851
+    },
+    "tests/native-saved-project.ts": {
+      "sha256": "b281ebf4099eab92e8556bb4aa1de3c50699623d0315610b67dfce32cbee046e",
+      "bytes": 3921
+    }
+  },
+  "postCorrectionStatic": {
+    "scopedESLint": "passed",
+    "isolatedStrictTypeScript": "passed"
+  },
+  "finalSourceHashes": {
+    "tests/stroke-edit.spec.ts": {
+      "sha256": "cdc3ea50ebec622d3476fb458d08514ca88aba3d92048f17cc73741a30343a6f",
+      "bytes": 19446
+    },
+    "tests/stroke-edit-fixtures.ts": {
+      "sha256": "fa957e8bfec3096ae6d0caa4f6cb87629e7815fe80b78b3a70ca2f8d66f04b86",
+      "bytes": 3851
+    },
+    "tests/native-saved-project.ts": {
+      "sha256": "b281ebf4099eab92e8556bb4aa1de3c50699623d0315610b67dfce32cbee046e",
+      "bytes": 3921
+    },
+    "src/main.ts": {
+      "sha256": "2d1329860af1e539a1689d142fd77481188c40569d6b5650f13848c1df3d9f0f",
+      "bytes": 79362
+    },
+    "src/style.css": {
+      "sha256": "a3a233b2e835fead1235197e8acc3080e4d95ba75c0328bd4f6f3cc7aa74dd5c",
+      "bytes": 17574
+    },
+    "src/stroke-edit.ts": {
+      "sha256": "f04b9bb2710976ff509659717b8e499b16bd01b7f6d442de020cc65ceb3b871f",
+      "bytes": 5702
+    }
+  },
+  "finalScope": "All 11 independent cases passed in the complete 141-case native suite after the single approved case10 fixture correction and two product fixes. Original geometry, pixels, GIF timings and remaining assertions unchanged. No rerun by this author; no additional device/process-restart/maximum-quota claims."
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "artifacts": [
+    {
+      "label": "push-stage-failure",
+      "sourceHead": "2cfc610ec3a723fa29d4ef73898c50ef57f2e257",
+      "runId": 37601015386,
+      "artifactId": 11473530730,
+      "artifactBytes": 1033127,
+      "artifactSha256": "e4b85f77dfa6db06d5f0c337c3435c75051261fbe019cb93ea2d66c93ff0fede",
+      "receiptSha256": "a2d251acad47a7072f368d582812ee1750f5e20c375b32ff0789a1bc49900365",
+      "browserLogSha256": "6dc7c0533faecf85ad96c58c5a8aef0523bbf2765361c980ac34c8b589029dcf",
+      "sourcePatchSha256": null
+    },
+    {
+      "label": "push-original-failure",
+      "sourceHead": "2cfc610ec3a723fa29d4ef73898c50ef57f2e257",
+      "runId": 37601015386,
+      "artifactId": 11473371061,
+      "artifactBytes": 1032356,
+      "artifactSha256": "587a5632b11efd79973dab3d4a45a2cf8962c7b0c77028c3d73bd88a07789ad1",
+      "receiptSha256": "fd54ea5038a9bf4992cb67a821b5fa5e7a80eed2511118ba9036a6daefd12f17",
+      "browserLogSha256": "406ac9b51d9bc82fc20af43076df549aa228c8654a75482cd7b0590fc2f04fd0",
+      "sourcePatchSha256": null
+    },
+    {
+      "label": "pr-vp8-rejection",
+      "sourceHead": "2cfc610ec3a723fa29d4ef73898c50ef57f2e257",
+      "runId": 37601022892,
+      "artifactId": 11473106049,
+      "artifactBytes": 10395686,
+      "artifactSha256": "3380a97c93d6fa6faf47de5da1b1b4bbacb4ddb67ebc10b7f5c69e24306e1277",
+      "receiptSha256": "cafe85c202adf0dec522185d167be13c639db8e64bc3597d488a4146df8afd78",
+      "browserLogSha256": "1cfb86a5acc60d3560f04215f21f9e50da2a6eb62b333c17a5a2ad92bea0c443",
+      "sourcePatchSha256": "56d68f3a883c2a93b3278b8126e28480a6ddc020686b6ea3b6de7f04e5d07ba8"
+    },
+    {
+      "label": "push-vp8-rejection",
+      "sourceHead": "2cfc610ec3a723fa29d4ef73898c50ef57f2e257",
+      "runId": 37601015386,
+      "artifactId": 11472652668,
+      "artifactBytes": 10397021,
+      "artifactSha256": "0d64be10a8f9d33c8c7618ee089358dd3736f3d307c1b6ddb0a22e1e7d355814",
+      "receiptSha256": "6deeaafc83a4a70ea50cb2b6595277c574eeb92eea1767a5f8d0fd86f127b5d0",
+      "browserLogSha256": "08fd4159716b481a6eeec4b3bb4c415f43bf094c136860526c422c7b4993852c",
+      "sourcePatchSha256": "7a2be353b8f79a37eae9c322d1c5959bb5e6ad38736b4262abb55f115840b969"
+    }
+  ],
+  "limits": [
+    "First push/PR attempts at this source head, no retry or discarded first failure.",
+    "All original ZIP hashes and listed captured artifact hashes/byte counts checked locally.",
+    "Video sample/addVideo completion counters are not decoded-frame counts.",
+    "Stage elapsed waits include native/muxer/scheduling work; not additive CPU time."
+  ]
+}

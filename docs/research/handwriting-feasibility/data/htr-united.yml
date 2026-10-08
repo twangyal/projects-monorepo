@@ -1,0 +1,153 @@
+authors:
+- name: Clérice
+  roles:
+  - project-manager
+  - quality-control
+  surname: Thibault
+- name: Chagué
+  roles:
+  - project-manager
+  - quality-control
+  surname: Alix
+- name: Davoury
+  roles:
+  - transcriber
+  - aligner
+  surname: Baudouin
+- name: Doat
+  roles:
+  - transcriber
+  - aligner
+  surname: Soline
+- name: Faure
+  roles:
+  - transcriber
+  - aligner
+  surname: Margaux
+- name: Humeau
+  roles:
+  - transcriber
+  - aligner
+  surname: Maxime
+characters:
+  members:
+  - e
+  - s
+  - a
+  - i
+  - u
+  - n
+  - r
+  - t
+  - o
+  - l
+  - d
+  - m
+  - c
+  - p
+  - v
+  - ','
+  - ́
+  - "'"
+  - q
+  - f
+  - .
+  - g
+  - b
+  - h
+  - ̀
+  - j
+  - x
+  - '-'
+  - ̂
+  - L
+  - C
+  - M
+  - y
+  - J
+  - z
+  - A
+  - D
+  - P
+  - '"'
+  - '>'
+  - <
+  - E
+  - '!'
+  - N
+  - S
+  - Q
+  - '1'
+  - ;
+  - '?'
+  - ':'
+  - R
+  - I
+  - T
+  - B
+  - V
+  - œ
+  - '6'
+  - O
+  - (
+  - _
+  - )
+  - '2'
+  - '3'
+  - H
+  - '4'
+  - ^
+  - '9'
+  - '8'
+  - '7'
+  - F
+  - '0'
+  - G
+  - '5'
+  - ̧
+  - U
+  - '&'
+  - '['
+  - ']'
+  - °
+  - ̈
+  - k
+  - $
+  - w
+  - X
+  - W
+  - Y
+  - +
+  - Z
+  mode: NFD
+description: Manuscripts of the 19th century
+format: Alto-XML
+hands:
+  count: 1-per-folder
+  precision: exact
+language:
+- fra
+license:
+- name: CC-BY 4.0
+  url: https://creativecommons.org/licenses/by/4.0/
+production-software: eScriptorium + Kraken
+project-name: CREMMA
+schema: https://htr-united.github.io/schema/2022-04-15/schema.json
+script:
+- iso: Latn
+script-type: only-manuscript
+time:
+  notAfter: '1899'
+  notBefore: '1800'
+title: CREMMA Manuscrits du 19e
+transcription-guidelines: Abréviations conservées.
+url: https://github.com/HTR-United/CREMMA-MSS-19
+volume:
+- count: 55581
+  metric: characters
+- count: 69
+  metric: files
+- count: 1807
+  metric: lines
+- count: 167
+  metric: regions

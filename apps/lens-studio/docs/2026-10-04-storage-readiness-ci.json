@@ -1,0 +1,183 @@
+{
+  "head": "f19cd6551699d5385de2434b000dc4fbe96826df",
+  "lensPush": {
+    "runId": 37224210032,
+    "jobId": 111500393755,
+    "event": "push",
+    "checkout": "f19cd6551699d5385de2434b000dc4fbe96826df",
+    "conclusion": "success",
+    "units": 67,
+    "unitMilliseconds": 1606.491814,
+    "native": 32,
+    "nativeSeconds": 32,
+    "buildMilliseconds": 360,
+    "chrome": "153.0.8010.12",
+    "playwrightChromiumRevision": 1243,
+    "log": "/workspace/lens68-ci-push.log",
+    "logBytes": 51819,
+    "logSha256": "ea311fb6086093ad5a3c134481712dee74614246feb4141d92bc11dd0d6ea1c9",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "lensPR": {
+    "runId": 37224213108,
+    "jobId": 111500403633,
+    "event": "pull_request",
+    "checkout": "15efe2803d6ae44cbb306d4b86956ebbe8ec8b31",
+    "head": "f19cd6551699d5385de2434b000dc4fbe96826df",
+    "base": "d36b8970b28ff59e694341af772c6c2ee016ccea",
+    "conclusion": "success",
+    "units": 67,
+    "unitMilliseconds": 1696.505835,
+    "native": 32,
+    "nativeSeconds": 33.3,
+    "buildMilliseconds": 358,
+    "chrome": "153.0.8010.12",
+    "playwrightChromiumRevision": 1243,
+    "log": "/workspace/lens68-ci-pr.log",
+    "logBytes": 52876,
+    "logSha256": "b24b1a5a42ea65d6e08ac5dc102bae3125e29f1abe8e25b25829b7d5cc53a747",
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "prWorkflows": [
+    {
+      "id": 37224213101,
+      "name": "Style Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 156,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213101/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213101/logs",
+      "workflow_id": 374228271
+    },
+    {
+      "id": 37224213114,
+      "name": "Clothing Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 205,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213114/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213114/logs",
+      "workflow_id": 374146594
+    },
+    {
+      "id": 37224213108,
+      "name": "Lens Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 155,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213108/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213108/logs",
+      "workflow_id": 374263321
+    },
+    {
+      "id": 37224213109,
+      "name": "Motion Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 215,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213109/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213109/logs",
+      "workflow_id": 374184977
+    },
+    {
+      "id": 37224213073,
+      "name": "Duet",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 167,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213073/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213073/logs",
+      "workflow_id": 374211416
+    },
+    {
+      "id": 37224213057,
+      "name": "Git History",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 202,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213057/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213057/logs",
+      "workflow_id": 374121978
+    },
+    {
+      "id": 37224213116,
+      "name": "Melody Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 201,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213116/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213116/logs",
+      "workflow_id": 374102372
+    },
+    {
+      "id": 37224213115,
+      "name": "Color Context Lab",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 59,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213115/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213115/logs",
+      "workflow_id": 374578777
+    },
+    {
+      "id": 37224213183,
+      "name": "Stock Notebook",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 176,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213183/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213183/logs",
+      "workflow_id": 374276152
+    },
+    {
+      "id": 37224213038,
+      "name": "Friendly Challenges",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 158,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213038/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213038/logs",
+      "workflow_id": 374247392
+    },
+    {
+      "id": 37224213065,
+      "name": "Composure",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 153,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213065/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213065/logs",
+      "workflow_id": 374316624
+    },
+    {
+      "id": 37224213112,
+      "name": "Shot Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 234,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213112/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213112/logs",
+      "workflow_id": 374197287
+    },
+    {
+      "id": 37224213148,
+      "name": "Karaoke Studio",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 200,
+      "jobs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213148/jobs",
+      "logs_url": "https://api.github.com/repos/twangyal/projects-monorepo/actions/runs/37224213148/logs",
+      "workflow_id": 374170233
+    }
+  ],
+  "complete": true,
+  "allPRSuccessful": true,
+  "observedAt": "2026-10-04T18:28:31.235Z",
+  "failuresObserved": [],
+  "rerunsRequested": false,
+  "scope": "Read-only exact-head workflow monitoring; no rerun, source, Git, issue, build, browser or server operations."
+}

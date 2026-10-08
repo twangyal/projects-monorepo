@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "measuredDate": "2026-10-03",
+  "scope": "Local FFmpeg normalization of one original synthetic five-minute stereo signal; this is not a network synchronization measurement.",
+  "syntheticAttribution": "Original signal generated for Duet verification; no external recording or licensed sample used.",
+  "signal": {
+    "left": "0.16*sin(2*pi*220*t)+0.06*sin(2*pi*440*t)",
+    "right": "0.16*sin(2*pi*330*t)+0.04*sin(2*pi*660*t)",
+    "sampleRate": 16000,
+    "durationSeconds": 300
+  },
+  "input": {
+    "format": "FLAC",
+    "channels": 2,
+    "sampleRate": 16000,
+    "bytes": 11600835
+  },
+  "output": {
+    "container": "Ogg",
+    "codec": "Opus",
+    "channels": 2,
+    "sampleRate": 48000,
+    "decodedDurationSeconds": 300.0,
+    "bytes": 4838585
+  },
+  "normalizationSeconds": 5.769062395998844,
+  "maxChildRssKiB": 39680,
+  "maxParentRssKiB": 10240,
+  "rssMethod": "resource.getrusage high-water marks: RUSAGE_CHILDREN and RUSAGE_SELF; child maximum includes synthetic fixture generation and normalization.",
+  "ffmpegVersion": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "durationMethod": "Complete decoded 48 kHz stereo PCM frame count, excluding Opus pre-skip and final padding.",
+  "reproduce": {
+    "generateCommand": [
+      "ffmpeg",
+      "-nostdin",
+      "-v",
+      "error",
+      "-f",
+      "lavfi",
+      "-i",
+      "aevalsrc=0.16*sin(2*PI*220*t)+0.06*sin(2*PI*440*t)|0.16*sin(2*PI*330*t)+0.04*sin(2*PI*660*t):s=16000:d=300",
+      "-threads",
+      "1",
+      "-c:a",
+      "flac",
+      "original-synthetic.flac"
+    ],
+    "normalizePython": "from pathlib import Path; from threading import Event; from duet.media import normalize_audio; print(normalize_audio(Path(\"original-synthetic.flac\"), Path(\"normalized-synthetic.ogg\"), Event(), print))",
+    "testCommand": "PYTHONPATH=. python3 -m unittest discover -s tests -p test_media.py -v"
+  }
+}

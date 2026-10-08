@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 1,
+  "issue": 113,
+  "status": "passed",
+  "repo": "twangyal/projects-monorepo",
+  "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+  "treeSha": "d0f727608809aac27443eb049e652440d2b109dd",
+  "collectedAtUtc": "2026-10-04T23:03:04.757Z",
+  "verificationScope": "Actual first-attempt push and PR Melody jobs, decoded completed-job logs, API commit-tree checks and all thirteen PR workflow conclusions. No workflow reruns or local test/build/browser executions during collection.",
+  "checkouts": {
+    "push": {
+      "sha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "tree": "d0f727608809aac27443eb049e652440d2b109dd"
+    },
+    "pull_request": {
+      "sha": "66a254f49ed62e094bbdc165f28cb9e1b2b7f859",
+      "tree": "d0f727608809aac27443eb049e652440d2b109dd",
+      "parents": [
+        "d36b8970b28ff59e694341af772c6c2ee016ccea",
+        "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d"
+      ],
+      "treeEqualsPublishedHead": true
+    }
+  },
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37241975731,
+      "runAttempt": 1,
+      "workflow": "Melody Studio",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241975731",
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T22:57:40Z",
+      "updatedAt": "2026-10-04T22:59:53Z",
+      "job": {
+        "id": 111552347426,
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm ci",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run test:browser",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      "actualCheckoutShaFromLog": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "runtime": {
+        "node": "24.21.0",
+        "npm": "11.19.0",
+        "browser": "Chrome for Testing 153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "unit": {
+        "tests": 301,
+        "passed": 301,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 6914.648529
+      },
+      "native": {
+        "tests": 116,
+        "passed": 116,
+        "workers": 2,
+        "reportedDuration": "1.4m",
+        "commandStartedAt": "2026-10-04T22:58:26.8610534Z",
+        "successOutputAt": "2026-10-04T22:59:49.2166377Z",
+        "commandToSuccessSeconds": 82.355584
+      },
+      "checks": {
+        "npmCheck": "success",
+        "eslint": "success",
+        "typescript": "success",
+        "productionBuild": "success",
+        "viteBuildMs": 503
+      },
+      "decodedLog": {
+        "path": "/tmp/melody113-ci-push.log",
+        "bytes": 80854,
+        "sha256": "e8ec4f009a46b9a4dbaf99cba90219cb630bb515438ced1e2b29e5ea54ae7d9f"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37241977979,
+      "runAttempt": 1,
+      "workflow": "Melody Studio",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977979",
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T22:57:42Z",
+      "updatedAt": "2026-10-04T23:00:06Z",
+      "job": {
+        "id": 111552354516,
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm ci",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run check",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npx playwright install --with-deps chromium",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run npm run test:browser",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ]
+      },
+      "actualCheckoutShaFromLog": "66a254f49ed62e094bbdc165f28cb9e1b2b7f859",
+      "runtime": {
+        "node": "24.21.0",
+        "npm": "11.19.0",
+        "browser": "Chrome for Testing 153.0.8010.12",
+        "playwrightChromiumRevision": 1243
+      },
+      "unit": {
+        "tests": 301,
+        "passed": 301,
+        "failed": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "durationMs": 7285.636653
+      },
+      "native": {
+        "tests": 116,
+        "passed": 116,
+        "workers": 2,
+        "reportedDuration": "1.6m",
+        "commandStartedAt": "2026-10-04T22:58:28.3629720Z",
+        "successOutputAt": "2026-10-04T23:00:02.5510602Z",
+        "commandToSuccessSeconds": 94.188088
+      },
+      "checks": {
+        "npmCheck": "success",
+        "eslint": "success",
+        "typescript": "success",
+        "productionBuild": "success",
+        "viteBuildMs": 589
+      },
+      "decodedLog": {
+        "path": "/tmp/melody113-ci-pull_request.log",
+        "bytes": 81931,
+        "sha256": "38341a488ccd2397bf943164584edb165a961855e123f4deea5e217a6ed649e9"
+      }
+    }
+  ],
+  "allPrWorkflows": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37241977923,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977923"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37241977949,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977949"
+    },
+    {
+      "name": "Git History",
+      "runId": 37241977946,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977946"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37241977979,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977979"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37241977898,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977898"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37241977975,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977975"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37241977927,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977927"
+    },
+    {
+      "name": "Composure",
+      "runId": 37241977926,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977926"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37241977899,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977899"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37241977900,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977900"
+    },
+    {
+      "name": "Duet",
+      "runId": 37241977938,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977938"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37241978014,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241978014"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37241977895,
+      "runAttempt": 1,
+      "headSha": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37241977895"
+    }
+  ],
+  "limitations": [
+    "The CI log reports native duration rounded to minutes; command timestamps are retained separately.",
+    "CI software/native browser fixtures do not establish physical microphone latency or acoustic isolation.",
+    "The independently authored maximum artifact run is a separate local receipt, not falsely attributed to CI."
+  ],
+  "allPrSnapshot": {
+    "completed": 13,
+    "success": 13,
+    "failure": 0,
+    "cancelled": 0,
+    "pending": 0
+  }
+}

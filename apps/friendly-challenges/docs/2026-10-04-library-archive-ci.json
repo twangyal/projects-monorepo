@@ -1,0 +1,422 @@
+{
+  "issue": 103,
+  "head": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+  "status": "passed",
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37224780335,
+      "jobId": 111502074991,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224780335",
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "checkoutSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "checkoutKind": "branch head",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T18:31:47Z",
+      "completedAt": "2026-10-04T18:34:40Z",
+      "jobWallSeconds": 173.0,
+      "python": {
+        "tests": 154,
+        "seconds": 27.567,
+        "result": "OK"
+      },
+      "typescript": {
+        "tests": 37,
+        "passed": 37,
+        "failed": 0,
+        "durationMs": 468.285799
+      },
+      "nativeBrowser": {
+        "passed": 28,
+        "reportedDuration": "1.6m",
+        "workers": 1,
+        "installedChromiumVersion": "153.0.8010.12",
+        "versionEvidence": "Playwright install output in this job; no separate browser.version probe."
+      },
+      "versions": {
+        "python": "3.11.16",
+        "node": "24.21.0"
+      },
+      "checks": {
+        "ruff": "success",
+        "compileall": "success",
+        "eslint": "success",
+        "typecheck": "success",
+        "build": "success",
+        "viteBuildMilliseconds": 310
+      },
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:48Z",
+          "completed_at": "2026-10-04T18:31:49Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:49Z",
+          "completed_at": "2026-10-04T18:31:50Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:50Z",
+          "completed_at": "2026-10-04T18:31:51Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:51Z",
+          "completed_at": "2026-10-04T18:31:54Z"
+        },
+        {
+          "name": "Run python -m pip install -r requirements-dev.txt",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:54Z",
+          "completed_at": "2026-10-04T18:31:55Z"
+        },
+        {
+          "name": "Agreement, authorization, HTTP and restart verification",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:55Z",
+          "completed_at": "2026-10-04T18:32:23Z"
+        },
+        {
+          "name": "Run python -m compileall -q challenges tests",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:23Z",
+          "completed_at": "2026-10-04T18:32:24Z"
+        },
+        {
+          "name": "Run ruff check .",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:24Z",
+          "completed_at": "2026-10-04T18:32:24Z"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:24Z",
+          "completed_at": "2026-10-04T18:32:26Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:26Z",
+          "completed_at": "2026-10-04T18:32:32Z"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:32Z",
+          "completed_at": "2026-10-04T18:32:56Z"
+        },
+        {
+          "name": "Independent participants and arbiter in production Chromium",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:56Z",
+          "completed_at": "2026-10-04T18:34:35Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "skipped",
+          "started_at": "2026-10-04T18:34:35Z",
+          "completed_at": "2026-10-04T18:34:35Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:35Z",
+          "completed_at": "2026-10-04T18:34:35Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:35Z",
+          "completed_at": "2026-10-04T18:34:37Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:37Z",
+          "completed_at": "2026-10-04T18:34:37Z"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:37Z",
+          "completed_at": "2026-10-04T18:34:37Z"
+        }
+      ],
+      "log": "/workspace/friendly103-ci-push.log",
+      "logSha256": "992f866daa8392558fafbd85ced389616bbe3181cd320fb775bbca5e655bcf06"
+    },
+    {
+      "event": "pull_request",
+      "runId": 37224783061,
+      "jobId": 111502083084,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783061",
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "checkoutSha": "9d96016de291d891355baaad14e923ba36b993b6",
+      "checkoutKind": "pull-request merge commit",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T18:31:43Z",
+      "completedAt": "2026-10-04T18:34:29Z",
+      "jobWallSeconds": 166.0,
+      "python": {
+        "tests": 154,
+        "seconds": 26.265,
+        "result": "OK"
+      },
+      "typescript": {
+        "tests": 37,
+        "passed": 37,
+        "failed": 0,
+        "durationMs": 436.831434
+      },
+      "nativeBrowser": {
+        "passed": 28,
+        "reportedDuration": "1.6m",
+        "workers": 1,
+        "installedChromiumVersion": "153.0.8010.12",
+        "versionEvidence": "Playwright install output in this job; no separate browser.version probe."
+      },
+      "versions": {
+        "python": "3.11.16",
+        "node": "24.21.0"
+      },
+      "checks": {
+        "ruff": "success",
+        "compileall": "success",
+        "eslint": "success",
+        "typecheck": "success",
+        "build": "success",
+        "viteBuildMilliseconds": 341
+      },
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:44Z",
+          "completed_at": "2026-10-04T18:31:45Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:45Z",
+          "completed_at": "2026-10-04T18:31:46Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:46Z",
+          "completed_at": "2026-10-04T18:31:46Z"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:46Z",
+          "completed_at": "2026-10-04T18:31:47Z"
+        },
+        {
+          "name": "Run python -m pip install -r requirements-dev.txt",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:47Z",
+          "completed_at": "2026-10-04T18:31:49Z"
+        },
+        {
+          "name": "Agreement, authorization, HTTP and restart verification",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:31:49Z",
+          "completed_at": "2026-10-04T18:32:16Z"
+        },
+        {
+          "name": "Run python -m compileall -q challenges tests",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:16Z",
+          "completed_at": "2026-10-04T18:32:16Z"
+        },
+        {
+          "name": "Run ruff check .",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:16Z",
+          "completed_at": "2026-10-04T18:32:16Z"
+        },
+        {
+          "name": "Run npm ci",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:16Z",
+          "completed_at": "2026-10-04T18:32:18Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:18Z",
+          "completed_at": "2026-10-04T18:32:24Z"
+        },
+        {
+          "name": "Run npx playwright install --with-deps chromium",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:24Z",
+          "completed_at": "2026-10-04T18:32:47Z"
+        },
+        {
+          "name": "Independent participants and arbiter in production Chromium",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:32:47Z",
+          "completed_at": "2026-10-04T18:34:26Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "conclusion": "skipped",
+          "started_at": "2026-10-04T18:34:26Z",
+          "completed_at": "2026-10-04T18:34:26Z"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:26Z",
+          "completed_at": "2026-10-04T18:34:26Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:26Z",
+          "completed_at": "2026-10-04T18:34:27Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:27Z",
+          "completed_at": "2026-10-04T18:34:27Z"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success",
+          "started_at": "2026-10-04T18:34:27Z",
+          "completed_at": "2026-10-04T18:34:27Z"
+        }
+      ],
+      "log": "/workspace/friendly103-ci-pull_request.log",
+      "logSha256": "d6ae777cc663df2ac6e7cc3803eea819682548b716f738b9c9a7b27ddf6ffd15"
+    }
+  ],
+  "failures": [],
+  "actions": "Read-only; no reruns, cancellations, or repository mutations.",
+  "allProjectPullRequests": [
+    {
+      "name": "Style Studio",
+      "runId": 37224783087,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783087"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37224783127,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783127"
+    },
+    {
+      "name": "Git History",
+      "runId": 37224783128,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783128"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37224783054,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783054"
+    },
+    {
+      "name": "Clothing Studio",
+      "runId": 37224783038,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783038"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37224783121,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783121"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37224783137,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783137"
+    },
+    {
+      "name": "Duet",
+      "runId": 37224783058,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783058"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37224783078,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783078"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37224783061,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783061"
+    },
+    {
+      "name": "Composure",
+      "runId": 37224783171,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783171"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37224783086,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783086"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37224783098,
+      "headSha": "112fad9afe1487e0d7b4af26a4283636a9e99628",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37224783098"
+    }
+  ],
+  "observedAt": "2026-10-04T18:37:41.351915+00:00",
+  "all13ProjectPullRequestsPassed": true,
+  "additionalPush": [
+    {
+      "name": "Lens Studio",
+      "runId": 37224780321,
+      "conclusion": "success"
+    }
+  ]
+}

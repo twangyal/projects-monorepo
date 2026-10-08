@@ -1,0 +1,139 @@
+{
+  "issue": 90,
+  "status": "passed",
+  "observedAt": "2026-10-04T17:08:00.448248+00:00",
+  "origin": "http://127.0.0.1:4299",
+  "browserVersion": "151.0.7922.173",
+  "frozenFixtureReceipt": "/workspace/shot90-schema2-fixture-delta.json",
+  "verification": {
+    "path": "/workspace/shot90-maximum-final/verification.json",
+    "bytes": 252962,
+    "sha256": "702a90b862c2dcc11a09e61882a211b3e13e13fd52d74876ba6533e0855b8a63"
+  },
+  "log": {
+    "path": "/tmp/shot90-maximum-final.log",
+    "bytes": 263,
+    "sha256": "3e949ec03112d770d624fb1639a62db81edca41aa29c82217012523c0aaf89a1"
+  },
+  "topology": {
+    "sources": 4,
+    "shotsPerSource": 20,
+    "performersPerSource": 2,
+    "cuesPerPerformer": 32,
+    "totalRetainedCues": 256,
+    "clips": 20,
+    "seconds": 60,
+    "sourceBytes": [
+      7763,
+      7763,
+      7763,
+      7763
+    ],
+    "canonicalSequenceBytes": 36256,
+    "rawFileCeiling": 327680
+  },
+  "checks": [
+    "Actual whitespace-padded320KiB File imports exact original4-source/20-clip document; +1byte and21clips refuse without changing backup. One Undo/Redo restores exact prior/current documents; ordinary scene title unchanged.",
+    "One actual full-minute silent WebM independently decoded; forty stable source-clock/light/costume/camera/visibility samples cover all20 clips and complete frame timestamps."
+  ],
+  "endpointPixelChecks": 5,
+  "video": {
+    "bytes": 6386568,
+    "sha256": "d9538d275ed52e6c304a42b1fabe9204c95554d9620d9abd28f7f3aec713ca30",
+    "codec": "vp9",
+    "width": 960,
+    "height": 540,
+    "audioStreams": 0,
+    "decodedFrames": 1395,
+    "firstPts": 0,
+    "spanSeconds": 59.865,
+    "independentDecodeWallMs": 3531.942471999995
+  },
+  "videoSampleChecks": 40,
+  "recordAndDownloadWallMs": 60197.849636000006,
+  "restart": {
+    "bytes": 36256,
+    "sha256": "a1f73ae58fb96d7b4ec2c16e5d228829ffd3d47f2a5820c32f2230ec19e44a79",
+    "byteExact": true
+  },
+  "browserProcessesStopped": {
+    "637891": true,
+    "638037": true
+  },
+  "artifacts": [
+    {
+      "name": "maximum-before-restart.shot-sequence.json",
+      "bytes": 36256,
+      "sha256": "a1f73ae58fb96d7b4ec2c16e5d228829ffd3d47f2a5820c32f2230ec19e44a79"
+    },
+    {
+      "name": "maximum-after-restart.shot-sequence.json",
+      "bytes": 36256,
+      "sha256": "a1f73ae58fb96d7b4ec2c16e5d228829ffd3d47f2a5820c32f2230ec19e44a79"
+    },
+    {
+      "name": "maximum-sequence-60s.webm",
+      "bytes": 6386568,
+      "sha256": "d9538d275ed52e6c304a42b1fabe9204c95554d9620d9abd28f7f3aec713ca30"
+    },
+    {
+      "name": "desktop.png",
+      "bytes": 463614,
+      "sha256": "a542773ae32a61b4272c4a25063adec57d9b3c4221044430d35dfca8a68745d7"
+    },
+    {
+      "name": "390px.png",
+      "bytes": 359535,
+      "sha256": "691d4ec21b20695ee885cd4ff25f74cf3cd3c1bd9b27c2c3f0e8418db4644656"
+    }
+  ],
+  "screenshotsVisuallyReviewed": [
+    "desktop.png",
+    "390px.png"
+  ],
+  "sourceFilesAtRunCompletion": [
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/scripts/smoke_scene_sequences.mjs",
+      "bytes": 17200,
+      "sha256": "dbebcc8be31d2a9c339dfec1d211648d70c644f1a15b3882159b4a2deb633484"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence.js",
+      "bytes": 11386,
+      "sha256": "c8360cdb5803f0e87aa986929ff604aa5dbba0e9e3a6f459e7b1ab4f5b226f0e"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-store.js",
+      "bytes": 3978,
+      "sha256": "6943e57738f32ee7ef62afc4b59d7d6abbc415179f9bfbf65667d2942f9f2f25"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-ui.js",
+      "bytes": 21907,
+      "sha256": "3210a79b3220a73dc61ecb4dbfb0ea7958720d2a57c44795ba7f70291cbf0134"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/app.js",
+      "bytes": 24871,
+      "sha256": "a80b401e16e0b496db3415e8e185cdd587736eadd1ee98cb9b3148bd8deec46f"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/renderer.js",
+      "bytes": 4281,
+      "sha256": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9"
+    }
+  ],
+  "pageErrors": [],
+  "externalRequests": [],
+  "limits": [
+    "This is maximal source/shot/cue/name/clip/duration topology, not a claim of maximal canonical bytes or encoded video bytes.",
+    "The raw320KiB file boundary uses legal trailing JSON whitespace; all complete original sources remain intact.",
+    "Forty decoded video samples cover all20 clips at actual native PTS; not every frame is pixel-checked and no exact30fps assumption is made.",
+    "All sources use32 authored blocking cues per performer. Looping phase has separate native/scalar coverage; this maximum does not claim simultaneous looping and blocking modes.",
+    "No producer model, evaluator, renderer, serializer or expected-output helper imports.",
+    "No server/build is started and no persistent browser storage is injected.",
+    "Actual observed frame rate is not claimed to equal30fps;1395frames and actual PTS were independently decoded.",
+    "Source hashes describe files at completion; no Git checkout or source change was performed by the probe.",
+    "Native maximum uses Chromium151.0.7922.173; no claim of a physical GPU or headset measurement."
+  ]
+}

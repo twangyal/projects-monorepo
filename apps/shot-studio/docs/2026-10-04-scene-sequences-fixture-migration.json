@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "changes": [
+    "canonical sequence schemaVersion 1 to 2",
+    "four source labels length 40 to 80"
+  ],
+  "geometryClockPixelsThresholdsUnchanged": true,
+  "completeSourceFilmsByteExactUnchanged": true,
+  "canonicalByteDelta": 160,
+  "old": {
+    "path": "/workspace/shot90-frozen-fixtures/maximum-sequence.json",
+    "bytes": 36096,
+    "sha256": "2be74b6145c7de1fbcbf0c652d02f57ecc4f322452b1090721b19a15fd301eec"
+  },
+  "new": {
+    "path": "/workspace/shot90-schema2-frozen-fixtures/maximum-sequence.json",
+    "bytes": 36256,
+    "sha256": "a1f73ae58fb96d7b4ec2c16e5d228829ffd3d47f2a5820c32f2230ec19e44a79"
+  },
+  "exactRawFile": {
+    "path": "/workspace/shot90-schema2-frozen-fixtures/exact-320KiB-file.json",
+    "bytes": 327680,
+    "sha256": "67e0a377d4bd881861147c96b1e1c7ed53bdf15ca54e8dc77979e96985a02b39"
+  },
+  "overRawFile": {
+    "path": "/workspace/shot90-schema2-frozen-fixtures/oversize-file.json",
+    "bytes": 327681,
+    "sha256": "e779215e5dbc40fe97af37e8bf40107a536da739f46587996ccc791bc190a17a"
+  },
+  "script": {
+    "path": "/workspace/projects-monorepo/apps/shot-studio/scripts/smoke_scene_sequences.mjs",
+    "bytes": 17200,
+    "sha256": "dbebcc8be31d2a9c339dfec1d211648d70c644f1a15b3882159b4a2deb633484"
+  },
+  "checks": [
+    "node --check passed",
+    "--fixtures-only passed",
+    "deep comparison after reversing two authorized metadata changes passed",
+    "all frozen expectations except canonical byte length equal",
+    "all four original source files byte exact"
+  ],
+  "nativeRunPerformed": false
+}

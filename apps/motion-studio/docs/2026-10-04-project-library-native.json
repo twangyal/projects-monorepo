@@ -1,0 +1,277 @@
+{
+  "issue": 104,
+  "complete": true,
+  "fixtureReceipt": "/workspace/motion104-native-fixtures/fixture-verification.json",
+  "baselineReceipt": "/workspace/motion104-native-preparation.json",
+  "firstIntegration": {
+    "cases": 17,
+    "passed": 9,
+    "failed": 8,
+    "seconds": 43.2,
+    "log": "/tmp/motion104-native-first.log",
+    "bundle": "main-CXW9nza1.js",
+    "workersConfigured": 2,
+    "workersUsed": 1,
+    "reasonOneWorker": "One non-parallel test file preserves sequential runtime for persistent-process coverage."
+  },
+  "findings": {
+    "product": {
+      "cases": 6,
+      "observation": "Unchanged flush writes change current row/head revision. Two unrelated-project tabs then reject legitimate saves; canceled file/decode/pagehide/failure/ninth refusal change durable revisions despite unchanged content. Assertions retained."
+    },
+    "harness": {
+      "cases": 2,
+      "corrections": [
+        "Duplicate waits for actual third project row rather than matching prior Saved status before new identity exists.",
+        "Corrupt entry rejection expects actual bounded frame-count12\u201396 message.",
+        "Explicit DrawingA selection before subsequent Delete cel; import initially selects top image layer."
+      ]
+    }
+  },
+  "passingEvidence": [
+    "original file import and library region",
+    "legacy no-write upgrade, atomic two-entry creation, delete-last/no resurrection",
+    "same-project conflict preservation and explicit Save memory as new",
+    "corrupt wholehead protection",
+    "corruptlegacy explicit replacement retaining legacy value",
+    "held realRW save-before-switch",
+    "rawdraft navigation refusal",
+    "390px keyboard and decoded nativePNG exact primary pixels",
+    "two whole persistent Chromium processes with exact active backup and independent earlier project"
+  ],
+  "runtime": "All browser processes from each owned run exited; root4294 preview untouched. Slot released after corrected2. No production/config/build/server/Git edits by oracle owner.",
+  "artifacts": [
+    {
+      "path": "/tmp/motion104-native-first.log",
+      "bytes": 27826,
+      "sha256": "725f0a59b54f96956d6e527f6d5b7b5276075976727dc40f262c13e33fee510d"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/browser/project-library.spec.ts",
+      "bytes": 34858,
+      "sha256": "e4de36f3530d66cc042e7962525dd0a9d648b45acf3434254acb076a5164cb66"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/main-CXW9nza1.js",
+      "bytes": 105559,
+      "sha256": "e1793ab3f7a120c5134f110301cd4a376b058fe3a3bdde8cb1d1bd69fc2e496b"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/main-CekMjDRK.css",
+      "bytes": 13175,
+      "sha256": "b1c7fa6b0dd2590c3010eec6b2b32dd0dfeadf8b52e4d605ea2c50b19ba596c8"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-eight-ordi-38583-lly-with-no-silent-eviction/trace.zip",
+      "bytes": 832057,
+      "sha256": "3fa6b969e2eaa734a62b3449f8a97a7b330b43afb7bbd02b6ca863a6915410f5"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-actual-sel-7ebf2-retry-opens-the-exact-entry/trace.zip",
+      "bytes": 406307,
+      "sha256": "817c39f5cf1e28b52db85154fcd837d606a9c1c2a9a35fc861af52f43acec87c"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-held-selec-a8598-etires-its-editor-authority/trace.zip",
+      "bytes": 492628,
+      "sha256": "6fa3af0193f17dbb57ee21d721e05d4a671289078af3a326f556c4648fa85428"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-changed-ba-fbddf-and-preserves-focused-draft/trace.zip",
+      "bytes": 310211,
+      "sha256": "ee087696e4ce14a591e1cc9d59971c3267f11f414978f454e5c8249d72c7b983"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-one-corrup-5b3b2-mitted-entry-remains-usable/trace.zip",
+      "bytes": 673835,
+      "sha256": "3eed73408eb6a328ffb6d0098d51304cdd56841bde0a1ccd56f4c53c8be67971"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-metadata-r-d451f-ut-replacing-editor-history/trace.zip",
+      "bytes": 1078720,
+      "sha256": "c6f461cd46b0235882dc1469ff9a62d7d96ae77bf4a6314d78d7534afaf32ace"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-different--3628d-nother-tab-active-selection/trace.zip",
+      "bytes": 811894,
+      "sha256": "7a44f1769edae28e1886985ff9bee4b04a0086a82d91a09f9651880a48a6cf96"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-imports-cr-b8888-etion-preserve-original-art/trace.zip",
+      "bytes": 880186,
+      "sha256": "879531775cc2940f1c80f269f01c703e90b468611932227abe809c7f8480652e"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-complete-b-0cfc9-ntly-editable-earlier-entry/restart-proof.json",
+      "bytes": 148,
+      "sha256": "c34b4ee847005382ec5912dae1eba87c9e542deae726a25e393513a26e6ea600"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-complete-b-0cfc9-ntly-editable-earlier-entry/restart-active.motion.json",
+      "bytes": 855,
+      "sha256": "4bd9950e88c28fff93095804efed3580b92ec16cf451355571c30d3660fc1f43"
+    },
+    {
+      "path": "/tmp/motion104-native-results/project-library-keyboard-l-73bbb-exports-literal-held-pixels/library-390.png",
+      "bytes": 176293,
+      "sha256": "728a5de23979b1c05f119fbc86aaba907470aa3107556518d69199b3d7163db2"
+    },
+    {
+      "path": "/tmp/motion104-native-repaired.log",
+      "bytes": 8585,
+      "sha256": "c6475f2b1c1979bc297ac858f68038c8fbe7ec61fab0ff0227e0dd5d9cb85240"
+    },
+    {
+      "path": "/tmp/motion104-native-repaired-results/project-library-metadata-r-d451f-ut-replacing-editor-history/trace.zip",
+      "bytes": 1194920,
+      "sha256": "d1b280fd31d8e46a83f701ec7a265241ff25c5de7bd7c205f75df76ff2445656"
+    },
+    {
+      "path": "/tmp/motion104-native-repaired-results/project-library-imports-cr-b8888-etion-preserve-original-art/trace.zip",
+      "bytes": 2808155,
+      "sha256": "9fa8e34754e7adb7154db45ec975a730f4034d33fc5ddebe78a04403925933be"
+    },
+    {
+      "path": "/tmp/motion104-native-repaired-results/project-library-complete-b-0cfc9-ntly-editable-earlier-entry/restart-proof.json",
+      "bytes": 148,
+      "sha256": "1eaf5d3ae1e2df68258d3dfad0108f6f316f49c9b1becb81154acbf4e58c5f3e"
+    },
+    {
+      "path": "/tmp/motion104-native-repaired-results/project-library-complete-b-0cfc9-ntly-editable-earlier-entry/restart-active.motion.json",
+      "bytes": 855,
+      "sha256": "4bd9950e88c28fff93095804efed3580b92ec16cf451355571c30d3660fc1f43"
+    },
+    {
+      "path": "/tmp/motion104-native-repaired-results/project-library-keyboard-l-73bbb-exports-literal-held-pixels/library-390.png",
+      "bytes": 176293,
+      "sha256": "728a5de23979b1c05f119fbc86aaba907470aa3107556518d69199b3d7163db2"
+    },
+    {
+      "path": "/tmp/motion104-native-focused.log",
+      "bytes": 549,
+      "sha256": "53d290b27791b64ddca90088130913c3ab54ccb77d0e2054ba280917af62445d"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/tests/browser/project-library.spec.ts",
+      "bytes": 38144,
+      "sha256": "fa7639d5e118ea93be309c2bc7c8b397c366a43b246d45e54b31adeb19dad2aa"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/main-Cqx2Ujdw.js",
+      "bytes": 106237,
+      "sha256": "a635446aa7f5be9fdb3cf1224928504451683a23a52ea3e403fdba323623afaf"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/motion-studio/dist/assets/main-CekMjDRK.css",
+      "bytes": 13175,
+      "sha256": "b1c7fa6b0dd2590c3010eec6b2b32dd0dfeadf8b52e4d605ea2c50b19ba596c8"
+    },
+    {
+      "path": "/workspace/motion104-native-artifacts/library-390.png",
+      "bytes": 176293,
+      "sha256": "728a5de23979b1c05f119fbc86aaba907470aa3107556518d69199b3d7163db2"
+    },
+    {
+      "path": "/workspace/motion104-native-artifacts/restart-active.motion.json",
+      "bytes": 855,
+      "sha256": "4bd9950e88c28fff93095804efed3580b92ec16cf451355571c30d3660fc1f43"
+    },
+    {
+      "path": "/workspace/motion104-native-artifacts/restart-proof.json",
+      "bytes": 148,
+      "sha256": "1eaf5d3ae1e2df68258d3dfad0108f6f316f49c9b1becb81154acbf4e58c5f3e"
+    }
+  ],
+  "secondIntegration": {
+    "cases": 19,
+    "passed": 17,
+    "failed": 2,
+    "seconds": 27.1,
+    "bundle": "main-vE_7XnpI.js",
+    "log": "/tmp/motion104-native-repaired.log",
+    "meaning": "All six original unchanged-flush regressions and both new known-target/newerFile cases passed unchanged.",
+    "remainingFixtureCorrections": [
+      "Wait actual native delete prompt after asynchronous review rather than assert empty capture immediately after click.",
+      "Use truly invalid00-. raw pose draft; old001. was valid and committed on blur, adding a legitimate Undo step. Keep exact raw/caret/node/history assertions and await completed Undo title."
+    ]
+  },
+  "distinctFinalNativeCases": 19,
+  "finalCaseNames": [
+    "literal artwork imports into the named project library",
+    "imports create independent entries; open, title edit, duplicate and explicit deletion preserve original art",
+    "legacy upgrade reads without writes, creation retains legacy atomically and last deletion never resurrects it",
+    "same-project competing tab cannot overwrite winner or lose raw pose draft; explicit save-as-new preserves both",
+    "different-project saves merge without changing another tab active selection",
+    "metadata refresh preserves native raw input identity and caret without replacing editor history",
+    "present corrupt head blocks new/import without legacy fallback and preserves every original row",
+    "one corrupt entry is preserved while another admitted entry remains usable",
+    "corrupt legacy value stays protected and original raw copy survives explicit replacement",
+    "held autosave completes for its captured entry before ordinary project switching",
+    "changed-back raw input during genuine project File read refuses old import and preserves focused draft",
+    "held selected-image decode never moves durable active pointer and pagehide retires its editor authority",
+    "actual selected-image decode failure refuses opening and later native retry opens the exact entry",
+    "raw pose draft blocks project navigation until explicit discard without moving the saved pointer",
+    "eight ordinary literal projects refuse a ninth atomically with no silent eviction",
+    "keyboard library controls fit390px and selected entry exports literal held pixels",
+    "complete browser-process restart restores exact active project and independently editable earlier entry",
+    "reviewed replacement stays bound to conflicted A when another tab makes B globally active",
+    "a second genuine project File supersedes held first File and creates exactly one new entry"
+  ],
+  "finalFocused": {
+    "cases": 2,
+    "passed": 2,
+    "failed": 0,
+    "seconds": 5.8,
+    "bundle": "main-Cqx2Ujdw.js",
+    "log": "/tmp/motion104-native-focused.log",
+    "meaning": "Two affected fixtures pass;17 other distinct cases passed prior repaired bundle. Repeats are not counted as additional cases."
+  },
+  "finalSourceScope": "Final bundle includes root/owner additional sole-tween-consent and raw-read-knowledge repairs; only corrected2 rerun on it by this owner. Root separately owns old80 regression and maximum acceptance.",
+  "checks": {
+    "scopedESLint": "passed",
+    "wholeTypeScriptAtFinalAuthoredCheckpoint": "passed;0-line log /tmp/motion104-native-typecheck-final.log"
+  },
+  "mediaEvidence": {
+    "fixture": "Independent8\u00d78RGBA PNGs and12-frame projects frozen before library producer reads.",
+    "actualPngAssertion": {
+      "dimensions": [
+        640,
+        360
+      ],
+      "frame": 6,
+      "inkPixelAt": [
+        333,
+        180
+      ],
+      "inkExpectedAndObserved": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "embeddedPixelAt": [
+        60,
+        60
+      ],
+      "embeddedExpectedAndObserved": [
+        255,
+        255,
+        0,
+        255
+      ]
+    },
+    "limitation": "This suite decoded the actual PNG download natively and asserted literal pixels; PNG bytes were not separately retained after fixture cleanup. Maximum/export artifact acceptance is root-owned.",
+    "native390Screenshot": "/workspace/motion104-native-artifacts/library-390.png"
+  },
+  "restartEvidence": {
+    "wholePersistentChromiumProcessClosedAndRelaunched": true,
+    "sameOnDiskProfile": true,
+    "activeTitle": "Blue B \ud83c\udf3f",
+    "storedEntries": 2,
+    "exactBackupBytesBeforeAfter": true,
+    "independentEarlierEntryEditedAfterReopenWithoutChangingB": true,
+    "backupBytes": 855,
+    "backupSha256": "4bd9950e88c28fff93095804efed3580b92ec16cf451355571c30d3660fc1f43",
+    "proof": "/workspace/motion104-native-artifacts/restart-proof.json"
+  }
+}

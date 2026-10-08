@@ -1,0 +1,266 @@
+{
+  "issue": 99,
+  "status": "passed",
+  "observedAt": "2026-10-04T17:33:18.766157+00:00",
+  "origin": "http://127.0.0.1:4298",
+  "scripts": [
+    "/assets/index-BcyIN1-j.js"
+  ],
+  "browserVersion": "151.0.7922.173",
+  "verification": {
+    "path": "/workspace/melody99-maximum-final/verification.json",
+    "bytes": 7450,
+    "sha256": "e5c47a0dc3669b5324858b913d496ecff523f6ac3f127cef66195f92d7a5f69b"
+  },
+  "log": {
+    "path": "/tmp/melody99-maximum-final.log",
+    "bytes": 451,
+    "sha256": "5f9a0fcc7e8b3cb1459773b90a8eb53e357b481ebb52c992157c2508db563e51"
+  },
+  "frozenExpectationsUnchanged": true,
+  "originalFixtureHashesUnchanged": true,
+  "topology": {
+    "tracks": 8,
+    "notesPerTrack": 256,
+    "notes": 2048,
+    "references": 8,
+    "referenceFrames": 441000,
+    "referenceSeconds": 20,
+    "rawPcmBytes": 7056000,
+    "tempo": 240,
+    "endBeat": 128
+  },
+  "expectedEdits": {
+    "original": {
+      "id": "original-fractional-note",
+      "pitch": 69,
+      "start": 0.13,
+      "duration": 0.25,
+      "velocity": 0.75
+    },
+    "moved": {
+      "id": "original-fractional-note",
+      "pitch": 72,
+      "start": 0.63,
+      "duration": 0.25,
+      "velocity": 0.75
+    },
+    "resized": {
+      "id": "original-fractional-note",
+      "pitch": 72,
+      "start": 0.63,
+      "duration": 0.5,
+      "velocity": 0.75
+    }
+  },
+  "checks": [
+    "Native pointer move and resize preserve off-grid start; each gesture adds exactly one Undo/Redo state; all2048notes and8PCMassets compared in complete backups.",
+    "Independent SMF decoder confirms480ticks/beat and sole corrected note302..542; RIFF/PCM decoder confirms full128beat render, native onset,523Hz pitch/amplitude and exact long-tail silence."
+  ],
+  "assets": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "bytes": 882000,
+      "sha256": "73a7fa75042504912703a074223bda69aec35e5cce9c010319be8241c6ad87c8"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "bytes": 882000,
+      "sha256": "57adff2b3c38119ea32842eb66bd07d09c76770bc760cb9cf6deb5cc1a8ae04b"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "bytes": 882000,
+      "sha256": "c2f3b3efbbe7c68ff5dd0c01de99337de730859ef2e33357b44efc7701cc5d67"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000004",
+      "bytes": 882000,
+      "sha256": "8730c3636a3ae607525c8a26730ecc0b6e87a33f6fee544653bd0fb3649c6aea"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000005",
+      "bytes": 882000,
+      "sha256": "e70631abdb59e27251a03d1c5670052de2469a94af0a31db828880ae277666c4"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000006",
+      "bytes": 882000,
+      "sha256": "081b736c84661744255b013c69d4187672eed755db1866464fdd29ec99f7ad9d"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000007",
+      "bytes": 882000,
+      "sha256": "fbedbde8efc98804c0dd698b8ae4d5277a684886b9fa6ebef5b96d2488fd677a"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000008",
+      "bytes": 882000,
+      "sha256": "c8ca9235f9b66958ab362cccf9603c22da7fe46745d458924548c960eadcd019"
+    }
+  ],
+  "midi": {
+    "division": 480,
+    "tempos": [
+      250000
+    ],
+    "notes": [
+      {
+        "tick": 302,
+        "pitch": 72,
+        "velocity": 95
+      }
+    ],
+    "noteOffs": [
+      {
+        "tick": 542,
+        "pitch": 72
+      }
+    ]
+  },
+  "wav": {
+    "frames": 707364,
+    "frequencyHz": 523.2511443234902,
+    "rms": 0.1698085345030477,
+    "firstNonzeroFrame": 3474,
+    "beforeAndAfterSilenceExact": true,
+    "renderDownloadAndDecodeWallMs": 164.69038999999975
+  },
+  "restart": {
+    "bytes": 9580720,
+    "sha256": "edcf9465215d8557a89efd710efcb92f5933128ccc81b846a0f45742cd5e1c35",
+    "byteExact": true
+  },
+  "totalWallMs": 7689.033007999999,
+  "browserProcessesStopped": {
+    "647779": true,
+    "647901": true
+  },
+  "artifacts": [
+    {
+      "name": "before-edit.melody.json",
+      "bytes": 9580721,
+      "sha256": "d8fe0cc9cacdca9c3df257377c5df78ff341654f413211d7e9f799166b362152"
+    },
+    {
+      "name": "after-move.melody.json",
+      "bytes": 9580721,
+      "sha256": "e2b7d70b16907bf7e0d3f5825c05b513fa45cbaf9c38b718c1593037cf0d1ceb"
+    },
+    {
+      "name": "move-one-undo.melody.json",
+      "bytes": 9580721,
+      "sha256": "d8fe0cc9cacdca9c3df257377c5df78ff341654f413211d7e9f799166b362152"
+    },
+    {
+      "name": "move-one-redo.melody.json",
+      "bytes": 9580721,
+      "sha256": "e2b7d70b16907bf7e0d3f5825c05b513fa45cbaf9c38b718c1593037cf0d1ceb"
+    },
+    {
+      "name": "after-resize.melody.json",
+      "bytes": 9580720,
+      "sha256": "edcf9465215d8557a89efd710efcb92f5933128ccc81b846a0f45742cd5e1c35"
+    },
+    {
+      "name": "resize-one-undo.melody.json",
+      "bytes": 9580721,
+      "sha256": "e2b7d70b16907bf7e0d3f5825c05b513fa45cbaf9c38b718c1593037cf0d1ceb"
+    },
+    {
+      "name": "resize-one-redo.melody.json",
+      "bytes": 9580720,
+      "sha256": "edcf9465215d8557a89efd710efcb92f5933128ccc81b846a0f45742cd5e1c35"
+    },
+    {
+      "name": "after-process-restart.melody.json",
+      "bytes": 9580720,
+      "sha256": "edcf9465215d8557a89efd710efcb92f5933128ccc81b846a0f45742cd5e1c35"
+    },
+    {
+      "name": "corrected-notes-only.mid",
+      "bytes": 486,
+      "sha256": "87205c23461b50f0fbff61ebeb60d5803561fce065e3046284b3b8410bca7c44"
+    },
+    {
+      "name": "corrected-notes-only.wav",
+      "bytes": 1414772,
+      "sha256": "c621514d212128e035702c5e908ab24dbce3380f0e13ca229f0d1f44cb7eaa76"
+    },
+    {
+      "name": "desktop.png",
+      "bytes": 354525,
+      "sha256": "713bf96135987db58b0fa494e22053645c2a7deab5466aa6f93d169409ebd61a"
+    },
+    {
+      "name": "390px.png",
+      "bytes": 286928,
+      "sha256": "baf2ef8d748ebc42b7025640ca786c2619b13d230c42259664053e2ec9ea146c"
+    }
+  ],
+  "screenshotsVisuallyReviewed": [
+    "desktop.png",
+    "390px.png"
+  ],
+  "pageErrors": [],
+  "externalRequests": [],
+  "sourceFilesAtCompletion": [
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/scripts/smoke_direct_roll.mjs",
+      "bytes": 15694,
+      "sha256": "e2ff7a84bd1f731216d220b417a1da03e9e7300520aef07bbf21934ee92568c2"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/roll-edit.ts",
+      "bytes": 3925,
+      "sha256": "40d01db52104e5a29acf742c1de8facc70d70a21dffd3f715b108598b1cfeeb4"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/roll-controller.ts",
+      "bytes": 11226,
+      "sha256": "92a9f4b446607a6c1037ffda2c3a77e9f44b54d6f9d85e342dcd8607908c1bf6"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/main.ts",
+      "bytes": 93827,
+      "sha256": "c29e3ff67bf94c049030b91cf232b9bd7dab4b1f5d790a6abbcbd3abc6e3d390"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/style.css",
+      "bytes": 18428,
+      "sha256": "4fce5a9064a35cef88e28e8ba41750eff1012d7d7d2fcce06629fd71861714a4"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/audio.ts",
+      "bytes": 11496,
+      "sha256": "dc44b7f1d1ad9c95fe1a65fcff2659f26ed8da4552062791af2879f184ea3957"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/midi.ts",
+      "bytes": 3693,
+      "sha256": "36aa942085253047512b5605225b876a92bef5f40b92b668cdcb2e9c7f4ce84a"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/reference-project.ts",
+      "bytes": 13032,
+      "sha256": "8924a56ffb19414f012f6287fd2c1b517769fb0e1e2a014ca1367844c6a4e430"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/melody-studio/src/reference-storage.ts",
+      "bytes": 8915,
+      "sha256": "de4f51a6cb35418538f3e1cbe55f0d3df17a06d2a82595bf11e89e1f7be7573b"
+    }
+  ],
+  "limits": [
+    "Synthetic original PCM tests exact retained references; no vocal or physical microphone accuracy claim.",
+    "All2048 notes remain authored, but unrelated tracks are muted and track0 unrelated notes have zero velocity to isolate the corrected oscillator.",
+    "Actual WAV allocation spans128beats at240BPM; this is not a maximum-duration40BPM synthesis benchmark.",
+    "Pointer coordinates use native current grid geometry; expected musical deltas, ticks, samples and tolerances were frozen before producer inspection.",
+    "No producer imports, direct storage writes, model downloads, external services or browser API mocks.",
+    "This is the first actual maximum run: passed without a preceding claimed RED.",
+    "Allowed pre-run setup adjustment scrolls the selected note into view after backup download; expected body/handle hit offsets and scalar/audio tolerances were not modified.",
+    "Native Chromium151 software evidence, not physical touch/hardware audio quality.",
+    "Wall time includes native UI/download/serialization and is not an isolated rendering or latency benchmark.",
+    "All reference blobs compared byte-exact throughout; no maximum raw-JSON byte-cap or40BPM duration claim."
+  ]
+}

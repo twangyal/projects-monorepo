@@ -1,0 +1,764 @@
+{
+  "schemaVersion": 1,
+  "issue": 117,
+  "status": "Maximum actual acceptance passed after narrow invalid-fixture decimal correction; root executed, author inspected and archived existing evidence only",
+  "script": "scripts/smoke_saved_copy_conflicts.mjs",
+  "scope": "Independent complete maximum Lens photo/mask/settings conflict, artifact, bounded history and persistent Chromium restart acceptance",
+  "independence": {
+    "productionImports": [],
+    "readBeforeFreeze": [
+      "README.md",
+      "src/types.ts",
+      "unchanged src/model.ts",
+      "unchanged src/history.ts",
+      "unchanged src/photo-header.ts",
+      "unchanged public UI and tests",
+      "pending saved-copy design"
+    ],
+    "newStorageImplementationRead": false,
+    "expectedPixels": "Literal original RGBA arithmetic and independent scalar inversion/tent contributions/near-over-far composition at nine declared coordinates",
+    "decoders": "pngjs independently decodes hand-encoded PNG and later actual downloaded PNG"
+  },
+  "frozenFixture": {
+    "width": 1280,
+    "height": 1280,
+    "pixels": 1638400,
+    "photo": "Full opaque RGBA integer texture, stored DEFLATE without ancillary padding, within 7340032 byte normalized PNG cap",
+    "mask": "Exactly one byte per source pixel; three original vertical near/subject/far regions with different A/B/C boundaries",
+    "identity": "A/B/C same project/photo IDs, title, dimensions; B changes photo bytes, full mask and settings; C changes mask/settings again",
+    "manualSettingsA": {
+      "mode": "perspective",
+      "sourceFocal": 50,
+      "targetFocal": 75,
+      "shiftX": 0.0625,
+      "shiftY": -0.0312,
+      "near": 0.5,
+      "far": 2
+    },
+    "localChange": "A targetFocal 80 plus one radius-2 near stamp at source (640.25,640.25); unchanged original A PNG and independently predicted full mask",
+    "rgbaTolerance": 1,
+    "rawInput": "12582912 bytes complete JSON plus disclosed trailing whitespace; 12582913 rejects atomically",
+    "history": "Measure literal title/settings/depth edit bytes, excluding immutable photo; full mask reaches 33554432 byte cap before 30 states"
+  },
+  "plannedActualRuntime": [
+    "Fresh persistent Chromium process with two pages on a root-owned external production origin",
+    "Complete A load/save, true 12 MiB JSON admission and +1 refusal retaining complete current project",
+    "B durable exact whole native wrapper winner, stale A edited locally without winner overwrite",
+    "Local Undo/Redo and exact portable backup, actual PNG scalar check, unchanged raw title/numeric field nodes and title caret",
+    "A reviewed replacement held at genuine confirm while another actual tab writes C; stale review refuses, fresh confirmed replacement saves local complete project",
+    "Twenty real title commits followed by exact measured byte-budget history Undo/Redo; wait truthful save-pump idle before capturing final native wrapper UUID",
+    "Close full Chromium process and reopen fresh process on same origin/profile; exact complete native wrapper and project backup unchanged",
+    "Original and result PNG decode with declared normalized source pixels and scalar samples; no source metadata, depth-inference or calibrated-camera claims"
+  ],
+  "execution": {
+    "fixtures": "LENS_CONFLICT_FIXTURES=/workspace/lens117-maximum-valid-fixtures node scripts/smoke_saved_copy_conflicts.mjs --fixtures-only",
+    "runtime": "LENS_CONFLICT_FIXTURES=/workspace/lens117-maximum-valid-fixtures LENS_CONFLICT_OUTPUT=/workspace/lens117-maximum-second LENS_CONFLICT_ORIGIN=http://127.0.0.1:4315 CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_saved_copy_conflicts.mjs --run-prepared",
+    "runtimeCost": "Actual 367672.29994000006 ms (about 6.13 minutes), exceeding earlier 2\u20134 minute estimate",
+    "disk": "Allow 400 MiB workspace for complete fixtures/backups/profile/artifacts; no peak-memory guarantee",
+    "serviceOwnership": "No build/start/stop; only own fresh browser processes and output directories",
+    "workingDirectory": "apps/lens-studio",
+    "dependencies": "Existing app-local @playwright/test and pngjs; Node >=22.18, installed Chromium. No Python or generator installation needed."
+  },
+  "limitations": [
+    "The original integer texture and uncompressed DEFLATE deliberately exercise real large decoded pixels and file bytes; they are not worst-case photographic complexity or peak-memory evidence.",
+    "Exact 12 MiB JSON admission uses trailing whitespace after complete canonical content; no claim that canonical supported content fills the raw input cap.",
+    "The full mask reaches the 32 MiB history-byte cap before 30 edit states; the immutable photo is not charged to those edit states.",
+    "Manual labels/projection are authored test inputs, not inferred depth or camera-calibration evidence.",
+    "The runner owns only fresh browser processes and directories. An external root-owned same-origin service supplies the production build.",
+    "Author performed source authoring/static checks/evidence hashing only; actual generator and maximum browser execution were root-owned",
+    "No additional full-suite, CI, peak-memory, performance-optimality or physical-camera claim from this maximum receipt"
+  ],
+  "scriptSha256": "1b257013efa7c8932ac8ff9fb30e802944b4fd491fea535a2a42f80bd14e1541",
+  "staticChecks": {
+    "commands": [
+      "node --check scripts/smoke_saved_copy_conflicts.mjs",
+      "node_modules/.bin/eslint scripts/smoke_saved_copy_conflicts.mjs"
+    ],
+    "exitCodes": [
+      0,
+      0
+    ],
+    "scope": "Source-only; no fixture generation, browser, service, build or test execution by author",
+    "declarationCheck": "Python decimal source-only check: A/B/C/local precision, ratio and near-plane clearance; no generated fixture or browser run"
+  },
+  "bindingPolicy": "Exact empty startup status before first File input; current Saved locally status and enabled Reload before final raw native wrapper read; actual restored status before restart assertions",
+  "preRuntimeCorrections": [
+    {
+      "originalScriptSha256": "c8b709f2d5b0e2ff5ba208ed2ee3ec89c8b0a354593e34e979e36a1aca8ee400",
+      "correctedScriptSha256": "5a829dafed1c73d2577777f6faab74d312cf2ad02df60993391fb2ff118d4d70",
+      "reason": "Root static preflight identified BrowserContext has no newBrowserCDPSession; use context.browser().newBrowserCDPSession, matching Playwright Browser API",
+      "runtimeExecuted": false,
+      "fixturesExpectedValuesTolerancesChanged": false
+    },
+    {
+      "originalScriptSha256": "5a829dafed1c73d2577777f6faab74d312cf2ad02df60993391fb2ff118d4d70",
+      "correctedScriptSha256": "1b257013efa7c8932ac8ff9fb30e802944b4fd491fea535a2a42f80bd14e1541",
+      "reason": "Actual first root runtime A import correctly rejected five-decimal shiftY -0.03125 under unchanged four-decimal policy; use equally-nearest four-decimal -0.0312 (local inherits A)",
+      "changedDeclaredValues": {
+        "A.settings.shiftY": {
+          "before": -0.03125,
+          "after": -0.0312
+        },
+        "local.settings.shiftY": {
+          "before": -0.03125,
+          "after": -0.0312
+        }
+      },
+      "scalarExpectedPixels": "New generator computes A/local expected samples using the unchanged independent scalar oracle and corrected valid settings; no scalar function, sample coordinates or tolerance changed",
+      "remainingABCSettings": "B/C unchanged; all declared focal/depth/shift values independently checked against 2/3/4 decimal precision, ratios and plane clearance",
+      "imageMaskCapacityRuntimeAssertionsChanged": false
+    }
+  ],
+  "firstActualRuntime": {
+    "executor": "Root, not this author",
+    "status": "failed",
+    "wallMs": 70194.33034500001,
+    "receiptPath": "/workspace/lens117-maximum-first/verification.json",
+    "receiptSha256": "bcef6da4c6714b6bec9a5366f443cbd7705ef8dc37c8acebb33a2103391092aa",
+    "logPath": "/tmp/lens117-maximum-first.log",
+    "scriptSha256": "5a829dafed1c73d2577777f6faab74d312cf2ad02df60993391fb2ff118d4d70",
+    "originalFixturesPreserved": "/workspace/lens117-maximum-fixtures",
+    "originalFixtureReceiptSha256": "306169b9a88239b1e6a90be841fc83046e20f862a41bc88808847eb0d1955133",
+    "successfulNormalizationArtifact": {
+      "name": "normalized-photo-native.json",
+      "bytes": 10925488,
+      "sha256": "96ae99118741a3f5b06df872cc82463936994aad8f3b2f2d44a6c265d45dc556",
+      "checkedRgbaBytes": 6553600
+    },
+    "failureClassification": "Acceptance fixture invalid before A adoption; no product defect. Existing four-decimal validator refusal is correct.",
+    "expectedSuccessAssertion": "Study loaded message timed out because actual input was rejected",
+    "productChanged": false
+  },
+  "actualGeneration": {
+    "executor": "Root",
+    "fixtureDirectory": "/workspace/lens117-maximum-valid-fixtures",
+    "receiptSha256": "fd7614ee174467b6a7e35530156e146cac03f5f93439e091f41a9d84856af027",
+    "logPath": "/tmp/lens117-maximum-valid-generation.log",
+    "logSha256": "2dd534f5b3076422b316b136fb5579e707afd2ee64c35fc9f54db756cac2212a",
+    "node": "v24.19.0",
+    "zlib": "1.3.2.1-motley-3246f1b",
+    "scriptSha256": "1b257013efa7c8932ac8ff9fb30e802944b4fd491fea535a2a42f80bd14e1541",
+    "planSha256": "cfb7a6b5b0400107c6e975e5d013b6cfbc2b9ff70cbb806b4bbe7b3433b551ab",
+    "photos": [
+      {
+        "name": "source-A.png",
+        "bytes": 6555943,
+        "sha256": "eeba28f7087aba19e59729d5eb04155dd8e781c00712fb64921eca542e508d22",
+        "decodedRgbaBytes": 6553600
+      },
+      {
+        "name": "source-B.png",
+        "bytes": 6555943,
+        "sha256": "f2bad18b846d2f30aec03d5904e0c80195bdd04fc3ab2699e47fd0beb0016e85",
+        "decodedRgbaBytes": 6553600
+      }
+    ],
+    "projects": [
+      {
+        "name": "A",
+        "bytes": 10926179,
+        "sha256": "713f7cf9e02e626044447a647a5be14a12e1153377aa7db5a348df411a105c89",
+        "maskBytes": 1638400,
+        "maskSha256": "187a9e71819648f39d07fceceb9977aedf5316aee7ada49fc2800070898c33e7",
+        "planeCounts": [
+          512000,
+          614400,
+          512000
+        ],
+        "editStateBytes": 2184741
+      },
+      {
+        "name": "B",
+        "bytes": 10926177,
+        "sha256": "326604a3acbd60aee7fb9e00c09a1322087fd37202c01a6087b72eebf2608705",
+        "maskBytes": 1638400,
+        "maskSha256": "36c4516661e503afe30d6f231af693a9dfc5fde86be3d900f1aa865a2aa07910",
+        "planeCounts": [
+          409600,
+          819200,
+          409600
+        ],
+        "editStateBytes": 2184739
+      },
+      {
+        "name": "C",
+        "bytes": 10926178,
+        "sha256": "3a6832538a44494fb1abe48bdf1223fe35f1a9db65021c398b9f732619b86349",
+        "maskBytes": 1638400,
+        "maskSha256": "73597077f9e693152ef805f3ad1c3b3cddca9dcf584a5341ac60ffa3d0cfd437",
+        "planeCounts": [
+          614400,
+          409600,
+          614400
+        ],
+        "editStateBytes": 2184740
+      },
+      {
+        "name": "local",
+        "bytes": 10926179,
+        "sha256": "f8f4e345f633bdd56741eae68ec2cda538521f3e6b1b5c810cf2dc730810dd9c",
+        "maskBytes": 1638400,
+        "maskSha256": "e8cb17235634febf5b208fb0085decc149e3eb2c6381cbf410ea5f6cbf5510f4",
+        "planeCounts": [
+          512013,
+          614387,
+          512000
+        ],
+        "editStateBytes": 2184741
+      }
+    ],
+    "rawInput": {
+      "bytes": 12582912,
+      "sha256": "f311c41d93546ae32a58f9022256b682c07308a3464022fb1bbc6d4288046dd2",
+      "whitespaceBytes": 1656733,
+      "overflowBytes": 12582913,
+      "overflowSha256": "f32f16ec378548034ea31f949ef5aeae17f68d662b2ed7ad7b801ae59cc2a789"
+    },
+    "history": {
+      "photoStoredSeparately": true,
+      "editStateBytes": 2184741,
+      "expectedRetainedSnapshots": 15,
+      "budgetBytes": 33554432,
+      "provesByteCap": true
+    },
+    "scalarSamples": {
+      "A": [
+        {
+          "x": 0,
+          "y": 0,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 1279,
+          "rgba": [
+            143,
+            103,
+            118,
+            255
+          ]
+        },
+        {
+          "x": 64,
+          "y": 640,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 319,
+          "y": 320,
+          "rgba": [
+            34,
+            134,
+            110,
+            255
+          ]
+        },
+        {
+          "x": 400,
+          "y": 500,
+          "rgba": [
+            30,
+            242,
+            146,
+            255
+          ]
+        },
+        {
+          "x": 640,
+          "y": 640,
+          "rgba": [
+            40,
+            39,
+            215,
+            255
+          ]
+        },
+        {
+          "x": 879,
+          "y": 800,
+          "rgba": [
+            231,
+            178,
+            128,
+            255
+          ]
+        },
+        {
+          "x": 1024,
+          "y": 384,
+          "rgba": [
+            181,
+            53,
+            199,
+            255
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 640,
+          "rgba": [
+            81,
+            134,
+            108,
+            255
+          ]
+        }
+      ],
+      "B": [
+        {
+          "x": 0,
+          "y": 0,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 1279,
+          "rgba": [
+            59,
+            233,
+            187,
+            255
+          ]
+        },
+        {
+          "x": 64,
+          "y": 640,
+          "rgba": [
+            165,
+            147,
+            106,
+            255
+          ]
+        },
+        {
+          "x": 319,
+          "y": 320,
+          "rgba": [
+            48,
+            60,
+            122,
+            255
+          ]
+        },
+        {
+          "x": 400,
+          "y": 500,
+          "rgba": [
+            173,
+            141,
+            213,
+            255
+          ]
+        },
+        {
+          "x": 640,
+          "y": 640,
+          "rgba": [
+            65,
+            65,
+            129,
+            255
+          ]
+        },
+        {
+          "x": 879,
+          "y": 800,
+          "rgba": [
+            0,
+            204,
+            42,
+            255
+          ]
+        },
+        {
+          "x": 1024,
+          "y": 384,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 640,
+          "rgba": [
+            61,
+            155,
+            25,
+            255
+          ]
+        }
+      ],
+      "C": [
+        {
+          "x": 0,
+          "y": 0,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 1279,
+          "rgba": [
+            165,
+            168,
+            101,
+            255
+          ]
+        },
+        {
+          "x": 64,
+          "y": 640,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 319,
+          "y": 320,
+          "rgba": [
+            159,
+            137,
+            148,
+            255
+          ]
+        },
+        {
+          "x": 400,
+          "y": 500,
+          "rgba": [
+            139,
+            100,
+            151,
+            255
+          ]
+        },
+        {
+          "x": 640,
+          "y": 640,
+          "rgba": [
+            34,
+            182,
+            31,
+            255
+          ]
+        },
+        {
+          "x": 879,
+          "y": 800,
+          "rgba": [
+            112,
+            60,
+            186,
+            255
+          ]
+        },
+        {
+          "x": 1024,
+          "y": 384,
+          "rgba": [
+            211,
+            189,
+            12,
+            255
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 640,
+          "rgba": [
+            115,
+            244,
+            144,
+            255
+          ]
+        }
+      ],
+      "local": [
+        {
+          "x": 0,
+          "y": 0,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 1279,
+          "rgba": [
+            158,
+            145,
+            109,
+            255
+          ]
+        },
+        {
+          "x": 64,
+          "y": 640,
+          "rgba": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "x": 319,
+          "y": 320,
+          "rgba": [
+            227,
+            178,
+            98,
+            255
+          ]
+        },
+        {
+          "x": 400,
+          "y": 500,
+          "rgba": [
+            47,
+            130,
+            102,
+            255
+          ]
+        },
+        {
+          "x": 640,
+          "y": 640,
+          "rgba": [
+            40,
+            39,
+            215,
+            255
+          ]
+        },
+        {
+          "x": 879,
+          "y": 800,
+          "rgba": [
+            231,
+            178,
+            128,
+            255
+          ]
+        },
+        {
+          "x": 1024,
+          "y": 384,
+          "rgba": [
+            86,
+            70,
+            213,
+            255
+          ]
+        },
+        {
+          "x": 1279,
+          "y": 640,
+          "rgba": [
+            137,
+            66,
+            15,
+            255
+          ]
+        }
+      ]
+    }
+  },
+  "secondActualRuntime": {
+    "executor": "Root, not this author",
+    "publishedImplementationCommit": "d2dc756",
+    "status": "passed",
+    "startedAt": "2026-10-05T01:15:48.592Z",
+    "wallMs": 367672.29994000006,
+    "receiptPath": "/workspace/lens117-maximum-second/verification.json",
+    "receiptSha256": "d13ecb4be831492ef17f2e313628cb77563470c4a627c5d5eed7b82efdccef48",
+    "logPath": "/tmp/lens117-maximum-second.log",
+    "logSha256": "6f856a651c11de5675d317aa4ae6261fe82f151c062a6639edec8ed9bc4e15c9",
+    "scriptSha256": "1b257013efa7c8932ac8ff9fb30e802944b4fd491fea535a2a42f80bd14e1541",
+    "chromium": "151.0.7922.173",
+    "browserProcesses": [
+      795215,
+      795981
+    ],
+    "fixtureReceiptSha256": "fd7614ee174467b6a7e35530156e146cac03f5f93439e091f41a9d84856af027",
+    "checks": [
+      "Actual photo normalization checks all 6,553,600 RGBA bytes; exact 12 MiB accepted and +1 rejected retaining complete A.",
+      "Full A/B/C photo/mask/settings identity; protected loser brush/history/raw nodes/caret/PNG; stale review refused and fresh replacement complete.",
+      "Measured history-byte cap excludes immutable photo; genuine fresh process retains full native UUID/data and exact backup/PNG."
+    ],
+    "nativeBrush": {
+      "trusted": true,
+      "x": 640.25,
+      "y": 640.25
+    },
+    "finalStoredReceipt": {
+      "schemaVersion": 2,
+      "revision": "7c481a37-ea14-4b7f-a6f3-14b4c22640c3",
+      "projectSha256": "9558f7200575f624d2769f3565d5cf30b6b1d3d3fea5eb16cc48854340c39b20",
+      "completeProjectBytes": 10926179,
+      "editStateBytes": 2184741,
+      "wrapperBytes": 10926259,
+      "wrapperSha256": "9f8eb45fef246f7d52bab60f4d47b1414db5d4d00bc499c3b4115117e6cec873"
+    },
+    "history": {
+      "photoStoredSeparately": true,
+      "editStateBytes": 2184741,
+      "expectedRetainedSnapshots": 15,
+      "budgetBytes": 33554432,
+      "provesByteCap": true,
+      "undoTransitions": 14,
+      "redoTransitions": 14,
+      "distinctNativeTitleCommits": 20,
+      "exactPhotoSha256": "eeba28f7087aba19e59729d5eb04155dd8e781c00712fb64921eca542e508d22"
+    },
+    "artifacts": [
+      {
+        "name": "normalized-photo-native.json",
+        "bytes": 10925488,
+        "sha256": "3717379026953721cf4dabdfa04d449ee480e16cf772086a3427bf365c9d9770",
+        "checkedRgbaBytes": 6553600
+      },
+      {
+        "name": "A-native.json",
+        "bytes": 10926179,
+        "sha256": "713f7cf9e02e626044447a647a5be14a12e1153377aa7db5a348df411a105c89"
+      },
+      {
+        "name": "A-projection.png",
+        "bytes": 6555448,
+        "sha256": "68df969e7c19369cb7bb8c1322b8d8deb94c121a0d70050174594f13f3c16a39",
+        "samplesChecked": 9,
+        "rgbaTolerance": 1
+      },
+      {
+        "name": "after-overflow-native.json",
+        "bytes": 10926179,
+        "sha256": "713f7cf9e02e626044447a647a5be14a12e1153377aa7db5a348df411a105c89"
+      },
+      {
+        "name": "right-original-A-native.json",
+        "bytes": 10926179,
+        "sha256": "713f7cf9e02e626044447a647a5be14a12e1153377aa7db5a348df411a105c89"
+      },
+      {
+        "name": "B-native.json",
+        "bytes": 10926177,
+        "sha256": "326604a3acbd60aee7fb9e00c09a1322087fd37202c01a6087b72eebf2608705"
+      },
+      {
+        "name": "B-projection.png",
+        "bytes": 6555448,
+        "sha256": "8a29f31ba3ed9660dd2fe9ba84f310bb19685e94783bc0fd528113986a681af8",
+        "samplesChecked": 9,
+        "rgbaTolerance": 1
+      },
+      {
+        "name": "local-painted-native.json",
+        "bytes": 10926179,
+        "sha256": "f8f4e345f633bdd56741eae68ec2cda538521f3e6b1b5c810cf2dc730810dd9c"
+      },
+      {
+        "name": "local-protected-native.json",
+        "bytes": 10926179,
+        "sha256": "f8f4e345f633bdd56741eae68ec2cda538521f3e6b1b5c810cf2dc730810dd9c"
+      },
+      {
+        "name": "local-projection.png",
+        "bytes": 6555448,
+        "sha256": "643777a311d42376295c41f0482a7da462c94a154134bd09b4c8a069586c7f77",
+        "samplesChecked": 9,
+        "rgbaTolerance": 1
+      },
+      {
+        "name": "local-undo-A-native.json",
+        "bytes": 10926179,
+        "sha256": "713f7cf9e02e626044447a647a5be14a12e1153377aa7db5a348df411a105c89"
+      },
+      {
+        "name": "local-redo-native.json",
+        "bytes": 10926179,
+        "sha256": "f8f4e345f633bdd56741eae68ec2cda538521f3e6b1b5c810cf2dc730810dd9c"
+      },
+      {
+        "name": "after-stale-review-native.json",
+        "bytes": 10926179,
+        "sha256": "f8f4e345f633bdd56741eae68ec2cda538521f3e6b1b5c810cf2dc730810dd9c"
+      },
+      {
+        "name": "after-fresh-replacement-native.json",
+        "bytes": 10926179,
+        "sha256": "f8f4e345f633bdd56741eae68ec2cda538521f3e6b1b5c810cf2dc730810dd9c"
+      },
+      {
+        "name": "final-native.json",
+        "bytes": 10926179,
+        "sha256": "9558f7200575f624d2769f3565d5cf30b6b1d3d3fea5eb16cc48854340c39b20"
+      },
+      {
+        "name": "restart-native.json",
+        "bytes": 10926179,
+        "sha256": "9558f7200575f624d2769f3565d5cf30b6b1d3d3fea5eb16cc48854340c39b20"
+      },
+      {
+        "name": "restart-projection.png",
+        "bytes": 6555448,
+        "sha256": "643777a311d42376295c41f0482a7da462c94a154134bd09b4c8a069586c7f77",
+        "samplesChecked": 9,
+        "rgbaTolerance": 1
+      },
+      {
+        "name": "desktop.png",
+        "bytes": 522695,
+        "sha256": "79b149e93c1f2b8bfa15ab790930f4e2994a1d2bb32354b078c2bd741387cb5c"
+      },
+      {
+        "name": "mobile-390.png",
+        "bytes": 434486,
+        "sha256": "63cf652ac67a9f4f6b98b8f5691920081c92e96a0965c280acbf5c77c8e2ae78"
+      }
+    ],
+    "pageErrors": [],
+    "externalRequests": [],
+    "cleanup": {
+      "rootReportedStandaloneServicePort": 4315,
+      "rootReportedStandaloneServicePid": 793981,
+      "rootReportedStopped": true,
+      "runnerOwnsOnlyBrowserProcesses": true
+    },
+    "screenshotReview": "Root inspected successful 390px screenshot; runner asserted no horizontal overflow"
+  },
+  "artifactVerification": {
+    "method": "Author read and SHA256/byte-count verified every existing runtime artifact against original verification.json; no runtime repeat",
+    "artifactsVerified": 19,
+    "fixtureReceiptMatchesRuntime": true,
+    "currentScriptMatchesGenerationAndRuntime": true
+  }
+}

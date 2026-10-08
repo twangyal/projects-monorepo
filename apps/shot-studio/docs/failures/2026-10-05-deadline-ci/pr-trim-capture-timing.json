@@ -1,0 +1,1661 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-capture-timing-observation",
+  "before": {
+    "visibility": "visible",
+    "hidden": false,
+    "focused": true,
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1
+    },
+    "canvas": {
+      "x": 77.1875,
+      "y": -976.375,
+      "width": 631.984375,
+      "height": 355.484375,
+      "top": -976.375,
+      "right": 709.171875,
+      "bottom": -620.890625,
+      "left": 77.1875
+    }
+  },
+  "armedAt": 867.7000000000116,
+  "recorderStartAt": 872.5999999999767,
+  "detailWindowMs": 1000,
+  "eventLimit": 1500,
+  "diagnostics": {
+    "heartbeatIntervalMs": 25,
+    "longtaskSupported": true
+  },
+  "events": [
+    {
+      "kind": "export.intent",
+      "now": 867.7000000000116
+    },
+    {
+      "kind": "draw.begin",
+      "now": 870.5999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3
+    },
+    {
+      "kind": "draw.end",
+      "now": 871.2000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3
+    },
+    {
+      "kind": "captureStream.begin",
+      "now": 871.2999999999884,
+      "canvas": "sequence-stage",
+      "args": [
+        0
+      ]
+    },
+    {
+      "kind": "captureStream.end",
+      "now": 872.2999999999884,
+      "canvas": "sequence-stage",
+      "kinds": [
+        "video"
+      ]
+    },
+    {
+      "kind": "recorder.construct.begin",
+      "now": 872.5,
+      "mimeType": "video/webm;codecs=vp9",
+      "kinds": [
+        "video"
+      ]
+    },
+    {
+      "kind": "recorder.construct.end",
+      "now": 872.5
+    },
+    {
+      "kind": "recorder.start.begin",
+      "now": 872.5999999999767,
+      "args": [
+        100
+      ]
+    },
+    {
+      "kind": "recorder.start.end",
+      "now": 873.5,
+      "state": "recording"
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 873.8999999999651
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 873.8999999999651
+    },
+    {
+      "kind": "raf.begin",
+      "now": 886.2999999999884,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 870.7,
+      "callbackDelay": 15.599999999988313
+    },
+    {
+      "kind": "raf.end",
+      "now": 886.3999999999651,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 886.3999999999651,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 870.7,
+      "callbackDelay": 15.69999999996503
+    },
+    {
+      "kind": "draw.begin",
+      "now": 886.5999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3
+    },
+    {
+      "kind": "draw.end",
+      "now": 887.0999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3
+    },
+    {
+      "kind": "raf.end",
+      "now": 887.0999999999767,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 889.2000000000116,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 887.3,
+      "callbackDelay": 1.900000000011687
+    },
+    {
+      "kind": "raf.end",
+      "now": 889.2999999999884,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 889.2999999999884,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 887.3,
+      "callbackDelay": 1.999999999988404
+    },
+    {
+      "kind": "draw.begin",
+      "now": 889.2999999999884,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3137999999999996
+    },
+    {
+      "kind": "draw.end",
+      "now": 889.5999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3137999999999996
+    },
+    {
+      "kind": "raf.end",
+      "now": 889.5999999999767,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 903,
+      "due": 898.5,
+      "callbackDelay": 4.5,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 904.3999999999651,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 903.9,
+      "callbackDelay": 0.49999999996509814
+    },
+    {
+      "kind": "raf.end",
+      "now": 904.3999999999651,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 904.3999999999651,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 903.9,
+      "callbackDelay": 0.49999999996509814
+    },
+    {
+      "kind": "draw.begin",
+      "now": 904.5,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3304
+    },
+    {
+      "kind": "draw.end",
+      "now": 904.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.3304
+    },
+    {
+      "kind": "raf.end",
+      "now": 904.7999999999884,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 928.0999999999767,
+      "due": 928,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 953.3999999999651,
+      "due": 953.2000000000116,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 978.5,
+      "due": 978.3999999999651,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1003.5999999999767,
+      "due": 1003.5,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1028.7999999999884,
+      "due": 1028.5999999999767,
+      "callbackDelay": 0.20000000001164153,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1054,
+      "due": 1053.7999999999884,
+      "callbackDelay": 0.20000000001164153,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1079.2000000000116,
+      "due": 1079,
+      "callbackDelay": 0.20000000001164153,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1104.399999999965,
+      "due": 1104.2000000000116,
+      "callbackDelay": 0.19999999995343387,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1129.5,
+      "due": 1129.399999999965,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1154.5999999999767,
+      "due": 1154.5,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1179.7000000000116,
+      "due": 1179.5999999999767,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1204.7999999999884,
+      "due": 1204.7000000000116,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1231.2000000000116,
+      "due": 1229.7999999999884,
+      "callbackDelay": 1.400000000023283,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1234.899999999965,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1220.6,
+      "callbackDelay": 14.299999999965166
+    },
+    {
+      "kind": "raf.end",
+      "now": 1234.899999999965,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1234.899999999965,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1220.6,
+      "callbackDelay": 14.299999999965166
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1235,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.6471
+    },
+    {
+      "kind": "draw.end",
+      "now": 1235.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.6471
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1236
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1236
+    },
+    {
+      "kind": "raf.end",
+      "now": 1236,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1241.7000000000116,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1237.3,
+      "callbackDelay": 4.400000000011687
+    },
+    {
+      "kind": "raf.end",
+      "now": 1241.7000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1241.7000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1237.3,
+      "callbackDelay": 4.400000000011687
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1241.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.6637999999999997
+    },
+    {
+      "kind": "draw.end",
+      "now": 1242.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.6637999999999997
+    },
+    {
+      "kind": "raf.end",
+      "now": 1242.399999999965,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1254.5999999999767,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1253.9,
+      "callbackDelay": 0.699999999976626
+    },
+    {
+      "kind": "raf.end",
+      "now": 1254.7000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1254.7000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1253.9,
+      "callbackDelay": 0.8000000000115506
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1254.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.6803999999999997
+    },
+    {
+      "kind": "draw.end",
+      "now": 1255.0999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.6803999999999997
+    },
+    {
+      "kind": "raf.end",
+      "now": 1255.2000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1256.5,
+      "due": 1256.2000000000116,
+      "callbackDelay": 0.29999999998835847,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1281.7000000000116,
+      "due": 1281.5,
+      "callbackDelay": 0.20000000001164153,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1306.899999999965,
+      "due": 1306.7000000000116,
+      "callbackDelay": 0.19999999995343387,
+      "windowExpired": false
+    },
+    {
+      "kind": "recorder.start.event",
+      "now": 1313,
+      "state": "recording"
+    },
+    {
+      "kind": "recorder.dataavailable",
+      "now": 1313.0999999999767,
+      "bytes": 1,
+      "timecode": 0
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1333.2000000000116,
+      "due": 1331.899999999965,
+      "callbackDelay": 1.2000000000116415,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1358.2999999999884,
+      "due": 1358.2000000000116,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1412.7000000000116,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1354,
+      "callbackDelay": 58.70000000001164
+    },
+    {
+      "kind": "raf.end",
+      "now": 1412.7000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1412.7000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1354,
+      "callbackDelay": 58.70000000001164
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1412.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.7805
+    },
+    {
+      "kind": "draw.end",
+      "now": 1413.2000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.7805
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1413.2000000000116
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1413.2000000000116
+    },
+    {
+      "kind": "raf.end",
+      "now": 1413.2000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1415.399999999965,
+      "due": 1383.2999999999884,
+      "callbackDelay": 32.09999999997672,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1415.7000000000116,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1403.9,
+      "callbackDelay": 11.80000000001155
+    },
+    {
+      "kind": "raf.end",
+      "now": 1415.7000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1415.7000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1403.9,
+      "callbackDelay": 11.80000000001155
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1415.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8304
+    },
+    {
+      "kind": "draw.end",
+      "now": 1416.2000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8304
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1416.2000000000116
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1416.2000000000116
+    },
+    {
+      "kind": "raf.end",
+      "now": 1416.2000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "recorder.dataavailable",
+      "now": 1417.399999999965,
+      "bytes": 4457,
+      "timecode": 102.5
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1422.0999999999767,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1420.6,
+      "callbackDelay": 1.4999999999768079
+    },
+    {
+      "kind": "raf.end",
+      "now": 1422.0999999999767,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1422.0999999999767,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1420.6,
+      "callbackDelay": 1.4999999999768079
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1422.2999999999884,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8470999999999997
+    },
+    {
+      "kind": "draw.end",
+      "now": 1422.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8470999999999997
+    },
+    {
+      "kind": "raf.end",
+      "now": 1422.7000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1440.5999999999767,
+      "due": 1440.399999999965,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1446.2999999999884,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1437.2,
+      "callbackDelay": 9.099999999988313
+    },
+    {
+      "kind": "raf.end",
+      "now": 1446.2999999999884,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1446.2999999999884,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1437.2,
+      "callbackDelay": 9.099999999988313
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1446.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8636999999999997
+    },
+    {
+      "kind": "draw.end",
+      "now": 1446.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8636999999999997
+    },
+    {
+      "kind": "raf.end",
+      "now": 1446.7000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1465.5999999999767,
+      "due": 1465.5999999999767,
+      "callbackDelay": 0,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1477.0999999999767,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1470.6,
+      "callbackDelay": 6.499999999976808
+    },
+    {
+      "kind": "raf.end",
+      "now": 1477.2999999999884,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1477.399999999965,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1470.6,
+      "callbackDelay": 6.799999999965166
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1477.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8971
+    },
+    {
+      "kind": "draw.end",
+      "now": 1477.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.8971
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1477.899999999965
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1477.899999999965
+    },
+    {
+      "kind": "raf.end",
+      "now": 1477.899999999965,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1487.7000000000116,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1487.2,
+      "callbackDelay": 0.5000000000115961
+    },
+    {
+      "kind": "raf.end",
+      "now": 1487.7000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1487.7000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1487.2,
+      "callbackDelay": 0.5000000000115961
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1487.7999999999884,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9137
+    },
+    {
+      "kind": "draw.end",
+      "now": 1487.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9137
+    },
+    {
+      "kind": "raf.end",
+      "now": 1488,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1490.7999999999884,
+      "due": 1490.5999999999767,
+      "callbackDelay": 0.20000000001164153,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1516,
+      "due": 1515.7999999999884,
+      "callbackDelay": 0.20000000001164153,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1535.5999999999767,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1520.6,
+      "callbackDelay": 14.999999999976808
+    },
+    {
+      "kind": "raf.end",
+      "now": 1535.5999999999767,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1535.5999999999767,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1520.6,
+      "callbackDelay": 14.999999999976808
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1535.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9471
+    },
+    {
+      "kind": "draw.end",
+      "now": 1536.0999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9471
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1536.0999999999767
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1536.0999999999767
+    },
+    {
+      "kind": "raf.end",
+      "now": 1536.0999999999767,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1539.7999999999884,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1537.3,
+      "callbackDelay": 2.499999999988404
+    },
+    {
+      "kind": "raf.end",
+      "now": 1541.899999999965,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1541.899999999965,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1537.3,
+      "callbackDelay": 4.599999999965121
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1542,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9638
+    },
+    {
+      "kind": "draw.end",
+      "now": 1542.2000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9638
+    },
+    {
+      "kind": "raf.end",
+      "now": 1542.2000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1543.2000000000116,
+      "due": 1541,
+      "callbackDelay": 2.2000000000116415,
+      "windowExpired": false
+    },
+    {
+      "kind": "recorder.dataavailable",
+      "now": 1546.5999999999767,
+      "bytes": 3574,
+      "timecode": 233.60000000003492
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1554.2999999999884,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1554,
+      "callbackDelay": 0.29999999998835847
+    },
+    {
+      "kind": "raf.end",
+      "now": 1554.2999999999884,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1554.2999999999884,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1554,
+      "callbackDelay": 0.29999999998835847
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1554.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9804999999999997
+    },
+    {
+      "kind": "draw.end",
+      "now": 1554.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 3.9804999999999997
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1554.7000000000116
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1554.7000000000116
+    },
+    {
+      "kind": "raf.end",
+      "now": 1554.7000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1568.2999999999884,
+      "due": 1568.2000000000116,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1593.399999999965,
+      "due": 1593.2999999999884,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1595.5,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1587.3,
+      "callbackDelay": 8.200000000000045
+    },
+    {
+      "kind": "raf.end",
+      "now": 1595.5999999999767,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1595.5999999999767,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1587.3,
+      "callbackDelay": 8.299999999976762
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1595.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.0138
+    },
+    {
+      "kind": "draw.end",
+      "now": 1596,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.0138
+    },
+    {
+      "kind": "raf.end",
+      "now": 1596,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1618.5,
+      "due": 1618.399999999965,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1637,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1620.5,
+      "callbackDelay": 16.5
+    },
+    {
+      "kind": "raf.end",
+      "now": 1637,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1637,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1620.5,
+      "callbackDelay": 16.5
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1637.0999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.047
+    },
+    {
+      "kind": "draw.end",
+      "now": 1637.5,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.047
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1637.5
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1637.5
+    },
+    {
+      "kind": "raf.end",
+      "now": 1637.5,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1641.899999999965,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1637.2,
+      "callbackDelay": 4.69999999996503
+    },
+    {
+      "kind": "raf.end",
+      "now": 1641.899999999965,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1641.899999999965,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1637.2,
+      "callbackDelay": 4.69999999996503
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1641.899999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.0637
+    },
+    {
+      "kind": "draw.end",
+      "now": 1642.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.0637
+    },
+    {
+      "kind": "raf.end",
+      "now": 1642.399999999965,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1644.5,
+      "due": 1643.5999999999767,
+      "callbackDelay": 0.9000000000232831,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1654.7999999999884,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1653.9,
+      "callbackDelay": 0.8999999999882675
+    },
+    {
+      "kind": "raf.end",
+      "now": 1654.899999999965,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1654.899999999965,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1653.9,
+      "callbackDelay": 0.9999999999649845
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1655,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.0804
+    },
+    {
+      "kind": "draw.end",
+      "now": 1655.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.0804
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1655.399999999965
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1655.399999999965
+    },
+    {
+      "kind": "raf.end",
+      "now": 1655.399999999965,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "recorder.dataavailable",
+      "now": 1659.7999999999884,
+      "bytes": 4416,
+      "timecode": 346.80000000004657
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1669.5999999999767,
+      "due": 1669.5,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1695.0999999999767,
+      "due": 1694.5999999999767,
+      "callbackDelay": 0.5,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1696.399999999965,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1687.2,
+      "callbackDelay": 9.19999999996503
+    },
+    {
+      "kind": "raf.end",
+      "now": 1696.399999999965,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1696.399999999965,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1687.2,
+      "callbackDelay": 9.19999999996503
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1696.5,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1137
+    },
+    {
+      "kind": "draw.end",
+      "now": 1697.0999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1137
+    },
+    {
+      "kind": "raf.end",
+      "now": 1697.2000000000116,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1705.5999999999767,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1703.9,
+      "callbackDelay": 1.699999999976626
+    },
+    {
+      "kind": "raf.end",
+      "now": 1705.7000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1705.7000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1703.9,
+      "callbackDelay": 1.8000000000115506
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1705.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1304
+    },
+    {
+      "kind": "draw.end",
+      "now": 1706,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1304
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1706.0999999999767
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1706.0999999999767
+    },
+    {
+      "kind": "raf.end",
+      "now": 1706.0999999999767,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1720.2000000000116,
+      "due": 1720.0999999999767,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1745.399999999965,
+      "due": 1745.2000000000116,
+      "callbackDelay": 0.19999999995343387,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1748,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1737.2,
+      "callbackDelay": 10.799999999999955
+    },
+    {
+      "kind": "raf.end",
+      "now": 1748,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1748,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1737.2,
+      "callbackDelay": 10.799999999999955
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1748.0999999999767,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1637
+    },
+    {
+      "kind": "draw.end",
+      "now": 1750,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1637
+    },
+    {
+      "kind": "raf.end",
+      "now": 1750,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1756.399999999965,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1753.9,
+      "callbackDelay": 2.4999999999649845
+    },
+    {
+      "kind": "raf.end",
+      "now": 1756.5,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1756.5,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1753.9,
+      "callbackDelay": 2.599999999999909
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1756.5,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1804
+    },
+    {
+      "kind": "draw.end",
+      "now": 1756.7999999999884,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.1804
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1756.7999999999884
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1756.7999999999884
+    },
+    {
+      "kind": "raf.end",
+      "now": 1756.7999999999884,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "recorder.dataavailable",
+      "now": 1764.5,
+      "bytes": 3233,
+      "timecode": 451.5
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1770.5,
+      "due": 1770.399999999965,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1795.5999999999767,
+      "due": 1795.5,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1797.5,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1787.2,
+      "callbackDelay": 10.299999999999955
+    },
+    {
+      "kind": "raf.end",
+      "now": 1797.5,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1797.5,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1787.2,
+      "callbackDelay": 10.299999999999955
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1797.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.213699999999999
+    },
+    {
+      "kind": "draw.end",
+      "now": 1798.2999999999884,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.213699999999999
+    },
+    {
+      "kind": "raf.end",
+      "now": 1798.2999999999884,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1820.7000000000116,
+      "due": 1820.5999999999767,
+      "callbackDelay": 0.1000000000349246,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1838.2000000000116,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1837.2,
+      "callbackDelay": 1.000000000011596
+    },
+    {
+      "kind": "raf.end",
+      "now": 1838.2000000000116,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1838.2000000000116,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1837.2,
+      "callbackDelay": 1.000000000011596
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1838.399999999965,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.2637
+    },
+    {
+      "kind": "draw.end",
+      "now": 1838.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.2637
+    },
+    {
+      "kind": "requestFrame.begin",
+      "now": 1838.7999999999884
+    },
+    {
+      "kind": "requestFrame.end",
+      "now": 1838.7999999999884
+    },
+    {
+      "kind": "raf.end",
+      "now": 1838.7999999999884,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1845.7999999999884,
+      "due": 1845.7000000000116,
+      "callbackDelay": 0.09999999997671694,
+      "windowExpired": false
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1854.5,
+      "id": 1,
+      "label": "loop",
+      "timestamp": 1854,
+      "callbackDelay": 0.5
+    },
+    {
+      "kind": "raf.end",
+      "now": 1854.5999999999767,
+      "id": 1,
+      "label": "loop"
+    },
+    {
+      "kind": "raf.begin",
+      "now": 1854.5999999999767,
+      "id": 2,
+      "label": "tick",
+      "timestamp": 1854,
+      "callbackDelay": 0.5999999999767169
+    },
+    {
+      "kind": "draw.begin",
+      "now": 1854.7000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.2805
+    },
+    {
+      "kind": "draw.end",
+      "now": 1855.2000000000116,
+      "canvas": "sequence-stage",
+      "sourceTime": 4.2805
+    },
+    {
+      "kind": "raf.end",
+      "now": 1855.2999999999884,
+      "id": 2,
+      "label": "tick"
+    },
+    {
+      "kind": "heartbeat",
+      "now": 1872.5999999999767,
+      "due": 1870.899999999965,
+      "callbackDelay": 1.7000000000116415,
+      "windowExpired": true
+    },
+    {
+      "kind": "recorder.stop.begin",
+      "now": 6891.5,
+      "state": "recording"
+    },
+    {
+      "kind": "recorder.stop.end",
+      "now": 6893.700000000012,
+      "state": "inactive"
+    },
+    {
+      "kind": "recorder.stop.event",
+      "now": 6897.299999999988,
+      "state": "inactive"
+    }
+  ],
+  "totals": {
+    "export.intent": {
+      "count": 1,
+      "first": 867.7000000000116,
+      "last": 867.7000000000116,
+      "maxGap": 0
+    },
+    "draw.begin": {
+      "count": 227,
+      "first": 870.5999999999767,
+      "last": 6891.099999999977,
+      "maxGap": 330.5
+    },
+    "draw.end": {
+      "count": 227,
+      "first": 871.2000000000116,
+      "last": 6891.299999999988,
+      "maxGap": 331.19999999995343
+    },
+    "captureStream.begin": {
+      "count": 1,
+      "first": 871.2999999999884,
+      "last": 871.2999999999884,
+      "maxGap": 0
+    },
+    "captureStream.end": {
+      "count": 1,
+      "first": 872.2999999999884,
+      "last": 872.2999999999884,
+      "maxGap": 0
+    },
+    "recorder.construct.begin": {
+      "count": 1,
+      "first": 872.5,
+      "last": 872.5,
+      "maxGap": 0
+    },
+    "recorder.construct.end": {
+      "count": 1,
+      "first": 872.5,
+      "last": 872.5,
+      "maxGap": 0
+    },
+    "recorder.start.begin": {
+      "count": 1,
+      "first": 872.5999999999767,
+      "last": 872.5999999999767,
+      "maxGap": 0
+    },
+    "recorder.start.end": {
+      "count": 1,
+      "first": 873.5,
+      "last": 873.5,
+      "maxGap": 0
+    },
+    "requestFrame.begin": {
+      "count": 110,
+      "first": 873.8999999999651,
+      "last": 6891.299999999988,
+      "maxGap": 362.1000000000349
+    },
+    "requestFrame.end": {
+      "count": 110,
+      "first": 873.8999999999651,
+      "last": 6891.299999999988,
+      "maxGap": 362.1000000000349
+    },
+    "raf.begin": {
+      "count": 452,
+      "first": 886.2999999999884,
+      "last": 6891,
+      "maxGap": 330.5
+    },
+    "raf.end": {
+      "count": 452,
+      "first": 886.3999999999651,
+      "last": 6893.700000000012,
+      "maxGap": 330.0999999999767
+    },
+    "heartbeat": {
+      "count": 38,
+      "first": 903,
+      "last": 1872.5999999999767,
+      "maxGap": 57.09999999997672
+    },
+    "recorder.start.event": {
+      "count": 1,
+      "first": 1313,
+      "last": 1313,
+      "maxGap": 0
+    },
+    "recorder.dataavailable": {
+      "count": 47,
+      "first": 1313.0999999999767,
+      "last": 6897.200000000012,
+      "maxGap": 157.79999999998836
+    },
+    "recorder.stop.begin": {
+      "count": 1,
+      "first": 6891.5,
+      "last": 6891.5,
+      "maxGap": 0
+    },
+    "recorder.stop.end": {
+      "count": 1,
+      "first": 6893.700000000012,
+      "last": 6893.700000000012,
+      "maxGap": 0
+    },
+    "recorder.stop.event": {
+      "count": 1,
+      "first": 6897.299999999988,
+      "last": 6897.299999999988,
+      "maxGap": 0
+    }
+  },
+  "omittedDetailedEvents": 1438,
+  "wrappersRestored": true,
+  "scope": "Diagnostic timing only; original media, pixel and temporal acceptance gates remain unchanged. No screenshot or readPixels is added."
+}

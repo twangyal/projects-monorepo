@@ -1,0 +1,3 @@
+# Public corpus images are acquired locally; provenance and hashes are tracked.
+/data/*.png
+/data/*.jpg

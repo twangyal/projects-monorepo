@@ -1,0 +1,245 @@
+{
+  "issue": 107,
+  "complete": true,
+  "distinctNativeCases": 5,
+  "results": [
+    {
+      "run": "first unchangedfive",
+      "passed": 4,
+      "failed": 1,
+      "seconds": 39.7,
+      "log": "/tmp/duet107-native-first.log",
+      "failure": "Actual same-port restart refused after clean HTTPS shutdown; affected case passed pre-restart media/seat assertions, postrestart assertions were not reached."
+    },
+    {
+      "run": "focused selection attempt",
+      "tests": 0,
+      "log": "/tmp/duet107-native-restart-green.log",
+      "reason": "Anchored grep did not match Playwright qualified title; no browser started."
+    },
+    {
+      "run": "only affected case after socket reuse repair",
+      "passed": 1,
+      "failed": 0,
+      "testSeconds": 18.1,
+      "totalSeconds": 18.6,
+      "log": "/tmp/duet107-native-restart-focused.log",
+      "assertionsUnchanged": true
+    }
+  ],
+  "productRepair": {
+    "proof": {
+      "firstTlsStatus": 200,
+      "firstPid": 696527,
+      "firstExit": 0,
+      "immediateBindErrno": 98,
+      "restartPid": 696530,
+      "restartExit": 2,
+      "boundedFixedStartupError": true,
+      "firstClosed": true,
+      "secondClosed": true,
+      "credentialsPublished": false
+    },
+    "cause": "HTTPS override bypassed TCPServer.server_bind reuse flags, so same-port restart hit EADDRINUSE98.",
+    "repair": "Producer calls TCPServer.server_bind to preserve reuse and avoid HTTPServer reverse DNS."
+  },
+  "trustAndMedia": {
+    "certificateSha256": "ceca367ab9c09b121feeb063610705108dfdf99abee5970816063c85090af1cd",
+    "fixtureSpki": "evZD0EPEchYYenfY1NUZF7mFjij/DlrhW3sFPDh6CgQ=",
+    "trust": "Only exact fixture SPKI bypass; strict CA/SAN protocol negatives are separate",
+    "opusBytes": 194009,
+    "opusSha256": "04ae5d05c73388090a67955e7741f25cccece3337844c6af2f7923f62f2484f9",
+    "range": [
+      17,
+      80
+    ],
+    "contexts": 4,
+    "browserVersion": "151.0.7922.173",
+    "serviceRestart": true,
+    "physicalDevices": false
+  },
+  "independentRetainedAudioDecode": {
+    "decoder": "ffmpeg native retained Opus to mono16kHz float32",
+    "frames": 192000,
+    "seconds": 12.0,
+    "positiveZeroCrossingHz": 276.9166666666667,
+    "rms": 0.08633297519189559,
+    "originalToneHz": 277,
+    "originalPcmPeak": 0.1220703125
+  },
+  "processClosure": {
+    "servicePids": [
+      697110,
+      697509
+    ],
+    "browserPids": [
+      697113
+    ],
+    "allObservedPidsExited": true,
+    "noSecretMaterial": true
+  },
+  "fixtures": {
+    "issue": 107,
+    "originalFixtures": [
+      {
+        "file": "amber-orbit.wav",
+        "bytes": 384044,
+        "sha256": "5ab62d65924108fe4ea5d87a06975e67636dfa18088168b110a5cee1336069eb",
+        "frequencyHz": 277,
+        "sampleRate": 16000,
+        "frames": 192000,
+        "durationSeconds": 12,
+        "channels": 1,
+        "encoding": "signed little-endianPCM16",
+        "formula": "floor(4000*sin(2*pi*frequency*i/16000)+0.5)"
+      },
+      {
+        "file": "indigo-river.wav",
+        "bytes": 384044,
+        "sha256": "011922dfc4f68a56d42d1516b476390cd8ddc9d24658805237ae4fbdc3b73923",
+        "frequencyHz": 415,
+        "sampleRate": 16000,
+        "frames": 192000,
+        "durationSeconds": 12,
+        "channels": 1,
+        "encoding": "signed little-endianPCM16",
+        "formula": "floor(4000*sin(2*pi*frequency*i/16000)+0.5)"
+      }
+    ],
+    "roomTitle": "Original HTTPS listening room107",
+    "host": "Arden",
+    "guest": "Mira",
+    "ratings": {
+      "Amber orbit": {
+        "host": "like",
+        "guest": "like"
+      },
+      "Indigo river": {
+        "host": "pass",
+        "guest": "like"
+      }
+    },
+    "expectedInitialMix": [
+      "Amber orbit",
+      "Indigo river"
+    ],
+    "explicitReorderedMix": [
+      "Indigo river",
+      "Amber orbit"
+    ],
+    "memory": {
+      "date": "2026-10-04",
+      "text": "Original autumn memory <literal> \u03a9",
+      "track": "Amber orbit"
+    },
+    "playback": {
+      "seekSeconds": 3,
+      "maximumLocalContextPositionDifferenceSeconds": 0.5,
+      "consent": "guest must remain paused until explicit Enable audio on this device; recovery/restart requires fresh consent"
+    },
+    "transportAssertions": [
+      "only HTTPS explicitsetup header creation; setupDOMcleared immediately/no localStorage or export key",
+      "one-useinvite secondseat; twoisolatedprivatecapabilities; noJSONcookieauth; Secure HttpOnly SameSiteStrict roompath media cookie",
+      "actual native normalize Opus and complete/range byte equality betweenindependentseats",
+      "service restart retains originalseats/media/ratings/order/memory and savedpausedanchor",
+      "held genuine response cannot overwrite newer memorydraft or activate departedroom"
+    ],
+    "limits": "Software same-host separatecontexts, no physical LAN two-device/latency claim; exactfixtureSPKI only if nativeCA trust unavailable, no blanket TLS ignore",
+    "secrets": "No private key/setup/seat/invite values in metadata or committed fixtures"
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/duet107-native-artifacts/https-room-desktop.png",
+      "bytes": 180611,
+      "sha256": "3f8e4e32945214d52188f2bee97f3a989da2ad0b7e80a8c5eef2cd8ce2aa3c0c"
+    },
+    {
+      "path": "/workspace/duet107-native-artifacts/https-room-390.png",
+      "bytes": 167956,
+      "sha256": "d050f8d9c547d94d3c5d7b247a19bf1592765e56b72c918a68ad1c893166bf1d"
+    },
+    {
+      "path": "/workspace/duet107-native-artifacts/original-normalized.opus",
+      "bytes": 194009,
+      "sha256": "04ae5d05c73388090a67955e7741f25cccece3337844c6af2f7923f62f2484f9"
+    },
+    {
+      "path": "/workspace/duet107-native-artifacts/owned-process-closure.json",
+      "bytes": 145,
+      "sha256": "1db4bd3447069f1c8644ca03a2b9f3a3e76781a11ac245004f50a792eefbd214"
+    },
+    {
+      "path": "/workspace/duet107-native-artifacts/public-room.json",
+      "bytes": 1835,
+      "sha256": "6766bb70d6694081ec794bfb0eb160c9b5d37feac745bc1e26575deb06ca57dc"
+    }
+  ],
+  "sourceHashes": [
+    {
+      "path": "tests/browser/https-lan.spec.ts",
+      "bytes": 15050,
+      "sha256": "371418c26fc1740b5439a3a19f240ae2cf986265c2f02382542b693ec883b2c4"
+    },
+    {
+      "path": "tests/browser/https-lan-fixtures.ts",
+      "bytes": 7353,
+      "sha256": "03f47be3c13c487a50b6df500eef0725ba07b8f83127260a2e07471a57395fba"
+    },
+    {
+      "path": "duet/server.py",
+      "bytes": 32737,
+      "sha256": "54a8c9e3c2dbfa982bde161066a138c29a52e8eae5e362a60d672be2072b9888"
+    },
+    {
+      "path": "duet/https_server.py",
+      "bytes": 7451,
+      "sha256": "380abf20ba5461122fc612fc9559383c405674d7b6664006fc5890a2a6582c5c"
+    },
+    {
+      "path": "duet/transport.py",
+      "bytes": 6990,
+      "sha256": "f039576f51b77f8f3d9222db2582d0ab61dda043649f32447ce95db4c3b61daf"
+    },
+    {
+      "path": "duet/__main__.py",
+      "bytes": 2244,
+      "sha256": "cfc5aa8dce26d2653a2eb75ae756dea0e7c3709c8bd4c1424ce62d9cfeef36f7"
+    },
+    {
+      "path": "src/main.ts",
+      "bytes": 42130,
+      "sha256": "d07d94902c7cd95834ff2043bd0088635c954b7917256d4b0f72b07364f59039"
+    },
+    {
+      "path": "dist/assets/main-BBkWujh6.css",
+      "bytes": 12830,
+      "sha256": "30d84d5fdfcc21509903c5a90182256e048741e4c40bb92899e4aece29af1cd5"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/duet107-native-first.log",
+      "bytes": 5197,
+      "sha256": "beb3480ee0cdda4941ba331f57990b39d8970a17fc0835b8c7a177fae32514a0"
+    },
+    {
+      "path": "/tmp/duet107-native-restart-green.log",
+      "bytes": 231,
+      "sha256": "ece91d5bc28e31a7c5a3f5952fc89c9b1209213b1cc7cdd467355d5065d7b351"
+    },
+    {
+      "path": "/tmp/duet107-native-restart-focused.log",
+      "bytes": 603,
+      "sha256": "2fbc20e794035d0110b29ba4cd9054654482d890708b755e9d41f6eefb109687"
+    }
+  ],
+  "scope": [
+    "Original12second PCM only; actual production FFmpeg Opus normalization and native browser playback, no fake media.",
+    "Browser exact testcertificate SPKI exception only; no blanket ignoreHTTPSErrors or ignore-certificate-errors. Strict trustedCA/SAN/failure tests belong independent Python oracle.",
+    "Controlled native fetch promise delays occur after genuine HTTPS responses; these test ownership/lostresponse behavior, not packet latency.",
+    "Samehost independent contexts and actual serviceprocessrestart do not establish physicaltwo-device synchronization or arbitrary LANlatency.",
+    "Initial failedtrace retained privately under /workspace/duet107-native-first; trace may contain ephemeral testcapabilities and is not promoted to publicartifacts.",
+    "Root JSONreporter output path reused during focused run; first4/5 results remain backed by original listlog and failuretrace, focused structuredreport backs finalpublicattachment.",
+    "Only evidencecollection additions after firstfailure: publicmedia/screenshot/PID/browsermetadata; original behavior assertions stayed fixed."
+  ]
+}

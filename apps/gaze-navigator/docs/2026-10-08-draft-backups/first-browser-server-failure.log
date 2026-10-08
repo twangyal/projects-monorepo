@@ -1,0 +1,12 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:58:42] "GET / HTTP/1.1" 200 -
+
+Running 12 tests using 1 worker
+
+(node:655) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:58:42] "GET / HTTP/1.1" 200 -
+  ✘   1 [desktop] › apps/gaze-navigator/browser-tests/navigation.spec.js:324:1 › gaze downloads saved drafts and reopens exact text after refresh without saving the composer (20.0s)
+(node:724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:59:03] "GET / HTTP/1.1" 200 -

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "status": "measured",
+  "wallMs": 1679.121285000001,
+  "matchedCpuMs": 6529.999999999998,
+  "matchedProcesses": 4,
+  "newProcesses": 0,
+  "missingProcesses": 0,
+  "invalidPairs": 0,
+  "zeroCounterPairs": 1,
+  "complete": false,
+  "byType": {
+    "browser": {
+      "processes": 1,
+      "cpuMs": 280.0000000000002
+    },
+    "renderer": {
+      "processes": 1,
+      "cpuMs": 309.99999999999994
+    },
+    "GPU": {
+      "processes": 1,
+      "cpuMs": 5939.999999999998
+    },
+    "network.mojom.NetworkService": {
+      "processes": 1,
+      "cpuMs": 0
+    }
+  },
+  "limits": [
+    "Matched process CPU covers all threads/work in this observation window; it is not exclusive encoder CPU.",
+    "CPU milliseconds across parallel threads may exceed wall milliseconds. Do not subtract from overlapping stage timers.",
+    "New, missing, changed, regressed or zero-only process counters are excluded and disclose incomplete coverage.",
+    "Two native counter reads bracket the export observation window, including protocol and harness overhead; no periodic profiling runs.",
+    "No command lines, device identities, process IDs, media or page data are retained in the receipt."
+  ]
+}

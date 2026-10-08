@@ -1,0 +1,722 @@
+{
+  "issue": 58,
+  "date": "2026-10-04",
+  "implementationCommit": "1859702eb93b1243045d9560aeb321e57f400acb",
+  "acceptanceCommit": "afb52c903dd046edc5c8a1ed6e00bede57e826ba",
+  "local": {
+    "browser": "Chromium 151.0.7922.173",
+    "unitTests": 65,
+    "browserTests": 29,
+    "newBrowserTests": 17,
+    "browserSuiteSeconds": 52.1,
+    "syntaxChecks": "passed",
+    "producerRedThenGreenCases": 13,
+    "independentUnchangedRedThenGreenCases": 18,
+    "browserLog": "/tmp/shot-travel-full.log"
+  },
+  "independentReview": {
+    "source": "No actionable findings in analytic XYZ/XZ bounds, strict migration, exact cuts, draft/import preservation, preview/export and XR endpoint data flow.",
+    "videoOracle": "Authored geometry and actual PTS use separate pinhole math, no production camera functions/matrices or fitted timing correction. Tolerances froze before exports."
+  },
+  "cameraOnlyVideo": {
+    "verification": "real-decoded-camera-only-travel",
+    "thresholds": {
+      "projectionPixels": 16,
+      "staticDriftPixels": 4,
+      "minimumTravelPixels": 180,
+      "minimumObservedSampleSpanSeconds": 2.6
+    },
+    "results": [
+      {
+        "mode": "linear",
+        "path": "/tmp/shot-travel-full/travel-actual-WebM-camera--5d844-entical-controls-stay-still/linear-camera.webm",
+        "codec": "vp9",
+        "width": 960,
+        "height": 540,
+        "decodedFrames": 113,
+        "firstPts": 0,
+        "lastPts": 3.966,
+        "span": 3.966,
+        "samples": [
+          {
+            "index": 11,
+            "pts": 0.418,
+            "elapsed": 0.418,
+            "red": {
+              "x": 504.44249834765367,
+              "y": 270.64044943820227,
+              "minX": 470,
+              "maxX": 539,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3026
+            },
+            "green": {
+              "x": 683.4071310116086,
+              "y": 270.43615257048094,
+              "minX": 646,
+              "maxX": 721,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3618
+            },
+            "expectedRed": {
+              "x": 503.82486600837683,
+              "y": 270,
+              "minX": 469.55841138916304,
+              "maxX": 538.9256084541639,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 683.2289775172387,
+              "y": 270,
+              "minX": 646.1755282651781,
+              "maxX": 721.470863888377,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 29,
+            "pts": 1.201,
+            "elapsed": 1.201,
+            "red": {
+              "x": 446.51403103334434,
+              "y": 270.8309673159459,
+              "minX": 412,
+              "maxX": 481,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3029
+            },
+            "green": {
+              "x": 627.4965792474344,
+              "y": 270.41647662485747,
+              "minX": 592,
+              "maxX": 663,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3508
+            },
+            "expectedRed": {
+              "x": 447.6354982838013,
+              "y": 270,
+              "minX": 412.3852373871675,
+              "maxX": 481.7524344521684,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 627.0396097926632,
+              "y": 270,
+              "minX": 590.9716934617693,
+              "maxX": 664.2976898863815,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 53,
+            "pts": 2.008,
+            "elapsed": 2.008,
+            "red": {
+              "x": 389.1185281667209,
+              "y": 270.72158905893843,
+              "minX": 354,
+              "maxX": 425,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3071
+            },
+            "green": {
+              "x": 569.8213317264236,
+              "y": 270.4549563121422,
+              "minX": 534,
+              "maxX": 605,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3319
+            },
+            "expectedRed": {
+              "x": 389.72385108874073,
+              "y": 270,
+              "minX": 353.4596289330035,
+              "maxX": 424.79616519659123,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 569.1279625976026,
+              "y": 270,
+              "minX": 534.0757870935051,
+              "maxX": 605.3720814322176,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 77,
+            "pts": 2.8,
+            "elapsed": 2.8,
+            "red": {
+              "x": 330.0767195767196,
+              "y": 270.6554232804233,
+              "minX": 296,
+              "maxX": 368,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3024
+            },
+            "green": {
+              "x": 513.0871501272264,
+              "y": 270.51972010178116,
+              "minX": 478,
+              "maxX": 547,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3144
+            },
+            "expectedRed": {
+              "x": 332.8886285627333,
+              "y": 270,
+              "minX": 295.6292920114448,
+              "maxX": 368.9578035563618,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 512.2927400715952,
+              "y": 270,
+              "minX": 478.1745474456579,
+              "maxX": 547.5417445106589,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 101,
+            "pts": 3.604,
+            "elapsed": 3.604,
+            "red": {
+              "x": 271.97934426229506,
+              "y": 270.6377049180328,
+              "minX": 238,
+              "maxX": 311,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3050
+            },
+            "green": {
+              "x": 454.4110127826942,
+              "y": 270.6807604064241,
+              "minX": 420,
+              "maxX": 489,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3051
+            },
+            "expectedRed": {
+              "x": 275.1922663014833,
+              "y": 270,
+              "minX": 236.9227378638019,
+              "maxX": 312.2734061337045,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 454.59637781034513,
+              "y": 270,
+              "minX": 419.46799329801496,
+              "maxX": 488.8351903630159,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          }
+        ],
+        "bytes": 548671,
+        "sha256": "ce92fd49ccb75fa64c436b116b8488341737b81d10a4f40810fe8a57804558b0",
+        "maximumProjectionErrorPixels": 3.2129220391882427,
+        "maximumSampledHorizontalDisplacementPixels": 232.4631540853586
+      },
+      {
+        "mode": "static",
+        "path": "/tmp/shot-travel-full/travel-actual-WebM-camera--5d844-entical-controls-stay-still/static-camera.webm",
+        "codec": "vp9",
+        "width": 960,
+        "height": 540,
+        "decodedFrames": 118,
+        "firstPts": 0,
+        "lastPts": 3.937,
+        "span": 3.937,
+        "samples": [
+          {
+            "index": 11,
+            "pts": 0.405,
+            "elapsed": 0.405,
+            "red": {
+              "x": 534.7029765674478,
+              "y": 270.86542115262824,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3158
+            },
+            "green": {
+              "x": 713.2241662110442,
+              "y": 270.4212684527064,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3658
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 35,
+            "pts": 1.204,
+            "elapsed": 1.204,
+            "red": {
+              "x": 534.7195044472682,
+              "y": 270.8831003811944,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3148
+            },
+            "green": {
+              "x": 713.2307692307693,
+              "y": 270.40980016424857,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3653
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 59,
+            "pts": 2.004,
+            "elapsed": 2.004,
+            "red": {
+              "x": 534.7195044472682,
+              "y": 270.8831003811944,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3148
+            },
+            "green": {
+              "x": 713.2307692307693,
+              "y": 270.40980016424857,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3653
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 83,
+            "pts": 2.804,
+            "elapsed": 2.804,
+            "red": {
+              "x": 534.7195044472682,
+              "y": 270.8831003811944,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3148
+            },
+            "green": {
+              "x": 713.2307692307693,
+              "y": 270.40980016424857,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3653
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 107,
+            "pts": 3.605,
+            "elapsed": 3.605,
+            "red": {
+              "x": 534.6459923664122,
+              "y": 270.867048346056,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3144
+            },
+            "green": {
+              "x": 713.272030651341,
+              "y": 270.4425287356322,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3654
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          }
+        ],
+        "bytes": 50955,
+        "sha256": "070bd4dc8cd753983170cb66aa4c493bd18f52105e63221ddaad6847768c17c6",
+        "maximumProjectionErrorPixels": 0.9924305969774423,
+        "maximumSampledHorizontalDisplacementPixels": 0.07351208085594862
+      },
+      {
+        "mode": "identical",
+        "path": "/tmp/shot-travel-full/travel-actual-WebM-camera--5d844-entical-controls-stay-still/identical-camera.webm",
+        "codec": "vp9",
+        "width": 960,
+        "height": 540,
+        "decodedFrames": 119,
+        "firstPts": 0,
+        "lastPts": 3.931,
+        "span": 3.931,
+        "samples": [
+          {
+            "index": 12,
+            "pts": 0.401,
+            "elapsed": 0.401,
+            "red": {
+              "x": 534.5704761904761,
+              "y": 270.87111111111113,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3150
+            },
+            "green": {
+              "x": 713.2638774952146,
+              "y": 270.4030626196336,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3657
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 36,
+            "pts": 1.199,
+            "elapsed": 1.199,
+            "red": {
+              "x": 534.6436052046969,
+              "y": 270.95334814344653,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3151
+            },
+            "green": {
+              "x": 713.2556802627977,
+              "y": 270.40350396934025,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3653
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 60,
+            "pts": 2.011,
+            "elapsed": 2.011,
+            "red": {
+              "x": 534.6414974619289,
+              "y": 270.95558375634516,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3152
+            },
+            "green": {
+              "x": 713.2556802627977,
+              "y": 270.40350396934025,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3653
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 84,
+            "pts": 2.802,
+            "elapsed": 2.802,
+            "red": {
+              "x": 534.6414974619289,
+              "y": 270.95558375634516,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3152
+            },
+            "green": {
+              "x": 713.2556802627977,
+              "y": 270.40350396934025,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3653
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          },
+          {
+            "index": 108,
+            "pts": 3.604,
+            "elapsed": 3.604,
+            "red": {
+              "x": 534.6510003175612,
+              "y": 270.8710701810098,
+              "minX": 500,
+              "maxX": 569,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3149
+            },
+            "green": {
+              "x": 713.2556041552762,
+              "y": 270.462821213778,
+              "minX": 676,
+              "maxX": 751,
+              "minY": 246,
+              "maxY": 295,
+              "count": 3658
+            },
+            "expectedRed": {
+              "x": 533.8212334526586,
+              "y": 270,
+              "minX": 499.3883200139686,
+              "maxX": 569.4471751627644,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            },
+            "expectedGreen": {
+              "x": 713.2253449615205,
+              "y": 270,
+              "minX": 675.6457746864103,
+              "maxX": 751.9924305969774,
+              "minY": 245.7315512333273,
+              "maxY": 295.65359532604964
+            }
+          }
+        ],
+        "bytes": 54028,
+        "sha256": "ab38eea7f00bd3f4ee93a84771acbbcd03af94bf831b8a3212a8941b1000221f",
+        "maximumProjectionErrorPixels": 0.9924305969774423,
+        "maximumSampledHorizontalDisplacementPixels": 0.08052412708502743
+      }
+    ]
+  },
+  "nativeRootReview": {
+    "browser": "151.0.7922.173",
+    "endLabel": "CAMERA 01 · Cross the courtyard · END endpoint preview — not the film cut at this position",
+    "cutLabel": "CAMERA 02 · Meet the performers · Film",
+    "sizes": {
+      "viewport": 390,
+      "document": 390
+    },
+    "reloadedCanonicalFilmExact": true,
+    "pageErrors": [],
+    "artifacts": [
+      "/tmp/shot-travel-desktop.png",
+      "/tmp/shot-travel-mobile.png",
+      "/tmp/shot-travel-mobile-camera.png",
+      "/tmp/shot-travel-root-backup.json"
+    ]
+  },
+  "regressionHarnessCorrection": "An initial new assertion clicked Save while valid raw 6.250 was focused. Native blur correctly committed 6.25. The assertion now checks the native durable record without changing focus and explicitly Tabs afterward. No product change or tolerance relaxation was needed.",
+  "ci": {
+    "status": "passed",
+    "commit": "afb52c903dd046edc5c8a1ed6e00bede57e826ba",
+    "run": 37181949482,
+    "job": 111376124960,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37181949482",
+    "browser": "Chromium 153.0.8010.12",
+    "unitTests": 65,
+    "browserTests": 29,
+    "browserSuiteSeconds": 47.4,
+    "syntaxChecks": "passed",
+    "video": {
+      "linear": {
+        "decodedFrames": 117,
+        "spanSeconds": 3.936,
+        "redTravelPixels": 232.90796304080027,
+        "greenTravelPixels": 230.09306805870187
+      },
+      "static": {
+        "decodedFrames": 115,
+        "spanSeconds": 3.953
+      },
+      "identical": {
+        "decodedFrames": 116,
+        "spanSeconds": 3.933
+      }
+    },
+    "otherProjectWorkflows": "All twelve project workflows passed at the acceptance commit."
+  },
+  "limits": [
+    "Physical headset compatibility, tracking accuracy and comfort remain unverified in issue21. Controlled XR events establish endpoint capture/rejection data flow only.",
+    "Persisted page lifecycle events do not establish native BFCache admission.",
+    "Real-time MediaRecorder requests 30fps; actual frame counts/timestamps vary with hardware and encoding.",
+    "Travel is linear eye/target with fixed FOV and hard cuts; no obstacle avoidance, roll, easing, lens animation, audio or XR video export.",
+    "Threshold boundaries use JavaScript represented numbers and direct inclusive comparisons."
+  ]
+}

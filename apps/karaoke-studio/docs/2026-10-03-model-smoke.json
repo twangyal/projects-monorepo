@@ -1,0 +1,115 @@
+{
+  "environment": {
+    "os": "Linux x86_64",
+    "cpuQuota": 4,
+    "memoryGiB": 16
+  },
+  "scope": "Observed offline inference runtime, output format and bounds; no reference-stem accuracy score. See README for reproduction and attribution.",
+  "reports": [
+    {
+      "source": "original synthetic waveform",
+      "licensedAttribution": null,
+      "python": "3.11.16",
+      "versions": {
+        "spleeter": "2.4.2",
+        "tensorflow": "2.12.1",
+        "numpy": "1.24.3",
+        "scipy": "1.15.3"
+      },
+      "pipelineSeconds": 5.214413394000076,
+      "duration": 1.0,
+      "pcmPeaks": {
+        "source": 14961,
+        "vocals": 8432,
+        "backing": 14672
+      },
+      "processing": {
+        "model": "spleeter:2stems",
+        "modelRelease": "v1.4.0",
+        "modelArchiveSha256": "f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692",
+        "spleeterVersion": "2.4.2",
+        "tensorflowVersion": "2.12.1",
+        "stemPeak": 0.4477543830871582,
+        "stemGain": 1,
+        "sampleRate": 44100,
+        "duration": 1.0,
+        "offlineNetworkAttempts": 0,
+        "inferenceSeconds": 2.338257223000255,
+        "workerSeconds": 4.205745041001137,
+        "peakRssKiB": 788204,
+        "sourcePeak": 0.456573486328125,
+        "sourceGain": 1
+      }
+    },
+    {
+      "source": "official CC BY 3.0 singing example",
+      "licensedAttribution": "Real-model smoke, distinct from fast tests with fake service callbacks.\n\nSynthetic audio is original mathematical audio. Optional official singing\nexample: https://raw.githubusercontent.com/deezer/spleeter/master/audio_example.mp3\nSlow Motion Dream by Steven M Bryant (2011), Ft CSoul/Alex Beroza/Robert Siekawitch,\nCC BY 3.0, http://dig.ccmixter.org/files/stevieb357/34740 . The smoke excerpt and\nestimated stems are adaptations; preserve attribution if redistributed.\n",
+      "python": "3.11.16",
+      "versions": {
+        "spleeter": "2.4.2",
+        "tensorflow": "2.12.1",
+        "numpy": "1.24.3",
+        "scipy": "1.15.3"
+      },
+      "pipelineSeconds": 5.7333496259998356,
+      "duration": 10.0,
+      "pcmPeaks": {
+        "source": 32768,
+        "vocals": 29730,
+        "backing": 32767
+      },
+      "processing": {
+        "model": "spleeter:2stems",
+        "modelRelease": "v1.4.0",
+        "modelArchiveSha256": "f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692",
+        "spleeterVersion": "2.4.2",
+        "tensorflowVersion": "2.12.1",
+        "stemPeak": 1.0177987813949585,
+        "stemGain": 0.9825124752354644,
+        "sampleRate": 44100,
+        "duration": 10.0,
+        "offlineNetworkAttempts": 0,
+        "inferenceSeconds": 2.6916464300011285,
+        "workerSeconds": 4.371462822000467,
+        "peakRssKiB": 877164,
+        "sourcePeak": 1.0,
+        "sourceGain": 1
+      }
+    },
+    {
+      "source": "original synthetic waveform",
+      "licensedAttribution": null,
+      "python": "3.11.16",
+      "versions": {
+        "spleeter": "2.4.2",
+        "tensorflow": "2.12.1",
+        "numpy": "1.24.3",
+        "scipy": "1.15.3"
+      },
+      "pipelineSeconds": 7.470660679999128,
+      "duration": 30.0,
+      "pcmPeaks": {
+        "source": 16221,
+        "vocals": 8600,
+        "backing": 14520
+      },
+      "processing": {
+        "model": "spleeter:2stems",
+        "modelRelease": "v1.4.0",
+        "modelArchiveSha256": "f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692",
+        "spleeterVersion": "2.4.2",
+        "tensorflowVersion": "2.12.1",
+        "stemPeak": 0.4431180953979492,
+        "stemGain": 1,
+        "sampleRate": 44100,
+        "duration": 30.0,
+        "offlineNetworkAttempts": 0,
+        "inferenceSeconds": 3.7635197970012086,
+        "workerSeconds": 5.493312536000303,
+        "peakRssKiB": 1187280,
+        "sourcePeak": 0.495025634765625,
+        "sourceGain": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "status": "passed",
+  "fixtureOracleSha256": "cdd5c771017e5e39480a2284b23c1bdd4b147243dc130fd7f3aebd673ec680b7",
+  "browserVersion": "153.0.8010.0",
+  "browserSelection": "explicit CHROMIUM_PATH override",
+  "beforeRestart": {
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751"
+  },
+  "afterRestart": {
+    "schemaVersion": 1,
+    "revision": 8,
+    "bytes": 11554385,
+    "sha256": "a6137efd2434bd48dfd36aa6cf21c3d0c63f04694d14c3025458243a6bc03751",
+    "legacyRaw": null
+  },
+  "recordAndDownloadWallMs": 24366.375262999998,
+  "exportObservations": [
+    {
+      "reason": "before-click",
+      "wallMs": 1.4735419999997248,
+      "status": "Downloaded the complete committed sequence with its original WAV.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0,
+      "progressMax": 1,
+      "exportDisabled": false,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 5003.49523,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.18388888888888888,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 10008.101288999998,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.39333333333333337,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 15008.744894,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.6133333333333333,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "poll",
+      "wallMs": 20012.504082,
+      "status": "Encoding sequence WebM. Keep this tab visible. This is fresh rendering from editable scenes.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 0.83,
+      "progressMax": 1,
+      "exportDisabled": true,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    },
+    {
+      "reason": "download-event",
+      "wallMs": 24355.732376999997,
+      "status": "Sequence WebM downloaded with its soundtrack. No ordinary take was added.",
+      "saveStatus": "Sequence saved in this browser",
+      "progress": 1,
+      "progressMax": 1,
+      "exportDisabled": false,
+      "cancelDisabled": false,
+      "visibility": "visible",
+      "focused": true
+    }
+  ],
+  "closedOwnedBrowsers": true,
+  "pageErrors": [],
+  "externalRequests": [],
+  "limits": [
+    "Exact12MiB WAV has legal JUNK padding, not a larger PCM payload or worst-case decoding/RAM.",
+    "Metadata exact324KiB uses trailing JSON whitespace. No claim that canonical topology reaches that metadata cap.",
+    "16MiB+1 is an early whole-file refusal; valid component maxima total12,914,704B and cannot produce a valid exact16MiB artifact.",
+    "All256 performer cues are blocking; this graph does not claim simultaneous loop-mode or heterogeneous camera-axis maxima.",
+    "Forty landmark frames are independently pixel-checked; full video timestamps and all decoded PCM frames are inspected, not all video pixels.",
+    "The original constant-frequency PCM is synthetic test audio, not a microphone/physical-device claim."
+  ],
+  "browserDistribution": "Sparticuz Chromium153.0.8010.0 with software SwiftShader; not official full Chromium155",
+  "inspection": {
+    "status": "passed",
+    "videoCodec": "vp9",
+    "audioCodec": "opus",
+    "decodedVideoFrames": 1800,
+    "decodedAudioFrames": 2880648,
+    "sharedOrigin": 0,
+    "method": "One common first-decoded-stream timestamp origin. Fixed gates/guards; no fitted audio/video offsets. Full finite PCM and frame PTS; forty original torso landmarks."
+  },
+  "initialEnvironmentFailure": "Separate exec calls have isolated loopback namespaces. The first local capture failed at page.goto with ERR_CONNECTION_REFUSED before any application action. Retained original local receipt; corrected harness colocates server and browser."
+}

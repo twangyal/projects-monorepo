@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "issue": 116,
+  "createdAt": "2026-10-05T00:17:04.621743+00:00",
+  "scope": [
+    "src/main.ts",
+    "src/style.css"
+  ],
+  "status": "Root integration accepted:51 units, full56 native and original maximum/restart passed; producer checkpoint evidence retained.",
+  "source": [
+    {
+      "path": "src/main.ts",
+      "bytes": 55150,
+      "sha256": "c3c26e1c5298c0917c32b3dc18718854a235f8239cc219be406e81d6725cb5fc"
+    },
+    {
+      "path": "src/style.css",
+      "bytes": 13310,
+      "sha256": "5a82cd3d2597ef62582f65969c20c4c46cb09e9d201e4022fb5a0dd4b05ecfe3"
+    },
+    {
+      "path": "docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4079,
+      "sha256": "764b38c31857001b08018a6e5251a9ae2275a0833f8022f7fdaa76a3b15ff8b6"
+    }
+  ],
+  "beforeImplementation": {
+    "receipt": "docs/2026-10-05-saved-copy-baseline.json",
+    "owner": "root",
+    "result": "Original real two-page stale autosave lost the winner\u2019s photo/piece/opinion/look graph; protection assertion RED. UI producer did not rerun this baseline."
+  },
+  "checks": [
+    {
+      "command": "npx eslint src/main.ts",
+      "cwd": "apps/style-studio",
+      "exitCode": 0,
+      "log": "/tmp/style116-ui-lint-final.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "cwd": "apps/style-studio",
+      "exitCode": 2,
+      "log": "/tmp/style116-ui-typecheck-final.log",
+      "result": "No owned main/style diagnostics. Nine existing tests/browser/storage.spec.ts LoadedProject compatibility diagnostics remain for root adaptation."
+    },
+    {
+      "command": "git diff --check -- apps/style-studio/src/main.ts apps/style-studio/src/style.css",
+      "exitCode": 0
+    }
+  ],
+  "implementation": {
+    "savePump": "One active native save plus one latest detached committed snapshot; any older foreign conflict retires the pending snapshot. Success acknowledges only the captured committed generation and live page lifetime.",
+    "authority": "Initial restore/reload accepts opaque load receipt only after full JPEG decoding, temporary History/model admission and synchronous intent/lifetime checks. No canceled restore or in-memory replacement invents write permission.",
+    "recovery": "Typed SavedCopyConflict and SavedCopyProtected retain protected current memory; only store-proven ordinary rollback exposes Retry saving. Unknown/closed storage reopens for fresh review/read.",
+    "replacement": "Fresh native summary, explicit confirmation naming saved profile/counts or absence/unreadability, committed-only exclusion disclosure, same reviewed receipt passed to CAS replace. Newer local work during confirmed native write requires manual Retry; retired page lifetime remains protected.",
+    "drafts": "Status-only storage callbacks preserve native forms/caret, keyed look fields, current selection/history and normalized unsubmitted photo drafts. Explicit admitted reload alone resets those editors/history.",
+    "lifetime": "Persisted pagehide retires async UI authority while keeping the live store/native terminal truth and current committed/raw/photo/history graph. Nonpersisted teardown closes storage and retires owned downloads.",
+    "portable": "Project schema1, JSON backup, model, photos and all quotas unchanged."
+  },
+  "limits": {
+    "pendingCommittedSnapshots": 1,
+    "activeWrites": 1,
+    "nativeStorageOperationMs": 10000,
+    "projectBytes": 8388608,
+    "storedWrapperBytes": 8388688,
+    "historySnapshots": 20,
+    "historyBytes": 25165824
+  },
+  "claimsExcluded": [
+    "No build, browser run, persistent service or Git mutation by this UI producer.",
+    "No independent native or maximum proof claimed; those belong to root and separate acceptance owners."
+  ],
+  "authorCheckpointStatus": "coherent UI implementation; independent native acceptance pending",
+  "rootIntegration": {
+    "sourceUnchangedSinceReviewedImplementation": true,
+    "fullNative": {
+      "stats": {
+        "startTime": "2026-10-05T00:33:24.089Z",
+        "duration": 65168.94299999999,
+        "expected": 56,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/style116-full-native-final.log",
+        "bytes": 9529,
+        "sha256": "96b44d043899d0d56390d1180c2b7ec951ed55e359467b9a28b057dee4558c0b"
+      },
+      "results": {
+        "path": "/tmp/style116-full-native-results-final.json",
+        "bytes": 63667,
+        "sha256": "9ace59df8319f656562490048385650a496aa1c0b7a3c6deda5ea6f5e1917dac"
+      },
+      "preservedArtifacts": "/workspace/style116-full-native-final-artifacts"
+    },
+    "maximumReceipt": "2026-10-05-saved-copy-maximum.json",
+    "exactHeadCi": {
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "bothRunsPassed": true,
+      "receipt": "2026-10-05-saved-copy-ci.json"
+    }
+  }
+}

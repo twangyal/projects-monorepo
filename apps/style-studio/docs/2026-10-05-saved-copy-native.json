@@ -1,0 +1,544 @@
+{
+  "issue": 116,
+  "status": "Accepted: all10 independent editor cases pass in the final full56-case native gate; original failures retained below.",
+  "baseline": "docs/2026-10-05-saved-copy-baseline.json",
+  "originalFixture": {
+    "origin": "Original literal Project1/JPEG/PNG reused unchanged from the genuine pre-change two-tab overwrite reproduction. No new product helper supplies expected values.",
+    "project": {
+      "pieces": 3,
+      "looks": 1,
+      "photos": 1,
+      "examples": 0
+    },
+    "jpeg": {
+      "width": 720,
+      "height": 720,
+      "bytes": 15745,
+      "sha256": "112c335cddd7054df675d0c4395de483e1620c9aabeef285407f23653b3a6b52"
+    },
+    "winnerPng": {
+      "width": 120,
+      "height": 80,
+      "bytes": 267,
+      "sha256": "6af5bc263b791d5d9057e9c9d15aef04f678cad937dc4251f4dc26ea211f8009"
+    },
+    "reverification": "Actual helper-generated Project deep-equals pre-change literal fixture; JPEG dataURL unchanged and PNG Buffer byte-identical."
+  },
+  "plannedDistinctCases": 10,
+  "coverage": [
+    "Full native winner graph/photo/rating/look survives stale tab; raw unsubmitted normalized photo/forms and Undo/Redo remain usable.",
+    "Reload cancellation and explicitly confirmed full winner restoration.",
+    "Replacement fresh-summary confirmation/cancellation excludes but retains raw fields and unsubmitted photo.",
+    "Actual third page writes after native replacement dialog appears; stale review refuses.",
+    "Actual native put success followed by transaction abort retains winner, then new reviewed retry succeeds.",
+    "Actual startup JPEG decode held after native decode; changed-back raw intent cannot accept or overwrite saved copy.",
+    "Genuine File.text completion held while changed-back raw input retires import publication.",
+    "Actual replacement transaction held with keepalive reads; newer committed memory requires manual Retry.",
+    "Controlled persisted pagehide/pageshow during a real pending write cannot mark newer raw draft Saved.",
+    "Actual readonly replacement review held; changed-back keyed look notes suppress consent and retain focus/caret."
+  ],
+  "controlledSeams": [
+    "IDB transaction keepalive requests extend actual transactions without replacing their current-row results; terminal events remain native.",
+    "One replacement put success deliberately aborts its actual transaction.",
+    "createImageBitmap returns a real decoded bitmap only after the controlled delivery gate.",
+    "File.text returns original real bytes only after its controlled delivery gate.",
+    "Page lifecycle dispatch is controlled simulation, not a claim of actual BFCache navigation."
+  ],
+  "staticChecks": {
+    "scopedEslint": "passed again after narrow correction",
+    "isolatedStrictTypeScript": "passed again after narrow correction",
+    "wholeProjectTypeScript": "Root completed coherent production checks before native gates; this receipt owns the scoped editor checks and native result evidence."
+  },
+  "files": [
+    {
+      "path": "/workspace/projects-monorepo/apps/style-studio/tests/browser/saved-copy-editor.spec.ts",
+      "bytes": 14474,
+      "sha256": "0b38ae3cacfead87fef306f98a01551b1a5089edad296f405878e3f90b7822f8"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/style-studio/tests/browser/saved-copy-fixtures.ts",
+      "bytes": 31625,
+      "sha256": "2365eb4fb58e9f638257915ad42b252663722e325367a82cee1aee60c31d8650"
+    }
+  ],
+  "nativeRuns": [
+    {
+      "name": "first",
+      "stats": {
+        "startTime": "2026-10-05T00:19:52.279Z",
+        "duration": 50507.006,
+        "expected": 25,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "editorPassed": 9,
+      "editorFailed": 1,
+      "separateStorageOraclePassed": 16,
+      "log": {
+        "path": "/tmp/style116-new-native-first.log",
+        "bytes": 9753,
+        "sha256": "761caa9f9150f4f3388264ceb3456d841034c0e43db26b79d47cc2396858d3c0"
+      },
+      "json": {
+        "path": "/tmp/style116-new-native-results-first.json",
+        "bytes": 39715,
+        "sha256": "604b824f2691554ec20e1f8878af43c9906cabe7167dd322a20d59f1eb30a4c4"
+      },
+      "editorCases": [
+        {
+          "name": "two genuine pages preserve the complete winning photos rating and look while stale memory raw forms and Undo stay usable",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1918
+            }
+          ]
+        },
+        {
+          "name": "explicit Reload alone discards protected memory and raw drafts after consent and restores the complete winner",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1678
+            }
+          ]
+        },
+        {
+          "name": "fresh replacement review names the winner and excludes unsubmitted photo and form drafts without clearing them",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1673
+            }
+          ]
+        },
+        {
+          "name": "third writer after actual replacement confirmation invalidates review without overwriting either complete memory",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1980
+            }
+          ]
+        },
+        {
+          "name": "actual abort after replacement put success retains winner and protected memory until a new reviewed retry",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1590
+            }
+          ]
+        },
+        {
+          "name": "changed-back raw input during actual startup JPEG decode cannot accept the saved copy or authorize overwrite",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 5885
+            }
+          ]
+        },
+        {
+          "name": "a held genuine imported profile cannot publish after changed-back raw intent or grant protected save authority",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1761
+            }
+          ]
+        },
+        {
+          "name": "newer committed memory during a held genuine replacement stays unsaved until explicit Retry saving",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1907
+            }
+          ]
+        },
+        {
+          "name": "controlled persisted return cannot let an older completed save mark newer raw fields Saved",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 743
+            }
+          ]
+        },
+        {
+          "name": "changed-back keyed look input while replacement review is pending suppresses consent and preserves caret",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1644
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "focused-startup",
+      "stats": {
+        "startTime": "2026-10-05T00:22:51.923Z",
+        "duration": 6858.507,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "description": "Corrected canceled-startup editor case plus existing startup-photo ownership regression; both pass.",
+      "log": {
+        "path": "/tmp/style116-startup-native.log",
+        "bytes": 2002,
+        "sha256": "c6343807ca8c0d0f8bbb118b5adbd14337f534f409e7c12d04f1eeed190d5666"
+      },
+      "json": {
+        "path": "/tmp/style116-startup-native-results.json",
+        "bytes": 4744,
+        "sha256": "edeef5055c8b983d8c107e0c87b3f7ea2184bd014e23131baf0916d27d472606"
+      },
+      "cases": [
+        {
+          "name": "changed-back raw input during actual startup JPEG decode cannot accept the saved copy or authorize overwrite",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1359
+            }
+          ]
+        },
+        {
+          "name": "a late startup photo decode cannot replace a newer edit, and resetting a pending photo cannot attach it later",
+          "file": "browser/workflow.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1339
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "first-full",
+      "stats": {
+        "startTime": "2026-10-05T00:31:03.962Z",
+        "duration": 69441.75,
+        "expected": 55,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "description": "55/56 passed. The sole old corrupt-record case used an over-specific protected-word status matcher; root corrected it to exact memory guidance, hidden Retry saving, enabled Replace and a second actual corrupt-row read.",
+      "log": {
+        "path": "/tmp/style116-full-native-first.log",
+        "bytes": 12384,
+        "sha256": "dfcc090dad4394f8386d81aa30bf92e3355e0cbb46673069f35d7cfb76a51931"
+      },
+      "json": {
+        "path": "/tmp/style116-full-native-results-first.json",
+        "bytes": 70365,
+        "sha256": "3210f508856bb5f11a92aca2b251693020b36cc5be615704737c9d70048d419e"
+      },
+      "cases": [
+        {
+          "name": "corrupt stored data survives New profile until explicit reviewed replacement saves a valid empty profile",
+          "file": "browser/workflow.spec.ts",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 5542
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "focused-corrupt-compatibility",
+      "stats": {
+        "startTime": "2026-10-05T00:32:37.590Z",
+        "duration": 4767.902,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "description": "Root-owned existing corrupt-record assertion correction passed; no product source change.",
+      "log": {
+        "path": "/tmp/style116-corrupt-native.log",
+        "bytes": 1760,
+        "sha256": "30043f36ff99e61f83ceda8603b063e5f21ae1712117fecd821270a9f6fec70f"
+      },
+      "json": {
+        "path": "/tmp/style116-corrupt-native-results.json",
+        "bytes": 3371,
+        "sha256": "e011dec9175c982e1e80ba726be2cf4f306c6b07e15a491abc7d9a551cfef6f1"
+      },
+      "cases": [
+        {
+          "name": "corrupt stored data survives New profile until explicit reviewed replacement saves a valid empty profile",
+          "file": "browser/workflow.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 791
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "final-full",
+      "stats": {
+        "startTime": "2026-10-05T00:33:24.089Z",
+        "duration": 65168.94299999999,
+        "expected": 56,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "description": "All56 cases pass, including all10 new editor,16 storage and30 prior cases. Repeated focused runs are not additional distinct cases.",
+      "log": {
+        "path": "/tmp/style116-full-native-final.log",
+        "bytes": 9529,
+        "sha256": "96b44d043899d0d56390d1180c2b7ec951ed55e359467b9a28b057dee4558c0b"
+      },
+      "json": {
+        "path": "/tmp/style116-full-native-results-final.json",
+        "bytes": 63667,
+        "sha256": "9ace59df8319f656562490048385650a496aa1c0b7a3c6deda5ea6f5e1917dac"
+      },
+      "cases": [
+        {
+          "name": "two genuine pages preserve the complete winning photos rating and look while stale memory raw forms and Undo stay usable",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1936
+            }
+          ]
+        },
+        {
+          "name": "explicit Reload alone discards protected memory and raw drafts after consent and restores the complete winner",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1970
+            }
+          ]
+        },
+        {
+          "name": "fresh replacement review names the winner and excludes unsubmitted photo and form drafts without clearing them",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1747
+            }
+          ]
+        },
+        {
+          "name": "third writer after actual replacement confirmation invalidates review without overwriting either complete memory",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1895
+            }
+          ]
+        },
+        {
+          "name": "actual abort after replacement put success retains winner and protected memory until a new reviewed retry",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1804
+            }
+          ]
+        },
+        {
+          "name": "changed-back raw input during actual startup JPEG decode cannot accept the saved copy or authorize overwrite",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1238
+            }
+          ]
+        },
+        {
+          "name": "a held genuine imported profile cannot publish after changed-back raw intent or grant protected save authority",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1781
+            }
+          ]
+        },
+        {
+          "name": "newer committed memory during a held genuine replacement stays unsaved until explicit Retry saving",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 2115
+            }
+          ]
+        },
+        {
+          "name": "controlled persisted return cannot let an older completed save mark newer raw fields Saved",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 777
+            }
+          ]
+        },
+        {
+          "name": "changed-back keyed look input while replacement review is pending suppresses consent and preserves caret",
+          "file": "browser/saved-copy-editor.spec.ts",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 1652
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "No model predictive-quality, physical garment/fit or adversarial same-origin script claim.",
+    "Maximum graph/photo and full persistent process restart acceptance belong to a separate root-owned receipt.",
+    "Direct opaque-receipt tests are separately owned; their16 passing cases are included in aggregate56 counts, not duplicated as editor cases.",
+    "Controlled lifecycle and callback gates are disclosed above; no claim of native BFCache traversal."
+  ],
+  "firstFailure": {
+    "case": "changed-back raw input during actual startup JPEG decode cannot accept the saved copy or authorize overwrite",
+    "classification": "Test-only foreign-conflict message matcher incorrectly applied to legitimate cancelled-restore protection.",
+    "actualStatus": "Local profile could not be loaded: Restore cancelled; current work was kept. Your current profile is in memory. Export a backup, reload the saved profile, or review Replace saved copy.",
+    "repair": "Only the startup checkpoint now requires exact canceled-restore/kept-work and memory guidance plus hidden Retry saving and enabled Reload/Replace. Global foreign-conflict helper and every later raw/durable/authority assertion unchanged.",
+    "timeoutsChanged": false,
+    "productChanged": false,
+    "focusedRerun": "Passed unchanged corrected startup expectations in root-owned2/2 focused run and final56/56 run."
+  },
+  "actualWinner": {
+    "winnerPhotos": [
+      {
+        "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sha256": "112c335cddd7054df675d0c4395de483e1620c9aabeef285407f23653b3a6b52"
+      },
+      {
+        "id": "1a6da096619f248ea71cc046e698774a",
+        "sha256": "43ca7cc7021939b34aa701bee791e5d0d94585dc5c7b6467c262887dbad0626a"
+      }
+    ],
+    "memoryPhotos": [
+      {
+        "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sha256": "112c335cddd7054df675d0c4395de483e1620c9aabeef285407f23653b3a6b52"
+      }
+    ],
+    "winnerPieces": 4,
+    "winnerExamples": 1,
+    "winnerLooks": 1,
+    "rawDraftsPreserved": true
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/style116-new-native-first-artifacts/browser-saved-copy-editor--717b5--forms-and-Undo-stay-usable/actual-complete-winner.json",
+      "bytes": 31069,
+      "sha256": "117e480667b10821bf3c82e288e2166de8c543c8fde0442e5209b73466b84130"
+    },
+    {
+      "path": "/workspace/style116-new-native-first-artifacts/browser-saved-copy-editor--717b5--forms-and-Undo-stay-usable/actual-stale-memory.json",
+      "bytes": 22524,
+      "sha256": "8521b47f99575ee4d736c134ed4644067542efaa443aa8468896f28603f6692a"
+    },
+    {
+      "path": "/workspace/style116-new-native-first-artifacts/browser-saved-copy-editor--717b5--forms-and-Undo-stay-usable/complete-conflict-receipt.json",
+      "bytes": 576,
+      "sha256": "1ae718b7230ec5064ea65d0185147ad11c577b15fc7e7a2e7b3428f4ab31d8c4"
+    },
+    {
+      "path": "/workspace/style116-new-native-first-artifacts/browser-saved-copy-editor--de9c5-copy-or-authorize-overwrite/error-context.md",
+      "bytes": 16187,
+      "sha256": "50dacf24c0c844d1cb326babcfae3f66fb7b6e84f49496c16d162080856ff59e"
+    },
+    {
+      "path": "/workspace/style116-new-native-first-artifacts/browser-saved-copy-editor--de9c5-copy-or-authorize-overwrite/trace.zip",
+      "bytes": 1113830,
+      "sha256": "d472f423b5019a9ea8278b59dfb30a872aa5ed8566e8c448c3443b77e1cfaea2"
+    }
+  ],
+  "sourceAtReceipt": [
+    {
+      "path": "/workspace/projects-monorepo/apps/style-studio/src/main.ts",
+      "bytes": 55150,
+      "sha256": "c3c26e1c5298c0917c32b3dc18718854a235f8239cc219be406e81d6725cb5fc"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/style-studio/src/storage.ts",
+      "bytes": 20050,
+      "sha256": "91ae885dd42c40ce758ddecbd1f152d49a1f45b2783611149aa7a35c075e010c"
+    }
+  ],
+  "finalCoverage": {
+    "distinctEditorCases": 10,
+    "editorPassed": 10,
+    "fullNativeDistinctCases": 56,
+    "fullNativePassed": 56,
+    "separateStorageOracleCases": 16,
+    "priorCases": 30,
+    "durationMs": 65168.943,
+    "rootOwnedExecution": true,
+    "productSourceHashesUnchangedAcrossTheseRuns": true
+  },
+  "finalArtifacts": [
+    {
+      "path": "/workspace/style116-full-native-final-artifacts/browser-saved-copy-editor--717b5--forms-and-Undo-stay-usable/actual-complete-winner.json",
+      "bytes": 31069,
+      "sha256": "105306ac885e6dfa5a7ba51f0405b9c27c8013bbaf8d9f7d12b59efe7c86f0b5"
+    },
+    {
+      "path": "/workspace/style116-full-native-final-artifacts/browser-saved-copy-editor--717b5--forms-and-Undo-stay-usable/actual-stale-memory.json",
+      "bytes": 22524,
+      "sha256": "8521b47f99575ee4d736c134ed4644067542efaa443aa8468896f28603f6692a"
+    },
+    {
+      "path": "/workspace/style116-full-native-final-artifacts/browser-saved-copy-editor--717b5--forms-and-Undo-stay-usable/complete-conflict-receipt.json",
+      "bytes": 576,
+      "sha256": "8cb3ff32ed8cb6ee46ef26fa2092a095425c53724a299bffa652a75bdbef36b3"
+    }
+  ],
+  "actualWinnerFinal": {
+    "winnerPhotos": [
+      {
+        "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sha256": "112c335cddd7054df675d0c4395de483e1620c9aabeef285407f23653b3a6b52"
+      },
+      {
+        "id": "94fe10b8f33c5f7edc39de5c8e8939e9",
+        "sha256": "43ca7cc7021939b34aa701bee791e5d0d94585dc5c7b6467c262887dbad0626a"
+      }
+    ],
+    "memoryPhotos": [
+      {
+        "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sha256": "112c335cddd7054df675d0c4395de483e1620c9aabeef285407f23653b3a6b52"
+      }
+    ],
+    "winnerPieces": 4,
+    "winnerExamples": 1,
+    "winnerLooks": 1,
+    "rawDraftsPreserved": true
+  }
+}

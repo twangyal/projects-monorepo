@@ -1,0 +1,99 @@
+{
+  "repository": "https://github.com/HTR-United/CREMMA-MSS-19",
+  "commit": "d8f466de72561cd989f957d75a6743c5d8f0a262",
+  "license": "CC-BY-4.0",
+  "licenseScope": "Corpus-level htr-united.yml names CC-BY4.0; repository LICENSE is CC-BY4.0; includes original JPEG+ALTO rather than relying on unrelated repository code license.",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/LICENSE",
+      "bytes": 18650,
+      "sha256": "7e7170e3cebf88a9f60c7b8421418323c09304da1af4d5e90f4da1dc1c8a2661",
+      "purpose": "Primary dataset license/metadata; not model code license."
+    },
+    {
+      "path": "README.md",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/README.md",
+      "bytes": 379,
+      "sha256": "fb2712d0b437e19c341f6e69cc546901cfc42158929a1072e920520f9f348d37",
+      "purpose": "Primary dataset license/metadata; not model code license."
+    },
+    {
+      "path": "htr-united.yml",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/htr-united.yml",
+      "bytes": 1766,
+      "sha256": "cde21dc0e3d3ea4b21aeed3edfc1c2e9aa95a71b56ffd98e075b15e15a441c24",
+      "purpose": "Primary dataset license/metadata; not model code license."
+    },
+    {
+      "path": "01R_P1S3SS1P019_001.xml",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_001.xml",
+      "bytes": 29003,
+      "sha256": "82cffc3bc10fd33406dc4e18bebf1d89c46587f245c1e94bdbd25514c7f6173b",
+      "pageId": "01R_P1S3SS1P019_001"
+    },
+    {
+      "path": "01R_P1S3SS1P019_001.jpg",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_001.jpg",
+      "bytes": 241996,
+      "sha256": "74690e7e56dbe58308fcb3075febd94f6a59fea272c1f1037b2d1a28c9b788a0",
+      "pageId": "01R_P1S3SS1P019_001"
+    },
+    {
+      "path": "01R_P1S3SS1P019_002.xml",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_002.xml",
+      "bytes": 31138,
+      "sha256": "742a939d3357ea5de2eed4cd43f121510a7e425f73f180e1125171952782d1de",
+      "pageId": "01R_P1S3SS1P019_002"
+    },
+    {
+      "path": "01R_P1S3SS1P019_002.jpg",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_002.jpg",
+      "bytes": 235824,
+      "sha256": "667d7bf46685051c17346cb2076d0568aec4070a438c51779c22bdab30a7a3f4",
+      "pageId": "01R_P1S3SS1P019_002"
+    },
+    {
+      "path": "01R_P1S3SS1P019_003.xml",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_003.xml",
+      "bytes": 33483,
+      "sha256": "9415d15f9fb82eb04b4dd2184101b7385aa16e7290894c3e532bd0bbe5082d87",
+      "pageId": "01R_P1S3SS1P019_003"
+    },
+    {
+      "path": "01R_P1S3SS1P019_003.jpg",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_003.jpg",
+      "bytes": 247339,
+      "sha256": "dbf4f9cb8e1047373e0e79ef8d9d922d610b7e3baf59b4a0a32dfdd12ffd03ff",
+      "pageId": "01R_P1S3SS1P019_003"
+    },
+    {
+      "path": "01R_P1S3SS1P019_004.xml",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_004.xml",
+      "bytes": 31803,
+      "sha256": "2678c7c265e50f37c16e52947c7d0da0965ed2cb1503860ab52dd341e151cf48",
+      "pageId": "01R_P1S3SS1P019_004"
+    },
+    {
+      "path": "01R_P1S3SS1P019_004.jpg",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_004.jpg",
+      "bytes": 250107,
+      "sha256": "0c58ef3b8e01a788c4ceadef340e1e1b4f203b99f286d762ea4653299603b410",
+      "pageId": "01R_P1S3SS1P019_004"
+    },
+    {
+      "path": "01R_P1S3SS1P019_005.xml",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_005.xml",
+      "bytes": 27291,
+      "sha256": "bea9a33fa9ce695a421762968130c9ce162746a81418ace316595d6af567e673",
+      "pageId": "01R_P1S3SS1P019_005"
+    },
+    {
+      "path": "01R_P1S3SS1P019_005.jpg",
+      "url": "https://raw.githubusercontent.com/HTR-United/CREMMA-MSS-19/d8f466de72561cd989f957d75a6743c5d8f0a262/data/lettre-boudreau-tessier/01R_P1S3SS1P019_005.jpg",
+      "bytes": 249662,
+      "sha256": "13615d4f68ee3801661a3ca70762c501339b6b1e05745aa75349e90db9ac0f34",
+      "pageId": "01R_P1S3SS1P019_005"
+    }
+  ]
+}

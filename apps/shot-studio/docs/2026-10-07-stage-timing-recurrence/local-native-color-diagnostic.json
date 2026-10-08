@@ -1,0 +1,21 @@
+{
+  "requestedTime": 6.75,
+  "actualSampleTime": 6.733,
+  "width": 960,
+  "height": 540,
+  "x": 524,
+  "y": 258,
+  "rgba": [
+    1,
+    169,
+    1,
+    255
+  ],
+  "nativeDecodedColorSpace": {
+    "fullRange": false,
+    "matrix": "bt709",
+    "primaries": "bt709",
+    "transfer": "iec61966-2-1"
+  },
+  "scope": "Actual153 WebCodecs decode via pinned native VideoSampleSink and canvas; no color override, separate diagnostic, not changed acceptance."
+}

@@ -1,0 +1,698 @@
+{
+  "issue": 119,
+  "status": "Root final40/40 native pass, including all10 independent saved-mix cases; first34/40 and two fixture corrections retained",
+  "frozenAt": "2026-10-05T01:49:36.898802+00:00",
+  "independence": {
+    "newProducerImplementationRead": false,
+    "expectedValuesFromProducerHelpers": false,
+    "serviceOrBrowserStarted": false,
+    "buildRun": false,
+    "unchangedOldTests": true,
+    "fixturesGenerated": "Pure original deterministic PCM fixture generation only; no audio decode/playback or service execution",
+    "executionAttribution": "All recorded native executions were run by root; this author only inspected artifacts and updated the receipt."
+  },
+  "files": {
+    "tests/browser/saved-mixes.spec.ts": {
+      "sha256": "8a72f8acfe8e90e4315429ba8ff543a47a1144cd71b216c47efa5124e3fcb96b",
+      "bytes": 19421
+    },
+    "tests/browser/saved-mixes-fixtures.ts": {
+      "sha256": "1ceecd1aaaeb1aa1f388a514c47dfbd1fa19f20ea73421745f977e029047c133",
+      "bytes": 6556
+    }
+  },
+  "wavSources": [
+    {
+      "title": "Amber original",
+      "artist": "Original oracle A",
+      "frequency": 263,
+      "frames": 192000,
+      "sampleRate": 16000,
+      "channels": 1,
+      "bits": 16,
+      "bytes": 384044,
+      "sha256": "51b222c5ce32dbdb2f00686a4c4476846ba29a7a1f3b25b34248763caaed05f8"
+    },
+    {
+      "title": "Birch original",
+      "artist": "Original oracle B",
+      "frequency": 397,
+      "frames": 192000,
+      "sampleRate": 16000,
+      "channels": 1,
+      "bits": 16,
+      "bytes": 384044,
+      "sha256": "1b57c47489ca4514418d3f96ed92777698d66472130ceed2487fb0b42b8fd097"
+    },
+    {
+      "title": "Cedar original",
+      "artist": "Original oracle C",
+      "frequency": 541,
+      "frames": 192000,
+      "sampleRate": 16000,
+      "channels": 1,
+      "bits": 16,
+      "bytes": 384044,
+      "sha256": "1225fc89269ecdeaff5eb914ba0fdc566374f79f7e4dff9dc8a01be9422f9c34"
+    }
+  ],
+  "literalExpectations": {
+    "firstMix": {
+      "name": "Night <quiet> 🌙",
+      "songOrder": [
+        "Cedar original",
+        "Amber original"
+      ]
+    },
+    "secondMix": {
+      "name": "Morning",
+      "songOrder": [
+        "Birch original"
+      ]
+    },
+    "captureFields": [
+      "trackId",
+      "title",
+      "artist"
+    ],
+    "initialMutualVote": {
+      "track": "Amber original",
+      "host": 1,
+      "guest": 1
+    },
+    "load": {
+      "firstAvailableEntry": true,
+      "playing": false,
+      "position": 0,
+      "playlistRevisionDelta": 1,
+      "playbackRevisionDelta": 1,
+      "savedMixesRevisionDelta": 0,
+      "implicitLocalAudioConsent": false
+    },
+    "missingExample": {
+      "storedOrder": [
+        "Cedar original",
+        "Birch original",
+        "Amber original"
+      ],
+      "firstDeleted": "Birch original",
+      "deletedDuringConfirmation": "Amber original",
+      "finalAvailableOrder": [
+        "Cedar original"
+      ],
+      "originalStoredEntriesUnchanged": true
+    },
+    "capacity": {
+      "maxMixes": 8,
+      "ninthStatus": 409,
+      "duplicateNamesAllowed": true
+    },
+    "mediaIdentity": "SHA256 and byte count of each real normalized audio resource before/after metadata and playlist operations; no assumed Opus output bytes"
+  },
+  "cases": [
+    "two named orders retain original labels votes and media through current rebuild and token-free export",
+    "explicit load pauses first source at zero exactly once without enabling the second device",
+    "same-source Load rejects both a captured seek gesture and an old queued Play revision",
+    "stale save and update capture their displayed playlist and never retry a different order",
+    "static raw name node caret and changed-back intent survive polls and successful delayed save response",
+    "rename and explicit update preserve identity while later current edits and named deletion are independent",
+    "external deletion clears selected authority without substituting another mix or losing raw rename draft",
+    "missing labels remain visible and available-only confirmation refuses a third-writer changed subset",
+    "all-missing mix cannot load and captured labels survive without orphan audio",
+    "eight independent copies allow repeated literal names and reject a ninth without changing media or transport"
+  ],
+  "nativeAndControlledScopes": {
+    "native": [
+      "Two genuine isolated browser seats, actual room creation/invitation/claim",
+      "Native file upload of three original WAVs, actual production normalization and authorized audio resources",
+      "Native DOM input, focus/selection, confirmation, current-playlist controls and public downloads",
+      "Actual HTMLAudioElement playback/paused/position and explicit local audio enablement",
+      "Real service revisions/CAS and error responses, real room polling"
+    ],
+    "controlled": [
+      "Real HTTP request can be held before route.continue to expose stale captured revision",
+      "Real route.fetch response can be withheld before fulfill without changing status/body",
+      "Actual native confirmation is held while the other genuine seat deletes a track"
+    ],
+    "notClaimed": [
+      "Physical two-device synchronization",
+      "Archive or service restart covered by separate root acceptance",
+      "Exact generated Opus encoding oracle"
+    ]
+  },
+  "privacy": {
+    "privateCapabilitiesRemainInBrowser": "Seat tokens read only inside page.evaluate to authorize owned service calls; never returned in helper results or printed",
+    "exports": "Native room JSON download checked for both browser-held token substrings and private token/hash keys",
+    "invites": "Actual private invite retained transiently for second-page navigation, not persisted into fixture/receipt"
+  },
+  "checks": [
+    {
+      "command": "eslint tests/browser/saved-mixes.spec.ts tests/browser/saved-mixes-fixtures.ts",
+      "exitCode": 0,
+      "log": "/tmp/duet119-browser-oracle-lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "isolated strict tsc --noEmit on both owned files",
+      "exitCode": 0,
+      "log": "/tmp/duet119-browser-oracle-typecheck.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "eslint both owned files after fixture repairs",
+      "exitCode": 0,
+      "log": "/tmp/duet119-browser-oracle-repair-lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "isolated strict tsc both owned files after fixture repairs",
+      "exitCode": 0,
+      "log": "/tmp/duet119-browser-oracle-repair-typecheck.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "firstNativeOutcome": {
+    "owner": "Root-run; independently inspected saved reports/traces",
+    "resultsJson": "/tmp/duet119-full-native-first-results.json",
+    "sha256": "4ec1893e3788b9e4e20af553b0203883ce163838d0c44545a13c591b778810f1",
+    "log": "/tmp/duet119-full-native-first.log",
+    "logSha256": "5c4542f70f632e3710f60f8157008fe17df4066466d0d6cac3d8875c49e705cf",
+    "wholeSuiteStats": {
+      "startTime": "2026-10-05T01:55:32.972Z",
+      "duration": 282967.23899999994,
+      "expected": 34,
+      "skipped": 0,
+      "unexpected": 6,
+      "flaky": 0
+    },
+    "newCases": [
+      {
+        "title": "two named orders retain original labels votes and media through current rebuild and token-free export",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7298,
+        "retry": 0
+      },
+      {
+        "title": "explicit load pauses first source at zero exactly once without enabling the second device",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8214,
+        "retry": 0
+      },
+      {
+        "title": "same-source Load rejects both a captured seek gesture and an old queued Play revision",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8396,
+        "retry": 0
+      },
+      {
+        "title": "stale save and update capture their displayed playlist and never retry a different order",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 9258,
+        "retry": 0
+      },
+      {
+        "title": "static raw name node caret and changed-back intent survive polls and successful delayed save response",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7457,
+        "retry": 0
+      },
+      {
+        "title": "rename and explicit update preserve identity while later current edits and named deletion are independent",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8732,
+        "retry": 0
+      },
+      {
+        "title": "external deletion clears selected authority without substituting another mix or losing raw rename draft",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "failed",
+        "durationMs": 13874,
+        "retry": 0
+      },
+      {
+        "title": "missing labels remain visible and available-only confirmation refuses a third-writer changed subset",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "failed",
+        "durationMs": 97583,
+        "retry": 0
+      },
+      {
+        "title": "all-missing mix cannot load and captured labels survive without orphan audio",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 6756,
+        "retry": 0
+      },
+      {
+        "title": "eight independent copies allow repeated literal names and reject a ninth without changing media or transport",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7409,
+        "retry": 0
+      }
+    ],
+    "newPassed": 8,
+    "newFailed": 2,
+    "otherFailures": [
+      {
+        "title": "seek gesture cannot overwrite a partner's new position",
+        "file": "browser/recovery.spec.ts",
+        "status": "failed",
+        "durationMs": 5290,
+        "retry": 0
+      },
+      {
+        "title": "seek gesture cannot overwrite a partner's new song",
+        "file": "browser/recovery.spec.ts",
+        "status": "failed",
+        "durationMs": 5345,
+        "retry": 0
+      },
+      {
+        "title": "an invitation response cannot publish an old room token after switching rooms",
+        "file": "browser/recovery.spec.ts",
+        "status": "failed",
+        "durationMs": 5386,
+        "retry": 0
+      },
+      {
+        "title": "Play together restarts a song that has reached the end of the mix",
+        "file": "browser/recovery.spec.ts",
+        "status": "failed",
+        "durationMs": 5348,
+        "retry": 0
+      }
+    ],
+    "noProductFailureEstablished": true
+  },
+  "finalNativeOutcome": {
+    "owner": "Root-run; oracle author inspected retained report without new execution",
+    "json": "/tmp/duet119-full-native-final-results.json",
+    "jsonSha256": "2a906688756b9dcfd3b346c29005c3d9b516ec5a8822b936756df27230e2cd99",
+    "stats": {
+      "startTime": "2026-10-05T02:06:25.523Z",
+      "duration": 165577.612,
+      "expected": 40,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "playwrightVersion": "1.63.0",
+    "cases": [
+      {
+        "title": "complete editable archive preserves original seats, audio, votes, mix, memories and a pending invitation",
+        "file": "browser/archive.spec.ts",
+        "status": "passed",
+        "durationMs": 18097,
+        "retry": 0
+      },
+      {
+        "title": "offline CLI refuses a running library and never replaces an existing restore directory",
+        "file": "browser/archive.spec.ts",
+        "status": "passed",
+        "durationMs": 749,
+        "retry": 0
+      },
+      {
+        "title": "HTTPS setup authority is creation-only, immediately cleared, never stored, and failed mutation is not replayed",
+        "file": "browser/https-lan.spec.ts",
+        "status": "passed",
+        "durationMs": 1288,
+        "retry": 0
+      },
+      {
+        "title": "two HTTPS seats retain actual Opus, secure media, independent ratings, consent, mix and memories across service restart",
+        "file": "browser/https-lan.spec.ts",
+        "status": "passed",
+        "durationMs": 15656,
+        "retry": 0
+      },
+      {
+        "title": "held real HTTPS poll does not erase newer literal draft and leaving retires old room publication",
+        "file": "browser/https-lan.spec.ts",
+        "status": "passed",
+        "durationMs": 3352,
+        "retry": 0
+      },
+      {
+        "title": "late actual HTTPS room response cannot reactivate a deliberately departed room",
+        "file": "browser/https-lan.spec.ts",
+        "status": "passed",
+        "durationMs": 3517,
+        "retry": 0
+      },
+      {
+        "title": "unknown transport status blocks creation but independently retained seat access still works",
+        "file": "browser/https-lan.spec.ts",
+        "status": "passed",
+        "durationMs": 2108,
+        "retry": 0
+      },
+      {
+        "title": "seek gesture cannot overwrite a partner's new position",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 1360,
+        "retry": 0
+      },
+      {
+        "title": "seek gesture cannot overwrite a partner's new song",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 1407,
+        "retry": 0
+      },
+      {
+        "title": "an invitation response cannot publish an old room token after switching rooms",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 659,
+        "retry": 0
+      },
+      {
+        "title": "Play together restarts a song that has reached the end of the mix",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 1674,
+        "retry": 0
+      },
+      {
+        "title": "two named orders retain original labels votes and media through current rebuild and token-free export",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8090,
+        "retry": 0
+      },
+      {
+        "title": "explicit load pauses first source at zero exactly once without enabling the second device",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8090,
+        "retry": 0
+      },
+      {
+        "title": "same-source Load rejects both a captured seek gesture and an old queued Play revision",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8340,
+        "retry": 0
+      },
+      {
+        "title": "stale save and update capture their displayed playlist and never retry a different order",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 10371,
+        "retry": 0
+      },
+      {
+        "title": "static raw name node caret and changed-back intent survive polls and successful delayed save response",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7208,
+        "retry": 0
+      },
+      {
+        "title": "rename and explicit update preserve identity while later current edits and named deletion are independent",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8532,
+        "retry": 0
+      },
+      {
+        "title": "external deletion clears selected authority without substituting another mix or losing raw rename draft",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8408,
+        "retry": 0
+      },
+      {
+        "title": "all-missing mix cannot load and captured labels survive without orphan audio",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 6660,
+        "retry": 0
+      },
+      {
+        "title": "eight independent copies allow repeated literal names and reject a ninth without changing media or transport",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7449,
+        "retry": 0
+      },
+      {
+        "title": "missing labels remain visible and available-only confirmation refuses a third-writer changed subset",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7692,
+        "retry": 0
+      },
+      {
+        "title": "two independent seats share real audio, ratings, a mix, playback, memories and recovery",
+        "file": "browser/workflow.spec.ts",
+        "status": "passed",
+        "durationMs": 11908,
+        "retry": 0
+      },
+      {
+        "title": "private access restores one seat and an invitation cannot take a third seat",
+        "file": "browser/workflow.spec.ts",
+        "status": "passed",
+        "durationMs": 1577,
+        "retry": 0
+      },
+      {
+        "title": "failed audio can be retried and deleting audio retains its dated memory",
+        "file": "browser/workflow.spec.ts",
+        "status": "passed",
+        "durationMs": 2404,
+        "retry": 0
+      },
+      {
+        "title": "reconnecting preserves an unsaved memory and leaving asks before discarding it",
+        "file": "browser/workflow.spec.ts",
+        "status": "passed",
+        "durationMs": 4353,
+        "retry": 0
+      },
+      {
+        "title": "starting inside the drift deadband aligns before invoking native playback",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 823,
+        "retry": 0
+      },
+      {
+        "title": "a delayed native start reconciles the newest shared snapshot after playing",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 894,
+        "retry": 0
+      },
+      {
+        "title": "pending native startup preserves a newer pause",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 431,
+        "retry": 0
+      },
+      {
+        "title": "pending native startup preserves a newer disable",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 481,
+        "retry": 0
+      },
+      {
+        "title": "pending native startup preserves a newer source",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 530,
+        "retry": 0
+      },
+      {
+        "title": "a delayed native start pauses when shared playback has reached the end",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 860,
+        "retry": 0
+      },
+      {
+        "title": "an old native startup cannot pause the newer playing source",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 810,
+        "retry": 0
+      },
+      {
+        "title": "remote playback remains paused until the listener explicitly enables native audio",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 455,
+        "retry": 0
+      },
+      {
+        "title": "metadata alignment uses the newest snapshot instead of its initial pending position",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 321,
+        "retry": 0
+      },
+      {
+        "title": "a delayed old source cannot replace the native audio selected by a newer snapshot",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 325,
+        "retry": 0
+      },
+      {
+        "title": "native paused audio keeps small drift and corrects differences above 0.35 seconds",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 321,
+        "retry": 0
+      },
+      {
+        "title": "real playback, remote seek and remote pause align without feedback writes",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 756,
+        "retry": 0
+      },
+      {
+        "title": "switching immediately after native play starts consumes its stale promise and preserves the newer pause",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 514,
+        "retry": 0
+      },
+      {
+        "title": "actual browser autoplay rejection is visible and recovers through an explicit enable click",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 362,
+        "retry": 0
+      },
+      {
+        "title": "disable and destroy stop native playback and prevent late metadata from restarting it",
+        "file": "sync.spec.ts",
+        "status": "passed",
+        "durationMs": 458,
+        "retry": 0
+      }
+    ],
+    "log": "/tmp/duet119-full-native-final.log",
+    "logSha256": "91be7074b6b7cd1dc84c2f63ffb648cee87456ab0052ad3a62a2c3fbd9d1cec1",
+    "oracleCaseCount": 10,
+    "oraclePassed": 10,
+    "oracleCaseDurationSumMs": 80840,
+    "artifactsDirectory": "/workspace/duet119-full-native-final-artifacts",
+    "sourceHashesAtReceiptUpdate": {
+      "src/main.ts": "ef2dc721f8cb0ae87380f6ae6294a0001b198200bdb57255065d1715c11e4607",
+      "src/style.css": "7fecb41ba03aee23611d3ccab2c39c2396844aa367950021c29bb251e60afdab",
+      "duet/store.py": "95268be61a1f3805c9b84cf5331d6b416c08b769ee50576ac75a556de45356e2",
+      "duet/server.py": "81f4981c46458d9750fb1ce5bb5899bdf81b95bb85824febfbd34619aa9769ca",
+      "tests/browser/saved-mixes.spec.ts": "8a72f8acfe8e90e4315429ba8ff543a47a1144cd71b216c47efa5124e3fcb96b",
+      "tests/browser/saved-mixes-fixtures.ts": "1ceecd1aaaeb1aa1f388a514c47dfbd1fa19f20ea73421745f977e029047c133"
+    }
+  },
+  "originalFrozenFiles": {
+    "tests/browser/saved-mixes.spec.ts": {
+      "sha256": "60cfaa944c2730bc7f50ee58dce2b78df94294f0bde5ee779086150d4662155a",
+      "bytes": 18837
+    },
+    "tests/browser/saved-mixes-fixtures.ts": {
+      "sha256": "4d90d69b11f3905e13ec1a3c88c1608c327d7c59923a2975892b43852e47d92d",
+      "bytes": 6406
+    }
+  },
+  "fixtureRepairs": [
+    {
+      "case": "external deletion clears selected authority without substituting another mix or losing raw rename draft",
+      "actualCause": "All original preservation assertions passed. Final deliberate selection encountered native confirm; no handler meant automatic dismissal. Preview correctly remained empty for externally deleted selection.",
+      "actualDialog": "Select another mix and discard the unsaved selected-mix name?",
+      "trace": "/workspace/duet119-full-native-first-artifacts/browser-saved-mixes-extern-492be--or-losing-raw-rename-draft/trace.zip",
+      "traceSha256": "7c9b6cc43f90906e83724580ad68caa62af4af6fbca316aa75cd567147256b69",
+      "repair": "After all original raw-name/node/full-state assertions, explicitly inspect and accept that exact native discard dialog before selecting/loading second mix. No preservation assertion removed."
+    },
+    {
+      "case": "missing labels remain visible and available-only confirmation refuses a third-writer changed subset",
+      "actualCause": "Guest deletion of host-uploaded Amber correctly returned403 (actual expectation200 failure at line155). The unresolved native confirm then blocked teardown, producing secondary90s timeout.",
+      "trace": "/workspace/duet119-full-native-first-artifacts/browser-saved-mixes-missin-495bc-third-writer-changed-subset/trace.zip",
+      "traceSha256": "e860bca3c4930e4477fba3ee0b7736756ab9a6674fe64e114a784366098e9bf0",
+      "repair": "Explicit amberUploader fixture option defaults host unchanged for other9 cases. Only this case natively uploads exact original Amber as guest, making its later deletion authorized. WAV bytes/title/artist/order and original409/available-only/full-record expectations unchanged. Finally dismisses held native dialog even if assertion fails."
+    }
+  ],
+  "focusedRepairOutcome": {
+    "owner": "Root-run; oracle author inspected retained report without new execution",
+    "json": "/tmp/duet119-focused-native-results.json",
+    "jsonSha256": "4e2f143c40eed40c112b1e7079657b70a36908010615ed9f118742d370047de5",
+    "stats": {
+      "startTime": "2026-10-05T02:05:16.775Z",
+      "duration": 33537.667,
+      "expected": 7,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "playwrightVersion": "1.63.0",
+    "cases": [
+      {
+        "title": "seek gesture cannot overwrite a partner's new position",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 1514,
+        "retry": 0
+      },
+      {
+        "title": "seek gesture cannot overwrite a partner's new song",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 1334,
+        "retry": 0
+      },
+      {
+        "title": "an invitation response cannot publish an old room token after switching rooms",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 772,
+        "retry": 0
+      },
+      {
+        "title": "Play together restarts a song that has reached the end of the mix",
+        "file": "browser/recovery.spec.ts",
+        "status": "passed",
+        "durationMs": 1755,
+        "retry": 0
+      },
+      {
+        "title": "same-source Load rejects both a captured seek gesture and an old queued Play revision",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7419,
+        "retry": 0
+      },
+      {
+        "title": "external deletion clears selected authority without substituting another mix or losing raw rename draft",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 8725,
+        "retry": 0
+      },
+      {
+        "title": "missing labels remain visible and available-only confirmation refuses a third-writer changed subset",
+        "file": "browser/saved-mixes.spec.ts",
+        "status": "passed",
+        "durationMs": 7779,
+        "retry": 0
+      }
+    ],
+    "log": "/tmp/duet119-focused-native.log",
+    "logSha256": "4b208294aaf5fa99f4f9d1f38b40e30a6c98d79b99c92bc82fda0952caed413f"
+  }
+}

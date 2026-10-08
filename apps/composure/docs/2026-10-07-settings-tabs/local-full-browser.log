@@ -1,0 +1,92 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> composure@0.2.0 test:browser
+> playwright test
+
+[WebServer] (node:191) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:212) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:249) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 36 tests using 1 worker
+
+(node:261) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/bluetooth.spec.ts:8:1 › Bluetooth source requires explicit native connection and received calibration (750ms)
+  ✓   2 tests/browser/bluetooth.spec.ts:20:1 › five actual spaced packets drive a real keyboard escape and private source-labeled JSON without changing simulated best (6.7s)
+  ✓   3 tests/browser/bluetooth.spec.ts:39:1 › calibration ignores bursts and malformed offset packets and contact loss invalidates ready data before BPM filtering (2.8s)
+  ✓   4 tests/browser/bluetooth.spec.ts:50:1 › collection timeout and ready expiry require deliberate fresh collection (13.5s)
+  ✓   5 tests/browser/bluetooth.spec.ts:57:1 › Bluetooth pause drops notifications and resume requires new packets while wall freshness returns tension to neutral (15.1s)
+  ✓   6 tests/browser/bluetooth.spec.ts:67:1 › simulator controls cannot contaminate a pinned Bluetooth run and source changes preserve its report until confirmed replacement (2.9s)
+  ✓   7 tests/browser/bluetooth.spec.ts:78:3 › cancel during chooser drains one native operation and cannot publish a late connection (1.5s)
+  ✓   8 tests/browser/bluetooth.spec.ts:78:3 › cancel during connect drains one native operation and cannot publish a late connection (1.5s)
+  ✓   9 tests/browser/bluetooth.spec.ts:78:3 › cancel during service drains one native operation and cannot publish a late connection (1.5s)
+  ✓  10 tests/browser/bluetooth.spec.ts:78:3 › cancel during characteristic drains one native operation and cannot publish a late connection (1.7s)
+  ✓  11 tests/browser/bluetooth.spec.ts:78:3 › cancel during start drains one native operation and cannot publish a late connection (1.5s)
+  ✓  12 tests/browser/bluetooth.spec.ts:91:1 › pending notification start disconnects synchronously and serialized rejected cleanup cannot affect the next connection (1.6s)
+  ✓  13 tests/browser/bluetooth.spec.ts:99:1 › one aggregate startup deadline retires a late connect with immediate physical cleanup and no automatic retry (4.3s)
+  ✓  14 tests/browser/bluetooth.spec.ts:106:1 › native chooser is not cancelled by blur, queued connected disconnect events are ignored, actual disconnection invalidates readiness (10.0s)
+  ✓  15 tests/browser/bluetooth.spec.ts:114:1 › changing next-source intent retires pending work and genuine pagehide disconnects without retaining identity (544ms)
+  ✓  16 tests/browser/bluetooth.spec.ts:124:1 › fixed native failure messages and mobile keyboard connection never expose device identity or provider errors (673ms)
+  ✓  17 tests/browser/bluetooth.spec.ts:134:1 › missing Bluetooth provider leaves the genuine simulator available with clear unsupported guidance (305ms)
+  ✓  18 tests/browser/bluetooth.spec.ts:141:3 › cached page suspension preserves the run and explicit reconnection (1.7s)
+  ✓  19 tests/browser/bluetooth.spec.ts:141:3 › cached page suspension preserves the run and draining connection ownership (910ms)
+  ✘  20 tests/browser/bluetooth.spec.ts:171:1 › real cached history return retains the heap and allows deliberate sensor connection (9.6s)
+(node:625) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  21 tests/browser/settings-tabs.spec.ts:16:1 › an older tab win preserves newer comfort preferences and stale manual saves retain its best (5.6s)
+  ✓  22 tests/browser/settings-tabs.spec.ts:25:1 › write-time corrupt bytes and raw fields survive; reset refuses a repaired peer record (493ms)
+  ✓  23 tests/browser/settings-tabs.spec.ts:32:1 › native shared write lock queues a preference save and cancels a stalled request before any write (6.0s)
+  ✓  24 tests/browser/settings-tabs.spec.ts:42:1 › unavailable coordinated storage leaves preferences untouched and simulator usable (285ms)
+  ✓  25 tests/browser/touch.spec.ts:12:1 › native390px touch alone completes fuse power key steady lock and exit with a genuine simulated win report and durable preferences (7.6s)
+  ✓  26 tests/browser/touch.spec.ts:21:1 › genuine multiple contacts retain movement ownership independently and touchCancel releases every held control (1.1s)
+  ✓  27 tests/browser/touch.spec.ts:30:1 › two genuine fingers on Hold to interact keep the older lock hold after the newer contact lifts (5.9s)
+  ✓  28 tests/browser/touch.spec.ts:38:1 › native slight finger travel keeps the held interaction usable instead of handing the gesture to page panning (15.3s)
+  ✓  29 tests/browser/touch.spec.ts:42:1 › touch Pause Resume and native touchCancel preserve paused time and do not replay old held movement (1.9s)
+  ✓  30 tests/browser/touch.spec.ts:52:1 › controlled standardBLE packets support a complete native touch escape without mixing simulator data or claiming physical hardware (8.8s)
+  ✓  31 tests/browser/workflow.spec.ts:12:1 › real keyboard escape exports simulated evidence and persists only preferences/best time (5.0s)
+  ✓  32 tests/browser/workflow.spec.ts:24:1 › stale signal, paused time, blur and focused settings never advance held controls (15.2s)
+  ✓  33 tests/browser/workflow.spec.ts:34:1 › high simulated input can lose from noise while missing lock prerequisites stay locked (8.4s)
+  ✓  34 tests/browser/workflow.spec.ts:40:1 › mobile pointer cancellation, comfort preferences and corrupt storage preserve data (1.4s)
+  ✓  35 tests/browser/workflow.spec.ts:50:1 › held movement releases when entering settings and restart restores keyboard aim semantics (820ms)
+  ✓  36 tests/browser/workflow.spec.ts:55:1 › bounded event log still announces objectives after 256 pause and resume events (14.4s)
+
+
+  1) tests/browser/bluetooth.spec.ts:171:1 › real cached history return retains the heap and allows deliberate sensor connection 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: undefined
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      184 |     // Cached restoration does not fire a new document load event.
+      185 |     await page.goBack({waitUntil:'commit',timeout:10000});
+    > 186 |     await expect.poll(()=>page.evaluate(()=>(window as Window&{cachedVisit?:{shown:boolean}}).cachedVisit?.shown),{timeout:10000}).toBe(true);
+          |                                                                                                                                    ^
+      187 |     await expect(page.locator('#input-source')).toHaveValue('bluetooth-hr');
+      188 |     expect((await stats(page)).options).toHaveLength(0);
+      189 |     await expect(page.locator('#ble-connect')).toBeEnabled();await connect(page);
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/composure/tests/browser/bluetooth.spec.ts:186:132
+
+    Error Context: test-results/bluetooth-real-cached-hist-4ff6d-eliberate-sensor-connection/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/bluetooth-real-cached-hist-4ff6d-eliberate-sensor-connection/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/bluetooth-real-cached-hist-4ff6d-eliberate-sensor-connection/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/bluetooth.spec.ts:171:1 › real cached history return retains the heap and allows deliberate sensor connection 
+  35 passed (3.1m)

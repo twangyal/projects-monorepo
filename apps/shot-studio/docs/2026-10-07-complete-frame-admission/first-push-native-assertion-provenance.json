@@ -1,0 +1,9 @@
+{
+  "sourceHead": "771e17b990c0c7f7632a17f368377c26de48d10e",
+  "runId": 37605499998,
+  "jobId": 112739845822,
+  "artifactId": 11474483558,
+  "zipBytes": 7641858,
+  "zipSha256": "e78057280f149d0f8a8a717a7d4e23d6b46dec8f0d36cb8184837fced472e2a5",
+  "failure": "New test five-second assertion expired while ordinary four-second shot encoding was still active. No claim that native output admission failed. PR111passed; push110passed/1failed."
+}

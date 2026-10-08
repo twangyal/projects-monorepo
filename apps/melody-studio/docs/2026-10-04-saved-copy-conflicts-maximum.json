@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "issue": 98,
+  "status": "passed",
+  "output": "/workspace/melody98-maximum-conflict-actual",
+  "expected": {
+    "tracks": 8,
+    "notesPerTrack": 256,
+    "totalNotes": 2048,
+    "references": 8,
+    "framesPerReference": 441000,
+    "pcmBytesPerReference": 882000,
+    "totalPcmBytes": 7056000,
+    "originalTitle": "Original maximum saved-copy graph",
+    "winnerTitle": "Distinct maximum graph from other tab",
+    "localTitle": "Stale maximum local work",
+    "originalNote": {
+      "id": "original-fractional-note",
+      "pitch": 69,
+      "start": 0.13,
+      "duration": 0.25,
+      "velocity": 0.75
+    },
+    "localNote": {
+      "id": "original-fractional-note",
+      "pitch": 70,
+      "start": 0.13,
+      "duration": 0.25,
+      "velocity": 0.75
+    },
+    "winnerNote": {
+      "id": "original-fractional-note",
+      "pitch": 76,
+      "start": 0.375,
+      "duration": 0.375,
+      "velocity": 0.75
+    },
+    "savedRowSchema": 2,
+    "portableVersion": 1,
+    "rawTempo": "",
+    "rawFieldsExcluded": true
+  },
+  "fixtures": [
+    {
+      "name": "original-a.melody.json",
+      "bytes": 9580709,
+      "sha256": "79b6b311e4ed8b59e17565d01f0de8ff964062a73963733e4356d81e52270778",
+      "assets": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "bytes": 882000,
+          "sha256": "73a7fa75042504912703a074223bda69aec35e5cce9c010319be8241c6ad87c8"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "bytes": 882000,
+          "sha256": "57adff2b3c38119ea32842eb66bd07d09c76770bc760cb9cf6deb5cc1a8ae04b"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "bytes": 882000,
+          "sha256": "c2f3b3efbbe7c68ff5dd0c01de99337de730859ef2e33357b44efc7701cc5d67"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "bytes": 882000,
+          "sha256": "8730c3636a3ae607525c8a26730ecc0b6e87a33f6fee544653bd0fb3649c6aea"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "bytes": 882000,
+          "sha256": "e70631abdb59e27251a03d1c5670052de2469a94af0a31db828880ae277666c4"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000006",
+          "bytes": 882000,
+          "sha256": "081b736c84661744255b013c69d4187672eed755db1866464fdd29ec99f7ad9d"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000007",
+          "bytes": 882000,
+          "sha256": "fbedbde8efc98804c0dd698b8ae4d5277a684886b9fa6ebef5b96d2488fd677a"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000008",
+          "bytes": 882000,
+          "sha256": "c8ca9235f9b66958ab362cccf9603c22da7fe46745d458924548c960eadcd019"
+        }
+      ]
+    },
+    {
+      "name": "foreign-b.melody.json",
+      "bytes": 9580795,
+      "sha256": "9c48da65007d40ace355ee3270bfdc9f1c29c7207dcf7f67b329eb841b380b10",
+      "assets": [
+        {
+          "id": "00000000-0000-4000-8000-000000000065",
+          "bytes": 882000,
+          "sha256": "01dad6831557e98a6d7c8988986c849e727cd2e1fb528906cc21b0af8ea1f298"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000066",
+          "bytes": 882000,
+          "sha256": "6af608ecaf475d3a1d42db4ccf8a15a9c8c362453d14fde5790659fffd7d06d8"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000067",
+          "bytes": 882000,
+          "sha256": "f6a55ab8e5b22228145a8fa635207d8321c10addb23c72758584c0346f3fa4c0"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000068",
+          "bytes": 882000,
+          "sha256": "0e5e1929479d7366713ab73dd57b889058f3a8407de52061ea9d87064728fcb3"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000069",
+          "bytes": 882000,
+          "sha256": "27874126ddb721f7cf45990e01ba4ec14591c6510b6c41e725312abbb8911b0d"
+        },
+        {
+          "id": "00000000-0000-4000-8000-00000000006a",
+          "bytes": 882000,
+          "sha256": "297a88017310c9ea7428f9de7ef145b758cf82850dbc9135a421e0450bd7b162"
+        },
+        {
+          "id": "00000000-0000-4000-8000-00000000006b",
+          "bytes": 882000,
+          "sha256": "8b6eb74887fe4a62bd3891939b5c124dc64cdfd55c1f46a3ad55025df8d49cf0"
+        },
+        {
+          "id": "00000000-0000-4000-8000-00000000006c",
+          "bytes": 882000,
+          "sha256": "7f719c1991882d4883402c43aed92c93788b03dff3e91f7d674d217490b2fa6f"
+        }
+      ]
+    },
+    {
+      "name": "expected-local-a.melody.json",
+      "bytes": 9580700,
+      "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f",
+      "assets": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "bytes": 882000,
+          "sha256": "73a7fa75042504912703a074223bda69aec35e5cce9c010319be8241c6ad87c8"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "bytes": 882000,
+          "sha256": "57adff2b3c38119ea32842eb66bd07d09c76770bc760cb9cf6deb5cc1a8ae04b"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "bytes": 882000,
+          "sha256": "c2f3b3efbbe7c68ff5dd0c01de99337de730859ef2e33357b44efc7701cc5d67"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "bytes": 882000,
+          "sha256": "8730c3636a3ae607525c8a26730ecc0b6e87a33f6fee544653bd0fb3649c6aea"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "bytes": 882000,
+          "sha256": "e70631abdb59e27251a03d1c5670052de2469a94af0a31db828880ae277666c4"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000006",
+          "bytes": 882000,
+          "sha256": "081b736c84661744255b013c69d4187672eed755db1866464fdd29ec99f7ad9d"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000007",
+          "bytes": 882000,
+          "sha256": "fbedbde8efc98804c0dd698b8ae4d5277a684886b9fa6ebef5b96d2488fd677a"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000008",
+          "bytes": 882000,
+          "sha256": "c8ca9235f9b66958ab362cccf9603c22da7fe46745d458924548c960eadcd019"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "original-ui-backup.melody.json",
+      "bytes": 9580709,
+      "sha256": "79b6b311e4ed8b59e17565d01f0de8ff964062a73963733e4356d81e52270778"
+    },
+    {
+      "name": "stale-before-conflict.melody.json",
+      "bytes": 9580709,
+      "sha256": "79b6b311e4ed8b59e17565d01f0de8ff964062a73963733e4356d81e52270778"
+    },
+    {
+      "name": "foreign-durable-receipt.json",
+      "bytes": 9581746,
+      "sha256": "756a1c174641f610a2b23fd43a216a807d4d0543b618d4e703f883ee7152793e"
+    },
+    {
+      "name": "stale-local-complete.melody.json",
+      "bytes": 9580700,
+      "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f"
+    },
+    {
+      "name": "after-cancel-local.melody.json",
+      "bytes": 9580700,
+      "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f"
+    },
+    {
+      "name": "after-reviewed-replacement.melody.json",
+      "bytes": 9580700,
+      "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f"
+    },
+    {
+      "name": "replaced-durable-receipt.json",
+      "bytes": 9581651,
+      "sha256": "94d5b3a812ed3500d22e83219470b6fd90e184d3306dcae56e0ec889c2ada1db"
+    },
+    {
+      "name": "desktop-conflict-replacement.png.receipt.json",
+      "bytes": 80,
+      "sha256": "777c8a7603ed8dba32500e466274c4f482f5379f606bb4d5abf2d67acdfda81b"
+    },
+    {
+      "name": "after-process-restart.melody.json",
+      "bytes": 9580700,
+      "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f"
+    },
+    {
+      "name": "desktop-conflict-replacement.png",
+      "bytes": 111731,
+      "sha256": "14359112ad791bd9d9086471e019a60a04b2c6f7c5246865b588b3c7746cc5bb"
+    },
+    {
+      "name": "390px-restored.png",
+      "bytes": 48433,
+      "sha256": "f0cdb50eec389c935a80bf2fde2b31b5baa322dfbdcba0db6acd77acfd2e64bd"
+    }
+  ],
+  "checks": [
+    "All 2048 local notes/eight original PCM survive conflict, while foreign schema2 descriptor and all eight distinct PCM remain byte-exact; rawblanktempo stays unapplied.",
+    "Cancel is nondestructive; fresh explicit confirmation/CAS replaces the foreign copy with committed local notes/audio only, retaining blank raw tempo and a new storage UUID.",
+    "New browser process restores an identical schema2 row/all PCM and byte-identical complete portable backup; raw unapplied tempo was excluded."
+  ],
+  "phases": [
+    {
+      "name": "original maximum saved graph and genuine second-tab restore",
+      "wallMs": 2079.6175940000003
+    },
+    {
+      "name": "other tab commits all eight distinct replacement PCM assets",
+      "wallMs": 1546.3359309999996
+    },
+    {
+      "name": "stale ordinary roll and title edits conflict without replacing any foreign byte",
+      "wallMs": 1385.1317909999998
+    },
+    {
+      "name": "cancel fresh saved-copy review preserves both complete graphs",
+      "wallMs": 1133.3696550000004
+    },
+    {
+      "name": "deliberately reviewed CAS publishes only committed local graph",
+      "wallMs": 1108.0522659999997
+    },
+    {
+      "name": "whole browser process restart retains exact chosen complete backup",
+      "wallMs": 2099.946412000001
+    }
+  ],
+  "pageErrors": [],
+  "externalRequests": [],
+  "limitations": [
+    "Original modular PCM is a retained-byte identity fixture, not real microphone or transcription accuracy evidence.",
+    "Only ordinary UI imports/keyboard/title edits/review confirmations write project state; native IndexedDB access is readonly.",
+    "No producer serializers/models/storage helpers, API mocks, injected saved state, audio synthesis, device or physical mobile claim."
+  ],
+  "browserVersion": "151.0.7922.173",
+  "origin": "http://127.0.0.1:4298",
+  "scripts": [
+    "/assets/main-jpNsQjvF.js"
+  ],
+  "firstBrowserProcess": [
+    657165
+  ],
+  "confirmations": [
+    {
+      "accepted": false,
+      "message": "Replace the saved project “Distinct maximum graph from other tab” (8 tracks, 8 reference takes) with your current committed local notes and reference audio? Unapplied fields and suggestions are excluded. This overwrites the saved descriptor and assets; download backups first."
+    },
+    {
+      "accepted": true,
+      "message": "Replace the saved project “Distinct maximum graph from other tab” (8 tracks, 8 reference takes) with your current committed local notes and reference audio? Unapplied fields and suggestions are excluded. This overwrites the saved descriptor and assets; download backups first."
+    }
+  ],
+  "secondBrowserProcess": [
+    657341
+  ],
+  "restart": {
+    "bytes": 9580700,
+    "sha256": "2154b31b052bf56e6df4ee093e0b6653f492f37285523a29777215afeb96da1f",
+    "byteExact": true
+  },
+  "totalWallMs": 10323.409725
+}

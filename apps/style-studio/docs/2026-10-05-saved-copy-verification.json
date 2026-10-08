@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "issue": 116,
+  "status": "Complete: local51 units/full56 native/original maximum/restart, and both first-attempt published-head CI runs passed.",
+  "baseline": "2026-10-05-saved-copy-baseline.json",
+  "rootCheck": {
+    "units": 51,
+    "failed": 0,
+    "durationMs": 5038.808307,
+    "lint": "passed",
+    "typeCheck": "passed",
+    "build": "passed",
+    "log": {
+      "path": "/tmp/style116-root-check-first.log",
+      "bytes": 6327,
+      "sha256": "2997779014b7925b43960a5f3b6bb07ad46e3b1a2ef28fb87df69e44f98a65d4"
+    }
+  },
+  "firstNative": {
+    "stats": {
+      "startTime": "2026-10-05T00:19:52.279Z",
+      "duration": 50507.006,
+      "expected": 25,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/style116-new-native-first.log",
+      "bytes": 9753,
+      "sha256": "761caa9f9150f4f3388264ceb3456d841034c0e43db26b79d47cc2396858d3c0"
+    },
+    "results": {
+      "path": "/tmp/style116-new-native-results-first.json",
+      "bytes": 39715,
+      "sha256": "604b824f2691554ec20e1f8878af43c9906cabe7167dd322a20d59f1eb30a4c4"
+    },
+    "preservedArtifacts": "/workspace/style116-new-native-first-artifacts",
+    "failure": "Startup-cancel test expected foreign-conflict wording; actual status reports restore cancelled, current work kept in memory and recovery controls. Exact raw/durable assertions retained for affected rerun."
+  },
+  "compatibility": [
+    "Original native storage tests now explicitly accept successful loads, unwrap LoadedProject, expectDB2, retain literalversion1 incompatiblefixture and alloriginalabort/queue/rollback values. Corrupt clear now proves refusal before reviewedrepair/clear.",
+    "Original startup-decode test retains in-memory newer work and additionally checks complete original durableprofile preserved. CorruptNewprofile now requires explicitReplace; originalexactemptyrecovery values retained."
+  ],
+  "maximum": {
+    "fixtureGeneration": "passed",
+    "log": {
+      "path": "/tmp/style116-maximum-fixtures.log",
+      "bytes": 244,
+      "sha256": "9f3694d43907f91ddc8e6d6966b36cec251baf4d7421e6ea90b48e69e14ec69f"
+    },
+    "fixtures": "/workspace/style116-maximum-fixtures",
+    "canonicalBytes": 5544230,
+    "rawBytes": 8388608,
+    "rawWhitespacePaddingBytes": 2844378,
+    "jpegs": 20,
+    "jpegBytesEach": 204800,
+    "runtime": {
+      "status": "passed",
+      "wallMs": 89118.041327,
+      "completeProfileBytes": 5544230,
+      "completeProfileSha256": "a9b367ffed808defadd57751286ab77d65f6e5ea3f4b0418bab50a57fd046428",
+      "browserProcesses": [
+        784324,
+        784820
+      ],
+      "details": "2026-10-05-saved-copy-maximum.json"
+    }
+  },
+  "fullNative": {
+    "stats": {
+      "startTime": "2026-10-05T00:33:24.089Z",
+      "duration": 65168.94299999999,
+      "expected": 56,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/style116-full-native-final.log",
+      "bytes": 9529,
+      "sha256": "96b44d043899d0d56390d1180c2b7ec951ed55e359467b9a28b057dee4558c0b"
+    },
+    "results": {
+      "path": "/tmp/style116-full-native-results-final.json",
+      "bytes": 63667,
+      "sha256": "9ace59df8319f656562490048385650a496aa1c0b7a3c6deda5ea6f5e1917dac"
+    },
+    "preservedArtifacts": "/workspace/style116-full-native-final-artifacts"
+  },
+  "ci": {
+    "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+    "push": 37248358130,
+    "pullRequest": 37248361845,
+    "both": "51 units,56 browser,lint/type/build; no failures or reruns",
+    "receipt": "2026-10-05-saved-copy-ci.json"
+  },
+  "startupRerun": {
+    "stats": {
+      "startTime": "2026-10-05T00:22:51.923Z",
+      "duration": 6858.507,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/style116-startup-native.log",
+      "bytes": 2002,
+      "sha256": "c6343807ca8c0d0f8bbb118b5adbd14337f534f409e7c12d04f1eeed190d5666"
+    },
+    "results": {
+      "path": "/tmp/style116-startup-native-results.json",
+      "bytes": 4744,
+      "sha256": "edeef5055c8b983d8c107e0c87b3f7ea2184bd014e23131baf0916d27d472606"
+    }
+  },
+  "fullNativeFirst": {
+    "stats": {
+      "startTime": "2026-10-05T00:31:03.962Z",
+      "duration": 69441.75,
+      "expected": 55,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/style116-full-native-first.log",
+      "bytes": 12384,
+      "sha256": "dfcc090dad4394f8386d81aa30bf92e3355e0cbb46673069f35d7cfb76a51931"
+    },
+    "results": {
+      "path": "/tmp/style116-full-native-results-first.json",
+      "bytes": 70365,
+      "sha256": "3210f508856bb5f11a92aca2b251693020b36cc5be615704737c9d70048d419e"
+    },
+    "preservedArtifacts": "/workspace/style116-full-native-first-artifacts",
+    "failure": "Compatibility corrupt-record recovery test expected the literal word protected, but actual status correctly explained invalid/corrupt saved data preserved and current work in memory. Replaced only wording checkpoint with exact memory guidance, Retry hidden and Replace enabled; added a second native read proving New profile preserves the exact corrupt row. Original reviewed repair and exact empty profile/reload assertions retained."
+  },
+  "corruptRerun": {
+    "stats": {
+      "startTime": "2026-10-05T00:32:37.590Z",
+      "duration": 4767.902,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/style116-corrupt-native.log",
+      "bytes": 1760,
+      "sha256": "30043f36ff99e61f83ceda8603b063e5f21ae1712117fecd821270a9f6fec70f"
+    },
+    "results": {
+      "path": "/tmp/style116-corrupt-native-results.json",
+      "bytes": 3371,
+      "sha256": "e011dec9175c982e1e80ba726be2cf4f306c6b07e15a491abc7d9a551cfef6f1"
+    }
+  },
+  "finalLint": {
+    "path": "/tmp/style116-final-lint.log",
+    "bytes": 247,
+    "sha256": "47762aa1a2d8240cd2e880a05ba19abba4d23c56acbd138da8766dad8fc5da14"
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "milestone": 123,
+  "component": "changed-file discovery kernel",
+  "date": "2026-10-05",
+  "status": "source frozen; scoped producer verification passed; broad/native/install gates owned by root",
+  "contract": "docs/superpowers/specs/2026-10-05-git-changed-files-design.md",
+  "source": [
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/git_history/changed_files.py",
+      "bytes": 13003,
+      "sha256": "c8efe77263f9bcd38e7fac7a64b35ef3dc05f72449ce08ad40e1f9ef6280cf59"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/git-history/tests/test_changed_files.py",
+      "bytes": 13214,
+      "sha256": "7faf7e3d814817bc66daa88eb4b19da64225a0d1e168f7b312a306bc4f037959"
+    }
+  ],
+  "unchanged": [
+    "git_history/reader.py",
+    "GitRunner implementation",
+    "all existing tests"
+  ],
+  "public_api": [
+    "ChangedEndpoint",
+    "ChangedPath",
+    "ChangedFileCatalog",
+    "list_changed_files",
+    "validate_changed_files",
+    "render_changed_files_json"
+  ],
+  "canonical_json": "json.dumps(asdict(validated_catalog), ensure_ascii=False, sort_keys=True, indent=2) + LF; incremental encoding enforces 8 MiB before final join",
+  "runs": [
+    {
+      "phase": "initial fixture setup",
+      "outcome": "unmatched parenthesis fixed before genuine stub RED; not a behavior failure"
+    },
+    {
+      "phase": "original feature RED",
+      "command": "python -m unittest tests.test_changed_files",
+      "tests": 11,
+      "errors_including_subtests": 19,
+      "duration_seconds": 0.165,
+      "cause": "deliberate NotImplementedError stubs",
+      "log": {
+        "path": "/tmp/git123-kernel-red.log",
+        "bytes": 21596,
+        "sha256": "bdf0a2f137591e122f23def62682bcb93fe1990b211a89648cc0d57e1b7af67a"
+      }
+    },
+    {
+      "phase": "first integration",
+      "tests": 11,
+      "passed": 11,
+      "duration_seconds": 0.497,
+      "log": {
+        "path": "/tmp/git123-kernel-first-green.log",
+        "bytes": 110,
+        "sha256": "fe5987485cb0de84390f69391347ab040f1aeaf73f6f52c095e4a3085d75ceb1"
+      }
+    },
+    {
+      "phase": "immutable graph boundary RED",
+      "tests": 15,
+      "failed_subtests": 2,
+      "duration_seconds": 0.591,
+      "cause": "frozen dataclass catalog admitted mutable dict row/endpoint children",
+      "log": {
+        "path": "/tmp/git123-kernel-boundary-red.log",
+        "bytes": 1838,
+        "sha256": "27d35948335d4c315e48048db7ab3c663378daa0d51f6862737c74cdd18fdcf6"
+      }
+    },
+    {
+      "phase": "final scoped producer run",
+      "tests": 15,
+      "passed": 15,
+      "duration_seconds": 0.586,
+      "log": {
+        "path": "/tmp/git123-kernel-final.log",
+        "bytes": 114,
+        "sha256": "696157c6ed9188be263ea68a639cf7149d7e03b566d9a375724ef373b5ee5891"
+      }
+    }
+  ],
+  "static_checks": {
+    "ruff": "/tmp/duet-service-checks/bin/ruff check git_history/changed_files.py tests/test_changed_files.py — passed",
+    "compile": "python -m py_compile git_history/changed_files.py tests/test_changed_files.py — passed",
+    "fixture_compatibility_correction": "Ruff target py311 identified f-string expression backslashes supported only by runtime py312; moved original literal blob computations outside expressions, with expected bytes unchanged."
+  },
+  "original_evidence": [
+    "Temporary real Git raw diff matched literal colon metadata and NUL-path framing before the first stub failure; no proposed command deviation.",
+    "Independent original blob hashes verify add/delete/modify, empty present file, executable-only mode change, content plus mode change, rename represented D+A, symlink and gitlink metadata.",
+    "Literal tab/newline/Unicode/glob-looking and unaddressable drive/backslash paths are retained; non-UTF8 paths counted without replacement decoding.",
+    "Large and binary source candidates are represented from tree metadata without reading their contents; exact directory prefix excludes sibling prefixes.",
+    "Dirty index/worktree byte preservation and hostile external-diff/rename/submodule settings verified in disposable repositories.",
+    "Native SHA256 Git repository and file-to-directory leaf expansion verified with independently computed SHA256 blob ID.",
+    "Exact 10000 omitted raw paths accepted and +1 rejected before filtering; total exposed+omitted count also bounded.",
+    "Malformed raw framing/status/modes/absence IDs/duplicate/out-of-prefix paths rejected; cancellation and partial clone refused.",
+    "UTF8 byte caps, literal escaped output, strict schema/primitive/order checks and 8 MiB canonical output refusal covered."
+  ],
+  "limits": {
+    "raw_records": 10000,
+    "path_bytes": 4096,
+    "ref_bytes": 1024,
+    "raw_combined_process_bytes": 2097152,
+    "command_seconds": 10,
+    "aggregate_seconds": 45,
+    "aggregate_process_bytes": 33554432,
+    "catalog_json_bytes": 8388608
+  },
+  "scope_limits": [
+    "No native browser, shared service, package build/install or complete Python suite run by this producer.",
+    "Independent oracle/integration results are reported by their respective owners and are not added to the 15 producer cases.",
+    "Metadata-only discovery does not establish text validity, blob size, source readability, semantic rename identity or externally supplied catalog provenance.",
+    "8 MiB output refusal uses an admitted synthetic metadata graph; it is not a claim that all such graphs fit the tighter real 2 MiB raw subprocess output cap.",
+    "No monorepo Git index/branch mutations; only test-owned disposable repositories were committed."
+  ]
+}

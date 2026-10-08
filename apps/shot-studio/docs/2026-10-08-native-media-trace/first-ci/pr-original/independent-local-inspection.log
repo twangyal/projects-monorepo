@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "output": "/tmp/shot-first-ci-pr-original/maximum-155",
+  "inspectionWallMs": 4886.250126,
+  "videoFrames": 1800,
+  "audioFrames": 2880648
+}

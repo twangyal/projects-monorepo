@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "milestone": 124,
+  "owner": "audio admission/planning/session and additive encoder integration",
+  "state": "producer source frozen; native acceptance delegated to root and independent owners",
+  "sourceFiles": [
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-audio.js",
+      "sha256": "7b89ee0d78c40ffc0531f3e245dd3de851b8f85d869c00834e9abf17f75537c6"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/sequence-audio-session.js",
+      "sha256": "61533f23ae5c413b3e96aed5f5e5d81152a07fd202df8e685f1edf0b496746de"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/src/export.js",
+      "sha256": "93351f6dd837a1b49a2261d2b37d4f3f966f14a8e8f6682898eb21da482fcc5c"
+    }
+  ],
+  "ownedTests": [
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/tests/sequence-audio.test.js",
+      "sha256": "a5778adc84370e1ed6d82b0b0ebf7df13e9f1db275580ac590e3bccf350f2e72"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/tests/sequence-audio-session.test.js",
+      "sha256": "0cdb60f2269277ae75696a37287d3a291fb1873099e87e8698044daff0ffde24"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/shot-studio/tests/export-audio.test.js",
+      "sha256": "edcc26eb503da405170e85c5cd90f0271e142a2dfb9faebfce2f182e57ffc91b"
+    }
+  ],
+  "firstRuns": [
+    {
+      "log": "/tmp/shot124-audio-first.log",
+      "sha256": "f20eaf6b80a9a54aa517d5f09b95fdabaea034e285d42cf6e9cf75104a1d20bc",
+      "tests": 6,
+      "passed": 0,
+      "failed": 6,
+      "milliseconds": 111.314184,
+      "meaning": "callable admission/planning stubs; six successful-path failures"
+    },
+    {
+      "log": "/tmp/shot124-session-first.log",
+      "sha256": "14eaf830b94f409c7a4d296e6fff524b5b14b7970da356e5635f50f93fec7340",
+      "tests": 5,
+      "passed": 0,
+      "failed": 5,
+      "milliseconds": 86.787066,
+      "meaning": "callable session stub; five successful-path failures"
+    },
+    {
+      "log": "/tmp/shot124-export-first.log",
+      "sha256": "54ec452d412a619fa44aa9f8e036c1914859d4486fa38f2914cc9a0c4ff739c1",
+      "tests": 4,
+      "passed": 0,
+      "failed": 4,
+      "milliseconds": 92.834757,
+      "meaning": "existing silent exporter has no audioSession/Opus path; four feature-absence failures"
+    }
+  ],
+  "finalFocused": {
+    "command": "node --test tests/sequence-audio.test.js tests/sequence-audio-session.test.js tests/export-audio.test.js tests/export-capture.test.js tests/export-bounds.test.js tests/lifecycle.test.js",
+    "log": "/tmp/shot124-audio-focused-final.log",
+    "sha256": "a199cdc5fbf9ca95df64afa3d4d7a86fb039fbcc2a99bd3c5957e24cd771d3dd",
+    "tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "milliseconds": 225.426029,
+    "newProducerTests": 16,
+    "existingSilentLifecycleCaptureBoundsTests": 22
+  },
+  "syntax": {
+    "commands": [
+      "node --check src/sequence-audio.js",
+      "node --check src/sequence-audio-session.js",
+      "node --check src/export.js"
+    ],
+    "result": "passed",
+    "lint": "Shot package has no ESLint/typecheck script; syntax checked without installing tooling."
+  },
+  "contract": {
+    "asset": "frozen private-branded descriptor and original native immutable Blob; no publicly mutable PCM",
+    "admission": "RIFF/WAVE PCM16, 44.1/48 kHz, mono/stereo, 1\u201360 seconds, exact EOF/padding, unique fmt/data and at most64 chunks, fmt16 or18/cbSize0, total12 MiB",
+    "plan": "integer source In/exclusiveOut frames, span at least ceil(.1*rate), independent start0..60/gain0..1, explicit intersection with sequence duration; no extension/loop/resampling of retained bytes",
+    "session": "fresh AudioContext, native PCM buffer at original rate, /32768 conversion preserving channels, silent preparation, synchronous one-shot start from absolute ceil(audioClock*rate) origin, absolute sequence time, separate speaker/capture routing",
+    "terminal": "stop/disconnect owns graph; close Promise owns native context drain; canceled late resume cannot start; closed/state-failed sessions cannot substitute performance clock",
+    "export": "silent defaults preserve prior MIME/performance clock; audio adds vp9+opus/vp8+opus only, one owned canvas and audio destination stream, same capture cadence/32 MiB combined chunks, session close awaited before settlement"
+  },
+  "fixtureCorrection": "Before actual implementation run, one malformed-header mutation accidentally rewrote existing R byte with R; changed it to explicit RIFF\u2192RIFX. Initial stub failures preceded that branch. No product bounds or numerical expectations widened.",
+  "limits": [
+    "Lifecycle/encoder tests use controlled AudioContext/MediaRecorder/RAF seams; they are not native mux evidence.",
+    "Actual resampling, stereo Opus behavior, A/V<=100ms, pixel projections and native60s export remain separate independent/root gates.",
+    "Exact12 MiB parser fixture includes legal ancillary padding; maximum real stereo48k60s sample payload is11,520,000 bytes plus44-byte canonical header.",
+    "No physical latency, sample-exact encoder timestamps, requested30fps guarantee or codec losslessness claim.",
+    "No browser, build, live-service, monorepo Git or shared dependency/config changes by this owner."
+  ]
+}

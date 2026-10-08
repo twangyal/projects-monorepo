@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "verifiedOn": "2026-10-03",
+  "platform": "Linux",
+  "python": "3.12.14",
+  "node": "24.19.0",
+  "backendTests": 43,
+  "typescriptTests": 22,
+  "productionBrowserTests": 12,
+  "focusedStorageRetryTests": 1,
+  "checks": [
+    "Ruff 0.14.3",
+    "compileall",
+    "ESLint",
+    "TypeScript",
+    "Vite 7.3.6 production build"
+  ],
+  "realFlows": [
+    "Independent proposer/opponent mutual agreement and settlement",
+    "Independent third-context mutually nominated arbiter decision",
+    "Actual CLI process restart with persisted terminal record and audit",
+    "Concurrent invitation claims and terminal commands with real SQLite connections",
+    "Private recovery links, failed storage retry, successful retry and reload",
+    "Actual downloaded token-free JSON record",
+    "Historical deadlines and backwards-clock evidence flags",
+    "Desktop and 390px mobile production UI inspection"
+  ],
+  "scope": "Local loopback service with user-supplied names/evidence. No identity verification, internet deployment, automatic proof evaluation, money or external services.",
+  "reports": "Issue #30 records durable commits and remote CI; this file contains no capabilities or private user records.",
+  "chromium": "151.0.7922.173 (Debian GNU/Linux 13)"
+}

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "scope": "Motion110 immutable snapshot store producer",
+  "sourceFrozen": true,
+  "node": "v24.19.0",
+  "platform": "linux",
+  "sourceSha256": {
+    "server/snapshot-store.ts": "77332f3b10eb3a8042f6c430c9860a6126fedaeabccfeb440301edbdea6b6044",
+    "server/store-files.ts": "e336312401a9bd3fbfc8d05a17dc4ddaf8944fc01a9c404c5e67e6185013d523",
+    "tests/private-store.test.ts": "d1111eacdc4bc169478de9f822236ca3118fecdf56124bcb140e022f21a19165"
+  },
+  "checks": [
+    {
+      "command": "node --experimental-strip-types --test tests/private-store.test.ts",
+      "log": "/tmp/motion110-store-final.log",
+      "passed": 9,
+      "failed": 0,
+      "durationMs": 469.228006
+    },
+    {
+      "command": "npx eslint server/snapshot-store.ts server/store-files.ts tests/private-store.test.ts",
+      "exitCode": 0
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit --target ES2022 --lib ES2022,DOM,DOM.Iterable --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --strict --noUnusedLocals --noUnusedParameters --noFallthroughCasesInSwitch --skipLibCheck --types node server/snapshot-store.ts tests/private-store.test.ts",
+      "exitCode": 0
+    }
+  ],
+  "redEvidence": {
+    "deliberateStub": {
+      "failed": 5
+    },
+    "firstActual": {
+      "passed": 2,
+      "failed": 3,
+      "cause": "Test helper used valid createProject field order rather than admitted canonical validator order; helper corrected using existing validateProject."
+    },
+    "capabilityBypass": {
+      "passed": 5,
+      "failed": 1,
+      "cause": "Public revoke(undefined) shared operator absence sentinel; explicit operator flag repairs authority separation."
+    }
+  },
+  "logSha256": {
+    "/tmp/motion110-store-stub-red.log": "f6b187b63f59a4007e2ae7364fc57070e756166e2057dcb9a90dba7f039a0154",
+    "/tmp/motion110-store-first-actual.log": "043a62ad0802b0161d13561785d34e2aae17d0afc3576ac7a97ae17600757716",
+    "/tmp/motion110-store-authority-red.log": "154c8fdf4a48f16412815d3d3e3789e513b08c819be1de94ffab6eb9a37e2147",
+    "/tmp/motion110-store-final.log": "699a8c39d36c60050661b5d1025fe71db720f894260b0446f0beb7210a2ab1e2",
+    "/tmp/motion110-flock-proof.json": "ee36b12c8a5582783dcff68fde25a9567b27953c354753ba436939d514b97843"
+  },
+  "limitations": [
+    "Filesystem sync/cancellation/shutdown stages use explicitly controlled FileHandle sync boundaries, real files and locks.",
+    "Independent protocol/browser/maximum gates are owned separately and not claimed here.",
+    "Same-UID hostile mutation is detected by inode checks, not comprehensively sandboxed.",
+    "Native filesystem operations cannot be forcibly cancelled; close refusal retains ownership while writes remain pending."
+  ]
+}

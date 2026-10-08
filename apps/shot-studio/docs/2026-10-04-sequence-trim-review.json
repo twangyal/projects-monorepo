@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "issue": 114,
+  "status": "clear",
+  "reviewType": "Independent read-only implementation review",
+  "reviewedAtUtc": "2026-10-04T23:07:29.981789+00:00",
+  "files": [
+    {
+      "path": "docs/superpowers/specs/2026-10-04-shot-sequence-trimming-design.md",
+      "bytes": 14598,
+      "sha256": "566d505479af8d5c2be4010660c2f06b21fcfefd5b45e9c33ce67d63fbf19f8d"
+    },
+    {
+      "path": "apps/shot-studio/src/sequence.js",
+      "bytes": 12900,
+      "sha256": "e9fc3beb5d825b8b2ccb70153d047d25c24e9ba3ae88abc4ab3897cf08fe84f7"
+    },
+    {
+      "path": "apps/shot-studio/src/sequence-ui.js",
+      "bytes": 24751,
+      "sha256": "c9a1d5768fa238cb0710c410855b35b12b209ea5657f7d47bef919366a9f2093"
+    },
+    {
+      "path": "apps/shot-studio/index.html",
+      "bytes": 15054,
+      "sha256": "336e8fb9ba08756c0536c7d31e08540b8447161da22877363a90553a5c2da06c"
+    },
+    {
+      "path": "apps/shot-studio/style.css",
+      "bytes": 9421,
+      "sha256": "b06be85eb93899a28fa65df28ad07069e10a98bbedf366bbbd74511b547725d0"
+    },
+    {
+      "path": "apps/shot-studio/src/sequence-store.js",
+      "bytes": 3978,
+      "sha256": "6943e57738f32ee7ef62afc4b59d7d6abbc415179f9bfbf65667d2942f9f2f25"
+    },
+    {
+      "path": "apps/shot-studio/src/renderer.js",
+      "bytes": 4281,
+      "sha256": "1a09441b84451d372965bc2710620c3f4a1229962c5e46f770fe279cca880df9"
+    },
+    {
+      "path": "apps/shot-studio/scripts/smoke_sequence_trimming.mjs",
+      "bytes": 18851,
+      "sha256": "b46cb990738f1d345e1dfed807841bd55384a7af9c0f03f7359306e61338c2ff"
+    }
+  ],
+  "findings": [],
+  "scope": [
+    {
+      "area": "Strict schema3 and genuine legacy migrations",
+      "source": "src/sequence.js",
+      "conclusion": "Exact rich legacy clips omit range keys and become full source-shot ranges. Name-form schema1 requires exact source/clip forms and retains deterministic legacy IDs/display-label fallback. Mixed/unsupported fields and versions refuse. Canonical output checks 320 KiB after added ranges; identifiable original name-form raw input retains its 300 KiB admission cap. Browser draft load continues through importSequence without writing migrated bytes."
+    },
+    {
+      "area": "Represented spans and quota",
+      "source": "src/sequence.js",
+      "conclusion": "Finite In/Out and original-shot bounds precede admission. The represented subtraction must be at least 0.1, with no epsilon or quantization. Range negative zero becomes positive zero; other authored numbers survive. Sorted compensated span totals determine the 60-second quota independently of ordered destination-prefix construction."
+    },
+    {
+      "area": "Prepared original-clock endpoints",
+      "source": "src/sequence.js and src/renderer.js",
+      "conclusion": "Prepared documents/clip metadata are detached and frozen. clipFrame explicitly uses exact In at local 0 and exact Out at local duration. Original sourceStart remains the full original-shot prefix; sourceGlobal=sourceStart+shotLocal and cameraAt receives the original shot/local time. UI forwards full sourceFilm,sourceGlobal,camera to StageRenderer, whose performerAt uses that original film/global clock. Internal cuts choose the next excerpt; canonical final duration retains the explicit final Out override."
+    },
+    {
+      "area": "Raw Apply/history and failed actions",
+      "source": "src/sequence-ui.js and src/sequence-store.js",
+      "conclusion": "Stable native number inputs use step any. Input immediately retires the operation epoch/rehearsal and marks exact raw fields. Blank/nonfinite and below-minimum ranges report refusal without publication or input-node reconstruction. Both fields form one complete validated candidate and one history commit. History canonical equality preserves redo for identical states; invalid candidates precede cursor/branch changes. Reset/replacing selection/history/import paths use existing correction/discard guards; unrelated field drafts remain marked."
+    },
+    {
+      "area": "Async import/export and storage protection",
+      "source": "src/sequence-ui.js",
+      "conclusion": "File completion rechecks operation identity, aborted state, suspension and external scene ownership before parsing/publication. Changed-back raw input still advances the operation epoch. Export captures a separate prepared snapshot, disables range edits and draws only captured source clocks. Cancel/pagehide/context-loss retire export ownership and refuse late completion. LocalStorage failures keep committed memory work and old protected bytes; deliberate replacement preserves existing compare-before-write behavior."
+    },
+    {
+      "area": "Static product contract",
+      "source": "index.html and style.css",
+      "conclusion": "Frozen control IDs/labels are present, number step any is retained, and range info displays exact computed committed spans/original source start-end. Styles wrap label/button groups and permit narrow fields. This source inspection is not a native mobile-layout claim."
+    }
+  ],
+  "maximumRunnerMathReview": {
+    "source": "scripts/smoke_sequence_trimming.mjs",
+    "conclusion": "No discrepancy in the independently authored source-clock expectations. For each fixture, the chosen source shot is the only four-second shot and every preceding shot is three seconds, so its prefix is exactly shotIndex*3. The final two-second balancing shot keeps the untouched full film at 60 seconds. Each output excerpt is source-local 0.5..3.5 and spans 3 seconds; twenty excerpts total 60. Original camera displacement 0.8 over 4 seconds gives slope 0.2; root-position x=-1.5+sourceGlobal/40 and visibility use the original cue clock. Explicit endpoint samples recompute selected Out and use the original selected camera rather than the next destination cut. Decoded samples use actual native elapsed PTS with declared grid/codec tolerances, not nominal 30 fps identity.",
+    "executionPerformedByReviewer": false
+  },
+  "verificationPerformed": {
+    "sourceReads": true,
+    "fileHashes": true,
+    "tests": false,
+    "builds": false,
+    "browsers": false,
+    "services": false,
+    "gitOperations": false,
+    "productionEdits": false
+  },
+  "limitations": [
+    "No independent numerical fixture or runtime was executed during this review; producer/oracle/native and maximum evidence are separately owned.",
+    "Existing localStorage compare-before-write is optimistic and not an atomic multi-tab CAS; this milestone does not change that contract.",
+    "The 0.1-second minimum is represented duration, not an exact per-clip frame-count guarantee. Real-time silent WebM and codec/frame-grid assertions require separate actual native acceptance."
+  ]
+}

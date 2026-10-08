@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-04",
+  "issue": "https://github.com/twangyal/projects-monorepo/issues/110",
+  "method": "Independent read-only source review against the frozen private-links design; no reviewer execution of Motion tests, builds, browsers, servers or runtime gates.",
+  "sourceSha256": {
+    "src/private-api.ts": "8b3860ba6c9e3884fd93a7ebcbf8cd641cb3881a9f6a2440e54bf28f65bb9ed8",
+    "src/private-links.ts": "cb71c0f7a91aa57170d3c62f872fed0de46562b30d7e68cba14d5652b61d395a",
+    "src/snapshot-view.ts": "ceaf3fc12d5cbb4ff2a79880e3aa76d8d62bd1b57bf0af5ef08ef1fe940f4e56",
+    "src/main.ts": "a4354dca46d0965e629bdcf4f5bb498a59a89cf5142c779023aa43470283167e",
+    "server/transport.ts": "3dcee64047eb0c1fd65e8385e81c94b5eabfd471e987aa6fac5409e0f36d4c10",
+    "server/connections.ts": "40163a4e2a66c4351c147aaa024bac571688e22b67e26491b08dfbb711b17697",
+    "server/http.ts": "f6f757393002b78e418ad33d3a93ce8803377d557cb20b65dc0edaa6cf288b2d",
+    "server/main.ts": "066890628e2ba6ad400d2acdd3b6c0bd0bc9fa95fe51890e86ca0ff5682bd4b9",
+    "server/snapshot-store.ts": "77332f3b10eb3a8042f6c430c9860a6126fedaeabccfeb440301edbdea6b6044",
+    "server/store-files.ts": "e336312401a9bd3fbfc8d05a17dc4ddaf8944fc01a9c404c5e67e6185013d523"
+  },
+  "scope": [
+    "Publisher committed capture; raw drafts, gestures, tween ownership and changed-back intent invalidation; late cancellation and private setup key retirement.",
+    "Viewer fragment scrubbing, exact receipt hash/byte checks, late decoded-image cleanup, captured PNG/GIF artifacts and explicit fresh local-copy ProjectLibrary receipt/CAS.",
+    "Canonical configured authority, bounded nofollow configuration files, raw socket slots before TLS, trickle/phase/aggregate deadlines, one HTTP request and private-safe errors.",
+    "Bind-before-store admission, authenticated opened-file receipts, owned filesystem identity checks, index visibility commit, durable revocation, protected postcommit failures and shutdown ownership before lifetime-lock release."
+  ],
+  "findings": [
+    {
+      "status": "resolved",
+      "finding": "Browser error handling used foreign error-code names rather than MotionError wire codes, obscuring capacity and unavailable-link guidance.",
+      "repair": "Browser-local fixed private-safe messages now cover all ten actual MotionError codes; the reviewer reread the repaired source.",
+      "producerReportedEvidence": {
+        "owner": "recorder",
+        "red": {
+          "passed": 7,
+          "total": 11
+        },
+        "green": {
+          "passed": 11,
+          "total": 11
+        },
+        "staticChecks": "Scoped lint and full TypeScript clean"
+      },
+      "executedByReviewer": false
+    }
+  ],
+  "remainingActionableFindings": [],
+  "limitations": [
+    "Read-only review is not a replacement for native or protocol verification.",
+    "No physical-device, worst-case RAM, CI or deployment verification claimed.",
+    "Same-UID hostile mutation is not sandboxed; review applies to the documented pinned-identity checks and detected-replacement refusal."
+  ],
+  "parentReportedIntegrationEvidence": {
+    "executedByReviewer": false,
+    "unitTestsPassed": 200,
+    "unitWallSeconds": 27.797,
+    "staticChecks": "Lint and TypeScript green",
+    "buildMilliseconds": 493,
+    "strictTlsCliLifetimesPassed": 3,
+    "nativeAndMaximumAtReceipt": "Independent native owner lease; results not claimed here."
+  }
+}

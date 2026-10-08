@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "f10faec1cf81439801efc12a2a98ab72efae7e6c",
+  "runId": 37719353428,
+  "jobId": 113123290662,
+  "artifactId": 11524953828,
+  "zipBytes": 1031765,
+  "zipSha256": "7b6063abe5f74e20c9b1afac8d9cee4ab2c463be6941cdc49861c609a5e023f9",
+  "entries": [
+    {
+      "artifactEntry": "maximum/verification.json",
+      "retainedPath": "maximum-verification.json",
+      "bytes": 14353,
+      "sha256": "92295df7cf1d21bd6ef3a4b01d31af3f2a8927b31c32af7c906339fca82f8601"
+    },
+    {
+      "artifactEntry": "maximum-browser.log",
+      "retainedPath": "maximum-browser.log",
+      "bytes": 7546,
+      "sha256": "3a1e2142b2a67bcad50f04372071015ceac7b9d45bcee5638ec5568225c80be6"
+    }
+  ]
+}

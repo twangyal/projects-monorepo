@@ -1,0 +1,960 @@
+{
+  "issue": 114,
+  "status": "completed",
+  "design": "docs/superpowers/specs/2026-10-04-shot-sequence-trimming-design.md",
+  "independentMaximumFixture": {
+    "authoredBeforeNewKernelInspection": true,
+    "createdBeforeFirstNativeExecution": true,
+    "script": {
+      "path": "apps/shot-studio/scripts/smoke_sequence_trimming.mjs",
+      "bytes": 18851,
+      "sha256": "b46cb990738f1d345e1dfed807841bd55384a7af9c0f03f7359306e61338c2ff"
+    },
+    "original": {
+      "path": "/workspace/shot114-maximum-fixtures/maximum-sequence.json",
+      "bytes": 36796,
+      "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9"
+    },
+    "rawLimit": {
+      "path": "/workspace/shot114-maximum-fixtures/exact-320KiB-file.json",
+      "bytes": 327680,
+      "sha256": "8ee5b17b3381c024bd105e5d4b29f89600f40f6f87e4b54e50a0a86482d950f9"
+    },
+    "overLimit": {
+      "path": "/workspace/shot114-maximum-fixtures/oversize-file.json",
+      "bytes": 327681,
+      "sha256": "2b1e6855515bb27011c800613d4711d28d5b1e91c02aa34ead70be28f13e7183"
+    },
+    "frozenExpectations": {
+      "sources": 4,
+      "shotsPerSource": 20,
+      "performersPerSource": 2,
+      "cuesPerPerformer": 32,
+      "totalRetainedCues": 256,
+      "clips": 20,
+      "seconds": 60,
+      "sourceBytes": [
+        7763,
+        7763,
+        7763,
+        7763
+      ],
+      "canonicalSequenceBytes": 36796,
+      "rawFileCeiling": 327680,
+      "sourceIndices": [
+        5,
+        13,
+        9,
+        17
+      ],
+      "originalSourcePrefixes": [
+        15,
+        39,
+        27,
+        51
+      ],
+      "sourceShotDurations": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "retainedRanges": [
+        0.5,
+        3.5
+      ],
+      "sampleTargets": [
+        0.65,
+        2.35,
+        3.65,
+        5.35,
+        6.65,
+        8.35,
+        9.65,
+        11.35,
+        12.65,
+        14.35,
+        15.65,
+        17.35,
+        18.65,
+        20.35,
+        21.65,
+        23.35,
+        24.65,
+        26.35,
+        27.65,
+        29.35,
+        30.65,
+        32.35,
+        33.65,
+        35.35,
+        36.65,
+        38.35,
+        39.65,
+        41.35,
+        42.65,
+        44.35,
+        45.65,
+        47.35,
+        48.65,
+        50.35,
+        51.65,
+        53.35,
+        54.65,
+        56.35,
+        57.65,
+        59.35
+      ],
+      "tolerances": {
+        "ptsSeconds": 0.2,
+        "codecChannelError": 24,
+        "visibleMatches": 23,
+        "patchSamples": 27,
+        "invisibleChannelError": 40,
+        "invisibleMatches": 1,
+        "minimumVideoFrames": 600,
+        "minVideoSpan": 59,
+        "maxVideoSpan": 62
+      },
+      "pinhole": {
+        "focalPixels": 579.0168685375809,
+        "torsoFrontDepth": 7.84,
+        "torsoWorldY": 1.15,
+        "frontFaceLightFactor": 0.630398269642447
+      }
+    },
+    "topology": {
+      "sources": 4,
+      "shotsPerSource": 20,
+      "cuesPerPerformer": 32,
+      "totalCues": 256,
+      "clips": 20,
+      "retainedRange": [
+        0.5,
+        3.5
+      ],
+      "originalSelectedShotSeconds": 4,
+      "eachTrimmedClipSeconds": 3,
+      "totalOutputSeconds": 60
+    },
+    "limits": [
+      "Maximum retained topology and output duration; canonical JSON is 36,796 bytes, not a claim of maximum serialized document bytes.",
+      "The 320 KiB raw-file boundary uses declared trailing JSON whitespace.",
+      "Native capture and pixel expectations are pending; no runtime or physical headset claim."
+    ],
+    "fullFrozenExpectations": {
+      "path": "/workspace/shot114-maximum-fixtures/verification.json",
+      "bytes": 201659,
+      "sha256": "5b7995007988c481f99e7afd579c16de99c3045ee0f249c15e2692ac293e6573"
+    }
+  },
+  "localUnits": {
+    "first": {
+      "passed": 253,
+      "failed": 2,
+      "durationMs": 917.170071,
+      "log": {
+        "path": "/tmp/shot114-root-unit-first.log",
+        "bytes": 28822,
+        "sha256": "bcb3154fed4fa0c6d44574655a2047ce02cb9ac12a1bd594ff3f7a7f40443f8f"
+      },
+      "cause": "Independent source-byte oracle literal used noncanonical key insertion order for a loop actor; deep values matched existing canonical film. Fixture order repaired without changing values or hash assertions."
+    },
+    "repaired": {
+      "passed": 255,
+      "failed": 0,
+      "durationMs": 923.986565,
+      "log": {
+        "path": "/tmp/shot114-root-unit-repaired.log",
+        "bytes": 26557,
+        "sha256": "28df58bc8787d6185ebbfe41a84d35876b81a49b76aa50a1eeb677c91bd6425e"
+      }
+    },
+    "syntax": {
+      "result": "passed",
+      "log": {
+        "path": "/tmp/shot114-root-syntax-first.log",
+        "bytes": 769,
+        "sha256": "e54f688f3c55ab014bf89272d2005cc5092ed9ce218a1ca9b46759635e953d3e"
+      },
+      "wrongDirectoryInvocation": {
+        "path": "/tmp/shot114-root-syntax-wrong-directory.log",
+        "bytes": 543,
+        "sha256": "3f60aa908f7ae2b9f946bf01096886895e480d4e5fc65e2a22c796ee86fc279c"
+      }
+    },
+    "compatibility": {
+      "passed": 86,
+      "durationMs": 210.170016,
+      "log": {
+        "path": "/tmp/shot114-existing-compat-first.log",
+        "bytes": 9281,
+        "sha256": "c103a281b213c91753b27d6bad0cc3465afac77fd4623f8b530b012c8ff32a0c"
+      },
+      "scope": "Existing canonical schema expectations/full-shot fields only; legacy forms, exact numeric/pixel/byte/recovery assertions retained."
+    },
+    "independentOracle": {
+      "passed": 11,
+      "durationMs": 99.898,
+      "receipt": "2026-10-04-sequence-trim-oracle.json"
+    }
+  },
+  "native": {
+    "first": {
+      "stats": {
+        "startTime": "2026-10-04T23:08:19.174Z",
+        "duration": 54444.975999999995,
+        "expected": 14,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/shot114-new-native-first.log",
+        "bytes": 32605,
+        "sha256": "879e43fcd8c3671ed49188a8d0fb71888b58c57e5de728a4f71f0ceeef08e471"
+      },
+      "results": {
+        "path": "/tmp/shot114-new-native-results-first.json",
+        "bytes": 25841,
+        "sha256": "2e5f38c96ab5903dfd0396b0aad38be45520a5956a66fcff8052590e7f4f457d"
+      },
+      "artifacts": "/workspace/shot114-native-first-artifacts",
+      "failure": "The test checked the original invalid-range notice after a native backup download deliberately replaced it. The exact numeric assertion was moved before download; product and other assertions unchanged."
+    },
+    "affected": {
+      "stats": {
+        "startTime": "2026-10-04T23:10:34.587Z",
+        "duration": 5755.474999999999,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/shot114-affected-native.log",
+        "bytes": 2662,
+        "sha256": "0127c3f0187f4248183800fee7958a2a4d4f93fcd69a09b8936d3d74a6757031"
+      },
+      "results": {
+        "path": "/tmp/shot114-affected-native-results.json",
+        "bytes": 3320,
+        "sha256": "7cbb85a3bcf394dab597b64b92dcdbb5d24db34c5b83427b933e331c3d128b22"
+      }
+    },
+    "distinctPassed": 15,
+    "fullRegression": "pending",
+    "receipt": "2026-10-04-sequence-trim-native.json"
+  },
+  "maximumAttempts": [
+    {
+      "attempt": "first",
+      "result": "failed unchanged >600-frame threshold",
+      "decodedFrames": 119,
+      "videoSpanSeconds": 59.566,
+      "receipt": {
+        "path": "/workspace/shot114-maximum-native-first/verification.json",
+        "bytes": 207509,
+        "sha256": "f53e3ca5254eb4f22520e9d31bbdb75bd6e7334757d9068b19de0f3b8a9457a0"
+      },
+      "video": {
+        "path": "/workspace/shot114-maximum-native-first/maximum-sequence-60s.webm",
+        "bytes": 639683,
+        "sha256": "ca24fc16c701244c94a0d9cc3afcfbdb8e22c7c96471d702c56cc2a5e7d81948"
+      },
+      "captureStart": null,
+      "recordAndDownloadWallMs": 61084.82727499999,
+      "earlierChecks": [
+        "Actual whitespace-padded320KiB File imports exact original4-source/20-clip document; +1byte and21clips refuse without changing backup. One Undo/Redo restores exact prior/current documents; ordinary scene title unchanged.",
+        "Resetting one original3-second excerpt to its whole4-second shot refuses61-second output atomically; cancellation after actual renderer progress emits no WebM."
+      ],
+      "originalInputUnchanged": true
+    },
+    {
+      "attempt": "second",
+      "result": "failed unchanged >600-frame threshold",
+      "decodedFrames": 119,
+      "videoSpanSeconds": 59.598,
+      "receipt": {
+        "path": "/workspace/shot114-maximum-native-second/verification.json",
+        "bytes": 207893,
+        "sha256": "ae44de49decd7e97e3d47cfbb790b31a628b28d44f5549ea3d832bc8f4a20fbd"
+      },
+      "video": {
+        "path": "/workspace/shot114-maximum-native-second/maximum-sequence-60s.webm",
+        "bytes": 640578,
+        "sha256": "d6d6f6cef63c264185d54aa07738024ed89f9781f49422912e87ab99b2adccd9"
+      },
+      "captureStart": {
+        "canvasRect": {
+          "x": 83.59375,
+          "y": -140.96875,
+          "width": 716.546875,
+          "height": 403.046875,
+          "top": -140.96875,
+          "right": 800.140625,
+          "bottom": 262.078125,
+          "left": 83.59375
+        },
+        "viewport": {
+          "width": 1440,
+          "height": 1000
+        },
+        "hidden": false,
+        "visibilityState": "visible"
+      },
+      "recordAndDownloadWallMs": 61130.228029000005,
+      "earlierChecks": [
+        "Actual whitespace-padded320KiB File imports exact original4-source/20-clip document; +1byte and21clips refuse without changing backup. One Undo/Redo restores exact prior/current documents; ordinary scene title unchanged.",
+        "Resetting one original3-second excerpt to its whole4-second shot refuses61-second output atomically; cancellation after actual renderer progress emits no WebM."
+      ],
+      "originalInputUnchanged": true
+    }
+  ],
+  "maximumDiagnosis": {
+    "status": "Short controls did not reproduce the sustained maximum failure. Isolated explicit native frame-request candidate passes original maximum; production integration pending.",
+    "probes": [
+      {
+        "kind": "viewport",
+        "receipt": {
+          "path": "/workspace/shot114-viewport-diagnostic/receipt.json",
+          "bytes": 1667,
+          "sha256": "1b7819e455caae8daaf329181af513ef5600c06964a1fb043f2c290dba5245c8"
+        },
+        "measurements": [
+          {
+            "reveal": false,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "frames": 172,
+            "span": 5.959,
+            "first": [
+              0,
+              0.064,
+              0.19,
+              0.256,
+              0.277,
+              0.306,
+              0.328,
+              0.361,
+              0.414,
+              0.457
+            ]
+          },
+          {
+            "reveal": true,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": 0.03125,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": 0.03125,
+                "right": 800.140625,
+                "bottom": 403.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "frames": 159,
+            "span": 5.901,
+            "first": [
+              0,
+              0.065,
+              0.179,
+              0.235,
+              0.27,
+              0.357,
+              0.562,
+              0.58,
+              0.607,
+              0.636
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "cancel",
+        "receipt": {
+          "path": "/workspace/shot114-cancel-diagnostic/receipt.json",
+          "bytes": 1670,
+          "sha256": "15b18939beb818b9c4cb2652a937f0e81523ec8f8f84f6a884d02542c7908622"
+        },
+        "measurements": [
+          {
+            "reveal": false,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "frames": 175,
+            "span": 5.928,
+            "first": [
+              0,
+              0.067,
+              0.098,
+              0.144,
+              0.164,
+              0.197,
+              0.229,
+              0.269,
+              0.313,
+              0.343
+            ]
+          },
+          {
+            "reveal": true,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": 0.03125,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": 0.03125,
+                "right": 800.140625,
+                "bottom": 403.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "frames": 169,
+            "span": 5.933,
+            "first": [
+              0,
+              0.052,
+              0.351,
+              0.412,
+              0.439,
+              0.474,
+              0.501,
+              0.536,
+              0.574,
+              0.601
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "maximum-viewport",
+        "receipt": {
+          "path": "/workspace/shot114-maximum-viewport-diagnostic/receipt.json",
+          "bytes": 1719,
+          "sha256": "3d111308adc899d9924f848c0306025c6138071747a901074d7f98aae0ed47b0"
+        },
+        "measurements": [
+          {
+            "reveal": false,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 566,
+            "frames": 181,
+            "span": 6.038,
+            "first": [
+              0,
+              0.084,
+              0.115,
+              0.135,
+              0.191,
+              0.211,
+              0.235,
+              0.271,
+              0.304,
+              0.343
+            ]
+          },
+          {
+            "reveal": true,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": 0.03125,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": 0.03125,
+                "right": 800.140625,
+                "bottom": 403.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 580,
+            "frames": 180,
+            "span": 6.037,
+            "first": [
+              0,
+              0.031,
+              0.102,
+              0.134,
+              0.191,
+              0.213,
+              0.24,
+              0.283,
+              0.304,
+              0.337
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "persistent-capture",
+        "receipt": {
+          "path": "/workspace/shot114-persistent-capture-diagnostic/receipt.json",
+          "bytes": 1720,
+          "sha256": "776b054589e8ae112ce65bdcbf3fee1a3f36936a4e570dab5537d09b8c9a39ce"
+        },
+        "measurements": [
+          {
+            "reveal": false,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 468,
+            "frames": 176,
+            "span": 6.072,
+            "first": [
+              0,
+              0.038,
+              0.112,
+              0.142,
+              0.156,
+              0.215,
+              0.264,
+              0.306,
+              0.328,
+              0.362
+            ]
+          },
+          {
+            "reveal": true,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": 0.03125,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": 0.03125,
+                "right": 800.140625,
+                "bottom": 403.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 462,
+            "frames": 178,
+            "span": 6.138,
+            "first": [
+              0,
+              0.032,
+              0.077,
+              0.121,
+              0.156,
+              0.184,
+              0.218,
+              0.244,
+              0.285,
+              0.317
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "idle-capture",
+        "receipt": {
+          "path": "/workspace/shot114-idle-capture-diagnostic/receipt.json",
+          "bytes": 1717,
+          "sha256": "4035718bd260de9d269cf7807992286216c4a51ac217fa30ebf634a0ed404565"
+        },
+        "measurements": [
+          {
+            "reveal": false,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 486,
+            "frames": 182,
+            "span": 6.53,
+            "first": [
+              0,
+              0.044,
+              0.116,
+              0.164,
+              0.21,
+              0.246,
+              0.265,
+              0.308,
+              0.345,
+              0.373
+            ]
+          },
+          {
+            "reveal": true,
+            "before": {
+              "rect": {
+                "x": 83.59375,
+                "y": -140.96875,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": -140.96875,
+                "right": 800.140625,
+                "bottom": 262.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "after": {
+              "rect": {
+                "x": 83.59375,
+                "y": 0.03125,
+                "width": 716.546875,
+                "height": 403.046875,
+                "top": 0.03125,
+                "right": 800.140625,
+                "bottom": 403.078125,
+                "left": 83.59375
+              },
+              "viewport": 1000,
+              "hidden": false
+            },
+            "rafCallbacks": 460,
+            "frames": 182,
+            "span": 6.658,
+            "first": [
+              0,
+              0.043,
+              0.116,
+              0.15,
+              0.183,
+              0.219,
+              0.239,
+              0.279,
+              0.317,
+              0.365
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "captureCandidate": {
+    "scope": "Isolated scratch app copy; not the repository production build",
+    "source": {
+      "path": "/tmp/shot114-manual-capture-dist/src/export.js",
+      "bytes": 3761,
+      "sha256": "d8c8c4f93293a58ee8e51b388c1db7b5363e27bf947a7c150b5ca08ad130efcd"
+    },
+    "result": "passed",
+    "receipt": {
+      "path": "/workspace/shot114-manual-native-candidate/verification.json",
+      "bytes": 253850,
+      "sha256": "7eb0b35d6a930bf57cc31247df4ba21061eddc5c7a3bee4ee988207372d625cd"
+    },
+    "video": {
+      "bytes": 5016553,
+      "sha256": "b206dd2309da7507ffc776c02956fff98c4286d41ecc8c69fb4e27b12724bb2b",
+      "codec": "vp9",
+      "width": 960,
+      "height": 540,
+      "audioStreams": 0,
+      "decodedFrames": 1063,
+      "firstPts": 0,
+      "spanSeconds": 59.854,
+      "independentDecodeWallMs": 3218.1293259999948
+    },
+    "independentImageSamples": 40,
+    "endpointPreviews": 5,
+    "restart": {
+      "bytes": 36796,
+      "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9",
+      "byteExact": true
+    },
+    "captureStart": {
+      "canvasRect": {
+        "x": 83.59375,
+        "y": -140.96875,
+        "width": 716.546875,
+        "height": 403.046875,
+        "top": -140.96875,
+        "right": 800.140625,
+        "bottom": 262.078125,
+        "left": 83.59375
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "hidden": false,
+      "visibilityState": "visible"
+    },
+    "recordAndDownloadWallMs": 60260.350823999994,
+    "originalInputAndThresholdsUnchanged": true,
+    "productionVerification": "passed separately; see finalCaptureLocal and 2026-10-04-sequence-trim-maximum.json"
+  },
+  "finalCaptureLocal": {
+    "units": {
+      "passed": 261,
+      "failed": 0,
+      "durationMs": 917.458139,
+      "log": {
+        "path": "/tmp/shot114-capture-root-unit.log",
+        "bytes": 27195,
+        "sha256": "db215b125234a1e9c9d50726857c57a16d922c2423a6d707c9136f303a8811e6"
+      }
+    },
+    "syntax": {
+      "result": "passed",
+      "log": {
+        "path": "/tmp/shot114-capture-root-syntax.log",
+        "bytes": 769,
+        "sha256": "e54f688f3c55ab014bf89272d2005cc5092ed9ce218a1ca9b46759635e953d3e"
+      }
+    },
+    "fullNative": {
+      "stats": {
+        "startTime": "2026-10-04T23:32:42.790Z",
+        "duration": 252301.107,
+        "expected": 87,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/shot114-full-native-first.log",
+        "bytes": 166593,
+        "sha256": "cd97e95c9a5de968a36578b5af35bb02b5adb988e0e65f73b772ed3e86482069"
+      },
+      "results": {
+        "path": "/tmp/shot114-full-native-results-first.json",
+        "bytes": 101228,
+        "sha256": "ea51a91c7798cbcd23e6bb4fbc75451a6053cce869a70ca91f9554e2888a188e"
+      },
+      "preservedArtifacts": "/workspace/shot114-full-native-first-artifacts",
+      "firstFullInvocationPassed": true
+    },
+    "productionMaximum": {
+      "result": "passed",
+      "receipt": "2026-10-04-sequence-trim-maximum.json",
+      "video": {
+        "bytes": 4949079,
+        "sha256": "a445bc5a77504da28b51c4d1ac65fd6db3bded5782142c8cc0d6257e6f8b24e4",
+        "codec": "vp9",
+        "width": 960,
+        "height": 540,
+        "audioStreams": 0,
+        "decodedFrames": 1040,
+        "firstPts": 0,
+        "spanSeconds": 59.901,
+        "independentDecodeWallMs": 2327.3647950000013
+      },
+      "restart": {
+        "bytes": 36796,
+        "sha256": "0db7cb2d29b61b03843f5b82d274dfc91684e1099e5511b2ccdf4117259f59c9",
+        "byteExact": true
+      },
+      "originalInputAndThresholdsUnchanged": true
+    },
+    "source": {
+      "path": "apps/shot-studio/src/export.js",
+      "bytes": 4165,
+      "sha256": "491230f09ec710259b754a0ba21418c194971372265d77daf4afd4479200fc11"
+    },
+    "reviews": [
+      "2026-10-04-sequence-trim-capture.json",
+      "2026-10-04-sequence-trim-capture-review.json"
+    ]
+  },
+  "finalCaptureCi": {
+    "result": "passed",
+    "head": "265d8809eb3ecd0f7e5451a14e0e4149950c5735",
+    "receipt": "2026-10-04-sequence-trim-capture-ci.json",
+    "unitPerEvent": 261,
+    "nativePerEvent": 87,
+    "allPrWorkflowsPassed": 13
+  }
+}

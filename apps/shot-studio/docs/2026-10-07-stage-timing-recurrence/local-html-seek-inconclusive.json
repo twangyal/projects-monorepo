@@ -1,0 +1,15 @@
+{
+  "requestedTime": 6.75,
+  "currentTime": 0,
+  "width": 960,
+  "height": 540,
+  "x": 624,
+  "y": 258,
+  "rgba": [
+    49,
+    56,
+    55,
+    255
+  ],
+  "scope": "Native153 HTMLVideoElement seek/drawImage comparison only, not altered media acceptance."
+}

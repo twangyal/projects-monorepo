@@ -1,0 +1,7 @@
+{
+  "browser": "temporary Chromium153.0.8010.0",
+  "failure": "Native context could not create page; ANGLE Vulkan lacked VK_EXT_headless_surface and VK_KHR_surface. No CPU/export test body executed.",
+  "traceZipBytes": 4941,
+  "traceZipSha256": "16217d585f0ab52aacd26de33caa1061131b047e988dc7403f0b9a9c8e706cc8",
+  "scope": "Local runtime failure, not a production export failure."
+}

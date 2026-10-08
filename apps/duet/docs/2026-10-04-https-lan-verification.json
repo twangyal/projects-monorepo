@@ -1,0 +1,225 @@
+{
+  "issue": 107,
+  "version": "0.3.0",
+  "checkedAtUtc": "2026-10-04T20:33:06.806745+00:00",
+  "localStatus": "passed; both exact published-head CI events and all thirteen PR workflows passed at 880070a6ee83707434e293a986a9d6aedaa6522d",
+  "python": {
+    "fullDiscovery": {
+      "passed": 182,
+      "seconds": 60.871,
+      "log": {
+        "path": "/tmp/duet107-root-python-first.log",
+        "bytes": 30000,
+        "sha256": "6b570b98aa8f05f4a597ab6506e3601b28405b009d6617a466230d904fc7a140"
+      },
+      "scope": "Before the native restart finding. One additional immediate-restart regression and its production bind fix then pass in the final 11-case producer gate; 183 distinct cases now authored."
+    },
+    "finalProducerGate": {
+      "passed": 11,
+      "seconds": 3.191,
+      "receipt": "2026-10-04-https-lan-producer.json"
+    },
+    "static": "Full compileall and Ruff passed; scoped static gates passed after the narrow bind repair and browser-port configuration."
+  },
+  "typescript": {
+    "passed": 6,
+    "milliseconds": 112.406879,
+    "eslint": "passed",
+    "typecheck": "passed",
+    "normalBuildMilliseconds": 168,
+    "log": {
+      "path": "/tmp/duet107-root-check-first.log",
+      "bytes": 1815,
+      "sha256": "3d1969dd564c4f57da75b6ea97d401be611a3f2b3553643e88477efd575b5864"
+    }
+  },
+  "browser": {
+    "distinctPassingCases": 30,
+    "existingSuite": {
+      "passed": 25,
+      "milliseconds": 57725.238,
+      "log": {
+        "path": "/tmp/duet107-old-native-first.log",
+        "bytes": 4549,
+        "sha256": "57bce40726c098f69f3f9064cee529c73cb755ad66c2603a4f40273452003d33"
+      },
+      "results": {
+        "path": "/tmp/duet107-old-native-results-first.json",
+        "bytes": 29211,
+        "sha256": "b1bb9e0ca7042b90d95903e4b7d03dd8acc9687cf54905b99c770a980b4144c6"
+      },
+      "port": 4304,
+      "sourceChanges": "Only two existing tests derive the same local URL from Playwright baseURL instead of hardcoded port 4220; all behavior/media assertions preserved."
+    },
+    "newHttpsSuite": {
+      "distinctPassingCases": 5,
+      "receipt": "2026-10-04-https-lan-native.json",
+      "scope": "First 4 passed / 1 failed at actual immediate service restart; after genuine socket reuse fix, the affected case passes unchanged. Not a single local 30-case invocation."
+    },
+    "chromium": "151.0.7922.173",
+    "normalVersusHarness": "HTTPS cases use normal production bundle. Existing 25 use production build with isolated synchronization test entry; verified normal build restored afterward."
+  },
+  "productionArtifacts": [
+    {
+      "path": "apps/duet/dist/index.html",
+      "bytes": 777,
+      "sha256": "61e5085a74cf0dc3ab92ae4e00e856b44250cd865f0d60b31fe1aebcf4e0c21e"
+    },
+    {
+      "path": "apps/duet/dist/assets/main-YCxnwm9r.js",
+      "bytes": 34074,
+      "sha256": "f989c5a472c88537fb22d72636861919c77f32ea90f187842671442b5d23e3e4"
+    },
+    {
+      "path": "apps/duet/dist/assets/main-BBkWujh6.css",
+      "bytes": 12830,
+      "sha256": "30d84d5fdfcc21509903c5a90182256e048741e4c40bb92899e4aece29af1cd5"
+    }
+  ],
+  "independentProtocol": "2026-10-04-https-lan-protocol.json",
+  "actualPrivateInterface": "2026-10-04-https-lan-private-interface.json",
+  "client": "2026-10-04-https-lan-client.json",
+  "limitations": [
+    "Physical two-device certificate installation, output latency and synchronization remain unverified.",
+    "Actual unscaled native deadline measurements cover 5-second handshake and 10-second headers; body/response/total/join branches use explicitly scaled constants.",
+    "The exact 8 MiB HTTPS response is opaque transport data, separate from real normalized Opus; the prior 503.7 MB offline archive acceptance is retained historical evidence, not rerun for HTTPS.",
+    "No production certificate trust changes, external service, deployment, billing or runtime dependency added.",
+    "The first root npm command used the monorepo directory and failed ENOENT before executing tests; it was rerun in the Duet project and passed."
+  ],
+  "sourceHashes": [
+    {
+      "path": "apps/duet/duet/transport.py",
+      "bytes": 6990,
+      "sha256": "f039576f51b77f8f3d9222db2582d0ab61dda043649f32447ce95db4c3b61daf"
+    },
+    {
+      "path": "apps/duet/duet/https_server.py",
+      "bytes": 7451,
+      "sha256": "380abf20ba5461122fc612fc9559383c405674d7b6664006fc5890a2a6582c5c"
+    },
+    {
+      "path": "apps/duet/duet/server.py",
+      "bytes": 32737,
+      "sha256": "54a8c9e3c2dbfa982bde161066a138c29a52e8eae5e362a60d672be2072b9888"
+    },
+    {
+      "path": "apps/duet/duet/__main__.py",
+      "bytes": 2244,
+      "sha256": "cfc5aa8dce26d2653a2eb75ae756dea0e7c3709c8bd4c1424ce62d9cfeef36f7"
+    },
+    {
+      "path": "apps/duet/src/main.ts",
+      "bytes": 42130,
+      "sha256": "d07d94902c7cd95834ff2043bd0088635c954b7917256d4b0f72b07364f59039"
+    },
+    {
+      "path": "apps/duet/src/style.css",
+      "bytes": 14841,
+      "sha256": "1f066b32d055f979bc0564f94a642ca1ac264277f8b59cbd721d5ea6a62b0e0d"
+    },
+    {
+      "path": "apps/duet/tests/test_https_server.py",
+      "bytes": 9512,
+      "sha256": "e291ce44a3f9429729840f40ad42bdf0f809394a1ecabef6b8a37861a0b1643d"
+    },
+    {
+      "path": "apps/duet/tests/test_transport_config.py",
+      "bytes": 6059,
+      "sha256": "aa6be18a66a3bb05458e5780dca5a2b75d16a8cad641234ea84054dd28f3e45b"
+    },
+    {
+      "path": "apps/duet/tests/test_https_oracle.py",
+      "bytes": 27642,
+      "sha256": "447857be101e0a426624f680b1455d1ed8671aa0a7694686b4f63af19d79c2ed"
+    },
+    {
+      "path": "apps/duet/tests/test_cli_https.py",
+      "bytes": 7227,
+      "sha256": "77f8c23541dfc66b398c7701df2e7d6a9e061743f4611aac1d570abf92c549f6"
+    },
+    {
+      "path": "apps/duet/tests/browser/https-lan.spec.ts",
+      "bytes": 15050,
+      "sha256": "371418c26fc1740b5439a3a19f240ae2cf986265c2f02382542b693ec883b2c4"
+    },
+    {
+      "path": "apps/duet/tests/browser/https-lan-fixtures.ts",
+      "bytes": 7353,
+      "sha256": "03f47be3c13c487a50b6df500eef0725ba07b8f83127260a2e07471a57395fba"
+    },
+    {
+      "path": "apps/duet/playwright.config.ts",
+      "bytes": 762,
+      "sha256": "12f0a20c74afcaae3290d2aae143d7b66ac494c887544f3bafd9ad181f3984d6"
+    },
+    {
+      "path": "apps/duet/tests/browser_server.py",
+      "bytes": 828,
+      "sha256": "488dc4020b97b3e3d9beee7e2abdf11db213371db506c07c123b40d6ee56b5db"
+    },
+    {
+      "path": "apps/duet/tests/browser/workflow.spec.ts",
+      "bytes": 12425,
+      "sha256": "286d293f86a77e022a46302a4924cdf30b56bca1a70214e790903e75e4ba51ad"
+    }
+  ],
+  "ci": {
+    "status": "passed both exact-head events and all thirteen PR workflows",
+    "headSha": "880070a6ee83707434e293a986a9d6aedaa6522d",
+    "treeSha": "facd50cafb4823976f453ccce1af3da9488c83b1",
+    "receipt": "2026-10-04-https-lan-ci.json",
+    "firstMixedReceipt": "2026-10-04-https-lan-ci-first.json",
+    "push": {
+      "runId": 37233367305,
+      "pythonPassed": 183,
+      "typescriptPassed": 6,
+      "nativePassed": 30,
+      "nativeFailed": 0
+    },
+    "pullRequest": {
+      "runId": 37233369756,
+      "checkoutSha": "dfd41ddd748316b5ae357638e1a65fe0305a4a83",
+      "pythonPassed": 183,
+      "typescriptPassed": 6,
+      "nativePassed": 30,
+      "nativeFailed": 0
+    },
+    "allProjectPrSummary": {
+      "total": 13,
+      "success": 13,
+      "failure": 0,
+      "pending": 0
+    }
+  },
+  "ciReadinessRepair": {
+    "cause": "At head 6bc47b2, push guest naturally passed native position 2.8 before adopting the host seek revision 2; its pause used revision 1 and correctly returned 409. Same-head PR passed all 30.",
+    "firstCiReceipt": "2026-10-04-https-lan-ci-first.json",
+    "change": "Await actual completed partner GET carrying the successful seek revision, click the exact Pause together action, and additionally assert the outgoing pause uses that revision. No product source, fixture audio, time tolerance, timeout or original behavior assertion changed.",
+    "focused": {
+      "startTime": "2026-10-04T20:42:53.347Z",
+      "duration": 17517.688,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/duet107-ci-repair.log",
+      "bytes": 603,
+      "sha256": "66cde67a41cdfb9174a864c171de4af1da483efdf984ccb5bb1e9a8240a00ca1"
+    },
+    "results": {
+      "path": "/tmp/duet107-ci-repair-results.json",
+      "bytes": 3884,
+      "sha256": "deeec009f5ce62fe59cecf2a71b9f39155e05b25c30ea59b4a9bc6c3acc86311"
+    },
+    "testSource": {
+      "path": "apps/duet/tests/browser/https-lan.spec.ts",
+      "bytes": 16322,
+      "sha256": "968de7b756b1a70dd4646580cf916e014e9c072ca653cea3c56d4979f5e7715b"
+    },
+    "static": "Type checking and scoped ESLint passed.",
+    "normalBundleSha256": "f989c5a472c88537fb22d72636861919c77f32ea90f187842671442b5d23e3e4",
+    "finalPublishedCi": "2026-10-04-https-lan-ci.json"
+  }
+}

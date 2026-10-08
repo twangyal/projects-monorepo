@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "issue": 125,
+  "scope": "Transient lyric-range practice using the existing native audio player",
+  "source": {
+    "src/main.ts": "99cdb6f11ab02f0a65a69e636c644c5c13507e87e2b910332df3cfe2d95a16ad",
+    "src/practice-controller.ts": "12a2a835e05b5fedd6564885754e6898d09ccda740a4013c90713d8cf137f5b0",
+    "src/style.css": "045a10c4321c93171d8622d96720a1740e54d9dc7ab2c8e131e04b975bd01968"
+  },
+  "testFirst": {
+    "rootOwnedNativeFailure": "/tmp/karaoke125-native-missing-results.json",
+    "observedBeforeProductEdits": "Root inspected one expected missing #practice-first failure after a genuine original WAV project and loaded native audio; 10047.028 ms total.",
+    "excludedFromRedEvidence": "An earlier wrong-grep no-tests result is separate and is not feature RED."
+  },
+  "behavior": [
+    "First and last selectors retain explicit ordered inclusive cue indices; a new usable clip defaults to line 1 through line 1. Reversed or invalid selections refuse without clamping.",
+    "Exact source endpoints and every intermediate instrumental gap appear in the range summary. Current Original, Vocals or Backing is identified in both the summary and preview footer.",
+    "Play once, Repeat range and existing Play line share the same bounded native-player controller at normal 1x speed without native looping.",
+    "Seek and play admission share a ten-second deadline. Per-operation ownership cancels pending listeners, deadlines and animation-frame work. Practice does not overwrite audio.onloadedmetadata.",
+    "Every start captures project, loaded-project generation, edit generation, media generation, track, source, duration, epoch, range and mode.",
+    "Pause invalidates pending admission and retains the selected range; Resume is explicit. Stop clears ownership before pausing and keeps the current playhead.",
+    "Ordinary media boundary observation checks actual time before interpreting native pause at natural end. Explicit Pause takes precedence over repeat and its queued native pause event cannot resume the range.",
+    "Raw title, pasted text or cue input retires ownership in the capture phase, before mutation. Undo/Redo, cue actions, timeline gestures/seek, file choices, SRT application, track/project changes, Save, deletion, media jobs and timing capture also retire practice.",
+    "Practice retires before track() captures ordinary playback intent, preserving ordinary track-switch playback while preventing a retired practice session from resuming on another track.",
+    "External seeking, playback-rate changes, native source/error changes, hidden-page and pagehide retire ownership without automatic return. Late play fulfillment/rejection is inert after retirement.",
+    "Practice UI updates do not rebuild lyric rows, call changed(), record history, alter dirty/video state, save revisions or modify audio. Valid unsaved cue edits may be practiced; unapplied paste remains excluded and intact."
+  ],
+  "precision": {
+    "authoredEndpoints": "Retained and requested exactly; no rounding or range expansion.",
+    "ownedSeekAdmissionSeconds": "1 / 44100",
+    "ownedSeekAdmissionPurpose": "Only identify a matching completed native seek despite media-clock quantization. A matching undershoot remains in starting phase until actual forward playback reaches the exact source start.",
+    "endDecision": "Strict domain boundary using actual native time, without the seek allowance. At genuine natural media end only, the existing one-sample PCM duration admission allows the exact project endpoint.",
+    "physicalPlaybackSynchronizationMeasured": false
+  },
+  "review": {
+    "kind": "Independent read-only source review before integrated native execution",
+    "finding": "Explicit Pause could race a repeat endpoint and start the next repetition.",
+    "correction": "Pause now establishes paused ownership before native pause; a queued paused event preserves this intent. Explicit Resume handles the reached endpoint deliberately through the same boundary path, including its existing genuine native-end duration admission.",
+    "observedRegressionFailure": false
+  },
+  "firstIntegratedNativeRun": {
+    "owner": "root",
+    "results": "/tmp/karaoke125-native-first-results.json",
+    "artifacts": "/workspace/karaoke125-native-first-artifacts",
+    "startedAt": "2026-10-05T05:27:48.025Z",
+    "durationMs": 49768.351,
+    "passed": 9,
+    "failed": 3,
+    "skipped": 0,
+    "flaky": 0,
+    "producerDefectsAndCorrections": [
+      {
+        "observed": "Play line preservation case could not find the exact accessible name Play line 2 within the unchanged five-second expectation.",
+        "cause": "The inherited label expression duplicated the word line: Play line line 2.",
+        "correction": "Only Play line now produces Play line N; all other existing action labels remain unchanged."
+      },
+      {
+        "observed": "Controlled hidden lifecycle case left #practice-once disabled after visibility returned and native pause had settled.",
+        "cause": "Hidden retirement refreshed disabled controls, but the later visible visibilitychange did not refresh explicit admission controls.",
+        "correction": "Visible visibilitychange refreshes practice controls only; it does not create an owner, seek, play or resume. Existing hidden retirement remains intact."
+      }
+    ],
+    "separateFailure": "The native rejection oracle expected AbortError but observed no rejection. Its fixture diagnosis remains assigned to the independent native author; no speculative play behavior, deadline or tolerance change was made here.",
+    "postCorrectionNativeVerification": "Pending root-owned rerun; static checks alone do not establish runtime repair."
+  },
+  "focusedVerification": {
+    "eslint": {
+      "command": "npx eslint src/main.ts src/practice-controller.ts",
+      "exitCode": 0,
+      "log": "/tmp/karaoke125-client-eslint.log"
+    },
+    "typescript": {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "log": "/tmp/karaoke125-client-typecheck.log"
+    },
+    "diffWhitespace": { "exitCode": 0 },
+    "nativeRuntime": "Not executed by the client implementer; root owns integrated acceptance, broad suites, builds and maximum gates."
+  }
+}

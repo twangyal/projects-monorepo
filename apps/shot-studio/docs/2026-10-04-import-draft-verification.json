@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-04",
+  "issue": 57,
+  "implementationCommit": "6eb26664e2e134f5bc1c961bbdf158646402162c",
+  "problem": "The committed revision does not advance until a settings change event. A pending native File.text completion could therefore overwrite newly typed focused text/numeric input and save the incoming film before that input blurred.",
+  "reproduction": {
+    "browser": "151.0.7922.173",
+    "method": "Gate completion after actual native File.text bytes are read; type through native input without blur/change; release the real bytes. No fake film state, storage or WebGL.",
+    "beforeFix": [
+      "Shot-name input1/change0 was overwritten by the imported shot name.",
+      "Camera X input1/change0 was overwritten by the imported value 8.",
+      "Current authored film and actual localStorage were replaced by the incoming film.",
+      "Committed Tab/change control correctly rejected the same pending replacement."
+    ],
+    "newRegressionRed": "Two raw-draft cases failed before the repair; the committed-change control passed."
+  },
+  "fix": "Capture and compare a settings input-intent counter alongside the existing committed revision, import epoch and busy guards before applying an imported project. Input itself does not commit, refresh, save or add history.",
+  "verification": {
+    "unitTests": 28,
+    "syntaxChecks": "passed",
+    "nativeBrowserCases": 12,
+    "newNativeBrowserCases": 3,
+    "localChromium": "151.0.7922.173",
+    "ciChromium": "153.0.8010.12",
+    "ciBrowserSeconds": 16.1,
+    "ciRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37180331421",
+    "ciJob": 111371435190,
+    "allProjectWorkflowsAtImplementationCommit": 12,
+    "allProjectWorkflowsConclusion": "success",
+    "independentReview": "Clear; exact code and native regressions reviewed without additional edits.",
+    "nativeAssertions": [
+      "Focused raw shot-name draft retained.",
+      "Exact Camera X spelling 6.250 retained before blur.",
+      "Pending replacement preserves current authored film and durable localStorage.",
+      "Later blur commits the valid typed value normally.",
+      "Subsequent explicit import and Undo remain usable.",
+      "Complete ordinary suite retains real WebGL, independently decoded WebM, controlled XR lifecycle and protected unreadable draft recovery."
+    ]
+  },
+  "localIsolation": "A clearly owned ephemeral loopback port and temporary Playwright configuration were used, with system Chromium. No tracked configuration change or unknown server termination. Verification-only node_modules symlink was removed; ordinary pinned npm dependencies were installed from the existing offline cache.",
+  "sourceSha256": {
+    "src/app.js": "d98f63e270edce2efde2ea0a11e1819300d0c317573a85c051ccca9f6a96ccce",
+    "tests/browser/studio.spec.js": "1dc36ff84c8e0592fc01868d9146900591ff6efe59b17b4fb9fa0bfab03e0340"
+  },
+  "limitations": [
+    "The timing-only gate establishes a real reachable event-order defect; natural frequency with ungated bounded local reads is not measured.",
+    "No physical WebXR/headset verification or new capture-performance claim.",
+    "Existing superseded-import status/picker cleanup behavior is unchanged; this repair protects user typing from data replacement."
+  ]
+}

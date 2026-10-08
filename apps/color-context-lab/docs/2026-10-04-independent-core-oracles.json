@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "issue": 91,
+  "status": "complete",
+  "sourceCommit": "793f8775bd01c4e3fff8ca1233e2aef681fbeba1",
+  "scope": "Tests only; no application, model, protocol or UI changes.",
+  "node": "24.19.0",
+  "checks": {
+    "unitPassed": 22,
+    "unitCommand": "node --test tests/oracle-*.test.ts",
+    "decoder": "Pillow 12.3.0",
+    "decodedSizes": [
+      [
+        2,
+        2
+      ],
+      [
+        976,
+        976
+      ]
+    ],
+    "decoderCommand": "node scripts/export-core-oracles.ts && python scripts/verify-core-oracles.py",
+    "decodedEquality": "Every RGBA byte, including zero-alpha RGB, equals input.",
+    "pngOracle": "Independent bitwise CRC, Node zlib/Adler decoding and exact filter/scanline validation.",
+    "metricOracle": "Hand-derived geometry, checker parity, encoded RGB RMSE and linear luminance denominators.",
+    "mutation": {
+      "change": "Force center result alpha to255",
+      "failedCases": 3,
+      "restoredPassed": 22
+    },
+    "fullLocalGate": {
+      "command": "npm ci && npm run check",
+      "unitPassed": 91,
+      "lintPassed": true,
+      "typecheckPassed": true,
+      "buildPassed": true
+    }
+  },
+  "limits": [
+    "Uploaded-art perception and protection are not measured. No protocol fitting was performed.",
+    "Native browser verification is from GitHub CI, not a local browser invocation. Optional Pillow verification is local."
+  ],
+  "review": {
+    "status": "no-blockers-after-correction",
+    "corrections": [
+      "Required title accessor is rejected without invocation.",
+      "Same-project different-image commit is rejected atomically.",
+      "Each RGB luminance coefficient and the low-sRGB branch have isolated expectations.",
+      "Depth oracle asserts parser diagnostic and demonstrably fails without depth guard.",
+      "Positive split-IDAT/ancillary fixture carries valid DEFLATE scanline and tEXt keyword."
+    ],
+    "guardMutations": "Removing each accessor/image guard or changing the red luminance coefficient fails its actual fixture.",
+    "depthMutation": {
+      "change": "Remove parser JSON-depth guard",
+      "failedCases": 1,
+      "restoredTotalPassed": 91
+    }
+  },
+  "reconciliation": {
+    "baseCommit": "d56778b7bff9667a4c746a2f0794fa095d2bfe61",
+    "productionAndExperimentFilesPreserved": true,
+    "priorWorkspaceRecordPreserved": true,
+    "additionalCases": 22
+  },
+  "previousCi": {
+    "run": 37202578907,
+    "checkout": "a1c2a4e9d9ac0906bdddb9e37c478b59d00f95ed",
+    "head": "046c71173d08173e5cd4c55a2109296670a53368",
+    "typescriptPassed": 91,
+    "pythonPassed": 12,
+    "browserPassed": 32,
+    "status": "success-before-current-Astra-reconciliation"
+  },
+  "currentCi": {
+    "run": 37217535261,
+    "job": 111481005573,
+    "head": "7c06dac0685cf3ce5e7de4e6b0af8f79b98338b2",
+    "checkout": "c5909e7e18bb73d63f93e6e47da4806c074fc51a",
+    "merge": "47d067c52b7e085c13c82b54a507a7292ce996bf",
+    "unitPassed": 91,
+    "pythonPassed": 12,
+    "browserPassed": 32,
+    "lintTypecheckBuild": "passed",
+    "protocolFitsExecuted": 0
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-04",
+  "issue": 55,
+  "implementationCommit": "4ebb8f16b95fe7559ffd3e7f04ea41d672a2c954",
+  "problem": "Paused native audio could remain inside the 350 ms ongoing drift deadband at play admission. Native decoder startup then added lag; fulfillment only reported ready and did not reconcile the latest shared state. The next poll could eventually repair it, but startup and isolated synchronization checks exceeded the existing threshold.",
+  "reproduction": {
+    "remoteFailuresBeforeFix": [
+      { "run": 37177522908, "job": 111363156095, "observedDriftSeconds": 0.398101 },
+      { "run": 37177657041, "job": 111363561422, "observedDriftSeconds": 0.39544 }
+    ],
+    "localNativeProbe": "Chromium 151: approximately 0.349 s lag at native play admission grew to approximately 0.442 s after startup. This is an individual diagnostic observation, not an asserted stable latency.",
+    "newRegressionFailuresBeforeFix": [
+      "No alignment at the native play call when the shared target was 0.3 s ahead inside the deadband.",
+      "A delayed native start after a newer same-source seek retained approximately 0.594 s of advancing drift.",
+      "A delayed native start could remain playing when the shared target had reached the track endpoint."
+    ]
+  },
+  "fix": "Force alignment at genuine new enabled play admission, then reconcile the current snapshot and offset after native play fulfillment. Preserve consent, source/generation ownership, source readiness and endpoint behavior. Do not await the attempt's own pending synchronization promise. Ongoing 350 ms correction and original assertions are unchanged.",
+  "verification": {
+    "pythonTests": 66,
+    "typescriptTests": 6,
+    "browserTests": 23,
+    "nativeSyncCases": 15,
+    "newNativeSyncCases": 7,
+    "ruff": "passed",
+    "eslint": "passed",
+    "typecheck": "passed",
+    "normalProductionBuild": "passed",
+    "independentSourceReview": "No actionable findings; reviewed implementation and all seven new native regressions.",
+    "localChromium": "151.0.7922.173",
+    "localSuiteIsolation": "The ordinary browser service port 4220 was occupied. Temporary copies of specs/config changed only that port to 4224 and resolved the sync HTML fixture by its absolute path. Real service, FFmpeg normalization and native audio were retained; no tracked configuration was changed or unidentified process stopped.",
+    "ciChromium": "153.0.8010.12",
+    "ciRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37178669377",
+    "ciJob": 111366544223,
+    "ciPythonTests": "66 passed in 25.202 s",
+    "ciBrowserTests": "23 passed in 34.5 s on the unchanged CI configuration",
+    "allProjectWorkflowsAtImplementationCommit": "12 succeeded"
+  },
+  "newCases": [
+    "Alignment at the exact native play call while starting inside the normal drift deadband.",
+    "Delayed start uses a newer same-source seek and advancing wall-clock target.",
+    "Pending startup preserves a newer shared pause.",
+    "Pending startup preserves locally disabled audio.",
+    "Pending startup preserves a newer paused source.",
+    "Delayed startup pauses at the reached shared endpoint.",
+    "An older native startup cannot pause a newer playing source."
+  ],
+  "limitations": "Tests establish the local Chromium protocol with actual media decoding and controlled scheduling of native play. They do not establish arbitrary-network synchronization, physical output-device latency, subjective listening quality, or other browser support."
+}

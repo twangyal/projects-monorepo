@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "issue": 118,
+  "status": "actual-baseline-red",
+  "baselineHead": "64b518847b15ed18069709eda69335d0cec19c3d",
+  "baselineSource": {
+    "src/main.ts": "0efa974e01e47c5477b3c95727952dfd10cdc6ea5cd631c0f3570e9ab7322184",
+    "src/storage.ts": "87bf0b9afe806e896b549eb050680e8e7526403e098122388a59bff1c02dea43"
+  },
+  "probe": {
+    "path": "/tmp/clothing118-baseline-import.mjs",
+    "bytes": 16679,
+    "sha256": "434fac0555057e87b6d8dcdb91fc40a2c7a752a958df8b4837aabfb37fee1cd0"
+  },
+  "normalBuild": {
+    "path": "/tmp/clothing118-baseline-build.log",
+    "bytes": 612,
+    "sha256": "730f6e23570c07fb23b567f41575a24d8f53d172a1943e65f7ae6a93f8bb8910"
+  },
+  "frozenDist": "/workspace/clothing118-baseline-dist",
+  "origin": "http://127.0.0.1:4316",
+  "startedAt": "2026-10-05T01:26:44.378Z",
+  "finishedAt": "2026-10-05T01:26:49.116Z",
+  "browserVersion": "151.0.7922.173",
+  "fixtures": {
+    "current": {
+      "bytes": 723,
+      "sha256": "80fc64facb11f397f736b27d0c855a87decdfa612b0747b0e97565e3ca0fcd73"
+    },
+    "incoming": {
+      "bytes": 470,
+      "sha256": "f34df44b273c89a4834ff49c8b2914a9ce1798b11d321d0eca180c1fd6d793dd"
+    },
+    "photo": null,
+    "expectedNewTitle": "Newer title typed while reading",
+    "expectedRawRotation": "6.250",
+    "expectedGestureStrokeCount": 2
+  },
+  "results": [
+    {
+      "kind": "committed-title",
+      "status": "protection-failure",
+      "observedOlderCompleteBackupPublished": true,
+      "protectionPassed": false
+    },
+    {
+      "kind": "raw-rotation",
+      "status": "protection-failure",
+      "observedOlderCompleteBackupPublished": true,
+      "protectionPassed": false
+    },
+    {
+      "kind": "held-sketch",
+      "status": "protection-failure",
+      "observedOlderCompleteBackupPublished": true,
+      "protectionPassed": false
+    }
+  ],
+  "nativeReport": {
+    "path": "/workspace/clothing118-baseline-first/verification.json",
+    "bytes": 28402,
+    "sha256": "3053f115d26ece6f1c0cb9c857226e904579d46d989ad8977e1849dfcab35dc8"
+  },
+  "runtimeLog": {
+    "path": "/tmp/clothing118-baseline-first.log",
+    "bytes": 814,
+    "sha256": "495e706a78bae3b7a4195e6113a4ee30fff58a7e8c1c631e9c41057d0cd39e84"
+  },
+  "artifactDirectory": "/workspace/clothing118-baseline-first",
+  "artifacts": [
+    {
+      "path": "/workspace/clothing118-baseline-first/committed-title-after-release.png",
+      "bytes": 169586,
+      "sha256": "d51b0df612b0da59bf4678e5704a2ed8c46406266d6fdefda590b42dcfe030a3"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/committed-title-before-release.png",
+      "bytes": 165731,
+      "sha256": "5af1caa60fa32a5d2b98a025908011b7eca2ddbbe7f97c48c1d53aca634911e6"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/committed-title-final-backup.json",
+      "bytes": 469,
+      "sha256": "0c2c0340294f0ead073a84d908b5d4a21534da1bf7789f05a3b4b31539fe1dee"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/committed-title-final.png",
+      "bytes": 168968,
+      "sha256": "089e79e79367b9fcfa26aad9bbb6c172eaea86f8fb1ed5baae5b63ff4678112b"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/committed-title-initial-backup.json",
+      "bytes": 722,
+      "sha256": "49f715f52db3c6b98308a40a1dde1fa5c5588d4caae01b9d9a970abebd569299"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/committed-title-trace.zip",
+      "bytes": 1320823,
+      "sha256": "f6ebc495826d06d5e26968ea957d149c6807c27b020467fa26d72caa1481c0fb"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/frozen-expectations.json",
+      "bytes": 3176,
+      "sha256": "6cd4525e6f2e7d09475b9b62a2c3f2d213113cdfd08220a22fb0d1e0c002709e"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/held-sketch-after-release.png",
+      "bytes": 168434,
+      "sha256": "7cb8127218b39ff415baae7183e53d07a0a6e80d037cc717321b44cbce4f9f77"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/held-sketch-before-release.png",
+      "bytes": 165538,
+      "sha256": "87a785bdb1e2c7ab6487fb2a5c0f22238e246586fa11272e29f65757c000de9e"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/held-sketch-final-backup.json",
+      "bytes": 469,
+      "sha256": "0c2c0340294f0ead073a84d908b5d4a21534da1bf7789f05a3b4b31539fe1dee"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/held-sketch-final.png",
+      "bytes": 168940,
+      "sha256": "6030e59f81e4fb3d6a793157c5cfe62655faf802c3ed1b8a0237c11e22498920"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/held-sketch-initial-backup.json",
+      "bytes": 722,
+      "sha256": "49f715f52db3c6b98308a40a1dde1fa5c5588d4caae01b9d9a970abebd569299"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/held-sketch-trace.zip",
+      "bytes": 1455469,
+      "sha256": "8445b5695b1028deb48d2fb8412ff2818281ea73f952c5e42b261d3036147e88"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/original-current.json",
+      "bytes": 723,
+      "sha256": "80fc64facb11f397f736b27d0c855a87decdfa612b0747b0e97565e3ca0fcd73"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/original-incoming.json",
+      "bytes": 470,
+      "sha256": "f34df44b273c89a4834ff49c8b2914a9ce1798b11d321d0eca180c1fd6d793dd"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/raw-rotation-after-release.png",
+      "bytes": 173123,
+      "sha256": "6fb727f16bea19c82518fddd98dd54f0d5fb5093c82438591171b1a7f3dce887"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/raw-rotation-before-release.png",
+      "bytes": 169426,
+      "sha256": "a0f78c62ff642387a78658a7daea184f3a6578aa87edfaae3c17888067d90846"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/raw-rotation-final-backup.json",
+      "bytes": 469,
+      "sha256": "0c2c0340294f0ead073a84d908b5d4a21534da1bf7789f05a3b4b31539fe1dee"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/raw-rotation-final.png",
+      "bytes": 168943,
+      "sha256": "70554a95b1d09c6bc97dbf198b9e377d0c9d2bcd5100208655b90787265ef4a1"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/raw-rotation-initial-backup.json",
+      "bytes": 722,
+      "sha256": "49f715f52db3c6b98308a40a1dde1fa5c5588d4caae01b9d9a970abebd569299"
+    },
+    {
+      "path": "/workspace/clothing118-baseline-first/raw-rotation-trace.zip",
+      "bytes": 973613,
+      "sha256": "83c2c71a76c9e51f53fffba8514c34db3a013648be0f0999738d4697600cdd63"
+    }
+  ],
+  "pageErrors": [],
+  "externalRequests": [],
+  "limitations": [
+    "The original baseline uses photo:null to isolate the genuine File.text ownership bug; native bitmap and original photo retention are separate regression coverage.",
+    "All three initial scenarios reached their frozen protection assertion; no setup/admission failure and no harness revision.",
+    "Only root owned normal production service and launched browser; no other service was modified."
+  ]
+}

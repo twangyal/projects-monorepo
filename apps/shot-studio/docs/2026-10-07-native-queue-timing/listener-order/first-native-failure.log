@@ -1,0 +1,69 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> shot-studio@0.7.0 test:browser
+> playwright test tests/browser/timestamped-export.spec.js --grep native dequeue timing settles
+
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:58] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:34) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /style.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/xr.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/model.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/renderer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/history.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/draft.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/take-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/math.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/timestamped-export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/performer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/take-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/take-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/takes.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/take-video.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence-document-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence-audio.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence-audio-session.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence-document.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/sequence-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/export-video-policy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /src/export-timeline.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /vendor/mediabunny/mediabunny.min.mjs HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [07/Oct/2026 09:39:59] "GET /scripts/stage-timing-diagnostics.mjs HTTP/1.1" 200 -
+  ✘  1 tests/browser/timestamped-export.spec.js:127:1 › native dequeue timing settles before the exporter Promise continuation (419ms)
+
+
+  1) tests/browser/timestamped-export.spec.js:127:1 › native dequeue timing settles before the exporter Promise continuation 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+      135 |    const report=observer.snapshot();await encoder.flush();return report;
+      136 |   }finally{encoder.close();observer.stop();}
+    > 137 |  });expect(result.video.completed).toBe(1);expect(result.video.pending).toBe(0);
+          |                                    ^
+      138 | });
+      139 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/shot-studio/tests/browser/timestamped-export.spec.js:137:36
+
+    Error Context: test-results/timestamped-export-native--969d8-porter-Promise-continuation/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/timestamped-export-native--969d8-porter-Promise-continuation/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/timestamped-export-native--969d8-porter-Promise-continuation/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/timestamped-export.spec.js:127:1 › native dequeue timing settles before the exporter Promise continuation 

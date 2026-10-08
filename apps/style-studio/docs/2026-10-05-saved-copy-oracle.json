@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "milestone": 116,
+  "status": "Root integration accepted:51 units, full56 native and original maximum/restart passed; producer checkpoint evidence retained.",
+  "independence": "Literal complete Project1 graph and expected limits/outcomes authored before any new storage producer implementation reads. Uses only published API types and real IndexedDB. Image fixture is original720x720 native canvas greenfield/yellowrectangle JPEG; no producer image/graph generator used.",
+  "files": [
+    {
+      "path": "tests/browser/save-conflicts.spec.ts",
+      "bytes": 25237,
+      "sha256": "f8b8fcd9a7d5fe3bde739a72845aaa113864a0f388332771dc263a71f3e83885"
+    },
+    {
+      "path": "tests/storage-harness.ts",
+      "bytes": 2829,
+      "sha256": "f2953dd02cd7273d6e4aaa9907ae6c50f9ee005546c17c9f3a935dd727ffc257"
+    }
+  ],
+  "cases": [
+    "oracle full saved graph wins against a stale instance without receipt promotion from reload",
+    "oracle simultaneous native readwrite scopes admit only one complete winner",
+    "oracle queued own writes detach full graph at admission and advance after native complete",
+    "oracle put request success followed by native abort neither publishes nor advances authority",
+    "oracle version1 upgrade preserves exact legacy value and fences old writers",
+    "oracle absent key differs from present undefined and reviewed repair never silently loads corrupt data",
+    "oracle receipt purpose instance one-use and forgery reject without native mutation",
+    "oracle third writer invalidates reviewed replacement while keeping entire winner intact",
+    "oracle raw negative zero differs from zero while reordered object fields are value-identical",
+    "oracle malformed ordinary records permit review but native cyclic and unbounded values do not",
+    "oracle exact portable and wrapper comparison byte ceilings distinguish plus one",
+    "oracle close drains accepted writes but forbids receipt acceptance and new operations immediately",
+    "oracle held actual read delivery never invents absence and retires old receipts on protected refusal",
+    "oracle versionchange retires receipts and cannot leave an old usable writer",
+    "oracle blocked legacy upgrade refuses and late open releases its database without rewriting bytes",
+    "oracle genuine live native transaction reaches actual10second deadline without authorizing late writes"
+  ],
+  "counts": {
+    "authored": 16,
+    "executed": 0
+  },
+  "rootObservedBaseline": {
+    "receipt": {
+      "path": "docs/2026-10-05-saved-copy-baseline.json",
+      "bytes": 4079,
+      "sha256": "764b38c31857001b08018a6e5251a9ae2275a0833f8022f7fdaa76a3b15ff8b6"
+    },
+    "classification": "Root independently observed oldtwo-page staleautosave failure before implementation. This agent did not run that baseline and does not label the new16cases RED or GREEN."
+  },
+  "fixedExpectations": {
+    "project": {
+      "version": 1,
+      "pieces": 3,
+      "examples": 1,
+      "looks": 1,
+      "photos": 1,
+      "photoSize": [
+        720,
+        720
+      ],
+      "literalPhotoColors": [
+        "#1f6b34",
+        "#ebcc3c"
+      ],
+      "literalPhotoRectangle": [
+        80,
+        100,
+        160,
+        300
+      ]
+    },
+    "comparisonLimits": {
+      "portable": 8388608,
+      "wrapped": 8388688,
+      "plusOneRefused": true,
+      "note": "Malformed ordinary bounded strings test comparison admission only, not legal maximum profile topology."
+    },
+    "deadline": {
+      "milliseconds": 10000,
+      "actualNativeCase": "Keep actual native write transaction alive with ordinary repeatedget requests after actualput success; await original realdeadline. No fakeIndexedDB or timer replacement.",
+      "delayedResultCase": "Nativeget result event delivery is controlled while actual transaction completes. Safe immediate protected refusal or bounded deadline rejection both allowed; no inventedabsence or restoredoldreceipts."
+    }
+  },
+  "nativeGates": [
+    "Actual native readwrite scope race between independently openedstores",
+    "Actual put request success followedby transaction.abort rollback",
+    "Existing holdNextWrite executes realreadonly get requests tokeep nativewrite active; controls delivery ratherthan inventingtransaction outcomes",
+    "Delayed actual get-success delivery is explicitly controlled; request/transaction/database themselves remain native",
+    "Blocked genuineversion1connection released then cleanupgrade/version3 proves latefailedopen doesnot retain usableconnection"
+  ],
+  "harnessChanges": [
+    "Constructor/constants export only: SavedCopyConflict,STORAGE_OPERATION_MS,MAX_STORED_BYTES",
+    "rawDatabase(version=2) optionalversionparameter permits explicitgenuineversion1fixtures. Existing helper behavior otherwise unchanged."
+  ],
+  "static": {
+    "scopedESLint": "GREEN",
+    "wholeTypecheck": "Last check only9oldstorage.spec LoadedProject API adaptation errors owned byroot; no neworacle/harness errors.",
+    "logs": [
+      "/tmp/style116-oracle-lint.log",
+      "/tmp/style116-oracle-typecheck.log"
+    ]
+  },
+  "limits": [
+    "No browser/build/server launched bythisagent.",
+    "No physicaldevice, fashion-model performance or fullmaximumprofile retention claim.",
+    "Native lifecycle deliverygates are controlled boundarytests, not claims browser naturallydelayed thosecallbacks.",
+    "Storedaccessors cannot naturallysurvive native structuredclone; tests avoid fakeIDBvalues toclaim accessorbehavior."
+  ],
+  "firstNativeRun": null,
+  "authorCheckpointStatus": "authored and frozen; native execution awaits root lease",
+  "rootIntegration": {
+    "sourceUnchangedSinceReviewedImplementation": true,
+    "fullNative": {
+      "stats": {
+        "startTime": "2026-10-05T00:33:24.089Z",
+        "duration": 65168.94299999999,
+        "expected": 56,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "log": {
+        "path": "/tmp/style116-full-native-final.log",
+        "bytes": 9529,
+        "sha256": "96b44d043899d0d56390d1180c2b7ec951ed55e359467b9a28b057dee4558c0b"
+      },
+      "results": {
+        "path": "/tmp/style116-full-native-results-final.json",
+        "bytes": 63667,
+        "sha256": "9ace59df8319f656562490048385650a496aa1c0b7a3c6deda5ea6f5e1917dac"
+      },
+      "preservedArtifacts": "/workspace/style116-full-native-final-artifacts"
+    },
+    "maximumReceipt": "2026-10-05-saved-copy-maximum.json",
+    "exactHeadCi": {
+      "head": "285266b26152d99ccfbf69d52c4aad15a905775d",
+      "bothRunsPassed": true,
+      "receipt": "2026-10-05-saved-copy-ci.json"
+    }
+  }
+}

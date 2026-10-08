@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "issue": 128,
+  "mode": "explicit-bt709-decoder-diagnostic-variation",
+  "originalProbeSha256": "3b1648055d9661742dd42b616d91ee4c15df4ca6425e28c7886ff9e5eb536999",
+  "diagnosticProbeSha256": "985989c9d70c161c9eb4641aa9dd403255a53c80b3a782b251b1b1a788c04318",
+  "change": {
+    "before": "'-vf',filter,'-vsync'",
+    "after": "'-vf',filter+',scale=in_color_matrix=bt709','-vsync'"
+  },
+  "limits": [
+    "The original VP8 frozen inspector failure remains unchanged and retained.",
+    "Only raw RGB extraction explicitly interprets the already-declared BT709 matrix; every original numeric/media gate remains unchanged.",
+    "A diagnostic pass cannot replace original candidate rejection or establish production performance."
+  ]
+}

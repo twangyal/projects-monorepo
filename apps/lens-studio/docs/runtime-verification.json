@@ -1,0 +1,104 @@
+{
+  "verified_at_utc": "2026-10-04T00:01:00Z",
+  "environment": {
+    "os": "Debian 13 Linux",
+    "node": "24.19.0",
+    "browser": "Chromium 151.0.7922.173",
+    "execution": "Local container, headless system Chromium; isolated production build"
+  },
+  "unit_tests": 67,
+  "numerical_oracle": {
+    "included_in_unit_count": true,
+    "cases": 24,
+    "method": "Independent exhaustive source-pixel tent weights and direct inverse pinhole equations",
+    "maximum_rgba_error": 0,
+    "maximum_missing_fraction_error": 1.1102230246251565e-16,
+    "perspective_target_mm": [
+      40,
+      85
+    ],
+    "source_mm": 50,
+    "independent_png_decoder": "pngjs 7"
+  },
+  "source_orientation": {
+    "cases": 48,
+    "formats": [
+      "PNG",
+      "JPEG",
+      "static WebP"
+    ],
+    "orientations": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "aspects": [
+      "square",
+      "nonsquare"
+    ],
+    "method": "Every normalized RGBA byte compared with independently transformed native decode baseline",
+    "pixel_mismatches": 0
+  },
+  "browser_tests": {
+    "total_cases": 30,
+    "breakdown": {
+      "images": 5,
+      "jobs": 5,
+      "storage_and_demo": 10,
+      "editor_workflow": 10
+    },
+    "local_evidence": "Combined run passed 29/30; the remaining test incorrectly expected pre-normalization low-alpha RGB. Corrected actual-import/canonical-source checks then passed 2/2. All cases individually passed. Remote CI will run the complete suite together.",
+    "worker_cleanup": "Native jobs checks confirm all created workers terminate on completion, supersession, abort and compressed-image decode failure.",
+    "storage": "Actual IndexedDB ordering, transaction completion/abort, corrupt and undecodable record preservation, blocked upgrade, unavailable storage, retry and exact demo masks verified.",
+    "editor": "Real photo import, focal/shift, authored planes, painting, undo/redo, decoded PNG and JSON downloads, reload, invalid import, numeric drafts, keyboard, delayed actual worker messages, delayed native decode, storage unavailable and mobile layout.",
+    "remote_evidence": {
+      "commit": "c63ac79ab7ed0a78df99537b01df367679c04657",
+      "run": "https://github.com/twangyal/projects-monorepo/actions/runs/37163746892",
+      "result": "All 30 production browser cases and the full check gate passed together; all ten repository workflows succeeded."
+    }
+  },
+  "maximum_size_measurement": {
+    "width": 1280,
+    "height": 1280,
+    "normalizedBytes": 6555448,
+    "normalizeMs": 1263.9000000022352,
+    "renderMs": 2976.599999997765,
+    "exportMs": 3396.2000000029802,
+    "pngBytes": 6555448,
+    "missingFraction": 0.3536278204260776,
+    "cancelResult": "AbortError",
+    "cancelMs": 604.4000000022352,
+    "input": "Deterministic high-entropy 1280\u00d71280 RGBA PNG, 6,555,448 bytes",
+    "mode": "Manual perspective, source 50mm, target 85mm, cyclic row plane labels",
+    "repetitions": 1,
+    "cancellation_note": "Abort scheduled after job API returned; reported wall time includes synchronous project validation before worker creation.",
+    "scope": "Single local sample, not a cross-device performance guarantee."
+  },
+  "manual_visual_check": {
+    "desktop": [
+      1440,
+      1040
+    ],
+    "mobile": [
+      390,
+      844
+    ],
+    "mobile_scroll_width": 390,
+    "uncaught_page_errors": 0,
+    "external_requests": 0,
+    "observations": "Source unaltered with depth overlay off; authored subject remains anchored while foreground/background scale, newly uncovered holes remain checkerboard; desktop side-by-side and mobile stacked views inspected. Small independent authored texture also inspected at 40,50,85mm."
+  },
+  "limits_and_unverified": [
+    "No automatic depth inference, generated fill, hidden scene recovery, optical blur, lens distortion or calibrated camera recreation.",
+    "Three manually assigned camera-parallel planes approximate relative geometry only.",
+    "Browser native color conversion and Canvas normalization define canonical source pixels; low-alpha straight RGB can quantize during that normalization/presentation.",
+    "PNG encoder preserves exact kernel bytes; tests do not incorrectly demand Canvas readback preserve all straight low-alpha colors.",
+    "Physical camera comparisons, other browser engines and mobile hardware were not verified.",
+    "Input/output bounds, local storage and downloadable backups are documented in README."
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "issue": 121,
+  "date": "2026-10-05",
+  "baseline": "64b518847b15ed18069709eda69335d0cec19c3d",
+  "red": [
+    "feature API module absent before implementation",
+    "original production browser case failed missing split action before implementation",
+    "additional literal CRLF/astral domain case failed wrong text split before coordinate correction",
+    "reopened API/native textarea CRLF/astral browser failed unchanged one-cue state before coordinate correction"
+  ],
+  "focused_acceptance": {
+    "new_domain_cases": 10,
+    "new_browser_cases": 4,
+    "passed": true,
+    "evidence": [
+      "native six-second original authored stereo PCM tone and actual seeks",
+      "literal exact split/merge values; instrument gap deliberately covered by merge",
+      "exact original raw numeric spellings, title/pasted draft and single Undo/Redo states",
+      "complete 200-cue graph: split refused, merge admits 199, undo restores 200",
+      "real service save/reopen and actual full SRT download",
+      "actual API-saved CRLF record reopened through native textarea; saved halves preserve exact CRLF and astral character"
+    ]
+  },
+  "local_final_gate": {
+    "typescript_units": 103,
+    "lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed",
+    "native_browser": 79,
+    "native_browser_seconds": 174,
+    "chromium": "153.0.8010.0"
+  },
+  "local_python": {
+    "run": 166,
+    "passed": 165,
+    "failed": 1,
+    "unchanged_failure": "test_subprocess_rss_limit_is_enforced expected memory limit but received Media subprocess timed out; isolated rerun also fails",
+    "environment_observation": "An original Python child process was reported by /proc/<child-pid>/status as sites-preview rather than Python. Local process/RSS reporting does not reliably identify the child. No backend code or assertion changed. Published Linux CI remains required."
+  },
+  "review": {
+    "initial_finding": "textarea CRLF normalization changes displayed UTF-16 caret offsets",
+    "correction": "translate displayed caret to original literal offset before slicing and surrogate/full-proposal validation",
+    "final_findings": 0,
+    "scope": "independent read-only review; no independent test execution"
+  },
+  "source_sha256": {
+    "apps/karaoke-studio/src/main.ts": "b8f406357defa53216e94050b855fcb635c13c57f783649bed276fb3b87126b6",
+    "apps/karaoke-studio/src/cue-edit.ts": "087c6d874b873706dafdee56bc0e21ca83a19f53ce7b814dfb7296a56454b58a",
+    "apps/karaoke-studio/src/cue-structure.ts": "d77d6a1e7c1c4cacd48bf70736c3a62272efb99835ac44459a3cc28931ca7b4b",
+    "apps/karaoke-studio/tests/cue-edit.test.ts": "ce9bf5faa0bf54757040128ff7a5d6940a9c1e1db0eb6c2c352d7dcc0e6ebed9",
+    "apps/karaoke-studio/tests/cue-edit.spec.ts": "00d5d1f8230ad3a9bbd532eb4c174418bce2be93e473ed3c8e0066e96d3d19a2",
+    "apps/karaoke-studio/tests/cue-structure.test.ts": "30050edca654422aa140cac7b29ba726aff27e47e5b54cc5c8fd8c213c9a2e5f"
+  },
+  "published_ci": {
+    "status": "accepted",
+    "receipt": "2026-10-05-cue-edit-acceptance.json",
+    "head": "29dd9066b51eef096b595852b6b5d0d17c8b8c89",
+    "python": 166,
+    "typescript": 116,
+    "nativeBrowser": 91,
+    "reconfirmedHead": "d076b3e27a198a7a6073ed96990497b0b5c3033f"
+  },
+  "verification_corrections": {
+    "first_extended_browser_run": {
+      "passed": 77,
+      "failed": 1,
+      "limitation": "An overlapping native invocation overwrote trace output; discarded for final acceptance."
+    },
+    "sequential_browser_run": {
+      "passed": 77,
+      "failed": 2,
+      "cause": "Four new test clips consumed bounded shared-service slots; the last two unchanged uploads correctly hit the 20-project capacity."
+    },
+    "fix": "Each new case deletes only its own original clip after verification using existing token-protected JSON DELETE. Production limits and all old assertions retained.",
+    "intermediate_cleanup_run": "An in-flight invocation retained cleanup callbacks without a JSON body; native DELETE returned 411. A fresh invocation using the committed JSON-body cleanup passed all 79 cases. No old assertion or production capacity changed."
+  },
+  "concurrency_reconciliation": {
+    "preserved_commit": "fda0c2e886996b454203708bdd2b495f43db9124",
+    "preserved_original_domain_cases": 7,
+    "change": "Keep its selection-range API and original cases through a thin adapter to the production CRLF-safe algorithm. No duplicate implementation and no production UI behavior change.",
+    "independent_review": "No additional findings; read-only review, no independent test execution."
+  }
+}

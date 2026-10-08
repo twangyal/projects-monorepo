@@ -1,0 +1,56 @@
+{
+  "task": "Shot persistent archive import readiness CI follow-up",
+  "ci": {
+    "run": 37221140420,
+    "job": 111491551730,
+    "observed": "70 of71 pass; fresh-profile file import retained0 rows; browser open and connected",
+    "evidenceLimit": "Original CI artifact has no page snapshot/status or trace, so the precise triggering interleaving cannot be proved from CI alone."
+  },
+  "reproduction": {
+    "receipt": "/workspace/shot99-startup-repro/verification.json",
+    "method": "Delay delivery of genuine initial IDB open-success; native setInputFiles bypasses disabled input, app clears it during admission guard. Release leaves ready status and0rows. Same actual archive after enabled saves1row. No mock records, video, parser or hash.",
+    "archiveBytes": 2185527,
+    "archiveSha256": "63af2819c11553dd9668312e45a3f86c9b7c2b65e41da32fa34a579b2156b202"
+  },
+  "changes": [
+    "Await existing #import-take enabled before native file injection; no timeout widening.",
+    "Record status/import-disabled/selected-file-count/row-count in existing persistent-session failure receipt.",
+    "New test holds only first genuine IDB open-success before import, proves helper has not supplied File yet, releases real read and verifies actual recorded archive hash/film."
+  ],
+  "focusedGate": {
+    "passed": 2,
+    "failed": 0,
+    "seconds": 17.1,
+    "portableCaseSeconds": 10.9,
+    "delayedStartupCaseSeconds": 5,
+    "nodeSyntax": "pass",
+    "noBroadRerun": true,
+    "browserProcessesClosed": true
+  },
+  "files": {
+    "/workspace/melody99-shot-failure-artifact/error-context.md": {
+      "bytes": 13463,
+      "sha256": "a50c7a322e39bf19e983892fc14e2f0de6ca4c3e3d87b41b07495f3e44690ba8"
+    },
+    "/workspace/melody99-shot-failure-artifact/restart-browser-lifecycle.json": {
+      "bytes": 2688,
+      "sha256": "dddf3227939d09522154aac59e0ca5707a108ba9313429558546196a86f8ac1d"
+    },
+    "/workspace/shot99-startup-repro/verification.json": {
+      "bytes": 947,
+      "sha256": "2b2a28147ee0241e18afac26f3f1f290ff5db371651f636b68daf74eb5225cee"
+    },
+    "/workspace/shot99-startup-repro/trace.zip": {
+      "bytes": 2685692,
+      "sha256": "534715a2e7dd17d2a7faff810639a9628c4abffaf3efc5b4ebe650a607bd6f90"
+    },
+    "/tmp/shot99-readiness-green.log": {
+      "bytes": 516,
+      "sha256": "f1e71c5da681c71dac07202b8507ff496912fdf98b1e7af3da4af3624d2a612b"
+    },
+    "/workspace/projects-monorepo/apps/shot-studio/tests/browser/takes.spec.js": {
+      "bytes": 19919,
+      "sha256": "d03beecce4093040c843fc425637ba69562c55959c99489377ba522cb73c49ee"
+    }
+  }
+}

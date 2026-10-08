@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "issue": 116,
+  "reviewedAt": "2026-10-05T00:26:11Z",
+  "status": "read-only cross-seam review clear; no concrete blocker found",
+  "source": [
+    {
+      "path": "apps/style-studio/src/storage.ts",
+      "bytes": 20050,
+      "sha256": "91ae885dd42c40ce758ddecbd1f152d49a1f45b2783611149aa7a35c075e010c"
+    },
+    {
+      "path": "apps/style-studio/src/main.ts",
+      "bytes": 55150,
+      "sha256": "c3c26e1c5298c0917c32b3dc18718854a235f8239cc219be406e81d6725cb5fc"
+    },
+    {
+      "path": "apps/style-studio/src/images.ts",
+      "bytes": 12816,
+      "sha256": "0b227d66ad51302ea2a02f89533f7062a2546d596f21a67d58f6735c212f0908"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-04-style-saved-copy-conflicts-design.md",
+      "bytes": 28858,
+      "sha256": "dd3137961dff0c862abcf326bf2ce0067d34375354c5b85a42a45627a34133f1"
+    }
+  ],
+  "scope": [
+    "Complete storage receipt, comparison, transaction, queue, deadline, upgrade and close paths",
+    "Main startup, save pump, explicit reload/replacement, raw intent, keyed forms/photo drafts and page lifetime integration",
+    "Supporting native photo admission and cancellation paths"
+  ],
+  "findings": [],
+  "reviewedInvariants": [
+    {
+      "area": "Bounded exact raw identity",
+      "result": "Expanded UTF-8 JSON bytes are charged before identity assembly; schema2-looking wrappers use the portable cap plus 80 bytes. Ordinary raw values use the portable cap. Sorted own data fields, dense arrays, bounded depth/node count, and separate negative-zero positions preserve the full comparator without domain normalization. Absent and present undefined remain distinct; unsupported arbitrary values refuse authority."
+    },
+    {
+      "area": "Receipt and accepted load authority",
+      "result": "Purpose, epoch and one-use admission are held privately in a per-store WeakMap. Load output alone grants no write authority. Main decodes all referenced photos and constructs temporary history/model, then rechecks intent/generation/lifetime before synchronously accepting and publishing the loaded project."
+    },
+    {
+      "area": "Native terminal and deadlines",
+      "result": "Transactions require both successful request callback admission and native completion. Held readonly callbacks cannot fabricate absence; late readwrite callbacks refuse mutation. Timeout/version change retire the epoch, attempt abort, close the connection and refuse new work. Only an ordinary proven readwrite abort preserves retry authority. Synchronous deadline checks precede mutation and final success."
+    },
+    {
+      "area": "Queued own writes and third writers",
+      "result": "Detached save candidates execute serially and use the latest accepted own identity. Full actual raw comparison happens within the same readwrite callback before put/delete. Expected state advances only after confirmed native completion. A conflict retires later queued authority. Reviewed replacement consumes its purpose-specific proof and compares the actual third-writer value before mutation."
+    },
+    {
+      "area": "Raw fields and native focus",
+      "result": "Storage status/protection callbacks update status and controls rather than resetting or blanket-rendering forms. Raw input/change increments intent, including changed-back text. Keyed saved-look forms and normalized unsubmitted photo drafts remain owned by the editor. Explicit successful reload is the intentional history/form reset path."
+    },
+    {
+      "area": "Recovery and replacement publication",
+      "result": "Reload preserves existing memory until complete photo/history/model admission and receipt acceptance. Failed/canceled/late recovery cannot publish. Replacement keeps protection through the native write; failure retains protection. Successful captured older work leaves newer edits unsaved behind explicit Retry saving rather than queueing an automatic overwrite. Export remains a bare committed Project1 backup."
+    },
+    {
+      "area": "Startup and page lifetime",
+      "result": "The startup barrier lasts until its asynchronous chain finally settles, even after input or pagehide retires publication ownership. Persisted pagehide keeps the live memory/history/photo graph and connection while retiring UI lifetime. Already admitted writes may update store truth, but a retired owner cannot publish late load data or a Saved status. Nonpersisted teardown requests orderly close."
+    }
+  ],
+  "validation": {
+    "kind": "source review only",
+    "testsRun": false,
+    "browserRun": false,
+    "buildRun": false,
+    "workflowRerun": false,
+    "gitMutation": false,
+    "runtimeEvidence": "Not claimed by this reviewer; independent native and maximum acceptance are separate root-owned gates."
+  },
+  "limitations": [
+    "Read-only reasoning does not replace genuine IndexedDB transaction, BFCache, quota, focus/caret or maximum-artifact acceptance.",
+    "No generic arbitrary-object recovery, storage availability, permanent browser retention or preference-model accuracy guarantee is claimed."
+  ],
+  "modifiedFiles": [
+    "apps/style-studio/docs/2026-10-05-saved-copy-review.json"
+  ]
+}

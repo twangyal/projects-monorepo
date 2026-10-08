@@ -1,0 +1,440 @@
+{
+  "issue": 113,
+  "status": "local-acceptance-passed-ci-pending",
+  "firstFullLocalCheck": {
+    "command": "npm run check",
+    "result": "passed",
+    "units": {
+      "total": 295,
+      "passed": 295,
+      "durationMilliseconds": 5588.549939
+    },
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuildMilliseconds": 694,
+    "log": {
+      "path": "/tmp/melody113-root-check-first.log",
+      "bytes": 30812,
+      "sha256": "f9740f33c74b9073d3b25bffccdd5d2843937ab7644b04f4eea81bcf8278aab2"
+    },
+    "normalBuild": {
+      "index.html": {
+        "path": "/tmp/melody113-normal-dist-first/index.html",
+        "bytes": 670,
+        "sha256": "7a128d99d1770f7e114b67db78ce2eea0a6a911a67be8ee47efcd37c8f998482"
+      },
+      "assets/backed-capture.worklet-BBPGO3q2.js": {
+        "path": "/tmp/melody113-normal-dist-first/assets/backed-capture.worklet-BBPGO3q2.js",
+        "bytes": 75,
+        "sha256": "7f3878aa3977fcca788b9d541770900aa23acb83b4d7b2e5c01a09315b1c4515"
+      },
+      "assets/main-DeZ_MdJw.css": {
+        "path": "/tmp/melody113-normal-dist-first/assets/main-DeZ_MdJw.css",
+        "bytes": 16086,
+        "sha256": "d19462104488dd933a87f2eae2046826c38dc3a1b90a21b16fcb9eb51d07e792"
+      },
+      "assets/transcribe.worker-D27pcBxb.js": {
+        "path": "/tmp/melody113-normal-dist-first/assets/transcribe.worker-D27pcBxb.js",
+        "bytes": 2860,
+        "sha256": "e6f43ee54c3c3fc29cf9c532fa70b3e4b3009afd2f1ef5fe6fb1f7b93503c38c"
+      },
+      "assets/backed-capture.worklet-Ddne-q64.js": {
+        "path": "/tmp/melody113-normal-dist-first/assets/backed-capture.worklet-Ddne-q64.js",
+        "bytes": 3891,
+        "sha256": "fe2a6bfc3a8d0e063c436ed333833191b7246423a394f8c2582d0387b9e09534"
+      },
+      "assets/main-CmJiWIvT.js": {
+        "path": "/tmp/melody113-normal-dist-first/assets/main-CmJiWIvT.js",
+        "bytes": 145895,
+        "sha256": "19c18a9c54895d1dfad1bb7eaa18a6a86b17fc0d73b374621c99a4132d7d8f88"
+      },
+      "assets/render.worker-XQ4gxvXb.js": {
+        "path": "/tmp/melody113-normal-dist-first/assets/render.worker-XQ4gxvXb.js",
+        "bytes": 4883,
+        "sha256": "00266ba907dbf5e32d9216a4434d72b01d3a4ecc5d4ba5dce6ca1b3b919562e0"
+      }
+    }
+  },
+  "firstNewNative": {
+    "command": "MELODY_TEST_PORT=4306 CHROMIUM_PATH=/usr/bin/chromium PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/melody113-new-native-results-first.json npm run test:browser -- tests/backed-audio.spec.ts tests/backed-recording.spec.ts --workers=2 --reporter=line,json",
+    "stats": {
+      "startTime": "2026-10-04T22:23:45.518Z",
+      "duration": 37239.581,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 5,
+      "flaky": 0
+    },
+    "directWorklet": {
+      "passed": 9,
+      "failed": 0
+    },
+    "editor": {
+      "passed": 5,
+      "failed": 5
+    },
+    "failedCases": [
+      {
+        "file": "backed-recording.spec.ts",
+        "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+        "status": "unexpected"
+      },
+      {
+        "file": "backed-recording.spec.ts",
+        "title": "Finish stays disabled through count-in and Cancel preserves complete project, history and durable PCM",
+        "status": "unexpected"
+      },
+      {
+        "file": "backed-recording.spec.ts",
+        "title": "Stop playback and controlled pagehide cancel the whole backed session without publishing partial PCM",
+        "status": "unexpected"
+      },
+      {
+        "file": "backed-recording.spec.ts",
+        "title": "silent real microphone completion preserves old notes, reference bytes and redo instead of admitting backing audio",
+        "status": "unexpected"
+      },
+      {
+        "file": "backed-recording.spec.ts",
+        "title": "a foreign saved-copy winner during recording retains new complete memory without overwriting durable PCM",
+        "status": "unexpected"
+      }
+    ],
+    "log": {
+      "path": "/tmp/melody113-new-native-first.log",
+      "bytes": 21676,
+      "sha256": "edf252568d2942bc75a33f31ddd08312867012a5bf91f8ccd8d49e1acee5979e"
+    },
+    "results": {
+      "path": "/tmp/melody113-new-native-results-first.json",
+      "bytes": 56647,
+      "sha256": "23e743c6bf613c99fcc6bbeb9a7cd32e53791102f8ad3c148f4764aa9d458176"
+    },
+    "preservedArtifacts": "/workspace/melody113-native-first-artifacts",
+    "finding": "Five real MediaStream editor flows initially refused microphone capture before backing scheduling. The preserved diagnostic isolated legal forward frame gaps before arm; the narrow repair and unchanged affected-case acceptance are recorded below.",
+    "sourceRepairPending": false
+  },
+  "originalMaximumFixture": {
+    "path": "/workspace/melody113-maximum-fixtures/original.melody.json",
+    "bytes": 9562719,
+    "sha256": "45befaebf0cb4f2ebafb004036d7b3e41b6782290f59144c614bb359c3cafa69"
+  },
+  "originalMaximumExpectations": {
+    "path": "/workspace/melody113-maximum-fixtures/expectations.json",
+    "bytes": 2478,
+    "sha256": "e8a8b5d6d85fdbc7dd4e161164ef7b4e3483513463e4805324ce65fe6a65ea97"
+  },
+  "ci": {
+    "status": "passed",
+    "receipt": "2026-10-04-backed-recording-ci.json",
+    "head": "b96cdfd389ba9a7145089aa42319cfc3e1ccfd3d",
+    "tree": "d0f727608809aac27443eb049e652440d2b109dd",
+    "pushRun": 37241975731,
+    "pullRequestRun": 37241977979,
+    "unitTestsEach": 301,
+    "nativeTestsEach": 116,
+    "allProjectPullRequestWorkflows": 13,
+    "pullRequestMerge": "66a254f49ed62e094bbdc165f28cb9e1b2b7f859",
+    "mergeTreeMatchesHead": true
+  },
+  "limitations": [
+    "Synthetic software audio graph only; no measured microphone/vocal accuracy, physical latency correction or actual device compatibility.",
+    "Maximum acceptance passed in the authored software graph; see the maximum receipt for first fixture failure and exact measured scope.",
+    "Normal production build excludes test-only storage and audio harness entries."
+  ],
+  "startupRepair": {
+    "diagnosis": {
+      "kind": "scratch-only native startup diagnostic",
+      "attempts": 3,
+      "allFailedBeforeArm": true,
+      "topology": [
+        128,
+        128
+      ],
+      "forwardFramePairs": [
+        [
+          3584,
+          4224
+        ],
+        [
+          3200,
+          3712
+        ],
+        [
+          3584,
+          4224
+        ]
+      ],
+      "originalDistUnchanged": true,
+      "instrumentation": "Physically served scratch worker prefix subclasses registered processor and forwards original process; bounded diagnostic messages filtered from production controller protocol. This diagnostic is not an unmodified native gate.",
+      "ownedServer": {
+        "port": 4307,
+        "pid": 737537,
+        "terminated": true
+      },
+      "files": {
+        "/tmp/melody113-diagnostic.mjs": "ba1ad1c5cc53c0a60afc61fbdb9fd532fb46c574dfea4de63f126b9bd3a3471c",
+        "/tmp/melody113-diagnostic.json": "ee351a0419dbfd808094088a476e7cae6c99836ff5fa7fe321126d43eb8b4c61",
+        "/tmp/melody113-diagnostic.log": "b35b2db9d044799e6aebd3910898e8e125616a2c1f08dbb0d3b5adf043c46313",
+        "/tmp/melody113-normal-dist-first/assets/backed-capture.worklet-Ddne-q64.js": "fe2a6bfc3a8d0e063c436ed333833191b7246423a394f8c2582d0387b9e09534",
+        "/tmp/melody113-diag-dist/assets/backed-capture.worklet-Ddne-q64.js": "fb1cd32c4651a1e28dfd468f8c0ae5c86ce576356c6dd887d866e894a23a5762"
+      }
+    },
+    "scope": "Permit monotonic nonoverlapping forward graph-frame gaps before arm. Retain pinned channel topology, finite blocks and strict contiguous frames from arm onward.",
+    "originalAssertionsChanged": false,
+    "completionDeadline": "Final synchronous deadline/context check after bounded result scan/copy and before successful publication; actual focused RED then producer GREEN.",
+    "unsupportedBrowser": "Existing pre-permission AudioWorklet capability guard now has a no-resource-admission regression."
+  },
+  "repairedFullLocalCheck": {
+    "command": "npm run check",
+    "result": "passed",
+    "units": {
+      "total": 301,
+      "passed": 301,
+      "durationMilliseconds": 5464.577284
+    },
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuildMilliseconds": 574,
+    "log": {
+      "path": "/tmp/melody113-root-check-repaired.log",
+      "bytes": 31467,
+      "sha256": "2220a0cd45b9697189007ef7d71643fd6d2fc3e2e3fe836d77a21266a71e5e0d"
+    },
+    "normalBuild": {
+      "index.html": {
+        "path": "/tmp/melody113-normal-dist-repaired/index.html",
+        "bytes": 670,
+        "sha256": "ac94be89e6770eeecf835c0deb7131384a6f52ca9fd36dd9eff377c712d47751"
+      },
+      "assets/main-DeZ_MdJw.css": {
+        "path": "/tmp/melody113-normal-dist-repaired/assets/main-DeZ_MdJw.css",
+        "bytes": 16086,
+        "sha256": "d19462104488dd933a87f2eae2046826c38dc3a1b90a21b16fcb9eb51d07e792"
+      },
+      "assets/transcribe.worker-D27pcBxb.js": {
+        "path": "/tmp/melody113-normal-dist-repaired/assets/transcribe.worker-D27pcBxb.js",
+        "bytes": 2860,
+        "sha256": "e6f43ee54c3c3fc29cf9c532fa70b3e4b3009afd2f1ef5fe6fb1f7b93503c38c"
+      },
+      "assets/backed-capture.worklet-D8jsjSm5.js": {
+        "path": "/tmp/melody113-normal-dist-repaired/assets/backed-capture.worklet-D8jsjSm5.js",
+        "bytes": 75,
+        "sha256": "7f9bf4d0e8591a8a7abe7d6886412b66bc70c29935ec17ea0d7dd5cc22bef134"
+      },
+      "assets/main-xA4YM7U0.js": {
+        "path": "/tmp/melody113-normal-dist-repaired/assets/main-xA4YM7U0.js",
+        "bytes": 145894,
+        "sha256": "11e4a0077e86f13180ac8f4b034935e6e3e2f3274b849aecf5ad0d47cc3095b5"
+      },
+      "assets/backed-capture.worklet-B97G01j7.js": {
+        "path": "/tmp/melody113-normal-dist-repaired/assets/backed-capture.worklet-B97G01j7.js",
+        "bytes": 3918,
+        "sha256": "27e5dbedf57a6b733a2bfbeef15bae5783eb220d95ed96b0f8324ae28c4fe2e7"
+      },
+      "assets/render.worker-XQ4gxvXb.js": {
+        "path": "/tmp/melody113-normal-dist-repaired/assets/render.worker-XQ4gxvXb.js",
+        "bytes": 4883,
+        "sha256": "00266ba907dbf5e32d9216a4434d72b01d3a4ecc5d4ba5dce6ca1b3b919562e0"
+      }
+    }
+  },
+  "affectedNative": {
+    "scope": "Only the five editor cases that failed in the original 19-case native run; original assertions unchanged.",
+    "stats": {
+      "startTime": "2026-10-04T22:37:52.493Z",
+      "duration": 18281.862999999998,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "log": {
+      "path": "/tmp/melody113-affected-native.log",
+      "bytes": 2647,
+      "sha256": "fa163347e033c1367f4708f6688627ad0fd879e901532fd9ad74e6666072d3a7"
+    },
+    "results": {
+      "path": "/tmp/melody113-affected-native-results.json",
+      "bytes": 7872,
+      "sha256": "894249bce5c5ab57363cd662b6e5a7782bd3ae8178f5c8781fbeb4e4ca0bf67c"
+    },
+    "preservedArtifacts": "/workspace/melody113-native-affected-artifacts"
+  },
+  "fixtureReproduction": {
+    "generator": {
+      "path": "apps/melody-studio/scripts/create_backed_recording_fixtures.mjs",
+      "bytes": 3994,
+      "sha256": "522b8517a956c91564f86498da58cb949fe4e02ca63e84698c94e0cc66fb4b12"
+    },
+    "command": "node scripts/create_backed_recording_fixtures.mjs /workspace/melody113-reproduced-fixtures",
+    "originalBytesExact": true,
+    "originalExpectationValuesExact": true,
+    "scopedEslint": "passed",
+    "note": "Independent original Python fixture predates implementation completion; committed Node generator reproduces its exact 9,562,719-byte payload and expectation values without producer imports."
+  },
+  "firstFullNative": {
+    "command": "MELODY_TEST_PORT=4306 CHROMIUM_PATH=/usr/bin/chromium PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/melody113-full-native-results-first.json npm run test:browser -- --workers=2 --reporter=line,json",
+    "stats": {
+      "startTime": "2026-10-04T22:43:49.891Z",
+      "duration": 112700.106,
+      "expected": 115,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "newCases": {
+      "passed": 19,
+      "failed": 0
+    },
+    "failure": "Existing stale-tab roll test attempted a programmatic File input while startup still disabled project import; all later storage/history assertions were not reached.",
+    "log": {
+      "path": "/tmp/melody113-full-native-first.log",
+      "bytes": 20322,
+      "sha256": "906ea7a150f0dd8af64d306f6c76e498e0015f33ce98f157fe8c05b550003391"
+    },
+    "results": {
+      "path": "/tmp/melody113-full-native-results-first.json",
+      "bytes": 134999,
+      "sha256": "d671166549bb70212900483acca2cfa635e379fa174cf8c9671213e9aaf92716"
+    },
+    "preservedArtifacts": "/workspace/melody113-full-native-first-artifacts",
+    "repairPending": false
+  },
+  "maximum": {
+    "status": "passed",
+    "receipt": "2026-10-04-backed-recording-maximum.json",
+    "originalInputBytes": 9562719,
+    "originalTracks": 8,
+    "originalNotes": 2048,
+    "originalReferences": 8,
+    "framesPerReference": 441000,
+    "successfulCapturedBackupBytes": 9544215,
+    "fullProcessRestartByteExact": true,
+    "firstFixtureFailure": "Authored mono source was incorrectly expected to expose one native graph channel; actual MediaStream settings report stereo. Only runner expectation changed; original audio and numerical tolerances remained unchanged."
+  },
+  "readinessRepair": {
+    "scope": "One enabled-import readiness wait in the existing shared browser test helper; production unchanged.",
+    "receipt": "2026-10-04-backed-recording-readiness.json",
+    "stats": {
+      "startTime": "2026-10-04T22:48:18.908Z",
+      "duration": 8229.050000000001,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "result": "passed",
+    "log": {
+      "path": "/tmp/melody113-readiness-native.log",
+      "bytes": 1782,
+      "sha256": "19d588f98ebefa1c3327d4274de15a8505d37348e2ec0fa930ea7a2b3fcee6c2"
+    },
+    "results": {
+      "path": "/tmp/melody113-readiness-native-results.json",
+      "bytes": 3404,
+      "sha256": "c0fad4fe6945f4be9cb1e7a787273eac69c4caf849899134a33e0588edefa60b"
+    }
+  },
+  "nativeDistinctAcceptance": {
+    "passed": 116,
+    "scope": "115 passing cases in the first full 116 invocation plus the original remaining case passing after only its import readiness fixture repair; not a single all-green final local invocation. All 19 new cases passed in that first full invocation."
+  },
+  "finalStatic": {
+    "command": "npm run lint && npm run build",
+    "result": "passed",
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuildMilliseconds": 577,
+    "log": {
+      "path": "/tmp/melody113-final-static.log",
+      "bytes": 1161,
+      "sha256": "7c6a62e417c4ebfb301cee98e955b2991c467d00b151480c14d979391f5e993b"
+    },
+    "normalBuildOnly": true,
+    "normalBuild": [
+      {
+        "path": "apps/melody-studio/dist/assets/backed-capture.worklet-B97G01j7.js",
+        "bytes": 3918,
+        "sha256": "27e5dbedf57a6b733a2bfbeef15bae5783eb220d95ed96b0f8324ae28c4fe2e7"
+      },
+      {
+        "path": "apps/melody-studio/dist/assets/backed-capture.worklet-D8jsjSm5.js",
+        "bytes": 75,
+        "sha256": "7f9bf4d0e8591a8a7abe7d6886412b66bc70c29935ec17ea0d7dd5cc22bef134"
+      },
+      {
+        "path": "apps/melody-studio/dist/assets/main-DeZ_MdJw.css",
+        "bytes": 16086,
+        "sha256": "d19462104488dd933a87f2eae2046826c38dc3a1b90a21b16fcb9eb51d07e792"
+      },
+      {
+        "path": "apps/melody-studio/dist/assets/main-xA4YM7U0.js",
+        "bytes": 145894,
+        "sha256": "11e4a0077e86f13180ac8f4b034935e6e3e2f3274b849aecf5ad0d47cc3095b5"
+      },
+      {
+        "path": "apps/melody-studio/dist/assets/render.worker-XQ4gxvXb.js",
+        "bytes": 4883,
+        "sha256": "00266ba907dbf5e32d9216a4434d72b01d3a4ecc5d4ba5dce6ca1b3b919562e0"
+      },
+      {
+        "path": "apps/melody-studio/dist/assets/transcribe.worker-D27pcBxb.js",
+        "bytes": 2860,
+        "sha256": "e6f43ee54c3c3fc29cf9c532fa70b3e4b3009afd2f1ef5fe6fb1f7b93503c38c"
+      },
+      {
+        "path": "apps/melody-studio/dist/index.html",
+        "bytes": 670,
+        "sha256": "ac94be89e6770eeecf835c0deb7131384a6f52ca9fd36dd9eff377c712d47751"
+      }
+    ],
+    "sources": [
+      {
+        "path": "apps/melody-studio/src/backing.ts",
+        "bytes": 2094,
+        "sha256": "781d58d2c2ca78276cde4169157b12f3a0385e50c8d7ede3599ccc89f41a6381"
+      },
+      {
+        "path": "apps/melody-studio/src/backed-frames.ts",
+        "bytes": 5362,
+        "sha256": "3b2e924acb82184db386b4dd9f95a5e6f98258cfe5286544a058ff3079946edf"
+      },
+      {
+        "path": "apps/melody-studio/src/backed-recorder.ts",
+        "bytes": 18252,
+        "sha256": "7fdeaebd8c37ec03a336a01be1eee2786feacf5a0311c6efcbebc44ae412dcab"
+      },
+      {
+        "path": "apps/melody-studio/src/backed-capture.worklet.ts",
+        "bytes": 3338,
+        "sha256": "ea9ab8b0cf6d43bca5eb53b6569cf0f8ac1b1f002395f83cd01a687c12f1aa2a"
+      },
+      {
+        "path": "apps/melody-studio/src/main.ts",
+        "bytes": 104835,
+        "sha256": "1658de54ede1438d64b90ee2082472d8249f1ea52eb86edc837eac3d4195c8ff"
+      },
+      {
+        "path": "apps/melody-studio/src/style.css",
+        "bytes": 18546,
+        "sha256": "c51973d9c4188a2826588ff94b1cb1c65a685adedd7bd2c84176dd299e8aee32"
+      },
+      {
+        "path": "apps/melody-studio/tests/browser/save-conflicts.spec.ts",
+        "bytes": 15680,
+        "sha256": "e9361cadaa44b32852a361dd8084d8eaa17ded058a28ebb90aac36f75be6d8d2"
+      },
+      {
+        "path": "apps/melody-studio/scripts/create_backed_recording_fixtures.mjs",
+        "bytes": 3994,
+        "sha256": "522b8517a956c91564f86498da58cb949fe4e02ca63e84698c94e0cc66fb4b12"
+      },
+      {
+        "path": "apps/melody-studio/scripts/smoke_backed_recording.mjs",
+        "bytes": 27179,
+        "sha256": "b79a97e55121d19b1e7e0de02cbd82bcfe104d8d3b44797e08cf713553acb827"
+      }
+    ]
+  }
+}

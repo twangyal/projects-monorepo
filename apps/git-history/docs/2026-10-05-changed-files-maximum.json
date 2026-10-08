@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 1,
+  "issue": 123,
+  "status": "passed: root prepare, source/fresh core-wheel CLI, native installed-wheel handoff, final read-only audit",
+  "sourceFiles": {
+    "scripts/smoke_changed_files.py": {
+      "sha256": "cfcea2be28eab7935097abf9d821449c2d0bad2b139a49f4fa27fd46aaacd9dd",
+      "bytes": 13509
+    },
+    "scripts/smoke_changed_files_browser.mjs": {
+      "sha256": "1b27192336edebfc57802f3968380e9c351bb6ea1d3414e698449e726718a47e",
+      "bytes": 7877
+    }
+  },
+  "independence": {
+    "producerReads": "No new changed_files/CLI/service/UI implementation read; approved design, existing comparison/browser patterns and CLI schema only",
+    "expectedMetadata": "Exact original blob SHA1 independently computed from blob-length-NUL header and literal bytes; fixed modes/kinds/statuses and sorted UTF8 paths. Original expected catalog not calculated by new producer.",
+    "optionalParser": "Fresh installed wheel environment must have no tree_sitter; CLI manually selects complete2-line text, no optional grammar."
+  },
+  "frozenFixture": {
+    "maximumRawChanges": 10000,
+    "modifiedBulkPaths": 9997,
+    "bulkRange": "bulk/file-00000.txt through bulk/file-09996.txt",
+    "modifiedSourcePaths": 1,
+    "addedPaths": [
+      "src-extra/neighbor.txt",
+      "literal/tab\tnewline\n\u30e6\u30cb.txt"
+    ],
+    "unchangedPath": "unchanged.txt",
+    "overflowRawChanges": 10001,
+    "overflowAdditionalPath": "overflow/one-more.txt",
+    "allPresentKinds": "regular100644 blobs",
+    "exactDirectory": "src contains only src/selected.txt and excludes src-extra/neighbor.txt",
+    "sameRevisionResult": 0,
+    "selectedNativePath": "bulk/file-00101.txt",
+    "selectedNativeGlobalIndex": 101,
+    "sourceLeft": "Original common line\nleft 00101\n",
+    "sourceRight": "Original common line\nright 00101\n",
+    "alignmentCounts": {
+      "unchanged": 1,
+      "removed": 1,
+      "added": 1
+    }
+  },
+  "checks": [
+    "Exact source CLI/catalog against original full expected10000path/object/mode facts",
+    "Source and fresh optional-parser-free installed wheel catalog outputs byte-identical",
+    "10001 returns refusal with no partial JSON; same-ref empty succeeds; literal exactdirectory returns1",
+    "Dirty tracked file, staged control, untracked bytes and Git index fingerprints unchanged before/after CLI and final browser audit",
+    "Native catalog JSON exact installed CLI parity;100DOMrows/page2/globalindex101",
+    "Deliberate row handoff does not issue a source/report request; both pinnedrefs/fullpaths seeded",
+    "Explicit actual source loads then complete comparison JSON/HTML exact installed CLI bytes; no dirty source appears",
+    "Browser capability fragment scrubbed; no storage persistence or externalrequests; desktop390px nooverflow"
+  ],
+  "phases": {
+    "cwd": "apps/git-history",
+    "prepare": "python3 scripts/smoke_changed_files.py prepare --output /workspace/git123-maximum-fixtures",
+    "rootWheel": "Root builds wheel and creates fresh optional-parser-free venv; script installs nothing",
+    "verify": "python3 scripts/smoke_changed_files.py verify --output /workspace/git123-maximum-fixtures --source-python /PATH/source-python --installed-python /PATH/fresh-wheel-venv/bin/python",
+    "rootService": "Root starts installed-wheel workbench fixed to output/repository on random loopback port; saves startup JSON containing url privately0600. Runner starts/stops no service.",
+    "browser": "CHROMIUM_PATH=/usr/bin/chromium node scripts/smoke_changed_files_browser.mjs --output /workspace/git123-maximum-fixtures --session-file /PATH/private-startup.json",
+    "finalAudit": "python3 scripts/smoke_changed_files.py audit --output /workspace/git123-maximum-fixtures"
+  },
+  "ownership": {
+    "fixture": "prepare refuses existing output, creates only its new Git repository; never operates monorepoGit",
+    "root": "All preparation/install/live service/runtime timing decisions and initial execution",
+    "browser": "Helper owns and closes only its launched context/browser; no persistent service ownership",
+    "privateCapability": "Only read at authorized runtime from bounded0600startup file; never prints/session URL; failures sanitized, noprivate startup copied into public receipt"
+  },
+  "cost": {
+    "estimate": "Allow250MiB workspace for20k original blobs,10k small worktree files/index, catalog artifacts, installed venv/browser artifacts. Actual timings measured during rootexecution.",
+    "subprocessDeadlineSeconds": 60,
+    "subprocessCapturedOutputBytes": 16777216,
+    "catalogProducerLimits": "Existing10s2MiB subprocess /45s32MiB operation /10000entries /8MiBserialized remain independent"
+  },
+  "limits": [
+    "Count maximum uses small paths; no exact2MiB raw-output/8MiBserialized cap saturation claim.",
+    "Tab/newline/Unicode path is fidelity coverage, not long/control-path maximum or nonUTF8 omission quota.",
+    "All maximum endpoints regular; richer symlink/gitlink/mode/rename cases belong separate independent oracle.",
+    "No inspected-source execution, remote fetch, parser dependency, physicalhardware or monorepo Git mutation.",
+    "No runtime pass or behavioralRED manufactured."
+  ],
+  "staticChecks": {
+    "python": "ast.parse + /tmp/duet-service-checks/bin/ruff check scripts/smoke_changed_files.py exit0",
+    "javascript": "node --check + npx eslint scripts/smoke_changed_files_browser.mjs exit0",
+    "firstStaticFailure": "Unused Buffer declaration in helper found by scopedESLint; removed before runtime with no expectations altered"
+  },
+  "rootExecution": {
+    "cli-verification.json": {
+      "schemaVersion": 1,
+      "issue": 123,
+      "status": "passed",
+      "scriptSha256": "cfcea2be28eab7935097abf9d821449c2d0bad2b139a49f4fa27fd46aaacd9dd",
+      "fixtureOracleSha256": "10b062c48559b49c38e697563e233a20e2e24398e2e5e2307a0a72fde12068c3",
+      "catalogs": [
+        {
+          "name": "maximum",
+          "bytes": 3890122,
+          "sha256": "48c5b632771029c1f70cef3aa78bf40481792bd52ff9d42448aa6310d4fa820f",
+          "entries": 10000
+        },
+        {
+          "name": "src",
+          "bytes": 748,
+          "sha256": "bbfdb1c5a496549e3549f70fb046a639a3e69f34c744ae03ee694f4670f664c2",
+          "entries": 1
+        },
+        {
+          "name": "same",
+          "bytes": 356,
+          "sha256": "d644e275c5092b968426f2517a9cf23015f905054a1e7c2c715ccd0f7d33012e",
+          "entries": 0
+        }
+      ],
+      "overflowRefusals": [
+        {
+          "mode": "source",
+          "exit": 2
+        },
+        {
+          "mode": "installed",
+          "exit": 2
+        }
+      ],
+      "installedOptionalParser": false,
+      "worktreeIndexByteIdentity": true,
+      "originalTreeFacts": {
+        "schemaVersion": 1,
+        "issue": 123,
+        "revisions": {
+          "max-left": "79565621a4256cf2612e4802bb1ae225f488fdbe",
+          "max-right": "c83cc84250aafbc0958fd0e5c93c67f6ef574353",
+          "max-overflow": "211358571872425ec17ce821398f348668ffc00b"
+        },
+        "maximumRawEntries": 10000,
+        "overflowRawEntries": 10001,
+        "unchangedExcluded": "unchanged.txt",
+        "literalControlPath": "literal/tab\tnewline\n\u30e6\u30cb.txt",
+        "selectedPath": "bulk/file-00101.txt",
+        "selectedLeftSource": "Original common line\nleft 00101\n",
+        "selectedRightSource": "Original common line\nright 00101\n",
+        "selectedLeftBlob": "971538d54b6585611ae275ce9fea969d22317c06",
+        "selectedRightBlob": "4b79687c164163f36599d0feb148f5623352d3ae",
+        "originalState": {
+          "indexSha256": "122a2774457340dc8dfc1c3a01e387abec7e58cb507fe3bdec5ce4f3b0091bed",
+          "worktreeSha256": "bfe8254cbb32aab01fddd2cbbf15e0ca743a49ad884e0758006dedb6bae9351c",
+          "worktreeFiles": 10002,
+          "statusSha256": "2df4f486233288f627f89392900bb2370fd37577f102ceb671a65b356bdbfa40"
+        },
+        "expectedCatalogSha256": "34fefeb7b7f9a1c1acc0173af43adc4aa5995f6adbf7fe6fe3ac19de6bd83b95",
+        "limits": [
+          "Count maximum uses small original paths/blobs and remains below tighter raw-output byte bounds.",
+          "No2MiB raw-output or8MiB serialized catalog saturation claim.",
+          "Literal tab/newline/Unicode path is separate semantic fidelity, not a long-path maximum.",
+          "No optional native parser, network fetch or inspected-source execution required."
+        ]
+      },
+      "wallMs": 9595.917427999666
+    },
+    "browser-verification.json": {
+      "schemaVersion": 1,
+      "issue": 123,
+      "status": "passed",
+      "scriptSha256": "1b27192336edebfc57802f3968380e9c351bb6ea1d3414e698449e726718a47e",
+      "fixtureOracleSha256": "10b062c48559b49c38e697563e233a20e2e24398e2e5e2307a0a72fde12068c3",
+      "rootOrigin": "http://127.0.0.1:42873",
+      "checks": [
+        "10000 metadata rows exact to source/installed CLI;100-row DOM pagination and global index101 explicit handoff preserve fullpins and cause no source/report request.",
+        "Explicit native present-source loads and comparison retain original committed bytes, not dirty worktree; JSON and HTML downloads byte-identical to optional-parser-free installed CLI."
+      ],
+      "artifacts": [
+        {
+          "file": "browser-changed-files.json",
+          "bytes": 3890122,
+          "sha256": "48c5b632771029c1f70cef3aa78bf40481792bd52ff9d42448aa6310d4fa820f"
+        },
+        {
+          "file": "browser-selected-comparison.json",
+          "bytes": 1473,
+          "sha256": "485558644312776cf2b42e1848484e2990ee5a3b52add6e9d57299619f1b6bfb"
+        },
+        {
+          "file": "browser-selected-comparison.html",
+          "bytes": 4627,
+          "sha256": "132b0ea152a6d1819bc243bcf711314d92197cca8933fc9f485dcb136aa8ced9"
+        }
+      ],
+      "operations": [
+        "changed-files",
+        "source",
+        "source",
+        "comparison"
+      ],
+      "pageErrors": [],
+      "externalRequestCount": 0,
+      "scope": "Actual original tree catalog paging, explicit pinned source handoff and exact completed CLI/browser artifacts; no optional parsers or producer oracle imports.",
+      "browserVersion": "151.0.7922.173",
+      "browserPids": [
+        877257
+      ],
+      "browserClosed": true,
+      "wallMs": 9561.537703999998
+    },
+    "final-readonly-audit.json": {
+      "schemaVersion": 1,
+      "issue": 123,
+      "status": "passed",
+      "worktreeIndexByteIdentity": true,
+      "originalState": {
+        "indexSha256": "122a2774457340dc8dfc1c3a01e387abec7e58cb507fe3bdec5ce4f3b0091bed",
+        "worktreeSha256": "bfe8254cbb32aab01fddd2cbbf15e0ca743a49ad884e0758006dedb6bae9351c",
+        "worktreeFiles": 10002,
+        "statusSha256": "2df4f486233288f627f89392900bb2370fd37577f102ceb671a65b356bdbfa40"
+      }
+    },
+    "firstInvocationFailure": {
+      "log": "/tmp/git123-maximum-verify-first.log",
+      "kind": "environment path error before producer CLI execution",
+      "cause": "Root supplied nonexistent /usr/local/bin/python3; corrected to discovered system interpreter. No fixture or producer changes."
+    },
+    "packaging": {
+      "wheel": {
+        "bytes": 91233,
+        "sha256": "8f2e0b2eea1da10d2910d30218949810d24e42c22e889e38e298fede1384ff50"
+      },
+      "assets": [
+        {
+          "path": "changed-files.js",
+          "bytes": 5948,
+          "sha256": "4f89c19745a269bd937802d924d347787c8e763673c5b2f0db3d32d2048d2a95"
+        },
+        {
+          "path": "context-editor.js",
+          "bytes": 8787,
+          "sha256": "900964a376450b64c51c977e64aa0b404912d7811a28c1f328f979f5494efb48"
+        },
+        {
+          "path": "workbench.css",
+          "bytes": 15630,
+          "sha256": "3aba4a9d0cb1624352c653e05a309ed17022b2155bfa3895cf9bdb9d330dfcdd"
+        },
+        {
+          "path": "workbench.html",
+          "bytes": 26208,
+          "sha256": "cf5aac85b304488e57b5277fcddb902ff807a4f3107d6c1b31d11e359e967ba7"
+        },
+        {
+          "path": "workbench.js",
+          "bytes": 66301,
+          "sha256": "828da925340fe029f3b229e52363cde5029f0cf925183f37e19e32ff270f1ac6"
+        }
+      ],
+      "installedChecks": [
+        {
+          "environment": "core",
+          "version": "0.8.0",
+          "path": "/tmp/git123-installed-core/lib/python3.12/site-packages/git_history/__init__.py",
+          "native": false
+        },
+        {
+          "environment": "native",
+          "version": "0.8.0",
+          "path": "/tmp/git123-installed-native/lib/python3.12/site-packages/git_history/__init__.py",
+          "native": true
+        }
+      ]
+    },
+    "cleanup": {
+      "ownedServicePid": 873650,
+      "signal": "SIGTERM after successful final audit",
+      "privateCapabilityFile": "not copied or printed",
+      "browserPid": 877257,
+      "browserClosed": true
+    },
+    "visualReview": "Root viewed actual 390px screenshot: no horizontal document overflow; metadata and comparison remain readable. Measured layout assertion is in browser script.",
+    "artifactReceipts": [
+      {
+        "file": "fixture-oracle.json",
+        "bytes": 1495,
+        "sha256": "10b062c48559b49c38e697563e233a20e2e24398e2e5e2307a0a72fde12068c3"
+      },
+      {
+        "file": "cli-verification.json",
+        "bytes": 2566,
+        "sha256": "4069595565cd5b3a1a20955fa0161aa146d25c055913039ce71b537406e947c6"
+      },
+      {
+        "file": "browser-verification.json",
+        "bytes": 1622,
+        "sha256": "19074732b32624a4a85ba9e98800e215997233192dc748f482c9d20e23fa9c2d"
+      },
+      {
+        "file": "final-readonly-audit.json",
+        "bytes": 418,
+        "sha256": "911d57208cef8e564013cee6b7ef2ba90e31e86be73acf071b45bea1bb196008"
+      },
+      {
+        "file": "desktop.png",
+        "bytes": 484999,
+        "sha256": "9202fb93bbd2e1ca5a5a9d1c7bdbfb9c0cbbf9598eb6a3e343ce848a160e6234"
+      },
+      {
+        "file": "390px.png",
+        "bytes": 485984,
+        "sha256": "d9fab2e94449b98b4c9a2ff0e822609af91225bbbd7d83cf6942d4010e443b8a"
+      }
+    ]
+  }
+}

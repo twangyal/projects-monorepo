@@ -1,0 +1,184 @@
+{
+  "issue": 105,
+  "complete": true,
+  "distinctNativeCases": 17,
+  "runs": [
+    {
+      "kind": "baseline missing-feature RED",
+      "passed": 0,
+      "failed": 1,
+      "reason": "Actual selected saved clip loaded; Import timed lyrics (SRT) absent within2seconds.",
+      "log": "/tmp/karaoke105-baseline-red.log"
+    },
+    {
+      "kind": "first final production native gate",
+      "passed": 17,
+      "failed": 0,
+      "seconds": 20.1,
+      "log": "/tmp/karaoke105-native-first.log",
+      "bundle": "index-Csg4_O27.js"
+    }
+  ],
+  "assertionChangesAfterRun": false,
+  "fixturePolicy": "Original literal input/expected cue/SRT files frozen outside repository before producer reads; precontract raw-markup input retained as negative after required escaped-tag policy, decoded expected text unchanged. Export timed lyrics button locator corrected before first gate.",
+  "fixtures": {
+    "authority": "Final root frozen grammar: reject raw angle brackets, decode amp/lt/gt once. Literal original fixture expectations frozen before new producer reads. Prior draft rawmarkup retained as negative fixture; no expected numeric/cue-value change.",
+    "files": [
+      {
+        "name": "expected-cues.json",
+        "bytes": 687,
+        "sha256": "72d8514c3a23df074bc73de837caae68dd22fcd79ed0b9b54970944f53c24276"
+      },
+      {
+        "name": "expected-export.srt",
+        "bytes": 178,
+        "sha256": "d25a294e80fe611cf32b68688bc2e836ca5822b980a9127f9cd8ab9becab201a"
+      },
+      {
+        "name": "invalid-utf8.srt",
+        "bytes": 42,
+        "sha256": "6ce825ed0a62b3d8930442a11913cec2c801aa6130f007eb6adff19e93bda79d"
+      },
+      {
+        "name": "newer-selection.srt",
+        "bytes": 61,
+        "sha256": "5b7d76e66752308a2b3005c467fbcb34dcec49bdc41d8d5f7a66bd35d93e1db0"
+      },
+      {
+        "name": "primary-bom-crlf.srt",
+        "bytes": 192,
+        "sha256": "4d442994527474f811e4487e0bfe78274efb9ca1a94f26feabe555bf85c2923b"
+      },
+      {
+        "name": "rejected-raw-markup.srt",
+        "bytes": 176,
+        "sha256": "27f152c58c2b5e31445333eca04755cd50b9958411f53201decbbe7ea842ad17"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/karaoke105-native-artifacts/actual-imported.srt",
+      "bytes": 178,
+      "sha256": "d25a294e80fe611cf32b68688bc2e836ca5822b980a9127f9cd8ab9becab201a"
+    },
+    {
+      "path": "/workspace/karaoke105-native-artifacts/actual-imported.karaoke.zip",
+      "bytes": 2118358,
+      "sha256": "86e5e427faa1278dd3fd6603b48e4cd3b6dbf7e5c00762a0d12a7dd1d738a22d"
+    },
+    {
+      "path": "/workspace/karaoke105-native-artifacts/srt-mobile-390.png",
+      "bytes": 205066,
+      "sha256": "799e85ecff3617cd7690003fddd7ff5ac9c069c32c6838bf95f6678961473362"
+    }
+  ],
+  "archive": {
+    "project": {
+      "schemaVersion": 1,
+      "id": "6fa24f6becf54562927eccfceea301f8",
+      "title": "Original saved title105",
+      "duration": 4.0,
+      "revision": 2,
+      "cues": [
+        {
+          "start": 0.333,
+          "end": 1.125,
+          "text": "First café 🌓 <b>literal</b>"
+        },
+        {
+          "start": 1.25,
+          "end": 2.5,
+          "text": "Second & final?"
+        },
+        {
+          "start": 3.001,
+          "end": 4.0,
+          "text": "Line three 🎵"
+        }
+      ]
+    },
+    "files": [
+      {
+        "name": "project.json",
+        "bytes": 300,
+        "sha256": "e91d34d2b9e4072934c5714941ad8c64cefa9b8505fde671c2ac17a7e3628f2a"
+      },
+      {
+        "name": "source.wav",
+        "bytes": 705644,
+        "sha256": "67555fbeffac3bb285406530398eeecfe71e491db5c3473e72025fa97fa2eb29"
+      },
+      {
+        "name": "vocals.wav",
+        "bytes": 705644,
+        "sha256": "67555fbeffac3bb285406530398eeecfe71e491db5c3473e72025fa97fa2eb29"
+      },
+      {
+        "name": "backing.wav",
+        "bytes": 705644,
+        "sha256": "67555fbeffac3bb285406530398eeecfe71e491db5c3473e72025fa97fa2eb29"
+      },
+      {
+        "name": "manifest.json",
+        "bytes": 612,
+        "sha256": "c2b0b35db051dc3beef5458aa8713134c8d1a18c1abfd44b0ad37478c9cded19"
+      }
+    ]
+  },
+  "hashes": [
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/tests/srt-import.spec.ts",
+      "bytes": 21329,
+      "sha256": "59987e43307040907a53741d275aa00a231aa4a33b10578176a84ab13001a70b"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/src/main.ts",
+      "bytes": 57289,
+      "sha256": "2de1611d89fd815b7d1cf9b95a4ef49e14096adad014a87e552d3c421fd42c99"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/src/srt.ts",
+      "bytes": 3464,
+      "sha256": "3ec2bcf0c981e731f16a3b8dc95c2a7999f51397e5b943be7fc85c23cb21100a"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/src/draft-history.ts",
+      "bytes": 2577,
+      "sha256": "6f536be4d2ae38332b01169d73fd842522931fc8266da826ac85586ed030d18f"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/karaoke-studio/dist/assets/index-Csg4_O27.js",
+      "bytes": 56424,
+      "sha256": "4f4151d568fba57b4d85d413841bca4bbda9089cb14cea30686ec6f20eb929b2"
+    },
+    {
+      "path": "/tmp/karaoke105-native-first.log",
+      "bytes": 2376,
+      "sha256": "3a67559c08cd2e2128b6d2e2b77d95071d5ee3e7b71934ebbf07f1ee6e684920"
+    },
+    {
+      "path": "/tmp/karaoke105-baseline-red.log",
+      "bytes": 2371,
+      "sha256": "81ba16ca114783b3a3fc35ce8cc3ce7154f20ae769c04a574cbcbfe106254fbc"
+    }
+  ],
+  "coverage": [
+    "real native File with fatal-UTF8/strict grammar rejection, single-pass entities and multiline literal text",
+    "review does not save; explicit Apply one Undo/Redo, 1/3 original fraction restored",
+    "raw numeric spelling, invalid timing, title and unapplied paste retention, native textarea node/caret/focus",
+    "successful manual Save exact SRT bytes and complete native ZIP project+three audio SHA parity, reload",
+    "changed-back input, newer File, cancellation, project switch, controlled persisted pagehide and10second clock deadline retire held genuine File.arrayBuffer",
+    "real competing HTTP revision update rejects Save without losing imported editor/Undo",
+    "waveform10ms arrow preserves imported milliseconds and Undo returns original1/3",
+    "390px native keyboard Apply and no horizontal overflow"
+  ],
+  "scopeLimits": [
+    "Injected fake separator only supplies deterministic stems through actual HTTP/FFmpeg normalization; no trained model inference.",
+    "Pagehide/pageshow and read-deadline clock scenarios are explicitly controlled lifecycle tests.",
+    "Real300second maximum/200cue/20k/128KiB+1 and MP4 acceptance belongs separate root-coordinated gate.",
+    "No actual codec or image-decoding mock; comparison audio is actual retained WAV bytes."
+  ],
+  "browserClosed": true,
+  "serverOwnership": "Root isolated4302 server left untouched; no test builds or servers started."
+}

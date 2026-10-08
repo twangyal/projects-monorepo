@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "milestone": 107,
+  "date": "2026-10-04",
+  "scope": "CLI and creation-only HTTPS setup-key UI; no native browser or physical-device proof from this receipt.",
+  "sourceFiles": {
+    "duet/__main__.py": {
+      "bytes": 2244,
+      "sha256": "cfc5aa8dce26d2653a2eb75ae756dea0e7c3709c8bd4c1424ce62d9cfeef36f7"
+    },
+    "tests/test_cli_https.py": {
+      "bytes": 7227,
+      "sha256": "77f8c23541dfc66b398c7701df2e7d6a9e061743f4611aac1d570abf92c549f6"
+    },
+    "src/main.ts": {
+      "bytes": 42130,
+      "sha256": "d07d94902c7cd95834ff2043bd0088635c954b7917256d4b0f72b07364f59039"
+    },
+    "src/style.css": {
+      "bytes": 14841,
+      "sha256": "1f066b32d055f979bc0564f94a642ca1ac264277f8b59cbd721d5ea6a62b0e0d"
+    }
+  },
+  "retainedLogs": {
+    "initialRed": {
+      "path": "/tmp/duet107-cli-red.log",
+      "bytes": 6965,
+      "sha256": "57e87a22ed5f35a2f029bf9e3f4dbf7ce26312e5c209a9b0a027aa7d291846c2"
+    },
+    "firstGreen": {
+      "path": "/tmp/duet107-cli-green.log",
+      "bytes": 1018,
+      "sha256": "5e6c27f3099756a6e13d15f5be928db8ba4cb9f4d5bd961b83bb126d3c7f541d"
+    },
+    "bindRed": {
+      "path": "/tmp/duet107-cli-bind-red.log",
+      "bytes": 5043,
+      "sha256": "e246ef93617e6629441c9bf914e36aaa2a7654fa6d12641d88305b03d63792a7"
+    },
+    "bindGreen": {
+      "path": "/tmp/duet107-cli-bind-green.log",
+      "bytes": 1372,
+      "sha256": "ca8519c72abb4e512a3c65ee76ee6c8994ab5123b9c4ec8eea7b4e09b497c62c"
+    },
+    "ruff": {
+      "path": "/tmp/duet107-cli-ruff.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    "typecheck": {
+      "path": "/tmp/duet107-ui-typecheck.log",
+      "bytes": 248,
+      "sha256": "6581c7200e75a591bfcc856dc8cdb1a440dae25ac69895d49c94b6b706ac0507"
+    },
+    "eslint": {
+      "path": "/tmp/duet107-ui-lint.log",
+      "bytes": 208,
+      "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+    }
+  },
+  "cliVerification": {
+    "command": "python3 -m unittest tests.test_cli_https -v",
+    "initialRed": {
+      "tests": 4,
+      "failures": 7,
+      "errors": 0,
+      "seconds": 0.005,
+      "description": "Missing new CLI flags caused seven failing assertions across configuration and partial-option cases; default loopback case passed."
+    },
+    "firstGreen": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "seconds": 0.009,
+      "description": "The original cases passed, with an additional real invalid-TLS-file admission case. Server construction was mocked; real configuration validation rejected before library admission."
+    },
+    "bindRed": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 2,
+      "seconds": 0.015,
+      "description": "Injected constructor EADDRINUSE and EADDRNOTAVAIL escaped the HTTPS CLI boundary as OSError."
+    },
+    "bindGreen": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "seconds": 0.011,
+      "description": "HTTPS startup OSError now receives fixed bind/port/library-access guidance. The default loopback OSError is re-raised unchanged."
+    },
+    "coverage": [
+      "Default positional server call and actual bound loopback URL remain unchanged.",
+      "Supplying any incomplete combination of the five HTTPS options fails before server construction.",
+      "Complete options call the configuration builder before the server, printing only the public origin.",
+      "Configuration errors do not print a traceback, setup input or private filesystem paths.",
+      "Real invalid certificate input leaves the existing test library unchanged.",
+      "Occupied-port and unavailable-address constructor errors are sanitized only in HTTPS mode."
+    ],
+    "boundary": "CLI success, constructor-order and bind-error cases use controlled mocks. This is not a real-listener or TLS-handshake measurement."
+  },
+  "staticVerification": [
+    {
+      "command": "npm run typecheck",
+      "result": "passed",
+      "log": "typecheck"
+    },
+    {
+      "command": "npx eslint src/main.ts",
+      "result": "passed",
+      "log": "eslint"
+    },
+    {
+      "command": "/tmp/duet-service-checks/bin/ruff check duet/__main__.py tests/test_cli_https.py",
+      "result": "passed",
+      "log": "ruff"
+    },
+    {
+      "command": "python3 -m compileall -q duet/__main__.py tests/test_cli_https.py",
+      "result": "passed",
+      "evidence": "Observed silent successful compilation in the retained execution session; no separate compile log was produced."
+    }
+  ],
+  "clientContract": {
+    "status": "Same-origin GET /api/status; only room creation is gated until transport mode and authority requirement are known.",
+    "creationHeader": "X-Duet-Setup-Key exclusively on POST /api/rooms.",
+    "setupInput": {
+      "type": "password",
+      "maximumCharacters": 64,
+      "syntax": "lowercase hexadecimal",
+      "autocomplete": "off",
+      "hasFormName": false
+    },
+    "clearing": [
+      "Immediately at deliberate creation dispatch.",
+      "On leaving room creation, opening a seat or returning home.",
+      "On pagehide."
+    ],
+    "ownership": "Retired status and identity callbacks cannot activate an old room or unlock newer identity work; a received seat may be retained for explicit recovery.",
+    "retry": "No automatic replay of room creation. Failed or interrupted responses preserve name/title fields and require deliberate retry.",
+    "preserved": [
+      "Existing invitation and saved-seat flows do not require the setup key.",
+      "Explicit local audio enablement and existing shared playback algorithm remain unchanged.",
+      "Setup key is not saved, put in links, echoed, or used as participant authority."
+    ]
+  },
+  "configurationLimits": {
+    "allOrNothingOptions": [
+      "--bind",
+      "--origin",
+      "--tls-cert",
+      "--tls-key",
+      "--setup-token-file"
+    ],
+    "httpsPort": {
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "certificateBytes": 131072,
+    "privateKeyBytes": 32768,
+    "setupFileBytes": 65,
+    "note": "File, address and TLS admission are delegated to the separately owned transport configuration implementation; this receipt does not claim its full protocol verification."
+  },
+  "notRunByThisOwner": [
+    "Production build",
+    "Native browser suite",
+    "TLS or persistent service",
+    "Physical two-device test"
+  ],
+  "sanitization": "No setup keys, participant capabilities, certificate private material or their values are copied into this receipt. Log contents are referenced only by length and hash."
+}

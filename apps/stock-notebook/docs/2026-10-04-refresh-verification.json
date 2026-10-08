@@ -1,0 +1,222 @@
+{
+  "date": "2026-10-04",
+  "issue": 56,
+  "version": "0.3.0",
+  "coreCommit": "9dc2d16b108664d4e9b9fc8ca01bf2b2a5a34b47",
+  "implementationCommit": "85091d87fb5331e608ac1338bf5abaf36eba5c08",
+  "scope": "Reviewed complete CSV replacement preserving accepted research under existing schema v2. Original fictional input data and locally authored notes only. No remote financial data, model changes or source-link fetching.",
+  "environment": {
+    "os": "Debian 13 Linux x86_64",
+    "cpuQuota": 4,
+    "memoryGiB": 16,
+    "node": "24.19.0",
+    "localChromium": "151.0.7922.173",
+    "ciChromium": "153.0.8010.12"
+  },
+  "automated": {
+    "unitTests": 149,
+    "newProducerTests": 13,
+    "newIndependentOracleTests": 18,
+    "newReportTests": 7,
+    "productionBrowserTests": 34,
+    "newProductionBrowserTests": 12,
+    "localBrowserSeconds": 51.5,
+    "ciBrowserSeconds": 50.4,
+    "lint": "passed",
+    "typecheck": "passed",
+    "normalProductionBuild": "passed",
+    "independentReviews": "Core/report and UI lifecycle clear; oracle authored without reading refresh implementation.",
+    "ciRun": "https://github.com/twangyal/projects-monorepo/actions/runs/37179896113",
+    "ciJob": 111370156232,
+    "allProjectWorkflowsAtImplementationCommit": 12,
+    "allProjectWorkflowsConclusion": "success",
+    "unchangedExperimentTests": 31,
+    "experimentDiagnostics": "Frozen failed development results reproduced in CI; holdouts unopened and no learned feature enabled."
+  },
+  "nodeMaximum": {
+    "date": "2026-10-04",
+    "node": "v24.19.0",
+    "platform": "linux x64",
+    "fixture": {
+      "companies": 100,
+      "annualRowsPerInput": 500,
+      "periodsPerTicker": 5,
+      "unionPeriods": 1000,
+      "csvBytesPerInput": 2097152,
+      "csvSha256": {
+        "previous": "d04cc558bf45fd503f256e628e8103c2a44016b2319230401138099a923e936d",
+        "incoming": "337bd01e7462eb5f5bde22c50f8cd4dc507fb3909020143dcae64ecf07984ab7"
+      },
+      "retainedWatchlistEntries": 100,
+      "retainedComparisonEntries": 4,
+      "retainedNotes": 100,
+      "codePointsPerNote": 4000,
+      "note": "Original fictional data, disjoint five-year periods, retained long source links and maximum Unicode note lengths. Exact CSV bound includes trimmed padding. No source link is fetched."
+    },
+    "timings": {
+      "parsePreviousMs": 265.488265,
+      "parseIncomingMs": 217.775556,
+      "reviewMs": 369.71350199999995,
+      "applyMs": 463.92821200000003,
+      "refreshReportMs": 939.386011,
+      "researchReportMs": 268.828974
+    },
+    "artifacts": {
+      "before": {
+        "bytes": 2274391,
+        "sha256": "ccd4484e1d02c1ca5f5a5c4fda5a823a8851ba0c88ce557e28148e99be8bc9a1"
+      },
+      "after": {
+        "bytes": 2274413,
+        "sha256": "7c9dbff83797511307b4e8a2ba039e4482ac03730e8fc6bca561e9d3481302d7"
+      },
+      "report": {
+        "bytes": 4057011,
+        "sha256": "dd85575b248466e7d0a412e6fb18a4785887fa5cd09e82ef8b6e419407fd7fae"
+      },
+      "research": {
+        "bytes": 5026336,
+        "sha256": "f01b88ebe78f18cfc53821245c55f34a67a4c54e1fc4848f420692fb7368c59f"
+      }
+    },
+    "verified": [
+      "1,000 complete old/new period records",
+      "independent latest-period ordering and amounts",
+      "unchanged notebook identity and applied criteria",
+      "exact ordered research retention",
+      "complete correctly attributed proposed report",
+      "incoming-only final research provenance",
+      "exact schema-v2 JSON roundtrip",
+      "unchanged previous notebook"
+    ],
+    "limitation": "One Node sample and specific maximum-bound fixture, not a browser or performance guarantee. Native browser publication/persistence is verified separately."
+  },
+  "nativeProductionMaximum": {
+    "checkedAt": "2026-10-04T05:27:00.201Z",
+    "browser": "151.0.7922.173",
+    "initialImportMs": 1263.23666,
+    "reviewReadyMs": 672.9976059999999,
+    "completeReviewPages": 20,
+    "proposedReportMs": 1169.8135709999997,
+    "mobileOverflow": false,
+    "applyAndSaveMs": 1362.5782520000002,
+    "desktopOverflow": false,
+    "fixture": {
+      "rowsPerDataset": 500,
+      "csvBytes": 2097152,
+      "periodUnion": 1000,
+      "periodRowsPerPage": 50,
+      "notes": 100,
+      "noteCodePoints": 4000,
+      "watched": 100,
+      "comparison": 4
+    },
+    "unchangedNativeRecordDuringReview": true,
+    "completeProposedReport": true,
+    "exactIncomingRowsAndRetainedResearch": true,
+    "nativeTransactionMatchesDownload": true,
+    "nativeReloadMatchesDownload": true,
+    "freshHistoryAfterRefresh": true,
+    "artifacts": {
+      "previous": {
+        "bytes": 2274391,
+        "sha256": "ccd4484e1d02c1ca5f5a5c4fda5a823a8851ba0c88ce557e28148e99be8bc9a1"
+      },
+      "proposed": {
+        "bytes": 4057011,
+        "sha256": "aff8b9d1407df3e57f3209467b44616a65ed19f24d958b9bf184429621700e92"
+      },
+      "after": {
+        "bytes": 2274413,
+        "sha256": "a417a650e9cbfc6f04922146745e73574fb97840c8dceeae833e405babba984c"
+      },
+      "research": {
+        "bytes": 5026336,
+        "sha256": "f01b88ebe78f18cfc53821245c55f34a67a4c54e1fc4848f420692fb7368c59f"
+      }
+    },
+    "pageErrors": [],
+    "externalRequests": [],
+    "limitations": "Single synthetic-data run in Chromium; figures/source links are unverified and never fetched. Timings are observations, not device guarantees."
+  },
+  "separateNativeBrowserRestart": {
+    "checkedAt": "2026-10-04T05:29:46.290Z",
+    "browser": "151.0.7922.173",
+    "origin": "http://127.0.0.1:4286",
+    "browserProcesses": {
+      "before": 314233,
+      "after": 314369,
+      "firstDisconnected": true
+    },
+    "timingsMs": {
+      "firstLaunchMs": 601.187044,
+      "importAndSaveMs": 1304.1743349999997,
+      "stageReviewMs": 643.1991050000001,
+      "applyAndSaveMs": 1355.334488,
+      "wholeBrowserCloseMs": 78.01440199999979,
+      "relaunchMs": 627.5263860000005,
+      "nativeReopenAndDownloadMs": 1470.3312150000002
+    },
+    "fixture": {
+      "provenance": "Original synthetic annual figures and literal research notes generated locally",
+      "incomingRows": 500,
+      "periodsPerTicker": 5,
+      "retainedNotes": 100,
+      "codePointsPerNote": 4000,
+      "watched": 100,
+      "comparison": 4,
+      "removedPreviousPeriods": 500
+    },
+    "notebookId": "03d29fa3-0c12-462e-910e-9283ccb21621",
+    "previousDatasetId": "9745b60f-0ded-4fe8-be70-299ec4825156",
+    "incomingDatasetId": "7f9c511c-d4d8-4627-89d8-5f6f8e400f1f",
+    "nativeOnDiskProfile": true,
+    "exactDownloadAfterBrowserRestart": true,
+    "exactRawIndexedDbAfterBrowserRestart": true,
+    "rawRecordEqualsBothDownloads": true,
+    "artifacts": {
+      "beforeClose": {
+        "bytes": 2274413,
+        "sha256": "97fbe963f40e1f97d498c21991b96cfdce84b87615051039bf39650a146f9043"
+      },
+      "afterRelaunch": {
+        "bytes": 2274413,
+        "sha256": "97fbe963f40e1f97d498c21991b96cfdce84b87615051039bf39650a146f9043"
+      },
+      "rawIndexedDb": {
+        "bytes": 2274413,
+        "sha256": "97fbe963f40e1f97d498c21991b96cfdce84b87615051039bf39650a146f9043"
+      }
+    },
+    "pageErrors": [],
+    "externalRequests": [],
+    "limitations": "Single original synthetic-data run in local Chromium on Linux. This verifies native profile persistence across whole-browser restart, not operating-system crash durability or other browsers. Timings are observations, not device guarantees.",
+    "noStorageStateInjection": true,
+    "noDirectStorageWrites": true
+  },
+  "sourceSha256": {
+    "src/refresh.ts": "d33f2c8b52e7779767b2df4860b0de8e3d90d9c6c56e71bb1448879ac1164115",
+    "src/refresh-report.ts": "19a977ee6ada71721a2bc7d942adac184b5892f4cd69dd93670dc49b85ab5f50",
+    "src/refresh-view.ts": "72535dd14c8f03764a1aedf3026a82572348563057802e8e50d333ccaa334714",
+    "src/main.ts": "10809ef688c990c8b00ed35f570b736bd8d9e46a69abbeb8f067ed5a7d60e9ec",
+    "src/style.css": "28db0c46517ef9c884c33f41cbeb5aa6476139c3ee171ec60522a16dd639b77d",
+    "tests/refresh.test.ts": "1a2de88043a30abef6346299d9d70d134632daceb331f974a620317670d6f21d",
+    "tests/refresh-oracle.test.ts": "2384cf0cc7e4f2741ec794666f3a71fa16a6282372fde123d25a9bb4d28cd298",
+    "tests/refresh-report.test.ts": "42f7deeaa4caa728cf2b335ce3d5b676436b41c2ce41532a7a1f964655fc1f55",
+    "tests/browser/refresh.spec.ts": "897d0b232c5a427edcd9fcd55362c626e4c54f6a25bb2297d010e9787ca1c3aa",
+    "scripts/refresh-smoke.ts": "ddff2c199ef113b879b17047c058f32285ecf5629ad3b2a4a9196155898fb40c"
+  },
+  "screenshots": {
+    "stock-refresh-mobile-review.png": "7bb11f3b7224a54c389661574158f06a2ba82873c15624631e7d6533bd359121",
+    "stock-refresh-desktop-reopened.png": "bba178e18fd93aa739c351c0729ba4b300a96b5feafe9a6d1e8c47266b3a53fb"
+  },
+  "visualReview": "Native desktop and 390px mobile screenshots inspected; full source links and notes remain expandable, period/research review regions scroll without page overflow. Screenshots and downloaded files are local verification artifacts, not bundled.",
+  "reproduction": "Run npm run check, node --experimental-strip-types scripts/refresh-smoke.ts, and the complete production Chromium suite. For native maximum verification, use the generated previous-notebook.json and refresh-incoming.csv through the ordinary UI; inspect all twenty period pages, download previous/proposed files, acknowledge units/removals, apply, await native save, download JSON/research report and reopen. For process durability, use a persistent Chromium profile, close the entire browser after save completion, relaunch the same profile and compare actual downloaded JSON and raw IndexedDB bytes. Do not inject storage state.",
+  "limits": [
+    "Single synthetic-data and runtime observations do not verify financial figures, issuer continuity or cross-device performance.",
+    "Native process restart is verified; OS-crash durability and other browsers are not.",
+    "UTC rollover is controlled immediately after real native confirmation returns; the initial attempt to change the test clock inside a blocking dialog was a harness deadlock, not a production failure.",
+    "Whole CSV replacement starts fresh history. The proposed change report is downloadable session evidence, not a new persisted audit in schema v2.",
+    "Report byte overflow rejects complete output without truncating data or research."
+  ]
+}

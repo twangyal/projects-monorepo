@@ -1,0 +1,226 @@
+[
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 2,
+    "target": "scares"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 2,
+    "target": "scares"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 3,
+    "target": "start"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 3,
+    "target": "start"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 4,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 4,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 5,
+    "target": "Move up"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 5,
+    "target": "Move up"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 6,
+    "target": "interact"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 6,
+    "target": "interact"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 7,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 7,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 8,
+    "target": "Move down"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 8,
+    "target": "Move down"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 9,
+    "target": "interact"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 9,
+    "target": "interact"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 10,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 10,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 11,
+    "target": "Move up"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 11,
+    "target": "Move up"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 12,
+    "target": "interact"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 12,
+    "target": "interact"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 13,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 13,
+    "target": "Move right"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 14,
+    "target": "Move down"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 14,
+    "target": "Move down"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 15,
+    "target": "steady"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 15,
+    "target": "steady"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 16,
+    "target": "interact"
+  },
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 17,
+    "target": "interact"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 17,
+    "target": "interact"
+  },
+  {
+    "type": "pointercancel",
+    "trusted": true,
+    "pointerType": "touch",
+    "pointerId": 16,
+    "target": "interact"
+  }
+]

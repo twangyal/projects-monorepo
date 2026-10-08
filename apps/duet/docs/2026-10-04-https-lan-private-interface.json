@@ -1,0 +1,59 @@
+{
+  "status": "passed",
+  "scope": "Same-host client via actual RFC1918 interface; not physical two-device or network-latency evidence.",
+  "checks": [
+    "active RFC1918 interface exists",
+    "private runtime key/setup modes exactly0600",
+    "strict native CA and hostname verification enabled",
+    "private-interface status exact authority",
+    "setup-less creation rejected",
+    "setup creates original room",
+    "anonymous room read rejected",
+    "original invitation creates second seat",
+    "same invitation replay rejected",
+    "original host capability authenticated",
+    "original guest capability authenticated",
+    "other room capability rejected",
+    "owned accept thread joined",
+    "restart preserves original host capability",
+    "restart preserves original guest capability",
+    "restart preserves consumed invitation",
+    "owned accept thread joined"
+  ],
+  "servers": [
+    {
+      "boundAddress": [
+        "172.26.91.247",
+        52399
+      ],
+      "reuseAddress": 1
+    },
+    {
+      "boundAddress": [
+        "172.26.91.247",
+        52399
+      ],
+      "reuseAddress": 1
+    }
+  ],
+  "interface": {
+    "name": "eth0",
+    "address": "172.26.91.247",
+    "prefixLength": 22
+  },
+  "publicCertificateSha256": {
+    "ca.pem": "cf957977324bef7859e3a043ff40b4e666ae83311863818bd9ac66e6c62b4c79",
+    "leaf.pem": "5597cae77e643c770dbfd594f98b44a4f4873668635458f035dbe2e06bec29fa"
+  },
+  "origin": "https://172.26.91.247:52399",
+  "immediateRestartMilliseconds": 1.7705990030663088,
+  "privateRuntimeDirectoryRemoved": true,
+  "allOwnedServersClosed": true,
+  "wallSeconds": 0.17839984300371725,
+  "sourceHashes": {
+    "duet/transport.py": "f039576f51b77f8f3d9222db2582d0ab61dda043649f32447ce95db4c3b61daf",
+    "duet/https_server.py": "380abf20ba5461122fc612fc9559383c405674d7b6664006fc5890a2a6582c5c",
+    "duet/server.py": "54a8c9e3c2dbfa982bde161066a138c29a52e8eae5e362a60d672be2072b9888"
+  },
+  "scriptSha256": "b6a2c1b96d4bb1e85dde5f892c382603ca02c8566e8f028d9226e4b13875ddc1"
+}

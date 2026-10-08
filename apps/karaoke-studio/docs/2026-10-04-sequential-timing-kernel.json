@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "issue": 115,
+  "scope": "Pure bounded supplied-lyric sequential timing kernel; no audio/UI/history/backend changes",
+  "sourceSha256": {
+    "src/sequential-timing.ts": "f57fc02993062f8471cffc363eb32768c0fdf0f9eced66bd62bb4e472f53625e",
+    "tests/sequential-timing.test.ts": "77b916f4230a5c4a64ad8f4d2472ddb771913e5f27278fe5a2400beac6491cb0"
+  },
+  "checks": [
+    {
+      "command": "node --experimental-strip-types --test tests/sequential-timing.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "durationMs": 171.317256,
+      "log": "/tmp/karaoke115-kernel-final.log"
+    },
+    {
+      "command": "npx eslint src/sequential-timing.ts tests/sequential-timing.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/karaoke115-kernel-lint.log"
+    },
+    {
+      "command": "./node_modules/.bin/tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --strict --noUnusedLocals --noUnusedParameters --skipLibCheck src/sequential-timing.ts tests/sequential-timing.test.ts",
+      "exitCode": 0,
+      "log": "/tmp/karaoke115-kernel-scoped-typecheck.log"
+    }
+  ],
+  "firstActualRun": {
+    "kind": "Deliberate callable stub",
+    "passed": 1,
+    "failed": 10,
+    "durationMs": 233.757579,
+    "log": "/tmp/karaoke115-kernel-first.log",
+    "interpretation": "Ten successful-path expectations failed against the stub; one negative-admission-only case already passed. No missing-module failure claimed."
+  },
+  "admission": [
+    "Duration admitted by existing validateCues empty list; dense ordinary array1..200, own-data indices and own-data literal text.",
+    "Numeric start/end and unknown getters never read. Existing text admitted using trusted integer-only synthetic intervals solely for text validation; no fabricated interval published.",
+    "Exact Python-whitespace/Unicode/240-code-point-per-cue/20000-total semantics reused without a new control blacklist or normalization.",
+    "Exact finite marks; negative zero start becomes positive zero, all other represented positions unchanged.",
+    "Wrong phase/time leaves every private state field unchanged; complete review revalidates real captured intervals.",
+    "Detached state/review output and terminal idempotent cancellation retain only actual completed intervals."
+  ],
+  "maximumUnitFixture": {
+    "lines": 200,
+    "totalCodePoints": 20000,
+    "durationSeconds": 300,
+    "observedMediaClock": false
+  },
+  "limitations": [
+    "Pure tests supply scalar media positions; they do not establish native-clock authenticity or physical synchronization accuracy.",
+    "UI source/readiness/seek/rate/visibility ownership, Apply/history and real playback/export acceptance remain separate gates."
+  ],
+  "logSha256": {
+    "/tmp/karaoke115-kernel-first.log": "78b2648c5d607199d2d01447b5ec6430989b70d7b9c9f9a6c16d46c6f0618e5e",
+    "/tmp/karaoke115-kernel-green.log": "ed9dcc9054e1549fcbae92e8dc1c8e16b13854bb1399b9a3a3a4fd45abb43f49",
+    "/tmp/karaoke115-kernel-final.log": "8d96b4b30c37c3656b98be5a45279022eb71bef111212223e7f8a23765bb4bbe",
+    "/tmp/karaoke115-kernel-lint.log": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d",
+    "/tmp/karaoke115-kernel-scoped-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

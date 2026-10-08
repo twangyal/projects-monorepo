@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "issue": 124,
+  "date": "2026-10-05",
+  "scope": "Sequence panel complete soundtrack UI and async protected-save integration",
+  "status": "producer syntax verified; independent native and maximum runtime pending",
+  "sources": {
+    "src/sequence-ui.js": {
+      "bytes": 43252,
+      "sha256": "2f187d7f76196352da5282d35b358c7309c372eaa7208bd64709965aa416509b"
+    },
+    "index.html": {
+      "bytes": 17557,
+      "sha256": "5bd78905e857c679283e4d597ff1cdfbdd5b1181c79c8b12a1b1148cf5fdecd6"
+    },
+    "style.css": {
+      "bytes": 10158,
+      "sha256": "577d6408ad039484d24c2f99504589e8331c54dbff3c778a4796e6bd420e7e07"
+    }
+  },
+  "checks": [
+    {
+      "command": "node --check src/sequence-ui.js",
+      "log": "/tmp/shot124-ui-syntax-final.log",
+      "outcome": "PASS"
+    }
+  ],
+  "implementation": {
+    "documents": "Complete SequenceDocumentHistory bundles for existing clips/sources/ranges plus one immutable WAV asset; inner sequence schema3 and original scene/take records unchanged",
+    "audioImport": "Visible File stages only; explicit Import soundtrack invokes bounded admitted WAV owner; filename extension stripped for default label; original bytes retained; same-file chooser reset",
+    "audioSettings": "Native label and source In/Out/start/gain controls are stable and explicitly apply together; seconds converted once with Math.round(seconds*sampleRate); effective sample frames/audible crop/inaudibility disclosed",
+    "history": "One complete-bundle commit for accepted attach/settings/remove; Clear sequence Undo confirmed; ordinary Undo/Redo retain audio asset and original source clocks",
+    "storage": "One active plus latest complete save; native transaction completion precedes saved status; startup accepted only after bundle/history/sequence preparation and owner checks; logical retired load never installs authority; target-owned close drain blocks a fresh recovery instance",
+    "conflicts": "Sticky protected memory, separate preserved complete archive/legacy recovery downloads, manual Reload or fresh reviewed replacement with exact saved title; consent and write are guarded by epoch/current bundle version/native raw intent; late older replacement never marks newer work saved and requires explicit Retry sequence saving",
+    "audioOwnership": "Deliberate rehearsal uses owned session.time on original sequence position; seek/endpoints silent; imports/edits/rawinput/Undo/Redo/Stop/hidden/pagehide retire graph; audio owner remains until preparation/context close drains; no silent fallback from canceled/failed audio prep",
+    "export": "Captured committed complete bundle, existing dedicated sequence renderer, additive audioSession to exportFilm; unsupported encoder refused by audio owner; keep visible real-time export; no retained take or ordinary film write",
+    "backup": "Without audio, complete canonical inner JSON remains compatible; attached audio exports complete .shot-sequence original-WAV archive; archive imports admitted completely before one confirmed replacement",
+    "rawControls": "No library/storage callback rebuilds native field nodes; failures and stale completions retain current raw values/focus/caret; Apply clears only its own successfully applied fields",
+    "deadlines": "UI File/archive/preparation work has aggregate10s logical timeout; store owns10s native logical timeout and actual terminal drain; export uses existing duration+10s encoder watchdog after setup",
+    "limits": {
+      "wavBytes": 12582912,
+      "archiveBytes": 16777216,
+      "metadataBytes": 331776,
+      "soundtrackUniqueHistoryBytes": 67108864,
+      "sequenceSeconds": 60,
+      "clips": 20,
+      "sources": 4,
+      "videoBytes": 33554432
+    }
+  },
+  "sourceReviewChanges": [
+    "Absent replacement summary now names the absent complete record instead of printing null.",
+    "Hidden pending audio rehearsal retires its owner; canceled audio preparation cannot start silent playback.",
+    "Legacy storage events defer to the storage owner exact baseline comparison before protecting visible state."
+  ],
+  "claims": [
+    "No browser/service/build/install/Git/broad-suite actions were run by this producer.",
+    "No fabricated runtime RED or native audio quality proof is claimed.",
+    "Independent native original PCM/container/video oracles and complete maximum/restart are root-scheduled gates."
+  ]
+}

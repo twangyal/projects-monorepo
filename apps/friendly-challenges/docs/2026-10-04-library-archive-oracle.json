@@ -1,0 +1,115 @@
+{
+  "issue": 103,
+  "scope": "Independent original literal fixtures and16 Python oracle cases. No production/config/docs/Git/build/service/browser modifications.",
+  "independence": "Fixtures and assertions authored from frozen spec and existing domain/store only, before reading or executing new archive producer implementation. No new producer source read through final GREEN. Expected archives packed independently with struct/CRC/SHA; producer-created output inspected independently using stdlib zipfile.",
+  "fixture": {
+    "records": [
+      {
+        "bytes": 1524,
+        "sha256": "71558ae395961462898b78f3be6be0452aa47506b37d072712037c2f4aeea07f"
+      },
+      {
+        "bytes": 3304,
+        "sha256": "a272f1fb6dbb4e2d33773220d9147ec559aae340ecd7613c94b854f1b7999f3a"
+      }
+    ],
+    "images": [
+      {
+        "bytes": 671,
+        "sha256": "b1a7f24993a780a71ee76909a3eb04ad0e38faf41e3d3f1ace1d4a47bd4b7abf"
+      },
+      {
+        "bytes": 703,
+        "sha256": "ef2b76154cccad98b9a1516f8e66f76d2e2947b7a009442595942ac2117a5404"
+      }
+    ],
+    "archive": {
+      "bytes": 7878,
+      "sha256": "2e178a121106010976efe3b4e56b2fe57f1904212bc588396a5bd2cbc5eff8b8"
+    },
+    "meaning": "Legacy private1 exact UTF8 whitespace/CRLF/tab/Unicode and pendinginvite; private2 two claimed seats and two JPEG receipts including late receipt. Expected revisions/hash relationships manually authored."
+  },
+  "runs": [
+    {
+      "phase": "Deliberate stubs RED",
+      "tests": 16,
+      "errorsIncludingSubcases": 43,
+      "log": "/tmp/friendly103-oracle-red.log"
+    },
+    {
+      "phase": "First full actual integration, unchanged expectations",
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "seconds": 0.092,
+      "log": "/tmp/friendly103-oracle-first-integration.log"
+    }
+  ],
+  "postRedChanges": "Only two unused imports removed for lint; no test/fixture/assertion changes.",
+  "checks": {
+    "scopedRuff": "passed",
+    "py_compile": "passed"
+  },
+  "coverage": [
+    "exact rawTEXT+JPEG create/inspect/restore including privatev1/currentDB2",
+    "independent physical ZIP header/central/footer/CRC/hash corruptions",
+    "bounded manifest fields/duplicates/Unicode/path and record replay/digest/ID admission",
+    "hostile SQL objects and missing/orphan/mismatched/undecodable image relationships",
+    "pinned inode after original pathname replacement",
+    "live lock, unknown children/nonempty sidecars, source byte immutability",
+    "existing targets and actual late hardlink/directory no-clobber races",
+    "pre-cancellation, expired deadline and prepublication fsync failure cleanup"
+  ],
+  "limits": [
+    "No service/HTTP/browser acceptance or maximum80MiB/128MiB/RSS measurement in this oracle.",
+    "Injected standard-library boundary hooks schedule late competing target creation and prepublication fsync errors; filesystem operations themselves are real.",
+    "Pre-cancel and expired-deadline cases do not claim native decode preemption or every timing interleaving."
+  ],
+  "artifacts": [
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/tests/test_archive_oracle.py",
+      "bytes": 19235,
+      "sha256": "50b1cfa2e0d4796894b9e3ac480a5b7e670d752be3298196c9700185e5ab836f"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/tests/archive_oracle_fixtures.py",
+      "bytes": 7286,
+      "sha256": "608eb078f0e23f23c55c51180cc911306ee499e42931d102387923ada16f906a"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/archive_common.py",
+      "bytes": 6797,
+      "sha256": "a2e08e0ec4bba1192c9ccd4b727892280575a421ba9ffc0749ef2f47ae97990c"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/archive_format.py",
+      "bytes": 19865,
+      "sha256": "7551dd13a306b078dbb4575aeee1dd882db42808d115d959c20a364d5795896b"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/archive_media.py",
+      "bytes": 3395,
+      "sha256": "db1d4ca07b448b93f688408deeecbe14a7b5f2ab44bc0ac6709ae4cdda8cdf96"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/archive_state.py",
+      "bytes": 14963,
+      "sha256": "e9e0e6dfbf7c642a72cd189d212ce1a348015bca382a8e9b83ede05b652833c1"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/backup.py",
+      "bytes": 23802,
+      "sha256": "a8dfed2514250ea4bb625877ac948d783343e45ab86c5bf2026dc64b47b662b5"
+    },
+    {
+      "path": "/tmp/friendly103-oracle-red.log",
+      "bytes": 58912,
+      "sha256": "385b1869e9328bf2e5e29ff9624721d10da64aaa4fe9ecc58f563cda17d744aa"
+    },
+    {
+      "path": "/tmp/friendly103-oracle-first-integration.log",
+      "bytes": 2997,
+      "sha256": "83ebb081062a3d9326bac5dbcbff5c96d2d6c6cde1a8292e7fb8ec3463417b4e"
+    }
+  ]
+}

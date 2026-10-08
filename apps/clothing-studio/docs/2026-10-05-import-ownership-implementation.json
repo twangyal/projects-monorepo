@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "issue": 118,
+  "recordedAt": "2026-10-05T01:29:10.755635+00:00",
+  "status": "UI import ownership implementation frozen; independent native acceptance pending",
+  "scope": [
+    "src/main.ts"
+  ],
+  "sources": {
+    "beforeMainSha256": "0efa974e01e47c5477b3c95727952dfd10cdc6ea5cd631c0f3570e9ab7322184",
+    "afterMainSha256": "497114d2d8c1cc1bc3f450d9831d28d317624a26cc5395e93403e76d8f616988",
+    "afterMainBytes": 26932,
+    "unchangedStorageSha256": "87bf0b9afe806e896b549eb050680e8e7526403e098122388a59bff1c02dea43"
+  },
+  "originalBaseline": {
+    "owner": "root / independent runtime author",
+    "path": "/workspace/clothing118-baseline-first/verification.json",
+    "bytes": 28402,
+    "sha256": "3053f115d26ece6f1c0cb9c857226e904579d46d989ad8977e1849dfcab35dc8",
+    "scenarios": [
+      {
+        "kind": "committed-title",
+        "status": "protection-failure"
+      },
+      {
+        "kind": "raw-rotation",
+        "status": "protection-failure"
+      },
+      {
+        "kind": "held-sketch",
+        "status": "protection-failure"
+      }
+    ],
+    "interpretation": "All three actual held-File scenarios reached valid import admission, then incorrectly published the older complete backup after newer committed title, raw rotation or trusted sketch intent. UI producer did not rerun this baseline."
+  },
+  "implementation": {
+    "retirement": "retireLoad increments private token and updates only load-state busy visibility and Replace saved concept disabled state. It never syncs controls, redraws, cancels an owned gesture, changes editVersion, or changes project/history.",
+    "inputAndActions": "Capture-phase input/change incl changed-back values retire pending imports and preserve startupTouched. Shared edit/commit retire as action backstops; existing Cancel/New/Sample/Undo/Redo delegate the same helper. Valid sketch/placement pointer admission retires before focus/capture/transient preview.",
+    "adoption": "adoptLoad checks then consumes its matching token before the synchronous shared edit/history publication. Its own later finally is stale and inert; incoming project File.text owner is also checked before parsing/starting image validation.",
+    "lateOutputs": "Existing post-async token guards suppress stale photo/backup success and error. finishLoad mutates busy state only for current token and never invokes updateControls. Old success/error/finally cannot clear newer import status or raw fields.",
+    "lifetime": "pagehide retires only pending import publication. Late File/bitmap result cannot install after a persisted return. Existing media bitmap cleanup remains untouched.",
+    "compatibility": "No model, media, storage, CSS, limits, portable schema, render/export, or startup authority policy changes. Successful imports remain one existing history edit; cancellation/raw retirement creates no history state."
+  },
+  "checks": [
+    {
+      "command": "npx eslint src/main.ts",
+      "cwd": "apps/clothing-studio",
+      "exitCode": 0,
+      "log": "/tmp/clothing118-implementation-lint.log"
+    },
+    {
+      "command": "npx tsc --noEmit --target ES2022 --lib ES2022,DOM,DOM.Iterable --module ESNext --moduleResolution Bundler --allowImportingTsExtensions --strict --skipLibCheck --types node,vite/client src/main.ts",
+      "cwd": "apps/clothing-studio",
+      "exitCode": 0,
+      "log": "/tmp/clothing118-implementation-typecheck.log"
+    },
+    {
+      "command": "git diff --check -- apps/clothing-studio/src/main.ts",
+      "exitCode": 0
+    }
+  ],
+  "claimsExcluded": [
+    "No build/browser/server/Git mutation by UI producer.",
+    "Independent eight-case native suite is owned separately and has not been counted as passing here.",
+    "Native media work is not physically canceled by token retirement; late UI authority is refused and existing media cleanup closes bitmaps."
+  ]
+}

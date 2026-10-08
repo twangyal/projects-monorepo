@@ -1,0 +1,118 @@
+{
+  "issue": 108,
+  "scope": "Native test invitation readiness only; no production, helper, timeout or expected outcome changes",
+  "cause": {
+    "both_ci_traces": "Invite arbiter click returned before the asynchronous response; shared-link inputValue was empty, claim navigated to the empty URL and then waited for an absent claim form.",
+    "push_pending_fill_ms": 20888.612,
+    "ci_timeout_ms": 90000
+  },
+  "ci_evidence": [
+    {
+      "path": "/workspace/friendly108-ci-first-push-failure.log",
+      "bytes": 107493,
+      "sha256": "e854d30169b63edbd488bd761ce3a6e0522d09d999eed47c85911d51a7793410"
+    },
+    {
+      "path": "/workspace/friendly108-ci-first-pr-failure.log",
+      "bytes": 108628,
+      "sha256": "b4b1a766ae520a32b35030d2bf0f9f597fdbd491b85fe629e3c66552129d6ce5"
+    }
+  ],
+  "repair": "Wait for returned arbiter invitation with exact current origin, challenge ID and 64 lowercase hex token before capture; boolean assertion excludes capability from failure output.",
+  "audit_other_getters": {
+    "propose": "Already waits for returned invite value before capture.",
+    "privateLink": "Synchronous reveal event, no asynchronous issuance request."
+  },
+  "verification": {
+    "command": "CHROMIUM_PATH=/usr/bin/chromium npx playwright test --config=/tmp/friendly108-invitation-readiness.config.mjs --grep \"three HTTPS seats\"",
+    "passed": 1,
+    "failed": 0,
+    "case_seconds": 13.2,
+    "run_seconds": 13.7,
+    "eslint": "passed",
+    "unchanged_assertions": [
+      "three real HTTPS seats",
+      "stale terms consent rejected",
+      "mutually approved arbiter",
+      "two normalized JPEG bytes and independent Pillow pixels",
+      "public JSON and script-free image HTML",
+      "authority isolation and absence of private values in exports",
+      "whole CLI same-port restart",
+      "fresh-context original-seat recovery"
+    ],
+    "log": {
+      "path": "/tmp/friendly108-invitation-readiness.log",
+      "bytes": 611,
+      "sha256": "263494156662aa08b7ce20d8027212561272b085c52f18c28f6453fd313ecc89"
+    }
+  },
+  "source": {
+    "path": "apps/friendly-challenges/tests/browser/https-lan.spec.ts",
+    "bytes": 23461,
+    "sha256": "b775a06ca840dc7b695b71a30425241a4d3b2664eafcda0ee9852441602c1c97"
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/complete-images.html",
+      "bytes": 8804,
+      "sha256": "8f4d61b375b682881d52b65de09c3412bb449613e91d9d7057379cd690d6f035"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/https-agreement-390.png",
+      "bytes": 324422,
+      "sha256": "231ece537971de519df1ad9397cade2552abd5b40407ae7932260734d54d3d83"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/https-agreement-desktop.png",
+      "bytes": 356422,
+      "sha256": "55d56c8c723ff0be1a5a074163ffcca7cf1bd1d68e7ac6f86e45f930b5efefed"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/media-audit-verification.json",
+      "bytes": 968,
+      "sha256": "05735689ca8e04b671d0a62863bbae04900d375616ea9d0f1e1c87d69e1dad29"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/owned-process-closure.json",
+      "bytes": 145,
+      "sha256": "91ac777d005ceb855cf369ab931d00e715f333e4574ec58a87065fb3ef380408"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/public-certificate-receipt.json",
+      "bytes": 285,
+      "sha256": "1713a6aa6a12f613728df51131a2ec1dc448bcf54cf24e97e8ef5eac332501a9"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/public-record.json",
+      "bytes": 7814,
+      "sha256": "372aad2f6f307424ecaefe7302e3b18d0b2793235066bcb21f296146901f265f"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/reviewed-first.jpg",
+      "bytes": 354,
+      "sha256": "dcb394e5d9305ac1f987a49eb809eaef2bdeb5afd4773e0a6ae84777ffac4dab"
+    },
+    {
+      "path": "/workspace/friendly108-invitation-readiness/https-lan-three-HTTPS-seat-3b17a-cross-whole-service-restart/reviewed-second.jpg",
+      "bytes": 553,
+      "sha256": "5f64d4cf5ee6cc6f243f8a72aad0c3b28745738947cb9d02d3f98c27a3aec7ce"
+    }
+  ],
+  "process_closure": {
+    "servicePids": [
+      714780,
+      715090
+    ],
+    "browserPids": [
+      714783
+    ],
+    "allObservedPidsExited": true,
+    "noSecretMaterial": true
+  },
+  "bundle": {
+    "path": "apps/friendly-challenges/dist/assets/index-C3DcWdpJ.js",
+    "bytes": 62069,
+    "sha256": "f32d6046313b937af6d3981d653270141073fef7578a120527ab6932430f081b"
+  },
+  "prior_ci_receipt": "2026-10-04-https-lan-ci-first.json"
+}

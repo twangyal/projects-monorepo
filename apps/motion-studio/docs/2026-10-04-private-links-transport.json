@@ -1,0 +1,74 @@
+{
+  "feature": "Motion110 isolated Node24 snapshot service transport",
+  "timestamp": "2026-10-04T21:33:00.713507+00:00",
+  "files": {
+    "server/transport.ts": "3dcee64047eb0c1fd65e8385e81c94b5eabfd471e987aa6fac5409e0f36d4c10",
+    "server/connections.ts": "40163a4e2a66c4351c147aaa024bac571688e22b67e26491b08dfbb711b17697",
+    "server/http.ts": "0ff5a7249907397e1ad7207ddd8377425d524deaa8552aa8d3e2f894aa4afa01",
+    "server/main.ts": "066890628e2ba6ad400d2acdd3b6c0bd0bc9fa95fe51890e86ca0ff5682bd4b9",
+    "tests/private-transport.test.ts": "0f0a6f3f942bd11ee7f8af03672e8dc0fc6325a22c45811c055f3a070ce1c5b9"
+  },
+  "tests": {
+    "command": "node --experimental-strip-types --test tests/private-transport.test.ts",
+    "passed": 8,
+    "failed": 0,
+    "durationMilliseconds": 26408.468011,
+    "runtime": "Node v24.19.0",
+    "scope": [
+      "Original CA and exact-IP SAN verified through real raw net socket -> TLSSocket -> HTTP; immediate same-port restart.",
+      "Configuration alias/public bind/symlink/mode rejection; HTTP80 canonical authority helper.",
+      "Real store publication/read/revoke authority and exact public status.",
+      "Actual five-second undecided handshake, ten-second trickled header, and5.5second processing-idle distinction.",
+      "Actual five-second held store-read shutdown refusal retains lifetime lock, then release/reclose/reopen."
+    ],
+    "limits": [
+      "No physical-device proof or browser claims.",
+      "No full15second body,30second response or75second wall-duration claim from this owned suite; implementation shares phase/total lifecycle and independent protocol cases cover body/admission/framing/slots."
+    ]
+  },
+  "tdd": [
+    "First rawTLS callable-stub RED1 then GREEN1.",
+    "Routing callable-stub RED1 alongside2 priorgreen; actualstore integration GREEN2.",
+    "Bare0x WHATWG alias acceptance reproduced RED then GREEN after exact numeric-tail repair."
+  ],
+  "static": {
+    "strictScopedTypeScript": "passed",
+    "scopedESLint": "passed"
+  },
+  "logs": {
+    "/tmp/motion110-transport-red.log": "98073b5696cbe50de288cad44feff381b9b60bfd7b77682352f56a68f761ccb5",
+    "/tmp/motion110-transport-first.log": "e56479b2de1688b300a9dc9e09869dded895c7da5dc1be29009906adc723135c",
+    "/tmp/motion110-routing-red.log": "1a54c0c44b307b5c252b2f3edff9eed0fca7a17ce863f68df63aaea86731ae94",
+    "/tmp/motion110-routing-first.log": "cfbdac361b1b52a6c77b0245101188e279ca562445531a143b6e22ab5c4f1b3f",
+    "/tmp/motion110-barehex-red.log": "7954a84cb97873d4800b0cbefdecfcb0030128e65d06e59a821cac548c53f9aa",
+    "/tmp/motion110-barehex-green.log": "72093b7227485bfa61e2b40d75fb89ae3c5ffe4e0732c89d0a834dc1b0ee993f",
+    "/tmp/motion110-transport-final.log": "d1b200b1183fb28fbfbd9afc9b019d2ac566bfaf5d61cf9223f6c383146c11cd",
+    "/tmp/motion110-transport-typecheck.log": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d",
+    "/tmp/motion110-transport-lint.log": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+  },
+  "ownership": "Only owned server modules and private-transport.test.ts changed; no Git, browser, shared build or other application changes. Ephemeral test processes exited normally and all owned listeners closed.",
+  "staticWorkerRepair": {
+    "timestamp": "2026-10-04T21:39:19.508149+00:00",
+    "originalFileHashes": {
+      "server/http.ts": "f6f757393002b78e418ad33d3a93ce8803377d557cb20b65dc0edaa6cf288b2d",
+      "tests/private-transport.test.ts": "fda2a657bf2e0bd9cb0b1a1c21790c5d641e052e42c8122f1ed62ea8619a534d"
+    },
+    "cause": "Original fixed asset basename pattern excluded internal dots in actual Vite gif.worker-Diq5wjQj.js. Native first flow reached four valid PNG outputs then worker404 blocked GIF.",
+    "repair": "Startup allowlist permits internal dots in <=128-character fixed-extension basenames; excludes leading dots, double dots and path separators. No arbitrary path fallback.",
+    "regression": "Real strict-CA HTTPS worker request: observed404-vs200 RED then exactbytes/type GREEN; traversal/doubledot400 and unlistedJS/JSON/index/lock404.",
+    "focusedPassed": 1,
+    "focusedFailed": 0,
+    "focusedDurationMilliseconds": 270.579826,
+    "priorEightTestsRerun": false,
+    "distinctOwnedCasesPassed": 9,
+    "typecheck": "passed",
+    "scopedLint": "passed",
+    "nativeRepairGreen": "pending; no browser run by this owner",
+    "logs": {
+      "/tmp/motion110-worker-asset-red.log": "8aec5def682cc9e6fa8f4e5a2f7441fa0a3ad82e487c194d4b866404e6a797e7",
+      "/tmp/motion110-worker-asset-green.log": "f8c3b3adbe7c9c8adc37ffe65e11d4c55c2c9f5ccfccfc6f3f5188b3a71d3107",
+      "/tmp/motion110-worker-asset-typecheck.log": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d",
+      "/tmp/motion110-worker-asset-lint.log": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+    }
+  }
+}

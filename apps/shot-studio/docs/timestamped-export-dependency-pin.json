@@ -1,0 +1,35 @@
+{
+  "dependency": "mediabunny",
+  "version": "1.61.1",
+  "license": "MPL-2.0",
+  "sourceCommit": "922054aaac0bfe5e48545a46205038d6e73dc0d1",
+  "sourceTag": "v1.61.1",
+  "releasePublishedAt": "2026-10-03T20:02:06Z",
+  "primaryRelease": "https://github.com/Vanilagy/mediabunny/releases/tag/v1.61.1",
+  "asset": {
+    "id": 608447329,
+    "name": "mediabunny.min.mjs",
+    "bytes": 690410,
+    "publisherReportedDigest": "sha256:652fbe9226e55cb0c0784aaba6b4b73fea4fc0df498f62050cdc617a4bd97ca2",
+    "url": "https://github.com/Vanilagy/mediabunny/releases/download/v1.61.1/mediabunny.min.mjs"
+  },
+  "sourceLicense": "https://github.com/Vanilagy/mediabunny/blob/922054aaac0bfe5e48545a46205038d6e73dc0d1/LICENSE",
+  "verification": {
+    "releaseMetadataRead": true,
+    "tagResolvedToCommit": true,
+    "licenseTextRead": true,
+    "bundleBytesDownloaded": true,
+    "bundleChecksumLocallyVerified": true,
+    "bundleInstalled": true,
+    "nativeEncoderAcceptance": false
+  },
+  "next": "Implement and natively validate the bounded pipeline in timestamped-export-inputs.md. Vendoring alone does not fix production capture.",
+  "localAcquisition": {
+    "bundleBytes": 690410,
+    "bundleSha256": "652fbe9226e55cb0c0784aaba6b4b73fea4fc0df498f62050cdc617a4bd97ca2",
+    "licenseSha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+    "sourceArchiveBytes": 580632,
+    "sourceArchiveSha256": "d5f4d61689397557789792c8be7417ce57102a17078cef40aa4bcc7f15e81a5e",
+    "sourceArchiveScope": "Unchanged src/shared/scripts/package manifests/tsconfig/LICENSE via git archive of sourceCommit; upstream test/example media excluded."
+  }
+}

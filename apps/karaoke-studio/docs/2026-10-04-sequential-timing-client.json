@@ -1,0 +1,101 @@
+{
+  "issue": 115,
+  "date": "2026-10-04",
+  "scope": "Sequential timing UI/history integration only; scoped static verification, independent native playback acceptance pending.",
+  "contract": "docs/superpowers/specs/2026-10-04-karaoke-sequential-timing-design.md",
+  "sources": {
+    "src/main.ts": {
+      "bytes": 75240,
+      "sha256": "6c312a471e2d35c8e2f8fc87ea39fb3ae7b597981296ad855ff6e53cea5a6172"
+    },
+    "src/style.css": {
+      "bytes": 16958,
+      "sha256": "58f3ad92192f1d778876615264f45a9d0dfa2f157b2a9dc4ca3d3737f0b4804f"
+    }
+  },
+  "checks": [
+    {
+      "command": "npx tsc --noEmit",
+      "result": "passed at coherent UI checkpoint",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts",
+      "result": "passed after final synchronous Apply guard ordering",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "result": "passed after root-approved natural-ended endpoint exception",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts",
+      "result": "passed after root-approved natural-ended endpoint exception",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "result": "passed after network-stall waiting-latch review correction",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    },
+    {
+      "command": "npx eslint src/main.ts",
+      "result": "passed after network-stall waiting-latch review correction",
+      "log": {
+        "bytes": 208,
+        "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      }
+    }
+  ],
+  "controls": [
+    "timing-begin",
+    "timing-mark",
+    "timing-end-final",
+    "timing-cancel",
+    "timing-status",
+    "timing-line",
+    "timing-review",
+    "timing-summary",
+    "timing-review-list",
+    "timing-apply"
+  ],
+  "behavior": [
+    "One transient owner binds clip, project/edit/media generations, track, exact selected local audio URL, duration and media-clock floor.",
+    "Begin permits independent invalid old title/timing/paste drafts and admits only current cue text plus genuine loaded native media; no automatic seek/play.",
+    "Starts and ends use represented native currentTime without rounding. Pause and temporary buffering preserve pending/completed marks; seek/source/rate/loop/backward/hidden retire.",
+    "Focused Mark Enter/Space keydown marks once; repeats/modifiers are ignored, keyup never marks, and blur/retirement transfers held keys into a blocked-until-keyup latch.",
+    "Natural end never creates an automatic boundary; only a last open line exposes the explicit clip-end action.",
+    "Every completed line/text/gap is displayed literally in a bounded scroll review; no partial Apply.",
+    "Apply validates cues/connected limits, computes semantic no-op and captures exact current raw baseline, then synchronously checks actual media ownership before history/model changes.",
+    "Changed Apply uses existing one-edit LyricHistory/changed path and replaces only cues; title and pasted words/dirty marker survive. No-op preserves exact nodes/raw spelling/video/redo.",
+    "Save and lyric/video export are unavailable while timing capture/review is active; Save remains an explicit revision-checked request after Apply.",
+    "Existing SRT, waveform, project, archive and media job intent paths retire timing; retirement itself does not rebuild cues, save, or record history."
+  ],
+  "limits": {
+    "durationSeconds": 300,
+    "cues": 200,
+    "codePointsPerCue": 240,
+    "totalCodePoints": 20000,
+    "durationIdentityToleranceSeconds": 2.2675736961451248e-05
+  },
+  "native": "No browser/service/build run by this producer. Independent owner uses actual local WAV playback with trusted actions and read-only currentTime observations.",
+  "claims": "Manual line timing, not lyric recognition, word alignment, measured physical latency or click precision beyond observed browser media timing.",
+  "naturalEndedBoundary": "Only ended && currentTime exactly equals admitted native audio.duration may exceed project duration within the existing 1/44100-second duration tolerance. The clock floor retains that actual observation; explicit final closure supplies exact project duration. Normal Mark remains gated by !ended and the pure strict project range, and complete Apply admits the same ended endpoint.",
+  "reviewCorrection": "Network stalled is not playback waiting: only actual waiting latches the playback gate, while real readyState independently disables unavailable media and playing releases the waiting latch. Source-only independent finding; no fabricated media event or clock runtime claimed."
+}

@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "issue": 106,
+  "verifiedAt": "2026-10-04T20:00:54.184515+00:00",
+  "scope": "Operation-specific admission of existing New, repeated File import, Redo persistence, capacity refusal and SVG rejection assertions; product source unchanged.",
+  "change": {
+    "file": "apps/motion-studio/tests/recovery.spec.ts",
+    "added": [
+      "Wait for exact New project saved. Your other projects were kept. status",
+      "Wait for enabled Scale control",
+      "Assert exact raw Scale value 0.1 before Set key"
+    ],
+    "preserved": [
+      "Original out-of-bounds stage coordinate",
+      "Original outside the artwork bounds error assertion",
+      "Rejected stroke count 0",
+      "Recovered centered stroke count 1",
+      "No pageerrors"
+    ]
+  },
+  "focusedNative": {
+    "command": "npx playwright test --config=/tmp/motion106-focused.config.mjs --grep='drawing outside transformed artwork bounds'",
+    "workingDirectory": "/workspace/projects-monorepo/apps/motion-studio",
+    "baseURL": "http://127.0.0.1:4294",
+    "serverOwnership": "Existing root-owned preview; no server created or stopped",
+    "productionBundle": "main-Cqx2Ujdw.js",
+    "node": "24.19.0",
+    "chromium": "151.0.7922.173",
+    "workers": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "startedAt": "2026-10-04T19:59:26.154Z",
+    "runMilliseconds": 2096.991,
+    "testMilliseconds": 993,
+    "exitCode": 0,
+    "log": {
+      "path": "/tmp/motion106-focused.log",
+      "bytes": 556,
+      "sha256": "e591a0bbae0d59b561f7bd48c0e6c50c585ecfd9f6299336cf7264f74849ea97"
+    },
+    "result": {
+      "path": "/tmp/motion106-focused-results.json",
+      "bytes": 3047,
+      "sha256": "02a7b4854d5b70169d102ca7b7c5539d4e99dc66cd05b43643e2ed70a5697844"
+    },
+    "temporaryConfig": {
+      "path": "/tmp/motion106-focused.config.mjs",
+      "bytes": 436,
+      "sha256": "3522a1eb1706304f2da3e7c58c40e41af4e21746d28bb87d761e443eb9345112"
+    }
+  },
+  "limitations": [
+    "Affected test ran once locally; the full 121-browser suite was not rerun locally.",
+    "No build, product-source edits, dependency updates or new service process.",
+    "Previously successful 147-unit and 120 other-browser results belong to the preserved failing CI run, not this focused verification.",
+    "The preceding 6ec2f2c head push passed 121/121; its PR passed 120/121 with a distinct unsaved-Redo reload fixture failure."
+  ],
+  "remoteCi": {
+    "receipt": "2026-10-04-new-project-readiness-ci.json",
+    "headSha": "6ec2f2cf827c16eb591d5721a87ac50813b73b49",
+    "pushPassed": true,
+    "pullRequestPassed": false,
+    "newProjectFixturePassedBothRuns": true,
+    "distinctFailure": "Redo reload without completed save barrier in tween.spec.ts32:454"
+  },
+  "additionalTransitionRepairs": [
+    {
+      "file": "tests/browser/tween.spec.ts",
+      "reason": "Redo RAM backup is not proof of completed autosave. Actual failed PR trace shows Saving locally before immediate reload.",
+      "checks": [
+        "Await Saved in this browser after Redo",
+        "Poll genuine native IDB selected project until deep-equal to the accepted RAM result",
+        "Keep all original candidate geometry, Undo, Redo and final reloaded equality"
+      ]
+    },
+    {
+      "file": "tests/recovery.spec.ts",
+      "reason": "Repeated identical File imports reuse title/artwork/success text, so those values can pass before the new import publishes.",
+      "checks": [
+        "Capture all previously committed library IDs before second File import",
+        "Poll native same-transaction head/active row until active ID is absent prior IDs",
+        "Assert exact persisted project, visible current-project row identity and title before actual backup comparison"
+      ]
+    },
+    {
+      "file": "tests/browser/project-library.spec.ts",
+      "reason": "Unchanged prior title/DB can pass before ninth-file capacity admission runs; earlier optional New can leave the same error.",
+      "checks": [
+        "Use real current backup download to replace any stale prior capacity message",
+        "Wait for exact capacity terminal message from ninth File operation and enabled file control",
+        "Keep exact full library and title equality; no eviction permitted"
+      ]
+    },
+    {
+      "file": "tests/workflow.spec.ts",
+      "reason": "Generic unchanged can match an earlier invalid JSON refusal instead of SVG admission.",
+      "checks": [
+        "Wait exact actual PNG/JPEG/static WebP refusal for submitted SVG",
+        "Keep original saved artwork equality and later successful valid project reopen"
+      ]
+    }
+  ],
+  "additionalFocusedNative": {
+    "command": "npx playwright test --config=/tmp/motion106-transitions.config.mjs --grep='a bounded project with genuine|explicit nonidentity pairing|eight ordinary literal projects|invalid project and SVG imports'",
+    "workingDirectory": "/workspace/projects-monorepo/apps/motion-studio",
+    "baseURL": "http://127.0.0.1:4294",
+    "productionBundle": "main-Cqx2Ujdw.js",
+    "serverOwnership": "Existing root-owned preview; no server created or stopped",
+    "node": "24.19.0",
+    "chromium": "151.0.7922.173",
+    "workers": 1,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "startedAt": "2026-10-04T20:09:49.235Z",
+    "runMilliseconds": 11151.331,
+    "tests": [
+      {
+        "title": "eight ordinary literal projects refuse a ninth atomically with no silent eviction",
+        "file": "browser/project-library.spec.ts",
+        "line": 329,
+        "status": "passed",
+        "milliseconds": 1248
+      },
+      {
+        "title": "explicit nonidentity pairing and reversal review actual pixels without saving, then Apply is one undoable edit",
+        "file": "browser/tween.spec.ts",
+        "line": 27,
+        "status": "passed",
+        "milliseconds": 1823
+      },
+      {
+        "title": "a bounded project with genuine decoded PNGs can reopen its own backup",
+        "file": "recovery.spec.ts",
+        "line": 71,
+        "status": "passed",
+        "milliseconds": 5646
+      },
+      {
+        "title": "invalid project and SVG imports preserve artwork, then a valid backup reopens atomically",
+        "file": "workflow.spec.ts",
+        "line": 69,
+        "status": "passed",
+        "milliseconds": 1088
+      }
+    ],
+    "exitCode": 0,
+    "log": {
+      "path": "/tmp/motion106-transitions.log",
+      "bytes": 991,
+      "sha256": "f3c51441b450cc9009f26bee6ded3d6e7b3c7026537a0ba266eed22bed4e97ea"
+    },
+    "result": {
+      "path": "/tmp/motion106-transitions-results.json",
+      "bytes": 6964,
+      "sha256": "eec5ece9dc02aafbb50cb6c812e15087104cedc66d6675e003a6feda69a6f5b8"
+    },
+    "temporaryConfig": {
+      "path": "/tmp/motion106-transitions.config.mjs",
+      "bytes": 496,
+      "sha256": "352f01abeaeb47322fa52f432a3a19257f92d2d48486e8cff44ba67cad789ac4"
+    }
+  },
+  "staticValidation": {
+    "typescript": "npx tsc --noEmit: passed",
+    "scopedEslint": "npx eslint tests/recovery.spec.ts tests/browser/tween.spec.ts tests/browser/project-library.spec.ts tests/workflow.spec.ts: passed"
+  },
+  "finalRemoteCi": {
+    "receipt": "2026-10-04-new-project-readiness-final-ci.json",
+    "headSha": "50373f43bb9e401d049018ece8117060b00dbeaa",
+    "push": {
+      "unitPassed": 147,
+      "browserPassed": 121
+    },
+    "pullRequest": {
+      "unitPassed": 147,
+      "browserPassed": 121
+    },
+    "treeSha": "3d8e487db4d18e827d1265aef57b7a0008312fe3",
+    "allProjectPrSummary": {
+      "total": 13,
+      "success": 13,
+      "failure": 0,
+      "pending": 0
+    }
+  }
+}

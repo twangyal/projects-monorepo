@@ -1,0 +1,211 @@
+{
+  "status": "passed after two harness-only corrections",
+  "checkedAtUtc": "2026-10-04T19:57:39.350054+00:00",
+  "coreHeadReportedByRoot": "191018e5670fda48430a3da0da8c6f35341d6041",
+  "finalReceipt": {
+    "path": "/workspace/karaoke105-maximum-complete/verification.json",
+    "bytes": 53121,
+    "sha256": "af829f09c35f50dd8d416b7d8a740b373f51a6feef953f3cf4b551b32d828b06"
+  },
+  "finalLog": {
+    "path": "/tmp/karaoke105-maximum-complete.log",
+    "bytes": 89,
+    "sha256": "4a6af1463f054940b682607a1556ae50656af7dd3e8a64fe6c85a10677a277ba"
+  },
+  "runtimeMs": 17532.688785,
+  "chromium": "151.0.7922.173",
+  "frozenExpectations": {
+    "path": "/workspace/karaoke105-maximum-fixtures/frozen-expectations.json",
+    "bytes": 44166,
+    "sha256": "7d5f96da1a97c6d0cdfeaed7a121268c271113926c376bc661ac30e1197bcfa4"
+  },
+  "originalFixtureFilesAllMatch": true,
+  "originalSixWavFilesAllMatch": true,
+  "audioFacts": {
+    "path": "/workspace/karaoke105-maximum-fixtures/audio-facts.json",
+    "bytes": 1308,
+    "sha256": "d8f1189fd643b92ae306d1ad4d6aa7d0f177d93f0fd8ffee3e04cf829b64a4a0"
+  },
+  "ownedSourceHashes": {
+    "scripts/smoke_srt_import.mjs": "4640b4fc89bce7d51a9a722c8b0300be6c280613870261892291e767b91734d7",
+    "tests/srt_smoke_server.py": "70047989d2c9a4f7e1d5a57f55e64d4204ecf214a931c15ceac80d6c5a837a55",
+    "scripts/smoke_archive.py": "d31ff6e631337b6d39ad0162997f70b946e442c5c37586d88a134f6245c2a339",
+    "assets/DejaVuSans.ttf": "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e"
+  },
+  "productionSourceHashes": {
+    "src/main.ts": "2de1611d89fd815b7d1cf9b95a4ef49e14096adad014a87e552d3c421fd42c99",
+    "src/srt.ts": "3ec2bcf0c981e731f16a3b8dc95c2a7999f51397e5b943be7fc85c23cb21100a",
+    "dist/assets/index-Csg4_O27.js": "4f4151d568fba57b4d85d413841bca4bbda9089cb14cea30686ec6f20eb929b2"
+  },
+  "maxima": {
+    "cueCount": 200,
+    "lyricCodePoints": 20000,
+    "durationSeconds": 300,
+    "fileBytesAccepted": 131072,
+    "fileBytesRejected": 131073,
+    "archiveBytes": 158790486
+  },
+  "checks": [
+    "Exact128KiB accepted;128KiB+1 refused without changing200cues/20k literal code points.",
+    "Project1 full native File review/one UndoRedo/manual Save/exact SRT export verified.",
+    "Project2 full native File review/one UndoRedo/manual Save/exact SRT export verified.",
+    "Actual complete archive File restore and full service/Chromium restart preserve200cues,exactSRT,and all original WAV bytes."
+  ],
+  "artifacts": [
+    {
+      "name": "maximum-saved.srt",
+      "bytes": 30691,
+      "sha256": "cb4f2ba813c88abcfd98ad0a66cbffb9525011c7edbc5d7a65c1376cebf39f25"
+    },
+    {
+      "name": "short-saved.srt",
+      "bytes": 156,
+      "sha256": "0b68098e33ee56459b07fec5137ed0975aa29c7d8f1337de499929b37a9ce093"
+    },
+    {
+      "name": "short-boundaries.mp4",
+      "bytes": 193273,
+      "sha256": "3521a4c523c8fa7a701c9ac5888b59b44635a6ea029c310fada77ab56fb9b3c5"
+    },
+    {
+      "name": "maximum.karaoke.zip",
+      "bytes": 158790486,
+      "sha256": "d4c013080c300a62ca56e53654ee7ee6d739ed3e5c53fc61db8ab37eee3995f7"
+    },
+    {
+      "name": "restart-maximum.srt",
+      "bytes": 30691,
+      "sha256": "cb4f2ba813c88abcfd98ad0a66cbffb9525011c7edbc5d7a65c1376cebf39f25"
+    }
+  ],
+  "shortVideo": {
+    "frames": 144,
+    "seconds": 6,
+    "size": [
+      1280,
+      720
+    ],
+    "fps": 24,
+    "codecs": [
+      "h264",
+      "aac"
+    ],
+    "checkedFrames": [
+      0,
+      11,
+      12,
+      35,
+      36,
+      47,
+      48,
+      83,
+      84,
+      101,
+      102,
+      131,
+      132,
+      143
+    ],
+    "allFourteenPassed": true,
+    "minimumCoreCoverage": 0.9963198394111743,
+    "minimumSpatialPrecision": 1,
+    "frozenThresholds": {
+      "coreMaskMin": 240,
+      "channelTolerance": 35,
+      "minCoreCoverage": 0.9,
+      "maskDilationPixels": 2,
+      "minSpatialPrecision": 0.95
+    },
+    "lateAudioNonSilent": true
+  },
+  "restoredProjectId": "348a7352abd34b96babb3260c76fcb5d",
+  "failuresRetained": [
+    {
+      "status": "failed",
+      "receipt": {
+        "path": "/workspace/karaoke105-maximum-final/verification.json",
+        "bytes": 5289,
+        "sha256": "23ea4d14f7b50ce6da703be6f05deb8ace375ca63e4e88c64236d87cd7cd0faf"
+      },
+      "log": {
+        "path": "/tmp/karaoke105-maximum-first.log",
+        "bytes": 3452,
+        "sha256": "252871e5848d23263c5a103950ee14a414664de97db60227243af258e092e345"
+      },
+      "failure": "FFmpeg rejected the harness duration spelling .5; changed only to the equivalent 0.5.",
+      "pids": [
+        687353,
+        687354
+      ],
+      "allPidsAbsent": true,
+      "noInferenceMarker": true,
+      "frozenSha256": "7d5f96da1a97c6d0cdfeaed7a121268c271113926c376bc661ac30e1197bcfa4"
+    },
+    {
+      "status": "failed",
+      "receipt": {
+        "path": "/workspace/karaoke105-maximum-repaired/verification.json",
+        "bytes": 53685,
+        "sha256": "27d4782ac5acb8c22d99c35ce476241eb41b1310ef75215a7622d22fbe246f27"
+      },
+      "log": {
+        "path": "/tmp/karaoke105-maximum-repaired.log",
+        "bytes": 804,
+        "sha256": "a144d2f688eeb818b0d62391af01729624c49db7fe45ecb9565de4670fb296fc"
+      },
+      "failure": "Playwright rejects in-memory File buffers above 50 MiB; used the same downloaded 158790486-byte archive by native file path.",
+      "pids": [
+        688049,
+        688050
+      ],
+      "allPidsAbsent": true,
+      "noInferenceMarker": true,
+      "frozenSha256": "7d5f96da1a97c6d0cdfeaed7a121268c271113926c376bc661ac30e1197bcfa4"
+    }
+  ],
+  "cleanup": {
+    "successfulAndScreenshotPids": [
+      688494,
+      688886,
+      688495,
+      688887,
+      689175,
+      689176
+    ],
+    "allPidsAbsent": true,
+    "allFailurePidsAbsent": true,
+    "noInferenceMarkerInAnyAttempt": true,
+    "protectedLibraryNotReadOrTouched": true
+  },
+  "screenshots": {
+    "followup": {
+      "path": "/workspace/karaoke105-maximum-complete/screenshot-followup.json",
+      "bytes": 236,
+      "sha256": "36b9a5bf35ff3248e4f1ddf11525602b02573bf22faf4ecf7a32297865ca5e67"
+    },
+    "files": [
+      {
+        "path": "/workspace/karaoke105-maximum-complete/desktop-viewport.png",
+        "bytes": 164952,
+        "sha256": "a47b2f9d3caacb2f1527ac6b84195e4b433d535e7bf7677f3f50e2d355080d48"
+      },
+      {
+        "path": "/workspace/karaoke105-maximum-complete/mobile-editor-viewport.png",
+        "bytes": 57147,
+        "sha256": "a76fe8a3e441e89a3eee1bfe9a515b22bd738e628b4b6f1eee684f4a6161b289"
+      }
+    ],
+    "visuallyInspected": true,
+    "horizontalOverflow": false,
+    "projectEdits": false
+  },
+  "pageErrors": [],
+  "externalRequests": [],
+  "limits": [
+    "300-second acceptance covers SRT, saved audio, archive, restoration and full process restart; actual video is the separate original six-second clip.",
+    "Synthetic original PCM; no source separation, model inference or audio-quality claim.",
+    "File byte ceiling uses explicit trailing blank lines; not a memory/RSS measurement.",
+    "Fourteen independent selected ASCII glyph masks and every video PTS are verified; no OCR claim for the maximum Unicode lyrics.",
+    "No product, build, fixture, numeric or pixel expectation changes were made to obtain the pass."
+  ]
+}

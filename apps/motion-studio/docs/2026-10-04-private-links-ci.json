@@ -1,0 +1,188 @@
+{
+  "issue": 110,
+  "checkedAtUtc": "2026-10-04T22:04:00.755Z",
+  "status": "passed",
+  "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+  "expectedTree": "7e4072d7585a3c1d0eef7fd69bd5b66397775a27",
+  "firstFailureReceipt": "2026-10-04-private-links-ci-first.json",
+  "repair": {
+    "scope": "one-line independent fixture change only",
+    "file": "tests/private-oracle.test.ts",
+    "description": "Create valid unindexed crash-file fixture with explicit mode0600, matching the actual writer regardless of ambient umask.",
+    "productionChanged": false,
+    "controlledUmask0022": "RED then GREEN; original permission refusal and all other assertions retained.",
+    "ciReruns": 0
+  },
+  "runs": [
+    {
+      "event": "push",
+      "runId": 37238138030,
+      "jobId": 111541270641,
+      "checkoutSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "tree": "7e4072d7585a3c1d0eef7fd69bd5b66397775a27",
+      "treeVerified": true,
+      "conclusion": "success",
+      "units": {
+        "total": 204,
+        "passed": 204,
+        "failed": 0,
+        "milliseconds": 29711.572441
+      },
+      "native": {
+        "passed": 130,
+        "failed": 0,
+        "durationReported": "1.2m"
+      },
+      "buildMilliseconds": 450,
+      "log": {
+        "path": "/workspace/motion110-final-ci-push.log",
+        "bytes": 76383,
+        "sha256": "c5c97fc018cfe34a1781a2a6e89c4efcde43c5b4a6835dc550b8b40dd4857228"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37238141120,
+      "jobId": 111541278684,
+      "checkoutSha": "628b964c311c5aa5def3171da518d0e146cca585",
+      "tree": "7e4072d7585a3c1d0eef7fd69bd5b66397775a27",
+      "treeVerified": true,
+      "conclusion": "success",
+      "units": {
+        "total": 204,
+        "passed": 204,
+        "failed": 0,
+        "milliseconds": 29347.192292
+      },
+      "native": {
+        "passed": 130,
+        "failed": 0,
+        "durationReported": "1.4m"
+      },
+      "buildMilliseconds": 595,
+      "log": {
+        "path": "/workspace/motion110-final-ci-pr.log",
+        "bytes": 77455,
+        "sha256": "6743907980a92afac14131837df6f899a8e32bc23a1359d85652abdad7056e0e"
+      }
+    }
+  ],
+  "checks": {
+    "eslint": "passed-both",
+    "typecheck": "passed-both",
+    "productionBuild": "passed-both",
+    "opensslAndUtilLinuxPrerequisites": "installed successfully in both jobs",
+    "actualFlockProcessTest": "passed-both"
+  },
+  "environment": {
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "153.0.8010.12",
+    "playwrightChromiumBuild": "1243",
+    "utilLinux": "2.39.3-9ubuntu6.6"
+  },
+  "allPrSnapshot": [
+    {
+      "name": "Clothing Studio",
+      "runId": 37238141182,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Style Studio",
+      "runId": 37238141095,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Lens Studio",
+      "runId": 37238141096,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Melody Studio",
+      "runId": 37238141196,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Git History",
+      "runId": 37238141111,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Color Context Lab",
+      "runId": 37238141241,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Motion Studio",
+      "runId": 37238141120,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stock Notebook",
+      "runId": 37238141094,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Duet",
+      "runId": 37238141100,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Shot Studio",
+      "runId": 37238141108,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Composure",
+      "runId": 37238141178,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Friendly Challenges",
+      "runId": 37238141153,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Karaoke Studio",
+      "runId": 37238141181,
+      "headSha": "45af03a2bcb00b5c862f153dbc138231cac4e11c",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "collectorActions": {
+    "workflowReruns": 0,
+    "fullLocalUnitReruns": 0,
+    "browserReruns": 0,
+    "builds": 0
+  },
+  "limitations": [
+    "CI software/TLS fixtures do not prove physical two-device trust or public hosting.",
+    "Separate eight-maximum-payload acceptance retains its own original bundle/measurement receipt; not rerun by this collector."
+  ],
+  "privacy": "No capabilities, digests of credentials, private links, signed URLs or raw private project records included."
+}

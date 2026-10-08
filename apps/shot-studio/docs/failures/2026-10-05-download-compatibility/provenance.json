@@ -1,0 +1,43 @@
+{
+  "implementationHead": "63e2e72dd4a970dc816dfa57684d8718c9d24c95",
+  "runs": [
+    {
+      "event": "pull_request",
+      "id": 37324086989,
+      "artifact": 11351905008,
+      "archiveSha256": "ae8b6daecd9ab74c9a8b5ff9f859c558fa7ea613ffb03fa14ab63a1cdeaa7aba"
+    },
+    {
+      "event": "push",
+      "id": 37324080881,
+      "artifact": 11350913973,
+      "archiveSha256": "3086605b85a314811b04dddf8df07b04499d0bfb179c31e8f8f4ecabefc289e8"
+    }
+  ],
+  "limitations": [
+    "The 16-download PR control reproduced full Chromium 153 restart crashes and passed the headless reference.",
+    "The push control stopped at the 11th initial download in all environments, before restart. It is inconclusive for restart compatibility; no retry or permission override was applied."
+  ],
+  "files": [
+    {
+      "name": "first-pr-browser.log",
+      "bytes": 45543,
+      "sha256": "33f02962aef01536fb5798503aa66d7ef76d3f154d95f77bb702edb68f884732"
+    },
+    {
+      "name": "first-pr-report.json",
+      "bytes": 16216,
+      "sha256": "ad3d6546435e0d888dcfdec23ef5c25580793260c0eb59248fb28ac43e787ac3"
+    },
+    {
+      "name": "first-push-browser.log",
+      "bytes": 18821,
+      "sha256": "583da27729c21680d6eab7999d59a24b661417d79581e71bfa376122828e4257"
+    },
+    {
+      "name": "first-push-report.json",
+      "bytes": 9379,
+      "sha256": "1a95a90e4c646aa04501013a4f7562d03c31c60e114bef603261ed7c55543be3"
+    }
+  ]
+}

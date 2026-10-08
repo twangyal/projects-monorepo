@@ -1,0 +1,136 @@
+{
+  "status": "passed",
+  "verifiedAtUtc": "2026-10-04T20:43:25.170054+00:00",
+  "tests": 21,
+  "durationSeconds": 26.039,
+  "command": "python3 -m unittest discover -s tests -p test_https_oracle.py -v",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+  "sources": [
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/tests/test_https_oracle.py",
+      "bytes": 32841,
+      "sha256": "333f06bde077c7a6a6b1d9604ac019efa1d3c697993d05d9b5d23d2202b71809"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/tests/https_oracle_fixtures.py",
+      "bytes": 4308,
+      "sha256": "ccc2eaf7d25d5241b535b51ae6c5e0b9de51eb2a213f8963d52044c331386f4f"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/transport.py",
+      "bytes": 7318,
+      "sha256": "13e9682d8ceb05bb563a61b35a11043cb48060308aa359efec7efd8273f2477c"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/https_server.py",
+      "bytes": 7560,
+      "sha256": "5ef9a8c33799758c1216f419eda84b82580bb5150cc68aa2908bdf04d7a5fac6"
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/friendly-challenges/challenges/server.py",
+      "bytes": 26359,
+      "sha256": "3525c9ff1247f287be14ee6214827a3a56ee316b91dab10c3d68c0e3565bdcf2"
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/friendly108-oracle-stub-red.log",
+      "bytes": 16445,
+      "sha256": "cd9b66d4dcf052400c0b3e04d45d307c38611af42d7c00c59ef045d63c40d6b2"
+    },
+    {
+      "path": "/tmp/friendly108-oracle-first-integration.log",
+      "bytes": 7392,
+      "sha256": "31f0fbe2bb098dc45ae52533c5fcb38cc7ed4de050f64ced97343b8386682947"
+    },
+    {
+      "path": "/tmp/friendly108-oracle-consent-corrected.log",
+      "bytes": 278,
+      "sha256": "e4d4ccc8aaef58cd0186f6dbb002c37c4e03015c6893b9b6b528b0983de26bdd"
+    },
+    {
+      "path": "/tmp/friendly108-oracle-body-corrected.log",
+      "bytes": 260,
+      "sha256": "c59aec6075ade51a664676c82eb82ac7f12c0ed1a74c5b9d1c8a5c2587cf260e"
+    },
+    {
+      "path": "/tmp/friendly108-oracle-image-corrected.log",
+      "bytes": 284,
+      "sha256": "f93a9692b5a4a353a8f98baaeffe14cffe9652a280e490acb9ecada2898efa20"
+    },
+    {
+      "path": "/tmp/friendly108-oracle-response-first.log",
+      "bytes": 359,
+      "sha256": "52d08903ecb666c690bba84cf6def3b2b7508f97d18371b99f1aa8cb694ee8f1"
+    },
+    {
+      "path": "/tmp/friendly108-oracle-final.log",
+      "bytes": 3582,
+      "sha256": "188cbb0308513004b1ad53cb0d8038a43411eb3a900e9fcacf228ee5dbbcb690"
+    }
+  ],
+  "firstEvidence": {
+    "callableStub": "13 cases: literalconstants1pass and12 errors at deliberate prepare_transport stub",
+    "firstIntegration": "20 cases23.500s;3 assertion failures and1 cascadedsubcasebinderror, all testfixture assumptions",
+    "fixtureRepairs": [
+      "Consumed Friendly invitation returns404/not_found, not409; corrected two explicit assertions after reading unchanged baseline Store authentication.",
+      "Declared partial JSON body16000 replaces64000 that correctly exceededFriendly16KiB; cleanup nowfinally per subcase."
+    ],
+    "affected": "Consent1pass.578s,body1pass2.087s,image/restart1pass1.110s",
+    "response": "Added8MiB native static response/backpressure1pass1.068s",
+    "final": "21pass26.039s; no production edits made by oracle owner"
+  },
+  "actualNativeCoverage": [
+    "originalCA trust, hostname and chain verification; wrongCA/wrongSAN/expiredleaf rejected",
+    "16 admitted verifiedTLS sockets; seventeenth refused; releasedslot reusable",
+    "16KiB exactheaders/+1 and64fields/+1; prefetchedbody excluded; pipelined second creation notexecuted",
+    "exactFriendly status and error envelope; setup-only creation; no cookie privateauthority",
+    "claim retains proposed status; exactcurrent terms required beforeacceptance; staleconsents409",
+    "original normalizedJPEG bytes/hash/fullauthenticatedreads, escapedtokenfreeHTML andJSON, no inventedRangeroute",
+    "immediate sameportTLS restart retains originalseats/audit/JPEG and consumedinvite",
+    "occupied listener leaves raw SQLite/audit files unchanged",
+    "heldactualStoreRLock refused teardown preserves lifetime lock untilrequestexits"
+  ],
+  "unscaledTimingSeconds": {
+    "handshake": 5,
+    "trickledSingleHeader": 10
+  },
+  "scaledBranchOnlySeconds": {
+    "body": 0.6,
+    "response": 0.2,
+    "totalConnection": 0.6,
+    "requestJoin": 0.15
+  },
+  "image": {
+    "bytes": 645,
+    "sha256": "a9413f8a7bfe89f218e1889a28a67d13b7f3fcc1cecd53ecb29623254640f495",
+    "width": 31,
+    "height": 19,
+    "source": "Original solidRGB211,37,89; PillowJPEGquality88; exact retained bytes"
+  },
+  "maximumResponse": {
+    "bytes": 8388608,
+    "kind": "original bounded static JavaScript comment, no image-size claim",
+    "backpressure": "native1024byte TCP receive window plus .2s scaled response deadline/slot recovery"
+  },
+  "notClaimed": [
+    "unscaled15secondbody/30secondresponse/75secondtotal timing",
+    "physical multi-device/LAN or universal browser trust",
+    "arbiter nativejourney or SIGTERM process test; assigned separately"
+  ],
+  "cleanup": "All test-owned sockets and server accept threads close/join; TemporaryDirectory removes runtimeCA/key/setup/library; suite process exited normally; no persistent services/browser/builds",
+  "static": "Scoped Ruff and py_compile passed",
+  "frozenMetadata": [
+    {
+      "path": "/workspace/friendly108-protocol-fixtures/expectations.json",
+      "bytes": 1872,
+      "sha256": "dedc5acb31000e3ea37821be3770c718003aba0b7903782d941f55b1a5ed04df"
+    },
+    {
+      "path": "/workspace/friendly108-protocol-fixtures/authored-oracle.json",
+      "bytes": 3947,
+      "sha256": "6bbbee3810136315bb9218cd968064d1d5358a25d62b933a8581c31cdd80bbf3"
+    }
+  ]
+}

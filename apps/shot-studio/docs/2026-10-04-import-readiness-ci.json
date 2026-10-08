@@ -1,0 +1,300 @@
+{
+  "head": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+  "shotReadinessStatus": "passed",
+  "overallStatus": "Shot push and all13PR workflows succeeded; additional Melody push failed",
+  "shotRuns": [
+    {
+      "event": "push",
+      "runId": 37222152746,
+      "jobId": 111494491403,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222152746",
+      "headSha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "checkoutSha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "checkoutKind": "branch head",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T17:52:17Z",
+      "completedAt": "2026-10-04T17:55:42Z",
+      "units": {
+        "tests": 232,
+        "passed": 232,
+        "failed": 0,
+        "skipped": 0,
+        "durationMs": 899.22045
+      },
+      "native": {
+        "passed": 72,
+        "durationReported": "2.3m",
+        "chromiumVersionInstalled": "153.0.8010.12",
+        "versionEvidence": "Actual Playwright install logs followed by native command in same job"
+      },
+      "syntaxCheck": "success",
+      "steps": [
+        {
+          "name": "Run npm test",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:52:23Z",
+          "completed_at": "2026-10-04T17:52:24Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:52:24Z",
+          "completed_at": "2026-10-04T17:52:24Z"
+        },
+        {
+          "name": "Run npm run test:browser",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:53:17Z",
+          "completed_at": "2026-10-04T17:55:37Z"
+        }
+      ],
+      "log": {
+        "path": "/workspace/shot99-readiness-ci-push.log",
+        "bytes": 361307,
+        "sha256": "ae07561211db7082fa063d54a2276892e6c2d999aea30ebe12e86d89aa529f81"
+      }
+    },
+    {
+      "event": "pull_request",
+      "runId": 37222156547,
+      "jobId": 111494501581,
+      "url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156547",
+      "headSha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "checkoutSha": "fda328d4b8efdd0ad09555252efc315b7d8f3b60",
+      "checkoutKind": "synthetic PR merge",
+      "conclusion": "success",
+      "startedAt": "2026-10-04T17:52:19Z",
+      "completedAt": "2026-10-04T17:55:26Z",
+      "units": {
+        "tests": 232,
+        "passed": 232,
+        "failed": 0,
+        "skipped": 0,
+        "durationMs": 876.147876
+      },
+      "native": {
+        "passed": 72,
+        "durationReported": "2.3m",
+        "chromiumVersionInstalled": "153.0.8010.12",
+        "versionEvidence": "Actual Playwright install logs followed by native command in same job"
+      },
+      "syntaxCheck": "success",
+      "steps": [
+        {
+          "name": "Run npm test",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:52:24Z",
+          "completed_at": "2026-10-04T17:52:25Z"
+        },
+        {
+          "name": "Run npm run check",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:52:25Z",
+          "completed_at": "2026-10-04T17:52:25Z"
+        },
+        {
+          "name": "Run npm run test:browser",
+          "conclusion": "success",
+          "started_at": "2026-10-04T17:53:01Z",
+          "completed_at": "2026-10-04T17:55:22Z"
+        }
+      ],
+      "log": {
+        "path": "/workspace/shot99-readiness-ci-pull_request.log",
+        "bytes": 362364,
+        "sha256": "e31f8bf86dfe57d7f2bb864920252955d56f42f1be429af6c185cb1d3c03596d"
+      }
+    }
+  ],
+  "all13ProjectPullRequests": [
+    {
+      "id": 37222156545,
+      "name": "Style Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156545",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:53:20Z"
+    },
+    {
+      "id": 37222156551,
+      "name": "Clothing Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156551",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:53:10Z"
+    },
+    {
+      "id": 37222156623,
+      "name": "Lens Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156623",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:53:35Z"
+    },
+    {
+      "id": 37222156500,
+      "name": "Motion Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156500",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:53:50Z"
+    },
+    {
+      "id": 37222156584,
+      "name": "Melody Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156584",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:54:14Z"
+    },
+    {
+      "id": 37222156575,
+      "name": "Duet",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156575",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:54:25Z"
+    },
+    {
+      "id": 37222156472,
+      "name": "Git History",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156472",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:54:16Z"
+    },
+    {
+      "id": 37222156577,
+      "name": "Color Context Lab",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156577",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:55:13Z"
+    },
+    {
+      "id": 37222156498,
+      "name": "Friendly Challenges",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156498",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:54:49Z"
+    },
+    {
+      "id": 37222156547,
+      "name": "Shot Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156547",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:55:27Z"
+    },
+    {
+      "id": 37222156583,
+      "name": "Stock Notebook",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156583",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:55:02Z"
+    },
+    {
+      "id": 37222156557,
+      "name": "Composure",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156557",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:55:06Z"
+    },
+    {
+      "id": 37222156486,
+      "name": "Karaoke Studio",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+      "html_url": "https://github.com/twangyal/projects-monorepo/actions/runs/37222156486",
+      "created_at": "2026-10-04T17:52:16Z",
+      "updated_at": "2026-10-04T17:56:16Z"
+    }
+  ],
+  "all13PrSuccessful": true,
+  "additionalMelodyPushFailure": {
+    "runId": 37222152754,
+    "jobId": 111494491245,
+    "checkoutSha": "9a4f08f6e3e415d29ca5c113979f91bb4d68711c",
+    "conclusion": "failure",
+    "test": "tests/roll-edit.spec.ts:60 aborted save and Retry save publishes roll edit",
+    "assertionLine": 63,
+    "browserPassed": 79,
+    "browserFailed": 1,
+    "browserDuration": "44.5s",
+    "error": "After retry then reload, received original pitch60/start1/3 instead of expected61/start7/12.",
+    "log": {
+      "path": "/workspace/shot99-melody-failure.log",
+      "bytes": 81285,
+      "sha256": "c09d34c73bd90585db65c25db13648103dc786109be876d9eccb9e306f340954"
+    },
+    "artifact": {
+      "id": 11310826315,
+      "zip": {
+        "path": "/workspace/attachments/48064655-3caf-44ab-8f7f-3345032fb3cf/melody99-retry-failure.zip",
+        "bytes": 1071572,
+        "sha256": "862ce7e92902a3ae7925028a9d00ab4b6a9b2f9987d70eef27ab8a6b2df142a9"
+      },
+      "trace": {
+        "path": "/workspace/melody99-retry-failure/trace.zip",
+        "bytes": 750431,
+        "sha256": "d4900468946e283418cabd8db99ef69d7c4badf2d8e607dca1b5b1c1ca5e139c"
+      },
+      "selectedEvents": {
+        "path": "/workspace/melody99-retry-failure/save-retry-trace-events.json",
+        "bytes": 5636,
+        "sha256": "2e5bb9cea4a44ae8a290db6de0d77c7c7ed69339f25acd2080655d169d2c1d74"
+      }
+    },
+    "traceEvidence": "Retry click ends42532.118ms; /Saved/i assertion succeeds42536.378ms; reload begins42537.588ms. Successful expectation does not log resolved status text; no transaction-completion event present. /Saved/i also matches not saved, so actual persistence cause remains unproven by trace alone.",
+    "ownerNotified": true,
+    "rerunPerformed": false
+  },
+  "scope": [
+    "Shot logs verified232units/72native in bothpush/PR; no changed thresholds or reruns by reviewer.",
+    "Other13project PR conclusions are workflowAPIstatus evidence only; no claim their detailed logs re-audited.",
+    "Melody push failed independently while Melody PR succeeded; neither failure nor cancellation is hidden.",
+    "No source, Git, issue, build or browser changes by CI reviewer.",
+    "Reported2.3m native time is Playwright rounded output; precise step timestamps also retained."
+  ]
+}

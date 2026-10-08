@@ -1,0 +1,74 @@
+{
+  "status": "data-available-runtime-blocked-no-OCR",
+  "manifestSha256": "69b8553577f2e0446305efe1f03125f42c3ae5fe8e6b3ea79a8a033e22f5dbbe",
+  "primaryFilesHashAndLengthVerified": 13,
+  "rows": 30,
+  "splits": {
+    "correction": 12,
+    "development": 6,
+    "evaluation": 12
+  },
+  "allLiteralALTOReferencesExact": true,
+  "allFirstSixMainZoneLinesExact": true,
+  "allCropPixelsEqualIndependentArraySlices": true,
+  "rgbChannelValuesCompared": 6379023,
+  "uniqueCropHashes": 30,
+  "editorialRows": [
+    "01R_P1S3SS1P019_002:line-02",
+    "01R_P1S3SS1P019_003:line-02"
+  ],
+  "pages": [
+    {
+      "pageId": "01R_P1S3SS1P019_001",
+      "split": "correction",
+      "sourceShape": [
+        1500,
+        975,
+        3
+      ],
+      "lines": 6
+    },
+    {
+      "pageId": "01R_P1S3SS1P019_002",
+      "split": "correction",
+      "sourceShape": [
+        1500,
+        975,
+        3
+      ],
+      "lines": 6
+    },
+    {
+      "pageId": "01R_P1S3SS1P019_003",
+      "split": "development",
+      "sourceShape": [
+        1500,
+        975,
+        3
+      ],
+      "lines": 6
+    },
+    {
+      "pageId": "01R_P1S3SS1P019_004",
+      "split": "evaluation",
+      "sourceShape": [
+        1500,
+        975,
+        3
+      ],
+      "lines": 6
+    },
+    {
+      "pageId": "01R_P1S3SS1P019_005",
+      "split": "evaluation",
+      "sourceShape": [
+        1500,
+        975,
+        3
+      ],
+      "lines": 6
+    }
+  ],
+  "inferencePerformed": false,
+  "sourceNetworkRefetchPerformed": false
+}

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "milestone": "Motion Studio #104 bounded named editable project library",
+  "version": "0.4.0",
+  "date": "2026-10-04",
+  "implementation": "Eight local editable projects, independent IDs and saves, read-only legacy preservation, accepted opaque receipts, transaction-local CAS, protected recovery and exact portable Project2 backups.",
+  "localStatic": {
+    "units": 147,
+    "passed": 147,
+    "failed": 0,
+    "durationMs": 1456.357114,
+    "eslint": "passed",
+    "typecheck": "passed",
+    "productionBuildMs": 459,
+    "normalEntry": "main-Cqx2Ujdw.js",
+    "css": "main-CekMjDRK.css",
+    "log": {
+      "path": "/tmp/motion104-root-check-final.log",
+      "bytes": 15732,
+      "sha256": "dc64ac1792bf23187f5938ae729cc67232b8636fd2e4c0ac0892943a40bc4229"
+    }
+  },
+  "native": {
+    "distinctCases": 121,
+    "storage": 22,
+    "newUI": 19,
+    "preservedExisting": 80,
+    "method": "Documented staged actual Chromium runs. First failures and scope-specific repairs are retained in separate receipts; this is not a single final local all-121 run.",
+    "receipts": [
+      "2026-10-04-project-library-storage-first.json",
+      "2026-10-04-project-library-storage-supplement.json",
+      "2026-10-04-project-library-native.json",
+      "2026-10-04-project-library-existing.json"
+    ]
+  },
+  "sourceReview": "Independent read-only review of the final data ownership, raw recovery and storage guards found no remaining material issue.",
+  "maximumAcceptance": {
+    "status": "passed",
+    "receipt": "2026-10-04-project-library-maximum.json",
+    "projectCount": 8,
+    "bytesPerProject": 6291624,
+    "totalCanonicalProjectBytes": 50332992,
+    "fullProcessRestartByteExact": true,
+    "pngExports": 64,
+    "gifExports": 8,
+    "gifFrames": 768,
+    "wallMilliseconds": 346192.18567000004,
+    "browserVersion": "151.0.7922.173"
+  },
+  "publishedHeadCI": {
+    "status": "passed",
+    "receipt": "2026-10-04-project-library-ci.json",
+    "headSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+    "pushRunId": 37228372920,
+    "pullRequestRunId": 37228375087,
+    "actualPullRequestCheckoutSha": "8280a3154ff87d97593243221de5c2069a34c9af",
+    "unitsPassedEach": 147,
+    "completeBrowserSuitePassedEach": 121,
+    "chromiumVersion": "153.0.8010.12",
+    "allProjectPullRequestWorkflowsPassed": 13
+  },
+  "limits": [
+    "Local browser storage only, no account/hosted sharing.",
+    "Only selected-project images decode; serialized caps do not guarantee available quota or peak memory.",
+    "Raw recovery data never grants overwrite authority; unsafe/uncomparable or malformed catalog data stays protected.",
+    "Controlled pagehide/pageshow events exercise lifecycle handlers, not physical BFCache acceptance.",
+    "Clock-injected synchronous expiry branch is separate from the real 10-second native transaction timeout."
+  ],
+  "implementationHeadSha": "f6b633a349881b30072469e740d25f3cff7de74a",
+  "implementationTreeSha": "7959858c698d2527810d8295b93c97696463086c"
+}

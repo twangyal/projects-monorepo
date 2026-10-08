@@ -1,0 +1,99 @@
+{
+  "issue": 103,
+  "date": "2026-10-04",
+  "version": "0.3.0",
+  "status": "complete; exact published-head push and PR CI passed, all thirteen project PR workflows passed",
+  "contract": "docs/superpowers/specs/2026-10-04-friendly-complete-library-archive-design.md",
+  "checks": {
+    "python": {
+      "passed": 154,
+      "failed": 0,
+      "seconds": 24.476,
+      "log": {
+        "bytes": 25454,
+        "sha256": "9b54a066f47c8b7f8d16b2d95a3cb93cb68660facfb777086c24d06a49ec4065"
+      }
+    },
+    "typescript": {
+      "passed": 37,
+      "failed": 0,
+      "durationMs": 291.306976
+    },
+    "eslint": "passed",
+    "typecheck": "passed",
+    "ruff": "passed",
+    "compileall": "passed",
+    "productionBuild": {
+      "passed": true,
+      "milliseconds": 236,
+      "script": "index-CYuTaMrs.js",
+      "css": "index-vF3kZ63t.css"
+    },
+    "npmCheckLog": {
+      "bytes": 5331,
+      "sha256": "ce58868030d0a9ce9e985f0cbe865b0a091eaeb74021dd1eed2f6e9169bf2b87"
+    }
+  },
+  "producerTests": {
+    "commonStateMedia": 13,
+    "format": 16,
+    "orchestrationCli": 23,
+    "observedStubRedBeforeImplementation": true
+  },
+  "independentOracleTests": 16,
+  "native": {
+    "newCasesPassed": 4,
+    "firstActualSeconds": 8.2,
+    "finalCleanupRunSeconds": 8.6,
+    "existing24": "unchanged; full28 passed independently in both exact-head CI events"
+  },
+  "repairs": [
+    "Bound raw-record CRC/SHA work to64KiB cancellation blocks after actual test RED.",
+    "Close the real SQLite serialization feature-probe connection after actual missing-close RED.",
+    "Keep source schema1/private record1 compatibility exact and preserve quoted SQL literals in trusted schema admission.",
+    "Guard huge integer deadlines as bounded input errors.",
+    "Use private native-test cleanup and disable traces/video/screenshots for synthetic capability-bearing pages."
+  ],
+  "source": {
+    "challenges/archive_common.py": {
+      "bytes": 6797,
+      "sha256": "a2e08e0ec4bba1192c9ccd4b727892280575a421ba9ffc0749ef2f47ae97990c"
+    },
+    "challenges/archive_format.py": {
+      "bytes": 19865,
+      "sha256": "7551dd13a306b078dbb4575aeee1dd882db42808d115d959c20a364d5795896b"
+    },
+    "challenges/archive_media.py": {
+      "bytes": 3395,
+      "sha256": "db1d4ca07b448b93f688408deeecbe14a7b5f2ab44bc0ac6709ae4cdda8cdf96"
+    },
+    "challenges/archive_state.py": {
+      "bytes": 15749,
+      "sha256": "9ae776ea0adad88a2a28e30bfcb7551ed3b3dd6eee5c715b8228098a2df7f61b"
+    },
+    "challenges/backup.py": {
+      "bytes": 23820,
+      "sha256": "f565195b98137695613abedb90edf95ab7422db33f270fb0fc73858d9fd77799"
+    },
+    "scripts/smoke_library_archive.py": {
+      "bytes": 20326,
+      "sha256": "310a793ceaea1abda9e42b51305859090dd20648f7f0a8fce9e89a229c18b14d"
+    },
+    "tests/browser/archive.spec.ts": {
+      "bytes": 13107,
+      "sha256": "1f105286dc148192d4ca0456f0dba86fedb3c3855f4d59629f4a57b6d5aa6e65"
+    }
+  },
+  "oracleReceipt": "2026-10-04-library-archive-oracle.json",
+  "nativeReceipt": "2026-10-04-library-archive-native.json",
+  "maximumReceipt": "2026-10-04-library-archive-maximum.json",
+  "limits": [
+    "Offline Linux operator flow; no web import endpoint, remote hosting, encryption or recovery of lost raw links.",
+    "Maximum20records/160images reaches80MiB original JPEG bytes using valid37x23 RGB images with legal padding; not maximum pixels or compressed-image complexity.",
+    "Actual84,198,426-byte archive, not exact128MiB archive/database cap or every record1MiB.",
+    "Maximum uses genuine CLI/HTTP/services; small three-record fixture covers real browser downloads and private access.",
+    "Live exportedAt/serverTime differ naturally. All other public data and exact original private TEXT/JPEG bytes are verified.",
+    "No peak RSS, physical device, identity or evidence-truth claim. Private runtime archives/credentials/databases are retained locally and excluded from publication."
+  ],
+  "ciReceipt": "2026-10-04-library-archive-ci.json"
+}

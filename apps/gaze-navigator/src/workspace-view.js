@@ -1,4 +1,5 @@
 import { createWorkspace } from './workspace.js';
+import {encodeDraftBackup,parseDraftBackup,MAX_BACKUP_BYTES} from './draft-backup.js';
 
 export function setupWorkspace(document, onLayoutChange, onComposerChange = () => {}) {
   const workspace = createWorkspace();
@@ -12,6 +13,7 @@ export function setupWorkspace(document, onLayoutChange, onComposerChange = () =
   let editing = null;
   let accepted = { subject: '', body: '' };
   let pending = null;
+  let importEpoch=0;
   const fields = () => ({ subject: node('draftSubject').value, body: node('draftBody').value });
   const dirty = () => { const current=fields();return current.subject!==accepted.subject||current.body!==accepted.body; };
 
@@ -51,6 +53,7 @@ export function setupWorkspace(document, onLayoutChange, onComposerChange = () =
 
   function renderDrafts() {
     const drafts=node('draftList');drafts.replaceChildren();
+    node('downloadDrafts').disabled=workspace.drafts().length===0;
     for(const draft of workspace.drafts()){
       const item=document.createElement('article'),button=document.createElement('button');
       item.dataset.draftId=draft.id;
@@ -111,6 +114,29 @@ export function setupWorkspace(document, onLayoutChange, onComposerChange = () =
       result.textContent = error.message;
     }
   });
+  node('downloadDrafts').addEventListener('click',()=>{
+    try{
+      const rows=workspace.drafts().map(({subject,body})=>({subject,body}));
+      const win=document.defaultView;
+      const url=win.URL.createObjectURL(new win.Blob([encodeDraftBackup(rows)],{type:'application/json'}));
+      const link=document.createElement('a');link.href=url;link.download='gaze-session-drafts.json';
+      try{link.click();}finally{win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);}
+      result.textContent='Backup download requested for saved drafts only. Current unsaved composer text was excluded.';
+    }catch(error){result.textContent=error.message;}
+  });
+  node('importDrafts').addEventListener('click',()=>{node('draftBackupChooser').hidden=false;node('draftBackupFile').focus({preventScroll:true});node('draftBackupChooser').scrollIntoView?.({block:'center'});result.textContent='Use the visible file chooser with a mouse or keyboard. Gaze cannot open the system chooser.';onLayoutChange();});
+  node('draftBackupFile').addEventListener('change',async()=>{
+    const epoch=++importEpoch,file=node('draftBackupFile').files?.[0];node('draftBackupFile').value='';
+    if(!file)return;
+    result.textContent='Reading draft backup. Current drafts and composer stay available.';
+    try{
+      if(file.size>MAX_BACKUP_BYTES)throw Error('Draft backups are limited to 2 MiB.');
+      const text=await file.text();if(epoch!==importEpoch)return;
+      const added=workspace.appendDrafts(parseDraftBackup(text));renderDrafts();
+      result.textContent=`Imported ${added.length} drafts into this session. Current composer text was kept. Nothing was sent.`;
+      onLayoutChange();
+    }catch(error){if(epoch===importEpoch)result.textContent=error.message;}
+  });
   node('searchButton').addEventListener('click', () => {
     visible = workspace.search(node('searchInput').value);
     selected = null;
@@ -129,5 +155,6 @@ export function setupWorkspace(document, onLayoutChange, onComposerChange = () =
     const index = visible.findIndex(message => message.id === selected);
     select(visible[(index + 1) % visible.length].id);
   });
+  renderDrafts();
   renderMessages();
 }

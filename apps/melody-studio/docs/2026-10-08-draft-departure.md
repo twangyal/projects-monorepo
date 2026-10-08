@@ -1,0 +1,9 @@
+# Protect unapplied editor work on departure — 2026-10-08
+
+Issue: [#146](https://github.com/twangyal/projects-monorepo/issues/146). Parent `577ab9c9775ccd7437ab0496ab64982846a48556`, branch `Astra`.
+
+The existing beforeunload guard covered pending/failed committed saves but omitted memory-only note/field drafts and continuation suggestions. It now also reads the existing semantic scratch predicate. No values are applied, saved, exported or changed by departure admission. Applying/discarding work clears scratch under existing editor logic. Other session controls/reviews are outside this milestone.
+
+The native baseline failed because an interacted page emitted no beforeunload dialog for an unapplied note. Final targeted native run passed four cases: note draft, invalid tempo, invalid track name and unsaved continuation. Each dismisses an actual Chromium beforeunload dialog, checks retained raw draft/current proposal and unchanged committed storage, then applies/discards or corrects work and verifies clean reload with no dialog. The continuation fixture initially required explicit Retry save to migrate its legacy seed into a complete saved project; correcting that fixture admission did not alter product saving behavior. Complete note/reference backup remains exact in note/field cases. Fresh read-only review found no Critical/Important blocker.
+
+The affected unit/lint/TypeScript/production build gate passed 341 unit tests. Targeted native run: four passed (26.9 seconds). Full serial browser regression: 172 passed (3.8 minutes). Browser evidence uses Chromium 153.0.8010.0 with actual user activation. Warnings remain browser-controlled: this does not guarantee every browser shows a dialog, recover drafts after forced termination, or persist draft state. No physical music-quality acceptance is claimed. Exact-head CI outcome is recorded in the issue after publication.

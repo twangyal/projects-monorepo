@@ -1,0 +1,105 @@
+{
+  "status": "passed",
+  "checkedAtUtc": "2026-10-04T20:24:17.615795+00:00",
+  "command": "python3 -m unittest discover -s tests -p test_https_oracle.py -v",
+  "tests": 20,
+  "elapsedSeconds": 25.4,
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "openssl": "OpenSSL 3.5.8 25 Aug 2026",
+  "files": [
+    {
+      "path": "/workspace/projects-monorepo/apps/duet/tests/test_https_oracle.py",
+      "sha256": "447857be101e0a426624f680b1455d1ed8671aa0a7694686b4f63af19d79c2ed",
+      "bytes": 27642
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/duet/tests/https_oracle_fixtures.py",
+      "sha256": "3f6fa94258cd255d14ea6a88203372d1337ea70ec0bc11c61f7d1b7e91e5d7fd",
+      "bytes": 3547
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/duet/duet/transport.py",
+      "sha256": "f039576f51b77f8f3d9222db2582d0ab61dda043649f32447ce95db4c3b61daf",
+      "bytes": 6990
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/duet/duet/https_server.py",
+      "sha256": "380abf20ba5461122fc612fc9559383c405674d7b6664006fc5890a2a6582c5c",
+      "bytes": 7451
+    },
+    {
+      "path": "/workspace/projects-monorepo/apps/duet/duet/server.py",
+      "sha256": "7165c45974035a0dc87c5ae6127cb75960ec6942fedf6384686ca57d80407b3e",
+      "bytes": 32689
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/duet107-oracle-first.log",
+      "sha256": "21ff6081285e489054152de63599fa7551b2161b358e291323a621da50868d8a",
+      "bytes": 8960
+    },
+    {
+      "path": "/tmp/duet107-oracle-first-integration.log",
+      "sha256": "9c0885711ac59fce12316eeeb1c315634aadb6c57160b9e5450734f397f691c5",
+      "bytes": 2693
+    },
+    {
+      "path": "/tmp/duet107-oracle-scaled-first.log",
+      "sha256": "b9e29822648e0e94572c506c56e16aa7929f2df0d0bbc44e5108b96f9362945f",
+      "bytes": 1124
+    },
+    {
+      "path": "/tmp/duet107-oracle-backpressure-first.log",
+      "sha256": "97d15d1af93066f505ad986db765a6170969f825ad8a27e877e1deb9723918f1",
+      "bytes": 359
+    },
+    {
+      "path": "/tmp/duet107-oracle-final.log",
+      "sha256": "ec4a5f88d22f4b227a3cbfb79c021d20e50931a8a2f1d5bccdd721bef950b473",
+      "bytes": 3309
+    }
+  ],
+  "firstOutcomes": {
+    "initial11": "2 passes,1 actual hexadecimal-origin failure,8 unfinished server keyword errors; no claim of deliberate stub capture",
+    "first17": "17 passed unchanged21.720s",
+    "followupScaled2": "body/total passed; join refusal failed from jobs.close shared-lock acquisition before request join",
+    "maximumTransport": "passed first run1.081s",
+    "final20": "20 passed unchanged25.400s after owner repaired shutdown ordering"
+  },
+  "resolvedFindings": [
+    "Reject hexadecimal IPv4-like origin0x7f.0x1 instead of DNS admission",
+    "Join HTTPS request workers before jobs.close shared-lock acquisition; retain Store/directory lock on join refusal"
+  ],
+  "verificationScopes": {
+    "native": "Original runtimeCA; Python verifies trust+hostname; expired/wrongSAN/unknownCA reject; no TLS mocks",
+    "realMeasuredDeadlinesSeconds": [
+      5,
+      10
+    ],
+    "scaledOnlySeconds": {
+      "body": 0.6,
+      "totalConnection": 0.6,
+      "response": 0.2,
+      "requestJoin": 0.15
+    },
+    "connectionCapacity": 16,
+    "headerBytes": 16384,
+    "headerFields": 64,
+    "audio": "Original1second440Hz PCM through actual FFmpeg normalization; native HTTPS cookie/bearer ranges match complete Opus bytes",
+    "maximumTransport": "8MiB original opaque stored bytes, exact Range and native small-receive-window backpressure; not claimed playable8MiB audio",
+    "shutdown": "Native handshake/header sockets close; controlled held Store boundary proves bounded refusal retains lifetime lock until request exits",
+    "notClaimed": [
+      "unscaled30s body/response or75s total timing",
+      "physical devices or LAN hardware",
+      "shutdown during real normalization, owned by producer/native tests"
+    ]
+  },
+  "cleanup": "Each test closes sockets/servers and joins accept threads; suite exits normally; TemporaryDirectory removes runtimeCA/private keys/setup files; no persistent processes launched",
+  "static": "Scoped Ruff and py_compile passed",
+  "expectationsMetadata": {
+    "path": "/workspace/duet107-protocol-fixtures/expectations.json",
+    "sha256": "d6878fecdfb1c3b12f2d5373295c39972ef26a5e2809f221ede4ce7d64a780c1",
+    "bytes": 1734
+  }
+}
