@@ -667,6 +667,7 @@ function syncTransport() {
     if (button) button.disabled = !!busy || playing || !project.tracks.some(track => track.notes.length);
   }
   if (stopButton) stopButton.disabled = !playing && !playbackJob && !capture?.backed;
+  timingView?.sync();
 }
 
 async function playSnapshot(snapshot: Composition, label: string, owner: ContinuationProposal | null = null, section?: SectionRange, loop = false) {
@@ -1490,7 +1491,7 @@ libraryView = createLibraryView(libraryHost, {
 });
 
 timingView = createTimingView(timingHost, {
-  state: () => ({ composition: project, trackId: currentTrack().id, generation: compositionGeneration, intent: editorIntent, blocked: startup || !!busy }),
+  state: () => ({ composition: project, trackId: currentTrack().id, generation: compositionGeneration, intent: editorIntent, blocked: startup || !!busy, playing }),
   ready: () => {
     if (startup || busy) return false;
     if (scratchExists() || roll.active) { announce('Apply or discard all unapplied editor fields and continuation suggestions, and finish the piano roll gesture before reviewing or applying timing. Your drafts are kept.'); return false; }
@@ -1498,6 +1499,18 @@ timingView = createTimingView(timingHost, {
   },
   intent: newEditorIntent,
   publish: (next, text) => commit(next, text),
+  audition: candidate => {
+    void playSnapshot(candidate, 'Auditioning reviewed timing in the current mix. Your committed composition is unchanged.');
+    const token = operation, generation = playbackGeneration;
+    return () => {
+      // A later ordinary/Solo playback owns different counters and stays live.
+      if (token !== operation || generation !== playbackGeneration) return;
+      const pending = playbackJob !== null;
+      stopPlayback(false);
+      // Let the current input event retain its raw draft before replacing app DOM.
+      if (pending) queueMicrotask(() => render());
+    };
+  },
 });
 
 render();
