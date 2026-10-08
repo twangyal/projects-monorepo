@@ -842,3 +842,11 @@ stage diagnostic brackets export with native cumulative counters, excludes
 lifetime usage/churn/invalid or zero-only counters, and reports unavailable
 rather than inventing zero CPU. It measures whole observed process work, not
 exclusive codec CPU. Production settings and original media gates are unchanged.
+
+The [bounded native media trace](docs/2026-10-08-native-media-trace/README.md)
+adds an explicit `--media-trace` maximum-probe variation, separate from original
+acceptance and stage timing. It retains fixed event aggregates with loss,
+missing-counter and ownership disclosures, rather than raw trace payloads.
+Native emitting-thread CPU excludes worker threads and does not partition GPU
+process work. The first local maximum passes unchanged media gates; full155 CI
+remains pending and issue128 remains open for throughput repair.

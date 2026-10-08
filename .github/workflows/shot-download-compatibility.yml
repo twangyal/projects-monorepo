@@ -1,9 +1,9 @@
 name: Shot download compatibility experiment
 on:
   push:
-    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/browser-cpu-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
+    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/browser-cpu-diagnostics.mjs', 'apps/shot-studio/scripts/media-trace-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
   pull_request:
-    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/browser-cpu-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
+    paths: ['apps/shot-studio/src/**', 'apps/shot-studio/tests/**', 'apps/shot-studio/scripts/download-compatibility.mjs', 'apps/shot-studio/scripts/export-diagnostics.mjs', 'apps/shot-studio/scripts/stage-timing-diagnostics.mjs', 'apps/shot-studio/scripts/browser-cpu-diagnostics.mjs', 'apps/shot-studio/scripts/media-trace-diagnostics.mjs', 'apps/shot-studio/scripts/smoke_sequence_soundtrack.mjs', 'apps/shot-studio/scripts/browser-155/**', '.github/workflows/shot-download-compatibility.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -86,6 +86,30 @@ jobs:
           done
           DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --stage-timing --fixtures /tmp/shot-155-fixtures --output test-results/stage-timing-155 --origin http://127.0.0.1:4175 2>test-results/stage-timing-155-browser.log
           node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/stage-timing-155
+      - name: Separate bounded native media trace diagnostic variation
+        if: ${{ !cancelled() && env.SHOT_POSTFIX_CHROMIUM_PATH != '' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          export CHROMIUM_PATH="$SHOT_POSTFIX_CHROMIUM_PATH"
+          python3 -m http.server 4176 --bind 127.0.0.1 > /tmp/shot-155-media-server.log 2>&1 &
+          shot_media_server_pid=$!
+          trap 'kill "$shot_media_server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl --silent --fail http://127.0.0.1:4176/ > /dev/null; then break; fi
+            sleep .1
+          done
+          DEBUG=pw:browser node scripts/smoke_sequence_soundtrack.mjs --capture --media-trace --fixtures /tmp/shot-155-fixtures --output test-results/media-trace-155 --origin http://127.0.0.1:4176 2>test-results/media-trace-155-browser.log
+          node scripts/smoke_sequence_soundtrack.mjs --inspect --output test-results/media-trace-155
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shot-studio-full-chromium-155-media-trace
+          path: |
+            apps/shot-studio/test-results/media-trace-155/**
+            !apps/shot-studio/test-results/media-trace-155/profile/**
+            apps/shot-studio/test-results/media-trace-155-browser.log
+          retention-days: 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

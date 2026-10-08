@@ -1,0 +1,44 @@
+{
+  "sourceParent": "2a708d936c9adda3c3036fe1eda07291432ff309",
+  "browser": "stripped Chromium 153.0.8010.0 with owned SwiftShader rendering wrapper",
+  "firstMaximum": true,
+  "parallelLoadLimitation": "A separate one-second targeted native export ran during maximum capture. Do not interpret local throughput as a controlled benchmark or compare against CI 155.",
+  "media": {
+    "bytes": 10036348,
+    "sha256": "080d1774a99ea87c20a20ff423fefe831657d8102a46a1a4d5b6f0960a5bba72"
+  },
+  "retainedFiles": {
+    "missing-api-red.log": {
+      "bytes": 6635,
+      "sha256": "8955d40c536e7ecefa729f2bc0c99d975309514db2d7ec34b1398d5ebd2d3275"
+    },
+    "review-regressions-red.log": {
+      "bytes": 2672,
+      "sha256": "954df1c7deab1127508e1a04d524cf1dd915c742497f274771ce34a46ff06e78"
+    },
+    "final-unit.log": {
+      "bytes": 39625,
+      "sha256": "903e42f3979ad182cee69aa1be6684f91c4008c443fd27ec5399f638cdf2f84b"
+    },
+    "full-native-browser.log": {
+      "bytes": 309594,
+      "sha256": "d1540095b50313cd7c7346539d6f2d95c766b4bba4a5540bbfa0b8488e707646"
+    },
+    "final-native.log": {
+      "bytes": 2971,
+      "sha256": "8ca1aa77bcc04fc46f98bd1e5e9e51c67e0ce28ae21e9d7ce62f56586f86bbe8"
+    },
+    "first-local-maximum.json": {
+      "bytes": 80758,
+      "sha256": "c3e5dd56b3b8abd9e3298a5f29679a88140a32865b57345f6b7b22dcc0987316"
+    },
+    "first-local-maximum.log": {
+      "bytes": 511,
+      "sha256": "1a9cf57d1d20fcbb5ae52ec993957168fc6648566791afdc3740838d720e63d1"
+    },
+    "final-native-receipt.json": {
+      "bytes": 1465,
+      "sha256": "3268b79324d10e71e7de4b6925297d87dcdeb929854d253bbf3a25242ef1ef82"
+    }
+  }
+}

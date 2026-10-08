@@ -1,0 +1,37 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:41] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:33) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET / HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /style.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/app.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/model.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/renderer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/xr.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/history.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/draft.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/take-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence-ui.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/math.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/take-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/performer.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/timestamped-export.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/takes.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/take-video.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/take-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence-document.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence-archive.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence-document-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence-audio-session.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/sequence-audio.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/export-timeline.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /src/export-video-policy.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [08/Oct/2026 07:52:42] "GET /vendor/mediabunny/mediabunny.min.mjs HTTP/1.1" 200 -
+  ✓  1 tests/browser/media-trace-diagnostics.spec.js:4:1 › native media trace brackets thirty actual complete production frames with sanitized codec event buckets (559ms)
+
+  1 passed (1.5s)
