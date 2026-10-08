@@ -30,7 +30,15 @@ Set **Section start beat** and **Section end beat (exclusive)**, then choose **P
 
 **Stop playback** stops either mode. Changing a bound or committing a composition edit stops playback and retires pending rendering/resume work. **Export section WAV** downloads one pass as `-section.wav`; ordinary Play composition, Export WAV and Export MIDI still use the whole composition. The range is session-only and is not saved in project files, autosave or undo history.
 
-Sections crop the fully rendered committed synthesized mix, using the nearest audio-frame boundaries. Crossing notes retain their existing phase/envelopes, and peak limiting uses the whole composition. Reference takes and unapplied edits are excluded. A section omits the release tail beyond its exclusive end. Loops use native audio-buffer repetition with hard boundaries; abrupt waveform joins can click. There is no crossfade, tempo automation, section arrangement, or measured musician-quality claim in this milestone. These remain intermediate controls toward the full DAW destination.
+Sections crop the fully rendered committed synthesized mix, using the nearest audio-frame boundaries. Crossing notes retain their existing phase/envelopes, and peak limiting uses the whole composition. Reference takes and unapplied edits are excluded. A section omits the release tail beyond its exclusive end. Loops use native audio-buffer repetition with hard boundaries; abrupt waveform joins can click. There is no crossfade, tempo automation, playlist section management, or measured musician-quality claim in this milestone. These remain intermediate controls toward the full DAW destination.
+
+### Repeat a layered section
+
+**Duplicate section** inserts a copy immediately after the selected exclusive end and shifts later notes on **every track**, including muted tracks, by the section's beat length. With start 1 and end 9, the first eight beats repeat at beat 9 and later material moves eight beats forward. Fractional timing, rests, pitches, velocities and track sounds are retained; copied notes get independent IDs. The current range stays selected so you can repeat it again.
+
+Choose bounds that include whole notes. A note crossing either boundary refuses the entire operation; nothing is split, shortened or silently quantized. Empty sections and results beyond current 256-notes-per-track/128-beat prototype guards also refuse. Apply/discard unfinished editor fields and continuation proposals and finish any piano-roll gesture first. A pointer click on Duplicate section cannot commit a focused unsent field by blurring it.
+
+Success is one **Undo/Redo** edit and autosaves through the existing complete-project flow. Reference takes and bindings keep their original bytes and capture timing; they are not duplicated or shifted audio regions. Full MIDI/WAV/project exports include the resulting committed synthesized arrangement. This adds an arrangement building block; editable audio clips, playlist/section management and broader DAW production controls remain to be built.
 
 ## Record with backing
 
