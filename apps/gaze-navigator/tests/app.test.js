@@ -10,7 +10,7 @@ function element() {
     setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; },
     click() { this.emit('click'); },
     scrollBy(options) { this.lastScroll = options.top; },
-    classList: { add: value => classes.add(value), remove: value => classes.delete(value), contains: value => classes.has(value) },
+    classList: { add: value => classes.add(value), remove: (...values) => values.forEach(value => classes.delete(value)), contains: value => classes.has(value), toggle: (value, on) => (on ? classes.add(value) : classes.delete(value)) },
     addEventListener: (name, callback) => listeners.set(name, callback),
     removeEventListener: name => listeners.delete(name),
     emit: (name, event = {}) => listeners.get(name)?.(event),
@@ -18,12 +18,13 @@ function element() {
     append(child) { this.children.push(child); },
     setAttribute() {},
     contains(target) { return this.children.includes(target); },
+    querySelectorAll() { return []; },
     closest() { return this; },
   };
 }
 
 test('stationary pointer confirms once, resets on leave, and ignores calibration', async () => {
-  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'dwellDefault', 'dwellSlow', 'dwellVerySlow', 'dwellDuration', 'newDraft', 'downloadDrafts', 'importDrafts', 'draftBackupFile', 'draftBackupChooser', 'draftReview', 'draftReviewText', 'keepComposer', 'replaceComposer', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'downloadAccuracy', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview', 'keyboardUp', 'keyboardDown'];
+  const ids = ['startCamera', 'simulate', 'recalibrate', 'status', 'calibration', 'calibrationStage', 'playground', 'result', 'gazeCursor', 'dwellFill', 'messageList', 'messageDetail', 'searchInput', 'composer', 'draftSubject', 'draftBody', 'draftList', 'saveDraft', 'cancelDraft', 'dwellDefault', 'dwellSlow', 'dwellVerySlow', 'dwellDuration', 'assistOff', 'assistStandard', 'assistWide', 'assistDescription', 'newDraft', 'downloadDrafts', 'importDrafts', 'draftBackupFile', 'draftBackupChooser', 'draftReview', 'draftReviewText', 'keepComposer', 'replaceComposer', 'searchButton', 'scrollButton', 'selectButton', 'composeButton', 'pauseTracking', 'stopTracking', 'checkAccuracy', 'accuracyPanel', 'accuracyStage', 'accuracyDot', 'accuracyResult', 'accuracyData', 'downloadAccuracy', 'cancelAccuracy', 'textKeyboard', 'keyboardKeys', 'keyboardTitle', 'keyboardCaps', 'closeKeyboard', 'editSearch', 'editSubject', 'editBody', 'keyboardPreview', 'keyboardUp', 'keyboardDown'];
   const nodes = Object.fromEntries(ids.map(id => [id, element()]));
   for (const id of ['navigationRoot', 'trackingControls', 'pageUp', 'pageDown']) nodes[id] = element();
   nodes.playground.classList.add('hidden');

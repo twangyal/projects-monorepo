@@ -39,6 +39,28 @@ async function hit(locator) {
   });
 }
 
+// Nearby assist can select controls up to 96 px away, so "looking away" must use the
+// visible point farthest from every enabled gaze target rather than a fixed corner.
+async function lookAway(page) {
+  const point = await page.evaluate(() => {
+    const rects = [...document.querySelectorAll('[data-gaze-target]')]
+      .filter(node => !node.disabled)
+      .map(node => node.getBoundingClientRect())
+      .filter(rect => rect.width > 0 && rect.height > 0);
+    let best = { x: 1, y: 1, distance: -1 };
+    for (let x = 1; x < innerWidth; x += 8) {
+      for (let y = 1; y < innerHeight; y += 8) {
+        const distance = Math.min(...rects.map(rect => Math.hypot(
+          Math.max(rect.left - x, 0, x - rect.right), Math.max(rect.top - y, 0, y - rect.bottom))));
+        if (distance > best.distance) best = { x, y, distance };
+      }
+    }
+    return best;
+  });
+  await page.mouse.move(point.x, point.y);
+  return point.distance;
+}
+
 async function hold(page, locator, { scroll = true, duration = 1100 } = {}) {
   if (scroll) await locator.evaluate(element => new Promise(resolve => {
     const ancestors = [];
@@ -50,7 +72,7 @@ async function hold(page, locator, { scroll = true, duration = 1100 } = {}) {
     element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
     if (positions().every((value, index) => value === before[index])) done();
   }));
-  await page.mouse.move(1, 1);
+  await lookAway(page);
   await page.clock.runFor(32);
   const geometry = await locator.evaluate(element => {
     const bounds = element.getBoundingClientRect();
@@ -351,4 +373,78 @@ test('late file read cannot append over a newer selection and current editing re
  await page.locator('#draftBackupFile').setInputFiles(file('fast.json','New imported'));await expect(page.locator('#draftList article')).toHaveCount(2);
  await page.evaluate(()=>window.releaseDraftRead(JSON.stringify({format:'gaze-session-drafts',version:1,drafts:[{subject:'Late stale',body:'Must not publish'}]})));
  await expect(page.locator('#draftList article')).toHaveCount(2);await expect(page.locator('#draftList')).toContainText('Typed during read');await expect(page.locator('#draftList')).toContainText('New imported');await expect(page.locator('#draftList')).not.toContainText('Late stale');await expect(page.locator('#draftBody')).toHaveValue('Still unsaved');
+});
+
+// Finds a visible blank point 12-40 px outside a control where it is clearly the closest target.
+async function nearbyPoint(locator) {
+  return locator.evaluate(element => {
+    const distance = (rect, x, y) => Math.hypot(Math.max(rect.left - x, 0, x - rect.right), Math.max(rect.top - y, 0, y - rect.bottom));
+    const others = [...document.querySelectorAll('[data-gaze-target]')]
+      .filter(node => node !== element && !node.disabled)
+      .map(node => node.getBoundingClientRect())
+      .filter(rect => rect.width > 0 && rect.height > 0);
+    const own = element.getBoundingClientRect();
+    for (let offset = 12; offset <= 40; offset += 4) {
+      const cx = own.left + own.width / 2;
+      const cy = own.top + own.height / 2;
+      for (const [x, y] of [[cx, own.bottom + offset], [cx, own.top - offset], [own.left - offset, cy], [own.right + offset, cy]]) {
+        if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) continue;
+        if (document.elementFromPoint(x, y)?.closest('[data-gaze-target]')) continue;
+        if (others.every(rect => distance(rect, x, y) > distance(own, x, y) + 24)) return { x, y };
+      }
+    }
+    return null;
+  });
+}
+
+test('nearby assist outlines and confirms a control just outside the pointer, and Off requires a direct hit', async ({ page }) => {
+  await simulate(page);
+  const compose = page.locator('#composeButton');
+  await compose.evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  const point = await nearbyPoint(compose);
+  expect(point, 'a blank point near Compose must exist').not.toBeNull();
+  await lookAway(page);
+  await page.clock.runFor(32);
+  await page.mouse.move(point.x, point.y);
+  await page.clock.runFor(400);
+  await expect(compose).toHaveClass(/gaze-assisted/);
+  await expect(page.locator('#composer')).toBeHidden();
+  await page.clock.runFor(700);
+  await expect(page.locator('#composer')).toBeVisible();
+
+  await hold(page, page.locator('#cancelDraft'));
+  await hold(page, page.locator('#assistOff'));
+  await expect(page.locator('#assistOff')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#assistDescription')).toContainText('off');
+  await compose.evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  const again = await nearbyPoint(compose);
+  await lookAway(page);
+  await page.clock.runFor(32);
+  await page.mouse.move(again.x, again.y);
+  await page.clock.runFor(2000);
+  await expect(page.locator('#composer')).toBeHidden();
+  await expect(compose).not.toHaveClass(/gaze-focus/);
+});
+
+test('gaze between two equally close controls abstains instead of guessing', async ({ page }) => {
+  await simulate(page);
+  const compose = page.locator('#composeButton');
+  await compose.evaluate(element => element.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  const between = await page.evaluate(() => {
+    const a = document.querySelector('#composeButton').getBoundingClientRect();
+    const b = document.querySelector('#searchButton').getBoundingClientRect();
+    const x = (a.left + a.right + b.left + b.right) / 4;
+    const y = (a.top + a.bottom + b.top + b.bottom) / 4;
+    const gap = Math.hypot(Math.max(a.left - x, 0, x - a.right), Math.max(a.top - y, 0, y - a.bottom));
+    return { x, y, gap, blank: !document.elementFromPoint(x, y)?.closest('[data-gaze-target]') };
+  });
+  expect(between.blank).toBe(true);
+  expect(between.gap).toBeLessThanOrEqual(48);
+  await lookAway(page);
+  await page.clock.runFor(32);
+  await page.mouse.move(between.x, between.y);
+  await page.clock.runFor(3000);
+  await expect(page.locator('#gazeCursor')).toHaveClass(/ambiguous/);
+  await expect(page.locator('#composer')).toBeHidden();
+  await expect(page.locator('#result')).not.toContainText('confirmed');
 });

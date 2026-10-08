@@ -111,3 +111,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .confirmation-choices button[aria-pressed="true"] { background: #285743; outline: 2px solid #75e5b4; }
 
 .confirmation-choices button.gaze-focus { outline: 3px solid #75e5b4; background: #173b2f; }
+
+/* Nearby assist: a dashed amber outline distinguishes inferred targets from direct hits. */
+[data-gaze-target].gaze-focus.gaze-assisted { outline: 3px dashed #f5c76b; outline-offset: 2px; }
+#gazeCursor.ambiguous { border-style: dashed; border-color: #f5c76b; box-shadow: 0 0 0 6px rgba(245,199,107,.2); }
