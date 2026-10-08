@@ -5,7 +5,7 @@ import { REFERENCE_LIMITS } from './reference-types.ts';
 import { validateAsset, validateDocument } from './reference-project.ts';
 
 const RATE = REFERENCE_LIMITS.sampleRate;
-const MAX_SOLO_FRAMES = Math.ceil((MAX_COMPOSITION_BEATS * 60 / 40 + 0.08) * RATE);
+const MAX_SOLO_FRAMES = Math.ceil((MAX_COMPOSITION_BEATS * 60 / 40 + 2) * RATE);
 // A cancelled native render cannot be forcibly closed. Retain admission until
 // it actually settles, including while the caller's result is already revoked.
 let normalizing = false;

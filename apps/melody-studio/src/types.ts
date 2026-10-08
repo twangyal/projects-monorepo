@@ -6,12 +6,14 @@ export interface Note {
   duration: number;
   velocity: number;
 }
+export interface SoundEnvelope { attack: number; decay: number; sustain: number; release: number }
 export interface Track {
   id: string;
   name: string;
   instrument: Instrument;
   volume: number;
   muted: boolean;
+  envelope?: SoundEnvelope;
   notes: Note[];
 }
 export interface Composition {

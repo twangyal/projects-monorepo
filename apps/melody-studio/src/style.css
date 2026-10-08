@@ -253,3 +253,7 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
 .timing-changes table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .timing-changes th, .timing-changes td { text-align: left; padding: .5rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 .timing-changes caption { text-align: left; font-size: .8rem; }
+
+.sound-envelope { margin: 16px 0; padding: 12px; border: 1px solid var(--border, #d5d9dd); border-radius: 8px; min-width: 0; }
+.sound-envelope input { width: 100%; }
+.sound-envelope button { margin-top: 8px; width: 100%; }

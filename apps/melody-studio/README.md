@@ -24,7 +24,17 @@ Open the localhost URL printed by Vite. No account, API key, backend, paid servi
 4. Add tracks to layer parts. Each track has a name, volume, mute switch, and one of three synthesized instruments: **Soft keys** (sine), **Warm flute** (triangle), or **Bright synth** (sawtooth). These are simple waveform sounds, not sampled acoustic instruments. Play and stop the combined composition.
 5. Save a project backup or export MIDI/WAV. Recording, importing, or trying the demo on a populated track asks before replacing its notes and reference take. Opening a project, loading an example, or starting a new composition also asks before replacing existing notes.
 
-Arrangements can span **512 beats**: 4 minutes 16 seconds at 120 BPM, or 12 minutes 48 seconds at 40 BPM, before the short synthesized release tail. Editing, section repetition, MIDI review and whole-song exports share this timeline. Captures and retained reference takes remain 20 seconds each; they are source ideas rather than full-song audio clips. Earlier project files remain compatible. Melody remains ACTIVE toward capable sound design, audio editing, mixing, routing and effects.
+Arrangements can span **512 beats**: 4 minutes 16 seconds at 120 BPM, or 12 minutes 48 seconds at 40 BPM, before the synthesized release tail (up to two seconds per track). Editing, section repetition, MIDI review and whole-song exports share this timeline. Captures and retained reference takes remain 20 seconds each; they are source ideas rather than full-song audio clips. Earlier project files remain compatible. Melody remains ACTIVE toward capable sound design, audio editing, mixing, routing and effects.
+
+## Design a track sound
+
+Each track has a **Sound envelope** with linear **Attack**, **Decay**, **Sustain** and **Release**. Attack rises from silence to full level; decay falls to the sustain level; release fades from the level reached when the note ends. Attack, decay and release accept 0–2 seconds; sustain accepts 0–1. A note ending during attack or decay releases from its actual level. Zero-length phases are supported.
+
+Edit the fields, then choose **Apply sound envelope** for one undoable, autosaved track edit. Until Apply, playback and exports use the committed sound. Blank, nonfinite or out-of-range values remain editable and cannot affect the project. Switching tracks retains each track's sound drafts. **Discard sound edits** restores only the selected track's committed sound. Apply/discard other editor drafts and suggestions and finish piano-roll gestures before applying sound settings; a pointer click cannot blur and commit an unrelated raw field.
+
+Applied settings survive complete project backups, saved compositions, track duplication, Undo/Redo and reload. All synthesized playback, backing, edited-note comparison and WAV exports use the same renderer. Whole-song WAV and aligned stems include the complete release tail; section exports retain their exclusive crop bounds. MIDI keeps its existing note/program representation and does **not** carry custom envelopes. Earlier projects retain their original 0.01-second attack, full sustain and 0.08-second release, with unchanged rendered PCM.
+
+This provides per-track amplitude shaping for the three existing waveform instruments. Filters, sample instruments, effects and mixer routing remain future DAW work. See [sound-envelope verification](docs/2026-10-08-sound-envelope.md).
 
 ## Audition an arrangement section
 

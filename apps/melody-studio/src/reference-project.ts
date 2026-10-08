@@ -43,7 +43,8 @@ function composition(value: unknown, normalize: boolean): Composition {
   const raw = record(value, ['version', 'title', 'tempo', 'tracks'], 'Composition');
   const tracks = array(raw.tracks, 8, 'Tracks');
   for (const item of tracks) {
-    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes'], 'Track');
+    const hasEnvelope = item !== null && typeof item === 'object' && Object.hasOwn(item, 'envelope');
+    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasEnvelope ? ['envelope'] : [])], 'Track');
     for (const note of array(track.notes, 256, 'Notes')) record(note, ['id', 'pitch', 'start', 'duration', 'velocity'], 'Note');
   }
   const result = validateComposition(value);
