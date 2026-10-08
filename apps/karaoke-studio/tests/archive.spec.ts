@@ -349,3 +349,14 @@ test('observing another page video export never downloads or replaces the curren
   expect(new URL(page.url()).searchParams.get('project')).toBe(saved.id);
   expect(await (await request.get(`/api/projects/${saved.id}`)).json()).toEqual(saved);
 });
+
+test('an unreadable accepted archive reply keeps the uncertain-restore guard until deliberate status review',async({page,request})=>{
+ const saved=await seed(request);await open(page,saved);await rawDraft(page);let accepted:Job|null=null,submissions=0;
+ page.on('request',r=>{if(r.method()==='POST'&&new URL(r.url()).pathname==='/api/archives')submissions++;});
+ await page.route('**/api/archives',async route=>{const response=await route.fetch();accepted=(await response.json()).job;await route.fulfill({status:202,contentType:'application/json',body:'{"job":'});},{times:1});
+ await page.getByLabel('Import project archive',{exact:true}).setInputFiles({name:'unreadable.karaoke.zip',mimeType:'application/zip',buffer:fixture('Recovered unreadable archive').bytes});
+ await expect(page.locator('#message')).toContainText('may have reached');await expect(page.locator('#archive-file')).toBeDisabled();await expectDraft(page);expect(submissions).toBe(1);
+ await waitJob(request,accepted!.id);await page.locator('#archive-recheck').click();
+ await expect(page.locator('#projects').locator('option')).toContainText(['Recovered unreadable archive']);await expect(page.locator('#archive-file')).toBeEnabled();await expectDraft(page);
+ expect((await projects(request)).filter(p=>p.title==='Recovered unreadable archive')).toHaveLength(1);expect(submissions).toBe(1);
+});

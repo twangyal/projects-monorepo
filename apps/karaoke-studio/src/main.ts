@@ -1,3 +1,4 @@
+import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
 import { activeCue, draftCues, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
@@ -171,8 +172,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.method && init.method !== 'GET' && session) headers.set('X-Karaoke-Token', session.token);
   const response = await fetch(path, { ...init, headers, cache: 'no-store' });
-  const value = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(typeof value.error === 'string' ? value.error : `Local studio request failed (${response.status}).`);
+  const value = await readReply(response) as {error?:unknown};
+  if (!response.ok) throw new Error(typeof value?.error === 'string' ? value.error : `Local studio request failed (${response.status}).`);
   return value as T;
 }
 function json(method: string, body: unknown): RequestInit { return { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }; }
@@ -566,7 +567,9 @@ function renderCues(rawTimings: RawTiming[] = []) {
 async function refreshProjects(isCurrent: () => boolean = () => true): Promise<boolean> {
   const result = await request<{ projects: Project[] }>('/api/projects');
   if (!isCurrent()) return false;
-  projects = result.projects;
+  if (!Array.isArray(result?.projects)) throw new Error('Invalid clip library response.');
+  const admitted = result.projects.map(validateProject);
+  projects = admitted;
   for (const id of archiveCaches.keys()) if (!projects.some(project => project.id === id)) archiveCaches.delete(id);
   const select = element<HTMLSelectElement>('projects'); select.replaceChildren(new Option('Choose a saved clip', ''));
   for (const project of projects) select.append(new Option(project.title, project.id));
@@ -582,7 +585,8 @@ async function openProject(id: string) {
   const generation = ++projectGeneration;
   loading = true; controls();
   try {
-  const project = await request<Project>(`/api/projects/${encodeURIComponent(id)}`);
+  const project = validateProject(await request<unknown>(`/api/projects/${encodeURIComponent(id)}`));
+  if (project.id !== id) throw new Error('The studio returned a different clip. Your current work is kept.');
   if (generation !== projectGeneration) return;
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
@@ -632,11 +636,14 @@ element('save').addEventListener('click', async () => {
   timeline.cancelGesture(); editGeneration++;
   saving = true; controls();
   try {
-    working = await request<Project>(`/api/projects/${working.id}`, json('PUT', { title: working.title, cues: working.cues, revision: working.revision }));
+    const sent = structuredClone(working);
+    const reply = await request<unknown>(`/api/projects/${sent.id}`, json('PUT', { title: sent.title, cues: sent.cues, revision: sent.revision }));
+    const saved = validateSaveReply(reply, sent);
+    working = saved;
     dirty = false; videoUrl = null;
     renderCues(); lyricHistory = new LyricHistory(draftSnapshot());
     await refreshProjects(); message('Lyrics and timing saved locally.');
-  } catch (error) { message(error instanceof Error ? error.message : 'Could not save. Your edits are still here.', true); }
+  } catch (error) { message(error instanceof TypeError ? new UnconfirmedReplyError().message : error instanceof Error ? error.message : 'Could not save. Your edits are still here.', true); }
   finally { saving = false; controls(); }
 });
 

@@ -183,6 +183,8 @@ Videos contain the estimated backing and rendered lyric cards at **1280×720, 24
 
 Completed projects persist in the supplied data directory and reopen from **Saved clips** after a service restart. There is no account, cloud backup, browser-storage dependency, or external song upload. Only one service instance can use a data directory at a time; an exclusive lock prevents a second instance from interfering with its files.
 
+A successful Save acknowledgment must identify this clip and contain the exact submitted title, cues, duration and next revision. An unreadable or mismatched reply leaves your raw fields, unsaved state and Undo/Redo history intact. The service may already have committed the change: inspect the saved clip before another deliberate save. Save never repeats the PUT automatically. An unreadable accepted archive reply similarly retains the uncertain-restore guard until you explicitly check restore status.
+
 Stop the service before moving, replacing, or linking storage directories. The
 running service retains handles to its owned directories and rejects changed
 library/project paths with recovery guidance. Restore the original directories
