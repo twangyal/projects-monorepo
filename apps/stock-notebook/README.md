@@ -1,5 +1,7 @@
 # Stock Notebook
 
+**Product direction (2026-10-08): ACTIVE.** The destination is AI-model API interpretation of natural-language screening requests, using suitable free access and deferring paid integration. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+
 An offline workspace for turning supplied annual financial data into an understandable research shortlist. Import a company universe, inspect a supported-language interpretation, apply editable filters, compare the underlying figures and write company briefs with explicitly attached sources. Download a research report or an editable notebook backup. Data stays in this browser.
 
 This is a deterministic screening and annual-history workspace for catalog idea #13. The parser and observations follow documented rules; they are not AI analysis. The initial milestone is tracked in [issue #32](https://github.com/twangyal/projects-monorepo/issues/32), with supplied annual history in [issue #35](https://github.com/twangyal/projects-monorepo/issues/35). Broad language understanding, generated outlooks and live financial coverage remain future work.

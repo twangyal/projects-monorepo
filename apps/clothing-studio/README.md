@@ -1,5 +1,7 @@
 # Clothing Studio
 
+**Product direction (2026-10-08): ACTIVE.** The destination is a professional garment-design environment with linked 2D patterns, editable 3D garments, credible cloth simulation and personalized fitting. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+
 A local T-shirt concept workspace: adjust a silhouette, choose colors and visual textures, sketch on the garment, place it over a photo, and export your idea. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
 
 The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape, depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.

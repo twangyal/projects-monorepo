@@ -1,5 +1,7 @@
 # Karaoke Studio
 
+**Product direction (2026-10-08): ACTIVE.** The destination is an automatic song-to-karaoke workflow with lyric transcription and synchronization, followed by user correction when needed. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+
 A local karaoke maker: import a complete song or excerpt, estimate vocals and backing with the actual pretrained Spleeter model, supply and time lyrics, preview the result, and export a karaoke video. AI estimates the stems; you supply and synchronize the words. There is no automatic lyric recognition or alignment.
 
 ## Install and run

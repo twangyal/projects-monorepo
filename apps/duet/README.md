@@ -1,5 +1,7 @@
 # Duet
 
+**Product direction (2026-10-08): ACTIVE.** The destination is Spotify integration and an automatically populated shared listening timeline with editable events and song-linked text/photo memories. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+
 A private local music room for two people: bring your own audio files, rate songs independently, build an explainable shared mix, listen together, and attach dated memories. No accounts, paid services, or streaming subscription are required. Spotify integration, catalog access, and musical-similarity recommendations are not implemented.
 
 ## Run locally

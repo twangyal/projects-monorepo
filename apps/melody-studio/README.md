@@ -1,5 +1,7 @@
 # Melody Studio
 
+**Product direction (2026-10-08): ACTIVE.** The destination is a full music-production DAW with the depth and creative control associated with FL Studio. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+
 A local browser music sketchbook: record or import a single hummed melody, turn it into editable notes, compare corrections with a retained reference take, layer tracks, and export a composition. Pitch detection and synthesis remain deterministic. A small local statistical learner can continue an explicitly selected ending with inspectable, reversible note proposals; broader generative arrangement remains future work.
 
 ## Run locally

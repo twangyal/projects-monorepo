@@ -9,6 +9,7 @@ You have broad autonomy to develop, improve, create, and maintain projects withi
 Read these first on every run:
 
 - `PROJECT_IDEAS.md`
+- `docs/PRODUCT_DIRECTION.md`
 - this `AGENTS.md`
 - project-specific README or AGENTS.md files
 - recent git history
@@ -16,7 +17,7 @@ Read these first on every run:
 
 `PROJECT_IDEAS.md` describes the general product ideas and their status. It is direction, not a detailed implementation plan.
 
-You are expected to make reasonable product and engineering decisions independently.
+You are expected to make reasonable product and engineering decisions independently within the stated product direction. Preserve the owner's destination when defining milestones; do not silently narrow it to the existing prototype.
 
 ## Every run
 
@@ -66,7 +67,7 @@ Prefer work in roughly this order:
 10. new projects
 11. minor cosmetic work
 
-Prefer finishing useful projects over endlessly polishing one project.
+Prefer finishing useful projects over endlessly polishing one project. Select coherent milestones against the intended user experience and its major missing capabilities. Storage, recovery, exports and test coverage support that experience; their completion alone does not complete the product.
 
 Avoid repeatedly switching between projects without completing coherent work.
 
@@ -75,12 +76,12 @@ Avoid repeatedly switching between projects without completing coherent work.
 Use these statuses in `PROJECT_IDEAS.md`:
 
 - `IDEA` — not started
-- `ACTIVE` — currently under development
-- `MAINTENANCE` — core product works; only meaningful improvements remain
+- `ACTIVE` — meaningful product development remains against the intended vision
+- `MAINTENANCE` — the intended product experience is substantially delivered and evaluated in relevant real use; no major capability gap remains that requires active development
 - `BLOCKED` — cannot reasonably proceed without external information or resources
 - `DONE` — fulfills its intended purpose and has no obvious high-value missing work
 
-You may change statuses based on repository evidence.
+All fourteen implemented apps are ACTIVE under the 2026-10-08 direction reset. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
 
 ## Independence
 
