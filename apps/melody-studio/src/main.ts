@@ -1,3 +1,4 @@
+import { createTimingView } from './timing-view.ts';
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import { duplicateSection } from './section-arrangement.ts';
 import { sectionWindow, type SectionRange } from './section.ts';
@@ -31,7 +32,10 @@ const referenceHost = document.createElement('section');
 referenceHost.id = 'reference-panel'; referenceHost.setAttribute('aria-labelledby', 'reference-heading');
 const libraryHost = document.createElement('section');
 libraryHost.id = 'composition-library'; libraryHost.setAttribute('aria-labelledby', 'library-heading');
-root.append(app, libraryHost, referenceHost, midiHost);
+const timingHost = document.createElement('section');
+timingHost.id = 'track-timing'; timingHost.setAttribute('aria-labelledby', 'timing-heading');
+root.append(app, timingHost, libraryHost, referenceHost, midiHost);
+let timingView: ReturnType<typeof createTimingView> | null = null;
 let libraryView: ReturnType<typeof createLibraryView> | null = null;
 let storage: Storage | null = null;
 try { storage = window.localStorage; } catch { /* Recovery is shown in the interface. */ }
@@ -115,6 +119,7 @@ function numericDraft(value: string, label: string): number {
 }
 function scratchExists(): boolean { return fieldDrafts.size > 0 || noteDrafts.size > 0 || proposal !== null; }
 function newEditorIntent() {
+  timingView?.retire();
   libraryView?.retire();
   roll.cancel();
   editorIntent++;
@@ -126,7 +131,7 @@ function newEditorIntent() {
   midiReading = false; midiReview = null;
   const ack = midiHost.querySelector<HTMLInputElement>('#midi-discard-ack'); if (ack) ack.checked = false;
   if (hadImport) midiStatus('The editor changed. Review this phrase again. If a file was still loading, choose it again.');
-  updateMidiControls(); updateReference();
+  updateMidiControls(); updateReference(); timingView?.sync();
 }
 function commitField(id: string, action: () => boolean) {
   const key = fieldKey(id), raw = fieldDrafts.get(key);
@@ -362,7 +367,7 @@ function render() {
     replacement?.focus({ preventScroll: true });
     if (replacement instanceof HTMLInputElement && inputSelection?.start !== null && inputSelection?.start !== undefined && inputSelection.end !== null) replacement.setSelectionRange(inputSelection.start, inputSelection.end, inputSelection.direction ?? 'none');
   }
-  updateMidiControls(); updateReference();
+  updateMidiControls(); updateReference(); timingView?.sync();
 }
 
 function confirmReplace() {
@@ -969,7 +974,7 @@ window.addEventListener('pagehide', () => {
     loadEpoch++; pendingLoad.retired = true; recovery = true; unsaved = true;
     saveMessage = 'Load ownership was retired. The pending read must finish before editing or Retry load is available.';
   }
-  cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; releaseActionPointer(); });
+  timingView?.retire(); cancelMidi(); cancelCapture(); stopPlayback(false); void audioContext?.close(); audioContext = null; releaseActionPointer(); });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && capture?.backed) cancelCapture();
 });
@@ -1466,6 +1471,17 @@ libraryView = createLibraryView(libraryHost, {
     cancelMidi(); render();
     return true;
   },
+});
+
+timingView = createTimingView(timingHost, {
+  state: () => ({ composition: project, trackId: currentTrack().id, generation: compositionGeneration, intent: editorIntent, blocked: startup || !!busy }),
+  ready: () => {
+    if (startup || busy) return false;
+    if (scratchExists() || roll.active) { announce('Apply or discard all unapplied editor fields and continuation suggestions, and finish the piano roll gesture before reviewing or applying timing. Your drafts are kept.'); return false; }
+    return true;
+  },
+  intent: newEditorIntent,
+  publish: (next, text) => commit(next, text),
 });
 
 render();

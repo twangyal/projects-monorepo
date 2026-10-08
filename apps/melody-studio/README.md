@@ -85,6 +85,14 @@ Committed edits use the same complete-project history and autosave as numeric
 edits, retain every reference sample unchanged, and stop old audition playback.
 Cancelled or zero-change gestures preserve the redo branch and suggestion.
 
+## Review whole-track timing
+
+Use **Timing grid (beats)**, **Timing strength (%)** and **Timing swing (%)**, then **Review timing**. Grids are 1, ½, ¼ or ⅛ beat intervals. Strength 100% moves each onset to its nearest grid point; 50% moves halfway; 0% keeps the original timing. Swing 0–50% delays odd subdivisions in each pair by that fraction of one grid interval: grid ½ beat with swing 25% places the first pair at internal beats 0 and 0.625, then starts the next pair at 1. This is a grid-delay percentage, not a displayed swing-ratio convention. Nearest-grid ties choose the later onset.
+
+The review lists exact old/new displayed starts for changed notes. **Apply timing** makes one Undo/Redo edit and autosaves; **Discard timing** and review alone keep committed exports and history unchanged. Unchanged results preserve the redo branch. Note IDs, order, pitch, duration and velocity, other tracks and original reference samples are retained. Durations are never quantized; onsets can create or alter overlaps. A shift extending any note beyond internal beat 512 refuses the whole proposal rather than clipping it.
+
+Apply/discard unsent editor fields and continuation suggestions and finish roll gestures first. Review/Apply pointer actions guard before focused fields can commit by blurring. Source edits, track changes and settings input retire the review; raw settings remain available for correction. Timing settings/review are session-only. Audition the applied result and Undo if needed; there is no unsaved-preview audio audition or measured musician-quality claim.
+
 ## Arrange and undo
 
 **Duplicate track** copies its notes and sound settings into a new independent track, sharing the same immutable reference take when present. Use the **−12 / −1 / +1 / +12** controls to move the selected track down or up an octave or semitone. **Repeat phrase** adds one copy after the last note, preserving internal rests and overlaps; leading silence occurs only before the first phrase. Out-of-range transformations leave the composition unchanged.

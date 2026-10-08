@@ -243,3 +243,13 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
 #composition-library button { min-height: 44px; white-space: normal; }
 #library-status { min-height: 3em; font-size: .83rem; }
 @media(max-width:720px) { #composition-library { margin: 0 1rem 1.5rem; padding: 1rem; } .library-fields label { flex-basis: 100%; } }
+
+#track-timing { margin: 1.5rem 0; padding: 1.5rem; border: 1px solid var(--line); border-radius: 12px; background: #fafbf8; min-width: 0; }
+#track-timing p { margin: .6rem 0; overflow-wrap: anywhere; }
+.timing-controls { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
+.timing-controls > label, .timing-controls > .timing-control { flex: 1 1 150px; min-width: 0; }
+.timing-controls input, .timing-controls select { width: 100%; }
+.timing-changes { max-height: 18rem; overflow: auto; margin-top: 1rem; }
+.timing-changes table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.timing-changes th, .timing-changes td { text-align: left; padding: .5rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.timing-changes caption { text-align: left; font-size: .8rem; }
