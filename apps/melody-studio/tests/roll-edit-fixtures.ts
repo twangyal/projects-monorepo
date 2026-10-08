@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {setTimeout as delay} from 'node:timers/promises';
 import {expect,type Page} from '@playwright/test';
 import type {Composition} from '../src/types.ts';
 import {downloadedBytes,decodeMidi,decodeWav} from './browser/continuation-fixtures.ts';
@@ -26,8 +27,21 @@ export async function openRoll(page:Page,project=rollBackup()){
   await expect(page.getByLabel('Project title')).toHaveValue(project.document.composition.title);
   await expect(page.locator('[data-note="fractional-low"]')).toBeVisible();
 }
+const downloadTimes=new WeakMap<Page,number[]>();
 export async function rollDownload(page:Page,name='Save project file'){
-  const pending=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();return downloadedBytes(await pending);
+  // Chromium drops the eleventh download in a one-second burst, even after a
+  // trusted click. CI37831967038 retained ten downloads in859ms before that drop.
+  // Pace only a full burst; keep every native click/download and the test timeout.
+  const times=downloadTimes.get(page)??[];
+  if(times.length===10){
+    while(performance.now()-times[0]<=1000)await delay(Math.max(1,1001-(performance.now()-times[0])));
+    times.shift();
+  }
+  const pending=page.waitForEvent('download').then(download=>({download,at:performance.now()}));
+  await page.getByRole('button',{name,exact:true}).click();
+  const {download,at}=await pending;
+  times.push(at);downloadTimes.set(page,times);
+  return downloadedBytes(download);
 }
 export async function readRoll(page:Page):Promise<RollBackup>{return JSON.parse((await rollDownload(page)).toString()) as RollBackup;}
 export async function geometry(page:Page){
