@@ -1,3 +1,4 @@
+import {readReply,validateRoomReply,validateRoomExport,UnconfirmedReplyError} from './reply-admission.ts';
 import './style.css';
 import { mixCommand, playlistChange, validateSavedMixFields, type SavedMixFields } from './saved-mixes.ts';
 import { AudioSync, clockOffset, estimatedPosition, type Playback, type Track } from './sync.ts';
@@ -63,8 +64,8 @@ async function api<T>(path: string, method = 'GET', body?: unknown, raw?: { file
   else if (method !== 'GET') headers.set('Content-Type', 'application/json');
   const start = Date.now();
   const response = await fetch(path, { method, headers, body: raw ? raw.file : method === 'GET' ? undefined : JSON.stringify(body ?? {}), cache: 'no-store' });
-  const value = await response.json().catch(() => ({})); const end = Date.now();
-  if (!response.ok) throw new ApiError(typeof value.error === 'string' ? value.error : `Request failed (${response.status}).`, response.status);
+  const value = await readReply(response) as {error?:unknown}; const end = Date.now();
+  if (!response.ok) throw new ApiError(typeof value?.error === 'string' ? value.error : `Request failed (${response.status}).`, response.status);
   return { value: value as T, start, end };
 }
 function roomPath(suffix = '') { if (!credentials) throw new Error('Open your room first.'); return `/api/rooms/${credentials.roomId}${suffix}`; }
@@ -118,8 +119,9 @@ async function loadTransportStatus() {
   } finally { if (owner === transportEpoch) { transportLoading = false; controls(); } }
 }
 el('retry-transport-status').addEventListener('click', () => void loadTransportStatus());
-function accept(snapshot: Room, start: number, end: number, order: number) {
-  if (snapshot.id !== credentials?.roomId || snapshot.serverTime < latestServerTime || (snapshot.serverTime === latestServerTime && order < appliedOrder)) return;
+function accept(snapshot: Room, start: number, end: number, order: number): boolean {
+  validateRoomReply(snapshot, credentials!.roomId, room?.myRole);
+  if (snapshot.id !== credentials?.roomId || snapshot.serverTime < latestServerTime || (snapshot.serverTime === latestServerTime && order < appliedOrder)) return false;
   const saved = validateSavedMixFields({ savedMixes: snapshot.savedMixes, savedMixesRevision: snapshot.savedMixesRevision });
   snapshot = { ...snapshot, ...saved };
   latestServerTime = snapshot.serverTime; appliedOrder = order; room = snapshot; offset = clockOffset(snapshot.serverTime, start, end); connected = true;
@@ -129,7 +131,7 @@ function accept(snapshot: Room, start: number, end: number, order: number) {
   if (signature !== contentSignature) { contentSignature = signature; renderContent(); }
   if (snapshot.activeJob) job = snapshot.activeJob;
   sync.apply(snapshot, id => `/api/rooms/${snapshot.id}/tracks/${id}/audio`, offset);
-  renderSavedMixes(); renderJob(); renderPlayer(); controls();
+  renderSavedMixes(); renderJob(); renderPlayer(); controls(); return true;
 }
 async function poll() {
   clearTimeout(polling); if (!credentials) return;
@@ -166,14 +168,24 @@ async function open(auth: Credentials, identityOwner?: number) {
   const current = generation, order = ++requestOrder;
   const result = await api<Room>(roomPath('/access'), 'POST', {}, undefined, auth);
   if (current !== generation) return;
+  validateRoomReply(result.value, auth.roomId);
   saveCredentials(auth, result.value.title); history.replaceState(null, '', `?room=${auth.roomId}`); accept(result.value, result.start, result.end, order); void poll();
 }
 async function mutate(suffix: string, method: string, body: unknown) {
   if (busy || !credentials) return false;
   busy = true; controls(); const current = generation, order = ++requestOrder;
+  const previousMemories = new Set(room?.memories.map(memory => memory.id));
   try {
     const result = await api<Room>(roomPath(suffix), method, body);
-    if (current === generation) { accept(result.value, result.start, result.end, order); notify(''); return true; }
+    if (current === generation) {
+      validateRoomReply(result.value, credentials!.roomId, room?.myRole);
+      if (suffix === '/memories' && method === 'POST') {
+        const sent = body as {trackId:string;date:string;text:string};
+        if (!result.value.memories.some(memory => !previousMemories.has(memory.id) && memory.trackId === sent.trackId && memory.date === sent.date && memory.text === sent.text && memory.author === room?.myRole)) throw new UnconfirmedReplyError();
+      }
+      if (!accept(result.value, result.start, result.end, order)) throw new UnconfirmedReplyError();
+      notify(''); return true;
+    }
   } catch (error) { if (current === generation) { notify(`${message(error)} Your input is still available.`, true); void poll(); } }
   finally { if (current === generation) { busy = false; controls(); } }
   return false;
@@ -325,7 +337,7 @@ async function changeSavedMix(kind: 'save' | 'update' | 'rename' | 'delete' | 'l
       if (!fields.savedMixes.some(mix => mix.id === value.mixId)) throw new Error('The saved mix response was incomplete. Refresh the room before trying again.');
       incoming = value.room; createdId = value.mixId;
     } else incoming = result.value as Room;
-    accept(incoming, result.start, result.end, order);
+    if (!accept(incoming, result.start, result.end, order)) throw new UnconfirmedReplyError();
     if (kind === 'save' && saveInput === saveNameIntent) {
       el<HTMLInputElement>('mix-name').value = '';
       if (createdId && selection === selectionIntent && renameInput === renameNameIntent && el<HTMLInputElement>('saved-mix-name').value === renameBaseline) selectMix(createdId);
@@ -451,8 +463,9 @@ el('memory-form').addEventListener('submit', async event => {
   if (saved && el<HTMLTextAreaElement>('memory-text').value === text) { el<HTMLTextAreaElement>('memory-text').value = ''; notify('A little moment, kept with its song.'); }
 });
 el('room-export').addEventListener('click', async () => {
-  try { const { value } = await api<unknown>(roomPath('/export')); const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = 'duet-room-notes.json'; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); notify('Room notes exported without access credentials. Keep a server data-directory backup to preserve the audio.'); }
-  catch (error) { notify(message(error), true); }
+  if (!credentials) return; const current = generation, id = credentials.roomId;
+  try { const { value } = await api<unknown>(roomPath('/export')); if (current !== generation) return; validateRoomExport(value, id); const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = 'duet-room-notes.json'; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); notify('Room notes exported without access credentials. Keep a server data-directory backup to preserve the audio.'); }
+  catch (error) { if (current === generation) notify(message(error), true); }
 });
 function hasDraft() { return !!file || !!el<HTMLTextAreaElement>('memory-text').value.trim() || !!el<HTMLInputElement>('mix-name').value || el<HTMLInputElement>('saved-mix-name').value !== renameBaseline; }
 function home() {

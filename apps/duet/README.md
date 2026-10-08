@@ -1,5 +1,7 @@
 # Duet
 
+Successful room replies are checked against the current private seat and the public room schema before replacing the displayed state. A memory acknowledgment must include a new memory with the exact submitted song, date and text before its draft clears. Unreadable, mismatched or stale replies preserve input and ask you to inspect the refreshed room before another deliberate attempt; writes are never repeated automatically. Room-note downloads require complete version-two public data and reject unexpected fields, including nested credential fields.
+
 **Product direction (2026-10-08): ACTIVE.** The destination is Spotify integration and an automatically populated shared listening timeline with editable events and song-linked text/photo memories. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
 A private local music room for two people: bring your own audio files, rate songs independently, build an explainable shared mix, listen together, and attach dated memories. No accounts, paid services, or streaming subscription are required. Spotify integration, catalog access, and musical-similarity recommendations are not implemented.

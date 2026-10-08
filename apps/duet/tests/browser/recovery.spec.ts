@@ -16,7 +16,7 @@ async function fixture(page: Page) {
     tracks: [firstTrack, secondTrack].map((id, index) => ({
       id, title: `Song ${index + 1}`, artist: '', duration: 100, uploadedBy: 'host', createdAt: index,
     })),
-    ratings: {}, blend: [], playlist: [firstTrack, secondTrack], playlistRevision: 0,
+    ratings: { [firstTrack]: { host: 0, guest: 0 }, [secondTrack]: { host: 0, guest: 0 } }, blend: [], playlist: [firstTrack, secondTrack], playlistRevision: 0,
     savedMixes: [], savedMixesRevision: 0,
     playback: { ...playback }, memories: [], activeJob: null,
   });
