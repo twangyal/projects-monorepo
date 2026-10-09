@@ -34,7 +34,7 @@ Edit the fields, then choose **Apply sound envelope** for one undoable, autosave
 
 Applied settings survive complete project backups, saved compositions, track duplication, Undo/Redo and reload. All synthesized playback, backing, edited-note comparison and WAV exports use the same renderer. Whole-song WAV and aligned stems include the complete release tail; section exports retain their exclusive crop bounds. MIDI keeps its existing note/program representation and does **not** carry custom envelopes. Earlier projects retain their original 0.01-second attack, full sustain and 0.08-second release, with unchanged rendered PCM.
 
-This provides per-track amplitude shaping for the three existing waveform instruments. Sample instruments, effects and mixer routing remain future DAW work. See [sound-envelope verification](docs/2026-10-08-sound-envelope.md).
+This provides per-track amplitude shaping for the three existing waveform instruments. Sample instruments, additional effects and mixer routing remain future DAW work. See [sound-envelope verification](docs/2026-10-08-sound-envelope.md).
 
 ### Shape the tone with a resonant filter
 
@@ -93,6 +93,12 @@ Choose a track and the shared section bounds, then use **Transpose section up/do
 Selection uses original onsets at or after the start and before the exclusive end. Whole note lengths, starts, dynamics, IDs, sounds/effects, other tracks and retained reference recordings stay intact. Any transformed pitch outside MIDI 36–96 (C2–C7) refuses the whole edit without clamping. Empty/invalid sections refuse; a unison inversion makes no history edit and retains Redo.
 
 Finish other editor drafts, suggestions and roll gestures first. Pointer and keyboard actions protect unapplied work. A changed result is one autosaved Undo/Redo edit, included in ordinary project/library backups, MIDI, synthesized playback and WAV. These controls transform notes; they do not pitch-shift captured audio or infer harmony. See [section pitch evidence](docs/2026-10-09-section-pitch.md).
+
+### Reverse a phrase’s rhythm
+
+Select a track and choose whole-note section boundaries, then **Reverse section note timing**. Each contained note interval is mirrored inside the range, including leading/trailing rests: new start = section start + (section end − original note end), using internal zero-based beats. Pitches, durations, velocities, IDs, sounds/effects, other tracks and complete reference recordings stay unchanged. Synthesized notes attack and release normally at their new starts; this does not reverse recorded audio or oscillator samples.
+
+A note on the selected track crossing either boundary refuses the whole operation; notes exactly ending at a boundary are supported. Other tracks’ boundary crossings do not prevent the selected-track edit. Empty/invalid sections refuse. Symmetric timing adds no edit and keeps Redo. Finish raw editor fields, suggestions and roll gestures first; pointer-before-blur and keyboard admission keep unapplied work safe. A changed result is one autosaved Undo/Redo edit, retained by complete backups/reload and ordinary MIDI/WAV. The song still ends at its last note; if reversal shortens that implicit end, reduce the session range before another section action or use Undo. Fractional math is subject to JavaScript precision; use Undo for exact restoration rather than assuming reversing twice is bit-exact for arbitrary fractional starts. See [reversal evidence](docs/2026-10-09-section-reverse.md).
 
 ## Record with backing
 
