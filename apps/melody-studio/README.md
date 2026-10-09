@@ -78,6 +78,14 @@ Success is one **Undo/Redo** edit and autosaves through the existing complete-pr
 
 Choose whole-note boundaries: any crossing note on any track refuses the entire edit. Apply/discard raw editor fields and continuation suggestions and finish roll gestures first. Pointer admission protects focused unsent fields; keyboard actions refuse retained drafts. Blank or invalid range text stays available for correction. Success is one complete-project **Undo/Redo** edit and autosaves, stopping old playback and timing review. Removing the entire song keeps empty tracks and original reference captures; captured audio is never cut or time-shifted. Save a project backup for longer-term recovery. See [section-removal evidence](docs/2026-10-08-section-removal.md).
 
+### Tighten note timing in a section
+
+Choose the section bounds above, select the track, and set **Quantize grid** to one, half, quarter or eighth of a beat. Set **Quantize strength** from 0–1, then choose **Quantize section note starts**. Strength 1 fully aligns onsets to the nearest grid anchored at song beat zero; strength 0 retains the original timing. Intermediate values move partway. Exact midpoint ties choose the later grid position. Chords sharing a start stay together.
+
+Selection uses the original onset at or after the section start and before its exclusive end. Complete durations stay fixed, including notes crossing a boundary. Rounded starts may move outside the selection by up to half a grid; a result extending past the 512-beat timeline refuses the entire operation instead of shortening or clamping any note. IDs, pitches, dynamics, sounds, effects, other tracks and reference takes are preserved. This edits synthesized notes, not captured audio or transcription accuracy.
+
+A changed result is one saved Undo/Redo edit. Zero strength or already aligned notes preserve Redo without adding history. Empty/missing selections, malformed strength and invalid bounds refuse while retaining raw control text. Apply/discard other editor fields and suggestions and finish roll gestures first; pointer admission protects focused unsent fields before blur and keyboard actions use the same guard. Grid/strength are session-only; the resulting notes survive project/library backups and reload and are used by existing playback, MIDI and WAV exports. Duration quantization, swing and audio warping remain future work. See [quantization evidence](docs/2026-10-09-quantization.md).
+
 ## Record with backing
 
 Select the destination track, apply or discard unfinished editor fields and suggestions, then choose **Record with backing**. Confirm replacing that track when it already contains notes or a reference. Use headphones: speaker playback can leak into your microphone and confuse single-voice pitch detection.
