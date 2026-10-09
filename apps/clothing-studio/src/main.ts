@@ -1,3 +1,4 @@
+import {mountGrading} from './grading-view.ts';
 import {constructionMarkup,mountConstruction} from './construction-view.ts';
 import './style.css';
 import {
@@ -79,7 +80,7 @@ function message(text: string, error = false) {
 }
 
 function renderViews() {
-  constructionView?.render(project);
+  constructionView?.render(project); gradingView?.render(project);
   element('sketch-surface').innerHTML = garmentSvg(project);
   element('preview-surface').innerHTML = previewSvg(project);
   const dimensions = previewSize(project);
@@ -171,7 +172,7 @@ function finishLoad(generation: number) {
 function adoptLoad(generation: number, transform: (current: Project) => Project, text: string, wholeProject = false) {
   if (generation !== loadGeneration) return;
   // Consume the admitted token before shared edit/commit retires old imports.
-  retireLoad(); edit(transform); if (wholeProject) constructionView.reset(); message(text);
+  retireLoad(); edit(transform); if (wholeProject) { constructionView.reset(); gradingView.reset(); } message(text);
 }
 
 function edit(transform: (current: Project) => Project) {
@@ -207,7 +208,7 @@ for (const [id, key, factor] of placementFields) input(id).addEventListener('cha
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 
-element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
+element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
 element('sample').addEventListener('click', () => { cancelLoad(); edit(current => ({ ...current, photo: null })); });
 element('reset-placement').addEventListener('click', () => edit(current => ({ ...current, placement: createProject().placement })));
 element('clear-sketch').addEventListener('click', () => edit(current => ({ ...current, strokes: [] })));
@@ -216,7 +217,7 @@ element('cancel-load').addEventListener('click', () => { cancelLoad(); message('
 function travel(direction: 'undo' | 'redo') {
   cancelLoad(); cancelGesture();
   if (!(direction === 'undo' ? history.canUndo : history.canRedo)) return;
-  project = history[direction](); constructionView?.reset(); editVersion++;
+  project = history[direction](); constructionView?.reset(); gradingView?.reset(); editVersion++;
   renderViews(); updateControls(); scheduleSave(); message('');
 }
 element('undo').addEventListener('click', () => travel('undo'));
@@ -359,6 +360,7 @@ function constructionGuard(): boolean {
   return true;
 }
 const constructionView = mountConstruction({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
+const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 
 window.addEventListener('pagehide', retireLoad);
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });

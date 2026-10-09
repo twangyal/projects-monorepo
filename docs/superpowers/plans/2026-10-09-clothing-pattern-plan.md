@@ -43,3 +43,12 @@ Implemented interfaces: `skirtMesh(SkirtDraft)`, `shellSvg(SkirtDraft,yaw,color)
 - [x] Outward-normal regression RED→GREEN and actual independent OBJ download checks.
 - [x] Complete local check and native suites: 48 units, 57 browser cases.
 - [x] Fresh whole-branch review, issue-linked publication and exact-head CI closure.
+
+### Task 3: Saved relative size grading (#168)
+
+User outcome: derive a complete measured size set from one base, retain the rule in the concept and export labelled physical nets together. This advances revised size-grading/production preparation, without claiming standardized sizes or fit.
+Interfaces: optional Project.grading `{waistStep,hemStep,slantStep,steps}`; strict data-only finite increments -20..20cm, integer1..3 symmetric steps, at least one nonzero increment. `gradedSizes` validates every derived draft before admission/export. `gradedPatternSvg` lays out 3–7 complete two-panel nets at original physical scale with labels/calibration and unique IDs. Legacy absence preserved.
+- [x] Four missing-module RED→GREEN domain cases: independent deltas, malformed/accessor/refusal, complete-project retention, physical SVG size set.
+- [x] Rule Apply/Discard, saved table, committed export and base/raw/gesture guards; accepted-project import explicitly resets both controllers.
+- [x] Native real nested-net perimeters/physical units, complete graph/history/reload, invalid whole set/raw/Redo/390px/identical import.
+- [x] Full check/native, fresh review, docs/roadmap, commit and exact-head CI before closure.

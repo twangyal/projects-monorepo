@@ -1,3 +1,4 @@
+import {validateGrading,gradedSizes,type Grading} from './grading.ts';
 import {validateConstruction,type SkirtDraft} from './construction.ts';
 export interface Point { x: number; y: number }
 export interface Stroke { id: string; color: string; width: number; points: Point[] }
@@ -8,7 +9,7 @@ export interface Garment {
 export interface Placement { x: number; y: number; width: number; height: number; rotation: number; opacity: number }
 export interface Photo { dataUrl: string; width: number; height: number; name: string }
 export interface Project {
-  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft;
+  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading;
   strokes: Stroke[]; placement: Placement; photo: Photo | null;
 }
 
@@ -143,7 +144,9 @@ export function validateProject(value: unknown): Project {
     };
   }
   const construction = Object.hasOwn(project, 'construction') ? validateConstruction(project.construction) : undefined;
-  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}) };
+  const grading = Object.hasOwn(project, 'grading') ? validateGrading(project.grading) : undefined;
+  if (grading) { if (!construction) throw new Error('Grading requires a measured construction.'); gradedSizes(construction, grading); }
+  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}) };
 }
 
 function boundedJson(text: string): string {

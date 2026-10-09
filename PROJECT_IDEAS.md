@@ -41,6 +41,7 @@ Description: Clothing Studio is a professional garment-design environment with t
 
 Milestone #166 adds physical-centimetre two-panel flared-skirt pattern construction, complete optional draft persistence, explicit reversible editing and full-size SVG seam-line export. Geometry is a developable conical-frustum net; sewing allowances, closures, body fit, cloth simulation and full professional garment design remain unfinished under the ACTIVE vision.
 Milestone #167 links those committed panels to a keyboard/mobile rotatable rigid 3D shell and centimetre OBJ surface export, preserving complete history, saved reload and unapplied drafts. The coarse surface is an explicit construction study; cloth/material physics, avatars, garment details, size grading and real production evaluation remain ACTIVE work.
+Milestone #168 adds optional saved manual linear grading rules, a 3–7 relative-size measurement table and full-scale labelled multi-size SVG nets. Derived sizes validate together; rules can be removed with Undo while preserving artwork/base drafts. Standardized body sizing, advanced grading, cloth simulation and physical production acceptance remain ACTIVE work.
 
 ## 6. AI karaoke generator
 
