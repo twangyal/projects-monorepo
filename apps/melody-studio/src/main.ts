@@ -1,3 +1,4 @@
+import { transposeSection, invertSection } from './section-pitch.ts';
 import { quantizeSection } from './quantize.ts';
 import { DEFAULT_ECHO, validateEcho } from './sound-echo.ts';
 import { DEFAULT_ENVELOPE, ENVELOPE_KEYS, validateEnvelope } from './sound-envelope.ts';
@@ -384,6 +385,7 @@ function render() {
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${escape(draft?.pitch ?? '60')}" /></label><label>Start beat<input name="start" type="number" min="1" max="${MAX_COMPOSITION_BEATS + .75}" step="any" value="${escape(draft?.start ?? '1')}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${escape(draft?.duration ?? '1')}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${escape(draft?.velocity ?? '0.8')}" /></label><button type="submit">Apply note</button><button type="button" class="quiet" data-action="discard-note-edits">Discard note edits</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form>${continuationPanel(selection, seedError)}</div></section>
       <section class="save-panel" aria-labelledby="section-heading"><div><p class="eyebrow">ARRANGEMENT AUDITION</p><h2 id="section-heading">Work on a section.</h2><p id="section-help" class="small">Beats start at 1; the end is exclusive. Committed synthesized mix only. Session-only range; hard loop boundaries can click. Duplicate inserts after the end. Remove deletes the section and closes the gap on all tracks. Crossing notes must be included whole; reference recordings stay unchanged. Both edits support Undo. End beat at most ${compositionDurationBeats(project) + 1}.</p></div><div class="export-actions"><label for="section-start">Section start beat<input id="section-start" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionStart)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><label for="section-end">Section end beat (exclusive)<input id="section-end" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionEnd)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><button data-action="play-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Play section</button><button data-action="loop-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Loop section</button><button data-action="duplicate-section" ${busy || !totalNotes ? 'disabled' : ''}>Duplicate section</button><button data-action="remove-section" ${busy || !totalNotes ? 'disabled' : ''}>Remove section and close gap</button><button data-action="wav-section" ${busy || !totalNotes ? 'disabled' : ''}>Export section WAV</button></div></section>
       <section class="save-panel" aria-labelledby="quantize-heading"><div><p class="eyebrow">NOTE TIMING</p><h2 id="quantize-heading">Tighten the rhythm.</h2><p id="quantize-help" class="small">Use the section range above on the selected track. Move original note starts toward the nearest song grid; midpoint ties go later. Strength 0 keeps timing, 1 fully aligns. Lengths, pitches and dynamics stay fixed. Starts may move outside the selection; timeline overflow refuses. Session-only settings; Apply supports Undo.</p></div><div class="export-actions"><label for="quantize-grid">Quantize grid<select id="quantize-grid" aria-label="Quantize grid" aria-describedby="quantize-help" ${disabled()}>${[['1','One beat'],['0.5','Half beat'],['0.25','Quarter beat'],['0.125','Eighth beat']].map(([value,label]) => `<option value="${value}" ${quantizeGrid === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label for="quantize-strength">Quantize strength<input id="quantize-strength" type="text" inputmode="decimal" maxlength="40" value="${escape(quantizeStrength)}" aria-describedby="quantize-help" ${disabled()} /></label><button data-action="quantize-section" ${busy || !track.notes.length ? 'disabled' : ''}>Quantize section note starts</button></div></section>
+      <section class="save-panel" aria-labelledby="phrase-pitch-heading"><div><p class="eyebrow">PHRASE PITCH</p><h2 id="phrase-pitch-heading">Create a phrase variation.</h2><p class="small">Use the section range above on the selected track. Change pitches at original onsets, keeping whole note lengths and dynamics. Invert mirrors intervals around the lowest pitch at the earliest included onset. Any result outside C2–C7 refuses the whole edit. Reference recordings stay unchanged; each change supports Undo.</p></div><div class="export-actions">${[[-12,'down an octave'],[-1,'down a semitone'],[1,'up a semitone'],[12,'up an octave']].map(([step,label]) => `<button data-action="transpose-section:${step}" ${busy || !track.notes.length ? 'disabled' : ''}>Transpose section ${label}</button>`).join('')}<button data-action="invert-section" ${busy || !track.notes.length ? 'disabled' : ''}>Invert section pitches</button></div></section>
       <section class="save-panel" aria-labelledby="dynamics-heading"><div><p class="eyebrow">PHRASE DYNAMICS</p><h2 id="dynamics-heading">Shape a crescendo.</h2><p id="dynamics-help" class="small">Use the section range above on the selected track. Ramp from the first to the last distinct note onset; chords share a velocity. At least two onsets are needed. Values 0–1; zero is silent and omitted from MIDI. Timing, other tracks and reference recordings stay unchanged. Parameters are session-only; Apply is one reversible saved edit.</p></div><div class="export-actions"><label for="ramp-start">Ramp start velocity<input id="ramp-start" type="text" inputmode="decimal" maxlength="40" value="${escape(rampStart)}" aria-describedby="dynamics-help" ${disabled()} /></label><label for="ramp-end">Ramp end velocity<input id="ramp-end" type="text" inputmode="decimal" maxlength="40" value="${escape(rampEnd)}" aria-describedby="dynamics-help" ${disabled()} /></label><button data-action="apply-velocity-ramp" ${busy || !track.notes.length ? 'disabled' : ''}>Apply velocity ramp</button></div></section>
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button><button data-action="wav-track" ${busy || !track.notes.length ? 'disabled' : ''}>Export track WAV</button></div></section>
       <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Successful takes retain a normalized listen-back copy on this device. Export a project backup before clearing browser data.</p></footer>
@@ -741,6 +743,10 @@ function exportTrackWav() {
   } catch (error) { announce(error instanceof Error ? error.message : 'Could not export this track.'); }
 }
 
+function sectionEditAction(action = ''): boolean {
+  return ['duplicate-section', 'remove-section', 'apply-velocity-ramp', 'quantize-section', 'invert-section'].includes(action) || action.startsWith('transpose-section:');
+}
+
 function sectionArrangementGuard(): boolean {
   if (scratchExists() || roll.active) {
     announce('Apply or discard all unapplied fields and the continuation suggestion, and finish the piano roll edit before changing a section arrangement. Your drafts are kept.');
@@ -813,10 +819,10 @@ root.addEventListener('pointerdown', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || button.hasAttribute('data-note') || !root.contains(button)) return;
   if (libraryHost.contains(button)) event.preventDefault();
-  if (['duplicate-section', 'remove-section', 'apply-velocity-ramp', 'quantize-section'].includes(button.dataset.action ?? '') && !sectionArrangementGuard()) {
+  if (sectionEditAction(button.dataset.action) && !sectionArrangementGuard()) {
     event.preventDefault(); event.stopImmediatePropagation(); return;
   }
-  if (['quantize-section', 'apply-velocity-ramp', 'apply-envelope', 'discard-envelope', 'apply-filter', 'discard-filter', 'apply-echo', 'discard-echo'].includes(button.dataset.action ?? '')) event.preventDefault();
+  if (sectionEditAction(button.dataset.action) || ['quantize-section', 'apply-velocity-ramp', 'apply-envelope', 'discard-envelope', 'apply-filter', 'discard-filter', 'apply-echo', 'discard-echo'].includes(button.dataset.action ?? '')) event.preventDefault();
   if (button.dataset.action === 'apply-envelope' && !soundDraftGuard()) { event.stopImmediatePropagation(); return; }
   if (button.dataset.action === 'apply-echo' && !soundDraftGuard(echoFields)) { event.stopImmediatePropagation(); return; }
   if (button.dataset.action === 'apply-filter' && !soundDraftGuard(filterFields)) { event.stopImmediatePropagation(); return; }
@@ -857,12 +863,24 @@ app.addEventListener('click', event => {
   if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
-  if (['duplicate-section', 'remove-section', 'apply-velocity-ramp', 'quantize-section'].includes(action ?? '') && !sectionArrangementGuard()) return;
+  if (sectionEditAction(action) && !sectionArrangementGuard()) return;
   if (action === 'apply-envelope' && !soundDraftGuard()) return;
   if (action === 'apply-echo' && !soundDraftGuard(echoFields)) return;
   if (action === 'apply-filter' && !soundDraftGuard(filterFields)) return;
   if (action && !['record-backed', 'save', 'midi', 'wav', 'wav-section', 'wav-track', 'solo-track', 'duplicate-section', 'remove-section', 'play-section', 'loop-section', 'play', 'stop', 'cancel', 'finish-record', 'audition-continuation'].includes(action)) newEditorIntent();
   switch (action) {
+    case 'transpose-section:-12':
+    case 'transpose-section:-1':
+    case 'transpose-section:1':
+    case 'transpose-section:12':
+    case 'invert-section': {
+      try {
+        const next = action === 'invert-section' ? invertSection(project, currentTrack().id, selectedSection()) : transposeSection(project, currentTrack().id, selectedSection(), Number(action.split(':')[1]));
+        const unchanged = JSON.stringify(next) === JSON.stringify(project);
+        commit(next, unchanged ? 'Section pitches are unchanged. No edit was made.' : 'Section pitches transformed on the selected track. Timing, dynamics and reference recordings are unchanged. Undo restores the original pitches.');
+      } catch (error) { announce(error instanceof Error ? error.message : 'Could not transform section pitches.'); }
+      break;
+    }
     case 'quantize-section': {
       try {
         const next = quantizeSection(project, currentTrack().id, selectedSection(), Number(quantizeGrid), numericDraft(quantizeStrength, 'Quantize strength'));

@@ -84,7 +84,15 @@ Choose the section bounds above, select the track, and set **Quantize grid** to 
 
 Selection uses the original onset at or after the section start and before its exclusive end. Complete durations stay fixed, including notes crossing a boundary. Rounded starts may move outside the selection by up to half a grid; a result extending past the 512-beat timeline refuses the entire operation instead of shortening or clamping any note. IDs, pitches, dynamics, sounds, effects, other tracks and reference takes are preserved. This edits synthesized notes, not captured audio or transcription accuracy.
 
-A changed result is one saved Undo/Redo edit. Zero strength or already aligned notes preserve Redo without adding history. Empty/missing selections, malformed strength and invalid bounds refuse while retaining raw control text. Apply/discard other editor fields and suggestions and finish roll gestures first; pointer admission protects focused unsent fields before blur and keyboard actions use the same guard. Grid/strength are session-only; the resulting notes survive project/library backups and reload and are used by existing playback, MIDI and WAV exports. Duration quantization, swing and audio warping remain future work. See [quantization evidence](docs/2026-10-09-quantization.md).
+A changed result is one saved Undo/Redo edit. Zero strength or already aligned notes preserve Redo without adding history. Empty/missing selections, malformed strength and invalid bounds refuse while retaining raw control text. Apply/discard other editor fields and suggestions and finish roll gestures first; pointer admission protects focused unsent fields before blur and keyboard actions use the same guard. Grid/strength are session-only; the resulting notes survive project/library backups and reload and are used by existing playback, MIDI and WAV exports. This direct edit complements the existing reviewed timing proposal and audition flow, which also supports swing. Duration quantization and audio warping remain future work. See [quantization evidence](docs/2026-10-09-quantization.md).
+
+### Change a phrase’s pitches
+
+Choose a track and the shared section bounds, then use **Transpose section up/down a semitone/octave** or **Invert section pitches**. Transpose moves every included pitch by ±1 or ±12 semitones. Invert mirrors intervals around the lowest pitch at the earliest included onset: with pivot 60, pitches 60, 67 and 64 become 60, 53 and 56. Simultaneous chord notes use their lowest pitch as the pivot, independent of storage order.
+
+Selection uses original onsets at or after the start and before the exclusive end. Whole note lengths, starts, dynamics, IDs, sounds/effects, other tracks and retained reference recordings stay intact. Any transformed pitch outside MIDI 36–96 (C2–C7) refuses the whole edit without clamping. Empty/invalid sections refuse; a unison inversion makes no history edit and retains Redo.
+
+Finish other editor drafts, suggestions and roll gestures first. Pointer and keyboard actions protect unapplied work. A changed result is one autosaved Undo/Redo edit, included in ordinary project/library backups, MIDI, synthesized playback and WAV. These controls transform notes; they do not pitch-shift captured audio or infer harmony. See [section pitch evidence](docs/2026-10-09-section-pitch.md).
 
 ## Record with backing
 
