@@ -168,10 +168,10 @@ function finishLoad(generation: number) {
   if (generation !== loadGeneration) return;
   loadBusy = false; updateLoadControls();
 }
-function adoptLoad(generation: number, transform: (current: Project) => Project, text: string) {
+function adoptLoad(generation: number, transform: (current: Project) => Project, text: string, wholeProject = false) {
   if (generation !== loadGeneration) return;
   // Consume the admitted token before shared edit/commit retires old imports.
-  retireLoad(); edit(transform); message(text);
+  retireLoad(); edit(transform); if (wholeProject) constructionView.reset(); message(text);
 }
 
 function edit(transform: (current: Project) => Project) {
@@ -306,7 +306,7 @@ input('project-file').addEventListener('change', async () => {
     const text = await file.text(); if (generation !== loadGeneration) return;
     const restored = parseProject(text); await validatePhoto(restored.photo);
     if (generation !== loadGeneration) return;
-    adoptLoad(generation, () => restored, 'Project backup restored. Undo returns to your previous concept.');
+    adoptLoad(generation, () => restored, 'Project backup restored. Undo returns to your previous concept.', true);
   } catch (error) {
     if (generation === loadGeneration) message(`Could not open project: ${error instanceof Error ? error.message : 'Invalid backup.'}`, true);
   } finally { finishLoad(generation); }

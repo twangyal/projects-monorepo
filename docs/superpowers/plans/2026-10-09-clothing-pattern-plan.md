@@ -32,6 +32,14 @@ Interfaces: `SkirtDraft`, `validateConstruction(unknown):SkirtDraft`, `patternGe
 - [x] Native exact full backup/history/reload/physical SVG and invalid/raw/held import/390px tests.
 - [x] Run full check/native gate, review diff, update docs, publish issue-linked commit via expected main lease; close only verified.
 
-### Next independent milestone
+### Task 2: Linked rigid shell and OBJ hand-off (#167)
 
 Create its tracking issue before implementation. Generate a 32-segment frustum mesh from the exact committed waist/hem/slant, project sorted surface faces into an SVG 3D viewer, expose reversible session camera yaw and matching side seams. Independently verify radii, slant/height, mesh seam identity and native linkage; no cloth or body model. Deliver only after #166 is durable.
+
+
+Implemented interfaces: `skirtMesh(SkirtDraft)`, `shellSvg(SkirtDraft,yaw,color)`, `shellObj(SkirtDraft)`. Mesh and net share validated committed measurements; camera rotation does not persist.
+- [x] Missing-module domain RED→GREEN; exact circle/slant identities and bounded projection.
+- [x] Native linked views/history/reload/raw drafts/keyboard/390px evidence.
+- [x] Outward-normal regression RED→GREEN and actual independent OBJ download checks.
+- [x] Complete local check and native suites: 48 units, 57 browser cases.
+- [x] Fresh whole-branch review, issue-linked publication and exact-head CI closure.
