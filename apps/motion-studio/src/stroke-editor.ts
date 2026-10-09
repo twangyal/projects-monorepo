@@ -1,5 +1,5 @@
 import { evaluateDrawingCel, evaluatePose, localPoint, type Point, type Pose, type Project, type Stroke } from './model.ts';
-import { deleteStroke, setStrokeAppearance, type StrokeTarget } from './stroke-edit.ts';
+import { deleteStroke, duplicateStroke, mirrorStroke, setStrokeAppearance, type StrokeTarget } from './stroke-edit.ts';
 
 /** Captures one rigid path displacement, never accumulated pointer deltas. */
 export class StrokeDrag {
@@ -26,7 +26,7 @@ interface State { project: Project; layerId: string; frame: number; generation: 
 interface Hooks { state(): State; admitOtherDrafts(): boolean; begin(keepSelection?: boolean): void; apply(project: Project): boolean; changed(): void }
 interface Selection { target: StrokeTarget; project: Project; frame: number; generation: number; operation: number }
 export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
-  host.innerHTML = `<section id="stroke-editor" role="region" aria-label="Selected drawing strokes" hidden><h3>Selected drawing strokes</h3><p id="stroke-exposure" class="hint"></p><div id="stroke-list"></div><div id="stroke-appearance"><label class="field">Selected stroke color<input id="stroke-color" type="color" value="#563d75"></label><label class="field">Selected stroke width<input id="stroke-width" type="text" inputmode="decimal"></label><button id="stroke-apply">Apply stroke appearance</button><button id="stroke-discard">Discard stroke edits</button><button id="stroke-delete">Delete selected stroke</button></div><p id="stroke-status" aria-live="polite">Select a retained stroke in the list or on the canvas. Arrow keys move it in stage axes; Shift moves ten units.</p></section>`;
+  host.innerHTML = `<section id="stroke-editor" role="region" aria-label="Selected drawing strokes" hidden><h3>Selected drawing strokes</h3><p id="stroke-exposure" class="hint"></p><div id="stroke-list"></div><div id="stroke-appearance"><label class="field">Selected stroke color<input id="stroke-color" type="color" value="#563d75"></label><label class="field">Selected stroke width<input id="stroke-width" type="text" inputmode="decimal"></label><button id="stroke-apply">Apply stroke appearance</button><button id="stroke-discard">Discard stroke edits</button><button id="stroke-duplicate">Duplicate selected stroke</button><button id="stroke-mirror-x">Mirror stroke horizontally</button><button id="stroke-mirror-y">Mirror stroke vertically</button><button id="stroke-delete">Delete selected stroke</button></div><p id="stroke-status" aria-live="polite">Select a retained stroke in the list or on the canvas. Arrow keys move it in stage axes; Shift moves ten units.</p></section>`;
   const get = <T extends HTMLElement = HTMLElement>(id: string) => host.querySelector<T>(`#${id}`)!;
   const color = get<HTMLInputElement>('stroke-color'), width = get<HTMLInputElement>('stroke-width');
   const rows = new Map<number, HTMLElement>(); let selection: Selection | null = null, dirty = false, invalid = false;
@@ -81,7 +81,7 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
     if (!cel?.strokes.length) get('stroke-exposure').textContent += ' This drawing has no retained strokes.';
     const available = !!currentStroke(); color.disabled = state.locked || !available; width.disabled = state.locked || !available;
     get<HTMLButtonElement>('stroke-apply').disabled = state.locked || !available;
-    get<HTMLButtonElement>('stroke-delete').disabled = state.locked || !available || dirty;
+    for (const id of ['stroke-delete', 'stroke-duplicate', 'stroke-mirror-x', 'stroke-mirror-y']) get<HTMLButtonElement>(id).disabled = state.locked || !available || dirty;
     get<HTMLButtonElement>('stroke-discard').disabled = state.locked || (!selection && !dirty);
   }
   function appearanceInput() {
@@ -113,11 +113,26 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
     try { hooks.begin(true); bind(selection.target, false); const candidate = deleteStroke(hooks.state().project, selection.target); hooks.apply(candidate); dirty = false; selection = null; invalid = false; width.value = ''; status('Selected stroke deleted.'); update(); hooks.changed(); }
     catch (error) { status(error instanceof Error ? error.message : 'Could not delete this stroke.'); }
   }
+  function reuse(action: 'duplicate' | 'horizontal' | 'vertical') {
+    if (hooks.state().locked || !hooks.admitOtherDrafts() || !admit() || !selection || !currentStroke()) return;
+    const target = { ...selection.target };
+    try {
+      hooks.begin(true); bind(target, false);
+      const candidate = action === 'duplicate' ? duplicateStroke(hooks.state().project, target) : mirrorStroke(hooks.state().project, target, action);
+      const changed = hooks.apply(candidate);
+      bind(action === 'duplicate' && changed ? { ...target, strokeIndex: target.strokeIndex + 1 } : target, true);
+      status(changed ? action === 'duplicate' ? 'Independent stroke copy selected. Move it to reuse this shape.' : `Stroke mirrored ${action === 'horizontal' ? 'horizontally' : 'vertically'} in local drawing coordinates.` : 'Stroke geometry is unchanged. No new edit was made.');
+      update(); hooks.changed();
+    } catch (error) { status(error instanceof Error ? error.message : 'Could not reuse this stroke.'); update(); hooks.changed(); }
+  }
+  get('stroke-duplicate').addEventListener('click', () => reuse('duplicate'));
+  get('stroke-mirror-x').addEventListener('click', () => reuse('horizontal'));
+  get('stroke-mirror-y').addEventListener('click', () => reuse('vertical'));
   get('stroke-delete').addEventListener('click', remove);
   host.addEventListener('pointerdown', event => {
-    if (!(event.target as HTMLElement).closest('#stroke-list button,#stroke-apply,#stroke-delete,#stroke-discard') || event.button !== 0) return;
+    if (!(event.target as HTMLElement).closest('#stroke-list button,#stroke-apply,#stroke-delete,#stroke-discard,#stroke-duplicate,#stroke-mirror-x,#stroke-mirror-y') || event.button !== 0) return;
     if (!hooks.admitOtherDrafts()) { event.preventDefault(); if (!(event.target as HTMLElement).closest('#stroke-discard')) event.stopImmediatePropagation(); return; }
-    if ((event.target as HTMLElement).closest('#stroke-list button,#stroke-delete') && !admit()) { event.preventDefault(); event.stopImmediatePropagation(); }
+    if ((event.target as HTMLElement).closest('#stroke-list button,#stroke-delete,#stroke-duplicate,#stroke-mirror-x,#stroke-mirror-y') && !admit()) { event.preventDefault(); event.stopImmediatePropagation(); }
   }, true);
   function overlay(context: CanvasRenderingContext2D, preview: Project) {
     context.clearRect(0, 0, 640, 360);

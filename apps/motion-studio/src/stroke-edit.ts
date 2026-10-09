@@ -92,3 +92,19 @@ export function deleteStroke(input: Project, target: StrokeTarget): Project {
   cel.strokes.splice(index, 1);
   return validateProject(project);
 }
+
+/** Insert an independent copy immediately above the selected path in paint order. */
+export function duplicateStroke(input: Project, target: StrokeTarget): Project {
+  const { project, cel, index, stroke } = select(input, target);
+  cel.strokes.splice(index + 1, 0, structuredClone(stroke));
+  return validateProject(project);
+}
+/** Reflect local path coordinates about its own bounds, keeping point direction/order. */
+export function mirrorStroke(input: Project, target: StrokeTarget, axis: 'horizontal' | 'vertical'): Project {
+  if (axis !== 'horizontal' && axis !== 'vertical') throw new Error('Choose horizontal or vertical mirroring.');
+  const { project, stroke } = select(input, target);
+  const property = axis === 'horizontal' ? 'x' : 'y';
+  const values = stroke.points.map(p => p[property]), low = Math.min(...values), high = Math.max(...values);
+  if (low !== high) stroke.points = stroke.points.map(p => ({ ...p, [property]: low + high - p[property] }));
+  return validateProject(project);
+}

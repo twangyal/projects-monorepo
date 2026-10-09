@@ -55,6 +55,8 @@ Each completed drag, keyboard move, appearance application or deletion is one Un
 
 Apply or explicitly discard raw appearance values before changing selection, frame, layer, mode or project. Selection clears on those transitions and on unrelated edits or history navigation. Pointer cancellation, Escape, focus loss, page departure or changed stage geometry discard a drag preview. A move that puts any point outside the supported coordinate range is refused as a whole. Selection outlines and drag previews are temporary: autosaves, project files, PNGs, GIFs and private snapshots contain only committed artwork.
 
+**Duplicate selected stroke** inserts an independent copy immediately after the selected path in paint order and selects the copy. Move it with the existing drag/arrow controls. **Mirror stroke horizontally/vertically** reflects local coordinates about that path's own bounds; layer rotation/scale are unchanged, so local horizontal need not be screen horizontal. Point order, width and color remain intact. These edits change the active held drawing only and each changed action is one Undo/Redo step. Unchanged mirrors add no history. Appearance and other editor drafts guard these actions; duplication refuses atomically at the existing total stroke/point/file limits. Saved projects and rendered exports contain the committed result.
+
 This tool edits complete strokes. It does not reshape individual points, cut paths with an eraser, infer objects or generate artwork. The existing project format, file limits and saved-copy protection continue to apply.
 
 ## Drawings and pose keyframes
