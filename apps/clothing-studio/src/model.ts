@@ -1,3 +1,4 @@
+import {validateConstruction,type SkirtDraft} from './construction.ts';
 export interface Point { x: number; y: number }
 export interface Stroke { id: string; color: string; width: number; points: Point[] }
 export interface Garment {
@@ -7,7 +8,7 @@ export interface Garment {
 export interface Placement { x: number; y: number; width: number; height: number; rotation: number; opacity: number }
 export interface Photo { dataUrl: string; width: number; height: number; name: string }
 export interface Project {
-  schemaVersion: 1; title: string; note: string; garment: Garment;
+  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft;
   strokes: Stroke[]; placement: Placement; photo: Photo | null;
 }
 
@@ -141,7 +142,8 @@ export function validateProject(value: unknown): Project {
       name: text(image.name, 'Photo name', MAX_PHOTO_NAME_LENGTH),
     };
   }
-  return { schemaVersion: 1, title, note, garment, strokes, placement, photo };
+  const construction = Object.hasOwn(project, 'construction') ? validateConstruction(project.construction) : undefined;
+  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}) };
 }
 
 function boundedJson(text: string): string {

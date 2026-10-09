@@ -1,3 +1,4 @@
+import {constructionMarkup,mountConstruction} from './construction-view.ts';
 import './style.css';
 import {
   createProject, validateProject, parseProject, serializeProject, ProjectHistory,
@@ -50,6 +51,7 @@ app.innerHTML = `
         <button id="preview-png" class="export-button">Export preview PNG <span aria-hidden="true">↓</span></button>
       </section>
     </div>
+    ${constructionMarkup}
     <footer><span>Made for the first spark of an idea.</span><span>Photos and projects stay in this browser. Keep a backup for safekeeping.</span></footer>
   </main>`;
 
@@ -77,6 +79,7 @@ function message(text: string, error = false) {
 }
 
 function renderViews() {
+  constructionView?.render(project);
   element('sketch-surface').innerHTML = garmentSvg(project);
   element('preview-surface').innerHTML = previewSvg(project);
   const dimensions = previewSize(project);
@@ -204,7 +207,7 @@ for (const [id, key, factor] of placementFields) input(id).addEventListener('cha
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 
-element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); message('Started a new concept. Undo restores the previous one.'); });
+element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
 element('sample').addEventListener('click', () => { cancelLoad(); edit(current => ({ ...current, photo: null })); });
 element('reset-placement').addEventListener('click', () => edit(current => ({ ...current, placement: createProject().placement })));
 element('clear-sketch').addEventListener('click', () => edit(current => ({ ...current, strokes: [] })));
@@ -213,7 +216,7 @@ element('cancel-load').addEventListener('click', () => { cancelLoad(); message('
 function travel(direction: 'undo' | 'redo') {
   cancelLoad(); cancelGesture();
   if (!(direction === 'undo' ? history.canUndo : history.canRedo)) return;
-  project = history[direction](); editVersion++;
+  project = history[direction](); constructionView?.reset(); editVersion++;
   renderViews(); updateControls(); scheduleSave(); message('');
 }
 element('undo').addEventListener('click', () => travel('undo'));
@@ -349,6 +352,13 @@ element('replace-saved').addEventListener('click', async () => {
   } catch { unsaved = true; element('save-state').textContent = 'Not saved locally · previous concept protected'; message('Could not replace the saved concept. Previous browser data remains protected; export your current project backup.', true); }
   finally { replacingSaved = false; updateControls(); }
 });
+
+function constructionGuard(): boolean {
+  const raw = input('title').value !== project.title || element<HTMLTextAreaElement>('note').value !== project.note || placementFields.some(([id,key,factor]) => input(id).value !== String(Number((project.placement[key]*factor).toFixed(2))));
+  if (gesture || raw || exportBusy || replacingSaved) { message('Finish the active gesture or other raw concept fields before changing construction. Your drafts are kept.', true); return false; }
+  return true;
+}
+const constructionView = mountConstruction({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
 
 window.addEventListener('pagehide', retireLoad);
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
