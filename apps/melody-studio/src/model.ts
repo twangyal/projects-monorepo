@@ -1,5 +1,6 @@
 import { validateEnvelope } from './sound-envelope.ts';
 import { validateFilter } from './sound-filter.ts';
+import { validateEcho } from './sound-echo.ts';
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition, Note, Track } from './types.ts';
 
@@ -94,7 +95,7 @@ export function validateComposition(value: unknown): Composition {
       const velocity = number(note.velocity, `${notePath} velocity`, 0, 1);
       return { id: noteId, pitch, start, duration, velocity };
     });
-    return { id: trackId, name, instrument, volume, muted: track.muted, notes, ...(Object.hasOwn(track, 'envelope') ? { envelope: validateEnvelope(track.envelope) } : {}), ...(Object.hasOwn(track, 'filter') ? { filter: validateFilter(track.filter) } : {}) };
+    return { id: trackId, name, instrument, volume, muted: track.muted, notes, ...(Object.hasOwn(track, 'envelope') ? { envelope: validateEnvelope(track.envelope) } : {}), ...(Object.hasOwn(track, 'filter') ? { filter: validateFilter(track.filter) } : {}), ...(Object.hasOwn(track, 'echo') ? { echo: validateEcho(track.echo) } : {}) };
   });
   return { version: 1, title, tempo, tracks };
 }

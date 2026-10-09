@@ -46,6 +46,16 @@ Projects, saved compositions, duplicated tracks, Undo/Redo and reload retain app
 
 Coefficients follow the [W3C Audio EQ Cookbook low-pass filter](https://www.w3.org/TR/audio-eq-cookbook/). This is static subtractive sound shaping, not filter automation, a filter envelope, a track effects bus or musician-quality evaluation. Those remain part of the ACTIVE full-DAW destination.
 
+### Add rhythmic echo
+
+Enable **rhythmic echo**, choose **Echo spacing (beats)** from 0.25–4, **Echo decay** from 0.05–0.95, and integer **Echo repeats** from 1–8. Choose **Apply sound echo** for one Undo/Redo and autosave edit. Each repeat is the complete filtered/enveloped voice delayed by another spacing interval, with level multiplied by decay for each repeat. The dry voice keeps its existing gain; overlapping taps may trigger the existing whole-mix peak limiter.
+
+Drafts remain separate from playback and files until Apply. Blank, nonfinite and invalid values remain editable. Track selection retains each track’s drafts; **Discard echo edits** restores only its committed settings. Finish other raw fields, suggestions and roll gestures before Apply; pointer admission protects focused unsent fields before blur, and keyboard activation uses the same guard. Disable Enable and Apply to remove the effect; re-enabling starts from 1 beat, decay 0.5, 3 repeats.
+
+Complete projects, the saved composition library, duplication, Undo/Redo and reload preserve applied echoes. Shared synthesis includes echoes in playback, solo, backing, edited-note comparison and WAV/stem exports. Whole-song and aligned track WAV include the complete echo/release tail; sections and reference comparison keep their existing exclusive window bounds. MIDI does not include custom effects. Old projects omit echo and keep their original PCM. Echo tails can extend beyond the 512-beat note timeline. The 40-million-frame synthesis allocation guard remains in force: an excessive render refuses instead of truncating the tail; shorten the song or use a lower render sample rate in a programmatic renderer.
+
+This is finite mono echo, not reverb, stereo delay, live-input processing, mixer routing or musician-quality acceptance. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
+
 ## Audition an arrangement section
 
 Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.
