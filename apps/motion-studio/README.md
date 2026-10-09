@@ -83,6 +83,14 @@ The interface numbers frames from **1**. Project JSON stores frames from **0**: 
 
 Unapplied pose/name text remains visible, including empty or invalid values. Apply valid values or use **Discard pose edits** before changing layers, drawings, frames or projects. Values need not align to a suggested increment. JSON downloads remain available for committed work and explicitly exclude raw drafts. Pointer cancellation, Escape, focus/visibility loss or changed canvas geometry discard an active gesture without a partial save.
 
+## Adjust drawing exposure timing
+
+Select a later held drawing and choose **Move active drawing start**. Enter its new displayed starting frame (an integer from 2 through the project end) in the frame prompt. Cancel keeps the current project. The first drawing always starts at frame 1, and an occupied boundary is refused.
+
+This moves the complete retained drawing without changing its strokes or any pose key. Other drawing starts remain fixed, so the preceding hold extends or shortens; moving past another boundary deliberately changes drawing order. Blank and generated drawings behave the same way. A changed move selects the new start and creates one Undo/Redo/autosave edit. Unchanged input, cancellation, invalid/occupied targets and complete-file refusals preserve project, current frame, selection and Redo; unchanged timing also keeps a separately reviewed in-between proposal.
+
+Finish or discard other raw pose/name/stroke edits before opening the prompt. Pointer activation guards them before blur, and keyboard activation has the same admission checks. The control is locked during gestures, loading/recovery and export. Drawing reuse and neighbor-guide controls also honor pending project imports and recovery reads. Existing deliberate editing actions can still supersede an import under their established rules.
+
 ## Draw with neighboring exposure guides
 
 Enable **Show neighboring drawings** to compare the immediately previous held drawing in teal and the next in rose. The text identifies their starting frames, including blank neighbors. Guides do not skip blank drawings or wrap from the end back to the beginning. A single drawing has no neighbors; imported image layers do not offer this control.
