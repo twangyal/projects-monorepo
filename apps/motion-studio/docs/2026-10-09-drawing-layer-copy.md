@@ -1,0 +1,9 @@
+# Complete animated drawing layer reuse
+
+Issue #159 adds independent copies of complete vector drawing layers: all retained cels, stroke geometry/appearance and pose keys. A fresh validated identity and Unicode-safe bounded name distinguish the selected copy immediately above its source. The current frame is unchanged. Full-project validation precedes publication and selection; quota errors preserve source, selection and Redo. Imported bitmap duplication is unavailable and existing image resources remain unchanged.
+
+Local verification passes 247 unit tests, lint/type/build and 154 native browser cases. Four new deterministic cases cover complete graph/nonaliasing, identity/name validation, exact eighth-layer admission and atomic layer/stroke/point/exact-byte-cap refusals. Three native cases first fail on missing controls, then pass exact project downloads, nonzero current-frame preservation, copied-pose editing, independent PNG pixels, Undo/Redo/reload, preblur pose protection, raw stroke keyboard refusal, disabled image control and preserved Redo after quota refusal. Phone-width controls were visually inspected. Independent read-only review found no critical or important defects.
+
+The first browser attempt stopped on a TypeScript inference error: default crypto.randomUUID inferred a narrower UUID template type than the existing model's valid IDs. Explicitly declaring the parameter as string fixes that contract before browser RED/GREEN verification. The final full browser gate includes the added nonzero-frame assertion; earlier passing runs do not substitute for it.
+
+Native verification uses Chromium 153 with a temporary CPU-rendering wrapper. Hosted CI receipts are recorded in the issue after publication. This is drawing reuse, not learned motion or real-user evaluation. The full product remains ACTIVE.

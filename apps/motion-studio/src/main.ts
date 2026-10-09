@@ -3,6 +3,7 @@ import { playbackFrame } from './playback.ts';
 import { createStrokeEditor, StrokeDrag, uniformCanvas } from './stroke-editor.ts';
 import { hitStroke, translateStroke, type StrokeTarget } from './stroke-edit.ts';
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
+import { duplicateDrawingLayer } from './layer-copy.ts';
 import { History } from './history.ts';
 import { createTweenWorkspace } from './tween-view.ts';
 import { loadAssets, closeAssets, renderFrame, type Assets } from './render.ts';
@@ -27,7 +28,7 @@ app.innerHTML = `
 <aside class="tools panel"><div class="panel-heading"><h3>Make your mark</h3><span>01</span></div><div class="tool-content">
 <div class="segmented"><button id="draw-mode" aria-pressed="true">✎ Draw</button><button id="move-mode" aria-pressed="false">↔ Move</button><button id="edit-strokes-mode" aria-pressed="false">Edit strokes</button></div><div id="stroke-editor-host"></div>
 <label class="field">Ink color<input id="ink" type="color" value="#563d75"></label><label class="field">Brush width <output id="brush-value">6 px</output><input id="brush" type="range" min="1" max="40" value="6"></label><p class="hint">Draw on the selected drawing layer. Move places a pose at the current frame.</p>
-<div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
+<div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="duplicate-layer">Duplicate drawing layer</button><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
 <div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="field">Project file action<select id="project-file-action"><option value="new">Import as new project</option><option value="replace">Replace current project</option></select></label><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
 </div></aside>
 <section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><div class="stage-stack"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas><canvas id="stroke-overlay" width="640" height="360" aria-hidden="true"></canvas></div></div>
@@ -213,6 +214,7 @@ function controls() {
   for (const id of ['delete-layer', 'layer-name', 'set-key', 'pose-x', 'pose-y', 'pose-scale', 'pose-rotation', 'pose-opacity', 'easing']) el<HTMLInputElement>(id).disabled = locked || !chosen;
   el<HTMLButtonElement>('remove-key').disabled = locked || !chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame);
   const drawing = chosen?.kind === 'drawing' ? chosen : null;
+  el<HTMLButtonElement>('duplicate-layer').disabled = locked || !drawing || project.layers.length >= 8;
   const active = drawing ? evaluateDrawingCel(drawing, frame) : null;
   const occupied = drawing?.cels.some(cel => cel.frame === frame);
   for (const id of ['add-blank-cel', 'duplicate-cel']) {
@@ -370,7 +372,7 @@ app.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   // Discard owns the raw fields before native blur can auto-commit a valid pose value.
   if ((event.target as HTMLElement).closest('#discard-pose-edits')) { event.preventDefault(); return; }
-  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode')) return;
+  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer')) return;
   if (!admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 el<HTMLInputElement>('ink').addEventListener('input', () => tweens.retire());
@@ -536,6 +538,17 @@ el('discard-pose-edits').addEventListener('click', () => {
 });
 el<HTMLInputElement>('background').addEventListener('input', event => edit(next => { next.background = (event.target as HTMLInputElement).value; }));
 el('add-layer').addEventListener('click', () => { if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave()) return; edit(next => { const added = createDrawingLayer(`Drawing ${next.layers.length + 1}`); next.layers.push(added); selected = added.id; selectMode('draw'); }); });
+el('duplicate-layer').addEventListener('click', () => {
+  if (busy || exporting || gesture || !admitDrafts()) return;
+  try {
+    const next = duplicateDrawingLayer(project, selected);
+    const index = next.layers.findIndex(item => item.id === selected);
+    const copiedId = next.layers[index + 1].id;
+    if (!tweens.confirmLeave()) return;
+    pause();
+    if (commit(next)) { selected = copiedId; refresh(); tell('Drawing layer duplicated. All drawings and pose keys are independent.'); }
+  } catch (error) { tell(errorMessage(error), true); }
+});
 el('delete-layer').addEventListener('click', () => { if (busy || exporting || gesture || !admitDrafts() || !tweens.confirmLeave()) return; edit(next => { next.layers = next.layers.filter(item => item.id !== selected); }); });
 for (const [id, delta] of [['layer-down', -1], ['layer-up', 1]] as const) el(id).addEventListener('click', () => edit(next => {
   const index = next.layers.findIndex(item => item.id === selected), target = index + delta;

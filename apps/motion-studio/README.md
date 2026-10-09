@@ -42,6 +42,12 @@ rounded centisecond timing.
 
 Undo/Redo retain up to 30 project snapshots within a 20 MiB history budget; large projects may retain fewer. Ctrl/⌘ Z and Ctrl/⌘ Shift Z work outside text fields. With the canvas focused, Space toggles playback. History is session-only and is not included in backups.
 
+## Reuse animated drawings
+
+Select a drawing layer and choose **Duplicate drawing layer** to copy all its held drawings, strokes and pose keys. The independent copy is inserted immediately above the source in paint order, selected, and named with a bounded “ copy” suffix. The timeline stays at its current frame. Change its poses or artwork to reuse an animated character or prop without altering the original. One Undo removes the copy; Redo restores it. Autosaves, project files and exports include the committed copy.
+
+Complete layer copies consume the existing layer, total stroke/point and project-file budgets. Refusals preserve artwork, selection and Redo. Finish or explicitly discard other pose/name/stroke drafts first; activation guards them before pointer blur and on keyboard activation. Copies are unavailable during gestures, loading or export. Imported image layers are not duplicated by this control. Drawing-layer copies leave all existing image data and resources unchanged.
+
 ## Correct an existing stroke
 
 Choose a drawing layer and the desired held drawing, then select **Edit strokes**. Select a path on the canvas or choose **Stroke N** in **Selected drawing strokes**. The list follows paint order and can select artwork that is covered or outside the stage. Canvas selection checks the selected layer's active drawing; overlapping strokes select the last painted path. Imported images remain separate layers.
