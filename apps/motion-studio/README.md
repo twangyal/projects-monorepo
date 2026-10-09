@@ -83,6 +83,14 @@ The interface numbers frames from **1**. Project JSON stores frames from **0**: 
 
 Unapplied pose/name text remains visible, including empty or invalid values. Apply valid values or use **Discard pose edits** before changing layers, drawings, frames or projects. Values need not align to a suggested increment. JSON downloads remain available for committed work and explicitly exclude raw drafts. Pointer cancellation, Escape, focus/visibility loss or changed canvas geometry discard an active gesture without a partial save.
 
+## Draw with neighboring exposure guides
+
+Enable **Show neighboring drawings** to compare the immediately previous held drawing in teal and the next in rose. The text identifies their starting frames, including blank neighbors. Guides do not skip blank drawings or wrap from the end back to the beginning. A single drawing has no neighbors; imported image layers do not offer this control.
+
+Both guides use the selected layer's **current-frame pose** so you can compare and trace shape changes separately from pose movement. They render at 25% of the layer's current opacity; invisible layers have invisible guides. Original stroke colors are replaced by the guide colors. The selected drawing stays editable as usual, and guides refresh after frame/layer/history changes.
+
+Guides pause during playback and return as soon as playback stops, including a stop caused by editing a pose. This checkbox is a session preference and resets after reload. The overlay is separate from committed artwork: project files, saved copies, private viewers, PNGs, GIFs and frame ZIPs exclude it. Toggling creates no history edit. Finish or discard raw pose/name/stroke values first; pointer, label and keyboard activation protect those values. The control is locked during gestures, loading and export.
+
 ## Review drawing in-betweens
 
 1. Select a drawing layer with two adjacent nonempty drawings and at least one free frame between them. Finish or discard existing pose/name drafts, then choose **Make drawing in-betweens**. Both endpoints must contain the same number of strokes, from one through eight.

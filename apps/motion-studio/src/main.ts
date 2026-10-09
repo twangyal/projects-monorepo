@@ -3,6 +3,7 @@ import { playbackFrame } from './playback.ts';
 import { createStrokeEditor, StrokeDrag, uniformCanvas } from './stroke-editor.ts';
 import { hitStroke, translateStroke, type StrokeTarget } from './stroke-edit.ts';
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
+import { neighborDrawings, renderNeighborDrawings } from './onion-skin.ts';
 import { duplicateDrawingLayer } from './layer-copy.ts';
 import { History } from './history.ts';
 import { createTweenWorkspace } from './tween-view.ts';
@@ -31,9 +32,9 @@ app.innerHTML = `
 <div class="rule"></div><div class="section-label"><h3>Layers</h3><span id="layer-count"></span></div><div id="layers" aria-label="Artwork layers"></div><div class="layer-actions"><button id="duplicate-layer">Duplicate drawing layer</button><button id="add-layer">+ Drawing layer</button><label class="file-button">+ Import image<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Import artwork image"></label></div><div class="small-actions"><button id="layer-down">Lower</button><button id="layer-up">Raise</button><button id="delete-layer">Delete layer</button></div><p class="hint">Up to 8 layers. PNG, JPEG or still WebP, up to 4 MiB.</p>
 <div class="rule"></div><label class="field">Project title<input id="project-title" maxlength="80"></label><label class="field">Stage color<input id="background" type="color"></label><button id="backup" class="full">Save project file ↓</button><label class="field">Project file action<select id="project-file-action"><option value="new">Import as new project</option><option value="replace">Replace current project</option></select></label><label class="file-button full subtle">Open project file<input id="project-file" type="file" accept="application/json,.json" aria-label="Open project file"></label>
 </div></aside>
-<section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><div class="stage-stack"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas><canvas id="stroke-overlay" width="640" height="360" aria-hidden="true"></canvas></div></div>
+<section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><div class="stage-stack"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas><canvas id="onion-overlay" width="640" height="360" aria-hidden="true"></canvas><canvas id="stroke-overlay" width="640" height="360" aria-hidden="true"></canvas></div></div>
 <div class="transport panel"><button id="play" class="primary">Play animation</button><button id="first-frame" title="Go to the first frame">Start</button><label class="loop"><input id="loop" type="checkbox" checked> Loop</label><span id="time" class="mono">0.00 s / 4.00 s</span></div>
-<div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button></div><p id="drawing-action-hint" class="hint"></p><button id="make-tween">Make drawing in-betweens</button><p id="tween-eligibility" class="hint"></p><div id="tween-workspace"></div></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
+<div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button></div><p id="drawing-action-hint" class="hint"></p><label class="onion-control"><input id="onion-enabled" type="checkbox" aria-describedby="onion-status">Show neighboring drawings</label><p id="onion-status" class="hint"></p><button id="make-tween">Make drawing in-betweens</button><p id="tween-eligibility" class="hint"></p><div id="tween-workspace"></div></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
 <div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever. PNG frames · full color · exact 12 fps</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="png-frames">Export PNG frames ZIP</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
 </section>
 <aside class="pose-panel panel"><div class="panel-heading"><h3>Strike a pose</h3><span>02</span></div><div class="tool-content"><label class="field">Layer name<input id="layer-name" maxlength="40"></label><p id="pose-state" class="pose-state">Frame 1 · saved pose</p><div class="pair"><label class="field">Position X<input id="pose-x" type="text" inputmode="decimal" min="-640" max="1280" step="1"></label><label class="field">Position Y<input id="pose-y" type="text" inputmode="decimal" min="-360" max="720" step="1"></label></div><label class="field">Scale<input id="pose-scale" type="text" inputmode="decimal" min="0.1" max="4" step="0.05"></label><label class="field">Rotation (degrees)<input id="pose-rotation" type="text" inputmode="decimal" min="-720" max="720" step="5"></label><label class="field">Opacity<input id="pose-opacity" type="text" inputmode="decimal" min="0" max="1" step="0.05"></label><label class="field">Motion to next pose<select id="easing"><option value="linear">Steady / linear</option><option value="ease">Ease in & out</option><option value="hold">Hold this pose</option></select></label><p id="pose-draft-status" role="status" hidden></p><button id="discard-pose-edits" class="full" hidden>Discard pose edits</button><button id="set-key" class="primary full">Set keyframe</button><button id="remove-key" class="text-button">Remove this keyframe</button><p class="hint">Changing pose values sets a key at this frame. The first key always stays. Drawing edits the active held drawing until its next boundary.</p><div class="note"><span aria-hidden="true">✦</span><strong>Start with two poses.</strong><p>Set a pose at the start. Scrub near the end, move your layer, then press play.</p></div></div></aside>
@@ -46,6 +47,7 @@ let history = new History(project);
 let assets: Assets = new Map();
 let selected = project.layers.at(-1)?.id || '';
 let frame = 0, playing = false, mode: 'draw' | 'move' | 'edit' = 'draw';
+let onionEnabled = false;
 let animation = 0, playStarted = 0, playFrom = 0;
 let busy = true, exporting = false, operation = 0, generation = 0;
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -100,6 +102,7 @@ const strokeEditor = createStrokeEditor(el('stroke-editor-host'), {
   apply: commit,
   changed() { controls(); draw(); },
 });
+const onionContext = el<HTMLCanvasElement>('onion-overlay').getContext('2d')!;
 const overlayContext = el<HTMLCanvasElement>('stroke-overlay').getContext('2d')!;
 const privateLinks = createPrivateLinks(el('private-links'), {
   state: () => ({ generation, intent: operation, locked: busy || exporting || !!gesture || restorePending || retryPending || libraryPending, drafts: drafts.size > 0 || tweens.unsaved || strokeEditor.unsaved }),
@@ -114,7 +117,7 @@ function tell(text: string, error = false) { el('message').textContent = text; e
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : 'This operation could not be completed.'; }
 function layer(): Layer | undefined { return project.layers.find(item => item.id === selected); }
 function value(id: string, next: string) { const node = el<HTMLInputElement>(id); if (!drafts.has(id) && node.value !== next) node.value = next; }
-function pause() { playing = false; cancelAnimationFrame(animation); el('play').textContent = 'Play animation'; }
+function pause() { const wasPlaying = playing; playing = false; cancelAnimationFrame(animation); el('play').textContent = 'Play animation'; if (wasPlaying) { controls(); draw(); } }
 function intent(keepStroke = false) { if (!keepStroke) strokeEditor.retire(); tweens.retire(); generation++; operation++; libraryTransition++; libraryPending = false; }
 function draftControls() {
   const pending = drafts.size > 0;
@@ -195,7 +198,7 @@ async function flushActiveSave(): Promise<boolean> {
   const succeeded = await queueActiveSave(validateProject(project), ++saveRevision, owner);
   return succeeded && owner === lineage && token === operation && revision === generation;
 }
-function draw() { const visible = gesture?.preview || project; renderFrame(ctx, visible, frame, assets); strokeEditor.overlay(overlayContext, visible); canvas.dataset.frame = String(frame); }
+function draw() { const visible = gesture?.preview || project; renderFrame(ctx, visible, frame, assets); renderNeighborDrawings(onionContext, onionEnabled && !playing ? neighborDrawings(visible, selected, frame) : []); strokeEditor.overlay(overlayContext, visible); canvas.dataset.frame = String(frame); }
 function controls() {
   privateLinks.update();
   const locked = busy || exporting || !!gesture;
@@ -215,6 +218,10 @@ function controls() {
   el<HTMLButtonElement>('remove-key').disabled = locked || !chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame);
   const drawing = chosen?.kind === 'drawing' ? chosen : null;
   el<HTMLButtonElement>('duplicate-layer').disabled = locked || !drawing || project.layers.length >= 8;
+  const onionControl = el<HTMLInputElement>('onion-enabled');
+  onionControl.disabled = locked || !drawing; onionControl.checked = onionEnabled;
+  const guides = drawing && onionEnabled && !playing ? neighborDrawings(project, selected, frame) : [];
+  el('onion-status').textContent = !drawing ? 'Select a drawing layer to compare neighboring exposures.' : !onionEnabled ? 'Compare the adjacent drawings in the current pose. Previous is teal; next is rose. Guides are excluded from saved artwork and exports.' : playing ? 'Neighboring drawing guides are paused during playback.' : guides.length ? guides.map(item => `${item.side === 'previous' ? 'Previous' : 'Next'}: ${item.strokes.length ? 'drawing' : 'blank drawing'} from frame ${item.frame + 1} (${item.side === 'previous' ? 'teal' : 'rose'})`).join('; ') + '. Guides use this frame’s pose and never enter exports.' : 'This drawing has no neighboring exposures.';
   const active = drawing ? evaluateDrawingCel(drawing, frame) : null;
   const occupied = drawing?.cels.some(cel => cel.frame === frame);
   for (const id of ['add-blank-cel', 'duplicate-cel']) {
@@ -319,7 +326,7 @@ el('play').addEventListener('click', () => {
   if (busy || exporting || gesture || !admitDrafts()) return;
   if (playing) { pause(); return; }
   intent();
-  playing = true; playFrom = frame === project.frameCount - 1 ? 0 : frame; playStarted = performance.now(); el('play').textContent = 'Pause animation'; animation = requestAnimationFrame(tick);
+  playing = true; playFrom = frame === project.frameCount - 1 ? 0 : frame; playStarted = performance.now(); el('play').textContent = 'Pause animation'; controls(); draw(); animation = requestAnimationFrame(tick);
 });
 el('first-frame').addEventListener('click', () => seek(0));
 el<HTMLInputElement>('frame').addEventListener('input', event => seek(Number((event.target as HTMLInputElement).value)));
@@ -372,9 +379,18 @@ app.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   // Discard owns the raw fields before native blur can auto-commit a valid pose value.
   if ((event.target as HTMLElement).closest('#discard-pose-edits')) { event.preventDefault(); return; }
-  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer')) return;
+  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#onion-enabled,.onion-control')) return;
   if (!admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
+// A label's later default click can focus its input even after pointerdown cancellation.
+app.addEventListener('click', event => {
+  if ((event.target as HTMLElement).closest('.onion-control') && !admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, true);
+el('onion-enabled').addEventListener('change', () => {
+  const input = el<HTMLInputElement>('onion-enabled');
+  if (busy || exporting || gesture || layer()?.kind !== 'drawing' || !admitDrafts()) { input.checked = onionEnabled; return; }
+  onionEnabled = input.checked; controls(); draw();
+});
 el<HTMLInputElement>('ink').addEventListener('input', () => tweens.retire());
 el<HTMLInputElement>('brush').addEventListener('input', event => { tweens.retire(); el('brush-value').textContent = `${(event.target as HTMLInputElement).value} px`; });
 function stagePoint(event: PointerEvent): Point { const rect = canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * WIDTH / rect.width, y: (event.clientY - rect.top) * HEIGHT / rect.height }; }
