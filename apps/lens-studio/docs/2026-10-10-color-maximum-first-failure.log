@@ -1,0 +1,61 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test color-regions.spec.ts -g maximum original
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/color-regions.spec.ts:19:1 › maximum original photo connected preview commits all1638400 labels with exact complete history (6.4s)
+
+
+  1) tests/browser/color-regions.spec.ts:19:1 › maximum original photo connected preview commits all1638400 labels with exact complete history 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#render-status')
+    Expected substring: "Projection ready"
+    Received string:    "Rendering projection…"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#render-status') with timeout 5000ms
+      - waiting for locator('#render-status')
+        - locator resolved to <p class="hint" id="render-status"></p>
+        - unexpected value ""
+        2 × locator resolved to <p class="hint" id="render-status">Rendering projection…</p>
+          - unexpected value "Rendering projection…"
+
+
+      18 | });
+      19 | test('maximum original photo connected preview commits all1638400 labels with exact complete history',async({page})=>{
+    > 20 |  await page.goto('/');await expect(page.locator('#save-status')).not.toContainText('Checking local');const rgba=new Uint8ClampedArray(1280*1280*4).fill(255);await page.getByLabel('Import photo',{exact:true}).setInputFiles({name:'maximum-source.png',mimeType:'image/png',buffer:independentPng({width:1280,height:1280,rgba})});await expect(page.locator('#render-status')).toContainText('Projection ready');const original=await backup(page);expect([original.photo.width,original.photo.height]).toEqual([1280,1280]);await page.getByLabel('Depth tool',{exact:true}).selectOption('color');await page.getByLabel('Paint near',{exact:true}).check();await page.getByLabel('Color tolerance',{exact:true}).fill('0');await page.locator('#source-canvas').scrollIntoViewIfNeeded();const b=(await page.locator('#source-canvas').boundingBox())!;await page.mouse.move(b.x+b.width/2,b.y+b.height/2);const start=Date.now();await page.mouse.down();const pointerDownRoundTripMs=Date.now()-start;const preview=await page.locator('#source-canvas').evaluate((canvas:HTMLCanvasElement)=>[...canvas.getContext('2d')!.getImageData(640,640,1,1).data]);expect(preview[0]).toBeLessThan(255);await page.mouse.up();const next=await backup(page),labels=Buffer.from(next.depth.labels,'base64');expect(labels.length).toBe(1638400);expect(labels.every(v=>v===0)).toBe(true);expect(next).toEqual({...original,depth:next.depth});await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(original);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(next);test.info().annotations.push({type:'measured-pointerdown-roundtrip-ms',description:String(pointerDownRoundTripMs)});console.log(JSON.stringify({maximumColorSelection:{width:1280,height:1280,labels:labels.length,pointerDownRoundTripMs,previewRGBA:preview}}));
+         |                                                                                                                                                                                                                                                                                                                                                                                   ^
+      21 | });
+      22 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/color-regions.spec.ts:20:371
+
+    Error Context: test-results/color-regions-maximum-orig-2f21f-with-exact-complete-history/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/color-regions-maximum-orig-2f21f-with-exact-complete-history/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/color-regions-maximum-orig-2f21f-with-exact-complete-history/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/color-regions.spec.ts:19:1 › maximum original photo connected preview commits all1638400 labels with exact complete history 

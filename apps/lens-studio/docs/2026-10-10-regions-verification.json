@@ -63,7 +63,16 @@
     "minor": "Pre-existing secondary-pointer cancellation can discard an unfinished primary gesture; no committed data loss."
   },
   "ci": {
-    "status": "pending publication; exact-head result will be recorded in issue169"
+    "status": "success",
+    "commit": "49119b3d08bf05ac8cd1c797d6819e8efbdec190",
+    "run": 38040352090,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/38040352090",
+    "checkoutHashInspected": true,
+    "units": 73,
+    "browser": 69,
+    "lint": "pass",
+    "typecheck": "pass",
+    "build": "pass"
   },
   "limitations": [
     "Manual depth only; no learned depth, generated fill or calibrated camera acceptance",

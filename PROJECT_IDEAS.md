@@ -127,6 +127,8 @@ Milestone: Lens Studio delivers local PNG/JPEG/WebP import, fixed focal framing,
 
 Milestone #169: rectangle and closed polygon depth authoring adds live previews, explicit/Escape cancellation and one-step history while preserving complete photos/settings/recovery/export. Independent geometry covers fractional reversal and current maximum image/point bounds; native checks cover exact masks, saved reload, raw drafts/Redo, mobile controls and actual perspective PNGs. Manual authoring supports the photo simulation workflow; learned depth and missing-content reconstruction remain unfinished.
 
+Milestone #170: connected-color source selection assigns four-connected regions against a fixed RGBA seed with visible tolerance, captured previews, one-step history and cancellation/draft preservation. Exact disconnected/threshold/alpha/max-raster tests and native masks/reload/perspective PNG verification cover the manual workflow. Automatic scene depth and reconstruction remain future product capabilities.
+
 ## 17. Track physiological state to create situations in a game
 
 Path: `apps/composure`

@@ -1,0 +1,84 @@
+{
+  "issue": 170,
+  "baseCommit": "49119b3d08bf05ac8cd1c797d6819e8efbdec190",
+  "environment": {
+    "node": "24.19.0",
+    "chromium": "153.0.8010.0"
+  },
+  "local": {
+    "check": {
+      "command": "npm run check",
+      "units": 79,
+      "lint": "pass",
+      "typecheck": "pass",
+      "build": "pass",
+      "exitCode": 0
+    },
+    "browser": {
+      "command": "CHROMIUM_PATH=/tmp/lens-chromium-wrapper npm run test:browser",
+      "passed": 72,
+      "elapsed": "2.3m",
+      "exitCode": 0
+    },
+    "additionalMaximum": {
+      "command": "CHROMIUM_PATH=/tmp/lens-chromium-wrapper npm run test:browser -- color-regions.spec.ts -g 'maximum original'",
+      "passed": 1,
+      "elapsed": "27.4s",
+      "exitCode": 0,
+      "source": [
+        1280,
+        1280
+      ],
+      "exactDepthLabels": 1638400,
+      "pointerDownRoundTripMs": 976,
+      "previewRGBA": [
+        236,
+        183,
+        165,
+        255
+      ]
+    }
+  },
+  "tests": [
+    "Fixed seed inclusive RGBA tolerance; no neighbor drift",
+    "Four-connected barriers, diagonal and disconnected same colors",
+    "Invalid seed/tolerance/plane/raster refusal without invoking seed getter",
+    "No-op preserves Redo; complete one-edit history",
+    "Actual native masks and complete source/settings retention",
+    "Saved reload, Escape/tool/tolerance cancellation and unrelated raw drafts",
+    "Independent actual perspective PNG decode/scalar comparison within one RGBA level",
+    "390px controls inspected; no horizontal overflow",
+    "Maximum actual source preview, exact full depth mask, complete Undo/Redo"
+  ],
+  "failuresAndCorrections": [
+    {
+      "failure": "Maximum initial projection wait exceeded default5second assertion before selection",
+      "correction": "Select after admitted decoded source is published, independent of background result preview"
+    },
+    {
+      "failure": "Maximum source publication also exceeded default5second assertion",
+      "correction": "Use existing maximum verification convention:40second source assertion around unchanged30second product work deadlines; unchanged45second overall test, input sizes and complete-graph/pixel assertions",
+      "evidence": "Original two failures retained in literal logs"
+    }
+  ],
+  "review": {
+    "criticalOrImportantRemaining": 0,
+    "nativeMaximumMeasuredAfterReview": true
+  },
+  "ci": {
+    "status": "pending publication; exact-head result recorded in issue170"
+  },
+  "limitations": [
+    "Deterministic manual color selection, not learned depth or semantic object recognition",
+    "Main-thread maximum pointerdown/preview took976ms in this one native round trip, including automation transport; no universal latency/peak-memory guarantee",
+    "Local full suite72 cases plus separately added maximum1; hosted final suite should run73 together",
+    "Physical touch/device acceptance remains unverified"
+  ],
+  "logs": {
+    "2026-10-10-color-browser.log": "818b4a0ef586623c0cf29e2373b58373763d6a501180154206296ce818d61134",
+    "2026-10-10-color-maximum.log": "28acb388f2616ba4665e0cf3b1717c2fad1d5834094e392101a03fc4b404a56c",
+    "2026-10-10-color-check.log": "2e21811d13102181d085f04fb1146d46c94c00ea04a4a9f85294fac30e1847c1",
+    "2026-10-10-color-maximum-second-failure.log": "e09b0d53753a24753e7f775c52eedd0136077ee752b126ac4221a87881a3da46",
+    "2026-10-10-color-maximum-first-failure.log": "f25624f0a8d7c7c47005930dd65562ba79146369af0787c5f1dc37969dde4707"
+  }
+}
