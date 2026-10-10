@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/boundary-2026-10-10/subject.py", line 124, in <module>
+    main()
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/boundary-2026-10-10/subject.py", line 83, in main
+    checked(args.depth, protocol['depthPreviewSha256'])
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/boundary-2026-10-10/subject.py", line 16, in checked
+    raise ValueError('Checksum mismatch: ' + Path(path).name)
+ValueError: Checksum mismatch: smoke-depth.png

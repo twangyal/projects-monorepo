@@ -1,0 +1,35 @@
+{
+  "frozenBeforeDiagnosticUtc": "2026-10-10T19:02:32.029063+00:00",
+  "scope": "Existing portrait, source-only coarse single-annotator silhouette and fixed quantized-depth subject anchor diagnostic; not held-out, raw-depth parity, human effort or product readiness",
+  "sourceAnnotationSha256": "9a616878964fdd16539fd780a5cd4603a72c3cc98797b606782d7a4417aa6a62",
+  "depthPreviewSha256": "ece90cb24558b2565d38ffe01d5598e18b6e696c53e107d2d17c7e8ea5edc897",
+  "depthSize": [
+    784,
+    518
+  ],
+  "anchor": [
+    0.5,
+    0.46
+  ],
+  "bandHalfWidth": 20,
+  "sampling": "floor(anchor * width/height), one 8bit grayscale sample; inclusive clipped +/-20 band",
+  "connectivity": 4,
+  "referenceRasterization": "even-odd polygon interior at pixel centers; union outer polygons then remove background holes",
+  "comparisons": [
+    "all-subject",
+    "empty",
+    "whole-band",
+    "anchor-component"
+  ],
+  "metrics": [
+    "truePositive",
+    "falsePositive",
+    "falseNegative",
+    "trueNegative",
+    "differentPixels",
+    "differentFraction",
+    "iou"
+  ],
+  "interpretation": "differentPixels is the minimum binary label flips to this coarse reference, not strokes, time, ease of correcting depth, or total editing effort; all-subject/empty are synthetic binary-mask baselines",
+  "tuning": "No post-output protocol, annotation, anchor or band changes; retain all results"
+}

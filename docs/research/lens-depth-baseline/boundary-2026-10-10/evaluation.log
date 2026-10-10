@@ -1,0 +1,73 @@
+{
+  "scope": "Existing portrait, source-only coarse single-annotator silhouette and fixed quantized-depth subject anchor diagnostic; not held-out, raw-depth parity, human effort or product readiness",
+  "protocolSha256": "ce741f6988397d4c6697adac26f4b437ddd0451d5f210787817769e740e8707b",
+  "annotationSha256": "9a616878964fdd16539fd780a5cd4603a72c3cc98797b606782d7a4417aa6a62",
+  "depthPreviewSha256": "ece90cb24558b2565d38ffe01d5598e18b6e696c53e107d2d17c7e8ea5edc897",
+  "size": [
+    784,
+    518
+  ],
+  "anchorPixel": [
+    392,
+    238
+  ],
+  "anchorGray": 129,
+  "inclusiveBand": [
+    109,
+    149
+  ],
+  "referencePixels": 27447,
+  "comparisons": {
+    "all-subject": {
+      "truePositive": 27447,
+      "falsePositive": 378665,
+      "falseNegative": 0,
+      "trueNegative": 0,
+      "differentPixels": 378665,
+      "differentFraction": 0.932415195808053,
+      "iou": 0.06758480419194705
+    },
+    "empty": {
+      "truePositive": 0,
+      "falsePositive": 0,
+      "falseNegative": 27447,
+      "trueNegative": 378665,
+      "differentPixels": 27447,
+      "differentFraction": 0.06758480419194705,
+      "iou": 0.0
+    },
+    "whole-band": {
+      "truePositive": 25745,
+      "falsePositive": 27228,
+      "falseNegative": 1702,
+      "trueNegative": 351437,
+      "differentPixels": 28930,
+      "differentFraction": 0.07123650618548577,
+      "iou": 0.4708733424782808
+    },
+    "anchor-component": {
+      "truePositive": 25727,
+      "falsePositive": 26866,
+      "falseNegative": 1720,
+      "trueNegative": 351799,
+      "differentPixels": 28586,
+      "differentFraction": 0.07038944921597982,
+      "iou": 0.4736803343582568
+    }
+  },
+  "maskPngSha256": {
+    "reference": "c43a57b2ff31ada4bbfa483c0635bbe9f09b9171c8a2256a107b2f8d44ec4beb",
+    "all-subject": "c0a7ada1926e30f8285f2cab49908ee9de3ad317d7cace1a0b22bf44e725babb",
+    "empty": "361b6e16000ebb8001ef41c8a35db78fd54f7bb16acbf3485effb93c7a348b6c",
+    "whole-band": "7c37d1dfa226b986239249a1f44d3e8bf34454c7369de6b29185fab0a15bf03e",
+    "anchor-component": "c89ea9c85075984cfc0d71e5029983d5f87ebcc7d83f98366126110e39343a7d"
+  },
+  "interpretation": "differentPixels is the minimum binary label flips to this coarse reference, not strokes, time, ease of correcting depth, or total editing effort; all-subject/empty are synthetic binary-mask baselines",
+  "limitations": [
+    "Previously evaluated public portrait; training overlap unknown, not held-out quality",
+    "One independently drawn coarse silhouette, not measured ground truth",
+    "Uses minmax-normalized8bit display depth, not raw or physical distance",
+    "No human correction time, strokes, actual perspective output or product acceptance",
+    "No model rerun, new model selection, browser inference or resource evaluation"
+  ]
+}
