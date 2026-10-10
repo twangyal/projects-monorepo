@@ -3,3 +3,5 @@
 .storage-controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 0;margin-bottom:12px}.storage-controls #storage-drain-status{flex-basis:100%;margin:0}.storage-controls #save-status{flex:1 1 100%;margin:0;overflow-wrap:anywhere}
 
 .field select{display:block;width:100%;font:inherit;min-height:40px;padding:8px;border:1px solid #b8c5c3;border-radius:8px;background:#fffdf6;color:#294b50}
+
+.source-viewport{overflow:auto;overscroll-behavior:contain}.source-view-controls{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.source-view-controls .field,.source-view-controls .hint{flex-basis:100%;margin:0}.source-view-controls button{flex:1 1 auto}

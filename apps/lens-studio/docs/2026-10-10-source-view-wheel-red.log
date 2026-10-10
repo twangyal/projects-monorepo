@@ -1,0 +1,59 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test source-view.spec.ts -g native wheel
+
+[WebServer] (node:33) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:54) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:79) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:92) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:110) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/source-view.spec.ts:21:1 › native wheel panning retires only the unfinished gesture and retains redo (6.4s)
+
+
+  1) tests/browser/source-view.spec.ts:21:1 › native wheel panning retires only the unfinished gesture and retains redo 
+
+    Error: expect(locator).toBeDisabled() failed
+
+    Locator:  getByRole('button', { name: 'Cancel depth gesture', exact: true })
+    Expected: disabled
+    Received: enabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeDisabled" getByRole('button', { name: 'Cancel depth gesture', exact: true }) with timeout 5000ms
+      - waiting for getByRole('button', { name: 'Cancel depth gesture', exact: true })
+        14 × locator resolved to <button type="button">Cancel depth gesture</button>
+           - unexpected value "enabled"
+
+
+      20 |
+      21 | test('native wheel panning retires only the unfinished gesture and retains redo',async({page})=>{
+    > 22 |  await setup(page);const original=await backup(page);await page.getByLabel('Depth tool',{exact:true}).selectOption('rectangle');await page.getByLabel('Paint near',{exact:true}).check();await page.locator('#source-viewport').scrollIntoViewIfNeeded();await point(page,75,55);await page.mouse.down();await point(page,85,65);await page.mouse.up();const painted=await backup(page);expect(painted.depth).not.toEqual(original.depth);await page.getByRole('button',{name:'Undo',exact:true}).click();await page.getByLabel('Source zoom',{exact:true}).selectOption('4');await page.locator('#source-viewport').scrollIntoViewIfNeeded();const c=await center(page);await point(page,c.x,c.y);await page.mouse.down();await expect(page.getByRole('button',{name:'Cancel depth gesture',exact:true})).toBeEnabled();const scroll=await page.locator('#source-viewport').evaluate(el=>el.scrollLeft);await page.mouse.wheel(90,120);await expect.poll(()=>page.locator('#source-viewport').evaluate(el=>el.scrollLeft)).toBeGreaterThan(scroll);await expect(page.getByRole('button',{name:'Cancel depth gesture',exact:true})).toBeDisabled();await page.mouse.up();expect(await backup(page)).toEqual(original);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(painted);
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ^
+      23 | });
+      24 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/source-view.spec.ts:22:1093
+
+    Error Context: test-results/source-view-native-wheel-p-bed7a-ed-gesture-and-retains-redo/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/source-view-native-wheel-p-bed7a-ed-gesture-and-retains-redo/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/source-view-native-wheel-p-bed7a-ed-gesture-and-retains-redo/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/source-view.spec.ts:21:1 › native wheel panning retires only the unfinished gesture and retains redo 

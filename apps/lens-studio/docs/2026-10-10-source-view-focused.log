@@ -1,0 +1,26 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test source-view.spec.ts
+
+[WebServer] (node:32) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:53) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:78) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:91) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:109) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/source-view.spec.ts:11:1 › zoom and pan preserve complete study result pixels drafts and redo without saved view state (2.1s)
+  ✓  2 tests/browser/source-view.spec.ts:14:1 › scaled scrolled native rectangle maps exact source pixels and zoom cancellation retains redo (17.5s)
+  ✓  3 tests/browser/source-view.spec.ts:17:1 › 390px source view stays contained and accessible panning preserves exact connected-color source identity (1.6s)
+  ✓  4 tests/browser/source-view.spec.ts:21:1 › native wheel panning retires only the unfinished gesture and retains redo (1.8s)
+
+  4 passed (28.8s)

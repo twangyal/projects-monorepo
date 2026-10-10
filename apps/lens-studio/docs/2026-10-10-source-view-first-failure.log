@@ -1,0 +1,56 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test source-view.spec.ts
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/source-view.spec.ts:11:1 › zoom and pan preserve complete study result pixels drafts and redo without saved view state (2.8s)
+  ✘  2 tests/browser/source-view.spec.ts:14:1 › scaled scrolled native rectangle maps exact source pixels and zoom cancellation retains redo (10.7s)
+(node:184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 tests/browser/source-view.spec.ts:17:1 › 390px source view stays contained and accessible panning preserves exact connected-color source identity (1.2s)
+
+
+  1) tests/browser/source-view.spec.ts:14:1 › scaled scrolled native rectangle maps exact source pixels and zoom cancellation retains redo 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+      13 | });
+      14 | test('scaled scrolled native rectangle maps exact source pixels and zoom cancellation retains redo',async({page})=>{
+    > 15 |  await setup(page);const original=await backup(page);await page.getByLabel('Source zoom',{exact:true}).selectOption('4');await page.getByRole('button',{name:'Pan source right',exact:true}).click();await page.getByRole('button',{name:'Pan source down',exact:true}).click();await page.locator('#source-viewport').scrollIntoViewIfNeeded();const c=await center(page);await page.getByLabel('Depth tool',{exact:true}).selectOption('rectangle');await page.getByLabel('Paint near',{exact:true}).check();await point(page,c.x-4,c.y-4);await page.mouse.down();await point(page,c.x+4,c.y+4);await page.mouse.up();const painted=await backup(page),labels=Buffer.from(painted.depth.labels,'base64');for(let y=0;y<120;y++)for(let x=0;x<160;x++)expect(labels[y*160+x]).toBe(x>=c.x-4&&x<c.x+4&&y>=c.y-4&&y<c.y+4?0:1);await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(original);await page.getByLabel('Target focal length',{exact:true}).fill('');await page.locator('#source-viewport').scrollIntoViewIfNeeded();await point(page,c.x,c.y);await page.mouse.down();await page.getByLabel('Source zoom',{exact:true}).selectOption('2');await page.mouse.up();expect(await backup(page)).toEqual(original);await expect(page.getByLabel('Target focal length',{exact:true})).toHaveValue('');await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(painted);
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ^
+      16 | });
+      17 | test('390px source view stays contained and accessible panning preserves exact connected-color source identity',async({page})=>{
+      18 |  await page.setViewportSize({width:390,height:844});await setup(page);const original=await backup(page);await page.getByLabel('Source zoom',{exact:true}).selectOption('4');await page.getByRole('button',{name:'Pan source right',exact:true}).focus();await page.keyboard.press('Enter');await page.getByRole('button',{name:'Pan source down',exact:true}).focus();await page.keyboard.press('Enter');await page.locator('#source-viewport').scrollIntoViewIfNeeded();const c=await center(page);await page.getByLabel('Depth tool',{exact:true}).selectOption('color');await page.getByLabel('Paint far',{exact:true}).check();await page.getByLabel('Color tolerance',{exact:true}).fill('255');await page.locator('#source-viewport').scrollIntoViewIfNeeded();await point(page,c.x+.5,c.y+.5);await page.mouse.down();await page.mouse.up();const next=await backup(page);expect(next).toEqual({...original,depth:next.depth});expect(Buffer.from(next.depth.labels,'base64').every(v=>v===2)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('#source-view-controls').screenshot({path:test.info().outputPath('source-view-mobile.png')});
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/source-view.spec.ts:15:753
+
+    Error Context: test-results/source-view-scaled-scrolle-02539-m-cancellation-retains-redo/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/source-view-scaled-scrolle-02539-m-cancellation-retains-redo/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/source-view-scaled-scrolle-02539-m-cancellation-retains-redo/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/source-view.spec.ts:14:1 › scaled scrolled native rectangle maps exact source pixels and zoom cancellation retains redo 
+  2 passed (22.2s)

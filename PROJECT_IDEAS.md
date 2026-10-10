@@ -129,6 +129,8 @@ Milestone #169: rectangle and closed polygon depth authoring adds live previews,
 
 Milestone #170: connected-color source selection assigns four-connected regions against a fixed RGBA seed with visible tolerance, captured previews, one-step history and cancellation/draft preservation. Exact disconnected/threshold/alpha/max-raster tests and native masks/reload/perspective PNG verification cover the manual workflow. Automatic scene depth and reconstruction remain future product capabilities.
 
+Milestone #171: source-only Fit/2×/4× zoom with native scrolling and accessible pan controls enables precise manual depth work while keeping the saved photo, result pixels and complete study unchanged. Scaled/scrolled native selections, gesture cancellation and mobile containment are verified; learned depth and reconstruction remain unfinished.
+
 ## 17. Track physiological state to create situations in a game
 
 Path: `apps/composure`

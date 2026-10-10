@@ -1,0 +1,53 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test source-view.spec.ts -g zoom and pan preserve
+
+[WebServer] (node:32) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:53) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:77) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:90) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/source-view.spec.ts:11:1 › zoom and pan preserve complete study result pixels drafts and redo without saved view state (46.4s)
+
+
+  1) tests/browser/source-view.spec.ts:11:1 › zoom and pan preserve complete study result pixels drafts and redo without saved view state 
+
+    Test timeout of 45000ms exceeded.
+
+    Error: locator.selectOption: Test timeout of 45000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Source zoom', { exact: true })
+
+
+      10 | async function center(page:Page){return page.locator('#source-viewport').evaluate((surface:HTMLDivElement)=>{const canvas=surface.querySelector('canvas')!,b=canvas.getBoundingClientRect(),v=surface.getBoundingClientRect();return {x:Math.floor((v.left+surface.clientWidth/2-b.left)*160/b.width),y:Math.floor((v.top+surface.clientHeight/2-b.top)*120/b.height)};});}
+      11 | test('zoom and pan preserve complete study result pixels drafts and redo without saved view state',async({page})=>{
+    > 12 |  await setup(page);const original=await backup(page),pixels=await png(page),resultBounds=await page.locator('#result-canvas').boundingBox();await page.getByLabel('Target focal length',{exact:true}).fill('');for(const zoom of ['2','4','1']){await page.getByLabel('Source zoom',{exact:true}).selectOption(zoom);expect(await backup(page)).toEqual(original);await expect(page.getByLabel('Target focal length',{exact:true})).toHaveValue('');expect(await page.locator('#result-canvas').boundingBox()).toEqual(resultBounds);}expect(await png(page)).toEqual(pixels);await page.getByLabel('Source zoom',{exact:true}).selectOption('4');await page.getByRole('button',{name:'Pan source right',exact:true}).click();await page.getByRole('button',{name:'Pan source down',exact:true}).click();const scroll=await page.locator('#source-viewport').evaluate(el=>({x:el.scrollLeft,y:el.scrollTop}));expect(scroll.x).toBeGreaterThan(0);expect(scroll.y).toBeGreaterThan(0);expect(await backup(page)).toEqual(original);await expect(page.locator('#save-status')).toContainText('Saved locally');await page.reload();await expect(page.locator('#render-status')).toContainText('Projection ready');await expect(page.getByLabel('Source zoom',{exact:true})).toHaveValue('1');expect(await backup(page)).toEqual(original);
+         |                                                                                                                                                                                                                                                                                                   ^
+      13 | });
+      14 | test('scaled scrolled native rectangle maps exact source pixels and zoom cancellation retains redo',async({page})=>{
+      15 |  await setup(page);const original=await backup(page);await page.getByLabel('Source zoom',{exact:true}).selectOption('4');await page.getByRole('button',{name:'Pan source right',exact:true}).click();await page.getByRole('button',{name:'Pan source down',exact:true}).click();await page.locator('#source-viewport').scrollIntoViewIfNeeded();const c=await center(page);await page.getByLabel('Depth tool',{exact:true}).selectOption('rectangle');await page.getByLabel('Paint near',{exact:true}).check();await point(page,c.x-4,c.y-4);await page.mouse.down();await point(page,c.x+4,c.y+4);await page.mouse.up();const painted=await backup(page),labels=Buffer.from(painted.depth.labels,'base64');for(let y=0;y<120;y++)for(let x=0;x<160;x++)expect(labels[y*160+x]).toBe(x>=c.x-4&&x<c.x+4&&y>=c.y-4&&y<c.y+4?0:1);await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(original);await page.getByLabel('Target focal length',{exact:true}).fill('');await page.locator('#source-viewport').scrollIntoViewIfNeeded();await point(page,c.x,c.y);await page.mouse.down();await page.getByLabel('Source zoom',{exact:true}).selectOption('2');await page.mouse.up();expect(await backup(page)).toEqual(original);await expect(page.getByLabel('Target focal length',{exact:true})).toHaveValue('');await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(painted);
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/source-view.spec.ts:12:291
+
+    Error Context: test-results/source-view-zoom-and-pan-p-02609-do-without-saved-view-state/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/source-view-zoom-and-pan-p-02609-do-without-saved-view-state/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/source-view-zoom-and-pan-p-02609-do-without-saved-view-state/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/source-view.spec.ts:11:1 › zoom and pan preserve complete study result pixels drafts and redo without saved view state 

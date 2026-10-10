@@ -1,0 +1,135 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 check
+> npm run test && npm run lint && npm run build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+✔ seed color selects only its four-connected component; diagonal and disconnected copies stay intact (21.275051ms)
+✔ inclusive per-channel tolerance compares each candidate to fixed seed without gradual drift (2.318416ms)
+✔ all RGBA channels participate and input pixels are unchanged (1.384532ms)
+✔ one complete depth edit is undoable and a same-plane no-op preserves redo (2.319069ms)
+✔ invalid tolerance seed plane and incompatible rasters refuse before publication (10.491596ms)
+✔ maximum admitted raster selects every source pixel without recursion or input mutation (747.007273ms)
+✔ pre-aborted demo rejects AbortError before any browser drawing (2.219603ms)
+✔ demo without Canvas support reports actionable browser requirement (0.31ms)
+✔ history returns isolated states, ignores no-ops and preserves redo until an actual branch (16.747572ms)
+✔ history retains at most thirty states including current (5.040756ms)
+✔ byte cap accounts compact edit states while preserving current and a single fixed photo (997.770961ms)
+✔ commit rejects different project/photo and invalid state atomically; reset accepts a staged new photo (3.87585ms)
+✔ valid render creates a module worker, captures snapshot and releases worker/listeners on completion (10.811115ms)
+✔ invalid project and already-aborted request leave the existing job alive (3.716131ms)
+✔ export supersedes render module-wide, ignores retired messages, and cleans both workers (6.917884ms)
+✔ live abort terminates its worker and permits a later successful render (4.634077ms)
+✔ 30-second deadline rejects and terminates without fabricating a frame (2.452793ms)
+✔ malformed worker results and runtime errors are bounded safe failures (9.168709ms)
+✔ creation is detached with a unique UUID, fixed defaults and a complete subject mask (10.357599ms)
+✔ settings enforce ranges, ratio, decimal precision and unused near-plane clearance atomically (8.1842ms)
+✔ canonical masks enforce exact sizes and labels and never alias decoded bytes (0.802833ms)
+✔ strict projects reject unknown keys, prototypes, mismatched dimensions and invalid Unicode (1.709094ms)
+✔ project serialization is compact, detached and round-trips authored text (7.506323ms)
+✔ UUIDs require exact string termination and titles reject C1 controls in direct and JSON inputs (6.223195ms)
+✔ strict JSON rejects decoded duplicate keys, depth, unsafe numbers, malformed text and byte excess (0.986289ms)
+✔ painting stamps pixel centers and clips source edges without changing inputs (1.205307ms)
+✔ stamp spacing is cumulative across tiny segments and includes the final endpoint (8.946917ms)
+✔ painting rejects invalid and excessive gestures before changing any labels (5.577926ms)
+✔ fill and projection reset are detached and retain declared source, depths and assigned mask (1.397848ms)
+✔ analytical pinhole distances agree in both perspective directions and subject stays anchored (7.539346ms)
+✔ fixed identity retains arbitrary masks, alpha and source bytes with canonical transparent RGB (24.811075ms)
+✔ perspective identity retains arbitrary masks, alpha and source bytes with canonical transparent RGB (5.656006ms)
+✔ independent scalar gate 23x15 fixed 100 shift 0,0 (42.500666ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 23x15 fixed 25 shift 0,0 (6.575946ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 23x15 fixed 37.5 shift 0.1375,-0.2211 (15.476346ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 23x15 perspective 40 shift 0,0 (36.855033ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 23x15 perspective 85 shift 0,0 (8.743598ms)
+ℹ max RGBA error=0; missingFraction error=1.1102230246251565e-16
+✔ independent scalar gate 23x15 perspective 85 shift -0.3197,0.25 (11.019025ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 16x11 fixed 100 shift 0,0 (1.709386ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 16x11 fixed 25 shift 0,0 (1.778868ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 16x11 fixed 37.5 shift 0.1375,-0.2211 (1.673183ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 16x11 perspective 40 shift 0,0 (2.08121ms)
+ℹ max RGBA error=0; missingFraction error=8.326672684688674e-17
+✔ independent scalar gate 16x11 perspective 85 shift 0,0 (1.950126ms)
+ℹ max RGBA error=0; missingFraction error=5.551115123125783e-17
+✔ independent scalar gate 16x11 perspective 85 shift -0.3197,0.25 (8.669406ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 1x1 fixed 100 shift 0,0 (1.158091ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 1x1 fixed 25 shift 0,0 (0.67953ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 1x1 fixed 37.5 shift 0.1375,-0.2211 (0.59667ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 1x1 perspective 40 shift 0,0 (0.442295ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 1x1 perspective 85 shift 0,0 (0.696189ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ independent scalar gate 1x1 perspective 85 shift -0.3197,0.25 (0.68159ms)
+ℹ max RGBA error=0; missingFraction error=0
+✔ authored opaque planes expose holes and the near plane occludes the subject (14.320658ms)
+✔ premultiplied edge filtering retains bright color and coverage is independent of source alpha (0.961268ms)
+✔ independent PNG decoding preserves low-alpha straight bytes across stored-block boundaries (22.913054ms)
+✔ normalized PNG assets have exact detached fields and actual matching header dimensions (9.374221ms)
+✔ stored metadata, accessors, inherited objects and noncanonical base64 are rejected (5.509909ms)
+✔ source header gate rejects animation, truncation, checksum corruption and unsafe dimensions (1.410777ms)
+✔ all orientation values are bounded and parsed from JPEG, PNG and WebP metadata (14.606997ms)
+✔ normalized decoded-byte cap applies before compressed image inspection (100.660726ms)
+✔ lossless PNG preserves exact straight low-alpha colors and emits only the three required chunks (5.825977ms)
+✔ stored DEFLATE blocks cross 65535 bytes with valid lengths, checksum and scanline filters (79.231233ms)
+✔ maximum normalized raster has bounded deterministic output with independent PNG decode (525.970075ms)
+✔ invalid raster dimensions, wrong arrays and byte counts reject before encoding (0.973335ms)
+✔ rectangle labels only source cell centres in either drag direction and preserves full project (14.001686ms)
+✔ polygon uses even-odd cell-centre containment for concave and self-crossing boundaries (4.841833ms)
+✔ no-area assignment keeps history redo; complete changed mask is one undo step (3.099214ms)
+✔ malformed bounded geometry refuses without invoking getters or changing source (12.994343ms)
+✔ maximum original dimensions and 2048-point polygon keep exact complete graph (696.690515ms)
+✔ fractional polygon boundary is invariant when reversed (1.596512ms)
+✔ analytical projection scales and translated points use exact subject anchoring (3.68445ms)
+✔ identity is byte exact for mixed depths and alpha, canonicalizing only transparent RGB (4.689699ms)
+✔ fixed 2x crop inverse-samples pixel centers and wider field leaves sampled holes (3.148942ms)
+✔ source bounds do not clamp, and premultiplied interpolation avoids transparent blue fringes (0.826971ms)
+✔ rounded-zero alpha canonicalizes RGB and original transparency does not mean missing coverage (1.848335ms)
+✔ all-subject manual perspective remains unchanged at both lens directions (3.891864ms)
+✔ public geometry and render entries reject unsafe settings, masks, dimensions and raster data (1.419097ms)
+✔ presentFrame rejects invalid bytes before calling the canvas (0.573188ms)
+✔ denied IndexedDB access reports protected guidance without private exception details (3.03124ms)
+✔ missing IndexedDB reports protected backup and retry guidance before opening (0.599046ms)
+✔ a failed open does not poison subsequent independent storage admission (0.253566ms)
+ℹ tests 79
+ℹ suites 0
+ℹ pass 79
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1410.897842
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 lint
+> eslint .
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 build
+> tsc --noEmit && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 16 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                         0.74 kB │ gzip:  0.45 kB
+dist/assets/render.worker-BivCSiTe.js  15.70 kB
+dist/assets/index-4s9bwCGc.css          6.29 kB │ gzip:  2.06 kB
+dist/assets/index-C_wC-R7q.js          66.76 kB │ gzip: 23.83 kB
+✓ built in 631ms

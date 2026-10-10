@@ -1,0 +1,73 @@
+{
+  "issue": 171,
+  "baseCommit": "bcbfc60ed6defc9d8cc6aa73811656387f263e75",
+  "environment": {
+    "node": "24.19.0",
+    "chromium": "153.0.8010.0"
+  },
+  "local": {
+    "check": {
+      "command": "npm run check",
+      "units": 79,
+      "lint": "pass",
+      "typecheck": "pass",
+      "build": "pass",
+      "exitCode": 0
+    },
+    "focusedBrowser": {
+      "command": "CHROMIUM_PATH=/tmp/lens-chromium-wrapper npm run test:browser -- source-view.spec.ts",
+      "passed": 4,
+      "elapsed": "28.8s",
+      "exitCode": 0
+    },
+    "browser": {
+      "command": "CHROMIUM_PATH=/tmp/lens-chromium-wrapper npm run test:browser",
+      "passed": 77,
+      "elapsed": "3.1m",
+      "exitCode": 0
+    }
+  },
+  "tests": [
+    "Source-only Fit/2\u00d7/4\u00d7 view preserves complete study and exact actual exported PNG RGBA",
+    "Actual native rectangle in a scaled and scrolled source covers every independently expected source pixel",
+    "Zoom cancels unfinished preview without changing raw fields or Redo",
+    "Native trusted wheel movement discards unfinished gesture; complete committed project and Redo retained",
+    "390px source view contains accessible pan controls and exact connected-color assignment",
+    "Saved study reload resets view to Fit without changing portable project"
+  ],
+  "failuresAndCorrections": [
+    {
+      "failure": "Initial TDD test could not find Source zoom before feature existed",
+      "correction": "Implemented source-only zoom and native scrolling"
+    },
+    {
+      "failure": "First rectangle fixture focused sidebar controls after scrolling source into view; actual pointer targeted offscreen source",
+      "correction": "Scroll source viewport into view after changing tool/plane; retain complete per-pixel mask assertions"
+    },
+    {
+      "failure": "Review found native scrolling during active gesture could shift release geometry; actual wheel regression left Cancel depth gesture enabled",
+      "correction": "Capture source scroll coordinates with initial point; scroll listener and synchronous pointermove/up guard cancel only gesture whose source position moved, without stale queued events cancelling a fresh gesture"
+    }
+  ],
+  "review": {
+    "importantRemaining": 0,
+    "independentTypecheck": "pass",
+    "independentNativeRun": "not rerun; primary actual full/focused run supplies browser evidence"
+  },
+  "ci": {
+    "status": "pending publication; exact-head result to be recorded in issue171"
+  },
+  "limitations": [
+    "Manual depth authoring; no learned scene depth or generated fill",
+    "Physical touch-device behavior not measured",
+    "View zoom is session-only; source remains current bounded normalized raster"
+  ],
+  "logs": {
+    "2026-10-10-source-view-initial-red.log": "aa1ec1cbe2382694eceb58e0248f48d486fad4ebaec5ad824a88c9be8243b841",
+    "2026-10-10-source-view-first-failure.log": "4e36606f2b4aa0a20b9d6185497d7a61193d09402a5e3102179de6d1574a5240",
+    "2026-10-10-source-view-wheel-red.log": "cdcdc7f98de22d92632ab60cf11a74c84cbe861fbdb05d2e3e2c0b9f28964287",
+    "2026-10-10-source-view-focused.log": "95f6000783a8a3f320dcd43d4f16188e56780e92304efc0f2658f735b047520f",
+    "2026-10-10-source-view-check.log": "7afffc5b1a4e82dcb67fff7d01c9305e7f2a3a61cf9114cd26cd1784dea7063b",
+    "2026-10-10-source-view-browser.log": "a23dac5ad1fa09f3d9b422277fb30d5fcff87bce2644f091af5551f6133d6b2a"
+  }
+}

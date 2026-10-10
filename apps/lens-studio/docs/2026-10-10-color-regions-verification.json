@@ -66,7 +66,16 @@
     "nativeMaximumMeasuredAfterReview": true
   },
   "ci": {
-    "status": "pending publication; exact-head result recorded in issue170"
+    "status": "success",
+    "commit": "bcbfc60ed6defc9d8cc6aa73811656387f263e75",
+    "run": 38040992392,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/38040992392",
+    "units": 79,
+    "browser": 73,
+    "lint": "pass",
+    "typecheck": "pass",
+    "build": "pass",
+    "maximumPointerDownRoundTripMs": 1141
   },
   "limitations": [
     "Deterministic manual color selection, not learned depth or semantic object recognition",
