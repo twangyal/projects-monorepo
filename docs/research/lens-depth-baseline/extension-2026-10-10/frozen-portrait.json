@@ -1,0 +1,136 @@
+{
+  "frozenBeforeInference": "2026-10-10T14:08:29.214268+00:00",
+  "scope": "Two-photo extension: portrait; five clear ordinal comparisons plus three separately interpreted thin-boundary diagnostics; no measured ground truth or product readiness claim",
+  "model": {
+    "repository": "onnx-community/depth-anything-v2-small",
+    "revision": "c70d1ddbcd93c9bda8098268cc3554adf5e8dd4f",
+    "file": "onnx/model_quantized.onnx",
+    "bytes": 27258801,
+    "sha256": "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d",
+    "license": "Apache-2.0; Small variant only",
+    "preprocessorSha256": "03576db3c13dd0471fdf5f5e1428befcb95de063fe699879150b293dc9e0a2c6"
+  },
+  "photo": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/56/Portrait_%28CreativeCommons%29.jpg",
+    "sourcePage": "https://commons.wikimedia.org/w/index.php?title=File:Portrait_(CreativeCommons).jpg&oldid=1115647773",
+    "author": "Wendelin Jacober",
+    "license": "CC0-1.0",
+    "bytes": 2482488,
+    "dimensions": [
+      5472,
+      3648
+    ],
+    "sourceDate": "2015-09-10",
+    "sha256": "d237bbf13f886b69a376aad00836403dafdb8a6be0062dc98a50e1a6c7b32a48",
+    "normalization": "EXIF transpose, RGB, Pillow LANCZOS longest edge1280 without upscaling; differs from product browser normalization",
+    "licenseVerifiedUtc": "2026-10-10"
+  },
+  "annotation": "Independent reviewer selected image-only points before any output; coordinator reviewed geometric plausibility before freezing. Source previews1200x800. Larger raw inverse depth predicts nearer; ties are incorrect. Median of3x3 predicted-depth neighborhood; no tuning. Diagnostics are not a boundary accuracy metric.",
+  "pairs": [
+    {
+      "name": "subject_torso_vs_distant_town",
+      "near": [
+        0.5,
+        0.46
+      ],
+      "far": [
+        0.64,
+        0.43
+      ],
+      "rationale": "The centrally occluding subject is much nearer than town buildings visible beyond the balcony.",
+      "evaluationCategory": "clear"
+    },
+    {
+      "name": "left_door_panel_vs_town",
+      "near": [
+        0.18,
+        0.46
+      ],
+      "far": [
+        0.61,
+        0.61
+      ],
+      "rationale": "The doorway surrounds the camera-side balcony; buildings beyond the railing are distant.",
+      "evaluationCategory": "clear"
+    },
+    {
+      "name": "right_door_panel_vs_roof",
+      "near": [
+        0.84,
+        0.47
+      ],
+      "far": [
+        0.6,
+        0.68
+      ],
+      "rationale": "Door panel is foreground architecture; roof is down and beyond the balcony.",
+      "evaluationCategory": "clear"
+    },
+    {
+      "name": "balcony_floor_vs_building",
+      "near": [
+        0.5,
+        0.95
+      ],
+      "far": [
+        0.38,
+        0.66
+      ],
+      "rationale": "Walkable floor beneath the subject is foreground; the visible building lies beyond the balcony.",
+      "evaluationCategory": "clear"
+    },
+    {
+      "name": "subject_skirt_vs_background_field",
+      "near": [
+        0.51,
+        0.72
+      ],
+      "far": [
+        0.375,
+        0.545
+      ],
+      "rationale": "Subject skirt occupies the balcony; green field is beyond its railing.",
+      "evaluationCategory": "clear"
+    },
+    {
+      "name": "hair_top_vs_sky",
+      "near": [
+        0.5,
+        0.211
+      ],
+      "far": [
+        0.5,
+        0.194
+      ],
+      "rationale": "Top hair contour against sky; sparse hairs, antialiasing, and the absence of finite sky depth make this diagnostic only.",
+      "evaluationCategory": "diagnostic"
+    },
+    {
+      "name": "left_forearm_vs_sky",
+      "near": [
+        0.4,
+        0.3125
+      ],
+      "far": [
+        0.4,
+        0.28
+      ],
+      "rationale": "Narrow arm region above the town; contour precision and arm orientation affect interpretation.",
+      "evaluationCategory": "diagnostic"
+    },
+    {
+      "name": "railing_top_vs_background",
+      "near": [
+        0.375,
+        0.49
+      ],
+      "far": [
+        0.375,
+        0.4775
+      ],
+      "rationale": "Thin horizontal railing against distant landscape; subpixel placement and mixed pixels can dominate.",
+      "evaluationCategory": "diagnostic"
+    }
+  ],
+  "baseline": "Current unpainted all-subject mask ties all eight comparisons; strict score0. Manual mask/correction effort not evaluated."
+}

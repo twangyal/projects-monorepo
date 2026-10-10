@@ -44,3 +44,7 @@ Every artifact is checksum-checked before the model session. A changed source do
 5. Decide whether integration is warranted; generated missing surfaces remain a separate capability.
 
 Artifact access is available; this milestone is **unfinished**, not blocked by missing weights. Lens and the portfolio remain ACTIVE under the revised product direction. No paid service, uploaded private image or product model integration was introduced.
+
+## Broader frozen evaluation
+
+The [two-photo extension](extension-2026-10-10/README.md) adds independent pre-output image-only labels, actual portrait/street inference, retained difficult-case failures and same-host repeatability. All10 clear comparisons pass, but the overhead wire ties sky; sparse diagnostics are not boundary accuracy. The original smoke remains unchanged. The harness now admits additional explicitly checksummed protocols with coordinate bounds; broader correction-effort, browser and integration work remains open in #172.

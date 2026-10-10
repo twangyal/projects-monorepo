@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-10T14:07:14.419275+00:00",
+  "basis": "Independent source-image-only visual judgments; full-image normalized [0,1) coordinates; no calibrated ground truth.",
+  "model_outputs_inspected": false,
+  "notes": "Clear pairs are plausible visual depth orderings, not measurements. Diagnostic boundary pairs have no correctness guarantee. Points were chosen on 1200x800 source previews, before access to any model output.",
+  "images": [
+    {
+      "name": "portrait",
+      "original_path": "/tmp/lens-depth-portrait.jpg",
+      "source_sha256": "d237bbf13f886b69a376aad00836403dafdb8a6be0062dc98a50e1a6c7b32a48",
+      "inspected_preview_path": "/tmp/lens-depth-portrait-source.jpg",
+      "clear_pairs": [
+        {
+          "name": "subject_torso_vs_distant_town",
+          "near": [
+            0.5,
+            0.46
+          ],
+          "far": [
+            0.64,
+            0.43
+          ],
+          "rationale": "The centrally occluding subject is much nearer than town buildings visible beyond the balcony."
+        },
+        {
+          "name": "left_door_panel_vs_town",
+          "near": [
+            0.18,
+            0.46
+          ],
+          "far": [
+            0.61,
+            0.61
+          ],
+          "rationale": "The doorway surrounds the camera-side balcony; buildings beyond the railing are distant."
+        },
+        {
+          "name": "right_door_panel_vs_roof",
+          "near": [
+            0.84,
+            0.47
+          ],
+          "far": [
+            0.6,
+            0.68
+          ],
+          "rationale": "Door panel is foreground architecture; roof is down and beyond the balcony."
+        },
+        {
+          "name": "balcony_floor_vs_building",
+          "near": [
+            0.5,
+            0.95
+          ],
+          "far": [
+            0.38,
+            0.66
+          ],
+          "rationale": "Walkable floor beneath the subject is foreground; the visible building lies beyond the balcony."
+        },
+        {
+          "name": "subject_skirt_vs_background_field",
+          "near": [
+            0.51,
+            0.72
+          ],
+          "far": [
+            0.375,
+            0.545
+          ],
+          "rationale": "Subject skirt occupies the balcony; green field is beyond its railing."
+        }
+      ],
+      "diagnostic_boundary_pairs": [
+        {
+          "name": "hair_top_vs_sky",
+          "near": [
+            0.5,
+            0.211
+          ],
+          "far": [
+            0.5,
+            0.194
+          ],
+          "rationale": "Top hair contour against sky; sparse hairs, antialiasing, and the absence of finite sky depth make this diagnostic only."
+        },
+        {
+          "name": "left_forearm_vs_sky",
+          "near": [
+            0.4,
+            0.3125
+          ],
+          "far": [
+            0.4,
+            0.28
+          ],
+          "rationale": "Narrow arm region above the town; contour precision and arm orientation affect interpretation."
+        },
+        {
+          "name": "railing_top_vs_background",
+          "near": [
+            0.375,
+            0.49
+          ],
+          "far": [
+            0.375,
+            0.4775
+          ],
+          "rationale": "Thin horizontal railing against distant landscape; subpixel placement and mixed pixels can dominate."
+        }
+      ]
+    },
+    {
+      "name": "street",
+      "original_path": "/tmp/lens-depth-street.png",
+      "source_sha256": "a85bdf0ad5d91c88cf9b4a07dc2b61530348cacdedda791680e59a88ef6c16dd",
+      "inspected_preview_path": "/tmp/lens-depth-street-source.jpg",
+      "clear_pairs": [
+        {
+          "name": "central_near_road_vs_far_road",
+          "near": [
+            0.5,
+            0.9
+          ],
+          "far": [
+            0.5,
+            0.6
+          ],
+          "rationale": "On the approximately planar road, the lower image point is nearer under the evident perspective."
+        },
+        {
+          "name": "right_near_road_vs_far_road",
+          "near": [
+            0.8,
+            0.8
+          ],
+          "far": [
+            0.8,
+            0.61
+          ],
+          "rationale": "Same road surface extends toward the vanishing region; small surface irregularities should not reverse this large separation."
+        },
+        {
+          "name": "nearest_left_lamp_pole_vs_receding_pole",
+          "near": [
+            0.282,
+            0.5
+          ],
+          "far": [
+            0.48,
+            0.52
+          ],
+          "rationale": "The large left pole is earlier in the receding row; the smaller pole near the vanishing region is farther."
+        },
+        {
+          "name": "left_foreground_car_vs_distant_vehicle",
+          "near": [
+            0.088,
+            0.575
+          ],
+          "far": [
+            0.59,
+            0.565
+          ],
+          "rationale": "Large parked car at the left foreground is nearer than the small vehicle toward the street center."
+        },
+        {
+          "name": "left_tree_trunk_vs_receding_tree_trunk",
+          "near": [
+            0.113,
+            0.5
+          ],
+          "far": [
+            0.426,
+            0.541
+          ],
+          "rationale": "Trunks belong to the left sidewalk tree row; size and occlusion support the depth ordering, though exact trunk geometry is uncalibrated."
+        }
+      ],
+      "diagnostic_boundary_pairs": [
+        {
+          "name": "nearest_lamp_pole_vs_foliage",
+          "near": [
+            0.282,
+            0.4375
+          ],
+          "far": [
+            0.29,
+            0.4375
+          ],
+          "rationale": "Thin pole contour against foliage; the foliage distance is less certain than road perspective and pixels can mix."
+        },
+        {
+          "name": "overhead_wire_vs_sky",
+          "near": [
+            0.667,
+            0.078
+          ],
+          "far": [
+            0.667,
+            0.066
+          ],
+          "rationale": "Thin overhead wire against sky; normalized wire location is approximate and sky has no measured finite depth."
+        },
+        {
+          "name": "pedestrian_vs_background",
+          "near": [
+            0.773,
+            0.574
+          ],
+          "far": [
+            0.781,
+            0.574
+          ],
+          "rationale": "Small pedestrian against roadside background; very few pixels and uncertain background distance prevent a correctness guarantee."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "verifiedUtc": "2026-10-10T14:15:29.978490+00:00",
+  "baseCommit": "c32b00fbb9470e99f0dd90ce910613f2ffaac841",
+  "freezeComment": "https://github.com/twangyal/projects-monorepo/issues/172#issuecomment-6098336480",
+  "unitTests": {
+    "total": 4,
+    "failed": 0,
+    "redMissingLoaderFailures": 4
+  },
+  "applicationCheck": {
+    "units": 79,
+    "failed": 0,
+    "lint": "passed",
+    "typesAndBuild": "passed",
+    "nativeBrowser": "not rerun locally for research-only code change; published CI will be checked"
+  },
+  "review": {
+    "blockers": 0,
+    "independentSourceOnlyAnnotations": true,
+    "sameHostRerunOnly": true
+  },
+  "categoryResults": {
+    "clear": {
+      "strict": 10,
+      "total": 10
+    },
+    "diagnostic": {
+      "strict": 5,
+      "total": 6
+    }
+  },
+  "firstFinalIndependentRawPreviewAndPairsExactlyEqual": true,
+  "originalDefaultRawPreviewAndPairsExactlyEqual": true,
+  "changedManifestRefusedBeforeModelAndPhotoAccess": true,
+  "productModelEnabled": false,
+  "issueState": "open",
+  "next": "Quantitative boundary/correction-effort evaluation, real browser runtime, editable depth/subject anchors; no integration readiness established",
+  "files": {
+    "README.md": "ba34712d80e2a3a7a7f57150c8622fbdbecf71e2bef01edcd087a0155431eb58",
+    "application-check.log": "1c256c2012c8e03f6f30bf41a57b5b52121c61275dbfc399434819a5e27bd971",
+    "changed-manifest-refusal.log": "cd9eca3c77af84cdf64ce06c06e6c36a426a676ff621276a8021d5f4b4be9adf",
+    "first/portrait-inference.log": "72f15fc5801648db8cc26a82ef04d484637e5f99ce0e60060e0c554f5583d382",
+    "first/portrait-result.json": "72f15fc5801648db8cc26a82ef04d484637e5f99ce0e60060e0c554f5583d382",
+    "first/street-inference.log": "0fb257b8bbae2046c3e86e8021be136ccceb25cea306ea3f637aee2d2c7966f6",
+    "first/street-result.json": "0fb257b8bbae2046c3e86e8021be136ccceb25cea306ea3f637aee2d2c7966f6",
+    "frozen-portrait.json": "b076eb4d8734b9aadda2d855d9fbd8bfd6607ef0e454197ce03b4bfbbfcd179f",
+    "frozen-street.json": "1efbded1f2053ceb3bff83b1da23f1540f4e3bf73527e30b8d992b3f38692bd0",
+    "independent-comparison.json": "41c9b28ad5385fee42bf7e05236b9c6fdf3e5d0968b3e272554491f4b1917a8c",
+    "independent-portrait.json": "a07863c7f6db6d34a9f9ac626aebe4a2f5e0980ab928ed2974d847ed469b86f9",
+    "independent-portrait.log": "a07863c7f6db6d34a9f9ac626aebe4a2f5e0980ab928ed2974d847ed469b86f9",
+    "independent-source-labels.json": "7665271c7211b79365e3cf34224e5b6819464f3434abdabae10f1068ab7a1fdf",
+    "independent-street.json": "b5ff8f781bd18a35f5471c8b3c653b91387189264f4f222bf8fcac96e02ee5e1",
+    "independent-street.log": "b5ff8f781bd18a35f5471c8b3c653b91387189264f4f222bf8fcac96e02ee5e1",
+    "manifest-tests-green.log": "eb2fbe387e045d524df67a91ca892e519fcd5860989a508f8060a37b5522b5c7",
+    "manifest-tests-red.log": "56c7ba06171b38d9fcac05a66fb49cc58fea9995370db161c407d1831cfdef50",
+    "original-compatibility-result.json": "b1f13dfef8d18d426ab2f5a5ac9c353da7e5e82fce16ee806941c7ab44e17fdb",
+    "original-compatibility.log": "b1f13dfef8d18d426ab2f5a5ac9c353da7e5e82fce16ee806941c7ab44e17fdb",
+    "portrait-inference.log": "5e42bcfd9693d5e79d83887a490321bc22c1dd1b06ae138828a98d73343d72fd",
+    "portrait-result.json": "5e42bcfd9693d5e79d83887a490321bc22c1dd1b06ae138828a98d73343d72fd",
+    "portrait-result.png": "ece90cb24558b2565d38ffe01d5598e18b6e696c53e107d2d17c7e8ea5edc897",
+    "street-inference.log": "afc9271e3e2231a02b04354dcd1d001b7683a58786a7699c0f606fd7c7d9dfc6",
+    "street-result.json": "afc9271e3e2231a02b04354dcd1d001b7683a58786a7699c0f606fd7c7d9dfc6",
+    "street-result.png": "995ec4bd480c9685a860c2a9b2640f1c9d2ac5e8a895891a657577240f586317"
+  }
+}

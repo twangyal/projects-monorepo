@@ -6,6 +6,7 @@ calibration. See README.md and frozen-smoke.json for provenance and limits.
 import argparse
 import hashlib
 import json
+import math
 import platform
 import resource
 import time
@@ -23,14 +24,36 @@ def verified(path, expected):
     return data
 
 
+def load_manifest(path=None, expected=None):
+    """Admit an explicitly frozen extension; retain the original default bytes."""
+    if (path is None) != (expected is None):
+        raise ValueError("An extension requires both manifest and manifest-sha256")
+    if path is None:
+        data = Path(__file__).with_name("frozen-smoke.json").read_bytes()
+    else:
+        data = verified(path, expected)
+    manifest = json.loads(data)
+    pairs = manifest.get("pairs")
+    if not isinstance(pairs, list) or not 1 <= len(pairs) <= 64:
+        raise ValueError("Expected 1 to64 frozen ordinal pairs")
+    for pair in pairs:
+        for side in ("near", "far"):
+            point = pair.get(side) if isinstance(pair, dict) else None
+            if not isinstance(point, list) or len(point) != 2 or not all(
+                type(v) in (int, float) and math.isfinite(v) and 0 <= v < 1 for v in point
+            ):
+                raise ValueError("Expected finite normalized coordinates in [0,1)")
+    return data, manifest
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("model", "preprocessor", "photo", "output"):
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--manifest")
+    parser.add_argument("--manifest-sha256")
     args = parser.parse_args()
-    manifest_path = Path(__file__).with_name("frozen-smoke.json")
-    manifest_bytes = manifest_path.read_bytes()
-    manifest = json.loads(manifest_bytes)
+    manifest_bytes, manifest = load_manifest(args.manifest, args.manifest_sha256)
     model = manifest["model"]
     verified(args.model, model["sha256"])
     cfg = json.loads(verified(args.preprocessor, model["preprocessorSha256"]))
@@ -81,7 +104,7 @@ def main():
     preview_path = Path(args.output).with_suffix(".png")
     Image.fromarray(preview).save(preview_path)
     receipt = {
-        "scope": manifest["scope"], "frozenManifestSha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "scope": manifest["scope"], "annotation": manifest["annotation"], "frozenManifestSha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "modelSha256": model["sha256"], "photoSha256": manifest["photo"]["sha256"],
         "runtime": {"python": platform.python_version(), "onnxruntime": ort.__version__, "numpy": np.__version__, "pillow": pillow_version, "architecture": platform.machine(), "providers": session.get_providers(), "intraOpThreads": 4, "interOpThreads": 1},
         "normalizedPhoto": [width, height], "inputShape": list(tensor.shape), "outputShape": list(raw.shape),
@@ -91,7 +114,7 @@ def main():
         "strictCorrect": sum(p["correct"] for p in pairs), "pairsTotal": len(pairs), "unpaintedBaselineStrictCorrect": 0,
         "processPeakRssKiB": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "previewPngSha256": hashlib.sha256(preview_path.read_bytes()).hexdigest(),
-        "limitations": ["One previously published real photo may have training overlap; no generalization or calibrated distance claim", "Visual ordinal labels from one implementer, not independently measured ground truth", "No subject-boundary/correction-effort or browser/WebGPU evaluation", "Pillow normalization differs from product browser normalization", "Measured latency and Linux process peak RSS are observations, not resource guarantees"]
+        "limitations": ["Published input photos may have training overlap; no generalization or calibrated distance claim", "Visual ordinal labels, not measured ground truth; annotation records provenance", "No quantitative subject-boundary accuracy, correction-effort or browser/WebGPU evaluation", "Pillow normalization differs from product browser normalization", "Measured latency and Linux process peak RSS are observations, not resource guarantees"]
     }
     Path(args.output).write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(receipt, indent=2))

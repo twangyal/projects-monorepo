@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/evaluate.py", line 124, in <module>
+    main()
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/evaluate.py", line 56, in main
+    manifest_bytes, manifest = load_manifest(args.manifest, args.manifest_sha256)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/evaluate.py", line 34, in load_manifest
+    data = verified(path, expected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/evaluate.py", line 23, in verified
+    raise ValueError(f"Checksum mismatch: {Path(path).name}")
+ValueError: Checksum mismatch: frozen-street.json
+
+exitCode=1; noReceipt=True; noPreview=True

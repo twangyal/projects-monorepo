@@ -1,0 +1,41 @@
+test_default_retains_exact_original_protocol (test_evaluate.FrozenManifestTests.test_default_retains_exact_original_protocol) ... FAIL
+test_empty_and_unbounded_pair_sets_are_rejected (test_evaluate.FrozenManifestTests.test_empty_and_unbounded_pair_sets_are_rejected) ... FAIL
+test_extension_requires_matching_hash_before_admission (test_evaluate.FrozenManifestTests.test_extension_requires_matching_hash_before_admission) ... FAIL
+test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels (test_evaluate.FrozenManifestTests.test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels) ... FAIL
+
+======================================================================
+FAIL: test_default_retains_exact_original_protocol (test_evaluate.FrozenManifestTests.test_default_retains_exact_original_protocol)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/test_evaluate.py", line 16, in test_default_retains_exact_original_protocol
+    self.assertTrue(hasattr(evaluate, 'load_manifest'), 'Missing explicit frozen-manifest loader')
+AssertionError: False is not true : Missing explicit frozen-manifest loader
+
+======================================================================
+FAIL: test_empty_and_unbounded_pair_sets_are_rejected (test_evaluate.FrozenManifestTests.test_empty_and_unbounded_pair_sets_are_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/test_evaluate.py", line 48, in test_empty_and_unbounded_pair_sets_are_rejected
+    self.assertTrue(hasattr(evaluate, 'load_manifest'), 'Missing explicit frozen-manifest loader')
+AssertionError: False is not true : Missing explicit frozen-manifest loader
+
+======================================================================
+FAIL: test_extension_requires_matching_hash_before_admission (test_evaluate.FrozenManifestTests.test_extension_requires_matching_hash_before_admission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/test_evaluate.py", line 22, in test_extension_requires_matching_hash_before_admission
+    self.assertTrue(hasattr(evaluate, 'load_manifest'), 'Missing explicit frozen-manifest loader')
+AssertionError: False is not true : Missing explicit frozen-manifest loader
+
+======================================================================
+FAIL: test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels (test_evaluate.FrozenManifestTests.test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/test_evaluate.py", line 36, in test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels
+    self.assertTrue(hasattr(evaluate, 'load_manifest'), 'Missing explicit frozen-manifest loader')
+AssertionError: False is not true : Missing explicit frozen-manifest loader
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.005s
+
+FAILED (failures=4)

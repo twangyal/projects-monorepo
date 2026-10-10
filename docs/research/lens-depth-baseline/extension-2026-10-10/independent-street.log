@@ -1,0 +1,191 @@
+{
+  "scope": "Two-photo extension: street; five clear ordinal comparisons plus three separately interpreted thin-boundary diagnostics; no measured ground truth or product readiness claim",
+  "frozenManifestSha256": "1efbded1f2053ceb3bff83b1da23f1540f4e3bf73527e30b8d992b3f38692bd0",
+  "modelSha256": "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d",
+  "photoSha256": "a85bdf0ad5d91c88cf9b4a07dc2b61530348cacdedda791680e59a88ef6c16dd",
+  "runtime": {
+    "python": "3.12.14",
+    "onnxruntime": "1.23.2",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "architecture": "x86_64",
+    "providers": [
+      "CPUExecutionProvider"
+    ],
+    "intraOpThreads": 4,
+    "interOpThreads": 1
+  },
+  "normalizedPhoto": [
+    1280,
+    853
+  ],
+  "inputShape": [
+    1,
+    3,
+    518,
+    784
+  ],
+  "outputShape": [
+    1,
+    518,
+    784
+  ],
+  "sessionLoadMs": 1157.7541899999915,
+  "inferenceMs": [
+    11347.134072000017,
+    16654.29141100003,
+    11310.738819999984
+  ],
+  "rawOutputSha256": [
+    "184bff1708920805b7804f48d16e943707ac54e82b5dd4aeaf9d8e4a078db0fb",
+    "184bff1708920805b7804f48d16e943707ac54e82b5dd4aeaf9d8e4a078db0fb",
+    "184bff1708920805b7804f48d16e943707ac54e82b5dd4aeaf9d8e4a078db0fb"
+  ],
+  "sameProcessRepeatExactlyEqual": true,
+  "rawRange": [
+    0.0,
+    10.56293773651123
+  ],
+  "pairs": [
+    {
+      "name": "central_near_road_vs_far_road",
+      "near": [
+        0.5,
+        0.9
+      ],
+      "far": [
+        0.5,
+        0.6
+      ],
+      "rationale": "On the approximately planar road, the lower image point is nearer under the evident perspective.",
+      "evaluationCategory": "clear",
+      "nearRaw": 8.167720794677734,
+      "farRaw": 0.8078224658966064,
+      "correct": true
+    },
+    {
+      "name": "right_near_road_vs_far_road",
+      "near": [
+        0.8,
+        0.8
+      ],
+      "far": [
+        0.8,
+        0.61
+      ],
+      "rationale": "Same road surface extends toward the vanishing region; small surface irregularities should not reverse this large separation.",
+      "evaluationCategory": "clear",
+      "nearRaw": 5.7863335609436035,
+      "farRaw": 1.1673816442489624,
+      "correct": true
+    },
+    {
+      "name": "nearest_left_lamp_pole_vs_receding_pole",
+      "near": [
+        0.282,
+        0.5
+      ],
+      "far": [
+        0.48,
+        0.52
+      ],
+      "rationale": "The large left pole is earlier in the receding row; the smaller pole near the vanishing region is farther.",
+      "evaluationCategory": "clear",
+      "nearRaw": 1.6154476404190063,
+      "farRaw": 0.5008143186569214,
+      "correct": true
+    },
+    {
+      "name": "left_foreground_car_vs_distant_vehicle",
+      "near": [
+        0.088,
+        0.575
+      ],
+      "far": [
+        0.59,
+        0.565
+      ],
+      "rationale": "Large parked car at the left foreground is nearer than the small vehicle toward the street center.",
+      "evaluationCategory": "clear",
+      "nearRaw": 1.0761089324951172,
+      "farRaw": 0.2657179832458496,
+      "correct": true
+    },
+    {
+      "name": "left_tree_trunk_vs_receding_tree_trunk",
+      "near": [
+        0.113,
+        0.5
+      ],
+      "far": [
+        0.426,
+        0.541
+      ],
+      "rationale": "Trunks belong to the left sidewalk tree row; size and occlusion support the depth ordering, though exact trunk geometry is uncalibrated.",
+      "evaluationCategory": "clear",
+      "nearRaw": 1.4633264541625977,
+      "farRaw": 0.6667646765708923,
+      "correct": true
+    },
+    {
+      "name": "nearest_lamp_pole_vs_foliage",
+      "near": [
+        0.282,
+        0.4375
+      ],
+      "far": [
+        0.29,
+        0.4375
+      ],
+      "rationale": "Thin pole contour against foliage; the foliage distance is less certain than road perspective and pixels can mix.",
+      "evaluationCategory": "diagnostic",
+      "nearRaw": 1.5407699346542358,
+      "farRaw": 1.3333319425582886,
+      "correct": true
+    },
+    {
+      "name": "overhead_wire_vs_sky",
+      "near": [
+        0.667,
+        0.078
+      ],
+      "far": [
+        0.667,
+        0.066
+      ],
+      "rationale": "Thin overhead wire against sky; normalized wire location is approximate and sky has no measured finite depth.",
+      "evaluationCategory": "diagnostic",
+      "nearRaw": 0.0,
+      "farRaw": 0.0,
+      "correct": false
+    },
+    {
+      "name": "pedestrian_vs_background",
+      "near": [
+        0.773,
+        0.574
+      ],
+      "far": [
+        0.781,
+        0.574
+      ],
+      "rationale": "Small pedestrian against roadside background; very few pixels and uncertain background distance prevent a correctness guarantee.",
+      "evaluationCategory": "diagnostic",
+      "nearRaw": 0.5395360589027405,
+      "farRaw": 0.4454975128173828,
+      "correct": true
+    }
+  ],
+  "strictCorrect": 7,
+  "pairsTotal": 8,
+  "unpaintedBaselineStrictCorrect": 0,
+  "processPeakRssKiB": 704272,
+  "previewPngSha256": "995ec4bd480c9685a860c2a9b2640f1c9d2ac5e8a895891a657577240f586317",
+  "limitations": [
+    "One previously published real photo may have training overlap; no generalization or calibrated distance claim",
+    "Visual ordinal labels from one implementer, not independently measured ground truth",
+    "No subject-boundary/correction-effort or browser/WebGPU evaluation",
+    "Pillow normalization differs from product browser normalization",
+    "Measured latency and Linux process peak RSS are observations, not resource guarantees"
+  ]
+}

@@ -131,7 +131,7 @@ Milestone #170: connected-color source selection assigns four-connected regions 
 
 Milestone #171: source-only Fit/2×/4× zoom with native scrolling and accessible pan controls enables precise manual depth work while keeping the saved photo, result pixels and complete study unchanged. Scaled/scrolled native selections, gesture cancellation and mobile containment are verified; learned depth and reconstruction remain unfinished.
 
-Research #172: a checksum-pinned local learned-depth candidate now executes genuine CPU inference on a CC0 real photo under a predeclared one-photo smoke protocol. The reproducible harness and results are retained in docs/research/lens-depth-baseline. This establishes runtime feasibility only; held-out photo/boundary quality, correction effort, browser inference and reviewed editable-depth integration remain open. No model is enabled in the product.
+Research #172: a checksum-pinned local learned-depth candidate now executes genuine CPU inference on a CC0 real photo under a predeclared one-photo smoke protocol. The reproducible harness and results are retained in docs/research/lens-depth-baseline. This establishes runtime feasibility only; held-out photo/boundary quality, correction effort, browser inference and reviewed editable-depth integration remain open. No model is enabled in the product. The frozen portrait/street extension adds independently selected pre-output visual labels and repeatable CPU outputs: clear ordering10/10, thin-wire diagnostic tied at zero. Quantitative boundaries, correction effort, browser inference and editable-depth integration remain open.
 
 ## 17. Track physiological state to create situations in a game
 

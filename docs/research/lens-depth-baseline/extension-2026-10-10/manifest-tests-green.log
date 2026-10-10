@@ -1,0 +1,9 @@
+test_default_retains_exact_original_protocol (test_evaluate.FrozenManifestTests.test_default_retains_exact_original_protocol) ... ok
+test_empty_and_unbounded_pair_sets_are_rejected (test_evaluate.FrozenManifestTests.test_empty_and_unbounded_pair_sets_are_rejected) ... ok
+test_extension_requires_matching_hash_before_admission (test_evaluate.FrozenManifestTests.test_extension_requires_matching_hash_before_admission) ... ok
+test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels (test_evaluate.FrozenManifestTests.test_frozen_invalid_coordinates_cannot_silently_sample_empty_or_wrapped_pixels) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.014s
+
+OK
