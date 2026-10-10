@@ -2,7 +2,8 @@ import { MAX_COMPOSITION_BEATS, MAX_RENDER_FRAMES } from './limits.ts';
 import { DEFAULT_ENVELOPE, envelopeLevel, validateEnvelope } from './sound-envelope.ts';
 import { lowpass, validateFilter } from './sound-filter.ts';
 import { validateEcho } from './sound-echo.ts';
-import type { Composition, Note, SoundEnvelope, SoundFilter } from './types.ts';
+import { validateVolumeRamp, volumeRampLevel } from './volume-ramp.ts';
+import type { Composition, Note, SoundEnvelope, SoundFilter, VolumeRamp } from './types.ts';
 
 const MIN_HZ = 440 * 2 ** ((36 - 69) / 12);
 const MAX_HZ = 440 * 2 ** ((96 - 69) / 12);
@@ -184,32 +185,33 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
   const frames = Math.ceil(endSeconds * sampleRate);
   if (!Number.isSafeInteger(frames) || frames > MAX_RENDER_FRAMES) throw new RangeError('Rendered audio exceeds the frame budget. Lower the sample rate or shorten the composition.');
   const result = new Float32Array(frames);
-  const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; gain: number }>();
+  const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; volumeRamp?: VolumeRamp; gain: number }>();
   for (const track of project.tracks) {
     if (track.muted || track.volume === 0) continue;
     const envelope = track.envelope === undefined ? DEFAULT_ENVELOPE : validateEnvelope(track.envelope);
     const filter = track.filter === undefined ? undefined : validateFilter(track.filter);
     const echo = track.echo === undefined ? undefined : validateEcho(track.echo);
+    const volumeRamp = track.volumeRamp === undefined ? undefined : validateVolumeRamp(track.volumeRamp);
     for (const note of track.notes) {
       if (note.velocity === 0) continue;
       // Finite delayed copies share the same rendered voice, including its full
       // filter state and release. Beat offsets are rounded only at placement.
       for (let tap = 0; tap <= (echo?.repeats ?? 0); tap++) {
         const delayed = tap === 0 ? note : {...note, start: note.start + tap * echo!.beats};
-        const key = `${track.instrument}:${delayed.pitch}:${delayed.start}:${delayed.duration}:${JSON.stringify(envelope)}:${JSON.stringify(filter)}`;
+        const key = `${track.instrument}:${delayed.pitch}:${delayed.start}:${delayed.duration}:${JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(volumeRamp)}`;
         const gain = track.volume * note.velocity * 0.4 * (tap === 0 ? 1 : echo!.decay ** tap);
         const existing = groups.get(key);
         if (existing) existing.gain += gain;
-        else groups.set(key, { note: delayed, instrument: track.instrument, envelope, filter, gain });
+        else groups.set(key, { note: delayed, instrument: track.instrument, envelope, filter, volumeRamp, gain });
       }
     }
   }
   // Identical oscillators add linearly. Sum their gains once to avoid rendering
   // duplicate sample streams and accumulating thousands of Float32 rounding errors.
-  const voices = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; placements: { start: number; gain: number }[] }>();
-  for (const { note, instrument, envelope, filter, gain } of groups.values()) {
+  const voices = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; placements: { start: number; gain: number; volumeRamp?: VolumeRamp }[] }>();
+  for (const { note, instrument, envelope, filter, volumeRamp, gain } of groups.values()) {
     const key = `${instrument}:${note.pitch}:${note.duration}:${JSON.stringify(envelope)}:${JSON.stringify(filter)}`;
-    const placement = { start: Math.round(note.start * secondsPerBeat * sampleRate), gain };
+    const placement = { start: Math.round(note.start * secondsPerBeat * sampleRate), gain, volumeRamp };
     const existing = voices.get(key);
     if (existing) existing.placements.push(placement);
     else voices.set(key, { note, instrument, envelope, filter, placements: [placement] });
@@ -236,9 +238,13 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
       const level = envelopeLevel(i, durationSamples, attackSamples, decaySamples, envelope.sustain, releaseSamples);
       waveform[i] = (shape ? shape(wave) : wave) * level;
     }
-    for (const { start, gain } of placements) {
+    for (const { start, gain, volumeRamp } of placements) {
       const mixLength = Math.min(length, result.length - start);
-      for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain;
+      if (volumeRamp) {
+        for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain * volumeRampLevel(volumeRamp, (start + i) / sampleRate / secondsPerBeat);
+      } else {
+        for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain;
+      }
     }
   }
   let peak = 0;
