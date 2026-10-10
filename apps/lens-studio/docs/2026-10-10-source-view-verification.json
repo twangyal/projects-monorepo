@@ -55,7 +55,15 @@
     "independentNativeRun": "not rerun; primary actual full/focused run supplies browser evidence"
   },
   "ci": {
-    "status": "pending publication; exact-head result to be recorded in issue171"
+    "status": "success",
+    "commit": "d26d55df2f3387cc8ec9a6fa04046d888b89b10f",
+    "run": 38041874294,
+    "url": "https://github.com/twangyal/projects-monorepo/actions/runs/38041874294",
+    "units": 79,
+    "browser": 77,
+    "lint": "pass",
+    "typecheck": "pass",
+    "build": "pass"
   },
   "limitations": [
     "Manual depth authoring; no learned scene depth or generated fill",

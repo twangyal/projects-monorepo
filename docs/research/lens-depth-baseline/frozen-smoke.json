@@ -1,0 +1,85 @@
+{
+  "frozenBeforeInference": "2026-10-10T09:39:54.915851+00:00",
+  "scope": "One real-photo runtime/ordinal smoke check, not a held-out product quality evaluation",
+  "model": {
+    "repository": "onnx-community/depth-anything-v2-small",
+    "revision": "c70d1ddbcd93c9bda8098268cc3554adf5e8dd4f",
+    "file": "onnx/model_quantized.onnx",
+    "bytes": 27258801,
+    "sha256": "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d",
+    "license": "Apache-2.0; Small variant only",
+    "preprocessorSha256": "03576db3c13dd0471fdf5f5e1428befcb95de063fe699879150b293dc9e0a2c6"
+  },
+  "photo": {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/The_living_room_that_needs_houseplants.jpg",
+    "sourcePage": "https://commons.wikimedia.org/w/index.php?title=File:The_living_room_that_needs_houseplants.jpg&oldid=1145910283",
+    "author": "Lo / L's pets & stuff",
+    "license": "CC0-1.0",
+    "bytes": 4194091,
+    "sha256": "159a97446c8744093ead5306c69df7dae7e77f613782cb0365f7b420b8293eae",
+    "dimensions": [
+      3264,
+      2448
+    ],
+    "normalization": "EXIF transpose, RGB, Pillow LANCZOS longest edge1280 without upscaling; differs from product browser normalization"
+  },
+  "annotation": "Original visual near/far judgments by the implementer before viewing any model output; no measured metric ground truth. Coordinates are normalized image coordinates. Median of3\u00d73 predicted-depth neighborhood. Larger raw inverse depth predicts nearer; ties count as incorrect. No thresholds or model tuning after freezing.",
+  "pairs": [
+    {
+      "name": "foreground shelf versus back window",
+      "near": [
+        0.12,
+        0.45
+      ],
+      "far": [
+        0.7,
+        0.5
+      ]
+    },
+    {
+      "name": "foreground cat versus back window",
+      "near": [
+        0.58,
+        0.98
+      ],
+      "far": [
+        0.7,
+        0.5
+      ]
+    },
+    {
+      "name": "front chair versus climbing pole",
+      "near": [
+        0.52,
+        0.72
+      ],
+      "far": [
+        0.35,
+        0.38
+      ]
+    },
+    {
+      "name": "table versus back window",
+      "near": [
+        0.42,
+        0.67
+      ],
+      "far": [
+        0.7,
+        0.45
+      ]
+    },
+    {
+      "name": "front floor versus back floor",
+      "near": [
+        0.5,
+        0.94
+      ],
+      "far": [
+        0.62,
+        0.78
+      ]
+    }
+  ],
+  "baseline": "Current unpainted Lens study assigns every pixel to subject; all5 ordinal comparisons tie, so0/5 strict correct. Manually authored masks are not evaluated here."
+}

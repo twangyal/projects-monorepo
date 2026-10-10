@@ -1,0 +1,36 @@
+{
+  "issue": 172,
+  "date": "2026-10-10",
+  "status": "Research checkpoint complete; broader milestone remains open",
+  "preInferenceProtocolComment": "https://github.com/twangyal/projects-monorepo/issues/172#issuecomment-6096210874",
+  "modelCard": {
+    "url": "https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/c70d1ddbcd93c9bda8098268cc3554adf5e8dd4f/README.md",
+    "sha256": "5c03bcb41e047e7760916b47889de3a8273c6a925cb3c16e5dbdeefac25167cb",
+    "declaredLicense": "apache-2.0"
+  },
+  "checks": {
+    "realModelWeightHash": "matches published immutable artifact",
+    "preprocessorHash": "matches pinned configuration",
+    "realPhotoHash": "matches frozen input",
+    "actualCpuInference": "3 primary and3 independent fresh-process runs",
+    "independentRawOutputAndSamples": "exact repeat",
+    "wrongArtifact": "actual1024-byte probe rejected before session/result, expected exit1, no output files",
+    "pythonCompilation": "pass"
+  },
+  "review": {
+    "importantRemaining": 0,
+    "originalPhotoOrdinalReview": "post-output plausibility review, not independent frozen ground truth"
+  },
+  "files": {
+    "README.md": "85a9503ee380c53afed935d57e3cf631058245187a9431ed271cc9e95de2b1dd",
+    "evaluate.py": "48045fea9de083de1ec2edad730333619148688d6c7e5ae686b13dc2595342f9",
+    "frozen-smoke.json": "4b366d65d270f348e478504560793735d456d52fc292ca5362983de7ae65ea45",
+    "independent-rerun.json": "1a78820d6826a23a136c25b89086338d49bb9370ffd5715c5a3a79c2ff0cb918",
+    "inference.log": "b67e076b773eeb9265dba22dc223be58a27f0de895730e8fd9b7bbe681a30edb",
+    "preprocessor_config.json": "03576db3c13dd0471fdf5f5e1428befcb95de063fe699879150b293dc9e0a2c6",
+    "requirements-measured.txt": "830b2f759226843cde91f9edb25658066d34d0bb34da5b0439928dbec97a9b5e",
+    "smoke-depth.png": "ac3d95b09fba35b9d9c1c144a84ba66c9227453c65e0a6beb1973e12b112dd00",
+    "smoke-result.json": "b67e076b773eeb9265dba22dc223be58a27f0de895730e8fd9b7bbe681a30edb",
+    "wrong-artifact-refusal.log": "9e9ed2dc27d993a4ace97c3ff40a1fd448bbe2a8263a0037a4f668b92858ee35"
+  }
+}
