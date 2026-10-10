@@ -1,0 +1,9 @@
+{
+  "source": "https://storage.googleapis.com/chrome-for-testing-public/153.0.8010.12/linux64/chrome-headless-shell-linux64.zip",
+  "zipBytes": 119809080,
+  "zipSha256": "a9da028861a0cf789ff25c2fed45f5f1aaf969ed9247835b6a7821a4f7af9d1d",
+  "zipMd5MatchesPublishedHeader": true,
+  "zipAllEntriesCrcPass": true,
+  "browserBytes": 197422408,
+  "browserSha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e"
+}

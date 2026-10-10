@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8"><title>Local depth runtime research probe</title>
+<button id="response">Check main-thread response</button><output id="clicks">0</output>
+<script>
+let clicks = 0;
+document.querySelector('#response').onclick = () => {window.clickEpochMs = performance.timeOrigin + performance.now();document.querySelector('#clicks').textContent = String(++clicks);};
+window.stages = [];
+window.lateMessages = 0;
+window.startProbe = (config, cancel) => new Promise((resolve, reject) => {
+  const worker = new Worker('/worker.js');
+  let retired = false;
+  const deadline = setTimeout(() => finish(null, new Error('Research90-second worker deadline')), 90000);
+  function finish(result, error) {
+    if (retired) return;
+    retired = true; clearTimeout(deadline); worker.terminate();
+    if (error) reject(error); else resolve(result);
+  }
+  worker.onerror = event => finish(null, new Error(event.message));
+  worker.onmessage = ({data}) => {
+    if (retired) {window.lateMessages++; return;}
+    if (data.stage) {
+      window.stages.push(data);
+      window.notifyStage({cancel, ...data});
+      if (cancel && data.stage === 'running' && data.round === 0) {
+        const began = performance.now();
+        setTimeout(() => finish({cancelled: true, afterRunningStage: true, terminateRequestAfterStageMs: performance.now() - began}), 100);
+      }
+    } else if (data.error) finish(null, new Error(data.error));
+    else if (data.done) finish(data);
+  };
+  worker.postMessage(config);
+});
+</script>

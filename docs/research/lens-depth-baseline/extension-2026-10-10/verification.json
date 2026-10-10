@@ -36,9 +36,10 @@
   "issueState": "open",
   "next": "Quantitative boundary/correction-effort evaluation, real browser runtime, editable depth/subject anchors; no integration readiness established",
   "files": {
-    "README.md": "ba34712d80e2a3a7a7f57150c8622fbdbecf71e2bef01edcd087a0155431eb58",
+    "README.md": "80fc78f6b723c193b9ddf997bb6850cdaa68e34d796a7bcde02544c3009741d7",
     "application-check.log": "1c256c2012c8e03f6f30bf41a57b5b52121c61275dbfc399434819a5e27bd971",
-    "changed-manifest-refusal.log": "cd9eca3c77af84cdf64ce06c06e6c36a426a676ff621276a8021d5f4b4be9adf",
+    "changed-manifest-refusal.log": "ae95d3785870604dde6d410cd22dab722ccfdacae2037fc3bf105d71844ee3c2",
+    "first/expected-hash-refusal.log": "cd9eca3c77af84cdf64ce06c06e6c36a426a676ff621276a8021d5f4b4be9adf",
     "first/portrait-inference.log": "72f15fc5801648db8cc26a82ef04d484637e5f99ce0e60060e0c554f5583d382",
     "first/portrait-result.json": "72f15fc5801648db8cc26a82ef04d484637e5f99ce0e60060e0c554f5583d382",
     "first/street-inference.log": "0fb257b8bbae2046c3e86e8021be136ccceb25cea306ea3f637aee2d2c7966f6",
@@ -61,5 +62,6 @@
     "street-inference.log": "afc9271e3e2231a02b04354dcd1d001b7683a58786a7699c0f606fd7c7d9dfc6",
     "street-result.json": "afc9271e3e2231a02b04354dcd1d001b7683a58786a7699c0f606fd7c7d9dfc6",
     "street-result.png": "995ec4bd480c9685a860c2a9b2640f1c9d2ac5e8a895891a657577240f586317"
-  }
+  },
+  "changedManifestFollowupVerifiedUtc": "2026-10-10T14:32:28.945485+00:00"
 }

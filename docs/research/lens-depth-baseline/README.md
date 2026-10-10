@@ -48,3 +48,5 @@ Artifact access is available; this milestone is **unfinished**, not blocked by m
 ## Broader frozen evaluation
 
 The [two-photo extension](extension-2026-10-10/README.md) adds independent pre-output image-only labels, actual portrait/street inference, retained difficult-case failures and same-host repeatability. All10 clear comparisons pass, but the overhead wire ties sky; sparse diagnostics are not boundary accuracy. The original smoke remains unchanged. The harness now admits additional explicitly checksummed protocols with coordinate bounds; broader correction-effort, browser and integration work remains open in #172.
+
+The [actual Chromium/WASM probe](browser-2026-10-10/README.md) executes repeatable portrait inference with an interactive main thread, but retains a failed500ms native worker-retirement gate and measured CPU/WASM differences. Independent diagnosis observed delayed target destruction before browser close, not a persistent leak. Browser preprocessing, resources, boundary/correction utility and editable-depth integration remain open; no product model is enabled.

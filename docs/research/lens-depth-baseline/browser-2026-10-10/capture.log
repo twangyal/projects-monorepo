@@ -1,0 +1,192 @@
+{
+  "scope": "Two-photo extension: portrait; five clear ordinal comparisons plus three separately interpreted thin-boundary diagnostics; no measured ground truth or product readiness claim",
+  "annotation": "Independent reviewer selected image-only points before any output; coordinator reviewed geometric plausibility before freezing. Source previews1200x800. Larger raw inverse depth predicts nearer; ties are incorrect. Median of3x3 predicted-depth neighborhood; no tuning. Diagnostics are not a boundary accuracy metric.",
+  "frozenManifestSha256": "b076eb4d8734b9aadda2d855d9fbd8bfd6607ef0e454197ce03b4bfbbfcd179f",
+  "modelSha256": "fcf51f1b230362b28690bb9d1809bf0431f29cad20534e3f589bd7285547f20d",
+  "photoSha256": "d237bbf13f886b69a376aad00836403dafdb8a6be0062dc98a50e1a6c7b32a48",
+  "runtime": {
+    "python": "3.12.14",
+    "onnxruntime": "1.23.2",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "architecture": "x86_64",
+    "providers": [
+      "CPUExecutionProvider"
+    ],
+    "intraOpThreads": 4,
+    "interOpThreads": 1
+  },
+  "normalizedPhoto": [
+    1280,
+    853
+  ],
+  "inputShape": [
+    1,
+    3,
+    518,
+    784
+  ],
+  "outputShape": [
+    1,
+    518,
+    784
+  ],
+  "sessionLoadMs": 389.85437799988176,
+  "inferenceMs": [
+    9752.917778999972,
+    10553.096401999937,
+    3509.7811630000706
+  ],
+  "rawOutputSha256": [
+    "0ca318bb7b95922a5eb0a6c7aa9ed5e0ea8da5cacc639a1a050dd762626c4f70",
+    "0ca318bb7b95922a5eb0a6c7aa9ed5e0ea8da5cacc639a1a050dd762626c4f70",
+    "0ca318bb7b95922a5eb0a6c7aa9ed5e0ea8da5cacc639a1a050dd762626c4f70"
+  ],
+  "sameProcessRepeatExactlyEqual": true,
+  "rawRange": [
+    0.0,
+    5.391716957092285
+  ],
+  "pairs": [
+    {
+      "name": "subject_torso_vs_distant_town",
+      "near": [
+        0.5,
+        0.46
+      ],
+      "far": [
+        0.64,
+        0.43
+      ],
+      "rationale": "The centrally occluding subject is much nearer than town buildings visible beyond the balcony.",
+      "evaluationCategory": "clear",
+      "nearRaw": 2.722013235092163,
+      "farRaw": 0.0,
+      "correct": true
+    },
+    {
+      "name": "left_door_panel_vs_town",
+      "near": [
+        0.18,
+        0.46
+      ],
+      "far": [
+        0.61,
+        0.61
+      ],
+      "rationale": "The doorway surrounds the camera-side balcony; buildings beyond the railing are distant.",
+      "evaluationCategory": "clear",
+      "nearRaw": 4.115739822387695,
+      "farRaw": 0.0,
+      "correct": true
+    },
+    {
+      "name": "right_door_panel_vs_roof",
+      "near": [
+        0.84,
+        0.47
+      ],
+      "far": [
+        0.6,
+        0.68
+      ],
+      "rationale": "Door panel is foreground architecture; roof is down and beyond the balcony.",
+      "evaluationCategory": "clear",
+      "nearRaw": 4.374788761138916,
+      "farRaw": 0.0,
+      "correct": true
+    },
+    {
+      "name": "balcony_floor_vs_building",
+      "near": [
+        0.5,
+        0.95
+      ],
+      "far": [
+        0.38,
+        0.66
+      ],
+      "rationale": "Walkable floor beneath the subject is foreground; the visible building lies beyond the balcony.",
+      "evaluationCategory": "clear",
+      "nearRaw": 3.2829294204711914,
+      "farRaw": 0.05444981902837753,
+      "correct": true
+    },
+    {
+      "name": "subject_skirt_vs_background_field",
+      "near": [
+        0.51,
+        0.72
+      ],
+      "far": [
+        0.375,
+        0.545
+      ],
+      "rationale": "Subject skirt occupies the balcony; green field is beyond its railing.",
+      "evaluationCategory": "clear",
+      "nearRaw": 2.6684906482696533,
+      "farRaw": 0.0,
+      "correct": true
+    },
+    {
+      "name": "hair_top_vs_sky",
+      "near": [
+        0.5,
+        0.211
+      ],
+      "far": [
+        0.5,
+        0.194
+      ],
+      "rationale": "Top hair contour against sky; sparse hairs, antialiasing, and the absence of finite sky depth make this diagnostic only.",
+      "evaluationCategory": "diagnostic",
+      "nearRaw": 2.730576753616333,
+      "farRaw": 0.0,
+      "correct": true
+    },
+    {
+      "name": "left_forearm_vs_sky",
+      "near": [
+        0.4,
+        0.3125
+      ],
+      "far": [
+        0.4,
+        0.28
+      ],
+      "rationale": "Narrow arm region above the town; contour precision and arm orientation affect interpretation.",
+      "evaluationCategory": "diagnostic",
+      "nearRaw": 2.499359369277954,
+      "farRaw": 0.0,
+      "correct": true
+    },
+    {
+      "name": "railing_top_vs_background",
+      "near": [
+        0.375,
+        0.49
+      ],
+      "far": [
+        0.375,
+        0.4775
+      ],
+      "rationale": "Thin horizontal railing against distant landscape; subpixel placement and mixed pixels can dominate.",
+      "evaluationCategory": "diagnostic",
+      "nearRaw": 0.6389158964157104,
+      "farRaw": 0.0,
+      "correct": true
+    }
+  ],
+  "strictCorrect": 8,
+  "pairsTotal": 8,
+  "unpaintedBaselineStrictCorrect": 0,
+  "processPeakRssKiB": 700796,
+  "previewPngSha256": "ece90cb24558b2565d38ffe01d5598e18b6e696c53e107d2d17c7e8ea5edc897",
+  "limitations": [
+    "Published input photos may have training overlap; no generalization or calibrated distance claim",
+    "Visual ordinal labels, not measured ground truth; annotation records provenance",
+    "No quantitative subject-boundary accuracy, correction-effort or browser/WebGPU evaluation",
+    "Pillow normalization differs from product browser normalization",
+    "Measured latency and Linux process peak RSS are observations, not resource guarantees"
+  ]
+}

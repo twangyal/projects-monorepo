@@ -1,0 +1,205 @@
+{
+  "cancel": {
+    "cancelled": true,
+    "afterRunningStage": true,
+    "terminateRequestAfterStageMs": 101.40000000037253
+  },
+  "remainingWorkersAt500ms": [
+    {
+      "targetId": "EAE23732A3C6B73BAD27702215121661",
+      "type": "worker",
+      "title": "http://127.0.0.1:40143/worker.js",
+      "url": "http://127.0.0.1:40143/worker.js",
+      "attached": true,
+      "parentId": "8BDE309570E339C26713C9E5356899E1",
+      "canAccessOpener": false,
+      "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+      "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+    }
+  ],
+  "followup": [
+    {
+      "elapsedMs": 1000,
+      "info": [
+        {
+          "targetId": "EAE23732A3C6B73BAD27702215121661",
+          "type": "worker",
+          "title": "http://127.0.0.1:40143/worker.js",
+          "url": "http://127.0.0.1:40143/worker.js",
+          "attached": false,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      ]
+    },
+    {
+      "elapsedMs": 2000,
+      "info": []
+    }
+  ],
+  "targetEvents": [
+    {
+      "kind": "targetCreated",
+      "epochMs": 1791642826351,
+      "value": {
+        "targetInfo": {
+          "targetId": "8BDE309570E339C26713C9E5356899E1",
+          "type": "page",
+          "title": "",
+          "url": "",
+          "attached": true,
+          "canAccessOpener": false,
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetInfoChanged",
+      "epochMs": 1791642826753,
+      "value": {
+        "targetInfo": {
+          "targetId": "8BDE309570E339C26713C9E5356899E1",
+          "type": "page",
+          "title": "about:blank",
+          "url": "about:blank",
+          "attached": true,
+          "canAccessOpener": false,
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetInfoChanged",
+      "epochMs": 1791642827275,
+      "value": {
+        "targetInfo": {
+          "targetId": "8BDE309570E339C26713C9E5356899E1",
+          "type": "page",
+          "title": "127.0.0.1:40143",
+          "url": "http://127.0.0.1:40143/",
+          "attached": true,
+          "canAccessOpener": false,
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetCreated",
+      "epochMs": 1791642828997,
+      "value": {
+        "targetInfo": {
+          "targetId": "1E86B95C2E3BB04F7FEB6DB472D98B8C",
+          "type": "worker",
+          "title": "",
+          "url": "",
+          "attached": false,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetInfoChanged",
+      "epochMs": 1791642829103,
+      "value": {
+        "targetInfo": {
+          "targetId": "1E86B95C2E3BB04F7FEB6DB472D98B8C",
+          "type": "worker",
+          "title": "http://127.0.0.1:40143/worker.js",
+          "url": "http://127.0.0.1:40143/worker.js",
+          "attached": true,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetInfoChanged",
+      "epochMs": 1791642834319,
+      "value": {
+        "targetInfo": {
+          "targetId": "1E86B95C2E3BB04F7FEB6DB472D98B8C",
+          "type": "worker",
+          "title": "http://127.0.0.1:40143/worker.js",
+          "url": "http://127.0.0.1:40143/worker.js",
+          "attached": false,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetDestroyed",
+      "epochMs": 1791642834343,
+      "value": {
+        "targetId": "1E86B95C2E3BB04F7FEB6DB472D98B8C"
+      }
+    },
+    {
+      "kind": "targetCreated",
+      "epochMs": 1791642835155,
+      "value": {
+        "targetInfo": {
+          "targetId": "EAE23732A3C6B73BAD27702215121661",
+          "type": "worker",
+          "title": "",
+          "url": "",
+          "attached": false,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetInfoChanged",
+      "epochMs": 1791642835243,
+      "value": {
+        "targetInfo": {
+          "targetId": "EAE23732A3C6B73BAD27702215121661",
+          "type": "worker",
+          "title": "http://127.0.0.1:40143/worker.js",
+          "url": "http://127.0.0.1:40143/worker.js",
+          "attached": true,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetInfoChanged",
+      "epochMs": 1791642845987,
+      "value": {
+        "targetInfo": {
+          "targetId": "EAE23732A3C6B73BAD27702215121661",
+          "type": "worker",
+          "title": "http://127.0.0.1:40143/worker.js",
+          "url": "http://127.0.0.1:40143/worker.js",
+          "attached": false,
+          "parentId": "8BDE309570E339C26713C9E5356899E1",
+          "canAccessOpener": false,
+          "parentFrameId": "8BDE309570E339C26713C9E5356899E1",
+          "browserContextId": "CC30736CCC85CBC6A80CA20E30CCD4F9"
+        }
+      }
+    },
+    {
+      "kind": "targetDestroyed",
+      "epochMs": 1791642846009,
+      "value": {
+        "targetId": "EAE23732A3C6B73BAD27702215121661"
+      }
+    }
+  ]
+}

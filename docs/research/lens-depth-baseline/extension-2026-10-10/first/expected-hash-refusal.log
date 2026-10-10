@@ -9,4 +9,6 @@ Traceback (most recent call last):
            ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/workspace/scratch/dea0b0842cca/projects-monorepo/docs/research/lens-depth-baseline/evaluate.py", line 23, in verified
     raise ValueError(f"Checksum mismatch: {Path(path).name}")
-ValueError: Checksum mismatch: changed-frozen-street.json
+ValueError: Checksum mismatch: frozen-street.json
+
+exitCode=1; noReceipt=True; noPreview=True
