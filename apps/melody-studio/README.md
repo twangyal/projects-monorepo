@@ -56,6 +56,16 @@ Complete projects, the saved composition library, duplication, Undo/Redo and rel
 
 This is finite mono echo, not reverb, stereo delay, live-input processing, mixer routing or musician-quality acceptance. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
 
+### Fade a track over song time
+
+Enable **volume ramp**, set **Ramp start beat** and **Ramp end beat**, and choose start/end levels from 0–1. Beats start at 1 and accept fractions through 513 (the end of the 512-beat note timeline). The end must be after the start. Choose **Apply volume ramp** for one undoable, autosaved edit. The level changes linearly between the bounds and holds its start/end values outside them, multiplying the track's ordinary volume. This fades sustained notes, release and echo tails together; it does not change note velocities or captured audio. Use 0→1 for a fade-in and 1→0 for a fade-out.
+
+Drafts do not affect playback or files until Apply. Invalid or blank values remain editable; switching tracks retains drafts. **Discard volume ramp edits** restores the selected track's committed settings. Finish unrelated drafts, suggestions and piano-roll gestures first. Disable Enable and Apply to remove automation and return to constant volume.
+
+Applied ramps survive complete backups, saved compositions, duplication, Undo/Redo and reload. Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share the automated renderer; cropped sections retain the song-time gain. Continuation audition retains that gain when shifting its selected ending to the start. MIDI omits this custom automation. Earlier projects retain identical PCM, and peak/frame limits stay active. A ramp does not extend the song or its existing effect tails. Section note transformations move notes while leaving this song-time ramp anchored to its entered beats.
+
+This is one linear volume ramp per track, without multiple automation points, curve editing, effect automation or mixer routing. Synthetic Chromium audio/export checks establish the described behavior, not musician-quality or physical listening evaluation. See [volume-ramp verification](docs/2026-10-10-volume-ramp.md). Melody remains ACTIVE toward the full DAW vision.
+
 ## Audition an arrangement section
 
 Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.
