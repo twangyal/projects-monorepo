@@ -1,0 +1,78 @@
+{
+  "issue": 169,
+  "baseCommit": "770904abbfab19b78909f4314f59740e0c586c97",
+  "verifiedAt": "2026-10-10T09:07:47Z",
+  "environment": {
+    "node": "24.19.0",
+    "chromium": "153.0.8010.0",
+    "localFlags": [
+      "--no-zygote",
+      "--in-process-gpu",
+      "--disable-gpu",
+      "--disable-software-rasterizer",
+      "--font-render-hinting=none"
+    ]
+  },
+  "local": {
+    "check": {
+      "command": "npm run check",
+      "exitCode": 0,
+      "units": 73,
+      "lint": "pass",
+      "typecheck": "pass",
+      "build": "pass"
+    },
+    "browser": {
+      "command": "CHROMIUM_PATH=/tmp/lens-chromium-wrapper npm run test:browser",
+      "exitCode": 0,
+      "passed": 69,
+      "elapsed": "2.4m"
+    }
+  },
+  "coverage": [
+    "Independent pixel-center rectangle, concave and self-crossing polygons",
+    "Fractional reversed-boundary regression",
+    "1280x1280 original photo and all 1638400 labels; 2048-point polygon",
+    "Actual native masks, complete photo/settings retention, one undo/redo, saved reload",
+    "Escape and explicit cancellation preserve raw fields and redo",
+    "390px controls inspected without horizontal overflow",
+    "Actual manual-perspective PNG independently decoded and compared with scalar oracle within one RGBA level"
+  ],
+  "failuresAndCorrections": [
+    {
+      "problem": "Wrapped tool-selector label did not expose exact accessible name",
+      "correction": "Separate associated label and select id"
+    },
+    {
+      "problem": "Fixture used unsupported Target focal length (mm) label",
+      "correction": "Existing actual Target focal length label; native keyboard cancellation retained"
+    },
+    {
+      "problem": "Original triangle fixture puts a pixel center exactly on fractional sloped boundary; independently ordered arithmetic disagreed",
+      "correction": "Observed delivered native coordinates matched requested points; moved fixture off numerical tie, retaining every pixel assertion"
+    },
+    {
+      "problem": "Reviewer found actual reversal-dependent boundary at pixel (11,15), polygon [(16.3,22.9),(8.2,0.5),(6.7,8.1)]",
+      "originalCrossingForward": 11.5,
+      "originalCrossingReverse": 11.500000000000002,
+      "correction": "New regression failed before canonical lower-y-to-upper-y crossing arithmetic and passes after it"
+    }
+  ],
+  "review": {
+    "criticalOrImportantRemaining": 0,
+    "minor": "Pre-existing secondary-pointer cancellation can discard an unfinished primary gesture; no committed data loss."
+  },
+  "ci": {
+    "status": "pending publication; exact-head result will be recorded in issue169"
+  },
+  "limitations": [
+    "Manual depth only; no learned depth, generated fill or calibrated camera acceptance",
+    "Desktop native Chromium evidence; not physical touch-device acceptance",
+    "Maximum geometry tested without general latency/peak-memory promise",
+    "Earlier process full-gate completion and temporary logs unavailable; fresh full gate replaces no inferred result"
+  ],
+  "logs": {
+    "2026-10-10-regions-check.log": "9aa259e2ea40f52d77255185e0a03f9a9e098474a4d441baebde9cb0f2277664",
+    "2026-10-10-regions-browser.log": "a597f52ace6cf562850bbe915d2a0834c5fefd63efc71a4662a42462f4af863f"
+  }
+}
