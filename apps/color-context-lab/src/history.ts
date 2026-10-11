@@ -1,9 +1,9 @@
-import { LIMITS, type EditState, type ImageAsset, type Project } from './types.ts';
+import { LIMITS, type ImageAsset, type Project } from './types.ts';
 import { validateProject } from './model.ts';
 
 interface Entry { json: string; bytes: number }
 function entry(project: Project): Entry {
-  const state: EditState = { title: project.title, settings: project.settings };
+  const state: Pick<Project, 'title' | 'settings' | 'variants'> = { title: project.title, settings: project.settings, ...(project.variants ? {variants: project.variants} : {}) };
   const json = JSON.stringify(state);
   return { json, bytes: new TextEncoder().encode(json).length };
 }
@@ -14,9 +14,9 @@ export class History {
   private index = 0;
   constructor(project: Project) { this.reset(project); }
   get current(): Project {
-    const edit = JSON.parse(this.entries[this.index].json) as EditState;
+    const edit = JSON.parse(this.entries[this.index].json) as Pick<Project, 'title' | 'settings' | 'variants'>;
     return { schemaVersion: 1, id: this.id, title: edit.title,
-      image: { ...this.image, source: { ...this.image.source } }, settings: edit.settings };
+      image: { ...this.image, source: { ...this.image.source } }, settings: edit.settings, ...(edit.variants ? {variants: edit.variants} : {}) };
   }
   get canUndo(): boolean { return this.index > 0; }
   get canRedo(): boolean { return this.index < this.entries.length - 1; }

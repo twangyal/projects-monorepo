@@ -35,6 +35,12 @@ Unsent fields remain separate from applied settings. Apply commits one reversibl
 
 Surround width is 0–128 pixels; checker cells are 4–128 pixels. A zero-width surround changes no pixels. Colors are explicit six-digit RGB values. The maximum output is 976 × 976 pixels.
 
+## Keep surround alternatives
+
+Use **Keep applied surround** to retain up to 12 distinct named variants for the current artwork. A variant stores only surround settings; all variants share the same normalized RGBA image. Restore applies that surround as one reversible edit, keeping the study title and other alternatives. Remove is reversible with Undo. Apply or discard unsent settings before using these controls. Typing a variant name retires older pending imports or recovery loads.
+
+Variants are included in autosave and complete project JSON backups as an optional schema-1 `variants` field. Legacy projects retain their original field shape. Result PNG and comparison report downloads describe the currently applied surround; restore a named alternative first to export it. The name being typed is an uncommitted label and is not included in backups. This collection does not measure human perception or establish protection efficacy.
+
 ## Read the measurements
 
 **Artwork pixels unchanged** refers to an exact RGBA comparison within the retained image rectangle. It does not mean the entire framed output is unchanged or that people perceive it identically.

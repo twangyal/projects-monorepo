@@ -18,6 +18,8 @@ const imageFile = node<HTMLInputElement>('image-file'), projectFile = node<HTMLI
 const error = node<HTMLParagraphElement>('error'), previewStatus = node<HTMLParagraphElement>('preview-status'), saveStatus = node<HTMLParagraphElement>('save-status');
 const originalCanvas = node<HTMLCanvasElement>('original-canvas'), resultCanvas = node<HTMLCanvasElement>('result-canvas');
 const buttons = Object.fromEntries(['apply-changes','discard-changes','undo','redo','stop-job','download-source','download-result','download-project','download-report','retry-save','retry-load','raw-backup','continue-unsaved','save-current','clear-saved'].map(id => [id, node<HTMLButtonElement>(id)]));
+const variantName = node<HTMLInputElement>('variant-name'), keepVariant = node<HTMLButtonElement>('keep-variant');
+let variantListKey = '';
 const fields = [title, mode, border, colorA, colorB, cell];
 const store = new ProjectStore();
 let project: Project | null = null, history: History | null = null;
@@ -59,6 +61,9 @@ function fillFields(): void {
 }
 function enabled(): boolean { return !startup && memoryEnabled && !!project; }
 function updateControls(): void {
+  variantName.disabled = !enabled();
+  keepVariant.disabled = !enabled() || dirty || (project?.variants?.length ?? 0) >= LIMITS.variants;
+  displayVariants();
   for (const field of fields) field.disabled = !enabled(); imageFile.disabled = !enabled(); projectFile.disabled = !enabled();
   buttons['apply-changes'].disabled = !enabled(); buttons['discard-changes'].disabled = !enabled() || !dirty;
   buttons.undo.disabled = !enabled() || !history?.canUndo; buttons.redo.disabled = !enabled() || !history?.canRedo;
@@ -79,6 +84,44 @@ function updateControls(): void {
   }
   if (dirty && frameGeneration === generation) previewStatus.textContent = 'Applied settings preview — unsent changes are not shown';
 }
+function displayVariants(): void {
+  const variants = project?.variants ?? [], key = JSON.stringify(variants), list = node('variant-list');
+  if (key !== variantListKey) {
+    variantListKey = key; list.replaceChildren();
+    variants.forEach((variant, index) => {
+      const item = el('li'), label = el('strong', variant.name), swatch = el('span', '', 'variant-swatch');
+      swatch.style.background = variant.settings.colorA;
+      swatch.setAttribute('aria-hidden', 'true');
+      item.append(swatch, label, el('span', `${variant.settings.mode} · ${variant.settings.border}px · ${variant.settings.colorA}${variant.settings.mode === 'checker' ? ` / ${variant.settings.colorB} · cells ${variant.settings.cellSize}px` : ''}`, 'hint'));
+      const actions = el('div', '', 'button-row');
+      for (const action of ['Restore', 'Remove'] as const) {
+        const button = el('button', action); button.setAttribute('aria-label', `${action} ${variant.name}`);
+        button.onclick = () => changeVariant(action === 'Restore' ? 'restore' : 'remove', index);
+        actions.append(button);
+      }
+      item.append(actions); list.append(item);
+    });
+  }
+  for (const button of list.querySelectorAll('button')) button.disabled = !enabled() || dirty;
+  node('variant-status').textContent = variants.length ? `${variants.length} of ${LIMITS.variants} named surrounds kept.` : 'No named surrounds yet.';
+}
+function changeVariant(action: 'keep' | 'restore' | 'remove', index = -1): void {
+  if (!enabled() || dirty || !project || !history) return;
+  try {
+    const variants = project.variants ?? [];
+    if (action !== 'keep' && !variants[index]) return;
+    const next = validateProject(action === 'keep'
+      ? {...project, variants: [...variants, {name: variantName.value, settings: project.settings}]}
+      : action === 'restore' ? {...project, settings: variants[index]!.settings}
+      : {...project, variants: variants.filter((_, position) => position !== index)});
+    editorIntent();
+    const changed = history.commit(next); project = history.current;
+    if (changed) { generation++; untouchedDemo = false; scheduleSave(); }
+    if (action === 'keep') variantName.value = '';
+    if (action === 'remove') variantName.focus();
+    fillFields(); updateControls(); void renderPreview();
+  } catch (caught) { showError(`${caught instanceof Error ? caught.message : 'Variant change failed.'} Applied work and named surrounds were kept.`); }
+}
 function displayRaster(canvas: HTMLCanvasElement, raster: Raster): void { canvas.width = raster.width; canvas.height = raster.height; const context = canvas.getContext('2d'); if (!context) throw new Error('Canvas presentation is unavailable.'); const image = context.createImageData(raster.width, raster.height); image.data.set(raster.rgba); context.putImageData(image, 0, 0); }
 function displayComparison(comparison: Comparison): void {
   displayRaster(originalCanvas, comparison.baseline); displayRaster(resultCanvas, comparison.result);
@@ -95,6 +138,7 @@ async function renderPreview(): Promise<void> {
 function publish(candidate: Project, restored: boolean, demo = false): void {
   const validated = validateProject(candidate), nextHistory = new History(validated);
   cancelWork(); project = validated; history = nextHistory; generation++; intent++; untouchedDemo = demo; dirty = false; fillFields();
+  variantName.value = '';
   frameGeneration = -1; durableGeneration = restored ? generation : -1; updateControls(); void renderPreview();
 }
 function apply(): void {
@@ -181,13 +225,21 @@ async function importFile(file: File, png: boolean): Promise<void> {
     if (png) candidate = createProject(await normalize(file,{signal:op.abort.signal}));
     else { if (!file.size || file.size > LIMITS.projectBytes) throw new Error('Project size'); const bytes = await file.arrayBuffer(); if (!own(op)) return; candidate = parseProjectJson(new TextDecoder('utf-8',{fatal:true}).decode(bytes)); }
     if (!own(op)) return; candidate = validateProject(candidate);
-    if ((!untouchedDemo || dirty || protectedSave) && !confirm('Replace the current applied artwork and its undo history? Unsent fields will be discarded only if this complete replacement succeeds. Download the current project first if needed.')) { if(own(op))previewStatus.textContent='Replacement declined. Applied artwork and unsent fields were kept.'; return; }
+    if ((!untouchedDemo || dirty || variantName.value || protectedSave) && !confirm('Replace the current applied artwork and its undo history? Unsent fields will be discarded only if this complete replacement succeeds. Download the current project first if needed.')) { if(own(op))previewStatus.textContent='Replacement declined. Applied artwork and unsent fields were kept.'; return; }
     if (!own(op)) return; finish(op); publish(candidate,false); untouchedDemo = false; scheduleSave();
   } catch { if (own(op)) { previewStatus.textContent='No replacement published. Applied artwork and unsent fields were kept.'; showError(png ? 'PNG import rejected. Use an 8-bit RGB/RGBA noninterlaced PNG without animation or orientation metadata, within 8 MiB and source-size limits. Current artwork and drafts were kept.' : 'Project rejected in full. Check valid UTF-8, exact schema, raw RGBA and the 4 MiB limit. Current artwork and drafts were kept.'); } }
   finally { finish(op); }
 }
 form.addEventListener('input',()=>{if(!enabled())return;dirty=true;editorIntent();updateControls();});
 form.addEventListener('change',()=>{if(!enabled())return;dirty=true;editorIntent();updateControls();});
+variantName.addEventListener('input', () => {
+  if (!enabled()) return;
+  retirePendingLoad();
+  if (operation?.kind === 'Normalizing PNG' || operation?.kind === 'Reading complete project') {
+    intent++; cancelWork('Replacement stopped. Applied artwork and variant name were kept.');
+  }
+});
+keepVariant.onclick = () => changeVariant('keep');
 form.addEventListener('submit',event=>{event.preventDefault();apply();});
 buttons['discard-changes'].onclick = discard; buttons.undo.onclick = ()=>changeHistory(false); buttons.redo.onclick = ()=>changeHistory(true);
 buttons['stop-job'].onclick = ()=>cancelWork();

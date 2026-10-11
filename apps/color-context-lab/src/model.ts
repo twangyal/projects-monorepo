@@ -76,10 +76,27 @@ export function validateImageAsset(value: unknown): ImageAsset {
   return { id: uuid(fields.id), width, height, rgba: base64(fields.rgba, width * height * 4), source };
 }
 export function validateProject(value: unknown): Project {
-  const fields = object(value, ['schemaVersion', 'id', 'title', 'image', 'settings']);
+  const hasVariants = value !== null && typeof value === 'object' && Object.hasOwn(value, 'variants');
+  const fields = object(value, ['schemaVersion', 'id', 'title', 'image', 'settings', ...(hasVariants ? ['variants'] : [])]);
   requireValue(fields.schemaVersion === 1, 'Unsupported project schema version.');
   const project: Project = { schemaVersion: 1, id: uuid(fields.id), title: literal(fields.title, LIMITS.titleCharacters),
     image: validateImageAsset(fields.image), settings: validateSettings(fields.settings) };
+  if (hasVariants) {
+    const values = fields.variants;
+    requireValue(Array.isArray(values) && Object.getPrototypeOf(values) === Array.prototype && values.length <= LIMITS.variants, 'Keep at most 12 named surround variants.');
+    requireValue(Reflect.ownKeys(values).length === values.length + 1, 'Use ordinary complete variant arrays.');
+    const names = new Set<string>();
+    project.variants = [];
+    for (let index = 0; index < values.length; index++) {
+      const descriptor = Object.getOwnPropertyDescriptor(values, String(index));
+      requireValue(descriptor && descriptor.enumerable && 'value' in descriptor, 'Use ordinary variant data, not accessors or missing entries.');
+      const variant = object(descriptor.value, ['name', 'settings']);
+      const name = literal(variant.name, LIMITS.titleCharacters);
+      requireValue(!names.has(name.trim().toLocaleLowerCase('en-US')), 'Variant names must be distinct.');
+      names.add(name.trim().toLocaleLowerCase('en-US'));
+      project.variants.push({name, settings: validateSettings(variant.settings)});
+    }
+  }
   requireValue(encoder.encode(JSON.stringify(project)).length <= LIMITS.projectBytes, 'Project exceeds the 4 MiB backup limit.');
   return project;
 }

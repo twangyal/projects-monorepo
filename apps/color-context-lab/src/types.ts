@@ -2,7 +2,8 @@ export type SurroundMode = 'solid' | 'checker';
 export interface Settings { mode: SurroundMode; border: number; colorA: string; colorB: string; cellSize: number }
 export interface SourceInfo { fileName: string; format: 'png' | 'procedural'; width: number; height: number }
 export interface ImageAsset { id: string; width: number; height: number; rgba: string; source: SourceInfo }
-export interface Project { schemaVersion: 1; id: string; title: string; image: ImageAsset; settings: Settings }
+export interface SurroundVariant { name: string; settings: Settings }
+export interface Project { schemaVersion: 1; id: string; title: string; image: ImageAsset; settings: Settings; variants?: SurroundVariant[] }
 export interface EditState { title: string; settings: Settings }
 export interface Raster { width: number; height: number; rgba: Uint8ClampedArray }
 export interface Metrics {
@@ -17,7 +18,7 @@ export const LIMITS = Object.freeze({
   projectBytes: 4 * 1024 * 1024, jsonDepth: 16,
   border: 128, cellMin: 4, cellMax: 128, outputSide: 976,
   pngBytes: 4 * 1024 * 1024, reportBytes: 16 * 1024 * 1024,
-  historyStates: 30, historyBytes: 128 * 1024,
+  variants: 12, historyStates: 30, historyBytes: 128 * 1024,
   jobTimeoutMs: 30_000, storageTimeoutMs: 5_000, storageQueue: 32,
   titleCharacters: 80, fileNameCharacters: 240, experimentReportBytes: 512 * 1024,
 });

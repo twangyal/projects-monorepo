@@ -265,3 +265,36 @@ test('bounded malformed and unavailable experiment responses claim no outcome wh
     await expect(page.locator('#download-experiment')).toBeDisabled();await page.unroute('**/experiment-report.json');
   }
 });
+
+test('artists retain named surrounds, restore exact results, undo removal and reopen complete backups',async({page})=>{
+  await page.goto('/');await open(page);const original=await backup(page);
+  await page.getByLabel('Variant name',{exact:true}).fill('Neutral first');
+  await page.getByRole('button',{name:'Keep applied surround',exact:true}).click();
+  await page.locator('#color-a').fill('#ff0000');await apply(page);
+  await page.getByLabel('Variant name',{exact:true}).fill('Warm <study>');
+  await page.getByRole('button',{name:'Keep applied surround',exact:true}).click();
+  const retained=await backup(page);expect(retained.variants).toHaveLength(2);expect(retained.image).toEqual(original.image);
+  await page.locator('#border-size').fill('draft');
+  await expect(page.getByRole('button',{name:'Restore Neutral first',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Keep applied surround',exact:true})).toBeDisabled();
+  expect(await backup(page)).toEqual(retained);await page.locator('#discard-changes').click();
+  await page.getByRole('button',{name:'Restore Neutral first',exact:true}).click();
+  await expect(page.locator('#preview-status')).toHaveText('Applied settings preview ready.');
+  expectPng(await download(page,'#download-result'),scalar(original).result);
+  await page.getByRole('button',{name:'Remove Warm <study>',exact:true}).click();
+  expect((await backup(page)).variants).toHaveLength(1);await page.locator('#undo').click();
+  expect((await backup(page)).variants).toHaveLength(2);await saved(page);await page.reload();
+  await expect(page.getByRole('button',{name:'Restore Warm <study>',exact:true})).toBeVisible();
+  await open(page,retained);expect(await backup(page)).toEqual(retained);
+  await page.getByLabel('Variant name',{exact:true}).fill('warm <study>');
+  await page.getByRole('button',{name:'Keep applied surround',exact:true}).click();
+  await expect(page.locator('#error')).toContainText('distinct');expect(await backup(page)).toEqual(retained);
+});
+
+test('typing a variant name retires an older pending project replacement without changing applied settings',async({page})=>{
+  await installNative(page);await page.goto('/');await open(page);const original=await backup(page);await gate(page,'file');
+  await page.locator('#project-file').setInputFiles({name:'held-color.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...rawProject(),title:'Late replacement'}))});await held(page,'file');
+  await page.getByLabel('Variant name',{exact:true}).fill('Keep this name');await release(page);
+  expect(await backup(page)).toEqual(original);await expect(page.getByLabel('Variant name',{exact:true})).toHaveValue('Keep this name');
+  await expect(page.locator('#download-result')).toBeEnabled();
+});
