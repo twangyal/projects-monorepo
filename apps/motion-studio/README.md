@@ -63,6 +63,8 @@ Apply or explicitly discard raw appearance values before changing selection, fra
 
 **Duplicate selected stroke** inserts an independent copy immediately after the selected path in paint order and selects the copy. Move it with the existing drag/arrow controls. **Mirror stroke horizontally/vertically** reflects local coordinates about that path's own bounds; layer rotation/scale are unchanged, so local horizontal need not be screen horizontal. Point order, width and color remain intact. These edits change the active held drawing only and each changed action is one Undo/Redo step. Unchanged mirrors add no history. Appearance and other editor drafts guard these actions; duplication refuses atomically at the existing total stroke/point/file limits. Saved projects and rendered exports contain the committed result.
 
+**Grow stroke ×2**, **Shrink stroke ×0.5**, and clockwise/counterclockwise **90° rotation** reshape the selected retained path around the center of its own local coordinate bounds. Brush width and color stay fixed; layer poses, drawing starts and other artwork stay intact. Local rotations follow the drawing axes even when the layer itself is rotated. Each changed action is one Undo/Redo step and saves normally. Single-point paths are unchanged and add no history; invalid targets, coordinate overflow or file capacity refuse the entire edit. Apply or discard pending appearance/pose edits before using these controls. This is deterministic authored geometry, not learned shape generation.
+
 This tool edits complete strokes. It does not reshape individual points, cut paths with an eraser, infer objects or generate artwork. The existing project format, file limits and saved-copy protection continue to apply.
 
 ## Drawings and pose keyframes

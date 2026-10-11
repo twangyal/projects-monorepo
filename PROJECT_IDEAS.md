@@ -96,6 +96,8 @@ Milestone #127: editor and private-viewer lossless PNG frame ZIP export is imple
 
 Milestone #178: retained pose-key retiming moves exact poses and outgoing easing on drawing/image layers without recreating values or shifting drawing exposure starts. Explicit frame entry, occupied/first/file-limit refusal, one-edit history/recovery and pre-blur draft protection support authored animation timing. Motion remains ACTIVE; learned animation and live synchronization remain unfinished.
 
+Milestone #179: selected retained strokes can grow/shrink and quarter-turn about their local bounds center while keeping brush appearance, layer poses, exposures and other artwork intact. Atomic coordinate/file validation, raw-draft guards, no-op Redo preservation, independent exported pixels and recovery checks support usable authored shape reuse. Motion remains ACTIVE; learned animation and live synchronization remain unfinished.
+
 ## 12. Outfit rating based on your taste
 
 Path: `apps/style-studio`

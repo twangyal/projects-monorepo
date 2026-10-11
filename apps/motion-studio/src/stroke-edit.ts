@@ -108,3 +108,21 @@ export function mirrorStroke(input: Project, target: StrokeTarget, axis: 'horizo
   if (low !== high) stroke.points = stroke.points.map(p => ({ ...p, [property]: low + high - p[property] }));
   return validateProject(project);
 }
+
+/** Transform path geometry around its local bounds center, leaving brush width fixed. */
+export function transformStroke(input: Project, target: StrokeTarget, action: 'grow' | 'shrink' | 'clockwise' | 'counterclockwise'): Project {
+  if (!['grow','shrink','clockwise','counterclockwise'].includes(action)) throw new Error('Choose stroke growth, shrinkage or a quarter turn.');
+  const { project, stroke } = select(input, target);
+  const xs = stroke.points.map(p => p.x), ys = stroke.points.map(p => p.y);
+  const lowX = Math.min(...xs), highX = Math.max(...xs), lowY = Math.min(...ys), highY = Math.max(...ys);
+  if (lowX === highX && lowY === highY) return project;
+  const cx = (lowX + highX) / 2, cy = (lowY + highY) / 2;
+  stroke.points = stroke.points.map(p => {
+    const dx = p.x - cx, dy = p.y - cy;
+    if (action === 'clockwise') return { x: cx - dy, y: cy + dx };
+    if (action === 'counterclockwise') return { x: cx + dy, y: cy - dx };
+    const factor = action === 'grow' ? 2 : .5;
+    return { x: cx + dx * factor, y: cy + dy * factor };
+  });
+  return validateProject(project);
+}
