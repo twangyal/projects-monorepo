@@ -1,6 +1,7 @@
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition, Note } from './types.ts';
 import { validateComposition } from './model.ts';
+import { volumeRampLevel } from './volume-ramp.ts';
 
 /** Joint transition: semitone interval, next duration ticks, preceding rest ticks. */
 export type JointToken = [interval: number, durationTicks: number, restTicks: number];
@@ -278,8 +279,14 @@ export function auditionComposition(proposal: ContinuationProposal): Composition
   const newNotes = source.notes.slice(-checked.length);
   const shift = checked.selection.startTick / 4;
   const notes = [...checked.selection.notes, ...newNotes].map(note => ({ ...note, start: note.start - shift }));
+  // Audition starts at the selected ending, but must retain its song-time gain.
+  const ramp = source.volumeRamp;
+  const volumeRamp = ramp ? ramp.end <= shift
+    ? {start:0,end:1,from:ramp.to,to:ramp.to}
+    : {...ramp,start:Math.max(0,ramp.start-shift),end:ramp.end-shift,from:volumeRampLevel(ramp,shift)}
+    : undefined;
   return validateComposition({
     version: 1, title: checked.base.title, tempo: checked.base.tempo,
-    tracks: [{ ...source, notes }],
+    tracks: [{ ...source, notes, ...(volumeRamp ? {volumeRamp} : {}) }],
   });
 }
