@@ -4,7 +4,7 @@ A private photo workspace for exploring focal framing and manually authored dept
 
 ## Run locally
 
-Use Node.js 22.18 or newer (CI uses Node 24) and a current desktop Chromium browser with workers, `createImageBitmap`, OffscreenCanvas and IndexedDB.
+Use Node.js 22.18 or newer (CI uses Node 24) and a current desktop Chromium browser with workers, `createImageBitmap`, OffscreenCanvas, IndexedDB and `DecompressionStream`.
 
 ```sh
 cd apps/lens-studio
@@ -31,6 +31,22 @@ The application has no backend, account, model download or API key. Browser stor
 5. Use **Undo**, **Redo** and **Reset projection** to compare choices. Export the result with **Export PNG** and retain editable work with **Download project**. **Import project** reopens that backup.
 
 The original and result stay at the same dimensions and aspect ratio. A checkerboard represents transparency. Original transparency is retained; missing field of view and newly uncovered regions also remain transparent. No content is generated to fill them.
+
+## Edit a depth mask in another image editor
+
+**Download depth mask** exports only the committed labels, at normalized source dimensions. It contains no photo, checkerboard or overlay. Edit it with hard pixel edges and these opaque RGB colors:
+
+| Plane | Color | RGB |
+| --- | --- | --- |
+| Near | `#db714d` | 219, 113, 77 |
+| Subject | `#699f90` | 105, 159, 144 |
+| Far | `#7684c8` | 118, 132, 200 |
+
+Save a static **8-bit PNG**, at exactly the source width and height, up to 7 MiB. Disable antialiasing, feathering, transparency and color-profile conversion. A grayscale depth image is not this label format. Lens rejects unsupported precision, rotation, dimension changes, corrupt compressed streams and decoded pixels outside the opaque palette; it does not resize, threshold or guess depth labels.
+
+Choose **Import depth mask** to review its image, plane counts and changed-pixel count. Nothing is committed until **Apply depth mask**. Apply replaces the entire mask as one Undo/Redo edit, preserves the photo and applied settings, and retains unapplied title/numeric fields. An identical mask preserves Redo. **Discard depth mask** or Escape keeps the current study. New input, painting, editor actions or page departure retire a pending read or review. An unchanged raw field blurring while you click Apply does not discard the reviewed mask.
+
+Decoding uses a separate worker with owned cancellation and a 30-second deadline. A rejected or canceled mask preserves current work. Applied labels use the existing autosave, conflict protection and complete project backups. A mask PNG contains no source-photo identity: verify that its dimensions and content belong to this photo before applying. This exchange supplies editable manual geometry; it does not enable a learned model or establish scene-depth quality. See [verification and retained failures](docs/2026-10-11-mask-exchange/README.md).
 
 ## What the simulation means
 
@@ -95,7 +111,7 @@ npm run test:browser
 
 With an existing system Chromium, use `CHROMIUM_PATH=/usr/bin/chromium npm run test:browser`. The production browser suite reserves port 4261 (`LENS_TEST_PORT` selects another unused port) and builds its image, worker and storage harnesses only for tests. Normal production builds include only the application.
 
-Tests cover strict project/mask validation, bounded history, actual source image formats and orientations, worker cancellation, IndexedDB recovery and the complete editor/export/reopen flow. A separately derived scalar renderer checks focal geometry, subject anchoring, occlusion, alpha edges and missing coverage. An independent PNG decoder checks exported bytes, including colors at low alpha. See `docs/runtime-verification.json` for measured runtime evidence. The local unit gate has 79 tests, including 24 independent numerical cases; the current browser suite has 77 cases, including 48 source-orientation combinations inside the image test. The complete remote CI gate passed all 30 browser cases together at commit `c63ac79`; the independent numerical and source-orientation checks passed as well.
+Tests cover strict project/mask validation, bounded history, actual source image formats and orientations, worker cancellation, IndexedDB recovery and the complete editor/export/reopen flow. A separately derived scalar renderer checks focal geometry, subject anchoring, occlusion, alpha edges and missing coverage. An independent PNG decoder checks exported bytes, including colors at low alpha. See `docs/runtime-verification.json` for measured runtime evidence. The local unit gate has 91 tests, including 24 independent numerical cases; the current browser suite has 86 cases, including 48 source-orientation combinations inside the image test. The complete remote CI gate passed all 30 browser cases together at commit `c63ac79`; the independent numerical and source-orientation checks passed as well.
 
 ## Project status
 

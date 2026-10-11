@@ -1,0 +1,112 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test tests/browser/depth-mask.spec.ts
+
+[WebServer] (node:32) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:53) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:77) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:90) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 7 tests using 1 worker
+
+(node:108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/depth-mask.spec.ts:12:1 › mask review requires explicit Apply and actual labels survive undo redo PNG and reload (1.7s)
+  ✓  2 tests/browser/depth-mask.spec.ts:17:1 › invalid dimensions alpha malformed PNG and discarded reviews preserve complete work and redo (1.3s)
+  ✓  3 tests/browser/depth-mask.spec.ts:21:1 › same mask Apply preserves redo and any newer input retires a reviewed proposal (1.1s)
+  ✓  4 tests/browser/depth-mask.spec.ts:28:1 › native owned mask worker retires on cancel newer input and pagehide without late adoption (757ms)
+  ✘  5 tests/browser/depth-mask.spec.ts:36:1 › maximum full mask preview opaque PNG and persisted study retain all 1638400 source labels (29.3s)
+(node:267) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  6 tests/browser/depth-mask.spec.ts:43:1 › native permissive decoder cannot admit PNG with corrupt compressed stream checksum (6.0s)
+(node:344) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  7 tests/browser/depth-mask.spec.ts:51:1 › native precision conversion cannot hide nonopaque or off-palette 16-bit source samples (1.3s)
+
+
+  1) tests/browser/depth-mask.spec.ts:36:1 › maximum full mask preview opaque PNG and persisted study retain all 1638400 source labels 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#render-status')
+    Expected substring: "Projection ready"
+    Received string:    "Rendering projection…"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#render-status') with timeout 5000ms
+      - waiting for locator('#render-status')
+        2 × locator resolved to <p class="hint" id="render-status"></p>
+          - unexpected value ""
+        3 × locator resolved to <p class="hint" id="render-status">Rendering projection…</p>
+          - unexpected value "Rendering projection…"
+
+
+      37 |  await page.goto('/');await expect(page.locator('#save-status')).not.toContainText('Checking local');const source=new Uint8ClampedArray(1280*1280*4).fill(255);await page.getByLabel('Import photo',{exact:true}).setInputFiles({name:'maximum.png',mimeType:'image/png',buffer:independentPng({width:1280,height:1280,rgba:source})});await expect(page.locator('#render-status')).toContainText('Projection ready',{timeout:25000});const original=await backup(page);
+      38 |  await page.getByLabel('Import depth mask',{exact:true}).setInputFiles(mask(1280,1280));await expect(page.locator('#mask-review')).toContainText('1092267 pixels change',{timeout:25000});await page.getByRole('button',{name:'Apply depth mask',exact:true}).click();const next=await backup(page),labels=Buffer.from(next.depth.labels,'base64');expect(labels.length).toBe(1638400);for(let i=0;i<labels.length;i++)if(labels[i]!==i%3)throw Error(`Wrong label ${i}`);expect(next).toEqual({...original,depth:next.depth});const png=PNG.sync.read(await bytes(page,'Download depth mask'));expect(png.width).toBe(1280);expect(png.height).toBe(1280);for(let i=0;i<labels.length;i++)for(let channel=0;channel<4;channel++)if(png.data[i*4+channel]!==palette[i%3][channel])throw Error(`Wrong exported pixel ${i}`);
+    > 39 |  await expect(page.locator('#save-status')).toContainText('Saved locally');await page.reload();await expect(page.locator('#render-status')).toContainText('Projection ready');expect(await backup(page)).toEqual(next);
+         |                                                                                                                                             ^
+      40 |  console.log(JSON.stringify({maskExchangeMaximum:{labels:labels.length,pngBytes:png.data.length,projectBytes:Buffer.byteLength(JSON.stringify(next)),sourceUnchanged:true}}));
+      41 | });
+      42 | function corruptStream(file:ReturnType<typeof mask>){const bytes=Buffer.from(file.buffer);let offset=8;while(offset<bytes.length){const n=bytes.readUInt32BE(offset),type=bytes.toString('ascii',offset+4,offset+8);if(type==='IDAT'){bytes[offset+8+n-1]^=1;let crc=0xffffffff;for(const v of bytes.subarray(offset+4,offset+8+n)){crc^=v;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}bytes.writeUInt32BE((crc^0xffffffff)>>>0,offset+8+n);return {...file,buffer:bytes};}offset+=n+12;}throw Error('No IDAT');}
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/depth-mask.spec.ts:39:141
+
+    Error Context: test-results/depth-mask-maximum-full-ma-41621-n-all-1638400-source-labels/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/depth-mask-maximum-full-ma-41621-n-all-1638400-source-labels/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/depth-mask-maximum-full-ma-41621-n-all-1638400-source-labels/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/browser/depth-mask.spec.ts:43:1 › native permissive decoder cannot admit PNG with corrupt compressed stream checksum 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('#render-status')
+    Expected substring: "Projection ready"
+    Received string:    "Projection failed · previous result kept"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" locator('#render-status') with timeout 5000ms
+      - waiting for locator('#render-status')
+        2 × locator resolved to <p class="hint" id="render-status">Rendering projection…</p>
+          - unexpected value "Rendering projection…"
+        11 × locator resolved to <p class="hint" id="render-status">Projection failed · previous result kept</p>
+           - unexpected value "Projection failed · previous result kept"
+
+
+       7 | const palette=[[219,113,77,255],[105,159,144,255],[118,132,200,255]];
+       8 | function mask(w=6,h=4,invalid=false){const rgba=new Uint8ClampedArray(w*h*4);for(let i=0;i<w*h;i++)rgba.set(palette[i%3],i*4);if(invalid)rgba[3]=254;return {name:'edited-mask.png',mimeType:'image/png',buffer:independentPng({width:w,height:h,rgba})};}
+    >  9 | async function setup(page:Page){await page.goto('/');await expect(page.locator('#save-status')).not.toContainText('Checking local');const rgba=new Uint8ClampedArray(6*4*4).fill(255);await page.getByLabel('Import photo',{exact:true}).setInputFiles({name:'source.png',mimeType:'image/png',buffer:independentPng({width:6,height:4,rgba})});await expect(page.locator('#render-status')).toContainText('Projection ready');}
+         |                                                                                                                                                                                                                                                                                                                                                                                              ^
+      10 | async function bytes(page:Page,name:string){const pending=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();return await readFile((await (await pending).path())!);}
+      11 | async function backup(page:Page):Promise<Project>{return JSON.parse((await bytes(page,'Download project')).toString());}
+      12 | test('mask review requires explicit Apply and actual labels survive undo redo PNG and reload',async({page})=>{
+        at setup (/workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/depth-mask.spec.ts:9:382)
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/depth-mask.spec.ts:44:2
+
+    Error Context: test-results/depth-mask-native-permissi-4575c--compressed-stream-checksum/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/depth-mask-native-permissi-4575c--compressed-stream-checksum/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/depth-mask-native-permissi-4575c--compressed-stream-checksum/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests/browser/depth-mask.spec.ts:36:1 › maximum full mask preview opaque PNG and persisted study retain all 1638400 source labels 
+    tests/browser/depth-mask.spec.ts:43:1 › native permissive decoder cannot admit PNG with corrupt compressed stream checksum 
+  5 passed (52.5s)

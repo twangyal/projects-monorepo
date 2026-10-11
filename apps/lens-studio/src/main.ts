@@ -1,3 +1,5 @@
+import {maskPng,maskRaster,reviewMask} from './depth-mask.ts';
+import {readMask} from './depth-mask-job.ts';
 import {prepareColorRegion,type ColorRegion} from './color-regions.ts';
 import {assignRegion,type RegionTool} from './regions.ts';
 import './style.css';
@@ -67,6 +69,14 @@ const brushInput = field(paintControls, 'brushRadius', 'Brush size', 'number'); 
 const toleranceInput=field(paintControls,'colorTolerance','Color tolerance','number');toleranceInput.value='16';toleranceInput.min='0';toleranceInput.max='255';toleranceInput.step='1';toleranceInput.addEventListener('input',()=>{if(gesture?.tool==='color')cancelGesture();});
 const fillButton = button('Fill plane', () => { if (project && !exportLocked) { try { commit(fillMask(project, selectedPlane)); } catch { announce('Could not assign this depth plane.', true); } } }); paintControls.append(fillButton);
 const overlayLabel = el('label', '', 'checkbox'); const overlayInput = el('input'); overlayInput.type = 'checkbox'; overlayInput.checked = false; overlayLabel.append(overlayInput, el('span', 'Show depth overlay')); overlayInput.addEventListener('change', drawSource); paintPanel.append(paintControls, overlayLabel, el('p', 'Drag a rectangle or trace a polygon outline and release to close it. Escape cancels. Each region is one undoable edit; brush size applies only to Brush. Connected color previews the clicked four-connected region; tolerance is the maximum RGBA channel difference from that pixel (0–255), not inferred depth.', 'hint'), el('p', 'Manual depth is your assignment, not inferred scene depth.', 'hint'), el('p', 'Near / subject / far are camera-parallel planes. An all-subject mask leaves perspective unchanged apart from framing shift.', 'hint')); controls.append(paintPanel);
+const maskPanel=panel('Depth mask exchange','Edit the complete mask locally in another image editor. Use an 8-bit PNG up to 7 MiB. Keep exact source dimensions, opaque colors and hard pixel edges.');
+maskPanel.append(el('p','Near #db714d · Subject #699f90 · Far #7684c8. Use PNG; disable antialiasing, feathering and color-profile conversion. This is manual assignment, not estimated depth.','hint'));
+const maskInput=field(maskPanel,'mask-import','Import depth mask','file');maskInput.accept='.png,image/png';
+const maskDownload=button('Download depth mask',()=>{if(!project||exportLocked)return;try{download(new Blob([new Uint8Array(maskPng(project))],{type:'image/png'}),'lens-studio-depth-mask.png');announce('Depth mask downloaded at source dimensions with opaque palette colors.');}catch{announce('Could not export depth mask; study kept.',true);}});maskPanel.append(maskDownload);
+const maskReview=el('div');maskReview.id='mask-review';maskReview.hidden=true;const maskSummary=el('p','','hint');maskSummary.setAttribute('role','status');
+const maskCanvas=el('canvas');maskCanvas.style.imageRendering='pixelated';maskCanvas.setAttribute('aria-label','Proposed depth mask; near orange, subject green and far blue');
+const maskApply=el('button','Apply depth mask','primary');maskApply.type='button';maskApply.addEventListener('click',()=>{const review=maskProposal;if(!review||!project||exportLocked||gesture||review.generation!==generation||review.lifetime!==lifetime||review.intent!==editorIntent)return;commit(review.project);announce(review.changed?'Depth mask applied as one undoable edit. Photo, settings and unapplied fields were kept.':'Mask is identical; history was kept.');});
+const maskDiscard=button('Discard depth mask',()=>announce('Depth mask review discarded; committed study kept.'));maskReview.append(maskSummary,maskCanvas,maskApply,maskDiscard);maskPanel.append(maskReview);controls.append(maskPanel);
 const comparisonHeader = el('div', '', 'comparison-heading'); const comparisonTitle = el('h2', 'Source & result'); const projectionSummary = el('p', '', 'hint'); projectionSummary.id = 'projection-summary'; comparisonHeader.append(comparisonTitle, projectionSummary); comparison.append(comparisonHeader);
 const frames = el('div', '', 'frames'); const sourceFigure = el('figure'); const resultFigure = el('figure'); const sourceCaption = el('figcaption', 'Original · paint depth here'); const resultCaption = el('figcaption', 'Projected result');
 const sourceCanvas = el('canvas'); sourceCanvas.id = 'source-canvas'; sourceCanvas.setAttribute('aria-label', 'Original photo; paint depth assignments here'); sourceCanvas.tabIndex = 0;
@@ -93,6 +103,8 @@ storagePanel.append(saveStatus, drainStatus, retryButton, reloadButton, replaceB
 comparison.append(missing, renderStatus, el('p', 'Original transparency is retained; uncovered regions stay transparent. No content was generated.', 'notice'), el('p', 'This is a declared pinhole projection study. It does not recover hidden detail, infer depth, add optical blur or calibrate a real camera.', 'hint'));
 main.append(el('footer', 'Local by design · one photo · no account · download a project backup for recovery outside this browser.'));
 
+let maskProposal: {project:Project;changed:number;generation:number;lifetime:number;intent:number;fields:Map<HTMLInputElement,string>}|null=null;
+function retireMaskReview():void{maskProposal=null;maskReview.hidden=true;maskCanvas.width=maskCanvas.height=0;}
 let frameGeneration = -1; let sourceDrawPending = false; let previewBusy = false;
 let project: Project | null = null; let history: History | null = null; let source: Raster | null = null; let frame: Rendered | null = null;
 let generation = 0; let operationSequence = 0; let operation: { id: number; kind: 'stage' | 'export'; controller: AbortController } | null = null;
@@ -143,19 +155,20 @@ function newOwner(): StorageOwner {
   return { controller: new AbortController(), intent: editorIntent, generation, lifetime, cancelled: false };
 }
 function retireIntent(): void {
+  retireMaskReview();
   editorIntent++;
   initialOwner?.controller.abort(); recoveryOwner?.controller.abort();
   invalidateStage();
 }
 app.addEventListener('input', retireIntent, true);
-app.addEventListener('change', retireIntent, true);
+app.addEventListener('change', event=>{const target=event.target;if(target instanceof HTMLInputElement&&maskProposal?.fields.get(target)===target.value)return;retireIntent();}, true);
 app.addEventListener('submit', retireIntent, true);
 function syncModes(): void { fixedRadio.checked = project?.settings.mode !== 'perspective'; perspectiveRadio.checked = project?.settings.mode === 'perspective'; perspectiveRadio.disabled = exportLocked || !ackInput.checked; }
 function syncNumeric(force = false): void { if (!project) return; for (const [name, input] of numeric) if (force || !numericDirty.has(name)) input.value = String(project.settings[name]); }
 function refreshControls(): void {
   workspace.hidden = !project; empty.hidden = !!project; syncModes(); syncNumeric(); if (project && !titleDirty) titleInput.value = project.title;
   undoButton.disabled = exportLocked || !!gesture || !history?.canUndo; redoButton.disabled = exportLocked || !!gesture || !history?.canRedo;
-  for (const n of [photoInput, projectInput, demoButton, resetButton, renderButton, pngButton, jsonButton, titleInput, saveTitle, fixedRadio, ackInput, fillButton, brushInput, toolInput, toleranceInput, overlayInput, applyButton, ...numeric.values()]) n.disabled = exportLocked;
+  for (const n of [maskInput, maskDownload, maskApply, photoInput, projectInput, demoButton, resetButton, renderButton, pngButton, jsonButton, titleInput, saveTitle, fixedRadio, ackInput, fillButton, brushInput, toolInput, toleranceInput, overlayInput, applyButton, ...numeric.values()]) n.disabled = exportLocked;
   perspectiveRadio.disabled = exportLocked || !ackInput.checked; for (const n of paintControls.querySelectorAll<HTMLInputElement>('input[type=radio]')) n.disabled = exportLocked;
   sourceZoom.disabled=exportLocked||!project;for(const pan of panButtons)pan.disabled=exportLocked||!project||sourceZoom.value==='1';cancelDepth.disabled=exportLocked||!gesture;toleranceInput.parentElement!.hidden=toolInput.value!=='color';
   cancelButton.hidden = !operation && !previewBusy && !initialPending && !recoveryOwner; refreshStorageControls();
@@ -243,6 +256,18 @@ async function stage(task: (signal: AbortSignal) => Promise<Project>, descriptio
 async function stageDemo(): Promise<void> { await stage((signal) => createDemoProject(signal), 'Building the original authored three-plane demo…'); }
 photoInput.addEventListener('change', () => { const file = photoInput.files?.[0]; photoInput.value = ''; if (file) void stage(async (signal) => createProject(await normalizePhoto(file, signal)), 'Loading and normalizing the photo…'); });
 projectInput.addEventListener('change', () => { const file = projectInput.files?.[0]; projectInput.value = ''; if (file) void stage(async (signal) => { if (file.size > LIMITS.projectBytes || !file.size) throw new Error('Project too large'); const text = await file.text(); if (signal.aborted) throw new DOMException('Canceled', 'AbortError'); const next = parseProject(text); await validateProjectImages(next, signal); return next; }, 'Validating project and photo…'); });
+maskInput.addEventListener('change',()=>{const file=maskInput.files?.[0];maskInput.value='';if(file)void stageMask(file);});
+async function stageMask(file:File):Promise<void>{
+ retireIntent();if(!project||exportLocked||terminal)return;if(gesture)cancelGesture();operation?.controller.abort();
+ const captured=project,epoch=generation,intent=editorIntent,ownedLifetime=lifetime,op={id:++operationSequence,kind:'stage' as const,controller:new AbortController()};operation=op;refreshControls();announce('Reading depth mask locally…');
+ try{
+  const raster=await readMask(file,captured.photo.width,captured.photo.height,op.controller.signal);
+  if(operation!==op||op.controller.signal.aborted||generation!==epoch||editorIntent!==intent||lifetime!==ownedLifetime||terminal)return;
+  const review=reviewMask(captured,raster);maskCanvas.width=raster.width;maskCanvas.height=raster.height;const ctx=maskCanvas.getContext('2d');if(!ctx)throw new Error('No mask preview');presentFrame(ctx,maskRaster(review.project));
+  maskProposal={project:review.project,changed:review.changed,generation:epoch,intent,lifetime:ownedLifetime,fields:new Map([titleInput,brushInput,toleranceInput,...numeric.values()].map(input=>[input,input.value]))};maskSummary.textContent=`${raster.width} × ${raster.height} · Near: ${review.counts[0]} · Subject: ${review.counts[1]} · Far: ${review.counts[2]} · ${review.changed} pixels change. Review then Apply to replace the complete mask; Discard keeps your current mask.`;maskReview.hidden=false;announce('Depth mask reviewed. No committed pixels changed; choose Apply or Discard.');
+ }catch(error){if(operation===op&&!op.controller.signal.aborted)announce(`Could not review depth mask. ${error instanceof Error?error.message:'Use a valid PNG mask.'} Current work was kept.`,true);}
+ finally{if(operation===op)operation=null;refreshControls();}
+}
 function cancelOperation(): void {
   if (initialOwner) initialOwner.cancelled = true;
   if (recoveryOwner) recoveryOwner.cancelled = true;
@@ -265,8 +290,8 @@ function cancelMovedGesture(): boolean { if(!gesture || gesture.scrollLeft===sou
 sourceSurface.addEventListener('scroll',cancelMovedGesture);
 function cancelGesture(): void { const captured = gesture; gesture = null; if (captured && sourceCanvas.hasPointerCapture(captured.pointer)) sourceCanvas.releasePointerCapture(captured.pointer); refreshControls(); drawSource(); }
 sourceCanvas.addEventListener('pointercancel', cancelGesture); sourceCanvas.addEventListener('lostpointercapture', () => { if (gesture) cancelGesture(); });
-window.addEventListener('keydown', (e) => { if(e.key==='Escape'&&gesture){e.preventDefault();retireIntent();cancelGesture();announce('Depth gesture canceled; committed mask retained.');return;} const target = e.target; if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return; e.preventDefault(); if (e.shiftKey) redo(); else undo(); });
-window.addEventListener('beforeunload', (e) => { if (operation || gesture || numericDirty.size || titleDirty || project && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('keydown', (e) => { if(e.key==='Escape'&&maskProposal){e.preventDefault();retireIntent();announce('Depth mask review discarded; committed study kept.');return;}if(e.key==='Escape'&&gesture){e.preventDefault();retireIntent();cancelGesture();announce('Depth gesture canceled; committed mask retained.');return;} const target = e.target; if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return; e.preventDefault(); if (e.shiftKey) redo(); else undo(); });
+window.addEventListener('beforeunload', (e) => { if (maskProposal || operation || gesture || numericDirty.size || titleDirty || project && savedGeneration !== generation) { e.preventDefault(); e.returnValue = ''; } });
 async function prepareLoad(target: ProjectStore, owner: StorageOwner): Promise<{ loaded: LoadedProject; history: History | null } | null> {
   try {
     const loaded = await target.load({ signal: owner.controller.signal });
@@ -306,6 +331,7 @@ async function freshStore(owner: StorageOwner): Promise<ProjectStore | null> {
   return store;
 }
 function stopTransientWork(): void {
+  retireMaskReview();
   operation?.controller.abort(); operation = null; exportLocked = false;
   clearTimeout(previewTimer); previewController?.abort(); previewSequence++; previewBusy = false;
 }

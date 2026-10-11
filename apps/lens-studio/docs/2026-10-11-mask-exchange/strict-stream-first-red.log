@@ -1,0 +1,49 @@
+✖ strict mask PNG admits actual compressed stream and refuses corrupt Adler32 (1.778123ms)
+✖ strict mask PNG rejects precision conversion and wrong dimensions before native decoding (8.576896ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 283.058087
+
+✖ failing tests:
+
+test at tests/mask-png.test.ts:8:1
+✖ strict mask PNG admits actual compressed stream and refuses corrupt Adler32 (1.778123ms)
+  AssertionError [ERR_ASSERTION]: Strict mask stream admission is missing
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/mask-png.test.ts:8:101)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/mask-png.test.ts:9:1
+✖ strict mask PNG rejects precision conversion and wrong dimensions before native decoding (8.576896ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(api)
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/mask-png.test.ts:9:114)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

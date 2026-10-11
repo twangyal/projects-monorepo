@@ -1,0 +1,99 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> lens-studio@0.2.0 test:browser
+> playwright test tests/browser/depth-mask.spec.ts
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/depth-mask.spec.ts:11:1 › mask review requires explicit Apply and actual labels survive undo redo PNG and reload (1.1s)
+(node:185) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  2 tests/browser/depth-mask.spec.ts:16:1 › invalid dimensions alpha malformed PNG and discarded reviews preserve complete work and redo (1.3s)
+  ✓  3 tests/browser/depth-mask.spec.ts:20:1 › same mask Apply preserves redo and any newer input retires a reviewed proposal (1.1s)
+
+
+  1) tests/browser/depth-mask.spec.ts:11:1 › mask review requires explicit Apply and actual labels survive undo redo PNG and reload 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 16
+    + Received  + 16
+
+      Array [
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    -   0,
+        1,
+    -   2,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+    +   1,
+      ]
+
+      11 | test('mask review requires explicit Apply and actual labels survive undo redo PNG and reload',async({page})=>{
+      12 |  await setup(page);const original=await backup(page);await page.getByLabel('Study title',{exact:true}).fill('unapplied title');await page.getByLabel('Target focal length',{exact:true}).fill('');await expect(page.getByLabel('Import depth mask',{exact:true})).toBeVisible({timeout:1500});await page.getByLabel('Import depth mask',{exact:true}).setInputFiles(mask());await expect(page.locator('#mask-review')).toContainText('16 pixels change');await expect(page.locator('#mask-review')).toContainText('Near: 8');await expect(page.getByRole('button',{name:'Undo',exact:true})).toBeDisabled();
+    > 13 |  await page.getByRole('button',{name:'Apply depth mask',exact:true}).click();await expect(page.getByLabel('Study title',{exact:true})).toHaveValue('unapplied title');await expect(page.getByLabel('Target focal length',{exact:true})).toHaveValue('');const next=await backup(page);expect(next).toEqual({...original,depth:next.depth});expect([...Buffer.from(next.depth.labels,'base64')]).toEqual(Array.from({length:24},(_,i)=>i%3));
+         |                                                                                                                                                                                                                                                                                                                                                                                                 ^
+      14 |  const exported=PNG.sync.read(await bytes(page,'Download depth mask'));expect(exported.width).toBe(6);expect([...exported.data]).toEqual(Array.from({length:24},(_,i)=>palette[i%3]).flat());await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(original);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(next);await expect(page.locator('#save-status')).toContainText('Saved locally');page.on('dialog',d=>d.accept());await page.reload();await expect(page.locator('#render-status')).toContainText('Projection ready');expect(await backup(page)).toEqual(next);
+      15 | });
+      16 | test('invalid dimensions alpha malformed PNG and discarded reviews preserve complete work and redo',async({page})=>{
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/lens-studio/tests/browser/depth-mask.spec.ts:13:385
+
+    Error Context: test-results/depth-mask-mask-review-req-67e30-ve-undo-redo-PNG-and-reload/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/depth-mask-mask-review-req-67e30-ve-undo-redo-PNG-and-reload/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/depth-mask-mask-review-req-67e30-ve-undo-redo-PNG-and-reload/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/depth-mask.spec.ts:11:1 › mask review requires explicit Apply and actual labels survive undo redo PNG and reload 
+  2 passed (11.5s)
