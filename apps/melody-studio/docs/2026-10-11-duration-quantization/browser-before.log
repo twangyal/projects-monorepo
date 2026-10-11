@@ -1,0 +1,53 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> melody-studio@0.7.0 test:browser
+> playwright test tests/quantize-duration.spec.ts --grep independent project --workers=1
+
+[WebServer] (node:32) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:53) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:78) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:91) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:109) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/quantize-duration.spec.ts:5:1 › quantize selected original durations with independent project/MIDI/WAV, history and reload (30.2s)
+
+
+  1) tests/quantize-duration.spec.ts:5:1 › quantize selected original durations with independent project/MIDI/WAV, history and reload 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Quantize section note durations', exact: true })
+
+
+      4 |
+      5 | test('quantize selected original durations with independent project/MIDI/WAV, history and reload',async({page})=>{
+    > 6 |  await openRoll(page);const before=await readRoll(page);await page.getByLabel('Section start beat',{exact:true}).fill('1');await page.getByLabel('Section end beat (exclusive)',{exact:true}).fill('4.5');await page.getByLabel('Quantize grid',{exact:true}).selectOption('0.5');await page.getByRole('button',{name:'Quantize section note durations',exact:true}).click();await expect(page.locator('#notice')).toContainText('note durations quantized');const expected=structuredClone(before);expected.document.composition.tracks[0].notes[0].duration=.5;expected.document.composition.tracks[0].notes[1].duration=1;expected.document.composition.tracks[0].notes[2].duration=.5;expect(await readRoll(page)).toEqual(expected);assertMidi(await rollDownload(page,'Export MIDI'),expected.document.composition);assertWav(await rollDownload(page,'Export WAV'),expected.document.composition);
+        |                                                                                                                                                                                                                                                                                                                                                                      ^
+      7 |  await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await readRoll(page)).toEqual(before);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await readRoll(page)).toEqual(expected);await expect(page.locator('#save-status')).toHaveText('Saved in this browser');await page.reload();expect(await readRoll(page)).toEqual(expected);
+      8 | });
+      9 | test('partial strength, zero/aligned no-op and invalid/empty selection retain reference and redo',async({page})=>{
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/melody-studio/tests/quantize-duration.spec.ts:6:358
+
+    Error Context: test-results/quantize-duration-quantize-25a29-MIDI-WAV-history-and-reload/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/quantize-duration-quantize-25a29-MIDI-WAV-history-and-reload/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/quantize-duration-quantize-25a29-MIDI-WAV-history-and-reload/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/quantize-duration.spec.ts:5:1 › quantize selected original durations with independent project/MIDI/WAV, history and reload 
