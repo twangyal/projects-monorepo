@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateChangedCatalog, changedPage, changedHandoff, changedJson } from '../git_history/web/changed-files.js';
+import { validateChangedCatalog, changedPage, changedHandoff, changedHistoryHandoff, changedJson } from '../git_history/web/changed-files.js';
 const l = 'a'.repeat(40), r = 'b'.repeat(40), x = 'c'.repeat(40), y = 'd'.repeat(40);
 const endpoint = (object_id = x, mode = '100644', kind = 'regular') => ({ kind, mode, object_id });
 const row = (path = 'src/literal\t\n<file>.txt') => ({ path, change: 'modified', left: endpoint(), right: endpoint(y), addressable: true });
@@ -36,6 +36,23 @@ test('JSON follows sorted schema keys/two spaces/newline and literal Unicode con
   const value = validateChangedCatalog(catalog([])), json = changedJson(value);
   assert.equal(json, '{\n  "directory": "",\n  "entries": [],\n  "kind": "changed-file-catalog",\n  "left_requested_ref": "old",\n  "left_revision": "'+l+'",\n  "omitted_non_utf8_paths": 0,\n  "repo_name": "repo",\n  "right_requested_ref": "new",\n  "right_revision": "'+r+'",\n  "schema_version": 1\n}\n');
   assert.ok(changedJson(validateChangedCatalog(catalog())).includes('literal\\t\\n<file>'));
+});
+test('history handoff independently selects a present regular endpoint using immutable catalog pins', () => {
+  const value = validateChangedCatalog(catalog());
+  assert.deepEqual(changedHistoryHandoff(value, 0, 'left'), { path: row().path, revision: l, requested_ref: 'old' });
+  assert.deepEqual(changedHistoryHandoff(value, 0, 'right'), { path: row().path, revision: r, requested_ref: 'new' });
+  for (const index of [-1, 1, 0.5, '0']) assert.equal(changedHistoryHandoff(value, index, 'left'), null);
+  assert.equal(changedHistoryHandoff(value, 0, 'other'), null);
+  const added = validateChangedCatalog(catalog([{ ...row(), change: 'added', left: null }]));
+  assert.equal(changedHistoryHandoff(added, 0, 'left'), null); assert.equal(changedHistoryHandoff(added, 0, 'right').revision, r);
+  const deleted = validateChangedCatalog(catalog([{ ...row(), change: 'deleted', right: null }]));
+  assert.equal(changedHistoryHandoff(deleted, 0, 'right'), null); assert.equal(changedHistoryHandoff(deleted, 0, 'left').revision, l);
+  for (const endpoint of [ { kind: 'symlink', mode: '120000', object_id: x }, { kind: 'gitlink', mode: '160000', object_id: x } ]) {
+    const changed = validateChangedCatalog(catalog([{ ...row(), change: 'type-changed', left: endpoint }]));
+    assert.equal(changedHistoryHandoff(changed, 0, 'left'), null); assert.equal(changedHistoryHandoff(changed, 0, 'right').revision, r);
+  }
+  const literal = validateChangedCatalog(catalog([{ ...row('\\literal'), addressable: false }]));
+  assert.equal(changedHistoryHandoff(literal, 0, 'right'), null);
 });
 test('catalog admission rejects coerced modes, zero revision IDs and impossible tree paths or equal-pin changes', () => {
   for (const bad of [catalog([{ ...row(), left: endpoint(x, 100644) }]), { ...catalog(), left_revision: '0'.repeat(40) }, catalog([{ ...row('/absolute'), addressable: false }]), catalog([{ ...row('a//b'), addressable: false }]), catalog([{ ...row('a/../b'), addressable: false }]), { ...catalog(), right_revision: l }]) assert.throws(() => validateChangedCatalog(bad));
