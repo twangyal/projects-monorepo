@@ -1,0 +1,95 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> clothing-studio@0.1.0 test
+> node --experimental-strip-types --test tests/*.test.ts --test-name-pattern=physical tile|printable documents
+
+✔ assembled shell preserves exact measured circles and meridian seam lengths (1.764357ms)
+✔ mesh and SVG projection are deterministic finite bounded and complete at all views (5.722233ms)
+✔ valid extreme drafts remain finite without changing source parameters (0.879499ms)
+✔ quad winding faces outward for downstream surface tools (0.410907ms)
+✔ OBJ contains centimetre surface coordinates with safe indexed panel and seam groups (1.203107ms)
+✔ physical pattern arcs and both joining edges match circumference and slant (2.592469ms)
+✔ strict settings reject unsafe shapes and impossible conical assemblies (0.403306ms)
+✔ legacy absence remains exact while construction survives detached complete history and backups (2.048085ms)
+✔ nets at valid extremes remain finite bounded physical sheets with explicit joining labels (3.433492ms)
+✔ cutting corners lie on independent concentric offsets and parallel side edges (1.735503ms)
+✔ optional allowance schema preserves old absence and complete history backups and graded settings (2.663775ms)
+✔ valid cutting extremes remain finite and exported stitch paths keep measured geometry (4.436934ms)
+✔ grading produces exact relative measurements without changing the base (2.298134ms)
+✔ rules reject accessors invalid counts non-finite or unchanging sets and invalid derived garments (0.784759ms)
+✔ grading optional complete-project data round-trips detached while legacy absence stays exact (1.249986ms)
+✔ size-set SVG labels every relative size with physical dimensions and calibration (3.548011ms)
+✔ every extreme T-shirt shape stays within the 400 by 440 garment stage (7.7514ms)
+✔ neckline, sleeve, width, and length controls all change real garment geometry (0.387472ms)
+✔ garment SVG clips procedural textures and normalized sketch strokes to the silhouette (1.146253ms)
+✔ plain, stripe, and weave textures have distinct shared rendering (0.237581ms)
+✔ SVG user labels are escaped and every internal reference resolves within its own document (1.451544ms)
+✔ sample preview has authored vector person, neutral background, and exact placement transforms (1.043752ms)
+✔ photo preview uses validated local JPEG only and follows its dimensions (0.281576ms)
+✔ all public SVG functions reject unvalidated numbers and unsafe colors or photo URLs (0.615969ms)
+✔ PNG export rejects invalid project data and kind before touching browser resources (0.64314ms)
+✔ labels containing XML-invalid characters cannot break SVG image decoding (0.81224ms)
+✔ bounded image headers identify PNG, JPEG and all three WebP header forms (2.447525ms)
+✔ dimensions are bounded before decoder access with exact resource boundaries (0.789616ms)
+✔ WebP canvas metadata cannot conceal oversized or mismatched compressed-frame dimensions (0.287905ms)
+✔ magic must match the allowed MIME type and truncated containers are rejected (0.571845ms)
+✔ JPEG marker scanning handles metadata but rejects unbounded or invalid segments (0.281496ms)
+✔ backup photo headers round trip and require canonical JPEG data URI and matching dimensions (0.523724ms)
+✔ null backup photos need no decoder and invalid encoded backup dimensions fail before decode (0.445308ms)
+✔ oversized imports fail without reading or decoding file bytes (0.270549ms)
+✔ factories create independent valid projects fitted to a sample preview (2.930519ms)
+✔ validation reconstructs known properties at every depth without coercion or aliases (2.705596ms)
+✔ every numeric bound accepts its exact minimum and maximum (2.568474ms)
+✔ validation rejects invalid garment fields and exact color or pattern lookalikes (1.359889ms)
+✔ validation rejects every placement boundary, nonfinite values and silent numeric coercion (10.193918ms)
+✔ project structure, schema and text limits reject malformed inputs (0.77896ms)
+✔ prototype objects, dangerous own keys and accessors are rejected without invoking getters (0.962972ms)
+✔ validation rejects unsafe method values without executing caller-supplied array methods (0.484546ms)
+✔ stroke IDs, colors, widths and points must be finite, bounded, present and unique (2.341769ms)
+✔ stroke, individual-point and total-point maximums accept exact limits and reject overflow (27.83728ms)
+✔ photo structural validation requires bounded JPEG data URLs, dimensions and names (6.511409ms)
+✔ project JSON round trips all known fields and rejects malformed or oversized text by UTF-8 bytes (20.524046ms)
+✔ history starts without undo or redo and returns independent validated snapshots (0.830897ms)
+✔ history commits, undoes and redoes each edit including clear and new projects (2.471901ms)
+✔ history no-op edits are omitted and preserve redo while a changed edit discards it (0.502643ms)
+✔ history retains exactly forty past edits and trims only the oldest (1.957992ms)
+✔ committed inputs and values returned by undo or redo cannot mutate stored history (0.287765ms)
+✔ history validates construction, commit and reset atomically before changing any state (0.613566ms)
+node:internal/modules/esm/resolve:271
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/workspace/scratch/dea0b0842cca/projects-monorepo/apps/clothing-studio/src/print-pattern.ts' imported from /workspace/scratch/dea0b0842cca/projects-monorepo/apps/clothing-studio/tests/print-pattern.test.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+    at moduleResolve (node:internal/modules/esm/resolve:865:10)
+    at defaultResolve (node:internal/modules/esm/resolve:992:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:701:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:721:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:759:56)
+    at #resolve (node:internal/modules/esm/loader:683:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:603:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:163:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:253:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/clothing-studio/src/print-pattern.ts'
+}
+
+Node.js v24.19.0
+✖ tests/print-pattern.test.ts (116.180512ms)
+✔ vector download is stable, transparent and contains garment shapes only (2.359145ms)
+✔ maximum vector artwork retains all 100 paths and 12000 points within 1 MiB (29.410593ms)
+✔ vector export rejects unsafe project fields and artwork quotas before producing a file (0.62299ms)
+ℹ tests 56
+ℹ suites 0
+ℹ pass 55
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 342.630393
+
+✖ failing tests:
+
+test at tests/print-pattern.test.ts:1:1
+✖ tests/print-pattern.test.ts (116.180512ms)
+  'test failed'

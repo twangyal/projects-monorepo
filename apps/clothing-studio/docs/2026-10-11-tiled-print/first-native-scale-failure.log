@@ -1,0 +1,59 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> clothing-studio@0.1.0 test:browser
+> playwright test tests/print-pattern.spec.ts
+
+[WebServer] (node:32) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:53) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:78) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:91) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:115) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:109) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/print-pattern.spec.ts:11:1 › tiled exports guard unapplied construction and focused placement drafts on mobile (915ms)
+  ✘  2 tests/print-pattern.spec.ts:6:1 › actual A4 and Letter downloads print at physical scale with the complete tile count and unchanged concept (867ms)
+
+
+  1) tests/print-pattern.spec.ts:6:1 › actual A4 and Letter downloads print at physical scale with the complete tile count and unchanged concept
+
+    Error: expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 188.9763779527559
+    Received: 190.1082000732422
+
+    Expected precision:    2
+    Expected difference: < 0.005
+    Received difference:   1.1318221204862766
+
+       6 | test('actual A4 and Letter downloads print at physical scale with the complete tile count and unchanged concept',async({page,context})=>{
+       7 |  await page.goto('/');const p=createProject();p.title='Private title must stay out of printing';p.note='Private note';p.strokes=[{id:'private',width:8,color:'#ff0000',points:[{x:.3,y:.4}]}];await page.getByLabel('Import project backup').setInputFiles({name:'original.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(p))});await expect(page.getByLabel('Concept name')).toHaveValue(p.title);await page.getByLabel('Seam / waist allowance (cm)',{exact:true}).fill('1');await page.getByLabel('Hem allowance (cm)',{exact:true}).fill('3');await page.getByRole('button',{name:'Apply measured pattern',exact:true}).click();const before=await backup(page);
+    >  8 |  for(const [name,width,height] of [['Export A4 tiled pattern',210,297],['Export US Letter tiled pattern',215.9,279.4]] as const){const html=(await download(page,name)).toString();expect(html).not.toContain(p.title);expect(html).not.toContain(p.note);expect(html).not.toMatch(/<script|<image|foreignObject/);const printed=await context.newPage();let external=0;await printed.route('**/*',route=>{external++;return route.abort();});await printed.setContent(html);await printed.emulateMedia({media:'print'});const sheets=await printed.locator('.sheet').count();expect(sheets).toBeGreaterThan(1);expect(await printed.locator('[id="tile-0-cut-front"]').count()).toBe(1);const rect=await printed.locator('.sheet').first().locator('rect').boundingBox();expect(rect!.width).toBeCloseTo(50*96/25.4,2);expect(rect!.height).toBeCloseTo(50*96/25.4,2);const pdf=await printed.pdf({preferCSSPageSize:true,printBackground:true});const text=pdf.toString('latin1');expect(text.match(/\/Type \/Page\b/g)).toHaveLength(sheets);const boxes=[...text.matchAll(/\/MediaBox\s*\[0 0 ([\d.]+) ([\d.]+)\]/g)];expect(boxes).toHaveLength(sheets);for(const box of boxes){expect(Math.abs(Number(box[1])-width*72/25.4)).toBeLessThan(.5);expect(Math.abs(Number(box[2])-height*72/25.4)).toBeLessThan(.5);}expect(external).toBe(0);await printed.locator('.sheet').first().screenshot({path:test.info().outputPath(name.includes('A4')?'a4-calibration.png':'letter-calibration.png')});await printed.close();expect(await backup(page)).toEqual(before);}
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+       9 |  await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(p);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(before);
+      10 | });
+      11 | test('tiled exports guard unapplied construction and focused placement drafts on mobile',async({page})=>{
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/clothing-studio/tests/print-pattern.spec.ts:8:767
+
+    Error Context: test-results/print-pattern-actual-A4-an-c5639-count-and-unchanged-concept/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/print-pattern-actual-A4-an-c5639-count-and-unchanged-concept/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/print-pattern-actual-A4-an-c5639-count-and-unchanged-concept/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/print-pattern.spec.ts:6:1 › actual A4 and Letter downloads print at physical scale with the complete tile count and unchanged concept
+  1 passed (4.6s)

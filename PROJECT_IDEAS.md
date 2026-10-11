@@ -51,6 +51,8 @@ Milestone #168 adds optional saved manual linear grading rules, a 3–7 relative
 
 Milestone #182 adds optional saved skirt seam/waist and hem allowances, separate measured stitch and full-scale cutting SVG paths, exact parallel-edge/concentric-arc corners and inherited allowances across relative sizes. Complete history/backups/reload, raw drafts, pending imports and wide-arc sheet containment are verified. Physical toile/fit evaluation, closures, cloth simulation and the professional multi-garment vision remain ACTIVE.
 
+Milestone #183 adds self-contained A4/US Letter tiled base-pattern exports, a physical calibration/assembly page, 1cm overlap and repeated global registration crosses. Native downloaded HTML/print-to-PDF page sizes and counts are verified with unchanged complete concepts/history and guarded raw drafts. Real printer/toile acceptance and graded-set tiling remain unfinished.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`
