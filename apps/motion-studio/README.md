@@ -91,6 +91,14 @@ This moves the complete retained drawing without changing its strokes or any pos
 
 Finish or discard other raw pose/name/stroke edits before opening the prompt. Pointer activation guards them before blur, and keyboard activation has the same admission checks. The control is locked during gestures, loading/recovery and export. Drawing reuse and neighbor-guide controls also honor pending project imports and recovery reads. Existing deliberate editing actions can still supersede an import under their established rules.
 
+## Move a pose’s timing
+
+Select a later **Keyframe at frame N** diamond, then choose **Move this keyframe**. Enter an integer displayed frame from 2 through the project end. The frame-1 pose is fixed, and another pose at the target refuses the move. This works on drawing and imported-image layers; between-pose frames have no retained key to move.
+
+The complete pose and its **Motion to next pose** easing travel together. Drawing boundaries, image bytes and all other keys/layers stay fixed. Crossing another key changes pose order; changing either neighbor changes the interpolation. Inspect playback after retiming. A changed move selects its destination and is one Undo/Redo/autosave edit. Cancel, unchanged input, occupied/invalid targets and complete-file-budget refusal preserve project, selection and Redo; no-op timing also keeps reviewed in-between scratch.
+
+Apply or discard raw pose/name/stroke drafts first. Pointer activation guards focused values before blur; keyboard uses the same admission. The action is locked during gestures, loading/recovery reads and export. This edits authored motion timing, not generated artwork or learned motion. See [pose-retiming evidence](docs/2026-10-11-pose-timing/README.md).
+
 ## Draw with neighboring exposure guides
 
 Enable **Show neighboring drawings** to compare the immediately previous held drawing in teal and the next in rose. The text identifies their starting frames, including blank neighbors. Guides do not skip blank drawings or wrap from the end back to the beginning. A single drawing has no neighbors; imported image layers do not offer this control.

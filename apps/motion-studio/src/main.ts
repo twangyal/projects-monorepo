@@ -3,7 +3,7 @@ import { playbackFrame } from './playback.ts';
 import { createStrokeEditor, StrokeDrag, uniformCanvas } from './stroke-editor.ts';
 import { hitStroke, translateStroke, type StrokeTarget } from './stroke-edit.ts';
 import { WIDTH, HEIGHT, FPS, MAX_JSON_BYTES, MAX_DRAWING_CELS, createProject, createDemo, createDrawingLayer, validateProject, evaluatePose, evaluateDrawingCel, addBlankDrawingCel, duplicateDrawingCel, removeDrawingCel, replaceDrawingCelStrokes, timelineResizeLoss, upsertKeyframe, removeKeyframe, resizeTimeline, localPoint, type Project, type Layer, type Pose, type Easing, type Point, type Stroke } from './model.ts';
-import { retimeDrawingCel, displayedDrawingFrame } from './cel-timing.ts';
+import { retimeDrawingCel, retimePoseKey, displayedDrawingFrame } from './cel-timing.ts';
 import { neighborDrawings, renderNeighborDrawings } from './onion-skin.ts';
 import { duplicateDrawingLayer } from './layer-copy.ts';
 import { History } from './history.ts';
@@ -38,7 +38,7 @@ app.innerHTML = `
 <div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button><button id="retime-cel" aria-describedby="drawing-action-hint">Move active drawing start</button></div><p id="drawing-action-hint" class="hint"></p><label class="onion-control"><input id="onion-enabled" type="checkbox" aria-describedby="onion-status">Show neighboring drawings</label><p id="onion-status" class="hint"></p><button id="make-tween">Make drawing in-betweens</button><p id="tween-eligibility" class="hint"></p><div id="tween-workspace"></div></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
 <div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever. PNG frames · full color · exact 12 fps</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="png-frames">Export PNG frames ZIP</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
 </section>
-<aside class="pose-panel panel"><div class="panel-heading"><h3>Strike a pose</h3><span>02</span></div><div class="tool-content"><label class="field">Layer name<input id="layer-name" maxlength="40"></label><p id="pose-state" class="pose-state">Frame 1 · saved pose</p><div class="pair"><label class="field">Position X<input id="pose-x" type="text" inputmode="decimal" min="-640" max="1280" step="1"></label><label class="field">Position Y<input id="pose-y" type="text" inputmode="decimal" min="-360" max="720" step="1"></label></div><label class="field">Scale<input id="pose-scale" type="text" inputmode="decimal" min="0.1" max="4" step="0.05"></label><label class="field">Rotation (degrees)<input id="pose-rotation" type="text" inputmode="decimal" min="-720" max="720" step="5"></label><label class="field">Opacity<input id="pose-opacity" type="text" inputmode="decimal" min="0" max="1" step="0.05"></label><label class="field">Motion to next pose<select id="easing"><option value="linear">Steady / linear</option><option value="ease">Ease in & out</option><option value="hold">Hold this pose</option></select></label><p id="pose-draft-status" role="status" hidden></p><button id="discard-pose-edits" class="full" hidden>Discard pose edits</button><button id="set-key" class="primary full">Set keyframe</button><button id="remove-key" class="text-button">Remove this keyframe</button><p class="hint">Changing pose values sets a key at this frame. The first key always stays. Drawing edits the active held drawing until its next boundary.</p><div class="note"><span aria-hidden="true">✦</span><strong>Start with two poses.</strong><p>Set a pose at the start. Scrub near the end, move your layer, then press play.</p></div></div></aside>
+<aside class="pose-panel panel"><div class="panel-heading"><h3>Strike a pose</h3><span>02</span></div><div class="tool-content"><label class="field">Layer name<input id="layer-name" maxlength="40"></label><p id="pose-state" class="pose-state">Frame 1 · saved pose</p><div class="pair"><label class="field">Position X<input id="pose-x" type="text" inputmode="decimal" min="-640" max="1280" step="1"></label><label class="field">Position Y<input id="pose-y" type="text" inputmode="decimal" min="-360" max="720" step="1"></label></div><label class="field">Scale<input id="pose-scale" type="text" inputmode="decimal" min="0.1" max="4" step="0.05"></label><label class="field">Rotation (degrees)<input id="pose-rotation" type="text" inputmode="decimal" min="-720" max="720" step="5"></label><label class="field">Opacity<input id="pose-opacity" type="text" inputmode="decimal" min="0" max="1" step="0.05"></label><label class="field">Motion to next pose<select id="easing"><option value="linear">Steady / linear</option><option value="ease">Ease in & out</option><option value="hold">Hold this pose</option></select></label><p id="pose-draft-status" role="status" hidden></p><button id="discard-pose-edits" class="full" hidden>Discard pose edits</button><button id="set-key" class="primary full">Set keyframe</button><button id="retime-key" class="full">Move this keyframe</button><button id="remove-key" class="text-button">Remove this keyframe</button><p class="hint">Changing pose values sets a key at this frame. The first key always stays. Drawing edits the active held drawing until its next boundary.</p><div class="note"><span aria-hidden="true">✦</span><strong>Start with two poses.</strong><p>Set a pose at the start. Scrub near the end, move your layer, then press play.</p></div></div></aside>
 </div><section id="private-links" class="panel" role="region" aria-label="Private snapshot links"></section><footer><span>Local projects stay in this browser. Private sharing is optional and explicit.</span><span>Layer motion · no account required</span></footer></main>`;
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
@@ -218,6 +218,7 @@ function controls() {
   el<HTMLButtonElement>('layer-up').disabled = locked || index < 0 || index >= project.layers.length - 1;
   for (const id of ['delete-layer', 'layer-name', 'set-key', 'pose-x', 'pose-y', 'pose-scale', 'pose-rotation', 'pose-opacity', 'easing']) el<HTMLInputElement>(id).disabled = locked || !chosen;
   el<HTMLButtonElement>('remove-key').disabled = locked || !chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame);
+  el<HTMLButtonElement>('retime-key').disabled = authoringLocked || !chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame);
   const drawing = chosen?.kind === 'drawing' ? chosen : null;
   el<HTMLButtonElement>('duplicate-layer').disabled = authoringLocked || !drawing || project.layers.length >= 8;
   const onionControl = el<HTMLInputElement>('onion-enabled');
@@ -372,6 +373,22 @@ function changeCel(kind: 'blank' | 'duplicate' | 'delete') {
 el('add-blank-cel').addEventListener('click', () => changeCel('blank'));
 el('duplicate-cel').addEventListener('click', () => changeCel('duplicate'));
 el('delete-cel').addEventListener('click', () => changeCel('delete'));
+el('retime-key').addEventListener('click', () => {
+  if (busy || exporting || gesture || restorePending || retryPending || libraryPending || !admitDrafts()) return;
+  const chosen = layer(); if (!chosen || frame === 0 || !chosen.keys.some(key => key.frame === frame)) return;
+  pause();
+  const sourceFrame = frame;
+  const raw = window.prompt(`Move the pose key from frame ${sourceFrame + 1} to which frame (2–${project.frameCount})? Drawing starts and other pose keys stay fixed. Pose values and outgoing easing move together; interpolation and key order may change. Undo restores the original.`, String(sourceFrame + 1));
+  if (raw === null) return;
+  try {
+    const nextFrame = displayedDrawingFrame(raw, project.frameCount);
+    const next = retimePoseKey(project, selected, sourceFrame, nextFrame);
+    if (nextFrame === sourceFrame) { tell('Pose key time is unchanged. No edit was made.'); return; }
+    if (!tweens.confirmLeave()) return;
+    if (commit(next)) { frame = nextFrame; refresh(); tell(`Pose key moved from frame ${sourceFrame + 1} to ${nextFrame + 1}. Pose values and outgoing easing are retained; drawing starts stay fixed. Undo restores the original timing.`); }
+  } catch (error) { tell(errorMessage(error), true); }
+});
+
 el('retime-cel').addEventListener('click', () => {
   if (busy || exporting || gesture || restorePending || retryPending || libraryPending || !admitDrafts()) return;
   const chosen = layer(); if (!chosen || chosen.kind !== 'drawing') return;
@@ -397,7 +414,7 @@ app.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   // Discard owns the raw fields before native blur can auto-commit a valid pose value.
   if ((event.target as HTMLElement).closest('#discard-pose-edits')) { event.preventDefault(); return; }
-  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#retime-cel,#onion-enabled,.onion-control')) return;
+  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#retime-cel,#retime-key,#onion-enabled,.onion-control')) return;
   if (!admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 // A label's later default click can focus its input even after pointerdown cancellation.

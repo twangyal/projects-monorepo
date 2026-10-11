@@ -94,6 +94,8 @@ Progress: Motion Studio provides local freehand and normalized image layers, edi
 Description: An account-free browser drawing and animation studio where users draw or upload artwork, set keyframes to define movement, and preview or export animations. Projects autosave in browser storage, with optional online saving through a private project link. Users teach motion by defining poses and timing at keyframes. AI could assist with generating or refining intermediate frames, while completed and corrected sequences provide examples for later motion learning. The first portfolio version would focus on a complete drawing-to-keyframes-to-animation workflow, followed by AI assistance.
 Milestone #127: editor and private-viewer lossless PNG frame ZIP export is implemented with exact 12/1 fps metadata, fixed paths/CRC checks, bounded worker ownership, cancellation and whole-result admission. Local native verification decodes all 96 frames of an eight-layer/four-image/100-stroke/10,000-point maximum and preserves 1,024 exact colors in the independent fixture. The complete local browser suite and both first published push/PR gates pass 237 units and 146 native cases with lint/type/build, on identical local/push/actual-merge trees at d076b3e. Milestone #127 is complete.
 
+Milestone #178: retained pose-key retiming moves exact poses and outgoing easing on drawing/image layers without recreating values or shifting drawing exposure starts. Explicit frame entry, occupied/first/file-limit refusal, one-edit history/recovery and pre-blur draft protection support authored animation timing. Motion remains ACTIVE; learned animation and live synchronization remain unfinished.
+
 ## 12. Outfit rating based on your taste
 
 Path: `apps/style-studio`

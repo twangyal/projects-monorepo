@@ -17,3 +17,16 @@ export function retimeDrawingCel(input: Project, layerId: string, celFrame: numb
   cel.frame = nextFrame; layer.cels.sort((a,b) => a.frame - b.frame);
   return validateProject(project);
 }
+
+/** Move an exact retained pose, including its outgoing easing, on either layer kind. */
+export function retimePoseKey(input: Project, layerId: string, keyFrame: number, nextFrame: number): Project {
+  const project = validateProject(input), layer = project.layers.find(item => item.id === layerId);
+  if (!layer) throw new Error('Select an existing layer to change pose timing.');
+  if (!Number.isInteger(keyFrame) || keyFrame <= 0) throw new Error('The first pose key cannot be moved.');
+  const key = layer.keys.find(item => item.frame === keyFrame);
+  if (!key) throw new Error('There is no pose key at this frame. Select its diamond first.');
+  if (!Number.isInteger(nextFrame) || nextFrame <= 0 || nextFrame >= project.frameCount) throw new Error('The pose key must be within the timeline after its first frame.');
+  if (nextFrame !== keyFrame && layer.keys.some(item => item.frame === nextFrame)) throw new Error('A pose key already occupies that frame. Choose an unoccupied frame.');
+  key.frame = nextFrame; layer.keys.sort((a,b) => a.frame - b.frame);
+  return validateProject(project);
+}

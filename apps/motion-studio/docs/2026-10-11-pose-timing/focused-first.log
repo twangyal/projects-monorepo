@@ -1,0 +1,132 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> motion-studio@0.6.0 test:browser
+> playwright test tests/key-timing.spec.ts
+
+[WebServer] (node:690) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:711) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:735) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 2 workers
+
+(node:766) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:767) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/key-timing.spec.ts:14:1 › cancel, unchanged key time and invalid/occupied entries preserve selection, complete graph and redo (6.0s)
+  ✘  1 tests/key-timing.spec.ts:11:1 › retime a retained pose with actual frame entry, independent PNG timing, history and reload (6.3s)
+(node:924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:918) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 tests/key-timing.spec.ts:20:1 › pending genuine project-file loading locks authoring actions and cannot be retired by a forced retime click (1.4s)
+  ✓  4 tests/key-timing.spec.ts:17:1 › retiming refuses other raw drafts before a dialog or pointer blur at 390px (1.6s)
+
+
+  1) tests/key-timing.spec.ts:11:1 › retime a retained pose with actual frame entry, independent PNG timing, history and reload 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "drawing starts"
+    Received string:    "Move the pose key from frame 7 to which frame (2–12)? Drawing starts and other pose keys stay fixed. Pose values and outgoing easing move together; interpolation and key order may change. Undo restores the original."
+
+       8 | async function bytes(page:Page,id='#backup'){const pending=page.waitForEvent('download');await page.locator(id).click();return readFile((await (await pending).path())!);}
+       9 | async function backup(page:Page){return JSON.parse((await bytes(page)).toString());}
+    > 10 | async function enter(page:Page,raw:string|null){page.once('dialog',async dialog=>{expect(dialog.type()).toBe('prompt');expect(dialog.message()).toContain('drawing starts');if(raw===null)await dialog.dismiss();else await dialog.accept(raw);});await page.getByRole('button',{name:'Move this keyframe',exact:true}).click();}
+         |                                                                                                                                                 ^
+      11 | test('retime a retained pose with actual frame entry, independent PNG timing, history and reload',async({page})=>{
+      12 |  const p=await open(page);await expect(page.locator('#retime-key')).toBeDisabled();await page.locator('#frame').fill('6');await enter(page,'9');await expect(page.locator('#frame')).toHaveValue('8');const expected=structuredClone(p);expected.layers[0].keys[1].frame=8;expect(await backup(page)).toEqual(expected);await page.locator('#frame').fill('4');const png=PNG.sync.read(await bytes(page,'#png'));const pixel=(x:number,y:number)=>Array.from(png.data.subarray((y*640+x)*4,(y*640+x)*4+4));expect(pixel(350,180)).toEqual([255,0,0,255]);expect(pixel(400,180)).toEqual([255,255,255,255]);expect(pixel(550,40)).toEqual([255,0,255,255]);await page.locator('#undo').click();expect(await backup(page)).toEqual(p);await page.locator('#redo').click();expect(await backup(page)).toEqual(expected);await expect.poll(()=>nativeCurrent(page)).toEqual(expected);await page.reload();expect(await backup(page)).toEqual(expected);
+      13 | });
+        at _Page.<anonymous> (/workspace/scratch/dea0b0842cca/projects-monorepo/apps/motion-studio/tests/key-timing.spec.ts:10:145)
+
+    Error: locator.click: Test ended.
+    Call log:
+      - waiting for getByRole('button', { name: 'Move this keyframe', exact: true })
+        - locator resolved to <button class="full" id="retime-key">Move this keyframe</button>
+      - attempting click action
+        - waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+        - performing click action
+
+
+       8 | async function bytes(page:Page,id='#backup'){const pending=page.waitForEvent('download');await page.locator(id).click();return readFile((await (await pending).path())!);}
+       9 | async function backup(page:Page){return JSON.parse((await bytes(page)).toString());}
+    > 10 | async function enter(page:Page,raw:string|null){page.once('dialog',async dialog=>{expect(dialog.type()).toBe('prompt');expect(dialog.message()).toContain('drawing starts');if(raw===null)await dialog.dismiss();else await dialog.accept(raw);});await page.getByRole('button',{name:'Move this keyframe',exact:true}).click();}
+         |                                                                                                                                                                                                                                                                                                                         ^
+      11 | test('retime a retained pose with actual frame entry, independent PNG timing, history and reload',async({page})=>{
+      12 |  const p=await open(page);await expect(page.locator('#retime-key')).toBeDisabled();await page.locator('#frame').fill('6');await enter(page,'9');await expect(page.locator('#frame')).toHaveValue('8');const expected=structuredClone(p);expected.layers[0].keys[1].frame=8;expect(await backup(page)).toEqual(expected);await page.locator('#frame').fill('4');const png=PNG.sync.read(await bytes(page,'#png'));const pixel=(x:number,y:number)=>Array.from(png.data.subarray((y*640+x)*4,(y*640+x)*4+4));expect(pixel(350,180)).toEqual([255,0,0,255]);expect(pixel(400,180)).toEqual([255,255,255,255]);expect(pixel(550,40)).toEqual([255,0,255,255]);await page.locator('#undo').click();expect(await backup(page)).toEqual(p);await page.locator('#redo').click();expect(await backup(page)).toEqual(expected);await expect.poll(()=>nativeCurrent(page)).toEqual(expected);await page.reload();expect(await backup(page)).toEqual(expected);
+      13 | });
+        at enter (/workspace/scratch/dea0b0842cca/projects-monorepo/apps/motion-studio/tests/key-timing.spec.ts:10:313)
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/motion-studio/tests/key-timing.spec.ts:12:129
+
+    Error Context: test-results/key-timing-retime-a-retain-b12ef-G-timing-history-and-reload/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/key-timing-retime-a-retain-b12ef-G-timing-history-and-reload/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/key-timing-retime-a-retain-b12ef-G-timing-history-and-reload/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/key-timing.spec.ts:14:1 › cancel, unchanged key time and invalid/occupied entries preserve selection, complete graph and redo 
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "drawing starts"
+    Received string:    "Move the pose key from frame 7 to which frame (2–12)? Drawing starts and other pose keys stay fixed. Pose values and outgoing easing move together; interpolation and key order may change. Undo restores the original."
+
+       8 | async function bytes(page:Page,id='#backup'){const pending=page.waitForEvent('download');await page.locator(id).click();return readFile((await (await pending).path())!);}
+       9 | async function backup(page:Page){return JSON.parse((await bytes(page)).toString());}
+    > 10 | async function enter(page:Page,raw:string|null){page.once('dialog',async dialog=>{expect(dialog.type()).toBe('prompt');expect(dialog.message()).toContain('drawing starts');if(raw===null)await dialog.dismiss();else await dialog.accept(raw);});await page.getByRole('button',{name:'Move this keyframe',exact:true}).click();}
+         |                                                                                                                                                 ^
+      11 | test('retime a retained pose with actual frame entry, independent PNG timing, history and reload',async({page})=>{
+      12 |  const p=await open(page);await expect(page.locator('#retime-key')).toBeDisabled();await page.locator('#frame').fill('6');await enter(page,'9');await expect(page.locator('#frame')).toHaveValue('8');const expected=structuredClone(p);expected.layers[0].keys[1].frame=8;expect(await backup(page)).toEqual(expected);await page.locator('#frame').fill('4');const png=PNG.sync.read(await bytes(page,'#png'));const pixel=(x:number,y:number)=>Array.from(png.data.subarray((y*640+x)*4,(y*640+x)*4+4));expect(pixel(350,180)).toEqual([255,0,0,255]);expect(pixel(400,180)).toEqual([255,255,255,255]);expect(pixel(550,40)).toEqual([255,0,255,255]);await page.locator('#undo').click();expect(await backup(page)).toEqual(p);await page.locator('#redo').click();expect(await backup(page)).toEqual(expected);await expect.poll(()=>nativeCurrent(page)).toEqual(expected);await page.reload();expect(await backup(page)).toEqual(expected);
+      13 | });
+        at _Page.<anonymous> (/workspace/scratch/dea0b0842cca/projects-monorepo/apps/motion-studio/tests/key-timing.spec.ts:10:145)
+
+    Error: locator.click: Test ended.
+    Call log:
+      - waiting for getByRole('button', { name: 'Move this keyframe', exact: true })
+        - locator resolved to <button class="full" id="retime-key">Move this keyframe</button>
+      - attempting click action
+        - waiting for element to be visible, enabled and stable
+        - element is visible, enabled and stable
+        - scrolling into view if needed
+        - done scrolling
+        - performing click action
+
+
+       8 | async function bytes(page:Page,id='#backup'){const pending=page.waitForEvent('download');await page.locator(id).click();return readFile((await (await pending).path())!);}
+       9 | async function backup(page:Page){return JSON.parse((await bytes(page)).toString());}
+    > 10 | async function enter(page:Page,raw:string|null){page.once('dialog',async dialog=>{expect(dialog.type()).toBe('prompt');expect(dialog.message()).toContain('drawing starts');if(raw===null)await dialog.dismiss();else await dialog.accept(raw);});await page.getByRole('button',{name:'Move this keyframe',exact:true}).click();}
+         |                                                                                                                                                                                                                                                                                                                         ^
+      11 | test('retime a retained pose with actual frame entry, independent PNG timing, history and reload',async({page})=>{
+      12 |  const p=await open(page);await expect(page.locator('#retime-key')).toBeDisabled();await page.locator('#frame').fill('6');await enter(page,'9');await expect(page.locator('#frame')).toHaveValue('8');const expected=structuredClone(p);expected.layers[0].keys[1].frame=8;expect(await backup(page)).toEqual(expected);await page.locator('#frame').fill('4');const png=PNG.sync.read(await bytes(page,'#png'));const pixel=(x:number,y:number)=>Array.from(png.data.subarray((y*640+x)*4,(y*640+x)*4+4));expect(pixel(350,180)).toEqual([255,0,0,255]);expect(pixel(400,180)).toEqual([255,255,255,255]);expect(pixel(550,40)).toEqual([255,0,255,255]);await page.locator('#undo').click();expect(await backup(page)).toEqual(p);await page.locator('#redo').click();expect(await backup(page)).toEqual(expected);await expect.poll(()=>nativeCurrent(page)).toEqual(expected);await page.reload();expect(await backup(page)).toEqual(expected);
+      13 | });
+        at enter (/workspace/scratch/dea0b0842cca/projects-monorepo/apps/motion-studio/tests/key-timing.spec.ts:10:313)
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/motion-studio/tests/key-timing.spec.ts:15:72
+
+    Error Context: test-results/key-timing-cancel-unchange-bb1be-ion-complete-graph-and-redo/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/key-timing-cancel-unchange-bb1be-ion-complete-graph-and-redo/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/key-timing-cancel-unchange-bb1be-ion-complete-graph-and-redo/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests/key-timing.spec.ts:11:1 › retime a retained pose with actual frame entry, independent PNG timing, history and reload 
+    tests/key-timing.spec.ts:14:1 › cancel, unchanged key time and invalid/occupied entries preserve selection, complete graph and redo 
+  2 passed (19.3s)
