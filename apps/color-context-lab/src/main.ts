@@ -3,7 +3,7 @@ import { createProject, parseProjectJson, serializeProject, updateProject, valid
 import { History } from './history.ts';
 import { ProjectStore } from './storage.ts';
 import { createDemoImage } from './render.ts';
-import { cancelJobs, exportPng, exportReport, exportVariantReport, normalize, preview } from './jobs.ts';
+import { cancelJobs, exportPng, exportReport, exportVariantReport, previewVariantPair, normalize, preview } from './jobs.ts';
 import { experimentExamples, loadExperimentReport } from './experiment.ts';
 import type { ExperimentReport } from './experiment.ts';
 import { LIMITS } from './types.ts';
@@ -20,6 +20,9 @@ const originalCanvas = node<HTMLCanvasElement>('original-canvas'), resultCanvas 
 const buttons = Object.fromEntries(['apply-changes','discard-changes','undo','redo','stop-job','download-source','download-result','download-project','download-report','retry-save','retry-load','raw-backup','continue-unsaved','save-current','clear-saved'].map(id => [id, node<HTMLButtonElement>(id)]));
 const variantName = node<HTMLInputElement>('variant-name'), keepVariant = node<HTMLButtonElement>('keep-variant');
 const variantFirst = node<HTMLSelectElement>('variant-first'), variantSecond = node<HTMLSelectElement>('variant-second'), variantReport = node<HTMLButtonElement>('download-variant-report');
+const viewVariantPair = node<HTMLButtonElement>('view-variant-pair');
+let namedPreviewKey = '';
+function selectedPairKey(): string { return JSON.stringify([generation, variantFirst.value, variantSecond.value]); }
 let variantListKey = '';
 const fields = [title, mode, border, colorA, colorB, cell];
 const store = new ProjectStore();
@@ -38,7 +41,8 @@ const urls = new Set<string>();
 function showError(message = ''): void { error.textContent = message; error.hidden = !message; }
 function own(op: Operation): boolean { return operation === op && generation === op.generation && intent === op.intent && !op.abort.signal.aborted; }
 function cancelWork(message = 'Stopped. Applied project, history and unsent fields were kept.'): void {
-  const old = operation; operation = null; if (old) { clearTimeout(old.timer); old.abort.abort(); cancelJobs(); previewStatus.textContent = message; }
+  const old = operation; operation = null;
+  if (old?.kind === 'Rendering named comparison') node('named-preview-status').textContent = message; if (old) { clearTimeout(old.timer); old.abort.abort(); cancelJobs(); previewStatus.textContent = message; }
   updateControls();
 }
 function begin(kind: string): Operation {
@@ -113,6 +117,11 @@ function displayVariants(): void {
   for (const button of list.querySelectorAll('button')) button.disabled = !enabled() || dirty;
   for (const select of [variantFirst, variantSecond]) select.disabled = !enabled() || variants.length < 2;
   variantReport.disabled = !enabled() || !variantFirst.value || !variantSecond.value || variantFirst.value === variantSecond.value;
+  viewVariantPair.disabled = variantReport.disabled;
+  if (namedPreviewKey && namedPreviewKey !== selectedPairKey()) {
+    namedPreviewKey = ''; node('named-preview').hidden = true;
+    node('named-preview-status').textContent = 'Selection or applied project changed. View the selected pair again.';
+  }
   node('variant-status').textContent = variants.length ? `${variants.length} of ${LIMITS.variants} named surrounds kept.` : 'No named surrounds yet.';
 }
 function changeVariant(action: 'keep' | 'restore' | 'remove', index = -1): void {
@@ -217,6 +226,26 @@ async function loadSaved(initial = false): Promise<void> {
 function download(bytes: string | Uint8Array, type: string, name: string): void {
   const body = typeof bytes === 'string' ? bytes : new Uint8Array(bytes); const url = URL.createObjectURL(new Blob([body], {type})); urls.add(url); const anchor = document.createElement('a'); anchor.href = url; anchor.download = name; anchor.click(); setTimeout(() => { URL.revokeObjectURL(url); urls.delete(url); },1000);
 }
+async function renderNamedComparison(): Promise<void> {
+  if (!enabled() || !project || viewVariantPair.disabled) return;
+  const captured = project, variants = captured.variants ?? [], key = selectedPairKey();
+  const first = variants.findIndex(variant => variant.name === variantFirst.value), second = variants.findIndex(variant => variant.name === variantSecond.value);
+  namedPreviewKey = ''; node('named-preview').hidden = true;
+  const op = begin('Rendering named comparison');
+  node('named-preview-status').textContent = 'Rendering retained contexts…';
+  try {
+    const pair = await previewVariantPair(captured, first, second, {signal: op.abort.signal});
+    if (!own(op) || selectedPairKey() !== key) return;
+    displayRaster(node<HTMLCanvasElement>('named-first-canvas'), pair.first);
+    displayRaster(node<HTMLCanvasElement>('named-second-canvas'), pair.second);
+    node('named-first-label').textContent = `${variants[first]!.name} · ${pair.first.width} × ${pair.first.height} pixels`;
+    node('named-second-label').textContent = `${variants[second]!.name} · ${pair.second.width} × ${pair.second.height} pixels`;
+    namedPreviewKey = key; node('named-preview').hidden = false;
+    node('named-preview-status').textContent = 'Named comparison ready. Applied settings and drafts were kept.';
+    previewStatus.textContent = 'Named comparison ready. The applied project was kept.';
+  } catch { if (own(op)) { node('named-preview-status').textContent = 'Named comparison unavailable. Applied work and drafts were kept; try again.'; previewStatus.textContent = 'Named comparison unavailable. The applied project was kept.'; } }
+  finally { finish(op); }
+}
 async function exportNamedComparison(): Promise<void> {
   if (!enabled() || !project || variantReport.disabled) return;
   const captured = project, variants = captured.variants ?? [];
@@ -227,7 +256,7 @@ async function exportNamedComparison(): Promise<void> {
     if (!own(op)) return;
     download(report, 'text/html;charset=utf-8', 'color-context-named-comparison.html');
     previewStatus.textContent = 'Named comparison downloaded. Applied settings and unsent fields were kept.';
-  } catch { if (own(op)) showError('Named comparison failed or was canceled. No partial report was downloaded; applied work and drafts were kept.'); }
+  } catch { if (own(op)) { showError('Named comparison failed or was canceled. No partial report was downloaded; applied work and drafts were kept.'); previewStatus.textContent = 'No named comparison downloaded. Applied work and drafts were kept.'; } }
   finally { if (operation === op) { finish(op); if (!dirty && frameGeneration !== generation) void renderPreview(); } }
 }
 async function exportArtifact(kind: 'source' | 'result' | 'project' | 'report'): Promise<void> {
@@ -263,9 +292,11 @@ variantName.addEventListener('input', () => {
   }
 });
 for (const select of [variantFirst, variantSecond]) select.onchange = () => {
-  if (operation?.kind === 'Preparing named surround comparison') cancelWork('Named comparison stopped after the selection changed. Applied work and drafts were kept.');
+  if (operation?.kind === 'Preparing named surround comparison' || operation?.kind === 'Rendering named comparison') cancelWork('Named comparison stopped after the selection changed. Applied work and drafts were kept.');
   updateControls();
 };
+viewVariantPair.onclick = () => {void renderNamedComparison();};
+node<HTMLSelectElement>('named-view-scale').onchange = () => {node('named-views').classList.toggle('actual', node<HTMLSelectElement>('named-view-scale').value === 'actual');};
 variantReport.onclick = () => {void exportNamedComparison();};
 keepVariant.onclick = () => changeVariant('keep');
 form.addEventListener('submit',event=>{event.preventDefault();apply();});
@@ -278,7 +309,7 @@ buttons['save-current'].onclick = ()=>{void explicitSave();}; buttons['clear-sav
 buttons['continue-unsaved'].onclick = ()=>{if(startup)return;retirePendingLoad();memoryEnabled=true;protectWrites();saveStatus.textContent='Saving disabled · working in memory. Save current project is the explicit way to enable saving.';updateControls();if(project&&frameGeneration!==generation)void renderPreview();};
 buttons['raw-backup'].onclick = ()=>{void (async()=>{try{const raw=await store.exportRaw();if(raw===null)showError('No saved string record is available.');else download(raw,'application/json','color-context-raw-saved-record.json');}catch{showError('Raw saved record could not be exported safely. It was kept unchanged.');}})();};
 node<HTMLSelectElement>('comparison-view').onchange = ()=>{node('paired-views').classList.toggle('actual',node<HTMLSelectElement>('comparison-view').value==='actual');};
-let syncingScroll=false; const scrolls=Array.from(document.querySelectorAll<HTMLElement>('.canvas-scroll'));for(const scroll of scrolls)scroll.addEventListener('scroll',()=>{if(syncingScroll)return;syncingScroll=true;for(const other of scrolls)if(other!==scroll){other.scrollLeft=scroll.scrollLeft;other.scrollTop=scroll.scrollTop;}syncingScroll=false;});
+for (const group of ['paired-views', 'named-views']) { let syncingScroll=false; const scrolls=Array.from(node(group).querySelectorAll<HTMLElement>('.canvas-scroll'));for(const scroll of scrolls)scroll.addEventListener('scroll',()=>{if(syncingScroll)return;syncingScroll=true;for(const other of scrolls)if(other!==scroll){other.scrollLeft=scroll.scrollLeft;other.scrollTop=scroll.scrollTop;}syncingScroll=false;}); }
 window.addEventListener('beforeunload',event=>{if(dirty||project&&durableGeneration!==generation){event.preventDefault();event.returnValue='';}});
 window.addEventListener('pagehide',event=>{retireExperiment();intent++;loadEpoch++;pendingLoad=null;cancelWork();for(const url of urls)URL.revokeObjectURL(url);urls.clear();if(!event.persisted){clearTimeout(saveTimer);store.close();}});
 window.addEventListener('pageshow',event=>{if(event.persisted){updateControls();if(startup)void loadSaved(true);else if(project&&frameGeneration!==generation&&!dirty)void renderPreview();if(!experiment&&!experimentRequest)void fetchExperiment();}});

@@ -93,3 +93,13 @@ test('invalid pair selection cannot supersede a live job; valid report pair owns
   assert.equal((current.request as {project:Project}).project.variants![0]!.name,'First');
   current.reply({ok:true,kind:'variant-report',value:report});assert.equal(await pending,report);
 }));
+
+test('named preview validates both raster geometries and snapshots/cancels the owned pair job',async()=>workers(async()=>{
+  const {previewVariantPair}=await import('../src/jobs.ts');assert.equal(typeof previewVariantPair,'function');
+  const project=fixture();project.variants=[{name:'Small',settings:project.settings},{name:'Large',settings:{...project.settings,border:1}}];
+  const pair={first:{width:1,height:1,rgba:Uint8ClampedArray.of(10,20,30,255)},second:{width:3,height:3,rgba:new Uint8ClampedArray(36)}};
+  const valid=previewVariantPair(project,0,1);latest().reply({ok:true,kind:'variant-preview',value:pair});assert.deepEqual(await valid,pair);
+  const wrong=previewVariantPair(project,0,1), rejected=assert.rejects(wrong);latest().reply({ok:true,kind:'variant-preview',value:{...pair,second:pair.first}});await rejected;
+  const abort=new AbortController(), pending=previewVariantPair(project,0,1,{signal:abort.signal}), stopped=assert.rejects(pending,{name:'AbortError'});
+  project.variants[0]!.name='Later';assert.equal((latest().request as {project:Project}).project.variants![0]!.name,'Small');abort.abort();await stopped;
+}));

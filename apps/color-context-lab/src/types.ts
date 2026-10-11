@@ -10,6 +10,7 @@ export interface Metrics {
   artworkChangedPixels: number; artworkMaxChannelDelta: number; surroundPixels: number; totalPixels: number;
   rgbRmse: number; maxRgbDelta: number; meanAbsoluteLuminanceDelta: number;
 }
+export interface VariantPreview { first: Raster; second: Raster }
 export interface Comparison { baseline: Raster; result: Raster; metrics: Metrics }
 export interface PngHeader { width: number; height: number; colorType: 2 | 6 }
 export const LIMITS = Object.freeze({

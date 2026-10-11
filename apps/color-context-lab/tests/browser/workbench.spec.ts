@@ -336,3 +336,53 @@ test('maximum976 named comparison downloads two complete PNGs with all retained7
   }
   expect(await backup(page)).toEqual(project);
 });
+
+test('live named comparison shows both retained contexts without applying them or changing raw drafts',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto('/');const original=rawProject();original.variants=[{name:'Warm',settings:{...original.settings,border:2,mode:'solid',colorA:'#ff0000'}},{name:'Cool',settings:{...original.settings,border:3,mode:'solid',colorA:'#0000ff'}}];await open(page,original);
+  await page.locator('#variant-first').selectOption('Warm');await page.locator('#variant-second').selectOption('Cool');await page.locator('#border-size').fill('draft');
+  await expect(page.getByRole('button',{name:'View named comparison',exact:true})).toBeVisible();await page.getByRole('button',{name:'View named comparison',exact:true}).click();
+  await expect(page.locator('#named-preview-status')).toHaveText('Named comparison ready. Applied settings and drafts were kept.');
+  for(const [id,width,height,rgba] of [['named-first-canvas',7,6,[255,0,0,255]],['named-second-canvas',9,8,[0,0,255,255]]] as const) {
+    const pixels=await page.locator(`#${id}`).evaluate(canvas=>{const value=canvas as HTMLCanvasElement;return {width:value.width,height:value.height,pixel:[...value.getContext('2d')!.getImageData(0,0,1,1).data], artwork:[...value.getContext('2d')!.getImageData((value.width-3)/2+2,(value.height-2)/2+1,1,1).data]};});
+    expect(pixels).toEqual({width,height,pixel:rgba,artwork:[0,1,2,255]});
+  }
+  await page.getByRole('combobox',{name:'Named comparison scale',exact:true}).selectOption('actual');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  expect(await backup(page)).toEqual(original);await expect(page.locator('#border-size')).toHaveValue('draft');
+  await page.locator('#variant-second').selectOption('Warm');await expect(page.locator('#named-preview')).toBeHidden();
+});
+
+test('changed-back named preview selection permanently retires an older held result',async({page})=>{
+  await installNative(page);await page.goto('/');const original=rawProject();original.variants=[{name:'One',settings:original.settings},{name:'Two',settings:{...original.settings,colorA:'#ff0000'}}];await open(page,original);
+  await page.locator('#variant-first').selectOption('One');await page.locator('#variant-second').selectOption('Two');await gate(page,'worker');
+  await page.locator('#view-variant-pair').click();await held(page,'worker');
+  await page.locator('#variant-second').selectOption('One');await page.locator('#variant-second').selectOption('Two');await release(page);
+  await expect(page.locator('#named-preview')).toBeHidden();await expect(page.locator('#named-preview-status')).not.toContainText('ready');
+  await page.locator('#view-variant-pair').click();await expect(page.locator('#named-preview')).toBeVisible();expect(await backup(page)).toEqual(original);
+});
+
+test('maximum live named contexts scroll together without moving the separate applied comparison',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto('/');const source=literalRaster(720,720), project=rawProject({border:128},720,720,source.rgba);
+  project.variants=[{name:'White',settings:{...project.settings,colorA:'#ffffff'}},{name:'Blue',settings:{...project.settings,colorA:'#0000ff'}}];await open(page,project);
+  await page.locator('#variant-first').selectOption('White');await page.locator('#variant-second').selectOption('Blue');await page.locator('#view-variant-pair').click();await expect(page.locator('#named-preview')).toBeVisible();
+  await page.locator('#comparison-view').selectOption('actual');await page.locator('#named-view-scale').selectOption('actual');
+  const first=page.getByRole('region',{name:'First retained context view',exact:true}), second=page.getByRole('region',{name:'Second retained context view',exact:true});
+  await first.evaluate(value=>{value.scrollLeft=120;value.scrollTop=90;});await expect.poll(()=>second.evaluate(value=>[value.scrollLeft,value.scrollTop])).toEqual([120,90]);
+  expect(await page.getByRole('region',{name:'Normalized original view',exact:true}).evaluate(value=>[value.scrollLeft,value.scrollTop])).toEqual([0,0]);
+  expect(await page.locator('#named-first-canvas').evaluate(canvas=>[(canvas as HTMLCanvasElement).width,(canvas as HTMLCanvasElement).height])).toEqual([976,976]);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(await backup(page)).toEqual(project);
+});
+
+test('unavailable live named worker ends the busy status and preserves applied work',async({page})=>{
+  await page.goto('/');const original=rawProject();original.variants=[{name:'One',settings:original.settings},{name:'Two',settings:{...original.settings,colorA:'#ff0000'}}];await open(page,original);
+  await page.locator('#variant-first').selectOption('One');await page.locator('#variant-second').selectOption('Two');
+  await page.route('**/assets/image.worker-*.js',route=>route.abort());await page.locator('#view-variant-pair').click();
+  await expect(page.locator('#named-preview-status')).toContainText('unavailable');await expect(page.locator('#preview-status')).not.toContainText('Rendering');
+  expect(await backup(page)).toEqual(original);
+});
+
+test('unavailable named report worker ends the busy status and publishes no download',async({page})=>{
+  await page.goto('/');const original=rawProject();original.variants=[{name:'One',settings:original.settings},{name:'Two',settings:{...original.settings,colorA:'#ff0000'}}];await open(page,original);
+  await page.locator('#variant-first').selectOption('One');await page.locator('#variant-second').selectOption('Two');const downloads:string[]=[];page.on('download',file=>downloads.push(file.suggestedFilename()));
+  await page.route('**/assets/image.worker-*.js',route=>route.abort());await page.locator('#download-variant-report').click();
+  await expect(page.locator('#error')).toContainText('failed');await expect(page.locator('#preview-status')).not.toContainText('Preparing');expect(downloads).toEqual([]);expect(await backup(page)).toEqual(original);
+});
