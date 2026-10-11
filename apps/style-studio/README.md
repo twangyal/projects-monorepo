@@ -28,8 +28,9 @@ There is no backend, API key, paid service, model download, or runtime network i
 1. Add tops, bottoms, and shoes under **Add wardrobe piece**. Name and explicitly tag each piece's palette, fit, style, and formality. An optional photo is normalized locally.
 2. Use **Teach my taste** to label examples **Like** or **Pass**. The model needs at least eight examples, including three of each label. Before that, it explains the missing evidence and shows unranked outfit ideas.
 3. Choose the tags for a new outfit and use **Assess this outfit**. Review the alignment score, label counts, and strongest feature contributions. These contributions explain this particular fitted model; they are not general fashion rules.
-4. Use **Suggest looks** to combine one owned top, bottom, and pair of shoes. Choose a mode and occasion. Save a result, edit its name/notes, and rate it. Correcting a saved look's rating updates its existing example rather than counting the same vote twice.
-5. Download an **outfit board** as a PNG, or **Export profile** as a complete JSON backup. Reopen the profile in the same browser or import the backup elsewhere.
+4. Under **Build a look**, explicitly choose an owned top, bottom and pair of shoes. **Assess chosen outfit** previews their actual photos or illustrations and scores their averaged tags without editing your profile. Name it, add notes and **Save chosen outfit** to preserve independent piece/photo snapshots. Saving does not imply Like or Pass; rate the saved look explicitly. Missing or deleted selections require a replacement, and insufficient training evidence remains unscored.
+5. Use **Suggest looks** to combine one owned top, bottom, and pair of shoes. Choose a mode and occasion. Save a result, edit its name/notes, and rate it. Correcting a saved look's rating updates its existing example rather than counting the same vote twice.
+6. Download an **outfit board** as a PNG, or **Export profile** as a complete JSON backup. Reopen the profile in the same browser or import the backup elsewhere.
 
 **Load sample profile** provides original procedural wardrobe illustrations and explicitly labeled sample preferences. It replaces the active profile only through your action and can be undone. It never silently mixes sample labels into your own preferences.
 
@@ -134,3 +135,5 @@ STYLE_CONFLICT_FIXTURES=/tmp/style-capacity-fixtures \
 ```
 
 The runner owns its browser processes and leaves the supplied server untouched.
+
+Issue [#184](https://github.com/twangyal/projects-monorepo/issues/184) adds chosen wardrobe composition. The complete gate passes 51 unit and 60 native Chromium cases, lint, types and build. Native checks compare the independently computed score, complete JSON before/after assessment, saved snapshots after wardrobe deletion, Undo/Redo, reopen, actual photo pixels in the downloaded PNG, insufficient-evidence behavior, mobile missing selections and cancellation of a held real import. See [the verification record](docs/2026-10-11-chosen-outfits/README.md). Style Studio remains ACTIVE against the revised product direction.

@@ -1,0 +1,117 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 test:browser
+> playwright test tests/browser/composition.spec.ts --timeout=5000
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+(node:107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/composition.spec.ts:9:1 › chosen owned outfit has a real assessment and complete reversible saved snapshots (5.1s)
+(node:187) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/composition.spec.ts:12:1 › missing selections do not guess an outfit and drafts survive wardrobe edits on mobile (5.1s)
+(node:264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 tests/browser/composition.spec.ts:15:1 › new composition input retires a held real import while preserving the complete profile (5.1s)
+
+
+  1) tests/browser/composition.spec.ts:9:1 › chosen owned outfit has a real assessment and complete reversible saved snapshots
+
+    Test timeout of 5000ms exceeded.
+
+    Error: locator.selectOption: Test timeout of 5000ms exceeded.
+    Call log:
+      - waiting for locator('#compose-form').getByLabel('Outfit top', { exact: true })
+
+
+       6 | async function backup(page:Page):Promise<Project>{const d=page.waitForEvent('download');await page.getByRole('button',{name:'Export profile',exact:true}).click();return JSON.parse((await readFile((await (await d).path())!)).toString());}
+       7 | async function load(page:Page,p:Project){await page.goto('/');await page.locator('#profile-import').setInputFiles({name:'profile.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(p))});await expect(page.locator('#profile-title')).toHaveValue(p.title);}
+    >  8 | async function choose(page:Page,p:Project){const form=page.locator('#compose-form');for(const category of ['top','bottom','shoes'] as const)await form.getByLabel(`Outfit ${category}`,{exact:true}).selectOption(p.pieces.find(x=>x.category===category)!.id);await form.getByLabel('Chosen look name',{exact:true}).fill('Exactly my combination');await form.getByLabel('Chosen look notes',{exact:true}).fill('For the opening');return form;}
+         |                                                                                                                                                                                                      ^
+       9 | test('chosen owned outfit has a real assessment and complete reversible saved snapshots',async({page})=>{
+      10 |  page.on('dialog',d=>d.accept());const p=createDemoProject();await load(page,p);const before=await backup(page),form=await choose(page,before);await page.locator('#piece-name').fill('Unapplied wardrobe name');await form.getByRole('button',{name:'Assess chosen outfit',exact:true}).click();await expect(page.locator('#compose-result')).toContainText(/\d+\s*\/\s*100/);expect(await backup(page)).toEqual(before);await form.getByRole('button',{name:'Save chosen outfit',exact:true}).click();const after=await backup(page);expect(after.examples).toEqual(before.examples);expect(after.looks).toHaveLength(before.looks.length+1);const saved=after.looks.at(-1)!;expect(saved.name).toBe('Exactly my combination');expect(saved.notes).toBe('For the opening');expect(saved.pieces).toEqual(['top','bottom','shoes'].map(c=>before.pieces.find(x=>x.category===c)));expect({...after,looks:before.looks}).toEqual(before);await expect(page.locator('#piece-name')).toHaveValue('Unapplied wardrobe name');await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(before);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(after);await expect(page.locator('#save-status')).toContainText('Saved on this device');await page.reload();expect(await backup(page)).toEqual(after);const card=page.locator(`[data-look-id="${saved.id}"]`),pending=page.waitForEvent('download');await card.getByRole('button',{name:'Download outfit board',exact:true}).click();const png=await readFile((await (await pending).path())!);expect(png.subarray(1,4).toString()).toBe('PNG');expect(png.readUInt32BE(16)).toBe(1200);expect(png.readUInt32BE(20)).toBe(1000);
+      11 | });
+        at choose (/workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/composition.spec.ts:8:198)
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/composition.spec.ts:10:124
+
+    Error Context: test-results/browser-composition-chosen-3ff98--reversible-saved-snapshots/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-composition-chosen-3ff98--reversible-saved-snapshots/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-composition-chosen-3ff98--reversible-saved-snapshots/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/browser/composition.spec.ts:12:1 › missing selections do not guess an outfit and drafts survive wardrobe edits on mobile
+
+    Test timeout of 5000ms exceeded.
+
+    Error: locator.fill: Test timeout of 5000ms exceeded.
+    Call log:
+      - waiting for locator('#compose-form').getByLabel('Chosen look name', { exact: true })
+
+
+      11 | });
+      12 | test('missing selections do not guess an outfit and drafts survive wardrobe edits on mobile',async({page})=>{
+    > 13 |  page.on('dialog',d=>d.accept());await page.setViewportSize({width:390,height:844});await load(page,createDemoProject());const before=await backup(page),form=page.locator('#compose-form');await form.getByLabel('Chosen look name',{exact:true}).fill('Keep this draft');await form.getByRole('button',{name:'Assess chosen outfit',exact:true}).click();await expect(page.locator('#message')).toContainText(/Select.*top.*bottom.*shoes/);expect(await backup(page)).toEqual(before);await choose(page,before);await form.getByLabel('Chosen look notes',{exact:true}).fill('Do not discard my notes');await page.locator(`[data-piece-id="${before.pieces[0].id}"]`).getByRole('button',{name:'Delete piece',exact:true}).click();await expect(form.getByLabel('Chosen look notes',{exact:true})).toHaveValue('Do not discard my notes');await expect(form.getByLabel('Outfit top',{exact:true})).toHaveValue(before.pieces[0].id);await form.getByRole('button',{name:'Assess chosen outfit',exact:true}).click();await expect(page.locator('#message')).toContainText(/no longer|unavailable/);expect((await backup(page)).looks).toEqual(before.looks);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('#compose').screenshot({path:test.info().outputPath('composition-mobile.png')});
+         |                                                                                                                                                                                                                                                    ^
+      14 | });
+      15 | test('new composition input retires a held real import while preserving the complete profile',async({page})=>{
+      16 |  page.on('dialog',d=>d.accept());await load(page,createDemoProject());const before=await backup(page);await page.evaluate(()=>{const original=File.prototype.text;let release!:()=>void;const gate=new Promise<void>(r=>release=r);Object.assign(window,{releaseCompositionFile:release});File.prototype.text=async function(){const text=await original.call(this);if(this.name==='held-compose.json')await gate;return text;};});const incoming=createProject('Old incoming profile');await page.locator('#profile-import').setInputFiles({name:'held-compose.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(incoming))});await page.locator('#compose-form').getByLabel('Chosen look name',{exact:true}).fill('New composition intent');await page.evaluate(()=>(window as unknown as {releaseCompositionFile:()=>void}).releaseCompositionFile());await expect(page.locator('#cancel-operation')).toBeHidden();expect(await backup(page)).toEqual(before);await expect(page.locator('#compose-form').getByLabel('Chosen look name',{exact:true})).toHaveValue('New composition intent');
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/composition.spec.ts:13:244
+
+    Error Context: test-results/browser-composition-missin-52813-ve-wardrobe-edits-on-mobile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-composition-missin-52813-ve-wardrobe-edits-on-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-composition-missin-52813-ve-wardrobe-edits-on-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) tests/browser/composition.spec.ts:15:1 › new composition input retires a held real import while preserving the complete profile
+
+    Test timeout of 5000ms exceeded.
+
+    Error: locator.fill: Test timeout of 5000ms exceeded.
+    Call log:
+      - waiting for locator('#compose-form').getByLabel('Chosen look name', { exact: true })
+
+
+      14 | });
+      15 | test('new composition input retires a held real import while preserving the complete profile',async({page})=>{
+    > 16 |  page.on('dialog',d=>d.accept());await load(page,createDemoProject());const before=await backup(page);await page.evaluate(()=>{const original=File.prototype.text;let release!:()=>void;const gate=new Promise<void>(r=>release=r);Object.assign(window,{releaseCompositionFile:release});File.prototype.text=async function(){const text=await original.call(this);if(this.name==='held-compose.json')await gate;return text;};});const incoming=createProject('Old incoming profile');await page.locator('#profile-import').setInputFiles({name:'held-compose.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(incoming))});await page.locator('#compose-form').getByLabel('Chosen look name',{exact:true}).fill('New composition intent');await page.evaluate(()=>(window as unknown as {releaseCompositionFile:()=>void}).releaseCompositionFile());await expect(page.locator('#cancel-operation')).toBeHidden();expect(await backup(page)).toEqual(before);await expect(page.locator('#compose-form').getByLabel('Chosen look name',{exact:true})).toHaveValue('New composition intent');
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ^
+      17 | });
+      18 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/composition.spec.ts:16:706
+
+    Error Context: test-results/browser-composition-new-co-9741c-erving-the-complete-profile/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-composition-new-co-9741c-erving-the-complete-profile/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-composition-new-co-9741c-erving-the-complete-profile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    tests/browser/composition.spec.ts:9:1 › chosen owned outfit has a real assessment and complete reversible saved snapshots
+    tests/browser/composition.spec.ts:12:1 › missing selections do not guess an outfit and drafts survive wardrobe edits on mobile
+    tests/browser/composition.spec.ts:15:1 › new composition input retires a held real import while preserving the complete profile

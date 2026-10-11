@@ -5,13 +5,13 @@ import {
   setTitle, updateLook, updatePiece,
 } from './domain.ts';
 import { createDemoProject } from './demo.ts';
-import { featuresFromTags, tagsFromFeatures } from './features.ts';
+import { averageFeatures, featuresFromTags, tagsFromFeatures } from './features.ts';
 import { assessOutfit, generateAlternatives, trainPreferenceModel } from './model.ts';
 import { ProjectHistory } from './history.ts';
 import { openProjectStore, SavedCopyConflict, SavedCopyProtected, type ProjectStore } from './storage.ts';
 import { exportLookPng, normalizePhoto, validateProjectPhotos } from './images.ts';
 import {
-  FITS, FORMALITIES, LIMITS, PALETTES, STYLES,
+  CATEGORIES, FITS, FORMALITIES, LIMITS, PALETTES, STYLES,
   type Category, type Label, type Mode, type Occasion, type PhotoAsset,
   type Piece, type Project, type SavedLook, type Tags, type TasteScore,
 } from './types.ts';
@@ -20,7 +20,7 @@ const mount = document.querySelector<HTMLDivElement>('#app');
 if (!mount) throw new Error('The editor mount is missing.');
 mount.innerHTML = `
 <a class="skip-link" href="#wardrobe">Skip to wardrobe</a>
-<header class="site-header"><a class="brand" href="#top"><span class="brand-mark" aria-hidden="true">s.</span> Style Studio</a><nav aria-label="Workspace"><a href="#wardrobe">Wardrobe</a><a href="#taste">Your taste</a><a href="#ideas">Outfit ideas</a><a href="#saved">Saved looks</a></nav><span class="local-badge">Local & private</span></header>
+<header class="site-header"><a class="brand" href="#top"><span class="brand-mark" aria-hidden="true">s.</span> Style Studio</a><nav aria-label="Workspace"><a href="#wardrobe">Wardrobe</a><a href="#taste">Your taste</a><a href="#compose">Build a look</a><a href="#saved">Saved looks</a></nav><span class="local-badge">Local & private</span></header>
 <main id="top">
   <section class="hero" aria-labelledby="hero-title"><div><p class="eyebrow">A wardrobe that feels like you</p><h1 id="hero-title">Good style starts<br>with <em>your taste.</em></h1><p class="hero-copy">Keep the pieces you own. Teach us what you like. Find a few new ways to wear them.</p><button id="load-sample" class="button secondary">Load sample profile</button><p class="quiet">Original sample pieces and labels. Replacing your profile is confirmed and undoable.</p></div><aside class="model-panel" aria-labelledby="model-heading"><div class="panel-top"><span class="eyebrow">Your preference notebook</span><span class="dot" aria-hidden="true"></span></div><h2 id="model-heading">Learning your point of view</h2><p id="model-status" role="status"></p><div id="model-counts" class="counts"></div><p class="quiet">A small model learns from your Like / Pass labels and the tags you enter. Photos are references only; there is no automatic image recognition.</p><p class="quiet">Scores describe estimated taste alignment, not probabilities, fit or objective fashion quality.</p></aside></section>
   <section class="profile-bar" aria-label="Profile and backup"><form id="profile-form"><label for="profile-title">Profile title</label><div class="inline"><input id="profile-title" name="title" maxlength="80" required><button class="button subtle" type="submit">Save profile title</button></div></form><div class="profile-actions"><button id="undo" class="button subtle">Undo</button><button id="redo" class="button subtle">Redo</button><button id="export-profile" class="button subtle">Export profile</button><button id="import-profile" class="button subtle">Import profile</button><input id="profile-import" type="file" accept=".json,application/json" class="visually-hidden" aria-label="Choose profile JSON"><button id="new-profile" class="button subtle">New profile</button></div><div class="save-line"><p id="save-status" role="status">Opening local storage…</p><button id="retry-save" class="button subtle" hidden>Retry saving</button><button id="retry-load" class="button subtle">Reload saved profile</button><button id="replace-saved-copy" class="button subtle">Replace saved copy</button></div></section>
@@ -28,6 +28,7 @@ mount.innerHTML = `
   <section id="wardrobe" class="workspace-section" aria-labelledby="wardrobe-heading"><div class="section-heading"><div><p class="eyebrow">01 / The pieces you reach for</p><h2 id="wardrobe-heading">Your wardrobe</h2></div><p id="wardrobe-count" class="section-caption"></p></div><div class="section-layout"><form id="piece-form" class="editor-panel"><h3 id="piece-form-heading">Add a wardrobe piece</h3><p class="quiet">Use your own photo or keep an illustrated reference. Describe the piece yourself.</p><label for="piece-name">Piece name</label><input id="piece-name" name="name" required maxlength="80" placeholder="The linen shirt"><label for="piece-category">Category</label><select id="piece-category" name="category"><option value="top">Top</option><option value="bottom">Bottom</option><option value="shoes">Shoes</option></select><div id="piece-tags" class="tag-fields"></div><label for="piece-photo">Reference photo (optional)</label><input id="piece-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="piece-photo-preview" class="photo-draft"></div><p id="piece-photo-status" class="quiet" role="status"></p><button id="remove-piece-photo" class="text-button" type="button" hidden>Remove reference photo</button><div class="form-actions"><button id="piece-submit" class="button" type="submit">Add wardrobe piece</button><button id="cancel-piece-edit" class="button subtle" type="button" hidden>Cancel edit</button></div></form><div><div id="wardrobe-list" class="wardrobe-grid"></div><p id="wardrobe-empty" class="empty">A favorite shirt, a reliable pair of trousers, the shoes you always wear. Add one of each to start making looks.</p></div></div></section>
   <section id="taste" class="workspace-section" aria-labelledby="taste-heading"><div class="section-heading"><div><p class="eyebrow">02 / Your likes, your labels</p><h2 id="taste-heading">Teach your taste</h2></div><p id="example-count" class="section-caption"></p></div><div class="section-layout"><form id="example-form" class="editor-panel"><h3>Keep an outfit opinion</h3><p class="quiet">An outfit can be a reference you like or one you would pass on. Enter the tags you see.</p><label for="example-caption">Outfit caption</label><input id="example-caption" name="caption" required maxlength="160" placeholder="Relaxed weekend layers"><div id="example-tags" class="tag-fields"></div><label for="example-label">Your opinion</label><select id="example-label" name="label"><option value="like">Like</option><option value="pass">Pass</option></select><label for="example-photo">Outfit reference photo (optional)</label><input id="example-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="example-photo-preview" class="photo-draft"></div><p id="example-photo-status" class="quiet" role="status"></p><button id="remove-example-photo" class="text-button" type="button" hidden>Remove reference photo</button><button id="example-submit" class="button" type="submit">Teach my taste</button></form><div><div id="example-list" class="example-list"></div><p id="example-empty" class="empty">Your opinions make this personal. Start with at least eight examples, including three Likes and three Passes.</p></div></div></section>
   <section id="assessment" class="workspace-section" aria-labelledby="assessment-heading"><div class="section-heading"><div><p class="eyebrow">03 / A second look</p><h2 id="assessment-heading">Does this feel like you?</h2></div><p class="section-caption">You describe the outfit. Your model supplies the estimate.</p></div><div class="assessment-layout"><form id="assessment-form" class="editor-panel"><h3>Assess a new outfit</h3><div id="assessment-tags" class="tag-fields"></div><button class="button" type="submit">Assess this outfit</button></form><div id="assessment-result" class="assessment-result" role="status"><p class="eyebrow">Taste alignment</p><h3>Your point of view, made visible.</h3><p>Choose the tags that describe a look, then assess it against your labeled examples.</p></div></div></section>
+  <section id="compose" class="workspace-section" aria-labelledby="compose-heading"><div class="section-heading"><div><p class="eyebrow">Your pieces, your choice</p><h2 id="compose-heading">Build a look you chose</h2></div></div><div class="assessment-layout"><form id="compose-form" class="editor-panel"><p class="quiet">Choose one owned piece from each category. Assess their declared tags or save the complete combination. Saving does not teach a Like or Pass opinion.</p><label for="compose-top">Outfit top</label><select id="compose-top" name="top"><option value="">Choose top</option></select><label for="compose-bottom">Outfit bottom</label><select id="compose-bottom" name="bottom"><option value="">Choose bottom</option></select><label for="compose-shoes">Outfit shoes</label><select id="compose-shoes" name="shoes"><option value="">Choose shoes</option></select><label for="compose-name">Chosen look name</label><input id="compose-name" name="name" maxlength="80" required><label for="compose-notes">Chosen look notes</label><textarea id="compose-notes" name="notes" maxlength="500" rows="3"></textarea><div class="form-actions"><button id="compose-assess" class="button secondary" type="button">Assess chosen outfit</button><button class="button" type="submit">Save chosen outfit</button><button id="compose-discard" class="button subtle" type="button">Discard chosen outfit edits</button></div></form><div id="compose-result" class="assessment-result" role="status"></div></div></section>
   <section id="ideas" class="workspace-section" aria-labelledby="ideas-heading"><div class="section-heading"><div><p class="eyebrow">04 / A little outfit inspiration</p><h2 id="ideas-heading">New combinations, owned pieces</h2></div></div><form id="suggestion-form" class="suggestion-controls"><div><label for="suggestion-mode">Direction</label><select id="suggestion-mode" name="mode"><option value="match">Match my taste</option><option value="explore">Explore a different style</option></select></div><div><label for="suggestion-occasion">Occasion</label><select id="suggestion-occasion" name="occasion"><option value="any">Any occasion</option><option value="casual">Casual</option><option value="smart">Smart</option><option value="formal">Formal</option></select></div><button class="button" type="submit">Suggest looks</button></form><p id="suggestion-rule" class="quiet">Match uses your learned score. Explore combines 35% learned score with 65% declared-tag novelty. Occasion filters use your formality tags, without silently relaxing them.</p><p id="suggestion-status" role="status" class="section-caption">Add a top, bottom and shoes to make a complete outfit.</p><div id="suggestion-list" class="look-grid"></div></section>
   <section id="saved" class="workspace-section" aria-labelledby="saved-heading"><div class="section-heading"><div><p class="eyebrow">05 / Looks worth keeping</p><h2 id="saved-heading">Your saved looks</h2></div><p id="look-count" class="section-caption"></p></div><p class="quiet">Saved looks keep their own piece snapshots. Editing or removing a wardrobe item will not change a look you saved.</p><div id="look-list" class="look-grid"></div><p id="look-empty" class="empty">Save an outfit idea, give it a name, and keep a note about when you would wear it.</p></section>
   <footer><strong>Made for your wardrobe, kept on your device.</strong><p>Local storage is not a backup. Export your profile to keep photos, labels and saved looks together. Outfit boards are images, not editable backups.</p><p>36 pieces · 80 opinions · 30 saved looks · 20 photos. No accounts, paid models or online saving.</p></footer>
@@ -81,6 +82,10 @@ const pieceForm = element<HTMLFormElement>('#piece-form');
 const exampleForm = element<HTMLFormElement>('#example-form');
 const assessmentForm = element<HTMLFormElement>('#assessment-form');
 const suggestionForm = element<HTMLFormElement>('#suggestion-form');
+const composeForm = element<HTMLFormElement>('#compose-form');
+let compositionAssessed = false;
+let compositionSignature = '';
+composeForm.dataset.dirty = 'false';
 let project = createProject();
 let history = new ProjectHistory(project);
 let model = trainPreferenceModel(project.examples);
@@ -258,6 +263,7 @@ function resetPieceForm(): void {
 function resetEditors(): void {
   resetPieceForm(); exampleForm.reset(); clearPhotoDraft('example'); exampleForm.dataset.dirty = 'false';
   profileForm.dataset.dirty = 'false'; field(profileForm, 'title').value = project.title;
+  composeForm.reset(); composeForm.dataset.dirty = 'false'; compositionAssessed = false;
   assessedTags = null; suggestionSignature = null; element('#suggestion-list').replaceChildren();
   renderAssessment();
 }
@@ -396,6 +402,60 @@ function outfitStrip(pieces: readonly Piece[]): HTMLElement {
   for (const piece of pieces) { const item = node('div'); item.append(visual(piece, true), node('p', '', piece.name)); strip.append(item); }
   return strip;
 }
+function chosenPieces(): [Piece, Piece, Piece] {
+  const ids = CATEGORIES.map(category => field(composeForm, category).value);
+  if (ids.some(id => !id)) throw new Error('Select a top, bottom and shoes to build a complete outfit.');
+  return CATEGORIES.map((category, i) => {
+    const piece = project.pieces.find(item => item.id === ids[i] && item.category === category);
+    if (!piece) throw new Error('A selected wardrobe piece is no longer available in this category. Choose a replacement.');
+    return piece;
+  }) as [Piece, Piece, Piece];
+}
+function renderComposition(): void {
+  const signature = JSON.stringify(project.pieces);
+  if (signature !== compositionSignature) {
+    compositionSignature = signature;
+    for (const category of CATEGORIES) {
+      const select = field(composeForm, category) as HTMLSelectElement, previous = select.value;
+      const placeholder = node('option', '', `Choose ${category}`); placeholder.value = '';
+      const options = project.pieces.filter(piece => piece.category === category).map(piece => {
+        const option = node('option', '', piece.name); option.value = piece.id; return option;
+      });
+      if (previous && !options.some(option => option.value === previous)) {
+        const unavailable = node('option', '', 'Unavailable selection — choose a replacement');
+        unavailable.value = previous; unavailable.disabled = true; options.push(unavailable);
+      }
+      select.replaceChildren(placeholder, ...options); select.value = previous;
+    }
+  }
+  const output = element('#compose-result'); output.replaceChildren(node('p', 'eyebrow', 'Your chosen combination'));
+  let pieces: [Piece, Piece, Piece];
+  try { pieces = chosenPieces(); }
+  catch (error) { output.append(node('p', '', describe(error))); return; }
+  output.append(outfitStrip(pieces));
+  if (!compositionAssessed) { output.append(node('p', '', 'Assess these pieces against your labels, or save the combination without rating it.')); return; }
+  const score = assessOutfit(averageFeatures(pieces), model);
+  if (score) output.append(scoreContent(score));
+  else output.append(node('p', '', model.status === 'insufficient' ? model.reason : 'Your model is not ready.'), node('p', 'quiet', 'No learned score is shown until there are enough explicit labels. You can still save this outfit.'));
+}
+for (const event of ['input','change']) composeForm.addEventListener(event, () => {
+  composeForm.dataset.dirty = 'true'; compositionAssessed = false; renderComposition();
+});
+element('#compose-assess').addEventListener('click', () => attempt(() => {
+  chosenPieces(); compositionAssessed = true; renderComposition();
+}));
+composeForm.addEventListener('submit', event => {
+  event.preventDefault(); attempt(() => {
+    const pieces = chosenPieces();
+    const next = saveLook(project, [pieces[0].id,pieces[1].id,pieces[2].id], field(composeForm,'name').value, field(composeForm,'notes').value);
+    publish(next, 'Your chosen outfit was saved with independent piece snapshots. No opinion was inferred.');
+    composeForm.dataset.dirty = 'false';
+  });
+});
+element('#compose-discard').addEventListener('click', () => {
+  interact(); composeForm.reset(); composeForm.dataset.dirty = 'false'; compositionAssessed = false; renderComposition();
+  message('Chosen outfit drafts discarded. Your saved profile is unchanged.');
+});
 function currentSuggestionSignature(): string { return JSON.stringify([project.pieces, project.examples]); }
 function renderSuggestions(): void {
   const mode = field(suggestionForm, 'mode').value as Mode;
@@ -495,7 +555,7 @@ function render(): void {
     const item = node('div'); item.append(node('strong', '', String(value)), node('span', '', label)); counts.append(item);
   }
   element<HTMLButtonElement>('#undo').disabled = !history.canUndo; element<HTMLButtonElement>('#redo').disabled = !history.canRedo;
-  renderWardrobe(); renderExamples(); renderLooks(); renderAssessment();
+  renderWardrobe(); renderExamples(); renderLooks(); renderAssessment(); renderComposition();
   if (suggestionSignature !== null && suggestionSignature !== currentSuggestionSignature()) {
     element('#suggestion-status').textContent = 'Your profile changed. Suggest looks again to update these ideas and their estimates.';
     for (const control of element('#suggestion-list').querySelectorAll<HTMLButtonElement>('button[type="submit"]')) control.disabled = true;
@@ -691,6 +751,7 @@ void (async () => {
 function hasUnsavedDrafts(): boolean {
   if (pendingSave || saving || saveFailed) return true;
   if (field(profileForm, 'title').value !== project.title) return true;
+  if (composeForm.dataset.dirty === 'true') return true;
   if (pieceForm.dataset.dirty === 'true' || exampleForm.dataset.dirty === 'true') return true;
   if (Object.values(photoDrafts).some(draft => draft.busy || draft.asset !== null)) return true;
   for (const look of project.looks) {
