@@ -63,4 +63,10 @@ export function changedHandoff(catalog, index) {
   if (!row?.addressable || [row.left, row.right].some(endpoint => endpoint && endpoint.kind !== 'regular')) return null;
   return { path: row.path, left: { revision: catalog.left_revision, requested_ref: catalog.left_requested_ref, selection: row.left ? 'whole' : 'missing' }, right: { revision: catalog.right_revision, requested_ref: catalog.right_requested_ref, selection: row.right ? 'whole' : 'missing' } };
 }
+export function changedHistoryHandoff(catalog, index, side) {
+  if (side !== 'left' && side !== 'right') return null;
+  const row = Number.isSafeInteger(index) && index >= 0 ? catalog.entries[index] : null;
+  if (!row?.addressable || row[side]?.kind !== 'regular') return null;
+  return { path: row.path, revision: catalog[`${side}_revision`], requested_ref: catalog[`${side}_requested_ref`] };
+}
 export function changedJson(catalog) { return serialize(validateChangedCatalog(catalog)); }

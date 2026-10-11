@@ -1,6 +1,6 @@
 'use strict';
 import { createContextDraft, addContextRecord, updateContextRecord, removeContextRecord, rebindContextDraft, serializeContextDraft, evidenceCommits } from './context-editor.js';
-import { validateChangedCatalog, changedPage, changedHandoff, changedJson, CHANGES_PAGE_SIZE } from './changed-files.js';
+import { validateChangedCatalog, changedPage, changedHandoff, changedHistoryHandoff, changedJson, CHANGES_PAGE_SIZE } from './changed-files.js';
 // The capability never enters a request URL, DOM text, storage, or a log.
 const launch = new URLSearchParams(location.hash.slice(1));
 let capability = launch.getAll('session').length === 1 ? launch.get('session') : null;
@@ -781,13 +781,14 @@ $('comparison-form').addEventListener('submit', event => {
 $('comparison-prev').addEventListener('click', () => { comparisonPage--; renderComparisonRows(); });
 $('comparison-next').addEventListener('click', () => { comparisonPage++; renderComparisonRows(); });
 for (const id of ['comparison-download-html', 'comparison-download-json']) $(id).addEventListener('click', event => { if ($(id).getAttribute('aria-disabled') === 'true') event.preventDefault(); });
-for (const event of ['input', 'change']) $('workspace-mode').addEventListener(event, () => {
+function workspaceChanged() {
   retireChanges();
   invalidate();
   const comparing = $('workspace-mode').value === 'comparison';
   $('history-workspace').hidden = comparing; $('comparison-workspace').hidden = !comparing;
   status(pumping ? 'Workspace changed. Stopping previous work and waiting for cleanup…' : 'Workspace changed. Drafts and pinned revisions are kept.');
-});
+}
+for (const event of ['input', 'change']) $('workspace-mode').addEventListener(event, workspaceChanged);
 
 // Catalog metadata has its own immutable receipt. Side editing may keep that
 // receipt, but every pending job still uses the single global pump above.
@@ -806,6 +807,9 @@ function changesControls() {
   for (const button of $('changes-table').querySelectorAll('[data-use-change]')) {
     button.disabled = unavailable || !changesCurrent || !changedHandoff(changes, Number(button.dataset.useChange));
   }
+  for (const button of $('changes-table').querySelectorAll('[data-history-side]')) {
+    button.disabled = unavailable || !changesCurrent || !changedHistoryHandoff(changes, Number(button.dataset.historyChange), button.dataset.historySide);
+  }
   $('changes-download-json').setAttribute('aria-disabled', String(unavailable || !changesCurrent || !changesUrl));
 }
 function renderChanges() {
@@ -823,8 +827,13 @@ function renderChanges() {
     }
     const action = node('td'), choice = node('button', 'Use these comparison paths'); choice.type = 'button'; choice.dataset.useChange = String(index);
     choice.addEventListener('click', () => useChangedPath(index)); action.append(choice);
-    const eligible = changedHandoff(changes, index);
-    action.append(node('p', eligible ? 'Regular blob candidate; text support is checked only when you open source.' : entry.addressable ? 'Symlink or gitlink metadata only. Its target is not opened.' : 'This literal path cannot be addressed by the source comparison API.', 'hint'));
+    for (const side of ['left', 'right']) {
+      const button = node('button', `Inspect ${side} history`); button.type = 'button';
+      button.dataset.historySide = side; button.dataset.historyChange = String(index);
+      button.addEventListener('click', () => inspectChangedPath(index, side)); action.append(button);
+    }
+    const eligible = ['left', 'right'].some(side => changedHistoryHandoff(changes, index, side));
+    action.append(node('p', eligible ? 'Regular blob candidates are checked when opened. Symlink and gitlink endpoints stay metadata-only.' : entry.addressable ? 'Symlink or gitlink metadata only. Its target is not opened.' : 'This literal path cannot be addressed by the source APIs.', 'hint'));
     row.append(action); body.append(row);
   }
   pager('changes', page.page, page.total, CHANGES_PAGE_SIZE, 'matches');
@@ -855,6 +864,22 @@ function useChangedPath(index) {
   comparisonInputEpoch++;
   status(pumping ? 'Comparison paths prepared. Previous work is stopping; open each present source explicitly after cleanup.' : 'Comparison paths prepared. Open each present source explicitly; missing paths are verified by comparison.');
   controls();
+}
+function inspectChangedPath(index, side) {
+  if (!ready || uncertainJob || !changesCurrent || $('workspace-mode').value !== 'comparison') return;
+  const captured = changes, target = changedHistoryHandoff(captured, index, side), owner = generation;
+  if (!target) return;
+  const replacing = snapshot || source || reportIdentity || $('ref').value !== 'HEAD' || $('path').value !== '' || $('directory').value !== '' || $('language').value !== 'all' || $('start-line').value !== '1' || $('end-line').value !== '1';
+  if (replacing && !window.confirm(`Replace the current history source and selection with ${JSON.stringify(target.path)} at the ${side} commit ${target.revision}?\nThe committed source will open. Supplied discussion drafts and comparison selections are kept; previous report downloads become stale.`)) return;
+  if (!ready || uncertainJob || !changesCurrent || changes !== captured || generation !== owner || $('workspace-mode').value !== 'comparison') return;
+  $('workspace-mode').value = 'history'; workspaceChanged();
+  files = []; filePage = 0; clearSource();
+  snapshot = { revision: target.revision, requested_ref: target.requested_ref };
+  $('ref').value = target.revision; $('revision').textContent = target.revision;
+  $('directory').value = ''; $('language').value = 'all'; $('file-filter').value = ''; $('function-filter').value = '';
+  $('path').value = JSON.stringify(target.path); $('start-line').value = '1'; $('end-line').value = '1';
+  $('catalog-summary').textContent = `Changed-file catalog ${side} pin · requested ref ${visible(target.requested_ref)}. History reads use this exact commit.`;
+  renderFiles(); controls(); $('path').focus(); openSource();
 }
 for (const side of Object.values(comparisonSides)) {
   for (const suffix of ['ref', 'directory', 'language', 'path', 'start-line', 'end-line', 'selection-mode']) {
