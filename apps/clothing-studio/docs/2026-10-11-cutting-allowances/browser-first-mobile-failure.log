@@ -1,0 +1,67 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> clothing-studio@0.1.0 test:browser
+> playwright test tests/cutting-allowance.spec.ts
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/cutting-allowance.spec.ts:7:1 › actual cutting SVG keeps stitch measurements and complete artwork through history grading and reload (1.1s)
+  ✘  2 tests/cutting-allowance.spec.ts:10:1 › invalid allowance and other focused raw drafts preserve artwork Redo and mobile containment (1.3s)
+
+
+  1) tests/cutting-allowance.spec.ts:10:1 › invalid allowance and other focused raw drafts preserve artwork Redo and mobile containment
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 4
+
+    @@ -1,7 +1,11 @@
+      Object {
+        "construction": Object {
+    +     "allowances": Object {
+    +       "hem": 3,
+    +       "seam": 1,
+    +     },
+          "hem": 140,
+          "kind": "flared-skirt",
+          "slant": 60,
+          "waist": 80,
+        },
+
+       9 | });
+      10 | test('invalid allowance and other focused raw drafts preserve artwork Redo and mobile containment',async({page})=>{
+    > 11 |  await page.setViewportSize({width:390,height:844});await page.goto('/');await page.getByRole('button',{name:'Apply measured pattern',exact:true}).click();const before=await backup(page);await set(page,'1','3');await page.getByRole('button',{name:'Apply measured pattern',exact:true}).click();await page.getByRole('button',{name:'Undo',exact:true}).click();for(const raw of ['','-1','2.6','1e-']){await set(page,raw,'3');await page.getByRole('button',{name:'Apply measured pattern',exact:true}).click();await expect(page.getByLabel('Seam / waist allowance (cm)',{exact:true})).toHaveValue(raw);expect(await backup(page)).toEqual(before);await expect(page.getByRole('button',{name:'Redo',exact:true})).toBeEnabled();}await page.getByRole('button',{name:'Discard pattern edits',exact:true}).click();const position=page.getByLabel('Horizontal position (%)',{exact:true});await position.fill('');await set(page,'1','3');await position.focus();await page.getByRole('button',{name:'Apply measured pattern',exact:true}).click();await expect(position).toBeFocused();expect(await backup(page)).toEqual(before);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('.construction-panel').screenshot({path:test.info().outputPath('cutting-mobile.png')});
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^
+      12 | });
+      13 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/clothing-studio/tests/cutting-allowance.spec.ts:11:1086
+
+    Error Context: test-results/cutting-allowance-invalid--6fee9-Redo-and-mobile-containment/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cutting-allowance-invalid--6fee9-Redo-and-mobile-containment/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cutting-allowance-invalid--6fee9-Redo-and-mobile-containment/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/cutting-allowance.spec.ts:10:1 › invalid allowance and other focused raw drafts preserve artwork Redo and mobile containment
+  1 passed (4.8s)

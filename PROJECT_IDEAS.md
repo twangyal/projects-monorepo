@@ -49,6 +49,8 @@ Milestone #166 adds physical-centimetre two-panel flared-skirt pattern construct
 Milestone #167 links those committed panels to a keyboard/mobile rotatable rigid 3D shell and centimetre OBJ surface export, preserving complete history, saved reload and unapplied drafts. The coarse surface is an explicit construction study; cloth/material physics, avatars, garment details, size grading and real production evaluation remain ACTIVE work.
 Milestone #168 adds optional saved manual linear grading rules, a 3–7 relative-size measurement table and full-scale labelled multi-size SVG nets. Derived sizes validate together; rules can be removed with Undo while preserving artwork/base drafts. Standardized body sizing, advanced grading, cloth simulation and physical production acceptance remain ACTIVE work.
 
+Milestone #182 adds optional saved skirt seam/waist and hem allowances, separate measured stitch and full-scale cutting SVG paths, exact parallel-edge/concentric-arc corners and inherited allowances across relative sizes. Complete history/backups/reload, raw drafts, pending imports and wide-arc sheet containment are verified. Physical toile/fit evaluation, closures, cloth simulation and the professional multi-garment vision remain ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`
