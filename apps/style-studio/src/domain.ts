@@ -1,7 +1,7 @@
 import {
   CATEGORIES, PALETTES, FITS, STYLES, FORMALITIES, ID_PATTERN, LIMITS,
   type Category, type Label, type Tags, type Piece, type PieceIds, type OutfitPieces,
-  type PreferenceExample, type SavedLook, type Project, type PhotoAsset,
+  type PreferenceExample, type SavedLook, type Project, type PhotoAsset, type WearRecord,
 } from './types.ts';
 import { featuresFromTags, averageFeatures, validateFeatures } from './features.ts';
 import { validatePhotoAsset } from './photo-header.ts';
@@ -72,13 +72,26 @@ function validateExample(value: unknown): PreferenceExample {
     label: choice(example.label, ['like', 'pass'], 'Label'), origin,
     features: validateFeatures(example.features, origin), photoId: photoReference(example.photoId), sourceLookId };
 }
+function validateWear(value: unknown): WearRecord {
+  const record = object(value, ['id', 'date', 'occasion', 'notes'], 'Wear entry');
+  const date = record.date;
+  if (typeof date !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}(?![\s\S])/.test(date)) fail('Wear date must be a real calendar date in YYYY-MM-DD format.');
+  const [year, month, day] = date.split('-').map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > days[month - 1]) fail('Wear date must be a real calendar date.');
+  return { id: identifier(record.id, 'Wear entry ID'), date,
+    occasion: text(record.occasion, 80, 'Wear occasion', true, true),
+    notes: text(record.notes, 500, 'Wear notes', true, true) };
+}
 function validateLook(value: unknown): SavedLook {
-  const look = object(value, ['id', 'name', 'notes', 'pieces'], 'Saved look');
+  const look = object(value, ['id', 'name', 'notes', 'pieces'], 'Saved look', ['wears']);
   const pieces = list(look.pieces, 3, 'Outfit pieces').map(validatePiece);
   if (pieces.length !== 3 || pieces.some((piece, index) => piece.category !== CATEGORIES[index])
       || new Set(pieces.map(piece => piece.id)).size !== 3) fail('A saved look needs distinct top, bottom and shoes snapshots in that order.');
   return { id: identifier(look.id, 'Look ID'), name: text(look.name, 80, 'Look name'),
-    notes: text(look.notes, 500, 'Look notes', true, true), pieces: pieces as unknown as OutfitPieces };
+    notes: text(look.notes, 500, 'Look notes', true, true), pieces: pieces as unknown as OutfitPieces,
+    ...(Object.hasOwn(look, 'wears') ? { wears: list(look.wears, LIMITS.wearsPerLook, 'Wear entries').map(validateWear) } : {}) };
 }
 function bounded(serialized: string): string {
   if (serialized.length > LIMITS.projectBytes || new TextEncoder().encode(serialized).byteLength > LIMITS.projectBytes) fail('Profile exceeds the 8 MiB serialized limit.');
@@ -101,7 +114,9 @@ export function validateProject(value: unknown): Project {
     photos: list(project.photos, LIMITS.photos, 'Photos').map(validatePhotoAsset) };
   for (const category of CATEGORIES) if (result.pieces.filter(piece => piece.category === category).length > LIMITS.piecesPerCategory) fail(`Keep at most ${LIMITS.piecesPerCategory} ${category} pieces.`);
   const ids = new Set<string>();
-  for (const entity of [...result.pieces, ...result.examples, ...result.looks, ...result.photos]) {
+  const wears = result.looks.flatMap(look => look.wears ?? []);
+  if (wears.length > LIMITS.wears) fail(`Keep at most ${LIMITS.wears} wear entries across your profile.`);
+  for (const entity of [...result.pieces, ...result.examples, ...result.looks, ...result.photos, ...wears]) {
     if (ids.has(entity.id)) fail('Profile entity IDs must be unique.');
     ids.add(entity.id);
   }
@@ -243,5 +258,26 @@ export function rateLook(project: Project, id: string, label: Label): Project {
     origin: 'outfit', features: averageFeatures(look.pieces), photoId: null, sourceLookId: look.id });
   if (existing) next.examples[next.examples.indexOf(existing)] = example;
   else next.examples.push(example);
+  return finish(next);
+}
+
+export function addWear(project: Project, lookId: string, input: Omit<WearRecord, 'id'>): Project {
+  object(input, ['date', 'occasion', 'notes'], 'New wear entry');
+  const next = validateProject(project), look = find(next.looks, lookId, 'look');
+  look.wears = [...(look.wears ?? []), validateWear({ ...input, id: newId() })];
+  return finish(next);
+}
+export function updateWear(project: Project, lookId: string, wearId: string, input: Omit<WearRecord, 'id'>): Project {
+  object(input, ['date', 'occasion', 'notes'], 'Wear entry edit');
+  const next = validateProject(project), look = find(next.looks, lookId, 'look');
+  const old = find(look.wears ?? [], wearId, 'wear entry');
+  look.wears![look.wears!.indexOf(old)] = validateWear({ ...input, id: old.id });
+  return finish(next);
+}
+export function deleteWear(project: Project, lookId: string, wearId: string): Project {
+  const next = validateProject(project), look = find(next.looks, lookId, 'look');
+  find(look.wears ?? [], wearId, 'wear entry');
+  look.wears = look.wears!.filter(record => record.id !== wearId);
+  if (look.wears.length === 0) delete look.wears;
   return finish(next);
 }

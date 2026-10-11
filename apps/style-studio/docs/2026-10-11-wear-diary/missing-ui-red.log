@@ -1,0 +1,85 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 test:browser
+> playwright test tests/browser/wear.spec.ts --timeout=8000
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/wear.spec.ts:7:1 › actual wear diary is correctable, reversible, retained across native reopen and explicitly rated (8.1s)
+(node:183) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/wear.spec.ts:15:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation (8.1s)
+
+
+  1) tests/browser/wear.spec.ts:7:1 › actual wear diary is correctable, reversible, retained across native reopen and explicitly rated
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.fill: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for locator('[data-look-id="99f4086b2555784003528d7327bae887"]').getByLabel('Wear date', { exact: true })
+
+
+       6 | async function load(page:Page,p=createDemoProject()){await page.goto('/');page.on('dialog',d=>d.accept());await page.locator('#profile-import').setInputFiles({name:'diary.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(p))});await expect(page.locator('#profile-title')).toHaveValue(p.title);return p;}
+       7 | test('actual wear diary is correctable, reversible, retained across native reopen and explicitly rated',async({page})=>{
+    >  8 |  const before=await load(page),look=before.looks[0],card=page.locator(`[data-look-id="${look.id}"]`);await card.getByLabel('Wear date',{exact:true}).fill('2026-10-10');await card.getByLabel('Wear occasion',{exact:true}).fill('Gallery opening');await card.getByLabel('Wear notes',{exact:true}).fill('Comfortable all evening');await card.getByRole('button',{name:'Save wear entry',exact:true}).click();const added=await backup(page);expect(added.examples).toEqual(before.examples);expect(added.looks[0].pieces).toEqual(before.looks[0].pieces);expect(added.looks[0].wears).toHaveLength(1);const wear=added.looks[0].wears![0];expect({...wear,id:''}).toEqual({id:'',date:'2026-10-10',occasion:'Gallery opening',notes:'Comfortable all evening'});expect({...added,looks:before.looks}).toEqual(before);
+         |                                                                                                                                                      ^
+       9 |  await card.getByRole('button',{name:'Edit wear entry',exact:true}).click();await card.getByLabel('Wear date',{exact:true}).fill('2024-02-29');await card.getByLabel('Wear notes',{exact:true}).fill('Corrected memory');await card.getByRole('button',{name:'Save wear entry',exact:true}).click();const edited=await backup(page);expect(edited.looks[0].wears![0]).toEqual({...wear,date:'2024-02-29',notes:'Corrected memory'});
+      10 |  await page.getByRole('button',{name:'Undo',exact:true}).click();expect(await backup(page)).toEqual(added);await page.getByRole('button',{name:'Redo',exact:true}).click();expect(await backup(page)).toEqual(edited);await expect(page.locator('#save-status')).toContainText('Saved on this device');await page.reload();expect(await backup(page)).toEqual(edited);
+      11 |  await page.locator(`[data-piece-id="${before.pieces[0].id}"]`).getByRole('button',{name:'Delete piece',exact:true}).click();const removedPiece=await backup(page);expect(removedPiece.looks).toEqual(edited.looks);await card.getByRole('button',{name:'Like',exact:true}).click();const liked=await backup(page);await card.getByRole('button',{name:'Pass',exact:true}).click();const passed=await backup(page);expect(passed.examples.length).toBe(liked.examples.length);expect(passed.examples.at(-1)!.id).toBe(liked.examples.at(-1)!.id);expect(passed.looks).toEqual(edited.looks);
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/wear.spec.ts:8:150
+
+    Error Context: test-results/browser-wear-actual-wear-d-f7047-reopen-and-explicitly-rated/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-wear-actual-wear-d-f7047-reopen-and-explicitly-rated/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-wear-actual-wear-d-f7047-reopen-and-explicitly-rated/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/browser/wear.spec.ts:15:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.fill: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for locator('[data-look-id="699e518253a11e5683658ffa46220fe0"]').getByLabel('Wear notes', { exact: true })
+
+
+      14 | });
+      15 | test('mobile wear drafts survive other edits and require a native leaving-page confirmation',async({page})=>{
+    > 16 |  await page.setViewportSize({width:390,height:844});const p=await load(page),card=page.locator(`[data-look-id="${p.looks[0].id}"]`);await card.getByLabel('Wear notes',{exact:true}).fill('Unsubmitted memory');await card.getByRole('button',{name:'Like',exact:true}).click();await expect(card.getByLabel('Wear notes',{exact:true})).toHaveValue('Unsubmitted memory');expect((await backup(page)).looks[0].wears).toBeUndefined();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+         |                                                                                                                                                                                      ^
+      17 |  page.removeAllListeners('dialog');const dialog=page.waitForEvent('dialog');const nav=page.reload().catch(()=>{});await (await dialog).dismiss();await nav;await expect(card.getByLabel('Wear notes',{exact:true})).toHaveValue('Unsubmitted memory');await card.getByRole('button',{name:'Discard wear entry edits',exact:true}).click();await expect(card.getByLabel('Wear notes',{exact:true})).toHaveValue('');await card.screenshot({path:test.info().outputPath('wear-mobile.png')});
+      18 | });
+      19 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/wear.spec.ts:16:182
+
+    Error Context: test-results/browser-wear-mobile-wear-d-17913-e-leaving-page-confirmation/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-wear-mobile-wear-d-17913-e-leaving-page-confirmation/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-wear-mobile-wear-d-17913-e-leaving-page-confirmation/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests/browser/wear.spec.ts:7:1 › actual wear diary is correctable, reversible, retained across native reopen and explicitly rated
+    tests/browser/wear.spec.ts:15:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation

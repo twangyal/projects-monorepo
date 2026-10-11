@@ -17,7 +17,8 @@ export interface PreferenceExample {
 }
 export type OutfitPieces = readonly [Piece, Piece, Piece];
 export type PieceIds = readonly [string, string, string];
-export interface SavedLook { id: string; name: string; notes: string; pieces: OutfitPieces }
+export interface WearRecord { id: string; date: string; occasion: string; notes: string }
+export interface SavedLook { id: string; name: string; notes: string; pieces: OutfitPieces; wears?: WearRecord[] }
 export interface Project {
   schemaVersion: 1; title: string; pieces: Piece[]; examples: PreferenceExample[];
   looks: SavedLook[]; photos: PhotoAsset[];
@@ -54,7 +55,7 @@ export const FEATURE_NAMES = [
 // A true end assertion also excludes the final newline accepted by JS `$`.
 export const ID_PATTERN = /^[a-f0-9]{32}(?![\s\S])/;
 export const LIMITS = {
-  pieces: 36, piecesPerCategory: 12, examples: 80, looks: 30, photos: 20,
+  pieces: 36, piecesPerCategory: 12, examples: 80, looks: 30, photos: 20, wears: 100, wearsPerLook: 20,
   photoBytes: 204800, photoSide: 720, projectBytes: 8388608,
   sourcePhotoBytes: 8388608, sourcePhotoPixels: 16000000, sourcePhotoSide: 8192,
   historySnapshots: 20, historyBytes: 25165824,

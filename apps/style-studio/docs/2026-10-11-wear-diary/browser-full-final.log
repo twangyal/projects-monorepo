@@ -1,0 +1,87 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 test:browser
+> playwright test
+
+[WebServer] (node:199) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:220) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:244) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:257) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 65 tests using 1 worker
+
+(node:275) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/composition.spec.ts:10:1 › chosen owned outfit has a real assessment and complete reversible saved snapshots (1.3s)
+  ✓   2 tests/browser/composition.spec.ts:13:1 › missing selections do not guess an outfit and drafts survive wardrobe edits on mobile (711ms)
+  ✓   3 tests/browser/composition.spec.ts:16:1 › new composition input retires a held real import while preserving the complete profile (322ms)
+  ✓   4 tests/browser/composition.spec.ts:20:1 › chosen outfits with too few explicit opinions remain unscored and still save without new labels (507ms)
+  ✓   5 tests/browser/images.spec.ts:8:1 › real PNG, JPEG and static WebP become contained white720-square bounded JPEGs (5.2s)
+  ✓   6 tests/browser/images.spec.ts:28:1 › transparent pixels become white, source metadata is absent and noise meets byte cap (208ms)
+  ✓   7 tests/browser/images.spec.ts:48:1 › unsafe headers fail before decode, corrupt compressed pixels fail actual decode (98ms)
+  ✓   8 tests/browser/images.spec.ts:67:1 › late decoded bitmap is closed when normalization is cancelled (78ms)
+  ✓   9 tests/browser/images.spec.ts:78:1 › stored photo gate really decodes and closes assets, including late cancellation (96ms)
+  ✓  10 tests/browser/images.spec.ts:93:1 › board is real1200x1000 PNG with photo/procedural art and saved snapshots survive live deletion (2.2s)
+  ✓  11 tests/browser/images.spec.ts:114:1 › phone JPEG EXIF orientation6 is preserved before metadata-free square normalization (113ms)
+  ✓  12 tests/browser/images.spec.ts:132:1 › normalization closes the real bitmap if Canvas creation fails after decoding (1.1s)
+  ✓  13 tests/browser/images.spec.ts:145:46 › image/png EXIF orientation6 becomes upright metadata-free reference pixels (2.1s)
+  ✓  14 tests/browser/images.spec.ts:145:46 › image/webp EXIF orientation6 becomes upright metadata-free reference pixels (119ms)
+  ✓  15 tests/browser/save-conflicts.spec.ts:36:1 › oracle full saved graph wins against a stale instance without receipt promotion from reload (94ms)
+  ✓  16 tests/browser/save-conflicts.spec.ts:56:1 › oracle simultaneous native readwrite scopes admit only one complete winner (105ms)
+  ✓  17 tests/browser/save-conflicts.spec.ts:71:1 › oracle queued own writes detach full graph at admission and advance after native complete (87ms)
+  ✓  18 tests/browser/save-conflicts.spec.ts:86:1 › oracle put request success followed by native abort neither publishes nor advances authority (84ms)
+  ✓  19 tests/browser/save-conflicts.spec.ts:107:1 › oracle version1 upgrade preserves exact legacy value and fences old writers (77ms)
+  ✓  20 tests/browser/save-conflicts.spec.ts:128:1 › oracle absent key differs from present undefined and reviewed repair never silently loads corrupt data (86ms)
+  ✓  21 tests/browser/save-conflicts.spec.ts:143:1 › oracle receipt purpose instance one-use and forgery reject without native mutation (85ms)
+  ✓  22 tests/browser/save-conflicts.spec.ts:159:1 › oracle third writer invalidates reviewed replacement while keeping entire winner intact (91ms)
+  ✓  23 tests/browser/save-conflicts.spec.ts:174:1 › oracle raw negative zero differs from zero while reordered object fields are value-identical (92ms)
+  ✓  24 tests/browser/save-conflicts.spec.ts:192:1 › oracle malformed ordinary records permit review but native cyclic and unbounded values do not (133ms)
+  ✓  25 tests/browser/save-conflicts.spec.ts:213:1 › oracle exact portable and wrapper comparison byte ceilings distinguish plus one (462ms)
+  ✓  26 tests/browser/save-conflicts.spec.ts:233:1 › oracle close drains accepted writes but forbids receipt acceptance and new operations immediately (80ms)
+  ✓  27 tests/browser/save-conflicts.spec.ts:248:1 › oracle held actual read delivery never invents absence and retires old receipts on protected refusal (10.1s)
+  ✓  28 tests/browser/save-conflicts.spec.ts:295:1 › oracle versionchange retires receipts and cannot leave an old usable writer (85ms)
+  ✓  29 tests/browser/save-conflicts.spec.ts:310:1 › oracle blocked legacy upgrade refuses and late open releases its database without rewriting bytes (87ms)
+  ✓  30 tests/browser/save-conflicts.spec.ts:329:1 › oracle genuine live native transaction reaches actual10second deadline without authorizing late writes (10.1s)
+  ✓  31 tests/browser/saved-copy-editor.spec.ts:7:1 › two genuine pages preserve the complete winning photos rating and look while stale memory raw forms and Undo stay usable (1.4s)
+  ✓  32 tests/browser/saved-copy-editor.spec.ts:14:1 › explicit Reload alone discards protected memory and raw drafts after consent and restores the complete winner (1.2s)
+  ✓  33 tests/browser/saved-copy-editor.spec.ts:19:1 › fresh replacement review names the winner and excludes unsubmitted photo and form drafts without clearing them (1.2s)
+  ✓  34 tests/browser/saved-copy-editor.spec.ts:24:1 › third writer after actual replacement confirmation invalidates review without overwriting either complete memory (1.3s)
+  ✓  35 tests/browser/saved-copy-editor.spec.ts:28:1 › actual abort after replacement put success retains winner and protected memory until a new reviewed retry (1.2s)
+  ✓  36 tests/browser/saved-copy-editor.spec.ts:32:1 › changed-back raw input during actual startup JPEG decode cannot accept the saved copy or authorize overwrite (752ms)
+  ✓  37 tests/browser/saved-copy-editor.spec.ts:36:1 › a held genuine imported profile cannot publish after changed-back raw intent or grant protected save authority (1.2s)
+  ✓  38 tests/browser/saved-copy-editor.spec.ts:40:1 › newer committed memory during a held genuine replacement stays unsaved until explicit Retry saving (1.4s)
+  ✓  39 tests/browser/saved-copy-editor.spec.ts:44:1 › controlled persisted return cannot let an older completed save mark newer raw fields Saved (432ms)
+  ✓  40 tests/browser/saved-copy-editor.spec.ts:48:1 › changed-back keyed look input while replacement review is pending suppresses consent and preserves caret (1.2s)
+  ✓  41 tests/browser/storage.spec.ts:11:1 › real IndexedDB opens the version-two singleton and persists across accepted store reopen (63ms)
+  ✓  42 tests/browser/storage.spec.ts:29:1 › an existing incompatible database is reported without silently replacing it (63ms)
+  ✓  43 tests/browser/storage.spec.ts:42:1 › schema creation failure has no uncaught page error and native setup can retry (66ms)
+  ✓  44 tests/browser/storage.spec.ts:63:1 › queued saves capture nested data at call time before earlier transactions finish (66ms)
+  ✓  45 tests/browser/storage.spec.ts:87:1 › save and clear commit in invocation order and do not resurrect an older profile (69ms)
+  ✓  46 tests/browser/storage.spec.ts:103:1 › a real aborted write and invalid save do not poison later queued operations (69ms)
+  ✓  47 tests/browser/storage.spec.ts:123:1 › close waits for accepted writes and immediately rejects all new operations (68ms)
+  ✓  48 tests/browser/storage.spec.ts:146:1 › corrupt records including undefined remain untouched after failed loads (72ms)
+  ✓  49 tests/browser/wear.spec.ts:8:1 › actual wear diary is correctable, reversible, retained across native reopen and explicitly rated (1.4s)
+  ✓  50 tests/browser/wear.spec.ts:16:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation (507ms)
+  ✓  51 tests/browser/wear.spec.ts:21:1 › wear input retires a held real profile import without clearing a newer diary draft (326ms)
+  ✓  52 tests/browser/wear.spec.ts:24:1 › two real pages preserve the complete winning diary and stale raw fields until reviewed reload (718ms)
+  ✓  53 tests/browser/wear.spec.ts:27:1 › diary capacity refuses atomically and stale edited records require explicit discard or restoration (806ms)
+  ✓  54 tests/browser/workflow.spec.ts:153:1 › a person teaches an empty profile, assesses, saves and corrects a look, then exports real pixels and reopens (3.1s)
+  ✓  55 tests/browser/workflow.spec.ts:234:1 › sample labels affect the learned prediction and occasion and exploration rules stay explicit (820ms)
+  ✓  56 tests/browser/workflow.spec.ts:257:1 › malformed and undecodable imports preserve the current profile and the undo boundary (1.2s)
+  ✓  57 tests/browser/workflow.spec.ts:294:1 › focused and unsaved drafts survive independent rating edits; selected wardrobe edits leave saved snapshots intact (827ms)
+  ✓  58 tests/browser/workflow.spec.ts:320:1 › storage unavailable stays visible while real in-memory edits and backup export work (349ms)
+  ✓  59 tests/browser/workflow.spec.ts:333:1 › mobile workspace has no horizontal overflow, preserves invalid-form drafts and makes no external requests (571ms)
+  ✓  60 tests/browser/workflow.spec.ts:349:1 › cold-start outfit ideas are unranked and limited wardrobes disclose shared-piece fallback (700ms)
+  ✓  61 tests/browser/workflow.spec.ts:362:1 › a late startup photo decode cannot replace a newer edit, and resetting a pending photo cannot attach it later (834ms)
+  ✓  62 tests/browser/workflow.spec.ts:400:1 › intervening edits cancel a photo-bearing import and a real board export without stale publication or download (1.0s)
+  ✓  63 tests/browser/workflow.spec.ts:427:1 › leaving the page with an unsaved opinion draft requires a native navigation confirmation (225ms)
+  ✓  64 tests/browser/workflow.spec.ts:437:1 › a quota error leaves edits and backup usable, then an explicit retry saves the same real profile (507ms)
+  ✓  65 tests/browser/workflow.spec.ts:457:1 › corrupt stored data survives New profile until explicit reviewed replacement saves a valid empty profile (461ms)
+
+  65 passed (1.1m)

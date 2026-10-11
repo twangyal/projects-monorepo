@@ -1,0 +1,56 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 test:browser
+> playwright test tests/browser/wear.spec.ts
+
+[WebServer] (node:31) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:52) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:76) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:89) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:107) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/browser/wear.spec.ts:7:1 › actual wear diary is correctable, reversible, retained across native reopen and explicitly rated (1.7s)
+  ✘  2 tests/browser/wear.spec.ts:15:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation (45.1s)
+
+
+  1) tests/browser/wear.spec.ts:15:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation
+
+    Test timeout of 45000ms exceeded.
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator:  locator('[data-look-id="bf337272b11c0ffe16d0d9537f9977fa"]').getByLabel('Wear notes', { exact: true })
+    Expected: "Unsubmitted memory"
+    Received: ""
+
+
+      15 | test('mobile wear drafts survive other edits and require a native leaving-page confirmation',async({page})=>{
+      16 |  await page.setViewportSize({width:390,height:844});const p=await load(page),card=page.locator(`[data-look-id="${p.looks[0].id}"]`);await card.getByLabel('Wear notes',{exact:true}).fill('Unsubmitted memory');await card.getByRole('button',{name:'Like',exact:true}).click();await expect(card.getByLabel('Wear notes',{exact:true})).toHaveValue('Unsubmitted memory');expect((await backup(page)).looks[0].wears).toBeUndefined();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    > 17 |  page.removeAllListeners('dialog');const dialog=page.waitForEvent('dialog');const nav=page.reload().catch(()=>{});await (await dialog).dismiss();await nav;await expect(card.getByLabel('Wear notes',{exact:true})).toHaveValue('Unsubmitted memory');await card.getByRole('button',{name:'Discard wear entry edits',exact:true}).click();await expect(card.getByLabel('Wear notes',{exact:true})).toHaveValue('');await card.screenshot({path:test.info().outputPath('wear-mobile.png')});
+         |                                                                                                                                                                                                                     ^
+      18 | });
+      19 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/wear.spec.ts:17:213
+
+    Error Context: test-results/browser-wear-mobile-wear-d-17913-e-leaving-page-confirmation/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-wear-mobile-wear-d-17913-e-leaving-page-confirmation/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-wear-mobile-wear-d-17913-e-leaving-page-confirmation/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/browser/wear.spec.ts:15:1 › mobile wear drafts survive other edits and require a native leaving-page confirmation
+  1 passed (50.3s)

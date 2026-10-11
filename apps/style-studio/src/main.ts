@@ -1,8 +1,8 @@
 import './style.css';
 import {
-  addPiece, addTaggedExample, createProject, deleteExample, deleteLook, deletePiece,
+  addPiece, addTaggedExample, addWear, createProject, deleteExample, deleteLook, deletePiece, deleteWear,
   newId, parseProject, rateLook, saveLook, serializeProject, setExampleLabel,
-  setTitle, updateLook, updatePiece,
+  setTitle, updateLook, updatePiece, updateWear,
 } from './domain.ts';
 import { createDemoProject } from './demo.ts';
 import { averageFeatures, featuresFromTags, tagsFromFeatures } from './features.ts';
@@ -265,6 +265,9 @@ function resetEditors(): void {
   profileForm.dataset.dirty = 'false'; field(profileForm, 'title').value = project.title;
   composeForm.reset(); composeForm.dataset.dirty = 'false'; compositionAssessed = false;
   assessedTags = null; suggestionSignature = null; element('#suggestion-list').replaceChildren();
+  for (const card of lookCards.values()) {
+    const form = card.querySelector<HTMLFormElement>('.wear-form'); if (form) resetWearForm(form);
+  }
   renderAssessment();
 }
 pieceForm.addEventListener('submit', event => {
@@ -507,6 +510,57 @@ async function exportBoard(lookId: string): Promise<void> {
   } catch (error) { if (!controller.signal.aborted && operation === controller) message(describe(error), true); }
   finally { if (operation === controller) cancelOperation(); }
 }
+function resetWearForm(form: HTMLFormElement): void {
+  form.reset(); delete form.dataset.wearId; form.dataset.dirty = 'false';
+  const today = new Date();
+  field(form, 'wearDate').value = `${today.getFullYear().toString().padStart(4,'0')}-${(today.getMonth()+1).toString().padStart(2,'0')}-${today.getDate().toString().padStart(2,'0')}`;
+}
+function wearForm(lookId: string): HTMLFormElement {
+  const form = node('form', 'wear-form');
+  const heading = node('h4', '', 'Record an outfit you wore');
+  const dateLabel = node('label', '', 'Wear date'), date = node('input');
+  date.type = 'date'; date.name = 'wearDate'; date.required = true; date.min = '0001-01-01'; date.max = '9999-12-31'; date.id = `wear-date-${lookId}`; dateLabel.htmlFor = date.id;
+  const occasionLabel = node('label', '', 'Wear occasion'), occasion = node('input');
+  occasion.name = 'wearOccasion'; occasion.maxLength = 80; occasion.id = `wear-occasion-${lookId}`; occasionLabel.htmlFor = occasion.id;
+  const notesLabel = node('label', '', 'Wear notes'), notes = node('textarea');
+  notes.name = 'wearNotes'; notes.maxLength = 500; notes.rows = 3; notes.id = `wear-notes-${lookId}`; notesLabel.htmlFor = notes.id;
+  const save = node('button', 'button subtle', 'Save wear entry'); save.type = 'submit';
+  form.append(heading, node('p', 'quiet', 'Record your own wear history. Use Like or Pass separately to teach your taste; wear alone adds no opinion.'), dateLabel, date, occasionLabel, occasion, notesLabel, notes, save,
+    button('Discard wear entry edits', 'text-button', () => { interact(); resetWearForm(form); message('Wear entry drafts discarded.'); }));
+  form.addEventListener('input', () => { form.dataset.dirty = 'true'; });
+  form.addEventListener('change', () => { form.dataset.dirty = 'true'; });
+  form.addEventListener('submit', event => { event.preventDefault(); attempt(() => {
+    const input = { date: date.value, occasion: occasion.value, notes: notes.value };
+    const next = form.dataset.wearId ? updateWear(project, lookId, form.dataset.wearId, input) : addWear(project, lookId, input);
+    publish(next, 'Wear history saved. No Like or Pass opinion was inferred.'); resetWearForm(form);
+  }); });
+  resetWearForm(form); return form;
+}
+function renderWearDiary(card: HTMLElement, look: SavedLook): void {
+  const list = card.querySelector<HTMLElement>('[data-part="wears"]')!;
+  const records = [...(look.wears ?? [])].reverse().sort((a,b) => b.date.localeCompare(a.date));
+  list.replaceChildren(node('h4', '', `Wear diary · ${records.length} / ${LIMITS.wearsPerLook} entries`));
+  if (records.length === 0) list.append(node('p', 'quiet', 'No recorded wears yet.'));
+  for (const record of records) {
+    const entry = node('article', 'wear-entry'); entry.dataset.wearId = record.id;
+    const time = node('time', '', record.date); time.dateTime = record.date;
+    entry.append(time, node('p', '', record.occasion || 'No occasion supplied'), node('p', 'wear-memory', record.notes));
+    const actions = node('div', 'card-actions');
+    actions.append(button('Edit wear entry', 'text-button', () => {
+      interact(); const form = card.querySelector<HTMLFormElement>('.wear-form')!;
+      // Resolve the current record, never a captured stale snapshot.
+      const current = project.looks.find(item => item.id === look.id)?.wears?.find(item => item.id === record.id);
+      if (!current) { message('This wear entry is no longer available.'); return; }
+      form.dataset.wearId = current.id; form.dataset.dirty = 'true';
+      for (const key of ['date','occasion','notes'] as const) field(form,'wear'+titleCase(key)).value = current[key];
+      field(form, 'wearDate').focus(); message('Editing the selected wear entry. Save or discard your edits.');
+    }), button('Delete wear entry', 'text-button danger', () => {
+      const current = project.looks.find(item => item.id === look.id)?.wears?.find(item => item.id === record.id);
+      if (current) confirmDelete('wear entry', current.date, () => publish(deleteWear(project, look.id, current.id), 'Selected wear entry removed. Your explicit opinion and saved outfit remain.'));
+    }));
+    entry.append(actions); list.append(entry);
+  }
+}
 function createLookCard(look: SavedLook): HTMLElement {
   const card = node('article', 'look-card'); card.dataset.lookId = look.id;
   const heading = node('h3'); heading.dataset.part = 'heading';
@@ -530,7 +584,8 @@ function createLookCard(look: SavedLook): HTMLElement {
   const actions = node('div', 'card-actions'); actions.append(button('Download outfit board', 'text-button', () => { void exportBoard(look.id); }), button('Delete look', 'text-button danger', () => {
     const current = project.looks.find(item => item.id === look.id); if (current) confirmDelete('look', current.name, () => publish(deleteLook(project, current.id), 'Selected look deleted; its existing opinion remains in your training examples.'));
   }));
-  card.append(heading, visuals, tags, form, ratings, actions); return card;
+  const diary = node('div', 'wear-diary'); diary.dataset.part = 'wears';
+  card.append(heading, visuals, tags, form, ratings, diary, wearForm(look.id), actions); return card;
 }
 function renderLooks(): void {
   prune(lookCards, new Set(project.looks.map(look => look.id))); const list = element('#look-list');
@@ -540,6 +595,7 @@ function renderLooks(): void {
     card.querySelector('[data-part="heading"]')!.textContent = look.name;
     card.querySelector('[data-part="visuals"]')!.replaceChildren(outfitStrip(look.pieces));
     card.querySelector('[data-part="tags"]')!.textContent = 'Top / bottom / shoes · saved piece snapshots';
+    renderWearDiary(card, look);
     const form = card.querySelector<HTMLFormElement>('form')!;
     if (form.dataset.dirty !== 'true') { field(form, 'name').value = look.name; field(form, 'notes').value = look.notes; }
     const rating = project.examples.find(example => example.sourceLookId === look.id && example.origin === 'outfit');
@@ -755,7 +811,9 @@ function hasUnsavedDrafts(): boolean {
   if (pieceForm.dataset.dirty === 'true' || exampleForm.dataset.dirty === 'true') return true;
   if (Object.values(photoDrafts).some(draft => draft.busy || draft.asset !== null)) return true;
   for (const look of project.looks) {
-    const form = lookCards.get(look.id)?.querySelector<HTMLFormElement>('form');
+    const card = lookCards.get(look.id);
+    if (card?.querySelector<HTMLFormElement>('.wear-form')?.dataset.dirty === 'true') return true;
+    const form = card?.querySelector<HTMLFormElement>('form');
     if (form?.dataset.dirty === 'true' && (field(form, 'name').value !== look.name
         || field(form, 'notes').value !== look.notes.replace(/\r\n?/g, '\n'))) return true;
   }
