@@ -104,6 +104,14 @@ Selection uses original onsets at or after the start and before the exclusive en
 
 Finish other editor drafts, suggestions and roll gestures first. Pointer and keyboard actions protect unapplied work. A changed result is one autosaved Undo/Redo edit, included in ordinary project/library backups, MIDI, synthesized playback and WAV. These controls transform notes; they do not pitch-shift captured audio or infer harmony. See [section pitch evidence](docs/2026-10-09-section-pitch.md).
 
+### Stretch or compress a phrase
+
+Select a track and whole-note section bounds, then choose **Stretch section timing ×2** or **Compress section timing ×0.5**. Timing scales around the section start: contained note starts, durations and rests double or halve. Later notes on that track shift by the section’s length change, keeping the gap after the phrase. A note ending exactly at the start stays unchanged; a note starting exactly at the exclusive end shifts. Other tracks stay at their original song positions.
+
+Project tempo, pitches, velocities, IDs, instruments, envelopes, filters, echo spacing and song-time volume ramps stay anchored. Original reference recordings and bindings are unchanged; this edits synthesized note rhythm and does not time-stretch captured audio. Stretching a track changes its alignment with other parts deliberately. The entered section bounds stay selected; enter the transformed phrase’s new end before reversing the scale.
+
+Crossing notes on the selected track, empty selections, invalid bounds, durations outside 0.25–16 beats or any resulting note outside the 512-beat timeline refuse the entire edit. No note is split, quantized or clamped. Apply/discard unrelated drafts and proposals and finish roll gestures first. Pointer admission protects focused unsent fields; keyboard activation uses the same guard. Success is one autosaved Undo/Redo edit, preserved by complete backups/reload and used by existing MIDI/playback/WAV exports. This is phrase development within the ACTIVE DAW destination; audio warping and musician evaluation remain future work. See [timing-scale verification](docs/2026-10-11-section-scale/README.md).
+
 ### Reverse a phrase’s rhythm
 
 Select a track and choose whole-note section boundaries, then **Reverse section note timing**. Each contained note interval is mirrored inside the range, including leading/trailing rests: new start = section start + (section end − original note end), using internal zero-based beats. Pitches, durations, velocities, IDs, sounds/effects, other tracks and complete reference recordings stay unchanged. Synthesized notes attack and release normally at their new starts; this does not reverse recorded audio or oscillator samples.

@@ -43,3 +43,27 @@ export function duplicateSection(project: Composition, range: SectionRange): Com
   }
   return validateComposition(next);
 }
+
+/** Scale a whole selected-track phrase and ripple its later notes; audio stays anchored. */
+export function scaleSection(project: Composition, trackId: string, range: SectionRange, factor: number): Composition {
+  if (factor !== .5 && factor !== 2) throw new Error('Choose half-time compression or double-length stretching.');
+  const next = validateComposition(project);
+  sectionWindow(range.start, range.end, next.tempo, compositionDurationBeats(next), 22050);
+  const track = next.tracks.find(item => item.id === trackId);
+  if (!track) throw new Error('Choose an existing track.');
+  const start = Number(range.start) - 1, end = Number(range.end) - 1;
+  const shift = (end - start) * (factor - 1);
+  for (const note of track.notes) {
+    const stop = note.start + note.duration;
+    if (note.start < start && stop > start || note.start < end && stop > end) throw new Error('A note on the selected track crosses a section boundary. Choose bounds that include whole notes.');
+  }
+  if (!track.notes.some(note => note.start >= start && note.start < end)) throw new Error('The selected track has no note onsets in this section.');
+  for (const note of track.notes) {
+    if (note.start >= end) note.start += shift;
+    else if (note.start >= start) {
+      note.start = start + (note.start - start) * factor;
+      note.duration *= factor;
+    }
+  }
+  return validateComposition(next);
+}
