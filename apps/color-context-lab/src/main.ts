@@ -3,7 +3,7 @@ import { createProject, parseProjectJson, serializeProject, updateProject, valid
 import { History } from './history.ts';
 import { ProjectStore } from './storage.ts';
 import { createDemoImage } from './render.ts';
-import { cancelJobs, exportPng, exportReport, normalize, preview } from './jobs.ts';
+import { cancelJobs, exportPng, exportReport, exportVariantReport, normalize, preview } from './jobs.ts';
 import { experimentExamples, loadExperimentReport } from './experiment.ts';
 import type { ExperimentReport } from './experiment.ts';
 import { LIMITS } from './types.ts';
@@ -19,6 +19,7 @@ const error = node<HTMLParagraphElement>('error'), previewStatus = node<HTMLPara
 const originalCanvas = node<HTMLCanvasElement>('original-canvas'), resultCanvas = node<HTMLCanvasElement>('result-canvas');
 const buttons = Object.fromEntries(['apply-changes','discard-changes','undo','redo','stop-job','download-source','download-result','download-project','download-report','retry-save','retry-load','raw-backup','continue-unsaved','save-current','clear-saved'].map(id => [id, node<HTMLButtonElement>(id)]));
 const variantName = node<HTMLInputElement>('variant-name'), keepVariant = node<HTMLButtonElement>('keep-variant');
+const variantFirst = node<HTMLSelectElement>('variant-first'), variantSecond = node<HTMLSelectElement>('variant-second'), variantReport = node<HTMLButtonElement>('download-variant-report');
 let variantListKey = '';
 const fields = [title, mode, border, colorA, colorB, cell];
 const store = new ProjectStore();
@@ -88,6 +89,13 @@ function displayVariants(): void {
   const variants = project?.variants ?? [], key = JSON.stringify(variants), list = node('variant-list');
   if (key !== variantListKey) {
     variantListKey = key; list.replaceChildren();
+    for (const select of [variantFirst, variantSecond]) {
+      const previous = select.value;
+      const placeholder = el('option', 'Choose a variant'); placeholder.value = '';
+      select.replaceChildren(placeholder);
+      for (const variant of variants) { const option = el('option', variant.name); option.value = variant.name; select.append(option); }
+      select.value = variants.some(variant => variant.name === previous) ? previous : '';
+    }
     variants.forEach((variant, index) => {
       const item = el('li'), label = el('strong', variant.name), swatch = el('span', '', 'variant-swatch');
       swatch.style.background = variant.settings.colorA;
@@ -103,6 +111,8 @@ function displayVariants(): void {
     });
   }
   for (const button of list.querySelectorAll('button')) button.disabled = !enabled() || dirty;
+  for (const select of [variantFirst, variantSecond]) select.disabled = !enabled() || variants.length < 2;
+  variantReport.disabled = !enabled() || !variantFirst.value || !variantSecond.value || variantFirst.value === variantSecond.value;
   node('variant-status').textContent = variants.length ? `${variants.length} of ${LIMITS.variants} named surrounds kept.` : 'No named surrounds yet.';
 }
 function changeVariant(action: 'keep' | 'restore' | 'remove', index = -1): void {
@@ -207,6 +217,19 @@ async function loadSaved(initial = false): Promise<void> {
 function download(bytes: string | Uint8Array, type: string, name: string): void {
   const body = typeof bytes === 'string' ? bytes : new Uint8Array(bytes); const url = URL.createObjectURL(new Blob([body], {type})); urls.add(url); const anchor = document.createElement('a'); anchor.href = url; anchor.download = name; anchor.click(); setTimeout(() => { URL.revokeObjectURL(url); urls.delete(url); },1000);
 }
+async function exportNamedComparison(): Promise<void> {
+  if (!enabled() || !project || variantReport.disabled) return;
+  const captured = project, variants = captured.variants ?? [];
+  const first = variants.findIndex(variant => variant.name === variantFirst.value), second = variants.findIndex(variant => variant.name === variantSecond.value);
+  const op = begin('Preparing named surround comparison');
+  try {
+    const report = await exportVariantReport(captured, first, second, {signal: op.abort.signal});
+    if (!own(op)) return;
+    download(report, 'text/html;charset=utf-8', 'color-context-named-comparison.html');
+    previewStatus.textContent = 'Named comparison downloaded. Applied settings and unsent fields were kept.';
+  } catch { if (own(op)) showError('Named comparison failed or was canceled. No partial report was downloaded; applied work and drafts were kept.'); }
+  finally { if (operation === op) { finish(op); if (!dirty && frameGeneration !== generation) void renderPreview(); } }
+}
 async function exportArtifact(kind: 'source' | 'result' | 'project' | 'report'): Promise<void> {
   if (!enabled() || !project || (dirty && (kind === 'result' || kind === 'report'))) return;
   const captured = project, op = begin('Preparing applied-only download');
@@ -239,6 +262,11 @@ variantName.addEventListener('input', () => {
     intent++; cancelWork('Replacement stopped. Applied artwork and variant name were kept.');
   }
 });
+for (const select of [variantFirst, variantSecond]) select.onchange = () => {
+  if (operation?.kind === 'Preparing named surround comparison') cancelWork('Named comparison stopped after the selection changed. Applied work and drafts were kept.');
+  updateControls();
+};
+variantReport.onclick = () => {void exportNamedComparison();};
 keepVariant.onclick = () => changeVariant('keep');
 form.addEventListener('submit',event=>{event.preventDefault();apply();});
 buttons['discard-changes'].onclick = discard; buttons.undo.onclick = ()=>changeHistory(false); buttons.redo.onclick = ()=>changeHistory(true);

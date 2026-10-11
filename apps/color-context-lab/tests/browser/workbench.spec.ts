@@ -298,3 +298,41 @@ test('typing a variant name retires an older pending project replacement without
   expect(await backup(page)).toEqual(original);await expect(page.getByLabel('Variant name',{exact:true})).toHaveValue('Keep this name');
   await expect(page.locator('#download-result')).toBeEnabled();
 });
+
+test('named pair report exports both exact retained contexts while preserving current settings and raw drafts',async({page})=>{
+  await page.goto('/');const original=rawProject();original.variants=[{name:'Warm <script>',settings:{...original.settings,border:2,colorA:'#ff0000',mode:'solid'}},{name:'Cool',settings:{...original.settings,border:3,colorA:'#0000ff',mode:'solid'}}];await open(page,original);
+  const first=page.getByRole('combobox',{name:'First retained surround',exact:true}), second=page.getByRole('combobox',{name:'Second retained surround',exact:true});
+  await first.selectOption('Warm <script>');await second.selectOption('Warm <script>');
+  await expect(page.getByRole('button',{name:'Download named comparison report',exact:true})).toBeDisabled();
+  await second.selectOption('Cool');await page.locator('#border-size').fill('raw draft');
+  const html=(await download(page,'#download-variant-report')).toString('utf8');
+  const images=[...html.matchAll(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g)];expect(images).toHaveLength(2);
+  for(const [index,image] of images.entries()) expectPng(Buffer.from(image[1]!,'base64'),scalar({...original,settings:original.variants![index]!.settings}).result);
+  expect(html).toContain('Warm &lt;script&gt;');expect(html).not.toContain('<script');
+  expect(await backup(page)).toEqual(original);await expect(page.locator('#border-size')).toHaveValue('raw draft');
+});
+
+test('changing a named comparison pair retires a held worker result and leaves drafts intact',async({page})=>{
+  await installNative(page);await page.goto('/');const original=rawProject();original.variants=[{name:'One',settings:original.settings},{name:'Two',settings:{...original.settings,colorA:'#ff0000'}}];await open(page,original);
+  await page.locator('#variant-first').selectOption('One');await page.locator('#variant-second').selectOption('Two');await page.locator('#border-size').fill('draft');
+  const downloads:string[]=[];page.on('download',file=>downloads.push(file.suggestedFilename()));await gate(page,'worker');
+  await page.locator('#download-variant-report').click();await held(page,'worker');
+  await page.locator('#variant-second').selectOption('One');await release(page);
+  expect(downloads).toEqual([]);await expect(page.locator('#download-variant-report')).toBeDisabled();await expect(page.locator('#border-size')).toHaveValue('draft');
+  await page.locator('#variant-second').selectOption('Two');expect((await download(page,'#download-variant-report')).toString('utf8')).toContain('Two');
+  expect(await backup(page)).toEqual(original);
+});
+
+test('maximum976 named comparison downloads two complete PNGs with all retained720-square artwork bytes',async({page})=>{
+  await page.goto('/');const source=literalRaster(720,720), project=rawProject({border:128},720,720,source.rgba);
+  project.variants=[{name:'Maximum white',settings:{...project.settings,colorA:'#ffffff'}},{name:'Maximum blue',settings:{...project.settings,colorA:'#0000ff'}}];await open(page,project);
+  await page.locator('#variant-first').selectOption('Maximum white');await page.locator('#variant-second').selectOption('Maximum blue');
+  const report=await download(page,'#download-variant-report'),html=report.toString('utf8');expect(report.length).toBeLessThanOrEqual(16*1024*1024);expect(html).toMatch(/<\/html>$/);
+  const images=[...html.matchAll(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g)];expect(images).toHaveLength(2);
+  for(const [index,image] of images.entries()) {
+    const png=PNG.sync.read(Buffer.from(image[1]!,'base64'));expect([png.width,png.height]).toEqual([976,976]);
+    expect([...png.data.subarray(0,4)]).toEqual(index===0?[255,255,255,255]:[0,0,255,255]);
+    for(let row=0;row<720;row++) expect(png.data.subarray(((row+128)*976+128)*4,((row+128)*976+848)*4)).toEqual(Buffer.from(source.rgba.subarray(row*720*4,(row+1)*720*4)));
+  }
+  expect(await backup(page)).toEqual(project);
+});

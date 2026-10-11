@@ -82,3 +82,14 @@ test('single aggregate30second timer terminates owned worker and leaves subseque
   assert.equal(worker.terminated, 1); assert.equal(worker.onmessage, null);
   const next = exportReport(fixture()); latest().reply({ ok: true, kind: 'report', value: report }); assert.equal(await next, report);
 }));
+
+test('invalid pair selection cannot supersede a live job; valid report pair owns a detached snapshot', async () => workers(async () => {
+  const {exportVariantReport}=await import('../src/jobs.ts');assert.equal(typeof exportVariantReport,'function');
+  const project=fixture();project.variants=[{name:'First',settings:project.settings},{name:'Second',settings:{...project.settings,colorA:'#ff0000'}}];
+  const active=exportReport(project), old=latest();
+  await assert.rejects(exportVariantReport(project,0,0));assert.equal(old.terminated,0);
+  old.reply({ok:true,kind:'report',value:report});await active;
+  const pending=exportVariantReport(project,0,1), current=latest();project.variants[0]!.name='Later';
+  assert.equal((current.request as {project:Project}).project.variants![0]!.name,'First');
+  current.reply({ok:true,kind:'variant-report',value:report});assert.equal(await pending,report);
+}));

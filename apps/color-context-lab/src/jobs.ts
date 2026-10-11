@@ -1,11 +1,12 @@
 import { admitImageFile } from './images.ts';
 import { validateImageAsset, validateProject } from './model.ts';
 import { inspectPng } from './png.ts';
+import { validateVariantPair } from './report.ts';
 import { LIMITS } from './types.ts';
 import type { Comparison, ImageAsset, Metrics, Project, Raster } from './types.ts';
 export interface JobOptions { signal?: AbortSignal }
-export type JobRequest = { kind: 'normalize'; file: File } | { kind: 'preview'; project: Project } | { kind: 'png'; project: Project; variant: 'source' | 'result' } | { kind: 'report'; project: Project };
-export type JobReply = { ok: true; kind: 'normalize'; value: ImageAsset } | { ok: true; kind: 'preview'; value: Comparison } | { ok: true; kind: 'png'; value: Uint8Array } | { ok: true; kind: 'report'; value: string } | { ok: false; error: string };
+export type JobRequest = { kind: 'normalize'; file: File } | { kind: 'preview'; project: Project } | { kind: 'png'; project: Project; variant: 'source' | 'result' } | { kind: 'report'; project: Project } | { kind: 'variant-report'; project: Project; first: number; second: number };
+export type JobReply = { ok: true; kind: 'normalize'; value: ImageAsset } | { ok: true; kind: 'preview'; value: Comparison } | { ok: true; kind: 'png'; value: Uint8Array } | { ok: true; kind: 'report' | 'variant-report'; value: string } | { ok: false; error: string };
 let active: { stop: () => void } | undefined;
 const abort = () => new DOMException('Operation cancelled.', 'AbortError');
 const failed = () => new Error('Image processing failed. Retry the operation or choose a supported PNG.');
@@ -101,6 +102,15 @@ export async function exportReport(project: Project, options?: JobOptions): Prom
   const snapshot = validateProject(project);
   const signal = signalFrom(options);
   return start({ kind: 'report', project: snapshot }, signal, value => {
+    if (typeof value !== 'string' || value.length > LIMITS.reportBytes || new TextEncoder().encode(value).length > LIMITS.reportBytes) throw failed();
+    return value;
+  });
+}
+export async function exportVariantReport(project: Project, first: number, second: number, options?: JobOptions): Promise<string> {
+  const snapshot = validateProject(project);
+  validateVariantPair(snapshot, first, second);
+  const signal = signalFrom(options);
+  return start({kind: 'variant-report', project: snapshot, first, second}, signal, value => {
     if (typeof value !== 'string' || value.length > LIMITS.reportBytes || new TextEncoder().encode(value).length > LIMITS.reportBytes) throw failed();
     return value;
   });
