@@ -1,0 +1,89 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 test:browser
+> playwright test tests/browser/worn-filter.spec.ts --timeout=8000
+
+[WebServer] (node:32) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:53) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:77) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] (node:90) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/browser/worn-filter.spec.ts:7:1 › wear filtering is explicit and changing choices or recorded wear retires stale saves while keeping raw names (5.3s)
+(node:185) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/browser/worn-filter.spec.ts:12:1 › all-worn mobile wardrobe explains an empty result without relaxing filters and removal makes the same combination available (8.1s)
+
+
+  1) tests/browser/worn-filter.spec.ts:7:1 › wear filtering is explicit and changing choices or recorded wear retires stale saves while keeping raw names
+
+    Error: expect(locator).toHaveValue(expected) failed
+
+    Locator: locator('#suggestion-form').getByLabel('Wear history', { exact: true })
+    Expected: "all"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveValue" locator('#suggestion-form').getByLabel('Wear history', { exact: true }) with timeout 5000ms
+      - waiting for locator('#suggestion-form').getByLabel('Wear history', { exact: true })
+
+
+       6 | async function load(page:Page,p:Project){page.on('dialog',d=>d.accept());await page.goto('/');await page.locator('#profile-import').setInputFiles({name:'worn.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(p))});await expect(page.locator('#profile-title')).toHaveValue(p.title);}
+       7 | test('wear filtering is explicit and changing choices or recorded wear retires stale saves while keeping raw names',async({page})=>{
+    >  8 |  const p=createDemoProject();await load(page,p);const form=page.locator('#suggestion-form');await expect(form.getByLabel('Wear history',{exact:true})).toHaveValue('all');await form.getByRole('button',{name:'Suggest looks',exact:true}).click();await expect(page.locator('#suggestion-status')).toContainText('8 occasion-valid combinations');const draft=page.locator('#suggestion-list [name=name]').first();await draft.fill('Keep my proposed name');await form.getByLabel('Wear history',{exact:true}).selectOption('unworn');await expect(page.locator('#suggestion-list button[type=submit]').first()).toBeDisabled();await expect(draft).toHaveValue('Keep my proposed name');expect(await backup(page)).toEqual(p);await form.getByRole('button',{name:'Suggest looks',exact:true}).click();await expect(page.locator('#suggestion-status')).toContainText('8 occasion-valid combinations');
+         |                                                                                                                                                        ^
+       9 |  const card=page.locator(`[data-look-id="${p.looks[0].id}"]`);await card.getByLabel('Wear notes',{exact:true}).fill('Actual outing');await card.getByRole('button',{name:'Save wear entry',exact:true}).click();const worn=await backup(page);await expect(page.locator('#suggestion-list button[type=submit]').first()).toBeDisabled();await form.getByRole('button',{name:'Suggest looks',exact:true}).click();await expect(page.locator('#suggestion-status')).toContainText('7 occasion-valid combinations');await expect(page.locator('#suggestion-status')).toContainText('1 previously worn');const key=p.looks[0].pieces.map(x=>x.id).join('-');await expect(page.locator(`[data-candidate-key="${key}"]`)).toHaveCount(0);expect(await backup(page)).toEqual(worn);
+      10 |  await form.getByLabel('Direction',{exact:true}).selectOption('explore');await expect(page.locator('#suggestion-list button[type=submit]').first()).toBeDisabled();await form.getByRole('button',{name:'Suggest looks',exact:true}).click();await expect(page.locator('#suggestion-status')).toContainText('7 occasion-valid combinations');await page.locator('#suggestion-list').getByRole('button',{name:'Save look',exact:true}).first().click();const saved=await backup(page);expect(saved.examples).toEqual(worn.examples);expect(saved.looks.at(-1)!.pieces.map(x=>x.id).join('-')).not.toBe(key);
+      11 | });
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/worn-filter.spec.ts:8:152
+
+    Error Context: test-results/browser-worn-filter-wear-f-aa31e-ves-while-keeping-raw-names/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-worn-filter-wear-f-aa31e-ves-while-keeping-raw-names/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-worn-filter-wear-f-aa31e-ves-while-keeping-raw-names/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/browser/worn-filter.spec.ts:12:1 › all-worn mobile wardrobe explains an empty result without relaxing filters and removal makes the same combination available
+
+    Test timeout of 8000ms exceeded.
+
+    Error: locator.selectOption: Test timeout of 8000ms exceeded.
+    Call log:
+      - waiting for locator('#suggestion-form').getByLabel('Wear history', { exact: true })
+
+
+      11 | });
+      12 | test('all-worn mobile wardrobe explains an empty result without relaxing filters and removal makes the same combination available',async({page})=>{
+    > 13 |  await page.setViewportSize({width:390,height:844});const p=createDemoProject();p.pieces=structuredClone([...p.looks[0].pieces]);p.looks[0].wears=[{id:'f'.repeat(32),date:'2026-10-10',occasion:'A real outing',notes:'Recorded explicitly'}];await load(page,p);const form=page.locator('#suggestion-form');await form.getByLabel('Wear history',{exact:true}).selectOption('unworn');await form.getByRole('button',{name:'Suggest looks',exact:true}).click();await expect(page.locator('#suggestion-status')).toContainText(/Every occasion-valid combination.*previously worn/);await expect(page.locator('#suggestion-list button[type=submit]')).toHaveCount(0);expect(await backup(page)).toEqual(p);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.locator('#ideas').screenshot({path:test.info().outputPath('unworn-mobile.png')});await page.locator(`[data-look-id="${p.looks[0].id}"]`).getByRole('button',{name:'Delete wear entry',exact:true}).click();await form.getByRole('button',{name:'Suggest looks',exact:true}).click();await expect(page.locator('#suggestion-status')).toContainText('1 occasion-valid combinations');await expect(page.locator('#suggestion-list button[type=submit]')).toHaveCount(1);
+         |                                                                                                                                                                                                                                                                                                                                                                  ^
+      14 | });
+      15 |
+        at /workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/browser/worn-filter.spec.ts:13:354
+
+    Error Context: test-results/browser-worn-filter-all-wo-fddcd--same-combination-available/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/browser-worn-filter-all-wo-fddcd--same-combination-available/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/browser-worn-filter-all-wo-fddcd--same-combination-available/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests/browser/worn-filter.spec.ts:7:1 › wear filtering is explicit and changing choices or recorded wear retires stale saves while keeping raw names
+    tests/browser/worn-filter.spec.ts:12:1 › all-worn mobile wardrobe explains an empty result without relaxing filters and removal makes the same combination available

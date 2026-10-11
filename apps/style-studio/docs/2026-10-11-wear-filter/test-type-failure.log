@@ -1,0 +1,85 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 check
+> npm run test && npm run lint && npm run build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+✔ explicit demo is a valid original six-piece twelve-example profile with a detached saved look (30.075123ms)
+✔ new profiles and generated IDs have detached validated defaults (6.040147ms)
+✔ strict schema rejects unknown fields, prototypes, broken IDs and malformed shapes (2.475439ms)
+✔ text bounds preserve captions and notes but reject invalid Unicode and controls (6.299799ms)
+✔ validation and serialization detach nested snapshots without changing caller input (2.002206ms)
+✔ JSON rejects duplicate decoded keys, malformed syntax, deep nesting and UTF-8 size overflow (9.8268ms)
+✔ piece quotas include the destination category and errors are atomic (28.099724ms)
+✔ unknown mutation fields, missing targets and malformed outfit selections reject without mutation (1.989026ms)
+✔ saved look snapshots retain names, tags and photos after wardrobe edits and deletion (5.620686ms)
+✔ photo publication is atomic and collection traces all three reference locations (1.981114ms)
+✔ photo quota allows atomic replacement after garbage collection but rejects a 21st reference (18.269878ms)
+✔ examples validate feature origins and root IDs are globally unique (1.610475ms)
+✔ rating a saved look upserts at quota and remains independent after look deletion (63.570659ms)
+✔ look quota, exact snapshot category order and duplicate rating sources are validated (17.438766ms)
+✔ saved outfit ratings average actual snapshot tags and retain those features after live edits (1.471917ms)
+✔ normalized photo validation rejects corrupt headers and never accepts an external URL (0.675978ms)
+✔ profile validation rejects non-data photo objects before reading their fields (0.535957ms)
+✔ fixed one-hot feature contract round trips and detaches (2.097749ms)
+✔ outfit features average actual ordered pieces without mutation (1.085455ms)
+✔ feature boundaries reject malformed, nonfinite and unrepresentable groups (0.553984ms)
+✔ initial state and current getter detach nested caller data (2.986268ms)
+✔ applied, undo and redo boundaries return detached snapshots (1.259727ms)
+✔ rejected and identical edits preserve current state and available redo (0.882679ms)
+✔ editing after undo clears redo without retaining the abandoned future (0.363918ms)
+✔ twenty total snapshots include current and trim the oldest undo states (0.891162ms)
+✔ photo-bearing snapshots trim to the serialized byte cap while retaining current (4393.623761ms)
+✔ invalid initial state is rejected (0.374704ms)
+✔ cold start counts actual labels and never manufactures scores (2.791094ms)
+✔ learner generalizes a synthetic preference to held-out combinations deterministically (34.729229ms)
+✔ correcting real labels reverses held-out predictions instead of using fashion rules (15.441448ms)
+✔ class balance prevents majority-count bias and objective includes L2 (8.343297ms)
+✔ contributions explain largest present signed terms with stable ties (5.991123ms)
+✔ training and scoring reject nonfinite and invalid external inputs (10.248727ms)
+✔ cold alternatives are deterministic unranked ideas with hard occasion rules (3.638891ms)
+✔ exploration uses declared novelty rule and differs from learned matching (7.421098ms)
+✔ 1728-combination bound, lexical ties and pairwise diversity fallback are explicit (18.223058ms)
+✔ 600 prescribed updates match an independent scalar logistic recurrence (2.684994ms)
+✔ occasion eligibility is exactly the declared rule across all 27 formality combinations (0.732183ms)
+✔ outfit-origin lessons train their actual averaged thirds and stable sigmoid handles extreme finite logits (5.741307ms)
+✔ sparse training input cannot invent unlabeled Pass counts (0.324349ms)
+✔ stored photos validate JPEG header dimensions and return a detached exact shape (40.299899ms)
+✔ stored photo cap measures decoded bytes rather than URI length (12.059174ms)
+✔ exact fields, normalized dimensions, ID and MIME are required (0.553924ms)
+✔ base64 rejects noncanonical bits, whitespace, wrong prefix and malformed padding (0.28528ms)
+✔ malformed JPEG segments and concealed frame headers are rejected before decoding (0.499782ms)
+✔ source static PNG/WebP headers enforce animation, matching dimensions, truncation and edge limits (0.917302ms)
+✔ source JPEGs can contain bounded legal metadata beyond stored JPEG cap (17.866991ms)
+✔ JPEG orientation is read from bounded TIFF metadata for correct phone-photo decoding (0.393132ms)
+✔ PNG eXIf and WebP EXIF read bounded TIFF orientation without losing container dimensions (1.846231ms)
+✔ unavailable IndexedDB rejects with export and memory-only guidance (2.836402ms)
+✔ a browser security failure while accessing IndexedDB is an asynchronous actionable error (0.46482ms)
+✔ wear records retain complete snapshots and explicit feedback without inferred votes (15.058461ms)
+✔ optional diary preserves legacy profiles and validates real calendar dates and ordinary fields (15.040383ms)
+✔ per-look and complete-profile diary limits fail atomically and remain editable at capacity (16.397117ms)
+✔ explicit repeat filter excludes exact ordered combinations without changing learned scores or votes (21.607615ms)
+✔ repeat exclusion input refuses malformed, sparse, accessor and over-limit records (5.044889ms)
+ℹ tests 56
+ℹ suites 0
+ℹ pass 56
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4599.271087
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 lint
+> eslint .
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> style-studio@0.2.0 build
+> tsc --noEmit && vite build
+
+tests/worn-filter.test.ts(9,294): error TS7022: 'logit' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.

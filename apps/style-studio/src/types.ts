@@ -37,7 +37,7 @@ export interface Candidate {
   novelty: number | null; rankScore: number | null;
 }
 export interface Suggestions {
-  candidates: Candidate[]; eligibleCount: number; ranked: boolean;
+  candidates: Candidate[]; eligibleCount: number; excludedCount: number; ranked: boolean;
   diversityFallback: boolean; reason: string | null;
 }
 

@@ -1,0 +1,49 @@
+✖ explicit repeat filter excludes exact ordered combinations without changing learned scores or votes (14.958021ms)
+✖ repeat exclusion input refuses malformed, sparse, accessor and over-limit records (3.755016ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 156.035071
+
+✖ failing tests:
+
+test at tests/worn-filter.test.ts:6:1
+✖ explicit repeat filter excludes exact ordered combinations without changing learned scores or votes (14.958021ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  8 !== 7
+
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/worn-filter.test.ts:9:48)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 8,
+    expected: 7,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/worn-filter.test.ts:17:1
+✖ repeat exclusion input refuses malformed, sparse, accessor and over-limit records (3.755016ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/projects-monorepo/apps/style-studio/tests/worn-filter.test.ts:19:117)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

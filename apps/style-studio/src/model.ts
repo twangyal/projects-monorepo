@@ -2,7 +2,7 @@ import { averageFeatures, featuresFromTags, validateFeatures } from './features.
 import { CATEGORIES, FEATURE_NAMES, ID_PATTERN, LIMITS } from './types.ts';
 import type {
   Candidate, Counts, FeatureVector, Mode, ModelResult, Occasion, OutfitPieces,
-  Piece, PreferenceExample, Suggestions, TasteScore, TrainedModel,
+  Piece, PieceIds, PreferenceExample, Suggestions, TasteScore, TrainedModel,
 } from './types.ts';
 
 const STEPS = 600;
@@ -136,11 +136,24 @@ function occasionAllows(pieces: OutfitPieces, occasion: Occasion): boolean {
 }
 
 export function generateAlternatives(pieces: readonly Piece[], model: ModelResult,
-  options: { mode: Mode; occasion: Occasion }): Suggestions {
+  options: { mode: Mode; occasion: Occasion; excludePieceIds?: readonly PieceIds[] }): Suggestions {
   validateModel(model);
   if (!options || !['match', 'explore'].includes(options.mode)
     || !['any', 'casual', 'smart', 'formal'].includes(options.occasion)) throw new Error('Choose a supported mode and occasion.');
   if (!Array.isArray(pieces) || pieces.length > LIMITS.pieces) throw new Error('The wardrobe can contain at most 36 pieces.');
+  const exclusions = options.excludePieceIds === undefined ? [] : options.excludePieceIds;
+  const ordinaryList = (value: unknown, maximum: number): value is unknown[] => {
+    if (!Array.isArray(value) || value.length > maximum || Reflect.ownKeys(value).length !== value.length + 1) return false;
+    for (let i = 0; i < value.length; i++) if (!Object.hasOwn(value,i) || !('value' in Object.getOwnPropertyDescriptor(value,String(i))!)) return false;
+    return true;
+  };
+  if (!ordinaryList(exclusions, LIMITS.looks)) throw new Error('Supply at most 30 ordinary outfit exclusions.');
+  const excludedKeys = new Set<string>();
+  for (const tuple of exclusions) {
+    if (!ordinaryList(tuple,3) || tuple.length !== 3 || !tuple.every(validId) || new Set(tuple).size !== 3) throw new Error('Each outfit exclusion needs three distinct valid piece IDs in top, bottom, shoes order.');
+    excludedKeys.add(tuple.join(':'));
+  }
+  let excludedCount = 0;
   const groups: Piece[][] = [[], [], []];
   const ids = new Set<string>();
   for (const piece of pieces) {
@@ -156,6 +169,7 @@ export function generateAlternatives(pieces: readonly Piece[], model: ModelResul
   for (const top of groups[0]) for (const bottom of groups[1]) for (const shoes of groups[2]) {
     const outfit: OutfitPieces = [top, bottom, shoes];
     if (!occasionAllows(outfit, options.occasion)) continue;
+    if (excludedKeys.has([top.id,bottom.id,shoes.id].join(':'))) { excludedCount++; continue; }
     const features = averageFeatures(outfit);
     const taste = model.status === 'trained' ? scoreValidated(features, model) : null;
     const novelty = model.status === 'trained'
@@ -180,9 +194,11 @@ export function generateAlternatives(pieces: readonly Piece[], model: ModelResul
     }
   }
   const reasons: string[] = [];
-  if (!candidates.length) reasons.push('No eligible combinations meet this occasion rule. Add a top, bottom, and shoes with suitable declared formality tags.');
+  if (!candidates.length) reasons.push(excludedCount > 0
+    ? 'Every occasion-valid combination was excluded as previously worn. Include previous outfits or add different owned pieces; the repeat filter was not relaxed.'
+    : 'No eligible combinations meet this occasion rule. Add a top, bottom, and shoes with suitable declared formality tags.');
   if (model.status === 'insufficient') reasons.push('These are unranked outfit ideas, not personalized recommendations. ' + model.reason);
   if (diversityFallback) reasons.push('The available wardrobe required shared pieces between alternatives.');
-  return { candidates: selected, eligibleCount: candidates.length, ranked: model.status === 'trained',
+  return { candidates: selected, eligibleCount: candidates.length, excludedCount, ranked: model.status === 'trained',
     diversityFallback, reason: reasons.length ? reasons.join(' ') : null };
 }
