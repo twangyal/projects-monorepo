@@ -64,7 +64,7 @@ function base64(value: unknown, bytes: number): string {
 
 export function validateSettings(value: unknown): Settings {
   const fields = object(value, ['mode', 'border', 'colorA', 'colorB', 'cellSize']);
-  requireValue(fields.mode === 'solid' || fields.mode === 'checker', 'Choose a solid or checker surround.');
+  requireValue(fields.mode === 'solid' || fields.mode === 'checker' || fields.mode === 'horizontal-stripes' || fields.mode === 'vertical-stripes', 'Choose a solid, checker, horizontal stripe or vertical stripe surround.');
   for (const name of ['colorA', 'colorB']) requireValue(typeof fields[name] === 'string' && /^#[0-9a-f]{6}(?![\s\S])/.test(fields[name]), 'Colors must be lowercase six-digit hexadecimal values.');
   return { mode: fields.mode, border: integer(fields.border, 0, LIMITS.border), colorA: fields.colorA as string,
     colorB: fields.colorB as string, cellSize: integer(fields.cellSize, LIMITS.cellMin, LIMITS.cellMax) };

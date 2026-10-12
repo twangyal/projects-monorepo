@@ -30,7 +30,9 @@ export function renderComparison(project: Project): Comparison {
         baseline.rgba.set(pixel, offset);
         result.rgba.set(pixel, offset);
       } else {
-        const index = mode === 'checker' ? (Math.floor(x / cellSize) + Math.floor(y / cellSize)) % 2 : 0;
+        const index = mode === 'checker' ? (Math.floor(x / cellSize) + Math.floor(y / cellSize)) % 2
+          : mode === 'horizontal-stripes' ? Math.floor(y / cellSize) % 2
+          : mode === 'vertical-stripes' ? Math.floor(x / cellSize) % 2 : 0;
         const color = colors[index]!;
         baseline.rgba.set([128, 128, 128, 255], offset);
         result.rgba.set([...color, 255], offset);
