@@ -10,6 +10,12 @@ Select a piano-roll note, then enter **Split at beat** and choose **Split select
 
 Each half retriggers its instrument envelope, filter and echo, so the result has two attacks and can have overlapping release tails. It is not a continuous tied voice. Apply or discard other editor drafts first. One Undo restores the original; Redo, browser autosave, complete project backups, MIDI and WAV retain the split. The split-position field is a session-only editing parameter. This is a note-editing milestone toward the ACTIVE full-DAW direction ([#190](https://github.com/twangyal/projects-monorepo/issues/190)).
 
+## Join notes into a sustained voice
+
+Select a note and choose **Join next matching note**. It must have exactly one touching successor in the same track with identical pitch and velocity. The result retains the selected ID and the original outer interval; the successor ID is removed. Unrelated voices, sounds and reference audio stay intact. Gaps, overlaps and duration beyond 16 beats refuse; only floating-point roundoff at touching/maximum boundaries is normalized. A chord with multiple matching successors is ambiguous and refuses.
+
+The joined note has one attack, filter evolution and release, with one set of echo copies. This deliberately changes articulation. Apply or discard editor drafts first. One Undo restores both notes, and complete backups, autosave, MIDI and WAV retain the joined result ([#191](https://github.com/twangyal/projects-monorepo/issues/191)).
+
 ## Run locally
 
 Use Node.js **22.18 or newer** and npm:
