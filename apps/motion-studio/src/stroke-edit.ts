@@ -87,6 +87,20 @@ export function setStrokePoint(input: Project, target: StrokeTarget, pointIndex:
   stroke.points[index] = position;
   return validateProject(project);
 }
+export function insertStrokeMidpoint(input: Project, target: StrokeTarget, pointIndex: number): Project {
+  const index = finite(pointIndex, 'Point index'), { project, stroke } = select(input, target);
+  if (!Number.isInteger(index) || index < 0 || index >= stroke.points.length - 1) throw new Error('Select a point with a following neighbor to insert a midpoint.');
+  const a = stroke.points[index], b = stroke.points[index + 1];
+  stroke.points.splice(index + 1, 0, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  return validateProject(project);
+}
+export function deleteStrokePoint(input: Project, target: StrokeTarget, pointIndex: number): Project {
+  const index = finite(pointIndex, 'Point index'), { project, stroke } = select(input, target);
+  if (!Number.isInteger(index) || index < 0 || index >= stroke.points.length) throw new Error('Select an existing point in this stroke.');
+  if (stroke.points.length === 1) throw new Error('Keep at least one point in the stroke. Delete the whole stroke to remove it.');
+  stroke.points.splice(index, 1);
+  return validateProject(project);
+}
 export function setStrokeAppearance(input: Project, target: StrokeTarget, appearance: { color: string; width: number }): Project {
   const values = fields(appearance, ['color', 'width'], 'Stroke appearance');
   if (typeof values.color !== 'string') throw new Error('Stroke color must use #RRGGBB notation.');

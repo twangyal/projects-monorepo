@@ -1,5 +1,5 @@
 import { evaluateDrawingCel, evaluatePose, localPoint, type Point, type Pose, type Project, type Stroke } from './model.ts';
-import { deleteStroke, duplicateStroke, reorderStroke, mirrorStroke, transformStroke, setStrokeAppearance, setStrokePoint, type StrokeTarget } from './stroke-edit.ts';
+import { deleteStroke, duplicateStroke, reorderStroke, mirrorStroke, transformStroke, setStrokeAppearance, setStrokePoint, insertStrokeMidpoint, deleteStrokePoint, type StrokeTarget } from './stroke-edit.ts';
 
 /** Captures one rigid path displacement, never accumulated pointer deltas. */
 export class StrokeDrag {
@@ -26,7 +26,7 @@ interface State { project: Project; layerId: string; frame: number; generation: 
 interface Hooks { state(): State; admitOtherDrafts(): boolean; begin(keepSelection?: boolean): void; apply(project: Project): boolean; changed(): void }
 interface Selection { target: StrokeTarget; project: Project; frame: number; generation: number; operation: number }
 export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
-  host.innerHTML = `<section id="stroke-editor" role="region" aria-label="Selected drawing strokes" hidden><h3>Selected drawing strokes</h3><p id="stroke-exposure" class="hint"></p><div id="stroke-list"></div><div id="stroke-appearance"><label class="field">Selected stroke color<input id="stroke-color" type="color" value="#563d75"></label><label class="field">Selected stroke width<input id="stroke-width" type="text" inputmode="decimal"></label><button id="stroke-apply">Apply stroke appearance</button><button id="stroke-discard">Discard stroke edits</button><button id="stroke-duplicate">Duplicate selected stroke</button><button id="stroke-mirror-x">Mirror stroke horizontally</button><button id="stroke-mirror-y">Mirror stroke vertically</button><button id="stroke-grow">Grow stroke ×2</button><button id="stroke-shrink">Shrink stroke ×0.5</button><button id="stroke-rotate-cw">Rotate stroke clockwise 90°</button><button id="stroke-rotate-ccw">Rotate stroke counterclockwise 90°</button><button id="stroke-forward">Bring stroke forward</button><button id="stroke-backward">Send stroke backward</button><button id="stroke-delete">Delete selected stroke</button></div><fieldset id="stroke-points"><legend>Reshape a stroke point</legend><label class="field">Selected point<select id="stroke-point"></select></label><label class="field">Point local X<input id="stroke-point-x" type="text" inputmode="decimal"></label><label class="field">Point local Y<input id="stroke-point-y" type="text" inputmode="decimal"></label><button id="stroke-point-apply">Apply stroke point</button><p class="hint">Coordinates belong to the drawing before layer poses. Each axis accepts −1280 to 1280. The ring marks the committed selected point. Discard stroke edits restores raw fields.</p></fieldset><p id="stroke-status" aria-live="polite">Select a retained stroke in the list or on the canvas. Arrow keys move it in stage axes; Shift moves ten units.</p></section>`;
+  host.innerHTML = `<section id="stroke-editor" role="region" aria-label="Selected drawing strokes" hidden><h3>Selected drawing strokes</h3><p id="stroke-exposure" class="hint"></p><div id="stroke-list"></div><div id="stroke-appearance"><label class="field">Selected stroke color<input id="stroke-color" type="color" value="#563d75"></label><label class="field">Selected stroke width<input id="stroke-width" type="text" inputmode="decimal"></label><button id="stroke-apply">Apply stroke appearance</button><button id="stroke-discard">Discard stroke edits</button><button id="stroke-duplicate">Duplicate selected stroke</button><button id="stroke-mirror-x">Mirror stroke horizontally</button><button id="stroke-mirror-y">Mirror stroke vertically</button><button id="stroke-grow">Grow stroke ×2</button><button id="stroke-shrink">Shrink stroke ×0.5</button><button id="stroke-rotate-cw">Rotate stroke clockwise 90°</button><button id="stroke-rotate-ccw">Rotate stroke counterclockwise 90°</button><button id="stroke-forward">Bring stroke forward</button><button id="stroke-backward">Send stroke backward</button><button id="stroke-delete">Delete selected stroke</button></div><fieldset id="stroke-points"><legend>Reshape a stroke point</legend><label class="field">Selected point<select id="stroke-point"></select></label><label class="field">Point local X<input id="stroke-point-x" type="text" inputmode="decimal"></label><label class="field">Point local Y<input id="stroke-point-y" type="text" inputmode="decimal"></label><button id="stroke-point-apply">Apply stroke point</button><button id="stroke-point-insert">Insert midpoint after point</button><button id="stroke-point-delete">Delete selected point</button><p class="hint">Coordinates belong to the drawing before layer poses. Each axis accepts −1280 to 1280. The ring marks the committed selected point. Discard stroke edits restores raw fields.</p></fieldset><p id="stroke-status" aria-live="polite">Select a retained stroke in the list or on the canvas. Arrow keys move it in stage axes; Shift moves ten units.</p></section>`;
   const get = <T extends HTMLElement = HTMLElement>(id: string) => host.querySelector<T>(`#${id}`)!;
   const color = get<HTMLInputElement>('stroke-color'), width = get<HTMLInputElement>('stroke-width');
   const pointSelect = get<HTMLSelectElement>('stroke-point'), pointX = get<HTMLInputElement>('stroke-point-x'), pointY = get<HTMLInputElement>('stroke-point-y');
@@ -91,6 +91,9 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
     pointSelect.disabled = state.locked || !available || dirty;
     pointX.disabled = state.locked || !available || draftKind === 'appearance'; pointY.disabled = pointX.disabled;
     get<HTMLButtonElement>('stroke-point-apply').disabled = pointX.disabled;
+    const stroke = currentStroke();
+    get<HTMLButtonElement>('stroke-point-insert').disabled = state.locked || !stroke || dirty || pointIndex >= stroke.points.length - 1;
+    get<HTMLButtonElement>('stroke-point-delete').disabled = state.locked || !stroke || dirty || stroke.points.length === 1;
     get<HTMLButtonElement>('stroke-apply').disabled = state.locked || !available || draftKind === 'point';
     for (const id of ['stroke-forward', 'stroke-backward', 'stroke-delete', 'stroke-duplicate', 'stroke-mirror-x', 'stroke-mirror-y', 'stroke-grow', 'stroke-shrink', 'stroke-rotate-cw', 'stroke-rotate-ccw']) get<HTMLButtonElement>(id).disabled = state.locked || !available || dirty;
     get<HTMLButtonElement>('stroke-discard').disabled = state.locked || (!selection && !dirty);
@@ -141,6 +144,19 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
       status(changed ? `Point ${pointIndex + 1} applied throughout this held drawing.` : 'Stroke point is unchanged. No new edit was made.'); update(); hooks.changed();
     } catch (error) { status(error instanceof Error ? error.message : 'Could not apply this stroke point.'); }
   });
+  function topology(action: 'insert' | 'delete') {
+    if (hooks.state().locked || !hooks.admitOtherDrafts() || !admit() || !selection || !currentStroke()) return;
+    const target = { ...selection.target };
+    try {
+      const candidate = action === 'insert' ? insertStrokeMidpoint(hooks.state().project, target, pointIndex) : deleteStrokePoint(hooks.state().project, target, pointIndex);
+      hooks.begin(true); bind(target, false);
+      const changed = hooks.apply(candidate);
+      if (changed && action === 'insert') pointIndex++;
+      bind(target, true); status(action === 'insert' ? 'Midpoint inserted and selected. Edit its local coordinates to reshape the segment.' : 'Point deleted. Other points and brush appearance were kept.'); update(); hooks.changed();
+    } catch (error) { status(error instanceof Error ? error.message : 'Could not change this stroke topology.'); }
+  }
+  get('stroke-point-insert').addEventListener('click', () => topology('insert'));
+  get('stroke-point-delete').addEventListener('click', () => topology('delete'));
   function remove() {
     if (hooks.state().locked || !hooks.admitOtherDrafts() || !admit() || !selection || !currentStroke()) return;
     try { hooks.begin(true); bind(selection.target, false); const candidate = deleteStroke(hooks.state().project, selection.target); hooks.apply(candidate); dirty = false; selection = null; invalid = false; width.value = ''; status('Selected stroke deleted.'); update(); hooks.changed(); }
@@ -179,9 +195,9 @@ export function createStrokeEditor(host: HTMLElement, hooks: Hooks) {
     }
   }, true);
   host.addEventListener('pointerdown', event => {
-    if (!(event.target as HTMLElement).closest('#stroke-list button,#stroke-apply,#stroke-delete,#stroke-discard,#stroke-duplicate,#stroke-mirror-x,#stroke-mirror-y,#stroke-grow,#stroke-shrink,#stroke-rotate-cw,#stroke-rotate-ccw,#stroke-forward,#stroke-backward,#stroke-point-apply,#stroke-point') || event.button !== 0) return;
+    if (!(event.target as HTMLElement).closest('#stroke-list button,#stroke-apply,#stroke-delete,#stroke-discard,#stroke-duplicate,#stroke-mirror-x,#stroke-mirror-y,#stroke-grow,#stroke-shrink,#stroke-rotate-cw,#stroke-rotate-ccw,#stroke-forward,#stroke-backward,#stroke-point-apply,#stroke-point,#stroke-point-insert,#stroke-point-delete') || event.button !== 0) return;
     if (!hooks.admitOtherDrafts()) { event.preventDefault(); if (!(event.target as HTMLElement).closest('#stroke-discard')) event.stopImmediatePropagation(); return; }
-    if ((event.target as HTMLElement).closest('#stroke-list button,#stroke-delete,#stroke-duplicate,#stroke-mirror-x,#stroke-mirror-y,#stroke-grow,#stroke-shrink,#stroke-rotate-cw,#stroke-rotate-ccw,#stroke-forward,#stroke-backward,#stroke-point') && !admit()) { event.preventDefault(); event.stopImmediatePropagation(); }
+    if ((event.target as HTMLElement).closest('#stroke-list button,#stroke-delete,#stroke-duplicate,#stroke-mirror-x,#stroke-mirror-y,#stroke-grow,#stroke-shrink,#stroke-rotate-cw,#stroke-rotate-ccw,#stroke-forward,#stroke-backward,#stroke-point,#stroke-point-insert,#stroke-point-delete') && !admit()) { event.preventDefault(); event.stopImmediatePropagation(); }
   }, true);
   function overlay(context: CanvasRenderingContext2D, preview: Project) {
     context.clearRect(0, 0, 640, 360);
