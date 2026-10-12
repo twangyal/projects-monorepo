@@ -93,6 +93,14 @@ export function deleteStroke(input: Project, target: StrokeTarget): Project {
   return validateProject(project);
 }
 
+export function reorderStroke(input: Project, target: StrokeTarget, direction: 'forward' | 'backward'): Project {
+  if (direction !== 'forward' && direction !== 'backward') throw new Error('Choose forward or backward paint order.');
+  const {project,cel,index} = select(input,target), neighbor=index+(direction==='forward'?1:-1);
+  if(neighbor<0 || neighbor>=cel.strokes.length) return project;
+  [cel.strokes[index],cel.strokes[neighbor]]=[cel.strokes[neighbor],cel.strokes[index]];
+  return validateProject(project);
+}
+
 /** Insert an independent copy immediately above the selected path in paint order. */
 export function duplicateStroke(input: Project, target: StrokeTarget): Project {
   const { project, cel, index, stroke } = select(input, target);

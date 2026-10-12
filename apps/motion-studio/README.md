@@ -65,6 +65,8 @@ Apply or explicitly discard raw appearance values before changing selection, fra
 
 **Grow stroke ×2**, **Shrink stroke ×0.5**, and clockwise/counterclockwise **90° rotation** reshape the selected retained path around the center of its own local coordinate bounds. Brush width and color stay fixed; layer poses, drawing starts and other artwork stay intact. Local rotations follow the drawing axes even when the layer itself is rotated. Each changed action is one Undo/Redo step and saves normally. Single-point paths are unchanged and add no history; invalid targets, coordinate overflow or file capacity refuse the entire edit. Apply or discard pending appearance/pose edits before using these controls. This is deterministic authored geometry, not learned shape generation.
 
+**Bring stroke forward** and **Send stroke backward** move the selected path one position in the current drawing's paint order. Later strokes appear above earlier strokes at overlaps. The same artwork stays selected at its new list index; its points, brush width/color, poses and other held drawings remain unchanged. Changed ordering is one Undo/Redo/autosave edit and affects the current drawing throughout its held interval. At the front/back boundary the action is unchanged and keeps Redo. Apply/discard appearance and other editor drafts first; after changing a pose field, deliberately reselect the stroke. PNG/GIF and project backups retain the committed order. See [#193](https://github.com/twangyal/projects-monorepo/issues/193).
+
 This tool edits complete strokes. It does not reshape individual points, cut paths with an eraser, infer objects or generate artwork. The existing project format, file limits and saved-copy protection continue to apply.
 
 ## Drawings and pose keyframes
