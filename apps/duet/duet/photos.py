@@ -154,14 +154,16 @@ def _decode_photo(data, mime, width, height, frames):
                    '-protocol_whitelist', 'file,pipe', '-format_whitelist', formats[mime],
                    '-err_detect', 'explode', '-max_pixels', str(MAX_CODEC_PIXELS),
                    '-f', formats[mime], '-i', str(source), '-map', '0:v:0', '-an', '-sn', '-dn',
-                   '-threads', '1', '-fps_mode', 'passthrough', '-pix_fmt', 'rgba',
+                   '-threads', '1', '-fps_mode', 'passthrough', '-pix_fmt', 'rgb24',
                    '-c:v', 'rawvideo', '-f', 'rawvideo', 'pipe:1']
         try:
             count, _ = _run(command, threading.Event(), timeout=PHOTO_SECONDS,
-                            stdout_limit=MAX_DECODED_PIXELS * 4, count_stdout=True)
+                            stdout_limit=MAX_DECODED_PIXELS * 3, count_stdout=True)
         except (RuntimeError, OSError):
             raise PhotoError('This photo could not be fully decoded within the supported limits. Check the file and FFmpeg installation.') from None
-    frame = width * height * 4
+    # RGB avoids an unnecessary alpha/output allocation; the decoder still reads
+    # all source pixels, and original photo bytes (including alpha) stay unchanged.
+    frame = width * height * 3
     if count != frames * frame:
         raise PhotoError('This photo has incomplete or inconsistent pixels.')
 

@@ -63,7 +63,7 @@ class PhotoInspectionTests(unittest.TestCase):
             inspect_photo(BROKEN_LATER_GIF)
         with self.assertRaises(PhotoError):
             inspect_photo(GIF[:42] + b';')
-        with patch('duet.photos._run', return_value=(16, b'')):
+        with patch('duet.photos._run', return_value=(12, b'')):
             with self.assertRaises(PhotoError):
                 inspect_photo(ANIMATED_GIF)
 
