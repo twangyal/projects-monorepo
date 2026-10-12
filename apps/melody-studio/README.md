@@ -4,6 +4,12 @@
 
 A local browser music sketchbook: record or import a single hummed melody, turn it into editable notes, compare corrections with a retained reference take, layer tracks, and export a composition. Pitch detection and synthesis remain deterministic. A small local statistical learner can continue an explicitly selected ending with inspectable, reversible note proposals; broader generative arrangement remains future work.
 
+## Split a sustained note
+
+Select a piano-roll note, then enter **Split at beat** and choose **Split selected note**. Song beats start at 1. The point is exact and ignores the roll grid; both halves must be at least 0.25 beats. Only machine-roundoff near that minimum is normalized. The original ID stays on the first half; the second receives a new ID, retaining pitch and velocity. Other notes, track sounds and reference takes stay unchanged. A full 256-note track refuses the split.
+
+Each half retriggers its instrument envelope, filter and echo, so the result has two attacks and can have overlapping release tails. It is not a continuous tied voice. Apply or discard other editor drafts first. One Undo restores the original; Redo, browser autosave, complete project backups, MIDI and WAV retain the split. The split-position field is a session-only editing parameter. This is a note-editing milestone toward the ACTIVE full-DAW direction ([#190](https://github.com/twangyal/projects-monorepo/issues/190)).
+
 ## Run locally
 
 Use Node.js **22.18 or newer** and npm:
