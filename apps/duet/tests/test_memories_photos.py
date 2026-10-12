@@ -91,7 +91,15 @@ class PhotoInspectionTests(unittest.TestCase):
             self.assertNotIn('private-file-path', str(error.exception))
 
     def test_exact_pixel_limit_decodes_and_animation_budget_refuses_before_worker(self):
-        self.assertEqual(inspect_photo(png(4000, 4000)), ('image/png', 4000, 4000))
+        try:
+            result = inspect_photo(png(4000, 4000))
+        except PhotoError as error:
+            # Trusted synthetic fixture only: expose bounded worker diagnostics
+            # in CI without changing generic production errors.
+            cause = error.__context__
+            self.fail(f'Exact-limit fixture refused: {type(cause).__name__}: '
+                      f'{getattr(cause, "stderr", str(cause))!r}')
+        self.assertEqual(result, ('image/png', 4000, 4000))
         # Complete original LZW frame blocks on a larger valid canvas, exceeding
         # the aggregate limit only on the third frame.
         over_budget = GIF[:6] + struct.pack('<HH', 4000, 4000) + GIF[10:25] + GIF[25:-1] * 3 + b';'
