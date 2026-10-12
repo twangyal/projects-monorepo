@@ -78,6 +78,16 @@ Applied ramps survive complete backups, saved compositions, duplication, Undo/Re
 
 This is one linear volume ramp per track, without multiple automation points, curve editing, effect automation or mixer routing. Synthetic Chromium audio/export checks establish the described behavior, not musician-quality or physical listening evaluation. See [volume-ramp verification](docs/2026-10-10-volume-ramp.md). Melody remains ACTIVE toward the full DAW vision.
 
+### Shape a track with multiple volume points
+
+Enable **volume curve** and enter **Volume curve points**, one song beat and gain per line, such as `1 1`, `5 .2`, `9 .8`, `17 0`. Beats are1-based through513; levels range0–1. Up to64 strictly increasing points can define several rises, dips and fades. Gain interpolates linearly between points and holds the first/last level outside their range. A single point sets a constant gain. The graph shows the committed curve, including held endpoints.
+
+Choose **Apply volume curve** or **Discard volume curve edits**. Raw text remains separate from playback/files and is retained while switching tracks. Blank, duplicate, unordered, out-of-bounds or malformed points refuse the complete edit. Decimal conversion preserves fractional/tiny values through displayed one-based beats and unchanged reapplication;32,768text characters can represent all64valid subnormal levels. Finish other raw fields, note drafts, gestures and suggestions first; pointer and keyboard guards protect unsent fields before blur.
+
+The curve multiplies track volume **and any separately enabled volume ramp**. Disable the older ramp if only the new curve should shape gain. It affects sustained notes, release and echoes at absolute song time in shared playback/solo/backing/reference-note rendering and WAV/stem/section exports. Section note transformations leave automation anchored; continuation audition shifts the curve to preserve its original song-time levels. Curves do not extend the song. MIDI omits custom automation.
+
+Changed Apply is one Undo/Redo edit, retained in complete projects, autosave, saved copies, portable recovery and track duplication. Reference PCM and other tracks remain unchanged; absent curves preserve legacy PCM. This is linear amplitude automation, without stereo routing, effect curves, live automation recording or musician-quality acceptance. Melody remains ACTIVE toward the full DAW vision ([#197](https://github.com/twangyal/projects-monorepo/issues/197)).
+
 ## Audition an arrangement section
 
 Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.

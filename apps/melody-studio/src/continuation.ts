@@ -1,3 +1,4 @@
+import {shiftVolumeCurve} from './volume-curve.ts';
 import { MAX_COMPOSITION_BEATS } from './limits.ts';
 import type { Composition, Note } from './types.ts';
 import { validateComposition } from './model.ts';
@@ -287,6 +288,6 @@ export function auditionComposition(proposal: ContinuationProposal): Composition
     : undefined;
   return validateComposition({
     version: 1, title: checked.base.title, tempo: checked.base.tempo,
-    tracks: [{ ...source, notes, ...(volumeRamp ? {volumeRamp} : {}) }],
+    tracks: [{ ...source, notes, ...(volumeRamp ? {volumeRamp} : {}), ...(source.volumeCurve ? {volumeCurve:shiftVolumeCurve(source.volumeCurve,shift)} : {}) }],
   });
 }

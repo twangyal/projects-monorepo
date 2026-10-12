@@ -259,3 +259,6 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
 .sound-envelope .checkbox-label input { width: auto; }
 .sound-envelope input { width: 100%; }
 .sound-envelope button { margin-top: 8px; width: 100%; }
+
+.sound-envelope textarea {width:100%;max-width:100%;box-sizing:border-box;resize:vertical;font:inherit;padding:8px;border:1px solid #d5d9dd;border-radius:6px;}
+.sound-envelope svg {display:block;width:100%;height:96px;margin-top:12px;}

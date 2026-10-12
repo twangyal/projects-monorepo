@@ -46,8 +46,9 @@ function composition(value: unknown, normalize: boolean): Composition {
     const hasEnvelope = item !== null && typeof item === 'object' && Object.hasOwn(item, 'envelope');
     const hasEcho = item !== null && typeof item === 'object' && Object.hasOwn(item, 'echo');
     const hasFilter = item !== null && typeof item === 'object' && Object.hasOwn(item, 'filter');
+    const hasVolumeCurve = item !== null && typeof item === 'object' && Object.hasOwn(item, 'volumeCurve');
     const hasVolumeRamp = item !== null && typeof item === 'object' && Object.hasOwn(item, 'volumeRamp');
-    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasEnvelope ? ['envelope'] : []), ...(hasFilter ? ['filter'] : []), ...(hasEcho ? ['echo'] : []), ...(hasVolumeRamp ? ['volumeRamp'] : [])], 'Track');
+    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasEnvelope ? ['envelope'] : []), ...(hasFilter ? ['filter'] : []), ...(hasEcho ? ['echo'] : []), ...(hasVolumeRamp ? ['volumeRamp'] : []), ...(hasVolumeCurve ? ['volumeCurve'] : [])], 'Track');
     for (const note of array(track.notes, 256, 'Notes')) record(note, ['id', 'pitch', 'start', 'duration', 'velocity'], 'Note');
   }
   const result = validateComposition(value);
