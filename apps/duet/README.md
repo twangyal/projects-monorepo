@@ -6,7 +6,7 @@ Partner invitation rotation admits one in-flight request per private seat, even 
 
 **Product direction (2026-10-08): ACTIVE.** The destination is Spotify integration and an automatically populated shared listening timeline with editable events and song-linked text/photo memories. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
-A private local music room for two people: bring your own audio files, rate songs independently, build an explainable shared mix, listen together, and attach dated memories. No accounts, paid services, or streaming subscription are required. Spotify integration, catalog access, and musical-similarity recommendations are not implemented.
+A private local music room for two people: bring your own audio files, rate songs independently, build an explainable shared mix, listen together, and attach dated memories. Each person can also connect Spotify so the room keeps an **automatic listening timeline** (see [Connect Spotify](#connect-spotify-for-the-listening-timeline)). Uploaded-audio rooms need no accounts or subscriptions; the Spotify timeline needs the operator's own Spotify app. Catalog search, musical-similarity recommendations and Spotify playback are not implemented.
 
 ## Run locally
 
@@ -84,6 +84,34 @@ HTTPS requires TLS 1.2 or newer, the exact configured Host, and the exact Origin
 - Each person presses **Enable audio on this device**. **Listen**, **Play together/Pause together**, **Previous**, **Next**, and the seek slider change shared playback. Audio permission and volume remain local to each browser. Browsers may require another explicit click if autoplay is blocked.
 - Playlist playback advances to the next song and stops after the final song; it does not loop. A song outside the playlist stops at its end. Server restart preserves room data and pauses playback rather than starting it automatically.
 - Choose a song, date, and memory text, then press **Keep this memory**. Each person can delete their own memories. Removing a song preserves memories with its recorded title and marks the audio unavailable.
+
+## Connect Spotify for the listening timeline
+
+The room's **Our listening timeline** section turns both people's Spotify listening into a shared history, without an approval step for each entry. It also lets either person write entries.
+
+**Operator setup (once).** Spotify issues API access through developer apps. Create an app at the Spotify developer dashboard and add this redirect URI to it exactly:
+
+- `http://127.0.0.1:8766/spotify/callback` for the default loopback service (use your `--port`). Spotify accepts loopback IP addresses, not `localhost`.
+- `<your --origin>/spotify/callback` in HTTPS LAN mode.
+
+Then start Duet with the app's **client ID**. No client secret is used: Duet uses Authorization Code with PKCE.
+
+```sh
+python3 -m duet --data-dir "$HOME/.local/share/duet" --port 8766 --spotify-client-id YOUR_CLIENT_ID
+# or: DUET_SPOTIFY_CLIENT_ID=YOUR_CLIENT_ID python3 -m duet ...
+```
+
+Since February 2026, Spotify's development-mode apps require the **app owner to have Spotify Premium**, and new apps allow 5 users. That is enough for a couple. Duet itself charges nothing and calls no paid service. Without a client ID the timeline section explains that Spotify is off, and written entries still work.
+
+**Each person connects their own account.** Choose **Connect my Spotify**, approve on Spotify, and you return to the room. Duet requests only `user-read-recently-played` and `user-library-read`. It then checks each connected account about every ten minutes (or on **Check Spotify now**) and adds entries automatically:
+
+- **You both played …**: a song in both people's histories. Duet shows each person's own play counts and times and never assumes you listened together; it only notes when plays were within 30 minutes of each other.
+- **… heard … for the first time**: the first time Duet saw someone play a song *after they connected*. The recent history imported when connecting is a baseline, and a song already in Liked Songs is not "new". On one day, more than two of these from one person collapse into a single group.
+- **… added … to Liked Songs**: a song liked after connecting.
+
+Either person can **Hide** an entry. Hidden entries stay hidden when the same listening is seen again, and **Show hidden** restores them. Either person can add a caption. **Write an entry** adds your own dated moment with an optional song and note; only its writer can delete it. Spotify's history endpoint returns at most the 50 most recent plays per check, so very heavy listening between checks can be undercounted.
+
+**Privacy.** Spotify credentials and imported listening are kept in `listening.sqlite3` inside the data directory, created owner-only (mode 0600). They are never in the room document, room-note exports or library archives. Neither person's credentials ever reach the browser. **Disconnect my Spotify** deletes that person's credential and imported listening; written entries remain. Deleting the room deletes everything. A library archive does not include the timeline or connections, so after restoring, reconnect and rewrite entries you need.
 
 ## Correct a saved song memory
 

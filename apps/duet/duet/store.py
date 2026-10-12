@@ -424,6 +424,14 @@ class Store:
             self._write(room, promote=True)
             return {'roomId': room_id, 'token': token, 'room': self._snapshot(room, 'guest', self._clock())}
 
+    def has_participant(self, room_id, role):
+        """Whether a room still exists with an occupied seat for ``role``."""
+        try:
+            with self._transaction():
+                return self._read(room_id)['profiles'].get(role) is not None
+        except DomainError:
+            return False
+
     def authenticate(self, room_id, token):
         with self._transaction():
             return self._authorized(room_id, token)[1]
