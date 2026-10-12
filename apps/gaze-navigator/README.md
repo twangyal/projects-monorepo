@@ -48,6 +48,8 @@ Discovery reaches controls inside open shadow roots (web components) and same-or
 
 Execution never opens `javascript:` or other non-web link schemes, writes fields through native value setters plus `input`/`change` events so framework-managed forms see the change, keeps a 20-step per-field undo history, and acts only on elements captured inside the circle (plus the page's single search field for "search for…"). The panel lives in an open shadow root that context capture ignores, and a spacer reserves room so it never permanently covers the end of a page.
 
+Interpretation quality is measured on a fixed suite: `npm run evaluate:instructions` scores 120 tuned phrasings (120/120) and 50 held-out phrasings (34/50, 68%). Both suites have zero wrong page actions; every miss is a question or an explanation. See [the evaluation](docs/2026-10-12-instruction-suite-evaluation.md). This is the baseline a Jev interpreter (#206) must beat.
+
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 
 ### On real websites (Chrome extension)
@@ -296,3 +298,7 @@ Context capture descends into open shadow roots and same-origin frames, and infe
 ### Calibration that follows navigation — 2026-10-12
 
 In the extension, camera calibrations are serialized from WebGazer's regression, kept in extension session memory, and restored on the next page when the window size matches (≤ 2 h). Stopping the camera deletes them. 120 unit and 160 native Chromium cases pass locally. [Verification record](docs/2026-10-12-calibration-persistence-verification.md); issue #208.
+
+### Measured spoken phrasing — 2026-10-12
+
+A versioned 120-instruction suite plus a 50-instruction held-out set measures the interpreter. Broadening raised the tuned suite from 91/120 with one unsafe action to 120/120. The held-out set scores 34/50, with 0 unsafe actions on both. 124 unit tests pass, and the 64 web-runtime native cases pass. [Evaluation](docs/2026-10-12-instruction-suite-evaluation.md); issue #209.

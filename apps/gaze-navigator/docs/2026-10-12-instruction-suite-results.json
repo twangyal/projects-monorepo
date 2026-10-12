@@ -1,0 +1,3026 @@
+[
+  {
+    "summary": {
+      "suite": "spoken-web-v1",
+      "total": 120,
+      "correct": 120,
+      "unsafe": 0,
+      "abstained": 0,
+      "categories": {
+        "activate": {
+          "total": 32,
+          "correct": 32,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "choose": {
+          "total": 5,
+          "correct": 5,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "clarify": {
+          "total": 4,
+          "correct": 4,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "select": {
+          "total": 8,
+          "correct": 8,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "dictate": {
+          "total": 8,
+          "correct": 8,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "edit": {
+          "total": 12,
+          "correct": 12,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "submit": {
+          "total": 4,
+          "correct": 4,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "search": {
+          "total": 4,
+          "correct": 4,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "scroll": {
+          "total": 12,
+          "correct": 12,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "navigate": {
+          "total": 6,
+          "correct": 6,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "control": {
+          "total": 19,
+          "correct": 19,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "refuse": {
+          "total": 6,
+          "correct": 6,
+          "unsafe": 0,
+          "abstained": 0
+        }
+      }
+    },
+    "results": [
+      {
+        "id": 1,
+        "category": "activate",
+        "context": "navigation",
+        "say": "open pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 2,
+        "category": "activate",
+        "context": "navigation",
+        "say": "Pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 3,
+        "category": "activate",
+        "context": "navigation",
+        "say": "click pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 4,
+        "category": "activate",
+        "context": "navigation",
+        "say": "click on pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 5,
+        "category": "activate",
+        "context": "navigation",
+        "say": "please open pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 6,
+        "category": "activate",
+        "context": "navigation",
+        "say": "can you open pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 7,
+        "category": "activate",
+        "context": "navigation",
+        "say": "could you open the pricing page please",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 8,
+        "category": "activate",
+        "context": "navigation",
+        "say": "go to pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 9,
+        "category": "activate",
+        "context": "navigation",
+        "say": "take me to contact us",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 10,
+        "category": "activate",
+        "context": "navigation",
+        "say": "show me the pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 11,
+        "category": "activate",
+        "context": "navigation",
+        "say": "I want to see pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 12,
+        "category": "activate",
+        "context": "navigation",
+        "say": "open contact",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 13,
+        "category": "activate",
+        "context": "navigation",
+        "say": "contact us",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 14,
+        "category": "activate",
+        "context": "navigation",
+        "say": "sign in",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 15,
+        "category": "activate",
+        "context": "navigation",
+        "say": "press sign in",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 16,
+        "category": "activate",
+        "context": "navigation",
+        "say": "click the sign in button",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 17,
+        "category": "activate",
+        "context": "navigation",
+        "say": "log in",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 18,
+        "category": "activate",
+        "context": "navigation",
+        "say": "go home",
+        "expected": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 19,
+        "category": "activate",
+        "context": "navigation",
+        "say": "open home",
+        "expected": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 20,
+        "category": "activate",
+        "context": "navigation",
+        "say": "open the second link",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 21,
+        "category": "activate",
+        "context": "navigation",
+        "say": "click the last link",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 22,
+        "category": "activate",
+        "context": "product",
+        "say": "add to cart",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 23,
+        "category": "activate",
+        "context": "product",
+        "say": "add it to my cart",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 24,
+        "category": "activate",
+        "context": "product",
+        "say": "place order",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 25,
+        "category": "activate",
+        "context": "product",
+        "say": "open reviews",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 26,
+        "category": "activate",
+        "context": "product",
+        "say": "show reviews",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 27,
+        "category": "activate",
+        "context": "product",
+        "say": "click this",
+        "expected": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 28,
+        "category": "activate",
+        "context": "form",
+        "say": "check send me a copy",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 29,
+        "category": "activate",
+        "context": "form",
+        "say": "tick send me a copy",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 30,
+        "category": "activate",
+        "context": "form",
+        "say": "send message",
+        "expected": {
+          "type": "activate",
+          "targetId": 6
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 6
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 31,
+        "category": "activate",
+        "context": "list",
+        "say": "open the second read more",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 32,
+        "category": "activate",
+        "context": "list",
+        "say": "click the first remove",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 33,
+        "category": "choose",
+        "context": "navigation",
+        "say": "click the second one",
+        "expected": {
+          "type": "choose",
+          "index": 2
+        },
+        "got": {
+          "type": "choose",
+          "index": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 34,
+        "category": "choose",
+        "context": "navigation",
+        "say": "the third one",
+        "expected": {
+          "type": "choose",
+          "index": 3
+        },
+        "got": {
+          "type": "choose",
+          "index": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 35,
+        "category": "choose",
+        "context": "navigation",
+        "say": "number four",
+        "expected": {
+          "type": "choose",
+          "index": 4
+        },
+        "got": {
+          "type": "choose",
+          "index": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 36,
+        "category": "choose",
+        "context": "navigation",
+        "say": "four",
+        "expected": {
+          "type": "choose",
+          "index": 4
+        },
+        "got": {
+          "type": "choose",
+          "index": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 37,
+        "category": "choose",
+        "context": "navigation",
+        "say": "option 2",
+        "expected": {
+          "type": "choose",
+          "index": 2
+        },
+        "got": {
+          "type": "choose",
+          "index": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 38,
+        "category": "clarify",
+        "context": "list",
+        "say": "read more",
+        "expected": {
+          "type": "clarify",
+          "elementIds": [
+            1,
+            2,
+            3
+          ]
+        },
+        "got": {
+          "type": "clarify",
+          "candidates": [
+            {
+              "number": 1,
+              "label": "Read more",
+              "elementId": 1
+            },
+            {
+              "number": 2,
+              "label": "Read more",
+              "elementId": 2
+            },
+            {
+              "number": 3,
+              "label": "Read more",
+              "elementId": 3
+            }
+          ],
+          "message": "Which one? 1: Read more; 2: Read more; 3: Read more. Say a number or cancel."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 39,
+        "category": "clarify",
+        "context": "list",
+        "say": "open read more",
+        "expected": {
+          "type": "clarify",
+          "elementIds": [
+            1,
+            2,
+            3
+          ]
+        },
+        "got": {
+          "type": "clarify",
+          "candidates": [
+            {
+              "number": 1,
+              "label": "Read more",
+              "elementId": 1
+            },
+            {
+              "number": 2,
+              "label": "Read more",
+              "elementId": 2
+            },
+            {
+              "number": 3,
+              "label": "Read more",
+              "elementId": 3
+            }
+          ],
+          "message": "Which one? 1: Read more; 2: Read more; 3: Read more. Say a number or cancel."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 40,
+        "category": "clarify",
+        "context": "list",
+        "say": "remove",
+        "expected": {
+          "type": "clarify",
+          "elementIds": [
+            4,
+            5
+          ]
+        },
+        "got": {
+          "type": "clarify",
+          "candidates": [
+            {
+              "number": 4,
+              "label": "Remove",
+              "elementId": 4
+            },
+            {
+              "number": 5,
+              "label": "Remove",
+              "elementId": 5
+            }
+          ],
+          "message": "Which one? 4: Remove; 5: Remove. Say a number or cancel."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 41,
+        "category": "clarify",
+        "context": "list",
+        "say": "click remove",
+        "expected": {
+          "type": "clarify",
+          "elementIds": [
+            4,
+            5
+          ]
+        },
+        "got": {
+          "type": "clarify",
+          "candidates": [
+            {
+              "number": 4,
+              "label": "Remove",
+              "elementId": 4
+            },
+            {
+              "number": 5,
+              "label": "Remove",
+              "elementId": 5
+            }
+          ],
+          "message": "Which one? 4: Remove; 5: Remove. Say a number or cancel."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 42,
+        "category": "select",
+        "context": "product",
+        "say": "choose hardcover",
+        "expected": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 1
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 1,
+          "optionName": "Hardcover"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 43,
+        "category": "select",
+        "context": "product",
+        "say": "select large print",
+        "expected": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 2
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 2,
+          "optionName": "Large print"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 44,
+        "category": "select",
+        "context": "product",
+        "say": "large print",
+        "expected": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 2
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 2,
+          "optionName": "Large print"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 45,
+        "category": "select",
+        "context": "product",
+        "say": "pick audiobook",
+        "expected": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 3
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 3,
+          "optionName": "Audiobook"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 46,
+        "category": "select",
+        "context": "form",
+        "say": "select order problem",
+        "expected": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 1
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 1,
+          "optionName": "Order problem"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 47,
+        "category": "select",
+        "context": "form",
+        "say": "choose book suggestion",
+        "expected": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 2
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 2,
+          "optionName": "Book suggestion"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 48,
+        "category": "select",
+        "context": "form",
+        "say": "set topic to order problem",
+        "expected": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 1
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 1,
+          "optionName": "Order problem"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 49,
+        "category": "select",
+        "context": "form",
+        "say": "change the topic to order problem",
+        "expected": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 1
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 1,
+          "optionName": "Order problem"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 50,
+        "category": "dictate",
+        "context": "form",
+        "say": "type Ada Lovelace",
+        "expected": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "Ada Lovelace"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "Ada Lovelace"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 51,
+        "category": "dictate",
+        "context": "form",
+        "say": "type ada@example.com into email address",
+        "expected": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "append",
+            "text": "ada@example.com"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "append",
+            "text": "ada@example.com"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 52,
+        "category": "dictate",
+        "context": "form",
+        "say": "enter ada@example.com in the email field",
+        "expected": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "append",
+            "text": "ada@example.com"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "append",
+            "text": "ada@example.com"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 53,
+        "category": "dictate",
+        "context": "form",
+        "say": "write hello into message",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "hello"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "hello"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 54,
+        "category": "dictate",
+        "context": "form",
+        "say": "type meet me in the park",
+        "expected": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "meet me in the park"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "meet me in the park"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 55,
+        "category": "dictate",
+        "context": "focused",
+        "say": "type see you soon",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "see you soon"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "see you soon"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 56,
+        "category": "dictate",
+        "context": "focused",
+        "say": "dictate thanks again",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "thanks again"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "thanks again"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 57,
+        "category": "dictate",
+        "context": "focused",
+        "say": "new line",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "\n",
+            "raw": true
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "\n",
+            "raw": true
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 58,
+        "category": "edit",
+        "context": "focused",
+        "say": "delete the last word",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 59,
+        "category": "edit",
+        "context": "focused",
+        "say": "delete last word",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 60,
+        "category": "edit",
+        "context": "focused",
+        "say": "remove the last word",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 61,
+        "category": "edit",
+        "context": "focused",
+        "say": "erase that",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 62,
+        "category": "edit",
+        "context": "focused",
+        "say": "clear it",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 63,
+        "category": "edit",
+        "context": "focused",
+        "say": "undo",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "undo"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "undo"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 64,
+        "category": "edit",
+        "context": "focused",
+        "say": "undo that",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "undo"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "undo"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 65,
+        "category": "edit",
+        "context": "focused",
+        "say": "replace Tuesday with Friday",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "Tuesday",
+            "text": "Friday"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "Tuesday",
+            "text": "Friday"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 66,
+        "category": "edit",
+        "context": "focused",
+        "say": "change Tuesday to Friday",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "Tuesday",
+            "text": "Friday"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "Tuesday",
+            "text": "Friday"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 67,
+        "category": "edit",
+        "context": "focused",
+        "say": "change it to Thanks",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace-all",
+            "text": "Thanks"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace-all",
+            "text": "Thanks"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 68,
+        "category": "edit",
+        "context": "form",
+        "say": "clear the email field",
+        "expected": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 69,
+        "category": "edit",
+        "context": "form",
+        "say": "clear name",
+        "expected": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 70,
+        "category": "submit",
+        "context": "focused",
+        "say": "press enter",
+        "expected": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "got": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 71,
+        "category": "submit",
+        "context": "focused",
+        "say": "send it",
+        "expected": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "got": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 72,
+        "category": "submit",
+        "context": "focused",
+        "say": "submit",
+        "expected": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "got": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 73,
+        "category": "submit",
+        "context": "focused",
+        "say": "hit enter",
+        "expected": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "got": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 74,
+        "category": "search",
+        "context": "navigation",
+        "say": "search for river songs",
+        "expected": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "got": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 75,
+        "category": "search",
+        "context": "navigation",
+        "say": "search river songs",
+        "expected": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "got": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 76,
+        "category": "search",
+        "context": "navigation",
+        "say": "look up river songs",
+        "expected": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "got": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 77,
+        "category": "search",
+        "context": "navigation",
+        "say": "find river songs",
+        "expected": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "got": {
+          "type": "search",
+          "targetId": 5,
+          "text": "river songs"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 78,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll down",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 79,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll up",
+        "expected": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 80,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll down a little",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 81,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll down a bit",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 82,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll a little",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 83,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll up a lot",
+        "expected": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 84,
+        "category": "scroll",
+        "context": "empty",
+        "say": "page down",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 85,
+        "category": "scroll",
+        "context": "empty",
+        "say": "go down",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 86,
+        "category": "scroll",
+        "context": "empty",
+        "say": "move down a little",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "small"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 87,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll to the top",
+        "expected": {
+          "type": "scroll",
+          "direction": "top",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "top",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 88,
+        "category": "scroll",
+        "context": "empty",
+        "say": "go to the top",
+        "expected": {
+          "type": "scroll",
+          "direction": "top",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "top",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 89,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll to the bottom",
+        "expected": {
+          "type": "scroll",
+          "direction": "bottom",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "bottom",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 90,
+        "category": "navigate",
+        "context": "empty",
+        "say": "go back",
+        "expected": {
+          "type": "back"
+        },
+        "got": {
+          "type": "back"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 91,
+        "category": "navigate",
+        "context": "empty",
+        "say": "back",
+        "expected": {
+          "type": "back"
+        },
+        "got": {
+          "type": "back"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 92,
+        "category": "navigate",
+        "context": "empty",
+        "say": "go back a page",
+        "expected": {
+          "type": "back"
+        },
+        "got": {
+          "type": "back"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 93,
+        "category": "navigate",
+        "context": "empty",
+        "say": "previous page",
+        "expected": {
+          "type": "back"
+        },
+        "got": {
+          "type": "back"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 94,
+        "category": "navigate",
+        "context": "empty",
+        "say": "return to the previous page",
+        "expected": {
+          "type": "back"
+        },
+        "got": {
+          "type": "back"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 95,
+        "category": "navigate",
+        "context": "empty",
+        "say": "go forward",
+        "expected": {
+          "type": "forward"
+        },
+        "got": {
+          "type": "forward"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 96,
+        "category": "control",
+        "context": "navigation",
+        "say": "cancel",
+        "expected": {
+          "type": "cancel"
+        },
+        "got": {
+          "type": "cancel"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 97,
+        "category": "control",
+        "context": "navigation",
+        "say": "stop",
+        "expected": {
+          "type": "cancel"
+        },
+        "got": {
+          "type": "cancel"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 98,
+        "category": "control",
+        "context": "navigation",
+        "say": "never mind",
+        "expected": {
+          "type": "cancel"
+        },
+        "got": {
+          "type": "cancel"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 99,
+        "category": "control",
+        "context": "navigation",
+        "say": "cancel that",
+        "expected": {
+          "type": "cancel"
+        },
+        "got": {
+          "type": "cancel"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 100,
+        "category": "control",
+        "context": "navigation",
+        "say": "stop that",
+        "expected": {
+          "type": "cancel"
+        },
+        "got": {
+          "type": "cancel"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 101,
+        "category": "control",
+        "context": "navigation",
+        "say": "pause",
+        "expected": {
+          "type": "pause"
+        },
+        "got": {
+          "type": "pause"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 102,
+        "category": "control",
+        "context": "navigation",
+        "say": "pause listening",
+        "expected": {
+          "type": "pause"
+        },
+        "got": {
+          "type": "pause"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 103,
+        "category": "control",
+        "context": "navigation",
+        "say": "hold on",
+        "expected": {
+          "type": "pause"
+        },
+        "got": {
+          "type": "pause"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 104,
+        "category": "control",
+        "context": "navigation",
+        "say": "wait",
+        "expected": {
+          "type": "pause"
+        },
+        "got": {
+          "type": "pause"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 105,
+        "category": "control",
+        "context": "navigation",
+        "say": "resume",
+        "expected": {
+          "type": "resume"
+        },
+        "got": {
+          "type": "resume"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 106,
+        "category": "control",
+        "context": "navigation",
+        "say": "continue",
+        "expected": {
+          "type": "resume"
+        },
+        "got": {
+          "type": "resume"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 107,
+        "category": "control",
+        "context": "navigation",
+        "say": "yes",
+        "expected": {
+          "type": "confirm"
+        },
+        "got": {
+          "type": "confirm"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 108,
+        "category": "control",
+        "context": "navigation",
+        "say": "yes please",
+        "expected": {
+          "type": "confirm"
+        },
+        "got": {
+          "type": "confirm"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 109,
+        "category": "control",
+        "context": "navigation",
+        "say": "go ahead",
+        "expected": {
+          "type": "confirm"
+        },
+        "got": {
+          "type": "confirm"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 110,
+        "category": "control",
+        "context": "navigation",
+        "say": "no",
+        "expected": {
+          "type": "deny"
+        },
+        "got": {
+          "type": "deny"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 111,
+        "category": "control",
+        "context": "navigation",
+        "say": "no thanks",
+        "expected": {
+          "type": "deny"
+        },
+        "got": {
+          "type": "deny"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 112,
+        "category": "control",
+        "context": "navigation",
+        "say": "use camera",
+        "expected": {
+          "type": "tracking",
+          "source": "camera"
+        },
+        "got": {
+          "type": "tracking",
+          "source": "camera"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 113,
+        "category": "control",
+        "context": "navigation",
+        "say": "stop camera",
+        "expected": {
+          "type": "tracking",
+          "source": "pointer"
+        },
+        "got": {
+          "type": "tracking",
+          "source": "pointer"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 114,
+        "category": "control",
+        "context": "navigation",
+        "say": "recalibrate",
+        "expected": {
+          "type": "calibrate"
+        },
+        "got": {
+          "type": "calibrate"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 115,
+        "category": "refuse",
+        "context": "navigation",
+        "say": "open careers",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No control called \"careers\" is inside the gaze circle. Look at it and try again."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 116,
+        "category": "refuse",
+        "context": "empty",
+        "say": "open pricing",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No control called \"pricing\" is inside the gaze circle. Look at it and try again."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 117,
+        "category": "refuse",
+        "context": "empty",
+        "say": "type hello",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No text field is inside the gaze circle."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 118,
+        "category": "refuse",
+        "context": "empty",
+        "say": "click this",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No control is inside the gaze circle."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 119,
+        "category": "refuse",
+        "context": "empty",
+        "say": "submit",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No form control is inside the gaze circle."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 120,
+        "category": "refuse",
+        "context": "navigation",
+        "say": "make me a sandwich",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"make me a sandwich\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "correct"
+      }
+    ]
+  },
+  {
+    "summary": {
+      "suite": "spoken-web-v1-held-out",
+      "total": 50,
+      "correct": 34,
+      "unsafe": 0,
+      "abstained": 16,
+      "categories": {
+        "activate": {
+          "total": 20,
+          "correct": 15,
+          "unsafe": 0,
+          "abstained": 5
+        },
+        "choose": {
+          "total": 2,
+          "correct": 2,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "search": {
+          "total": 2,
+          "correct": 2,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "refuse": {
+          "total": 1,
+          "correct": 1,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "dictate": {
+          "total": 4,
+          "correct": 1,
+          "unsafe": 0,
+          "abstained": 3
+        },
+        "select": {
+          "total": 4,
+          "correct": 4,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "edit": {
+          "total": 6,
+          "correct": 4,
+          "unsafe": 0,
+          "abstained": 2
+        },
+        "submit": {
+          "total": 1,
+          "correct": 1,
+          "unsafe": 0,
+          "abstained": 0
+        },
+        "scroll": {
+          "total": 4,
+          "correct": 3,
+          "unsafe": 0,
+          "abstained": 1
+        },
+        "navigate": {
+          "total": 1,
+          "correct": 0,
+          "unsafe": 0,
+          "abstained": 1
+        },
+        "control": {
+          "total": 5,
+          "correct": 1,
+          "unsafe": 0,
+          "abstained": 4
+        }
+      }
+    },
+    "results": [
+      {
+        "id": 1,
+        "category": "activate",
+        "context": "navigation",
+        "say": "hit the pricing link",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 2,
+        "category": "activate",
+        "context": "navigation",
+        "say": "tap on contact us",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 3,
+        "category": "activate",
+        "context": "navigation",
+        "say": "open up pricing please",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 4,
+        "category": "activate",
+        "context": "navigation",
+        "say": "would you take me home",
+        "expected": {
+          "type": "activate",
+          "targetId": 1
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"take me home\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 5,
+        "category": "activate",
+        "context": "navigation",
+        "say": "I'd like to sign in",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 6,
+        "category": "activate",
+        "context": "navigation",
+        "say": "bring up pricing",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 7,
+        "category": "activate",
+        "context": "navigation",
+        "say": "select the contact link",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 8,
+        "category": "activate",
+        "context": "navigation",
+        "say": "press the first button",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 9,
+        "category": "activate",
+        "context": "navigation",
+        "say": "the second link please",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 10,
+        "category": "activate",
+        "context": "navigation",
+        "say": "go to the third link",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 11,
+        "category": "activate",
+        "context": "navigation",
+        "say": "sign in please",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 12,
+        "category": "activate",
+        "context": "navigation",
+        "say": "login",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 13,
+        "category": "activate",
+        "context": "form",
+        "say": "uncheck send me a copy",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 14,
+        "category": "activate",
+        "context": "form",
+        "say": "click send",
+        "expected": {
+          "type": "activate",
+          "targetId": 6
+        },
+        "got": {
+          "type": "clarify",
+          "candidates": [
+            {
+              "number": 4,
+              "label": "Send me a copy",
+              "elementId": 4
+            },
+            {
+              "number": 6,
+              "label": "Send message",
+              "elementId": 6
+            }
+          ],
+          "message": "Which one? 4: Send me a copy; 6: Send message. Say a number or cancel."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 15,
+        "category": "activate",
+        "context": "product",
+        "say": "buy it now",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"buy it now\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 16,
+        "category": "activate",
+        "context": "product",
+        "say": "add this to the cart",
+        "expected": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 17,
+        "category": "activate",
+        "context": "product",
+        "say": "read the reviews",
+        "expected": {
+          "type": "activate",
+          "targetId": 4
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"read the reviews\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 18,
+        "category": "activate",
+        "context": "list",
+        "say": "the third read more",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 19,
+        "category": "activate",
+        "context": "list",
+        "say": "open the last read more",
+        "expected": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "got": {
+          "type": "activate",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 20,
+        "category": "activate",
+        "context": "list",
+        "say": "remove the second one",
+        "expected": {
+          "type": "activate",
+          "targetId": 5
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"remove the second one\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 21,
+        "category": "choose",
+        "context": "navigation",
+        "say": "number two please",
+        "expected": {
+          "type": "choose",
+          "index": 2
+        },
+        "got": {
+          "type": "choose",
+          "index": 2
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 22,
+        "category": "choose",
+        "context": "navigation",
+        "say": "pick option three",
+        "expected": {
+          "type": "choose",
+          "index": 3
+        },
+        "got": {
+          "type": "choose",
+          "index": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 23,
+        "category": "search",
+        "context": "navigation",
+        "say": "search for gift cards please",
+        "expected": {
+          "type": "search",
+          "targetId": 5,
+          "text": "gift cards"
+        },
+        "got": {
+          "type": "search",
+          "targetId": 5,
+          "text": "gift cards"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 24,
+        "category": "search",
+        "context": "navigation",
+        "say": "look for poetry",
+        "expected": {
+          "type": "search",
+          "targetId": 5,
+          "text": "poetry"
+        },
+        "got": {
+          "type": "search",
+          "targetId": 5,
+          "text": "poetry"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 25,
+        "category": "refuse",
+        "context": "navigation",
+        "say": "open careers page",
+        "expected": {
+          "type": "unknown"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No control called \"careers page\" is inside the gaze circle. Look at it and try again."
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 26,
+        "category": "dictate",
+        "context": "form",
+        "say": "type my name is Ada",
+        "expected": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "my name is Ada"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "my name is Ada"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 27,
+        "category": "dictate",
+        "context": "form",
+        "say": "put Ada in the name field",
+        "expected": {
+          "type": "edit",
+          "targetId": 1,
+          "edit": {
+            "kind": "append",
+            "text": "Ada"
+          }
+        },
+        "got": {
+          "type": "unknown",
+          "message": "No control called \"put ada in the name field\" is inside the gaze circle. Look at it and try again."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 28,
+        "category": "dictate",
+        "context": "form",
+        "say": "fill in the email with ada@example.com",
+        "expected": {
+          "type": "edit",
+          "targetId": 2,
+          "edit": {
+            "kind": "append",
+            "text": "ada@example.com"
+          }
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"fill in the email with ada@example.com\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 29,
+        "category": "select",
+        "context": "form",
+        "say": "choose general question",
+        "expected": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 0
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 0,
+          "optionName": "General question"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 30,
+        "category": "select",
+        "context": "form",
+        "say": "set the topic to book suggestion",
+        "expected": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 2
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 5,
+          "optionIndex": 2,
+          "optionName": "Book suggestion"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 31,
+        "category": "select",
+        "context": "product",
+        "say": "choose the hardcover",
+        "expected": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 1
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 1,
+          "optionName": "Hardcover"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 32,
+        "category": "select",
+        "context": "product",
+        "say": "audiobook please",
+        "expected": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 3
+        },
+        "got": {
+          "type": "select-option",
+          "targetId": 1,
+          "optionIndex": 3,
+          "optionName": "Audiobook"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 33,
+        "category": "edit",
+        "context": "focused",
+        "say": "delete that word",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"delete that word\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 34,
+        "category": "edit",
+        "context": "focused",
+        "say": "remove the last word please",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "delete-word"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 35,
+        "category": "edit",
+        "context": "focused",
+        "say": "clear the field",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "clear"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 36,
+        "category": "edit",
+        "context": "focused",
+        "say": "undo the last change",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "undo"
+          }
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"undo the last change\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 37,
+        "category": "edit",
+        "context": "focused",
+        "say": "replace on with by",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "on",
+            "text": "by"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "on",
+            "text": "by"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 38,
+        "category": "edit",
+        "context": "focused",
+        "say": "change Friday to Monday",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "Friday",
+            "text": "Monday"
+          }
+        },
+        "got": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "replace",
+            "find": "Friday",
+            "text": "Monday"
+          }
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 39,
+        "category": "dictate",
+        "context": "focused",
+        "say": "new paragraph",
+        "expected": {
+          "type": "edit",
+          "targetId": 3,
+          "edit": {
+            "kind": "append",
+            "text": "\n",
+            "raw": true
+          }
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"new paragraph\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 40,
+        "category": "submit",
+        "context": "focused",
+        "say": "press enter please",
+        "expected": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "got": {
+          "type": "submit",
+          "targetId": 3
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 41,
+        "category": "scroll",
+        "context": "empty",
+        "say": "scroll down some more",
+        "expected": {
+          "type": "scroll",
+          "direction": "down",
+          "amount": "page"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"scroll down some more\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 42,
+        "category": "scroll",
+        "context": "empty",
+        "say": "page up",
+        "expected": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 43,
+        "category": "scroll",
+        "context": "empty",
+        "say": "go up a little",
+        "expected": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "small"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "up",
+          "amount": "small"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 44,
+        "category": "scroll",
+        "context": "empty",
+        "say": "jump to the bottom",
+        "expected": {
+          "type": "scroll",
+          "direction": "bottom",
+          "amount": "page"
+        },
+        "got": {
+          "type": "scroll",
+          "direction": "bottom",
+          "amount": "page"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 45,
+        "category": "navigate",
+        "context": "empty",
+        "say": "back one page",
+        "expected": {
+          "type": "back"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"back one page\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 46,
+        "category": "control",
+        "context": "navigation",
+        "say": "never mind that",
+        "expected": {
+          "type": "cancel"
+        },
+        "got": {
+          "type": "cancel"
+        },
+        "outcome": "correct"
+      },
+      {
+        "id": 47,
+        "category": "control",
+        "context": "navigation",
+        "say": "hang on",
+        "expected": {
+          "type": "pause"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"hang on\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 48,
+        "category": "control",
+        "context": "navigation",
+        "say": "carry on",
+        "expected": {
+          "type": "resume"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"carry on\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 49,
+        "category": "control",
+        "context": "navigation",
+        "say": "sure",
+        "expected": {
+          "type": "confirm"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"sure\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      },
+      {
+        "id": 50,
+        "category": "control",
+        "context": "navigation",
+        "say": "nope",
+        "expected": {
+          "type": "deny"
+        },
+        "got": {
+          "type": "unknown",
+          "message": "\"nope\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+        },
+        "outcome": "abstained"
+      }
+    ]
+  }
+]

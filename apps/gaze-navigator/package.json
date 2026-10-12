@@ -8,7 +8,8 @@
     "lint": "node scripts/check-syntax.js",
     "build": "npm run lint && npm run build:extension -- --test",
     "benchmark:local": "node scripts/benchmark-local.js",
-    "build:extension": "node scripts/build-extension.js"
+    "build:extension": "node scripts/build-extension.js",
+    "evaluate:instructions": "node scripts/evaluate-instructions.js"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

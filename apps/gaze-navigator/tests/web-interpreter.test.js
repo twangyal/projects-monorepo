@@ -15,7 +15,8 @@ test('control words are recognized before anything else', () => {
 test('numbers and ordinals answer questions or pick numbered elements', () => {
   assert.equal(parseNumber('three'), 3);
   assert.equal(parseNumber('number 12'), 12);
-  assert.equal(parseNumber('the second'), null);
+  assert.equal(parseNumber('the second'), 2);
+  assert.equal(parseNumber('the second link'), null);
   assert.equal(parseNumber('second'), 2);
   assert.deepEqual(interpret('number two', context()), { type: 'choose', index: 2 });
   assert.deepEqual(interpret('click 3', context()), { type: 'choose', index: 3 });
