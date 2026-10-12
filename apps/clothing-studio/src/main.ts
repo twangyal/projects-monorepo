@@ -204,7 +204,7 @@ const placementFields: [string, keyof Placement, number][] = [
   ['overlay-height', 'height', 100], ['rotation', 'rotation', 1], ['opacity', 'opacity', 100],
 ];
 for (const [id, key, factor] of placementFields) input(id).addEventListener('change', () => {
-  if (!input(id).value || !input(id).checkValidity()) { message('Choose a value within the displayed control limits.', true); updateControls(); return; }
+  if (!input(id).value || !input(id).checkValidity()) { message('Choose a value within the displayed control limits. Your draft is kept.', true); return; }
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 

@@ -11,3 +11,6 @@
 .construction-views{min-width:0;display:grid;gap:1rem}.shell-paper{padding:1rem;background:#f3efe5;border:1px solid #ddd8ca;border-radius:8px}.shell-paper h4{margin:.2rem 0 .8rem;font-size:1rem}#construction-shell{border-radius:6px;outline-offset:3px}#construction-shell svg{display:block;width:100%;height:auto}.shell-paper .fine-print{font-size:.75rem}.shell-paper .construction-actions{justify-content:center}#shell-angle{font-size:.8rem;text-align:center}
 
 .grading-panel{border-top:1px solid var(--line);margin-top:20px;padding-top:12px}.grading-panel h4{margin:0 0 8px}.grading-panel table{width:100%;border-collapse:collapse;font-size:13px}.grading-panel caption{text-align:left;padding:8px 0}.grading-panel th,.grading-panel td{text-align:left;border-bottom:1px solid var(--line);padding:6px 3px}
+
+.waistband-toggle { display: flex; align-items: center; gap: .6rem; margin: 1rem 0; }
+input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; padding: 0; accent-color: #9a735b; }
