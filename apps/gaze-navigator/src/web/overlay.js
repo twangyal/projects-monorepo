@@ -55,18 +55,23 @@ summary { cursor: pointer; }
 .hint { color: #a9c2b8; font-size: 13px; }
 `;
 
-function load(window) {
-  try {
-    return JSON.parse(window.sessionStorage.getItem(STORAGE_KEY)) ?? {};
-  } catch {
-    return {};
-  }
-}
-
-function save(window, settings) {
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch { /* Settings then last only for this page. */ }
+// Default settings store: the tab's session storage. The extension supplies its own store so
+// nothing is written into a website's storage.
+export function sessionStore(window) {
+  return {
+    load() {
+      try {
+        return JSON.parse(window.sessionStorage.getItem(STORAGE_KEY)) ?? {};
+      } catch {
+        return {};
+      }
+    },
+    save(settings) {
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      } catch { /* Settings then last only for this page. */ }
+    },
+  };
 }
 
 const ROLE_LABELS = { link: 'Link', button: 'Button', textbox: 'Text field', searchbox: 'Search field', combobox: 'Dropdown', checkbox: 'Checkbox', radio: 'Option', switch: 'Switch', tab: 'Tab', menuitem: 'Menu item', option: 'Option', slider: 'Slider', generic: 'Control' };
@@ -78,12 +83,18 @@ export function describeElement(element) {
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
 }
 
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', ...load(window) };
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, store = sessionStore(window) } = {}) {
+  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
   const shadow = host.attachShadow({ mode: 'open' });
-  shadow.innerHTML = `<style>${STYLE}</style>
+  // Constructable stylesheets are not subject to a website's style-src policy.
+  const sheet = 'adoptedStyleSheets' in shadow && window.CSSStyleSheet ? new window.CSSStyleSheet() : null;
+  if (sheet) {
+    sheet.replaceSync(STYLE);
+    shadow.adoptedStyleSheets = [sheet];
+  }
+  shadow.innerHTML = `${sheet ? '' : `<style>${STYLE}</style>`}
   <div class="layer" aria-hidden="true"><div class="outlines"></div><div class="circle"></div><div class="calibration-dot hidden"></div></div>
   <section class="panel" role="region" aria-label="Gaze Navigator">
     <div class="head"><h2>Gaze Navigator</h2><button class="collapse" aria-expanded="true">Hide</button></div>
@@ -283,7 +294,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     feedback(result);
     if (result.performed) {
       // Shown after a navigation this action may cause; ignored if it arrives much later.
-      save(window, { ...settings, announce: result.message, announcedAt: Date.now() });
+      store.save({ ...settings, announce: result.message, announcedAt: Date.now() });
       window.setTimeout(() => recapture(true), 50);
     }
     renderOutlines();
@@ -328,7 +339,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       calibration?.cancel();
       const wasOn = camera.stop();
       settings.source = 'pointer';
-      save(window, settings);
+      store.save(settings);
       filter.reset();
       ui.circle.classList.remove('lost');
       renderSource();
@@ -336,13 +347,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     }
     if (camera.state !== 'off') return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
     settings.source = 'camera';
-    save(window, settings);
+    store.save(settings);
     renderSource();
     camera.start().then(result => {
       if (settings.source !== 'camera') return;
       if (!result.ok) {
         settings.source = 'pointer';
-        save(window, settings);
+        store.save(settings);
         renderSource();
         feedback({ message: result.message, tone: 'error' });
         return;
@@ -394,7 +405,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (on && !speech.listening && !speech.start()) on = false;
     if (!on) speech.stop();
     settings.listening = on;
-    save(window, settings);
+    store.save(settings);
     ui.listen.setAttribute('aria-pressed', String(on));
     ui.listen.textContent = on ? 'Stop listening' : 'Start listening';
   }
@@ -418,14 +429,14 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.size.value = settings.size;
   ui.size.addEventListener('change', () => {
     settings.size = RADII[ui.size.value] ? ui.size.value : 'medium';
-    save(window, settings);
+    store.save(settings);
     schedule();
     recapture(true);
   });
   ui.speak.checked = settings.speak;
   ui.speak.addEventListener('change', () => {
     settings.speak = ui.speak.checked;
-    save(window, settings);
+    store.save(settings);
   });
   ui.collapse.addEventListener('click', () => {
     const collapsed = ui.panel.classList.toggle('collapsed');
@@ -437,7 +448,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const arrival = recent ? `Done: ${settings.announce} Now on "${document.title}".` : `Ready on "${document.title}". Move your gaze over the page, then speak or type an instruction.`;
   delete settings.announce;
   delete settings.announcedAt;
-  save(window, settings);
+  store.save(settings);
   feedback({ message: arrival });
   renderSource();
   if (settings.listening) setListening(true);

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Gaze Navigator",
+  "version": "0.1.0",
+  "description": "Look at part of a web page and say what to do. Gaze or pointer context, spoken or typed instructions.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Gaze Navigator",
+    "default_popup": "popup.html"
+  },
+  "commands": {
+    "toggle-navigator": {
+      "suggested_key": {
+        "default": "Alt+Shift+G"
+      },
+      "description": "Turn Gaze Navigator on or off for this page"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/*.js",
+        "src/web/*.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

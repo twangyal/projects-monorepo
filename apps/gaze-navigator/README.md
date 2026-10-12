@@ -48,10 +48,28 @@ Execution never opens `javascript:` or other non-web link schemes, writes fields
 
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 
-Current limits: the practice site loads the runtime directly; running it on arbitrary third-party websites needs browser-extension packaging. Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. Jev is the intended interpreter but is not integrated or evaluated; the rule interpreter is the measured baseline. Spoken commands are English only.
+### On real websites (Chrome extension)
+
+```bash
+cd apps/gaze-navigator
+npm run build:extension      # fetches pinned WebGazer 3.3.0 with npm, verifies its SHA-256, writes dist/extension
+```
+
+In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select `apps/gaze-navigator/dist/extension`. Then open any website and use the toolbar popup's **Turn on for this page**, or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>.
+
+- By default the extension uses only `activeTab` + `scripting` + `storage`: it runs on the page you turned it on for and stops when that page changes.
+- **Stay on in this tab when pages change** and **Start automatically on every website** ask for optional access to websites (`<all_urls>`), because restarting after a navigation needs host access. Auto-start makes the navigator hands-free after this one-time setup.
+- Navigator settings live in the extension's in-memory session storage, never in the website's storage; the navigator runs in the extension's isolated world, invisible to page scripts, and its styles use constructable stylesheets so strict page CSPs cannot strip them.
+- "Use camera" injects the bundled WebGazer into the isolated world (MV3 forbids remotely hosted code). Its face models still download from tfhub.dev, and the camera/microphone prompts are for the website's origin.
+- Protected pages (`chrome://`, the web store) report that the navigator cannot run there. Iframes, other browsers and per-page calibration persistence are not handled yet. The navigator's modules are web-accessible, so a website can detect that the extension is installed. WebGazer is GPL-3.0; its license is copied into the build.
+
+Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. Jev is the intended interpreter but is not integrated or evaluated; the rule interpreter is the measured baseline. Spoken commands are English only.
 
 ## Architecture
 
+- `src/web/` — spoken web navigation runtime: context, interpreter, controller, actions, speech, camera source, hands-free calibration and overlay; `boot.js` (practice site) and `extension-boot.js` (extension) start it.
+- `practice-site/` — unannotated six-page website used to demonstrate and test spoken navigation.
+- `extension/` + `scripts/build-extension.js` — MV3 Chrome extension packaging (`dist/extension`; `--test` adds a fake estimator and pre-granted host access for automated tests).
 - `index.html` — demo UI and explicit gaze targets.
 - `src/app.js` — calibration, WebGazer adapter and animation-frame sampling for simulation.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
@@ -152,7 +170,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-The practice-site suite (`browser-tests/web-navigator.spec.js`) installs a controllable fake `SpeechRecognition` before page scripts run, then verifies discovery, speech-start context capture, dictation and correction, clarification, confirmation, pause/interim cancel, dropdowns, region scrolling, search, back navigation, unsafe-link refusal and speech-permission failure on all four viewports. `npm run lint` syntax-checks every JavaScript file under the app. Playwright starts the static server and tests pointer dwell, safety controls, keyboard draft entry, multiline previews/case changes, accuracy-target visibility/report closing, resize calibration, and the decision lab at 1280×900, 390×740, 390×480, and the compact-height boundary 390×651. The lab tests use controlled local API responses for offline comparison, explicit local routing, cloud/invalid-output rejection, cancellation/retry, and safe report export/import. Its controlled clock advances actual animation frames; these are interface tests, not webcam accuracy/latency measurements. Tests reject external requests in simulation and page exceptions. The GitHub workflow runs the same checks on a standard Ubuntu runner with read-only repository access, no persistent artifact/cache uploads, and a 15-minute limit.
+The practice-site suite (`browser-tests/web-navigator.spec.js`) installs a controllable fake `SpeechRecognition` before page scripts run, then verifies discovery, speech-start context capture, dictation and correction, clarification, confirmation, pause/interim cancel, dropdowns, region scrolling, search, back navigation, unsafe-link refusal and speech-permission failure on all four viewports. `npm run lint` syntax-checks every JavaScript file under the app. Playwright starts the static server and tests pointer dwell, safety controls, keyboard draft entry, multiline previews/case changes, accuracy-target visibility/report closing, resize calibration, and the decision lab at 1280×900, 390×740, 390×480, and the compact-height boundary 390×651. The lab tests use controlled local API responses for offline comparison, explicit local routing, cloud/invalid-output rejection, cancellation/retry, and safe report export/import. Its controlled clock advances actual animation frames; these are interface tests, not webcam accuracy/latency measurements. Tests reject external requests in simulation and page exceptions. The GitHub workflow runs the same checks on a standard Ubuntu runner with read-only repository access, no persistent artifact/cache uploads, and a 25-minute limit. Extension tests (`browser-tests/extension.spec.js`) build `dist/extension-test` and load it into full Chromium (the headless shell cannot load extensions).
 
 [CI run 37136868563](https://github.com/twangyal/projects-monorepo/actions/runs/37136868563) verified commit `8c1910b`: **55 Node tests and 48 native Chromium cases passed** (24 navigation, 24 decision lab), alongside lint/build syntax checks. The browser regression also established that all five accuracy target centers and keyboard footer controls remain reachable at the tested sizes. Local Chromium launch was blocked by the development runtime's Unix-socket restriction; native browser verification ran in CI. Physical webcam accuracy, hardware release indicators, and actual TensorFlow memory measurements remain unverified.
 
@@ -263,3 +281,7 @@ First milestone toward the revised destination: context circle, numbered discove
 ### Camera gaze for spoken navigation — 2026-10-12
 
 The spoken web runtime can now follow webcam gaze after a hands-free, no-click calibration, with spoken or button control of the tracking source, cancel-safe camera startup and release, and per-page recalibration after navigation. 117 unit and 136 native Chromium cases pass locally with a controllable fake estimator; real face-model camera tracking could not run here (tfhub.dev is unreachable). [Verification record](docs/2026-10-12-camera-web-navigation-verification.md); issue #204.
+
+### Real websites through a Chrome extension — 2026-10-12
+
+`npm run build:extension` packages the spoken gaze runtime as an MV3 extension with a pinned, checksum-verified WebGazer. It runs on any website from the popup or Alt+Shift+G, optionally stays on across navigations or starts everywhere after the user grants website access, keeps settings out of website storage and survives strict CSP. 117 unit and 152 native Chromium cases pass locally, including 16 that load the real built extension. [Verification record](docs/2026-10-12-extension-verification.md); issue #205.

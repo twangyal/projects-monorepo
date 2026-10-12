@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Gaze Navigator</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <h1>Gaze Navigator</h1>
+  <p id="state" role="status">Checking this page…</p>
+  <button id="toggle" disabled>Turn on for this page</button>
+  <fieldset>
+    <legend>While browsing</legend>
+    <label><input type="checkbox" id="persist" /> Stay on in this tab when pages change</label>
+    <label><input type="checkbox" id="autoStart" /> Start automatically on every website</label>
+    <p id="access" class="note"></p>
+  </fieldset>
+  <p class="note">Shortcut: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>. Look at part of the page, then say or type what to do. Say "use camera" for webcam gaze.</p>
+  <p class="note">Speech uses the browser's recognition service. The navigator stores no audio, transcripts, camera frames or page content.</p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
