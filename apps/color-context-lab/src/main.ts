@@ -7,7 +7,7 @@ import { cancelJobs, exportPng, exportReport, exportVariantReport, previewVarian
 import { experimentExamples, loadExperimentReport } from './experiment.ts';
 import type { ExperimentReport } from './experiment.ts';
 import { LIMITS } from './types.ts';
-import type { Comparison, EditState, Project, Raster } from './types.ts';
+import type { Comparison, EditState, Project, Raster, SurroundMode } from './types.ts';
 
 function node<T extends HTMLElement>(id: string): T { const found = document.getElementById(id); if (!found) throw new Error('Missing workbench control.'); return found as T; }
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, text = '', cls = ''): HTMLElementTagNameMap[K] { const element = document.createElement(tag); element.textContent = text; if (cls) element.className = cls; return element; }
@@ -59,7 +59,7 @@ function editorIntent(): void {
 function rawEdit(): EditState {
   function integer(input: HTMLInputElement): number { const value = input.value.trim(); if (!value || value.length > 64 || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value)) throw new Error('Use complete integer pixel values.'); const parsed = Number(value); if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) throw new Error('Pixel values must be finite integers.'); return parsed; }
   if (title.value.length > LIMITS.titleCharacters * 2) throw new Error('Study title must use at most 80 Unicode characters.');
-  return { title: title.value, settings: { mode: mode.value as 'solid' | 'checker', border: integer(border), colorA: colorA.value, colorB: colorB.value, cellSize: integer(cell) } };
+  return { title: title.value, settings: { mode: mode.value as SurroundMode, border: integer(border), colorA: colorA.value, colorB: colorB.value, cellSize: integer(cell) } };
 }
 function fillFields(): void {
   if (!project) return; title.value = project.title; mode.value = project.settings.mode; border.value = String(project.settings.border); colorA.value = project.settings.colorA; colorB.value = project.settings.colorB; cell.value = String(project.settings.cellSize); dirty = false;
@@ -104,7 +104,7 @@ function displayVariants(): void {
       const item = el('li'), label = el('strong', variant.name), swatch = el('span', '', 'variant-swatch');
       swatch.style.background = variant.settings.colorA;
       swatch.setAttribute('aria-hidden', 'true');
-      item.append(swatch, label, el('span', `${variant.settings.mode} · ${variant.settings.border}px · ${variant.settings.colorA}${variant.settings.mode === 'checker' ? ` / ${variant.settings.colorB} · cells ${variant.settings.cellSize}px` : ''}`, 'hint'));
+      item.append(swatch, label, el('span', `${variant.settings.mode.replaceAll('-', ' ')} · ${variant.settings.border}px · ${variant.settings.colorA}${variant.settings.mode !== 'solid' ? ` / ${variant.settings.colorB} · ${variant.settings.mode === 'checker' ? 'cells' : 'bands'} ${variant.settings.cellSize}px` : ''}`, 'hint'));
       const actions = el('div', '', 'button-row');
       for (const action of ['Restore', 'Remove'] as const) {
         const button = el('button', action); button.setAttribute('aria-label', `${action} ${variant.name}`);

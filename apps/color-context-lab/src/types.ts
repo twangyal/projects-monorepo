@@ -1,4 +1,4 @@
-export type SurroundMode = 'solid' | 'checker';
+export type SurroundMode = 'solid' | 'checker' | 'horizontal-stripes' | 'vertical-stripes';
 export interface Settings { mode: SurroundMode; border: number; colorA: string; colorB: string; cellSize: number }
 export interface SourceInfo { fileName: string; format: 'png' | 'procedural'; width: number; height: number }
 export interface ImageAsset { id: string; width: number; height: number; rgba: string; source: SourceInfo }
