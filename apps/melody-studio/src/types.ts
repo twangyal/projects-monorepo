@@ -17,6 +17,7 @@ export interface Track {
   instrument: Instrument;
   volume: number;
   muted: boolean;
+  harmonics?: number[];
   envelope?: SoundEnvelope;
   filter?: SoundFilter;
   echo?: SoundEcho;

@@ -33,6 +33,8 @@ Milestone #197 adds retained multi-point song-time volume curves for several ris
 
 Milestone #198 adds an optional sampled-expression MIDI export for committed volume curves/ramps, preserving ordinary MIDI output, note/program/tempo data and guarded editor state. Timing/gain quantization and current import/external-instrument limits are explicit; full DAW acceptance remains unfinished.
 
+Optional editable eight-harmonic tones (#215) now override the fixed waveform through shared synthesis, with Apply/Discard/bypass, strict complete-project recovery, independent normalized PCM checks and unchanged base-instrument MIDI. High-frequency partial omission is disclosed; synthesis and musical usefulness remain intermediate full-DAW work.
+
 ## 4. Git blame agent
 
 Path: apps/git-history
