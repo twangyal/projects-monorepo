@@ -106,6 +106,13 @@ export function interpret(utterance, context = { elements: [] }) {
   if (/^(cancel|stop|never ?mind|forget it)$/.test(text)) return { type: 'cancel' };
   if (/^(pause|pause listening|stop listening|pause navigator|hold on)$/.test(text)) return { type: 'pause' };
   if (/^(resume|continue|unpause|start listening)$/.test(text)) return { type: 'resume' };
+  if (/^(?:use|start|switch to|turn on) (?:the )?(?:camera|webcam|eye tracking|gaze tracking|my eyes)(?: mode| tracking)?$|^camera mode$/.test(text)) {
+    return { type: 'tracking', source: 'camera' };
+  }
+  if (/^(?:use|switch to) (?:the )?(?:pointer|mouse)(?: mode)?$|^(?:stop|turn off) (?:the )?(?:camera|webcam|eye tracking)$|^pointer mode$/.test(text)) {
+    return { type: 'tracking', source: 'pointer' };
+  }
+  if (/^(?:re)?calibrate(?: (?:the )?camera)?$/.test(text)) return { type: 'calibrate' };
   if (/^(yes|confirm|do it|go ahead|ok|okay|yes please)$/.test(text)) return { type: 'confirm' };
   if (/^(no|no thanks|don't|do not)$/.test(text)) return { type: 'deny' };
   const choice = /^(?:number|option|choice|item|choose|pick|select|click|press|open)?\s*(.+)$/.exec(text);

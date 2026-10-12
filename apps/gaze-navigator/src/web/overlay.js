@@ -4,6 +4,8 @@ import { captureContext } from './page-context.js';
 import { createController } from './controller.js';
 import { createSpeechInput } from './speech-input.js';
 import { createGazeFilter } from '../gaze-filter.js';
+import { createCameraGaze } from './camera-gaze.js';
+import { runCalibration } from './calibration.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
 const STORAGE_KEY = 'gaze-web-navigator';
@@ -16,7 +18,11 @@ const STYLE = `
 .circle { position: fixed; left: 0; top: 0; border-radius: 50%; border: 3px solid #f5c76b; box-shadow: 0 0 0 2px #0009, inset 0 0 0 2px #0009; background: rgba(245,199,107,.08); opacity: 0; transition: opacity 120ms ease; }
 .circle.visible { opacity: 1; }
 .circle.frozen { border-style: dashed; }
-.circle.paused { border-color: #9aa7a1; background: none; }
+.circle.paused, .circle.lost { border-color: #9aa7a1; background: none; }
+.circle.lost { border-style: dotted; }
+.calibration-dot { position: fixed; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: #f5c76b; box-shadow: 0 0 0 6px #0009, 0 0 0 14px rgba(245,199,107,.35); }
+.calibration-dot.sampling { background: #75e5b4; box-shadow: 0 0 0 6px #0009, 0 0 0 10px rgba(117,229,180,.45); }
+.calibration-dot.hidden { display: none; }
 .outline { position: fixed; border: 2px solid #75e5b4; border-radius: 6px; box-shadow: 0 0 0 2px #0008; }
 .outline.question { border-color: #f5c76b; border-width: 3px; }
 .badge { position: absolute; left: -2px; top: -22px; min-width: 22px; padding: 1px 6px; border-radius: 10px; background: #75e5b4; color: #07110e; font: 700 13px/18px system-ui, sans-serif; text-align: center; }
@@ -72,13 +78,13 @@ export function describeElement(element) {
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
 }
 
-export function startWebNavigator({ window = globalThis.window, document = window.document, source = 'pointer', interpret } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, ...load(window) };
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera } = {}) {
+  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', ...load(window) };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
   const shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `<style>${STYLE}</style>
-  <div class="layer" aria-hidden="true"><div class="outlines"></div><div class="circle"></div></div>
+  <div class="layer" aria-hidden="true"><div class="outlines"></div><div class="circle"></div><div class="calibration-dot hidden"></div></div>
   <section class="panel" role="region" aria-label="Gaze Navigator">
     <div class="head"><h2>Gaze Navigator</h2><button class="collapse" aria-expanded="true">Hide</button></div>
     <div class="body">
@@ -89,6 +95,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <button class="listen" aria-pressed="false">Start listening</button>
         <button class="pause" aria-pressed="false">Pause</button>
         <button class="cancel">Cancel</button>
+      </div>
+      <div class="row" role="group" aria-label="Tracking">
+        <button class="use-pointer" aria-pressed="true">Pointer</button>
+        <button class="use-camera" aria-pressed="false">Camera</button>
+        <button class="recalibrate" disabled>Recalibrate</button>
       </div>
       <form class="typed">
         <input class="instruction" aria-label="Typed instruction" placeholder="e.g. open pricing" autocomplete="off" />
@@ -101,6 +112,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       <details class="context-details" open><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
         <p class="hint">"Open pricing", "click the second one", "type hello into search", "delete last word", "replace Tuesday with Friday", "choose large", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
+        <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
       </details>
     </div>
@@ -110,7 +122,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     circle: $('.circle'), outlines: $('.outlines'), panel: $('.panel'), status: $('.status'), transcript: $('.transcript'),
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
-    collapse: $('.collapse'),
+    collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'),
+    recalibrate: $('.recalibrate'),
   };
   document.documentElement.append(host);
   // Reserve scroll space so the panel never permanently covers the end of a page.
@@ -122,8 +135,14 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const resizeObserver = new window.ResizeObserver(reserve);
   resizeObserver.observe(ui.panel);
 
-  const controller = createController({ window, interpret });
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate } });
   const filter = createGazeFilter();
+  const camera = createCameraGaze({
+    document, window, load: loadCamera,
+    onGaze: (x, y, time) => track(x, y, time),
+    onLost: () => ui.circle.classList.add('lost'),
+  });
+  let calibration = null;
   let point = null;
   let frozen = false;
   let context = { elements: [], region: null };
@@ -219,14 +238,26 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     if (frame === null) frame = window.requestAnimationFrame(draw);
   }
 
+  // Viewport coordinates from the active source. Gaze resting on the panel keeps the last page area.
   function track(x, y, time) {
-    const next = source === 'camera' ? filter.filter(x, y, time) : { x, y };
+    if (calibration) return;
+    ui.circle.classList.remove('lost');
+    const next = settings.source === 'camera' ? filter.filter(x, y, time) : { x, y };
     if (!next) return;
+    if (settings.source === 'camera') {
+      const panel = ui.panel.getBoundingClientRect();
+      frozen = next.x >= panel.left && next.x <= panel.right && next.y >= panel.top && next.y <= panel.bottom;
+      if (frozen) {
+        ui.circle.classList.add('frozen');
+        return;
+      }
+    }
     point = next;
     schedule();
   }
 
   const onPointer = event => {
+    if (settings.source !== 'pointer') return;
     // Looking at the panel keeps the last page context, so instructions can be typed or chosen there.
     frozen = event.composedPath().includes(host);
     if (frozen) {
@@ -235,15 +266,17 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     }
     track(event.clientX, event.clientY, event.timeStamp);
   };
-  if (source === 'pointer') window.addEventListener('pointermove', onPointer, true);
+  window.addEventListener('pointermove', onPointer, true);
   const refresh = () => recapture(true);
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
 
   function run(utterance, captured) {
-    const used = captured ?? spokenContext ?? (recapture(true), context);
+    // While calibrating the circle is hidden, so instructions cannot target page elements.
+    const used = calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
     const result = controller.handle(utterance, used);
+    if (calibration && (result.cancelled || result.paused)) calibration.cancel();
     promptContext = result.pending ? used : null;
     ui.pause.setAttribute('aria-pressed', String(controller.paused));
     ui.pause.textContent = controller.paused ? 'Resume' : 'Pause';
@@ -284,6 +317,75 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     },
   });
 
+  function renderSource() {
+    ui.usePointer.setAttribute('aria-pressed', String(settings.source === 'pointer'));
+    ui.useCamera.setAttribute('aria-pressed', String(settings.source === 'camera'));
+    ui.recalibrate.disabled = settings.source !== 'camera' || camera.state === 'off';
+  }
+
+  function setSource(source) {
+    if (source === 'pointer') {
+      calibration?.cancel();
+      const wasOn = camera.stop();
+      settings.source = 'pointer';
+      save(window, settings);
+      filter.reset();
+      ui.circle.classList.remove('lost');
+      renderSource();
+      return { ok: true, message: wasOn ? 'Camera off. The circle follows the pointer.' : 'The circle follows the pointer.' };
+    }
+    if (camera.state !== 'off') return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+    settings.source = 'camera';
+    save(window, settings);
+    renderSource();
+    camera.start().then(result => {
+      if (settings.source !== 'camera') return;
+      if (!result.ok) {
+        settings.source = 'pointer';
+        save(window, settings);
+        renderSource();
+        feedback({ message: result.message, tone: 'error' });
+        return;
+      }
+      renderSource();
+      feedback(calibrate());
+    });
+    return { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
+  }
+
+  function calibrate() {
+    const api = camera.api;
+    if (!api) return { ok: false, message: 'Turn the camera on first by saying "use camera".' };
+    calibration?.cancel();
+    camera.resetCalibration();
+    filter.reset();
+    ui.circle.classList.remove('visible');
+    ui.outlines.replaceChildren();
+    let instruction = '';
+    const session = runCalibration({
+      api, window, dot: ui.dot,
+      onProgress({ point: number, total, phase, attempt }) {
+        instruction = phase === 'retry' || attempt > 1
+          ? `Dot ${number} of ${total} needs another look. Keep your face visible and look at the dot.`
+          : `Look at dot ${number} of ${total} until it turns green.`;
+        ui.status.textContent = instruction;
+        ui.status.className = 'status question';
+      },
+    });
+    calibration = session;
+    session.done.then(result => {
+      if (calibration !== session) return;
+      calibration = null;
+      if (result.cancelled) feedback({ message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
+      else if (result.ok) feedback({ message: `Calibrated with ${result.calibrated} of ${result.total} dots. The circle now follows your gaze.`, tone: 'success' });
+      else feedback({ message: `Only ${result.calibrated} of ${result.total} dots could be learned. Check lighting and that your face is visible, then say recalibrate.`, tone: 'error' });
+    }, () => {
+      if (calibration === session) calibration = null;
+      feedback({ message: 'Calibration failed. Say recalibrate to try again, or use pointer.', tone: 'error' });
+    });
+    return { ok: true, message: `Calibrating without clicks. ${instruction}` };
+  }
+
   function setListening(on) {
     if (on && !speech.supported) {
       feedback({ message: 'Speech recognition is not available in this browser. Type instructions instead.', tone: 'error' });
@@ -298,6 +400,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
 
   ui.listen.addEventListener('click', () => setListening(!settings.listening));
+  ui.usePointer.addEventListener('click', () => run('use pointer', { elements: [] }));
+  ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
+  ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
+  const onPageHide = () => { calibration?.cancel(); camera.stop(); };
+  window.addEventListener('pagehide', onPageHide);
   ui.pause.addEventListener('click', () => run(controller.paused ? 'resume' : 'pause', { elements: [] }));
   ui.cancel.addEventListener('click', () => run('cancel', { elements: [] }));
   ui.form.addEventListener('submit', event => {
@@ -332,17 +439,28 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   delete settings.announcedAt;
   save(window, settings);
   feedback({ message: arrival });
+  renderSource();
   if (settings.listening) setListening(true);
+  // Camera mode continues across pages; estimator data never persists, so each page recalibrates.
+  if (settings.source === 'camera') {
+    settings.source = 'pointer';
+    feedback({ message: `${arrival} ${setSource('camera').message}` });
+  }
 
   return {
     host,
     shadow,
     controller,
+    camera,
+    get calibrating() { return Boolean(calibration); },
     get context() { return context; },
     // Tracking adapters (camera, tests) feed viewport coordinates here.
     track,
     run: utterance => run(utterance, null),
     stop() {
+      calibration?.cancel();
+      camera.stop();
+      window.removeEventListener('pagehide', onPageHide);
       speech.stop();
       window.removeEventListener('pointermove', onPointer, true);
       window.removeEventListener('scroll', refresh, true);

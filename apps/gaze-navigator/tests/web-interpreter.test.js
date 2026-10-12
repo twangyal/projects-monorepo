@@ -116,3 +116,16 @@ test('applyEdit implements corrections and reports impossible ones as null', () 
   assert.equal(applyEdit('new', { kind: 'undo' }, []), null);
   assert.equal(applyEdit('anything', { kind: 'clear' }), '');
 });
+
+test('tracking and calibration commands are recognized without colliding with cancel or pause', () => {
+  for (const said of ['use camera', 'Start eye tracking', 'switch to the webcam', 'camera mode']) {
+    assert.deepEqual(interpret(said, context()), { type: 'tracking', source: 'camera' }, said);
+  }
+  for (const said of ['use pointer', 'switch to mouse', 'stop camera', 'turn off the webcam']) {
+    assert.deepEqual(interpret(said, context()), { type: 'tracking', source: 'pointer' }, said);
+  }
+  assert.deepEqual(interpret('recalibrate', context()), { type: 'calibrate' });
+  assert.deepEqual(interpret('calibrate camera', context()), { type: 'calibrate' });
+  assert.equal(interpret('stop', context()).type, 'cancel');
+  assert.equal(interpret('stop listening', context()).type, 'pause');
+});

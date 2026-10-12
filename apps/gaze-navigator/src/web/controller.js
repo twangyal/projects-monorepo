@@ -10,7 +10,8 @@ function targetOf(context, id) {
   return context.elements.find(element => element.id === id) ?? (context.pageSearch?.id === id ? context.pageSearch : null);
 }
 
-export function createController({ window, actions = pageActions, interpret = interpretRules, now = () => Date.now(), confirmMs = CONFIRM_MS }) {
+// `commands` handles navigator-level actions (tracking source, calibration) outside the page.
+export function createController({ window, actions = pageActions, interpret = interpretRules, commands = {}, now = () => Date.now(), confirmMs = CONFIRM_MS }) {
   let paused = false;
   let pending = null;
   const history = new WeakMap();
@@ -97,6 +98,14 @@ export function createController({ window, actions = pageActions, interpret = in
     if (action.type === 'resume') {
       paused = false;
       return reply('Resumed. Look at something and say what to do.', 'info', { paused: false });
+    }
+    // Switching or stopping the camera stays available while paused.
+    if (action.type === 'tracking' || action.type === 'calibrate') {
+      pending = null;
+      const handler = action.type === 'tracking' ? commands.tracking : commands.calibrate;
+      if (!handler) return reply('Camera tracking is not available here.', 'error');
+      const result = handler(action.source);
+      return reply(result.message, result.ok ? 'success' : 'error');
     }
     if (paused) return reply('Paused. Say resume to continue, or cancel.', 'info');
 

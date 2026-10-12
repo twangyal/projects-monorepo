@@ -130,3 +130,22 @@ test('numbers without a question pick the numbered element; confirm without a qu
   assert.match(controller.handle('7', context).message, /no number 7/);
   assert.match(controller.handle('yes', context).message, /nothing waiting/);
 });
+
+test('tracking commands are delegated, work while paused, and clear pending questions', () => {
+  const page = fakePage();
+  const calls = [];
+  const controller = createController({ window: {}, actions: page.actions, commands: {
+    tracking: source => { calls.push(source); return { ok: true, message: `Using ${source}.` }; },
+    calibrate: () => { calls.push('calibrate'); return { ok: false, message: 'Turn the camera on first.' }; },
+  } });
+  const context = { elements: [describe(1, page.node('Delete'), { consequential: true })] };
+  controller.handle('delete', context);
+  controller.handle('pause', context);
+  assert.equal(controller.handle('stop camera', context).message, 'Using pointer.');
+  assert.equal(controller.handle('recalibrate', context).tone, 'error');
+  controller.handle('resume', context);
+  assert.match(controller.handle('confirm', context).message, /nothing waiting/);
+  assert.deepEqual(calls, ['pointer', 'calibrate']);
+  assert.equal(page.log.length, 0);
+  assert.equal(createController({ window: {}, actions: page.actions }).handle('use camera', context).tone, 'error');
+});
