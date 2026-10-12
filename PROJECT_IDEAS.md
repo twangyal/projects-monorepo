@@ -57,7 +57,7 @@ Milestone #182 adds optional saved skirt seam/waist and hem allowances, separate
 
 Milestone #183 adds self-contained A4/US Letter tiled base-pattern exports, a physical calibration/assembly page, 1cm overlap and repeated global registration crosses. Native downloaded HTML/print-to-PDF page sizes and counts are verified with unchanged complete concepts/history and guarded raw drafts. Real printer/toile acceptance and graded-set tiling remain unfinished.
 
-Entered body measurements now persist with complete concepts and add a circular two-ring proxy to the rigid skirt preview, with waist/hip circumference differences and short-skirt refusal to extrapolate (#201). Transparency/rotation are view-only; garment pattern/OBJ exports exclude the proxy. Anatomy, cloth/body contact and physical fit are unverified; the project remains ACTIVE.
+Entered body measurements now persist with complete concepts and add a circular two-ring proxy to the rigid skirt preview, with waist/hip circumference differences and short-skirt refusal to extrapolate (#201). Transparency/rotation are view-only; garment pattern/OBJ exports exclude the proxy. Saved profiles also compare waist/hip differences across all relative graded sizes, with per-size short-skirt refusal and profile/history updates (#202). Anatomy, cloth/body contact and physical fit are unverified; the project remains ACTIVE.
 
 ## 6. AI karaoke generator
 

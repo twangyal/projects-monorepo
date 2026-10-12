@@ -23,3 +23,13 @@ On 2026-10-12, Node 24 and Chrome for Testing headless shell 153.0.8010.12:
 Test setup initially failed because an old temporary browser path no longer existed and a different cached executable crashed. The official headless shell was restored before executed browser verification. A test oracle initially clicked Backup after correctly refused label activation, thereby intentionally blurring and committing its valid placement draft. The oracle now downloads without moving focus to inspect the preserved committed snapshot. No product fix was needed for that test failure.
 
 These are local checks, not a hosted CI claim. Physical measurements, anatomical accuracy, cloth contact, fabric simulation, comfort, mobility, sizing standards, sewing and manufacturing have not been validated. The full project remains ACTIVE; project #8 remains skipped.
+
+## Relative size comparison — #202
+
+The follow-on table milestone compares each committed graded size against the saved profile using the same validated geometric helper. It adds optional signed waist/hip columns and entered measurement context, restores original columns when no profile exists, and reports Not reached independently for shorter sizes. No fit recommendation or automated size choice is made. This is display-only; schema, grading rules and garment exports are unchanged. The table is focusable and horizontally scrollable on narrow screens.
+
+Two additional native browser cases independently calculate all five size differences from circumference/slant geometry, compare actual graded SVG download bytes before/after adding a profile, exercise profile updates plus Undo, verify every short size refuses extrapolation and profile removal restores original columns, and check 390px containment. Independent review found no correctness blockers.
+
+Final local #202 checks: `npm run check` passed (66 units, lint, TypeScript, production build); full native browser suite passed **75/75**. The 390px comparison table screenshot was inspected and fits without page overflow. Hosted #202 CI remains to be checked after publication.
+
+Hosted #201 verification also completed successfully: [run 38290198403](https://github.com/twangyal/projects-monorepo/actions/runs/38290198403), job 114948174813, exact checkout `890abb3bfb4ba9c4d765308e4234ecab9fb43a05`. Downloaded logs confirmed 66 units, 73 browsers, lint, types and build.

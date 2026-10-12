@@ -1,3 +1,4 @@
+import {compareBody} from './body-fitting.ts';
 import {DEFAULT_GRADING,validateGrading,gradedSizes,gradedPatternSvg,type Grading} from './grading.ts';
 import {validateProject,type Project} from './model.ts';
 const fields=[['waistStep','Waist increment per size (cm)'],['hemStep','Hem increment per size (cm)'],['slantStep','Slant increment per size (cm)'],['steps','Steps on each side of base']] as const;
@@ -6,7 +7,19 @@ export function mountGrading(options:{current:()=>Project;commit:(next:Project)=
  const input=(key:keyof Grading)=>document.getElementById(`grading-${key}`) as HTMLInputElement;let signature='';
  function reset(){const r=options.current().grading??DEFAULT_GRADING;for(const [key] of fields)input(key).value=String(r[key]);}
  function dirty(){const r=options.current().grading??DEFAULT_GRADING;return fields.some(([key])=>input(key).value!==String(r[key]));}
- function render(p:Project){const next=JSON.stringify(p.grading??null);if(next!==signature){signature=next;reset();}const host=document.getElementById('grading-table')!;if(!p.grading||!p.construction){host.textContent='Apply a measured base, then a grading rule to create the size set.';return;}host.innerHTML='<table><caption>Committed relative sizes · cm</caption><thead><tr><th>Size</th><th>Waist</th><th>Hem</th><th>Slant</th></tr></thead><tbody>'+gradedSizes(p.construction,p.grading).map(({offset,draft})=>`<tr><th>Base ${offset>=0?'+':''}${offset}</th><td>${draft.waist}</td><td>${draft.hem}</td><td>${draft.slant}</td></tr>`).join('')+'</tbody></table>';}
+ function render(p:Project){
+  const next=JSON.stringify(p.grading??null);if(next!==signature){signature=next;reset();}
+  const host=document.getElementById('grading-table')!;host.tabIndex=p.bodyMeasurements?0:-1;
+  if(!p.grading||!p.construction){host.textContent='Apply a measured base, then a grading rule to create the size set.';return;}
+  const profile=p.bodyMeasurements;
+  const signed=(value:number)=>`${value>=0?'+':''}${value.toFixed(2)}`;
+  const rows=gradedSizes(p.construction,p.grading).map(({offset,draft})=>{
+   const c=profile?compareBody(draft,profile):null;
+   return `<tr><th scope="row">Base ${offset>=0?'+':''}${offset}</th><td>${draft.waist}</td><td>${draft.hem}</td><td>${draft.slant}</td>${c?`<td>${signed(c.waistDifference)}</td><td>${c.hipDifference===null?'Not reached':signed(c.hipDifference)}</td>`:''}</tr>`;
+  }).join('');
+  host.innerHTML='<table><caption>Committed relative sizes · cm'+(profile?` · body waist ${profile.waist}, hip ${profile.hip} at depth ${profile.hipDepth}`:'')+'</caption><thead><tr><th scope="col">Size</th><th scope="col">Waist</th><th scope="col">Hem</th><th scope="col">Slant</th>'+(profile?'<th scope="col">Waist difference</th><th scope="col">Hip difference</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table>'+(profile?'<p class="fine-print">Differences are garment minus entered body circumference: negative means smaller, zero equal, positive larger. Not reached means that size ends above the hip depth; no extrapolation. Geometry only, not a fit recommendation. Scroll the table horizontally to inspect all columns.</p>':'');
+ }
+
  for(const action of ['apply','discard','remove','export']){const button=document.getElementById(`grading-${action}`)!;button.addEventListener('pointerdown',event=>event.preventDefault());button.addEventListener('click',()=>{if(action==='discard'){reset();options.notice('Grading drafts discarded.');return;}if(!options.guard())return;try{if(action==='remove'){const next={...options.current()};delete next.grading;options.commit(validateProject(next));reset();options.notice('Grading rule removed; the base and pattern drafts are retained. Undo restores the rule.');return;}if(options.baseDirty())throw new Error('Apply or discard pattern drafts before grading.');const p=options.current();if(!p.construction)throw new Error('Apply a measured base before grading.');if(action==='apply'){const raw=Object.fromEntries(fields.map(([key])=>{const value=input(key).value;if(!value.trim())throw new Error(`${key} is required.`);return [key,Number(value)];}));const r=validateGrading(raw);gradedSizes(p.construction,r);options.commit(validateProject({...p,grading:r}));reset();options.notice('Grading rule applied to the complete concept.');}else{if(dirty())throw new Error('Apply or discard grading drafts before exporting.');if(!p.grading)throw new Error('Apply a grading rule before exporting.');options.download(new Blob([gradedPatternSvg(p.construction,p.grading)],{type:'image/svg+xml;charset=utf-8'}),'-graded-skirt-patterns.svg');options.notice('All relative sizes exported at full scale. Check each 5 cm square and the committed cutting allowance labels.');}}catch(error){options.notice(error instanceof Error?error.message:'Could not grade the pattern.',true);}});}
  return {render,reset,dirty};
 }
