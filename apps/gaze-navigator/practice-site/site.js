@@ -34,3 +34,24 @@ if (results) {
   }
   if (!results.children.length) results.textContent = 'No books matched.';
 }
+
+// A web component whose controls live in an open shadow root, as many design systems do.
+if (!customElements.get('nb-feedback')) {
+  customElements.define('nb-feedback', class extends HTMLElement {
+    connectedCallback() {
+      if (this.shadowRoot) return;
+      const root = this.attachShadow({ mode: 'open' });
+      root.innerHTML = `<style>button, input { font: inherit; padding: 6px 10px; margin: 4px; }</style>
+        <button>Helpful</button><button>Not helpful</button>
+        <label>Comment <input id="comment" /></label>`;
+      for (const button of root.querySelectorAll('button')) {
+        button.addEventListener('click', () => say(`Thanks for your feedback: ${button.textContent}.`));
+      }
+    }
+  });
+}
+
+// Topic cards are clickable only through script and a pointer cursor, with no role or tabindex.
+for (const topic of document.querySelectorAll('.topic')) {
+  topic.addEventListener('click', () => say(topic.dataset.answer));
+}

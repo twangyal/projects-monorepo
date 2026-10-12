@@ -22,3 +22,8 @@ main { max-width: 960px; margin: 0 auto; padding: 24px; }
 footer { padding: 24px; color: #6b6052; text-align: center; }
 .spacer { height: 60vh; }
 .saved li { margin: 6px 0; }
+.topics { display: flex; flex-wrap: wrap; gap: 12px; }
+.topic { cursor: pointer; padding: 14px 18px; border: 1px solid #d9cdb8; border-radius: 10px; background: #fff; }
+iframe { width: min(100%, 420px); border: 1px solid #d9cdb8; border-radius: 8px; background: #fff; }
+iframe.ask { height: 150px; }
+iframe.map { height: 70px; }

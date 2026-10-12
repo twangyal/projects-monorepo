@@ -71,7 +71,7 @@ async function typeInstruction(page, text) {
 async function look(page, locator) {
   const box = await locator.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await expect(panel(page).locator('.context li').first()).toBeVisible();
+  await expect(panel(page).locator('.context li').first()).toBeAttached();
 }
 
 test('starts automatically on a strict-CSP website, acts there, and follows navigation', async ({ context, worker }) => {

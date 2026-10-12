@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Help — Northwind Books</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./site.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="index.html">Northwind Books</a>
+    <nav aria-label="Main"><ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="catalog.html">Catalog</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="account.html">Account</a></li>
+      <li><a href="help.html">Help</a></li>
+    </ul></nav>
+    <form class="search" action="search.html" method="get" role="search">
+      <input type="search" name="q" aria-label="Search books" placeholder="Search books" />
+      <button>Search</button>
+    </form>
+    <span>Cart: <span id="cartCount">0</span></span>
+  </header>
+  <main>
+    <h1>Help center</h1>
+    <p class="notice" role="status"></p>
+    <h2>Popular topics</h2>
+    <div class="topics">
+      <div class="topic" data-answer="Orders ship within two days. Returns are free for 30 days (practice).">Shipping and returns</div>
+      <div class="topic" data-answer="Gift cards never expire (practice).">Gift cards</div>
+    </div>
+    <h2>Was this page helpful?</h2>
+    <nb-feedback></nb-feedback>
+    <h2>Ask us</h2>
+    <iframe class="ask" src="help-form.html" title="Ask a question"></iframe>
+    <h2>Find the shop</h2>
+    <iframe class="map" sandbox srcdoc="<p style='font:16px sans-serif'>Map of 12 Harbour Lane, provided by another site.</p>" title="Store map"></iframe>
+  </main>
+  <footer>A fictional practice website. Nothing is sold, sent or stored.</footer>
+  <script type="module" src="./site.js"></script>
+  <script type="module" src="../src/web/boot.js"></script>
+</body>
+</html>

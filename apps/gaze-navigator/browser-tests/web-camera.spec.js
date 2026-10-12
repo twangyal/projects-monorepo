@@ -63,7 +63,10 @@ async function open(page, path) {
   await page.clock.pauseAt(new Date(Date.UTC(2026, 9, 12, 0, minute++)));
 }
 
+const openSettings = page => panel(page).locator('details.settings').evaluate(details => { details.open = true; });
+
 async function startCamera(page) {
+  await openSettings(page);
   await panel(page).getByRole('button', { name: 'Camera' }).click();
   await expect(panel(page).getByRole('button', { name: 'Camera' })).toHaveAttribute('aria-pressed', 'true');
   await expect(dot(page)).toHaveClass(/settling/);
@@ -127,6 +130,7 @@ test('camera mode continues after navigation with a fresh calibration, and stop 
   await typeInstruction(page, 'stop camera');
   await expect(status(page)).toHaveText('Camera off. The circle follows the pointer.');
   expect(await page.evaluate(() => window.__camera.released)).toBe(1);
+  await openSettings(page);
   await expect(panel(page).getByRole('button', { name: 'Pointer' })).toHaveAttribute('aria-pressed', 'true');
   await expect(panel(page).getByRole('button', { name: 'Recalibrate' })).toBeDisabled();
 });
@@ -140,6 +144,7 @@ test('calibration retries hidden-face dots, reports failure, and spoken cancel s
   await page.clock.runFor(9 * 2 * 1900);
   await expect(status(page)).toContainText('Only 0 of 9 dots could be learned');
   await page.evaluate(() => { window.__camera.faceVisible = true; });
+  await openSettings(page);
   await panel(page).getByRole('button', { name: 'Recalibrate' }).click();
   await expect(status(page)).toContainText('Look at dot 1 of 9');
   await typeInstruction(page, 'cancel');

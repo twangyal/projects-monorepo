@@ -1,6 +1,6 @@
 // Presentation and tracking for the web navigator. Runs inside any page; all UI lives in a
 // shadow root that is excluded from context capture.
-import { captureContext } from './page-context.js';
+import { captureContext, frameOffset, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
 import { createSpeechInput } from './speech-input.js';
 import { createGazeFilter } from '../gaze-filter.js';
@@ -49,6 +49,7 @@ form input { flex: 1; min-width: 0; }
 label { display: block; margin-top: 8px; font-size: 14px; color: #c6d9d1; }
 ol { margin: 6px 0; padding-left: 26px; }
 li { margin: 2px 0; }
+li.unreachable { list-style: none; margin-left: -18px; color: #f5c76b; }
 details { margin-top: 8px; }
 summary { cursor: pointer; }
 .prompt:empty { display: none; }
@@ -74,7 +75,21 @@ export function sessionStore(window) {
   };
 }
 
-const ROLE_LABELS = { link: 'Link', button: 'Button', textbox: 'Text field', searchbox: 'Search field', combobox: 'Dropdown', checkbox: 'Checkbox', radio: 'Option', switch: 'Switch', tab: 'Tab', menuitem: 'Menu item', option: 'Option', slider: 'Slider', generic: 'Control' };
+const ROLE_LABELS = { link: 'Link', button: 'Button', textbox: 'Text field', searchbox: 'Search field', combobox: 'Dropdown', checkbox: 'Checkbox', radio: 'Option', switch: 'Switch', tab: 'Tab', menuitem: 'Menu item', option: 'Option', slider: 'Slider', clickable: 'Clickable', generic: 'Control' };
+
+// Focus inside shadow roots and same-origin frames is reported on their hosts; follow it down.
+function deepActiveElement(document) {
+  let active = document.activeElement;
+  for (let depth = 0; active && depth < 32; depth++) {
+    let inner = active.shadowRoot?.activeElement ?? null;
+    if (!inner && /^I?FRAME$/.test(active.tagName)) {
+      try { inner = active.contentDocument?.activeElement ?? null; } catch { inner = null; }
+    }
+    if (!inner || inner === active) break;
+    active = inner;
+  }
+  return active;
+}
 
 export function describeElement(element) {
   const role = ROLE_LABELS[element.role] ?? element.role;
@@ -107,20 +122,22 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <button class="pause" aria-pressed="false">Pause</button>
         <button class="cancel">Cancel</button>
       </div>
-      <div class="row" role="group" aria-label="Tracking">
-        <button class="use-pointer" aria-pressed="true">Pointer</button>
-        <button class="use-camera" aria-pressed="false">Camera</button>
-        <button class="recalibrate" disabled>Recalibrate</button>
-      </div>
       <form class="typed">
         <input class="instruction" aria-label="Typed instruction" placeholder="e.g. open pricing" autocomplete="off" />
         <button type="submit">Do it</button>
       </form>
-      <div class="row">
-        <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
-        <label><input type="checkbox" class="speak" /> Speak feedback</label>
-      </div>
-      <details class="context-details" open><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
+      <details class="settings"><summary>Tracking and settings</summary>
+        <div class="row" role="group" aria-label="Tracking">
+          <button class="use-pointer" aria-pressed="true">Pointer</button>
+          <button class="use-camera" aria-pressed="false">Camera</button>
+          <button class="recalibrate" disabled>Recalibrate</button>
+        </div>
+        <div class="row">
+          <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
+          <label><input type="checkbox" class="speak" /> Speak feedback</label>
+        </div>
+      </details>
+      <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
         <p class="hint">"Open pricing", "click the second one", "type hello into search", "delete last word", "replace Tuesday with Friday", "choose large", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
         <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
@@ -136,6 +153,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'),
     recalibrate: $('.recalibrate'),
   };
+  // The element list is open by default only where the panel has room to spare.
+  if ((window.innerHeight ?? 0) > 700) $('.context-details').open = true;
   document.documentElement.append(host);
   // Reserve scroll space so the panel never permanently covers the end of a page.
   const spacer = document.createElement('div');
@@ -160,6 +179,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   let spokenContext = null;
   let promptContext = null;
   let lastCapture = -Infinity;
+  let trailing = null;
   let frame = null;
 
   const radius = () => RADII[settings.size] ?? RADII.medium;
@@ -199,7 +219,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     for (const element of shown) {
       if (question && !question.has(element.id)) continue;
       if (!element.element.isConnected) continue;
-      const rect = element.element.getBoundingClientRect();
+      const rect = viewportRect(element.element, element.frames);
       const box = document.createElement('div');
       box.className = question ? 'outline question' : 'outline';
       Object.assign(box.style, { left: `${rect.left - 3}px`, top: `${rect.top - 3}px`, width: `${rect.width + 6}px`, height: `${rect.height + 6}px` });
@@ -218,6 +238,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       item.textContent = describeElement(element);
       return item;
     });
+    for (const embedded of context.unreachable ?? []) {
+      const item = document.createElement('li');
+      item.className = 'unreachable';
+      item.textContent = `${embedded.name}: content from another site that the navigator cannot reach`;
+      items.push(item);
+    }
     ui.context.replaceChildren(...items);
     ui.summary.textContent = `In the circle (${context.elements.length})`;
   }
@@ -225,10 +251,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   function recapture(force = false) {
     if (!point || controller.paused) return;
     const time = window.performance.now();
-    if (!force && time - lastCapture < CONTEXT_INTERVAL_MS) return;
+    if (!force && time - lastCapture < CONTEXT_INTERVAL_MS) {
+      // Capture once more when the interval ends, so a resting gaze always gets fresh context.
+      trailing ??= window.setTimeout(() => {
+        trailing = null;
+        recapture(true);
+      }, CONTEXT_INTERVAL_MS - (time - lastCapture));
+      return;
+    }
+    window.clearTimeout(trailing);
+    trailing = null;
     lastCapture = time;
     context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host });
-    const focused = context.elements.find(element => element.element === document.activeElement);
+    const focused = context.elements.find(element => element.element === deepActiveElement(document));
     context.focusedId = focused?.id ?? null;
     renderContextList();
     if (!controller.pending) renderOutlines();
@@ -278,6 +313,25 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     track(event.clientX, event.clientY, event.timeStamp);
   };
   window.addEventListener('pointermove', onPointer, true);
+  // Pointer events over a same-origin frame go to that frame's document; translate them back.
+  const watchedFrames = new WeakSet();
+  const frameListeners = [];
+  function watchFrames() {
+    for (const { document: frameDocument, frames } of sameOriginFrames(document, host)) {
+      if (watchedFrames.has(frameDocument)) continue;
+      watchedFrames.add(frameDocument);
+      const listener = event => {
+        if (settings.source !== 'pointer') return;
+        frozen = false;
+        const { x, y } = frameOffset(frames);
+        track(event.clientX + x, event.clientY + y, event.timeStamp);
+      };
+      frameDocument.addEventListener('pointermove', listener, true);
+      frameListeners.push([frameDocument, listener]);
+    }
+  }
+  watchFrames();
+  window.addEventListener('load', watchFrames, true);
   const refresh = () => recapture(true);
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
@@ -474,9 +528,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.removeEventListener('pagehide', onPageHide);
       speech.stop();
       window.removeEventListener('pointermove', onPointer, true);
+      window.removeEventListener('load', watchFrames, true);
+      for (const [frameDocument, listener] of frameListeners) frameDocument.removeEventListener('pointermove', listener, true);
       window.removeEventListener('scroll', refresh, true);
       window.removeEventListener('resize', refresh);
       if (frame !== null) window.cancelAnimationFrame(frame);
+      window.clearTimeout(trailing);
       resizeObserver.disconnect();
       spacer.remove();
       host.remove();
