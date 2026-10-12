@@ -14,6 +14,7 @@ import stat
 import threading
 import time
 
+from .circles import Circles
 from .store import DomainError, Store
 from .images import MAX_IMAGE_BYTES
 from .image_export import render_image_export
@@ -89,6 +90,9 @@ class ChallengeServer(HTTPServer):
                 if (self.data_dir / name).is_symlink():
                     raise RuntimeError('Database files must not be symbolic links.')
             self.store = Store(self.data_dir) if now is None else Store(self.data_dir, clock=now)
+            if (self.data_dir / 'circles.sqlite3').is_symlink():
+                raise RuntimeError('Database files must not be symbolic links.')
+            self.circles = Circles(self.data_dir, self.store) if now is None else Circles(self.data_dir, self.store, clock=now)
             if self.transport is None:
                 super().__init__(('127.0.0.1', port), Handler)
         except BaseException:
@@ -170,6 +174,8 @@ class ChallengeServer(HTTPServer):
         if any(thread.is_alive() for thread, _ in handlers):
             raise RuntimeError('An active request did not stop; its data directory remains locked.')
         try:
+            if getattr(self, 'circles', None) is not None:
+                self.circles.close()
             if self.store is not None:
                 self.store.close()
         finally:
@@ -336,7 +342,7 @@ class Handler(BaseHTTPRequestHandler):
             raise DomainError('invalid_request', 'Use exactly one Authorization header.', 400)
         if self.command not in ('GET', 'HEAD', 'POST'):
             raise DomainError('invalid_request', 'This HTTP method is not supported.', 405)
-        link = self.command in ('GET', 'HEAD') and re.fullmatch(r'/\?challenge=' + ID, self.path)
+        link = self.command in ('GET', 'HEAD') and re.fullmatch(r'/\?(?:challenge|circle)=' + ID, self.path)
         if ('?' in self.path and not link) or '#' in self.path:
             raise DomainError('invalid_request', 'Only the supported challenge link query is accepted.', 400)
         if len(self.path) > 2048:
@@ -475,6 +481,27 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {'schemaVersion': 1, 'maxChallenges': 20, 'transport': transport})
         if path == '/api/challenges' and method == 'POST':
             return self._json(201, store.create(self._object()))
+        if path == '/api/circles' and method == 'POST':
+            return self._json(201, self.server.circles.create(self._object()))
+        circle = re.fullmatch(r'/api/circles/(' + ID + r')(?:/([a-z/]+))?', path)
+        if circle:
+            circle_id, action = circle.groups()
+            circles = self.server.circles
+            if action == 'join' and method == 'POST':
+                return self._json(200, circles.join(circle_id, self._object()))
+            if action is None and method == 'GET':
+                return self._json(200, circles.view(circle_id, self._token()))
+            handlers = {'invite': lambda token, body: circles.invite(circle_id, token),
+                        'leave': lambda token, body: circles.leave(circle_id, token),
+                        'share': lambda token, body: circles.share(circle_id, token, body),
+                        'unshare': lambda token, body: circles.unshare(circle_id, token, body),
+                        'cheer': lambda token, body: circles.cheer(circle_id, token, body),
+                        'comment': lambda token, body: circles.comment(circle_id, token, body),
+                        'comment/delete': lambda token, body: circles.delete_comment(circle_id, token, body)}
+            if action in handlers and method == 'POST':
+                token = self._token()
+                return self._json(200, handlers[action](token, self._object()))
+            raise DomainError('not_found', 'Route not found.', 404)
         media = re.fullmatch(r'/api/challenges/(' + ID + r')/evidence/(' + ID + r')/image', path)
         if media and method == 'GET':
             challenge_id, evidence_id = media.groups()
@@ -514,7 +541,7 @@ class Handler(BaseHTTPRequestHandler):
         raise DomainError('not_found', 'Route not found.', 404)
 
     def _static(self):
-        if self.path == '/' or re.fullmatch(r'/\?challenge=' + ID, self.path):
+        if self.path == '/' or re.fullmatch(r'/\?(?:challenge|circle)=' + ID, self.path):
             parts = ['index.html']
         elif re.fullmatch(r'/assets/[A-Za-z0-9][A-Za-z0-9_.-]{0,160}\.(?:js|css|svg|png|jpe?g|webp|ico|woff2)', self.path):
             parts = self.path[1:].split('/')

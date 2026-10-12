@@ -31,7 +31,7 @@ async function boundedJSON<T>(action: (signal: AbortSignal) => Promise<T>, calle
 
 const MAX_REQUEST = 16 * 1024;
 const MAX_RESPONSE = 1024 * 1024;
-const PATH = /^\/api\/(?:status|challenges(?:\/[0-9a-f]{32}(?:\/(?:join|terms|invite|accept|decline|withdraw|evidence|result(?:\/respond)?|void(?:\/confirm)?|arbiter\/(?:join|nominate|respond|withdraw|decide)|export))?)?)$(?![\s\S])/;
+const PATH = /^\/api\/(?:status|challenges(?:\/[0-9a-f]{32}(?:\/(?:join|terms|invite|accept|decline|withdraw|evidence|result(?:\/respond)?|void(?:\/confirm)?|arbiter\/(?:join|nominate|respond|withdraw|decide)|export))?)?|circles(?:\/[0-9a-f]{32}(?:\/(?:join|invite|leave|share|unshare|cheer|comment(?:\/delete)?))?)?)$(?![\s\S])/;
 
 function invalidRequest(): ApiError {
   return new ApiError('The local challenge request is invalid. Use the current challenge controls and a valid private seat.', 400, 'invalid_request');

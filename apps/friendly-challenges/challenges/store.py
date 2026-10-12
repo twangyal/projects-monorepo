@@ -248,6 +248,22 @@ class Store:
             role = self._authenticate(record, token)
             return domain.snapshot(record, role, domain.timestamp(self._clock))
 
+    def seat_role(self, challenge_id, token):
+        """The seat a capability holds, for circle sharing consent."""
+        with self._transaction() as connection:
+            return self._authenticate(self._load(connection, challenge_id), token)
+
+    def public_state(self, challenge_id):
+        """Public challenge state for circles; never includes capability digests. None if absent."""
+        with self._transaction() as connection:
+            try:
+                record = self._load(connection, challenge_id, missing='not_found', check_images=False)
+            except DomainError as error:
+                if error.code == 'not_found':
+                    return None
+                raise
+            return deepcopy(record['state'])
+
     def command(self, challenge_id, token, action, payload):
         with self._transaction() as connection:
             record = self._load(connection, challenge_id)
