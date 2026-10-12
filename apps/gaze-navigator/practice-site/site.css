@@ -1,0 +1,24 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 17px/1.5 Georgia, 'Times New Roman', serif; color: #1f1b16; background: #faf6ef; }
+header { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 16px 24px; background: #2f4a3a; color: #fff; }
+header a { color: #fff; }
+.brand { font-size: 1.4rem; font-weight: bold; text-decoration: none; }
+nav ul { display: flex; flex-wrap: wrap; gap: 18px; margin: 0; padding: 0; list-style: none; }
+form.search { display: flex; gap: 6px; }
+input, select, textarea, button { font: inherit; padding: 8px 10px; border: 1px solid #8a7f70; border-radius: 6px; background: #fff; color: inherit; }
+button { background: #e9dfcf; cursor: pointer; }
+button.danger { background: #8f2d2d; color: #fff; border-color: #8f2d2d; }
+button.primary { background: #2f4a3a; color: #fff; border-color: #2f4a3a; }
+main { max-width: 960px; margin: 0 auto; padding: 24px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.card { padding: 16px; border: 1px solid #d9cdb8; border-radius: 10px; background: #fff; }
+.card h3 { margin-top: 0; }
+.shelf { display: flex; gap: 14px; overflow-x: auto; padding: 8px 2px 14px; }
+.shelf .card { flex: 0 0 200px; }
+.reviews { max-height: 180px; overflow-y: auto; border: 1px solid #d9cdb8; border-radius: 10px; padding: 0 14px; background: #fff; }
+.field { display: grid; gap: 4px; margin: 12px 0; max-width: 520px; }
+.notice { padding: 10px 14px; border-radius: 8px; background: #e2efe5; }
+.notice:empty { display: none; }
+footer { padding: 24px; color: #6b6052; text-align: center; }
+.spacer { height: 60vh; }
+.saved li { margin: 6px 0; }

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Search results — Northwind Books</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./site.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="index.html">Northwind Books</a>
+    <nav aria-label="Main"><ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="catalog.html">Catalog</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="account.html">Account</a></li>
+    </ul></nav>
+    <form class="search" action="search.html" method="get" role="search">
+      <input type="search" name="q" aria-label="Search books" placeholder="Search books" />
+      <button>Search</button>
+    </form>
+    <span>Cart: <span id="cartCount">0</span></span>
+  </header>
+  <main>
+    <h1>Search results for “<span id="query"></span>”</h1>
+    <p class="notice" role="status"></p>
+    <ul id="results"></ul>
+  </main>
+  <footer>A fictional practice website. Nothing is sold, sent or stored.</footer>
+  <script type="module" src="./site.js"></script>
+  <script type="module" src="../src/web/boot.js"></script>
+</body>
+</html>
