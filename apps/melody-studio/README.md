@@ -88,6 +88,14 @@ The curve multiplies track volume **and any separately enabled volume ramp**. Di
 
 Changed Apply is one Undo/Redo edit, retained in complete projects, autosave, saved copies, portable recovery and track duplication. Reference PCM and other tracks remain unchanged; absent curves preserve legacy PCM. This is linear amplitude automation, without stereo routing, effect curves, live automation recording or musician-quality acceptance. Melody remains ACTIVE toward the full DAW vision ([#197](https://github.com/twangyal/projects-monorepo/issues/197)).
 
+### Export volume automation to another music app
+
+Choose **Export MIDI with volume automation** to carry the combined committed volume curve and volume ramp as7-bit MIDI expression(CC11). Ordinary **Export MIDI** stays byte-compatible and omits this automation. Channel volume(CC7), note velocities/timing, track programs and tempo keep their original representation. Unapplied drafts/suggestions and roll gestures must be resolved before the expressive export; activation guards them before pointer blur and on keyboard use. Export changes no project/history/reference data. Files end in `-automation.mid`.
+
+Expression is sampled at1/16beat and rounded to0–127; rounded curve/ramp breakpoint ticks and the song endpoint are included. For maximum graphs the grid automatically becomes1/8or1/4beat to keep the complete file under the existing32,768event ceiling. Repeated values are omitted. Timing uses480ticks/beat, so sub-tick features cannot be represented exactly. Muted tracks contain no new expression events. All events stop at the original MIDI note-timeline end; custom synth envelopes, filter, echo and their tails are not represented.
+
+External instruments may ignore CC11 or map it differently; this is not PCM-equivalent sound or continuous automation. Melody’s current MIDI importer deliberately reports unsupported controllers and excludes affected lanes; it does **not** restore these expression curves. Use a complete project backup for exact Melody recovery. The standard controller mapping is documented by [the MIDI Association](https://midi.org/midi-1-0-control-change-messages), verified2026-10-12. This export milestone ([#198](https://github.com/twangyal/projects-monorepo/issues/198)) advances the ACTIVE DAW workflow without claiming external-instrument acceptance.
+
 ## Audition an arrangement section
 
 Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.

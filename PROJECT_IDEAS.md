@@ -31,6 +31,8 @@ Description: Melody Studio is intended to become a full music-production DAW wit
 
 Milestone #197 adds retained multi-point song-time volume curves for several rises, dips and fades, with explicit raw text Apply/Discard, a committed graph, exact decimal beat display/reapplication, complete recovery and continuous shared playback/WAV gain. Existing ramps multiply deliberately; source references remain unchanged. Melody remainsACTIVE toward full DAW mixing/routing/effects and real musician evaluation.
 
+Milestone #198 adds an optional sampled-expression MIDI export for committed volume curves/ramps, preserving ordinary MIDI output, note/program/tempo data and guarded editor state. Timing/gain quantization and current import/external-instrument limits are explicit; full DAW acceptance remains unfinished.
+
 ## 4. Git blame agent
 
 Path: apps/git-history

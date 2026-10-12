@@ -1,3 +1,6 @@
+import {volumeCurveLevel} from './volume-curve.ts';
+import {volumeRampLevel} from './volume-ramp.ts';
+import {MIDI_IMPORT_LIMITS} from './midi-import.ts';
 import type { Composition, Note } from './types.ts';
 import { compositionDurationBeats, validateComposition } from './model.ts';
 
@@ -57,9 +60,13 @@ function track(events: Event[], endTick: number): number[] {
   return [77, 84, 114, 107, ...uint32(bytes.length), ...bytes];
 }
 
-export function encodeMidi(project: Composition): Uint8Array {
+export function encodeMidi(project: Composition, expression = false): Uint8Array {
+  if(typeof expression!=='boolean')throw new Error('MIDI expression option must be boolean.');
   const valid = validateComposition(project);
   const end = Math.round(compositionDurationBeats(valid) * TICKS_PER_BEAT);
+  const automated=valid.tracks.filter(p=>!p.muted&&(p.volumeCurve||p.volumeRamp));
+  const baseEvents=3+valid.tracks.reduce((n,p)=>n+4+p.notes.length*2,0);
+  const step=[30,60,120].find(step=>baseEvents+automated.reduce((n,p)=>n+Math.ceil(end/step)+2+(p.volumeCurve?.length??0)+(p.volumeRamp?2:0),0)<=MIDI_IMPORT_LIMITS.events)!;
   const tempo = Math.round(60_000_000 / valid.tempo);
   const encoder = new TextEncoder();
   const chunks = [track([
@@ -72,6 +79,15 @@ export function encodeMidi(project: Composition): Uint8Array {
       { tick: 0, order: 1, bytes: [192 | channel, PROGRAMS[part.instrument]] },
       { tick: 0, order: 2, bytes: [176 | channel, 7, Math.round(part.volume * 127)] },
     ];
+    if (expression && !part.muted && (part.volumeCurve || part.volumeRamp)) {
+      const ticks=new Set<number>([0,end]);for(let tick=0;tick<=end;tick+=step)ticks.add(tick);
+      for(const beat of [...(part.volumeCurve?.map(p=>p.beat)??[]),...(part.volumeRamp?[part.volumeRamp.start,part.volumeRamp.end]:[])]){const tick=Math.round(beat*TICKS_PER_BEAT);if(tick<=end)ticks.add(tick);}
+      let previous=-1;
+      for(const tick of [...ticks].sort((a,b)=>a-b)){
+        const beat=tick/TICKS_PER_BEAT,gain=(part.volumeCurve?volumeCurveLevel(part.volumeCurve,beat):1)*(part.volumeRamp?volumeRampLevel(part.volumeRamp,beat):1),value=Math.round(gain*127);
+        if(value!==previous){events.push({tick,order:2,bytes:[176|channel,11,value]});previous=value;}
+      }
+    }
     if (!part.muted) {
       for (const note of mergeOverlappingNotes(part.notes)) {
         events.push(
