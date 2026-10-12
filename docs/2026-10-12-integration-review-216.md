@@ -33,3 +33,11 @@ Downloaded job logs, not just run conclusions:
 - [Friendly38319449211](https://github.com/twangyal/projects-monorepo/actions/runs/38319449211), job115043767521, exact `18afa17`:202Python/51TypeScript/39browsers and project gates passed.
 
 These receipts predate the repairs and do not certify them. Final task-branch hosted CI, extended Gaze verification, full Friendly rerun, Duet decoding/acceptance and canonical integration remain tracked by#216. No physical webcam, real Spotify account/provider, physical friend-device acceptance or Jev integration is established. All projects remain ACTIVE; project#8 stays skipped. Preserve both roadmap updates and main's newer Melody/Clothing work when integrating.
+
+## Final checkpoint update
+
+Fresh isolated Friendly full browser gate completed: **42/42 pass**, including all original39 and new3 with unchanged production limits. The first notebook-capacity failure remains recorded above.
+
+Extended Gaze attempt finished **64 failed /16 did not run** before meaningful app acceptance: extension setup used a temporary launcher from the repository root and could not find `scripts/build-extension.js`; full Chrome startup then refused its process-singleton socket with `Operation not permitted` (and restricted ptrace). This is distinct from the passing15 desktop headless-shell cases. Correct the extension working directory and use an environment permitting normal full-Chrome local sockets; do not bypass platform security or call these cases passing.
+
+Fresh task-source hosted checks started for901f9d0: Gaze38322465441, Duet38322465447, Friendly38322465711. Outcomes are pending, not certified. Next run must inspect actual job logs and remaining Duet photo/media blocker before canonical integration. Main remains the verified harmonic-tone head f3f5124.
