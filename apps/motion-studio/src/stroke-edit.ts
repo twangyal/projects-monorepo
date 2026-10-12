@@ -79,6 +79,14 @@ export function translateStroke(input: Project, target: StrokeTarget, delta: Poi
   }));
   return validateProject(project);
 }
+/** Correct one local vertex without changing its neighbors or brush. */
+export function setStrokePoint(input: Project, target: StrokeTarget, pointIndex: number, value: Point): Project {
+  const position = point(value, 'Stroke point'), index = finite(pointIndex, 'Point index');
+  const { project, stroke } = select(input, target);
+  if (!Number.isInteger(index) || index < 0 || index >= stroke.points.length) throw new Error('Select an existing point in this stroke.');
+  stroke.points[index] = position;
+  return validateProject(project);
+}
 export function setStrokeAppearance(input: Project, target: StrokeTarget, appearance: { color: string; width: number }): Project {
   const values = fields(appearance, ['color', 'width'], 'Stroke appearance');
   if (typeof values.color !== 'string') throw new Error('Stroke color must use #RRGGBB notation.');
