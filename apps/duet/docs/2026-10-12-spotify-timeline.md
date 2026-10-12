@@ -88,3 +88,28 @@ Python 3.11, Node.js 22.22, Chromium 141 via `CHROMIUM_PATH`.
   listening.
 - Photos on memories, including the timeline in library archives, and occasion
   playlists. These are the next milestones.
+
+## Memories with photos — issue #212
+
+Memories (date, text ≤ 1000 characters, optional photo) attach to a song
+(`track-<id>`) or a written moment (`manual-<id>`). They are shown under every
+entry for that song and in an "All our memories" list. They are author-owned
+and outlive a Spotify disconnect, and room deletion removes them and their
+photos.
+
+`duet/photos.py` identifies JPEG, PNG, WebP and GIF by signature and reads
+dimensions from headers using only the standard library. SVG, HTML, damaged,
+zero-size and over-12,000 px images are refused. A declared Content-Type that
+disagrees with the bytes is refused. Uploads over 5 MiB are refused from
+Content-Length before any body is read. Files are written owner-only (0600)
+through a temporary name and an atomic replace, and are served with the
+detected type, `nosniff` and either the room cookie or a Bearer credential.
+
+Verification (local): 249 Python tests pass, 6 of them new (format
+acceptance and refusal; author-only photo, edit and delete; cookie and
+anonymous access; replacement cleanup; disconnect persistence; room-deletion
+cascade; Content-Length refusal). 23 TypeScript tests pass, with memory reply
+validation added. The Chromium end-to-end case now uploads a genuine 24×16 PNG
+from one seat and confirms that the other seat's browser decodes it at 24 px,
+that only the author can edit, that an edit keeps the photo, and that the
+memory remains listed after a disconnect.

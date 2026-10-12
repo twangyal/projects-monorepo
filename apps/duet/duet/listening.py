@@ -67,8 +67,15 @@ CREATE TABLE IF NOT EXISTS overrides (
 CREATE TABLE IF NOT EXISTS manual (
   id TEXT PRIMARY KEY, room_id TEXT NOT NULL, author TEXT NOT NULL, date TEXT NOT NULL,
   title TEXT NOT NULL, song TEXT NOT NULL, note TEXT NOT NULL, created_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS song_memories (
+  id TEXT PRIMARY KEY, room_id TEXT NOT NULL, target TEXT NOT NULL, label TEXT NOT NULL, author TEXT NOT NULL,
+  date TEXT NOT NULL, text TEXT NOT NULL, photo TEXT, created_at REAL NOT NULL);
 '''
-ROOM_TABLES = ('connections', 'pending', 'auth_failures', 'tracks', 'seen', 'plays', 'likes', 'overrides', 'manual')
+ROOM_TABLES = ('connections', 'pending', 'auth_failures', 'tracks', 'seen', 'plays', 'likes', 'overrides', 'manual',
+               'song_memories')
+MAX_MEMORIES = 300
+MEMORY_TARGET = re.compile(r'(?:track-[A-Za-z0-9]{1,64}|manual-[0-9a-f]{32})\Z')
+PHOTO_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif')
 
 
 def _text(value, limit, label, *, empty=False):
@@ -373,6 +380,70 @@ class ListeningStore:
             raise DomainError(404, 'Timeline entry not found.')
         return row[0]
 
+    # Memories -------------------------------------------------------------------------------
+    # Memories belong to the couple, not to imported listening: they stay until their author
+    # deletes them or the room is deleted, even if a disconnect removes the song's entries.
+
+    def add_memory(self, room_id, role, target, date, text):
+        if type(target) is not str or not MEMORY_TARGET.fullmatch(target):
+            raise DomainError(404, 'That song or moment is not on this timeline.')
+        date, text = _date(date), _text(text, 1000, 'Memory')
+        with self._transaction() as db:
+            kind, ident = target.split('-', 1)
+            if kind == 'track':
+                row = db.execute('SELECT title, artists FROM tracks WHERE room_id=? AND track_id=?', (room_id, ident)).fetchone()
+                label = row and (f'{row[0]} — {row[1]}' if row[1] else row[0])
+            else:
+                row = db.execute('SELECT title FROM manual WHERE room_id=? AND id=?', (room_id, ident)).fetchone()
+                label = row and row[0]
+            if not label:
+                raise DomainError(404, 'That song or moment is not on this timeline.')
+            if db.execute('SELECT count(*) FROM song_memories WHERE room_id=?', (room_id,)).fetchone()[0] >= MAX_MEMORIES:
+                raise DomainError(409, 'This timeline already has 300 memories. Delete one before adding another.')
+            memory_id = uuid.uuid4().hex
+            db.execute('INSERT INTO song_memories VALUES (?,?,?,?,?,?,?,NULL,?)',
+                       (memory_id, room_id, target, label[:300], role, date, text, self.now() * 1000))
+        return memory_id
+
+    def _own_memory(self, db, room_id, role, memory_id):
+        if type(memory_id) is not str or not _ID.fullmatch(memory_id):
+            raise DomainError(404, 'Memory not found.')
+        row = db.execute('SELECT author, photo FROM song_memories WHERE id=? AND room_id=?', (memory_id, room_id)).fetchone()
+        if row is None:
+            raise DomainError(404, 'Memory not found.')
+        if row[0] != role:
+            raise DomainError(403, 'Only the person who added this memory can change it.')
+        return row[1]
+
+    def update_memory(self, room_id, role, memory_id, date, text):
+        date, text = _date(date), _text(text, 1000, 'Memory')
+        with self._transaction() as db:
+            self._own_memory(db, room_id, role, memory_id)
+            db.execute('UPDATE song_memories SET date=?, text=? WHERE id=?', (date, text, memory_id))
+
+    def delete_memory(self, room_id, role, memory_id):
+        """Returns the deleted photo's type so the caller can remove the file."""
+        with self._transaction() as db:
+            photo = self._own_memory(db, room_id, role, memory_id)
+            db.execute('DELETE FROM song_memories WHERE id=?', (memory_id,))
+        return photo
+
+    def set_photo(self, room_id, role, memory_id, mime):
+        """Records a photo type; returns the previous type, whose file the caller replaces."""
+        if mime is not None and mime not in PHOTO_TYPES:
+            raise DomainError(400, 'Use a JPEG, PNG, WebP or GIF photo.')
+        with self._transaction() as db:
+            previous = self._own_memory(db, room_id, role, memory_id)
+            db.execute('UPDATE song_memories SET photo=? WHERE id=?', (mime, memory_id))
+        return previous
+
+    def photo(self, room_id, memory_id):
+        if type(memory_id) is not str or not _ID.fullmatch(memory_id):
+            return None
+        with self._transaction() as db:
+            row = db.execute('SELECT photo FROM song_memories WHERE id=? AND room_id=?', (memory_id, room_id)).fetchone()
+        return row[0] if row else None
+
     # Reading ----------------------------------------------------------------------------------
 
     def state(self, room_id, *, configured, include_hidden=False):
@@ -398,8 +469,21 @@ class ListeningStore:
             manual = [{'id': row[0], 'author': row[1], 'date': row[2], 'title': row[3], 'song': row[4], 'note': row[5],
                        'createdAt': row[6]}
                       for row in db.execute('SELECT id, author, date, title, song, note, created_at FROM manual WHERE room_id=?', (room_id,))]
+            memories = [{'id': row[0], 'target': row[1], 'label': row[2], 'role': row[3], 'date': row[4], 'text': row[5],
+                         'photo': row[6] is not None, 'createdAt': row[7]}
+                        for row in db.execute('SELECT id, target, label, author, date, text, photo, created_at FROM song_memories '
+                                              'WHERE room_id=? ORDER BY date DESC, created_at DESC', (room_id,))]
         entries = derive_timeline(tracks=tracks, seen=seen, plays=plays, likes=likes, overrides=overrides, manual=manual)
+        # Every entry for a song shows that song's memories, so they can be revisited wherever it appears.
+        by_target = {}
+        for memory in memories:
+            by_target.setdefault(memory['target'], []).append(memory)
+        for entry in entries:
+            target = f'manual-{entry["id"]}' if entry['kind'] == 'manual' else f'track-{entry["track"]["id"]}'
+            entry['memoryTarget'] = target
+            entry['memories'] = by_target.get(target, [])
         hidden = sum(entry['hidden'] for entry in entries)
         visible = entries if include_hidden else [entry for entry in entries if not entry['hidden']]
         return {'configured': configured, 'connections': connections, 'authFailures': failures,
-                'entries': visible[:MAX_TIMELINE], 'hiddenCount': hidden, 'truncated': len(visible) > MAX_TIMELINE}
+                'entries': visible[:MAX_TIMELINE], 'hiddenCount': hidden, 'truncated': len(visible) > MAX_TIMELINE,
+                'memories': memories}

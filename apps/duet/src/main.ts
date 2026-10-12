@@ -136,6 +136,12 @@ function accept(snapshot: Room, start: number, end: number, order: number): bool
   if (timelineRoom !== privateSeatKey(credentials!)) {
     const auth = credentials!; timelineRoom = privateSeatKey(auth);
     timeline.open({ roomId: auth.roomId, myRole: snapshot.myRole, api: (path, method, body) => api(path, method, body, undefined, auth),
+      upload: async (path, file) => {
+        const response = await fetch(path, { method: 'PUT', headers: { Authorization: `Bearer ${auth.token}`, 'Content-Type': file.type || 'application/octet-stream' }, body: file, cache: 'no-store' });
+        const value = await readReply(response) as { error?: unknown };
+        if (!response.ok) throw new Error(typeof value?.error === 'string' ? value.error : `Upload failed (${response.status}).`);
+        return value;
+      },
       names: () => ({ host: room?.profiles.host.name ?? 'Host', guest: room?.profiles.guest?.name ?? 'Your partner' }) });
   }
   el('connection').textContent = 'Connected to your shared room'; el('connection').classList.remove('offline');

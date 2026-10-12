@@ -4,7 +4,8 @@
 export type Role = 'host' | 'guest';
 interface TrackRef { id: string; title: string; artists: string; album: string; url: string }
 interface Person { firstAt: number; lastAt: number; plays: number }
-interface BaseEntry { key: string; at: number; hidden: boolean; caption: string }
+export interface Memory { id: string; target: string; label: string; role: Role; date: string; text: string; photo: boolean; createdAt: number }
+interface BaseEntry { key: string; at: number; hidden: boolean; caption: string; memoryTarget: string; memories: Memory[] }
 export type Entry =
   | BaseEntry & { kind: 'both'; track: TrackRef; people: Record<Role, Person>; withinThirtyMinutes: boolean }
   | BaseEntry & { kind: 'new'; track: TrackRef; role: Role; plays: number }
@@ -13,10 +14,10 @@ export type Entry =
 interface Connection { displayName: string; connectedAt: number; syncedAt: number | null; error: string | null }
 export interface ListeningState {
   configured: boolean; redirectUri: string | null; connections: Record<Role, Connection | null>;
-  authFailures: Partial<Record<Role, string>>; entries: Entry[]; hiddenCount: number; truncated: boolean;
+  authFailures: Partial<Record<Role, string>>; entries: Entry[]; hiddenCount: number; truncated: boolean; memories: Memory[];
 }
 type Api = <T>(path: string, method?: string, body?: unknown) => Promise<{ value: T }>;
-interface Context { api: Api; roomId: string; myRole: Role; names: () => Record<Role, string> }
+interface Context { api: Api; upload: (path: string, file: File) => Promise<unknown>; roomId: string; myRole: Role; names: () => Record<Role, string> }
 
 const ROLES: Role[] = ['host', 'guest'];
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -28,12 +29,18 @@ function validTrack(value: unknown) {
     isText(value.album, 200) && typeof value.url === 'string' && /^https:\/\/open\.spotify\.com\/track\/[A-Za-z0-9]+$/.test(value.url);
 }
 
+function validMemory(value: unknown) {
+  return isRecord(value) && /^[a-f0-9]{32}$/.test(String(value.id)) && /^(track-[A-Za-z0-9]{1,64}|manual-[a-f0-9]{32})$/.test(String(value.target)) &&
+    isText(value.label, 300) && ROLES.includes(value.role as Role) && /^\d{4}-\d{2}-\d{2}$/.test(String(value.date)) &&
+    isText(value.text, 1000) && typeof value.photo === 'boolean' && isTime(value.createdAt);
+}
+
 // Replies are checked before rendering so a malformed service reply cannot inject links or crash the view.
 export function validateListening(value: unknown): ListeningState {
   const fail = () => { throw new Error('The listening timeline reply was not understood. Refresh and try again.'); };
   if (!isRecord(value) || typeof value.configured !== 'boolean' || !Array.isArray(value.entries) || !isRecord(value.connections) ||
     !isRecord(value.authFailures) || typeof value.hiddenCount !== 'number' || typeof value.truncated !== 'boolean' ||
-    !(value.redirectUri === null || isText(value.redirectUri, 300))) fail();
+    !(value.redirectUri === null || isText(value.redirectUri, 300)) || !Array.isArray(value.memories) || !value.memories.every(validMemory)) fail();
   const state = value as unknown as ListeningState;
   for (const role of ROLES) {
     const connection = state.connections[role] as unknown;
@@ -43,7 +50,8 @@ export function validateListening(value: unknown): ListeningState {
     if (failure !== undefined && !isText(failure, 300)) fail();
   }
   for (const entry of state.entries as unknown[]) {
-    if (!isRecord(entry) || !isText(entry.key, 120) || !isTime(entry.at) || typeof entry.hidden !== 'boolean' || !isText(entry.caption, 200)) fail();
+    if (!isRecord(entry) || !isText(entry.key, 120) || !isTime(entry.at) || typeof entry.hidden !== 'boolean' || !isText(entry.caption, 200) ||
+      !isText(entry.memoryTarget, 120) || !Array.isArray(entry.memories) || !entry.memories.every(validMemory)) fail();
     const item = entry as Record<string, unknown>;
     if (item.kind === 'both') {
       if (!validTrack(item.track) || !isRecord(item.people) || typeof item.withinThirtyMinutes !== 'boolean') fail();
@@ -197,21 +205,20 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     }
     actions.append(button(entry.hidden ? 'Restore' : 'Hide', () => void mutate(`/entries/${entry.key}`, 'PUT', { hidden: !entry.hidden, caption: entry.caption },
       entry.hidden ? 'Entry restored.' : 'Entry hidden. Later checks will not bring it back.')));
-    actions.append(button(entry.caption ? 'Edit caption' : 'Add caption', () => {
-      editing = editing === entry.key ? null : entry.key;
-      regions?.entries.querySelector('.caption-form')?.remove();
-      render();
-    }));
+    actions.append(button(entry.caption ? 'Edit caption' : 'Add caption', () => toggle(`caption:${entry.key}`)));
+    actions.append(button('Add a memory', () => toggle(`memory:${entry.key}`)));
     if (entry.kind === 'manual' && entry.role === context!.myRole) {
       actions.append(button('Delete', () => { if (window.confirm('Delete this written entry?')) void mutate(`/manual/${entry.id}`, 'DELETE', {}, 'Entry deleted.'); }));
     }
     item.append(actions);
-    if (editing === entry.key) {
-      const form = node('form', '', 'caption-form');
+    if (editing === `memory:${entry.key}`) item.append(memoryForm(entry.memoryTarget, null));
+    if (editing === `caption:${entry.key}`) {
+      const form = node('form', '', 'caption-form inline-form');
       const input = node('input'); input.maxLength = 200; input.value = entry.caption; input.setAttribute('aria-label', 'Caption');
       form.append(input, node('button', 'Save caption'));
       form.addEventListener('submit', event => {
         event.preventDefault(); editing = null; form.remove();
+        regions?.memories.querySelector('.inline-form')?.remove();
         void mutate(`/entries/${entry.key}`, 'PUT', { hidden: entry.hidden, caption: input.value }, 'Caption saved.');
       });
       item.append(form);
@@ -224,7 +231,112 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     item.append(node('strong', words.title), node('p', words.detail, 'fine'));
     if (entry.caption) item.append(node('p', entry.caption, 'caption'));
     entryActions(entry, item);
+    if (entry.memories.length) {
+      const list = node('ul', '', 'entry-memories');
+      for (const memory of entry.memories) list.append(renderMemory(memory, false));
+      item.append(list);
+    }
     return item;
+  }
+
+  // One inline editor at a time; refreshes keep it (and its draft) until it is saved or closed.
+  function toggle(key: string) {
+    editing = editing === key ? null : key;
+    regions?.entries.querySelector('.inline-form')?.remove();
+    regions?.memories.querySelector('.inline-form')?.remove();
+    render();
+  }
+
+  function memoryForm(target: string, existing: Memory | null) {
+    const form = node('form', '', 'memory-form inline-form');
+    const date = node('input'); date.type = 'date'; date.required = true; date.min = '1900-01-01'; date.max = '2100-12-31';
+    date.value = existing?.date ?? localDate(Date.now()); date.setAttribute('aria-label', 'Memory date');
+    const text = node('textarea'); text.required = true; text.maxLength = 1000; text.rows = 2; text.value = existing?.text ?? '';
+    text.setAttribute('aria-label', 'Memory'); text.placeholder = 'What this song brings back';
+    const photo = node('input'); photo.type = 'file'; photo.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    photo.setAttribute('aria-label', existing?.photo ? 'Replace photo' : 'Photo (optional)');
+    form.append(date, text, photo, node('button', existing ? 'Save memory' : 'Keep this memory'));
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      void (async () => {
+        const file = photo.files?.[0];
+        if (file && file.size > 5 * 1024 * 1024) { notify('Photos can be at most 5 MiB.', true); return; }
+        let memoryId = existing?.id;
+        if (existing) {
+          if (!await mutate(`/memories/${existing.id}`, 'PUT', { date: date.value, text: text.value })) return;
+        } else {
+          const created = await create(target, date.value, text.value);
+          if (!created) return;
+          memoryId = created;
+        }
+        editing = null; form.remove();
+        if (file && memoryId) await attach(memoryId, file);
+        render();
+      })();
+    });
+    return form;
+  }
+
+  async function create(target: string, date: string, text: string) {
+    if (!context || busy) return null;
+    const current = session; busy = true; render();
+    try {
+      const reply = await context.api<{ memoryId: string; listening: unknown }>(path('/memories'), 'POST', { target, date, text });
+      if (current !== session) return null;
+      if (!/^[a-f0-9]{32}$/.test(String(reply.value.memoryId))) throw new Error('The memory reply was not understood.');
+      state = validateListening(reply.value.listening);
+      notify('Memory kept.');
+      return reply.value.memoryId;
+    } catch (error) {
+      if (current === session) notify(error instanceof Error ? error.message : 'The memory could not be saved.', true);
+      return null;
+    } finally {
+      if (current === session) { busy = false; render(); }
+    }
+  }
+
+  // The memory's words are already saved; a failed photo is reported without losing them.
+  async function attach(memoryId: string, file: File) {
+    if (!context) return;
+    const current = session; busy = true; render();
+    try {
+      const reply = await context.upload(path(`/memories/${memoryId}/photo`), file);
+      if (current === session) { state = validateListening(reply); notify('Memory and photo kept.'); }
+    } catch (error) {
+      if (current === session) notify(`${error instanceof Error ? error.message : 'The photo could not be saved.'} The memory’s words were kept.`, true);
+    } finally {
+      if (current === session) { busy = false; render(); }
+    }
+  }
+
+  function renderMemory(memory: Memory, withLabel: boolean) {
+    const names = context!.names();
+    const item = node('li', '', 'memory-item');
+    if (withLabel) item.append(node('strong', memory.label));
+    item.append(node('p', memory.text), node('p', `${new Date(`${memory.date}T12:00:00`).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} · ${names[memory.role]}`, 'fine'));
+    if (memory.photo) {
+      const image = node('img'); image.src = path(`/memories/${memory.id}/photo`); image.alt = `Photo for the memory: ${memory.text.slice(0, 80)}`;
+      image.loading = 'lazy'; item.append(image);
+    }
+    if (memory.role === context!.myRole) {
+      const actions = node('div', '', 'entry-actions');
+      actions.append(button('Edit memory', () => toggle(`edit:${memory.id}:${withLabel ? 'all' : memory.target}`)));
+      if (memory.photo) actions.append(button('Remove photo', () => void mutate(`/memories/${memory.id}/photo`, 'DELETE', {}, 'Photo removed.')));
+      actions.append(button('Delete memory', () => { if (window.confirm('Delete this memory and its photo?')) void mutate(`/memories/${memory.id}`, 'DELETE', {}, 'Memory deleted.'); }));
+      item.append(actions);
+      if (editing === `edit:${memory.id}:${withLabel ? 'all' : memory.target}`) item.append(memoryForm(memory.target, memory));
+    }
+    return item;
+  }
+
+  function renderAllMemories() {
+    const details = node('details', '', 'all-memories');
+    details.open = Boolean(editing?.endsWith(':all'));
+    details.append(node('summary', `All our memories (${state!.memories.length})`));
+    if (!state!.memories.length) details.append(node('p', 'Add a memory to any song or moment above.', 'fine'));
+    const list = node('ul'); for (const memory of state!.memories) list.append(renderMemory(memory, true));
+    details.append(list);
+    return details;
   }
 
   function renderEntries(names: Record<Role, string>) {
@@ -278,14 +390,14 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
   }
 
   // Stable regions: the written-entry form is built once so refreshes never discard a draft.
-  let regions: { connections: HTMLElement; status: HTMLElement; toolbar: HTMLElement; entries: HTMLElement; form: HTMLFormElement } | null = null;
+  let regions: { connections: HTMLElement; status: HTMLElement; toolbar: HTMLElement; entries: HTMLElement; memories: HTMLElement; form: HTMLFormElement } | null = null;
 
   function build() {
     container.querySelector('.timeline-body')?.remove();
     const body = node('div', '', 'timeline-body');
     const status = node('p', '', 'fine'); status.id = 'listening-status'; status.setAttribute('role', 'status');
-    regions = { connections: node('div'), status, toolbar: node('div', '', 'timeline-toolbar'), entries: node('div'), form: renderManualForm() };
-    body.append(regions.connections, regions.status, regions.toolbar, regions.entries, regions.form);
+    regions = { connections: node('div'), status, toolbar: node('div', '', 'timeline-toolbar'), entries: node('div'), memories: node('div'), form: renderManualForm() };
+    body.append(regions.connections, regions.status, regions.toolbar, regions.entries, regions.memories, regions.form);
     container.append(body);
   }
 
@@ -297,8 +409,9 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     if (state.hiddenCount || showHidden) {
       regions.toolbar.append(button(showHidden ? 'Hide removed entries' : `Show hidden (${state.hiddenCount})`, () => { showHidden = !showHidden; void load(); }));
     }
-    // An open caption editor keeps its entry list until it is saved or closed.
-    if (!editing || !regions.entries.querySelector('.caption-form')) regions.entries.replaceChildren(renderEntries(names));
+    // An open inline editor keeps its region until it is saved or closed, so drafts survive refreshes.
+    if (!editing || !regions.entries.querySelector('.inline-form')) regions.entries.replaceChildren(renderEntries(names));
+    if (!editing || !regions.memories.querySelector('.inline-form')) regions.memories.replaceChildren(renderAllMemories());
     for (const control of container.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement>('.timeline-body button, .timeline-body input, .timeline-body textarea')) control.disabled = busy;
   }
 

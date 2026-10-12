@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Browser } from '@playwright/test';
+import { crc32, deflateSync } from 'node:zlib';
 import { cleanup } from './saved-mixes-fixtures';
 
 // tests/browser_server.py starts a loopback fake of Spotify's accounts service and Web API.
@@ -9,6 +10,17 @@ async function spotify(command: Record<string, unknown>) {
 }
 
 const section = (page: Page) => page.locator('#listening');
+
+// A genuine 24×16 PNG so the browser must actually decode the stored photo.
+function png(): Buffer {
+  const chunk = (kind: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(kind), data]), length = Buffer.alloc(4), crc = Buffer.alloc(4);
+    length.writeUInt32BE(data.length); crc.writeUInt32BE(crc32(body)); return Buffer.concat([length, body, crc]);
+  };
+  const header = Buffer.alloc(13); header.writeUInt32BE(24, 0); header.writeUInt32BE(16, 4); header[8] = 8; header[9] = 2;
+  const rows = Buffer.concat(Array.from({ length: 16 }, (_, y) => Buffer.concat([Buffer.from([0]), Buffer.alloc(72, y * 12)])));
+  return Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', header), chunk('IDAT', deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
+}
 
 async function pair(page: Page, browser: Browser, baseURL: string | undefined) {
   await page.goto('/'); await page.locator('#host-name').fill('Ada'); await page.locator('#room-title').fill('Our listening');
@@ -92,6 +104,32 @@ test('two people connect Spotify, see automatic entries, curate them durably and
     await expect(written.getByRole('button', { name: 'Delete' })).toHaveCount(0);
     await expect(section(page).locator('.timeline-entry.kind-both .caption')).toHaveText('Our first road trip song');
 
+    // A memory with a photo attaches to the song and appears for both people.
+    const sharedForGuest = section(guest).locator('.timeline-entry.kind-both');
+    await sharedForGuest.getByRole('button', { name: 'Add a memory' }).click();
+    const memoryForm = sharedForGuest.locator('.memory-form');
+    await memoryForm.getByLabel('Memory date').fill('2025-07-04');
+    await memoryForm.getByLabel('Memory', { exact: true }).fill('Windows down on the coast road');
+    await memoryForm.getByLabel('Photo (optional)').setInputFiles({ name: 'coast.png', mimeType: 'image/png', buffer: png() });
+    await memoryForm.getByRole('button', { name: 'Keep this memory' }).click();
+    await expect(sharedForGuest.locator('.memory-item img')).toBeVisible();
+    await page.reload(); await expect(page.locator('#room-view')).toBeVisible();
+    const hostMemory = section(page).locator('.timeline-entry.kind-both .memory-item');
+    await expect(hostMemory).toContainText('Windows down on the coast road');
+    await expect(hostMemory).toContainText('Ben');
+    // The photo is lazy-loaded, as on a real page: bring it into view like a reader would.
+    await hostMemory.locator('img').scrollIntoViewIfNeeded();
+    await expect.poll(() => hostMemory.locator('img').evaluate(image => (image as HTMLImageElement).naturalWidth)).toBe(24);
+    await expect(hostMemory.getByRole('button', { name: 'Edit memory' })).toHaveCount(0);
+    await expect(section(page).locator('.all-memories summary')).toHaveText('All our memories (1)');
+    // Only the author edits; an edit keeps the photo.
+    const guestMemory = section(guest).locator('.timeline-entry.kind-both .memory-item');
+    await guestMemory.getByRole('button', { name: 'Edit memory' }).click();
+    await guestMemory.getByLabel('Memory', { exact: true }).fill('Windows down on the coast road, singing');
+    await guestMemory.getByRole('button', { name: 'Save memory' }).click();
+    await expect(section(guest).locator('.timeline-entry.kind-both .memory-item').first()).toContainText('singing');
+    await expect(section(guest).locator('.timeline-entry.kind-both .memory-item img')).toBeVisible();
+
     // Credentials never reach the browser.
     const reply = await page.evaluate(async () => {
       const id = new URL(location.href).searchParams.get('room')!;
@@ -105,6 +143,8 @@ test('two people connect Spotify, see automatic entries, curate them durably and
     await expect(section(page)).toContainText('Your Spotify is not connected.');
     await expect(section(page).locator('.timeline-entry.kind-both')).toHaveCount(0);
     await expect(section(page).locator('.timeline-entry.kind-manual')).toHaveCount(1);
+    // Memories outlive the disconnected listening and stay revisitable in the full list.
+    await expect(section(page).locator('.all-memories summary')).toHaveText('All our memories (1)');
   } finally {
     await cleanup(page); await close();
   }

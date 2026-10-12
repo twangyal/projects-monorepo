@@ -20,6 +20,7 @@ import uuid
 
 from .jobs import JobManager
 from .listening import ListeningStore
+from .photos import EXTENSIONS, MAX_PHOTO_BYTES, PhotoError, inspect_photo
 from .spotify import SpotifyClient, SpotifyError
 from .store import DomainError, Store
 from .transport import TransportConfig, validate_transport, matches_setup
@@ -136,6 +137,8 @@ class DuetServer(ThreadingHTTPServer):
             with _child_directory(self._data_fd, '.jobs', create=True):
                 pass
             with _child_directory(self._data_fd, 'media', create=True):
+                pass
+            with _child_directory(self._data_fd, 'photos', create=True):
                 pass
             self.store = Store(self.data_dir)
             self.store.pause_all()
@@ -488,7 +491,9 @@ class Handler(BaseHTTPRequestHandler):
             joined = store.join_room(room_id, body['inviteToken'], body['name'])
             return self._json(200, joined, self._cookie(room_id, joined['token']))
         audio = re.fullmatch(r'/tracks/(' + ID + r')/audio', tail)
-        token, role = self._token(room_id, allow_cookie=bool(audio and method in ('GET', 'HEAD')))
+        # Media elements cannot send a Bearer header, so audio and photos accept the room cookie.
+        photo_read = re.fullmatch(r'/listening/memories/(' + ID + r')/photo', tail) and method in ('GET', 'HEAD')
+        token, role = self._token(room_id, allow_cookie=bool((audio or photo_read) and method in ('GET', 'HEAD')))
         if audio and method in ('GET', 'HEAD'):
             track_id = audio.group(1)
             with self.server.lock:
@@ -509,11 +514,12 @@ class Handler(BaseHTTPRequestHandler):
                     raise DomainError(409, 'Cancel this room’s upload before deleting the room.')
                 store.delete_room(room_id, token)
                 self.server.listening.delete_room(room_id)
-                try:
-                    with _child_directory(self.server._data_fd, 'media') as media:
-                        _cleanup_child(media, room_id)
-                except OSError:
-                    pass  # Metadata is authoritative; leftover media cannot be read.
+                for directory in ('media', 'photos'):
+                    try:
+                        with _child_directory(self.server._data_fd, directory) as parent:
+                            _cleanup_child(parent, room_id)
+                    except OSError:
+                        pass  # Metadata is authoritative; leftover files cannot be read.
             return self._json(200, {'deleted': True})
         if tail == '/access' and method == 'POST':
             self._object('')
@@ -639,6 +645,23 @@ class Handler(BaseHTTPRequestHandler):
             body = self._object('date title song note')
             listening.add_manual(room_id, role, body['date'], body['title'], body['song'], body['note'])
             return self._json(201, self._listening_state(room_id))
+        if tail == '/listening/memories' and method == 'POST':
+            body = self._object('target date text')
+            memory_id = listening.add_memory(room_id, role, body['target'], body['date'], body['text'])
+            return self._json(201, {'memoryId': memory_id, 'listening': self._listening_state(room_id)})
+        memory = re.fullmatch(r'/listening/memories/(' + ID + r')(?P<photo>/photo)?', tail)
+        if memory and memory.group('photo'):
+            return self._memory_photo(room_id, role, memory.group(1), method)
+        if memory and method == 'PUT':
+            body = self._object('date text')
+            listening.update_memory(room_id, role, memory.group(1), body['date'], body['text'])
+            return self._json(200, self._listening_state(room_id))
+        if memory and method == 'DELETE':
+            self._object('')
+            photo = listening.delete_memory(room_id, role, memory.group(1))
+            if photo:
+                self._remove_photo(room_id, memory.group(1), photo)
+            return self._json(200, self._listening_state(room_id))
         manual = re.fullmatch(r'/listening/manual/(' + ID + r')', tail)
         if manual and method == 'PUT':
             body = self._object('date title song note')
@@ -649,6 +672,75 @@ class Handler(BaseHTTPRequestHandler):
             listening.delete_manual(room_id, role, manual.group(1))
             return self._json(200, self._listening_state(room_id))
         raise DomainError(404, 'Route not found.')
+
+    def _remove_photo(self, room_id, memory_id, mime):
+        try:
+            with _child_directory(self.server._data_fd, 'photos') as photos:
+                with _child_directory(photos, room_id) as room_directory:
+                    os.unlink(f'{memory_id}.{EXTENSIONS[mime]}', dir_fd=room_directory)
+        except (OSError, KeyError):
+            pass  # The database no longer references it, so it cannot be served.
+
+    def _memory_photo(self, room_id, role, memory_id, method):
+        listening = self.server.listening
+        if method in ('GET', 'HEAD'):
+            mime = listening.photo(room_id, memory_id)
+            if mime not in EXTENSIONS:
+                raise DomainError(404, 'Photo not found.')
+            directories = []
+            try:
+                photos = os.open('photos', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=self.server._data_fd)
+                directories.append(photos)
+                room_directory = os.open(room_id, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=photos)
+                directories.append(room_directory)
+                descriptor = os.open(f'{memory_id}.{EXTENSIONS[mime]}', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=room_directory)
+                stream = os.fdopen(descriptor, 'rb')
+                if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                    stream.close()
+                    raise OSError('Not a regular file')
+            except OSError:
+                raise DomainError(404, 'Photo not found.') from None
+            finally:
+                for directory in reversed(directories):
+                    os.close(directory)
+            return self._file(stream, mime)
+        if method == 'DELETE':
+            self._object('')
+            previous = listening.set_photo(room_id, role, memory_id, None)
+            if previous:
+                self._remove_photo(room_id, memory_id, previous)
+            return self._json(200, self._listening_state(room_id))
+        if method != 'PUT':
+            raise DomainError(404, 'Route not found.')
+        size = self._length(MAX_PHOTO_BYTES)
+        declared = self.headers.get('Content-Type', '').split(';')[0].strip().lower()
+        data = self._body(size)
+        try:
+            mime, _, _ = inspect_photo(data)
+        except PhotoError as error:
+            raise DomainError(400, str(error)) from None
+        # The bytes decide the type; a mismatched declaration is refused rather than trusted.
+        if declared != mime:
+            raise DomainError(400, 'The photo’s contents do not match its declared type.')
+        previous = listening.set_photo(room_id, role, memory_id, mime)
+        try:
+            with _child_directory(self.server._data_fd, 'photos') as photos:
+                with _child_directory(photos, room_id, create=True) as room_directory:
+                    name = f'{memory_id}.{EXTENSIONS[mime]}'
+                    temporary = f'.{memory_id}.{uuid.uuid4().hex}'
+                    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600,
+                                         dir_fd=room_directory)
+                    with os.fdopen(descriptor, 'wb') as output:
+                        output.write(data)
+                        output.flush()
+                        os.fsync(output.fileno())
+                    os.replace(temporary, name, src_dir_fd=room_directory, dst_dir_fd=room_directory)
+        except OSError:
+            listening.set_photo(room_id, role, memory_id, previous)
+            raise DomainError(500, 'The photo could not be saved. The memory text was kept.') from None
+        if previous and previous != mime:
+            self._remove_photo(room_id, memory_id, previous)
+        return self._json(200, self._listening_state(room_id))
 
     def _redirect(self, location):
         self._headers(303, 'text/plain; charset=utf-8', 0, {'Location': location})
