@@ -63,7 +63,8 @@ In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose 
 - **Stay on in this tab when pages change** and **Start automatically on every website** ask for optional access to websites (`<all_urls>`), because restarting after a navigation needs host access. Auto-start makes the navigator hands-free after this one-time setup.
 - Navigator settings live in the extension's in-memory session storage, never in the website's storage; the navigator runs in the extension's isolated world, invisible to page scripts, and its styles use constructable stylesheets so strict page CSPs cannot strip them.
 - "Use camera" injects the bundled WebGazer into the isolated world (MV3 forbids remotely hosted code). Its face models still download from tfhub.dev, and the camera/microphone prompts are for the website's origin.
-- Protected pages (`chrome://`, the web store) report that the navigator cannot run there. Iframes, other browsers and per-page calibration persistence are not handled yet. The navigator's modules are web-accessible, so a website can detect that the extension is installed. WebGazer is GPL-3.0; its license is copied into the build.
+- In the extension, a successful camera calibration follows you between pages. Its training samples (tiny eye-patch images plus screen positions) are kept only in the extension's in-memory session storage, never in website storage. They are reused while the window size is unchanged and for up to two hours. "Stop camera" or "use pointer" deletes them, and the browser discards them when it closes. The practice site (no extension) still recalibrates on each page.
+- Protected pages (`chrome://`, the web store) report that the navigator cannot run there. Cross-origin iframes and other browsers are not handled. The navigator's modules are web-accessible, so a website can detect that the extension is installed. WebGazer is GPL-3.0; its license is copied into the build.
 
 Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. Jev is the intended interpreter but is not integrated or evaluated; the rule interpreter is the measured baseline. Spoken commands are English only.
 
@@ -291,3 +292,7 @@ The spoken web runtime can now follow webcam gaze after a hands-free, no-click c
 ### Real-site discovery: web components, frames, script-only clickables — 2026-10-12
 
 Context capture descends into open shadow roots and same-origin frames, and infers pointer-cursor clickables. It reports unreachable cross-origin frames and fixes stale context after a quick stop (trailing capture). 117 unit and 156 native Chromium cases pass locally. [Verification record](docs/2026-10-12-real-site-discovery-verification.md); issue #207.
+
+### Calibration that follows navigation — 2026-10-12
+
+In the extension, camera calibrations are serialized from WebGazer's regression, kept in extension session memory, and restored on the next page when the window size matches (≤ 2 h). Stopping the camera deletes them. 120 unit and 160 native Chromium cases pass locally. [Verification record](docs/2026-10-12-calibration-persistence-verification.md); issue #208.

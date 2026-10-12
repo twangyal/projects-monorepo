@@ -146,3 +146,36 @@ test('camera mode loads the bundled estimator into the isolated world and releas
   await expect(status(page)).toHaveText('Camera off. The circle follows the pointer.');
   expect(await isolated(() => globalThis.__fakeCamera)).toEqual({ instances: 1, released: 1, faceVisible: true });
 });
+
+test('a calibration follows navigation in extension memory and is forgotten when the camera stops', async ({ context, control }) => {
+  test.setTimeout(60000);
+  await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready');
+  await typeInstruction(page, 'use camera');
+  await expect(status(page)).toHaveText('Calibrated with 9 of 9 dots. The circle now follows your gaze.', { timeout: 30000 });
+  const stored = await control.evaluate(async () => (await chrome.storage.session.get('gaze-calibration'))['gaze-calibration']);
+  expect(stored.samples).toHaveLength(36);
+  expect(await page.evaluate(() => [sessionStorage.length, localStorage.length]), 'eye data never reaches website storage').toEqual([0, 0]);
+
+  await page.goto('http://shop.example/contact');
+  await expect(status(page)).toHaveText('Camera on with your earlier calibration. Say recalibrate if the circle drifts.');
+  const id = await tabId(control, 'http://shop.example/*');
+  const restored = await control.evaluate(async tab => (await chrome.scripting.executeScript({
+    target: { tabId: tab }, func: () => globalThis.__fakeCamera.restored,
+  }))[0].result, id);
+  expect(restored).toBe(36);
+  await expect(page.locator('#gaze-web-navigator .calibration-dot')).toHaveClass(/hidden/);
+
+  // A different window size invalidates the mapping, so the next page calibrates again.
+  const size = page.viewportSize();
+  await page.setViewportSize({ width: size.width - 40, height: size.height });
+  await page.goto('http://shop.example/about');
+  await expect(status(page)).toContainText('The window size changed, so the camera needs calibrating again.');
+  await expect(page.locator('#gaze-web-navigator .calibration-dot')).toHaveClass(/settling|sampling/);
+
+  await typeInstruction(page, 'stop camera');
+  await expect(status(page)).toHaveText('Camera off. The circle follows the pointer.');
+  await expect.poll(() => control.evaluate(async () => Object.keys(await chrome.storage.session.get('gaze-calibration')).length)).toBe(0);
+});

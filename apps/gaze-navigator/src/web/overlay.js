@@ -6,6 +6,7 @@ import { createSpeechInput } from './speech-input.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createCameraGaze } from './camera-gaze.js';
 import { runCalibration } from './calibration.js';
+import { decodeCalibration, encodeCalibration } from './calibration-store.js';
 
 const RADII = { small: 60, medium: 90, large: 130 };
 const STORAGE_KEY = 'gaze-web-navigator';
@@ -390,8 +391,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function setSource(source) {
     if (source === 'pointer') {
-      calibration?.cancel();
+      // Detach first so the cancelled calibration does not announce itself over "Camera off".
+      const active = calibration;
+      calibration = null;
+      active?.cancel();
       const wasOn = camera.stop();
+      // Turning the camera off also forgets the saved calibration (eye-patch training data).
+      store.clearCalibration?.();
       settings.source = 'pointer';
       store.save(settings);
       filter.reset();
@@ -403,7 +409,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     settings.source = 'camera';
     store.save(settings);
     renderSource();
-    camera.start().then(result => {
+    camera.start().then(async result => {
       if (settings.source !== 'camera') return;
       if (!result.ok) {
         settings.source = 'pointer';
@@ -413,9 +419,29 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         return;
       }
       renderSource();
-      feedback(calibrate());
+      feedback(await restoreOrCalibrate());
     });
     return { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
+  }
+
+  // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.
+  async function restoreOrCalibrate() {
+    const api = camera.api;
+    let decoded = { ok: false, reason: 'none' };
+    try {
+      decoded = decodeCalibration(await store.loadCalibration?.(), { width: window.innerWidth, height: window.innerHeight, now: Date.now() });
+    } catch { /* Fall back to a fresh calibration. */ }
+    if (decoded.ok && api && camera.api === api) {
+      try {
+        camera.resetCalibration();
+        api.getRegression()[0].setData(decoded.samples);
+        filter.reset();
+        return { ok: true, message: 'Camera on with your earlier calibration. Say recalibrate if the circle drifts.', tone: 'success' };
+      } catch { /* Incompatible data: calibrate again. */ }
+    }
+    const result = calibrate();
+    if (decoded.reason === 'resized') result.message = `The window size changed, so the camera needs calibrating again. ${result.message}`;
+    return result;
   }
 
   function calibrate() {
@@ -442,7 +468,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (calibration !== session) return;
       calibration = null;
       if (result.cancelled) feedback({ message: 'Calibration stopped. Say recalibrate to try again, or use pointer.', tone: 'info' });
-      else if (result.ok) feedback({ message: `Calibrated with ${result.calibrated} of ${result.total} dots. The circle now follows your gaze.`, tone: 'success' });
+      else if (result.ok) {
+        try {
+          const saved = encodeCalibration(api.getRegression()[0].getData(), { width: window.innerWidth, height: window.innerHeight, now: Date.now() });
+          store.saveCalibration?.(saved);
+        } catch { /* The calibration still works on this page. */ }
+        feedback({ message: `Calibrated with ${result.calibrated} of ${result.total} dots. The circle now follows your gaze.`, tone: 'success' });
+      }
       else feedback({ message: `Only ${result.calibrated} of ${result.total} dots could be learned. Check lighting and that your face is visible, then say recalibrate.`, tone: 'error' });
     }, () => {
       if (calibration === session) calibration = null;
