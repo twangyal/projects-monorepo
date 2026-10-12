@@ -146,3 +146,13 @@ The grading milestone passes the complete52unit/62native-browser local gate with
 Milestone #182 adds saved cutting allowances. The complete local gate passes 55 unit and 65 production Chromium cases plus lint/typecheck/build; see [cutting allowance evidence](docs/2026-10-11-cutting-allowances/README.md). Physical toile evaluation and the broader professional garment-design vision remain ACTIVE.
 
 Milestone #183 adds home-printer A4/US Letter base-pattern tiling. Native checks verify the real downloaded HTML, physical SVG calibration and actual Chromium PDF page dimensions/counts, with complete artwork/history and raw drafts retained. See [tiled print evidence](docs/2026-10-11-tiled-print/README.md). Physical printer output and toile acceptance remain untested.
+
+## Entered body measurement comparison
+
+Enable **Use body measurements**, enter waist and hip circumferences plus the vertical **waist-to-hip depth**, then **Apply body measurements**. The optional profile travels with JSON backups, autosave and Undo/Redo. Uncheck and apply to remove it; Discard restores the committed profile. Legacy concepts have no profile. Finish other raw concept, pattern and grading edits before applying a profile.
+
+The linked preview adds an open, two-ring circular measurement proxy at the skirt waist and entered hip depth. Waist and hip differences are garment circumference minus entered body circumference, in centimetres. The hip comparison interpolates the rigid skirt's circumference at that vertical depth; a skirt ending above it reports no comparison rather than extrapolating. Negative, zero and positive values describe geometry only. Display rings use 32 straight segments around nominal circular measurements; they are not anatomical body scans or exact polygon perimeter measurements. The two-decimal readout does not establish measurement accuracy or suitable wearing ease.
+
+**Transparent garment comparison** and rotation are view-only. Full-size/tiled pattern SVGs and construction OBJ remain garment-only, independent of the profile or transparency. The proxy does not model anatomical shape, cloth drape, collisions, contact, comfort, mobility or manufacturing fit. Personalized avatars and validated cloth/body fitting remain ACTIVE work. Supported entered ranges: waist 50–180cm, hip 50–220cm, depth 5–40cm; other ranges require a future validated geometry design. See [#201](https://github.com/twangyal/projects-monorepo/issues/201).
+
+[Body comparison evidence](docs/2026-10-12-body-measurements.md) records the local verification and physical limits.

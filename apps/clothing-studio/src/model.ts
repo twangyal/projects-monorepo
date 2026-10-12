@@ -1,3 +1,4 @@
+import {validateBodyMeasurements,type BodyMeasurements} from './body-fitting.ts';
 import {validateGrading,gradedSizes,type Grading} from './grading.ts';
 import {validateConstruction,type SkirtDraft} from './construction.ts';
 export interface Point { x: number; y: number }
@@ -9,7 +10,7 @@ export interface Garment {
 export interface Placement { x: number; y: number; width: number; height: number; rotation: number; opacity: number }
 export interface Photo { dataUrl: string; width: number; height: number; name: string }
 export interface Project {
-  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading;
+  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading; bodyMeasurements?:BodyMeasurements;
   strokes: Stroke[]; placement: Placement; photo: Photo | null;
 }
 
@@ -143,10 +144,11 @@ export function validateProject(value: unknown): Project {
       name: text(image.name, 'Photo name', MAX_PHOTO_NAME_LENGTH),
     };
   }
+  const bodyMeasurements=Object.hasOwn(project,'bodyMeasurements')?validateBodyMeasurements(project.bodyMeasurements):undefined;
   const construction = Object.hasOwn(project, 'construction') ? validateConstruction(project.construction) : undefined;
   const grading = Object.hasOwn(project, 'grading') ? validateGrading(project.grading) : undefined;
   if (grading) { if (!construction) throw new Error('Grading requires a measured construction.'); gradedSizes(construction, grading); }
-  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}) };
+  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}) };
 }
 
 function boundedJson(text: string): string {

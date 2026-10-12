@@ -14,3 +14,7 @@
 
 .waistband-toggle { display: flex; align-items: center; gap: .6rem; margin: 1rem 0; }
 input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; padding: 0; accent-color: #9a735b; }
+#body-measurements { min-width: 0; margin: 1.25rem 0; padding: 1rem; border: 1px solid var(--line, #d8d6ce); border-radius: .75rem; }
+#body-measurements > label { display: flex; align-items: center; gap: .6rem; margin: .75rem 0; }
+#body-measurements > label input[type="checkbox"] { width: auto; flex: none; }
+#body-measurements legend { padding: 0 .3rem; font-weight: 600; }

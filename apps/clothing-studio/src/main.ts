@@ -1,3 +1,4 @@
+import {mountBody} from './body-view.ts';
 import {mountGrading} from './grading-view.ts';
 import {constructionMarkup,mountConstruction} from './construction-view.ts';
 import './style.css';
@@ -60,6 +61,7 @@ function element<T extends HTMLElement = HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
 }
 const input = (id: string) => element<HTMLInputElement>(id);
+let bodyView:ReturnType<typeof mountBody>|null=null;
 let project = createProject();
 const history = new ProjectHistory(project);
 let editVersion = 0;
@@ -80,7 +82,7 @@ function message(text: string, error = false) {
 }
 
 function renderViews() {
-  constructionView?.render(project); gradingView?.render(project);
+  bodyView?.render(project); constructionView?.render(project); gradingView?.render(project);
   element('sketch-surface').innerHTML = garmentSvg(project);
   element('preview-surface').innerHTML = previewSvg(project);
   const dimensions = previewSize(project);
@@ -172,7 +174,7 @@ function finishLoad(generation: number) {
 function adoptLoad(generation: number, transform: (current: Project) => Project, text: string, wholeProject = false) {
   if (generation !== loadGeneration) return;
   // Consume the admitted token before shared edit/commit retires old imports.
-  retireLoad(); edit(transform); if (wholeProject) { constructionView.reset(); gradingView.reset(); } message(text);
+  retireLoad(); edit(transform); if (wholeProject) { constructionView.reset(); gradingView.reset(); bodyView?.reset(); } message(text);
 }
 
 function edit(transform: (current: Project) => Project) {
@@ -208,7 +210,7 @@ for (const [id, key, factor] of placementFields) input(id).addEventListener('cha
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 
-element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
+element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
 element('sample').addEventListener('click', () => { cancelLoad(); edit(current => ({ ...current, photo: null })); });
 element('reset-placement').addEventListener('click', () => edit(current => ({ ...current, placement: createProject().placement })));
 element('clear-sketch').addEventListener('click', () => edit(current => ({ ...current, strokes: [] })));
@@ -217,7 +219,7 @@ element('cancel-load').addEventListener('click', () => { cancelLoad(); message('
 function travel(direction: 'undo' | 'redo') {
   cancelLoad(); cancelGesture();
   if (!(direction === 'undo' ? history.canUndo : history.canRedo)) return;
-  project = history[direction](); constructionView?.reset(); gradingView?.reset(); editVersion++;
+  project = history[direction](); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); editVersion++;
   renderViews(); updateControls(); scheduleSave(); message('');
 }
 element('undo').addEventListener('click', () => travel('undo'));
@@ -354,13 +356,14 @@ element('replace-saved').addEventListener('click', async () => {
   finally { replacingSaved = false; updateControls(); }
 });
 
-function constructionGuard(): boolean {
+function constructionGuard(ignoreBody=false): boolean {
   const raw = input('title').value !== project.title || element<HTMLTextAreaElement>('note').value !== project.note || placementFields.some(([id,key,factor]) => input(id).value !== String(Number((project.placement[key]*factor).toFixed(2))));
-  if (gesture || raw || exportBusy || replacingSaved) { message('Finish the active gesture or other raw concept fields before changing construction. Your drafts are kept.', true); return false; }
+  if (gesture || raw || exportBusy || replacingSaved || (!ignoreBody && bodyView?.dirty())) { message('Finish the active gesture or other raw concept fields before changing construction. Your drafts are kept.', true); return false; }
   return true;
 }
 const constructionView = mountConstruction({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
+bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 
 window.addEventListener('pagehide', retireLoad);
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
