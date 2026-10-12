@@ -91,6 +91,12 @@ The interface numbers frames from **1**. Project JSON stores frames from **0**: 
 
 Unapplied pose/name text remains visible, including empty or invalid values. Apply valid values or use **Discard pose edits** before changing layers, drawings, frames or projects. Values need not align to a suggested increment. JSON downloads remain available for committed work and explicitly exclude raw drafts. Pointer cancellation, Escape, focus/visibility loss or changed canvas geometry discard an active gesture without a partial save.
 
+## Export a transparent frame
+
+**Save transparent frame PNG** exports all committed artwork at the current frame on a transparent640×360 canvas. Held drawings, layer transforms/opacity and original imported images use the same renderer as preview and ordinary exports. Empty pixels are transparent; overlapping partially transparent artwork uses normal source-over compositing. Editor selection rings and neighboring-drawing guides are excluded. Files end in `-frame-N-transparent.png`. This makes an animation frame reusable in another compositor.
+
+**Save frame PNG** keeps the stage color. GIF and PNG frame ZIP keep their established opaque backgrounds; this control exports one PNG only. Both single-frame PNG buttons protect unapplied editor fields before pointer blur and on keyboard activation. Exports create no project/history edit, and stale asynchronous results are retired by the existing frame-export ownership checks. See [#196](https://github.com/twangyal/projects-monorepo/issues/196).
+
 ## Adjust drawing exposure timing
 
 Select a later held drawing and choose **Move active drawing start**. Enter its new displayed starting frame (an integer from 2 through the project end) in the frame prompt. Cancel keeps the current project. The first drawing always starts at frame 1, and an occupied boundary is refused.

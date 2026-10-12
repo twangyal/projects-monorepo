@@ -27,3 +27,8 @@ test('public geometry and render reject invalid values before drawing', () => {
   assert.throws(() => renderFrame(context, project, NaN, new Map()), /frame/i);
   assert.throws(() => renderFrame(context, project, 12, new Map()), /frame/i);
 });
+test('public renderer rejects invalid transparent-background option before drawing',()=>{
+ const context={} as CanvasRenderingContext2D,project={schemaVersion:2 as const,title:'Transparent',background:'#FFFFFF',frameCount:12,layers:[]};
+ const render=renderFrame as unknown as (ctx:CanvasRenderingContext2D,p:typeof project,frame:number,assets:Map<string,ImageBitmap>,transparent:boolean)=>void;
+ assert.throws(()=>render(context,project,0,new Map(),'yes' as unknown as boolean),/transparent/i);
+});

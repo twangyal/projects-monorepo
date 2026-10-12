@@ -36,7 +36,7 @@ app.innerHTML = `
 <section class="canvas-column" id="stage-section" aria-label="Animation stage"><div class="stage-bar"><div><strong id="stage-title">Your animation</strong><span id="demo-label">ORIGINAL DEMO</span></div><span>640 × 360 · 12 fps</span></div><div class="canvas-surround"><div class="stage-stack"><canvas id="stage" width="640" height="360" tabindex="0" aria-label="Drawing and animation canvas"></canvas><canvas id="onion-overlay" width="640" height="360" aria-hidden="true"></canvas><canvas id="stroke-overlay" width="640" height="360" aria-hidden="true"></canvas></div></div>
 <div class="transport panel"><button id="play" class="primary">Play animation</button><button id="first-frame" title="Go to the first frame">Start</button><label class="loop"><input id="loop" type="checkbox" checked> Loop</label><span id="time" class="mono">0.00 s / 4.00 s</span></div>
 <div class="timeline panel"><div class="timeline-top"><h3>Every pose tells a story</h3><label class="duration">Duration <select id="duration"><option value="12">1 second</option><option value="24">2 seconds</option><option value="48">4 seconds</option><option value="72">6 seconds</option><option value="96">8 seconds</option></select></label></div><label class="scrubber">Frame <output id="frame-label">1 / 48</output><input id="frame" type="range" min="0" max="47" value="0" aria-label="Timeline frame"></label><div class="timeline-labels"><span>START</span><span>END</span></div><section id="drawing-timeline" aria-label="Selected layer drawings"><h3>Drawings</h3><p id="drawing-status"></p><div id="drawing-cels"></div><div class="cel-actions"><button id="add-blank-cel" aria-describedby="drawing-action-hint">Blank drawing at this frame</button><button id="duplicate-cel" aria-describedby="drawing-action-hint">Duplicate held drawing at this frame</button><button id="delete-cel" aria-describedby="drawing-action-hint">Delete active drawing</button><button id="retime-cel" aria-describedby="drawing-action-hint">Move active drawing start</button></div><p id="drawing-action-hint" class="hint"></p><label class="onion-control"><input id="onion-enabled" type="checkbox" aria-describedby="onion-status">Show neighboring drawings</label><p id="onion-status" class="hint"></p><button id="make-tween">Make drawing in-betweens</button><p id="tween-eligibility" class="hint"></p><div id="tween-workspace"></div></section><h3 class="key-heading">Pose keyframes</h3><div id="keys" aria-label="Selected layer keyframes"></div><p class="hint">Select a diamond to revisit a pose. The frames between poses are interpolated.</p></div>
-<div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever. PNG frames · full color · exact 12 fps</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="png-frames">Export PNG frames ZIP</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
+<div class="export panel"><div><h3>Give your creation a little freedom.</h3><p>Animated GIF · 256 colors · loops forever. PNG frames · full color · exact 12 fps</p></div><div class="export-buttons"><button id="png">Save frame PNG</button><button id="png-transparent">Save transparent frame PNG</button><button id="gif" class="primary">Export animation ↓</button><button id="png-frames">Export PNG frames ZIP</button><button id="cancel-export" hidden>Cancel export</button></div><progress id="export-progress" max="1" value="0" hidden aria-label="Animation export progress"></progress></div>
 </section>
 <aside class="pose-panel panel"><div class="panel-heading"><h3>Strike a pose</h3><span>02</span></div><div class="tool-content"><label class="field">Layer name<input id="layer-name" maxlength="40"></label><p id="pose-state" class="pose-state">Frame 1 · saved pose</p><div class="pair"><label class="field">Position X<input id="pose-x" type="text" inputmode="decimal" min="-640" max="1280" step="1"></label><label class="field">Position Y<input id="pose-y" type="text" inputmode="decimal" min="-360" max="720" step="1"></label></div><label class="field">Scale<input id="pose-scale" type="text" inputmode="decimal" min="0.1" max="4" step="0.05"></label><label class="field">Rotation (degrees)<input id="pose-rotation" type="text" inputmode="decimal" min="-720" max="720" step="5"></label><label class="field">Opacity<input id="pose-opacity" type="text" inputmode="decimal" min="0" max="1" step="0.05"></label><label class="field">Motion to next pose<select id="easing"><option value="linear">Steady / linear</option><option value="ease">Ease in & out</option><option value="hold">Hold this pose</option></select></label><p id="pose-draft-status" role="status" hidden></p><button id="discard-pose-edits" class="full" hidden>Discard pose edits</button><button id="set-key" class="primary full">Set keyframe</button><button id="retime-key" class="full">Move this keyframe</button><button id="remove-key" class="text-button">Remove this keyframe</button><p class="hint">Changing pose values sets a key at this frame. The first key always stays. Drawing edits the active held drawing until its next boundary.</p><div class="note"><span aria-hidden="true">✦</span><strong>Start with two poses.</strong><p>Set a pose at the start. Scrub near the end, move your layer, then press play.</p></div></div></aside>
 </div><section id="private-links" class="panel" role="region" aria-label="Private snapshot links"></section><footer><span>Local projects stay in this browser. Private sharing is optional and explicit.</span><span>Layer motion · no account required</span></footer></main>`;
@@ -414,7 +414,7 @@ app.addEventListener('pointerdown', event => {
   if (event.button !== 0) return;
   // Discard owns the raw fields before native blur can auto-commit a valid pose value.
   if ((event.target as HTMLElement).closest('#discard-pose-edits')) { event.preventDefault(); return; }
-  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#retime-cel,#retime-key,#onion-enabled,.onion-control')) return;
+  if (!(event.target as HTMLElement).closest('#draw-mode,#move-mode,#edit-strokes-mode,#duplicate-layer,#retime-cel,#retime-key,#onion-enabled,.onion-control,#png,#png-transparent')) return;
   if (!admitDrafts()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 // A label's later default click can focus its input even after pointerdown cancellation.
@@ -930,19 +930,21 @@ el('backup').addEventListener('click', () => {
   download(new Blob([JSON.stringify(validateProject(project))], { type: 'application/json' }), '.motion.json');
   tell(`Editable project file downloaded. It includes every committed drawing and pose.${drafts.size || strokeEditor.unsaved ? ' Unapplied editor values are not included.' : ''}`);
 });
-el('png').addEventListener('click', () => {
+function exportFramePNG(transparent: boolean) {
   if (busy || exporting || gesture || !admitDrafts()) return;
   pause(); tweens.retire(); const snapshot = validateProject(project), capturedFrame = frame, token = operation, revision = generation, request = ++pngRequest;
   const output = document.createElement('canvas'); output.width = WIDTH; output.height = HEIGHT;
   try {
-    renderFrame(output.getContext('2d')!, snapshot, capturedFrame, assets);
+    renderFrame(output.getContext('2d')!, snapshot, capturedFrame, assets, transparent);
     output.toBlob(blob => {
       if (request !== pngRequest || token !== operation || revision !== generation || gesture) return;
-      if (blob) { download(blob, `-frame-${capturedFrame + 1}.png`, snapshot.title); tell('Committed frame PNG downloaded.'); }
+      if (blob) { download(blob, `-frame-${capturedFrame + 1}${transparent ? '-transparent' : ''}.png`, snapshot.title); tell(transparent ? 'Committed transparent frame PNG downloaded.' : 'Committed frame PNG downloaded.'); }
       else tell('Could not create a PNG. Your artwork is still editable.', true);
     }, 'image/png');
   } catch (error) { tell(errorMessage(error), true); }
-});
+}
+el('png').addEventListener('click', () => exportFramePNG(false));
+el('png-transparent').addEventListener('click', () => exportFramePNG(true));
 el('gif').addEventListener('click', () => { void exportAnimation(false); });
 el('png-frames').addEventListener('click', () => { void exportAnimation(true); });
 async function exportAnimation(pngFrames: boolean) {

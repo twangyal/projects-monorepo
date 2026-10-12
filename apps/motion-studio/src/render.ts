@@ -42,7 +42,8 @@ function checkAssets(project: Project, assets: Assets): void {
  * The caller owns bitmap lifetime; closing one invalidates further rendering.
  * No project, cel, stroke or mutable asset map escapes through this interface.
  */
-export function createFrameRenderer(project: Project, assets: Assets): FrameRenderer {
+export function createFrameRenderer(project: Project, assets: Assets, transparent = false): FrameRenderer {
+  if (typeof transparent !== 'boolean') throw new Error('Transparent background must be a boolean.');
   const safe = validateProject(project), bound: Assets = new Map();
   checkAssets(safe, assets);
   for (const layer of safe.layers) if (layer.kind === 'image') bound.set(layer.id, assets.get(layer.id)!);
@@ -53,22 +54,23 @@ export function createFrameRenderer(project: Project, assets: Assets): FrameRend
       // ImageBitmap.close() is observable even after its map binding is captured.
       // Refuse before clearing the destination if an owner released an asset.
       checkAssets(safe, bound);
-      drawFrame(ctx, safe, frame, bound);
+      drawFrame(ctx, safe, frame, bound, transparent);
     },
   });
 }
 
 /** Shared preview/PNG/GIF kernel. Editor overlays are intentionally separate. */
-export function renderFrame(ctx: RenderContext, project: Project, frame: number, assets: Assets): void {
-  createFrameRenderer(project, assets).render(ctx, frame);
+export function renderFrame(ctx: RenderContext, project: Project, frame: number, assets: Assets, transparent = false): void {
+  createFrameRenderer(project, assets, transparent).render(ctx, frame);
 }
 
-function drawFrame(ctx: RenderContext, safe: Project, frame: number, assets: Assets): void {
+function drawFrame(ctx: RenderContext, safe: Project, frame: number, assets: Assets, transparent: boolean): void {
   ctx.save();
   try {
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     ctx.shadowBlur = 0; ctx.shadowOffsetX = ctx.shadowOffsetY = 0; ctx.filter = 'none';
-    ctx.fillStyle = safe.background; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    if (transparent) ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    else { ctx.fillStyle = safe.background; ctx.fillRect(0, 0, WIDTH, HEIGHT); }
     for (const layer of safe.layers) {
       const pose = evaluatePose(layer, frame);
       ctx.save();
