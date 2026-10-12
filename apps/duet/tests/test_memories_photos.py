@@ -90,6 +90,16 @@ class PhotoInspectionTests(unittest.TestCase):
                 inspect_photo(png())
             self.assertNotIn('private-file-path', str(error.exception))
 
+    def test_exact_pixel_limit_decodes_and_animation_budget_refuses_before_worker(self):
+        self.assertEqual(inspect_photo(png(4000, 4000)), ('image/png', 4000, 4000))
+        # Complete original LZW frame blocks on a larger valid canvas, exceeding
+        # the aggregate limit only on the third frame.
+        over_budget = GIF[:6] + struct.pack('<HH', 4000, 4000) + GIF[10:25] + GIF[25:-1] * 3 + b';'
+        with patch('duet.photos._run') as runner:
+            with self.assertRaisesRegex(PhotoError, '32 million'):
+                inspect_photo(over_budget)
+            runner.assert_not_called()
+
     def test_refuses_active_content_damage_and_extremes(self):
         for data in (b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
                      b'<!doctype html><script>alert(1)</script>', b'\xff\xd8\xff\xe0', b'',

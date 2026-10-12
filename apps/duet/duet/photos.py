@@ -15,6 +15,9 @@ from .media import _run
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_SIDE = 12000
 MAX_PIXELS = 16_000_000
+# FFmpeg checks aligned internal buffers (e.g. 4032x4000 for a 4000x4000 PNG).
+# Public dimensions and exact decoded output remain bounded separately.
+MAX_CODEC_PIXELS = MAX_PIXELS + 128 * MAX_SIDE + 4096
 MAX_DECODED_PIXELS = 32_000_000
 PHOTO_SECONDS = 5.0
 EXTENSIONS = {'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif'}
@@ -149,7 +152,7 @@ def _decode_photo(data, mime, width, height, frames):
         command = ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-xerror',
                    '-threads', '1', '-filter_threads', '1', '-filter_complex_threads', '1',
                    '-protocol_whitelist', 'file,pipe', '-format_whitelist', formats[mime],
-                   '-err_detect', 'explode', '-max_pixels', str(MAX_PIXELS),
+                   '-err_detect', 'explode', '-max_pixels', str(MAX_CODEC_PIXELS),
                    '-f', formats[mime], '-i', str(source), '-map', '0:v:0', '-an', '-sn', '-dn',
                    '-threads', '1', '-fps_mode', 'passthrough', '-pix_fmt', 'rgba',
                    '-c:v', 'rawvideo', '-f', 'rawvideo', 'pipe:1']
