@@ -27,7 +27,7 @@ function section(title: string, hint = ''): HTMLElement {
 }
 /** Forms follow the page convention: `data-dirty` marks an unsent draft that navigation must not drop silently. */
 function form(id: string): HTMLFormElement {
-  const n = el('form'); n.id = id; n.addEventListener('input', () => { n.dataset.dirty = 'true'; }); return n;
+  const n = el('form'); n.id = id; n.addEventListener('input', () => { n.dataset.dirty = 'true'; n.dataset.intent = String(Number(n.dataset.intent ?? 0) + 1); }); return n;
 }
 function field(f: HTMLFormElement, name: string, caption: string, max: number, multiline = false): HTMLInputElement | HTMLTextAreaElement {
   const label = el('label', caption, 'field'); const n = multiline ? el('textarea') : el('input');
@@ -93,7 +93,7 @@ export function createCircles(host: CircleHost) {
       const view = views.get(id); const card = el('article', '', 'record-card'); card.dataset.circleId = id;
       card.append(el('h3', view?.name ?? 'Private circle'),
         el('p', view ? `${view.members.length} ${view.members.length === 1 ? 'member' : 'members'} · ${view.challenges.length} shared ${view.challenges.length === 1 ? 'challenge' : 'challenges'}` : 'A circle remembered in this browser', 'hint'),
-        button('Open circle', () => { if (host.leaveDrafts()) openCircle(id); }));
+        button('Open circle', () => { openCircle(id); }));
       circleList.append(card);
     }
     createButton.disabled = busy;
@@ -114,7 +114,7 @@ export function createCircles(host: CircleHost) {
       const view = parseCircleView(reply.circle);
       if (typeof reply.token !== 'string' || typeof reply.inviteToken !== 'string') throw new Error();
       clear(createForm); remember(view.id, reply.token); views.set(view.id, view); busy = false;
-      openCircle(view.id); revealLink('join', reply.inviteToken);
+      if (openCircle(view.id)) revealLink('join', reply.inviteToken);
       host.announce('Circle created. Send the invitation link to the friends you want in it.');
     } catch (error) { host.announce(failure(error), true); }
     finally { busy = false; renderList(); }
@@ -190,11 +190,13 @@ export function createCircles(host: CircleHost) {
     try { await navigator.clipboard.writeText(linkInput.value); host.announce('Circle link copied.'); }
     catch { linkInput.focus(); linkInput.select(); host.announce('Select and copy the link. Clipboard access is unavailable.'); }
   }
-  function openCircle(id: string): void {
+  function openCircle(id: string): boolean {
+    if (busy) { host.announce('Wait for your current circle action to finish before opening a circle.', true); return false; }
+    if (!host.leaveDrafts()) return false;
     host.enterCircle(); host.announce(''); epoch++; openId = id; rendered = ''; linkBox.hidden = true; linkInput.value = ''; commentForms.clear();
     page.hidden = false; history.replaceState(null, '', `/?circle=${id}`);
     const cached = views.get(id); if (cached) render(cached); else { circleName.textContent = 'Loading circle…'; memberText.textContent = ''; feedList.replaceChildren(); sharedList.replaceChildren(); }
-    void refreshOpen();
+    void refreshOpen(); return true;
   }
   function hide(): void { epoch++; openId = null; clearTimeout(poll); page.hidden = true; linkBox.hidden = true; linkInput.value = ''; }
   async function refreshOpen(manual = false): Promise<void> {
@@ -259,7 +261,12 @@ export function createCircles(host: CircleHost) {
     let f = commentForms.get(challenge.id);
     if (!f) {
       const made = form(`comment-${challenge.id}`); field(made, 'text', `Comment on “${challenge.title}”`, 500, true);
-      onSubmit(made, 'Post comment', () => { void act('comment', { challengeId: challenge.id, text: input(made, 'text') }).then((ok) => { if (ok) clear(made); }); });
+      onSubmit(made, 'Post comment', () => {
+        const submittedEpoch = epoch, submittedIntent = made.dataset.intent;
+        void act('comment', { challengeId: challenge.id, text: input(made, 'text') }).then((ok) => {
+          if (ok && epoch === submittedEpoch && commentForms.get(challenge.id) === made && made.dataset.intent === submittedIntent) clear(made);
+        });
+      });
       commentForms.set(challenge.id, made); f = made;
     }
     card.append(comments, f); return card;
@@ -267,6 +274,8 @@ export function createCircles(host: CircleHost) {
   function render(view: CircleView): void {
     if (view.id !== openId) return;
     const signature = JSON.stringify(view); if (signature === rendered) return; rendered = signature;
+    const focused = document.activeElement instanceof HTMLTextAreaElement && sharedList.contains(document.activeElement) ? document.activeElement : null;
+    const selection = focused ? [focused.selectionStart, focused.selectionEnd, focused.selectionDirection] as const : null;
     circleName.textContent = view.name;
     memberText.textContent = `${view.members.length} of 12 members: ${view.members.map((m) => m.id === view.me ? `${m.name} (you)` : m.name).join(', ')}`;
     feedList.replaceChildren(...view.feed.map(feedEntry));
@@ -274,6 +283,7 @@ export function createCircles(host: CircleHost) {
     sharedList.replaceChildren(...view.challenges.map(challengeEntry));
     if (!view.challenges.length) sharedList.append(el('p', 'No shared challenges yet. Open one of your challenges and choose “Share” for this circle; your opponent shares it from their seat too.', 'empty'));
     renderControls();
+    if (focused?.isConnected && selection) { focused.focus({ preventScroll: true }); focused.setSelectionRange(...selection); }
   }
 
   // Sharing from a challenge ------------------------------------------------------------------

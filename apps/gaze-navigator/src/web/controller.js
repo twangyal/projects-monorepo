@@ -20,7 +20,7 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function confirmable(action, element) {
     if (action.type === 'activate') return element.consequential;
-    if (action.type === 'submit') return element.role !== 'searchbox' && !/search/i.test(element.name);
+    if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
   }
 
@@ -41,6 +41,9 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
+    if (['activate', 'submit', 'edit', 'search', 'select-option'].includes(action.type) && !element?.isConnected) {
+      return reply('That control is no longer on the page. Look at it again.', 'error');
+    }
     let result;
     switch (action.type) {
       case 'activate': result = actions.activate(element, target.name); break;

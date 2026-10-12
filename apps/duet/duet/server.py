@@ -765,14 +765,22 @@ class Handler(BaseHTTPRequestHandler):
         if not self.server.store.has_participant(room_id, role):
             return self._plain(400, 'This Duet room no longer exists.')
         if 'error' in params or 'code' not in params:
-            listening.record_failure(room_id, role, 'The Spotify connection was cancelled or refused. Nothing was connected.')
+            listening.record_failure(room_id, role, 'The Spotify connection was cancelled or refused. Nothing was connected.',
+                                     generation=pending['generation'])
             return self._redirect(f'/?room={room_id}')
         try:
             tokens = spotify.exchange(params['code'][0], pending['verifier'], pending['redirectUri'])
             profile = spotify.profile(tokens['accessToken'])
-            listening.connect(room_id, role, tokens, profile)
+            # Serialize the final admission with room deletion, then verify the authorization
+            # generation that survived the network calls. A disconnect wins over a late reply.
+            with self.server.lock:
+                if not self.server.store.has_participant(room_id, role):
+                    return self._plain(400, 'This Duet room no longer exists.')
+                if not listening.connect(room_id, role, tokens, profile, generation=pending['generation']):
+                    return self._redirect(f'/?room={room_id}')
         except SpotifyError as error:
-            listening.record_failure(room_id, role, f'Spotify connection failed: {error}')
+            listening.record_failure(room_id, role, f'Spotify connection failed: {error}',
+                                     generation=pending['generation'])
             return self._redirect(f'/?room={room_id}')
         # Import the history baseline now, so the timeline is ready when the room reopens.
         listening.sync(spotify, room_id, role, force=True)

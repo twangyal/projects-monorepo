@@ -185,6 +185,72 @@ class StorageSyncTests(unittest.TestCase):
         self.assertFalse(self.store.sync(self.client, self.room, 'host'))
         self.assertEqual(self.store.state(self.room, configured=True)['entries'], [])
 
+    def test_reconnecting_during_fetch_discards_previous_account_results(self):
+        self.connect('host', 'ada', 'Ada')
+        self.play('ada', T0, 'OldSong', 'Private old song')
+        original = self.client.saved_tracks
+
+        def reconnect(token):
+            self.store.disconnect(self.room, 'host')
+            self.connect('host', 'ben', 'Ben')
+            return original(token)
+        self.client.saved_tracks = reconnect
+        self.assertFalse(self.store.sync(self.client, self.room, 'host'))
+        self.assertEqual(self.store.database.execute('SELECT track_id FROM seen').fetchall(), [])
+        state = self.store.state(self.room, configured=True)
+        self.assertEqual(state['connections']['host']['displayName'], 'Ben')
+        self.assertIsNone(state['connections']['host']['syncedAt'])
+
+    def test_refresh_from_previous_connection_cannot_replace_new_credentials(self):
+        self.connect('host', 'ada', 'Ada')
+        self.clock[0] += 7200
+        original = self.client.refresh
+
+        def reconnect(token):
+            tokens = original(token)
+            self.store.disconnect(self.room, 'host')
+            self.connect('host', 'ben', 'Ben')
+            return tokens
+        self.client.refresh = reconnect
+        self.assertFalse(self.store.sync(self.client, self.room, 'host'))
+        self.assertTrue(self.store.sync(self.client, self.room, 'host'))
+        self.assertEqual(self.store.state(self.room, configured=True)['connections']['host']['displayName'], 'Ben')
+
+    def test_old_sync_failure_does_not_mark_replacement_account_revoked(self):
+        self.connect('host', 'ada', 'Ada')
+
+        def reconnect(token, after):
+            self.store.disconnect(self.room, 'host')
+            self.connect('host', 'ben', 'Ben')
+            raise SpotifyError('Old access revoked', 401)
+        self.client.recently_played = reconnect
+        self.assertFalse(self.store.sync(self.client, self.room, 'host'))
+        self.assertIsNone(self.store.state(self.room, configured=True)['connections']['host']['error'])
+
+    def test_new_authorization_invalidates_callback_already_taken(self):
+        url = self.store.begin_auth(self.client, self.room, 'host', 'http://127.0.0.1/callback')
+        pending = self.store.take_state(parse_qs(urlsplit(url).query)['state'][0])
+        self.store.begin_auth(self.client, self.room, 'host', 'http://127.0.0.1/callback')
+        tokens = {'refreshToken': 'refresh', 'accessToken': 'access', 'expiresIn': 3600}
+        self.assertFalse(self.store.connect(self.room, 'host', tokens, {'id': 'ada', 'name': 'Ada'},
+                                            generation=pending['generation']))
+        self.store.record_failure(self.room, 'host', 'Late failure', generation=pending['generation'])
+        self.assertEqual(self.store.state(self.room, configured=True)['authFailures'], {})
+
+    def test_generation_survives_restart_and_disconnect_invalidates_taken_state(self):
+        self.connect('host', 'ada', 'Ada')
+        identity = self.store._credentials(self.room, 'host')[-1]
+        url = self.store.begin_auth(self.client, self.room, 'host', 'http://127.0.0.1/callback')
+        pending = self.store.take_state(parse_qs(urlsplit(url).query)['state'][0])
+        self.store.close()
+        self.store = ListeningStore(Path(self.temp.name), now=lambda: self.clock[0])
+        self.addCleanup(self.store.close)
+        self.assertEqual(self.store._credentials(self.room, 'host')[-1], identity)
+        self.store.disconnect(self.room, 'host')
+        tokens = {'refreshToken': 'refresh', 'accessToken': 'access', 'expiresIn': 3600}
+        self.assertFalse(self.store.connect(self.room, 'host', tokens, {'id': 'ada', 'name': 'Ada'},
+                                            generation=pending['generation']))
+
     def test_manual_entries_are_validated_and_author_owned(self):
         entry = self.store.add_manual(self.room, 'host', '2025-10-01', 'First dance', 'Our song', 'Kitchen')
         with self.assertRaises(Exception) as denied:
@@ -283,6 +349,27 @@ class ListeningHttpTests(unittest.TestCase):
         callback = urlsplit(connection.getresponse().getheader('Location'))
         connection.close()
         return self.request('GET', f'{callback.path}?{callback.query}', headers={'Sec-Fetch-Site': 'cross-site'}, raw=True), callback
+
+    def test_disconnect_during_callback_cannot_restore_consent(self):
+        original = self.server.spotify.exchange
+
+        def disconnect(*args):
+            self.assertEqual(self.request('DELETE', self.base + '/connection', {}, self.host)[0], 200)
+            return original(*args)
+        self.server.spotify.exchange = disconnect
+        self.connect(self.host, 'ada', 'Ada')
+        state = self.request('GET', self.base, token=self.host)[1]
+        self.assertIsNone(state['connections']['host'])
+
+    def test_room_deleted_during_callback_keeps_listening_deleted(self):
+        original = self.server.spotify.exchange
+
+        def delete(*args):
+            self.assertEqual(self.request('DELETE', f'/api/rooms/{self.room}', {}, self.host)[0], 200)
+            return original(*args)
+        self.server.spotify.exchange = delete
+        self.connect(self.host, 'ada', 'Ada')
+        self.assertEqual(self.server.listening.connected(), [])
 
     def test_connect_callback_sync_curate_and_disconnect(self):
         now = int(time.time() * 1000)

@@ -180,7 +180,12 @@ class Circles:
             for table in ('members', 'cheers', 'comments'):
                 db.execute(f'DELETE FROM {table} WHERE circle_id=? AND member_id=?', (circle_id, member_id))
             # Shares made by a departing member are withdrawn with them.
-            db.execute('DELETE FROM shares WHERE circle_id=? AND member_id=?', (circle_id, member_id))
+            affected = [row[0] for row in db.execute(
+                'SELECT challenge_id FROM shares WHERE circle_id=? AND member_id=?', (circle_id, member_id))]
+            for challenge_id in affected:
+                for table in ('shares', 'comments'):
+                    db.execute(f'DELETE FROM {table} WHERE circle_id=? AND challenge_id=?', (circle_id, challenge_id))
+                db.execute('DELETE FROM cheers WHERE circle_id=? AND item LIKE ?', (circle_id, f'{challenge_id}-%'))
             if db.execute('SELECT count(*) FROM members WHERE circle_id=?', (circle_id,)).fetchone()[0] == 0:
                 for table in ('shares', 'cheers', 'comments'):
                     db.execute(f'DELETE FROM {table} WHERE circle_id=?', (circle_id,))

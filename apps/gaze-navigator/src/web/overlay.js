@@ -174,6 +174,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     onLost: () => ui.circle.classList.add('lost'),
   });
   let calibration = null;
+  let sourceGeneration = 0;
+  let closing = false;
   let point = null;
   let frozen = false;
   let context = { elements: [], region: null };
@@ -379,6 +381,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (!speech.listening) setListening(false);
     },
     onState(state) {
+      if (closing) return;
       if (state === 'stopped' && settings.listening && !speech.listening) setListening(false);
     },
   });
@@ -391,6 +394,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function setSource(source) {
     if (source === 'pointer') {
+      sourceGeneration++;
       // Detach first so the cancelled calibration does not announce itself over "Camera off".
       const active = calibration;
       calibration = null;
@@ -406,11 +410,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       return { ok: true, message: wasOn ? 'Camera off. The circle follows the pointer.' : 'The circle follows the pointer.' };
     }
     if (camera.state !== 'off') return { ok: true, message: 'The camera is already on. Say recalibrate to calibrate again.' };
+    const generation = ++sourceGeneration;
     settings.source = 'camera';
     store.save(settings);
     renderSource();
     camera.start().then(async result => {
-      if (settings.source !== 'camera') return;
+      if (settings.source !== 'camera' || generation !== sourceGeneration) return;
       if (!result.ok) {
         settings.source = 'pointer';
         store.save(settings);
@@ -419,19 +424,21 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         return;
       }
       renderSource();
-      feedback(await restoreOrCalibrate());
+      const restored = await restoreOrCalibrate(generation);
+      if (generation === sourceGeneration && restored) feedback(restored);
     });
     return { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
   }
 
   // Reuses a calibration saved by an earlier page when the window is unchanged and it is recent.
-  async function restoreOrCalibrate() {
+  async function restoreOrCalibrate(generation) {
     const api = camera.api;
     let decoded = { ok: false, reason: 'none' };
     try {
       decoded = decodeCalibration(await store.loadCalibration?.(), { width: window.innerWidth, height: window.innerHeight, now: Date.now() });
     } catch { /* Fall back to a fresh calibration. */ }
-    if (decoded.ok && api && camera.api === api) {
+    if (generation !== sourceGeneration || !api || camera.api !== api) return null;
+    if (decoded.ok) {
       try {
         camera.resetCalibration();
         api.getRegression()[0].setData(decoded.samples);
@@ -500,8 +507,19 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.usePointer.addEventListener('click', () => run('use pointer', { elements: [] }));
   ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
-  const onPageHide = () => { calibration?.cancel(); camera.stop(); };
+  const onPageHide = () => { closing = true; sourceGeneration++; calibration?.cancel(); camera.stop(); speech.stop(); controller.cancel(); spokenContext = null; };
   window.addEventListener('pagehide', onPageHide);
+  const onPageShow = event => {
+    if (!event.persisted) return;
+    closing = false;
+    // A restored document retains its UI, but the microphone was released on pagehide.
+    // Keep the saved preference for new pages; this page requires an explicit restart.
+    settings.listening = false;
+    ui.listen.setAttribute('aria-pressed', 'false');
+    ui.listen.textContent = 'Start listening';
+    feedback({ message: 'Returned to this page. Listening is stopped. Choose Start listening to continue.' });
+  };
+  window.addEventListener('pageshow', onPageShow);
   ui.pause.addEventListener('click', () => run(controller.paused ? 'resume' : 'pause', { elements: [] }));
   ui.cancel.addEventListener('click', () => run('cancel', { elements: [] }));
   ui.form.addEventListener('submit', event => {
@@ -555,9 +573,14 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     track,
     run: utterance => run(utterance, null),
     stop() {
+      closing = true;
+      sourceGeneration++;
+      controller.cancel();
+      spokenContext = null;
       calibration?.cancel();
       camera.stop();
       window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('pageshow', onPageShow);
       speech.stop();
       window.removeEventListener('pointermove', onPointer, true);
       window.removeEventListener('load', watchFrames, true);

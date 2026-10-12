@@ -141,6 +141,23 @@ class CircleTests(unittest.TestCase):
         names = [member['name'] for member in self.request('GET', base, token=joe)[1]['members']]
         self.assertEqual(names, ['Joe', 'Terry'])
 
+    def test_departing_participant_withdraws_everyones_conversation(self):
+        circle_id, joe, terry, sam = self.circle()
+        base = f'/api/circles/{circle_id}'
+        for member, seat in ((joe, self.joe_seat), (terry, self.terry_seat)):
+            self.request('POST', base + '/share', {'challengeId': self.challenge, 'seatToken': seat}, member)
+        self.command('accept', self.terry_seat, termsVersion=1)
+        item = self.request('GET', base, token=sam)[1]['feed'][0]['key']
+        self.request('POST', base + '/cheer', {'item': item}, sam)
+        self.request('POST', base + '/comment', {'challengeId': self.challenge, 'text': 'Old conversation'}, sam)
+        self.request('POST', base + '/leave', {}, terry)
+        invite = self.request('POST', base + '/invite', {}, joe)[1]['inviteToken']
+        rejoined = self.request('POST', base + '/join', {'inviteToken': invite, 'name': 'Terry'})[1]['token']
+        self.request('POST', base + '/share', {'challengeId': self.challenge, 'seatToken': self.terry_seat}, rejoined)
+        view = self.request('POST', base + '/share', {'challengeId': self.challenge, 'seatToken': self.joe_seat}, joe)[1]
+        self.assertEqual(view['challenges'][0]['comments'], [])
+        self.assertEqual(view['feed'][0]['cheers'], [])
+
     def test_invitations_rotate_and_limits_hold(self):
         status, created = self.request('POST', '/api/circles', {'circleName': 'Book club', 'name': 'Ana'})
         circle_id, ana = created['circleId'], created['token']

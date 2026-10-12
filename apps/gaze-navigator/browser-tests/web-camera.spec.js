@@ -151,3 +151,19 @@ test('calibration retries hidden-face dots, reports failure, and spoken cancel s
   await expect(status(page)).toHaveText('Calibration stopped. Say recalibrate to try again, or use pointer.');
   await expect(dot(page)).toHaveClass(/hidden/);
 });
+
+test('a cancelled camera start cannot change the mode of an immediate retry', async ({ page }) => {
+  await open(page, '/practice-site/catalog.html');
+  const state = await page.evaluate(async () => {
+    window.gazeNavigator.stop();
+    const { startWebNavigator } = await import('/src/web/overlay.js');
+    let loads = 0;
+    window.gazeNavigator = startWebNavigator({ window, loadCamera: () => ++loads === 1 ? new Promise(() => {}) : Promise.resolve(window.webgazer) });
+    window.gazeNavigator.run('use camera');
+    window.gazeNavigator.run('use pointer');
+    window.gazeNavigator.run('use camera');
+    for (let index = 0; index < 20; index++) await Promise.resolve();
+    return { source: window.gazeNavigator.shadow.querySelector('.use-camera').getAttribute('aria-pressed'), camera: window.gazeNavigator.camera.state, calibrating: window.gazeNavigator.calibrating };
+  });
+  expect(state).toEqual({ source: 'true', camera: 'ready', calibrating: true });
+});

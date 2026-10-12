@@ -228,3 +228,51 @@ test('controls inside web components, same-origin frames and script-only cards a
   await page.mouse.move(map.x + 40, map.y - 10);
   await expect(panel(page).locator('.context li.unreachable')).toHaveText('Store map: content from another site that the navigator cannot reach');
 });
+
+test('search fallback into a message waits for confirmation before sending', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await page.locator('form.search').evaluate(form => form.remove());
+  await look(page, page.getByLabel('Message', { exact: true }));
+  await typeInstruction(page, 'find hello');
+  await expect(status(page)).toContainText('may have consequences');
+  await expect(page.getByLabel('Message', { exact: true })).toHaveValue('');
+  await expect(page.locator('.notice')).toBeEmpty();
+  await panel(page).locator('.prompt').getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByLabel('Message', { exact: true })).toHaveValue('hello');
+  await expect(page.locator('.notice')).toHaveText('Practice message sent. Nothing left this page.');
+});
+
+test('pagehide and navigator stop discard queued speech confirmations', async ({ page }) => {
+  for (const lifecycle of ['pagehide', 'stop']) {
+    await page.goto('/practice-site/account.html');
+    const start = panel(page).getByRole('button', { name: 'Start listening' });
+    if (await start.count()) await start.click();
+    await look(page, page.getByRole('button', { name: 'Delete account' }));
+    await page.evaluate(() => window.__speech.say('delete account'));
+    await expect(status(page)).toContainText('may have consequences');
+    await page.evaluate(action => {
+      if (action === 'stop') window.gazeNavigator.stop();
+      else window.dispatchEvent(new PageTransitionEvent('pagehide'));
+      window.__speech.say('confirm');
+    }, lifecycle);
+    await expect(page.locator('.notice')).toBeEmpty();
+    expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(false);
+    expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('gaze-web-navigator')).listening)).toBe(true);
+  }
+});
+
+test('a BFCache return shows stopped speech and permits an explicit restart', async ({ page }) => {
+  await page.goto('/practice-site/account.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+  });
+  await expect(panel(page).getByRole('button', { name: 'Start listening' })).toHaveAttribute('aria-pressed', 'false');
+  expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(false);
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('gaze-web-navigator')).listening)).toBe(true);
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(true);
+  await page.evaluate(() => window.__speech.fail('not-allowed'));
+  await expect(panel(page).getByRole('button', { name: 'Start listening' })).toHaveAttribute('aria-pressed', 'false');
+});

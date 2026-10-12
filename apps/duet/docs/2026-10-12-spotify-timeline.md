@@ -113,3 +113,34 @@ validation added. The Chromium end-to-end case now uploads a genuine 24×16 PNG
 from one seat and confirms that the other seat's browser decodes it at 24 px,
 that only the author can edit, that an edit keeps the photo, and that the
 memory remains listed after a disconnect.
+
+## Handoff review: stale Spotify work (2026-10-12)
+
+A connection now has a durable random generation, and each authorization
+attempt has a separate durable generation. Disconnecting, replacing a
+connection, starting another authorization, or deleting its room invalidates
+older work. The callback checks the authorization generation after its network
+calls; its final room check and connection admission share the existing
+room-deletion lock. Sync admits fetched history, refreshed credentials and
+errors only for the connection generation that started the request. Existing
+connections receive identities transactionally on migration; legacy pending
+callbacks are discarded and must be restarted. No generation or credential is
+added to public listening replies.
+
+Three regressions failed before this repair: old-account history committed
+into a replacement connection, a callback restored a disconnected connection,
+and a callback restored listening after room deletion. The repaired listening
+suite passes 24 cases, including refresh/error isolation, superseded
+authorization and restart identity checks. Together with the six existing
+photo/memory cases, the focused Python gate passes 30 cases. The unchanged
+TypeScript gate passes 23 cases, ESLint, type checking and production build.
+
+**Unresolved photo admission blocker:** the current header inspector accepts
+incomplete media, including a 24-byte PNG prefix and a 10-byte GIF header.
+Its JPEG/GIF/WebP acceptance fixtures do not contain decodable image payloads.
+The signature and dimension checks establish passive format admission only;
+they do not establish complete decoding or rejection of all damaged images.
+A repair must validate full media with bounded time, memory, diagnostics and
+local-only decoder input, and replace those fixtures with genuine complete
+images. The existing isolated FFmpeg runner is a candidate; no decoder change
+or relaxed resource guard was made during this stale-account repair.

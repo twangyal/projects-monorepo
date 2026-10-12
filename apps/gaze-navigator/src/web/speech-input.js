@@ -23,12 +23,16 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
 
   function setup() {
     recognition = new Recognition();
+    const current = recognition;
+    handled.clear();
+    started.clear();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = window.navigator?.language || 'en-US';
-    recognition.onstart = () => onState?.('listening');
-    recognition.onspeechstart = () => onSpeechStart?.();
+    recognition.onstart = () => { if (wanted && recognition === current) onState?.('listening'); };
+    recognition.onspeechstart = () => { if (wanted && recognition === current) onSpeechStart?.(); };
     recognition.onresult = event => {
+      if (!wanted || recognition !== current) return;
       failures = 0;
       for (let index = event.resultIndex; index < event.results.length; index++) {
         const result = event.results[index];
@@ -49,6 +53,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
       }
     };
     recognition.onerror = event => {
+      if (!wanted || recognition !== current) return;
       if (event.error === 'no-speech' || event.error === 'aborted') return;
       failures++;
       if (FATAL.has(event.error) || failures >= 3) wanted = false;
@@ -56,6 +61,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
     };
     // Browsers end continuous sessions after silence; restart while the user still wants to listen.
     recognition.onend = () => {
+      if (recognition !== current) return;
       handled.clear();
       started.clear();
       if (!wanted) {
@@ -76,7 +82,7 @@ export function createSpeechInput(window, { onSpeechStart, onInterim, onFinal, o
     get listening() { return wanted; },
     start() {
       if (!Recognition || wanted) return false;
-      if (!recognition) setup();
+      setup();
       wanted = true;
       failures = 0;
       try {
