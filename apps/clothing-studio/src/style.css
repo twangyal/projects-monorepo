@@ -48,6 +48,7 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .check-field input { width: auto !important; }
 .fit-panel summary { cursor: pointer; font-size: .72rem; font-weight: 600; color: #5d6657; padding: 4px 0; }
 .fit-panel[open] { display: grid; gap: 8px; }
+.describe-style { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: #eef1e8; }
 .sleeve-presets { align-items: center; gap: 6px; }
 .sleeve-presets button { padding: 6px 10px; }
 .print-options { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: #f7f1e7; }

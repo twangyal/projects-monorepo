@@ -101,6 +101,19 @@ Each part takes fabrics, colors, prints and uploaded motifs like any other, and 
 
 These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
 
+### Describe a style (#245)
+
+Type a description in **Describe a style**, for example "navy breton stripe on heavyweight ecru jersey", "small white polka dots on navy, half-drop" or "washed indigo denim". **Apply to this part** (or Enter) styles the selected part. **Apply to every part** styles them all; rib trims keep their rib knit and stay plain. Either is one undoable edit.
+
+The description is read locally and deterministically, with no network or model, so the same words always give the same style. It recognizes:
+- **colours:** about 90 names, light/pale/pastel/soft/dark/deep/muted/dusty/washed/faded/bright/vivid/neon variants, and `#rrggbb`;
+- **fabrics:** the library's fabrics by name or synonym (heavyweight, slub, rib, piqué/polo, terry/fleece, linen, denim/twill, jersey/cotton);
+- **motifs:** stripe/breton, dots/polka, gingham/check/plaid, floral/ditsy, geometric, waves;
+- **repeat sizes:** tiny to huge, or in cm/mm;
+- **layouts:** standard, half-drop, half-brick, mirror.
+
+With a print, "X on Y" or the colour next to the motif word sets the print colour, and the other colour is the ground. Anything not mentioned stays as it was, so "mustard" recolours a printed part and keeps its print. The panel lists what was understood and which words were not, and a description with nothing recognizable changes nothing.
+
 ### Fit: edit points of measure (#243)
 
 Open **Fit** under the measurements to set a top's points of measure directly at the sample size:
