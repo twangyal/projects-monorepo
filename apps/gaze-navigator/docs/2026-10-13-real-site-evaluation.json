@@ -5,18 +5,18 @@
     "First set (7 tasks): the first rules-only run completed 2/7; three task-script targeting mistakes and one interpreter gap (\"sign in\" did not match a \"Log in\" link) were fixed before the recorded runs.",
     "Expanded set (#238, 13 tasks): the first rules-only run completed 8/13. Two failures were interpreter gaps, fixed: \"next page\" went forward in history instead of following the \"Next page\" link of the search results, and a typed correction (\"change Turnig to Turing\") lost the field because typing the instruction moved focus into the navigator panel. Two were task-script mistakes (a stale Wikipedia search input and a hidden duplicate theme dropdown). The other two were the everyday phrasings that only WaterSheep resolves.",
     "Third round (#240, 17 tasks): menus, disclosure toggles and checkboxes. The first rules-only run found two real gaps, both fixed: \"close the menu\" did nothing (close was not understood, and the open button is renamed \"Hide navigation menu\"), and \"open filter and sort\" asked for confirmation because a toggle button inside a form defaulted to submit. Two task-script mistakes (a renamed menu button, an unstable list entry) were corrected.",
-    "Fourth round (#244, 18 tasks): a Python documentation quick search passes. Picking a Wikipedia search suggestion was attempted but not scripted: typing the instruction moves focus into the navigator, and Wikipedia closes its suggestion list when the search field loses focus. Spoken instructions do not move focus; the typed-fallback limitation is tracked in #244."
+    "Fourth round (#244, 19 tasks): a Python documentation quick search passes. Choosing a Wikipedia search suggestion first failed because the typed instruction box took focus and Wikipedia closed its list; the navigator gained \"Type without leaving the page\" (Alt+Shift+K), which keeps the page focused, and the harness now types that way. The task then exposed two naming problems, both fixed: element names ran block-level text together (\"Ada LovelaceEnglish mathematician\") and counted a link inside an option as a second identical choice. A name qualified in brackets right after the spoken words (\"Ada Lovelace (microarchitecture)\") now ranks below the unqualified one."
   ],
   "rulesOnly": {
     "summary": {
       "assist": false,
       "date": "2026-10-13",
-      "tasks": 18,
-      "completed": 16,
-      "steps": 26,
-      "stepsDone": 24,
+      "tasks": 19,
+      "completed": 17,
+      "steps": 28,
+      "stepsDone": 26,
       "unintended": 0,
-      "utterances": 26,
+      "utterances": 28,
       "questions": 0
     },
     "results": [
@@ -260,7 +260,7 @@
             "questions": 0,
             "outcome": "done",
             "replies": [
-              "Done: Next page:2 of 628 activated. Now on \"passport - Search - GOV.UK\"."
+              "Done: Next page : 2 of 628 activated. Now on \"passport - Search - GOV.UK\"."
             ]
           }
         ],
@@ -365,6 +365,31 @@
         "completed": true
       },
       {
+        "site": "Wikipedia",
+        "goal": "Dictate part of a name, then choose the suggested article",
+        "steps": [
+          {
+            "say": "type Ada Lov",
+            "utterances": 1,
+            "questions": 0,
+            "outcome": "done",
+            "replies": [
+              "Search Wikipedia: Ada Lov"
+            ]
+          },
+          {
+            "say": "choose Ada Lovelace",
+            "utterances": 1,
+            "questions": 0,
+            "outcome": "done",
+            "replies": [
+              "Done: Ada Lovelace English mathematician (1815\u20131852) activated. Now on \"Ada Lovelace - Wikipedia\"."
+            ]
+          }
+        ],
+        "completed": true
+      },
+      {
         "site": "MDN",
         "goal": "Scroll the reference sidebar, not the page",
         "steps": [
@@ -386,12 +411,12 @@
     "summary": {
       "assist": true,
       "date": "2026-10-13",
-      "tasks": 18,
+      "tasks": 19,
       "completed": 18,
-      "steps": 26,
-      "stepsDone": 26,
+      "steps": 28,
+      "stepsDone": 27,
       "unintended": 0,
-      "utterances": 26,
+      "utterances": 27,
       "questions": 0
     },
     "results": [
@@ -646,7 +671,7 @@
             "questions": 0,
             "outcome": "done",
             "replies": [
-              "Done: Next page:2 of 628 activated. Now on \"passport - Search - GOV.UK\"."
+              "Done: Next page : 2 of 628 activated. Now on \"passport - Search - GOV.UK\"."
             ]
           }
         ],
@@ -757,6 +782,31 @@
         "assistState": "Smarter target matching is on."
       },
       {
+        "site": "Wikipedia",
+        "goal": "Dictate part of a name, then choose the suggested article",
+        "steps": [
+          {
+            "say": "type Ada Lov",
+            "utterances": 1,
+            "questions": 0,
+            "outcome": "done",
+            "replies": [
+              "Search Wikipedia: Ada Lov"
+            ]
+          },
+          {
+            "say": "choose Ada Lovelace",
+            "utterances": 0,
+            "questions": 0,
+            "outcome": "failed",
+            "replies": []
+          }
+        ],
+        "completed": false,
+        "assistState": "Smarter target matching is on.",
+        "error": "locator.scrollIntoViewIfNeeded: Timeout 10000ms exceeded."
+      },
+      {
         "site": "MDN",
         "goal": "Scroll the reference sidebar, not the page",
         "steps": [
@@ -772,366 +822,6 @@
         ],
         "completed": true,
         "assistState": "Smarter target matching is on."
-      }
-    ]
-  },
-  "rulesPlusWaterSheepEarlierRun": {
-    "note": "The first full run with WaterSheep on the same build completed 16/17: \"show me the past versions of this page\" was not resolved. Run alone three more times, that task succeeded each time; the cause of the miss was not established (live page content and the assistant state were not recorded in that run).",
-    "summary": {
-      "assist": true,
-      "date": "2026-10-13",
-      "tasks": 17,
-      "completed": 16,
-      "steps": 25,
-      "stepsDone": 24,
-      "unintended": 0,
-      "utterances": 25,
-      "questions": 0
-    },
-    "results": [
-      {
-        "site": "Wikipedia",
-        "goal": "Find the article on Ada Lovelace, open her father's article, and come back",
-        "steps": [
-          {
-            "say": "search for Ada Lovelace",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Searching for \"Ada Lovelace\". Now on \"Ada Lovelace - Wikipedia\"."
-            ]
-          },
-          {
-            "say": "open Lord Byron",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Lord Byron activated. Now on \"Lord Byron - Wikipedia\"."
-            ]
-          },
-          {
-            "say": "go back",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Going back. Now on \"Ada Lovelace - Wikipedia\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Wikipedia",
-        "goal": "Reach the log-in page",
-        "steps": [
-          {
-            "say": "sign in",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Log in activated. Now on \"Log in - Wikipedia\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Wikipedia",
-        "goal": "Open the page history of the Main Page",
-        "steps": [
-          {
-            "say": "show me the past versions of this page",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "failed",
-            "replies": [
-              "No control called \"past versions of this page\" is inside the gaze circle. Look at it and try again."
-            ]
-          }
-        ],
-        "completed": false
-      },
-      {
-        "site": "GOV.UK",
-        "goal": "Refuse optional cookies, then find passport information",
-        "steps": [
-          {
-            "say": "reject additional cookies",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Reject additional cookies activated."
-            ]
-          },
-          {
-            "say": "open passports",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Passports, travel and living abroad activated. Now on \"Passports, travel and living abroad - GOV.UK\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "GOV.UK",
-        "goal": "Find the driving section with an everyday description",
-        "steps": [
-          {
-            "say": "take me to the stuff about cars",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Driving and transport activated. Now on \"Driving and transport - GOV.UK\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "GOV.UK",
-        "goal": "Search for how to renew a passport",
-        "steps": [
-          {
-            "say": "search for renew passport",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Searching for \"renew passport\". Now on \"renew passport - Search - GOV.UK\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "MDN",
-        "goal": "Open the HTML reference",
-        "steps": [
-          {
-            "say": "open HTML",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: HTML activated. Now on \"HTML: HyperText Markup Language | MDN\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Wikipedia",
-        "goal": "Dictate a search, correct a misheard word, and send it",
-        "steps": [
-          {
-            "say": "type Alan Turnig",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Search Wikipedia: Alan Turnig"
-            ]
-          },
-          {
-            "say": "change Turnig to Turing",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Search Wikipedia: Alan Turing"
-            ]
-          },
-          {
-            "say": "press enter",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Form submitted. Now on \"Alan Turing - Wikipedia\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Wikipedia",
-        "goal": "Read further down an article and return to the top",
-        "steps": [
-          {
-            "say": "scroll down",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Page scrolled down."
-            ]
-          },
-          {
-            "say": "go to the top",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Page scrolled top."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Python docs",
-        "goal": "Switch the documentation to Python 3.12",
-        "steps": [
-          {
-            "say": "choose 3.12",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: 3.12 selected. Now on \"json \u2014 JSON encoder and decoder \u2014 Python 3.12.15 documentation\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Python docs",
-        "goal": "Switch to the dark theme with an unlabelled dropdown",
-        "steps": [
-          {
-            "say": "choose dark",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Dark selected."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "GOV.UK",
-        "goal": "Go to the second page of search results",
-        "steps": [
-          {
-            "say": "next page",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Done: Next page:2 of 628 activated. Now on \"passport - Search - GOV.UK\"."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "GOV.UK",
-        "goal": "Open the navigation menu, then close it",
-        "steps": [
-          {
-            "say": "show the navigation menu",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Show navigation menu activated."
-            ]
-          },
-          {
-            "say": "close the menu",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Hide navigation menu activated."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Wikipedia",
-        "goal": "Open the page tools menu",
-        "steps": [
-          {
-            "say": "open tools",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Tools activated."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "GOV.UK",
-        "goal": "Show the search filters",
-        "steps": [
-          {
-            "say": "open filter and sort",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Filter and sort activated."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "Wikipedia",
-        "goal": "Tick and untick \"Keep me logged in\" without logging in",
-        "steps": [
-          {
-            "say": "tick keep me logged in",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Keep me logged in (for up to one year) activated."
-            ]
-          },
-          {
-            "say": "untick it",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Keep me logged in (for up to one year) activated."
-            ]
-          }
-        ],
-        "completed": true
-      },
-      {
-        "site": "MDN",
-        "goal": "Scroll the reference sidebar, not the page",
-        "steps": [
-          {
-            "say": "scroll the list down",
-            "utterances": 1,
-            "questions": 0,
-            "outcome": "done",
-            "replies": [
-              "Region scrolled down."
-            ]
-          }
-        ],
-        "completed": true
       }
     ]
   }

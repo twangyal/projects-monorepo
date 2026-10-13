@@ -18,11 +18,32 @@ for (const button of document.querySelectorAll('.add-to-cart')) {
     say(`${button.dataset.title} added to your cart.`);
   });
 }
+// Search suggestions, as many sites show them: a list under the search box that closes when the box loses focus.
+const BOOKS = ['The Quiet River', 'River Songs', 'Mountain Letters', 'Gardens of Stone', 'Night Train North'];
+for (const box of document.querySelectorAll('input[name=q]')) {
+  const list = document.createElement('ul');
+  list.className = 'suggestions'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Suggestions'); list.hidden = true;
+  box.after(list);
+  box.addEventListener('input', () => {
+    const typed = box.value.trim().toLowerCase();
+    list.replaceChildren(...(typed ? BOOKS.filter(title => title.toLowerCase().includes(typed)) : []).map(title => {
+      // As on Wikipedia, each option wraps a link with the same name.
+      const option = document.createElement('li'), link = document.createElement('a');
+      option.setAttribute('role', 'option'); link.href = 'book.html'; link.textContent = title; option.append(link);
+      // A mouse press does not take focus, so the list stays open long enough to be clicked.
+      option.addEventListener('mousedown', event => event.preventDefault());
+      // A click on the link navigates by itself; the option handles clicks elsewhere on it.
+      option.addEventListener('click', event => { if (!event.target.closest('a')) location.href = 'book.html'; });
+      return option;
+    }));
+    list.hidden = !list.children.length;
+  });
+  box.addEventListener('blur', () => { list.hidden = true; });
+}
 const results = document.querySelector('#results');
 if (results) {
   const query = new URLSearchParams(location.search).get('q') ?? '';
-  const books = ['The Quiet River', 'River Songs', 'Mountain Letters', 'Gardens of Stone', 'Night Train North'];
-  const found = books.filter(title => title.toLowerCase().includes(query.toLowerCase().trim()));
+  const found = BOOKS.filter(title => title.toLowerCase().includes(query.toLowerCase().trim()));
   document.querySelector('#query').textContent = query || '(nothing)';
   for (const title of query.trim() ? found : []) {
     const item = document.createElement('li');

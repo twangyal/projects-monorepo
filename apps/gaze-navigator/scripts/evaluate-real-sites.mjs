@@ -1,6 +1,7 @@
 // Scripted tasks on live public websites through the Chrome extension: the pointer stands in for gaze
 // (it rests on the control a person would look at) and typed text stands in for speech. Each step records
 // whether the intended effect happened, how many utterances it took, questions asked and unintended effects.
+// Instructions are typed with "Type without leaving the page", so the page keeps focus as with speech.
 // This is an automated proxy for real use, not a study with intended users or real gaze/speech input.
 //   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal']
 // DIR must be an extension build with host access granted (automation cannot click the permission prompt).
@@ -88,10 +89,14 @@ export const TASKS = [
     { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'tick keep me logged in', done: async page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked() },
     { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'untick it', done: async page => !(await page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked()) },
   ] },
-  // Added in #244: a documentation quick search. (Picking a search suggestion is not scripted: typing the
-  // instruction moves focus into the navigator, and Wikipedia closes its suggestion list when the field loses it.)
+  // Added in #244: a documentation quick search, and choosing a search suggestion (which needs the page to keep focus).
   { site: 'Python docs', goal: 'Search the documentation with its quick search', start: 'https://docs.python.org/3/library/json.html', steps: [
     { look: page => page.getByRole('searchbox', { name: 'Quick search' }).filter({ visible: true }).first(), say: 'search for json decoder', done: url(/search\.html\?q=json\+decoder/) },
+  ] },
+  { site: 'Wikipedia', goal: 'Dictate part of a name, then choose the suggested article', start: 'https://en.wikipedia.org/wiki/Main_Page', steps: [
+    // Already in view; scrolling to it first keeps Wikipedia's suggestion list from showing.
+    { look: field('Search Wikipedia'), noScroll: true, say: 'type Ada Lov', done: typed('Ada Lov') },
+    { look: page => page.getByRole('option').filter({ hasText: /^Ada Lovelace/, visible: true }).first(), say: 'choose Ada Lovelace', target: 'Ada Lovelace', done: url(/\/wiki\/Ada_Lovelace$/) },
   ] },
   { site: 'MDN', goal: 'Scroll the reference sidebar, not the page', start: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a', steps: [
     { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
@@ -127,7 +132,7 @@ async function run() {
         record.steps.push(entry);
         if (step.look) {
           const target = step.look(page);
-          await target.scrollIntoViewIfNeeded({ timeout: 10000 });
+          if (!step.noScroll) await target.scrollIntoViewIfNeeded({ timeout: 10000 });
           const box = await target.boundingBox();
           if (!box) { entry.outcome = 'target-missing'; break; }
           await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -136,8 +141,10 @@ async function run() {
         const before = page.url(), measured = step.measure ? await step.measure(page) : undefined;
         const say = async text => {
           entry.utterances++;
-          await panel.getByLabel('Typed instruction').fill(text);
-          await panel.getByRole('button', { name: 'Do it' }).click();
+          // Typed without leaving the page (#244), so the page keeps focus as it would with speech.
+          await panel.getByRole('button', { name: 'Type without leaving the page' }).click();
+          await page.keyboard.type(text);
+          await page.keyboard.press('Enter');
           await page.waitForTimeout(300);
           await page.waitForFunction(() => !/Working out/.test(document.querySelector('#gaze-web-navigator')?.shadowRoot.querySelector('.status')?.textContent ?? ''), null, { timeout: 20000 }).catch(() => {});
           await page.waitForLoadState('domcontentloaded').catch(() => {});
@@ -152,7 +159,9 @@ async function run() {
           entry.questions++;
           const labels = await buttons.allTextContents();
           if (labels[0] === 'Confirm') { await say('confirm'); continue; }
-          const chosen = labels.find(label => step.target && label.replace(/^\d+:\s*/, '') === step.target);
+          // The intended control, also when its label carries a description ("Ada Lovelace English mathematician").
+          const intended = label => label === step.target || (label.startsWith(`${step.target} `) && !label.startsWith(`${step.target} (`));
+          const chosen = labels.find(label => step.target && intended(label.replace(/^\d+:\s*/, '')));
           if (!chosen) break;
           await say(chosen.split(':')[0]);
         }

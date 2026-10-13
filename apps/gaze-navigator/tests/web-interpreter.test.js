@@ -159,3 +159,11 @@ test('"close" closes an open toggle or uses a Close control; otherwise the words
   assert.equal(interpret('close the menu', context(element(8, 'Show navigation menu', 'button', { expanded: false }))).type, 'unknown');
   assert.deepEqual(interpret('close account', context(element(9, 'Close account', 'button', { consequential: true }))), { type: 'activate', targetId: 9 });
 });
+
+test('a name qualified in brackets right after the spoken words ranks below the unqualified one', () => {
+  const suggestions = context(element(1, 'Ada Lovelace English mathematician (1815–1852)', 'option'), element(2, 'Ada Lovelace (microarchitecture) GPU microarchitecture by Nvidia', 'option'));
+  assert.deepEqual(interpret('choose Ada Lovelace', suggestions), { type: 'activate', targetId: 1 });
+  assert.ok(matchScore('ada lovelace', 'Ada Lovelace (microarchitecture)') < matchScore('ada lovelace', 'Ada Lovelace English mathematician'));
+  // Asking for the qualified one still finds it.
+  assert.deepEqual(interpret('choose Ada Lovelace microarchitecture', suggestions), { type: 'activate', targetId: 2 });
+});

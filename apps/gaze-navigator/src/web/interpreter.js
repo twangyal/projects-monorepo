@@ -41,7 +41,11 @@ export function matchScore(query, name) {
   const qTokens = tokens(query);
   const nTokens = tokens(name);
   if (!qTokens.length || !nTokens.length) return 0;
-  if (` ${n} `.includes(` ${q} `)) return 0.9;
+  if (` ${n} `.includes(` ${q} `)) {
+    // "Ada Lovelace (microarchitecture)" is a more specific thing than the "Ada Lovelace" that was asked for.
+    const raw = name.toLowerCase(), at = raw.indexOf(query.toLowerCase().trim());
+    return at >= 0 && /^\s*\(/.test(raw.slice(at + query.trim().length)) ? 0.84 : 0.9;
+  }
   const shared = qTokens.filter(token => nTokens.includes(token)).length;
   // Word overlap stays below a contained phrase, so reordered words ("high to low") never tie an exact name.
   return 0.7 * (shared / qTokens.length) + 0.1 * (shared / nTokens.length);

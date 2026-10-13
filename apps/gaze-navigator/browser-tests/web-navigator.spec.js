@@ -264,3 +264,47 @@ test('a disclosure toggle inside a form opens without a confirmation; the form\'
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#filter-panel')).toBeHidden();
 });
+
+test('typing without leaving the page keeps a site\'s suggestion list open to choose from', async ({ page }) => {
+  await page.goto('/practice-site/index.html');
+  const box = page.getByRole('searchbox', { name: 'Search books' }), list = page.getByRole('listbox', { name: 'Suggestions' });
+  const keep = panel(page).getByRole('button', { name: 'Type without leaving the page' });
+  const typeKeepingFocus = async text => { await keep.click(); await expect(keep).toHaveAttribute('aria-pressed', 'true'); await page.keyboard.type(text); await page.keyboard.press('Enter'); };
+  await look(page, box);
+  await typeKeepingFocus('type riv');
+  await expect(box).toHaveValue('riv');
+  await expect(box).toBeFocused();
+  await expect(list).toBeVisible();
+  // The regular instruction box takes focus, and the site closes its list, as many sites do.
+  await panel(page).getByLabel('Typed instruction').focus();
+  await expect(list).toBeHidden();
+  await box.focus();
+  await page.keyboard.type('e');
+  await expect(list).toBeVisible();
+  // With focus kept, the suggestion can be chosen by name.
+  await look(page, page.getByRole('option', { name: 'The Quiet River' }));
+  // The option and the link inside it are one target, so there is no question between identical choices.
+  await expect(panel(page).locator('.context li').filter({ hasText: 'The Quiet River' })).toHaveCount(1);
+  await typeKeepingFocus('choose the quiet river');
+  await page.waitForURL('**/practice-site/book.html');
+
+  // Alt+Shift+K starts typing to the navigator; keys go to it, not the page, and Escape stops.
+  await look(page, page.getByRole('searchbox', { name: 'Search books' }));
+  await page.getByRole('searchbox', { name: 'Search books' }).focus();
+  await page.keyboard.press('Alt+Shift+K');
+  await expect(panel(page).getByRole('button', { name: 'Type without leaving the page' })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.type('abc');
+  await expect(panel(page).locator('.transcript')).toHaveText('Typing to the navigator: abc');
+  await expect(page.getByRole('searchbox', { name: 'Search books' })).toHaveValue('');
+  await page.keyboard.press('Escape');
+  await expect(panel(page).getByRole('button', { name: 'Type without leaving the page' })).toHaveAttribute('aria-pressed', 'false');
+  await page.keyboard.type('x');
+  await expect(page.getByRole('searchbox', { name: 'Search books' })).toHaveValue('x');
+  // After using a setting in the panel, the mode still captures (only the panel's own text field opts out).
+  await panel(page).locator('details.settings').evaluate(details => { details.open = true; });
+  await panel(page).getByLabel('Speak feedback').focus();
+  await page.keyboard.press('Alt+Shift+K');
+  await page.keyboard.type('go back');
+  await expect(panel(page).locator('.transcript')).toHaveText('Typing to the navigator: go back');
+  await page.keyboard.press('Escape');
+});
