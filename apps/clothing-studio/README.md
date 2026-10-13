@@ -44,6 +44,22 @@ How the 3D garment is built: the tee's flat front and back silhouettes (shoulder
 
 See [3D product editor verification](docs/2026-10-13-product-editor.md).
 
+### Automatic tech pack (#227)
+
+Below the 3D editor, **Factory-ready tech pack** is generated from the design and updates with every change.
+
+- **Details**: **Style number**, **Season** and **Sample size** (XS–XL). Use **Apply details** to save them with the design as one undoable edit.
+- **Bill of materials**: one line per distinct fabric, color and print. Each line gives the composition, weight, the parts it covers, and consumption. Consumption is estimated from the pattern-piece areas plus 15% for seam allowance and cutting waste, in m² and in linear metres at 150 cm wide. Then come trims (thread, neck label, care label) and each artwork, with its print size and placement.
+- **Points of measure A–K**: chest, body length, sleeve length, armhole depth, shoulder, neck width, front and back neck drop, hem, sleeve opening and rib height.
+  - They come from the same dimensions as the 3D garment and pattern pieces.
+  - Each has a tolerance and is graded XS–XL around the sample size.
+  - A measurement diagram labels each point.
+- **Construction**: seam-by-seam operations, with a mitred V or a shoulder-joined crew rib, and artwork application.
+- **Download tech pack (Excel)** saves an `.xlsx` workbook with Cover, Bill of materials, Points of measure and Construction sheets. Measurements are numeric cells.
+- **Download printable tech pack** saves a self-contained HTML document with front and back renders, the tables and the diagram. Open it in a browser and print, or save it as a PDF.
+
+Consumption, grading and construction are standard starting values for a basic tee. Confirm them with a marker and a fit sample. See [tech pack verification](docs/2026-10-13-tech-pack.md).
+
 ## Create a concept
 
 1. Name the project and adjust body width, body length, sleeve length, and neckline. Silhouette values are drawing units, not physical measurements.

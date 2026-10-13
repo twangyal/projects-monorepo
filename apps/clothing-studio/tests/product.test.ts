@@ -20,9 +20,13 @@ test('templates are valid remixable products and validation refuses anything out
     ['chest', p => { p.measurements.chest = 300; }],
     ['part', p => { delete (p.parts as Record<string, unknown>).neckband; }],
     ['extra', p => { (p as unknown as Record<string, unknown>).price = 1; }],
+    ['sample size', p => { p.spec = { styleNumber: 'A', season: 'B', sampleSize: 'XXL' as never }; }],
+    ['style number', p => { p.spec = { styleNumber: 'x'.repeat(41), season: '', sampleSize: 'M' }; }],
+    ['season', p => { p.spec = { styleNumber: '', season: 'SS\u000027', sampleSize: 'M' }; }],
     ['artwork', p => { p.artwork = [{ part: 'front', dataUrl: 'javascript:alert(1)', width: 1, height: 1, name: 'x', xCm: 0, yCm: 0, widthCm: 10 }]; }],
   ];
   for (const [label, mutate] of bad) { const p = structuredClone(good); mutate(p); assert.throws(() => validateProduct(p), Error, label); }
+  assert.deepEqual(validateProduct({ ...structuredClone(good), spec: { styleNumber: ' CS-1 ', season: 'SS27', sampleSize: 'L' } }).spec, { styleNumber: 'CS-1', season: 'SS27', sampleSize: 'L' });
   // Projects keep the design; older projects without one stay valid.
   const project = validateProject({ ...createProject(), product: good });
   assert.deepEqual(project.product, good);

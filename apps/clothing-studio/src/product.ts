@@ -27,9 +27,14 @@ export interface Print { motif: Motif; color: string; scaleCm: number; layout: L
 export interface PartStyle { material: string; color: string; print: Print | null }
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number }
 export interface Measurements { chest: number; length: number; sleeve: number }
+export interface Spec { styleNumber: string; season: string; sampleSize: Size }
+export const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
+export type Size = typeof SIZES[number];
 export interface Product {
   base: 'tee'; name: string; measurements: Measurements; neckline: 'crew' | 'v';
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
+  /** Tech-pack header details; absent until the designer fills them in. */
+  spec?: Spec;
 }
 
 export const LIMITS = {
@@ -71,7 +76,7 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
 }
 
 export function validateProduct(value: unknown): Product {
-  const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork'], 'Product');
+  const p = plain(value, Object.hasOwn(value as object, 'spec') ? ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', 'spec'] : ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork'], 'Product');
   if (p.base !== 'tee') fail('Unsupported base product.');
   if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
   const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
@@ -87,7 +92,14 @@ export function validateProduct(value: unknown): Product {
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
-  return { base: 'tee', name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork };
+  let spec: Spec | undefined;
+  if (p.spec !== undefined) {
+    const raw = plain(p.spec, ['styleNumber', 'season', 'sampleSize'], 'Tech pack details');
+    const text = (value: unknown, label: string) => typeof value === 'string' && value.length <= 40 && ![...value].some(c => c.charCodeAt(0) < 32) ? value.trim() : fail(`${label} must be at most 40 characters of plain text.`);
+    if (!SIZES.includes(raw.sampleSize as Size)) fail('Sample size must be XS, S, M, L or XL.');
+    spec = { styleNumber: text(raw.styleNumber, 'Style number'), season: text(raw.season, 'Season'), sampleSize: raw.sampleSize as Size };
+  }
+  return { base: 'tee', name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });
@@ -121,12 +133,22 @@ export function panelSize(m: Measurements) { return { width: m.chest / 2 + 2, le
 export function sleeveSize(m: Measurements) { const armhole = m.chest * 0.23 + 4; return { capWidth: armhole * 2, cuffWidth: Math.max(28, armhole * 1.55 - m.sleeve * 0.25), length: m.sleeve }; }
 export function neckSize(m: Measurements, neckline: Product['neckline']) { const neck = m.chest * 0.41 + 6; return { length: neckline === 'v' ? neck + 6 : neck, width: 2 }; }
 
+/** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
+export function teeDimensions(product: Product) {
+  const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2;
+  return {
+    panelWidth: panel.width, length: m.length, half, neckHalf: m.chest * 0.08 + 7, shoulderX: half * 0.86 + 1, shoulderDrop: 4,
+    armDepth: m.chest * 0.23 + 2, sleeveLength: m.sleeve, cuffHalf: Math.max(sleeve.cuffWidth / 2, 10), capWidth: sleeve.capWidth,
+    neckDepthFront: product.neckline === 'v' ? 15 : 8, neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
+  };
+}
+
 export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number }
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
   const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), neck = neckSize(m, product.neckline);
-  const w = panel.width, half = w / 2, shoulderDrop = 4, neckWidth = m.chest * 0.08 + 7, armDepth = m.chest * 0.23 + 2;
+  const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   const body = (front: boolean) => {
     const neckDepth = front ? (product.neckline === 'v' ? 15 : 8) : 2;
     const pts = [{ x: half - neckWidth, y: 0 }, { x: 0, y: shoulderDrop }, { x: 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: shoulderDrop + armDepth }, { x: 0, y: panel.length },
@@ -161,11 +183,11 @@ interface Silhouette { points: Pt[]; pinned: boolean[]; neck: boolean[]; armhole
  * back meet (shoulders, sleeve edges, sides); the hem, cuffs and neck stay open. `armholes` are the sleeve seams.
  */
 export function teeSilhouette(product: Product, side: 'front' | 'back'): Silhouette {
-  const m = product.measurements, half = panelSize(m).width / 2, sleeve = sleeveSize(m);
-  const neckHalf = m.chest * 0.08 + 7, shoulderX = half * 0.86 + 1, shoulderDrop = 4, armDepth = m.chest * 0.23 + 2;
+  const m = product.measurements, half = panelSize(m).width / 2;
+  const { neckHalf, shoulderX, shoulderDrop, armDepth } = teeDimensions(product);
   const angle = 38 * Math.PI / 180, dir = { x: Math.cos(angle), y: Math.sin(angle) }, perp = { x: -Math.sin(angle), y: Math.cos(angle) };
   const shoulder = { x: shoulderX, y: shoulderDrop }, underarm = { x: half, y: shoulderDrop + armDepth };
-  const cuffHalf = Math.max(sleeve.cuffWidth / 2, 10), top = { x: shoulder.x + dir.x * m.sleeve, y: shoulder.y + dir.y * m.sleeve };
+  const cuffHalf = teeDimensions(product).cuffHalf, top = { x: shoulder.x + dir.x * m.sleeve, y: shoulder.y + dir.y * m.sleeve };
   const bottom = { x: top.x + perp.x * cuffHalf, y: top.y + perp.y * cuffHalf };
   const neckDepth = side === 'front' ? (product.neckline === 'v' ? 15 : 8) : 2;
   const mirror = (p: Pt) => ({ x: -p.x, y: p.y });

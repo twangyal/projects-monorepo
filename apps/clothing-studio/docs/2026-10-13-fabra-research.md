@@ -70,7 +70,7 @@ Clothing Studio is already deeper than Fabra's public beta in places: real measu
 
 Each milestone delivers a usable end-to-end slice. All of it stays local and account-free, and paid services are excluded.
 
-1. **3D product editor (this milestone).**
+1. **3D product editor** (done in #226).
    - A product library: base T-shirt plus remixable templates.
    - The garment is built from named parts (front, back, two sleeves, neck rib), rendered in real-time WebGL with orbit view.
    - A library of fabric materials (procedural and physically scaled), colors and repeat prints.
@@ -78,7 +78,7 @@ Each milestone delivers a usable end-to-end slice. All of it stays local and acc
    - Artwork placement on front and back.
    - The linked 2D pattern-piece view shows the same parts and fabrics.
    - It is saved in the project, with undo, and exports PNG renders.
-2. **Automatic tech pack.**
+2. **Automatic tech pack** (done in #227; see [verification](2026-10-13-tech-pack.md)).
    - Cover with front and back renders.
    - BoM generated from part materials, colors, prints, artwork and trims.
    - Points of measure from the garment dimensions, graded across sizes.

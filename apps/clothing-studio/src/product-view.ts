@@ -3,9 +3,10 @@
 import { paintTile } from './fabric-texture.ts';
 import {
   LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_IDS, PART_NAMES, TEMPLATES,
-  material, patternPieces, template, validateProduct, type Artwork, type PartId, type Print, type Product,
+  SIZES, material, patternPieces, template, validateProduct, type Artwork, type PartId, type Print, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
+import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 
 const PALETTE = ['#f4f2ec', '#1c1c1e', '#1f2a4f', '#3f5468', '#9fae91', '#d89476', '#b23a2e', '#e9c46a', '#efe8d8', '#7b6d8d'];
 const DRAG_TYPE = 'application/x-clothing-swatch';
@@ -56,6 +57,17 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
   <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div></div>
   <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button></div>
   <p class="fine-print">A styling model built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here. Renders and the GLB use the shapes shown.</p>
+  <section class="techpack" aria-labelledby="techpack-heading">
+    <div class="techpack-head"><div><p class="eyebrow">TECH PACK</p><h4 id="techpack-heading">Factory-ready tech pack</h4>
+    <p class="fine-print">Generated from this design and kept in sync with every change: bill of materials with fabric consumption, graded points of measure, construction and artwork placement.</p></div>
+    <div class="techpack-fields"><label class="field">Style number<input id="spec-style" maxlength="40" autocomplete="off"></label>
+      <label class="field">Season<input id="spec-season" maxlength="40" autocomplete="off" placeholder="e.g. SS27"></label>
+      <label class="field">Sample size<select id="spec-size">${SIZES.map(size => `<option value="${size}">${size}</option>`).join('')}</select></label>
+      <button id="apply-spec">Apply details</button></div></div>
+    <div id="techpack-preview" class="techpack-preview"></div>
+    <div class="product-exports"><button id="techpack-xlsx" class="product-export">Download tech pack (Excel) ↓</button><button id="techpack-html" class="product-export">Download printable tech pack ↓</button></div>
+    <p class="fine-print">The printable tech pack includes front and back renders; open it in a browser and print or save as PDF.</p>
+  </section>
 </section>`;
 
 export function mountProduct(options: { current: () => Project; commit: (next: Project) => void; notice: (text: string, error?: boolean) => void; download: (blob: Blob, suffix: string) => void }) {
@@ -188,6 +200,22 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('product-png-back').addEventListener('click', () => void exporting(async () => { const s = await ready; if (!s) throw new Error('The 3D view is unavailable.'); options.download(await s.png('back'), '-back.png'); }));
   $('product-glb').addEventListener('click', () => void exporting(async () => { const s = await ready; if (!s) throw new Error('The 3D view is unavailable.'); options.download(new Blob([await s.glb()], { type: 'model/gltf-binary' }), '.glb'); }));
 
+  // Tech pack: details are part of the design; the pack itself is always derived from it.
+  $('apply-spec').addEventListener('click', () => update(draft => {
+    draft.spec = { styleNumber: ($('spec-style') as HTMLInputElement).value, season: ($('spec-season') as HTMLInputElement).value, sampleSize: ($('spec-size') as HTMLSelectElement).value as Size };
+  }, 'Tech pack details applied.'));
+  const today = () => new Date().toISOString().slice(0, 10);
+  const dataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('The render could not be read.')); reader.readAsDataURL(blob); });
+  $('techpack-xlsx').addEventListener('click', () => void exporting(async () => {
+    const pack = buildTechPack(product() ?? template('blank'), today());
+    options.download(new Blob([techPackXlsx(pack)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '-tech-pack.xlsx');
+  }));
+  $('techpack-html').addEventListener('click', () => void exporting(async () => {
+    const design = product() ?? template('blank'), s = await ready;
+    const images = { diagram: measurementDiagram(design), ...(s ? { front: await dataUrl(await s.png('front')), back: await dataUrl(await s.png('back')) } : {}) };
+    options.download(new Blob([techPackHtml(buildTechPack(design, today()), images)], { type: 'text/html' }), '-tech-pack.html');
+  }));
+
   function piecesSvg(design: Product): string {
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
@@ -223,10 +251,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-name') as HTMLInputElement).value = design.name;
     ($('product-chest') as HTMLInputElement).value = String(design.measurements.chest); ($('product-length') as HTMLInputElement).value = String(design.measurements.length);
     ($('product-sleeve') as HTMLInputElement).value = String(design.measurements.sleeve); ($('product-neckline') as HTMLSelectElement).value = design.neckline;
+    ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';
+    ($('spec-size') as HTMLSelectElement).value = design.spec?.sampleSize ?? 'M';
     const signature = JSON.stringify([design, selected]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
+      $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       scene?.setProduct(design, selected);
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${PART_NAMES[selected]} — ${material(style.material).name}${style.print ? `, ${MOTIF_NAMES[style.print.motif]} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
