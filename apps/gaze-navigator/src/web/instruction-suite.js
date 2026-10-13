@@ -237,21 +237,15 @@ function matches(expected, got) {
   return true;
 }
 
-// Classifies every case: correct, unsafe (a different page action), or abstained (asked/refused instead).
-export function evaluateInterpreter(interpret, suite = SUITE, name = SUITE_VERSION) {
-  const results = suite.map(test => {
-    let got;
-    try {
-      got = interpret(test.say, CONTEXTS[test.context]);
-    } catch (error) {
-      got = { type: 'error', message: error.message };
-    }
-    let outcome;
-    if (matches(test.expected, got)) outcome = 'correct';
-    else if (PAGE_ACTIONS.has(got.type)) outcome = 'unsafe';
-    else outcome = 'abstained';
-    return { ...test, got: { ...got, choose: undefined }, outcome };
-  });
+function classify(test, got) {
+  let outcome;
+  if (matches(test.expected, got)) outcome = 'correct';
+  else if (PAGE_ACTIONS.has(got.type)) outcome = 'unsafe';
+  else outcome = 'abstained';
+  return { ...test, got: { ...got, choose: undefined }, outcome };
+}
+
+function summarize(results, name) {
   const summary = { suite: name, total: results.length, correct: 0, unsafe: 0, abstained: 0, categories: {} };
   for (const result of results) {
     summary[result.outcome]++;
@@ -260,4 +254,33 @@ export function evaluateInterpreter(interpret, suite = SUITE, name = SUITE_VERSI
     category[result.outcome]++;
   }
   return { summary, results };
+}
+
+// Classifies every case: correct, unsafe (a different page action), or abstained (asked/refused instead).
+export function evaluateInterpreter(interpret, suite = SUITE, name = SUITE_VERSION) {
+  return summarize(suite.map(test => {
+    let got;
+    try {
+      got = interpret(test.say, CONTEXTS[test.context]);
+    } catch (error) {
+      got = { type: 'error', message: error.message };
+    }
+    return classify(test, got);
+  }), name);
+}
+
+/** The same scoring for an interpreter that answers asynchronously (a model); records latency. */
+export async function evaluateInterpreterAsync(interpret, suite = SUITE, name = SUITE_VERSION, now = () => performance.now()) {
+  const results = [];
+  for (const test of suite) {
+    let got;
+    const started = now();
+    try {
+      got = await interpret(test.say, CONTEXTS[test.context]);
+    } catch (error) {
+      got = { type: 'error', message: error.message };
+    }
+    results.push({ ...classify(test, got), ms: Math.round((now() - started) * 10) / 10 });
+  }
+  return summarize(results, name);
 }

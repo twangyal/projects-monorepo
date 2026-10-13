@@ -266,10 +266,12 @@ export function interpret(utterance, context = { elements: [] }) {
   if (resolved.type === 'unknown') {
     resolved = selectOption(query, context.elements.filter(element => element.options?.length)) ?? resolved;
   }
+  // Unknown results say why, so an assisting model can be asked only about naming a target:
+  // `targetQuery` when an activation was requested but no control matched, `unparsed` otherwise.
   if (resolved.type === 'unknown' && verbless === text && !hint) {
-    return { type: 'unknown', message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".` };
+    return { type: 'unknown', unparsed: true, message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".` };
   }
-  return resolved;
+  return resolved.type === 'unknown' ? { ...resolved, targetQuery: query } : resolved;
 }
 
 // Pure text corrections applied to a field value.
