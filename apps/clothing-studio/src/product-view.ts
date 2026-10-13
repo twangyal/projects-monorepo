@@ -118,6 +118,16 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
 export function mountProduct(options: { current: () => Project; commit: (next: Project) => void; notice: (text: string, error?: boolean) => void; download: (blob: Blob, suffix: string) => void }) {
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const canvas = $('product-canvas') as HTMLCanvasElement;
+  // A decode belongs to the project and editing intent that started it, never the current selection later.
+  let assetGeneration = 0;
+  const retireAssets = () => { assetGeneration++; };
+  const root = document.getElementById('app')!;
+  for (const event of ['input', 'change', 'pointerdown', 'keydown', 'click', 'drop']) root.addEventListener(event, retireAssets, true);
+  window.addEventListener('pagehide', retireAssets);
+  const beginAsset = () => {
+    const generation = ++assetGeneration, origin = options.current();
+    return () => generation === assetGeneration && options.current() === origin;
+  };
   let selected: PartId = 'front', scene: import('./product-3d.ts').ProductScene | null = null, shown = '';
   const ready = import('./product-3d.ts').then(({ ProductScene }) => { scene = new ProductScene(canvas); shown = ''; render(options.current()); return scene; })
     .catch(() => { $('product-status').textContent = 'This browser could not start the 3D view (WebGL is required). Pattern pieces and editing still work.'; return null; });
@@ -177,10 +187,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('motif-file').addEventListener('change', async () => {
     const input = $('motif-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
     if (!file) return;
+    const owned = beginAsset();
+    let bitmap: ImageBitmap | undefined;
+    const target = selected;
     try {
       if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Choose a PNG, JPEG or WebP image of at most 10 MB.');
       if ((product()?.motifs?.length ?? 0) >= LIMITS.motifs) throw new Error(`Keep at most ${LIMITS.motifs} uploaded motifs; remove one first.`);
-      const bitmap = await createImageBitmap(file);
+      bitmap = await createImageBitmap(file);
+      if (!owned()) return;
       let edge = Math.min(768, Math.max(bitmap.width, bitmap.height)), dataUrl = '', width = 0, height = 0;
       for (; edge >= 64; edge = Math.round(edge * 0.75)) {
         const scale = edge / Math.max(bitmap.width, bitmap.height), c = document.createElement('canvas');
@@ -188,17 +202,17 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         c.getContext('2d')!.drawImage(bitmap, 0, 0, width, height); dataUrl = c.toDataURL('image/png');
         if (dataUrl.length <= LIMITS.motifBytes * 1.33) break;
       }
-      bitmap.close();
       if (dataUrl.length > LIMITS.motifBytes * 1.33) throw new Error('That image is too detailed to use as a motif; try a simpler or smaller one.');
       const name = file.name.replace(/\.[^.]+$/, '').slice(0, 60) || 'Uploaded motif';
       update(draft => {
         const motifs = draft.motifs ?? [];
         let n = 1; while (motifs.some(m => m.id === `m${n}`)) n++;
         draft.motifs = [...motifs, { id: `m${n}`, name, dataUrl, width, height }];
-        const current = draft.parts[selected].print;
-        draft.parts[selected].print = { motif: `upload:m${n}`, color: current?.color ?? '#1f2a4f', scaleCm: current?.scaleCm ?? 8, layout: current?.layout ?? 'grid' };
-      }, `“${name}” repeats on the ${label(selected).toLowerCase()}. Choose its repeat and size in cm below, or drag it onto other parts.`);
-    } catch (error) { options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
+        const current = draft.parts[target].print;
+        draft.parts[target].print = { motif: `upload:m${n}`, color: current?.color ?? '#1f2a4f', scaleCm: current?.scaleCm ?? 8, layout: current?.layout ?? 'grid' };
+      }, `“${name}” repeats on the ${label(target).toLowerCase()}. Choose its repeat and size in cm below, or drag it onto other parts.`);
+    } catch (error) { if (owned()) options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
+    finally { bitmap?.close(); }
   });
   // Repaint the garment, pieces and thumbnails once an uploaded motif has decoded.
   onMotifImage(() => { shown = ''; render(options.current()); });
@@ -288,9 +302,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('artwork-file').addEventListener('change', async () => {
     const input = $('artwork-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
     if (!file) return;
+    const owned = beginAsset();
+    let bitmap: ImageBitmap | undefined;
+    const side = ($('artwork-side') as HTMLSelectElement).value as Artwork['part'];
     try {
       if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Choose a PNG, JPEG or WebP image of at most 10 MB.');
-      const bitmap = await createImageBitmap(file);
+      bitmap = await createImageBitmap(file);
+      if (!owned()) return;
       let edge = Math.min(1024, Math.max(bitmap.width, bitmap.height)), dataUrl = '', width = 0, height = 0;
       for (; edge >= 128; edge = Math.round(edge * 0.75)) {
         const scale = edge / Math.max(bitmap.width, bitmap.height), c = document.createElement('canvas');
@@ -298,13 +316,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         c.getContext('2d')!.drawImage(bitmap, 0, 0, width, height); dataUrl = c.toDataURL('image/png');
         if (dataUrl.length <= LIMITS.artworkBytes * 1.33) break;
       }
-      bitmap.close();
-      const side = ($('artwork-side') as HTMLSelectElement).value as Artwork['part'];
       update(draft => {
         draft.artwork = draft.artwork.filter(art => art.part !== side);
         draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), xCm: 0, yCm: side === 'front' ? 10 : 12, widthCm: Math.min(24, topMeasurements(draft).chest / 4) });
       }, `Artwork placed on the ${side}. Adjust its width and position below.`);
-    } catch (error) { options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
+    } catch (error) { if (owned()) options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
+    finally { bitmap?.close(); }
   });
   $('apply-artwork').addEventListener('click', () => update(draft => {
     const side = ($('artwork-side') as HTMLSelectElement).value, art = draft.artwork.find(item => item.part === side);
