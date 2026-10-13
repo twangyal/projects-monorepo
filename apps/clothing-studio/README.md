@@ -2,7 +2,7 @@
 
 **Product direction (2026-10-08): ACTIVE.** The destination is a professional garment-design environment with linked 2D patterns, editable 3D garments, credible cloth simulation and personalized fitting. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
-A local T-shirt concept workspace: adjust a silhouette, choose colors and visual textures, sketch on the garment, place it over a photo, and export your idea. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
+A local garment design workspace. **Style a garment in 3D**: start from a template, drag fabrics, colors and prints onto each part of a real-time 3D tee, place artwork, see the linked pattern pieces, and export renders or a 3D model. The concept tee sketchbook, photo overlay and measured skirt construction are still here. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
 
 The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape, depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
 
@@ -23,6 +23,26 @@ npm run preview
 ```
 
 The built `dist/` directory can be served by a static web server. Use a current browser with IndexedDB, SVG, Canvas and `createImageBitmap`; Chromium is automated below. Photo decoding can vary between browsers. No external assets, telemetry, or network requests are needed by the production app. The development server uses its local hot-reload connection.
+
+## Style a garment in 3D
+
+**3D product design** follows the approachable workflow of web-based product design tools such as Fabra: start from a product or template, style it part by part in real-time 3D, and export. See the [research and roadmap](docs/2026-10-13-fabra-research.md).
+
+1. **Choose a template**: **Blank tee**, **Breton stripe**, **Ringer tee** or **Garden print**. Templates are remixable starting points. Replacing a design asks first and can be undone.
+2. **Style each part.** The garment's parts are the front body, back body, left and right sleeves and the neck rib.
+   - Drag a fabric, color or print from the library onto a part of the 3D garment, or select a part (click it, use the part buttons, or click its pattern piece) and click a library item.
+   - The inspector sets the selected part's fabric, color, print, print color, **Repeat** (standard, half drop, half brick or mirror) and **Repeat size**.
+   - **Use this style on every part** copies the style to all parts; the neck rib keeps its rib knit.
+3. **The fabric library** has 8 fabrics with weight and composition, from cotton jersey (180 gsm) to denim twill (340 gsm). Each has a procedural knit or weave structure. Prints come in 6 motifs. Fabric structure and prints are drawn at their real size in centimetres, so a 2 cm stripe is 2 cm on the garment and on the pattern.
+4. **Measurements**: chest, body length, sleeve length and crew or V neckline. They reshape the 3D garment and the **linked pattern pieces**. Those are finished flat pieces, without seam allowance, dimensioned in cm and filled with the same fabrics.
+5. **Artwork**: upload a PNG (transparency kept), JPEG or WebP for the front or back. Set its width and position in cm from the centre and below the shoulder.
+6. **View and export**: orbit by dragging, or use **Front**, **Back**, **Left** and **Right**. **Export front/back render PNG** saves a render, and **Export 3D model (GLB)** saves the styled garment, with its named parts and artwork, for other 3D tools.
+
+Every change is one Undo/Redo step and is saved with the project and its backups. Projects without a 3D design remain valid.
+
+How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here, and it is not worn on a body. For fabric drape on a body, see the measured skirt's simulation below. Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
+
+See [3D product editor verification](docs/2026-10-13-product-editor.md).
 
 ## Create a concept
 
