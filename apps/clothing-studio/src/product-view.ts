@@ -395,9 +395,21 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Exports.
   const exporting = async (action: () => Promise<void>) => { try { await action(); } catch (error) { options.notice(error instanceof Error ? error.message : 'Export failed.', true); } };
-  $('product-png-front').addEventListener('click', () => void exporting(async () => { const s = await ready; if (!s) throw new Error('The 3D view is unavailable.'); options.download(await s.png('front'), '-front.png'); }));
-  $('product-png-back').addEventListener('click', () => void exporting(async () => { const s = await ready; if (!s) throw new Error('The 3D view is unavailable.'); options.download(await s.png('back'), '-back.png'); }));
-  $('product-glb').addEventListener('click', () => void exporting(async () => { const s = await ready; if (!s) throw new Error('The 3D view is unavailable.'); options.download(new Blob([await s.glb()], { type: 'model/gltf-binary' }), '.glb'); }));
+  for (const [id, kind, suffix] of [['product-png-front', 'front', '-front.png'], ['product-png-back', 'back', '-back.png'], ['product-glb', 'glb', '.glb']] as const) {
+    const button = $(id) as HTMLButtonElement;
+    button.addEventListener('click', () => void exporting(async () => {
+      if (button.disabled) return;
+      const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank');
+      button.disabled = true;
+      try {
+        if (!await ready) throw new Error('The 3D view is unavailable.');
+        const exports = await import('./product-3d.ts');
+        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design)], {type:'model/gltf-binary'})
+          : await exports.productSnapshotPng(design, kind);
+        options.download(blob, suffix, snapshot.title);
+      } finally { button.disabled = false; }
+    }));
+  }
 
   // Tech pack: details are part of the design; the pack itself is always derived from it.
   $('apply-spec').addEventListener('click', () => update(draft => {

@@ -44,6 +44,8 @@ Uploaded motifs and artwork are inspected before decoding; saved assets must hav
 
 Unapplied product measurements, fit, artwork placement, tech-pack details and costing stay in their fields across part selection, styling and image redraws. **Apply** commits its group; **Discard all product drafts** resets every pending product field without editing the garment. New template/project, backup replacement and Undo/Redo require finishing these drafts first. Artwork side and fit handles require finishing their respective drafts. Costing's material-price list refreshes after Apply/Discard. Drafts are session-only and not included in autosave or exports; commit them before reloading. [Draft verification](docs/2026-10-13-product-drafts-247.md) records the boundaries.
 
+Front/back PNG, GLB and printable tech-pack exports capture the committed design and concept filename before preparing images. Each uses an independent scene, leaves the visible camera and editing available, and releases temporary resources on success or failure. Only the initiating export button is busy. See [standalone export verification](docs/2026-10-13-standalone-snapshots-250.md).
+
 Printable tech-pack export captures one committed design, date and filename. A separate render scene waits for its exact image assets and produces both images; editing remains available while its export button is busy. Uploaded artwork is visible on the outward-facing styling surfaces. [Snapshot verification](docs/2026-10-13-techpack-snapshot-247.md) records actual render and lifecycle checks.
 
 

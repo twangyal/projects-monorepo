@@ -172,14 +172,24 @@ export class ProductScene {
   }
 }
 
-/** Owned, detached render scene: editing and other exports cannot change its captured design. */
-export async function productSnapshotRenders(product: Product): Promise<{ front: Blob; back: Blob }> {
+/** Own one immutable scene for the full asynchronous export and always release its resources. */
+async function withProductSnapshot<T>(product: Product, exportScene: (scene: ProductScene) => Promise<T>): Promise<T> {
   const snapshot = structuredClone(product);
   await prepareMotifImages(snapshot.motifs ?? []);
   const scene = new ProductScene(document.createElement('canvas'));
   try {
     scene.setProduct(snapshot, null);
     await scene.prepareArtwork();
-    return { front: await scene.png('front'), back: await scene.png('back') };
+    return await exportScene(scene);
   } finally { scene.dispose(); }
+}
+
+export function productSnapshotRenders(product: Product): Promise<{ front: Blob; back: Blob }> {
+  return withProductSnapshot(product, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
+}
+export function productSnapshotPng(product: Product, view: 'front' | 'back'): Promise<Blob> {
+  return withProductSnapshot(product, scene => scene.png(view));
+}
+export function productSnapshotGlb(product: Product): Promise<ArrayBuffer> {
+  return withProductSnapshot(product, scene => scene.glb());
 }
