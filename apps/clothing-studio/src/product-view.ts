@@ -10,6 +10,7 @@ import type { Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
 import { readStylePrompt } from './style-prompt.ts';
+import { BODY_CHEST, defaultBodyChest, validateBodyChest, type GarmentDrapeResult } from './garment-drape.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -38,6 +39,9 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <div class="product-stage">
       <canvas id="product-canvas" aria-label="3D garment. Drag to orbit; click a part to select it." tabindex="0"></canvas>
       <div class="view-buttons" role="group" aria-label="Camera view">${['front', 'back', 'left', 'right'].map(v => `<button data-view="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
+      <div class="drape-controls" id="garment-drape-controls"><label class="field">Body chest girth (cm)<input id="garment-drape-chest" type="number" min="${BODY_CHEST[0]}" max="${BODY_CHEST[1]}" step="1"></label>
+        <button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
+        <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
       <p id="product-status" class="fine-print" role="status"></p>
     </div>
@@ -125,6 +129,53 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   let selected: PartId = 'front', scene: import('./product-3d.ts').ProductScene | null = null, shown = '';
   const ready = import('./product-3d.ts').then(({ ProductScene }) => { scene = new ProductScene(canvas); shown = ''; render(options.current()); return scene; })
     .catch(() => { $('product-status').textContent = 'This browser could not start the 3D view (WebGL is required). Pattern pieces and editing still work.'; return null; });
+
+  // Draping on a body: simulated in a worker, and kept while the design's shape, fabrics and the body stay the same, so
+  // recolouring keeps the drape and a change of measurements, fit, modules or fabric drapes again. The body is a view
+  // setting for this session, not part of the design.
+  let draping = false, bodyChest: number | null = null, drape: { key: string; result: GarmentDrapeResult } | null = null;
+  let drapeWorker: Worker | null = null, drapeTimer = 0, drapeKey = '';
+  const chestFor = (design: Product) => bodyChest ?? defaultBodyChest(design);
+  const drapeKeyOf = (design: Product) => JSON.stringify([design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline,
+    partsOf(design).map(id => design.parts[id].material), chestFor(design)]);
+  const currentDrape = (design: Product) => (draping && !isBottoms(design) && drape?.key === drapeKeyOf(design) ? drape.result : null);
+  function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
+  function startDrape(design: Product) {
+    const key = drapeKeyOf(design);
+    if (drapeKey === key) return;
+    stopDrape(); drapeKey = key;
+    $('garment-drape-status').textContent = 'Draping on the body…';
+    // Rapid edits (typing a measurement) start one simulation, for the last of them.
+    drapeTimer = window.setTimeout(() => {
+      const worker = new Worker(new URL('./garment-drape.worker.ts', import.meta.url), { type: 'module' });
+      drapeWorker = worker;
+      worker.onmessage = (event: MessageEvent<{ kind: 'progress'; frame: number; frames: number } | { kind: 'result'; result: GarmentDrapeResult } | { kind: 'error'; message: string }>) => {
+        if (worker !== drapeWorker) return;
+        const data = event.data;
+        if (data.kind === 'progress') { $('garment-drape-status').textContent = `Draping on the body… ${Math.round(100 * data.frame / data.frames)}%`; return; }
+        worker.terminate(); drapeWorker = null; drapeKey = '';
+        if (data.kind === 'result') { drape = { key, result: data.result }; shown = ''; render(options.current()); }
+        else $('garment-drape-status').textContent = data.message;
+      };
+      worker.onerror = () => { if (worker === drapeWorker) { stopDrape(); $('garment-drape-status').textContent = 'The drape simulation could not run in this browser.'; } };
+      worker.postMessage({ product: design, bodyChest: chestFor(design) });
+    }, 250);
+  }
+  function drapeSummary(design: Product, result: GarmentDrapeResult): string {
+    const { ease, contact, residualSpeed } = result.metrics;
+    return `Draped on a body with a ${result.body.chest} cm chest: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; `
+      + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`;
+  }
+  function setDraping(on: boolean) {
+    if (on) {
+      const value = Number(($('garment-drape-chest') as HTMLInputElement).value);
+      try { bodyChest = validateBodyChest(value); } catch (error) { options.notice((error as Error).message, true); return; }
+    } else stopDrape();
+    draping = on; shown = ''; render(options.current());
+  }
+  $('garment-drape-on').addEventListener('click', () => setDraping(true));
+  $('garment-drape-off').addEventListener('click', () => setDraping(false));
+  $('garment-drape-chest').addEventListener('change', () => { if (draping) setDraping(true); });
 
   // Library previews use the same tiles as the garment.
   for (const preview of document.querySelectorAll<HTMLCanvasElement>('[data-material-preview]')) {
@@ -612,13 +663,21 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-neckline') as HTMLSelectElement).value = design.neckline;
     ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';
     ($('spec-size') as HTMLSelectElement).value = design.spec?.sampleSize ?? 'M';
-    const signature = JSON.stringify([design, selected, !!project.product]);
+    const draped = currentDrape(design), chestInput = $('garment-drape-chest') as HTMLInputElement;
+    if (document.activeElement !== chestInput) chestInput.value = bottoms ? '' : String(chestFor(design));
+    for (const id of ['garment-drape-on', 'garment-drape-chest']) ($(id) as HTMLInputElement).disabled = bottoms;
+    $('garment-drape-on').textContent = draping ? 'Drape again' : 'Drape on a body'; $('garment-drape-off').hidden = !draping;
+    if (bottoms) $('garment-drape-status').textContent = 'Draping on a body is available for tops.';
+    else if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
+    else if (draped) $('garment-drape-status').textContent = drapeSummary(design, draped);
+    else startDrape(design);
+    const signature = JSON.stringify([design, selected, !!project.product, draping && !bottoms, drape?.key ?? '', !!draped]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       renderRange(design);
-      scene?.setProduct(design, selected);
+      scene?.setProduct(design, selected, draped);
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${label(selected)} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }

@@ -6,6 +6,7 @@ import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, tileSizeCm } from './fabric-texture.ts';
 import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type Product } from './product.ts';
+import type { BodyProxy, GarmentDrapeResult } from './garment-drape.ts';
 
 export type View = 'front' | 'back' | 'left' | 'right';
 export class ProductScene {
@@ -14,6 +15,8 @@ export class ProductScene {
   private camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
   private controls: OrbitControls;
   private group = new THREE.Group();
+  /** The body a drape was simulated on; kept out of `group` so exports carry only the garment. */
+  private body = new THREE.Group();
   private parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
   private provisional: THREE.Texture[] = [];
@@ -26,7 +29,7 @@ export class ProductScene {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.add(this.group);
+    this.scene.add(this.group); this.scene.add(this.body);
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a0, 1.6));
     const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(60, 120, 160); this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(-120, 60, -140); this.scene.add(rim);
@@ -74,19 +77,23 @@ export class ProductScene {
     return { texture, tileCm };
   }
 
-  setProduct(product: Product, selected: PartId | null) {
+  /** Shows the product; with a drape, each part takes its simulated shape and the body it hangs on is shown. */
+  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null) {
     for (const texture of this.provisional.splice(0)) texture.dispose();
+    this.setBody(drape?.body ?? null);
     for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
     // The framing follows the garment: a hood rises above the shoulders, and trousers are long.
     const previous = this.height;
-    this.height = garmentHeight(product) + 6;
+    // A draped top is framed with the body's head in view.
+    this.height = Math.max(garmentHeight(product), drape ? topMeasurements(product).length + 32 : 0) + 6;
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous) > 0.5) this.setView(this.view);
     for (const part of teeMesh(product, Delaunator)) {
       const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(part.positions, 3));
+      const draped = drape?.parts.find(item => item.part === part.part);
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(draped && draped.positions.length === part.positions.length ? draped.positions : part.positions, 3));
       // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.
       geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
       geometry.setIndex(part.indices); geometry.computeVertexNormals();
@@ -99,6 +106,39 @@ export class ProductScene {
     this.group.updateMatrixWorld(true);
     for (const art of product.artwork) this.addArtwork(product, art);
     this.requestRender();
+  }
+
+  private setBody(body: BodyProxy | null) {
+    for (const child of [...this.body.children]) { this.body.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
+    if (!body) return;
+    const skin = () => new THREE.MeshStandardMaterial({ color: 0xc9cdd3, roughness: 0.85, metalness: 0 });
+    // Torso: stadium sections joined into a tube, down to a little below the hip.
+    const sections = [...body.torso.slice(0, 4), { ...body.torso[3]!, y: body.torso[3]!.y - 12 }], around = 40, positions: number[] = [], indices: number[] = [];
+    for (const section of sections) {
+      const straight = section.halfWidth - section.halfDepth;
+      for (let i = 0; i < around; i++) {
+        const angle = 2 * Math.PI * i / around, cos = Math.cos(angle);
+        positions.push(Math.sign(Math.round(cos * 1e9)) * straight + section.halfDepth * cos, section.y, section.halfDepth * Math.sin(angle));
+      }
+    }
+    for (let r = 0; r + 1 < sections.length; r++) for (let i = 0; i < around; i++) {
+      const a = r * around + i, b = r * around + (i + 1) % around, c = a + around, d = b + around;
+      indices.push(a, c, b, b, c, d);
+    }
+    const torso = new THREE.BufferGeometry();
+    torso.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); torso.setIndex(indices); torso.computeVertexNormals();
+    const mesh = new THREE.Mesh(torso, skin()); mesh.name = 'Body'; this.body.add(mesh);
+    for (const capsule of body.capsules) {
+      const a = new THREE.Vector3(...capsule.a), b = new THREE.Vector3(...capsule.b), length = a.distanceTo(b);
+      for (const [at, radius] of [[a, capsule.radius], [b, capsule.end]] as const) {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 14), skin()); ball.position.copy(at); this.body.add(ball);
+      }
+      if (length < 1e-6) continue;
+      const limb = new THREE.Mesh(new THREE.CylinderGeometry(capsule.end, capsule.radius, length, 20, 1, true), skin());
+      limb.position.copy(a).add(b).multiplyScalar(0.5);
+      limb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      this.body.add(limb);
+    }
   }
 
   private addArtwork(product: Product, art: Product['artwork'][number]) {
