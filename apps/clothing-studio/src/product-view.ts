@@ -3,7 +3,7 @@
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
-  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, isBottoms, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, FIT_NAMES, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
@@ -56,6 +56,11 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
+      <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder, neck, armhole, hem, sleeve opening</summary>
+        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Values you leave unchanged keep scaling with the chest.</p>
+        <div class="measure-grid">${FIT_KEYS.map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div>
+        <div class="inline-actions"><button id="apply-fit">Apply fit</button><button id="reset-fit" class="quiet">Back to proportional</button></div>
+      </details>
       <p class="eyebrow">MODULES</p>
       <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
         <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label></div>
@@ -258,6 +263,23 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     // Artwork that no longer fits the panel is pulled back inside rather than rejected.
     for (const art of draft.artwork) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
   }, 'Measurements applied to the 3D garment and its pattern pieces.'));
+  // Fit: a point of measure is stored only when it differs from its proportional value.
+  const fitValues = (design: Product): Record<FitKey, number> => {
+    const d = teeDimensions(design);
+    return { shoulderWidth: d.shoulderX * 2, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+  };
+  $('apply-fit').addEventListener('click', () => update(draft => {
+    const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
+    for (const key of FIT_KEYS) {
+      const raw = ($(`fit-${key}`) as HTMLInputElement).value;
+      if (raw.trim() === '') throw new Error(`Fill in ${FIT_NAMES[key].toLowerCase()}.`);
+      const value = Number(raw);
+      // Displayed values are rounded to 0.1 cm, so an untouched field differs by at most 0.05.
+      if (Math.abs(value - proportional[key]) > 0.06) fit[key] = value;
+    }
+    if (Object.keys(fit).length) draft.fit = fit; else delete draft.fit;
+  }, 'Fit applied: the pattern pieces, 3D garment and tech pack follow it.'));
+  $('reset-fit').addEventListener('click', () => update(draft => { delete draft.fit; }, 'Fit is proportional to the chest again. You can undo this.'));
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-leg-preset]')) button.addEventListener('click', () => update(draft => {
     legMeasurements(draft).inseam = Number(button.dataset.legPreset);
   }, `${button.getAttribute('aria-label')}: the legs, pattern and tech pack follow it.`));
@@ -383,7 +405,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const thumbnails = new Map<string, string>();
   let thumbnailRun = 0;
   const lookOf = (design: Product, parts: Product['parts']) =>
-    JSON.stringify([design.measurements, design.neckline, optionsOf(design), design.artwork, parts, (design.motifs ?? []).map(m => [m.id, m.dataUrl.length, !!motifImage(m.dataUrl)])]);
+    JSON.stringify([design.measurements, design.neckline, optionsOf(design), design.fit ?? null, design.artwork, parts, (design.motifs ?? []).map(m => [m.id, m.dataUrl.length, !!motifImage(m.dataUrl)])]);
   let thumbnailScene: Promise<import('./product-3d.ts').ProductScene | null> | null = null;
   async function refreshThumbnails(design: Product) {
     const run = ++thumbnailRun;
@@ -493,11 +515,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-name') as HTMLInputElement).value = design.name;
     const bottoms = isBottoms(design);
     for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', !bottoms], ['top-modules', bottoms], ['leg-modules', !bottoms],
-      ['artwork-controls', bottoms], ['artwork-note', !bottoms]] as const) $(id).hidden = hidden;
+      ['artwork-controls', bottoms], ['artwork-note', !bottoms], ['fit-panel', bottoms]] as const) $(id).hidden = hidden;
     if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key]); }
     else {
       const m = topMeasurements(design);
       ($('product-chest') as HTMLInputElement).value = String(m.chest); ($('product-length') as HTMLInputElement).value = String(m.length); ($('product-sleeve') as HTMLInputElement).value = String(m.sleeve);
+      const values = fitValues(design);
+      for (const key of FIT_KEYS) ($(`fit-${key}`) as HTMLInputElement).value = String(Math.round(values[key] * 10) / 10);
+      $('reset-fit').toggleAttribute('disabled', !design.fit);
     }
     ($('product-neckline') as HTMLSelectElement).value = design.neckline;
     ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';

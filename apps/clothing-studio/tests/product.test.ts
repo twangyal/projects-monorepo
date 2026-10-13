@@ -275,3 +275,48 @@ test('shorts and trousers: leg measurements, two-leg 3D, paired leg panels, wais
   assert.ok(['Inseams', 'Side seams', 'Crotch seam', 'Waistband', 'Leg hems'].every(area => pack.construction.some(row => row.area === area)));
   assert.match(measurementDiagram(trousers), />E<\/text>/);
 });
+
+test('fit: edited points of measure drive the pattern, the 3D shell and the tech pack together', async () => {
+  const { buildTechPack } = await import('../src/techpack.ts');
+  const { flare, teeDimensions } = await import('../src/product.ts');
+  const tee = template('ringer'), d0 = teeDimensions(tee);
+  // Without fit, the pattern's shoulder point now sits where the 3D shell and tech pack put it.
+  const shoulderOf = (design: typeof tee) => patternPieces(design).find(piece => piece.part === 'front')!.outline[1];
+  assert.ok(Math.abs(shoulderOf(tee).x - (d0.half - d0.shoulderX)) < 1e-9);
+  assert.ok(Math.abs(teeSilhouette(tee, 'front').points[1].x - d0.shoulderX) < 1e-9);
+
+  const fitted = validateProduct({ ...tee, fit: { shoulderWidth: 40, neckWidth: 18, frontNeckDrop: 11, armholeDepth: 24, hemWidth: 46, sleeveOpening: 14 } });
+  const d = teeDimensions(fitted), front = patternPieces(fitted).find(piece => piece.part === 'front')!, sleeve = patternPieces(fitted).find(piece => piece.part === 'sleeveLeft')!;
+  assert.deepEqual([d.shoulderX * 2, d.neckHalf * 2, d.neckDepthFront, d.armDepth, d.hemHalf * 2, d.cuffHalf], [40, 18, 11, 24, 46, 14]);
+  assert.ok(Math.abs(front.outline[1].x - (d.half - 20)) < 1e-9, 'pattern shoulder point');
+  assert.equal(Math.max(...front.outline.filter(p => p.y < 20 && Math.abs(p.x - d.half) < 1e-9).map(p => p.y)), 11, 'front neck drop');
+  const hemXs = front.outline.filter(p => Math.abs(p.y - topMeasurements(fitted).length) < 1e-9).map(p => p.x);
+  assert.ok(Math.abs(Math.max(...hemXs) - Math.min(...hemXs) - 46) < 1e-9, 'tapered hem is 46 cm side to side');
+  assert.equal(sleeve.width, (24 + 2) * 2, 'the sleeve cap follows the armhole');
+  assert.ok(Math.abs(sleeve.outline.at(-2)!.x - sleeve.outline.at(-1)!.x - 28) < 1e-9, 'sleeve opening');
+  const silhouette = teeSilhouette(fitted, 'front');
+  assert.deepEqual([silhouette.points[1].x, silhouette.points[5].x], [20, 23], '3D shoulder and hem corners');
+  const pack = buildTechPack(fitted, '2026-10-13'), value = (code: string) => pack.poms.find(p => p.code === code)!.values.M;
+  assert.deepEqual(['E', 'F', 'G', 'D', 'I', 'J'].map(value), [40, 18, 11, 24, 46, 14]);
+  // The shell stays closed at the sleeves with an edited armhole.
+  const meshes = teeMesh(fitted, Delaunator), key = (m: typeof meshes[number], i: number) => `${m.positions[i * 3].toFixed(6)},${m.positions[i * 3 + 1].toFixed(6)},${m.positions[i * 3 + 2].toFixed(6)}`;
+  const body = meshes.find(m => m.part === 'front')!, arm = meshes.find(m => m.part === 'sleeveLeft')!;
+  const bodyKeys = new Set(Array.from({ length: body.positions.length / 3 }, (_, i) => key(body, i)));
+  assert.ok(Array.from({ length: arm.positions.length / 3 }, (_, i) => key(arm, i)).filter(k => bodyKeys.has(k)).length >= 10);
+
+  // An A-line hem wider than the chest flares the piece, which still starts at x = 0; a banded hem follows the hem width.
+  const aline = validateProduct({ ...tee, fit: { hemWidth: 70 } }), alineFront = patternPieces(aline).find(piece => piece.part === 'front')!;
+  assert.equal(flare(aline), 35 - teeDimensions(aline).half);
+  assert.ok(Math.min(...alineFront.outline.map(p => p.x)) === 0 && Math.abs(alineFront.width - 70) < 1e-9);
+  const sweat = validateProduct({ ...template('crew-sweat'), fit: { hemWidth: 50 } });
+  assert.equal(patternPieces(sweat).find(piece => piece.part === 'hemBand')!.width, 50 * 2 * 0.85);
+  assert.ok(teeMesh(sweat, Delaunator).find(m => m.part === 'hemBand')!.indices.length > 30);
+
+  // Validation keeps a garment: known keys, ranges, the neck inside the shoulders, tops only.
+  assert.throws(() => validateProduct({ ...tee, fit: { shoulderWidth: 30, neckWidth: 26 } }), /narrower than the shoulders/);
+  assert.throws(() => validateProduct({ ...tee, fit: { hemWidth: 94 } }), /Hem width/);
+  assert.throws(() => validateProduct({ ...tee, fit: { waist: 70 } }), Error);
+  assert.throws(() => validateProduct({ ...tee, fit: { armholeDepth: 50 } }), /Armhole depth/);
+  assert.throws(() => validateProduct({ ...template('trousers'), fit: { hemWidth: 50 } }), /tops/);
+  assert.deepEqual(validateProduct(JSON.parse(JSON.stringify(fitted))), fitted, 'saved projects round-trip');
+});

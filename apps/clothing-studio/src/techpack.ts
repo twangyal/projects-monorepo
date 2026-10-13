@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { BASE_NAMES, POCKET_FOLD_CM, partName, WAISTBAND_CM, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, POCKET_FOLD_CM, flare, partName, WAISTBAND_CM, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -69,7 +69,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
     pom('F', 'Neck width', 'Neck seam to neck seam', dims.neckHalf * 2, 0.5, 0.5),
     pom('G', 'Front neck drop', 'High point shoulder line to front neck seam', dims.neckDepthFront, 0.25, 0.5),
     pom('H', 'Back neck drop', 'High point shoulder line to back neck seam', dims.neckDepthBack, 0, 0.5),
-    pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.panelWidth, 2.5, 1),
+    pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.hemHalf * 2, 2.5, 1),
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
     ...(product.base === 'hoodie' ? [pom('K', 'Hood height', 'Neck seam at centre back to top of hood', dims.hoodHeight, 0.5, 1)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
@@ -252,7 +252,8 @@ export function measurementDiagram(product: Product): string {
   const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.35" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="3.2" fill="#b5452b" font-weight="700">${code}</text>`;
   const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>`;
-  const half = w / 2, armY = d.shoulderDrop + d.armDepth + 2.5;
+  // Marks are drawn on the unflared body (the group below shifts them onto a flared piece).
+  const half = d.half, body = d.panelWidth, armY = d.shoulderDrop + d.armDepth + 2.5;
   // The chest pocket is on the wearer's left, which is the right of a front view.
   const px = half + d.chestPocketX - d.chestPocketWidth / 2, py = d.chestPocketY;
   const pocketMarks = optionsOf(product).chestPocket ? `<rect x="${px}" y="${py}" width="${d.chestPocketWidth}" height="${d.chestPocketHeight}" fill="none" stroke="#333" stroke-width="0.35" stroke-dasharray="1 0.6"/>`
@@ -261,12 +262,12 @@ export function measurementDiagram(product: Product): string {
   const sideTop = d.shoulderDrop + d.armDepth, sideBottom = d.length - d.hemCurve;
   const hemMarks = d.hemCurve ? arrow(-2.5, sideTop, -2.5, sideBottom, 'S', -6, (sideTop + sideBottom) / 2) : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${sx + sleeve.width + 12} ${Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
-${outline(front, 0)}${outline(sleeve, sx)}
-${arrow(0, armY, w, armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
+${outline(front, 0)}${outline(sleeve, sx)}<g transform="translate(${flare(product)} 0)">
+${arrow(0, armY, body, armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
 ${arrow(half - d.shoulderX, d.shoulderDrop + 0.8, half + d.shoulderX, d.shoulderDrop + 0.8, 'E', half + d.shoulderX - 7, d.shoulderDrop + 4.5)}${arrow(half - d.neckHalf, -2, half + d.neckHalf, -2, 'F', half - 1.5, -3)}
-${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(0, d.length - d.hemCurve - 1.5, w, d.length - d.hemCurve - 1.5, 'I', half - 2, d.length - d.hemCurve - 3)}
-${arrow(w + 2.5, d.shoulderDrop, w + 2.5, d.shoulderDrop + d.armDepth, 'D', w + 4, d.shoulderDrop + d.armDepth / 2)}
-${pocketMarks}${hemMarks}
+${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(half - d.hemHalf, d.length - d.hemCurve - 1.5, half + d.hemHalf, d.length - d.hemCurve - 1.5, 'I', half - 2, d.length - d.hemCurve - 3)}
+${arrow(body + 2.5, d.shoulderDrop, body + 2.5, d.shoulderDrop + d.armDepth, 'D', body + 4, d.shoulderDrop + d.armDepth / 2)}
+${pocketMarks}${hemMarks}</g>
 ${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}
 </svg>`;
 }

@@ -101,6 +101,29 @@ Each part takes fabrics, colors, prints and uploaded motifs like any other, and 
 
 These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
 
+### Fit: edit points of measure (#243)
+
+Open **Fit** under the measurements to set a top's points of measure directly at the sample size:
+- shoulder width;
+- neck width;
+- front neck drop;
+- armhole depth;
+- hem width (½);
+- sleeve opening (½).
+
+**Apply fit** updates the linked pattern pieces, the 3D garment, the DXF and SVG export, consumption and the tech pack together. Only values you change are stored; the others keep scaling with the chest, and **Back to proportional** clears them.
+
+- **Shape.** The side seams run straight from the underarm to the hem width, so a narrower hem tapers the body and a wider one makes an A-line. A flared piece is laid out from x = 0 like the others. On sweatshirts and hoodies the hem band follows the hem width.
+- **Sleeves.** The sleeve cap follows the armhole depth, and the sleeve opening sets the cuff.
+- **Checks.** Validation keeps a garment:
+  - the neck at least 8 cm narrower than the shoulders;
+  - the shoulders at most 8 cm past the chest on each side;
+  - the front neck above the underarm;
+  - the armhole at least 12 cm above the hem;
+  - the hem between 0.7 and 1.6 times the chest width;
+  - the sleeve opening narrower than the armhole.
+- **Consistency.** The pattern's shoulder point now sits where the 3D shell and the tech pack's shoulder width put it. Before #243 it sat at the panel edge.
+
 ### Shorts and trousers (#239)
 
 The **Pull-on shorts** and **Straight trousers** templates use the trousers base: pull-on, with an elasticated waistband. Their parts are the front legs, back legs and waistband, each styled like any other part.

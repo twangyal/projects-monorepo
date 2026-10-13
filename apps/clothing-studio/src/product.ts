@@ -88,6 +88,16 @@ export interface UploadedMotif { id: string; name: string; dataUrl: string; widt
 export interface PartStyle { material: string; color: string; print: Print | null }
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number }
 export interface Measurements { chest: number; length: number; sleeve: number }
+/**
+ * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), neck width (F), front
+ * neck drop (G), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
+ * out keeps its proportion of the chest.
+ */
+export const FIT_KEYS = ['shoulderWidth', 'neckWidth', 'frontNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening'] as const;
+export type FitKey = typeof FIT_KEYS[number];
+export type Fit = Partial<Record<FitKey, number>>;
+export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop',
+  armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
 export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number }
 export interface Spec { styleNumber: string; season: string; sampleSize: Size }
@@ -106,6 +116,8 @@ export interface Product {
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
   /** Module choices; absent until one is changed (then DEFAULT_OPTIONS apply). */
   options?: Options;
+  /** Edited points of measure (tops only); absent, or without a key, keeps the proportional default. */
+  fit?: Fit;
   /** Tech-pack header details; absent until the designer fills them in. */
   spec?: Spec;
   /** Colorways for the range plan; absent until one is saved. */
@@ -118,6 +130,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  fit: { shoulderWidth: [30, 70], neckWidth: [12, 28], frontNeckDrop: [2, 25], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -219,7 +232,7 @@ export function printName(print: Print, product: Pick<Product, 'motifs'>): strin
   return MOTIF_NAMES[print.motif as Motif];
 }
 
-const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs', 'options'] as const;
+const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs', 'options', 'fit'] as const;
 export function validateProduct(value: unknown): Product {
   const present = value && typeof value === 'object' ? OPTIONAL.filter(key => Object.hasOwn(value, key)) : [];
   const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', ...present], 'Product');
@@ -250,6 +263,14 @@ export function validateProduct(value: unknown): Product {
     options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean };
   }
   const ids = partsOf({ base, options });
+  let fit: Fit | undefined;
+  if (p.fit !== undefined) {
+    if (base === 'trousers') fail('Fit measurements are for tops; shorts and trousers use their leg measurements.');
+    const raw = p.fit && typeof p.fit === 'object' && !Array.isArray(p.fit) ? Object.keys(p.fit as object) : [];
+    const f = plain(p.fit, raw.filter(key => FIT_KEYS.includes(key as FitKey)).length === raw.length ? raw : FIT_KEYS, 'Fit');
+    fit = Object.fromEntries(Object.keys(f).map(key => [key, finite(f[key], LIMITS.fit[key as FitKey], `${FIT_NAMES[key as FitKey]} (cm)`)])) as Fit;
+    checkFit({ base, measurements: measurements as Measurements, neckline: p.neckline as Product['neckline'], fit });
+  }
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
@@ -265,7 +286,7 @@ export function validateProduct(value: unknown): Product {
   }
   return { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
     ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, ids) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
-    ...(motifs ? { motifs } : {}), ...(options ? { options } : {}) };
+    ...(motifs ? { motifs } : {}), ...(options ? { options } : {}), ...(fit && Object.keys(fit).length ? { fit } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });
@@ -312,13 +333,16 @@ export function neckSize(m: Measurements, neckline: Product['neckline']) { const
 export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
 export function teeDimensions(product: Product) {
-  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, shoulderDrop = 4, armDepth = m.chest * 0.23 + 2;
+  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, shoulderDrop = 4, fit = product.fit ?? {};
+  const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2;
   return {
-    panelWidth: panel.width, length: m.length, half, neckHalf: m.chest * 0.08 + 7, shoulderX: half * 0.86 + 1, shoulderDrop,
+    panelWidth: panel.width, length: m.length, half, neckHalf: (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2, shoulderX: (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2, shoulderDrop,
     armDepth, sleeveLength: m.sleeve,
-    // Long sleeves taper to a rib cuff; tee sleeves stay open and wide.
-    cuffHalf: product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1), capWidth: sleeve.capWidth,
-    neckDepthFront: product.neckline === 'v' ? 15 : 8, neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
+    // Half the hem, side seam to side seam; the side seams run straight from the underarm to it.
+    hemHalf: (fit.hemWidth ?? panel.width) / 2,
+    // Long sleeves taper to a rib cuff; tee sleeves stay open and wide. The cap follows the armhole.
+    cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: (armDepth + 2) * 2,
+    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
     band: product.base === 'tee' ? 0 : BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
     hoodHeight: 32, hoodHalf: 13, pocketTop: m.length - BAND_CM - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
@@ -326,6 +350,20 @@ export function teeDimensions(product: Product) {
     // Chest pocket on the wearer's left (+x seen from the front): centre, top below the shoulder line, finished size.
     chestPocketX: half * 0.45, chestPocketY: shoulderDrop + armDepth * 0.5, chestPocketWidth: 12, chestPocketHeight: 13.5,
   };
+}
+
+/** How far a flared hem reaches past the chest on each side of the flat body piece (0 when it does not). */
+export function flare(product: Product): number { const d = teeDimensions(product); return Math.max(0, d.hemHalf - d.half); }
+
+/** Edited points of measure must still make a garment: the neck inside the shoulders, the armhole and neck within the body. */
+function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit'>) {
+  const d = teeDimensions(product as Product);
+  if (d.neckHalf + 4 > d.shoulderX) fail('The neck must be at least 8 cm narrower than the shoulders.');
+  if (d.shoulderX > d.half + 8) fail('The shoulders can drop at most 8 cm past the chest on each side.');
+  if (d.neckDepthFront + 4 > d.shoulderDrop + d.armDepth) fail('The front neck must end above the underarm.');
+  if (d.shoulderDrop + d.armDepth + 12 > d.length - d.band) fail('The armhole must end at least 12 cm above the hem.');
+  if (d.hemHalf < d.half * 0.7 || d.hemHalf > d.half * 1.6) fail(`Hem width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 3.2).toFixed(1)} cm for this chest.`);
+  if (d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
 }
 
 export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number }
@@ -419,17 +457,22 @@ export function patternPieces(product: Product): PatternPiece[] {
   if (isBottoms(product)) return trouserPieces(product);
   const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), neck = neckSize(m, product.neckline);
   const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
-  const body = (front: boolean) => {
-    const neckDepth = front ? (product.neckline === 'v' ? 15 : 8) : 2;
-    const pts = [{ x: half - neckWidth, y: 0 }, { x: 0, y: shoulderDrop }, { x: 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: shoulderDrop + armDepth },
-      ...hemLine(w, panel.length, dims.hemCurve), { x: w, y: shoulderDrop + armDepth }, { x: w - 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: w, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
+  // The side seams run from the underarm to the hem width; a body cut above a hem band ends where they cross the band.
+  const armY = shoulderDrop + armDepth, hemInset = (y: number) => (half - dims.hemHalf) * (y - armY) / (panel.length - armY);
+  const body = (front: boolean, length = panel.length) => {
+    const neckDepth = front ? dims.neckDepthFront : dims.neckDepthBack, inset = hemInset(length), shoulder = half - dims.shoulderX;
+    const hem = hemLine(w - 2 * inset, length, dims.hemCurve).map(p => ({ x: p.x + inset, y: p.y }));
+    const scoop = Math.max(1.5, shoulder + 1.5);
+    const pts = [{ x: half - neckWidth, y: 0 }, { x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: armY },
+      ...hem, { x: w, y: armY }, { x: w - scoop, y: shoulderDrop + armDepth * 0.55 }, { x: w - shoulder, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
     // Neckline: a curve for crew/back, a straight V for v-neck fronts.
     if (front && product.neckline === 'v') pts.push({ x: half, y: neckDepth });
     else for (let i = 1; i < 8; i++) { const t = Math.PI * i / 8; pts.push({ x: half + neckWidth * Math.cos(t), y: neckDepth * Math.sin(t) }); }
-    return pts;
+    // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
+    return pts.map(p => ({ x: p.x + flare(product), y: p.y }));
   };
   const sleevePiece = () => {
-    const cap = sleeve.capWidth, cuff = sleeve.cuffWidth, capHeight = Math.min(14, m.chest * 0.11), pts = [];
+    const cap = dims.capWidth, cuff = dims.cuffHalf * 2, capHeight = Math.min(14, m.chest * 0.11), pts = [];
     for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push({ x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }); }
     pts.push({ x: (cap + cuff) / 2, y: capHeight + sleeve.length }, { x: (cap - cuff) / 2, y: capHeight + sleeve.length });
     return pts;
@@ -445,10 +488,10 @@ export function patternPieces(product: Product): PatternPiece[] {
     return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1), ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
-  const band = dims.band, shorten = (outline: { x: number; y: number }[], limit: number) => outline.map(p => ({ x: p.x, y: Math.min(p.y, limit) }));
-  const pieces = [make('front', shorten(body(true), panel.length - band), 1), make('back', shorten(body(false), panel.length - band), 1)];
+  const band = dims.band;
+  const pieces = [make('front', body(true, panel.length - band), 1), make('back', body(false, panel.length - band), 1)];
   const capHeight = Math.min(14, m.chest * 0.11), sleeveOutline = () => {
-    const cap = sleeve.capWidth, cuff = dims.cuffHalf * 2 + 4, pts = [];
+    const cap = dims.capWidth, cuff = dims.cuffHalf * 2 + 4, pts = [];
     for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push({ x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }); }
     pts.push({ x: (cap + cuff) / 2, y: capHeight + sleeve.length - band }, { x: (cap - cuff) / 2, y: capHeight + sleeve.length - band });
     return pts;
@@ -457,7 +500,7 @@ export function patternPieces(product: Product): PatternPiece[] {
   if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(neck.length, neck.width * 2), 1));
   // Rib trims are cut about 15% shorter than the edge they finish so they hug it.
   pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1),
-    make('hemBand', rect(w * 2 * 0.85, band * 2), 1));
+    make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
   if (product.base === 'hoodie') {
     // Hood side panel (cut 2, mirrored): neck edge along the bottom, face edge on the left, rounded crown and back.
     const H = dims.hoodHeight, W = 26, hood = [{ x: 0, y: H }, { x: 0, y: 6 }];
@@ -499,9 +542,9 @@ export function teeSilhouette(product: Product, side: 'front' | 'back'): Silhoue
   const shoulder = { x: shoulderX, y: shoulderDrop }, underarm = { x: half, y: shoulderDrop + armDepth };
   const cuffHalf = teeDimensions(product).cuffHalf, top = { x: shoulder.x + dir.x * m.sleeve, y: shoulder.y + dir.y * m.sleeve };
   const bottom = { x: top.x + perp.x * cuffHalf, y: top.y + perp.y * cuffHalf };
-  const neckDepth = side === 'front' ? (product.neckline === 'v' ? 15 : 8) : 2;
+  const neckDepth = side === 'front' ? teeDimensions(product).neckDepthFront : teeDimensions(product).neckDepthBack;
   const mirror = (p: Pt) => ({ x: -p.x, y: p.y });
-  const neckPoint = { x: neckHalf, y: 0 }, hem = { x: half, y: m.length - teeDimensions(product).hemCurve };
+  const neckPoint = { x: neckHalf, y: 0 }, hem = { x: teeDimensions(product).hemHalf, y: m.length - teeDimensions(product).hemCurve };
   // Corners clockwise from the right neck point; edge i runs from corner i to corner i+1.
   const corners = [neckPoint, shoulder, top, bottom, underarm, hem, mirror(hem), mirror(underarm), mirror(bottom), mirror(top), mirror(shoulder), mirror(neckPoint)];
   //            shoulder  sleeve-top cuff   sleeve-bottom side  hem    side  sleeve-bottom cuff  sleeve-top shoulder neck
@@ -554,7 +597,7 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
     // Regions share their armhole edges exactly, so the sleeve seams join without gaps.
     // Corner indices: 0 neck, 1 shoulder, 2 sleeve top, 3 cuff bottom, 4 underarm, 5 hem (and mirrored 6–11).
     // A curved hem dips from the side seams to the centre: points between the hem corners (right to left).
-    const hem = dims.hemCurve ? hemLine(dims.panelWidth, m.length, dims.hemCurve).slice(1, -1).reverse().map(p => ({ x: p.x - dims.half, y: p.y })) : [];
+    const hem = dims.hemCurve ? hemLine(dims.hemHalf * 2, m.length, dims.hemCurve).slice(1, -1).reverse().map(p => ({ x: p.x - dims.hemHalf, y: p.y })) : [];
     let regions: { part: PartId; polygon: Pt[] }[] = [
       { part: side, polygon: [c[0], c[1], c[4], c[5], ...hem, c[6], c[7], c[10], ...c.slice(11)] },
       { part: 'sleeveLeft', polygon: [c[1], c[2], c[3], c[4]] },
@@ -564,7 +607,9 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
       // Rib bands: the body ends above the hem band and each sleeve above its cuff. Split points lie on the
       // silhouette's own edges, so the shell's seams are unchanged and neighbouring regions share edges.
       const toward = (from: Pt, to: Pt, distance: number) => { const length = Math.hypot(to.x - from.x, to.y - from.y); return { x: from.x + (to.x - from.x) * distance / length, y: from.y + (to.y - from.y) * distance / length }; };
-      const bandTop = m.length - dims.band, right = { x: c[5].x, y: bandTop }, left = { x: c[6].x, y: bandTop };
+      // The band's top corners lie on the (possibly slanted) side seams.
+      const onSide = (a: Pt, b: Pt, y: number) => ({ x: a.x + (b.x - a.x) * (y - a.y) / (b.y - a.y), y });
+      const bandTop = m.length - dims.band, right = onSide(c[4], c[5], bandTop), left = onSide(c[7], c[6], bandTop);
       const leftTop = toward(c[2], c[1], dims.band), leftBottom = toward(c[3], c[4], dims.band);
       const rightTop = toward(c[9], c[10], dims.band), rightBottom = toward(c[8], c[7], dims.band);
       regions = [
