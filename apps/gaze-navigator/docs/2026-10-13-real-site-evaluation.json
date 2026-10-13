@@ -4,18 +4,19 @@
   "history": [
     "First set (7 tasks): the first rules-only run completed 2/7; three task-script targeting mistakes and one interpreter gap (\"sign in\" did not match a \"Log in\" link) were fixed before the recorded runs.",
     "Expanded set (#238, 13 tasks): the first rules-only run completed 8/13. Two failures were interpreter gaps, fixed: \"next page\" went forward in history instead of following the \"Next page\" link of the search results, and a typed correction (\"change Turnig to Turing\") lost the field because typing the instruction moved focus into the navigator panel. Two were task-script mistakes (a stale Wikipedia search input and a hidden duplicate theme dropdown). The other two were the everyday phrasings that only WaterSheep resolves.",
-    "Third round (#240, 17 tasks): menus, disclosure toggles and checkboxes. The first rules-only run found two real gaps, both fixed: \"close the menu\" did nothing (close was not understood, and the open button is renamed \"Hide navigation menu\"), and \"open filter and sort\" asked for confirmation because a toggle button inside a form defaulted to submit. Two task-script mistakes (a renamed menu button, an unstable list entry) were corrected."
+    "Third round (#240, 17 tasks): menus, disclosure toggles and checkboxes. The first rules-only run found two real gaps, both fixed: \"close the menu\" did nothing (close was not understood, and the open button is renamed \"Hide navigation menu\"), and \"open filter and sort\" asked for confirmation because a toggle button inside a form defaulted to submit. Two task-script mistakes (a renamed menu button, an unstable list entry) were corrected.",
+    "Fourth round (#244, 18 tasks): a Python documentation quick search passes. Picking a Wikipedia search suggestion was attempted but not scripted: typing the instruction moves focus into the navigator, and Wikipedia closes its suggestion list when the search field loses focus. Spoken instructions do not move focus; the typed-fallback limitation is tracked in #244."
   ],
   "rulesOnly": {
     "summary": {
       "assist": false,
       "date": "2026-10-13",
-      "tasks": 17,
-      "completed": 15,
-      "steps": 25,
-      "stepsDone": 23,
+      "tasks": 18,
+      "completed": 16,
+      "steps": 26,
+      "stepsDone": 24,
       "unintended": 0,
-      "utterances": 25,
+      "utterances": 26,
       "questions": 0
     },
     "results": [
@@ -348,6 +349,22 @@
         "completed": true
       },
       {
+        "site": "Python docs",
+        "goal": "Search the documentation with its quick search",
+        "steps": [
+          {
+            "say": "search for json decoder",
+            "utterances": 1,
+            "questions": 0,
+            "outcome": "done",
+            "replies": [
+              "Done: Searching for \"json decoder\". Now on \"Search \u2014 Python 3.15.0 documentation\"."
+            ]
+          }
+        ],
+        "completed": true
+      },
+      {
         "site": "MDN",
         "goal": "Scroll the reference sidebar, not the page",
         "steps": [
@@ -369,12 +386,12 @@
     "summary": {
       "assist": true,
       "date": "2026-10-13",
-      "tasks": 17,
-      "completed": 17,
-      "steps": 25,
-      "stepsDone": 25,
+      "tasks": 18,
+      "completed": 18,
+      "steps": 26,
+      "stepsDone": 26,
       "unintended": 0,
-      "utterances": 25,
+      "utterances": 26,
       "questions": 0
     },
     "results": [
@@ -716,6 +733,23 @@
             "outcome": "done",
             "replies": [
               "Keep me logged in (for up to one year) activated."
+            ]
+          }
+        ],
+        "completed": true,
+        "assistState": "Smarter target matching is on."
+      },
+      {
+        "site": "Python docs",
+        "goal": "Search the documentation with its quick search",
+        "steps": [
+          {
+            "say": "search for json decoder",
+            "utterances": 1,
+            "questions": 0,
+            "outcome": "done",
+            "replies": [
+              "Done: Searching for \"json decoder\". Now on \"Search \u2014 Python 3.15.0 documentation\"."
             ]
           }
         ],

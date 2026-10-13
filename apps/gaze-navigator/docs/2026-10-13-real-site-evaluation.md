@@ -13,7 +13,7 @@ The product direction defines success as people completing useful tasks on real 
 - **Outcomes.** Each step is recorded as done (the intended effect), unintended (the page changed in another way), failed, or unanswered-question. Utterances and questions are counted.
 - **Conditions.** Every task runs with the rules alone and with **Smarter target matching** (WaterSheep, the real model).
 
-The seventeen tasks (six were added in #238 for text entry, correction, dropdowns, scrolling and pagination, and four in #240 for menus, disclosure toggles and checkboxes):
+The eighteen tasks (six were added in #238 for text entry, correction, dropdowns, scrolling and pagination, four in #240 for menus, disclosure toggles and checkboxes, and one in #244 for a documentation search box):
 
 | Site | Task | Steps |
 | --- | --- | --- |
@@ -34,15 +34,16 @@ The seventeen tasks (six were added in #238 for text entry, correction, dropdown
 | Wikipedia | Open the page tools menu | "open tools" |
 | GOV.UK | Show the search filters | "open filter and sort" |
 | Wikipedia | Tick and untick "Keep me logged in" (without logging in) | "tick keep me logged in", "untick it" |
+| Python docs | Search the documentation | "search for json decoder" (quick search box) |
 
 ## Results
 
 | Condition | Tasks completed | Steps done | Unintended actions | Utterances | Questions |
 | --- | --- | --- | --- | --- | --- |
-| Rules only | 15 / 17 | 23 / 25 | 0 | 25 | 0 |
-| Rules + WaterSheep | **17 / 17** | **25 / 25** | **0** | 25 | 0 |
+| Rules only | 16 / 18 | 24 / 26 | 0 | 26 | 0 |
+| Rules + WaterSheep | **18 / 18** | **26 / 26** | **0** | 26 | 0 |
 
-An earlier full run with WaterSheep on the same build completed 16/17: "show me the past versions of this page" was not resolved that time. Run on its own three more times, it succeeded each time. The cause of the one miss was not established, and both runs are in the JSON record.
+In #240, one earlier full run with WaterSheep completed 16/17: "show me the past versions of this page" was not resolved that time. Run on its own three more times, it succeeded each time. The cause of that miss was not established.
 
 The rules alone miss only the two everyday phrasings. With WaterSheep both succeed on the live pages: "show me the past versions of this page" opened **View history**, and "take me to the stuff about cars" opened **Driving and transport**. Dictation, the spoken correction, Enter, both dropdowns (including one with no label), page and region scrolling, and pagination all worked with the rules alone. Per-step replies are in [`2026-10-13-real-site-evaluation.json`](2026-10-13-real-site-evaluation.json).
 
@@ -64,10 +65,16 @@ The rules alone miss only the two everyday phrasings. With WaterSheep both succe
 
 Two task-script mistakes were also corrected: the menu button's renaming, and a list entry that was not present on every load.
 
+**Fourth round (#244).** A documentation quick search passes with the rules alone. Choosing a Wikipedia search suggestion could not be scripted:
+- Dictating "type Ada Lov" does open Wikipedia's suggestions, because the navigator fires real input events.
+- The next instruction, typed into the navigator's box, moves focus out of the search field, and Wikipedia closes its suggestions on blur.
+- Spoken instructions do not move focus, so speech is unaffected. Keyboard users of the typed fallback are affected, and so is this harness; #244 tracks it.
+
 The instruction suites are unchanged: 120/120, held-out 34/50 and held-out-2 18/50 with the rules, all with 0 unsafe.
 
 ## Limits
 
-- Seventeen tasks on four sites, written by the developer; the first runs informed the script fixes. These results show the pipeline working on real pages, not task completion rates for the intended users.
+- Eighteen tasks on four sites, written by the developer; the first runs informed the script fixes.
+- The harness types instructions to stand in for speech, so it cannot cover tasks that depend on the page keeping focus, such as choosing a search suggestion (#244). These results show the pipeline working on real pages, not task completion rates for the intended users.
 - The pointer stands in for gaze, so gaze jitter and calibration error are not exercised. Typed text stands in for speech, so recognition errors are not exercised.
 - Live sites change; rerun the script to refresh the record.

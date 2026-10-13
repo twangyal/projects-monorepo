@@ -88,6 +88,11 @@ export const TASKS = [
     { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'tick keep me logged in', done: async page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked() },
     { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'untick it', done: async page => !(await page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked()) },
   ] },
+  // Added in #244: a documentation quick search. (Picking a search suggestion is not scripted: typing the
+  // instruction moves focus into the navigator, and Wikipedia closes its suggestion list when the field loses it.)
+  { site: 'Python docs', goal: 'Search the documentation with its quick search', start: 'https://docs.python.org/3/library/json.html', steps: [
+    { look: page => page.getByRole('searchbox', { name: 'Quick search' }).filter({ visible: true }).first(), say: 'search for json decoder', done: url(/search\.html\?q=json\+decoder/) },
+  ] },
   { site: 'MDN', goal: 'Scroll the reference sidebar, not the page', start: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a', steps: [
     { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
   ] },
