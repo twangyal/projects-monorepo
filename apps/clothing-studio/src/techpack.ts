@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { material, MOTIF_NAMES, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { material, printName, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -35,7 +35,8 @@ export function buildTechPack(product: Product, date: string): TechPack {
   // Fabrics: one BoM line per distinct fabric + color + print, with its parts and estimated consumption.
   const bom: BomRow[] = fabricUsage(product).map((usage, index) => {
     const { style } = usage, fabric = material(style.material);
-    const print = style.print ? `; ${MOTIF_NAMES[style.print.motif]} print ${style.print.color} on ground, ${LAYOUT_NAMES[style.print.layout].toLowerCase()} repeat ${style.print.scaleCm} cm` : '';
+    const colours = style.print?.motif.startsWith('upload:') ? 'from supplied artwork in its own colours' : `${style.print?.color} on ground`;
+    const print = style.print ? `; ${printName(style.print, product)} print ${colours}, ${LAYOUT_NAMES[style.print.layout].toLowerCase()} repeat ${style.print.scaleCm} cm` : '';
     return { item: `F${index + 1} ${fabric.name}`, description: `${fabric.composition}, ${fabric.gsm} gsm${print}`, color: style.color,
       placement: usage.parts.map(part => PART_NAMES[part]).join(', '),
       quantity: `${usage.areaM2.toFixed(2)} m² (≈ ${usage.linearM.toFixed(2)} m at ${FABRIC_WIDTH_CM} cm wide)` };

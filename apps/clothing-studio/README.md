@@ -78,6 +78,15 @@ Below the tech pack, **Colorways and costing** turns one garment into a small ra
 
 See [colorway and range plan verification](docs/2026-10-13-colorways-range-plan.md).
 
+### Your own repeat prints (#231)
+
+**Upload your own motif**, under **Prints** in the library, turns a PNG, JPEG or WebP image into a repeat print.
+
+- The image is scaled to at most 768 px and 600 KB, and transparency is kept. The motif is applied to the selected part and joins the library, where you can click or drag it onto any part, including in colorways.
+- It repeats with the same **Repeat** layouts (standard, half drop, half brick, mirror) and **Repeat size** in cm as library prints. It appears on the 3D garment, the linked pattern pieces and colorway renders. Each repeat cell holds the motif at 85% of the cell, in proportion.
+- Uploaded motifs keep their own colours, so **Print color** is disabled for them. The tech pack lists them as printed from supplied artwork.
+- A design holds up to 6 motifs. **×** removes one and clears every print that used it, including in colorways, as one undoable edit.
+
 ## Create a concept
 
 1. Name the project and adjust body width, body length, sleeve length, and neckline. Silhouette values are drawing units, not physical measurements.

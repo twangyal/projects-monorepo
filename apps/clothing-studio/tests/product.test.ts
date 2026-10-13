@@ -83,3 +83,25 @@ test('repeat layouts place four motifs per tile with the documented offsets', ()
   assert.deepEqual(motifPlacements('half-brick').map(m => [m.x, m.y]), [[0.25, 0.25], [0.75, 0.25], [0.5, 0.75], [0, 0.75]]);
   assert.deepEqual(motifPlacements('mirror').map(m => [m.flipX, m.flipY]), [[false, false], [true, false], [false, true], [true, true]]);
 });
+
+test('uploaded motifs are validated, referenced by prints and named in the tech pack', async () => {
+  const { buildTechPack } = await import('../src/techpack.ts');
+  const { printName } = await import('../src/product.ts');
+  const png = 'data:image/png;base64,iVBORw0KGgo=';
+  const base = ringer(), motif = { id: 'm1', name: 'Star', dataUrl: png, width: 64, height: 64 };
+  const design = validateProduct({ ...base, motifs: [motif], parts: { ...base.parts, front: { ...base.parts.front, print: { motif: 'upload:m1', color: '#000000', scaleCm: 8, layout: 'half-drop' } } } });
+  assert.equal(printName(design.parts.front.print!, design), 'Star');
+  assert.match(buildTechPack(design, '2026-10-13').bom[0].description, /Star print from supplied artwork in its own colours, half drop repeat 8 cm/);
+  const bad: [string, (p: Record<string, unknown>) => void][] = [
+    ['unknown upload', p => { p.parts = { ...base.parts, back: { ...base.parts.back, print: { motif: 'upload:m9', color: '#000000', scaleCm: 8, layout: 'grid' } } }; }],
+    ['upload without motifs', p => { delete p.motifs; }],
+    ['script url', p => { p.motifs = [{ ...motif, dataUrl: 'javascript:alert(1)' }]; }],
+    ['svg', p => { p.motifs = [{ ...motif, dataUrl: 'data:image/svg+xml;base64,PHN2Zz4=' }]; }],
+    ['too large', p => { p.motifs = [{ ...motif, dataUrl: `data:image/png;base64,${'A'.repeat(900_000)}` }]; }],
+    ['duplicate ids', p => { p.motifs = [motif, motif]; }],
+    ['too many', p => { p.motifs = Array.from({ length: 7 }, (_, i) => ({ ...motif, id: `m${i}` })); }],
+  ];
+  for (const [label, mutate] of bad) { const p = structuredClone(design) as unknown as Record<string, unknown>; mutate(p); assert.throws(() => validateProduct(p), Error, label); }
+  // Colorways may use uploaded motifs too.
+  assert.doesNotThrow(() => validateProduct({ ...design, colorways: [{ id: 'c1', name: 'Stars', parts: design.parts, units: 1 }] }));
+});

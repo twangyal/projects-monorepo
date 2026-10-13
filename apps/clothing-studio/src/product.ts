@@ -23,7 +23,11 @@ export const LAYOUTS = ['grid', 'half-drop', 'half-brick', 'mirror'] as const;
 export type Layout = typeof LAYOUTS[number];
 export const LAYOUT_NAMES: Record<Layout, string> = { grid: 'Standard', 'half-drop': 'Half drop', 'half-brick': 'Half brick', mirror: 'Mirror' };
 
-export interface Print { motif: Motif; color: string; scaleCm: number; layout: Layout }
+/** A library motif, or `upload:<id>` for a motif the designer uploaded to this design. */
+export type PrintMotif = Motif | `upload:${string}`;
+export interface Print { motif: PrintMotif; color: string; scaleCm: number; layout: Layout }
+/** A designer's own motif image, repeated like library motifs (drawn as uploaded; print color does not tint it). */
+export interface UploadedMotif { id: string; name: string; dataUrl: string; width: number; height: number }
 export interface PartStyle { material: string; color: string; print: Print | null }
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number }
 export interface Measurements { chest: number; length: number; sleeve: number }
@@ -45,11 +49,13 @@ export interface Product {
   colorways?: Colorway[];
   /** Costing inputs; absent until the designer changes the defaults. */
   costing?: Costing;
+  /** Uploaded repeat motifs; absent until one is uploaded. */
+  motifs?: UploadedMotif[];
 }
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000],
+  colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
 const fail = (message: string): never => { throw new Error(message); };
@@ -66,12 +72,13 @@ const hex = (value: unknown, label: string): string => typeof value === 'string'
 
 export function material(id: string): Material { return MATERIALS.find(item => item.id === id) ?? fail('Choose a fabric from the library.'); }
 
-function validatePrint(value: unknown): Print | null {
+function validatePrint(value: unknown, uploaded: ReadonlySet<string>): Print | null {
   if (value === null) return null;
   const p = plain(value, ['motif', 'color', 'scaleCm', 'layout'], 'Print');
-  if (!MOTIFS.includes(p.motif as Motif)) fail('Choose a print from the library.');
+  const upload = typeof p.motif === 'string' && p.motif.startsWith('upload:') ? p.motif.slice(7) : null;
+  if (upload !== null ? !uploaded.has(upload) : !MOTIFS.includes(p.motif as Motif)) fail('Choose a print from the library or an uploaded motif.');
   if (!LAYOUTS.includes(p.layout as Layout)) fail('Print repeat must be standard, half drop, half brick or mirror.');
-  return { motif: p.motif as Motif, color: hex(p.color, 'Print color'), scaleCm: finite(p.scaleCm, LIMITS.scaleCm, 'Print repeat size (cm)'), layout: p.layout as Layout };
+  return { motif: p.motif as PrintMotif, color: hex(p.color, 'Print color'), scaleCm: finite(p.scaleCm, LIMITS.scaleCm, 'Print repeat size (cm)'), layout: p.layout as Layout };
 }
 function validateArtwork(value: unknown, measurements: Measurements): Artwork {
   const a = plain(value, ['part', 'dataUrl', 'width', 'height', 'name', 'xCm', 'yCm', 'widthCm'], 'Artwork');
@@ -86,18 +93,18 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
     yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm };
 }
 
-function validateParts(value: unknown): Record<PartId, PartStyle> {
+function validateParts(value: unknown, uploaded: ReadonlySet<string>): Record<PartId, PartStyle> {
   const rawParts = plain(value, PART_IDS, 'Parts');
   return Object.fromEntries(PART_IDS.map(id => {
     const s = plain(rawParts[id], ['material', 'color', 'print'], PART_NAMES[id]);
     if (typeof s.material !== 'string') fail('Choose a fabric from the library.');
     material(s.material as string);
-    return [id, { material: s.material as string, color: hex(s.color, `${PART_NAMES[id]} color`), print: validatePrint(s.print) }];
+    return [id, { material: s.material as string, color: hex(s.color, `${PART_NAMES[id]} color`), print: validatePrint(s.print, uploaded) }];
   })) as Record<PartId, PartStyle>;
 }
 const plainText = (value: unknown, limit: number, label: string) =>
   typeof value === 'string' && value.length <= limit && ![...value].some(c => c.charCodeAt(0) < 32) ? value.trim() : fail(`${label} must be at most ${limit} characters of plain text.`);
-function validateColorways(value: unknown): Colorway[] {
+function validateColorways(value: unknown, uploaded: ReadonlySet<string>): Colorway[] {
   if (!Array.isArray(value) || value.length > LIMITS.colorways) fail(`Keep at most ${LIMITS.colorways} colorways.`);
   const colorways = (value as unknown[]).map(item => {
     const c = plain(item, ['id', 'name', 'parts', 'units'], 'Colorway');
@@ -106,7 +113,7 @@ function validateColorways(value: unknown): Colorway[] {
     if (!name) fail('Name each colorway.');
     const units = finite(c.units, LIMITS.units, 'Planned units');
     if (!Number.isInteger(units)) fail('Planned units must be a whole number.');
-    return { id: c.id as string, name, parts: validateParts(c.parts), units };
+    return { id: c.id as string, name, parts: validateParts(c.parts, uploaded), units };
   });
   if (new Set(colorways.map(c => c.id)).size !== colorways.length) fail('Colorway IDs must be unique.');
   return colorways;
@@ -120,7 +127,27 @@ function validateCosting(value: unknown): Costing {
     trims: finite(c.trims, LIMITS.price, 'Trims cost'), printPerArtwork: finite(c.printPerArtwork, LIMITS.price, 'Print cost'), fabricPrices };
 }
 
-const OPTIONAL = ['spec', 'colorways', 'costing'] as const;
+function validateMotifs(value: unknown): UploadedMotif[] {
+  if (!Array.isArray(value) || value.length > LIMITS.motifs) fail(`Keep at most ${LIMITS.motifs} uploaded motifs.`);
+  const motifs = (value as unknown[]).map(item => {
+    const m = plain(item, ['id', 'name', 'dataUrl', 'width', 'height'], 'Uploaded motif');
+    if (typeof m.id !== 'string' || !/^[a-z0-9]{1,12}$/.test(m.id)) fail('Motif IDs must be short lowercase letters and digits.');
+    if (typeof m.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(m.dataUrl) || m.dataUrl.length > LIMITS.motifBytes * 1.4) fail('A motif must be a PNG, JPEG or WebP image of at most 600 KB.');
+    const width = finite(m.width, [1, 2048], 'Motif pixel width'), height = finite(m.height, [1, 2048], 'Motif pixel height');
+    if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Motif pixel size must be whole numbers.');
+    const name = plainText(m.name, 60, 'Motif name');
+    return { id: m.id as string, name: name || 'Uploaded motif', dataUrl: m.dataUrl as string, width, height };
+  });
+  if (new Set(motifs.map(m => m.id)).size !== motifs.length) fail('Motif IDs must be unique.');
+  return motifs;
+}
+/** The display name of a part's print. */
+export function printName(print: Print, product: Pick<Product, 'motifs'>): string {
+  if (print.motif.startsWith('upload:')) return product.motifs?.find(m => `upload:${m.id}` === print.motif)?.name ?? 'Uploaded motif';
+  return MOTIF_NAMES[print.motif as Motif];
+}
+
+const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs'] as const;
 export function validateProduct(value: unknown): Product {
   const present = value && typeof value === 'object' ? OPTIONAL.filter(key => Object.hasOwn(value, key)) : [];
   const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', ...present], 'Product');
@@ -129,7 +156,9 @@ export function validateProduct(value: unknown): Product {
   const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
   const measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
-  const parts = validateParts(p.parts);
+  const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
+  const uploaded = new Set((motifs ?? []).map(m => m.id));
+  const parts = validateParts(p.parts, uploaded);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
@@ -140,7 +169,8 @@ export function validateProduct(value: unknown): Product {
     spec = { styleNumber: plainText(raw.styleNumber, 40, 'Style number'), season: plainText(raw.season, 40, 'Season'), sampleSize: raw.sampleSize as Size };
   }
   return { base: 'tee', name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
-    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}) };
+    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
+    ...(motifs ? { motifs } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });

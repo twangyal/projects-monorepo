@@ -1,9 +1,9 @@
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
-import { paintTile } from './fabric-texture.ts';
+import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_IDS, PART_NAMES, TEMPLATES,
-  CURRENCIES, SIZES, material, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type Product, type Size,
+  CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
@@ -12,7 +12,7 @@ import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const PALETTE = ['#f4f2ec', '#1c1c1e', '#1f2a4f', '#3f5468', '#9fae91', '#d89476', '#b23a2e', '#e9c46a', '#efe8d8', '#7b6d8d'];
 const DRAG_TYPE = 'application/x-clothing-swatch';
-type Swatch = { kind: 'material'; id: string } | { kind: 'color'; value: string } | { kind: 'print'; motif: Print['motif'] };
+type Swatch = { kind: 'material'; id: string } | { kind: 'color'; value: string } | { kind: 'print'; motif: PrintMotif };
 
 export const productMarkup = `<section class="panel product-panel" id="product-editor" aria-labelledby="product-heading">
   <div class="product-head"><div><p class="eyebrow">3D PRODUCT DESIGN</p><h3 id="product-heading">Style a garment in 3D</h3>
@@ -24,6 +24,9 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <p class="eyebrow">FABRICS</p><div class="library-list" id="material-list">${MATERIALS.map(m => `<button class="library-swatch" draggable="true" data-swatch='${JSON.stringify({ kind: 'material', id: m.id })}' aria-label="Apply ${m.name}"><canvas width="44" height="44" data-material-preview="${m.id}" aria-hidden="true"></canvas><span>${m.name}<small>${m.gsm} gsm</small></span></button>`).join('')}</div>
       <p class="eyebrow">COLORS</p><div class="color-chips">${PALETTE.map(c => `<button class="color-chip" draggable="true" style="background:${c}" data-swatch='${JSON.stringify({ kind: 'color', value: c })}' aria-label="Apply color ${c}"></button>`).join('')}</div>
       <p class="eyebrow">PRINTS</p><div class="library-list">${MOTIFS.map(m => `<button class="library-swatch" draggable="true" data-swatch='${JSON.stringify({ kind: 'print', motif: m })}' aria-label="Apply ${MOTIF_NAMES[m]} print"><canvas width="44" height="44" data-print-preview="${m}" aria-hidden="true"></canvas><span>${MOTIF_NAMES[m]}</span></button>`).join('')}</div>
+      <div class="library-list" id="uploaded-motifs" aria-label="Your motifs"></div>
+      <label class="button quiet file-button">Upload your own motif<input id="motif-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <p class="fine-print">PNG, JPEG or WebP; transparent PNGs repeat best. It repeats in the chosen layout and size.</p>
       <p class="fine-print">Drag onto the garment, or select a part and click.</p>
     </aside>
     <div class="product-stage">
@@ -121,7 +124,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if (swatch.kind === 'material') { material(swatch.id); style.material = swatch.id; }
       else if (swatch.kind === 'color') style.color = swatch.value;
       else style.print = { motif: swatch.motif, color: style.print?.color ?? '#1f2a4f', scaleCm: style.print?.scaleCm ?? 6, layout: style.print?.layout ?? 'grid' };
-    }, `${PART_NAMES[part]}: ${swatch.kind === 'material' ? material(swatch.id).name : swatch.kind === 'color' ? `color ${swatch.value}` : `${MOTIF_NAMES[swatch.motif]} print`}.`);
+    }, `${PART_NAMES[part]}: ${swatch.kind === 'material' ? material(swatch.id).name : swatch.kind === 'color' ? `color ${swatch.value}` : `${printName({ motif: swatch.motif, color: '', scaleCm: 6, layout: 'grid' }, product() ?? {})} print`}.`);
   }
   const parseSwatch = (raw: string | undefined): Swatch | null => { try { return raw ? JSON.parse(raw) as Swatch : null; } catch { return null; } };
 
@@ -130,6 +133,54 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     button.addEventListener('click', () => { const swatch = parseSwatch(button.dataset.swatch); if (swatch) applySwatch(selected, swatch); });
     button.addEventListener('dragstart', event => { event.dataTransfer?.setData(DRAG_TYPE, button.dataset.swatch!); event.dataTransfer!.effectAllowed = 'copy'; });
   }
+  // Uploaded motifs: their swatches are rebuilt with the design, so they use delegated events.
+  $('uploaded-motifs').addEventListener('click', event => {
+    const target = event.target as Element, remove = target.closest<HTMLButtonElement>('[data-remove-motif]');
+    if (remove) {
+      const id = remove.dataset.removeMotif!, upload = `upload:${id}`, name = product()?.motifs?.find(m => m.id === id)?.name ?? 'motif';
+      update(draft => {
+        const clear = (parts: Product['parts']) => { for (const part of PART_IDS) if (parts[part].print?.motif === upload) parts[part].print = null; };
+        clear(draft.parts); for (const colorway of draft.colorways ?? []) clear(colorway.parts);
+        draft.motifs = draft.motifs!.filter(m => m.id !== id); if (!draft.motifs.length) delete draft.motifs;
+      }, `Removed the motif “${name}” and its prints. You can undo this.`);
+      return;
+    }
+    const swatch = parseSwatch(target.closest<HTMLElement>('[data-swatch]')?.dataset.swatch);
+    if (swatch) applySwatch(selected, swatch);
+  });
+  $('uploaded-motifs').addEventListener('dragstart', event => {
+    const button = (event.target as Element).closest<HTMLElement>('[data-swatch]');
+    if (button) { event.dataTransfer?.setData(DRAG_TYPE, button.dataset.swatch!); event.dataTransfer!.effectAllowed = 'copy'; }
+  });
+  $('motif-file').addEventListener('change', async () => {
+    const input = $('motif-file') as HTMLInputElement, file = input.files?.[0]; input.value = '';
+    if (!file) return;
+    try {
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Choose a PNG, JPEG or WebP image of at most 10 MB.');
+      if ((product()?.motifs?.length ?? 0) >= LIMITS.motifs) throw new Error(`Keep at most ${LIMITS.motifs} uploaded motifs; remove one first.`);
+      const bitmap = await createImageBitmap(file);
+      let edge = Math.min(768, Math.max(bitmap.width, bitmap.height)), dataUrl = '', width = 0, height = 0;
+      for (; edge >= 64; edge = Math.round(edge * 0.75)) {
+        const scale = edge / Math.max(bitmap.width, bitmap.height), c = document.createElement('canvas');
+        width = c.width = Math.max(1, Math.round(bitmap.width * scale)); height = c.height = Math.max(1, Math.round(bitmap.height * scale));
+        c.getContext('2d')!.drawImage(bitmap, 0, 0, width, height); dataUrl = c.toDataURL('image/png');
+        if (dataUrl.length <= LIMITS.motifBytes * 1.33) break;
+      }
+      bitmap.close();
+      if (dataUrl.length > LIMITS.motifBytes * 1.33) throw new Error('That image is too detailed to use as a motif; try a simpler or smaller one.');
+      const name = file.name.replace(/\.[^.]+$/, '').slice(0, 60) || 'Uploaded motif';
+      update(draft => {
+        const motifs = draft.motifs ?? [];
+        let n = 1; while (motifs.some(m => m.id === `m${n}`)) n++;
+        draft.motifs = [...motifs, { id: `m${n}`, name, dataUrl, width, height }];
+        const current = draft.parts[selected].print;
+        draft.parts[selected].print = { motif: `upload:m${n}`, color: current?.color ?? '#1f2a4f', scaleCm: current?.scaleCm ?? 8, layout: current?.layout ?? 'grid' };
+      }, `“${name}” repeats on the ${PART_NAMES[selected].toLowerCase()}. Choose its repeat and size in cm below, or drag it onto other parts.`);
+    } catch (error) { options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
+  });
+  // Repaint the garment, pieces and thumbnails once an uploaded motif has decoded.
+  onMotifImage(() => { shown = ''; render(options.current()); });
+
   canvas.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes(DRAG_TYPE)) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } });
   canvas.addEventListener('drop', event => {
     event.preventDefault();
@@ -276,7 +327,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Colorway thumbnails are front renders from the 3D view, made one at a time and cached by look.
   const thumbnails = new Map<string, string>();
   let thumbnailRun = 0;
-  const lookOf = (design: Product, parts: Product['parts']) => JSON.stringify([design.measurements, design.neckline, design.artwork, parts]);
+  const lookOf = (design: Product, parts: Product['parts']) =>
+    JSON.stringify([design.measurements, design.neckline, design.artwork, parts, (design.motifs ?? []).map(m => [m.id, m.dataUrl.length, !!motifImage(m.dataUrl)])]);
   let thumbnailScene: Promise<import('./product-3d.ts').ProductScene | null> | null = null;
   async function refreshThumbnails(design: Product) {
     const run = ++thumbnailRun;
@@ -323,12 +375,23 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     void refreshThumbnails(design);
   }
 
+  let motifsShown = '';
+  function renderMotifs(design: Product) {
+    const motifs = design.motifs ?? [], signature = JSON.stringify(motifs.map(m => [m.id, m.name, m.dataUrl.length]));
+    if (signature === motifsShown) return;
+    motifsShown = signature;
+    $('uploaded-motifs').innerHTML = motifs.map(m => `<div class="uploaded-motif"><button class="library-swatch" draggable="true" data-swatch='${JSON.stringify({ kind: 'print', motif: `upload:${m.id}` })}' aria-label="Apply ${escapeHtml(m.name)} print"><img src="${m.dataUrl}" alt="" width="44" height="44"><span>${escapeHtml(m.name)}<small>Your motif</small></span></button>
+      <button class="quiet remove-motif" data-remove-motif="${m.id}" aria-label="Remove motif ${escapeHtml(m.name)}">×</button></div>`).join('');
+    const select = $('part-print') as HTMLSelectElement;
+    select.innerHTML = `<option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}${motifs.map(m => `<option value="upload:${m.id}">${escapeHtml(m.name)} (your motif)</option>`).join('')}`;
+  }
+
   function piecesSvg(design: Product): string {
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
     const height = Math.max(...pieces.map(p => p.height));
     const defs = PART_IDS.map(id => {
-      const { canvas: tile, tileCm } = paintTile(design.parts[id]);
+      const { canvas: tile, tileCm } = paintTile(design.parts[id], undefined, design.motifs);
       return `<pattern id="fill-${id}" patternUnits="userSpaceOnUse" width="${tileCm}" height="${tileCm}"><image href="${tile.toDataURL('image/png')}" width="${tileCm}" height="${tileCm}"/></pattern>`;
     }).join('');
     return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="img" aria-label="Pattern pieces: ${pieces.map(p => PART_NAMES[p.part]).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${PART_NAMES[piece.part]}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/><text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${PART_NAMES[piece.part]} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm</text></g>`).join('')}</svg>`;
@@ -351,8 +414,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     $('inspector-heading').textContent = PART_NAMES[selected];
     for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=product-part]')) radio.checked = radio.value === selected;
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
+    renderMotifs(design);
     ($('part-print') as HTMLSelectElement).value = style.print?.motif ?? '';
     for (const id of ['print-color', 'print-layout', 'print-scale']) ($(id) as HTMLInputElement).disabled = !style.print;
+    // Uploaded motifs are drawn in their own colors.
+    ($('print-color') as HTMLInputElement).disabled = !style.print || style.print.motif.startsWith('upload:');
     ($('print-color') as HTMLInputElement).value = style.print?.color ?? '#1f2a4f'; ($('print-layout') as HTMLSelectElement).value = style.print?.layout ?? 'grid';
     ($('print-scale') as HTMLInputElement).value = String(style.print?.scaleCm ?? 6);
     ($('product-name') as HTMLInputElement).value = design.name;
@@ -360,14 +426,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-sleeve') as HTMLInputElement).value = String(design.measurements.sleeve); ($('product-neckline') as HTMLSelectElement).value = design.neckline;
     ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';
     ($('spec-size') as HTMLSelectElement).value = design.spec?.sampleSize ?? 'M';
-    const signature = JSON.stringify([design, selected]);
+    const signature = JSON.stringify([design, selected, !!project.product]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       renderRange(design);
       scene?.setProduct(design, selected);
-      $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${PART_NAMES[selected]} — ${material(style.material).name}${style.print ? `, ${MOTIF_NAMES[style.print.motif]} print` : ''}.`
+      $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${PART_NAMES[selected]} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }
   }

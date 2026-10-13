@@ -1,6 +1,21 @@
 // Procedural fabric and repeat-print tiles. A tile covers `tileCm` × `tileCm` of fabric, so 3D UVs in cm
 // divided by tileCm repeat it at physical size.
-import { material, type Layout, type Motif, type PartStyle, type Print } from './product.ts';
+import { material, type Layout, type Motif, type PartStyle, type Print, type UploadedMotif } from './product.ts';
+
+// Uploaded motif images are decoded once; tiles painted before decoding report `complete: false`.
+const images = new Map<string, HTMLImageElement>();
+const listeners = new Set<() => void>();
+export function motifImage(dataUrl: string): HTMLImageElement | null {
+  let image = images.get(dataUrl);
+  if (!image) {
+    image = new Image(); image.src = dataUrl; images.set(dataUrl, image);
+    image.decode().then(() => { for (const listener of listeners) listener(); }).catch(() => undefined);
+    if (images.size > 24) images.delete(images.keys().next().value!);
+  }
+  return image.complete && image.naturalWidth ? image : null;
+}
+/** Called whenever an uploaded motif finishes decoding, so views can repaint. */
+export function onMotifImage(listener: () => void) { listeners.add(listener); }
 
 export interface MotifPlacement { x: number; y: number; flipX: boolean; flipY: boolean }
 /**
@@ -41,14 +56,26 @@ export function tileSizeCm(style: PartStyle): number {
 }
 
 /** Paint one tile for a part's fabric, color and print. Returns the canvas and the fabric area it covers. */
-export function paintTile(style: PartStyle, canvas: HTMLCanvasElement = document.createElement('canvas')): { canvas: HTMLCanvasElement; tileCm: number } {
+export function paintTile(style: PartStyle, canvas: HTMLCanvasElement = document.createElement('canvas'), motifs: readonly UploadedMotif[] = []): { canvas: HTMLCanvasElement; tileCm: number; complete: boolean } {
   const fabric = material(style.material), print: Print | null = style.print;
   const tileCm = tileSizeCm(style);
   canvas.width = canvas.height = TILE_PX;
   const ctx = canvas.getContext('2d')!;
   ctx.fillStyle = style.color; ctx.fillRect(0, 0, TILE_PX, TILE_PX);
   // Print first (dyed into the fabric), then the knit/weave structure over both.
-  if (print) {
+  let complete = true;
+  if (print?.motif.startsWith('upload:')) {
+    const motif = motifs.find(m => `upload:${m.id}` === print.motif), image = motif ? motifImage(motif.dataUrl) : null;
+    complete = !!image;
+    if (image && motif) {
+      // Each of the four cells holds the motif, fitted to 85% of the cell and keeping its proportions.
+      const fit = (TILE_PX / 2) * 0.85 / Math.max(motif.width, motif.height), w = motif.width * fit, h = motif.height * fit;
+      for (const place of motifPlacements(print.layout)) for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) {
+        ctx.save(); ctx.translate((place.x + dx) * TILE_PX, (place.y + dy) * TILE_PX); ctx.scale(place.flipX ? -1 : 1, place.flipY ? -1 : 1);
+        ctx.drawImage(image, -w / 2, -h / 2, w, h); ctx.restore();
+      }
+    }
+  } else if (print) {
     if (print.motif === 'stripe') { ctx.fillStyle = print.color; ctx.fillRect(0, 0, TILE_PX, TILE_PX * 0.4); }
     else if (print.motif === 'gingham') {
       ctx.fillStyle = print.color; ctx.globalAlpha = 0.55; ctx.fillRect(0, 0, TILE_PX / 2, TILE_PX); ctx.fillRect(0, 0, TILE_PX, TILE_PX / 2);
@@ -56,7 +83,7 @@ export function paintTile(style: PartStyle, canvas: HTMLCanvasElement = document
     } else {
       for (const place of motifPlacements(print.layout)) for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) {
         ctx.save(); ctx.translate((place.x + dx) * TILE_PX, (place.y + dy) * TILE_PX); ctx.scale(place.flipX ? -1 : 1, place.flipY ? -1 : 1);
-        drawMotif(ctx, print.motif, TILE_PX / 2, print.color); ctx.restore();
+        drawMotif(ctx, print.motif as Motif, TILE_PX / 2, print.color); ctx.restore();
       }
     }
   }
@@ -74,5 +101,5 @@ export function paintTile(style: PartStyle, canvas: HTMLCanvasElement = document
       case 'slub': if (random() > 0.985) { ctx.fillStyle = light(0.12); ctx.fillRect(x, y, unit * (0.6 + random()), unit / 8); } else if ((Math.floor(x / (unit / 4))) % 2) { ctx.fillStyle = shade(0.04); ctx.fillRect(x, y, unit / 8, unit / 4); } break;
     }
   }
-  return { canvas, tileCm };
+  return { canvas, tileCm, complete };
 }

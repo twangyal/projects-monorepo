@@ -16,6 +16,7 @@ export class ProductScene {
   private group = new THREE.Group();
   private parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
+  private provisional: THREE.Texture[] = [];
   private artworkTextures = new Map<string, THREE.Texture>();
   private frame = 0;
   private height = 72;
@@ -54,25 +55,29 @@ export class ProductScene {
     this.controls.update(); this.requestRender();
   }
 
-  private texture(style: Product['parts'][PartId]): { texture: THREE.CanvasTexture; tileCm: number } {
-    const key = JSON.stringify(style);
+  private texture(style: Product['parts'][PartId], motifs: Product['motifs'] = []): { texture: THREE.CanvasTexture; tileCm: number } {
+    const motif = style.print?.motif.startsWith('upload:') ? motifs.find(m => `upload:${m.id}` === style.print!.motif)?.dataUrl ?? '' : '';
+    const key = JSON.stringify([style, motif.length, motif.slice(-64)]);
     let texture = this.textures.get(key);
     const tileCm = tileSizeCm(style);
     if (!texture) {
-      texture = new THREE.CanvasTexture(paintTile(style).canvas);
+      const painted = paintTile(style, undefined, motifs);
+      texture = new THREE.CanvasTexture(painted.canvas);
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
       if (this.textures.size > 40) { for (const old of this.textures.values()) old.dispose(); this.textures.clear(); }
-      this.textures.set(key, texture);
+      // A tile still waiting for its uploaded motif is repainted on the next update instead of being kept.
+      if (painted.complete) this.textures.set(key, texture); else this.provisional.push(texture);
     }
     return { texture, tileCm };
   }
 
   setProduct(product: Product, selected: PartId | null) {
+    for (const texture of this.provisional.splice(0)) texture.dispose();
     for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
     this.height = product.measurements.length + 6;
     for (const part of teeMesh(product, Delaunator)) {
-      const style = product.parts[part.part], { texture, tileCm } = this.texture(style);
+      const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(part.positions, 3));
       // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.

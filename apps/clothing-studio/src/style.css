@@ -79,3 +79,7 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .costing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; }
 .range-total td { font-weight: 700; background: #f7f1e7; }
 @media (max-width: 760px) { .range-save { grid-template-columns: 1fr; } }
+.uploaded-motif { display: flex; gap: 4px; align-items: stretch; }
+.uploaded-motif .library-swatch { flex: 1; }
+.uploaded-motif .library-swatch img { width: 44px; height: 44px; object-fit: contain; background: #efe8d8; border-radius: 6px; }
+.uploaded-motif .remove-motif { padding: 4px 10px; font-size: 18px; line-height: 1; }
