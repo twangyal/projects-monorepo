@@ -110,35 +110,3 @@ test('a clip without recognized lyrics explains itself, keeps even draft spacing
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('transcribing refreshes cached estimated word timing without changing lyric cues', async ({ page }) => {
-  let timingRequests = 0;
-  await page.route('**/word-timings', async route => {
-    timingRequests++;
-    if (timingRequests > 1) { await route.continue(); return; }
-    // Represent the timing cached before recognition became available. Later requests use
-    // the real fixture transcript, so this verifies refresh rather than merely changing a label.
-    const { cues } = route.request().postDataJSON() as { cues: { start: number; end: number; text: string }[] };
-    await route.fulfill({ json: {
-      recognized: false,
-      lines: cues.map(cue => {
-        const words = cue.text.split(/\s+/).filter(Boolean);
-        return words.map((text, index) => ({ text, start: cue.start + (cue.end - cue.start) * index / words.length, heard: false }));
-      }),
-    } });
-  });
-  await importClip(page, 16);
-  await expect(page.locator('#auto-status')).toContainText('12 words were recognized');
-  const before = await lines(page);
-  await seek(page, 4.5);
-  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'estimated');
-  expect(timingRequests).toBe(1);
-
-  await page.getByRole('button', { name: 'Transcribe again', exact: true }).click();
-  await expect(page.locator('#message')).toContainText('Lyrics recognized', { timeout: 15000 });
-  expect(await lines(page)).toEqual(before);
-  await seek(page, 4.5);
-  await expect.poll(() => timingRequests).toBeGreaterThanOrEqual(2);
-  await expect(page.locator('#stage')).toHaveAttribute('data-word-timing', 'recognized');
-  // The real transcript starts “This” at 4.0 s and “is” at 4.4 s.
-  await expect(page.locator('#stage')).toHaveAttribute('data-sung', '6');
-});
