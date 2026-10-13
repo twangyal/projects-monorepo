@@ -47,11 +47,14 @@ export function matchScore(query, name) {
   return 0.7 * (shared / qTokens.length) + 0.1 * (shared / nTokens.length);
 }
 
+// Synonyms apply both ways: a site may label its control "Log in" or "Sign in" whichever the user says.
 function variants(query) {
   const normalized = ` ${normalize(query)} `;
   const found = [query];
-  for (const [phrase, replacement] of SYNONYMS) {
-    if (normalized.includes(` ${phrase} `)) found.push(normalized.replace(` ${phrase} `, ` ${replacement} `).trim());
+  for (const [a, b] of SYNONYMS) {
+    for (const [phrase, replacement] of [[a, b], [b, a]]) {
+      if (normalized.includes(` ${phrase} `)) found.push(normalized.replace(` ${phrase} `, ` ${replacement} `).trim());
+    }
   }
   return found;
 }
@@ -182,6 +185,14 @@ export function interpret(utterance, context = { elements: [] }) {
   const chosen = choice && parseNumber(choice[1]);
   if (chosen) return { type: 'choose', index: chosen };
 
+  // "Next page" and "previous page" follow a pagination link or button inside the circle (as on search results);
+  // with none there, they move through the browser history.
+  const paging = /^(?:go to |show )?(?:the )?(next|previous|prev) page(?: of results)?$/.exec(text);
+  if (paging) {
+    const pattern = paging[1] === 'next' ? /^(?:next\b|[›»→])|\bnext page\b/i : /^(?:prev(?:ious)?\b|[‹«←])|\bprevious page\b/i;
+    const pagers = context.elements.filter(element => (element.role === 'link' || element.role === 'button') && pattern.test((element.name ?? '').trim()));
+    if (pagers.length) return deictic(pagers, element => ({ type: 'activate', targetId: element.id }), 'page link');
+  }
   if (/^(?:go |take me )?back(?: a page| to the previous page)?$|^(?:go|return) (?:back )?to the previous page$|^previous page$/.test(text)) return { type: 'back' };
   if (/^(go )?forward( a page)?$|^next page$/.test(text)) return { type: 'forward' };
   if (/^(page down|next screen)$/.test(text)) return { type: 'scroll', direction: 'down', amount: 'page' };
@@ -229,7 +240,10 @@ export function interpret(utterance, context = { elements: [] }) {
     }
     const fields = context.elements.filter(element => element.editable && matchScore(target, element.name) >= 0.5);
     if (fields.length) return resolve(target, fields, null, edit('replace-all', { text: unquote(value) }), 'text field');
-    return chooseField(null, context, edit('replace', { find: unquote(target), text: unquote(value) }));
+    // Correcting words inside a field needs that field to be focused; a merely gazed field is a guess.
+    const focused = context.elements.find(element => element.editable && element.id === context.focusedId);
+    if (!focused) return { type: 'unknown', message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
+    return edit('replace', { find: unquote(target), text: unquote(value) })(focused);
   }
   if ((match = /^(?:clear|empty|erase)(?: (?:the )?(.+?))?$/.exec(text))) {
     const name = match[1] && !/^(it|that|this|text|field|box|everything|all)$/.test(match[1]) ? match[1].replace(/ (field|box)$/, '') : null;
@@ -253,6 +267,28 @@ export function interpret(utterance, context = { elements: [] }) {
     if (picked) return picked;
   }
 
+  // Closing something: a toggle that is open ("close the menu" when its button now reads "Hide navigation menu"),
+  // or a Close/Hide/Collapse/Dismiss control. With neither in the circle, the words are an ordinary control name
+  // ("close account"), which keeps its usual handling and confirmation.
+  const closing = /^(?:close|hide|collapse|dismiss|shut)(?:\s+(?:the\s+)?(.+))?$/.exec(text);
+  if (closing) {
+    const subject = closing[1] && !DEICTIC.test(closing[1]) ? closing[1] : null;
+    const act = element => ({ type: 'activate', targetId: element.id });
+    const closers = context.elements.filter(element => element.expanded === true ||
+      ((element.role === 'button' || element.role === 'link') && /^(?:close|hide|collapse|dismiss)\b|^[×✕✖]$/i.test((element.name ?? '').trim())));
+    if (closers.length) {
+      if (!subject) return deictic(closers, act);
+      // "the menu" is only a role word: prefer closers whose name says it, else ask among them all.
+      if (!tokens(subject).length) {
+        const word = normalize(subject);
+        const saying = closers.filter(element => ` ${normalize(element.name ?? '')} `.includes(` ${word} `));
+        return deictic(saying.length ? saying : closers, act);
+      }
+      const named = rank(subject, closers, null);
+      if (named.length) return resolve(subject, closers, null, act);
+    }
+  }
+
   const verbless = text.replace(ACTIVATE_VERB, '');
   const hint = /\s(link|button|tab|checkbox|box|field|menu|option)$/.exec(verbless)?.[1];
   const query = verbless.replace(/^the\s+/, '').trim();
@@ -266,9 +302,13 @@ export function interpret(utterance, context = { elements: [] }) {
   if (resolved.type === 'unknown') {
     resolved = selectOption(query, context.elements.filter(element => element.options?.length)) ?? resolved;
   }
+  // Unknown results say why, so an assisting model can be asked only about naming a target:
+  // `targetQuery` when an activation was requested but no control matched, `unparsed` otherwise.
   if (resolved.type === 'unknown' && verbless === text && !hint) {
-    return { type: 'unknown', message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".` };
+    return { type: 'unknown', unparsed: true, message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".` };
   }
+  // Only a spoken activation verb ("open …", "click …") makes this a request to name a control.
+  if (resolved.type === 'unknown') return verbless !== text ? { ...resolved, targetQuery: query } : { ...resolved, unparsed: true };
   return resolved;
 }
 

@@ -25,7 +25,20 @@ async function loadCamera({ fresh = false } = {}) {
   return globalThis.webgazer;
 }
 
-const navigator = startWebNavigator({ window, store, loadCamera });
+// Smarter matching asks the extension's shared on-device model; only roles and names leave the page.
+async function loadAssistant(progress) {
+  const onProgress = message => { if (message?.type === 'gaze:assist-progress') progress(message.received, message.total); };
+  chrome.runtime.onMessage.addListener(onProgress);
+  const call = async (op, args = []) => {
+    const reply = await chrome.runtime.sendMessage({ type: 'gaze:assist', op, args });
+    if (!reply?.ok) throw new Error(reply?.message ?? 'The matching model is unavailable.');
+    return reply.result;
+  };
+  try { await call('load'); } finally { chrome.runtime.onMessage.removeListener(onProgress); }
+  return { decide: (...args) => call('decide', args), yes: (...args) => call('yes', args) };
+}
+
+const navigator = startWebNavigator({ window, store, loadCamera, loadAssistant });
 globalThis.__gazeNavigatorStop = () => {
   navigator.stop();
   globalThis.__gazeNavigatorRunning = false;

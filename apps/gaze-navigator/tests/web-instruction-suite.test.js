@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { interpret } from '../src/web/interpreter.js';
-import { HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter } from '../src/web/instruction-suite.js';
+import { HELD_OUT_2_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter } from '../src/web/instruction-suite.js';
 
 test('the suites are well formed and do not overlap', () => {
   const said = new Set(SUITE.map(item => `${item.context}|${item.say.toLowerCase()}`));
   assert.equal(SUITE.length, 120);
   assert.equal(HELD_OUT_SUITE.length, 50);
   for (const item of HELD_OUT_SUITE) assert.equal(said.has(`${item.context}|${item.say.toLowerCase()}`), false, item.say);
+  const earlier = new Set([...SUITE, ...HELD_OUT_SUITE].map(item => item.say.toLowerCase()));
+  assert.equal(HELD_OUT_2_SUITE.length, 50);
+  for (const item of HELD_OUT_2_SUITE) assert.equal(earlier.has(item.say.toLowerCase()), false, item.say);
 });
 
 test('the rule interpreter never performs a wrong page action on either suite', () => {

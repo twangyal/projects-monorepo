@@ -229,6 +229,42 @@ test('controls inside web components, same-origin frames and script-only cards a
   await expect(panel(page).locator('.context li.unreachable')).toHaveText('Store map: content from another site that the navigator cannot reach');
 });
 
+test('typed corrections still reach the field that had focus before the instruction box', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await look(page, page.getByLabel('Message'));
+  await typeInstruction(page, 'type Meet on Tuesday');
+  await expect(page.getByLabel('Message')).toHaveValue('Meet on Tuesday');
+  // Typing the next instruction moves focus into the panel; the correction still means the message field.
+  await look(page, page.getByLabel('Message'));
+  await typeInstruction(page, 'change Tuesday to Friday');
+  await expect(page.getByLabel('Message')).toHaveValue('Meet on Friday');
+  // Once focus has left for the page background, a correction is not guessed onto the old field.
+  await page.mouse.click(5, 300);
+  await look(page, page.getByLabel('Message'));
+  await typeInstruction(page, 'change Friday to Monday');
+  await expect(status(page)).toContainText('first select the text field');
+  await expect(page.getByLabel('Message')).toHaveValue('Meet on Friday');
+});
+
+test('a disclosure toggle inside a form opens without a confirmation; the form\'s real submit still asks', async ({ page }) => {
+  await page.goto('/practice-site/search.html?q=river');
+  const toggle = page.getByRole('button', { name: 'Filter and sort' });
+  await look(page, toggle);
+  await typeInstruction(page, 'open filter and sort');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(status(page)).toHaveText('Filter and sort activated.');
+  await look(page, page.getByRole('button', { name: 'Apply filters' }));
+  await typeInstruction(page, 'apply filters');
+  await expect(status(page)).toContainText('may have consequences');
+  await typeInstruction(page, 'cancel');
+  await expect(page).toHaveURL(/search\.html\?q=river$/);
+  // "Hide the filters" closes the open toggle.
+  await look(page, toggle);
+  await typeInstruction(page, 'hide the filters');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#filter-panel')).toBeHidden();
+});
+
 test('search fallback into a message waits for confirmation before sending', async ({ page }) => {
   await page.goto('/practice-site/contact.html');
   await page.locator('form.search').evaluate(form => form.remove());

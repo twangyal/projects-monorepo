@@ -26,6 +26,14 @@
   <main>
     <h1>Search results for “<span id="query"></span>”</h1>
     <p class="notice" role="status"></p>
+    <!-- As on many search pages, the filter toggle is a button inside the form, so it defaults to type="submit". -->
+    <form class="filters" action="search.html" method="get">
+      <button id="filter-toggle" aria-expanded="false" aria-controls="filter-panel">Filter and sort</button>
+      <div id="filter-panel" hidden>
+        <label><input type="checkbox" name="available" /> Available now</label>
+        <button>Apply filters</button>
+      </div>
+    </form>
     <ul id="results"></ul>
   </main>
   <footer>A fictional practice website. Nothing is sold, sent or stored.</footer>

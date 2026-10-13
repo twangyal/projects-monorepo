@@ -11,9 +11,12 @@ function targetOf(context, id) {
 }
 
 // `commands` handles navigator-level actions (tracking source, calibration) outside the page.
-export function createController({ window, actions = pageActions, interpret = interpretRules, commands = {}, now = () => Date.now(), confirmMs = CONFIRM_MS }) {
+// `assistant` (optional, see assisted-interpreter.js) may improve rule answers that named no control;
+// its answer arrives later as `followUp` and is dropped if any newer instruction came first.
+export function createController({ window, actions = pageActions, interpret = interpretRules, commands = {}, assistant = null, now = () => Date.now(), confirmMs = CONFIRM_MS }) {
   let paused = false;
   let pending = null;
+  let turn = 0;
   const history = new WeakMap();
 
   const reply = (message, tone = 'info', extra = {}) => ({ message, tone, pending: pending && { kind: pending.kind, candidates: pending.candidates ?? null }, ...extra });
@@ -87,6 +90,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function handle(utterance, context) {
+    const current = ++turn;
     const action = interpret(utterance, context);
     if (action.type === 'cancel') {
       const had = pending;
@@ -145,6 +149,21 @@ export function createController({ window, actions = pageActions, interpret = in
         if (!target) return reply(`There is no number ${action.index} in the gaze circle.`, 'error');
         return perform({ type: 'activate', targetId: target.id }, context);
       }
+      case 'clarify':
+      case 'unknown':
+        if (assistant?.needs(utterance, context, action)) {
+          const followUp = assistant.improve(utterance, context, action).catch(() => action)
+            // A newer instruction (including cancel or pause) makes this answer stale.
+            .then(improved => (current === turn && !paused ? respond(improved, context) : null));
+          return reply('Working out which control you mean…', 'info', { assisting: true, followUp });
+        }
+        return respond(action, context);
+      default: return perform(action, context);
+    }
+  }
+
+  function respond(action, context) {
+    switch (action.type) {
       case 'clarify':
         pending = { kind: 'clarify', candidates: action.candidates, choose: action.choose, context };
         return reply(action.message, 'question');

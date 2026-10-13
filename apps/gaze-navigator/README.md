@@ -1,6 +1,6 @@
 # Gaze Navigator
 
-**Product direction (2026-10-08): ACTIVE.** The destination is gaze context plus spoken instructions interpreted with Jev on real websites. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
+**Product direction (2026-10-08): ACTIVE.** The destination is gaze context plus spoken instructions interpreted on real websites, with WaterSheep (replacing Jev, per the owner on 2026-10-13) as the intended model interpreter. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
 A small browser-first vertical slice for project #1, **Eye detector with agentic AI**.
 
@@ -48,7 +48,39 @@ Discovery reaches controls inside open shadow roots (web components) and same-or
 
 Execution never opens `javascript:` or other non-web link schemes, writes fields through native value setters plus `input`/`change` events so framework-managed forms see the change, keeps a 20-step per-field undo history, and acts only on elements captured inside the circle (plus the page's single search field for "search for…"). The panel lives in an open shadow root that context capture ignores, and a spacer reserves room so it never permanently covers the end of a page.
 
-Interpretation quality is measured on a fixed suite: `npm run evaluate:instructions` scores 120 tuned phrasings (120/120) and 50 held-out phrasings (34/50, 68%). Both suites have zero wrong page actions; every miss is a question or an explanation. See [the evaluation](docs/2026-10-12-instruction-suite-evaluation.md). This is the baseline a Jev interpreter (#206) must beat.
+Interpretation quality is measured on a fixed suite: `npm run evaluate:instructions` scores 120 tuned phrasings (120/120) and 50 held-out phrasings (34/50, 68%). Both suites have zero wrong page actions; every miss is a question or an explanation. See [the evaluation](docs/2026-10-12-instruction-suite-evaluation.md). This is the baseline a model interpreter must beat.
+
+**WaterSheep target choice (#229, measured, not yet in the live runtime).** The owner chose [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep) instead of Jev. WaterSheep is an Apache-2.0 ModernBERT model that answers single-choice and yes/no questions with calibrated probabilities and runs locally through ONNX Runtime.
+
+`src/web/assisted-interpreter.js` keeps the rules first and asks the model only to choose a control:
+
+- when a requested target matched no name;
+- to break a tie between the controls the rules proposed (identical names stay a question);
+- for an unparsed phrase, only after a yes/no "does this ask to use a control?" answer of at least 0.8.
+
+The model sees the instruction and the controls' role, name, checked state and choices, never field values or page text. A pick of at least 0.8 acts, and still goes through consequential-action confirmation. A split answer asks a numbered question; anything else keeps the rule answer.
+
+`src/web/watersheep.js` adapts WaterSheep's browser inference with an injected runtime. `npm run evaluate:instructions -- --watersheep DIR` scores it on both suites from a local model copy.
+
+**Measured** (revision `236de64`), as correct / unsafe answers:
+
+| Suite | Rules | Rules + WaterSheep |
+| --- | --- | --- |
+| Tuned (120) | 120 / 0 | 120 / 0 |
+| Held-out (50) | 34 / 0 | 35 / 0 |
+| Second held-out (50, paraphrased targets) | 18 / 0 | **27 / 0** |
+
+Model calls take about 0.36 s. First scorings found unsafe picks, which led to safety-only fixes; both are recorded. **On live websites** (Wikipedia, GOV.UK, MDN, Python docs), seventeen scripted tasks through the real extension completed 15/17 with the rules alone and **17/17 with smarter matching** (an earlier run 16/17), with no unintended actions. They cover links, search, dictation and spoken correction, dropdowns, page and region scrolling, pagination, menus, disclosure toggles and checkboxes. The runs found and fixed five gaps: one-way synonyms, "next page" ignoring a Next page link, typed corrections losing their field, "close the menu" doing nothing, and filter toggles asking for confirmation. The pointer stood in for gaze and typed text for speech. See [the real-site evaluation](docs/2026-10-13-real-site-evaluation.md); rerun it with `node scripts/evaluate-real-sites.mjs --extension DIR [--assist]`.
+
+**Smarter target matching** (#232) is an opt-in setting under **Tracking and settings**. It uses WaterSheep live: the rules answer first and instantly. When they cannot name a control, the panel says "Working out which control you mean…" and asks the model, and any newer instruction (including cancel or pause) discards that pending answer. Consequential picks are still confirmed.
+
+- **On the practice site,** run `npm run vendor:watersheep` once. This fetches ONNX Runtime Web 1.23.0 and the tokenizer with npm, pinned by SHA-256, into `dist/vendor/watersheep`. The setting then downloads the model from Hugging Face at the pinned revision, checks its SHA-256, and caches it.
+- **In the extension,** the model runs in one shared offscreen document: it downloads once per browser and is cached in extension storage, never a website's. `npm run build:extension` bundles the runtime (the extension is about 14 MB).
+
+Measured live in Chromium on 4 CPU cores:
+
+- the first enable takes about 7–12 s (download included), and later enables about 3 s from cache;
+- each model-assisted instruction takes 1.3–3.5 s on the practice site, which is single-threaded. In the extension, isolated pages use 4 wasm threads, about halving each model call (0.6–0.7 s against 1.1–1.2 s). See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
 
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 
@@ -68,7 +100,7 @@ In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose 
 - In the extension, a successful camera calibration follows you between pages. Its training samples (tiny eye-patch images plus screen positions) are kept only in the extension's in-memory session storage, never in website storage. They are reused while the window size is unchanged and for up to two hours. "Stop camera" or "use pointer" deletes them, and the browser discards them when it closes. The practice site (no extension) still recalibrates on each page.
 - Protected pages (`chrome://`, the web store) report that the navigator cannot run there. Cross-origin iframes and other browsers are not handled. The navigator's modules are web-accessible, so a website can detect that the extension is installed. WebGazer is GPL-3.0; its license is copied into the build.
 
-Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. Jev is the intended interpreter but is not integrated or evaluated; the rule interpreter is the measured baseline. Spoken commands are English only.
+Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. WaterSheep (which replaced Jev) is measured but not yet used by the live runtime: it added one correct held-out case with no unsafe actions. Spoken commands are English only.
 
 ## Architecture
 

@@ -73,7 +73,7 @@ The owner asked to focus development on Gaze Navigator, Clothing Studio and Kara
 
 This approachable loop is now the primary near-term experience. It is pursued alongside the professional depth described above, not instead of it. See [the branch research](https://github.com/twangyal/projects-monorepo/blob/d6f594a/apps/clothing-studio/docs/2026-10-13-fabra-research.md) for the research and roadmap.
 
-For Gaze Navigator, the owner redirected the interpreter: "instead of jev look into [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep)". WaterSheep is an open-source (Apache-2.0), locally runnable, calibrated decision model with Jev-compatible requests. It replaces Jev as the intended interpreter for target choice. The requirement for evidence is unchanged: it must be measured against the rule baseline for correct targets, unintended actions, abstention and latency before it drives real pages. See [the branch research](https://github.com/twangyal/projects-monorepo/blob/d6f594a/apps/gaze-navigator/docs/2026-10-13-watersheep.md).
+For Gaze Navigator, the owner redirected the interpreter: "instead of jev look into [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep)". WaterSheep is an open-source (Apache-2.0), locally runnable, calibrated decision model with Jev-compatible requests. It replaces Jev as the intended interpreter for target choice. The requirement for evidence is unchanged: it must be measured against the rule baseline for correct targets, unintended actions, abstention and latency before it drives real pages. See [WaterSheep research and retained evaluations](../apps/gaze-navigator/docs/2026-10-13-watersheep.md).
 
 ## 6. Karaoke Studio
 

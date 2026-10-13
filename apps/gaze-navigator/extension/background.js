@@ -76,7 +76,24 @@ chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
 
 chrome.tabs.onRemoved.addListener(tabId => setEnabled(tabId, false));
 
+// Smarter matching: the model runs in one offscreen document shared by all tabs.
+async function ensureOffscreen() {
+  if (await chrome.offscreen.hasDocument()) return;
+  await chrome.offscreen.createDocument({ url: 'offscreen.html', reasons: ['WORKERS'], justification: 'Runs the on-device WaterSheep model for smarter target matching.' })
+    .catch(error => { if (!/single offscreen/i.test(error.message)) throw error; });
+}
+
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
+  if (message?.type === 'gaze:assist' && sender.tab?.id !== undefined && ['load', 'decide', 'yes'].includes(message.op)) {
+    ensureOffscreen()
+      .then(() => chrome.runtime.sendMessage({ target: 'gaze-offscreen', op: message.op, args: message.args ?? [], tabId: sender.tab.id }))
+      .then(respond, error => respond({ ok: false, message: error.message }));
+    return true;
+  }
+  if (message?.type === 'gaze:assist-progress' && !sender.tab) {
+    chrome.tabs.sendMessage(message.tabId, message).catch(() => {});
+    return false;
+  }
   if (message?.type === 'gaze:load-camera' && sender.tab?.id !== undefined) {
     // MV3 forbids remote code: the pinned estimator is bundled and runs in the isolated world.
     chrome.scripting.executeScript({ target: { tabId: sender.tab.id, frameIds: [sender.frameId ?? 0] }, files: ['vendor/webgazer.js'] })
