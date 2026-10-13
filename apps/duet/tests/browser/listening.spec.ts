@@ -150,6 +150,73 @@ test('two people connect Spotify, see automatic entries, curate them durably and
   }
 });
 
+test('a slice of the timeline becomes a private playlist in one person’s Spotify, after granting the new permission without losing listening', async ({ page, browser, baseURL }) => {
+  const suffix = Date.now().toString(36);
+  const [ada, ben] = [`pada${suffix}`, `pben${suffix}`];
+  await spotify({ users: { [ada]: 'Ada Spotify', [ben]: 'Ben Spotify' }, plays: [
+    { user: ada, minutesAgo: 2 * 1440, id: `Shared${suffix}`, title: 'Harbour Lights', artist: 'The Tides' },
+    { user: ben, minutesAgo: 3 * 1440, id: `Shared${suffix}`, title: 'Harbour Lights', artist: 'The Tides' },
+  ] });
+  const { guest, close } = await pair(page, browser, baseURL);
+  try {
+    // Ada approved Duet before playlists existed: only the two read permissions.
+    await spotify({ granted: 'user-read-recently-played user-library-read' });
+    await connect(page, ada);
+    await spotify({ granted: null });
+    await connect(guest, ben);
+    await spotify({ plays: [{ user: ada, minutesAgo: 1, id: `Fresh${suffix}`, title: 'Paper Boats' }] });
+    await section(page).getByRole('button', { name: 'Check Spotify now' }).click();
+    await expect(section(page).locator('.timeline-entry', { hasText: 'Paper Boats' })).toBeVisible();
+
+    const panel = section(page).locator('#timeline-playlists');
+    await panel.locator('summary').click();
+    await expect(panel.locator('#playlist-hint')).toContainText('needs one more permission');
+    await expect(panel.getByRole('button', { name: 'Create in my Spotify' })).toBeDisabled();
+    // Reconnecting the same account grants it and keeps the imported listening.
+    await spotify({ nextUser: ada });
+    await panel.getByRole('button', { name: 'Reconnect my Spotify' }).click();
+    await page.waitForURL(/\?room=[a-f0-9]{32}$/);
+    await expect(section(page).locator('.timeline-entry', { hasText: 'Paper Boats' })).toBeVisible();
+    await expect(section(page).locator('.timeline-entry.kind-both')).toContainText('Harbour Lights');
+
+    await panel.locator('summary').click();
+    await expect(panel.locator('#playlist-hint')).toHaveText('');
+    await panel.getByLabel('Playlist name').fill('Our coast week');
+    await panel.getByLabel('First-time songs').uncheck();
+    await panel.getByRole('button', { name: 'Preview songs' }).click();
+    await expect(panel.locator('#playlist-preview')).toContainText('1 song, oldest first');
+    await expect(panel.locator('#playlist-preview li')).toHaveText(['“Harbour Lights” by The Tides']);
+    await panel.getByLabel('First-time songs').check();
+    await expect(panel.locator('#playlist-preview')).toBeEmpty();
+    await panel.getByRole('button', { name: 'Preview songs' }).click();
+    await expect(panel.locator('#playlist-preview li')).toHaveText(['“Harbour Lights” by The Tides', '“Paper Boats” by Artist']);
+    await panel.getByRole('button', { name: 'Create in my Spotify' }).click();
+    await expect(page.locator('#notice')).toContainText('Created “Our coast week” with 2 songs in your Spotify.');
+    await expect(panel.getByLabel('Playlist name')).toHaveValue('');
+
+    const made = (await (await fetch(`${FAKE}/__test/playlists`)).json()).playlists.filter((item: { name: string }) => item.name === 'Our coast week');
+    expect(made).toEqual([{ user: ada, name: 'Our coast week', public: false, description: 'Made with Duet from our shared listening timeline.',
+      uris: [`spotify:track:Shared${suffix}`, `spotify:track:Fresh${suffix}`] }]);
+    const link = panel.getByRole('link', { name: 'Our coast week' });
+    await expect(link).toHaveAttribute('href', /^https:\/\/open\.spotify\.com\/playlist\/[0-9a-f]+$/);
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+
+    // Ben sees the playlist in the shared timeline; his own creation goes to his account.
+    await guest.reload(); await expect(guest.locator('#room-view')).toBeVisible();
+    const guestPanel = section(guest).locator('#timeline-playlists');
+    await guestPanel.locator('summary').click();
+    await expect(guestPanel.locator('#playlist-list')).toContainText('Our coast week · 2 songs · in Ada’s Spotify');
+    await guestPanel.getByLabel('Playlist name').fill('Ben’s picks');
+    await guestPanel.getByLabel('Songs we both played').uncheck();
+    await guestPanel.getByLabel('First-time songs').uncheck();
+    await guestPanel.getByRole('button', { name: 'Create in my Spotify' }).click();
+    await expect(guest.locator('#notice')).toContainText('No timeline songs match these choices yet.');
+  } finally {
+    await spotify({ granted: null });
+    await cleanup(page); await close();
+  }
+});
+
 test('a refused Spotify approval returns to the room with an explanation and connects nothing', async ({ page, browser, baseURL }) => {
   const { close } = await pair(page, browser, baseURL);
   try {
@@ -166,6 +233,8 @@ test('the timeline fits a phone-width screen', async ({ page, browser, baseURL }
   const { close } = await pair(page, browser, baseURL);
   try {
     await expect(section(page).locator('#timeline-manual')).toBeVisible();
+    await section(page).locator('#timeline-playlists summary').click();
+    await expect(section(page).getByLabel('Playlist name')).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   } finally {

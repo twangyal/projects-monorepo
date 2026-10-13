@@ -164,7 +164,24 @@ h3 { font-size: 15px; font-weight: 500; margin: 0; color: #566649; }
 .memory-form textarea, .memory-form input[type=file], .memory-form button { grid-column: 1 / -1; font-size: 11px; }
 .memory-form button { justify-self: start; }
 .all-memories summary { cursor: pointer; font: 18px Georgia, serif; color: #646247; }
-@media (max-width: 700px) { .listening { grid-column: 1; } .timeline-body { padding: 18px; } .manual-form, .memory-form { grid-template-columns: 1fr; } }
+.playlist-panel summary { cursor: pointer; font: 18px Georgia, serif; color: #646247; }
+.playlist-panel > p { font-size: 12px; line-height: 1.7; color: #576546; }
+.playlist-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.playlist-form > label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; }
+.playlist-form > label:first-child, .playlist-form fieldset, .playlist-form .actions, .playlist-form .check, #playlist-hint, .playlist-preview { grid-column: 1 / -1; }
+.playlist-form input { font-size: 11px; }
+.playlist-form fieldset { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 10px 12px; border: 1px solid #eae2cd; border-radius: 7px; font-size: 11px; }
+.playlist-form .check { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; color: #4f5641; }
+.playlist-form .check input { width: auto; padding: 0; margin: 0; accent-color: #697b55; }
+.playlist-form .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.playlist-form .actions button, #playlist-hint button { font-size: 11px; }
+#playlist-hint { margin: 0; }
+#playlist-hint:empty, .playlist-preview:empty { display: none; }
+.playlist-preview { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.playlist-preview p { margin: 0; }
+.playlist-list h5 { margin: 14px 0 6px; font-size: 12px; color: #4d4a33; }
+.playlist-list ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .listening { grid-column: 1; } .timeline-body { padding: 18px; } .manual-form, .memory-form, .playlist-form { grid-template-columns: 1fr; } }
 .player { display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center; gap: 25px; margin-top: 24px; padding: 22px 25px; background: #eef0e2; border-color: #d9dfc7; }
 .now-playing { display: flex; gap: 14px; align-items: center; min-width: 0; }
 .mini-record { width: 50px; height: 50px; border: 17px solid #828b6f; background: #d5bd91; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 4px #daccac; }
@@ -212,3 +229,4 @@ footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1
 #mix-status { white-space: pre-wrap; overflow-wrap: anywhere; }
 .order-buttons .text-button { margin-top: 6px; max-width: 95px; line-height: 1.4; }
 @media (max-width: 520px) { .saved-mix-actions > button { max-width: 100%; white-space: normal; } }
+.playlist-list a { color: #566642; }

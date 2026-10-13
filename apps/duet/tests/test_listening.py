@@ -198,6 +198,119 @@ class StorageSyncTests(unittest.TestCase):
         self.assertEqual(unknown.exception.status, 404)
 
 
+FULL_SCOPE = 'user-read-recently-played user-library-read playlist-modify-private'
+EVERYTHING = {'kinds': ['both', 'new', 'favorite'], 'from': '', 'to': '', 'memoriesOnly': False}
+
+
+class PlaylistTests(StorageSyncTests):
+    """Occasion playlists: a chosen slice of the timeline becomes a private playlist in one person's account."""
+
+    def connect(self, role, user, name, scope=FULL_SCOPE):
+        if user not in self.fake.users:
+            self.fake.add_user(user, name)
+        tokens = self.fake._issue(user, refresh=True, scope=scope)
+        self.store.connect(self.room, role, {'accessToken': tokens['access_token'], 'expiresIn': 3600,
+                                             'refreshToken': tokens['refresh_token'], 'scope': scope}, {'id': user, 'name': name})
+
+    def build_timeline(self):
+        self.connect('host', 'ada', 'Ada')
+        self.connect('guest', 'ben', 'Ben')
+        self.play('ada', T0 - 3 * DAY, 'Shared1', 'Our song')
+        self.play('ben', T0 - 2 * DAY, 'Shared1', 'Our song')
+        self.store.sync(self.client, self.room, 'host')
+        self.store.sync(self.client, self.room, 'guest')
+        self.clock[0] += 3600
+        self.play('ada', T0 + 2 * DAY, 'Fresh1', 'Fresh')
+        self.play('ada', T0 + 3 * DAY, 'Hidden1', 'Hidden')
+        self.fake.users['ben']['likes'].append((T0 + 4 * DAY, track('Fave1', 'Favourite')))
+        self.store.sync(self.client, self.room, 'host')
+        self.store.sync(self.client, self.room, 'guest')
+        self.store.set_override(self.room, 'guest', 'new-host-Hidden1', True, '')
+        self.store.add_memory(self.room, 'host', 'track-Fave1', '2025-10-13', 'Dancing in the kitchen')
+        self.store.add_manual(self.room, 'host', '2025-10-01', 'First date', 'Our song', '')
+
+    def titles(self, **selection):
+        return [song['title'] for song in self.store.playlist_preview(self.room, {**EVERYTHING, **selection})]
+
+    def test_selection_by_kind_dates_and_memories_skips_hidden_and_written_entries(self):
+        self.build_timeline()
+        self.assertEqual(self.titles(), ['Our song', 'Fresh', 'Favourite'], 'oldest first; hidden and manual entries excluded')
+        self.assertEqual(self.titles(kinds=['both']), ['Our song'])
+        self.assertEqual(self.titles(kinds=['new', 'favorite'], memoriesOnly=True), ['Favourite'])
+        self.assertEqual(self.titles(**{'from': '2025-10-11', 'to': '2025-10-12'}), ['Fresh'])
+        self.assertEqual(self.titles(**{'from': '2030-01-01'}), [])
+        for bad in [{**EVERYTHING, 'kinds': []}, {**EVERYTHING, 'kinds': ['manual']}, {**EVERYTHING, 'kinds': ['new', 'new']},
+                    {**EVERYTHING, 'from': '2025-10-12', 'to': '2025-10-11'}, {**EVERYTHING, 'memoriesOnly': 1},
+                    {**EVERYTHING, 'extra': True}, ['both'], {**EVERYTHING, 'to': '2025-02-30'}]:
+            with self.assertRaises(Exception) as invalid:
+                self.store.playlist_preview(self.room, bad)
+            self.assertEqual(invalid.exception.status, 400, bad)
+
+    def test_creating_a_private_playlist_in_one_persons_account(self):
+        self.build_timeline()
+        self.assertTrue(self.store.state(self.room, configured=True)['connections']['guest']['canCreatePlaylists'])
+        record = self.store.create_playlist(self.client, self.room, 'guest', 'Our autumn', EVERYTHING)
+        self.assertEqual((record['name'], record['tracks'], record['role']), ('Our autumn', 3, 'guest'))
+        self.assertRegex(record['url'], r'^https://open\.spotify\.com/playlist/[0-9a-f]+$')
+        stored = self.fake.playlists[record['id']]
+        self.assertEqual((stored['user'], stored['public'], stored['name']), ('ben', False, 'Our autumn'))
+        self.assertEqual(stored['uris'], ['spotify:track:Shared1', 'spotify:track:Fresh1', 'spotify:track:Fave1'])
+        state = self.store.state(self.room, configured=True)
+        self.assertEqual([(item['name'], item['role']) for item in state['playlists']], [('Our autumn', 'guest')])
+        self.assertNotIn('playlist-modify', json.dumps(state), 'grants are summarised, not exposed')
+
+        with self.assertRaises(Exception) as empty:
+            self.store.create_playlist(self.client, self.room, 'guest', 'Nothing', {**EVERYTHING, 'from': '2030-01-01'})
+        self.assertEqual(empty.exception.status, 409)
+        with self.assertRaises(Exception) as unnamed:
+            self.store.create_playlist(self.client, self.room, 'guest', '  ', EVERYTHING)
+        self.assertEqual(unnamed.exception.status, 400)
+
+        # Expired access is refreshed first and the playlist grant survives the refresh.
+        self.fake.expire_all()
+        self.clock[0] += 7200
+        self.assertEqual(self.store.create_playlist(self.client, self.room, 'host', 'Ada’s copy', EVERYTHING)['tracks'], 3)
+        self.assertEqual(len(self.store.state(self.room, configured=True)['playlists']), 2)
+
+        self.store.delete_room(self.room)
+        self.assertEqual(self.store.state(self.room, configured=True)['playlists'], [])
+
+    def test_older_connections_must_reconnect_and_spotify_refusals_are_explained(self):
+        self.build_timeline()
+        self.connect('host', 'ada', 'Ada', scope='user-read-recently-played user-library-read')
+        self.assertFalse(self.store.state(self.room, configured=True)['connections']['host']['canCreatePlaylists'])
+        self.assertEqual(self.titles(), ['Our song', 'Fresh', 'Favourite'], 're-authorizing the same account keeps its listening')
+        before = len(self.fake.requests)
+        with self.assertRaises(Exception) as missing:
+            self.store.create_playlist(self.client, self.room, 'host', 'Ours', {**EVERYTHING, 'kinds': ['both']})
+        self.assertEqual(missing.exception.status, 409)
+        self.assertIn('Reconnect', str(missing.exception))
+        self.assertEqual(len(self.fake.requests), before, 'nothing is sent to Spotify without the grant')
+
+        # Spotify may still refuse (e.g. the app lost the permission): that is a reconnect hint, not a crash.
+        self.fake.failures.append(('/v1/me/playlists', 403, {}))
+        with self.assertRaises(Exception) as refused:
+            self.store.create_playlist(self.client, self.room, 'guest', 'Ours', EVERYTHING)
+        self.assertEqual(refused.exception.status, 409)
+        self.fake.failures.append(('/v1/playlists/', 500, {}))
+        with self.assertRaises(Exception) as partial:
+            self.store.create_playlist(self.client, self.room, 'guest', 'Ours', EVERYTHING)
+        self.assertEqual(partial.exception.status, 502)
+        self.assertIn('did not add its songs', str(partial.exception))
+        self.assertEqual(self.store.state(self.room, configured=True)['playlists'], [])
+
+        # Granting the permission later is a plain re-authorization; a different account starts afresh.
+        self.connect('host', 'ada', 'Ada')
+        self.assertEqual(self.store.create_playlist(self.client, self.room, 'host', 'Ours', EVERYTHING)['tracks'], 3)
+        self.connect('host', 'cy', 'Cy')
+        self.assertEqual(self.titles(), ['Favourite'], 'the other account’s plays are not reused')
+
+        self.store.disconnect(self.room, 'guest')
+        with self.assertRaises(Exception) as disconnected:
+            self.store.create_playlist(self.client, self.room, 'guest', 'Ours', EVERYTHING)
+        self.assertEqual(disconnected.exception.status, 409)
+
+
 class ClientValidationTests(unittest.TestCase):
     def test_only_official_or_loopback_endpoints_and_valid_client_ids(self):
         with self.assertRaises(ValueError):
@@ -331,6 +444,28 @@ class ListeningHttpTests(unittest.TestCase):
         self.assertEqual([entry['kind'] for entry in state['entries']], ['manual'])
         self.assertEqual(self.request('DELETE', f'/api/rooms/{self.room}', {}, self.host)[0], 200)
         self.assertEqual(self.server.listening.state(self.room, configured=True)['entries'], [])
+
+    def test_playlist_preview_and_creation_over_http(self):
+        now = int(time.time() * 1000)
+        self.fake.add_user('ada', 'Ada')
+        self.fake.users['ada']['plays'].append((now - DAY, track('Shared1', 'Our song')))
+        self.fake.add_user('ben', 'Ben')
+        self.fake.users['ben']['plays'].append((now - DAY, track('Shared1', 'Our song')))
+        self.connect(self.host, 'ada', 'Ada')
+        self.connect(self.guest, 'ben', 'Ben')
+        selection = {'kinds': ['both'], 'from': '', 'to': '', 'memoriesOnly': False}
+        status, preview = self.request('POST', f'{self.base}/playlists/preview', {'selection': selection}, self.guest)
+        self.assertEqual((status, [song['id'] for song in preview['tracks']]), (200, ['Shared1']))
+        self.assertEqual(self.request('POST', f'{self.base}/playlists/preview', {'selection': {}}, self.guest)[0], 400)
+        self.assertEqual(self.request('POST', f'{self.base}/playlists', {'name': 'Ours', 'selection': selection})[0], 401)
+        status, created = self.request('POST', f'{self.base}/playlists', {'name': 'Ours', 'selection': selection}, self.guest)
+        self.assertEqual(status, 201, created)
+        self.assertEqual(created['listening']['playlists'][0]['url'], created['playlist']['url'])
+        self.assertTrue(created['listening']['connections']['host']['canCreatePlaylists'])
+        self.assertEqual(self.fake.playlists[created['playlist']['id']]['user'], 'ben', 'made in the requester’s own account')
+        # The other participant sees it in the shared state.
+        status, state = self.request('GET', self.base, token=self.host)
+        self.assertEqual([item['name'] for item in state['playlists']], ['Ours'])
 
     def test_refused_authorization_is_reported_without_connecting(self):
         self.fake.next_user = None

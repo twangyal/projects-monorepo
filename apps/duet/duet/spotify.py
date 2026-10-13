@@ -1,4 +1,4 @@
-"""Minimal Spotify Web API client: Authorization Code with PKCE plus the two reads Duet uses.
+"""Minimal Spotify Web API client: Authorization Code with PKCE, the two reads Duet uses, and playlist creation.
 
 Only a public client ID is configured; no client secret exists. Every response is size-limited,
 time-limited and validated into small plain records before it reaches storage.
@@ -16,7 +16,10 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 ACCOUNTS_URL = 'https://accounts.spotify.com'
 API_URL = 'https://api.spotify.com/v1'
-SCOPES = 'user-read-recently-played user-library-read'
+SCOPES = 'user-read-recently-played user-library-read playlist-modify-private'
+PLAYLIST_SCOPE = 'playlist-modify-private'
+MAX_PLAYLIST_TRACKS = 100
+_PLAYLIST_ID = re.compile(r'[A-Za-z0-9]{1,64}\Z')
 MAX_RESPONSE = 1024 * 1024
 TIMEOUT = 15
 _TRACK_ID = re.compile(r'[A-Za-z0-9]{1,64}\Z')
@@ -147,7 +150,10 @@ class SpotifyClient:
         refresh = value.get('refresh_token')
         if refresh is not None and (type(refresh) is not str or not 0 < len(refresh) <= 2048):
             raise SpotifyError('Spotify sent an invalid token response.')
-        return {'accessToken': access, 'expiresIn': expires, 'refreshToken': refresh}
+        scope = value.get('scope')
+        # The granted scopes decide what Duet may offer; an absent field means unknown.
+        scope = scope if type(scope) is str and len(scope) <= 1000 else None
+        return {'accessToken': access, 'expiresIn': expires, 'refreshToken': refresh, 'scope': scope}
 
     def exchange(self, code, verifier, redirect_uri):
         if type(code) is not str or not 0 < len(code) <= 2048:
@@ -161,6 +167,31 @@ class SpotifyClient:
 
     def _get(self, path, access_token):
         return self._request(Request(f'{self.api_url}{path}', headers={'Authorization': f'Bearer {access_token}'}))
+
+    def _post(self, path, access_token, body):
+        data = json.dumps(body).encode('utf-8')
+        return self._request(Request(f'{self.api_url}{path}', data=data, method='POST',
+                                     headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}))
+
+    def create_playlist(self, access_token, name, description):
+        """A private playlist in the signed-in person's account (``POST /me/playlists``)."""
+        value = self._post('/me/playlists', access_token, {'name': name, 'public': False, 'description': description})
+        playlist_id = value.get('id')
+        url = (value.get('external_urls') or {}).get('spotify') if type(value.get('external_urls')) is dict else None
+        if type(playlist_id) is not str or not _PLAYLIST_ID.fullmatch(playlist_id):
+            raise SpotifyError('Spotify sent an invalid playlist.')
+        if type(url) is not str or not re.fullmatch(r'https://open\.spotify\.com/playlist/[A-Za-z0-9]{1,64}', url):
+            url = f'https://open.spotify.com/playlist/{playlist_id}'
+        return {'id': playlist_id, 'url': url}
+
+    def add_items(self, access_token, playlist_id, track_ids):
+        """Add up to 100 tracks in order (``POST /playlists/{id}/items``)."""
+        if not _PLAYLIST_ID.fullmatch(playlist_id) or not 0 < len(track_ids) <= MAX_PLAYLIST_TRACKS or \
+                not all(_TRACK_ID.fullmatch(track) for track in track_ids):
+            raise SpotifyError('Duet tried to add an invalid track list.')
+        value = self._post(f'/playlists/{playlist_id}/items', access_token, {'uris': [f'spotify:track:{track}' for track in track_ids]})
+        if type(value.get('snapshot_id')) is not str:
+            raise SpotifyError('Spotify sent an invalid playlist update.')
 
     def profile(self, access_token):
         value = self._get('/me', access_token)

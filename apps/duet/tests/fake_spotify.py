@@ -1,7 +1,8 @@
 """A loopback stand-in for Spotify's accounts service and Web API, used only by tests.
 
 It follows the documented shapes Duet relies on: PKCE authorization, token exchange and refresh,
-``/me``, ``/me/player/recently-played`` and ``/me/tracks``. Tests control listening per user and
+``/me``, ``/me/player/recently-played``, ``/me/tracks``, ``POST /me/playlists`` and
+``POST /playlists/{id}/items`` (the February 2026 names). Tests control listening per user and
 can inject failures.
 """
 
@@ -36,6 +37,9 @@ class FakeSpotify:
         self.failures = []         # queued (path prefix, status, headers) failures
         self.requests = []
         self.rotate_refresh = True
+        self.granted = None
+        self.scopes = {}            # user -> granted scope string         # scopes to grant instead of the requested ones (simulates older approvals)
+        self.playlists = {}         # playlist id -> {'user', 'name', 'public', 'description', 'uris'}
         self.lock = threading.Lock()
         fake = self
 
@@ -67,6 +71,9 @@ class FakeSpotify:
                 fake.requests.append(('GET', parts.path, query))
                 if parts.path == '/authorize':
                     return self._authorize(query)
+                if parts.path == '/__test/playlists':
+                    with fake.lock:
+                        return self._send(200, {'playlists': list(fake.playlists.values())})
                 failure = self._failure(parts.path)
                 if failure:
                     return self._send(failure[0], {'error': {'status': failure[0]}}, failure[1])
@@ -94,6 +101,8 @@ class FakeSpotify:
                     fake.users.setdefault(user, {'name': name, 'plays': [], 'likes': []})
                 if 'nextUser' in command:
                     fake.next_user = command['nextUser']
+                if 'granted' in command:
+                    fake.granted = command['granted']
                 for item in command.get('plays', []):
                     fake.users[item['user']]['plays'].append((now - item['minutesAgo'] * 60000, track(item['id'], item['title'], item.get('artist', 'Artist'))))
                 for item in command.get('likes', []):
@@ -102,13 +111,13 @@ class FakeSpotify:
 
             def _authorize(self, query):
                 assert query['response_type'] == 'code' and query['code_challenge_method'] == 'S256'
-                assert set(query['scope'].split()) == {'user-read-recently-played', 'user-library-read'}
+                assert {'user-read-recently-played', 'user-library-read'} <= set(query['scope'].split())
                 user = fake.next_user
                 if user is None:
                     target = f"{query['redirect_uri']}?{urlencode({'error': 'access_denied', 'state': query['state']})}"
                 else:
                     code = secrets.token_urlsafe(24)
-                    fake.codes[code] = (user, query['code_challenge'], query['redirect_uri'])
+                    fake.codes[code] = (user, query['code_challenge'], query['redirect_uri'], fake.granted or query['scope'])
                     target = f"{query['redirect_uri']}?{urlencode({'code': code, 'state': query['state']})}"
                 self.send_response(303)
                 self.send_header('Location', target)
@@ -120,6 +129,8 @@ class FakeSpotify:
                 raw = self.rfile.read(size).decode()
                 if self.path == '/__test/control':
                     return self._control(json.loads(raw))
+                if self.path.startswith('/v1/'):
+                    return self._api_post(self.path, raw)
                 form = {key: values[0] for key, values in parse_qs(raw).items()}
                 fake.requests.append(('POST', self.path, form))
                 failure = self._failure(self.path)
@@ -131,28 +142,57 @@ class FakeSpotify:
                     entry = fake.codes.pop(form.get('code'), None)
                     if entry is None:
                         return self._send(400, {'error': 'invalid_grant'})
-                    user, challenge, redirect_uri = entry
+                    user, challenge, redirect_uri, scope = entry
                     digest = base64.urlsafe_b64encode(hashlib.sha256(form['code_verifier'].encode()).digest()).rstrip(b'=').decode()
                     if digest != challenge or form.get('redirect_uri') != redirect_uri:
                         return self._send(400, {'error': 'invalid_grant'})
-                    return self._send(200, fake._issue(user, refresh=True))
+                    return self._send(200, fake._issue(user, refresh=True, scope=scope))
                 if form.get('grant_type') == 'refresh_token':
                     user = fake.refresh_tokens.get(form.get('refresh_token'))
                     if user is None:
                         return self._send(400, {'error': 'invalid_grant'})
                     if fake.rotate_refresh:
                         del fake.refresh_tokens[form['refresh_token']]
-                    return self._send(200, fake._issue(user, refresh=fake.rotate_refresh))
+                    return self._send(200, fake._issue(user, refresh=fake.rotate_refresh, scope=fake.scopes.get(user)))
                 return self._send(400, {'error': 'unsupported_grant_type'})
+
+            def _api_post(self, path, raw):
+                body = json.loads(raw or '{}')
+                fake.requests.append(('POST', path, body))
+                failure = self._failure(path)
+                if failure:
+                    return self._send(failure[0], {'error': {'status': failure[0]}}, failure[1])
+                token = self.headers.get('Authorization', '')[7:]
+                user = fake.tokens.get(token)
+                if user is None:
+                    return self._send(401, {'error': {'status': 401}})
+                if 'playlist-modify-private' not in fake.scopes.get(user, '').split():
+                    return self._send(403, {'error': {'status': 403, 'message': 'Insufficient client scope'}})
+                if path == '/v1/me/playlists':
+                    playlist_id = secrets.token_hex(11)
+                    fake.playlists[playlist_id] = {'user': user, 'name': body['name'], 'public': body['public'],
+                                                   'description': body.get('description', ''), 'uris': []}
+                    return self._send(201, {'id': playlist_id, 'name': body['name'],
+                                            'external_urls': {'spotify': f'https://open.spotify.com/playlist/{playlist_id}'}})
+                parts = path.split('/')
+                if len(parts) == 5 and parts[2] == 'playlists' and parts[4] == 'items' and parts[3] in fake.playlists:
+                    playlist = fake.playlists[parts[3]]
+                    if playlist['user'] != user or len(body['uris']) > 100:
+                        return self._send(403, {'error': {'status': 403}})
+                    playlist['uris'].extend(body['uris'])
+                    return self._send(201, {'snapshot_id': secrets.token_hex(8)})
+                return self._send(404, {'error': {'status': 404}})
 
         self.server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
-    def _issue(self, user, refresh):
+    def _issue(self, user, refresh, scope=None):
         access = secrets.token_urlsafe(24)
         self.tokens[access] = user
+        if scope is not None:
+            self.scopes[user] = scope
         value = {'access_token': access, 'token_type': 'Bearer', 'expires_in': 3600,
-                 'scope': 'user-read-recently-played user-library-read'}
+                 'scope': self.scopes.get(user, 'user-read-recently-played user-library-read')}
         if refresh:
             value['refresh_token'] = secrets.token_urlsafe(24)
             self.refresh_tokens[value['refresh_token']] = user
