@@ -91,7 +91,7 @@ Each milestone delivers a usable end-to-end slice. All of it stays local and acc
 4. **More base products and modular options** (sweatshirt and hoodie done in #234; shorts, trousers and modular options still to do).
    - Hoodie, sweatshirt, shorts and trousers, plus the existing skirt.
    - Modules such as sleeve length, neckline, hem and pocket.
-5. **Pattern editing in the product editor.**
+5. **Pattern editing in the product editor** (DXF and printable 1:1 pattern export with seam allowance done in #235; editing and DXF import still to do).
    - Edit piece measurements and seams with live 3D, building on the skirt pattern work.
    - Drape the T-shirt.
    - DXF import and export.

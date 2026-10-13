@@ -101,6 +101,19 @@ Each part takes fabrics, colors, prints and uploaded motifs like any other, and 
 
 These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
 
+### Pattern export (#235)
+
+Under the linked pattern pieces:
+
+- **Download pattern (DXF)** saves every piece for cutting software and plotters. It is AutoCAD R12 ASCII, in millimetres with y up, on these layers:
+  - `CUT`: the cutting line, with a 1 cm seam allowance;
+  - `SEW`: the finished sewing line;
+  - `GRAIN`: the grainline;
+  - `TEXT`: the piece name, product, base, sample size, cut count (marked "(mirror)" for paired pieces) and fabric.
+- **Download printable pattern (SVG, 1:1)** saves the same pieces in centimetres: a solid cutting line, a dashed sewing line, grainline arrows, labels, and a 10 cm square to confirm the print scale.
+
+The seam allowance is mitred at corners and bevelled at very sharp ones. DXF text is plain ASCII; other characters are written as `\U+XXXX` escapes, which CAD readers decode. An independent DXF reader, ezdxf 1.3.5, opened a hoodie export with 0 errors: 9 closed cutting and 9 closed sewing polylines, the front cutting line 601.5 × 682.3 mm, and "Café" decoded correctly. The pieces are still the simplified styling patterns described above, not graded production patterns.
+
 ### Your own repeat prints (#231)
 
 **Upload your own motif**, under **Prints** in the library, turns a PNG, JPEG or WebP image into a repeat print.

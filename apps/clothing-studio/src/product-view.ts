@@ -7,6 +7,7 @@ import {
 } from './product.ts';
 import type { Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
+import { patternDxf, patternSvg } from './pattern-export.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -59,7 +60,9 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button></div>
     </aside>
   </div>
-  <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div></div>
+  <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div>
+    <div class="product-exports"><button id="pattern-dxf" class="product-export">Download pattern (DXF) ↓</button><button id="pattern-svg" class="product-export">Download printable pattern (SVG, 1:1) ↓</button></div>
+    <p class="fine-print">Exports add a 1 cm seam allowance around each finished piece and mark the sewing line, grainline, piece name, size and cut count. DXF is in millimetres for cutting software and plotters.</p></div>
   <div class="product-exports"><button id="product-png-front" class="product-export">Export front render PNG ↓</button><button id="product-png-back" class="product-export">Export back render PNG ↓</button><button id="product-glb" class="product-export">Export 3D model (GLB) ↓</button></div>
   <p class="fine-print">A styling model built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here. Renders and the GLB use the shapes shown.</p>
   <section class="techpack" aria-labelledby="techpack-heading">
@@ -324,6 +327,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     draft.costing = { currency: ($('cost-currency') as HTMLSelectElement).value as Costing['currency'], retail: number('cost-retail'), make: number('cost-make'),
       trims: number('cost-trims'), printPerArtwork: number('cost-print'), fabricPrices: prices };
   }, 'Costing applied to the range plan.'));
+  $('pattern-dxf').addEventListener('click', () => void exporting(async () => {
+    options.download(new Blob([patternDxf(product() ?? template('blank'))], { type: 'application/dxf' }), '-pattern.dxf');
+  }));
+  $('pattern-svg').addEventListener('click', () => void exporting(async () => {
+    options.download(new Blob([patternSvg(product() ?? template('blank'))], { type: 'image/svg+xml' }), '-pattern.svg');
+  }));
   $('range-xlsx').addEventListener('click', () => void exporting(async () => {
     options.download(new Blob([rangePlanXlsx(product() ?? template('blank'), today())], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '-range-plan.xlsx');
   }));
