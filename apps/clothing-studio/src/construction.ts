@@ -1,9 +1,9 @@
-export interface SkirtDraft {kind:'flared-skirt';waist:number;hem:number;slant:number;allowances?:{seam:number;hem:number};waistband?:{height:number;overlap:number}}
+export interface SkirtDraft {kind:'flared-skirt';waist:number;hem:number;slant:number;allowances?:{seam:number;hem:number};waistband?:{height:number;overlap:number};fabric?:'chiffon'|'cotton'|'linen'|'denim'}
 export const DEFAULT_CONSTRUCTION:SkirtDraft={kind:'flared-skirt',waist:80,hem:140,slant:60};
 export function validateConstruction(value:unknown):SkirtDraft {
  if(typeof value!=='object'||value===null||Object.getPrototypeOf(value)!==Object.prototype)throw new Error('Construction must be a plain measured skirt draft.');
- const keys=Reflect.ownKeys(value),expected=['kind','waist','hem','slant','allowances','waistband'];
- if(![4,5,6].includes(keys.length)||!['kind','waist','hem','slant'].every(k=>keys.includes(k))||keys.some(key=>typeof key!=='string'||!expected.includes(key)||!Object.hasOwn(Object.getOwnPropertyDescriptor(value,key)!,'value')))throw new Error('Construction requires kind, waist, hem and slant, with optional allowances and waistband data.');
+ const keys=Reflect.ownKeys(value),expected=['kind','waist','hem','slant','allowances','waistband','fabric'];
+ if(![4,5,6,7].includes(keys.length)||!['kind','waist','hem','slant'].every(k=>keys.includes(k))||keys.some(key=>typeof key!=='string'||!expected.includes(key)||!Object.hasOwn(Object.getOwnPropertyDescriptor(value,key)!,'value')))throw new Error('Construction requires kind, waist, hem and slant, with optional allowances, waistband and fabric data.');
  const v=value as Record<string,unknown>;
  if(v.kind!=='flared-skirt')throw new Error('Choose the flared-skirt construction.');
  for(const [key,min,max] of [['waist',50,150],['hem',70,300],['slant',20,120]] as const)if(typeof v[key]!=='number'||!Number.isFinite(v[key])||v[key]<min||v[key]>max)throw new Error(`${key} must be a finite number from ${min} to ${max} cm.`);
@@ -24,6 +24,10 @@ export function validateConstruction(value:unknown):SkirtDraft {
   const values=w as Record<string,unknown>;
   for(const [key,min,max] of [['height',2,10],['overlap',0,5]] as const)if(typeof values[key]!=='number'||!Number.isFinite(values[key])||values[key]<min||values[key]>max)throw new Error(`Waistband ${key} must be finite from ${min} to ${max} cm.`);
   result.waistband={height:values.height as number,overlap:values.overlap as number};
+ }
+ if(keys.includes('fabric')){
+  if(!['chiffon','cotton','linen','denim'].includes(v.fabric as string))throw new Error('Fabric must be chiffon, cotton, linen or denim.');
+  result.fabric=v.fabric as SkirtDraft['fabric'];
  }
  return result;
 }

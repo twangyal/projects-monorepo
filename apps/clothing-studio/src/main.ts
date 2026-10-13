@@ -1,6 +1,8 @@
 import {mountBody} from './body-view.ts';
 import {mountGrading} from './grading-view.ts';
 import {constructionMarkup,mountConstruction} from './construction-view.ts';
+import {mountDrape} from './drape-view.ts';
+import {mountProduct,productMarkup} from './product-view.ts';
 import './style.css';
 import {
   createProject, validateProject, parseProject, serializeProject, ProjectHistory,
@@ -53,6 +55,7 @@ app.innerHTML = `
         <button id="preview-png" class="export-button">Export preview PNG <span aria-hidden="true">↓</span></button>
       </section>
     </div>
+    ${productMarkup}
     ${constructionMarkup}
     <footer><span>Made for the first spark of an idea.</span><span>Photos and projects stay in this browser. Keep a backup for safekeeping.</span></footer>
   </main>`;
@@ -82,7 +85,7 @@ function message(text: string, error = false) {
 }
 
 function renderViews() {
-  bodyView?.render(project); constructionView?.render(project); gradingView?.render(project);
+  bodyView?.render(project); constructionView?.render(project); gradingView?.render(project); drapeView?.render(project); productView?.render(project);
   element('sketch-surface').innerHTML = garmentSvg(project);
   element('preview-surface').innerHTML = previewSvg(project);
   const dimensions = previewSize(project);
@@ -361,7 +364,13 @@ function constructionGuard(ignoreBody=false): boolean {
   if (gesture || raw || exportBusy || replacingSaved || (!ignoreBody && bodyView?.dirty())) { message('Finish the active gesture or other raw concept fields before changing construction. Your drafts are kept.', true); return false; }
   return true;
 }
+const productView = mountProduct({current:()=>project,commit:next=>edit(()=>next),notice:message,download});
 const constructionView = mountConstruction({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
+const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),guard:()=>{
+  if (!constructionGuard()) return false;
+  if (constructionView.dirty() || gradingView.dirty()) { message('Apply or discard pending pattern and grading edits before changing drape. Your drafts are kept.', true); return false; }
+  return true;
+},notice:message,download});
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 
