@@ -6,7 +6,7 @@ import {
   chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
-import type { Project } from './model.ts';
+import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
@@ -142,12 +142,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     preview.getContext('2d')!.drawImage(tile, 0, 0, 44, 44);
   }
 
+  // Validate the complete recoverable graph before invoking the parent commit or reporting success.
+  const commit = (next: Project) => options.commit(validateProject(next));
   const product = () => options.current().product ?? null;
   const label = (part: PartId) => partName(product() ?? template('blank'), part);
   function update(mutate: (draft: Product) => void, text: string) {
     const current = product() ?? template('blank');
     const draft = structuredClone(current);
-    try { mutate(draft); options.commit({ ...options.current(), product: validateProduct(draft) }); options.notice(text); }
+    try { mutate(draft); commit({ ...options.current(), product: validateProduct(draft) }); options.notice(text); }
     catch (error) { options.notice(error instanceof Error ? error.message : 'That change is not valid.', true); }
   }
   function applySwatch(part: PartId, swatch: Swatch) {
@@ -243,7 +245,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const name = TEMPLATES.find(item => item.id === button.dataset.template)?.name ?? 'chosen';
     if (current && !window.confirm(`Replace “${current.name}” with the ${name} template? You can undo this.`)) return;
     const next = template(button.dataset.template!);
-    options.commit({ ...options.current(), product: next }); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
+    commit({ ...options.current(), product: next }); options.notice(`${next.name} template loaded. Style any part to make it yours.`);
   });
 
   // Inspector fields commit on change.
@@ -338,7 +340,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Modules: each switch is one undoable edit, and every view follows it.
   const setModules = (change: (current: ReturnType<typeof optionsOf>) => ReturnType<typeof optionsOf>, text: string) => {
     const current = product() ?? template('blank');
-    try { options.commit({ ...options.current(), product: validateProduct(withOptions(current, change(optionsOf(current)))) }); options.notice(text); }
+    try { commit({ ...options.current(), product: validateProduct(withOptions(current, change(optionsOf(current)))) }); options.notice(text); }
     catch (error) { options.notice(error instanceof Error ? error.message : 'That module is not available.', true); render(options.current()); }
   };
   $('product-hem').addEventListener('change', () => {
