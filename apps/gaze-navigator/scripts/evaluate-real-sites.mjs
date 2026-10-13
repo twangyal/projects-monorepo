@@ -13,10 +13,16 @@ const argument = name => { const at = process.argv.indexOf(name); return at > 0 
 const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json');
 if (!extension) throw new Error('Give an extension build with --extension DIR.');
 
-const link = name => page => page.getByRole('link', { name, exact: true }).first();
+const link = name => page => page.getByRole('link', { name, exact: typeof name === 'string' }).first();
 const button = name => page => page.getByRole('button', { name, exact: true }).first();
 const field = name => page => page.getByRole('searchbox', { name, exact: true }).or(page.getByRole('textbox', { name, exact: true })).or(page.getByRole('combobox', { name, exact: true })).first();
 const url = pattern => async page => pattern.test(decodeURIComponent(page.url()));
+const select = name => page => page.getByRole('combobox', { name, exact: true }).first();
+const scrolled = selector => page => page.evaluate(css => css ? document.querySelector(css).scrollTop : scrollY, selector);
+// `measure` is read before the step; `done` then receives it.
+// Wikipedia swaps in a new search input on focus, so text is read from the focused field.
+const typed = text => async page => (await page.evaluate(() => document.activeElement?.value)) === text;
+const grew = selector => ({ measure: scrolled(selector), done: async (page, before) => (await scrolled(selector)(page)) > before + 100 });
 
 // Each task: a goal a person might have, as steps of (where they look, what they say, what should happen).
 export const TASKS = [
@@ -43,6 +49,29 @@ export const TASKS = [
   ] },
   { site: 'MDN', goal: 'Open the HTML reference', start: 'https://developer.mozilla.org/en-US/', steps: [
     { look: link('HTML'), say: 'open HTML', target: 'HTML', done: url(/\/docs\/Web\/HTML/) },
+  ] },
+  // Added in #238: dictation and correction, dropdowns, scrolling a region and the page, pagination.
+  { site: 'Wikipedia', goal: 'Dictate a search, correct a misheard word, and send it', start: 'https://en.wikipedia.org/wiki/Main_Page', steps: [
+    { look: field('Search Wikipedia'), say: 'type Alan Turnig', done: typed('Alan Turnig') },
+    { look: field('Search Wikipedia'), say: 'change Turnig to Turing', done: typed('Alan Turing') },
+    { look: field('Search Wikipedia'), say: 'press enter', done: url(/\/wiki\/Alan_Turing|search=Alan\+?\s?Turing/) },
+  ] },
+  { site: 'Wikipedia', goal: 'Read further down an article and return to the top', start: 'https://en.wikipedia.org/wiki/Ada_Lovelace', steps: [
+    { look: null, say: 'scroll down', ...grew(null) },
+    { look: null, say: 'go to the top', done: async page => (await scrolled(null)(page)) < 5 },
+  ] },
+  { site: 'Python docs', goal: 'Switch the documentation to Python 3.12', start: 'https://docs.python.org/3/library/json.html', steps: [
+    { look: select('Python version'), say: 'choose 3.12', done: url(/docs\.python\.org\/3\.12\//) },
+  ] },
+  { site: 'Python docs', goal: 'Switch to the dark theme with an unlabelled dropdown', start: 'https://docs.python.org/3/library/json.html', steps: [
+    { look: page => page.locator('select:visible').filter({ has: page.locator('option', { hasText: 'Dark' }) }).first(), say: 'choose dark',
+      done: async page => page.evaluate(() => document.documentElement.dataset.theme === 'dark' || document.body.dataset.theme === 'dark' || localStorage.getItem('currentTheme') === 'dark') },
+  ] },
+  { site: 'GOV.UK', goal: 'Go to the second page of search results', start: 'https://www.gov.uk/search/all?keywords=passport', steps: [
+    { look: link(/^Next page/), say: 'next page', target: 'Next page', done: url(/page=2/) },
+  ] },
+  { site: 'MDN', goal: 'Scroll the reference sidebar, not the page', start: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a', steps: [
+    { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
   ] },
 ];
 
@@ -80,7 +109,7 @@ async function run() {
           await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
           await page.waitForTimeout(250);
         }
-        const before = page.url();
+        const before = page.url(), measured = step.measure ? await step.measure(page) : undefined;
         const say = async text => {
           entry.utterances++;
           await panel.getByLabel('Typed instruction').fill(text);
@@ -103,7 +132,7 @@ async function run() {
           if (!chosen) break;
           await say(chosen.split(':')[0]);
         }
-        if (await step.done(page).catch(() => false)) entry.outcome = 'done';
+        if (await step.done(page, measured).catch(() => false)) entry.outcome = 'done';
         else if (page.url() !== before) entry.outcome = 'unintended';
         else entry.outcome = entry.questions ? 'unanswered-question' : 'failed';
         if (entry.outcome !== 'done') break;

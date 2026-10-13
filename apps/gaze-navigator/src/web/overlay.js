@@ -262,6 +262,15 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.summary.textContent = `In the circle (${context.elements.length})`;
   }
 
+  // The page element with focus. Typing an instruction into the navigator's own panel moves focus there, but a
+  // following correction ("change Tuesday to Friday") still means the page field that had it before.
+  let lastPageFocus = null;
+  const inPanel = active => active === host || active?.getRootNode?.() === shadow;
+  const onFocusIn = () => { const active = deepActiveElement(document); if (!inPanel(active)) lastPageFocus = active; };
+  // Focus leaving to nothing (a click on the page background) forgets the field.
+  const onFocusOut = event => { if (!event.relatedTarget) lastPageFocus = null; };
+  const pageFocus = () => { const active = deepActiveElement(document); return inPanel(active) ? lastPageFocus : active; };
+
   function recapture(force = false) {
     if (!point || controller.paused) return;
     const time = window.performance.now();
@@ -277,7 +286,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     trailing = null;
     lastCapture = time;
     context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host });
-    const focused = context.elements.find(element => element.element === deepActiveElement(document));
+    const focused = context.elements.find(element => element.element === pageFocus());
     context.focusedId = focused?.id ?? null;
     renderContextList();
     if (!controller.pending) renderOutlines();
@@ -349,6 +358,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const refresh = () => recapture(true);
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
+  document.addEventListener('focusin', onFocusIn, true);
+  document.addEventListener('focusout', onFocusOut, true);
+  onFocusIn();
 
   function run(utterance, captured) {
     // While calibrating the circle is hidden, so instructions cannot target page elements.
@@ -606,6 +618,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.removeEventListener('load', watchFrames, true);
       for (const [frameDocument, listener] of frameListeners) frameDocument.removeEventListener('pointermove', listener, true);
       window.removeEventListener('scroll', refresh, true);
+      document.removeEventListener('focusin', onFocusIn, true);
+      document.removeEventListener('focusout', onFocusOut, true);
       window.removeEventListener('resize', refresh);
       if (frame !== null) window.cancelAnimationFrame(frame);
       window.clearTimeout(trailing);

@@ -185,6 +185,14 @@ export function interpret(utterance, context = { elements: [] }) {
   const chosen = choice && parseNumber(choice[1]);
   if (chosen) return { type: 'choose', index: chosen };
 
+  // "Next page" and "previous page" follow a pagination link or button inside the circle (as on search results);
+  // with none there, they move through the browser history.
+  const paging = /^(?:go to |show )?(?:the )?(next|previous|prev) page(?: of results)?$/.exec(text);
+  if (paging) {
+    const pattern = paging[1] === 'next' ? /^(?:next\b|[›»→])|\bnext page\b/i : /^(?:prev(?:ious)?\b|[‹«←])|\bprevious page\b/i;
+    const pagers = context.elements.filter(element => (element.role === 'link' || element.role === 'button') && pattern.test((element.name ?? '').trim()));
+    if (pagers.length) return deictic(pagers, element => ({ type: 'activate', targetId: element.id }), 'page link');
+  }
   if (/^(?:go |take me )?back(?: a page| to the previous page)?$|^(?:go|return) (?:back )?to the previous page$|^previous page$/.test(text)) return { type: 'back' };
   if (/^(go )?forward( a page)?$|^next page$/.test(text)) return { type: 'forward' };
   if (/^(page down|next screen)$/.test(text)) return { type: 'scroll', direction: 'down', amount: 'page' };

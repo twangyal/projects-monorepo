@@ -228,3 +228,20 @@ test('controls inside web components, same-origin frames and script-only cards a
   await page.mouse.move(map.x + 40, map.y - 10);
   await expect(panel(page).locator('.context li.unreachable')).toHaveText('Store map: content from another site that the navigator cannot reach');
 });
+
+test('typed corrections still reach the field that had focus before the instruction box', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await look(page, page.getByLabel('Message'));
+  await typeInstruction(page, 'type Meet on Tuesday');
+  await expect(page.getByLabel('Message')).toHaveValue('Meet on Tuesday');
+  // Typing the next instruction moves focus into the panel; the correction still means the message field.
+  await look(page, page.getByLabel('Message'));
+  await typeInstruction(page, 'change Tuesday to Friday');
+  await expect(page.getByLabel('Message')).toHaveValue('Meet on Friday');
+  // Once focus has left for the page background, a correction is not guessed onto the old field.
+  await page.mouse.click(5, 300);
+  await look(page, page.getByLabel('Message'));
+  await typeInstruction(page, 'change Friday to Monday');
+  await expect(status(page)).toContainText('first select the text field');
+  await expect(page.getByLabel('Message')).toHaveValue('Meet on Friday');
+});
