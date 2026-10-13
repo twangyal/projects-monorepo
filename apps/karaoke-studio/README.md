@@ -260,6 +260,8 @@ The preview and the exported MP4 colour each word as it starts being sung, like 
 - Words never run backwards and stay inside their line. A line highlights in at most 16 steps, so very long lines advance in word groups.
 - Retiming a line moves its highlighting with it. Words keep their recognized times when those fall inside the new interval, and are clamped to it otherwise.
 
+Measured on the 20 JamendoLyrics songs (5,693 words): with correctly timed lines, highlights start a median **0.068 s** from the sung word, with 90% within 0.3 s; length estimates alone give 0.136 s and 75%. With automatically aligned pasted lyrics, the median is 0.109 s and 71% are within 0.3 s, limited by misplaced lines. See [the word-highlighting notes](docs/2026-10-13-word-highlighting.md).
+
 ## Model provenance and limitations
 
 Setup downloads the official [Deezer Spleeter v1.4.0 two-stem checkpoint](https://github.com/deezer/spleeter/releases/download/v1.4.0/2stems.tar.gz), **73,109,797 bytes**, and verifies its pinned SHA-256 against the value published in the official [checksum index](https://github.com/deezer/spleeter/releases/download/v1.4.0/checksum.json):

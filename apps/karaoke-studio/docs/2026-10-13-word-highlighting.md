@@ -50,4 +50,20 @@ Local runs with Python 3.11, Node.js 22 and Chromium 141 via `CHROMIUM_PATH`:
   Five older cases first failed because a line opened unsung for 0.15 s. That showed estimates must start with the line, because a marked or imported start is when singing begins. It is now so. A first draft of the browser case added two clips and exceeded the fixture's 20-project limit, so the checks now live in the existing cases.
 - A demo export with recognized words was inspected frame by frame.
 
-Measurement against annotated word starts on real songs is recorded below when run.
+## Measured on real songs (2026-10-13)
+
+`scripts/evaluate_word_highlighting.py` compares the time each word lights up with its annotated start for all 5,693 reference words of the 20 English JamendoLyrics songs (first 300 s). Recognized words are the cached transcripts of the #214 evaluation, produced by the same production path and pinned models. Per-song results are in [`2026-10-13-word-highlighting-evaluation.json`](2026-10-13-word-highlighting-evaluation.json).
+
+| Situation | Median error | Within 0.2 s | Within 0.3 s | Within 0.5 s | Within 1 s |
+| --- | --- | --- | --- | --- | --- |
+| Lines timed correctly, with recognized words | **0.068 s** | 82.8% | **90.2%** | 94.6% | 97.8% |
+| … words matched to recognition (64% of words) | 0.057 s | 92.0% | 97.0% | 98.9% | 99.4% |
+| … words placed between heard neighbours | 0.113 s | 66.8% | 78.3% | 87.2% | 95.1% |
+| Same lines, estimates only (no recognition) | 0.136 s | 61.8% | 74.7% | 88.2% | 97.2% |
+| Pasted lyrics aligned automatically | 0.109 s | 65.0% | 71.4% | 76.6% | 81.5% |
+
+**Interpretation**
+
+- With well-timed lines, recognized words put 9 of 10 word highlights within 0.3 s of the singing, against 3 of 4 with length estimates alone. The gain is largest on songs with uneven phrasing, for example Lower Loveday (0.29 s → 0.07 s) and Cortez (0.30 s → 0.09 s).
+- With automatically aligned pasted lyrics, the remaining large errors come from lines that were themselves misplaced, not from word placement. Two songs dominate: Pure Mids (median 2.1 s) and Moon I Mean (0.65 s). Correcting a line's timing fixes its words, because word timing follows the line.
+- Thresholds such as "good enough for singing along" were not established with singers.
