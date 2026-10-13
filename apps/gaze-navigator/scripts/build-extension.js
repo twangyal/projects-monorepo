@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { vendorWaterSheep } from './vendor-watersheep.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const testBuild = process.argv.includes('--test');
@@ -57,6 +58,12 @@ if (testBuild) {
   const { bundle, license } = webgazer();
   cpSync(bundle, join(out, 'vendor', 'webgazer.js'));
   cpSync(license, join(out, 'vendor', 'WEBGAZER-LICENSE.md'));
+  // Smarter matching: the pinned runtime is bundled; the model downloads on request in the offscreen page.
+  vendorWaterSheep(join(out, 'vendor', 'watersheep'));
+  writeFileSync(join(out, 'vendor', 'assistant.js'), `import { loadWaterSheepInBrowser } from '../src/web/watersheep-browser.js';
+export const loadAssistantModel = progress => loadWaterSheepInBrowser({ runtimeBase: chrome.runtime.getURL('vendor/watersheep/'), progress });
+`);
 }
+if (testBuild) cpSync(join(root, 'test-support', 'fake-assistant.js'), join(out, 'vendor', 'assistant.js'));
 writeFileSync(join(out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`Built ${out}`);

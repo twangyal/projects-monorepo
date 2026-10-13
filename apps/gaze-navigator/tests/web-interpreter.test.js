@@ -130,3 +130,32 @@ test('tracking and calibration commands are recognized without colliding with ca
   assert.equal(interpret('stop', context()).type, 'cancel');
   assert.equal(interpret('stop listening', context()).type, 'pause');
 });
+
+test('"next page" follows a pagination link in the circle; without one it still moves through history', () => {
+  const results = context(element(1, 'Next page : 2 of 628', 'link'), element(2, 'Previous page : 1 of 628', 'link'), element(3, 'Passports', 'link'));
+  assert.deepEqual(interpret('next page', results), { type: 'activate', targetId: 1 });
+  assert.deepEqual(interpret('go to the next page', results), { type: 'activate', targetId: 1 });
+  assert.deepEqual(interpret('previous page', results), { type: 'activate', targetId: 2 });
+  assert.deepEqual(interpret('next page', context(element(4, '»', 'link'))), { type: 'activate', targetId: 4 });
+  assert.deepEqual(interpret('next page', context(element(5, 'Go to next page', 'button'))), { type: 'activate', targetId: 5 });
+  // A "Next steps" heading link is not pagination, and no pager means history.
+  assert.equal(interpret('next page', context(element(6, 'Nextcloud', 'link'))).type, 'forward');
+  assert.equal(interpret('next page', context(element(7, 'Next steps', 'heading'))).type, 'forward');
+  assert.equal(interpret('previous page', context()).type, 'back');
+  assert.equal(interpret('next page', context()).type, 'forward');
+});
+
+test('"close" closes an open toggle or uses a Close control; otherwise the words name a control as usual', () => {
+  const menu = element(1, 'Hide navigation menu', 'button', { expanded: true });
+  assert.deepEqual(interpret('close the menu', context(menu, element(2, 'Menu help', 'link'))), { type: 'activate', targetId: 1 });
+  assert.deepEqual(interpret('close it', context(menu)), { type: 'activate', targetId: 1 });
+  assert.deepEqual(interpret('hide the filters', context(element(3, 'Filter and sort', 'button', { expanded: true }))), { type: 'activate', targetId: 3 });
+  assert.equal(interpret('hide the cart', context(element(3, 'Filter and sort', 'button', { expanded: true }))).type, 'unknown',
+    'a name that does not match the open toggle is not guessed');
+  assert.deepEqual(interpret('close', context(element(4, '×', 'button'), element(5, 'Subscribe', 'button'))), { type: 'activate', targetId: 4 });
+  assert.deepEqual(interpret('dismiss the banner', context(element(6, 'Dismiss banner', 'button'))), { type: 'activate', targetId: 6 });
+  assert.deepEqual(interpret('collapse cabinet office', context(element(7, 'Cabinet Office', 'button', { expanded: true }))), { type: 'activate', targetId: 7 });
+  // A closed toggle is not "closed" again, and "close account" stays an ordinary (consequential) control name.
+  assert.equal(interpret('close the menu', context(element(8, 'Show navigation menu', 'button', { expanded: false }))).type, 'unknown');
+  assert.deepEqual(interpret('close account', context(element(9, 'Close account', 'button', { consequential: true }))), { type: 'activate', targetId: 9 });
+});

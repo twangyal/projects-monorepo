@@ -2,6 +2,7 @@
 // shadow root that is excluded from context capture.
 import { captureContext, frameOffset, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
+import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createCameraGaze } from './camera-gaze.js';
@@ -55,6 +56,9 @@ details { margin-top: 8px; }
 summary { cursor: pointer; }
 .prompt:empty { display: none; }
 .hint { color: #a9c2b8; font-size: 13px; }
+.assist-row { display: grid; gap: 2px; margin-top: 6px; }
+.assist-row[hidden] { display: none; }
+.assist-row .hint { margin: 0; }
 `;
 
 // Default settings store: the tab's session storage. The extension supplies its own store so
@@ -99,8 +103,9 @@ export function describeElement(element) {
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
 }
 
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, store = sessionStore(window) } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', ...store.load() };
+// `loadAssistant(progress)` resolves to a calibrated decider (WaterSheep) when the user turns on smarter matching.
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window) } = {}) {
+  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
   const shadow = host.attachShadow({ mode: 'open' });
@@ -137,6 +142,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
           <label><input type="checkbox" class="speak" /> Speak feedback</label>
         </div>
+        <div class="assist-row">
+          <label><input type="checkbox" class="assist" /> Smarter target matching</label>
+          <p class="hint assist-note">Understands names that do not match exactly, such as "show the ratings" for Reviews, using the WaterSheep model on this device. It downloads 158 MB once; instructions are not sent anywhere.</p>
+          <p class="hint assist-state" role="status"></p>
+        </div>
       </details>
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
@@ -152,7 +162,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'),
-    recalibrate: $('.recalibrate'),
+    recalibrate: $('.recalibrate'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
   };
   // The element list is open by default only where the panel has room to spare.
   if ((window.innerHeight ?? 0) > 700) $('.context-details').open = true;
@@ -166,7 +176,12 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const resizeObserver = new window.ResizeObserver(reserve);
   resizeObserver.observe(ui.panel);
 
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate } });
+  // The assistant is attached only after the model has loaded; until then rules answer alone.
+  let assistant = null, assistLoad = 0, stopped = false;
+  let closing = false;
+  let sourceGeneration = 0;
+  const assistantRelay = { needs: (...args) => Boolean(assistant?.needs(...args)), improve: (...args) => assistant.improve(...args) };
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate }, assistant: assistantRelay });
   const filter = createGazeFilter();
   const camera = createCameraGaze({
     document, window, load: loadCamera,
@@ -174,8 +189,6 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     onLost: () => ui.circle.classList.add('lost'),
   });
   let calibration = null;
-  let sourceGeneration = 0;
-  let closing = false;
   let point = null;
   let frozen = false;
   let context = { elements: [], region: null };
@@ -251,6 +264,15 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     ui.summary.textContent = `In the circle (${context.elements.length})`;
   }
 
+  // The page element with focus. Typing an instruction into the navigator's own panel moves focus there, but a
+  // following correction ("change Tuesday to Friday") still means the page field that had it before.
+  let lastPageFocus = null;
+  const inPanel = active => active === host || active?.getRootNode?.() === shadow;
+  const onFocusIn = () => { const active = deepActiveElement(document); if (!inPanel(active)) lastPageFocus = active; };
+  // Focus leaving to nothing (a click on the page background) forgets the field.
+  const onFocusOut = event => { if (!event.relatedTarget) lastPageFocus = null; };
+  const pageFocus = () => { const active = deepActiveElement(document); return inPanel(active) ? lastPageFocus : active; };
+
   function recapture(force = false) {
     if (!point || controller.paused) return;
     const time = window.performance.now();
@@ -266,7 +288,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     trailing = null;
     lastCapture = time;
     context = captureContext(document, { x: point.x, y: point.y, radius: radius(), exclude: host });
-    const focused = context.elements.find(element => element.element === deepActiveElement(document));
+    const focused = context.elements.find(element => element.element === pageFocus());
     context.focusedId = focused?.id ?? null;
     renderContextList();
     if (!controller.pending) renderOutlines();
@@ -338,12 +360,23 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const refresh = () => recapture(true);
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
+  document.addEventListener('focusin', onFocusIn, true);
+  document.addEventListener('focusout', onFocusOut, true);
+  onFocusIn();
 
   function run(utterance, captured) {
+    if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
     // While calibrating the circle is hidden, so instructions cannot target page elements.
     const used = calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
     const result = controller.handle(utterance, used);
+    show(result, used);
+    // A model-assisted answer follows unless a newer instruction came first.
+    result.followUp?.then(later => { if (later && !stopped && !closing) show(later, used); });
+    return result;
+  }
+
+  function show(result, used) {
     if (calibration && (result.cancelled || result.paused)) calibration.cancel();
     promptContext = result.pending ? used : null;
     ui.pause.setAttribute('aria-pressed', String(controller.paused));
@@ -355,7 +388,6 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.setTimeout(() => recapture(true), 50);
     }
     renderOutlines();
-    return result;
   }
 
   const speech = createSpeechInput(window, {
@@ -381,7 +413,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       if (!speech.listening) setListening(false);
     },
     onState(state) {
-      if (closing) return;
+      if (closing || stopped) return;
       if (state === 'stopped' && settings.listening && !speech.listening) setListening(false);
     },
   });
@@ -415,7 +447,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     store.save(settings);
     renderSource();
     camera.start().then(async result => {
-      if (settings.source !== 'camera' || generation !== sourceGeneration) return;
+      if (settings.source !== 'camera' || generation !== sourceGeneration || stopped || closing) return;
       if (!result.ok) {
         settings.source = 'pointer';
         store.save(settings);
@@ -425,7 +457,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       }
       renderSource();
       const restored = await restoreOrCalibrate(generation);
-      if (generation === sourceGeneration && restored) feedback(restored);
+      if (generation === sourceGeneration && restored && !stopped && !closing) feedback(restored);
     });
     return { ok: true, message: 'Starting the camera. Allow camera access if the browser asks.' };
   }
@@ -437,7 +469,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     try {
       decoded = decodeCalibration(await store.loadCalibration?.(), { width: window.innerWidth, height: window.innerHeight, now: Date.now() });
     } catch { /* Fall back to a fresh calibration. */ }
-    if (generation !== sourceGeneration || !api || camera.api !== api) return null;
+    if (generation !== sourceGeneration || !api || camera.api !== api || stopped || closing) return null;
     if (decoded.ok) {
       try {
         camera.resetCalibration();
@@ -507,13 +539,16 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.usePointer.addEventListener('click', () => run('use pointer', { elements: [] }));
   ui.useCamera.addEventListener('click', () => run('use camera', { elements: [] }));
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
-  const onPageHide = () => { closing = true; sourceGeneration++; calibration?.cancel(); camera.stop(); speech.stop(); controller.cancel(); spokenContext = null; };
+  const onPageHide = () => {
+    closing = true; sourceGeneration++;
+    const active = calibration; calibration = null; active?.cancel();
+    camera.stop(); speech.stop(); controller.cancel();
+    spokenContext = null; promptContext = null;
+  };
   window.addEventListener('pagehide', onPageHide);
   const onPageShow = event => {
-    if (!event.persisted) return;
+    if (!event.persisted || stopped) return;
     closing = false;
-    // A restored document retains its UI, but the microphone was released on pagehide.
-    // Keep the saved preference for new pages; this page requires an explicit restart.
     settings.listening = false;
     ui.listen.setAttribute('aria-pressed', 'false');
     ui.listen.textContent = 'Start listening';
@@ -537,6 +572,32 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     schedule();
     recapture(true);
   });
+  async function setAssist(on) {
+    const load = ++assistLoad;
+    settings.assist = on; store.save(settings); ui.assist.checked = on;
+    assistant = null;
+    if (!on) {
+      controller.cancel(); promptContext = null; renderPrompt();
+      ui.assistState.textContent = ''; return;
+    }
+    if (!loadAssistant) { ui.assistState.textContent = 'Smarter matching is not available here.'; settings.assist = false; ui.assist.checked = false; return; }
+    ui.assistState.textContent = 'Loading the matching model…';
+    try {
+      const model = await loadAssistant((received, total) => {
+        if (load === assistLoad) ui.assistState.textContent = `Downloading the matching model: ${Math.round((received / total) * 100)}% of ${Math.round(total / 1e6)} MB (once).`;
+      });
+      if (load !== assistLoad) return;
+      assistant = createAssistedInterpreter({ model });
+      ui.assistState.textContent = 'Smarter target matching is on.';
+    } catch (error) {
+      if (load !== assistLoad) return;
+      settings.assist = false; store.save(settings); ui.assist.checked = false;
+      ui.assistState.textContent = `Smarter matching could not start: ${error.message} Instructions still work without it.`;
+    }
+  }
+  ui.assistRow.hidden = !loadAssistant;
+  ui.assist.addEventListener('change', () => void setAssist(ui.assist.checked));
+  if (settings.assist && loadAssistant) void setAssist(true);
   ui.speak.checked = settings.speak;
   ui.speak.addEventListener('change', () => {
     settings.speak = ui.speak.checked;
@@ -573,11 +634,9 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     track,
     run: utterance => run(utterance, null),
     stop() {
-      closing = true;
-      sourceGeneration++;
-      controller.cancel();
-      spokenContext = null;
-      calibration?.cancel();
+      stopped = true; closing = true; assistLoad++; sourceGeneration++;
+      controller.cancel(); spokenContext = null; promptContext = null;
+      const active = calibration; calibration = null; active?.cancel();
       camera.stop();
       window.removeEventListener('pagehide', onPageHide);
       window.removeEventListener('pageshow', onPageShow);
@@ -586,6 +645,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.removeEventListener('load', watchFrames, true);
       for (const [frameDocument, listener] of frameListeners) frameDocument.removeEventListener('pointermove', listener, true);
       window.removeEventListener('scroll', refresh, true);
+      document.removeEventListener('focusin', onFocusIn, true);
+      document.removeEventListener('focusout', onFocusOut, true);
       window.removeEventListener('resize', refresh);
       if (frame !== null) window.cancelAnimationFrame(frame);
       window.clearTimeout(trailing);

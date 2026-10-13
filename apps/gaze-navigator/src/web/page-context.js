@@ -215,7 +215,10 @@ export function scrollRegionAt(document, x, y, exclude) {
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
-  const submits = (element.tagName === 'BUTTON' && (element.getAttribute('type') ?? 'submit') === 'submit' && Boolean(form)) ||
+  // A button with aria-expanded is a disclosure toggle (menus, filter panels), even when it sits in a form and so
+  // defaults to type="submit"; its name can still make it consequential.
+  const disclosure = element.hasAttribute?.('aria-expanded');
+  const submits = (element.tagName === 'BUTTON' && !disclosure && (element.getAttribute('type') ?? 'submit') === 'submit' && Boolean(form)) ||
     (element.tagName === 'INPUT' && ['submit', 'image'].includes(element.type));
   const name = accessibleName(element);
   const description = {
@@ -230,6 +233,9 @@ function describe(element) {
   } else if (['checkbox', 'radio', 'switch'].includes(role)) {
     description.checked = element.checked ?? element.getAttribute('aria-checked') === 'true';
   }
+  // Disclosure state: an open menu or panel can be closed by name ("close the menu").
+  if (disclosure) description.expanded = element.getAttribute('aria-expanded') === 'true';
+  else if (element.tagName === 'SUMMARY' && element.parentElement?.tagName === 'DETAILS') description.expanded = element.parentElement.open;
   return description;
 }
 
