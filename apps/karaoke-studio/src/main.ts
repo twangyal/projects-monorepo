@@ -1,6 +1,7 @@
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
-import { activeCue, draftCues, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
+import { parseAlignment, parseTranscript, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
+import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
@@ -10,8 +11,8 @@ import { splitCue, mergeCue } from './cue-edit.ts';
 import { createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 
-interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
-interface Session { token: string; modelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
+interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
+interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
 interface ArchiveInfo { imported: boolean; processingSupplied: boolean; origin: 'local-library' | 'imported-declared'; sourceProjectId: string | null; sourceRevision: number | null; archiveSha256: string | null }
 const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
@@ -45,15 +46,16 @@ app.innerHTML = `
         <div class="export-row"><div><strong>Ready for a sing-along?</strong><p id="save-state">Choose a clip to begin.</p></div><button id="save" class="quiet" disabled>Save lyrics</button><button id="export-video" class="primary" disabled>Export karaoke MP4</button></div>
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
-      <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">YOUR LYRICS, YOUR TIMING</span></div>
+      <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">AUTOMATIC, THEN YOURS</span></div>
+        <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div></section>
         <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
         <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
-        <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p class="fine">Even spacing is a starting point. Listen and correct each line; lyrics are not recognized or aligned automatically.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
+        <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
       </section>
-    </div><footer><span>Built for your next kitchen concert.</span><span>AI estimates stems. You supply and synchronize the lyrics.</span></footer>
+    </div><footer><span>Built for your next kitchen concert.</span><span>AI estimates the stems and the lyrics. You review and correct them.</span></footer>
   </main>`;
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T { return document.getElementById(id) as T; }
@@ -81,7 +83,7 @@ let editGeneration = 0;
 let srtEpoch = 0;
 interface SrtOwner { epoch: number; projectId: string; project: number; edit: number; deadline: number }
 let srtOwner: SrtOwner | null = null;
-let srtReview: { owner: SrtOwner; cues: Project['cues'] } | null = null;
+let srtReview: { owner: SrtOwner; cues: Project['cues']; applied: string } | null = null;
 let srtTimer: ReturnType<typeof setTimeout> | undefined;
 let mediaGeneration = 0;
 let archiveInfo: ArchiveInfo | null = null;
@@ -95,6 +97,9 @@ let importedResult: { id: string; title: string } | null = null;
 let completedImportId: string | null = null;
 const archiveCaches = new Map<string, number>();
 let pollEpoch = 0;
+let transcript: { projectId: string; value: Transcript } | null = null;
+let transcriptEpoch = 0;
+let aligning = false;
 let pollInFlight: string | null = null;
 let ownedJob = false;
 let archiveJobRevision: number | null = null;
@@ -198,7 +203,7 @@ function controls() {
   element<HTMLButtonElement>('lyrics-download').disabled = !working?.cues.length || dirty || draftDirty || !!invalid || busy || saving || !!timingOwner;
   element<HTMLButtonElement>('backing-download').disabled = !working;
   element<HTMLButtonElement>('delete-project').disabled = !working || busy || saving;
-  element<HTMLButtonElement>('draft-timings').disabled = !working || busy || saving;
+  element<HTMLButtonElement>('draft-timings').disabled = !working || busy || saving || aligning;
   element<HTMLTextAreaElement>('lyric-draft').disabled = !working || busy || saving;
   element<HTMLInputElement>('title').disabled = busy || saving;
   element<HTMLButtonElement>('refresh').disabled = loading || saving || requestingJob || archiveChecking;
@@ -211,7 +216,7 @@ function controls() {
   element('cue-validation').textContent = invalid;
   element('save-state').textContent = saving ? 'Saving lyrics…' : draftDirty ? 'Unsaved pasted words — create draft timings or discard the paste.' : working ? dirty ? 'Unsaved lyric edits — save before exporting.' : 'Saved in your local studio.' : 'Choose a clip to begin.';
   element('video-download').hidden = !videoUrl || dirty || draftDirty || busy || !!timingOwner;
-  srtControls(); timingControls(); practiceControls();
+  srtControls(); timingControls(); practiceControls(); autoControls();
   updateTimeline();
   archiveControls();
   restoreArchiveFocus();
@@ -428,7 +433,7 @@ function captureTimingDrafts(): RawTiming[] {
     return { start: cue.start, end: cue.end, startText: row?.querySelector<HTMLInputElement>('[data-boundary="start"]')?.value ?? '', endText: row?.querySelector<HTMLInputElement>('[data-boundary="end"]')?.value ?? '' };
   }) || [];
 }
-function srtAllowed(): boolean { return !!working && !currentJob && !loading && !requestingJob && !saving && !archiveChecking; }
+function srtAllowed(): boolean { return !!working && !currentJob && !loading && !requestingJob && !saving && !archiveChecking && !aligning; }
 function srtCurrent(owner: SrtOwner): boolean {
   return srtOwner === owner && srtEpoch === owner.epoch && working?.id === owner.projectId && loadedProjectGeneration === owner.project && editGeneration === owner.edit;
 }
@@ -448,6 +453,63 @@ function srtTime(seconds: number): string {
   const milliseconds = Math.round(seconds * 1000), whole = Math.floor(milliseconds / 1000);
   return `${String(Math.floor(whole / 3600)).padStart(2, '0')}:${String(Math.floor(whole / 60) % 60).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')},${String(milliseconds % 1000).padStart(3, '0')}`;
 }
+function autoControls() {
+  const status = element('auto-status'), review = element<HTMLButtonElement>('auto-review'), transcribe = element<HTMLButtonElement>('auto-transcribe');
+  const current = working && transcript?.projectId === working.id ? transcript.value : null;
+  const allowed = srtAllowed();
+  review.hidden = !current?.available; review.disabled = !allowed || !current?.available || !current.cues.length;
+  transcribe.hidden = !working || !session?.lyricsModelReady; transcribe.disabled = !allowed;
+  transcribe.textContent = current?.available ? 'Transcribe again' : 'Transcribe lyrics';
+  if (!working) status.textContent = 'Choose a clip to see the lyrics recognized from its vocals.';
+  else if (!current) status.textContent = 'Checking for recognized lyrics…';
+  else if (current.available) {
+    const unsure = unsureSummary(current.cues);
+    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.`;
+  }
+  else status.textContent = session?.lyricsModelReady ? 'This clip has no recognized lyrics yet. Transcribe lyrics listens to its separated vocals locally.'
+    : 'Automatic lyrics need the local lyric recognition model. Run scripts/setup_lyrics_model.py with this studio’s model directory, refresh this page, then transcribe this clip.';
+}
+async function loadTranscript() {
+  if (!working) { transcript = null; autoControls(); return; }
+  const project = working, epoch = ++transcriptEpoch;
+  transcript = null; autoControls();
+  try {
+    const value = parseTranscript(await request<unknown>(`/api/projects/${project.id}/transcript`), project.duration);
+    if (epoch === transcriptEpoch && working?.id === project.id) { transcript = { projectId: project.id, value }; autoControls(); }
+  } catch (error) {
+    if (epoch !== transcriptEpoch || working?.id !== project.id) return;
+    transcript = { projectId: project.id, value: { available: false } }; autoControls();
+    element('auto-status').textContent = `Recognized lyrics could not be read: ${error instanceof Error ? error.message : 'Connection lost.'}`;
+  }
+}
+element('auto-review').addEventListener('click', () => {
+  const current = working && transcript?.projectId === working.id ? transcript.value : null;
+  if (!current?.available || !srtAllowed() || !working) return;
+  retireSrt('');
+  const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
+  srtOwner = owner;
+  srtReview = { owner, cues: current.cues.map(({ start, end, text }) => ({ start, end, text })), applied: 'Automatic lyrics applied as one edit. Listen, correct any words or timing, then use Save lyrics.' };
+  element('srt-summary').textContent = `${current.cues.length} automatically recognized lines to replace ${working.cues.length} current lines for “${working.title}”. Words and timing come from the separated vocals and may contain mistakes.`;
+  const list = element('srt-review-list'); list.replaceChildren();
+  for (const [index, cue] of current.cues.entries()) {
+    const row = document.createElement('li'); row.dataset.srtCue = String(index);
+    const unsure = cue.confidence < UNSURE_CONFIDENCE; if (unsure) row.dataset.unsure = 'true';
+    const time = document.createElement('strong'); time.textContent = `${index + 1}. ${srtTime(cue.start)} --> ${srtTime(cue.end)}${unsure ? ' · recognition unsure — listen' : ''}`;
+    const text = document.createElement('pre'); text.textContent = cue.text; row.append(time, text); list.append(row);
+  }
+  element('srt-review').hidden = false;
+  element('srt-status').textContent = 'Review the recognized lines, then replace lyric cues when ready. Nothing has been saved.';
+  srtControls(); element('srt-review').scrollIntoView({ block: 'nearest' });
+});
+element('auto-transcribe').addEventListener('click', async () => {
+  retirePractice('Transcribing lyrics stopped practice.');
+  if (!working || !srtAllowed() || timingOwner) return;
+  retireSrt('Transcribing lyrics cancelled the lyric import review.');
+  requestingJob = true; controls();
+  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/transcribe`, json('POST', {})); message(''); startPolling(job); }
+  catch (error) { message(error instanceof Error ? error.message : 'Could not start lyric recognition.', true); }
+  finally { requestingJob = false; controls(); }
+});
 element<HTMLInputElement>('srt-file').addEventListener('change', async event => {
   const input = event.target as HTMLInputElement, file = input.files?.[0]; input.value = '';
   if (file) retireTiming('Selecting timed lyrics cancelled the timing session. Staged times were not applied.');
@@ -468,7 +530,7 @@ element<HTMLInputElement>('srt-file').addEventListener('change', async event => 
     if (!srtAllowed()) { retireSrt('Other studio work cancelled the lyric import. Current lyrics were kept.'); return; }
     if (performance.now() >= owner.deadline) { retireSrt('SRT validation took longer than 10 seconds. Current lyrics were kept; choose the file again to retry.'); return; }
     clearTimeout(srtTimer); srtTimer = undefined;
-    srtReview = { owner, cues };
+    srtReview = { owner, cues, applied: 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.' };
     element('srt-summary').textContent = `${file.name} · ${cues.length} imported cues to replace ${previousCount} current cues for “${title}” (${formatTime(duration)}). First start ${srtTime(cues[0].start)}; last end ${srtTime(cues.at(-1)!.end)}.`;
     const list = element('srt-review-list'); list.replaceChildren();
     for (const [index, cue] of cues.entries()) {
@@ -496,7 +558,7 @@ element('srt-apply').addEventListener('click', () => {
   retireSrt('Lyric cues replaced in memory. The title and pasted words were kept; use Save lyrics when ready.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   working.cues = cues; renderCues(); changed();
-  message(draftDirty ? 'Timed lyrics imported. Your unapplied pasted words are kept; create draft timings or discard that paste before saving.' : 'Timed lyrics imported as one edit. Review the timing and use Save lyrics when ready.');
+  message(draftDirty ? 'Timed lyrics applied. Your unapplied pasted words are kept; create draft timings or discard that paste before saving.' : review.applied);
 });
 function editCueStructure(index: number, kind: 'split' | 'merge'): void {
   retirePractice('Changing cue structure stopped practice.');
@@ -598,7 +660,7 @@ async function openProject(id: string) {
   element('clip-details').hidden = false;
   element<HTMLTextAreaElement>('lyric-draft').value = project.cues.map(cue => cue.text).join('\n');
   history.replaceState(null, '', `?project=${project.id}`);
-  renderCues(); lyricHistory = new LyricHistory(draftSnapshot()); controls(); track(currentTrack);
+  renderCues(); lyricHistory = new LyricHistory(draftSnapshot()); controls(); track(currentTrack); void loadTranscript();
   } finally { if (generation === projectGeneration) { loading = false; controls(); } }
 }
 function mayLeave(): boolean { return !(dirty || draftDirty) || window.confirm('Discard unsaved lyric edits and open a different clip?'); }
@@ -623,10 +685,34 @@ element('discard-draft').addEventListener('click', () => {
 element('draft-timings').addEventListener('click', () => {
   retirePractice('Creating draft timings stopped practice.');
   retireTiming('Creating draft timings cancelled the timing session. Staged times were not applied.');
-  if (!working) return;
-  try { working.cues = draftCues(element<HTMLTextAreaElement>('lyric-draft').value, working.duration); draftDirty = false; renderCues(); changed(); message('Draft timings are evenly spaced. Listen and adjust each line before saving.'); }
-  catch (error) { message(error instanceof Error ? error.message : 'Could not create draft timings.', true); }
+  if (!working || aligning) return;
+  const recognized = transcript?.projectId === working.id && transcript.value.available;
+  if (!recognized) {
+    try { working.cues = draftCues(element<HTMLTextAreaElement>('lyric-draft').value, working.duration); draftDirty = false; renderCues(); changed(); message('Draft timings are evenly spaced because this clip has no recognized lyrics. Listen and adjust each line before saving.'); }
+    catch (error) { message(error instanceof Error ? error.message : 'Could not create draft timings.', true); }
+    return;
+  }
+  void alignPasted();
 });
+async function alignPasted() {
+  if (!working) return;
+  let lines: string[];
+  try { lines = draftLines(element<HTMLTextAreaElement>('lyric-draft').value); validateCues(lines.map((text, index) => ({ start: index, end: index + 1, text })), Math.max(lines.length, 1)); }
+  catch (error) { message(error instanceof Error ? error.message : 'Could not align these lyrics.', true); return; }
+  const project = working, pasted = element<HTMLTextAreaElement>('lyric-draft').value, edit = editGeneration, loaded = loadedProjectGeneration;
+  aligning = true; controls(); message('Aligning your lines to the sung vocals…');
+  try {
+    const aligned = parseAlignment(await request<unknown>(`/api/projects/${project.id}/align`, json('POST', { lines })), project.duration, lines);
+    if (working !== project || editGeneration !== edit || loadedProjectGeneration !== loaded || element<HTMLTextAreaElement>('lyric-draft').value !== pasted) {
+      message('The editor changed while aligning, so the aligned timing was not applied. Create draft timings again when ready.'); return;
+    }
+    retireSrt('Aligning lyrics cancelled the lyric import review.');
+    working.cues = aligned.map(({ start, end, text }) => ({ start, end, text })); draftDirty = false; renderCues(); changed();
+    const unsure = uncertainSummary(aligned);
+    message(`Aligned ${aligned.length} ${aligned.length === 1 ? 'line' : 'lines'} to the sung vocals. ${unsure ? `Check ${unsure}: their words were not clearly heard, so they were placed between neighbouring lines.` : 'Every line was matched to recognized words.'} Listen and adjust before saving.`);
+  } catch (error) { message(`${error instanceof Error ? error.message : 'Could not align these lyrics.'} Your pasted words are kept.`, true); }
+  finally { aligning = false; controls(); }
+}
 element('save').addEventListener('click', async () => {
   retirePractice('Saving lyrics stopped practice.');
   timeline.cancelGesture();
@@ -679,7 +765,7 @@ function showJob(job: Job | null) {
   if (job) retirePractice('Studio media work stopped practice.');
   currentJob = job; element('job-panel').hidden = !job;
   if (job) {
-    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'archive-import': 'Restoring a project archive' };
+    const titles: Record<Job['kind'], string> = { separate: 'Making space for your voice', export: 'Preparing your karaoke video', 'archive-export': 'Backing up your saved clip', 'archive-import': 'Restoring a project archive', transcribe: 'Listening for the lyrics' };
     element('job-title').textContent = titles[job.kind];
     element('job-stage').textContent = job.stage + (ownedJob ? '' : ' — observed studio work; cancellation belongs to its starting page.');
   }
@@ -716,8 +802,13 @@ async function pollJob(id: string, epoch = pollEpoch) {
         if (ownedJob && (followJobProject || (!(dirty || draftDirty) && !working))) {
           await openProject(job.projectId);
           if (!ownsPoll(id, epoch)) return;
-          message('Your stems are ready. Audition the estimates, then add and time your lyrics.');
+          message(working?.cues.length
+            ? `Your stems and ${working.cues.length} automatically timed lyric lines are ready. Play the preview, correct any words or timing, then save and export.`
+            : 'Your stems are ready. No lyrics were recognized automatically; paste your lyrics or transcribe again, then time them.');
         } else message('Your stems are ready in Saved clips. Your current lyric edits are still here.');
+      } else if (job.kind === 'transcribe') {
+        if (working?.id === job.projectId) await loadTranscript();
+        message('Lyrics recognized. Review automatic lyrics to replace the current lines, or paste your own lyrics and create draft timings to align them. Saved lyrics are unchanged.');
       } else if (ownedJob && job.resultUrl && working?.id === job.projectId) { videoUrl = job.resultUrl; download(videoUrl, '.mp4'); message('Karaoke MP4 ready. Your saved lyric timings are included.'); }
       else if (!ownedJob) message('The studio finished a karaoke MP4. Your editor is unchanged. Open its saved clip and export from this page to download the saved timings.');
       else message('Karaoke MP4 ready. Open its saved clip to export or download it.');

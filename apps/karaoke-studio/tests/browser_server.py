@@ -29,6 +29,28 @@ def fixture_separation(source, output_dir, model_dir, cancel, stage):
     return duration
 
 
+LYRICS_FIXTURE_SECONDS = 16.0
+FIXTURE_WORDS = [(text, start, start + 0.4) for text, start in (
+    ('Hello', 1.0), ('little', 1.5), ('world', 2.0), ('This', 4.0), ('is', 4.4), ('our', 4.8), ('chorus', 5.2),
+    ('Sing', 9.0), ('it', 9.5), ('back', 10.0), ('to', 10.5), ('me', 11.0))]
+
+
+def fixture_transcription(vocals, output, model_root, duration, cancel, stage):
+    """Deterministic recognized words for the 16-second lyrics fixture; other clips behave like a
+    recognition failure (no transcript), so existing flows keep starting without lyrics."""
+    import json
+    from karaoke.transcription import MODEL_NAME
+    stage('Recognizing fixture lyrics for browser verification')
+    for _ in range(10):
+        if cancel.wait(.03):
+            raise RuntimeError('Cancelled fixture job.')
+    if abs(duration - LYRICS_FIXTURE_SECONDS) > 1e-6:
+        raise RuntimeError('No fixture lyrics for this clip.')
+    transcript = dict(model=MODEL_NAME, words=[dict(text=t, start=s, end=e, confidence=0.4 if s >= 9 else 0.95) for t, s, e in FIXTURE_WORDS], seconds=0.3)
+    Path(output).write_text(json.dumps(transcript))
+    return transcript
+
+
 def forbidden_archive_separation(*_args):
     """Archive-only verification must never invoke inference, even a fixture."""
     raise AssertionError('Archive browser mode must not call a separator.')
@@ -57,7 +79,8 @@ if __name__ == '__main__':
                                port=int(os.environ.get('KARAOKE_TEST_PORT', '4188')),
                                dist_dir=root / 'dist', font_path=root / 'assets' / 'DejaVuSans.ttf',
                                separate=forbidden_archive_separation if archive_only else fixture_separation,
-                               ready=lambda _: not archive_only)
+                               ready=lambda _: not archive_only,
+                               transcribe=fixture_transcription, transcriber_ready=lambda _: not archive_only)
         try:
             server.serve_forever(poll_interval=.05)
         except KeyboardInterrupt:

@@ -40,11 +40,16 @@ export function validateCues(cues: Cue[], duration: number): Cue[] {
     return { start: cue.start, end: cue.end, text: cue.text };
   });
 }
-export function draftCues(text: string, duration: number): Cue[] {
+/** Pasted lyrics as stripped, nonempty lines (Python splitlines() semantics). */
+export function draftLines(text: string): string[] {
   textLength(text, MAX_LYRIC_CHARS, 'Pasted lyrics', true);
   // eslint-disable-next-line no-control-regex -- Match Python splitlines(), including file/group/record separators.
   const lines = text.split(/\r\n|[\n\r\v\f\u001c-\u001e\u0085\u2028\u2029]/).map(strip).filter(Boolean);
   if (!lines.length) throw new Error('Paste at least one lyric line first.');
+  return lines;
+}
+export function draftCues(text: string, duration: number): Cue[] {
+  const lines = draftLines(text);
   return validateCues(lines.map((line, index) => ({ start: duration * index / lines.length, end: duration * (index + 1) / lines.length, text: line })), duration);
 }
 export function activeCue(cues: Cue[], time: number): number {

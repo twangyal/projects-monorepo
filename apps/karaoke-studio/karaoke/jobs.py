@@ -83,7 +83,7 @@ class JobManager:
         work: Callable[[threading.Event, Callable[[str], None]], Callable[[], str | None]],
         cleanup: Callable[[], None] | None = None,
     ) -> dict:
-        if kind not in {"separate", "export", "archive-export", "archive-import"}:
+        if kind not in {"separate", "export", "archive-export", "archive-import", "transcribe"}:
             raise ValueError("Unknown media job kind")
         with self.lock:
             if self.busy():

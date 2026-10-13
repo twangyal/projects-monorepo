@@ -30,6 +30,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       MAX_PROCESSING_BYTES, export_archive, import_archive,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager
+from .lyrics_auto import align_lines, words_to_cues
 from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
                      MAX_WAV_BYTES, MAX_VIDEO_BYTES, MIN_FREE_BYTES,
@@ -40,7 +41,9 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export|archive|archive-info))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export|archive|archive-info|transcript|transcribe|align))?")
+_TRANSCRIPT = "transcript.json"
+MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
 _AUDIO_FILES = {"original": "source.wav", "vocals": "vocals.wav", "backing": "backing.wav"}
 
@@ -148,12 +151,15 @@ class KaraokeServer(ThreadingHTTPServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, data_dir, model_dir, port, *, dist_dir, font_path, separate, export, ready):
+    def __init__(self, data_dir, model_dir, port, *, dist_dir, font_path, separate, export, ready,
+                 transcribe=None, transcriber_ready=None):
         self.data_dir = Path(data_dir).expanduser().resolve()
         self.model_dir = Path(model_dir).expanduser().resolve()
         self.dist_dir = Path(dist_dir).resolve()
         self.font_path = Path(font_path).resolve()
         self.separate, self.export, self.ready = separate, export, ready
+        # Optional automatic lyrics; without a transcriber, clips start without lyric cues.
+        self.transcribe, self.transcriber_ready = transcribe, transcriber_ready
         self.token = secrets.token_urlsafe(32)
         self.lock = threading.RLock()
         self.jobs = JobManager(self.lock)
@@ -313,6 +319,28 @@ class KaraokeServer(ThreadingHTTPServer):
         except Exception:
             return False
 
+    def lyrics_ready(self):
+        try:
+            return self.transcribe is not None and bool(self.transcriber_ready(self.model_dir))
+        except Exception:
+            return False
+
+    def read_transcript(self, project):
+        """The stored recognized words for a project, or None when it has not been transcribed."""
+        from .transcription import validate_transcript
+        try:
+            source = self.project_file(project["id"], _TRANSCRIPT)
+        except FileNotFoundError:
+            return None
+        with source:
+            raw = source.read(MAX_TRANSCRIPT_BYTES + 1)
+        try:
+            if len(raw) > MAX_TRANSCRIPT_BYTES:
+                raise ValueError("Oversized transcript.")
+            return validate_transcript(json.loads(raw), project["duration"])
+        except (ValueError, UnicodeError):
+            raise RequestError(409, "The stored lyric transcript is invalid. Transcribe the clip again.") from None
+
     def server_close(self):
         with self.lock:
             self._closing = True
@@ -390,6 +418,18 @@ class KaraokeServer(ThreadingHTTPServer):
                     if metadata.is_symlink() or not metadata.is_file() or metadata.stat().st_size > 16384:
                         raise RuntimeError("Audio processing provenance is invalid or oversized.")
                     _copy_media(metadata, complete / "processing.json", 16384, cancel)
+                if self.lyrics_ready():
+                    # Automatic lyrics are the starting point; recognition failure leaves an
+                    # unlyricked clip that can be transcribed again, never a failed upload.
+                    try:
+                        with inherit_media_handles(work_fd):
+                            transcript = self.transcribe(complete / "vocals.wav", complete / _TRANSCRIPT,
+                                                         self.model_dir, duration, cancel, stage)
+                        project = validate_project({**project, "cues": words_to_cues(transcript["words"], duration)})
+                    except Exception:
+                        if cancel.is_set():
+                            raise
+                        (complete / _TRANSCRIPT).unlink(missing_ok=True)
                 _atomic_json(complete / "project.json", project)
             finally:
                 os.close(work_fd)
@@ -547,6 +587,50 @@ class KaraokeServer(ThreadingHTTPServer):
             return self.jobs.start(project_id, 'archive-import', work, cleanup)
         except BaseException:
             cleanup()
+            raise
+
+    def start_transcribe(self, project: dict):
+        if self._closing or self.uploading:
+            raise JobBusy("An audio upload is in progress. Wait before transcribing.")
+        if not self.lyrics_ready():
+            raise RequestError(409, "Lyric recognition is not set up. Run scripts/setup_lyrics_model.py with this studio's model directory, then try again.")
+        work_dir = self.new_work()
+
+        def work(cancel, stage):
+            work_fd = self._open_work(work_dir)
+            try:
+                project_fd = self._open_project(project["id"])
+                try:
+                    owned_work = self._descriptor_path(work_fd)
+                    owned_project = self._descriptor_path(project_fd)
+                    with inherit_media_handles(work_fd, project_fd):
+                        self.transcribe(owned_project / "vocals.wav", owned_work / _TRANSCRIPT,
+                                        self.model_dir, project["duration"], cancel, stage)
+                    self.check_storage()
+                finally:
+                    os.close(project_fd)
+            finally:
+                os.close(work_fd)
+
+            def publish():
+                self.project(project["id"])
+                fd = self._open_project(project["id"])
+                try:
+                    work_fd = self._open_work(work_dir)
+                    try:
+                        os.replace(_TRANSCRIPT, _TRANSCRIPT, src_dir_fd=work_fd, dst_dir_fd=fd)
+                    finally:
+                        os.close(work_fd)
+                finally:
+                    os.close(fd)
+                return f'/api/projects/{project["id"]}/transcript'
+
+            return publish
+
+        try:
+            return self.jobs.start(project["id"], "transcribe", work, lambda: self.cleanup_work(work_dir))
+        except Exception:
+            self.cleanup_work(work_dir)
             raise
 
     def start_export(self, project: dict):
@@ -854,7 +938,7 @@ class Handler(BaseHTTPRequestHandler):
         read = self.command in {"GET", "HEAD"}
         server = self.server
         if path == "/api/session" and read:
-            self._json(dict(token=server.token, modelReady=server.model_ready(),
+            self._json(dict(token=server.token, modelReady=server.model_ready(), lyricsModelReady=server.lyrics_ready(),
                             maxDuration=MAX_DURATION, maxProjects=MAX_PROJECTS,
                             maxUploadBytes=MAX_UPLOAD, maxArchiveBytes=MAX_ARCHIVE_BYTES, maxCues=MAX_CUES,
                             maxLyricChars=MAX_LYRIC_CHARS,
@@ -909,9 +993,16 @@ class Handler(BaseHTTPRequestHandler):
                 if (set(value) != {"revision"} or type(value["revision"]) is not int
                         or not 0 <= value["revision"] <= MAX_PORTABLE_REVISION):
                     raise RequestError(400, "Provide one portable saved revision when backing up.")
-            elif self.command == "POST" and resource == "export":
+            elif self.command == "POST" and resource in ("export", "transcribe"):
                 if self._read_json():
-                    raise RequestError(400, "Export takes an empty JSON object.")
+                    raise RequestError(400, "This action takes an empty JSON object.")
+            elif self.command == "POST" and resource == "align":
+                value = self._read_json()
+                lines = value.get("lines")
+                if (set(value) != {"lines"} or not isinstance(lines, list) or not 0 < len(lines) <= MAX_CUES
+                        or any(not isinstance(line, str) or not line.strip() or len(line) > 240 or "\0" in line for line in lines)
+                        or sum(len(line) for line in lines) > MAX_LYRIC_CHARS):
+                    raise RequestError(400, f"Provide 1–{MAX_CUES} nonempty lyric lines of at most 240 characters each.")
             with server.lock:
                 project = server.project(project_id)
                 directory = server.projects_dir / project_id
@@ -954,6 +1045,10 @@ class Handler(BaseHTTPRequestHandler):
                         raise RequestError(409, 'Saved archive is invalid or stale; back up the saved clip again.') from None
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project)
+                if self.command == "POST" and resource == "transcribe":
+                    job = server.start_transcribe(project)
+                if resource in ("transcript", "align") and (read or self.command == "POST"):
+                    transcript = server.read_transcript(project)
                 if read and resource == "video":
                     marker = directory / "video-revision.json"
                     if not (directory / "video.mp4").is_file() or not marker.is_file():
@@ -984,8 +1079,20 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == 'POST' and resource == 'archive':
                 self._json({'job': job}, 202)
                 return
-            if self.command == "POST" and resource == "export":
+            if self.command == "POST" and resource in ("export", "transcribe"):
                 self._json({"job": job}, 202)
+                return
+            if read and resource == "transcript":
+                if transcript is None:
+                    self._json({"available": False})
+                else:
+                    self._json({"available": True, "model": transcript["model"], "words": len(transcript["words"]),
+                                "cues": words_to_cues(transcript["words"], project["duration"], confidence=True)})
+                return
+            if self.command == "POST" and resource == "align":
+                if transcript is None:
+                    raise RequestError(409, "Transcribe this clip before aligning supplied lyrics.")
+                self._json({"cues": align_lines(value["lines"], transcript["words"], project["duration"])})
                 return
             if read and stem:
                 self._file(directory / _AUDIO_FILES[stem], "audio/wav")
@@ -1101,6 +1208,7 @@ def create_server(
     data_dir: Path, model_dir: Path, port: int = 8765, *,
     dist_dir: Path | None = None, font_path: Path | None = None,
     separate: Callable | None = None, export: Callable | None = None, ready: Callable | None = None,
+    transcribe: Callable | None = None, transcriber_ready: Callable | None = None,
 ) -> KaraokeServer:
     """Construct a loopback server; callable overrides exist for tests only.
 
@@ -1117,10 +1225,14 @@ def create_server(
     if export is None:
         from .video import export_video
         export = export_video
+    if transcribe is None and transcriber_ready is None:
+        from .transcription import asr_ready, transcribe_vocals
+        transcribe, transcriber_ready = transcribe_vocals, asr_ready
     app = Path(__file__).resolve().parents[1]
     return KaraokeServer(data_dir, model_dir, port,
                          dist_dir=dist_dir or app / "dist", font_path=font_path or app / "assets" / "DejaVuSans.ttf",
-                         separate=separate, export=export, ready=ready)
+                         separate=separate, export=export, ready=ready,
+                         transcribe=transcribe, transcriber_ready=transcriber_ready)
 
 
 def main(argv=None):
