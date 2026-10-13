@@ -30,7 +30,7 @@ from .archive import (ArchiveError, MAX_ARCHIVE_BYTES, MAX_PORTABLE_REVISION,
                       MAX_PROCESSING_BYTES, export_archive, import_archive,
                       read_archive_origin, read_archive_project)
 from .jobs import JobBusy, JobManager
-from .lyrics_auto import align_lines, words_to_cues
+from .lyrics_auto import align_lines, word_timings, words_to_cues
 from .media_io import inherit_media_handles
 from .limits import (MAX_INPUT_BYTES, MAX_JSON_BYTES, MAX_CUES, MAX_LYRIC_CHARS,
                      MAX_WAV_BYTES, MAX_VIDEO_BYTES, MIN_FREE_BYTES,
@@ -41,7 +41,7 @@ MAX_UPLOAD = MAX_INPUT_BYTES
 MAX_JSON = MAX_JSON_BYTES
 MAX_PROJECTS = 20
 _ID = r"[0-9a-f]{32}"
-_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export|archive|archive-info|transcript|transcribe|align))?")
+_PROJECT_ROUTE = re.compile(rf"/api/projects/({_ID})(?:/(audio/(original|vocals|backing)|lyrics|video|export|archive|archive-info|transcript|transcribe|align|word-timings))?")
 _TRANSCRIPT = "transcript.json"
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _JOB_ROUTE = re.compile(rf"/api/jobs/({_ID})(/cancel)?")
@@ -341,6 +341,13 @@ class KaraokeServer(ThreadingHTTPServer):
         except (ValueError, UnicodeError):
             raise RequestError(409, "The stored lyric transcript is invalid. Transcribe the clip again.") from None
 
+    def optional_transcript(self, project):
+        """Recognized words when available and valid; word highlighting falls back to estimates."""
+        try:
+            return self.read_transcript(project)
+        except RequestError:
+            return None
+
     def server_close(self):
         with self.lock:
             self._closing = True
@@ -639,6 +646,8 @@ class KaraokeServer(ThreadingHTTPServer):
         project = validate_project(project)
         if not project["cues"]:
             raise RequestError(400, "Add and timestamp lyric lines, then save before exporting a video.")
+        transcript = self.optional_transcript(project)
+        timing = {"words": transcript["words"]} if transcript else {}
         work_dir = self.new_work()
         project_dir = self.projects_dir / project["id"]
 
@@ -653,7 +662,7 @@ class KaraokeServer(ThreadingHTTPServer):
                     output = owned_work / "video.mp4"
                     with inherit_media_handles(work_fd, project_fd):
                         self.export(project, owned_project / "backing.wav", output,
-                                    owned_work, self.font_path, cancel)
+                                    owned_work, self.font_path, cancel, **timing)
                     self.check_storage()
                     if (output.is_symlink() or not output.is_file()
                             or not 0 < output.stat().st_size <= MAX_VIDEO_BYTES):
@@ -996,6 +1005,10 @@ class Handler(BaseHTTPRequestHandler):
             elif self.command == "POST" and resource in ("export", "transcribe"):
                 if self._read_json():
                     raise RequestError(400, "This action takes an empty JSON object.")
+            elif self.command == "POST" and resource == "word-timings":
+                value = self._read_json()
+                if set(value) != {"cues"} or not isinstance(value["cues"], list):
+                    raise RequestError(400, "Provide the lyric cues to time word by word.")
             elif self.command == "POST" and resource == "align":
                 value = self._read_json()
                 lines = value.get("lines")
@@ -1049,6 +1062,10 @@ class Handler(BaseHTTPRequestHandler):
                     job = server.start_transcribe(project)
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
                     transcript = server.read_transcript(project)
+                if self.command == "POST" and resource == "word-timings":
+                    # The same rules as saving, so unsaved but valid drafts can be previewed.
+                    timed = validate_project({**project, "cues": value["cues"]})
+                    transcript = server.optional_transcript(project)
                 if read and resource == "video":
                     marker = directory / "video-revision.json"
                     if not (directory / "video.mp4").is_file() or not marker.is_file():
@@ -1088,6 +1105,11 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     self._json({"available": True, "model": transcript["model"], "words": len(transcript["words"]),
                                 "cues": words_to_cues(transcript["words"], project["duration"], confidence=True)})
+                return
+            if self.command == "POST" and resource == "word-timings":
+                words = transcript["words"] if transcript else []
+                self._json({"recognized": transcript is not None,
+                            "lines": word_timings(timed["cues"], words, project["duration"])})
                 return
             if self.command == "POST" and resource == "align":
                 if transcript is None:

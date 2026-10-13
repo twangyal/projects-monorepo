@@ -232,3 +232,78 @@ def align_lines(lines: list[str], words: list, duration: float) -> list[dict]:
         index = run_end
     groups = [[dict(text=lines[k], start=filled[k][0], end=max(filled[k][1] - HOLD, filled[k][0]))] for k in range(len(lines))]
     return _finish(groups, duration, shares)
+
+
+# Word-by-word highlighting: each saved line is split on whitespace and every word gets the time it
+# starts being sung. A line highlights in at most this many steps, which bounds video cards.
+MAX_STEPS = 16
+NEARBY = 0.25
+
+
+def word_timings(cues: list[dict], words: list, duration: float) -> list[list[dict]]:
+    """For each cue, its words with the time each starts being sung and whether it was heard.
+
+    Words are matched to recognized words sung during the cue (spelling-tolerant global alignment).
+    Unheard words are placed between their heard neighbours in proportion to their length, and a
+    line with no recognized words is spread across its interval, so corrected and supplied lyrics
+    highlight too. Starts never decrease within a line and stay inside the cue.
+    """
+    words = clean_words(words, duration)
+    result = []
+    for cue in cues:
+        start, end = float(cue['start']), float(cue['end'])
+        tokens = cue['text'].split()
+        if not tokens:
+            result.append([])
+            continue
+        # A timed line starts when its singing starts (marked, imported or aligned); recognized words
+        # refine that, and automatic lines' short lead-in is covered by their recognized first word.
+        span = end - start
+        sing_start = start
+        sing_end = max(end - min(HOLD, span * 0.2), sing_start)
+        nearby = [w for w in words if w['end'] > start - NEARBY and w['start'] < end + NEARBY]
+        reference = [_token(token) for token in tokens]
+        matches = _align(reference, [_token(w['text']) for w in nearby]) if nearby else [None] * len(tokens)
+        anchors: list[float | None] = [None] * len(tokens)
+        last = -math.inf
+        for index, match in enumerate(matches):
+            if match is None or not reference[index]:
+                continue
+            at = min(max(nearby[match]['start'], start), sing_end)
+            if at >= last:  # an anchor that runs backwards is a stray match
+                anchors[index], last = at, at
+        weights = [len(token) + 1 for token in tokens]
+        starts = list(anchors)
+        index = 0
+        while index < len(tokens):
+            if starts[index] is not None:
+                index += 1
+                continue
+            run_end = index
+            while run_end < len(tokens) and anchors[run_end] is None:
+                run_end += 1
+            # The run shares the time from the previous heard word (or the start of singing) to the
+            # next heard word (or the end of singing), in proportion to word length.
+            first = index - 1 if index > 0 else index
+            left = starts[index - 1] if index > 0 else sing_start
+            right = anchors[run_end] if run_end < len(tokens) else sing_end
+            right = max(right, left)
+            total = sum(weights[first:run_end])
+            for k in range(index, run_end):
+                starts[k] = left + (right - left) * sum(weights[first:k]) / total
+            index = run_end
+        if len(tokens) > MAX_STEPS:
+            # Group words into at most MAX_STEPS highlight steps; each group starts with its first word.
+            group = [k * len(tokens) // MAX_STEPS for k in range(MAX_STEPS)]
+            for k, begin in enumerate(group):
+                stop = group[k + 1] if k + 1 < MAX_STEPS else len(tokens)
+                for j in range(begin, stop):
+                    starts[j] = starts[begin]
+        result.append([dict(text=token, start=round(at, 3), heard=anchors[k] is not None)
+                       for k, (token, at) in enumerate(zip(tokens, starts, strict=True))])
+    return result
+
+
+def sung_count(timings: list[dict], position: float) -> int:
+    """How many of a line's words have started by ``position``."""
+    return sum(1 for word in timings if word['start'] <= position)

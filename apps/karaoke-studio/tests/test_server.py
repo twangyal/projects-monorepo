@@ -34,7 +34,7 @@ def fake_separate(source, output_dir, model_root, cancel, stage):
     return 2.0
 
 
-def fake_export(project, backing, output, work_dir, font_path, cancel):
+def fake_export(project, backing, output, work_dir, font_path, cancel, **_timing):
     output.write_bytes(b"test-only MP4")
 
 

@@ -42,7 +42,7 @@ The lyric recognition setup downloads about 483 MB and installs about 662 MB; wi
 1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
 2. Wait for separation and lyric recognition, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
 3. The clip opens with **automatically recognized, timed lyric lines** already saved, so the preview and export work straight away. Listen and correct misheard words and timing. If you have the real lyrics, paste them one line per cue and press **Create draft timings**: each line is aligned to where it was sung, and lines whose words were not clearly heard are named so you can check them. Without recognized lyrics, pasted lines are evenly spaced instead. You can also choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues.
-4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
+4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview lights up the active line **word by word** as it is sung, shows upcoming text, and displays an instrumental break between cues. The exported video highlights words the same way (see [Word-by-word highlighting](#word-by-word-highlighting)).
 5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
 
 Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
@@ -249,6 +249,16 @@ It verifies every extracted file against its pinned checksum, then publishes `MO
 - Silero VAD: MIT.
 
 No weights are stored in this repository.
+
+### Word-by-word highlighting
+
+The preview and the exported MP4 colour each word as it starts being sung, like a karaoke screen. The timing comes from the studio, so the preview shows exactly what the video will show, including unsaved but valid corrections.
+
+- Each line's words are matched to the words recognized while that line plays. Matching tolerates near-miss spellings, so corrected or pasted text still follows the singing.
+- Words that were not heard are placed between their heard neighbours in proportion to their length.
+- A line without recognized words (no model, a restored archive, or an instrumental passage) is spread across its interval from its start, by word length.
+- Words never run backwards and stay inside their line. A line highlights in at most 16 steps, so very long lines advance in word groups.
+- Retiming a line moves its highlighting with it. Words keep their recognized times when those fall inside the new interval, and are clamped to it otherwise.
 
 ## Model provenance and limitations
 

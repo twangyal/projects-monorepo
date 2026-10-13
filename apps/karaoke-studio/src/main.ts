@@ -10,6 +10,7 @@ import { proposeBoundary, timingError } from './timing.ts';
 import { splitCue, mergeCue } from './cue-edit.ts';
 import { createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
+import { parseWordTiming, splitSung, sungCharacters, type WordTiming } from './word-timing.ts';
 
 interface Job { id: string; projectId: string; kind: 'separate' | 'export' | 'archive-export' | 'archive-import' | 'transcribe'; status: 'running' | 'complete' | 'failed' | 'cancelled'; stage: string; error?: string; resultUrl?: string }
 interface Session { token: string; modelReady: boolean; lyricsModelReady: boolean; maxDuration: number; maxUploadBytes: number; maxCues: number; maxLyricChars: number; maxProjects: number; maxArchiveBytes: number; activeJob?: Job | null }
@@ -272,7 +273,7 @@ function wrap(text: string, size: number, maxWidth = 1000): string[] {
   }
   return lines.length ? lines : [''];
 }
-function drawBlock(text: string, y: number, initialSize: number, minSize: number, maxHeight: number, color: string) {
+function drawBlock(text: string, y: number, initialSize: number, minSize: number, maxHeight: number, color: string, sung?: number, sungColor = '#e4b77d') {
   let size = initialSize, lines = wrap(text, size);
   while (size > minSize && lines.length * Math.ceil(size * 1.25) > maxHeight) lines = wrap(text, --size);
   const lineHeight = Math.ceil(size * 1.25);
@@ -283,7 +284,39 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
     lines[lines.length - 1] += '…';
   }
   context.font = `${size}px KaraokeSans`; context.fillStyle = color;
-  for (const [index, line] of lines.entries()) context.fillText(line, 640, y + (index - (lines.length - 1) / 2) * lineHeight);
+  let remaining = sung;
+  for (const [index, line] of lines.entries()) {
+    const lineY = y + (index - (lines.length - 1) / 2) * lineHeight;
+    if (remaining === undefined) { context.fillText(line, 640, lineY); continue; }
+    // Word-by-word highlight: the sung words, then the rest of the line, placed as one centred line.
+    const [done, rest] = splitSung(line, remaining), left = 640 - context.measureText(line).width / 2;
+    remaining -= [...done].filter(character => !/\s/.test(character)).length;
+    context.textAlign = 'left';
+    context.fillStyle = sungColor; context.fillText(done, left, lineY);
+    context.fillStyle = color; context.fillText(rest, left + context.measureText(done).width, lineY);
+    context.textAlign = 'center';
+  }
+}
+
+// Word timing for the lines being previewed, from the studio (recognized words, or estimates). The video
+// export uses the same timing, so the preview shows the words lighting up as they will in the video.
+let wordTiming: { key: string; value: WordTiming } | null = null;
+let wordTimingWanted = '', wordTimingTimer = 0;
+function currentWordTiming(project: Project): WordTiming | null {
+  const cues = project.cues.map(({ start, end, text }) => ({ start, end, text }));
+  const key = `${project.id}|${JSON.stringify(cues)}`;
+  if (wordTiming?.key === key) return wordTiming.value;
+  if (wordTimingWanted !== key) {
+    wordTimingWanted = key; window.clearTimeout(wordTimingTimer);
+    if (!cues.length) return null;
+    wordTimingTimer = window.setTimeout(() => void (async () => {
+      try {
+        const value = parseWordTiming(await request<unknown>(`/api/projects/${project.id}/word-timings`, json('POST', { cues })), cues);
+        if (wordTimingWanted === key) { wordTiming = { key, value }; draw(); }
+      } catch { /* The preview keeps highlighting whole lines. */ }
+    })(), 250);
+  }
+  return null;
 }
 function draw() {
   timeline.setPlayback(audio.currentTime || 0);
@@ -307,7 +340,11 @@ function draw() {
   const time = audio.currentTime || 0, index = working ? activeCue(working.cues, time) : -1;
   const current = index >= 0 ? working!.cues[index].text : 'Instrumental break';
   const upcoming = working?.cues.find(cue => cue.start > time);
-  drawBlock(current, 320, 44, 24, 300, index >= 0 ? '#e4b77d' : '#f7f5ed');
+  const fetched = working ? currentWordTiming(working) : null, timing = index >= 0 ? fetched : null;
+  if (timing) drawBlock(current, 320, 44, 24, 300, '#f7f5ed', sungCharacters(timing.lines[index], time));
+  else drawBlock(current, 320, 44, 24, 300, index >= 0 ? '#e4b77d' : '#f7f5ed');
+  stage.dataset.wordTiming = timing ? (timing.recognized ? 'recognized' : 'estimated') : 'none';
+  stage.dataset.sung = timing ? String(sungCharacters(timing.lines[index], time)) : '';
   if (upcoming) drawBlock(`Next: ${upcoming.text}`, 540, 26, 18, 80, '#9dafbb');
   context.font = '20px KaraokeSans'; context.fillStyle = '#9dafbb'; context.fillText(`Karaoke Studio · ${currentTrack[0].toUpperCase() + currentTrack.slice(1)} track`, 640, 660);
   stage.dataset.activeCue = String(index);

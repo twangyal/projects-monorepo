@@ -9,7 +9,7 @@ import unittest
 import wave
 import zipfile
 
-from karaoke.lyrics_auto import align_lines, words_to_cues
+from karaoke.lyrics_auto import MAX_STEPS, align_lines, sung_count, word_timings, words_to_cues
 from karaoke.model import validate_project
 from karaoke.transcribe_worker import words_from
 from karaoke.transcription import MODEL_NAME, asr_ready, validate_transcript
@@ -85,6 +85,50 @@ class AlignmentTests(unittest.TestCase):
         self.assertAlmostEqual(cues[0]['start'], 0.85)
         self.assertAlmostEqual(cues[1]['start'], 9.85)
         self.assertEqual(align_lines(['  ', ''], chorus, 20.0), [])
+
+
+class WordTimingTests(unittest.TestCase):
+    def test_each_word_takes_the_time_it_was_sung_and_unheard_words_fall_between(self):
+        cues = [dict(start=18.35, end=20.35, text='Lay awake at night'),
+                # Corrected text: "wondering" was misheard as "wandering"; "oh" was never recognized.
+                dict(start=20.55, end=22.45, text='Wandering oh how could I'),
+                dict(start=25.0, end=28.0, text='an instrumental\nline nobody sang')]
+        timed = word_timings(cues, SUNG, 40)
+        self.assertEqual([(w['text'], w['start'], w['heard']) for w in timed[0]],
+                         [('Lay', 18.5, True), ('awake', 18.8, True), ('at', 19.3, True), ('night', 19.5, True)])
+        second = timed[1]
+        self.assertEqual([w['text'] for w in second], ['Wandering', 'oh', 'how', 'could', 'I'])
+        self.assertEqual((second[0]['start'], second[0]['heard']), (20.7, True), 'near-miss spelling still matches')
+        self.assertFalse(second[1]['heard'])
+        self.assertTrue(20.7 < second[1]['start'] < 21.2 == second[2]['start'])
+        # A line with no recognized singing is spread across its interval by word length.
+        third = timed[2]
+        self.assertEqual([w['text'] for w in third], ['an', 'instrumental', 'line', 'nobody', 'sang'])
+        self.assertFalse(any(w['heard'] for w in third))
+        self.assertEqual(third[0]['start'], 25.0, 'a timed line starts when its singing starts')
+        gaps = [b['start'] - a['start'] for a, b in zip(third, third[1:])]
+        self.assertGreater(gaps[1], gaps[0] * 3, 'a long word lasts longer than a short one')
+        self.assertLess(third[-1]['start'], 28.0 - 0.35)
+        for line, cue in zip(timed, cues):
+            starts = [w['start'] for w in line]
+            self.assertEqual(starts, sorted(starts))
+            self.assertTrue(all(cue['start'] <= s < cue['end'] for s in starts))
+        self.assertEqual([sung_count(timed[0], t) for t in (18.4, 18.5, 19.4, 25)], [0, 1, 3, 4])
+
+    def test_retimed_lines_and_stray_matches_stay_inside_the_line(self):
+        # A line moved earlier than its singing keeps every word inside its own interval.
+        moved = word_timings([dict(start=17.0, end=18.7, text='Lay awake')], SUNG, 40)[0]
+        self.assertTrue(all(17.0 <= w['start'] < 18.7 for w in moved))
+        # "awake" was sung before "night", so in this order it cannot be trusted and is placed after it.
+        backwards = word_timings([dict(start=18.0, end=24.5, text='night awake')], SUNG, 40)[0]
+        self.assertEqual([(w['start'], w['heard']) for w in backwards], [(19.5, True), (21.825, False)])
+
+    def test_long_lines_highlight_in_bounded_steps_and_punctuation_is_timed(self):
+        text = ' '.join(f'word{i}' for i in range(50)) + ' —'
+        timed = word_timings([dict(start=0.0, end=30.0, text=text)], [], 40)[0]
+        self.assertEqual(len(timed), 51)
+        self.assertEqual(len({w['start'] for w in timed}), MAX_STEPS)
+        self.assertEqual(word_timings([dict(start=1.0, end=2.0, text='— !')], SUNG, 40)[0][0]['heard'], False)
 
 
 class TranscriptTests(unittest.TestCase):
@@ -185,6 +229,21 @@ class ServerLyricsTests(unittest.TestCase):
         self.assertEqual((done['kind'], done['status'], done['resultUrl']), ('transcribe', 'complete', base + '/transcript'))
         self.assertEqual(self.request('GET', base)[2]['cues'], project['cues'], 'transcribing again never replaces saved lyrics')
 
+        # Word timings for the current (possibly unsaved) lines, from the recognized words.
+        status, _, timed = self.request('POST', base + '/word-timings', {'cues': project['cues'][:1]})
+        self.assertEqual(status, 200, timed)
+        self.assertEqual((timed['recognized'], [w['start'] for w in timed['lines'][0]]), (True, [18.5, 18.8, 19.3, 19.5]))
+        for bad in ({}, {'cues': 'x'}, {'cues': [{'start': 2, 'end': 1, 'text': 'x'}]}, {'cues': [], 'extra': 1},
+                    {'cues': [{'start': 0, 'end': 1, 'text': 'x' * 241}]}):
+            self.assertEqual(self.request('POST', base + '/word-timings', bad)[0], 400, bad)
+        # Exports receive the recognized words so the video highlights the same way as the preview.
+        exported = []
+        self.server.export = lambda *args, **options: (exported.append(options), Path(args[2]).write_bytes(b'video'))
+        status, _, started = self.request('POST', base + '/export', {})
+        self.assertEqual(status, 202, started)
+        self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
+        self.assertEqual(exported[0]['words'][0]['text'], 'Lay')
+
         # Portable archives keep their exact format: the transcript stays local and can be recreated.
         status, _, backup = self.request('POST', base + '/archive', {'revision': project['revision']})
         self.assertEqual(status, 202, backup)
@@ -209,6 +268,9 @@ class ServerLyricsTests(unittest.TestCase):
         # A corrupt stored transcript is reported, not trusted.
         (self.helper.root / 'data' / 'projects' / project['id'] / 'transcript.json').write_text('{"model": "x"}')
         self.assertEqual(self.request('GET', base + '/transcript')[0], 409)
+        # Word highlighting still works from estimates, for previews and exports alike.
+        status, _, timed = self.request('POST', base + '/word-timings', {'cues': [{'start': 1, 'end': 3, 'text': 'hello there'}]})
+        self.assertEqual((status, timed['recognized'], [w['heard'] for w in timed['lines'][0]]), (200, False, [False, False]))
 
     def test_transcription_needs_the_model_and_cancels_cleanly(self):
         job = self.helper.upload()

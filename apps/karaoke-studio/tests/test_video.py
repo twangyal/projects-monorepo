@@ -63,6 +63,31 @@ class VideoTests(unittest.TestCase):
         finally:
             os.close(fd)
 
+    def test_word_highlighting_colours_only_the_sung_words(self):
+        project = update_project(self.project, 'Words', [dict(start=0, end=3, text='LEFT RIGHT')], 1)
+        cards = {}
+        for name, sung in [('none', []), ('one', ['LEFT']), ('all', ['LEFT', 'RIGHT']), ('legacy', None)]:
+            output = self.root / f'{name}.png'
+            video.render_card(project, 0, output, FONT, sung=sung)
+            cards[name] = Image.open(output).convert('RGB')
+            self.addCleanup(cards[name].close)
+        accent = (0xe4, 0xb7, 0x7d)
+
+        def accent_columns(image):
+            pixels = image.load()
+            return [x for x in range(1280) if any(pixels[x, y] == accent for y in range(290, 350))]
+        self.assertEqual(accent_columns(cards['none']), [])
+        left, everything = accent_columns(cards['one']), accent_columns(cards['all'])
+        self.assertTrue(left and everything and max(left) < 640 < max(everything))
+        # The whole sung line looks exactly like the previous whole-line highlight.
+        self.assertEqual(ImageChops.difference(cards['all'], cards['legacy']).getbbox(), None)
+        # Unsung text keeps the same position: only colours change.
+        background = Image.new('RGB', (1280, 720), (20, 35, 47))
+
+        def mask(image):
+            return ImageChops.difference(image, background).convert('L').point(lambda value: 255 if value else 0)
+        self.assertEqual(ImageChops.difference(mask(cards['none']), mask(cards['all'])).getbbox(), None)
+
     def test_long_lyric_preview_stays_inside_its_layout_region(self):
         project = update_project(self.project, 'Long lyrics',
                                  [dict(start=0, end=1, text='W' * 240),
@@ -84,17 +109,21 @@ class VideoTests(unittest.TestCase):
         self.assertEqual((streams['video']['width'], streams['video']['height']), (1280, 720))
         self.assertEqual(streams['audio']['codec_name'], 'aac')
         self.assertLessEqual(abs(float(metadata['format']['duration']) - 3), 1 / 24)
-        states = [({**self.project, 'cues': self.project['cues']}, None),
-                  (self.project, 0),
-                  ({**self.project, 'cues': self.project['cues'][1:]}, None),
-                  (self.project, 1), ({**self.project, 'cues': []}, None)]
+        # Without recognized words, FIRST starts with its line (0.5 s) and LINE at 0.827 s; SECOND LINE
+        # starts at 1.75 s with LINE at 2.1 s.
+        states = [({**self.project, 'cues': self.project['cues']}, None, None),
+                  (self.project, 0, ['FIRST']), (self.project, 0, ['FIRST', 'LINE']),
+                  ({**self.project, 'cues': self.project['cues'][1:]}, None, None),
+                  (self.project, 1, ['SECOND']), (self.project, 1, ['SECOND', 'LINE']),
+                  ({**self.project, 'cues': []}, None, None)]
         references = []
-        for index, (project, active) in enumerate(states):
+        for index, (project, active, sung) in enumerate(states):
             card = self.root / f'reference{index}.png'
-            video.render_card(project, active, card, FONT)
+            video.render_card(project, active, card, FONT, sung=sung)
             with Image.open(card) as image:
                 references.append(image.convert('RGB').crop((100, 160, 1180, 620)))
-        for frame, expected in [(11, 0), (12, 1), (29, 1), (30, 2), (41, 2), (42, 3), (59, 3), (60, 4)]:
+        for frame, expected in [(11, 0), (12, 1), (19, 1), (20, 2), (29, 2), (30, 3), (41, 3), (42, 4),
+                                (50, 4), (51, 5), (59, 5), (60, 6)]:
             with self.subTest(frame=frame):
                 decoded = self.root / f'frame{frame}.png'
                 subprocess.run(['ffmpeg', '-v', 'error', '-i', str(output), '-vf',
@@ -103,7 +132,7 @@ class VideoTests(unittest.TestCase):
                     crop = image.convert('RGB').crop((100, 160, 1180, 620))
                     errors = [sum(ImageStat.Stat(ImageChops.difference(crop, ref)).mean) for ref in references]
                 self.assertEqual(errors.index(min(errors)), expected)
-                self.assertLess(errors[expected], 8)
+                self.assertLess(errors[expected], min(error for index, error in enumerate(errors) if index != expected))
         self.assertEqual(list((self.root / 'work').iterdir()), [])
 
     def test_cancellation_and_validation_preserve_existing_export(self):
@@ -211,7 +240,7 @@ class VideoTests(unittest.TestCase):
         output.write_bytes(b'previous export')
         clock = [10.0]
 
-        def slow_card(_project, _active, path, _font):
+        def slow_card(_project, _active, path, _font, **_options):
             path.write_bytes(b'card')
             clock[0] += 601
 
@@ -230,7 +259,7 @@ class VideoTests(unittest.TestCase):
         output = self.root / 'video.mp4'
         output.write_bytes(b'previous export')
 
-        def large_card(_project, _active, path, _font):
+        def large_card(_project, _active, path, _font, **_options):
             path.write_bytes(b'x' * 17)
 
         with patch.object(video, 'MAX_CARD_BYTES', 16, create=True), \
@@ -255,9 +284,11 @@ class VideoTests(unittest.TestCase):
                                        text=f'Line {index}') for index in range(200)], 0)
         clock = [10.0]
         card_count = [0]
+        sung_states = []
 
-        def card(_project, _active, path, _font):
+        def card(_project, active, path, _font, sung=None):
             path.write_text(str(card_count[0]))
+            sung_states.append((active, sung))
             card_count[0] += 1
             clock[0] += 0.1
 
@@ -265,11 +296,12 @@ class VideoTests(unittest.TestCase):
             directory = Path(arguments[arguments.index('-i') + 1]).parent
             frames = sorted(directory.glob('frame*.png'))
             self.assertEqual(len(frames), 7200)
-            self.assertEqual(len(list(directory.glob('card*.png'))), 401)
-            self.assertEqual(len({frame.stat().st_ino for frame in frames}), 401)
-            for frame, state in [(0, 0), (6, 1), (17, 1), (18, 2), (7170, 399), (7199, 400)]:
+            # Each two-word line has one card per sung word; each gap one card.
+            self.assertEqual(len(list(directory.glob('card*.png'))), 601)
+            self.assertEqual(len({frame.stat().st_ino for frame in frames}), 601)
+            for frame, state in [(0, 0), (6, 1), (12, 1), (13, 2), (17, 2), (18, 3), (7170, 598), (7199, 600)]:
                 self.assertEqual(frames[frame].read_text(), str(state))
-            self.assertAlmostEqual(kwargs['timeout'], 559.9, places=6)
+            self.assertAlmostEqual(kwargs['timeout'], 539.9, places=6)
             self.assertEqual(kwargs['max_output_bytes'], 128 * 1024 * 1024)
             output.write_bytes(b'encoded fixture')
 
@@ -278,7 +310,8 @@ class VideoTests(unittest.TestCase):
                 patch.object(video, '_run_ffmpeg', side_effect=encoded):
             video.export_video(project, self.backing, self.root / 'video.mp4',
                                self.root / 'work', FONT, threading.Event())
-        self.assertEqual(card_count[0], 401)
+        self.assertEqual(card_count[0], 601)
+        self.assertEqual(sung_states[1:3], [(0, ['Line']), (0, ['Line', '0'])])
         self.assertEqual(list((self.root / 'work').iterdir()), [])
 
     def test_ffmpeg_cancel_timeout_and_output_limits_kill_and_reap(self):
