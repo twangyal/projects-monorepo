@@ -1,6 +1,7 @@
 import {validateBodyMeasurements,type BodyMeasurements} from './body-fitting.ts';
 import {validateGrading,gradedSizes,type Grading} from './grading.ts';
 import {validateConstruction,type SkirtDraft} from './construction.ts';
+import {validateProduct,type Product as ProductDesign} from './product.ts';
 export interface Point { x: number; y: number }
 export interface Stroke { id: string; color: string; width: number; points: Point[] }
 export interface Garment {
@@ -10,7 +11,7 @@ export interface Garment {
 export interface Placement { x: number; y: number; width: number; height: number; rotation: number; opacity: number }
 export interface Photo { dataUrl: string; width: number; height: number; name: string }
 export interface Project {
-  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading; bodyMeasurements?:BodyMeasurements;
+  schemaVersion: 1; title: string; note: string; garment: Garment; construction?: SkirtDraft; grading?: Grading; bodyMeasurements?:BodyMeasurements; product?: ProductDesign;
   strokes: Stroke[]; placement: Placement; photo: Photo | null;
 }
 
@@ -148,7 +149,11 @@ export function validateProject(value: unknown): Project {
   const construction = Object.hasOwn(project, 'construction') ? validateConstruction(project.construction) : undefined;
   const grading = Object.hasOwn(project, 'grading') ? validateGrading(project.grading) : undefined;
   if (grading) { if (!construction) throw new Error('Grading requires a measured construction.'); gradedSizes(construction, grading); }
-  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}) };
+  const product = Object.hasOwn(project, 'product') ? validateProduct(project.product) : undefined;
+  const admitted: Project = { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(product ? {product} : {}) };
+  // Admission, history and autosave must never accept a graph that its canonical backup cannot reopen.
+  boundedJson(JSON.stringify(admitted, null, 2));
+  return admitted;
 }
 
 function boundedJson(text: string): string {

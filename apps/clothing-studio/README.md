@@ -2,7 +2,7 @@
 
 **Product direction (2026-10-08): ACTIVE.** The destination is a professional garment-design environment with linked 2D patterns, editable 3D garments, credible cloth simulation and personalized fitting. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
-A local T-shirt concept workspace: adjust a silhouette, choose colors and visual textures, sketch on the garment, place it over a photo, and export your idea. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
+A local garment design workspace. **Style a garment in 3D**: start from a template, drag fabrics, colors and prints onto each part of a real-time 3D tee, place artwork, see the linked pattern pieces, and export renders or a 3D model. The concept tee sketchbook, photo overlay and measured skirt construction are still here. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
 
 The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape, depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
 
@@ -23,6 +23,166 @@ npm run preview
 ```
 
 The built `dist/` directory can be served by a static web server. Use a current browser with IndexedDB, SVG, Canvas and `createImageBitmap`; Chromium is automated below. Photo decoding can vary between browsers. No external assets, telemetry, or network requests are needed by the production app. The development server uses its local hot-reload connection.
+
+## Style a garment in 3D
+
+**3D product design** follows the approachable workflow of web-based product design tools such as Fabra: start from a product or template, style it part by part in real-time 3D, and export. See the [research and roadmap](docs/2026-10-13-fabra-research.md).
+
+1. **Choose a template**: **Blank tee**, **Breton stripe**, **Ringer tee** or **Garden print**. Templates are remixable starting points. Replacing a design asks first and can be undone.
+2. **Style each part.** The garment's parts are the front body, back body, left and right sleeves and the neck rib.
+   - Drag a fabric, color or print from the library onto a part of the 3D garment, or select a part (click it, use the part buttons, or click its pattern piece) and click a library item.
+   - The inspector sets the selected part's fabric, color, print, print color, **Repeat** (standard, half drop, half brick or mirror) and **Repeat size**.
+   - **Use this style on every part** copies the style to all parts; the neck rib keeps its rib knit.
+3. **The fabric library** has 8 fabrics with weight and composition, from cotton jersey (180 gsm) to denim twill (340 gsm). Each has a procedural knit or weave structure. Prints come in 6 motifs. Fabric structure and prints are drawn at their real size in centimetres, so a 2 cm stripe is 2 cm on the garment and on the pattern.
+4. **Measurements**: chest, body length, sleeve length and crew or V neckline. They reshape the 3D garment and the **linked pattern pieces**. Those are finished flat pieces, without seam allowance, dimensioned in cm and filled with the same fabrics.
+5. **Artwork**: upload a PNG (transparency kept), JPEG or WebP for the front or back. Set its width and position in cm from the centre and below the shoulder.
+6. **View and export**: orbit by dragging, or use **Front**, **Back**, **Left** and **Right**. **Export front/back render PNG** saves a render, and **Export 3D model (GLB)** saves the styled garment, with its named parts and artwork, for other 3D tools.
+
+Every change is one Undo/Redo step and is saved with the project and its backups. Projects without a 3D design remain valid.
+
+Uploaded motifs and artwork are inspected before decoding; saved assets must have bounded containers and matching encoded, declared and decoded dimensions. Tiny logos retain their size. Invalid backup/restore assets preserve current work and protect the saved record. See [raster admission verification](docs/2026-10-13-product-raster-247.md).
+
+Unapplied product measurements, fit, artwork placement, tech-pack details and costing stay in their fields across part selection, styling and image redraws. **Apply** commits its group; **Discard all product drafts** resets every pending product field without editing the garment. New template/project, backup replacement and Undo/Redo require finishing these drafts first. Artwork side and fit handles require finishing their respective drafts. Costing's material-price list refreshes after Apply/Discard. Drafts are session-only and not included in autosave or exports; commit them before reloading. [Draft verification](docs/2026-10-13-product-drafts-247.md) records the boundaries.
+
+Printable tech-pack export captures one committed design, date and filename. A separate render scene waits for its exact image assets and produces both images; editing remains available while its export button is busy. Uploaded artwork is visible on the outward-facing styling surfaces. [Snapshot verification](docs/2026-10-13-techpack-snapshot-247.md) records actual render and lifecycle checks.
+
+
+How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here, and it is not worn on a body. For fabric drape on a body, see the measured skirt's simulation below. Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
+
+See [3D product editor verification](docs/2026-10-13-product-editor.md).
+
+### Automatic tech pack (#227)
+
+Below the 3D editor, **Factory-ready tech pack** is generated from the design and updates with every change.
+
+- **Details**: **Style number**, **Season** and **Sample size** (XS–XL). Use **Apply details** to save them with the design as one undoable edit.
+- **Bill of materials**: one line per distinct fabric, color and print. Each line gives the composition, weight, the parts it covers, and consumption. Consumption is estimated from the pattern-piece areas plus 15% for seam allowance and cutting waste, in m² and in linear metres at 150 cm wide. Then come trims (thread, neck label, care label) and each artwork, with its print size and placement.
+- **Points of measure A–K**: chest, body length, sleeve length, armhole depth, shoulder, neck width, front and back neck drop, hem, sleeve opening and rib height.
+  - They come from the same dimensions as the 3D garment and pattern pieces.
+  - Each has a tolerance and is graded XS–XL around the sample size.
+  - A measurement diagram labels each point.
+- **Construction**: seam-by-seam operations, with a mitred V or a shoulder-joined crew rib, and artwork application.
+- **Download tech pack (Excel)** saves an `.xlsx` workbook with Cover, Bill of materials, Points of measure and Construction sheets. Measurements are numeric cells.
+- **Download printable tech pack** saves a self-contained HTML document with front and back renders, the tables and the diagram. Open it in a browser and print, or save it as a PDF.
+
+Consumption, grading and construction are standard starting values for a basic tee. Confirm them with a marker and a fit sample. See [tech pack verification](docs/2026-10-13-tech-pack.md).
+
+### Colorways and range plan (#230)
+
+Below the tech pack, **Colorways and costing** turns one garment into a small range.
+
+- **Save as colorway** stores the current part styling under a name (up to 8). Each colorway card shows its own front render. **Show in editor** restyles the garment with it, **Update** replaces it with the current styling, and **Delete** removes it. Every change is one undoable, saved edit. Renders are made in a separate scene, so the garment you are editing never changes on screen.
+- **Units for …** sets the planned quantity of each colorway.
+- **Costing inputs**: the currency (USD, EUR, GBP), retail price, make (CMT) per unit, trims per unit, print cost per placed artwork, and a price per metre of 150 cm fabric for each fabric in use. The defaults are indicative placeholders; replace them with supplier quotes, then **Apply costing**.
+- The **range plan** lists each colorway with these figures, plus totals:
+  - fabric cost (each fabric's estimated metres, from the same pattern-area consumption as the tech pack's bill of materials, times its price);
+  - trims, print and make;
+  - unit cost, retail and margin;
+  - units, total cost and revenue.
+
+  Until a colorway is saved, it shows the current design. Totals multiply the unit cost shown, rounded to the cent.
+- **Download range plan (Excel)** saves the plan, the fabric costing per colorway, and notes on the estimates.
+
+See [colorway and range plan verification](docs/2026-10-13-colorways-range-plan.md).
+
+### Sweatshirts and hoodies (#234)
+
+Besides the T-shirt, two base products ship with templates:
+
+- the **Crew sweatshirt**: French terry with rib neck, cuffs and hem band;
+- the **Pullover hoodie**: a hood, a kangaroo pocket, rib cuffs and hem band.
+
+Each base has its own parts:
+
+| Base | Parts |
+| --- | --- |
+| Sweatshirt | front, back, sleeves, neck rib, left and right cuffs, hem band |
+| Hoodie | front, back, sleeves, cuffs, hem band, hood, pocket |
+
+Each part takes fabrics, colors, prints and uploaded motifs like any other, and colorways, costing and the tech pack follow it.
+
+- **3D.** Long sleeves hang at a relaxed angle and taper into 6 cm rib cuffs. A 6 cm hem band finishes the body, and both are split from the same seam-joined shell, so the seams stay exact. The hood is a shell lofted from the sides and back of the neck opening to a closed crown, leaving the face open. The pocket is a patch slightly proud of the front body, above the hem band.
+- **Pattern.** The body and sleeves end above their bands. The rib cuffs and hem band are cut on the fold, about 15% shorter than the edge they finish. The hood side panel is cut 2, and the pocket is a trapezoid.
+- **Tech pack.** Points of measure add cuff height and hem band height, plus hood height, hood width and pocket width for the hoodie. Construction lists cuffs, hem band, hood and pocket instead of turned hems and a neck rib where they apply.
+- **Use this style on every part** keeps all rib trims in rib knit. A hoodie has no V-neck option.
+
+These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
+
+### Fit: edit points of measure (#243)
+
+Open **Fit** under the measurements to set a top's points of measure directly at the sample size:
+- shoulder width;
+- neck width;
+- front neck drop;
+- armhole depth;
+- hem width (½);
+- sleeve opening (½).
+
+**Apply fit** updates the linked pattern pieces, the 3D garment, the DXF and SVG export, consumption and the tech pack together. Only values you change are stored; the others keep scaling with the chest, and **Back to proportional** clears them.
+
+**Edit on the pattern.** The front pattern piece has handles on its shoulder point, neck point, front neck, underarm and hem corner. Drag one, or focus it and use the arrow keys (0.5 cm steps), to change the matching measurement. Each change is one undoable edit, and a value that would not make a garment is refused and snaps back. The handles are keyboard sliders with their measurement as the value.
+
+- **Shape.** The side seams run straight from the underarm to the hem width, so a narrower hem tapers the body and a wider one makes an A-line. A flared piece is laid out from x = 0 like the others. On sweatshirts and hoodies the hem band follows the hem width.
+- **Sleeves.** The sleeve cap follows the armhole depth, and the sleeve opening sets the cuff.
+- **Checks.** Validation keeps a garment:
+  - the neck at least 8 cm narrower than the shoulders;
+  - the shoulders at most 8 cm past the chest on each side;
+  - the front neck above the underarm;
+  - the armhole at least 12 cm above the hem;
+  - the hem between 0.7 and 1.6 times the chest width;
+  - the sleeve opening narrower than the armhole.
+- **Consistency.** The pattern's shoulder point now sits where the 3D shell and the tech pack's shoulder width put it. Before #243 it sat at the panel edge.
+
+### Shorts and trousers (#239)
+
+The **Pull-on shorts** and **Straight trousers** templates use the trousers base: pull-on, with an elasticated waistband. Their parts are the front legs, back legs and waistband, each styled like any other part.
+
+- **Measurements.** Waist (relaxed), hip, front rise, inseam and leg opening replace chest, length and sleeve. The waistband has to pull on over the hips, so the hip must be at least the waist; the leg opening must fit the thigh. **Leg: Shorts, Cropped or Full length** set the inseam to 18, 58 or 78 cm.
+- **3D.** Two legs are joined at the side seams and inseams and meet at the crotch. They are open at the hems, and the waistband sits on the open waist. The view re-frames when the garment's height changes.
+- **Pattern.** The front and back leg panels are each cut as a mirrored pair. The back has the longer crotch extension and rises 3 cm higher at the centre back. The waistband is cut on the fold, long enough to pass the hips. DXF and SVG export include them.
+- **Tech pack.** Points of measure:
+  - waist, relaxed and extended;
+  - hip;
+  - front and back rise, measured along the centre seams;
+  - thigh;
+  - inseam and outseam;
+  - leg opening;
+  - waistband height.
+
+  The bill of materials adds the waistband elastic (relaxed waist less 4 cm) and labels. Construction covers inseams, side seams, crotch seam, elasticated waistband and leg hems, and the diagram shows the leg panels.
+- **Artwork placement** is for tops for now.
+
+### Modules (#237)
+
+The **Modules** controls in the inspector switch parts of a base product. Every view follows the change: the 3D garment, the linked pattern pieces, the DXF and SVG pattern, the tech pack, consumption and costing. Each switch is one undoable edit and is saved with the project.
+
+- **Hem: Straight or Curved shirttail.** A curved hem rises 4 cm at the side seams; body length is still measured at the centre. The tech pack adds side length (S) and hem curve drop (T), and the hem instruction becomes a 1.5 cm turn-back that follows the curve. Sweatshirts and hoodies have a rib hem band, so their hem stays straight.
+- **Add a chest pocket.** A patch pocket goes on the wearer's left chest of a tee or sweatshirt. It is a part like any other: it starts in the front body's style (in every colorway too) and can then take its own fabric, colour and print. Its pattern piece includes a 2.5 cm facing at the top. The tech pack adds pocket width, height and placement (P, Q, R), drawn on the measurement diagram, plus a construction step. A hoodie has its kangaroo pocket instead.
+- **Sleeve: Short, Elbow or Long** set the sleeve length to 21, 35 or 60 cm. The measurement stays editable.
+
+Projects saved before #237 open with a straight hem and no chest pocket.
+
+### Pattern export (#235)
+
+Under the linked pattern pieces:
+
+- **Download pattern (DXF)** saves every piece for cutting software and plotters. It is AutoCAD R12 ASCII, in millimetres with y up, on these layers:
+  - `CUT`: the cutting line, with a 1 cm seam allowance;
+  - `SEW`: the finished sewing line;
+  - `GRAIN`: the grainline;
+  - `TEXT`: the piece name, product, base, sample size, cut count (marked "(mirror)" for paired pieces) and fabric.
+- **Download printable pattern (SVG, 1:1)** saves the same pieces in centimetres: a solid cutting line, a dashed sewing line, grainline arrows, labels, and a 10 cm square to confirm the print scale.
+
+The seam allowance is mitred at corners and bevelled at very sharp ones. DXF text is plain ASCII; other characters are written as `\U+XXXX` escapes, which CAD readers decode. An independent DXF reader, ezdxf 1.3.5, opened a hoodie export with 0 errors: 9 closed cutting and 9 closed sewing polylines, the front cutting line 601.5 × 682.3 mm, and "Café" decoded correctly. The pieces are still the simplified styling patterns described above, not graded production patterns.
+
+### Your own repeat prints (#231)
+
+**Upload your own motif**, under **Prints** in the library, turns a PNG, JPEG or WebP image into a repeat print.
+
+- The image is scaled to at most 768 px and 600 KB, and transparency is kept. The motif is applied to the selected part and joins the library, where you can click or drag it onto any part, including in colorways.
+- It repeats with the same **Repeat** layouts (standard, half drop, half brick, mirror) and **Repeat size** in cm as library prints. It appears on the 3D garment, the linked pattern pieces and colorway renders. Each repeat cell holds the motif at 85% of the cell, in proportion.
+- Uploaded motifs keep their own colours, so **Print color** is disabled for them. The tech pack lists them as printed from supplied artwork.
+- A design holds up to 6 motifs. **×** removes one and clears every print that used it, including in colorways, as one undoable edit.
 
 ## Create a concept
 
@@ -146,6 +306,35 @@ The grading milestone passes the complete52unit/62native-browser local gate with
 Milestone #182 adds saved cutting allowances. The complete local gate passes 55 unit and 65 production Chromium cases plus lint/typecheck/build; see [cutting allowance evidence](docs/2026-10-11-cutting-allowances/README.md). Physical toile evaluation and the broader professional garment-design vision remain ACTIVE.
 
 Milestone #183 adds home-printer A4/US Letter base-pattern tiling. Native checks verify the real downloaded HTML, physical SVG calibration and actual Chromium PDF page dimensions/counts, with complete artwork/history and raw drafts retained. See [tiled print evidence](docs/2026-10-11-tiled-print/README.md). Physical printer output and toile acceptance remain untested.
+
+## Fabric drape simulation (#219)
+
+**Fabric drape simulation** shows how the applied skirt actually hangs.
+
+1. Choose a **Fabric**. The choice is saved with the skirt as one undoable edit and kept when you change the pattern.
+2. **Simulate drape** runs a cloth solver in a background worker, taking about 2–3 s in desktop Chromium. **Cancel simulation** stops it without changing anything.
+3. The shaded view shows the settled folds. Rotate it with the buttons or the arrow keys, optionally showing the body proxy.
+4. **Export draped OBJ** writes the settled surface in centimetres, with front and back panel groups.
+
+How it works:
+- **Mesh.** Both panels are meshed directly from their flat annular-sector patterns, 24 rows down the slant and 48 columns per panel. Every rest length is therefore a real fabric distance, and the assembled cone starts unstretched.
+- **Solver.** An extended position-based (XPBD) solver settles the cloth under gravity for 4 simulated seconds. It uses stretch, shear and two-segment bending constraints, and long-range warp attachments for woven fabric that barely stretches. The waist row is held at the waistline.
+- **Body.** The fabric is kept outside a body surface of revolution: your entered waist, hip and waist-to-hip depth, constant below the hip (legs together). With no profile saved, it assumes a waist 2 cm smaller than the garment and a hip 20 cm larger, and says so.
+- **Results.** The panel reports:
+  - folds around the hem;
+  - hem flare relative to the rigid cone;
+  - hem drop;
+  - largest fabric stretch;
+  - closest approach to the body.
+
+| Fabric preset | Weight | Character |
+| --- | --- | --- |
+| Chiffon | 50 g/m² | very low bending stiffness |
+| Cotton poplin | 120 g/m² | |
+| Linen | 190 g/m² | |
+| Denim | 380 g/m² | very stiff |
+
+These are **approximate typical values with relative stiffnesses, not measured fabric data** (professional tools calibrate from fabric test instruments). The simulation has no friction, wind, motion, collisions of the fabric with itself, or thickness beyond a 4 mm contact offset. On the same skirt, softer fabric consistently forms more and narrower folds and hangs closer to the body; see [drape verification](docs/2026-10-13-drape.md). Validate drape and fit with a physical toile.
 
 ## Entered body measurement comparison
 
