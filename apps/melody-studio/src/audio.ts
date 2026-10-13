@@ -169,6 +169,23 @@ export function transcribe(samples: Float32Array, sampleRate: number, tempo: num
 
 /** Deterministic local synthesis, with short release tails and peak-limited mixing. */
 export function renderComposition(project: Composition, sampleRate = 22050): Float32Array {
+  const result = renderDry(project, sampleRate);
+  limitPeak([result]);
+  return result;
+}
+
+/** Scale every channel together so the loudest sample is at most 0.95. */
+export function limitPeak(channels: Float32Array[]): void {
+  let peak = 0;
+  for (const channel of channels) for (const sample of channel) peak = Math.max(peak, Math.abs(sample));
+  if (peak > 0.95) for (const channel of channels) for (let i = 0; i < channel.length; i++) channel[i] *= 0.95 / peak;
+}
+
+/**
+ * The unlimited mono sum of audible tracks (or only `onlyTrack`). Its length always covers the whole
+ * composition's notes, echoes and releases, plus `tailSeconds`, so per-track renders line up.
+ */
+export function renderDry(project: Composition, sampleRate = 22050, onlyTrack?: string, tailSeconds = 0): Float32Array {
   checkSampleRate(sampleRate);
   checkTempo(project.tempo);
   const secondsPerBeat = 60 / project.tempo;
@@ -183,12 +200,12 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
     const echo = track.echo === undefined ? undefined : validateEcho(track.echo);
     for (const note of track.notes) endSeconds = Math.max(endSeconds, (note.start + note.duration + (echo ? echo.beats * echo.repeats : 0)) * secondsPerBeat + settings.release);
   }
-  const frames = Math.ceil(endSeconds * sampleRate);
+  const frames = Math.ceil((endSeconds + tailSeconds) * sampleRate);
   if (!Number.isSafeInteger(frames) || frames > MAX_RENDER_FRAMES) throw new RangeError('Rendered audio exceeds the frame budget. Lower the sample rate or shorten the composition.');
   const result = new Float32Array(frames);
   const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve; gain: number }>();
   for (const track of project.tracks) {
-    if (track.muted || track.volume === 0) continue;
+    if (track.muted || track.volume === 0 || (onlyTrack !== undefined && track.id !== onlyTrack)) continue;
     const envelope = track.envelope === undefined ? DEFAULT_ENVELOPE : validateEnvelope(track.envelope);
     const filter = track.filter === undefined ? undefined : validateFilter(track.filter);
     const echo = track.echo === undefined ? undefined : validateEcho(track.echo);
@@ -249,9 +266,6 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
       }
     }
   }
-  let peak = 0;
-  for (const sample of result) peak = Math.max(peak, Math.abs(sample));
-  if (peak > 0.95) for (let i = 0; i < result.length; i++) result[i] *= 0.95 / peak;
   return result;
 }
 

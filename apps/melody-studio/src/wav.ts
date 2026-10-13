@@ -1,3 +1,18 @@
+/** 16-bit PCM WAV with one (mono) or two (interleaved stereo) channels of equal length. */
+export function encodeWavChannels(channels: Float32Array[], sampleRate: number): Uint8Array {
+  if (channels.length === 1) return encodeWav(channels[0]!, sampleRate);
+  if (channels.length !== 2 || channels.some(channel => !(channel instanceof Float32Array)) || channels[0]!.length !== channels[1]!.length) throw new Error('Stereo WAV needs two equal-length Float32Array channels.');
+  const [left, right] = channels as [Float32Array, Float32Array];
+  const interleaved = new Float32Array(left.length * 2);
+  for (let i = 0; i < left.length; i++) { interleaved[i * 2] = left[i]!; interleaved[i * 2 + 1] = right[i]!; }
+  const bytes = encodeWav(interleaved, sampleRate);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(22, 2, true); // channels
+  view.setUint32(28, sampleRate * 4, true); // byte rate
+  view.setUint16(32, 4, true); // block align
+  return bytes;
+}
+
 export function encodeWav(samples: Float32Array, sampleRate: number): Uint8Array {
   if (!Number.isInteger(sampleRate) || sampleRate < 1 || sampleRate > 384_000) {
     throw new Error('WAV sample rate must be an integer between 1 and 384000.');

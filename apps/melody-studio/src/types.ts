@@ -22,11 +22,18 @@ export interface Track {
   echo?: SoundEcho;
   volumeRamp?: VolumeRamp;
   volumeCurve?: VolumeCurve;
+  /** -1 (left) to +1 (right); absent means centred. */
+  pan?: number;
+  /** 0–1 share of the track sent to the shared reverb bus; absent means none. */
+  reverbSend?: number;
   notes: Note[];
 }
+export interface ReverbBus { size: number; level: number }
 export interface Composition {
   version: 1;
   title: string;
   tempo: number;
   tracks: Track[];
+  /** Shared reverb bus settings; absent means the defaults. */
+  reverb?: ReverbBus;
 }

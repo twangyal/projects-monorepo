@@ -66,7 +66,7 @@ Drafts remain separate from playback and files until Apply. Blank, nonfinite and
 
 Complete projects, the saved composition library, duplication, Undo/Redo and reload preserve applied echoes. Shared synthesis includes echoes in playback, solo, backing, edited-note comparison and WAV/stem exports. Whole-song and aligned track WAV include the complete echo/release tail; sections and reference comparison keep their existing exclusive window bounds. MIDI does not include custom effects. Old projects omit echo and keep their original PCM. Echo tails can extend beyond the 512-beat note timeline. The 40-million-frame synthesis allocation guard remains in force: an excessive render refuses instead of truncating the tail; shorten the song or use a lower render sample rate in a programmatic renderer.
 
-This is finite mono echo, not reverb, stereo delay, live-input processing, mixer routing or musician-quality acceptance. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
+This is finite echo per track. A shared stereo reverb bus is available under [Mix in stereo](#mix-in-stereo); stereo delay, live-input processing, fuller mixer routing and musician-quality acceptance are still to come. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
 
 ### Fade a track over song time
 
@@ -95,6 +95,21 @@ Choose **Export MIDI with volume automation** to carry the combined committed vo
 Expression is sampled at1/16beat and rounded to0–127; rounded curve/ramp breakpoint ticks and the song endpoint are included. For maximum graphs the grid automatically becomes1/8or1/4beat to keep the complete file under the existing32,768event ceiling. Repeated values are omitted. Timing uses480ticks/beat, so sub-tick features cannot be represented exactly. Muted tracks contain no new expression events. All events stop at the original MIDI note-timeline end; custom synth envelopes, filter, echo and their tails are not represented.
 
 External instruments may ignore CC11 or map it differently; this is not PCM-equivalent sound or continuous automation. Melody’s current MIDI importer deliberately reports unsupported controllers and excludes affected lanes; it does **not** restore these expression curves. Use a complete project backup for exact Melody recovery. The standard controller mapping is documented by [the MIDI Association](https://midi.org/midi-1-0-control-change-messages), verified2026-10-12. This export milestone ([#198](https://github.com/twangyal/projects-monorepo/issues/198)) advances the ACTIVE DAW workflow without claiming external-instrument acceptance.
+
+## Mix in stereo
+
+Each track's **Stereo mix** controls place it in the stereo field and send it to a shared reverb.
+
+- **Pan** runs from 100% left to 100% right. It uses a balance law: a centred track keeps its full level in both speakers, and panning only turns down the opposite side.
+- **Reverb send** sets how much of the track feeds the song's single **reverb bus**. The bus has **Reverb size** (longer, denser tail) and **Reverb return** (how loud the reverb comes back). Its settings are shared by all tracks and stored with the song.
+
+The reverb is a deterministic algorithmic stereo reverb (eight damped combs and four allpasses per channel, Freeverb-style), with left and right decorrelated. When any track sends to it, the song gets 0.75–4 seconds of tail after the last sound. The whole mix is peak-limited across both channels together.
+
+As soon as an audible track is panned or sends to the reverb, playback, section play and loop, **Solo track**, **Export WAV** and **Export track WAV** all become 22,050 Hz 16-bit **stereo**. A stem keeps its own pan and its share of the reverb. Songs with every track centred and no sends render exactly as before, sample for sample, and still export mono WAV.
+
+Each slider release is one Undo/Redo edit and is kept in autosave, saved copies and project files. Moving pan back to centre, or the send to 0%, removes the setting. **Export MIDI** adds CC10 (pan) and CC91 (reverb send) only for tracks where they are set; external instruments decide how to use them.
+
+This is the first mixing stage. Per-track insert chains, further buses and sends, stereo delay, effect automation and a mixer view remain part of the ACTIVE DAW destination. See [stereo mix verification](docs/2026-10-13-stereo-mix.md).
 
 ## Audition an arrangement section
 

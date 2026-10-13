@@ -40,7 +40,8 @@ function assetId(value: unknown): string {
 
 /** Check object boundaries before the legacy validator can read any getter. */
 function composition(value: unknown, normalize: boolean): Composition {
-  const raw = record(value, ['version', 'title', 'tempo', 'tracks'], 'Composition');
+  const hasReverb = value !== null && typeof value === 'object' && Object.hasOwn(value, 'reverb');
+  const raw = record(value, ['version', 'title', 'tempo', 'tracks', ...(hasReverb ? ['reverb'] : [])], 'Composition');
   const tracks = array(raw.tracks, 8, 'Tracks');
   for (const item of tracks) {
     const hasEnvelope = item !== null && typeof item === 'object' && Object.hasOwn(item, 'envelope');
@@ -48,7 +49,9 @@ function composition(value: unknown, normalize: boolean): Composition {
     const hasFilter = item !== null && typeof item === 'object' && Object.hasOwn(item, 'filter');
     const hasVolumeCurve = item !== null && typeof item === 'object' && Object.hasOwn(item, 'volumeCurve');
     const hasVolumeRamp = item !== null && typeof item === 'object' && Object.hasOwn(item, 'volumeRamp');
-    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasEnvelope ? ['envelope'] : []), ...(hasFilter ? ['filter'] : []), ...(hasEcho ? ['echo'] : []), ...(hasVolumeRamp ? ['volumeRamp'] : []), ...(hasVolumeCurve ? ['volumeCurve'] : [])], 'Track');
+    const hasPan = item !== null && typeof item === 'object' && Object.hasOwn(item, 'pan');
+    const hasSend = item !== null && typeof item === 'object' && Object.hasOwn(item, 'reverbSend');
+    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasEnvelope ? ['envelope'] : []), ...(hasFilter ? ['filter'] : []), ...(hasEcho ? ['echo'] : []), ...(hasVolumeRamp ? ['volumeRamp'] : []), ...(hasVolumeCurve ? ['volumeCurve'] : []), ...(hasPan ? ['pan'] : []), ...(hasSend ? ['reverbSend'] : [])], 'Track');
     for (const note of array(track.notes, 256, 'Notes')) record(note, ['id', 'pitch', 'start', 'duration', 'velocity'], 'Note');
   }
   const result = validateComposition(value);
