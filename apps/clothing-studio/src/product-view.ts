@@ -2,7 +2,8 @@
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
-  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_NAMES, RIB_PARTS, TEMPLATES, partsOf,
+  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
+  chestPocketAllowed, hemAllowed, optionsOf, withOptions,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
@@ -51,6 +52,11 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="${LIMITS.sleeve[0]}" max="${LIMITS.sleeve[1]}" step="1"></label>
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
       <button id="apply-measurements">Apply measurements</button>
+      <p class="eyebrow">MODULES</p>
+      <div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
+        <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label></div>
+      <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div>
+      <p id="module-help" class="fine-print"></p>
       <p class="eyebrow">ARTWORK</p>
       <label class="field">Artwork side<select id="artwork-side"><option value="front">Front</option><option value="back">Back</option></select></label>
       <label class="button quiet file-button">Upload artwork (PNG, JPEG, WebP)<input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
@@ -273,6 +279,25 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   }, 'Artwork removed.'));
   $('artwork-side').addEventListener('change', () => render(options.current(), true));
 
+  // Modules: each switch is one undoable edit, and every view follows it.
+  const setModules = (change: (current: ReturnType<typeof optionsOf>) => ReturnType<typeof optionsOf>, text: string) => {
+    const current = product() ?? template('blank');
+    try { options.commit({ ...options.current(), product: validateProduct(withOptions(current, change(optionsOf(current)))) }); options.notice(text); }
+    catch (error) { options.notice(error instanceof Error ? error.message : 'That module is not available.', true); render(options.current()); }
+  };
+  $('product-hem').addEventListener('change', () => {
+    const hem = ($('product-hem') as HTMLSelectElement).value as (typeof HEMS)[number];
+    setModules(current => ({ ...current, hem }), `${HEM_NAMES[hem]} hem: the 3D garment, pattern pieces and tech pack follow it.`);
+  });
+  $('product-chest-pocket').addEventListener('change', () => {
+    const on = ($('product-chest-pocket') as HTMLInputElement).checked;
+    if (on) selected = 'chestPocket';
+    setModules(current => ({ ...current, chestPocket: on }), on ? 'Chest pocket added in the front body’s style. Style it like any other part.' : 'Chest pocket removed. You can undo this.');
+  });
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-sleeve-preset]')) button.addEventListener('click', () => update(draft => {
+    draft.measurements.sleeve = Number(button.dataset.sleevePreset);
+  }, `${button.getAttribute('aria-label')}: the sleeves, pattern and tech pack follow it.`));
+
   // Exports.
   const exporting = async (action: () => Promise<void>) => { try { await action(); } catch (error) { options.notice(error instanceof Error ? error.message : 'Export failed.', true); } };
   $('product-png-front').addEventListener('click', () => void exporting(async () => { const s = await ready; if (!s) throw new Error('The 3D view is unavailable.'); options.download(await s.png('front'), '-front.png'); }));
@@ -341,7 +366,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const thumbnails = new Map<string, string>();
   let thumbnailRun = 0;
   const lookOf = (design: Product, parts: Product['parts']) =>
-    JSON.stringify([design.measurements, design.neckline, design.artwork, parts, (design.motifs ?? []).map(m => [m.id, m.dataUrl.length, !!motifImage(m.dataUrl)])]);
+    JSON.stringify([design.measurements, design.neckline, optionsOf(design), design.artwork, parts, (design.motifs ?? []).map(m => [m.id, m.dataUrl.length, !!motifImage(m.dataUrl)])]);
   let thumbnailScene: Promise<import('./product-3d.ts').ProductScene | null> | null = null;
   async function refreshThumbnails(design: Product) {
     const run = ++thumbnailRun;
@@ -434,6 +459,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=product-part]')) radio.checked = radio.value === selected;
     // A hoodie has a hood instead of a V-neck.
     ($('product-neckline') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=v]')!.disabled = design.base === 'hoodie';
+    const modules = optionsOf(design), pocket = $('product-chest-pocket') as HTMLInputElement;
+    ($('product-hem') as HTMLSelectElement).value = modules.hem;
+    ($('product-hem') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=curved]')!.disabled = !hemAllowed(design.base, 'curved');
+    pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
+    $('module-help').textContent = design.base === 'tee' ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
+      : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
     renderMotifs(design);
     ($('part-print') as HTMLSelectElement).value = style.print?.motif ?? '';

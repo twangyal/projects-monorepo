@@ -44,6 +44,10 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .product-inspector { display: grid; gap: 8px; }
 .product-inspector h4 { margin: 0; font-size: 18px; }
 .measure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.check-field { display: flex; align-items: flex-end; gap: 6px; font-size: .71rem; color: #7a8372; font-weight: 550; padding-bottom: .55rem; }
+.check-field input { width: auto !important; }
+.sleeve-presets { align-items: center; gap: 6px; }
+.sleeve-presets button { padding: 6px 10px; }
 .print-options { display: grid; gap: 6px; padding: 8px; border-radius: 8px; background: #f7f1e7; }
 .pattern-strip { display: grid; gap: 8px; }
 #product-pieces { overflow-x: auto; padding: 8px; background: #fff; border: 1px solid #e3d9ca; border-radius: 10px; }

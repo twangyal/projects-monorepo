@@ -101,6 +101,16 @@ Each part takes fabrics, colors, prints and uploaded motifs like any other, and 
 
 These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
 
+### Modules (#237)
+
+The **Modules** controls in the inspector switch parts of a base product. Every view follows the change: the 3D garment, the linked pattern pieces, the DXF and SVG pattern, the tech pack, consumption and costing. Each switch is one undoable edit and is saved with the project.
+
+- **Hem: Straight or Curved shirttail.** A curved hem rises 4 cm at the side seams; body length is still measured at the centre. The tech pack adds side length (S) and hem curve drop (T), and the hem instruction becomes a 1.5 cm turn-back that follows the curve. Sweatshirts and hoodies have a rib hem band, so their hem stays straight.
+- **Add a chest pocket.** A patch pocket goes on the wearer's left chest of a tee or sweatshirt. It is a part like any other: it starts in the front body's style (in every colorway too) and can then take its own fabric, colour and print. Its pattern piece includes a 2.5 cm facing at the top. The tech pack adds pocket width, height and placement (P, Q, R), drawn on the measurement diagram, plus a construction step. A hoodie has its kangaroo pocket instead.
+- **Sleeve: Short, Elbow or Long** set the sleeve length to 21, 35 or 60 cm. The measurement stays editable.
+
+Projects saved before #237 open with a straight hem and no chest pocket.
+
 ### Pattern export (#235)
 
 Under the linked pattern pieces:

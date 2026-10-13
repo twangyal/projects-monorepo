@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { BASE_NAMES, material, printName, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, POCKET_FOLD_CM, material, optionsOf, printName, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -31,7 +31,7 @@ export function fabricUsage(product: Product): FabricUsage[] {
 
 export function buildTechPack(product: Product, date: string): TechPack {
   const spec = product.spec ?? { styleNumber: '', season: '', sampleSize: 'M' as Size };
-  const dims = teeDimensions(product);
+  const dims = teeDimensions(product), modules = optionsOf(product);
   // Fabrics: one BoM line per distinct fabric + color + print, with its parts and estimated consumption.
   const bom: BomRow[] = fabricUsage(product).map((usage, index) => {
     const { style } = usage, fabric = material(style.material);
@@ -77,6 +77,15 @@ export function buildTechPack(product: Product, date: string): TechPack {
       pom('N', 'Hood width (½)', 'Face edge to back of hood, at the widest point', dims.hoodHalf * 2, 0.5, 1),
       pom('O', 'Pocket width at bottom', 'Pocket edge to pocket edge along its lower seam', dims.pocketHalfBottom * 2, 1, 0.5),
     ] : []),
+    ...(dims.hemCurve ? [
+      pom('S', 'Side length', 'Underarm straight down the side seam to the hem', dims.length - dims.hemCurve - dims.shoulderDrop - dims.armDepth, 1, 1),
+      pom('T', 'Hem curve drop', 'Hem at the side seam to hem at centre front, measured straight down', dims.hemCurve, 0, 0.5),
+    ] : []),
+    ...(modules.chestPocket ? [
+      pom('P', 'Chest pocket width', 'Finished, across the top edge', dims.chestPocketWidth, 0.5, 0.3),
+      pom('Q', 'Chest pocket height', 'Finished, top edge to bottom edge', dims.chestPocketHeight, 0.5, 0.3),
+      pom('R', 'Chest pocket placement', 'High point shoulder line straight down to the pocket top', dims.chestPocketY, 0.5, 0.5),
+    ] : []),
   ];
   const construction: ConstructionRow[] = [
     { area: 'Shoulder seams', operation: '4-thread overlock', detail: 'Back neck to shoulder point; stabilise with 6 mm clear tape' },
@@ -88,11 +97,13 @@ export function buildTechPack(product: Product, date: string): TechPack {
     { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? 'Underarm to hem in one pass; insert care label at left side' : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
     ...(product.base === 'tee' ? [
       { area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' },
-      { area: 'Body hem', operation: '2-needle coverstitch', detail: '2.5 cm turn-back' },
+      { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
     ] : [
       { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.band)} finished; cut about 15% shorter than the sleeve opening` },
       { area: 'Hem band', operation: 'Close into a loop, fold, then overlock to the body', detail: `${cm(dims.band)} finished; cut about 15% shorter than the hem` },
     ]),
+    ...(modules.chestPocket ? [{ area: 'Chest pocket', operation: `Turn the top ${cm(POCKET_FOLD_CM)} and coverstitch; press the edges under 1 cm and edgestitch to the left front`,
+      detail: `${cm(dims.chestPocketWidth)} × ${cm(dims.chestPocketHeight)} finished; top ${cm(dims.chestPocketY)} below the shoulder line, centred ${cm(dims.chestPocketX)} toward the wearer’s left; bar-tack both top corners` }] : []),
     ...product.artwork.map(art => ({ area: `${art.part === 'front' ? 'Front' : 'Back'} artwork`, operation: 'Screen print or DTG after sewing', detail: `${cm(art.widthCm)} wide, ${cm(art.yCm)} below shoulder` })),
   ];
   return {
@@ -195,12 +206,20 @@ export function measurementDiagram(product: Product): string {
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.35" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="3.2" fill="#b5452b" font-weight="700">${code}</text>`;
   const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.4"/>`;
   const half = w / 2, armY = d.shoulderDrop + d.armDepth + 2.5;
+  // The chest pocket is on the wearer's left, which is the right of a front view.
+  const px = half + d.chestPocketX - d.chestPocketWidth / 2, py = d.chestPocketY;
+  const pocketMarks = optionsOf(product).chestPocket ? `<rect x="${px}" y="${py}" width="${d.chestPocketWidth}" height="${d.chestPocketHeight}" fill="none" stroke="#333" stroke-width="0.35" stroke-dasharray="1 0.6"/>`
+    + arrow(px, py - 1.5, px + d.chestPocketWidth, py - 1.5, 'P', px + d.chestPocketWidth / 2 - 1, py - 2.7)
+    + arrow(px + d.chestPocketWidth + 1.5, py, px + d.chestPocketWidth + 1.5, py + d.chestPocketHeight, 'Q', px + d.chestPocketWidth + 2.5, py + d.chestPocketHeight / 2) : '';
+  const sideTop = d.shoulderDrop + d.armDepth, sideBottom = d.length - d.hemCurve;
+  const hemMarks = d.hemCurve ? arrow(-2.5, sideTop, -2.5, sideBottom, 'S', -6, (sideTop + sideBottom) / 2) : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 ${sx + sleeve.width + 12} ${Math.max(front.height, sleeve.height) + 12}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
 ${outline(front, 0)}${outline(sleeve, sx)}
 ${arrow(0, armY, w, armY, 'A', half - 2, armY - 1.2)}${arrow(half - d.neckHalf - 3, 0, half - d.neckHalf - 3, d.length, 'B', half - d.neckHalf - 7, d.length / 2)}
 ${arrow(half - d.shoulderX, d.shoulderDrop + 0.8, half + d.shoulderX, d.shoulderDrop + 0.8, 'E', half + d.shoulderX - 7, d.shoulderDrop + 4.5)}${arrow(half - d.neckHalf, -2, half + d.neckHalf, -2, 'F', half - 1.5, -3)}
-${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(0, d.length - 1.5, w, d.length - 1.5, 'I', half - 2, d.length - 3)}
+${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(0, d.length - d.hemCurve - 1.5, w, d.length - d.hemCurve - 1.5, 'I', half - 2, d.length - d.hemCurve - 3)}
 ${arrow(w + 2.5, d.shoulderDrop, w + 2.5, d.shoulderDrop + d.armDepth, 'D', w + 4, d.shoulderDrop + d.armDepth / 2)}
+${pocketMarks}${hemMarks}
 ${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}
 </svg>`;
 }

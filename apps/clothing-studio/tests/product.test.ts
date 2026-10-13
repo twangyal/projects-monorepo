@@ -155,3 +155,65 @@ test('sweatshirts and hoodies have their own parts, rib bands, hood and pocket i
   const area = (design: typeof hoodie) => fabricUsage(design).reduce((sum, usage) => sum + usage.areaM2, 0);
   assert.ok(area(hoodie) > area({ ...hoodie, base: 'sweatshirt', parts: Object.fromEntries(parts(sweat).map(id => [id, hoodie.parts[id] ?? hoodie.parts.front])) as typeof hoodie.parts }));
 });
+
+test('modules: a curved hem and a chest pocket follow through validation, 3D, pattern pieces, tech pack and colorways', async () => {
+  const { buildTechPack, fabricUsage, measurementDiagram } = await import('../src/techpack.ts');
+  const { DEFAULT_OPTIONS, HEM_CURVE_CM, POCKET_FOLD_CM, optionsOf, teeDimensions, withOptions } = await import('../src/product.ts');
+  const tee = template('ringer'), sweat = template('crew-sweat'), hoodie = template('hoodie');
+  assert.deepEqual(optionsOf(tee), DEFAULT_OPTIONS, 'saved designs without modules keep the defaults');
+  const withColorway = { ...tee, colorways: [{ id: 'c1', name: 'Red', parts: structuredClone(tee.parts), units: 10 }] };
+  const curved = validateProduct(withOptions(withColorway, { hem: 'curved', chestPocket: true }));
+  assert.deepEqual(curved.options, { hem: 'curved', chestPocket: true });
+  assert.deepEqual([...partsOf(curved)], [...partsOf(tee), 'chestPocket']);
+  assert.deepEqual(curved.parts.chestPocket, tee.parts.front, 'a new chest pocket starts in the front body style');
+  assert.deepEqual(curved.colorways![0].parts.chestPocket, tee.parts.front, 'and so does each colorway’s');
+  assert.deepEqual(validateProduct(JSON.parse(JSON.stringify(curved))), curved, 'saved projects round-trip');
+  const off = validateProduct(withOptions(curved, { hem: 'straight', chestPocket: false }));
+  assert.ok(!('chestPocket' in off.parts) && !('chestPocket' in off.colorways![0].parts));
+  // Parts must match the modules; banded or kangaroo-pocket bases refuse what they cannot have.
+  assert.throws(() => validateProduct({ ...curved, parts: tee.parts }), Error);
+  assert.throws(() => validateProduct({ ...tee, options: { hem: 'wavy', chestPocket: false } }), /straight or curved/);
+  assert.throws(() => validateProduct({ ...tee, options: { hem: 'straight', chestPocket: 'yes' } }), /on or off/);
+  assert.throws(() => withOptions(sweat, { hem: 'curved', chestPocket: false }), /hem band/);
+  assert.throws(() => validateProduct({ ...sweat, options: { hem: 'curved', chestPocket: false } }), /curved hem/);
+  assert.throws(() => withOptions(hoodie, { hem: 'straight', chestPocket: true }), /kangaroo/);
+  assert.deepEqual([...partsOf(validateProduct(withOptions(sweat, { hem: 'straight', chestPocket: true })))].at(-1), 'chestPocket');
+
+  // Pattern: the body hem curves up to the side seams; the pocket piece carries its top facing.
+  const pieces = patternPieces(curved), front = pieces.find(piece => piece.part === 'front')!, dims = teeDimensions(curved);
+  const lowest = (x: number) => Math.max(...front.outline.filter(p => Math.abs(p.x - x) < 1e-9).map(p => p.y));
+  assert.equal(front.height, curved.measurements.length, 'centre length is the body length');
+  assert.equal(lowest(0), curved.measurements.length - HEM_CURVE_CM, 'the side seam is shorter');
+  assert.ok(front.areaCm2 < patternPieces(tee).find(piece => piece.part === 'front')!.areaCm2);
+  const pocket = pieces.find(piece => piece.part === 'chestPocket')!;
+  assert.deepEqual([pocket.width, pocket.height, pocket.cutCount], [dims.chestPocketWidth, dims.chestPocketHeight + POCKET_FOLD_CM, 1]);
+
+  // 3D: the hem is open and lower at the centre than at the sides; the pocket sits proud of the front, on the wearer's left.
+  const meshes = teeMesh(curved, Delaunator), byPart = new Map(meshes.map(mesh => [mesh.part, mesh]));
+  assert.deepEqual(meshes.map(mesh => mesh.part), [...partsOf(curved)]);
+  const ys = (part: 'front' | 'chestPocket', near: (x: number) => boolean) => { const mesh = byPart.get(part)!, out: number[] = []; for (let i = 0; i < mesh.positions.length; i += 3) if (near(mesh.positions[i])) out.push(mesh.positions[i + 1]); return out; };
+  const half = panelSize(curved.measurements).width / 2;
+  assert.ok(Math.abs(Math.min(...ys('front', x => Math.abs(x) < 1))) < 1e-9, 'hem at centre front reaches the full length');
+  assert.ok(Math.abs(Math.min(...ys('front', x => Math.abs(x - half) < 1e-6)) - HEM_CURVE_CM) < 1e-9, 'hem at the side seam rises by the curve');
+  const body = byPart.get('front')!, patch = byPart.get('chestPocket')!;
+  const xs = patch.positions.filter((_, i) => i % 3 === 0);
+  assert.ok(Math.min(...xs) > 0, 'chest pocket on the wearer’s left (viewer’s right)');
+  const zAt = (mesh: typeof body, x: number, y: number) => { let best = Infinity, z = 0; for (let i = 0; i < mesh.positions.length; i += 3) { const d = Math.hypot(mesh.positions[i] - x, mesh.positions[i + 1] - y); if (d < best) { best = d; z = mesh.positions[i + 2]; } } return z; };
+  const py = curved.measurements.length - dims.chestPocketY - dims.chestPocketHeight / 2;
+  assert.ok(zAt(patch, dims.chestPocketX, py) > zAt(body, dims.chestPocketX, py), 'pocket on top of the front');
+
+  // Tech pack: pocket fabric, measurements and construction; curved-hem side length and hem detail.
+  const pack = buildTechPack(curved, '2026-10-13'), codes = pack.poms.map(p => p.code).join('');
+  assert.equal(codes, 'ABCDEFGHIJKSTPQR');
+  assert.equal(buildTechPack(tee, '2026-10-13').poms.map(p => p.code).join(''), 'ABCDEFGHIJK', 'no module rows without modules');
+  const side = pack.poms.find(p => p.code === 'S')!.values.M;
+  assert.equal(side, Math.round((dims.length - HEM_CURVE_CM - dims.shoulderDrop - dims.armDepth) * 2) / 2);
+  assert.match(pack.construction.find(row => row.area === 'Body hem')!.detail, /Curved shirttail/);
+  assert.match(pack.construction.find(row => row.area === 'Chest pocket')!.detail, /wearer’s left/);
+  assert.ok(fabricUsage(curved).some(usage => usage.parts.includes('chestPocket')), 'the pocket is in the fabric consumption');
+  assert.match(measurementDiagram(curved), />P<\/text>.*>Q<\/text>.*>S<\/text>/s);
+  // The cutting files carry the pocket piece and the curved hem.
+  const { layoutPattern, patternDxf } = await import('../src/pattern-export.ts');
+  assert.match(patternDxf(curved), /\nChest pocket\n/);
+  assert.equal(layoutPattern(curved).pieces.length, patternPieces(curved).length);
+});

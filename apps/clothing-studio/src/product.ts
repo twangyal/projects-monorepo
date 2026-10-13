@@ -5,10 +5,10 @@
 export const BASES = ['tee', 'sweatshirt', 'hoodie'] as const;
 export type Base = typeof BASES[number];
 export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie' };
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket'] as const;
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
-  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket' };
+  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
@@ -16,8 +16,40 @@ export const BASE_PARTS: Record<Base, readonly PartId[]> = {
 };
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
 export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
-/** The parts of this design's base, in display order. */
-export function partsOf(product: Pick<Product, 'base'>): readonly PartId[] { return BASE_PARTS[product.base]; }
+/** The parts of this design: its base's parts plus any optional module parts, in display order. */
+export function partsOf(product: Pick<Product, 'base' | 'options'>): readonly PartId[] {
+  return optionsOf(product).chestPocket ? [...BASE_PARTS[product.base], 'chestPocket'] : BASE_PARTS[product.base];
+}
+
+/**
+ * Modules a base product can be switched between, as in product-library tools. A curved (shirttail) hem needs an
+ * unbanded hem, so only the tee has it; the hoodie's kangaroo pocket takes the place of a chest pocket.
+ */
+export const HEMS = ['straight', 'curved'] as const;
+export type Hem = typeof HEMS[number];
+export const HEM_NAMES: Record<Hem, string> = { straight: 'Straight', curved: 'Curved shirttail' };
+export interface Options { hem: Hem; chestPocket: boolean }
+export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
+export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
+export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
+export function chestPocketAllowed(base: Base): boolean { return base !== 'hoodie'; }
+/** Sleeve-length presets in cm; the measurement stays editable. */
+export const SLEEVE_PRESETS = [{ id: 'short', name: 'Short', cm: 21 }, { id: 'elbow', name: 'Elbow', cm: 35 }, { id: 'long', name: 'Long', cm: 60 }] as const;
+
+/** The design with new module options: a new chest pocket starts in the front body's style, here and in every colorway. */
+export function withOptions(product: Product, next: Options): Product {
+  if (!hemAllowed(product.base, next.hem)) fail(`A ${BASE_NAMES[product.base].toLowerCase()} has a rib hem band, so its hem stays straight.`);
+  if (next.chestPocket && !chestPocketAllowed(product.base)) fail('A hoodie has a kangaroo pocket instead of a chest pocket.');
+  const draft = structuredClone(product);
+  const setPocket = (parts: Record<PartId, PartStyle>) => {
+    if (next.chestPocket) parts.chestPocket ??= structuredClone(parts.front);
+    else delete (parts as Partial<Record<PartId, PartStyle>>).chestPocket;
+  };
+  setPocket(draft.parts);
+  for (const colorway of draft.colorways ?? []) setPocket(colorway.parts);
+  draft.options = { ...next };
+  return draft;
+}
 /** Height of rib cuffs and the hem band on sweatshirts and hoodies, in cm. */
 export const BAND_CM = 6;
 
@@ -57,9 +89,11 @@ export type Currency = typeof CURRENCIES[number];
 /** Costing inputs per garment; fabric prices are per linear metre of 150 cm wide fabric. */
 export interface Costing { currency: Currency; retail: number; make: number; trims: number; printPerArtwork: number; fabricPrices: Record<string, number> }
 export interface Product {
-  /** Only the base's parts (BASE_PARTS) are present in `parts`. */
+  /** Exactly the design's parts (partsOf) are present in `parts`. */
   base: Base; name: string; measurements: Measurements; neckline: 'crew' | 'v';
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
+  /** Module choices; absent until one is changed (then DEFAULT_OPTIONS apply). */
+  options?: Options;
   /** Tech-pack header details; absent until the designer fills them in. */
   spec?: Spec;
   /** Colorways for the range plan; absent until one is saved. */
@@ -110,9 +144,9 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
     yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm };
 }
 
-function validateParts(value: unknown, uploaded: ReadonlySet<string>, base: Base): Record<PartId, PartStyle> {
-  const rawParts = plain(value, BASE_PARTS[base], 'Parts');
-  return Object.fromEntries(BASE_PARTS[base].map(id => {
+function validateParts(value: unknown, uploaded: ReadonlySet<string>, ids: readonly PartId[]): Record<PartId, PartStyle> {
+  const rawParts = plain(value, ids, 'Parts');
+  return Object.fromEntries(ids.map(id => {
     const s = plain(rawParts[id], ['material', 'color', 'print'], PART_NAMES[id]);
     if (typeof s.material !== 'string') fail('Choose a fabric from the library.');
     material(s.material as string);
@@ -121,7 +155,7 @@ function validateParts(value: unknown, uploaded: ReadonlySet<string>, base: Base
 }
 const plainText = (value: unknown, limit: number, label: string) =>
   typeof value === 'string' && value.length <= limit && ![...value].some(c => c.charCodeAt(0) < 32) ? value.trim() : fail(`${label} must be at most ${limit} characters of plain text.`);
-function validateColorways(value: unknown, uploaded: ReadonlySet<string>, base: Base): Colorway[] {
+function validateColorways(value: unknown, uploaded: ReadonlySet<string>, ids: readonly PartId[]): Colorway[] {
   if (!Array.isArray(value) || value.length > LIMITS.colorways) fail(`Keep at most ${LIMITS.colorways} colorways.`);
   const colorways = (value as unknown[]).map(item => {
     const c = plain(item, ['id', 'name', 'parts', 'units'], 'Colorway');
@@ -130,7 +164,7 @@ function validateColorways(value: unknown, uploaded: ReadonlySet<string>, base: 
     if (!name) fail('Name each colorway.');
     const units = finite(c.units, LIMITS.units, 'Planned units');
     if (!Number.isInteger(units)) fail('Planned units must be a whole number.');
-    return { id: c.id as string, name, parts: validateParts(c.parts, uploaded, base), units };
+    return { id: c.id as string, name, parts: validateParts(c.parts, uploaded, ids), units };
   });
   if (new Set(colorways.map(c => c.id)).size !== colorways.length) fail('Colorway IDs must be unique.');
   return colorways;
@@ -164,7 +198,7 @@ export function printName(print: Print, product: Pick<Product, 'motifs'>): strin
   return MOTIF_NAMES[print.motif as Motif];
 }
 
-const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs'] as const;
+const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs', 'options'] as const;
 export function validateProduct(value: unknown): Product {
   const present = value && typeof value === 'object' ? OPTIONAL.filter(key => Object.hasOwn(value, key)) : [];
   const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', ...present], 'Product');
@@ -175,9 +209,19 @@ export function validateProduct(value: unknown): Product {
   const measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
   if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
+  let options: Options | undefined;
+  if (p.options !== undefined) {
+    const o = plain(p.options, ['hem', 'chestPocket'], 'Modules');
+    if (!HEMS.includes(o.hem as Hem)) fail('Hem must be straight or curved.');
+    if (typeof o.chestPocket !== 'boolean') fail('Chest pocket must be on or off.');
+    if (!hemAllowed(base, o.hem as Hem)) fail('Only a tee can have a curved hem; banded hems stay straight.');
+    if (o.chestPocket && !chestPocketAllowed(base)) fail('A hoodie has a kangaroo pocket instead of a chest pocket.');
+    options = { hem: o.hem as Hem, chestPocket: o.chestPocket as boolean };
+  }
+  const ids = partsOf({ base, options });
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
   const uploaded = new Set((motifs ?? []).map(m => m.id));
-  const parts = validateParts(p.parts, uploaded, base);
+  const parts = validateParts(p.parts, uploaded, ids);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
@@ -188,8 +232,8 @@ export function validateProduct(value: unknown): Product {
     spec = { styleNumber: plainText(raw.styleNumber, 40, 'Style number'), season: plainText(raw.season, 40, 'Season'), sampleSize: raw.sampleSize as Size };
   }
   return { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
-    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, base) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
-    ...(motifs ? { motifs } : {}) };
+    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, ids) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
+    ...(motifs ? { motifs } : {}), ...(options ? { options } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });
@@ -228,17 +272,22 @@ export function panelSize(m: Measurements) { return { width: m.chest / 2 + 2, le
 export function sleeveSize(m: Measurements) { const armhole = m.chest * 0.23 + 4; return { capWidth: armhole * 2, cuffWidth: Math.max(28, armhole * 1.55 - m.sleeve * 0.25), length: m.sleeve }; }
 export function neckSize(m: Measurements, neckline: Product['neckline']) { const neck = m.chest * 0.41 + 6; return { length: neckline === 'v' ? neck + 6 : neck, width: 2 }; }
 
+export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
 export function teeDimensions(product: Product) {
-  const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2;
+  const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, shoulderDrop = 4, armDepth = m.chest * 0.23 + 2;
   return {
-    panelWidth: panel.width, length: m.length, half, neckHalf: m.chest * 0.08 + 7, shoulderX: half * 0.86 + 1, shoulderDrop: 4,
-    armDepth: m.chest * 0.23 + 2, sleeveLength: m.sleeve,
+    panelWidth: panel.width, length: m.length, half, neckHalf: m.chest * 0.08 + 7, shoulderX: half * 0.86 + 1, shoulderDrop,
+    armDepth, sleeveLength: m.sleeve,
     // Long sleeves taper to a rib cuff; tee sleeves stay open and wide.
     cuffHalf: product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1), capWidth: sleeve.capWidth,
     neckDepthFront: product.neckline === 'v' ? 15 : 8, neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
     band: product.base === 'tee' ? 0 : BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
     hoodHeight: 32, hoodHalf: 13, pocketTop: m.length - BAND_CM - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
+    // A curved hem rises this far at the side seams; the body length is still measured at the centre.
+    hemCurve: optionsOf(product).hem === 'curved' ? HEM_CURVE_CM : 0,
+    // Chest pocket on the wearer's left (+x seen from the front): centre, top below the shoulder line, finished size.
+    chestPocketX: half * 0.45, chestPocketY: shoulderDrop + armDepth * 0.5, chestPocketWidth: 12, chestPocketHeight: 13.5,
   };
 }
 
@@ -250,8 +299,8 @@ export function patternPieces(product: Product): PatternPiece[] {
   const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   const body = (front: boolean) => {
     const neckDepth = front ? (product.neckline === 'v' ? 15 : 8) : 2;
-    const pts = [{ x: half - neckWidth, y: 0 }, { x: 0, y: shoulderDrop }, { x: 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: shoulderDrop + armDepth }, { x: 0, y: panel.length },
-      { x: w, y: panel.length }, { x: w, y: shoulderDrop + armDepth }, { x: w - 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: w, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
+    const pts = [{ x: half - neckWidth, y: 0 }, { x: 0, y: shoulderDrop }, { x: 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: shoulderDrop + armDepth },
+      ...hemLine(w, panel.length, dims.hemCurve), { x: w, y: shoulderDrop + armDepth }, { x: w - 1.5, y: shoulderDrop + armDepth * 0.55 }, { x: w, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
     // Neckline: a curve for crew/back, a straight V for v-neck fronts.
     if (front && product.neckline === 'v') pts.push({ x: half, y: neckDepth });
     else for (let i = 1; i < 8; i++) { const t = Math.PI * i / 8; pts.push({ x: half + neckWidth * Math.cos(t), y: neckDepth * Math.sin(t) }); }
@@ -264,11 +313,14 @@ export function patternPieces(product: Product): PatternPiece[] {
     return pts;
   };
   const rect = (wd: number, ht: number) => [{ x: 0, y: 0 }, { x: wd, y: 0 }, { x: wd, y: ht }, { x: 0, y: ht }];
+  // Chest pocket: finished size plus the folded-down facing at the top.
+  const chestPocket = () => chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight + POCKET_FOLD_CM, 0, 0);
   const make = (part: PartId, outline: { x: number; y: number }[], cutCount: number): PatternPiece => ({
     part, outline, cutCount, width: Math.max(...outline.map(p => p.x)), height: Math.max(...outline.map(p => p.y)), areaCm2: area(outline),
   });
+  const modules = optionsOf(product).chestPocket ? [make('chestPocket', chestPocket(), 1)] : [];
   if (product.base === 'tee') {
-    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1)];
+    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1), ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band, shorten = (outline: { x: number; y: number }[], limit: number) => outline.map(p => ({ x: p.x, y: Math.min(p.y, limit) }));
@@ -293,7 +345,18 @@ export function patternPieces(product: Product): PatternPiece[] {
     const top = dims.pocketHalfTop, bottom = dims.pocketHalfBottom, h = 22;
     pieces.push(make('pocket', [{ x: bottom - top + 5, y: 0 }, { x: bottom + top - 5, y: 0 }, { x: bottom * 2, y: h }, { x: 0, y: h }], 1));
   }
-  return pieces;
+  return [...pieces, ...modules];
+}
+
+/** The hem from the left side seam to the right one: straight, or a shirttail curve `curve` cm higher at the sides. */
+function hemLine(width: number, length: number, curve: number): { x: number; y: number }[] {
+  if (!curve) return [{ x: 0, y: length }, { x: width, y: length }];
+  return Array.from({ length: 13 }, (_, i) => { const x = width * i / 12, t = (x - width / 2) / (width / 2); return { x, y: length - curve * t * t }; });
+}
+/** A patch pocket with chamfered lower corners, top-left at (x, y). */
+function chestPocketOutline(width: number, height: number, x: number, y: number): { x: number; y: number }[] {
+  const c = POCKET_CHAMFER_CM;
+  return [{ x, y }, { x: x + width, y }, { x: x + width, y: y + height - c }, { x: x + width - c, y: y + height }, { x: x + c, y: y + height }, { x, y: y + height - c }];
 }
 
 // 3D mesh ---------------------------------------------------------------------------------------
@@ -316,7 +379,7 @@ export function teeSilhouette(product: Product, side: 'front' | 'back'): Silhoue
   const bottom = { x: top.x + perp.x * cuffHalf, y: top.y + perp.y * cuffHalf };
   const neckDepth = side === 'front' ? (product.neckline === 'v' ? 15 : 8) : 2;
   const mirror = (p: Pt) => ({ x: -p.x, y: p.y });
-  const neckPoint = { x: neckHalf, y: 0 }, hem = { x: half, y: m.length };
+  const neckPoint = { x: neckHalf, y: 0 }, hem = { x: half, y: m.length - teeDimensions(product).hemCurve };
   // Corners clockwise from the right neck point; edge i runs from corner i to corner i+1.
   const corners = [neckPoint, shoulder, top, bottom, underarm, hem, mirror(hem), mirror(underarm), mirror(bottom), mirror(top), mirror(shoulder), mirror(neckPoint)];
   //            shoulder  sleeve-top cuff   sleeve-bottom side  hem    side  sleeve-bottom cuff  sleeve-top shoulder neck
@@ -367,8 +430,10 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
     const height = (p: Pt) => { const d = Math.min(seamDistance(p, s), depth); return d < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
     // Regions share their armhole edges exactly, so the sleeve seams join without gaps.
     // Corner indices: 0 neck, 1 shoulder, 2 sleeve top, 3 cuff bottom, 4 underarm, 5 hem (and mirrored 6–11).
+    // A curved hem dips from the side seams to the centre: points between the hem corners (right to left).
+    const hem = dims.hemCurve ? hemLine(dims.panelWidth, m.length, dims.hemCurve).slice(1, -1).reverse().map(p => ({ x: p.x - dims.half, y: p.y })) : [];
     let regions: { part: PartId; polygon: Pt[] }[] = [
-      { part: side, polygon: [c[0], c[1], c[4], c[5], c[6], c[7], c[10], ...c.slice(11)] },
+      { part: side, polygon: [c[0], c[1], c[4], c[5], ...hem, c[6], c[7], c[10], ...c.slice(11)] },
       { part: 'sleeveLeft', polygon: [c[1], c[2], c[3], c[4]] },
       { part: 'sleeveRight', polygon: [c[7], c[8], c[9], c[10]] },
     ];
@@ -393,8 +458,11 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
       const y0 = dims.pocketTop, y1 = m.length - dims.band - 0.01;
       regions.push({ part: 'pocket', polygon: [{ x: dims.pocketHalfTop, y: y0 }, { x: dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfTop, y: y0 }] });
     }
+    if (side === 'front' && optionsOf(product).chestPocket) {
+      regions.push({ part: 'chestPocket', polygon: chestPocketOutline(dims.chestPocketWidth, dims.chestPocketHeight, dims.chestPocketX - dims.chestPocketWidth / 2, dims.chestPocketY) });
+    }
     for (const { part, polygon } of regions) {
-      const lift = part === 'pocket' ? 0.5 : 0;
+      const lift = part === 'pocket' ? 0.5 : part === 'chestPocket' ? 0.35 : 0;
       const samples: Pt[] = [];
       for (let i = 0; i < polygon.length; i++) {
         const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 1.5));
