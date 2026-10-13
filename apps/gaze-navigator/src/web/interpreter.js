@@ -47,11 +47,14 @@ export function matchScore(query, name) {
   return 0.7 * (shared / qTokens.length) + 0.1 * (shared / nTokens.length);
 }
 
+// Synonyms apply both ways: a site may label its control "Log in" or "Sign in" whichever the user says.
 function variants(query) {
   const normalized = ` ${normalize(query)} `;
   const found = [query];
-  for (const [phrase, replacement] of SYNONYMS) {
-    if (normalized.includes(` ${phrase} `)) found.push(normalized.replace(` ${phrase} `, ` ${replacement} `).trim());
+  for (const [a, b] of SYNONYMS) {
+    for (const [phrase, replacement] of [[a, b], [b, a]]) {
+      if (normalized.includes(` ${phrase} `)) found.push(normalized.replace(` ${phrase} `, ` ${replacement} `).trim());
+    }
   }
   return found;
 }

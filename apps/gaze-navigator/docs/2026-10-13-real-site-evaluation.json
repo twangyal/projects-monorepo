@@ -1,0 +1,312 @@
+{
+ "date": "2026-10-13",
+ "note": "Scripted tasks on live public websites through the real extension build (host access pre-granted for automation). The pointer stands in for gaze and typed text for speech. A proxy for real use, not a study with intended users. First run (rules, before fixes) completed 2/7: three task-script targeting mistakes and one interpreter gap (\"sign in\" did not match a \"Log in\" link) were fixed before these runs.",
+ "rules": {
+  "summary": {
+   "assist": false,
+   "date": "2026-10-13",
+   "tasks": 7,
+   "completed": 5,
+   "steps": 10,
+   "stepsDone": 8,
+   "unintended": 0,
+   "utterances": 10,
+   "questions": 0
+  },
+  "results": [
+   {
+    "site": "Wikipedia",
+    "goal": "Find the article on Ada Lovelace, open her father's article, and come back",
+    "steps": [
+     {
+      "say": "search for Ada Lovelace",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Searching for \"Ada Lovelace\". Now on \"Ada Lovelace - Wikipedia\"."
+      ]
+     },
+     {
+      "say": "open Lord Byron",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Lord Byron activated. Now on \"Lord Byron - Wikipedia\"."
+      ]
+     },
+     {
+      "say": "go back",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Going back. Now on \"Ada Lovelace - Wikipedia\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "Wikipedia",
+    "goal": "Reach the log-in page",
+    "steps": [
+     {
+      "say": "sign in",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Log in activated. Now on \"Log in - Wikipedia\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "Wikipedia",
+    "goal": "Open the page history of the Main Page",
+    "steps": [
+     {
+      "say": "show me the past versions of this page",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "failed",
+      "replies": [
+       "No control called \"past versions of this page\" is inside the gaze circle. Look at it and try again."
+      ]
+     }
+    ],
+    "completed": false
+   },
+   {
+    "site": "GOV.UK",
+    "goal": "Refuse optional cookies, then find passport information",
+    "steps": [
+     {
+      "say": "reject additional cookies",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Reject additional cookies activated."
+      ]
+     },
+     {
+      "say": "open passports",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Passports, travel and living abroad activated. Now on \"Passports, travel and living abroad - GOV.UK\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "GOV.UK",
+    "goal": "Find the driving section with an everyday description",
+    "steps": [
+     {
+      "say": "take me to the stuff about cars",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "failed",
+      "replies": [
+       "No control called \"stuff about cars\" is inside the gaze circle. Look at it and try again."
+      ]
+     }
+    ],
+    "completed": false
+   },
+   {
+    "site": "GOV.UK",
+    "goal": "Search for how to renew a passport",
+    "steps": [
+     {
+      "say": "search for renew passport",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Searching for \"renew passport\". Now on \"renew passport - Search - GOV.UK\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "MDN",
+    "goal": "Open the HTML reference",
+    "steps": [
+     {
+      "say": "open HTML",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: HTML activated. Now on \"HTML: HyperText Markup Language | MDN\"."
+      ]
+     }
+    ],
+    "completed": true
+   }
+  ]
+ },
+ "rulesPlusWaterSheep": {
+  "summary": {
+   "assist": true,
+   "date": "2026-10-13",
+   "tasks": 7,
+   "completed": 7,
+   "steps": 10,
+   "stepsDone": 10,
+   "unintended": 0,
+   "utterances": 10,
+   "questions": 0
+  },
+  "results": [
+   {
+    "site": "Wikipedia",
+    "goal": "Find the article on Ada Lovelace, open her father's article, and come back",
+    "steps": [
+     {
+      "say": "search for Ada Lovelace",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Searching for \"Ada Lovelace\". Now on \"Ada Lovelace - Wikipedia\"."
+      ]
+     },
+     {
+      "say": "open Lord Byron",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Lord Byron activated. Now on \"Lord Byron - Wikipedia\"."
+      ]
+     },
+     {
+      "say": "go back",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Going back. Now on \"Ada Lovelace - Wikipedia\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "Wikipedia",
+    "goal": "Reach the log-in page",
+    "steps": [
+     {
+      "say": "sign in",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Log in activated. Now on \"Log in - Wikipedia\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "Wikipedia",
+    "goal": "Open the page history of the Main Page",
+    "steps": [
+     {
+      "say": "show me the past versions of this page",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: View history activated. Now on \"Main Page: Revision history - Wikipedia\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "GOV.UK",
+    "goal": "Refuse optional cookies, then find passport information",
+    "steps": [
+     {
+      "say": "reject additional cookies",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Reject additional cookies activated."
+      ]
+     },
+     {
+      "say": "open passports",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Passports, travel and living abroad activated. Now on \"Passports, travel and living abroad - GOV.UK\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "GOV.UK",
+    "goal": "Find the driving section with an everyday description",
+    "steps": [
+     {
+      "say": "take me to the stuff about cars",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Driving and transport activated. Now on \"Driving and transport - GOV.UK\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "GOV.UK",
+    "goal": "Search for how to renew a passport",
+    "steps": [
+     {
+      "say": "search for renew passport",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: Searching for \"renew passport\". Now on \"renew passport - Search - GOV.UK\"."
+      ]
+     }
+    ],
+    "completed": true
+   },
+   {
+    "site": "MDN",
+    "goal": "Open the HTML reference",
+    "steps": [
+     {
+      "say": "open HTML",
+      "utterances": 1,
+      "questions": 0,
+      "outcome": "done",
+      "replies": [
+       "Done: HTML activated. Now on \"HTML: HyperText Markup Language | MDN\"."
+      ]
+     }
+    ],
+    "completed": true
+   }
+  ]
+ }
+}
