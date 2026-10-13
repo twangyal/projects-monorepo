@@ -70,7 +70,9 @@ The model sees the instruction and the controls' role, name, checked state and c
 | Held-out (50) | 34 / 0 | 35 / 0 |
 | Second held-out (50, paraphrased targets) | 18 / 0 | **27 / 0** |
 
-Model calls take about 0.36 s. First scorings found unsafe picks, which led to safety-only fixes; both are recorded. **Smarter target matching** (#232) is an opt-in setting under **Tracking and settings**. It uses WaterSheep live: the rules answer first and instantly. When they cannot name a control, the panel says "Working out which control you mean…" and asks the model, and any newer instruction (including cancel or pause) discards that pending answer. Consequential picks are still confirmed.
+Model calls take about 0.36 s. First scorings found unsafe picks, which led to safety-only fixes; both are recorded. **On live websites** (Wikipedia, GOV.UK, MDN), seven scripted tasks through the real extension completed 5/7 with the rules alone and **7/7 with smarter matching**, with no unintended actions. The pointer stood in for gaze and typed text for speech. See [the real-site evaluation](docs/2026-10-13-real-site-evaluation.md); rerun it with `node scripts/evaluate-real-sites.mjs --extension DIR [--assist]`.
+
+**Smarter target matching** (#232) is an opt-in setting under **Tracking and settings**. It uses WaterSheep live: the rules answer first and instantly. When they cannot name a control, the panel says "Working out which control you mean…" and asks the model, and any newer instruction (including cancel or pause) discards that pending answer. Consequential picks are still confirmed.
 
 - **On the practice site,** run `npm run vendor:watersheep` once. This fetches ONNX Runtime Web 1.23.0 and the tokenizer with npm, pinned by SHA-256, into `dist/vendor/watersheep`. The setting then downloads the model from Hugging Face at the pinned revision, checks its SHA-256, and caches it.
 - **In the extension,** the model runs in one shared offscreen document: it downloads once per browser and is cached in extension storage, never a website's. `npm run build:extension` bundles the runtime (the extension is about 14 MB).
