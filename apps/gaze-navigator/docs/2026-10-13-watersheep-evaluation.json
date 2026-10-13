@@ -1791,6 +1791,580 @@
   },
   {
    "summary": {
+    "suite": "spoken-web-v1-held-out-2",
+    "total": 50,
+    "correct": 18,
+    "unsafe": 0,
+    "abstained": 32,
+    "categories": {
+     "activate": {
+      "total": 28,
+      "correct": 9,
+      "unsafe": 0,
+      "abstained": 19
+     },
+     "select": {
+      "total": 6,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 5
+     },
+     "clarify": {
+      "total": 1,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "dictate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "edit": {
+      "total": 2,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "scroll": {
+      "total": 2,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 2
+     },
+     "navigate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "control": {
+      "total": 4,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 4
+     },
+     "refuse": {
+      "total": 5,
+      "correct": 5,
+      "unsafe": 0,
+      "abstained": 0
+     }
+    }
+   },
+   "results": [
+    {
+     "id": 1,
+     "category": "activate",
+     "context": "navigation",
+     "say": "show me how much it costs",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"how much it costs\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "how much it costs"
+     }
+    },
+    {
+     "id": 2,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the prices",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"prices\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "prices"
+     }
+    },
+    {
+     "id": 3,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the cost page",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"cost page\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "cost page"
+     }
+    },
+    {
+     "id": 4,
+     "category": "activate",
+     "context": "navigation",
+     "say": "I want to get in touch",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"get in touch\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 5,
+     "category": "activate",
+     "context": "navigation",
+     "say": "take me to support",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"support\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "support"
+     }
+    },
+    {
+     "id": 6,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the contact page please",
+     "outcome": "correct"
+    },
+    {
+     "id": 7,
+     "category": "activate",
+     "context": "navigation",
+     "say": "click the login",
+     "outcome": "correct"
+    },
+    {
+     "id": 8,
+     "category": "activate",
+     "context": "navigation",
+     "say": "press log on",
+     "outcome": "correct"
+    },
+    {
+     "id": 9,
+     "category": "activate",
+     "context": "navigation",
+     "say": "go to my account",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"my account\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "my account"
+     }
+    },
+    {
+     "id": 10,
+     "category": "activate",
+     "context": "navigation",
+     "say": "go to the start page",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"start page\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "start page"
+     }
+    },
+    {
+     "id": 11,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the front page",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"front page\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "front page"
+     }
+    },
+    {
+     "id": 12,
+     "category": "activate",
+     "context": "navigation",
+     "say": "click the button",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"button\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "button"
+     }
+    },
+    {
+     "id": 13,
+     "category": "activate",
+     "context": "product",
+     "say": "put it in my basket",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"put it in my basket\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 14,
+     "category": "activate",
+     "context": "product",
+     "say": "add this one to the cart",
+     "outcome": "correct"
+    },
+    {
+     "id": 15,
+     "category": "activate",
+     "context": "product",
+     "say": "check out now",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"out now\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "out now"
+     }
+    },
+    {
+     "id": 16,
+     "category": "activate",
+     "context": "product",
+     "say": "complete my purchase",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"complete my purchase\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 17,
+     "category": "activate",
+     "context": "product",
+     "say": "see what people said about it",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"what people said about it\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "what people said about it"
+     }
+    },
+    {
+     "id": 18,
+     "category": "activate",
+     "context": "product",
+     "say": "open customer reviews",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"customer reviews\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "customer reviews"
+     }
+    },
+    {
+     "id": 19,
+     "category": "activate",
+     "context": "product",
+     "say": "show the ratings",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"ratings\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "ratings"
+     }
+    },
+    {
+     "id": 20,
+     "category": "activate",
+     "context": "product",
+     "say": "open the comments",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"comments\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "comments"
+     }
+    },
+    {
+     "id": 21,
+     "category": "activate",
+     "context": "form",
+     "say": "press the send button",
+     "outcome": "correct"
+    },
+    {
+     "id": 22,
+     "category": "activate",
+     "context": "form",
+     "say": "tick the copy box",
+     "outcome": "correct"
+    },
+    {
+     "id": 23,
+     "category": "activate",
+     "context": "form",
+     "say": "email me a copy",
+     "outcome": "correct"
+    },
+    {
+     "id": 24,
+     "category": "activate",
+     "context": "form",
+     "say": "open the topic list",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"topic list\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "topic list"
+     }
+    },
+    {
+     "id": 25,
+     "category": "activate",
+     "context": "form",
+     "say": "go to the email field",
+     "outcome": "correct"
+    },
+    {
+     "id": 26,
+     "category": "activate",
+     "context": "form",
+     "say": "click on the name box",
+     "outcome": "correct"
+    },
+    {
+     "id": 27,
+     "category": "activate",
+     "context": "list",
+     "say": "open the first article",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No article is inside the gaze circle."
+     }
+    },
+    {
+     "id": 28,
+     "category": "activate",
+     "context": "list",
+     "say": "open the third story",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No story is inside the gaze circle."
+     }
+    },
+    {
+     "id": 29,
+     "category": "select",
+     "context": "product",
+     "say": "pick the hardback",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"hardback\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "hardback"
+     }
+    },
+    {
+     "id": 30,
+     "category": "select",
+     "context": "product",
+     "say": "the paperback edition",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"the paperback edition\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 31,
+     "category": "select",
+     "context": "product",
+     "say": "choose the audio version",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"audio version\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "audio version"
+     }
+    },
+    {
+     "id": 32,
+     "category": "select",
+     "context": "product",
+     "say": "switch format to large print",
+     "outcome": "correct"
+    },
+    {
+     "id": 33,
+     "category": "select",
+     "context": "form",
+     "say": "choose a problem with my order",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"a problem with my order\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "a problem with my order"
+     }
+    },
+    {
+     "id": 34,
+     "category": "select",
+     "context": "form",
+     "say": "set the subject to book suggestion",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "message": "Nothing called \"subject\" is inside the gaze circle. To correct words, first select the text field."
+     }
+    },
+    {
+     "id": 35,
+     "category": "clarify",
+     "context": "list",
+     "say": "remove it",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"remove it\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 36,
+     "category": "dictate",
+     "context": "focused",
+     "say": "write thanks so much",
+     "outcome": "correct"
+    },
+    {
+     "id": 37,
+     "category": "edit",
+     "context": "focused",
+     "say": "erase everything",
+     "outcome": "correct"
+    },
+    {
+     "id": 38,
+     "category": "edit",
+     "context": "focused",
+     "say": "take back that change",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"take back that change\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 39,
+     "category": "scroll",
+     "context": "empty",
+     "say": "move down the page",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"move down the page\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 40,
+     "category": "scroll",
+     "context": "empty",
+     "say": "scroll back up",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"scroll back up\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 41,
+     "category": "navigate",
+     "context": "empty",
+     "say": "previous page please",
+     "outcome": "correct"
+    },
+    {
+     "id": 42,
+     "category": "control",
+     "context": "navigation",
+     "say": "stop everything",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"stop everything\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 43,
+     "category": "control",
+     "context": "navigation",
+     "say": "wait a sec",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"wait a sec\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 44,
+     "category": "control",
+     "context": "navigation",
+     "say": "yes do it",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"yes do it\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 45,
+     "category": "control",
+     "context": "navigation",
+     "say": "no don't",
+     "outcome": "abstained",
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"no don't\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 46,
+     "category": "refuse",
+     "context": "navigation",
+     "say": "open the blog",
+     "outcome": "correct"
+    },
+    {
+     "id": 47,
+     "category": "refuse",
+     "context": "navigation",
+     "say": "click download",
+     "outcome": "correct"
+    },
+    {
+     "id": 48,
+     "category": "refuse",
+     "context": "navigation",
+     "say": "open the shopping basket",
+     "outcome": "correct"
+    },
+    {
+     "id": 49,
+     "category": "refuse",
+     "context": "product",
+     "say": "open the size guide",
+     "outcome": "correct"
+    },
+    {
+     "id": 50,
+     "category": "refuse",
+     "context": "form",
+     "say": "attach a file",
+     "outcome": "correct"
+    }
+   ]
+  },
+  {
+   "summary": {
     "suite": "spoken-web-v1+watersheep",
     "total": 120,
     "correct": 120,
@@ -1871,7 +2445,7 @@
      }
     },
     "modelCalls": 2,
-    "modelMedianMs": 740
+    "modelMedianMs": 588
    },
    "results": [
     {
@@ -1880,7 +2454,7 @@
      "context": "navigation",
      "say": "open pricing",
      "outcome": "correct",
-     "ms": 0.3
+     "ms": 0.2
     },
     {
      "id": 2,
@@ -1928,7 +2502,7 @@
      "context": "navigation",
      "say": "could you open the pricing page please",
      "outcome": "correct",
-     "ms": 0.1
+     "ms": 0
     },
     {
      "id": 8,
@@ -1992,7 +2566,7 @@
      "context": "navigation",
      "say": "press sign in",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 16,
@@ -2176,7 +2750,7 @@
      "context": "list",
      "say": "read more",
      "outcome": "correct",
-     "ms": 0.2
+     "ms": 0.3
     },
     {
      "id": 39,
@@ -2192,7 +2766,7 @@
      "context": "list",
      "say": "remove",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 41,
@@ -2200,7 +2774,7 @@
      "context": "list",
      "say": "click remove",
      "outcome": "correct",
-     "ms": 0.1
+     "ms": 0.2
     },
     {
      "id": 42,
@@ -2224,7 +2798,7 @@
      "context": "product",
      "say": "large print",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 45,
@@ -2280,7 +2854,7 @@
      "context": "form",
      "say": "type ada@example.com into email address",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 52,
@@ -2288,7 +2862,7 @@
      "context": "form",
      "say": "enter ada@example.com in the email field",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 53,
@@ -2352,7 +2926,7 @@
      "context": "focused",
      "say": "remove the last word",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 61,
@@ -2384,7 +2958,7 @@
      "context": "focused",
      "say": "undo that",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 65,
@@ -2464,7 +3038,7 @@
      "context": "navigation",
      "say": "search for river songs",
      "outcome": "correct",
-     "ms": 0.1
+     "ms": 0
     },
     {
      "id": 75,
@@ -2792,7 +3366,7 @@
      "context": "navigation",
      "say": "open careers",
      "outcome": "correct",
-     "ms": 624.1
+     "ms": 583.6
     },
     {
      "id": 116,
@@ -2832,7 +3406,7 @@
      "context": "navigation",
      "say": "make me a sandwich",
      "outcome": "correct",
-     "ms": 739.8
+     "ms": 588.6
     }
    ]
   },
@@ -2912,7 +3486,7 @@
      }
     },
     "modelCalls": 15,
-    "modelMedianMs": 358
+    "modelMedianMs": 344
    },
    "results": [
     {
@@ -2921,7 +3495,7 @@
      "context": "navigation",
      "say": "hit the pricing link",
      "outcome": "correct",
-     "ms": 0.1
+     "ms": 0.2
     },
     {
      "id": 2,
@@ -2945,7 +3519,7 @@
      "context": "navigation",
      "say": "would you take me home",
      "outcome": "abstained",
-     "ms": 400.7,
+     "ms": 374.6,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3022,7 +3596,7 @@
      "context": "form",
      "say": "uncheck send me a copy",
      "outcome": "correct",
-     "ms": 0.1
+     "ms": 0
     },
     {
      "id": 14,
@@ -3030,7 +3604,7 @@
      "context": "form",
      "say": "click send",
      "outcome": "correct",
-     "ms": 346.2,
+     "ms": 382.9,
      "got": {
       "type": "activate",
       "targetId": 6,
@@ -3046,7 +3620,7 @@
      "context": "product",
      "say": "buy it now",
      "outcome": "abstained",
-     "ms": 319.7,
+     "ms": 359,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3067,7 +3641,7 @@
      "context": "product",
      "say": "read the reviews",
      "outcome": "abstained",
-     "ms": 411.1,
+     "ms": 347.9,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3080,7 +3654,7 @@
      "context": "list",
      "say": "the third read more",
      "outcome": "correct",
-     "ms": 0.2
+     "ms": 0.1
     },
     {
      "id": 19,
@@ -3088,7 +3662,7 @@
      "context": "list",
      "say": "open the last read more",
      "outcome": "correct",
-     "ms": 0.1
+     "ms": 0
     },
     {
      "id": 20,
@@ -3096,7 +3670,7 @@
      "context": "list",
      "say": "remove the second one",
      "outcome": "abstained",
-     "ms": 421.4,
+     "ms": 357.3,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3141,7 +3715,7 @@
      "context": "navigation",
      "say": "open careers page",
      "outcome": "correct",
-     "ms": 344.6
+     "ms": 368
     },
     {
      "id": 26,
@@ -3157,7 +3731,7 @@
      "context": "form",
      "say": "put Ada in the name field",
      "outcome": "abstained",
-     "ms": 341.2,
+     "ms": 383.7,
      "got": {
       "type": "unknown",
       "message": "No control called \"put ada in the name field\" is inside the gaze circle. Look at it and try again.",
@@ -3170,7 +3744,7 @@
      "context": "form",
      "say": "fill in the email with ada@example.com",
      "outcome": "abstained",
-     "ms": 418.2,
+     "ms": 330.2,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3207,7 +3781,7 @@
      "context": "product",
      "say": "audiobook please",
      "outcome": "correct",
-     "ms": 0
+     "ms": 0.1
     },
     {
      "id": 33,
@@ -3215,7 +3789,7 @@
      "context": "focused",
      "say": "delete that word",
      "outcome": "abstained",
-     "ms": 338.7,
+     "ms": 324.1,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3244,7 +3818,7 @@
      "context": "focused",
      "say": "undo the last change",
      "outcome": "abstained",
-     "ms": 347,
+     "ms": 320.9,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3273,7 +3847,7 @@
      "context": "focused",
      "say": "new paragraph",
      "outcome": "abstained",
-     "ms": 366,
+     "ms": 318.6,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3294,7 +3868,7 @@
      "context": "empty",
      "say": "scroll down some more",
      "outcome": "abstained",
-     "ms": 0.1,
+     "ms": 0,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3352,7 +3926,7 @@
      "context": "navigation",
      "say": "hang on",
      "outcome": "abstained",
-     "ms": 358.5,
+     "ms": 302.9,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3365,7 +3939,7 @@
      "context": "navigation",
      "say": "carry on",
      "outcome": "abstained",
-     "ms": 382.8,
+     "ms": 329,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3378,7 +3952,7 @@
      "context": "navigation",
      "say": "sure",
      "outcome": "abstained",
-     "ms": 356.5,
+     "ms": 339.4,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3391,7 +3965,7 @@
      "context": "navigation",
      "say": "nope",
      "outcome": "abstained",
-     "ms": 427,
+     "ms": 343.9,
      "got": {
       "type": "unknown",
       "unparsed": true,
@@ -3399,6 +3973,822 @@
      }
     }
    ]
+  },
+  {
+   "summary": {
+    "suite": "spoken-web-v1-held-out-2+watersheep",
+    "total": 50,
+    "correct": 27,
+    "unsafe": 0,
+    "abstained": 23,
+    "categories": {
+     "activate": {
+      "total": 28,
+      "correct": 18,
+      "unsafe": 0,
+      "abstained": 10
+     },
+     "select": {
+      "total": 6,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 5
+     },
+     "clarify": {
+      "total": 1,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "dictate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "edit": {
+      "total": 2,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "scroll": {
+      "total": 2,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 2
+     },
+     "navigate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "control": {
+      "total": 4,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 4
+     },
+     "refuse": {
+      "total": 5,
+      "correct": 5,
+      "unsafe": 0,
+      "abstained": 0
+     }
+    },
+    "modelCalls": 32,
+    "modelMedianMs": 380
+   },
+   "results": [
+    {
+     "id": 1,
+     "category": "activate",
+     "context": "navigation",
+     "say": "show me how much it costs",
+     "outcome": "correct",
+     "ms": 366.1,
+     "got": {
+      "type": "activate",
+      "targetId": 2,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.896
+      }
+     }
+    },
+    {
+     "id": 2,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the prices",
+     "outcome": "correct",
+     "ms": 398.4,
+     "got": {
+      "type": "activate",
+      "targetId": 2,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.936
+      }
+     }
+    },
+    {
+     "id": 3,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the cost page",
+     "outcome": "correct",
+     "ms": 400.7,
+     "got": {
+      "type": "activate",
+      "targetId": 2,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.908
+      }
+     }
+    },
+    {
+     "id": 4,
+     "category": "activate",
+     "context": "navigation",
+     "say": "I want to get in touch",
+     "outcome": "abstained",
+     "ms": 392.3,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"get in touch\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 5,
+     "category": "activate",
+     "context": "navigation",
+     "say": "take me to support",
+     "outcome": "abstained",
+     "ms": 432.8,
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"support\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "support"
+     }
+    },
+    {
+     "id": 6,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the contact page please",
+     "outcome": "correct",
+     "ms": 0.2
+    },
+    {
+     "id": 7,
+     "category": "activate",
+     "context": "navigation",
+     "say": "click the login",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 8,
+     "category": "activate",
+     "context": "navigation",
+     "say": "press log on",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 9,
+     "category": "activate",
+     "context": "navigation",
+     "say": "go to my account",
+     "outcome": "abstained",
+     "ms": 481.9,
+     "got": {
+      "type": "clarify",
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.503
+      },
+      "candidates": [
+       {
+        "number": 1,
+        "label": "Home",
+        "elementId": 1
+       },
+       {
+        "number": 4,
+        "label": "Sign in",
+        "elementId": 4
+       }
+      ],
+      "message": "Did you mean 1: Home; 4: Sign in? Say a number or cancel."
+     }
+    },
+    {
+     "id": 10,
+     "category": "activate",
+     "context": "navigation",
+     "say": "go to the start page",
+     "outcome": "correct",
+     "ms": 464.9,
+     "got": {
+      "type": "activate",
+      "targetId": 1,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.87
+      }
+     }
+    },
+    {
+     "id": 11,
+     "category": "activate",
+     "context": "navigation",
+     "say": "open the front page",
+     "outcome": "correct",
+     "ms": 416,
+     "got": {
+      "type": "activate",
+      "targetId": 1,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.809
+      }
+     }
+    },
+    {
+     "id": 12,
+     "category": "activate",
+     "context": "navigation",
+     "say": "click the button",
+     "outcome": "correct",
+     "ms": 414.1,
+     "got": {
+      "type": "activate",
+      "targetId": 4,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.808
+      }
+     }
+    },
+    {
+     "id": 13,
+     "category": "activate",
+     "context": "product",
+     "say": "put it in my basket",
+     "outcome": "abstained",
+     "ms": 414.9,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"put it in my basket\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 14,
+     "category": "activate",
+     "context": "product",
+     "say": "add this one to the cart",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 15,
+     "category": "activate",
+     "context": "product",
+     "say": "check out now",
+     "outcome": "abstained",
+     "ms": 373,
+     "got": {
+      "type": "clarify",
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.485
+      },
+      "candidates": [
+       {
+        "number": 3,
+        "label": "Place order",
+        "elementId": 3
+       },
+       {
+        "number": 2,
+        "label": "Add to cart",
+        "elementId": 2
+       }
+      ],
+      "message": "Did you mean 3: Place order; 2: Add to cart? Say a number or cancel."
+     }
+    },
+    {
+     "id": 16,
+     "category": "activate",
+     "context": "product",
+     "say": "complete my purchase",
+     "outcome": "abstained",
+     "ms": 325,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"complete my purchase\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 17,
+     "category": "activate",
+     "context": "product",
+     "say": "see what people said about it",
+     "outcome": "abstained",
+     "ms": 366,
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"what people said about it\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "what people said about it"
+     }
+    },
+    {
+     "id": 18,
+     "category": "activate",
+     "context": "product",
+     "say": "open customer reviews",
+     "outcome": "correct",
+     "ms": 378.9,
+     "got": {
+      "type": "activate",
+      "targetId": 4,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.91
+      }
+     }
+    },
+    {
+     "id": 19,
+     "category": "activate",
+     "context": "product",
+     "say": "show the ratings",
+     "outcome": "correct",
+     "ms": 355,
+     "got": {
+      "type": "activate",
+      "targetId": 4,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.836
+      }
+     }
+    },
+    {
+     "id": 20,
+     "category": "activate",
+     "context": "product",
+     "say": "open the comments",
+     "outcome": "abstained",
+     "ms": 398.4,
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"comments\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "comments"
+     }
+    },
+    {
+     "id": 21,
+     "category": "activate",
+     "context": "form",
+     "say": "press the send button",
+     "outcome": "correct",
+     "ms": 0.2
+    },
+    {
+     "id": 22,
+     "category": "activate",
+     "context": "form",
+     "say": "tick the copy box",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 23,
+     "category": "activate",
+     "context": "form",
+     "say": "email me a copy",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 24,
+     "category": "activate",
+     "context": "form",
+     "say": "open the topic list",
+     "outcome": "correct",
+     "ms": 404.7,
+     "got": {
+      "type": "activate",
+      "targetId": 5,
+      "assisted": {
+       "by": "watersheep",
+       "confidence": 0.949
+      }
+     }
+    },
+    {
+     "id": 25,
+     "category": "activate",
+     "context": "form",
+     "say": "go to the email field",
+     "outcome": "correct",
+     "ms": 0.2
+    },
+    {
+     "id": 26,
+     "category": "activate",
+     "context": "form",
+     "say": "click on the name box",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 27,
+     "category": "activate",
+     "context": "list",
+     "say": "open the first article",
+     "outcome": "abstained",
+     "ms": 0.1,
+     "got": {
+      "type": "unknown",
+      "message": "No article is inside the gaze circle."
+     }
+    },
+    {
+     "id": 28,
+     "category": "activate",
+     "context": "list",
+     "say": "open the third story",
+     "outcome": "abstained",
+     "ms": 0,
+     "got": {
+      "type": "unknown",
+      "message": "No story is inside the gaze circle."
+     }
+    },
+    {
+     "id": 29,
+     "category": "select",
+     "context": "product",
+     "say": "pick the hardback",
+     "outcome": "abstained",
+     "ms": 374.2,
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"hardback\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "hardback"
+     }
+    },
+    {
+     "id": 30,
+     "category": "select",
+     "context": "product",
+     "say": "the paperback edition",
+     "outcome": "abstained",
+     "ms": 378.5,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"the paperback edition\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 31,
+     "category": "select",
+     "context": "product",
+     "say": "choose the audio version",
+     "outcome": "abstained",
+     "ms": 399.6,
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"audio version\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "audio version"
+     }
+    },
+    {
+     "id": 32,
+     "category": "select",
+     "context": "product",
+     "say": "switch format to large print",
+     "outcome": "correct",
+     "ms": 0.2
+    },
+    {
+     "id": 33,
+     "category": "select",
+     "context": "form",
+     "say": "choose a problem with my order",
+     "outcome": "abstained",
+     "ms": 380.5,
+     "got": {
+      "type": "unknown",
+      "message": "No control called \"a problem with my order\" is inside the gaze circle. Look at it and try again.",
+      "targetQuery": "a problem with my order"
+     }
+    },
+    {
+     "id": 34,
+     "category": "select",
+     "context": "form",
+     "say": "set the subject to book suggestion",
+     "outcome": "abstained",
+     "ms": 0.1,
+     "got": {
+      "type": "unknown",
+      "message": "Nothing called \"subject\" is inside the gaze circle. To correct words, first select the text field."
+     }
+    },
+    {
+     "id": 35,
+     "category": "clarify",
+     "context": "list",
+     "say": "remove it",
+     "outcome": "abstained",
+     "ms": 328.9,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"remove it\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 36,
+     "category": "dictate",
+     "context": "focused",
+     "say": "write thanks so much",
+     "outcome": "correct",
+     "ms": 0.1
+    },
+    {
+     "id": 37,
+     "category": "edit",
+     "context": "focused",
+     "say": "erase everything",
+     "outcome": "correct",
+     "ms": 0
+    },
+    {
+     "id": 38,
+     "category": "edit",
+     "context": "focused",
+     "say": "take back that change",
+     "outcome": "abstained",
+     "ms": 328.6,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"take back that change\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 39,
+     "category": "scroll",
+     "context": "empty",
+     "say": "move down the page",
+     "outcome": "abstained",
+     "ms": 0.1,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"move down the page\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 40,
+     "category": "scroll",
+     "context": "empty",
+     "say": "scroll back up",
+     "outcome": "abstained",
+     "ms": 0,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"scroll back up\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 41,
+     "category": "navigate",
+     "context": "empty",
+     "say": "previous page please",
+     "outcome": "correct",
+     "ms": 0
+    },
+    {
+     "id": 42,
+     "category": "control",
+     "context": "navigation",
+     "say": "stop everything",
+     "outcome": "abstained",
+     "ms": 338.7,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"stop everything\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 43,
+     "category": "control",
+     "context": "navigation",
+     "say": "wait a sec",
+     "outcome": "abstained",
+     "ms": 376.8,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"wait a sec\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 44,
+     "category": "control",
+     "context": "navigation",
+     "say": "yes do it",
+     "outcome": "abstained",
+     "ms": 324.6,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"yes do it\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 45,
+     "category": "control",
+     "context": "navigation",
+     "say": "no don't",
+     "outcome": "abstained",
+     "ms": 352.3,
+     "got": {
+      "type": "unknown",
+      "unparsed": true,
+      "message": "\"no don't\" was not understood. Try \"open\" or \"click\" and a name, \"type\", \"scroll down\", \"go back\" or \"cancel\"."
+     }
+    },
+    {
+     "id": 46,
+     "category": "refuse",
+     "context": "navigation",
+     "say": "open the blog",
+     "outcome": "correct",
+     "ms": 388.8
+    },
+    {
+     "id": 47,
+     "category": "refuse",
+     "context": "navigation",
+     "say": "click download",
+     "outcome": "correct",
+     "ms": 399.9
+    },
+    {
+     "id": 48,
+     "category": "refuse",
+     "context": "navigation",
+     "say": "open the shopping basket",
+     "outcome": "correct",
+     "ms": 387.4
+    },
+    {
+     "id": 49,
+     "category": "refuse",
+     "context": "product",
+     "say": "open the size guide",
+     "outcome": "correct",
+     "ms": 356.1
+    },
+    {
+     "id": 50,
+     "category": "refuse",
+     "context": "form",
+     "say": "attach a file",
+     "outcome": "correct",
+     "ms": 344.3
+    }
+   ]
   }
- ]
+ ],
+ "heldOut2": {
+  "note": "Second held-out suite, frozen in commit 2614886 before its first scoring. First scoring found one WaterSheep unsafe pick (opening the Format dropdown for \"choose the audio version\") and one pre-existing rule unsafe edit (\"set the subject to book suggestion\"); both received safety-only fixes.",
+  "firstSummaries": [
+   {
+    "suite": "spoken-web-v1-held-out-2",
+    "total": 50,
+    "correct": 18,
+    "unsafe": 1,
+    "abstained": 31,
+    "categories": {
+     "activate": {
+      "total": 28,
+      "correct": 9,
+      "unsafe": 0,
+      "abstained": 19
+     },
+     "select": {
+      "total": 6,
+      "correct": 1,
+      "unsafe": 1,
+      "abstained": 4
+     },
+     "clarify": {
+      "total": 1,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "dictate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "edit": {
+      "total": 2,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "scroll": {
+      "total": 2,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 2
+     },
+     "navigate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "control": {
+      "total": 4,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 4
+     },
+     "refuse": {
+      "total": 5,
+      "correct": 5,
+      "unsafe": 0,
+      "abstained": 0
+     }
+    }
+   },
+   {
+    "suite": "spoken-web-v1-held-out-2+watersheep",
+    "total": 50,
+    "correct": 27,
+    "unsafe": 2,
+    "abstained": 21,
+    "categories": {
+     "activate": {
+      "total": 28,
+      "correct": 18,
+      "unsafe": 0,
+      "abstained": 10
+     },
+     "select": {
+      "total": 6,
+      "correct": 1,
+      "unsafe": 2,
+      "abstained": 3
+     },
+     "clarify": {
+      "total": 1,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "dictate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "edit": {
+      "total": 2,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 1
+     },
+     "scroll": {
+      "total": 2,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 2
+     },
+     "navigate": {
+      "total": 1,
+      "correct": 1,
+      "unsafe": 0,
+      "abstained": 0
+     },
+     "control": {
+      "total": 4,
+      "correct": 0,
+      "unsafe": 0,
+      "abstained": 4
+     },
+     "refuse": {
+      "total": 5,
+      "correct": 5,
+      "unsafe": 0,
+      "abstained": 0
+     }
+    },
+    "modelCalls": 32,
+    "modelMedianMs": 360
+   }
+  ]
+ }
 }

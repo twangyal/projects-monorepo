@@ -87,7 +87,27 @@ Both unsafe actions were gating mistakes, and both were fixed. The held-out prot
 - The yes/no intent gate never reached 0.8 for any unparsed phrase. For example, "buy it now" scored 0.06 and "hang on" 0.35. As configured, that path is safe but adds nothing. Making it useful needs a better-designed question, chosen on new data rather than this held-out set.
 - Cost: the model is called only when the rules could not act. Each call took about 0.35–0.75 s on 4 CPU cores in Node, loading took 0.7 s, and the download is 158 MB.
 
-**Decision.** The benefit is real but small, so WaterSheep is **not wired into the live navigator yet**. The next step is a fresh held-out suite with more name-mismatch and indirect requests, written before any further design changes, to see whether the target pick generalizes beyond one case.
+**Second held-out suite.** Fifty new phrasings, mostly paraphrased or indirect names for controls plus five negatives, were frozen in commit 2614886 before being scored once.
+
+| Held-out-2 (50) | Correct | Unsafe | Abstained |
+| --- | --- | --- | --- |
+| Rules, first scoring | 18 | 1 | 31 |
+| Rules + WaterSheep, first scoring | 27 | 2 | 21 |
+| Rules, after safety fixes | 18 | 0 | 32 |
+| **Rules + WaterSheep, after safety fixes** | **27** | **0** | **23** |
+
+The two unsafe actions led to safety-only fixes:
+
+- **"choose the audio version"** made WaterSheep open the Format dropdown (0.81). A request starting with choose, select, pick, set or switch no longer lets the model just open a dropdown.
+- **"set the subject to book suggestion"** was an older rule behaviour: it rewrote words in the gazed, unfocused name field. Word corrections now need a focused field.
+
+With 0 unsafe on every suite, WaterSheep's picks gave 10 of the 27 correct held-out-2 answers. Examples: "show me how much it costs" → Pricing, "go to the start page" → Home, "show the ratings" → Reviews, "open the topic list" → Topic. All five negatives ("open the blog", "attach a file") still made no pick. Its misses are paraphrases it was not confident about, such as "put it in my basket" and "complete my purchase", and the intent gate still never opened for unparsed phrases.
+
+**Decision.** The gain generalizes: held-out-2 rises from 36% to 54% correct with no unintended actions, at about 0.35–0.4 s for each instruction the rules could not handle. The next milestone is wiring it into the live navigator:
+
+- an asynchronous interpretation path in the controller, keeping cancel and pause instant;
+- onnxruntime-web bundled in the extension build;
+- the 158 MB model downloaded on request and cached, with the rules still working while it loads or if it fails.
 
 ## Remaining limits
 

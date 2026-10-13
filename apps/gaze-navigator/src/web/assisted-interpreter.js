@@ -49,7 +49,9 @@ export function createAssistedInterpreter({ model, rules = interpretRules, accep
     if (!valid(probs, choices.length + 1)) return null;
     const ranked = choices.map((choice, i) => ({ ...choice, p: probs[i] })).sort((a, b) => b.p - a.p);
     const assisted = { by: 'watersheep', confidence: Math.round(ranked[0].p * 1000) / 1000 };
-    if (ranked[0].p >= accept) return { ...ranked[0].act(), assisted };
+    // Asking to choose something never just opens a dropdown: that would look like an answer but change nothing chosen.
+    const choosing = /^\s*(?:please\s+)?(?:choose|select|pick|set|switch)\b/i.test(utterance);
+    if (ranked[0].p >= accept && !(choosing && ranked[0].element.options?.length)) return { ...ranked[0].act(), assisted };
     const candidates = ranked.filter(entry => entry.p >= CANDIDATE_FLOOR).slice(0, MAX_CANDIDATES);
     if (candidates.length < 2 || candidates.reduce((sum, entry) => sum + entry.p, 0) < shortlist) return null;
     return {

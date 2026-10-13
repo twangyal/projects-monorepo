@@ -62,7 +62,15 @@ The model sees the instruction and the controls' role, name, checked state and c
 
 `src/web/watersheep.js` adapts WaterSheep's browser inference with an injected runtime. `npm run evaluate:instructions -- --watersheep DIR` scores it on both suites from a local model copy.
 
-**Measured** (revision `236de64`): with WaterSheep, the held-out suite rises from 34/50 to **35/50 with 0 unsafe** (15 abstained), and the tuned suite stays at 120/120. Model calls take about 0.36 s. The first scoring found two unsafe picks, which led to safety-only gating fixes. Because the gain is small, the model is not yet used by the live navigator. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
+**Measured** (revision `236de64`), as correct / unsafe answers:
+
+| Suite | Rules | Rules + WaterSheep |
+| --- | --- | --- |
+| Tuned (120) | 120 / 0 | 120 / 0 |
+| Held-out (50) | 34 / 0 | 35 / 0 |
+| Second held-out (50, paraphrased targets) | 18 / 0 | **27 / 0** |
+
+Model calls take about 0.36 s. First scorings found unsafe picks, which led to safety-only fixes; both are recorded. The live navigator does not use the model yet; wiring it in is the next step. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
 
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 

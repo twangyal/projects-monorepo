@@ -229,7 +229,10 @@ export function interpret(utterance, context = { elements: [] }) {
     }
     const fields = context.elements.filter(element => element.editable && matchScore(target, element.name) >= 0.5);
     if (fields.length) return resolve(target, fields, null, edit('replace-all', { text: unquote(value) }), 'text field');
-    return chooseField(null, context, edit('replace', { find: unquote(target), text: unquote(value) }));
+    // Correcting words inside a field needs that field to be focused; a merely gazed field is a guess.
+    const focused = context.elements.find(element => element.editable && element.id === context.focusedId);
+    if (!focused) return { type: 'unknown', message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
+    return edit('replace', { find: unquote(target), text: unquote(value) })(focused);
   }
   if ((match = /^(?:clear|empty|erase)(?: (?:the )?(.+?))?$/.exec(text))) {
     const name = match[1] && !/^(it|that|this|text|field|box|everything|all)$/.test(match[1]) ? match[1].replace(/ (field|box)$/, '') : null;

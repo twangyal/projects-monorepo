@@ -85,3 +85,15 @@ test('only roles, names, checked state and choices are sent, and model failures 
   const malformed = { decide: async () => ({ probs: [2, -1] }), yes: async () => 1 };
   assert.equal((await createAssistedInterpreter({ model: malformed })('open the customer reviews', CONTEXTS.product)).type, 'unknown');
 });
+
+test('a request to choose never just opens a dropdown, and word corrections need a focused field', async () => {
+  // Measured on the second held-out suite: "choose the audio version" opened the Format dropdown.
+  const model = scripted({ Format: 9 });
+  const action = await createAssistedInterpreter({ model })('choose the audio version', CONTEXTS.product);
+  assert.notEqual(action.type, 'activate');
+  assert.equal((await createAssistedInterpreter({ model: scripted({ Topic: 9 }) })('open the topic list', CONTEXTS.form)).type, 'activate');
+  // "set the subject to …" with nothing focused no longer rewrites the gazed name field.
+  const { interpret } = await import('../src/web/interpreter.js');
+  assert.equal(interpret('set the subject to book suggestion', CONTEXTS.form).type, 'unknown');
+  assert.deepEqual(interpret('change Tuesday to Friday', CONTEXTS.focused), { type: 'edit', targetId: 3, edit: { kind: 'replace', find: 'Tuesday', text: 'Friday' } });
+});
