@@ -216,3 +216,83 @@ export function previewDrawingTween(current: Project, proposal: TweenProposal): 
 export function applyDrawingTween(current: Project, proposal: TweenProposal): Project {
   return reviewedCandidate(current, proposal);
 }
+
+export interface PairSuggestion {
+  pairs: TweenPair[];
+  /** Starting strokes whose partner or direction had a close alternative; review these first. */
+  uncertain: number[];
+  /** The whole drawing's estimated movement from the starting to the ending drawing. */
+  offset: Point;
+}
+const CLOSE_PARTNER = 1.15, CLOSE_DIRECTION = 1.1;
+function pathLength(points: Point[]): number {
+  let length = 0;
+  for (let k = 1; k < points.length; k++) length += Math.hypot(points[k].x - points[k - 1].x, points[k].y - points[k - 1].y);
+  return length;
+}
+/** A loop whose ends meet can start anywhere along it, so its pairing deserves a look. */
+function closed(points: Point[]): boolean {
+  const length = pathLength(points);
+  return length > 0 && Math.hypot(points[0].x - points.at(-1)!.x, points[0].y - points.at(-1)!.y) < 0.1 * length;
+}
+
+/**
+ * Propose stroke correspondence by geometry: compensate the drawing's overall movement, then compare
+ * every stroke pair in both directions by position and shape, and choose the assignment with the
+ * least total difference. Deterministic and exact for up to 8 strokes. A suggestion, not recognition.
+ */
+export function suggestTweenPairs(startStrokes: readonly Stroke[], endStrokes: readonly Stroke[]): PairSuggestion {
+  const count = startStrokes.length;
+  if (count < 1 || count > MAX_TWEEN_PAIRS || endStrokes.length !== count) fail('Endpoint drawings need the same number of strokes, from 1 to 8.');
+  const starts = startStrokes.map(stroke => sample(stroke.points, false));
+  const ends = endStrokes.map(stroke => [sample(stroke.points, false), sample(stroke.points, true)]);
+  const centroid = (points: Point[]) => ({ x: points.reduce((sum, p) => sum + p.x, 0) / points.length, y: points.reduce((sum, p) => sum + p.y, 0) / points.length });
+  const all = (strokes: Point[][]) => centroid(strokes.map(centroid));
+  const from = all(starts), to = all(ends.map(pair => pair[0]));
+  const offset = { x: to.x - from.x, y: to.y - from.y };
+  // Distances are relative to the drawing's own size, so the thresholds hold at any scale.
+  const spread = Math.max(1, Math.sqrt(starts.flat().reduce((sum, p) => sum + (p.x - from.x) ** 2 + (p.y - from.y) ** 2, 0) / (count * TWEEN_SAMPLES)));
+  const centres = starts.map(centroid);
+  const cost = starts.map((a, i) => ends.map(directions => directions.map(b => {
+    const cb = centroid(b);
+    let position = 0, shape = 0;
+    for (let k = 0; k < TWEEN_SAMPLES; k++) {
+      position += Math.hypot(a[k].x + offset.x - b[k].x, a[k].y + offset.y - b[k].y);
+      shape += Math.hypot(a[k].x - centres[i].x - (b[k].x - cb.x), a[k].y - centres[i].y - (b[k].y - cb.y));
+    }
+    return (position + 0.5 * shape) / TWEEN_SAMPLES / spread;
+  })));
+  const colorPenalty = (i: number, j: number) => startStrokes[i].color.toLowerCase() === endStrokes[j].color.toLowerCase() ? 0 : 0.15;
+  const best = cost.map((row, i) => row.map((pair, j) => Math.min(pair[0], pair[1]) + colorPenalty(i, j)));
+  // Exact minimum-cost assignment by dynamic programming over subsets of ending strokes.
+  const solve = (forbid?: [number, number]) => {
+    const size = 1 << count, total = new Float64Array(size).fill(Infinity), choice = new Int8Array(size).fill(-1);
+    total[0] = 0;
+    for (let mask = 0; mask < size; mask++) {
+      if (total[mask] === Infinity) continue;
+      let i = 0; for (let m = mask; m; m &= m - 1) i++;
+      if (i >= count) continue;
+      for (let j = 0; j < count; j++) {
+        if (mask & (1 << j) || (forbid && forbid[0] === i && forbid[1] === j)) continue;
+        const next = mask | (1 << j), value = total[mask] + best[i][j];
+        if (value < total[next]) { total[next] = value; choice[next] = j; }
+      }
+    }
+    const order: number[] = [];
+    for (let mask = size - 1; mask;) { const j = choice[mask]; if (j < 0) return null; order.unshift(j); mask &= ~(1 << j); }
+    return { total: total[size - 1], order };
+  };
+  const optimum = solve()!;
+  const uncertain: number[] = [];
+  const pairs = optimum.order.map((j, i): TweenPair => {
+    const [forward, backward] = cost[i][j];
+    const alternative = count > 1 ? solve([i, j]) : null;
+    const closePartner = alternative !== null && alternative.total <= optimum.total * CLOSE_PARTNER + 0.02;
+    // A dot has no direction, so reversing it cannot matter.
+    const directionless = pathLength(starts[i]) === 0 || pathLength(ends[j][0]) === 0;
+    const closeDirection = !directionless && Math.max(forward, backward) <= Math.min(forward, backward) * CLOSE_DIRECTION + 0.02;
+    if (closePartner || closeDirection || closed(starts[i]) || closed(ends[j][0])) uncertain.push(i);
+    return { startStroke: i, endStroke: j, reverseEnd: backward < forward };
+  });
+  return { pairs, uncertain, offset };
+}

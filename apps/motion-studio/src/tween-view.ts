@@ -1,6 +1,6 @@
 import { MAX_DRAWING_CELS, MAX_JSON_BYTES, type DrawingLayer, type Project, type Stroke } from './model.ts';
 import type { Assets } from './render.ts';
-import { applyDrawingTween, buildDrawingTween, planTweenFrames, previewDrawingTween, type TweenProposal } from './tween.ts';
+import { applyDrawingTween, buildDrawingTween, planTweenFrames, previewDrawingTween, suggestTweenPairs, type TweenProposal } from './tween.ts';
 import { createTweenPreview, type TweenPreview } from './tween-preview.ts';
 
 interface EditorState {
@@ -17,10 +17,10 @@ interface Hooks {
 /** Scratch controls own their nodes; ordinary editor refreshes never rebuild them. */
 export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
   host.innerHTML = `<section id="tween-panel" role="region" aria-label="Drawing in-betweens" hidden>
-    <h3>Drawing in-betweens</h3><p class="hint">Geometric interpolation of deliberately paired strokes, not learned animation. Review crossings, softened corners and paint-order changes before applying.</p>
+    <h3>Drawing in-betweens</h3><p class="hint">Geometric interpolation of paired strokes, not learned animation. Pair strokes yourself or let <strong>Suggest pairs from shapes</strong> propose them, then review crossings, softened corners and paint-order changes before applying.</p>
     <div class="tween-endpoints"><label class="field">Starting drawing<select id="tween-start"></select></label><p id="tween-end-label"></p></div>
     <div id="tween-ending-strokes" aria-label="Ending drawing strokes"></div><div id="tween-pairs"></div>
-    <button id="tween-pair-order">Pair in drawing order</button>
+    <div class="tween-pair-actions"><button id="tween-suggest">Suggest pairs from shapes</button><button id="tween-pair-order">Pair in drawing order</button></div>
     <label class="field tween-count">Number of new drawings<input id="tween-count" type="text" inputmode="numeric" value="1"></label>
     <p id="tween-frames" class="hint"></p><button id="tween-review">Review in-betweens</button>
     <p id="tween-status" role="status" aria-live="polite"></p><p id="tween-usage"></p>
@@ -124,7 +124,8 @@ export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
           const select = document.createElement('select'); label.append(select);
           const reversal = document.createElement('label'); reversal.className = 'tween-reverse'; const checkbox = document.createElement('input'); checkbox.type = 'checkbox';
           reversal.append(checkbox, document.createTextNode(`Reverse ending stroke for starting stroke ${index + 1}`));
-          select.addEventListener('input', changed); checkbox.addEventListener('input', changed);
+          const edited = () => { row!.classList.remove('is-uncertain'); row!.querySelector('.tween-check')?.remove(); changed(); };
+          select.addEventListener('input', edited); checkbox.addEventListener('input', edited);
           row.append(thumbnail(stroke, index, 'Starting'), label, reversal); list.append(row);
         } else row.querySelector('figure')!.replaceWith(thumbnail(stroke, index, 'Starting'));
         // Keep native control identity, focus, explicit choice and reversal while indices survive.
@@ -138,7 +139,7 @@ export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
       });
       if (!first.strokes.length || first.strokes.length !== last.strokes.length || first.strokes.length > 8 || last.frame - first.frame < 2) {
         status('Endpoints need the same 1–8 strokes and at least one interior frame. Choose another starting drawing.', true);
-      } else if (!dirty) status('Choose every pairing explicitly, then Review. Pairing is geometric, not a recognition result.');
+      } else if (!dirty) status('Choose every pairing, or Suggest pairs from shapes, then Review. Pairing is geometric, not a recognition result.');
     } catch (error) {
       for (const figure of list.querySelectorAll('figure')) { const caption = document.createElement('figcaption'); caption.textContent = 'Endpoint no longer available. Choose another starting drawing; existing raw choices are kept.'; figure.replaceChildren(caption); }
       node('tween-end-label').textContent = 'Ending drawing: unavailable'; status(message(error), true);
@@ -166,10 +167,37 @@ export function createTweenWorkspace(host: HTMLElement, hooks: Hooks) {
   }
   start.addEventListener('input', () => { changed(); renderPairs(); update(); });
   count.addEventListener('input', changed);
+  function markUncertain(uncertain: readonly number[] = []) {
+    for (const row of node('tween-pairs').querySelectorAll<HTMLElement>('[data-tween-stroke]')) {
+      const flagged = uncertain.includes(Number(row.dataset.tweenStroke));
+      row.classList.toggle('is-uncertain', flagged);
+      let note = row.querySelector<HTMLElement>('.tween-check');
+      if (flagged && !note) { note = document.createElement('p'); note.className = 'tween-check'; note.textContent = 'Check this pair: a close alternative partner or direction exists.'; row.append(note); }
+      if (!flagged) note?.remove();
+    }
+  }
   node('tween-pair-order').addEventListener('click', () => {
     if (hooks.state().locked) return;
     for (const [index, select] of [...node('tween-pairs').querySelectorAll('select')].entries()) select.value = String(index);
-    changed();
+    markUncertain(); changed();
+  });
+  node('tween-suggest').addEventListener('click', () => {
+    if (hooks.state().locked) return;
+    try {
+      const { first, last } = endpoints();
+      const suggestion = suggestTweenPairs(first.strokes, last.strokes);
+      for (const pair of suggestion.pairs) {
+        const row = node('tween-pairs').querySelector<HTMLElement>(`[data-tween-stroke="${pair.startStroke}"]`)!;
+        row.querySelector('select')!.value = String(pair.endStroke);
+        row.querySelector<HTMLInputElement>('input[type=checkbox]')!.checked = pair.reverseEnd;
+      }
+      markUncertain(suggestion.uncertain);
+      changed();
+      const moved = Math.round(Math.hypot(suggestion.offset.x, suggestion.offset.y));
+      status(`Suggested ${suggestion.pairs.length} pairs by position (after the drawing's overall ${moved}px movement) and shape, in both directions. ` +
+        (suggestion.uncertain.length ? `Check starting stroke${suggestion.uncertain.length > 1 ? 's' : ''} ${suggestion.uncertain.map(i => i + 1).join(', ')}, marked below. ` : '') +
+        'Change any pair, then Review.');
+    } catch (error) { status(message(error), true); }
   });
   node('tween-review').addEventListener('click', () => {
     if (hooks.state().locked || !hooks.admitDrafts()) return;
