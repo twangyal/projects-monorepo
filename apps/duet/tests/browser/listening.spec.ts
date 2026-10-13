@@ -33,12 +33,18 @@ async function pair(page: Page, browser: Browser, baseURL: string | undefined) {
   return { guest, close: () => context.close() };
 }
 
-// Connecting leaves Duet for the (fake) Spotify approval page and returns to the room.
-async function connect(page: Page, user: string | null) {
-  await spotify({ nextUser: user });
-  await section(page).getByRole('button', { name: 'Connect my Spotify' }).click();
+// Connecting leaves Duet for the (fake) Spotify approval page and returns to the room. The room URL
+// already matches before the round trip, so wait for Duet's callback itself to answer.
+async function viaSpotify(page: Page, start: () => Promise<void>) {
+  const callback = page.waitForResponse(response => new URL(response.url()).pathname === '/spotify/callback');
+  await start();
+  await callback;
   await page.waitForURL(/\?room=[a-f0-9]{32}$/);
   await expect(page.locator('#room-view')).toBeVisible();
+}
+async function connect(page: Page, user: string | null) {
+  await spotify({ nextUser: user });
+  await viaSpotify(page, () => section(page).getByRole('button', { name: 'Connect my Spotify' }).click());
 }
 
 test('two people connect Spotify, see automatic entries, curate them durably and disconnect', async ({ page, browser, baseURL }) => {
@@ -174,8 +180,7 @@ test('a slice of the timeline becomes a private playlist in one person’s Spoti
     await expect(panel.getByRole('button', { name: 'Create in my Spotify' })).toBeDisabled();
     // Reconnecting the same account grants it and keeps the imported listening.
     await spotify({ nextUser: ada });
-    await panel.getByRole('button', { name: 'Reconnect my Spotify' }).click();
-    await page.waitForURL(/\?room=[a-f0-9]{32}$/);
+    await viaSpotify(page, () => panel.getByRole('button', { name: 'Reconnect my Spotify' }).click());
     await expect(section(page).locator('.timeline-entry', { hasText: 'Paper Boats' })).toBeVisible();
     await expect(section(page).locator('.timeline-entry.kind-both')).toContainText('Harbour Lights');
 
