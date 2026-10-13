@@ -20,3 +20,22 @@ Source baseline and guarded source both pass88 units, ESLint, TypeScript and pro
 The focused corrected drape case now passes in Chromium143 against the ordinary verified production build: the unapplied waist90 remains visible and the full committed backup stays unchanged after rejected fabric selection; after Discard, denim applies normally. The same case failed before repair with actual80. Full local88-unit/lint/TypeScript/build checks pass on guarded source. This resolves one integration blocker only; no broad browser/physical garment acceptance or main Clothing integration is claimed.
 
 Durable guarded candidate: [`2583d63776a436c920fc7d086eb2bf33a7e57d3e`](https://github.com/twangyal/projects-monorepo/commit/2583d63776a436c920fc7d086eb2bf33a7e57d3e), on `autonomous/clothing-integration-247`, based on canonical main with the accepted Gaze changes. Its [hosted gate](https://github.com/twangyal/projects-monorepo/actions/runs/38422722282) passed on 2026-10-13: 88 unit tests, lint, TypeScript, production build and all 89 native browser cases. The pending grading refusal was inspected but has no dedicated new native regression. Passing this gate does not resolve the other seven review findings; canonical Clothing remains unchanged and #247 remains open.
+
+## Continued repairs — 2026-10-13
+
+The integration branch now reaches `1052bd941fe2e0ab5db9883e025ab8bbc2b06123`. Five of the eight original findings are repaired there, with canonical Clothing unchanged:
+
+| Original finding | Task-branch state |
+| --- | --- |
+| 1. Pending skirt/grading drape guard | Repaired in `2583d637`; 88 unit/89 hosted browser tests passed. Dedicated new grading refusal case remains absent. |
+| 2. Late motif/artwork ownership | Repaired in `e519b097`; captured generation/project/target, stale feedback suppression and finally bitmap cleanup. 90 unit/96 hosted browser tests passed in [38426304952](https://github.com/twangyal/projects-monorepo/actions/runs/38426304952). |
+| 3. Aggregate recovery budget | Repaired in `1052bd94`; complete canonical UTF-8 graph admission precedes history/storage and editor success feedback. 93 units plus focused production-native import refusal and geometry/download/reload pass locally. |
+| 4. Raw product drafts | Open. Preserve Apply/Discard drafts across unrelated edits, selection and asynchronous repaints. |
+| 5. Mutable tech-pack image export | Open. Use one immutable design/scene and filename for every image/table. |
+| 6. Neck rib mismatch | Repaired in `2e2b8ade`; exact flat front/back sewing path ×0.85, with explicit fabric-confirmation assumption. |
+| 7. Chest POM mismatch | Repaired in `2e2b8ade`; side-seam intersections at the documented 2.5cm-below-armhole line, including diagram endpoints. Geometry hosted gate [38424621499](https://github.com/twangyal/projects-monorepo/actions/runs/38424621499) passes90 units/90 browser tests. |
+| 8. Raster admission | Open. Verify container/header/decode bounds rather than trusting data-URL syntax/dimensions. Also repair existing sub128px artwork encoding-loop rejection discovered during test preparation. |
+
+The final combined [hosted gate38426887294](https://github.com/twangyal/projects-monorepo/actions/runs/38426887294) is running at this handoff; do not claim its final result until observed. Separate exact-cap budget fixtures use synthetic raster strings and establish schema/recovery behavior only. Near-cap interactive serialization cost is unprofiled. Physical fit, material stretch and exact3D opening-perimeter equality are not established by these flat pattern corrections.
+
+Independent read-only reviews found no scoped blockers for geometry, upload ownership and budget corrections. App-level evidence documents are committed on the task branch: `2026-10-13-measured-geometry-247.md`, `2026-10-13-product-asset-ownership-247.md` and `2026-10-13-project-budget-247.md`. Their first failures and corrected test-fixture/order mistakes are retained. Resume remaining work from the immutable candidate/current task branch, reconcile any newer main direction, and keep #247 open until review findings and final acceptance are resolved. Later style/top-drape branches remain outside this selected snapshot.

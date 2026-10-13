@@ -65,6 +65,9 @@ Milestone #183 adds self-contained A4/US Letter tiled base-pattern exports, a ph
 
 Entered body measurements now persist with complete concepts and add a circular two-ring proxy to the rigid skirt preview, with waist/hip circumference differences and short-skirt refusal to extrapolate (#201). Transparency/rotation are view-only; garment pattern/OBJ exports exclude the proxy. Saved profiles also compare waist/hip differences across all relative graded sizes, with per-size short-skirt refusal and profile/history updates (#202). Anatomy, cloth/body contact and physical fit are unverified; the project remains ACTIVE.
 
+
+Pending integration #247: the completed Fabra-style snapshot remains on `autonomous/clothing-integration-247`, now `1052bd941fe2e0ab5db9883e025ab8bbc2b06123`. Reviewed repairs cover skirt draft guards, measured neck/chest patterns and tech-pack values, late product upload ownership and the complete recoverable-project budget. Geometry hosted90/90 and upload90/96 unit/browser gates pass; final combined hosted verification is pending after93 local units and focused native budget/geometry checks. Raw product drafts, immutable export snapshots and raster admission still block canonical integration. Main Clothing keeps its existing implementation; see [the integration audit](docs/2026-10-13-clothing-integration-review-247.md). Status remains ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`
