@@ -1,9 +1,25 @@
 // Product designs: a base garment built from named parts, each styled with a fabric, color and optional
 // repeat print, plus placed artwork. Pure data, geometry and validation; rendering lives in product-3d.ts.
 
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'] as const;
+/** Base products. Each declares the parts a design styles; the 3D shell, pattern and tech pack follow them. */
+export const BASES = ['tee', 'sweatshirt', 'hoodie'] as const;
+export type Base = typeof BASES[number];
+export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie' };
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket'] as const;
 export type PartId = typeof PART_IDS[number];
-export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib' };
+export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
+  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket' };
+export const BASE_PARTS: Record<Base, readonly PartId[]> = {
+  tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
+  sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
+  hoodie: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket'],
+};
+/** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
+export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
+/** The parts of this design's base, in display order. */
+export function partsOf(product: Pick<Product, 'base'>): readonly PartId[] { return BASE_PARTS[product.base]; }
+/** Height of rib cuffs and the hem band on sweatshirts and hoodies, in cm. */
+export const BAND_CM = 6;
 
 export interface Material { id: string; name: string; composition: string; gsm: number; texture: 'jersey' | 'rib' | 'pique' | 'slub' | 'terry' | 'linen' | 'twill' | 'canvas'; tileCm: number; sheen: number }
 export const MATERIALS: readonly Material[] = [
@@ -41,7 +57,8 @@ export type Currency = typeof CURRENCIES[number];
 /** Costing inputs per garment; fabric prices are per linear metre of 150 cm wide fabric. */
 export interface Costing { currency: Currency; retail: number; make: number; trims: number; printPerArtwork: number; fabricPrices: Record<string, number> }
 export interface Product {
-  base: 'tee'; name: string; measurements: Measurements; neckline: 'crew' | 'v';
+  /** Only the base's parts (BASE_PARTS) are present in `parts`. */
+  base: Base; name: string; measurements: Measurements; neckline: 'crew' | 'v';
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
   /** Tech-pack header details; absent until the designer fills them in. */
   spec?: Spec;
@@ -93,9 +110,9 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
     yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm };
 }
 
-function validateParts(value: unknown, uploaded: ReadonlySet<string>): Record<PartId, PartStyle> {
-  const rawParts = plain(value, PART_IDS, 'Parts');
-  return Object.fromEntries(PART_IDS.map(id => {
+function validateParts(value: unknown, uploaded: ReadonlySet<string>, base: Base): Record<PartId, PartStyle> {
+  const rawParts = plain(value, BASE_PARTS[base], 'Parts');
+  return Object.fromEntries(BASE_PARTS[base].map(id => {
     const s = plain(rawParts[id], ['material', 'color', 'print'], PART_NAMES[id]);
     if (typeof s.material !== 'string') fail('Choose a fabric from the library.');
     material(s.material as string);
@@ -104,7 +121,7 @@ function validateParts(value: unknown, uploaded: ReadonlySet<string>): Record<Pa
 }
 const plainText = (value: unknown, limit: number, label: string) =>
   typeof value === 'string' && value.length <= limit && ![...value].some(c => c.charCodeAt(0) < 32) ? value.trim() : fail(`${label} must be at most ${limit} characters of plain text.`);
-function validateColorways(value: unknown, uploaded: ReadonlySet<string>): Colorway[] {
+function validateColorways(value: unknown, uploaded: ReadonlySet<string>, base: Base): Colorway[] {
   if (!Array.isArray(value) || value.length > LIMITS.colorways) fail(`Keep at most ${LIMITS.colorways} colorways.`);
   const colorways = (value as unknown[]).map(item => {
     const c = plain(item, ['id', 'name', 'parts', 'units'], 'Colorway');
@@ -113,7 +130,7 @@ function validateColorways(value: unknown, uploaded: ReadonlySet<string>): Color
     if (!name) fail('Name each colorway.');
     const units = finite(c.units, LIMITS.units, 'Planned units');
     if (!Number.isInteger(units)) fail('Planned units must be a whole number.');
-    return { id: c.id as string, name, parts: validateParts(c.parts, uploaded), units };
+    return { id: c.id as string, name, parts: validateParts(c.parts, uploaded, base), units };
   });
   if (new Set(colorways.map(c => c.id)).size !== colorways.length) fail('Colorway IDs must be unique.');
   return colorways;
@@ -151,14 +168,16 @@ const OPTIONAL = ['spec', 'colorways', 'costing', 'motifs'] as const;
 export function validateProduct(value: unknown): Product {
   const present = value && typeof value === 'object' ? OPTIONAL.filter(key => Object.hasOwn(value, key)) : [];
   const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', ...present], 'Product');
-  if (p.base !== 'tee') fail('Unsupported base product.');
+  if (!BASES.includes(p.base as Base)) fail('Choose a base product from the library.');
+  const base = p.base as Base;
   if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
   const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
   const measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
+  if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
   const uploaded = new Set((motifs ?? []).map(m => m.id));
-  const parts = validateParts(p.parts, uploaded);
+  const parts = validateParts(p.parts, uploaded, base);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
@@ -168,15 +187,16 @@ export function validateProduct(value: unknown): Product {
     if (!SIZES.includes(raw.sampleSize as Size)) fail('Sample size must be XS, S, M, L or XL.');
     spec = { styleNumber: plainText(raw.styleNumber, 40, 'Style number'), season: plainText(raw.season, 40, 'Season'), sampleSize: raw.sampleSize as Size };
   }
-  return { base: 'tee', name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
-    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
+  return { base, name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
+    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways, uploaded, base) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}),
     ...(motifs ? { motifs } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });
-const allParts = (part: PartStyle, overrides: Partial<Record<PartId, PartStyle>> = {}) =>
-  Object.fromEntries(PART_IDS.map(id => [id, overrides[id] ?? (id === 'neckband' ? { ...part, material: 'rib-220', print: null } : part)])) as Record<PartId, PartStyle>;
+const allParts = (part: PartStyle, overrides: Partial<Record<PartId, PartStyle>> = {}, base: Base = 'tee') =>
+  Object.fromEntries(BASE_PARTS[base].map(id => [id, overrides[id] ?? (RIB_PARTS.has(id) ? { ...part, material: 'rib-220', print: null } : part)])) as Record<PartId, PartStyle>;
 const measurements: Measurements = { chest: 104, length: 72, sleeve: 21 };
+const fleece: Measurements = { chest: 112, length: 70, sleeve: 62 };
 
 /** Base products are blank; templates are remixable designs built on them (as in product-library tools). */
 export const TEMPLATES: readonly { id: string; name: string; description: string; product: Product }[] = [
@@ -191,6 +211,10 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
   { id: 'garden', name: 'Garden print', description: 'A half-drop ditsy floral on sage cotton.',
     product: { base: 'tee', name: 'Garden print tee', measurements, neckline: 'v',
       parts: allParts(style('jersey-180', '#9fae91', { motif: 'floral', color: '#f4efe3', scaleCm: 7, layout: 'half-drop' }), { neckband: style('rib-220', '#9fae91') }), artwork: [] } },
+  { id: 'crew-sweat', name: 'Crew sweatshirt', description: 'Heather grey French terry with rib neck, cuffs and hem.',
+    product: { base: 'sweatshirt', name: 'Crew sweatshirt', measurements: fleece, neckline: 'crew', parts: allParts(style('terry-300', '#b7b4ad'), {}, 'sweatshirt'), artwork: [] } },
+  { id: 'hoodie', name: 'Pullover hoodie', description: 'Navy French terry with a hood, kangaroo pocket and rib trims.',
+    product: { base: 'hoodie', name: 'Pullover hoodie', measurements: { ...fleece, length: 72 }, neckline: 'crew', parts: allParts(style('terry-300', '#1f2a4f'), {}, 'hoodie'), artwork: [] } },
 ];
 export function template(id: string): Product {
   const found = TEMPLATES.find(item => item.id === id) ?? fail('Choose a template from the library.');
@@ -209,8 +233,12 @@ export function teeDimensions(product: Product) {
   const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2;
   return {
     panelWidth: panel.width, length: m.length, half, neckHalf: m.chest * 0.08 + 7, shoulderX: half * 0.86 + 1, shoulderDrop: 4,
-    armDepth: m.chest * 0.23 + 2, sleeveLength: m.sleeve, cuffHalf: Math.max(sleeve.cuffWidth / 2, 10), capWidth: sleeve.capWidth,
+    armDepth: m.chest * 0.23 + 2, sleeveLength: m.sleeve,
+    // Long sleeves taper to a rib cuff; tee sleeves stay open and wide.
+    cuffHalf: product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1), capWidth: sleeve.capWidth,
     neckDepthFront: product.neckline === 'v' ? 15 : 8, neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
+    band: product.base === 'tee' ? 0 : BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
+    hoodHeight: 32, hoodHalf: 13, pocketTop: m.length - BAND_CM - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
   };
 }
 
@@ -239,7 +267,33 @@ export function patternPieces(product: Product): PatternPiece[] {
   const make = (part: PartId, outline: { x: number; y: number }[], cutCount: number): PatternPiece => ({
     part, outline, cutCount, width: Math.max(...outline.map(p => p.x)), height: Math.max(...outline.map(p => p.y)), areaCm2: area(outline),
   });
-  return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1)];
+  if (product.base === 'tee') {
+    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1)];
+  }
+  // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
+  const band = dims.band, shorten = (outline: { x: number; y: number }[], limit: number) => outline.map(p => ({ x: p.x, y: Math.min(p.y, limit) }));
+  const pieces = [make('front', shorten(body(true), panel.length - band), 1), make('back', shorten(body(false), panel.length - band), 1)];
+  const capHeight = Math.min(14, m.chest * 0.11), sleeveOutline = () => {
+    const cap = sleeve.capWidth, cuff = dims.cuffHalf * 2 + 4, pts = [];
+    for (let i = 0; i <= 12; i++) { const t = i / 12; pts.push({ x: t * cap, y: capHeight * (1 - Math.sin(Math.PI * t)) }); }
+    pts.push({ x: (cap + cuff) / 2, y: capHeight + sleeve.length - band }, { x: (cap - cuff) / 2, y: capHeight + sleeve.length - band });
+    return pts;
+  };
+  pieces.push(make('sleeveLeft', sleeveOutline(), 1), make('sleeveRight', sleeveOutline(), 1));
+  if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(neck.length, neck.width * 2), 1));
+  // Rib trims are cut about 15% shorter than the edge they finish so they hug it.
+  pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1),
+    make('hemBand', rect(w * 2 * 0.85, band * 2), 1));
+  if (product.base === 'hoodie') {
+    // Hood side panel (cut 2, mirrored): neck edge along the bottom, face edge on the left, rounded crown and back.
+    const H = dims.hoodHeight, W = 26, hood = [{ x: 0, y: H }, { x: 0, y: 6 }];
+    for (let i = 0; i <= 8; i++) { const t = Math.PI / 2 * i / 8; hood.push({ x: W * 0.55 * (1 - Math.cos(t)) + 0, y: 6 * (1 - Math.sin(t)) }); }
+    hood.push({ x: W, y: H * 0.45 }, { x: W * 0.9, y: H });
+    pieces.push(make('hood', hood.map(p => ({ x: p.x, y: p.y })), 2));
+    const top = dims.pocketHalfTop, bottom = dims.pocketHalfBottom, h = 22;
+    pieces.push(make('pocket', [{ x: bottom - top + 5, y: 0 }, { x: bottom + top - 5, y: 0 }, { x: bottom * 2, y: h }, { x: 0, y: h }], 1));
+  }
+  return pieces;
 }
 
 // 3D mesh ---------------------------------------------------------------------------------------
@@ -256,7 +310,7 @@ interface Silhouette { points: Pt[]; pinned: boolean[]; neck: boolean[]; armhole
 export function teeSilhouette(product: Product, side: 'front' | 'back'): Silhouette {
   const m = product.measurements, half = panelSize(m).width / 2;
   const { neckHalf, shoulderX, shoulderDrop, armDepth } = teeDimensions(product);
-  const angle = 38 * Math.PI / 180, dir = { x: Math.cos(angle), y: Math.sin(angle) }, perp = { x: -Math.sin(angle), y: Math.cos(angle) };
+  const angle = teeDimensions(product).sleeveAngle * Math.PI / 180, dir = { x: Math.cos(angle), y: Math.sin(angle) }, perp = { x: -Math.sin(angle), y: Math.cos(angle) };
   const shoulder = { x: shoulderX, y: shoulderDrop }, underarm = { x: half, y: shoulderDrop + armDepth };
   const cuffHalf = teeDimensions(product).cuffHalf, top = { x: shoulder.x + dir.x * m.sleeve, y: shoulder.y + dir.y * m.sleeve };
   const bottom = { x: top.x + perp.x * cuffHalf, y: top.y + perp.y * cuffHalf };
@@ -304,7 +358,7 @@ function seamDistance(p: Pt, s: Silhouette): number {
  * hem, cuffs and neck stay open. y is up (hem at 0), z toward the viewer, units cm. UVs are flat cm.
  */
 export function teeMesh(product: Product, Delaunator: { from(points: number[][]): { triangles: Uint32Array | number[] } }): PartMesh[] {
-  const m = product.measurements, depth = m.chest / (2 * Math.PI) * 0.85, top = m.length;
+  const m = product.measurements, depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
   const groups = new Map<PartId, PartMesh>();
   for (const id of PART_IDS) groups.set(id, { part: id, positions: [], uvs: [], indices: [] });
   for (const side of ['front', 'back'] as const) {
@@ -313,12 +367,34 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
     const height = (p: Pt) => { const d = Math.min(seamDistance(p, s), depth); return d < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - d / depth) ** 2); };
     // Regions share their armhole edges exactly, so the sleeve seams join without gaps.
     // Corner indices: 0 neck, 1 shoulder, 2 sleeve top, 3 cuff bottom, 4 underarm, 5 hem (and mirrored 6–11).
-    const regions: { part: PartId; polygon: Pt[] }[] = [
+    let regions: { part: PartId; polygon: Pt[] }[] = [
       { part: side, polygon: [c[0], c[1], c[4], c[5], c[6], c[7], c[10], ...c.slice(11)] },
       { part: 'sleeveLeft', polygon: [c[1], c[2], c[3], c[4]] },
       { part: 'sleeveRight', polygon: [c[7], c[8], c[9], c[10]] },
     ];
+    if (dims.band) {
+      // Rib bands: the body ends above the hem band and each sleeve above its cuff. Split points lie on the
+      // silhouette's own edges, so the shell's seams are unchanged and neighbouring regions share edges.
+      const toward = (from: Pt, to: Pt, distance: number) => { const length = Math.hypot(to.x - from.x, to.y - from.y); return { x: from.x + (to.x - from.x) * distance / length, y: from.y + (to.y - from.y) * distance / length }; };
+      const bandTop = m.length - dims.band, right = { x: c[5].x, y: bandTop }, left = { x: c[6].x, y: bandTop };
+      const leftTop = toward(c[2], c[1], dims.band), leftBottom = toward(c[3], c[4], dims.band);
+      const rightTop = toward(c[9], c[10], dims.band), rightBottom = toward(c[8], c[7], dims.band);
+      regions = [
+        { part: side, polygon: [c[0], c[1], c[4], right, left, c[7], c[10], ...c.slice(11)] },
+        { part: 'hemBand', polygon: [right, c[5], c[6], left] },
+        { part: 'sleeveLeft', polygon: [c[1], leftTop, leftBottom, c[4]] },
+        { part: 'cuffLeft', polygon: [leftTop, c[2], c[3], leftBottom] },
+        { part: 'sleeveRight', polygon: [c[7], rightBottom, rightTop, c[10]] },
+        { part: 'cuffRight', polygon: [rightBottom, c[8], c[9], rightTop] },
+      ];
+    }
+    if (side === 'front' && product.base === 'hoodie') {
+      // The kangaroo pocket sits just above the hem band, slightly proud of the front body.
+      const y0 = dims.pocketTop, y1 = m.length - dims.band - 0.01;
+      regions.push({ part: 'pocket', polygon: [{ x: dims.pocketHalfTop, y: y0 }, { x: dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfBottom, y: y1 }, { x: -dims.pocketHalfTop, y: y0 }] });
+    }
     for (const { part, polygon } of regions) {
+      const lift = part === 'pocket' ? 0.5 : 0;
       const samples: Pt[] = [];
       for (let i = 0; i < polygon.length; i++) {
         const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 1.5));
@@ -334,7 +410,7 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
         let id = ids.get(index);
         if (id === undefined) {
           const p = samples[index]; id = group.positions.length / 3; ids.set(index, id);
-          group.positions.push(p.x, top - p.y, height(p));
+          group.positions.push(p.x, top - p.y, height(p) + lift);
           // Seen from behind, the back's prints read left to right like the front's.
           group.uvs.push(side === 'front' ? p.x : -p.x, p.y);
         }
@@ -349,14 +425,21 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
       }
     }
   }
-  // Neck rib: a 2 cm band rising from the open neck edge, front curve then back curve.
-  const rib = groups.get('neckband')!, width = neckSize(m, product.neckline).width, ring: { x: number; y: number; z: number }[] = [];
+  // The open neck edge, front curve (left to right) then back curve (right to left).
+  const ring: { x: number; y: number; z: number }[] = [], fronts: number[] = [];
   for (const side of ['front', 'back'] as const) {
     const s = teeSilhouette(product, side), sign = side === 'front' ? 1 : -1;
     const neckPoints = s.points.filter((_, i) => s.neck[i] || s.neck[(i - 1 + s.points.length) % s.points.length]).sort((a, b) => a.x - b.x);
     const ordered = side === 'front' ? neckPoints : [...neckPoints].reverse();
-    for (const p of ordered) { const d = Math.min(seamDistance(p, s), depth); ring.push({ x: p.x, y: top - p.y, z: d < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - d / depth) ** 2) }); }
+    for (const p of ordered) { const d = Math.min(seamDistance(p, s), depth); if (side === 'front') fronts.push(ring.length); ring.push({ x: p.x, y: top - p.y, z: d < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - d / depth) ** 2) }); }
   }
+  if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, ring, new Set(fronts), dims);
+  else neckRib(groups.get('neckband')!, ring, neckSize(m, product.neckline).width);
+  return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
+}
+
+/** Neck rib: a band rising from the open neck edge. */
+function neckRib(rib: PartMesh, ring: { x: number; y: number; z: number }[], width: number) {
   let along = 0;
   ring.forEach((p, i) => {
     if (i) along += Math.hypot(p.x - ring[i - 1].x, p.y - ring[i - 1].y, p.z - ring[i - 1].z);
@@ -364,5 +447,36 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
     if (i) { const a = (i - 1) * 2, b = a + 1, c = i * 2, d = c + 1; rib.indices.push(a, c, b, b, c, d); }
   });
   { const last = (ring.length - 1) * 2; rib.indices.push(last, 0, last + 1, last + 1, 0, 1); }
-  return PART_IDS.map(id => groups.get(id)!).filter(group => group.indices.length);
+}
+
+/**
+ * Hood: a shell lofted from the sides and back of the neck edge up to a closed crown. The middle of the front
+ * neck stays open as the face opening. Rows ease from the neck curve toward a head-sized ellipse set slightly back.
+ */
+function hoodMesh(hood: PartMesh, ring: { x: number; y: number; z: number }[], front: ReadonlySet<number>,
+  dims: { neckHalf: number; hoodHeight: number; hoodHalf: number }) {
+  const open = dims.neckHalf * 0.55;
+  const frontRight = ring.filter((p, i) => front.has(i) && p.x >= open), back = ring.filter((_, i) => !front.has(i)), frontLeft = ring.filter((p, i) => front.has(i) && p.x <= -open);
+  const base = [...frontRight, ...back, ...frontLeft], rows = 16;
+  const along: number[] = [0];
+  for (let i = 1; i < base.length; i++) along.push(along[i - 1] + Math.hypot(base[i].x - base[i - 1].x, base[i].z - base[i - 1].z));
+  // Columns go round the head from one side of the face opening, over the back, to the other side.
+  const opening = 0.32 * Math.PI, total = along.at(-1) || 1;
+  for (let j = 0; j <= rows; j++) {
+    const t = j / rows, ease = 1 - (1 - t) ** 2.4;
+    // Toward the crown the two sides close onto the centre seam: x narrows, front-to-back depth stays.
+    const crown = t < 0.6 ? 1 : Math.cos(((t - 0.6) / 0.4) * Math.PI / 2), rise = dims.hoodHeight * t + (t > 0.6 ? 3 * Math.sin(((t - 0.6) / 0.4) * Math.PI / 2) : 0);
+    for (let i = 0; i < base.length; i++) {
+      const b = base[i], theta = opening + (2 * Math.PI - 2 * opening) * along[i] / total;
+      const dome = { x: dims.hoodHalf * Math.sin(theta), z: -5 + 14 * Math.cos(theta) };
+      const x = (b.x + (dome.x - b.x) * ease) * crown, z = b.z + (dome.z - b.z) * ease;
+      hood.positions.push(x, b.y + rise, z);
+      hood.uvs.push(along[i], dims.hoodHeight * t);
+    }
+  }
+  const columns = base.length;
+  for (let j = 0; j < rows; j++) for (let i = 0; i + 1 < columns; i++) {
+    const a = j * columns + i, b = a + 1, c = a + columns, d = c + 1;
+    hood.indices.push(a, b, c, b, d, c);
+  }
 }

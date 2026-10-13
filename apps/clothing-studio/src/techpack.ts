@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { material, printName, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, material, printName, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -67,19 +67,36 @@ export function buildTechPack(product: Product, date: string): TechPack {
     pom('H', 'Back neck drop', 'High point shoulder line to back neck seam', dims.neckDepthBack, 0, 0.5),
     pom('I', 'Hem width (½)', 'Side seam to side seam at hem', dims.panelWidth, 2.5, 1),
     pom('J', 'Sleeve opening (½)', 'Along cuff edge', dims.cuffHalf, 0.5, 0.5),
-    pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25),
+    ...(product.base === 'hoodie' ? [pom('K', 'Hood height', 'Neck seam at centre back to top of hood', dims.hoodHeight, 0.5, 1)]
+      : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
+    ...(product.base === 'tee' ? [] : [
+      pom('L', 'Cuff height', 'Finished rib cuff', dims.band, 0, 0.25),
+      pom('M', 'Hem band height', 'Finished rib hem band', dims.band, 0, 0.25),
+    ]),
+    ...(product.base === 'hoodie' ? [
+      pom('N', 'Hood width (½)', 'Face edge to back of hood, at the widest point', dims.hoodHalf * 2, 0.5, 1),
+      pom('O', 'Pocket width at bottom', 'Pocket edge to pocket edge along its lower seam', dims.pocketHalfBottom * 2, 1, 0.5),
+    ] : []),
   ];
   const construction: ConstructionRow[] = [
     { area: 'Shoulder seams', operation: '4-thread overlock', detail: 'Back neck to shoulder point; stabilise with 6 mm clear tape' },
-    { area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `${product.neckline === 'v' ? 'Mitred at centre front V' : 'Joined at left shoulder'}; rib ${cm(dims.ribLength)} long, ${cm(dims.ribHeight)} finished` },
+    ...(product.base === 'hoodie' ? [
+      { area: 'Hood', operation: '4-thread overlock centre seam, then attach to neckline', detail: `Hood sides cut 2; ${cm(dims.hoodHeight)} high; face edge turned 2 cm and coverstitched` },
+      { area: 'Kangaroo pocket', operation: 'Turn pocket openings 2 cm and coverstitch; edgestitch top to front', detail: `${cm(dims.pocketHalfBottom * 2)} wide at the bottom; sides caught in the hem band seam` },
+    ] : [{ area: 'Neck rib', operation: 'Overlock attach, then 2-needle coverstitch', detail: `${product.neckline === 'v' ? 'Mitred at centre front V' : 'Joined at left shoulder'}; rib ${cm(dims.ribLength)} long, ${cm(dims.ribHeight)} finished` }]),
     { area: 'Sleeves', operation: '4-thread overlock (set in flat)', detail: 'Ease cap evenly; match sleeve head to shoulder seam' },
-    { area: 'Side seams', operation: '4-thread overlock', detail: 'Underarm to hem in one pass; insert care label at left side' },
-    { area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' },
-    { area: 'Body hem', operation: '2-needle coverstitch', detail: '2.5 cm turn-back' },
+    { area: 'Side seams', operation: '4-thread overlock', detail: product.base === 'tee' ? 'Underarm to hem in one pass; insert care label at left side' : 'Cuff edge to hem in one pass with the underarm seam; insert care label at left side' },
+    ...(product.base === 'tee' ? [
+      { area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' },
+      { area: 'Body hem', operation: '2-needle coverstitch', detail: '2.5 cm turn-back' },
+    ] : [
+      { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.band)} finished; cut about 15% shorter than the sleeve opening` },
+      { area: 'Hem band', operation: 'Close into a loop, fold, then overlock to the body', detail: `${cm(dims.band)} finished; cut about 15% shorter than the hem` },
+    ]),
     ...product.artwork.map(art => ({ area: `${art.part === 'front' ? 'Front' : 'Back'} artwork`, operation: 'Screen print or DTG after sewing', detail: `${cm(art.widthCm)} wide, ${cm(art.yCm)} below shoulder` })),
   ];
   return {
-    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: 'T-shirt', neckline: product.neckline === 'v' ? 'V-neck' : 'Crew neck', date,
+    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: BASE_NAMES[product.base], neckline: product.base === 'hoodie' ? 'Hood' : product.neckline === 'v' ? 'V-neck' : 'Crew neck', date,
     bom, poms, construction,
     notes: [
       `Consumption is estimated from finished pattern areas plus ${Math.round((WASTE - 1) * 100)}% for seam allowance and cutting waste; confirm with a marker.`,

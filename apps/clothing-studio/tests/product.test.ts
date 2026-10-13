@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import { motifPlacements } from '../src/fabric-texture.ts';
 import { validateProject, createProject } from '../src/model.ts';
-import { MATERIALS, PART_IDS, TEMPLATES, panelSize, patternPieces, teeMesh, teeSilhouette, template, validateProduct, type Product } from '../src/product.ts';
+import { MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeMesh, teeSilhouette, template, validateProduct, type Product } from '../src/product.ts';
 
 const ringer = () => template('ringer');
 
@@ -35,7 +35,7 @@ test('templates are valid remixable products and validation refuses anything out
 
 test('pattern pieces follow the measurements', () => {
   const p = ringer(), pieces = patternPieces(p);
-  assert.deepEqual(pieces.map(piece => piece.part), [...PART_IDS]);
+  assert.deepEqual(pieces.map(piece => piece.part), [...partsOf(p)]);
   const front = pieces[0];
   assert.equal(front.width, panelSize(p.measurements).width);
   assert.equal(front.height, p.measurements.length);
@@ -47,7 +47,7 @@ test('pattern pieces follow the measurements', () => {
 
 test('the 3D garment joins front and back exactly along the seams, leaves hem, cuffs and neck open, and uses cm UVs', () => {
   const p = ringer(), meshes = teeMesh(p, Delaunator);
-  assert.deepEqual(meshes.map(m => m.part), [...PART_IDS]);
+  assert.deepEqual(meshes.map(m => m.part), [...partsOf(p)]);
   const front = teeSilhouette(p, 'front');
   for (const mesh of meshes) {
     assert.equal(mesh.positions.length / 3, mesh.uvs.length / 2);
@@ -104,4 +104,54 @@ test('uploaded motifs are validated, referenced by prints and named in the tech 
   for (const [label, mutate] of bad) { const p = structuredClone(design) as unknown as Record<string, unknown>; mutate(p); assert.throws(() => validateProduct(p), Error, label); }
   // Colorways may use uploaded motifs too.
   assert.doesNotThrow(() => validateProduct({ ...design, colorways: [{ id: 'c1', name: 'Stars', parts: design.parts, units: 1 }] }));
+});
+
+test('sweatshirts and hoodies have their own parts, rib bands, hood and pocket in 3D, pattern and tech pack', async () => {
+  const { buildTechPack } = await import('../src/techpack.ts');
+  const { BAND_CM, partsOf: parts, teeDimensions } = await import('../src/product.ts');
+  const sweat = template('crew-sweat'), hoodie = template('hoodie');
+  assert.deepEqual([...parts(sweat)], ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
+  assert.deepEqual([...parts(hoodie)], ['front', 'back', 'sleeveLeft', 'sleeveRight', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket']);
+  // Parts must match the base exactly; a hoodie cannot have a V-neck.
+  assert.throws(() => validateProduct({ ...hoodie, neckline: 'v' }), /hood/);
+  assert.throws(() => validateProduct({ ...hoodie, parts: { ...hoodie.parts, neckband: hoodie.parts.front } }), Error);
+  assert.throws(() => validateProduct({ ...sweat, base: 'tee' }), Error);
+  assert.throws(() => validateProduct({ ...sweat, base: 'jacket' }), /base product/);
+
+  for (const design of [sweat, hoodie]) {
+    const meshes = teeMesh(design, Delaunator), byPart = new Map(meshes.map(mesh => [mesh.part, mesh]));
+    assert.deepEqual(meshes.map(mesh => mesh.part), [...parts(design)]);
+    const points = (part: string) => { const mesh = byPart.get(part as never)!; return Array.from({ length: mesh.positions.length / 3 }, (_, i) => ({ x: mesh.positions[i * 3], y: mesh.positions[i * 3 + 1], z: mesh.positions[i * 3 + 2] })); };
+    const key = (q: { x: number; y: number; z: number }) => `${q.x.toFixed(6)},${q.y.toFixed(6)},${q.z.toFixed(6)}`;
+    // The hem band runs along the bottom and shares its top edge with the body; each cuff shares an edge with its sleeve.
+    const band = points('hemBand'), body = new Set(points('front').map(key));
+    assert.ok(Math.min(...band.map(q => q.y)) < 1e-9 && Math.max(...band.map(q => q.y)) <= BAND_CM + 1e-9);
+    assert.ok(band.filter(q => body.has(key(q))).length >= 10, 'hem band joins the body');
+    const sleeve = new Set(points('sleeveLeft').map(key));
+    assert.ok(points('cuffLeft').filter(q => sleeve.has(key(q))).length >= 4, 'cuff joins the sleeve');
+    // Long sleeves end in narrow cuffs.
+    assert.ok(teeDimensions(design).cuffHalf < teeDimensions(template('ringer')).cuffHalf);
+    const pieces = patternPieces(design);
+    assert.deepEqual(pieces.map(piece => piece.part).sort(), [...parts(design)].sort());
+    assert.equal(pieces.find(piece => piece.part === 'front')!.height, design.measurements.length - BAND_CM, 'the body ends above the hem band');
+  }
+  // The hood rises above the shoulders and stays open at the face; the pocket sits proud of the front body.
+  const meshes = teeMesh(hoodie, Delaunator), hood = meshes.find(mesh => mesh.part === 'hood')!, pocket = meshes.find(mesh => mesh.part === 'pocket')!;
+  const hoodY = hood.positions.filter((_, i) => i % 3 === 1);
+  assert.ok(Math.max(...hoodY) > hoodie.measurements.length + 30, 'hood height');
+  const front = meshes.find(mesh => mesh.part === 'front')!;
+  const zAt = (mesh: typeof front, x: number, y: number) => { let best = Infinity, z = 0; for (let i = 0; i < mesh.positions.length; i += 3) { const d = Math.hypot(mesh.positions[i] - x, mesh.positions[i + 1] - y); if (d < best) { best = d; z = mesh.positions[i + 2]; } } return z; };
+  assert.ok(zAt(pocket, 0, 15) > zAt(front, 0, 15), 'pocket is on top of the front');
+  assert.equal(patternPieces(hoodie).find(piece => piece.part === 'hood')!.cutCount, 2);
+
+  const packs = [buildTechPack(sweat, '2026-10-13'), buildTechPack(hoodie, '2026-10-13')];
+  assert.deepEqual(packs.map(pack => pack.poms.map(p => p.code).join('')), ['ABCDEFGHIJKLM', 'ABCDEFGHIJKLMNO']);
+  assert.deepEqual(packs.map(pack => pack.base), ['Crew sweatshirt', 'Pullover hoodie']);
+  assert.ok(packs[1].construction.some(row => row.area === 'Hood') && packs[1].construction.some(row => row.area === 'Kangaroo pocket'));
+  assert.ok(!packs[1].construction.some(row => row.area === 'Neck rib'));
+  assert.ok(packs[0].construction.some(row => row.area === 'Cuffs') && !packs[0].construction.some(row => row.area === 'Body hem'));
+  // Consumption includes the bands, hood and pocket.
+  const { fabricUsage } = await import('../src/techpack.ts');
+  const area = (design: typeof hoodie) => fabricUsage(design).reduce((sum, usage) => sum + usage.areaM2, 0);
+  assert.ok(area(hoodie) > area({ ...hoodie, base: 'sweatshirt', parts: Object.fromEntries(parts(sweat).map(id => [id, hoodie.parts[id] ?? hoodie.parts.front])) as typeof hoodie.parts }));
 });

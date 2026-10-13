@@ -78,6 +78,29 @@ Below the tech pack, **Colorways and costing** turns one garment into a small ra
 
 See [colorway and range plan verification](docs/2026-10-13-colorways-range-plan.md).
 
+### Sweatshirts and hoodies (#234)
+
+Besides the T-shirt, two base products ship with templates:
+
+- the **Crew sweatshirt**: French terry with rib neck, cuffs and hem band;
+- the **Pullover hoodie**: a hood, a kangaroo pocket, rib cuffs and hem band.
+
+Each base has its own parts:
+
+| Base | Parts |
+| --- | --- |
+| Sweatshirt | front, back, sleeves, neck rib, left and right cuffs, hem band |
+| Hoodie | front, back, sleeves, cuffs, hem band, hood, pocket |
+
+Each part takes fabrics, colors, prints and uploaded motifs like any other, and colorways, costing and the tech pack follow it.
+
+- **3D.** Long sleeves hang at a relaxed angle and taper into 6 cm rib cuffs. A 6 cm hem band finishes the body, and both are split from the same seam-joined shell, so the seams stay exact. The hood is a shell lofted from the sides and back of the neck opening to a closed crown, leaving the face open. The pocket is a patch slightly proud of the front body, above the hem band.
+- **Pattern.** The body and sleeves end above their bands. The rib cuffs and hem band are cut on the fold, about 15% shorter than the edge they finish. The hood side panel is cut 2, and the pocket is a trapezoid.
+- **Tech pack.** Points of measure add cuff height and hem band height, plus hood height, hood width and pocket width for the hoodie. Construction lists cuffs, hem band, hood and pocket instead of turned hems and a neck rib where they apply.
+- **Use this style on every part** keeps all rib trims in rib knit. A hoodie has no V-neck option.
+
+These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
+
 ### Your own repeat prints (#231)
 
 **Upload your own motif**, under **Prints** in the library, turns a PNG, JPEG or WebP image into a repeat print.

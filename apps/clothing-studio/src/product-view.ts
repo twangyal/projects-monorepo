@@ -2,7 +2,7 @@
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
-  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_IDS, PART_NAMES, TEMPLATES,
+  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_NAMES, RIB_PARTS, TEMPLATES, partsOf,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
@@ -32,7 +32,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <div class="product-stage">
       <canvas id="product-canvas" aria-label="3D garment. Drag to orbit; click a part to select it." tabindex="0"></canvas>
       <div class="view-buttons" role="group" aria-label="Camera view">${['front', 'back', 'left', 'right'].map(v => `<button data-view="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
-      <div class="part-list" role="radiogroup" aria-label="Garment parts">${PART_IDS.map(id => `<label><input type="radio" name="product-part" value="${id}"> ${PART_NAMES[id]}</label>`).join('')}</div>
+      <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
       <p id="product-status" class="fine-print" role="status"></p>
     </div>
     <aside class="product-inspector" aria-label="Selected part">
@@ -139,7 +139,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     if (remove) {
       const id = remove.dataset.removeMotif!, upload = `upload:${id}`, name = product()?.motifs?.find(m => m.id === id)?.name ?? 'motif';
       update(draft => {
-        const clear = (parts: Product['parts']) => { for (const part of PART_IDS) if (parts[part].print?.motif === upload) parts[part].print = null; };
+        const clear = (parts: Product['parts']) => { for (const part of partsOf(draft)) if (parts[part].print?.motif === upload) parts[part].print = null; };
         clear(draft.parts); for (const colorway of draft.colorways ?? []) clear(colorway.parts);
         draft.motifs = draft.motifs!.filter(m => m.id !== id); if (!draft.motifs.length) delete draft.motifs;
       }, `Removed the motif “${name}” and its prints. You can undo this.`);
@@ -196,7 +196,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     down = null; const part = scene?.pick(event.clientX, event.clientY);
     if (part) { selected = part; render(options.current()); }
   });
-  for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=product-part]')) radio.addEventListener('change', () => { selected = radio.value as PartId; render(options.current()); });
+  // The parts list follows the base product, so it is rebuilt with the design and uses a delegated listener.
+  $('part-list').addEventListener('change', event => {
+    const radio = (event.target as Element).closest<HTMLInputElement>('input[name=product-part]');
+    if (radio) { selected = radio.value as PartId; render(options.current()); }
+  });
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-view]')) button.addEventListener('click', () => scene?.setView(button.dataset.view as 'front'));
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-template]')) button.addEventListener('click', () => {
     const current = product();
@@ -222,8 +226,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   }, `${PART_NAMES[selected]}: print updated.`));
   $('apply-all-parts').addEventListener('click', () => update(draft => {
     const style = draft.parts[selected];
-    for (const id of PART_IDS) if (id !== selected) draft.parts[id] = id === 'neckband' ? { ...structuredClone(style), material: draft.parts.neckband.material, print: null } : structuredClone(style);
-  }, `Every part now uses the ${PART_NAMES[selected].toLowerCase()} style (the neck rib keeps its rib knit).`));
+    for (const id of partsOf(draft)) if (id !== selected) draft.parts[id] = RIB_PARTS.has(id) ? { ...structuredClone(style), material: draft.parts[id].material, print: null } : structuredClone(style);
+  }, `Every part now uses the ${PART_NAMES[selected].toLowerCase()} style (rib trims keep their rib knit).`));
   $('product-name').addEventListener('change', () => update(draft => { draft.name = ($('product-name') as HTMLInputElement).value; }, 'Product renamed.'));
   $('apply-measurements').addEventListener('click', () => update(draft => {
     draft.measurements = { chest: Number(($('product-chest') as HTMLInputElement).value), length: Number(($('product-length') as HTMLInputElement).value), sleeve: Number(($('product-sleeve') as HTMLInputElement).value) };
@@ -369,7 +373,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const inputs = costing(design);
     ($('cost-currency') as HTMLSelectElement).value = inputs.currency;
     for (const [id, value] of [['cost-retail', inputs.retail], ['cost-make', inputs.make], ['cost-trims', inputs.trims], ['cost-print', inputs.printPerArtwork]] as const) ($(id) as HTMLInputElement).value = String(value);
-    const used = [...new Set([design.parts, ...(design.colorways ?? []).map(c => c.parts)].flatMap(parts => PART_IDS.map(id => parts[id].material)))];
+    const used = [...new Set([design.parts, ...(design.colorways ?? []).map(c => c.parts)].flatMap(parts => partsOf(design).map(id => parts[id].material)))];
     $('fabric-prices').innerHTML = used.map(id => `<label class="field">${escapeHtml(material(id).name)} per m<input type="number" min="0" max="${LIMITS.price[1]}" step="0.01" value="${inputs.fabricPrices[id] ?? DEFAULT_COSTING.fabricPrices[id] ?? 0}" data-fabric-price="${id}"></label>`).join('');
     $('range-table').innerHTML = rangeMarkup(design);
     void refreshThumbnails(design);
@@ -390,7 +394,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
     const height = Math.max(...pieces.map(p => p.height));
-    const defs = PART_IDS.map(id => {
+    const defs = partsOf(design).map(id => {
       const { canvas: tile, tileCm } = paintTile(design.parts[id], undefined, design.motifs);
       return `<pattern id="fill-${id}" patternUnits="userSpaceOnUse" width="${tileCm}" height="${tileCm}"><image href="${tile.toDataURL('image/png')}" width="${tileCm}" height="${tileCm}"/></pattern>`;
     }).join('');
@@ -407,12 +411,20 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   function render(project: Project, sideOnly = false) {
     const design = project.product ?? template('blank');
+    if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
     if (sideOnly) return;
     $('inspector-heading').textContent = PART_NAMES[selected];
+    const partList = partsOf(design).join();
+    if ($('part-list').dataset.parts !== partList) {
+      $('part-list').dataset.parts = partList;
+      $('part-list').innerHTML = partsOf(design).map(id => `<label><input type="radio" name="product-part" value="${id}"> ${PART_NAMES[id]}</label>`).join('');
+    }
     for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=product-part]')) radio.checked = radio.value === selected;
+    // A hoodie has a hood instead of a V-neck.
+    ($('product-neckline') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=v]')!.disabled = design.base === 'hoodie';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
     renderMotifs(design);
     ($('part-print') as HTMLSelectElement).value = style.print?.motif ?? '';

@@ -49,7 +49,8 @@ export class ProductScene {
   renderNow() { if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
 
   setView(view: View) {
-    const distance = 210, direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
+    // Taller products (a hood) are framed from further away.
+    const distance = 210 * Math.max(1, this.height / 80), direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
     this.controls.target.set(0, this.height / 2 + 4, 0);
     this.camera.position.set(direction[0] * distance, this.height / 2 + 4 + direction[1] * distance, direction[2] * distance);
     this.controls.update(); this.requestRender();
@@ -75,7 +76,8 @@ export class ProductScene {
     for (const texture of this.provisional.splice(0)) texture.dispose();
     for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
-    this.height = product.measurements.length + 6;
+    // A hood rises well above the shoulders, so the framing grows with it.
+    this.height = product.measurements.length + (product.base === 'hoodie' ? 36 : 6);
     for (const part of teeMesh(product, Delaunator)) {
       const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
       const geometry = new THREE.BufferGeometry();
