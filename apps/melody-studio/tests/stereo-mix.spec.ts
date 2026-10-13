@@ -30,7 +30,9 @@ test('pan and reverb send turn the song into a stereo mix with a reverb tail, as
   await expect(page.locator('label[for=pan] span')).toHaveText('100% left');
   const panned = await readRoll(page);
   expect(panned.document.composition.tracks[0]!.pan).toBe(-1);
-  expect({ ...panned, document: { ...panned.document, composition: { ...panned.document.composition, tracks: panned.document.composition.tracks.map(({ pan: _pan, ...track }) => track) } } }).toEqual(before);
+  const unpanned = structuredClone(panned);
+  for (const track of unpanned.document.composition.tracks) delete track.pan;
+  expect(unpanned).toEqual(before);
   const left = wav(await rollDownload(page, 'Export WAV'));
   expect([left.channels, left.frames]).toEqual([2, dry.frames]);
   for (let frame = 0; frame < dry.frames; frame += 7) { expect(left.sample(frame, 0)).toBe(dry.sample(frame, 0)); expect(left.sample(frame, 1)).toBe(0); }
