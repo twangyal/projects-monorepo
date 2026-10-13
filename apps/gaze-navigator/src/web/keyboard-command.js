@@ -55,6 +55,8 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
     }
     if (!session) return;
     if (stale(event)) return;
+    // Real keyboards deliver modifier keydown before Ctrl/Cmd+A/V or browser shortcuts.
+    if (['Control', 'Meta', 'Alt', 'Shift', 'AltGraph'].includes(event.key)) return;
     if (event.key === 'Escape') { consume(event); end(); return; }
     if (event.key === 'Tab' || ((event.ctrlKey || event.metaKey) && !['a', 'v'].includes(event.key.toLowerCase()))) {
       end(); return; // Browser/system shortcuts retain their normal behavior.

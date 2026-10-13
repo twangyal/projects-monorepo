@@ -120,3 +120,17 @@ test('pending website readonly changes cancel submission before observer deliver
   assert.equal(s.field.readOnly, true);
   assert.equal(s.commands.active, false);
 });
+
+test('modifier keydown preserves capture until the following shortcut or paste', () => {
+  const s = session(); s.start(); s.key('a');
+  s.key('Control', { ctrlKey: true });
+  assert.equal(s.commands.active, true);
+  s.key('a', { ctrlKey: true });
+  assert.equal(s.changes.at(-1).selectionStart, 0);
+  assert.equal(s.changes.at(-1).selectionEnd, 1);
+  s.key('v', { ctrlKey: true });
+  assert.equal(s.commands.active, true);
+  s.events.get('paste')({ clipboardData: { getData: () => 'open Ada Lovelace' }, preventDefault() {}, stopImmediatePropagation() {} });
+  s.key('Enter');
+  assert.deepEqual(s.submitted, ['open Ada Lovelace']);
+});
