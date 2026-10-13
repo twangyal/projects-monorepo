@@ -84,7 +84,7 @@ Each milestone delivers a usable end-to-end slice. All of it stays local and acc
    - Points of measure from the garment dimensions, graded across sizes.
    - Construction callouts by seam.
    - Printable HTML/PDF and spreadsheet export, synced to the design.
-3. **Repeat print maker and colorways/range plan.**
+3. **Repeat print maker and colorways/range plan** (colorways, range plan and costing done in #230; repeat print maker from uploads still to do).
    - Tile motifs or uploads in standard, half-brick, half-drop and mirror repeats.
    - Duplicate designs as colorways side by side.
    - A costing table built from material consumption estimated from pattern areas.

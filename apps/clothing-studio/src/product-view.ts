@@ -3,11 +3,13 @@
 import { paintTile } from './fabric-texture.ts';
 import {
   LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_IDS, PART_NAMES, TEMPLATES,
-  SIZES, material, patternPieces, template, validateProduct, type Artwork, type PartId, type Print, type Product, type Size,
+  CURRENCIES, SIZES, material, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
+import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
+const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const PALETTE = ['#f4f2ec', '#1c1c1e', '#1f2a4f', '#3f5468', '#9fae91', '#d89476', '#b23a2e', '#e9c46a', '#efe8d8', '#7b6d8d'];
 const DRAG_TYPE = 'application/x-clothing-swatch';
 type Swatch = { kind: 'material'; id: string } | { kind: 'color'; value: string } | { kind: 'print'; motif: Print['motif'] };
@@ -67,6 +69,25 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <div id="techpack-preview" class="techpack-preview"></div>
     <div class="product-exports"><button id="techpack-xlsx" class="product-export">Download tech pack (Excel) ↓</button><button id="techpack-html" class="product-export">Download printable tech pack ↓</button></div>
     <p class="fine-print">The printable tech pack includes front and back renders; open it in a browser and print or save as PDF.</p>
+  </section>
+  <section class="range" aria-labelledby="range-heading">
+    <div class="techpack-head"><div><p class="eyebrow">COLORWAYS AND RANGE PLAN</p><h4 id="range-heading">Colorways and costing</h4>
+    <p class="fine-print">Save the current styling as a colorway, compare colorways side by side, and plan units, cost and margin. Fabric cost follows each colorway's fabrics and the garment's measurements.</p></div>
+    <div class="range-save"><label class="field">Colorway name<input id="colorway-name" maxlength="${LIMITS.colorwayName}" autocomplete="off" placeholder="e.g. Navy and ecru"></label>
+      <button id="save-colorway">Save as colorway</button></div></div>
+    <div id="colorway-list" class="colorway-list" role="list" aria-label="Colorways"></div>
+    <details class="costing" open><summary>Costing inputs</summary>
+      <div class="costing-grid"><label class="field">Currency<select id="cost-currency">${CURRENCIES.map(c => `<option value="${c}">${c}</option>`).join('')}</select></label>
+        <label class="field">Retail price<input id="cost-retail" type="number" min="0" max="${LIMITS.price[1]}" step="0.01"></label>
+        <label class="field">Make (CMT) per unit<input id="cost-make" type="number" min="0" max="${LIMITS.price[1]}" step="0.01"></label>
+        <label class="field">Trims per unit<input id="cost-trims" type="number" min="0" max="${LIMITS.price[1]}" step="0.01"></label>
+        <label class="field">Print per artwork<input id="cost-print" type="number" min="0" max="${LIMITS.price[1]}" step="0.01"></label></div>
+      <p class="fine-print">Fabric prices per metre of 150 cm wide fabric (indicative defaults; replace them with your quotes):</p>
+      <div id="fabric-prices" class="costing-grid"></div>
+      <button id="apply-costing">Apply costing</button>
+    </details>
+    <div id="range-table" class="techpack-preview"></div>
+    <div class="product-exports"><button id="range-xlsx" class="product-export">Download range plan (Excel) ↓</button></div>
   </section>
 </section>`;
 
@@ -216,6 +237,92 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     options.download(new Blob([techPackHtml(buildTechPack(design, today()), images)], { type: 'text/html' }), '-tech-pack.html');
   }));
 
+  // Colorways: snapshots of the part styles, applied back as one undoable edit; units feed the range plan.
+  const nameOf = (id: string) => product()?.colorways?.find(c => c.id === id)?.name ?? 'colorway';
+  $('save-colorway').addEventListener('click', () => {
+    const name = ($('colorway-name') as HTMLInputElement).value.trim() || `Colorway ${(product()?.colorways?.length ?? 0) + 1}`;
+    update(draft => {
+      const colorways = draft.colorways ?? [];
+      if (colorways.length >= LIMITS.colorways) throw new Error(`Keep at most ${LIMITS.colorways} colorways; delete one first.`);
+      draft.colorways = [...colorways, { id: nextColorwayId(colorways), name, parts: structuredClone(draft.parts), units: 0 }];
+    }, `Saved the current styling as the colorway “${name}”.`);
+    ($('colorway-name') as HTMLInputElement).value = '';
+  });
+  $('colorway-list').addEventListener('click', event => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('button[data-colorway-action]');
+    if (!button) return;
+    const id = button.dataset.colorway!, name = nameOf(id);
+    if (button.dataset.colorwayAction === 'apply') update(draft => { draft.parts = structuredClone(draft.colorways!.find(c => c.id === id)!.parts); }, `The editor now shows the colorway “${name}”.`);
+    if (button.dataset.colorwayAction === 'replace') update(draft => { draft.colorways!.find(c => c.id === id)!.parts = structuredClone(draft.parts); }, `Updated “${name}” from the current styling.`);
+    if (button.dataset.colorwayAction === 'delete') update(draft => { draft.colorways = draft.colorways!.filter(c => c.id !== id); if (!draft.colorways.length) delete draft.colorways; }, `Deleted the colorway “${name}”. You can undo this.`);
+  });
+  $('colorway-list').addEventListener('change', event => {
+    const input = (event.target as Element).closest<HTMLInputElement>('input[data-colorway-units]');
+    if (!input) return;
+    const id = input.dataset.colorwayUnits!;
+    update(draft => { draft.colorways!.find(c => c.id === id)!.units = Number(input.value); }, `Planned units for “${nameOf(id)}” updated.`);
+  });
+  $('apply-costing').addEventListener('click', () => update(draft => {
+    const prices = { ...costing(draft).fabricPrices };
+    for (const input of document.querySelectorAll<HTMLInputElement>('#fabric-prices input[data-fabric-price]')) prices[input.dataset.fabricPrice!] = Number(input.value);
+    const number = (id: string) => { const value = ($(id) as HTMLInputElement).value; if (value.trim() === '') throw new Error('Fill in every costing value.'); return Number(value); };
+    draft.costing = { currency: ($('cost-currency') as HTMLSelectElement).value as Costing['currency'], retail: number('cost-retail'), make: number('cost-make'),
+      trims: number('cost-trims'), printPerArtwork: number('cost-print'), fabricPrices: prices };
+  }, 'Costing applied to the range plan.'));
+  $('range-xlsx').addEventListener('click', () => void exporting(async () => {
+    options.download(new Blob([rangePlanXlsx(product() ?? template('blank'), today())], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '-range-plan.xlsx');
+  }));
+
+  // Colorway thumbnails are front renders from the 3D view, made one at a time and cached by look.
+  const thumbnails = new Map<string, string>();
+  let thumbnailRun = 0;
+  const lookOf = (design: Product, parts: Product['parts']) => JSON.stringify([design.measurements, design.neckline, design.artwork, parts]);
+  let thumbnailScene: Promise<import('./product-3d.ts').ProductScene | null> | null = null;
+  async function refreshThumbnails(design: Product) {
+    const run = ++thumbnailRun;
+    // A separate, detached scene, so the garment being edited never changes on screen.
+    thumbnailScene ??= ready.then(async visible => visible && new (await import('./product-3d.ts')).ProductScene(document.createElement('canvas')));
+    const s = await thumbnailScene;
+    if (!s || run !== thumbnailRun) return;
+    for (const colorway of design.colorways ?? []) {
+      const look = lookOf(design, colorway.parts);
+      if (!thumbnails.has(look)) {
+        s.setProduct({ ...design, parts: colorway.parts }, null);
+        thumbnails.set(look, URL.createObjectURL(await s.png('front')));
+        if (run !== thumbnailRun) return;
+      }
+      const image = document.querySelector<HTMLImageElement>(`#colorway-list img[data-colorway-thumb="${colorway.id}"]`);
+      if (image) image.src = thumbnails.get(look)!;
+    }
+  }
+
+  function rangeMarkup(design: Product) {
+    const plan = rangePlan(design), symbol = CURRENCY_SYMBOLS[plan.currency], m = (value: number) => `${symbol}${value.toFixed(2)}`;
+    const head = ['Colorway', 'Units', 'Fabric', 'Trims', 'Print', 'Make', 'Unit cost', 'Retail', 'Margin', 'Total cost', 'Revenue'];
+    const cells = (row: (string | number)[]) => row.map(cell => `<td>${escapeHtml(String(cell))}</td>`).join('');
+    return `<h5>Range plan (${plan.currency})</h5><div class="table-scroll"><table><thead><tr>${head.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${plan.rows.map(r =>
+      `<tr data-range-row="${r.id}">${cells([r.name, r.units, m(r.fabric), m(r.trims), m(r.print), m(r.make), m(r.unitCost), m(r.retail), r.margin === null ? '—' : `${r.margin}%`, m(r.totalCost), m(r.totalRevenue)])}</tr>`).join('')}
+      <tr class="range-total">${cells(['Total', plan.totals.units, '', '', '', '', '', '', plan.totals.margin === null ? '—' : `${plan.totals.margin}%`, m(plan.totals.totalCost), m(plan.totals.totalRevenue)])}</tr></tbody></table></div>
+      ${design.colorways?.length ? '' : '<p class="notes">Save colorways to plan several at once; until then the current design is shown with no planned units.</p>'}`;
+  }
+  function renderRange(design: Product) {
+    $('colorway-list').innerHTML = (design.colorways ?? []).map(c => `<div role="listitem" class="colorway-card">
+      <img data-colorway-thumb="${c.id}" alt="Front render of ${escapeHtml(c.name)}" width="160" height="140">
+      <strong>${escapeHtml(c.name)}</strong>
+      <label class="field">Units for ${escapeHtml(c.name)}<input type="number" min="0" max="${LIMITS.units[1]}" step="1" value="${c.units}" data-colorway-units="${c.id}"></label>
+      <div class="inline-actions"><button data-colorway-action="apply" data-colorway="${c.id}" aria-label="Show ${escapeHtml(c.name)} in the editor">Show in editor</button>
+        <button class="quiet" data-colorway-action="replace" data-colorway="${c.id}" aria-label="Update ${escapeHtml(c.name)} from the current styling">Update</button>
+        <button class="quiet" data-colorway-action="delete" data-colorway="${c.id}" aria-label="Delete ${escapeHtml(c.name)}">Delete</button></div></div>`).join('')
+      || '<p class="fine-print">No colorways yet. Style the garment, name it above and save it; then restyle and save the next.</p>';
+    const inputs = costing(design);
+    ($('cost-currency') as HTMLSelectElement).value = inputs.currency;
+    for (const [id, value] of [['cost-retail', inputs.retail], ['cost-make', inputs.make], ['cost-trims', inputs.trims], ['cost-print', inputs.printPerArtwork]] as const) ($(id) as HTMLInputElement).value = String(value);
+    const used = [...new Set([design.parts, ...(design.colorways ?? []).map(c => c.parts)].flatMap(parts => PART_IDS.map(id => parts[id].material)))];
+    $('fabric-prices').innerHTML = used.map(id => `<label class="field">${escapeHtml(material(id).name)} per m<input type="number" min="0" max="${LIMITS.price[1]}" step="0.01" value="${inputs.fabricPrices[id] ?? DEFAULT_COSTING.fabricPrices[id] ?? 0}" data-fabric-price="${id}"></label>`).join('');
+    $('range-table').innerHTML = rangeMarkup(design);
+    void refreshThumbnails(design);
+  }
+
   function piecesSvg(design: Product): string {
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
@@ -258,6 +365,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
+      renderRange(design);
       scene?.setProduct(design, selected);
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${PART_NAMES[selected]} — ${material(style.material).name}${style.print ? `, ${MOTIF_NAMES[style.print.motif]} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';

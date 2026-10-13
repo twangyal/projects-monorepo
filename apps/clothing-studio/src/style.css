@@ -69,3 +69,13 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .techpack-preview .diagram svg { width: 100%; max-width: 640px; height: auto; }
 .techpack-preview .notes { margin: 0; font-size: 12px; color: #6b5e50; }
 @media (max-width: 760px) { .techpack-head, .techpack-fields { grid-template-columns: 1fr; } }
+.range { display: grid; gap: 12px; margin-top: 8px; padding-top: 14px; border-top: 1px solid #e3d9ca; }
+.range-save { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.colorway-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.colorway-card { display: grid; gap: 6px; padding: 8px; background: #fff; border: 1px solid #e3d9ca; border-radius: 10px; }
+.colorway-card img { width: 100%; height: auto; aspect-ratio: 600 / 520; object-fit: cover; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #fbf6ee, #e8dfd0); }
+.colorway-card .inline-actions button { padding: 6px 10px; font-size: 13px; }
+.costing summary { cursor: pointer; font-weight: 600; }
+.costing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; }
+.range-total td { font-weight: 700; background: #f7f1e7; }
+@media (max-width: 760px) { .range-save { grid-template-columns: 1fr; } }

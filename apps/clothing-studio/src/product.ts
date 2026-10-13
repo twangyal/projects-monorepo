@@ -30,15 +30,26 @@ export interface Measurements { chest: number; length: number; sleeve: number }
 export interface Spec { styleNumber: string; season: string; sampleSize: Size }
 export const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
 export type Size = typeof SIZES[number];
+/** A saved alternative set of part styles for the same garment, with its planned quantity. */
+export interface Colorway { id: string; name: string; parts: Record<PartId, PartStyle>; units: number }
+export const CURRENCIES = ['USD', 'EUR', 'GBP'] as const;
+export type Currency = typeof CURRENCIES[number];
+/** Costing inputs per garment; fabric prices are per linear metre of 150 cm wide fabric. */
+export interface Costing { currency: Currency; retail: number; make: number; trims: number; printPerArtwork: number; fabricPrices: Record<string, number> }
 export interface Product {
   base: 'tee'; name: string; measurements: Measurements; neckline: 'crew' | 'v';
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
   /** Tech-pack header details; absent until the designer fills them in. */
   spec?: Spec;
+  /** Colorways for the range plan; absent until one is saved. */
+  colorways?: Colorway[];
+  /** Costing inputs; absent until the designer changes the defaults. */
+  costing?: Costing;
 }
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000],
 } as const;
 
 const fail = (message: string): never => { throw new Error(message); };
@@ -75,31 +86,61 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
     yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm };
 }
 
-export function validateProduct(value: unknown): Product {
-  const p = plain(value, Object.hasOwn(value as object, 'spec') ? ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', 'spec'] : ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork'], 'Product');
-  if (p.base !== 'tee') fail('Unsupported base product.');
-  if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
-  const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
-  const measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
-  if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
-  const rawParts = plain(p.parts, PART_IDS, 'Parts');
-  const parts = Object.fromEntries(PART_IDS.map(id => {
+function validateParts(value: unknown): Record<PartId, PartStyle> {
+  const rawParts = plain(value, PART_IDS, 'Parts');
+  return Object.fromEntries(PART_IDS.map(id => {
     const s = plain(rawParts[id], ['material', 'color', 'print'], PART_NAMES[id]);
     if (typeof s.material !== 'string') fail('Choose a fabric from the library.');
     material(s.material as string);
     return [id, { material: s.material as string, color: hex(s.color, `${PART_NAMES[id]} color`), print: validatePrint(s.print) }];
   })) as Record<PartId, PartStyle>;
+}
+const plainText = (value: unknown, limit: number, label: string) =>
+  typeof value === 'string' && value.length <= limit && ![...value].some(c => c.charCodeAt(0) < 32) ? value.trim() : fail(`${label} must be at most ${limit} characters of plain text.`);
+function validateColorways(value: unknown): Colorway[] {
+  if (!Array.isArray(value) || value.length > LIMITS.colorways) fail(`Keep at most ${LIMITS.colorways} colorways.`);
+  const colorways = (value as unknown[]).map(item => {
+    const c = plain(item, ['id', 'name', 'parts', 'units'], 'Colorway');
+    if (typeof c.id !== 'string' || !/^[a-z0-9]{1,12}$/.test(c.id)) fail('Colorway IDs must be short lowercase letters and digits.');
+    const name = plainText(c.name, LIMITS.colorwayName, 'Colorway name');
+    if (!name) fail('Name each colorway.');
+    const units = finite(c.units, LIMITS.units, 'Planned units');
+    if (!Number.isInteger(units)) fail('Planned units must be a whole number.');
+    return { id: c.id as string, name, parts: validateParts(c.parts), units };
+  });
+  if (new Set(colorways.map(c => c.id)).size !== colorways.length) fail('Colorway IDs must be unique.');
+  return colorways;
+}
+function validateCosting(value: unknown): Costing {
+  const c = plain(value, ['currency', 'retail', 'make', 'trims', 'printPerArtwork', 'fabricPrices'], 'Costing');
+  if (!CURRENCIES.includes(c.currency as Currency)) fail('Currency must be USD, EUR or GBP.');
+  const prices = plain(c.fabricPrices, Object.keys((c.fabricPrices ?? {}) as object), 'Fabric prices');
+  const fabricPrices = Object.fromEntries(Object.entries(prices).map(([id, price]) => { material(id); return [id, finite(price, LIMITS.price, `${material(id).name} price`)]; }));
+  return { currency: c.currency as Currency, retail: finite(c.retail, LIMITS.price, 'Retail price'), make: finite(c.make, LIMITS.price, 'Make cost'),
+    trims: finite(c.trims, LIMITS.price, 'Trims cost'), printPerArtwork: finite(c.printPerArtwork, LIMITS.price, 'Print cost'), fabricPrices };
+}
+
+const OPTIONAL = ['spec', 'colorways', 'costing'] as const;
+export function validateProduct(value: unknown): Product {
+  const present = value && typeof value === 'object' ? OPTIONAL.filter(key => Object.hasOwn(value, key)) : [];
+  const p = plain(value, ['base', 'name', 'measurements', 'neckline', 'parts', 'artwork', ...present], 'Product');
+  if (p.base !== 'tee') fail('Unsupported base product.');
+  if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
+  const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
+  const measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
+  if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
+  const parts = validateParts(p.parts);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
   const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
   let spec: Spec | undefined;
   if (p.spec !== undefined) {
     const raw = plain(p.spec, ['styleNumber', 'season', 'sampleSize'], 'Tech pack details');
-    const text = (value: unknown, label: string) => typeof value === 'string' && value.length <= 40 && ![...value].some(c => c.charCodeAt(0) < 32) ? value.trim() : fail(`${label} must be at most 40 characters of plain text.`);
     if (!SIZES.includes(raw.sampleSize as Size)) fail('Sample size must be XS, S, M, L or XL.');
-    spec = { styleNumber: text(raw.styleNumber, 'Style number'), season: text(raw.season, 'Season'), sampleSize: raw.sampleSize as Size };
+    spec = { styleNumber: plainText(raw.styleNumber, 40, 'Style number'), season: plainText(raw.season, 40, 'Season'), sampleSize: raw.sampleSize as Size };
   }
-  return { base: 'tee', name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}) };
+  return { base: 'tee', name: (p.name as string).trim(), measurements, neckline: p.neckline as Product['neckline'], parts, artwork, ...(spec ? { spec } : {}),
+    ...(p.colorways !== undefined ? { colorways: validateColorways(p.colorways) } : {}), ...(p.costing !== undefined ? { costing: validateCosting(p.costing) } : {}) };
 }
 
 const style = (material: string, color: string, print: Print | null = null): PartStyle => ({ material, color, print });

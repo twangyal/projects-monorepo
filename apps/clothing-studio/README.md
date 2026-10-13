@@ -60,6 +60,24 @@ Below the 3D editor, **Factory-ready tech pack** is generated from the design an
 
 Consumption, grading and construction are standard starting values for a basic tee. Confirm them with a marker and a fit sample. See [tech pack verification](docs/2026-10-13-tech-pack.md).
 
+### Colorways and range plan (#230)
+
+Below the tech pack, **Colorways and costing** turns one garment into a small range.
+
+- **Save as colorway** stores the current part styling under a name (up to 8). Each colorway card shows its own front render. **Show in editor** restyles the garment with it, **Update** replaces it with the current styling, and **Delete** removes it. Every change is one undoable, saved edit. Renders are made in a separate scene, so the garment you are editing never changes on screen.
+- **Units for …** sets the planned quantity of each colorway.
+- **Costing inputs**: the currency (USD, EUR, GBP), retail price, make (CMT) per unit, trims per unit, print cost per placed artwork, and a price per metre of 150 cm fabric for each fabric in use. The defaults are indicative placeholders; replace them with supplier quotes, then **Apply costing**.
+- The **range plan** lists each colorway with these figures, plus totals:
+  - fabric cost (each fabric's estimated metres, from the same pattern-area consumption as the tech pack's bill of materials, times its price);
+  - trims, print and make;
+  - unit cost, retail and margin;
+  - units, total cost and revenue.
+
+  Until a colorway is saved, it shows the current design. Totals multiply the unit cost shown, rounded to the cent.
+- **Download range plan (Excel)** saves the plan, the fabric costing per colorway, and notes on the estimates.
+
+See [colorway and range plan verification](docs/2026-10-13-colorways-range-plan.md).
+
 ## Create a concept
 
 1. Name the project and adjust body width, body length, sleeve length, and neckline. Silhouette values are drawing units, not physical measurements.

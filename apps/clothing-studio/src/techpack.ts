@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { material, MOTIF_NAMES, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type Product, type Size } from './product.ts';
+import { material, MOTIF_NAMES, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -10,27 +10,35 @@ export interface TechPack {
   bom: BomRow[]; poms: Pom[]; construction: ConstructionRow[]; notes: string[];
 }
 
-const FABRIC_WIDTH_CM = 150, WASTE = 1.15;
+export const FABRIC_WIDTH_CM = 150, WASTE = 1.15;
 const round = (value: number, step = 0.5) => Math.round(value / step) * step;
 const cm = (value: number) => `${round(value, 0.1).toFixed(1)} cm`;
 
-export function buildTechPack(product: Product, date: string): TechPack {
-  const spec = product.spec ?? { styleNumber: '', season: '', sampleSize: 'M' as Size };
-  const pieces = patternPieces(product), dims = teeDimensions(product);
-  // Fabrics: one BoM line per distinct fabric + color + print, with its parts and estimated consumption.
-  const groups = new Map<string, { parts: PartId[]; area: number }>();
-  for (const piece of pieces) {
+export interface FabricUsage { style: PartStyle; parts: PartId[]; areaM2: number; linearM: number }
+/** Fabric needed per garment for each distinct fabric + colour + print: finished pattern area plus waste. */
+export function fabricUsage(product: Product): FabricUsage[] {
+  const groups = new Map<string, { style: PartStyle; parts: PartId[]; area: number }>();
+  for (const piece of patternPieces(product)) {
     const style = product.parts[piece.part], key = JSON.stringify(style);
-    const group = groups.get(key) ?? { parts: [], area: 0 };
+    const group = groups.get(key) ?? { style, parts: [], area: 0 };
     group.parts.push(piece.part); group.area += piece.areaCm2 * piece.cutCount; groups.set(key, group);
   }
-  const bom: BomRow[] = [...groups].map(([key, group], index) => {
-    const style = JSON.parse(key) as Product['parts'][PartId], fabric = material(style.material);
-    const area = group.area * WASTE / 10_000;
+  return [...groups.values()].map(({ style, parts, area }) => {
+    const areaM2 = area * WASTE / 10_000;
+    return { style, parts, areaM2, linearM: areaM2 / (FABRIC_WIDTH_CM / 100) };
+  });
+}
+
+export function buildTechPack(product: Product, date: string): TechPack {
+  const spec = product.spec ?? { styleNumber: '', season: '', sampleSize: 'M' as Size };
+  const dims = teeDimensions(product);
+  // Fabrics: one BoM line per distinct fabric + color + print, with its parts and estimated consumption.
+  const bom: BomRow[] = fabricUsage(product).map((usage, index) => {
+    const { style } = usage, fabric = material(style.material);
     const print = style.print ? `; ${MOTIF_NAMES[style.print.motif]} print ${style.print.color} on ground, ${LAYOUT_NAMES[style.print.layout].toLowerCase()} repeat ${style.print.scaleCm} cm` : '';
     return { item: `F${index + 1} ${fabric.name}`, description: `${fabric.composition}, ${fabric.gsm} gsm${print}`, color: style.color,
-      placement: group.parts.map(part => PART_NAMES[part]).join(', '),
-      quantity: `${area.toFixed(2)} m² (≈ ${(area / (FABRIC_WIDTH_CM / 100)).toFixed(2)} m at ${FABRIC_WIDTH_CM} cm wide)` };
+      placement: usage.parts.map(part => PART_NAMES[part]).join(', '),
+      quantity: `${usage.areaM2.toFixed(2)} m² (≈ ${usage.linearM.toFixed(2)} m at ${FABRIC_WIDTH_CM} cm wide)` };
   });
   bom.push(
     { item: 'T1 Sewing thread', description: '100% polyester core-spun, Tex 27', color: 'Match each fabric', placement: 'All seams', quantity: '1 cone per colour' },
@@ -114,15 +122,19 @@ function sheet(rows: (string | number)[][], widths: number[]): string {
   }).join('')}</row>`).join('');
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${body}</sheetData></worksheet>`;
 }
+export interface Sheet { name: string; rows: (string | number)[][]; widths: number[] }
 export function techPackXlsx(pack: TechPack): Uint8Array<ArrayBuffer> {
-  const sheets: { name: string; rows: (string | number)[][]; widths: number[] }[] = [
+  return xlsx([
     { name: 'Cover', widths: [22, 60], rows: [['Field', 'Value'], ['Style name', pack.name], ['Style number', pack.styleNumber || '—'], ['Season', pack.season || '—'],
       ['Product', pack.base], ['Neckline', pack.neckline], ['Sample size', pack.sampleSize], ['Generated', pack.date], ...pack.notes.map((note, i) => [`Note ${i + 1}`, note])] },
     { name: 'Bill of materials', widths: [26, 70, 16, 40, 34], rows: [['Item', 'Description', 'Colour', 'Placement', 'Quantity'], ...pack.bom.map(r => [r.item, r.description, r.color, r.placement, r.quantity])] },
     { name: 'Points of measure', widths: [6, 22, 44, 12, ...SIZES.map(() => 8)], rows: [['Code', 'Point of measure', 'How to measure', 'Tol. ± cm', ...SIZES.map(s => s === pack.sampleSize ? `${s} (sample)` : s)],
       ...pack.poms.map(p => [p.code, p.name, p.howToMeasure, p.tolerance, ...SIZES.map(s => p.values[s])])] },
     { name: 'Construction', widths: [22, 40, 70], rows: [['Area', 'Operation', 'Detail'], ...pack.construction.map(r => [r.area, r.operation, r.detail])] },
-  ];
+  ]);
+}
+/** A workbook of plain sheets: the first row of each is a bold header. */
+export function xlsx(sheets: Sheet[]): Uint8Array<ArrayBuffer> {
   const e = new TextEncoder();
   const files = [
     { name: '[Content_Types].xml', text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>` },
