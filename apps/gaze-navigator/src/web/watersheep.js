@@ -117,16 +117,21 @@ export function createWaterSheep({ ort, session, tokenizer, special, meta }) {
   };
 }
 
-/** Load WaterSheep from a local copy of the model repository (Node evaluation). */
-export async function loadWaterSheepFromDirectory(directory, { ort, Tokenizer, readFile }) {
-  const json = async name => JSON.parse(await readFile(`${directory}/${name}`, 'utf8'));
-  const [meta, tokenizerJson, tokenizerConfig] = await Promise.all([json('watersheep.json'), json('tokenizer/tokenizer.json'), json('tokenizer/tokenizer_config.json')]);
+/** WaterSheep from its parts: the runtime, the parsed metadata and tokenizer files, and a session. */
+export function waterSheepFromFiles({ ort, Tokenizer, session, meta, tokenizerJson, tokenizerConfig }) {
   const tokenizer = new Tokenizer(tokenizerJson, tokenizerConfig);
   const special = {};
   for (const key of ['cls', 'sep', 'mask']) {
     const token = tokenizerConfig[`${key}_token`];
     special[key] = tokenizer.token_to_id(token && typeof token === 'object' ? token.content : token);
   }
-  const session = await ort.InferenceSession.create(`${directory}/onnx/model_quantized.onnx`, { graphOptimizationLevel: 'all' });
   return createWaterSheep({ ort, session, tokenizer, special, meta });
+}
+
+/** Load WaterSheep from a local copy of the model repository (Node evaluation). */
+export async function loadWaterSheepFromDirectory(directory, { ort, Tokenizer, readFile }) {
+  const json = async name => JSON.parse(await readFile(`${directory}/${name}`, 'utf8'));
+  const [meta, tokenizerJson, tokenizerConfig] = await Promise.all([json('watersheep.json'), json('tokenizer/tokenizer.json'), json('tokenizer/tokenizer_config.json')]);
+  const session = await ort.InferenceSession.create(`${directory}/onnx/model_quantized.onnx`, { graphOptimizationLevel: 'all' });
+  return waterSheepFromFiles({ ort, Tokenizer, session, meta, tokenizerJson, tokenizerConfig });
 }

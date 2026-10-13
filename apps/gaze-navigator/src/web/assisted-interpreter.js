@@ -38,6 +38,8 @@ export function describeElement(element) {
 const valid = (probs, length) => Array.isArray(probs) && probs.length === length && probs.every(p => p >= 0 && p <= 1);
 
 /**
+ * An async interpreter (rules, then the model when it can help) with `needs(utterance, context,
+ * ruleAction)` and `improve(utterance, context, ruleAction)` for callers that run the rules themselves.
  * @param {object} options
  * @param {{decide: Function, yes: Function}} options.model WaterSheep (or any calibrated decider)
  * @param {Function} [options.rules] the deterministic interpreter
@@ -62,29 +64,41 @@ export function createAssistedInterpreter({ model, rules = interpretRules, accep
     };
   }
 
-  return async function interpret(utterance, context = { elements: [] }) {
-    const action = rules(utterance, context);
-    const elements = context.elements ?? [];
-    const said = (utterance ?? '').trim();
-    if (!said || !elements.length) return action;
+  // Tie-breaking is possible only among controls the rules proposed that words can tell apart.
+  function tieBreakChoices(action, elements) {
+    const choices = action.candidates.map(candidate => ({ element: elements.find(element => element.id === candidate.elementId), number: candidate.number }))
+      .filter(choice => choice.element);
+    // Controls described identically (two "Remove" buttons) cannot be told apart from words: keep the question.
+    if (choices.length !== action.candidates.length || new Set(choices.map(choice => choice.element.id)).size !== choices.length
+      || new Set(choices.map(choice => describeElement(choice.element))).size !== choices.length) return null;
+    return choices;
+  }
+
+  /** Whether the model could help with this rule answer at all; everything else stays instant. */
+  function needs(utterance, context, action) {
+    const elements = context?.elements ?? [];
+    if (!(utterance ?? '').trim() || !elements.length) return false;
+    if (action.type === 'clarify') return Boolean(tieBreakChoices(action, elements));
+    return action.type === 'unknown' && (action.targetQuery !== undefined || Boolean(action.unparsed));
+  }
+
+  /** The model-assisted answer for a rule answer that `needs` help; the rule answer when unsure or failing. */
+  async function improve(utterance, context, action) {
+    if (!needs(utterance, context, action)) return action;
+    const elements = context.elements, said = utterance.trim();
     const activate = element => () => ({ type: 'activate', targetId: element.id });
     try {
       if (action.type === 'clarify') {
-        // Tie-break only between controls the rules already proposed, using the rules' own action.
-        const choices = action.candidates.map(candidate => ({ element: elements.find(element => element.id === candidate.elementId), number: candidate.number }))
-          .filter(choice => choice.element);
-        // Controls described identically (two "Remove" buttons) cannot be told apart from words: keep the question.
-        if (choices.length !== action.candidates.length || new Set(choices.map(choice => choice.element.id)).size !== choices.length
-          || new Set(choices.map(choice => describeElement(choice.element))).size !== choices.length) return action;
-        const picked = await pick(said, choices.map(choice => ({ element: choice.element, act: () => action.choose(choice.number) })));
+        const picked = await pick(said, tieBreakChoices(action, elements).map(choice => ({ element: choice.element, act: () => action.choose(choice.number) })));
         return picked?.type === 'clarify' ? action : picked ?? action;
       }
-      if (action.type !== 'unknown') return action;
       if (action.unparsed && !(await model.yes(said, INTENT_QUESTION) >= intent)) return action;
-      if (action.targetQuery === undefined && !action.unparsed) return action;
       return (await pick(said, elements.map(element => ({ element, act: activate(element) })))) ?? action;
     } catch {
       return action; // The model is optional: any failure keeps the rule answer.
     }
-  };
+  }
+
+  const interpret = async (utterance, context = { elements: [] }) => improve(utterance, context, rules(utterance, context));
+  return Object.assign(interpret, { needs, improve });
 }

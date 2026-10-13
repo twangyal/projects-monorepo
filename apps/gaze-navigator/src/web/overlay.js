@@ -2,6 +2,7 @@
 // shadow root that is excluded from context capture.
 import { captureContext, frameOffset, sameOriginFrames, viewportRect } from './page-context.js';
 import { createController } from './controller.js';
+import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createCameraGaze } from './camera-gaze.js';
@@ -55,6 +56,9 @@ details { margin-top: 8px; }
 summary { cursor: pointer; }
 .prompt:empty { display: none; }
 .hint { color: #a9c2b8; font-size: 13px; }
+.assist-row { display: grid; gap: 2px; margin-top: 6px; }
+.assist-row[hidden] { display: none; }
+.assist-row .hint { margin: 0; }
 `;
 
 // Default settings store: the tab's session storage. The extension supplies its own store so
@@ -99,8 +103,9 @@ export function describeElement(element) {
   return `${role}: ${element.name || '(unnamed)'}${state}${value}`;
 }
 
-export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, store = sessionStore(window) } = {}) {
-  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', ...store.load() };
+// `loadAssistant(progress)` resolves to a calibrated decider (WaterSheep) when the user turns on smarter matching.
+export function startWebNavigator({ window = globalThis.window, document = window.document, interpret, loadCamera, loadAssistant = null, store = sessionStore(window) } = {}) {
+  const settings = { size: 'medium', listening: false, speak: false, source: 'pointer', assist: false, ...store.load() };
   const host = document.createElement('div');
   host.id = 'gaze-web-navigator';
   const shadow = host.attachShadow({ mode: 'open' });
@@ -137,6 +142,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
           <label>Circle size <select class="size"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></label>
           <label><input type="checkbox" class="speak" /> Speak feedback</label>
         </div>
+        <div class="assist-row">
+          <label><input type="checkbox" class="assist" /> Smarter target matching</label>
+          <p class="hint assist-note">Understands names that do not match exactly, such as "show the ratings" for Reviews, using the WaterSheep model on this device. It downloads 158 MB once; instructions are not sent anywhere.</p>
+          <p class="hint assist-state" role="status"></p>
+        </div>
       </details>
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
@@ -152,7 +162,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     prompt: $('.prompt'), listen: $('.listen'), pause: $('.pause'), cancel: $('.cancel'), form: $('.typed'),
     instruction: $('.instruction'), size: $('.size'), speak: $('.speak'), context: $('.context'), summary: $('.context-summary'),
     collapse: $('.collapse'), dot: $('.calibration-dot'), usePointer: $('.use-pointer'), useCamera: $('.use-camera'),
-    recalibrate: $('.recalibrate'),
+    recalibrate: $('.recalibrate'), assist: $('.assist'), assistState: $('.assist-state'), assistRow: $('.assist-row'),
   };
   // The element list is open by default only where the panel has room to spare.
   if ((window.innerHeight ?? 0) > 700) $('.context-details').open = true;
@@ -166,7 +176,10 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   const resizeObserver = new window.ResizeObserver(reserve);
   resizeObserver.observe(ui.panel);
 
-  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate } });
+  // The assistant is attached only after the model has loaded; until then rules answer alone.
+  let assistant = null, assistLoad = 0, stopped = false;
+  const assistantRelay = { needs: (...args) => Boolean(assistant?.needs(...args)), improve: (...args) => assistant.improve(...args) };
+  const controller = createController({ window, interpret, commands: { tracking: setSource, calibrate }, assistant: assistantRelay });
   const filter = createGazeFilter();
   const camera = createCameraGaze({
     document, window, load: loadCamera,
@@ -342,6 +355,13 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     const used = calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
     const result = controller.handle(utterance, used);
+    show(result, used);
+    // A model-assisted answer follows unless a newer instruction came first.
+    result.followUp?.then(later => { if (later && !stopped) show(later, used); });
+    return result;
+  }
+
+  function show(result, used) {
     if (calibration && (result.cancelled || result.paused)) calibration.cancel();
     promptContext = result.pending ? used : null;
     ui.pause.setAttribute('aria-pressed', String(controller.paused));
@@ -353,7 +373,6 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       window.setTimeout(() => recapture(true), 50);
     }
     renderOutlines();
-    return result;
   }
 
   const speech = createSpeechInput(window, {
@@ -519,6 +538,29 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     schedule();
     recapture(true);
   });
+  async function setAssist(on) {
+    const load = ++assistLoad;
+    settings.assist = on; store.save(settings); ui.assist.checked = on;
+    assistant = null;
+    if (!on) { ui.assistState.textContent = ''; return; }
+    if (!loadAssistant) { ui.assistState.textContent = 'Smarter matching is not available here.'; settings.assist = false; ui.assist.checked = false; return; }
+    ui.assistState.textContent = 'Loading the matching model…';
+    try {
+      const model = await loadAssistant((received, total) => {
+        if (load === assistLoad) ui.assistState.textContent = `Downloading the matching model: ${Math.round((received / total) * 100)}% of ${Math.round(total / 1e6)} MB (once).`;
+      });
+      if (load !== assistLoad) return;
+      assistant = createAssistedInterpreter({ model });
+      ui.assistState.textContent = 'Smarter target matching is on.';
+    } catch (error) {
+      if (load !== assistLoad) return;
+      settings.assist = false; store.save(settings); ui.assist.checked = false;
+      ui.assistState.textContent = `Smarter matching could not start: ${error.message} Instructions still work without it.`;
+    }
+  }
+  ui.assistRow.hidden = !loadAssistant;
+  ui.assist.addEventListener('change', () => void setAssist(ui.assist.checked));
+  if (settings.assist && loadAssistant) void setAssist(true);
   ui.speak.checked = settings.speak;
   ui.speak.addEventListener('change', () => {
     settings.speak = ui.speak.checked;
@@ -555,6 +597,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     track,
     run: utterance => run(utterance, null),
     stop() {
+      stopped = true; assistLoad++;
       calibration?.cancel();
       camera.stop();
       window.removeEventListener('pagehide', onPageHide);

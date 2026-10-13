@@ -179,3 +179,20 @@ test('a calibration follows navigation in extension memory and is forgotten when
   await expect(status(page)).toHaveText('Camera off. The circle follows the pointer.');
   await expect.poll(() => control.evaluate(async () => Object.keys(await chrome.storage.session.get('gaze-calibration')).length)).toBe(0);
 });
+
+test('smarter matching runs in one shared offscreen document and acts on a differently named control', async ({ context, control }) => {
+  await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');
+  await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await panel(page).locator('details.settings').evaluate(details => { details.open = true; });
+  await panel(page).getByLabel('Smarter target matching').check();
+  await expect(panel(page).locator('.assist-state')).toHaveText('Smarter target matching is on.');
+  await look(page, page.getByRole('link', { name: 'About us' }));
+  await typeInstruction(page, 'open the company story');
+  await page.waitForURL('http://shop.example/about');
+  await expect(status(page)).toContainText('Done: About us activated');
+  // The model lives in the extension, not the website: nothing in the page's storage or globals.
+  expect(await page.evaluate(() => [sessionStorage.length, localStorage.length, typeof window.__gazeTestAssistant])).toEqual([0, 0, 'undefined']);
+  expect(await control.evaluate(() => chrome.offscreen.hasDocument()), 'one shared model host').toBe(true);
+});

@@ -109,7 +109,45 @@ With 0 unsafe on every suite, WaterSheep's picks gave 10 of the 27 correct held-
 - onnxruntime-web bundled in the extension build;
 - the 158 MB model downloaded on request and cached, with the rules still working while it loads or if it fails.
 
+## Live in the navigator — issue #232 (2026-10-13)
+
+- **Controller.** A rule answer of `unknown` or `clarify` that the assistant `needs` returns at once with "Working out which control you mean…" and a `followUp` promise. The follow-up resolves to the model-assisted reply, which goes through the same clarify and confirm handling. It resolves to nothing if any newer instruction arrived first (cancel, pause or anything else) or the navigator is paused. Rule answers, safety words and numbers are unchanged and instant.
+- **Overlay.** **Smarter target matching** is an opt-in setting with download progress. It persists for the session and, after a successful load, reloads from cache on the next page. It is hidden when no loader is available. A failed load switches it off and says that instructions still work.
+- **Browser loader** (`watersheep-browser.js`):
+  - it loads the vendored self-contained runtime and the model at revision `236de64`;
+  - the ONNX file's SHA-256 is checked on every load, including from cache, and a mismatch is refused;
+  - downloads larger than the published size are aborted.
+- **Extension:**
+  - an offscreen document (`offscreen.html`, `WORKERS` reason) hosts one model for all tabs, cached in the extension's origin;
+  - the background relays `decide`/`yes` calls and progress;
+  - the manifest adds the `offscreen` permission and `wasm-unsafe-eval` for extension pages only;
+  - the test build substitutes a deterministic stand-in (`test-support/fake-assistant.js`).
+
+**Live checks with the real model:**
+
+| Where | First enable | Later enable | Instruction | Result |
+| --- | --- | --- | --- | --- |
+| Practice site, Chromium | 12 s | 2.8 s (cache) | "open my profile" | **Account**, 2.5 s |
+| Practice site, Chromium | | | "show me all the books", "open the support page", "go to the front page", "I need to get in touch" | No pick: safe abstentions, 1.3–3.5 s |
+| Real extension build (host access pre-granted for automation) | 6.6 s | | "open the FAQ" | **Questions**, 1.3 s including navigation |
+
+The website's storage stayed empty.
+
+A live bug found and fixed on the way: the runtime tried to import a separate glue module, which is now avoided by pointing `wasmPaths` at the wasm file only.
+
+**Tests:**
+
+- 133 unit tests, including the controller's follow-up rules: it acts while still the latest instruction, is dropped after cancel or pause, still confirms consequential picks, and keeps the rule answer when the assistant fails.
+- Two practice-site browser cases with a stand-in model, at four viewports:
+  - off by default, then opt in, see the "Working out" message and navigate;
+  - cancel discards a slow answer, only role and name options are sent, and a failure keeps the rule answer.
+- An extension case covering the offscreen host.
+- Full Chromium suite: 171 of 172 passed on the first run. The failure was "starts automatically on a strict-CSP website" at the short viewport, after 0.5 s. It passed in 8 further runs of that case and in a full rerun of that viewport (43/43). Its error output was overwritten before it could be read, so its cause is unknown.
+
 ## Remaining limits
+
+- In-browser latency of 1.3–3.5 s per assisted instruction is noticeable. Threaded wasm needs cross-origin isolation, which neither ordinary pages nor this extension enable yet.
+
 
 - The suites are described contexts, not live pages. Real-site and real-speech evaluation with intended users is still outstanding.
 - Browser and extension runtime wiring (an asynchronous controller path and bundled onnxruntime-web) waits on that evidence.

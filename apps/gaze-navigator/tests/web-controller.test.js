@@ -149,3 +149,44 @@ test('tracking commands are delegated, work while paused, and clear pending ques
   assert.equal(page.log.length, 0);
   assert.equal(createController({ window: {}, actions: page.actions }).handle('use camera', context).tone, 'error');
 });
+
+test('a model-assisted answer follows only while it is still the latest instruction, and still confirms', async () => {
+  const page = fakePage();
+  let release;
+  const assistant = {
+    needs: (_utterance, _context, action) => action.type === 'unknown',
+    improve: (_utterance, context) => new Promise(resolve => { release = () => resolve({ type: 'activate', targetId: context.elements[0].id }); }),
+  };
+  const controller = createController({ window: {}, actions: page.actions, assistant });
+  const context = { elements: [describe(1, page.node('Reviews'), { role: 'link' }), describe(2, page.node('Place order'), { consequential: true })] };
+  // The rules alone cannot name "the ratings": the controller says so and waits for the assistant.
+  const first = controller.handle('show the ratings', context);
+  assert.equal(first.assisting, true);
+  assert.equal(page.log.length, 0);
+  release();
+  assert.equal((await first.followUp).performed, 'activate');
+  assert.deepEqual(page.log.at(-1), ['activate', 'Reviews']);
+  // A newer instruction (here cancel) makes the pending answer stale: nothing runs.
+  const stale = controller.handle('show the ratings', context);
+  controller.handle('cancel', { elements: [] });
+  release();
+  assert.equal(await stale.followUp, null);
+  assert.equal(page.log.length, 1);
+  // Pausing drops it as well.
+  const paused = controller.handle('show the ratings', context);
+  controller.handle('pause', { elements: [] });
+  release();
+  assert.equal(await paused.followUp, null);
+  controller.handle('resume', { elements: [] });
+  // Consequential picks still wait for confirmation.
+  const consequential = { elements: [describe(2, page.node('Place order'), { consequential: true })] };
+  const buy = controller.handle('complete my purchase', consequential);
+  release();
+  const asked = await buy.followUp;
+  assert.equal(asked.tone, 'question');
+  assert.deepEqual(asked.pending, { kind: 'confirm', candidates: null });
+  assert.equal(page.log.length, 1, 'nothing ran before confirmation');
+  // A failing assistant keeps the rule answer.
+  const failing = createController({ window: {}, actions: page.actions, assistant: { needs: () => true, improve: () => Promise.reject(new Error('down')) } });
+  assert.equal((await failing.handle('show the ratings', context).followUp).tone, 'error');
+});

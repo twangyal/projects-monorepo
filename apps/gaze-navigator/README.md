@@ -70,7 +70,15 @@ The model sees the instruction and the controls' role, name, checked state and c
 | Held-out (50) | 34 / 0 | 35 / 0 |
 | Second held-out (50, paraphrased targets) | 18 / 0 | **27 / 0** |
 
-Model calls take about 0.36 s. First scorings found unsafe picks, which led to safety-only fixes; both are recorded. The live navigator does not use the model yet; wiring it in is the next step. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
+Model calls take about 0.36 s. First scorings found unsafe picks, which led to safety-only fixes; both are recorded. **Smarter target matching** (#232) is an opt-in setting under **Tracking and settings**. It uses WaterSheep live: the rules answer first and instantly. When they cannot name a control, the panel says "Working out which control you mean…" and asks the model, and any newer instruction (including cancel or pause) discards that pending answer. Consequential picks are still confirmed.
+
+- **On the practice site,** run `npm run vendor:watersheep` once. This fetches ONNX Runtime Web 1.23.0 and the tokenizer with npm, pinned by SHA-256, into `dist/vendor/watersheep`. The setting then downloads the model from Hugging Face at the pinned revision, checks its SHA-256, and caches it.
+- **In the extension,** the model runs in one shared offscreen document: it downloads once per browser and is cached in extension storage, never a website's. `npm run build:extension` bundles the runtime (the extension is about 14 MB).
+
+Measured live in Chromium on 4 CPU cores:
+
+- the first enable takes about 7–12 s (download included), and later enables about 3 s from cache;
+- each model-assisted instruction takes 1.3–3.5 s, because single-threaded wasm is slower than Node. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
 
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 
