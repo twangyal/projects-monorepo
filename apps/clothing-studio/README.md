@@ -147,6 +147,35 @@ Milestone #182 adds saved cutting allowances. The complete local gate passes 55 
 
 Milestone #183 adds home-printer A4/US Letter base-pattern tiling. Native checks verify the real downloaded HTML, physical SVG calibration and actual Chromium PDF page dimensions/counts, with complete artwork/history and raw drafts retained. See [tiled print evidence](docs/2026-10-11-tiled-print/README.md). Physical printer output and toile acceptance remain untested.
 
+## Fabric drape simulation (#219)
+
+**Fabric drape simulation** shows how the applied skirt actually hangs.
+
+1. Choose a **Fabric**. The choice is saved with the skirt as one undoable edit and kept when you change the pattern.
+2. **Simulate drape** runs a cloth solver in a background worker, taking about 2–3 s in desktop Chromium. **Cancel simulation** stops it without changing anything.
+3. The shaded view shows the settled folds. Rotate it with the buttons or the arrow keys, optionally showing the body proxy.
+4. **Export draped OBJ** writes the settled surface in centimetres, with front and back panel groups.
+
+How it works:
+- **Mesh.** Both panels are meshed directly from their flat annular-sector patterns, 24 rows down the slant and 48 columns per panel. Every rest length is therefore a real fabric distance, and the assembled cone starts unstretched.
+- **Solver.** An extended position-based (XPBD) solver settles the cloth under gravity for 4 simulated seconds. It uses stretch, shear and two-segment bending constraints, and long-range warp attachments for woven fabric that barely stretches. The waist row is held at the waistline.
+- **Body.** The fabric is kept outside a body surface of revolution: your entered waist, hip and waist-to-hip depth, constant below the hip (legs together). With no profile saved, it assumes a waist 2 cm smaller than the garment and a hip 20 cm larger, and says so.
+- **Results.** The panel reports:
+  - folds around the hem;
+  - hem flare relative to the rigid cone;
+  - hem drop;
+  - largest fabric stretch;
+  - closest approach to the body.
+
+| Fabric preset | Weight | Character |
+| --- | --- | --- |
+| Chiffon | 50 g/m² | very low bending stiffness |
+| Cotton poplin | 120 g/m² | |
+| Linen | 190 g/m² | |
+| Denim | 380 g/m² | very stiff |
+
+These are **approximate typical values with relative stiffnesses, not measured fabric data** (professional tools calibrate from fabric test instruments). The simulation has no friction, wind, motion, collisions of the fabric with itself, or thickness beyond a 4 mm contact offset. On the same skirt, softer fabric consistently forms more and narrower folds and hangs closer to the body; see [drape verification](docs/2026-10-13-drape.md). Validate drape and fit with a physical toile.
+
 ## Entered body measurement comparison
 
 Enable **Use body measurements**, enter waist and hip circumferences plus the vertical **waist-to-hip depth**, then **Apply body measurements**. The optional profile travels with JSON backups, autosave and Undo/Redo. Uncheck and apply to remove it; Discard restores the committed profile. Legacy concepts have no profile. Finish other raw concept, pattern and grading edits before applying a profile.

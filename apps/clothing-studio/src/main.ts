@@ -1,6 +1,7 @@
 import {mountBody} from './body-view.ts';
 import {mountGrading} from './grading-view.ts';
 import {constructionMarkup,mountConstruction} from './construction-view.ts';
+import {mountDrape} from './drape-view.ts';
 import './style.css';
 import {
   createProject, validateProject, parseProject, serializeProject, ProjectHistory,
@@ -82,7 +83,7 @@ function message(text: string, error = false) {
 }
 
 function renderViews() {
-  bodyView?.render(project); constructionView?.render(project); gradingView?.render(project);
+  bodyView?.render(project); constructionView?.render(project); gradingView?.render(project); drapeView?.render(project);
   element('sketch-surface').innerHTML = garmentSvg(project);
   element('preview-surface').innerHTML = previewSvg(project);
   const dimensions = previewSize(project);
@@ -362,6 +363,7 @@ function constructionGuard(ignoreBody=false): boolean {
   return true;
 }
 const constructionView = mountConstruction({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
+const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 
