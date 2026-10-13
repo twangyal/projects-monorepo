@@ -1,6 +1,6 @@
 # Lens Studio
 
-A private photo workspace for exploring focal framing and manually authored depth. Import a photo, declare the source and target focal lengths, compare the original with the simulated result, then save a PNG or an editable project backup. Everything runs in your browser; photos are not uploaded.
+A private photo workspace for exploring focal framing and depth-aware perspective. Depth planes can be painted by hand or proposed by a learned depth model running locally. Import a photo, declare the source and target focal lengths, compare the original with the simulated result, then save a PNG or an editable project backup. Everything runs in your browser; photos are not uploaded.
 
 ## Run locally
 
@@ -19,7 +19,7 @@ npm run build
 npm run preview -- --host 127.0.0.1 --port 4260 --strictPort
 ```
 
-The application has no backend, account, model download or API key. Browser storage belongs to the exact origin; changing host or port opens a different notebook. Use **Download project** before moving between origins or clearing browser data.
+The application has no backend, account or API key. Estimated depth needs the model file once; see [Estimated depth](#estimated-depth). Browser storage belongs to the exact origin; changing host or port opens a different notebook. Use **Download project** before moving between origins or clearing browser data.
 
 ## A first study
 
@@ -31,6 +31,17 @@ The application has no backend, account, model download or API key. Browser stor
 5. Use **Undo**, **Redo** and **Reset projection** to compare choices. Export the result with **Export PNG** and retain editable work with **Download project**. **Import project** reopens that backup.
 
 The original and result stay at the same dimensions and aspect ratio. A checkerboard represents transparency. Original transparency is retained; missing field of view and newly uncovered regions also remain transparent. No content is generated to fill them.
+
+## Estimated depth
+
+**Estimate depth** proposes which plane each pixel belongs to. It uses [Depth Anything V2 Small](https://github.com/DepthAnything/Depth-Anything-V2) (Apache-2.0; the larger variants are non-commercial and are not used), running in this browser with onnxruntime-web (MIT) in a dedicated worker. The photo never leaves the device.
+
+1. **Get the model once.** `npm run fetch-depth-model` downloads the pinned dynamic-shape ONNX export from [Depth-Anything-ONNX v2.0.0](https://github.com/fabio-sim/Depth-Anything-ONNX/releases/download/v2.0.0/depth_anything_v2_vits_dynamic.onnx). The file is 99,092,268 bytes, SHA-256 `46c4e8eeda3a27f34701831b6a2ec7753d7b38779b215acb5633424703deed8f`. The script places it in the git-ignored `public/models/`, so dev and production builds serve it from the same origin; `--from FILE` installs a copy you already have. If the app does not host the model, it asks you to choose the file. Either way, the bytes must match the pinned size and checksum before use.
+2. **Estimate.** Choose **Estimate depth**; progress is shown, and **Cancel estimate** stops the worker. In a cross-origin-isolated page, inference uses up to four threads: `npm run dev` and `npm run preview` send the needed `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` headers, and other static hosting must add them. Otherwise one thread is used, which is several times slower. A run stops after 3 minutes.
+3. **Review.** The proposal shows near (orange), subject (green) and far (blue), with brighter meaning estimated nearer. Click the subject to centre the subject band on its depth, or set **Far plane: depth below** and **Near plane: depth from**. Nothing changes until **Apply proposal as depth mask**, which replaces the whole mask as one undoable edit.
+4. **Correct.** Fix edges with the brush, region and color tools, then save and export as usual. The saved study contains only the resulting mask, so the project format is unchanged.
+
+The model estimates *relative* inverse depth with an unknown scale per photo. The sliders are display positions from farthest (0) to nearest (1), not distances. Edges, glass, reflections, sky and thin structures are often wrong. Perspective output is still a three-plane approximation, with uncovered regions left transparent.
 
 ## Edit a depth mask in another image editor
 
@@ -187,3 +198,9 @@ The [frozen portrait/street extension](../../docs/research/lens-depth-baseline/e
 The [actual Chromium/WASM probe](../../docs/research/lens-depth-baseline/browser-2026-10-10/README.md) executes repeatable portrait inference with an interactive main thread, but retains a failed500ms native worker-retirement gate and measured CPU/WASM differences. Independent diagnosis observed delayed target destruction before browser close, not a persistent leak. Browser preprocessing, resources, boundary/correction utility and editable-depth integration remain open; no product model is enabled.
 
 The [frozen anchored-subject diagnostic](../../docs/research/lens-depth-baseline/boundary-2026-10-10/README.md) uses a fresh source-only coarse silhouette reference and the existing portrait depth preview. A fixed anchored depth band retains connected background: IoU0.47368,28,586 binary label flips versus27,447 for empty. This synthetic proxy does not measure human effort or held-out quality and does not justify automatic subject replacement. The output and failures remain inspectable; subject/continuous-depth design and actual useful edits remain unfinished.
+
+Issue [#217](https://github.com/twangyal/projects-monorepo/issues/217) enables learned depth in the editor as a reviewed, editable proposal. See [Estimated depth](#estimated-depth) and [the verification notes](docs/2026-10-13-estimated-depth.md).
+
+- **Real model in Chromium:** each estimate runs on 4 threads in about 4.7–5.2 s per photo, and the page stays responsive meanwhile. Cancellation is acknowledged within 77 ms.
+- **CI:** a 214-byte fixture model runs real onnxruntime-web inference in the browser suite.
+- **Not established:** correction effort with people, the quality of this fp32 export on held-out photos (#172 evaluated an int8 conversion), and physical-device performance.

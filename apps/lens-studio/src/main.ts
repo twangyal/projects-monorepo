@@ -1,3 +1,4 @@
+import { mountDepthPanel } from './depth-panel.ts';
 import {maskPng,maskRaster,reviewMask} from './depth-mask.ts';
 import {readMask} from './depth-mask-job.ts';
 import {prepareColorRegion,type ColorRegion} from './color-regions.ts';
@@ -100,7 +101,7 @@ const replaceButton = button('Replace saved copy', () => { void replaceSavedStud
 const storagePanel = el('section', '', 'storage-controls'); storagePanel.setAttribute('aria-label', 'Saved study and recovery');
 const drainStatus = el('p', 'Waiting for a previous photo or storage operation to finish before recovery. Keep editing and download your current project; reload this app if cleanup does not finish.', 'hint'); drainStatus.id = 'storage-drain-status'; drainStatus.hidden = true;
 storagePanel.append(saveStatus, drainStatus, retryButton, reloadButton, replaceButton); main.append(storagePanel);
-comparison.append(missing, renderStatus, el('p', 'Original transparency is retained; uncovered regions stay transparent. No content was generated.', 'notice'), el('p', 'This is a declared pinhole projection study. It does not recover hidden detail, infer depth, add optical blur or calibrate a real camera.', 'hint'));
+comparison.append(missing, renderStatus, el('p', 'Original transparency is retained; uncovered regions stay transparent. No content was generated.', 'notice'), el('p', 'This is a declared pinhole projection study over three flat planes, whether you painted them or applied an estimate. It does not recover hidden detail, add optical blur or calibrate a real camera.', 'hint'));
 main.append(el('footer', 'Local by design · one photo · no account · download a project backup for recovery outside this browser.'));
 
 let maskProposal: {project:Project;changed:number;generation:number;lifetime:number;intent:number;fields:Map<HTMLInputElement,string>}|null=null;
@@ -114,6 +115,8 @@ let gesture: { pointer: number; scrollLeft:number; scrollTop:number; points: Poi
 
 interface StorageOwner { controller: AbortController; intent: number; generation: number; lifetime: number; cancelled: boolean }
 let editorIntent = 0, lifetime = 0;
+const depthUi = mountDepthPanel({ project: () => project, locked: () => exportLocked || !!gesture, commit, announce });
+controls.insertBefore(depthUi.element, maskPanel);
 let terminal = false, initialPending = true;
 let initialOwner: StorageOwner | null = null, recoveryOwner: StorageOwner | null = null;
 let store: ProjectStore | null = null, storageReady = false, protectedStorage = false;
@@ -171,7 +174,7 @@ function refreshControls(): void {
   for (const n of [maskInput, maskDownload, maskApply, photoInput, projectInput, demoButton, resetButton, renderButton, pngButton, jsonButton, titleInput, saveTitle, fixedRadio, ackInput, fillButton, brushInput, toolInput, toleranceInput, overlayInput, applyButton, ...numeric.values()]) n.disabled = exportLocked;
   perspectiveRadio.disabled = exportLocked || !ackInput.checked; for (const n of paintControls.querySelectorAll<HTMLInputElement>('input[type=radio]')) n.disabled = exportLocked;
   sourceZoom.disabled=exportLocked||!project;for(const pan of panButtons)pan.disabled=exportLocked||!project||sourceZoom.value==='1';cancelDepth.disabled=exportLocked||!gesture;toleranceInput.parentElement!.hidden=toolInput.value!=='color';
-  cancelButton.hidden = !operation && !previewBusy && !initialPending && !recoveryOwner; refreshStorageControls();
+  cancelButton.hidden = !operation && !previewBusy && !initialPending && !recoveryOwner; refreshStorageControls(); depthUi.refresh();
   if (project) { const s = project.settings; projectionSummary.textContent = `${s.mode === 'fixed' ? 'Fixed camera' : 'Manual perspective'} · declared ${s.sourceFocal} → ${s.targetFocal} mm · ratio ${(s.targetFocal / s.sourceFocal).toFixed(4)} · near ${s.near} / subject 1 / far ${s.far} · ${project.photo.width} × ${project.photo.height}`; }
 }
 function invalidateStage(): void {
