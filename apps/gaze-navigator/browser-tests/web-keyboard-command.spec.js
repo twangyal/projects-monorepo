@@ -138,3 +138,18 @@ test('child-frame navigation releases the old field and ends keyboard capture', 
   await expect(replacement).toHaveValue('ordinary typing');
   await expect(panel(page).locator('.status')).toContainText('Keyboard command cancelled');
 });
+
+test('a synchronous website readonly change on Enter cancels the command without overriding it', async ({ page }) => {
+  const field = await suggestions(page);
+  await page.evaluate(() => {
+    window.addEventListener('keydown', event => {
+      if (event.key === 'Enter') document.getElementById('people').setAttribute('readonly', '');
+    }, true);
+  });
+  await page.keyboard.press('Alt+Shift+G');
+  await page.keyboard.type('open Ada Lovelace');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.notice')).toBeEmpty();
+  expect(await field.evaluate(element => element.readOnly)).toBe(true);
+  await expect(panel(page).locator('.status')).toContainText('Keyboard command cancelled');
+});

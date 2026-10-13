@@ -103,3 +103,20 @@ test('the physical shortcut works when Alt changes the produced character', () =
   assert.equal(s.commands.active, true);
   s.commands.stop(); assert.equal(s.field.readOnly, false);
 });
+
+test('pending website readonly changes cancel submission before observer delivery', () => {
+  const s = session(); let observer;
+  s.document.defaultView.MutationObserver = class {
+    constructor() { observer = this; this.records = []; }
+    observe() {}
+    takeRecords() { const records = this.records; this.records = []; return records; }
+    disconnect() {}
+  };
+  s.start(); s.key('c');
+  // A window-capture website handler runs before our document keydown handler.
+  s.field.readOnly = true; observer.records.push({ type: 'attributes' });
+  s.key('Enter');
+  assert.deepEqual(s.submitted, []);
+  assert.equal(s.field.readOnly, true);
+  assert.equal(s.commands.active, false);
+});

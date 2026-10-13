@@ -11,8 +11,9 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
   function end(cancelled = true, restoreProtection = true) {
     if (!session) return;
     const old = session; session = null;
+    const pageChangedProtection = Boolean(old.observer?.takeRecords().length);
     old.observer?.disconnect();
-    if (old.protected && restoreProtection) old.field.readOnly = old.readOnly;
+    if (old.protected && restoreProtection && !pageChangedProtection) old.field.readOnly = old.readOnly;
     if (cancelled) onCancel();
   }
   function replace(text) {
@@ -21,6 +22,11 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
     chars.splice(start, length, ...added);
     session.cursor = session.anchor = start + added.length;
     changed();
+  }
+  function stale(event) {
+    const pageChangedProtection = Boolean(session.observer?.takeRecords().length);
+    if (!pageChangedProtection && getActiveElement() === session.field) return false;
+    consume(event); end(true, !pageChangedProtection); return true;
   }
   function keydown(event) {
     const shortcut = event.altKey && event.shiftKey && !event.ctrlKey && !event.metaKey && (event.code === 'KeyG' || event.key.toLowerCase() === 'g');
@@ -48,7 +54,7 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
       changed(); return;
     }
     if (!session) return;
-    if (getActiveElement() !== session.field) { consume(event); end(); return; }
+    if (stale(event)) return;
     if (event.key === 'Escape') { consume(event); end(); return; }
     if (event.key === 'Tab' || ((event.ctrlKey || event.metaKey) && !['a', 'v'].includes(event.key.toLowerCase()))) {
       end(); return; // Browser/system shortcuts retain their normal behavior.
@@ -86,7 +92,7 @@ export function createKeyboardCommands({ getActiveElement, onStart = () => true,
   }
   function paste(event) {
     if (!session) return;
-    if (getActiveElement() !== session.field) { consume(event); end(); return; }
+    if (stale(event)) return;
     consume(event); replace(event.clipboardData?.getData('text/plain') ?? '');
   }
   function focusChanged() {
