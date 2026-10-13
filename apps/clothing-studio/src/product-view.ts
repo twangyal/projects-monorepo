@@ -3,7 +3,7 @@
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
-  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, FIT_NAMES, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
@@ -463,21 +463,82 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     select.innerHTML = `<option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}${motifs.map(m => `<option value="upload:${m.id}">${escapeHtml(m.name)} (your motif)</option>`).join('')}`;
   }
 
+  // Direct pattern editing: handles on the front piece move its shoulder point, neck point, neck drop, underarm and
+  // hem corner. Each is a slider over one fit measurement; a drag or an arrow key is one undoable edit.
+  type Handle = { key: FitKey; axis: 'x' | 'y'; x: number; y: number; label: string; value: (x: number, y: number) => number; widens: boolean };
+  let handlesShown: Handle[] = [];
+  function fitHandles(design: Product): Handle[] {
+    if (isBottoms(design)) return [];
+    const d = teeDimensions(design), cx = flare(design) + d.half, armY = d.shoulderDrop + d.armDepth, full = d.length - armY;
+    // The hem corner sits where the side seam meets the hem, or the hem band seam on banded bases.
+    const hemY = d.band ? d.length - d.band : d.length, ratio = full / (hemY - armY), inset = (d.half - d.hemHalf) / ratio;
+    return [
+      { key: 'shoulderWidth', axis: 'x', x: cx - d.shoulderX, y: d.shoulderDrop, label: 'Shoulder point', value: x => 2 * (cx - x), widens: true },
+      { key: 'neckWidth', axis: 'x', x: cx - d.neckHalf, y: 0, label: 'Neck point', value: x => 2 * (cx - x), widens: true },
+      { key: 'frontNeckDrop', axis: 'y', x: cx, y: d.neckDepthFront, label: 'Front neck', value: (_, y) => y, widens: false },
+      { key: 'armholeDepth', axis: 'y', x: cx - d.half, y: armY, label: 'Underarm', value: (_, y) => y - d.shoulderDrop, widens: false },
+      { key: 'hemWidth', axis: 'x', x: cx - d.half + inset, y: hemY - (d.band ? 0 : d.hemCurve), label: 'Hem corner',
+        value: x => 2 * (d.half - (x - cx + d.half) * ratio), widens: true },
+    ];
+  }
+  const fitValue = (design: Product, key: FitKey) => fitValues(design)[key];
   function piecesSvg(design: Product): string {
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
+    handlesShown = fitHandles(design);
+    const frontAt = placed.find(item => item.piece.part === 'front')?.at ?? 0;
+    const handles = handlesShown.map(h => `<circle data-fit-handle="${h.key}" cx="${h.x.toFixed(2)}" cy="${h.y.toFixed(2)}" r="1.5" tabindex="0" role="slider" aria-label="${h.label}: ${FIT_NAMES[h.key]}"
+      aria-valuemin="${LIMITS.fit[h.key][0]}" aria-valuemax="${LIMITS.fit[h.key][1]}" aria-valuenow="${(Math.round(fitValue(design, h.key) * 10) / 10)}" aria-valuetext="${(Math.round(fitValue(design, h.key) * 10) / 10)} cm" aria-orientation="${h.axis === 'x' ? 'horizontal' : 'vertical'}"><title>${h.label}: drag to change ${FIT_NAMES[h.key].toLowerCase()}</title></circle>`).join('');
+    const handleLayer = handles ? `<g class="fit-handles" transform="translate(${frontAt} 0)">${handles}<text class="fit-readout" x="0" y="-0.5" font-size="3"></text></g>` : '';
     const height = Math.max(...pieces.map(p => p.height));
     const defs = partsOf(design).map(id => {
       const { canvas: tile, tileCm } = paintTile(design.parts[id], undefined, design.motifs);
       return `<pattern id="fill-${id}" patternUnits="userSpaceOnUse" width="${tileCm}" height="${tileCm}"><image href="${tile.toDataURL('image/png')}" width="${tileCm}" height="${tileCm}"/></pattern>`;
     }).join('');
-    return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="img" aria-label="Pattern pieces: ${pieces.map(p => partName(design, p.part)).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${partName(design, piece.part)}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/><text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${partName(design, piece.part)} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm</text></g>`).join('')}</svg>`;
+    return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="group" aria-label="Pattern pieces: ${pieces.map(p => partName(design, p.part)).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${partName(design, piece.part)}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/><text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${partName(design, piece.part)} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm</text></g>`).join('')}${handleLayer}</svg>`;
   }
+  function commitFit(key: FitKey, value: number) {
+    const rounded = Math.round(value * 2) / 2;
+    update(draft => { draft.fit = { ...(draft.fit ?? {}), [key]: rounded }; }, `${FIT_NAMES[key]} ${rounded} cm: the pattern, 3D garment and tech pack follow it.`);
+    // A refused value snaps the handle back.
+    shown = ''; render(options.current());
+  }
+  let drag: { handle: Handle; circle: SVGCircleElement; layer: SVGGElement; value: number; moved: boolean } | null = null;
+  const toLayer = (layer: SVGGElement, event: PointerEvent) => new DOMPoint(event.clientX, event.clientY).matrixTransform(layer.getScreenCTM()!.inverse());
+  $('product-pieces').addEventListener('pointerdown', event => {
+    const circle = (event.target as Element).closest<SVGCircleElement>('[data-fit-handle]');
+    const handle = circle && handlesShown.find(item => item.key === circle.dataset.fitHandle);
+    if (!circle || !handle) return;
+    event.preventDefault();
+    circle.setPointerCapture(event.pointerId);
+    drag = { handle, circle, layer: circle.parentNode as SVGGElement, value: fitValue(product() ?? template('blank'), handle.key), moved: false };
+  });
+  $('product-pieces').addEventListener('pointermove', event => {
+    if (!drag) return;
+    const point = toLayer(drag.layer, event), [low, high] = LIMITS.fit[drag.handle.key];
+    drag.value = Math.min(high, Math.max(low, drag.handle.value(point.x, point.y))); drag.moved = true;
+    if (drag.handle.axis === 'x') drag.circle.setAttribute('cx', point.x.toFixed(2)); else drag.circle.setAttribute('cy', point.y.toFixed(2));
+    const readout = drag.layer.querySelector('.fit-readout')!;
+    readout.setAttribute('x', drag.circle.getAttribute('cx')!); readout.setAttribute('y', String(Number(drag.circle.getAttribute('cy')) - 3));
+    readout.textContent = `${FIT_NAMES[drag.handle.key]} ${(Math.round(drag.value * 2) / 2).toFixed(1)} cm`;
+  });
+  const endDrag = () => { if (!drag) return; const { handle, value, moved } = drag; drag = null; if (moved) commitFit(handle.key, value); };
+  $('product-pieces').addEventListener('pointerup', endDrag);
+  $('product-pieces').addEventListener('pointercancel', () => { drag = null; shown = ''; render(options.current()); });
   $('product-pieces').addEventListener('click', event => {
+    if ((event.target as Element).closest('[data-fit-handle]')) return;
     const piece = (event.target as Element).closest<SVGGElement>('[data-piece]'); if (!piece) return;
     selected = piece.dataset.piece as PartId; render(options.current());
   });
   $('product-pieces').addEventListener('keydown', event => {
+    const circle = (event.target as Element).closest<SVGCircleElement>('[data-fit-handle]');
+    const handle = circle && handlesShown.find(item => item.key === circle.dataset.fitHandle);
+    if (handle) {
+      // Arrow keys move the handle 0.5 cm; moving a left-side point outward widens the measurement.
+      const step = { ArrowLeft: handle.widens ? 0.5 : 0, ArrowRight: handle.widens ? -0.5 : 0, ArrowDown: handle.widens ? 0 : 0.5, ArrowUp: handle.widens ? 0 : -0.5 }[event.key];
+      if (step) { event.preventDefault(); const key = handle.key; commitFit(key, fitValue(product() ?? template('blank'), key) + step); ($('product-pieces').querySelector(`[data-fit-handle="${key}"]`) as SVGCircleElement | null)?.focus(); }
+      return;
+    }
     const piece = (event.target as Element).closest<SVGGElement>('[data-piece]');
     if (piece && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); selected = piece.dataset.piece as PartId; render(options.current()); }
   });

@@ -113,6 +113,8 @@ Open **Fit** under the measurements to set a top's points of measure directly at
 
 **Apply fit** updates the linked pattern pieces, the 3D garment, the DXF and SVG export, consumption and the tech pack together. Only values you change are stored; the others keep scaling with the chest, and **Back to proportional** clears them.
 
+**Edit on the pattern.** The front pattern piece has handles on its shoulder point, neck point, front neck, underarm and hem corner. Drag one, or focus it and use the arrow keys (0.5 cm steps), to change the matching measurement. Each change is one undoable edit, and a value that would not make a garment is refused and snaps back. The handles are keyboard sliders with their measurement as the value.
+
 - **Shape.** The side seams run straight from the underarm to the hem width, so a narrower hem tapers the body and a wider one makes an A-line. A flared piece is laid out from x = 0 like the others. On sweatshirts and hoodies the hem band follows the hem width.
 - **Sleeves.** The sleeve cap follows the armhole depth, and the sleeve opening sets the cuff.
 - **Checks.** Validation keeps a garment:

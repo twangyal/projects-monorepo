@@ -57,6 +57,9 @@ input#construction-waistband { width: 1.1rem; height: 1.1rem; flex: 0 0 1.1rem; 
 .pattern-piece { cursor: pointer; }
 .pattern-piece.is-selected polygon { stroke: #a5482a; stroke-width: 0.9; }
 .pattern-piece:focus-visible polygon { stroke: #1f6f8b; stroke-width: 1; }
+.fit-handles circle { fill: #fffdf9; stroke: #a5482a; stroke-width: 0.5; cursor: grab; touch-action: none; }
+.fit-handles circle:focus-visible { stroke: #1f6f8b; stroke-width: 0.9; outline: none; }
+.fit-readout { fill: #a5482a; font-weight: 700; pointer-events: none; }
 @media (max-width: 1100px) { .product-grid { grid-template-columns: 1fr; } #product-canvas { height: 420px; } .product-library { grid-template-columns: 1fr; } .library-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
 .product-templates > div { display: flex; }
 .product-templates .template-card { width: 100%; align-content: start; }
