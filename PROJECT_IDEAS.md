@@ -13,7 +13,7 @@ Description: Gaze Navigator helps people who have difficulty using a mouse or ke
 
 Integration #216 repairs confirmation/camera/speech lifecycle ownership and preserves the newer canonical features. Hosted checks cover 127 units and 176 browser cases. This advances real-page navigation; physical speech/webcam and interpreter acceptance remain open.
 
-Integration #246 lands reviewed opt-in on-device WaterSheep matching and expanded real-page controls with canonical guards restored. Its hosted source gate passes 139 unit and 208 native browser cases; retained real-site/model reports are developer-authored measurements with simulated-input limits. Physical evaluation #132, typed-fallback menu preservation #244 and broader intended-user acceptance remain open.
+Integration #246 lands reviewed opt-in on-device WaterSheep matching and expanded real-page controls with canonical guards restored. Its hosted source gate passes 139 unit and 208 native browser cases; retained real-site/model reports are developer-authored measurements with simulated-input limits. Physical evaluation #132, broader intended-user acceptance remain open. Keyboard command mode (#244) now preserves website focus and ordinary drafts, with safe modifier/paste editing, dynamic-frame discovery and cancellation. The accepted source gate passes 148 unit and 240 native browser cases; physical keyboard/screen-reader and fresh Wikipedia evaluation remain separate.
 
 ## 2. Schedule app that bricks your phone
 

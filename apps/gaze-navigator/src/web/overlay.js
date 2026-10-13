@@ -4,6 +4,7 @@ import { captureContext, frameOffset, sameOriginFrames, viewportRect } from './p
 import { createController } from './controller.js';
 import { createAssistedInterpreter } from './assisted-interpreter.js';
 import { createSpeechInput } from './speech-input.js';
+import { createKeyboardCommands } from './keyboard-command.js';
 import { createGazeFilter } from '../gaze-filter.js';
 import { createCameraGaze } from './camera-gaze.js';
 import { runCalibration } from './calibration.js';
@@ -129,7 +130,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
         <button class="cancel">Cancel</button>
       </div>
       <form class="typed">
-        <input class="instruction" aria-label="Typed instruction" placeholder="e.g. open pricing" autocomplete="off" />
+        <input class="instruction" aria-label="Typed instruction" title="Alt+Shift+G: type without leaving website focus" placeholder="e.g. open pricing" autocomplete="off" />
         <button type="submit">Do it</button>
       </form>
       <details class="settings"><summary>Tracking and settings</summary>
@@ -150,6 +151,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       </details>
       <details class="context-details"><summary class="context-summary">In the circle</summary><ol class="context"></ol></details>
       <details><summary>What can I say?</summary>
+      <p class="hint">Keep website suggestions open: focus the page, press Alt+Shift+G, type a command, then Enter. Escape cancels. Use direct keyboard characters or paste.</p>
         <p class="hint">"Open pricing", "click the second one", "type hello into search", "delete last word", "replace Tuesday with Friday", "choose large", "scroll down", "go back", "submit", "pause", "cancel". Numbers answer questions; "confirm" approves a consequential action.</p>
         <p class="hint">"Use camera" starts webcam gaze and a no-click calibration (look at each dot); "recalibrate" repeats it; "stop camera" or "use pointer" turns the camera off.</p>
         <p class="hint">The circle follows your gaze (or pointer). Looking at this panel keeps the last page area. Context is captured when you start speaking.</p>
@@ -339,12 +341,57 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   };
   window.addEventListener('pointermove', onPointer, true);
   // Pointer events over a same-origin frame go to that frame's document; translate them back.
+  let keyboardContext = null, keyboardDraft = '';
+  function finishKeyboard() {
+    ui.instruction.value = keyboardDraft;
+    ui.instruction.readOnly = false;
+    ui.transcript.setAttribute('aria-live', 'off');
+    keyboardContext = null;
+  }
+  const keyboard = createKeyboardCommands({
+    getActiveElement: () => deepActiveElement(document),
+    onStart() {
+      if (stopped || closing) return false;
+      if (inPanel(deepActiveElement(document))) {
+        feedback({ message: 'Focus the website first, then press Alt+Shift+G to type without leaving it.' });
+        return false;
+      }
+      recapture(true);
+      keyboardContext = context;
+      keyboardDraft = ui.instruction.value;
+      ui.instruction.readOnly = true;
+      ui.transcript.setAttribute('aria-live', 'polite');
+      feedback({ message: 'Keyboard command mode. Type an instruction; Enter runs it and Escape cancels. Website focus stays in place.' });
+      return true;
+    },
+    onChange({ text, selectionStart, selectionEnd }) {
+      ui.instruction.value = text;
+      ui.instruction.setSelectionRange(selectionStart, selectionEnd);
+      ui.transcript.textContent = `Keyboard command: ${text || '(empty)'}` +
+        (selectionStart !== selectionEnd ? `. Selected: ${text.slice(selectionStart, selectionEnd)}` : '');
+    },
+    onSubmit(text) {
+      const captured = { ...keyboardContext, preserveFocus: true };
+      finishKeyboard();
+      ui.transcript.textContent = `Typed: ${text}`;
+      run(text, captured);
+    },
+    onCancel() {
+      finishKeyboard();
+      if (!stopped && !closing) feedback({ message: 'Keyboard command cancelled. Website typing is restored.' });
+    },
+    onUnavailable(message) { feedback({ message, tone: 'error' }); },
+  });
+  keyboard.attach(document);
   const watchedFrames = new WeakSet();
   const frameListeners = [];
+  const onFrameLoad = event => { if (/^I?FRAME$/.test(event.target?.tagName ?? '')) watchFrames(); };
   function watchFrames() {
     for (const { document: frameDocument, frames } of sameOriginFrames(document, host)) {
       if (watchedFrames.has(frameDocument)) continue;
       watchedFrames.add(frameDocument);
+      keyboard.attach(frameDocument);
+      frameDocument.addEventListener('load', onFrameLoad, true);
       const listener = event => {
         if (settings.source !== 'pointer') return;
         frozen = false;
@@ -357,6 +404,8 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   }
   watchFrames();
   window.addEventListener('load', watchFrames, true);
+  // Frame load events reach their document in capture phase, but skip its window.
+  document.addEventListener('load', onFrameLoad, true);
   const refresh = () => recapture(true);
   window.addEventListener('scroll', refresh, true);
   window.addEventListener('resize', refresh);
@@ -366,6 +415,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
 
   function run(utterance, captured) {
     if (stopped || closing) return { message: 'Navigator is stopped.', tone: 'info' };
+    keyboard.cancel();
     // While calibrating the circle is hidden, so instructions cannot target page elements.
     const used = calibration ? { elements: [], region: null } : captured ?? spokenContext ?? (recapture(true), context);
     spokenContext = null;
@@ -541,6 +591,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
   ui.recalibrate.addEventListener('click', () => run('recalibrate', { elements: [] }));
   const onPageHide = () => {
     closing = true; sourceGeneration++;
+    keyboard.cancel();
     const active = calibration; calibration = null; active?.cancel();
     camera.stop(); speech.stop(); controller.cancel();
     spokenContext = null; promptContext = null;
@@ -635,6 +686,7 @@ export function startWebNavigator({ window = globalThis.window, document = windo
     run: utterance => run(utterance, null),
     stop() {
       stopped = true; closing = true; assistLoad++; sourceGeneration++;
+      keyboard.stop();
       controller.cancel(); spokenContext = null; promptContext = null;
       const active = calibration; calibration = null; active?.cancel();
       camera.stop();
@@ -643,7 +695,11 @@ export function startWebNavigator({ window = globalThis.window, document = windo
       speech.stop();
       window.removeEventListener('pointermove', onPointer, true);
       window.removeEventListener('load', watchFrames, true);
-      for (const [frameDocument, listener] of frameListeners) frameDocument.removeEventListener('pointermove', listener, true);
+      document.removeEventListener('load', onFrameLoad, true);
+      for (const [frameDocument, listener] of frameListeners) {
+        frameDocument.removeEventListener('pointermove', listener, true);
+        frameDocument.removeEventListener('load', onFrameLoad, true);
+      }
       window.removeEventListener('scroll', refresh, true);
       document.removeEventListener('focusin', onFocusIn, true);
       document.removeEventListener('focusout', onFocusOut, true);

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Suggestion search — Northwind Books</title><link rel="icon" href="data:,"><link rel="stylesheet" href="./site.css"><style>main{margin:8px;padding:0 8px}h1{font-size:20px;margin:0 0 6px}p{margin:6px 0}label{display:block}#suggestions button{margin:4px 6px 0 0;font-size:14px;padding:4px}</style></head>
+<body><main><h1>Search suggestions</h1><p>Suggestions disappear when the field loses focus.</p><label>Search people <input id="people" type="search" autocomplete="off"></label><div id="suggestions"></div><p class="notice" role="status"></p></main>
+<script type="module">
+const field = document.querySelector('#people'), menu = document.querySelector('#suggestions'), notice = document.querySelector('.notice');
+function suggest() {
+  menu.replaceChildren();
+  if (!field.value) return;
+  for (const name of ['Ada Lovelace', 'Ada Yonath']) {
+    const button = document.createElement('button');
+    button.textContent = name;
+    menu.append(button);
+  }
+}
+menu.addEventListener('click', event => {
+  if (event.target.matches('button') && menu.contains(event.target)) notice.textContent = `Selected ${event.target.textContent}`;
+});
+field.addEventListener('input', suggest);
+field.addEventListener('focus', suggest);
+field.addEventListener('blur', () => menu.replaceChildren());
+</script><script type="module" src="../src/web/boot.js"></script></body></html>
