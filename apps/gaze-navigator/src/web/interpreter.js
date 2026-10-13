@@ -271,7 +271,9 @@ export function interpret(utterance, context = { elements: [] }) {
   if (resolved.type === 'unknown' && verbless === text && !hint) {
     return { type: 'unknown', unparsed: true, message: `"${raw}" was not understood. Try "open" or "click" and a name, "type", "scroll down", "go back" or "cancel".` };
   }
-  return resolved.type === 'unknown' ? { ...resolved, targetQuery: query } : resolved;
+  // Only a spoken activation verb ("open …", "click …") makes this a request to name a control.
+  if (resolved.type === 'unknown') return verbless !== text ? { ...resolved, targetQuery: query } : { ...resolved, unparsed: true };
+  return resolved;
 }
 
 // Pure text corrections applied to a field value.

@@ -71,7 +71,9 @@ export function createAssistedInterpreter({ model, rules = interpretRules, accep
         // Tie-break only between controls the rules already proposed, using the rules' own action.
         const choices = action.candidates.map(candidate => ({ element: elements.find(element => element.id === candidate.elementId), number: candidate.number }))
           .filter(choice => choice.element);
-        if (choices.length !== action.candidates.length || new Set(choices.map(choice => choice.element.id)).size !== choices.length) return action;
+        // Controls described identically (two "Remove" buttons) cannot be told apart from words: keep the question.
+        if (choices.length !== action.candidates.length || new Set(choices.map(choice => choice.element.id)).size !== choices.length
+          || new Set(choices.map(choice => describeElement(choice.element))).size !== choices.length) return action;
         const picked = await pick(said, choices.map(choice => ({ element: choice.element, act: () => action.choose(choice.number) })));
         return picked?.type === 'clarify' ? action : picked ?? action;
       }

@@ -50,7 +50,7 @@ Execution never opens `javascript:` or other non-web link schemes, writes fields
 
 Interpretation quality is measured on a fixed suite: `npm run evaluate:instructions` scores 120 tuned phrasings (120/120) and 50 held-out phrasings (34/50, 68%). Both suites have zero wrong page actions; every miss is a question or an explanation. See [the evaluation](docs/2026-10-12-instruction-suite-evaluation.md). This is the baseline a model interpreter must beat.
 
-**WaterSheep target choice (#229, evaluation-ready, not yet in the live runtime).** The owner chose [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep) instead of Jev. WaterSheep is an Apache-2.0 ModernBERT model that answers single-choice and yes/no questions with calibrated probabilities and runs locally through ONNX Runtime.
+**WaterSheep target choice (#229, measured, not yet in the live runtime).** The owner chose [WaterSheep](https://github.com/SamratDuttaOfficial/WaterSheep) instead of Jev. WaterSheep is an Apache-2.0 ModernBERT model that answers single-choice and yes/no questions with calibrated probabilities and runs locally through ONNX Runtime.
 
 `src/web/assisted-interpreter.js` keeps the rules first and asks the model only to choose a control:
 
@@ -60,7 +60,9 @@ Interpretation quality is measured on a fixed suite: `npm run evaluate:instructi
 
 The model sees the instruction and the controls' role, name, checked state and choices, never field values or page text. A pick of at least 0.8 acts, and still goes through consequential-action confirmation. A split answer asks a numbered question; anything else keeps the rule answer.
 
-`src/web/watersheep.js` adapts WaterSheep's browser inference with an injected runtime. `npm run evaluate:instructions -- --watersheep DIR` scores it on both suites from a local model copy. **Not yet measured:** this environment cannot reach huggingface.co, where the weights are published. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
+`src/web/watersheep.js` adapts WaterSheep's browser inference with an injected runtime. `npm run evaluate:instructions -- --watersheep DIR` scores it on both suites from a local model copy.
+
+**Measured** (revision `236de64`): with WaterSheep, the held-out suite rises from 34/50 to **35/50 with 0 unsafe** (15 abstained), and the tuned suite stays at 120/120. Model calls take about 0.36 s. The first scoring found two unsafe picks, which led to safety-only gating fixes. Because the gain is small, the model is not yet used by the live navigator. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
 
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 
@@ -80,7 +82,7 @@ In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose 
 - In the extension, a successful camera calibration follows you between pages. Its training samples (tiny eye-patch images plus screen positions) are kept only in the extension's in-memory session storage, never in website storage. They are reused while the window size is unchanged and for up to two hours. "Stop camera" or "use pointer" deletes them, and the browser discards them when it closes. The practice site (no extension) still recalibrates on each page.
 - Protected pages (`chrome://`, the web store) report that the navigator cannot run there. Cross-origin iframes and other browsers are not handled. The navigator's modules are web-accessible, so a website can detect that the extension is installed. WebGazer is GPL-3.0; its license is copied into the build.
 
-Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. WaterSheep (which replaced Jev) is integrated for evaluation but not yet measured or used by the live runtime; the rule interpreter is the measured baseline. Spoken commands are English only.
+Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. WaterSheep (which replaced Jev) is measured but not yet used by the live runtime: it added one correct held-out case with no unsafe actions. Spoken commands are English only.
 
 ## Architecture
 

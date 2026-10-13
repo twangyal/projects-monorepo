@@ -60,6 +60,19 @@ test('the model only breaks ties between the controls the rules proposed, keepin
   assert.equal(readMore.type, 'clarify');
   assert.deepEqual(readMore.candidates.map(candidate => candidate.elementId), [1, 2, 3]);
   assert.equal(readMore.assisted, undefined);
+  // Even a confident model may not pick between identically described controls (measured: "click remove").
+  const confident = scripted({ Remove: 9 });
+  const remove = await createAssistedInterpreter({ model: confident })('click remove', CONTEXTS.list);
+  assert.equal(remove.type, 'clarify');
+  assert.equal(confident.calls.length, 0);
+});
+
+test('a role word without an activation verb is not a request to name a control', async () => {
+  // Measured: "put Ada in the name field" focused the field instead of typing. Without a verb it must pass the intent gate.
+  const model = scripted({ 'Your name': 9 }, 0.1);
+  const action = await createAssistedInterpreter({ model })('put Ada in the name field', CONTEXTS.form);
+  assert.equal(action.type, 'unknown');
+  assert.deepEqual(model.calls.map(call => call.kind), ['yes']);
 });
 
 test('only roles, names, checked state and choices are sent, and model failures keep the rule answer', async () => {
