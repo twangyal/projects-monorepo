@@ -2,7 +2,7 @@
 
 **Product direction (2026-10-08): ACTIVE.** The destination is an automatic song-to-karaoke workflow with lyric transcription and synchronization, followed by user correction when needed. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
-A local karaoke maker: import a complete song or excerpt, estimate vocals and backing with the actual pretrained Spleeter model, supply and time lyrics, preview the result, and export a karaoke video. AI estimates the stems; you supply and synchronize the words. There is no automatic lyric recognition or alignment.
+A local karaoke maker: import a complete song or excerpt and it estimates vocals and backing with a pretrained MDX-Net vocal model (UVR-MDX-NET-Voc_FT), then recognizes and times the sung lyrics automatically from the separated vocals. Preview the result, correct words and timing where recognition went wrong (or paste the real lyrics and have them aligned to the singing), and export a karaoke video. Automatic lyrics are English-only and imperfect; see [Automatic lyrics](#automatic-lyrics) for measured quality.
 
 ## Install and run
 
@@ -20,12 +20,13 @@ npm ci
 npm run build
 ```
 
-The core dependency is Pillow; the separate ML lock installs Spleeter 2.4.2, TensorFlow 2.12.1, and their pinned dependencies. Use the same Python 3.11 environment to start the service, because its model subprocess uses that interpreter. Installation requires network access and substantial disk space; no paid service or GPU is required. On Ubuntu, FFmpeg can be installed with `sudo apt-get install ffmpeg`.
+The core dependency is Pillow; the separate ML lock installs ONNX Runtime 1.31.0, sherpa-onnx 1.13.8, NumPy, SciPy and their pinned dependencies (about 360 MB; before #236 it also needed TensorFlow and Spleeter, about 2 GB). Use the same Python 3.11 environment to start the service, because its model subprocess uses that interpreter. Installation requires network access; no paid service or GPU is required. On Ubuntu, FFmpeg can be installed with `sudo apt-get install ffmpeg`.
 
 Explicitly set up the model cache outside Git, then start the service:
 
 ```sh
 python scripts/setup_model.py --model-dir "$HOME/.cache/karaoke-studio/models"
+python scripts/setup_lyrics_model.py --model-dir "$HOME/.cache/karaoke-studio/models"
 python -m karaoke \
   --model-dir "$HOME/.cache/karaoke-studio/models" \
   --data-dir "$HOME/.local/share/karaoke-studio" \
@@ -34,14 +35,14 @@ python -m karaoke \
 
 Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The loopback service serves the production `dist/` build and its API from the same origin. `npm run dev` watches and rebuilds that production output; run it in a second terminal while the Python service is running, then refresh the browser after a rebuild. It does not start a separate browser-facing Vite server.
 
-Startup never downloads models. Missing/corrupt weights disable new separation with setup guidance; install missing ML packages into the service's active environment. The service processes one separation or video-export job at a time. **Cancel job** stops pending work and cleans partial output while preserving completed clips. Stopping the service cancels active workers too.
+The lyric recognition setup downloads about 483 MB and installs about 662 MB; without it the studio still works, and clips start without lyrics. Startup never downloads models. Missing/corrupt weights disable new separation with setup guidance; install missing ML packages into the service's active environment. The service processes one separation or video-export job at a time. **Cancel job** stops pending work and cleans partial output while preserving completed clips. Stopping the service cancels active workers too.
 
 ## Make a karaoke song
 
-1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
-2. Wait for separation, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
-3. Paste your lyrics, one line per cue, and press **Create draft timings**, or choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues. Even spacing is only a starting point; it does not detect singing or identify words.
-4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview highlights the active line, shows upcoming text, and displays an instrumental break between cues.
+1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–600 seconds** (ten minutes), at most **128 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
+2. Wait for separation and lyric recognition, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
+3. The clip opens with **automatically recognized, timed lyric lines** already saved, so the preview and export work straight away. Listen and correct misheard words and timing. If you have the real lyrics, paste them one line per cue and press **Create draft timings**: each line is aligned to where it was sung, and lines whose words were not clearly heard are named so you can check them. Without recognized lyrics, pasted lines are evenly spaced instead. You can also choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues.
+4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview lights up the active line **word by word** as it is sung, shows upcoming text, and displays an instrumental break between cues. The exported video highlights words the same way (see [Word-by-word highlighting](#word-by-word-highlighting)).
 5. Press **Save lyrics**, then **Export karaoke MP4**. Downloads include backing WAV and saved SRT subtitles. Editing saved lyrics invalidates the previous video; save and export again to download the current revision.
 
 Titles allow 1–100 Unicode code points. Projects support at most **200 cues**, **240 Unicode code points per cue**, and **20,000 lyric code points** overall. The pasted draft also counts line separators toward its limit. Cue intervals must be ordered, nonoverlapping, and within the clip; gaps are allowed. Invalid edits stay available for correction and cannot replace the saved project. Unsaved lyric drafts are not durable until you press **Save lyrics**.
@@ -169,15 +170,15 @@ replace your input fields or clear incomplete text/timing drafts.
 
 Waveform loading streams the local normalized WAV in a browser worker. Each
 441-frame/10 ms bin retains exact signed 16-bit minimum and maximum values across
-both channels, including opposite-phase audio. A five-minute song has 30,000
-bins and 120,000 bytes of peak data. The final partial bin uses only real samples.
+both channels, including opposite-phase audio. A ten-minute song has 60,000
+bins and 240,000 bytes of peak data. The final partial bin uses only real samples.
 Container overhead is limited to 4 KiB, and the whole load has a 30-second deadline.
 **Stop waveform** releases pending work; **Retry waveform** starts a new attempt.
 Playback and manual timing continue to work after a stopped or failed load.
 Peaks are temporary and are recomputed when a project is reopened. No model,
 network service, project migration or extra setup is needed for this view.
 
-Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; this is line-level karaoke, not word-by-word highlighting. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
+Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; saved or estimated word starts drive word-by-word highlighting within each line. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
 
 ## Local projects and backups
 
@@ -209,7 +210,7 @@ Use **Import project archive** to add a restored clip to the current library wit
 
 Cancel an accepted archive job with the existing job control. **Cancel archive upload** stops the browser request, but a lost response can leave acceptance uncertain. Use **Check restore status** to inspect the current library/job before retrying; it preserves the editor and does not repeat the import or cancel unrelated work. It also retries a failed provenance read. Ordinary editing/audio/video remain usable when provenance is unavailable, while archive backup waits for that check to recover.
 
-This is a versioned, uncompressed application format, limited to **160 MiB**, not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–300-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 180-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
+This is a versioned, uncompressed application format, limited to **306.8 MiB** (three maximum WAVs plus 4 MiB), not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–600-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 360-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
 
 The archive is **unencrypted private audio and lyrics**. Checksums detect corruption, not authentic provenance, media rights or separation quality. Imported audio and processing claims remain visibly **unverified** after restart and re-export; they never change local model readiness. Missing metadata is identified separately. Unrecognized/private processing metadata or a malformed provenance sidecar blocks backup visibly without changing the project. Stored local metadata is also not independently authenticated.
 
@@ -217,31 +218,103 @@ One completed archive cache per clip is retained, up to an additional 3,200 MiB 
 
 For a whole-library backup, stop the service and copy the data directory, including project metadata, audio and any imported-provenance sidecars. Retain the backed-up directory when starting a new library after reaching the clip cap.
 
-## Model provenance and limitations
+## Automatic lyrics
 
-Setup downloads the official [Deezer Spleeter v1.4.0 two-stem checkpoint](https://github.com/deezer/spleeter/releases/download/v1.4.0/2stems.tar.gz), **73,109,797 bytes**, and verifies its pinned SHA-256 against the value published in the official [checksum index](https://github.com/deezer/spleeter/releases/download/v1.4.0/checksum.json):
+After separation, the studio listens to the **separated vocals** and recognizes the sung words locally. It splits the vocals into phrases with Silero voice-activity detection, then recognizes them with NVIDIA Parakeet TDT 0.6B v2 (int8, English) through sherpa-onnx, in a network-denied, resource-limited worker. The words are grouped into lines at pauses and saved as the new clip's lyrics, so preview and export work straight away. Each recognized word carries a confidence. The **Automatic lyrics** panel names lines whose words averaged below 0.7, because on real songs such words were right only about 30% of the time.
+
+- **Review automatic lyrics** shows every recognized line, with unsure lines marked, and replaces the current lines as one undoable, unsaved edit.
+- **Create draft timings** with pasted lyrics aligns each line to where its words were sung. The exact text you pasted is kept. Lines that were not clearly heard are named and placed over the unmatched singing between their neighbours.
+- **Transcribe lyrics** (or **Transcribe again**) recognizes an existing or restored clip as a cancellable job. It never changes saved lyrics.
+- Recognized words are stored beside the clip as `transcript.json`. Portable archives do not include them; transcribe a restored clip again.
+
+**Measured on 20 English JamendoLyrics songs with reference timings** (5,693 words), running the production path:
+
+- **Recognition:** 30.9% word error rate overall with the MDX-Net vocals (41.9% with Spleeter's, before #236). Songs range from 12.3% to 85.7%, with distorted vocals and dense backing vocals the hardest.
+- **Word timing:** correctly recognized words start a median 0.06 s from the reference; 96.8% are within 0.3 s.
+- **Automatic lines:** 78.5% of reference lines have an automatic line starting within 1 s (76.4% before).
+- **Pasted lyrics:** a median 0.10 s start error, with 86.9% of lines within 1 s (0.14 s and 78.1% before). Of the lines the studio reports as heard, 97.5% are within 1 s.
+- **Speed:** recognition takes about 0.09 s per second of audio on 4 CPU cores, after separation.
+
+See [the design and evaluation notes](docs/2026-10-13-automatic-lyrics.md), the [per-song results with MDX-Net vocals](docs/2026-10-13-lyrics-with-mdx-evaluation.json) and the [earlier Spleeter results](docs/2026-10-13-automatic-lyrics-evaluation.json). Re-run them with `python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir MODELS --work /tmp/work`.
+
+**Model setup.** `python scripts/setup_lyrics_model.py --model-dir MODELS` downloads the pinned archive from the sherpa-onnx GitHub releases:
+
+- `sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2`, 482,468,385 bytes, SHA-256 `157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad`;
+- `silero_vad.onnx`, SHA-256 `9e2449e1…1fd6`.
+
+It verifies every extracted file against its pinned checksum, then publishes `MODELS/lyrics-asr`. Pass `--archive` and `--vad` to reuse existing official files. Licenses:
+
+- Parakeet TDT 0.6B v2: CC-BY-4.0 (NVIDIA);
+- sherpa-onnx: Apache-2.0;
+- Silero VAD: MIT.
+
+No weights are stored in this repository.
+
+### Word-by-word highlighting
+
+The preview and the exported MP4 colour each word as it starts being sung, like a karaoke screen. The timing comes from the studio, so the preview shows exactly what the video will show, including unsaved but valid corrections.
+
+- Each line's words are matched to the words recognized while that line plays. Matching tolerates near-miss spellings, so corrected or pasted text still follows the singing.
+- Words that were not heard are placed between their heard neighbours in proportion to their length.
+- A line without recognized words (no model, a restored archive, or an instrumental passage) is spread across its interval from its start, by word length.
+- Words never run backwards and stay inside their line. A line highlights in at most 16 steps, so very long lines advance in word groups.
+- Retiming a line moves its highlighting with it. Words keep their recognized times when those fall inside the new interval, and are clamped to it otherwise.
+
+Measured on the 20 JamendoLyrics songs (5,693 words): with correctly timed lines, highlights start a median **0.068 s** from the sung word, with 90% within 0.3 s; length estimates alone give 0.136 s and 75%. With automatically aligned pasted lyrics, the median is 0.109 s and 71% are within 0.3 s, limited by misplaced lines. See [the word-highlighting notes](docs/2026-10-13-word-highlighting.md).
+
+## Ten-minute songs (#233)
+
+Songs up to **10 minutes (600 s)** and **128 MiB** are supported; before #233 the limit was 5 minutes. All limits that follow from duration were raised together: decoded and WAV sizes, the 22 separation windows, waveform frames, portable archives (306.8 MiB), and the job scratch budget (1.6 GiB). The worker's wall-clock limit is now 30 minutes (raised again in #236 for the slower, better separation model). The video deadline stays at 10 minutes.
+
+**Measured with the real models** (2026-10-13, 4 CPU cores) on a 600-second input made of three English JamendoLyrics songs back to back:
+
+| Step | Result |
+| --- | --- |
+| Separation | 245 s for 22 windows with Spleeter (CPU 245 s, peak memory 1.27 GiB); with the MDX-Net model since #236, 589 s (worker 550 s, peak memory 1.38 GiB) |
+| Recognition | 61 s, peak memory 1.32 GiB; 40.2% WER on the 716 reference words, compared with 30–49% for the same songs run singly; median word onset error 0.068 s, 95.7% within 0.3 s |
+| Video export | 130 s for 127 automatic lines (578 highlight steps), producing a 17 MB MP4 |
+
+Recognition and timing quality held over the full length.
+
+Through the real service in Chromium, the same song went from upload to 127 timed lyric lines in 315 s and exported a 599.96 s MP4 in 144 s. Details are in [the ten-minute notes](docs/2026-10-13-ten-minute-songs.md).
+
+
+
+## Vocal separation (#236)
+
+Separation uses **UVR-MDX-NET-Voc_FT**, an MDX-Net vocal model from the Ultimate Vocal Remover project, in the ONNX conversion published by sherpa-onnx. It replaced Spleeter 2-stems after a reference-stem comparison on the 50 MUSDB18 test excerpts (global SDR in dB, higher is better):
+
+| Separator | Vocals SDR median (mean) | Backing SDR median (mean) |
+| --- | --- | --- |
+| Spleeter 2-stems (before #236) | 6.46 (6.39) | 11.50 (11.39) |
+| UVR_MDXNET_1_9703 | 7.51 (6.75) | 11.85 (11.95) |
+| **UVR-MDX-NET-Voc_FT (now)** | **9.96 (9.00)** | **14.06 (14.20)** |
+
+The new model is better on 45 of 50 tracks for vocals and 46 of 50 for the backing, by a median of 2.9 dB and 3.2 dB. Roughly, less singing leaks into the karaoke backing and the vocals used for lyric recognition are cleaner. It costs time: a 10-minute song separates in about 9 to 10 minutes on 4 CPU cores, where Spleeter took about 4. See [the separation notes](docs/2026-10-13-separation-quality.md).
+
+Setup downloads the model from the [sherpa-onnx release](https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/UVR-MDX-NET-Voc_FT.onnx), **66,762,795 bytes**, and verifies its pinned SHA-256 before publishing it to `MODEL_DIR/mdx`:
 
 ```text
-f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692
+e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4
 ```
 
-Only expected checkpoint files are extracted, each with its own pinned checksum, before the cache is published. An existing official archive can be reused without downloading:
+An existing copy can be reused without downloading:
 
 ```sh
 python scripts/setup_model.py \
   --model-dir "$HOME/.cache/karaoke-studio/models" \
-  --archive /path/to/2stems.tar.gz
+  --model /path/to/UVR-MDX-NET-Voc_FT.onnx
 ```
 
-Spleeter's **code** is [MIT-licensed](https://github.com/deezer/spleeter/blob/master/LICENSE). A separate license for the pretrained checkpoint was not established from the checked official documentation; the release archive contains no LICENSE/NOTICE/model card. Weights are not bundled in this repository. Preserve the official provenance and this distinction when using or redistributing artifacts.
+The model comes from the Ultimate Vocal Remover project ([model repository](https://github.com/TRvlvr/model_repo/releases); the UVR application is MIT-licensed), converted to ONNX by sherpa-onnx (Apache-2.0). A separate license for the weights was not established from those publications. Weights are not bundled in this repository. An existing Spleeter cache (`MODEL_DIR/2stems`) is no longer used and can be deleted; run setup once after upgrading. Projects separated with Spleeter, and archives containing them, still open, play, export and restore.
 
-After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker. It processes 30-second windows with two-second overlaps (at most eleven windows for five minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Exact source sample count and positions are preserved. Spleeter may initialize a prediction session for each call, so warmup is part of the measured runtime. This windowing controls resource use; it does not guarantee inaudible seams or separation quality.
+After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker that runs ONNX Runtime with up to four threads. It processes 30-second windows with two-second overlaps (at most 22 windows for ten minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Inside a window the model runs on 5.8-second segments, one at a time, each with 70 ms of context on both sides that is discarded, so segments join without seams and memory stays near 1.4 GiB whatever the song length. Exact source sample count and positions are preserved. The backing is the source minus the estimated vocals.
 
-Worker limits are ten minutes of wall time, ten minutes of CPU time and 3 GiB observed RSS. Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
+Worker limits are 30 minutes of wall time, four threads' worth of CPU time for that period and 3 GiB observed RSS (a ten-minute song used 550 s and 1.4 GiB on 4 cores). Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may still time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
 
-Uploads/exports require at least 1 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum song's three WAV files use about 151.4 MiB. Temporary float stems add about 201.9 MiB, with a conservative maximum separation working set around 417.3 MiB on disk including a 64 MiB upload, before small headers. Twenty maximum-duration projects need about 2.96 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
+Uploads/exports require at least 2 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum (ten-minute) song's three WAV files use about 302.8 MiB. Temporary float stems add about 403.8 MiB, with a conservative maximum separation working set around 834.6 MiB on disk including a 128 MiB upload, before small headers. Twenty maximum-duration projects need about 5.9 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
 
-Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain. The default Spleeter configuration estimates a limited frequency range, so high-frequency content can also be affected. Synthetic smoke audio validates inference plumbing, not real-song accuracy. A real singing smoke provides additional runtime evidence but no reference-stem quality score or guarantee. Automatic transcription/alignment, songs longer than five minutes, broader device testing, subjective boundary listening and reference-stem separation-quality evaluation remain future work.
+Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain; because the backing is the source minus the estimated vocals, anything the model misses as vocals stays in the backing. The reference-stem scores above come from 7-second excerpts of 50 songs; they are not a guarantee for any one song. Broader device testing and subjective listening remain future work.
 
 ## Lyric practice acceptance (#125)
 
@@ -276,7 +349,7 @@ injection while delayed genuine play completion is still checked independently.
 
 ## Fast verification and CI
 
-Fast checks require Python 3.11, FFmpeg, the core dependency, and Ruff; they do **not** require TensorFlow or model weights:
+Fast checks require Python 3.11, FFmpeg, the core dependency, and Ruff; they do **not** require ONNX Runtime or model weights (NumPy, in the dev requirements, runs the separator's signal-processing tests with stand-in models):
 
 ```sh
 python -m pip install -r requirements-core.txt -r requirements-dev.txt
@@ -493,3 +566,10 @@ that owned service on the same port/library, update its PID variable and run
 `--verify-restart`. Optional `KARAOKE_PYTHON` selects the core interpreter. The
 runner owns its browsers, never its service, and neither generates model stems
 nor claims subjective alignment quality.
+
+
+### Canonical handoff review (#242)
+
+Songs producing more than 200 short automatic lines are regrouped into longer contiguous lines so the whole song remains represented. Complete text beyond the existing character/cue bounds is refused rather than silently cropped. Alignment and word-highlighting matching share a one-million-cell computation ceiling per request; beyond it, all supplied words remain and unmatched timing estimates are flagged for correction. Submillisecond cue boundaries remain valid. Recognition refresh retires cached and pending preview timings even when saved cues are unchanged.
+
+The original branch gate and real-song reports describe their exact measured snapshots. Current integration evidence and retained local verification limits are recorded in [handoff verification](docs/2026-10-13-integration-242.md). These English-only results do not establish multilingual lyrics or uniformly accurate recognition.

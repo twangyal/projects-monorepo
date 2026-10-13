@@ -46,7 +46,7 @@ def plan_windows(frame_count: int, *, window_frames: int = WINDOW_FRAMES,
     hop = window_frames - overlap_frames
     count = 1 + max(0, (total - window_frames + hop - 1) // hop)
     if count > MAX_WINDOWS:
-        raise ValueError('Audio planning exceeds the eleven-window processing budget.')
+        raise ValueError(f'Audio planning exceeds the {MAX_WINDOWS}-window processing budget.')
     result = []
     start = 0
     while True:

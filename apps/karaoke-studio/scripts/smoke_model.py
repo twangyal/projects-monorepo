@@ -171,7 +171,7 @@ def main() -> None:
         'source': 'official CC BY 3.0 singing example' if args.licensed_sample else 'original synthetic waveform',
         'licensedAttribution': __doc__ if args.licensed_sample else None,
         'python': sys.version.split()[0],
-        'versions': {name: importlib.metadata.version(name) for name in ['spleeter', 'tensorflow', 'numpy', 'scipy']},
+        'versions': {name: importlib.metadata.version(name) for name in ['onnxruntime', 'numpy']},
         'pipelineSeconds': pipeline_seconds, 'outputDirectory': str(directory),
         'duration': duration, 'frameCount': round(duration * SAMPLE_RATE), 'pcmPeaks': peaks,
         'sampledPeakDiskBytes': peak_disk_bytes, 'publishedMediaBytes': sum((directory / f'{name}.wav').stat().st_size for name in ['source', 'vocals', 'backing']),

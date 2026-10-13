@@ -20,6 +20,7 @@ import sys
 from unittest.mock import patch
 
 from karaoke import server as server_module
+from karaoke.limits import MAX_DURATION, MAX_INPUT_BYTES, MAX_WAV_BYTES
 
 from karaoke.server import create_server
 
@@ -34,7 +35,7 @@ def fake_separate(source, output_dir, model_root, cancel, stage):
     return 2.0
 
 
-def fake_export(project, backing, output, work_dir, font_path, cancel):
+def fake_export(project, backing, output, work_dir, font_path, cancel, **_timing):
     output.write_bytes(b"test-only MP4")
 
 
@@ -106,9 +107,11 @@ class ServerTests(unittest.TestCase):
 
     def test_session_and_static_files_are_local_and_bounded(self):
         status, headers, session = self.request("GET", "/api/session")
-        self.assertEqual(session["maxDuration"], 300)
+        self.assertEqual(session["maxDuration"], MAX_DURATION)
+        self.assertEqual(session["maxDuration"], 600)
         self.assertEqual(session["maxProjects"], 20)
-        self.assertEqual(session["maxUploadBytes"], 64 * 1024**2)
+        self.assertEqual(session["maxUploadBytes"], MAX_INPUT_BYTES)
+        self.assertEqual(session["maxUploadBytes"], 128 * 1024**2)
         self.assertEqual(session["maxCues"], 200)
         self.assertEqual(session["maxLyricChars"], 20000)
         self.assertTrue(session["modelReady"])
@@ -189,7 +192,7 @@ class ServerTests(unittest.TestCase):
         def oversized(source, output, model, cancel, stage):
             duration = fake_separate(source, output, model, cancel, stage)
             with (output / 'source.wav').open('wb') as stream:
-                stream.truncate(300 * 44100 * 4 + 4097)
+                stream.truncate(MAX_WAV_BYTES + 1)
             return duration
         self.server.separate = oversized
         job = self.upload()
@@ -371,7 +374,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/projects", b"audio")[0], 503)
         self.server.ready = lambda _: True
         self.assertEqual(self.request("POST", "/api/projects", b"",
-                                      {"Content-Length": str(64 * 1024 * 1024 + 1)})[0], 413)
+                                      {"Content-Length": str(MAX_INPUT_BYTES + 1)})[0], 413)
         self.assertEqual(self.request("POST", "/api/projects", b"",
                                       {"Transfer-Encoding": "chunked"})[0], 400)
         self.assertEqual(self.request("POST", "/api/projects", b"")[0], 400)

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPracticeRange, practiceBoundary, type PracticeMode, type PracticeRange } from '../src/practice.ts';
-import type { Cue } from '../src/lyrics.ts';
+import { MAX_DURATION, type Cue } from '../src/lyrics.ts';
 
 const supplied = (): Cue[] => [
   { start: .123456789, end: 1.987654321, text: '  Café 🎵\n first  ' },
@@ -66,8 +66,9 @@ test('invalid timing or text outside the selected line still prevents practice',
 test('clip duration accepts its existing exact bounds and rejects values beyond them', () => {
   const cue = [{ start: 0, end: 1, text: 'One' }];
   assert.equal(createPracticeRange(cue, 1, 0, 0).clipDuration, 1);
-  assert.equal(createPracticeRange(cue, 300, 0, 0).clipDuration, 300);
-  for (const duration of [.999999, 300.000001, -1, 0, NaN, Infinity, '10', null]) {
+  assert.equal(MAX_DURATION, 600);
+  assert.equal(createPracticeRange(cue, MAX_DURATION, 0, 0).clipDuration, MAX_DURATION);
+  for (const duration of [.999999, MAX_DURATION + .000001, -1, 0, NaN, Infinity, '10', null]) {
     assert.throws(() => createPracticeRange(cue, duration as number, 0, 0));
   }
 });
@@ -128,7 +129,7 @@ test('boundary validates complete scalar range invariants before deciding', () =
     { firstIndex: -1 }, { firstIndex: .5 }, { firstIndex: 3 }, { firstIndex: NaN },
     { lastIndex: 0 }, { lastIndex: 200 }, { lastIndex: Infinity },
     { start: -1 }, { start: NaN }, { start: 8 }, { start: 9 },
-    { end: 11 }, { end: Infinity }, { clipDuration: .5 }, { clipDuration: 301 },
+    { end: 11 }, { end: Infinity }, { clipDuration: .5 }, { clipDuration: MAX_DURATION + 1 },
     { clipDuration: NaN }, { start: '3' },
   ]) {
     assert.throws(() => practiceBoundary({ ...range, ...patch } as PracticeRange, 'once', 5));

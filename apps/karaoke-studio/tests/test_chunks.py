@@ -11,6 +11,7 @@ from karaoke.chunks import (
     FloatStemAssembler, normalization_gain, plan_windows,
     scan_float_peak, write_pcm16_wav,
 )
+from karaoke.limits import MAX_DURATION, MAX_WINDOWS, SAMPLE_RATE
 
 
 def floats(values: list[float]) -> bytes:
@@ -19,14 +20,17 @@ def floats(values: list[float]) -> bytes:
 
 class ChunkTests(unittest.TestCase):
     def test_default_integer_plans_cover_exact_limits_and_tiny_extension(self):
-        for seconds, starts, last in [(30, [0], 30), (58, [0, 28], 30), (300, list(range(0, 281, 28)), 20)]:
+        for seconds, starts, last in [(30, [0], 30), (58, [0, 28], 30), (300, list(range(0, 281, 28)), 20),
+                                      (600, list(range(0, 589, 28)), 12)]:
             windows = plan_windows(seconds * 44100)
             self.assertEqual([item.start for item in windows], [second * 44100 for second in starts])
             self.assertEqual(windows[-1].frames, last * 44100)
             self.assertEqual(windows[-1].start + windows[-1].frames, seconds * 44100)
+        self.assertEqual(MAX_DURATION, 600)
+        self.assertEqual(len(plan_windows(MAX_DURATION * SAMPLE_RATE)), MAX_WINDOWS)
         windows = plan_windows(30 * 44100 + 1)
         self.assertEqual([(item.start, item.frames) for item in windows], [(0, 1323000), (1234800, 88201)])
-        for count in [0, -1, True, 1.5, 300 * 44100 + 1]:
+        for count in [0, -1, True, 1.5, MAX_DURATION * SAMPLE_RATE + 1]:
             with self.assertRaises(ValueError):
                 plan_windows(count)
         for window, overlap in [(0, 1), (8, 0), (8, 5), (8, True)]:

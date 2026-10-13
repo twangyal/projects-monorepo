@@ -91,7 +91,7 @@ test('PCM handles every small byte split, including half samples and incomplete 
 });
 
 test('PCM rejects invalid counts, overrun, truncated input and post-finish writes', () => {
-  for (const n of [0, -1, .5, NaN, 13230001]) assert.throws(() => new Pcm16PeakReducer(n));
+  for (const n of [0, -1, .5, NaN, 26460001]) assert.throws(() => new Pcm16PeakReducer(n));
   const partial = new Pcm16PeakReducer(2);
   partial.push(new Uint8Array(7));
   assert.throws(() => partial.finish(), /truncat|complete|length/i);
@@ -143,7 +143,8 @@ test('normalized parser enforces one-sample duration tolerance, not compressed m
     const parser = new NormalizedWavPeaks(expected);
     assert.throws(() => parser.push(wav()), /duration|match/i);
   }
-  for (const expected of [0, 300.1, NaN, Infinity]) assert.throws(() => new NormalizedWavPeaks(expected));
+  assert.doesNotThrow(() => new NormalizedWavPeaks(600));
+  for (const expected of [0, 600.1, NaN, Infinity]) assert.throws(() => new NormalizedWavPeaks(expected));
 });
 
 test('rejects unsupported PCM fields and nonzero format extension', () => {
@@ -198,24 +199,25 @@ test('failed parser cannot later publish a partial result', () => {
   assert.throws(() => parser.finish());
 });
 
-test('300-second source streams into only30,000 Int16 extrema pairs', () => {
+test('600-second source streams into only60,000 Int16 extrema pairs', () => {
+  assert.equal(MAX_WAVEFORM_BYTES, 105_844_096);
   const header = wav().subarray(0, 44).slice();
-  new DataView(header.buffer).setUint32(4, 52920036, true);
-  new DataView(header.buffer).setUint32(40, 52920000, true);
-  const parser = new NormalizedWavPeaks(300);
+  new DataView(header.buffer).setUint32(4, 105840036, true);
+  new DataView(header.buffer).setUint32(40, 105840000, true);
+  const parser = new NormalizedWavPeaks(600);
   parser.push(header);
   const block = new Uint8Array(65536);
-  for (let remaining = 52920000; remaining > 0; remaining -= Math.min(remaining, block.length)) {
+  for (let remaining = 105840000; remaining > 0; remaining -= Math.min(remaining, block.length)) {
     parser.push(block.subarray(0, Math.min(remaining, block.length)));
   }
   const peaks = parser.finish();
-  assert.equal(peaks.frameCount, 13230000);
-  assert.equal(peaks.minima.length, 30000);
-  assert.equal(peaks.minima.byteLength + peaks.maxima.byteLength, 120000);
+  assert.equal(peaks.frameCount, 26460000);
+  assert.equal(peaks.minima.length, 60000);
+  assert.equal(peaks.minima.byteLength + peaks.maxima.byteLength, 240000);
   assert.ok(peaks.minima.every(value => value === 0));
-  const tooLong = header.slice(); new DataView(tooLong.buffer).setUint32(4, 52920040, true);
-  new DataView(tooLong.buffer).setUint32(40, 52920004, true);
-  assert.throws(() => new NormalizedWavPeaks(300).push(tooLong), /frame|duration|300|limit/i);
+  const tooLong = header.slice(); new DataView(tooLong.buffer).setUint32(4, 105840040, true);
+  new DataView(tooLong.buffer).setUint32(40, 105840004, true);
+  assert.throws(() => new NormalizedWavPeaks(600).push(tooLong), /frame|duration|600|limit/i);
 });
 
 async function workerRun(response: (res: ServerResponse) => void, request: unknown = { projectId: 'a'.repeat(32), duration: 1 }, expire = false) {
