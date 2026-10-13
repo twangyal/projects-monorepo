@@ -63,6 +63,16 @@ Success means a user can develop an original garment, meaningfully refine its co
 
 Development may proceed through focused milestones, but the destination remains a complete garment-design environment. A functioning prototype or single-garment workflow is not grounds for maintenance. The existing parametric T-shirt and photo overlay are current implementation foundations, not substitutes for linked patterns, 3D construction, simulation or fitting.
 
+### Owner update — 2026-10-13
+
+The owner asked to focus development on Gaze Navigator, Clothing Studio and Karaoke Studio. For Clothing Studio, the owner wants "something like" [Fabra](https://www.fabra.com/), an approachable web-based 3D product design tool:
+- start from a library of base products and templates;
+- style garment parts in real-time 3D with drag-and-drop materials, colors, prints and graphics;
+- edit linked patterns;
+- get an automatically generated tech pack, colorways and a range plan with costing.
+
+This approachable loop is now the primary near-term experience. It is pursued alongside the professional depth described above, not instead of it. See `apps/clothing-studio/docs/2026-10-13-fabra-research.md` for the research and roadmap.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
