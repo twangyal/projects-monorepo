@@ -72,6 +72,24 @@ Automated same-host HTTPS checks can establish software behavior. Physical devic
 
 Each seat is a private capability, not a verified identity. Names are labels supplied by the people using the app. Anyone holding an access link can act as its seat; separate browser contexts demonstrate distinct permissions, not that distinct humans are present. Use separate browser profiles for a realistic demonstration. Do not post access or invitation links publicly.
 
+## Friend circles and the shared feed
+
+A **circle** is a small private group of friends, with up to 12 members and up to 10 circles per notebook, who follow the challenges its members choose to share.
+
+- **Create and invite.** On the notebook page, use **Create circle** with a circle name and your name. Then send the **Invite friends** link. Anyone holding that link can join until a member makes a new one, which stops the old link working. **My circle access link** reopens your membership in another browser. Membership is a private capability, like a seat, and the service stores only its digest.
+- **Both participants consent.** In a challenge, **Share with a circle** lists the circles this browser belongs to. A challenge appears in a circle only after **both** the proposer and the opponent share it, each from their own seat while being members of that circle. Until then, the circle receives nothing about the challenge, not even its title. An arbiter cannot share. Either participant can **Withdraw** it at any time, which also deletes its comments and cheers in that circle.
+- **What the feed shows.** The feed is derived from the immutable record and lists:
+  - the agreement: names, title, stake, deadline and success criteria;
+  - progress, using evidence captions shortened to 280 characters and marked late where it applies;
+  - disputes;
+  - a decline or withdrawal;
+  - the settled winner, or a void.
+
+  Evidence photos, links, terms edits, invitations and every private capability stay with the challenge's seats. A photo shows only as "a photo was added".
+- **Reactions.** Members can **Cheer** any feed item, which toggles, and comment on a shared challenge. Only a comment's author can delete it. **Leave circle** removes your cheers, comments and the shares you made there. The last member to leave deletes the circle.
+
+Circle data lives in a separate owner-only `circles.sqlite3`, so challenge records, exports and their schema are unchanged. **Complete library archives do not include circles.** Restoring a notebook restores challenges and seats, after which friends need a fresh circle invitation.
+
 ## Agreement and resolution rules
 
 - Acceptance freezes all terms. Every mutation carries the displayed revision; stale consent fails instead of silently applying to changed terms. The UI retains typed drafts when a refresh is required.
@@ -171,7 +189,7 @@ One data directory holds at most 20 challenges, including completed records; not
 
 Names are limited to 40 characters; titles to 100; descriptions, success criteria and reasons to 500; evidence rules to 300; evidence text to 1,000; supplied links to 1,024. Deadlines must be in the future and within 365 days on creation/edit. Ordinary JSON requests are limited to 16 KiB; serialized records and JSON exports to 1 MiB. Image append requests use a separate, exact-length binary frame capped at 540,688 bytes. Complete HTML exports are capped at 12 MiB. Unknown fields, ambiguous duplicate JSON keys, invalid Unicode/numbers, malformed URLs and invalid stored state are rejected.
 
-There is no remote image fetching, identity verification, notification system or public social graph. The local milestone covers the complete agreement-to-resolution experience; remote hosting and broader social features require a separate design.
+There is no remote image fetching, identity verification, notification system or public social graph. Friend circles are private and invitation-only: at most 10 circles of 12 members each, circle names of up to 60 characters, comments of up to 500 characters (500 per circle), and the newest 200 feed items. The local milestone covers the complete agreement-to-resolution experience; remote hosting and broader social features require a separate design.
 
 The HTTP service admits at most 16 active connections. A shared 15-second total deadline covers the request line and all headers, even when bytes keep arriving; unfinished requests close without reflecting partial input. Header bytes remain capped at 16 KiB and socket inactivity at five seconds. Once headers finish, a separate 15-second total deadline covers the request body. Healthy requests can proceed when expired connections release their slots.
 
@@ -289,3 +307,12 @@ The first published HTTPS head passed all 194 Python and 42 TypeScript checks in
 Exact corrected-head [push CI](https://github.com/twangyal/projects-monorepo/actions/runs/37235642896) and [PR CI](https://github.com/twangyal/projects-monorepo/actions/runs/37235646604) at `e4c71afde39b4934bee9311522708cda1d33f82c` each pass **194 Python, 42 TypeScript and all 34 browser cases**, plus compilation, lint, type checking and build. The PR checkout has the identical source tree; all thirteen project PR workflows pass. The [final CI receipt](docs/2026-10-04-https-lan-ci.json) preserves actual checkouts and logs. Physical two-device certificate trust and browser acceptance remain separately open in [#111](https://github.com/twangyal/projects-monorepo/issues/111).
 
 Version 0.4.1 rejects bare hexadecimal final hostname labels such as `0x`, `127.0.0x` and `name.0x` before TLS configuration is admitted (#112). Browsers normalize or reject these spellings, so accepting them produced unusable exact-origin links. Canonical private/loopback IPv4 and ordinary lowercase DNS remain supported. Actual helper/config regressions cover default and explicit ports with valid controls; the [shared verification receipt](../../docs/2026-10-04-canonical-https-origins.json) retains the targeted checks and original failures. Both push and PR CI at `76e6d2aef392bd361c5f1367be9aee4ef9cd0f2f` pass 196 Python, 42 TypeScript and all 34 native cases, plus lint, compilation, type checking and build. All thirteen project PR workflows pass; [final CI evidence](../../docs/2026-10-04-canonical-https-origins-ci.json) verifies the actual identical branch/merge trees.
+
+## Friend circles verification (#213)
+
+Version 0.5.0 adds friend circles and the shared feed; see [the design and verification notes](docs/2026-10-12-friend-circles.md). Local checks on 2026-10-12, using Python 3.11, Node.js 22 and Chromium 141:
+
+- 202 Python tests pass, 6 of them new for circles.
+- 51 TypeScript tests pass, 4 of them new.
+- All 39 native Chromium cases pass, 2 of them new.
+- Ruff, ESLint, type checking and the build pass.

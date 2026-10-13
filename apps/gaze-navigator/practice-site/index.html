@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Home — Northwind Books</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./site.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="index.html">Northwind Books</a>
+    <nav aria-label="Main"><ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="catalog.html">Catalog</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="account.html">Account</a></li>
+      <li><a href="help.html">Help</a></li>
+    </ul></nav>
+    <form class="search" action="search.html" method="get" role="search">
+      <input type="search" name="q" aria-label="Search books" placeholder="Search books" />
+      <button>Search</button>
+    </form>
+    <span>Cart: <span id="cartCount">0</span></span>
+  </header>
+  <main>
+    <h1>Stories for every season</h1>
+    <p class="notice" role="status"></p>
+    <p>Northwind Books is an ordinary small website with no gaze annotations. Use it to practice looking and speaking.</p>
+    <section aria-labelledby="featured">
+      <h2 id="featured">Featured this week</h2>
+      <div class="cards">
+        <article class="card"><h3>The Quiet River</h3><p>A slow journey down a forgotten waterway.</p><a href="book.html">Read more</a></article>
+        <article class="card"><h3>Mountain Letters</h3><p>Correspondence from a remote weather station.</p><a href="book.html">Read more</a></article>
+        <article class="card"><h3>Gardens of Stone</h3><p>Essays on patience and small landscapes.</p><a href="book.html">Read more</a></article>
+      </div>
+    </section>
+    <section aria-labelledby="arrivals">
+      <h2 id="arrivals">New arrivals</h2>
+      <div class="shelf" tabindex="0" aria-label="New arrivals shelf">
+        <div class="card">River Songs</div><div class="card">Night Train North</div><div class="card">Paper Lanterns</div>
+        <div class="card">Salt and Cedar</div><div class="card">The Lighthouse Year</div><div class="card">Winter Orchard</div>
+      </div>
+    </section>
+    <section aria-labelledby="newsletter">
+      <h2 id="newsletter">Newsletter</h2>
+      <label><input type="checkbox" id="weekly" /> Email me weekly picks</label>
+    </section>
+    <div class="spacer"></div>
+    <p><a href="catalog.html">Browse the full catalog</a></p>
+  </main>
+  <footer>A fictional practice website. Nothing is sold, sent or stored.</footer>
+  <script type="module" src="./site.js"></script>
+  <script type="module" src="../src/web/boot.js"></script>
+</body>
+</html>

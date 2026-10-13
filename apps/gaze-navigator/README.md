@@ -4,7 +4,10 @@
 
 A small browser-first vertical slice for project #1, **Eye detector with agentic AI**.
 
-The current milestone deliberately isolates gaze estimation from action execution. WebGazer provides webcam-based gaze coordinates; a tiny resolver maps those coordinates only to explicit `[data-gaze-target]` controls; a dwell timer confirms the selection and invokes the same local action as a normal click. No arbitrary browser clicking is implemented yet.
+It has two parts:
+
+- **Spoken web navigation** (`src/web/`, newest): a page-agnostic runtime that shows a context circle, numbers the ordinary links/controls/fields inside it, and carries out spoken or typed instructions on unannotated pages — with clarification, confirmation of consequential actions and spoken pause/cancel. It currently runs on the bundled practice website with the pointer standing in for gaze. See [Spoken web navigation](#spoken-web-navigation).
+- **Dwell navigator** (`index.html`): WebGazer webcam gaze, calibration, held-out accuracy checks and dwell confirmation of explicit `[data-gaze-target]` controls in a confined practice inbox.
 
 ## Run
 
@@ -30,8 +33,48 @@ Open `http://localhost:4173`.
 - The gaze keyboard keeps Earlier keys, Later keys, case, and Close controls outside its scrolling grid. Use those controls to reach lower keys on short screens; opening another field returns to the first row.
 - Session drafts have large **Open draft** controls. Reopening then **Update draft** changes that saved record without adding another copy. **Compose** reopens your current unsaved fields; **New draft** starts blank. Switching away from changed text requires the inline **Keep current composer** or **Replace composer** decision, reachable by gaze. A switch closes the gaze keyboard before replacing fields. Keep up to 20 drafts, with the existing 200-character subject and 10,000-character message limits. Previews are shortened; reopening retains the full text. Refresh clears the notebook. **Download saved drafts** explicitly keeps a local JSON backup of saved records, excluding current unsaved composer text. **Import draft backup** reveals a visible file chooser; your browser requires a mouse or keyboard to choose a file. Valid backups append up to the combined 20-draft limit without replacing current drafts or composer fields. Files are versioned and limited to 2 MiB; malformed, stale or excessive imports leave current work untouched. There is no automatic storage or sending.
 
+## Spoken web navigation
+
+Serve this directory as above and open `http://localhost:4173/practice-site/index.html` (or follow **Try spoken navigation on an ordinary practice website** from the navigator). Northwind Books is a fictional six-page site with no gaze annotations: navigation, search, cards with repeated "Read more" links, a horizontally scrolling shelf, a dropdown, a scrolling review list, a contact form, and consequential buttons. Nothing is sold, sent or stored.
+
+1. Move the pointer over the page (it stands in for gaze). The circle shows the area in context; links, buttons, fields, dropdowns, checkboxes and ARIA widgets inside it get numbered outlines, and the panel lists them with roles, names and values.
+2. Choose **Start listening** and speak, or type into **Typed instruction**. Looking at (hovering) the panel keeps the last page area, shown by a dashed circle. Speech context is captured at the instant speaking begins, so gaze can move while you finish the sentence.
+3. Examples: "open catalog", "click the second one", "type Ada Lovelace", "type see you soon into message", "replace Tuesday with Friday", "delete last word", "undo", "choose large print", "scroll down", "scroll up a bit", "search for river", "go back", "submit".
+4. When names are equally plausible the navigator asks "Which one?" and outlines only the candidates; answer with a number (or the on-screen buttons). Submitting forms and controls named like delete/remove/buy/pay/place order/send/sign out/unsubscribe ask for **confirm**; a confirmation expires after 15 seconds, and any new instruction, "no" or "cancel" discards it.
+5. **Camera gaze:** choose **Camera** or say "use camera". After camera permission, a no-click calibration shows nine dots: look at each until it turns green (0.9 s settle, then four samples; a dot without detectable eyes is retried once, and fewer than seven learned dots fails with guidance). Webcam samples then pass through the One Euro filter to move the circle; gaze on the panel keeps the last page area, and lost tracking dims the circle without discarding context. "Recalibrate" repeats calibration, "stop camera" or "use pointer" releases the camera, and these work even while paused. Camera mode continues after a page navigation but recalibrates there, because estimator data is never stored.
+6. "Pause" blocks everything except "resume" and "cancel". "Cancel", "stop" and "pause" act on the interim transcript before recognition finalizes. Settings (circle size, listening, spoken feedback) last for the browser tab session.
+
+Discovery reaches controls inside open shadow roots (web components) and same-origin iframes, including pointer input over those frames. It also finds script-only "Clickable" elements that set a pointer cursor without any role. Cross-origin frames inside the circle are listed as content the navigator cannot reach. Try it on the practice site's **Help** page. The panel keeps tracking and settings in a **Tracking and settings** disclosure, and opens the element list by default only on tall screens, so it covers less of small screens.
+
+Execution never opens `javascript:` or other non-web link schemes, writes fields through native value setters plus `input`/`change` events so framework-managed forms see the change, keeps a 20-step per-field undo history, and acts only on elements captured inside the circle (plus the page's single search field for "search for…"). The panel lives in an open shadow root that context capture ignores, and a spacer reserves room so it never permanently covers the end of a page.
+
+Interpretation quality is measured on a fixed suite: `npm run evaluate:instructions` scores 120 tuned phrasings (120/120) and 50 held-out phrasings (34/50, 68%). Both suites have zero wrong page actions; every miss is a question or an explanation. See [the evaluation](docs/2026-10-12-instruction-suite-evaluation.md). This is the baseline a Jev interpreter (#206) must beat.
+
+Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
+
+### On real websites (Chrome extension)
+
+```bash
+cd apps/gaze-navigator
+npm run build:extension      # fetches pinned WebGazer 3.3.0 with npm, verifies its SHA-256, writes dist/extension
+```
+
+In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select `apps/gaze-navigator/dist/extension`. Then open any website and use the toolbar popup's **Turn on for this page**, or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>.
+
+- By default the extension uses only `activeTab` + `scripting` + `storage`: it runs on the page you turned it on for and stops when that page changes.
+- **Stay on in this tab when pages change** and **Start automatically on every website** ask for optional access to websites (`<all_urls>`), because restarting after a navigation needs host access. Auto-start makes the navigator hands-free after this one-time setup.
+- Navigator settings live in the extension's in-memory session storage, never in the website's storage; the navigator runs in the extension's isolated world, invisible to page scripts, and its styles use constructable stylesheets so strict page CSPs cannot strip them.
+- "Use camera" injects the bundled WebGazer into the isolated world (MV3 forbids remotely hosted code). Its face models still download from tfhub.dev, and the camera/microphone prompts are for the website's origin.
+- In the extension, a successful camera calibration follows you between pages. Its training samples (tiny eye-patch images plus screen positions) are kept only in the extension's in-memory session storage, never in website storage. They are reused while the window size is unchanged and for up to two hours. "Stop camera" or "use pointer" deletes them, and the browser discards them when it closes. The practice site (no extension) still recalibrates on each page.
+- Protected pages (`chrome://`, the web store) report that the navigator cannot run there. Cross-origin iframes and other browsers are not handled. The navigator's modules are web-accessible, so a website can detect that the extension is installed. WebGazer is GPL-3.0; its license is copied into the build.
+
+Current limits: Camera mode loads WebGazer 3.3.0 from jsDelivr, whose face models download from tfhub.dev; real camera accuracy and the per-page recalibration effort are unmeasured. Jev is the intended interpreter but is not integrated or evaluated; the rule interpreter is the measured baseline. Spoken commands are English only.
+
 ## Architecture
 
+- `src/web/` — spoken web navigation runtime: context, interpreter, controller, actions, speech, camera source, hands-free calibration and overlay; `boot.js` (practice site) and `extension-boot.js` (extension) start it.
+- `practice-site/` — unannotated six-page website used to demonstrate and test spoken navigation.
+- `extension/` + `scripts/build-extension.js` — MV3 Chrome extension packaging (`dist/extension`; `--test` adds a fake estimator and pre-granted host access for automated tests).
 - `index.html` — demo UI and explicit gaze targets.
 - `src/app.js` — calibration, WebGazer adapter and animation-frame sampling for simulation.
 - `src/resolver.js` — isolated hit testing; rejects invalid coordinates, disabled controls, and targets outside the demo.
@@ -132,7 +175,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Playwright starts the static server and tests pointer dwell, safety controls, keyboard draft entry, multiline previews/case changes, accuracy-target visibility/report closing, resize calibration, and the decision lab at 1280×900, 390×740, 390×480, and the compact-height boundary 390×651. The lab tests use controlled local API responses for offline comparison, explicit local routing, cloud/invalid-output rejection, cancellation/retry, and safe report export/import. Its controlled clock advances actual animation frames; these are interface tests, not webcam accuracy/latency measurements. Tests reject external requests in simulation and page exceptions. The GitHub workflow runs the same checks on a standard Ubuntu runner with read-only repository access, no persistent artifact/cache uploads, and a 15-minute limit.
+The practice-site suite (`browser-tests/web-navigator.spec.js`) installs a controllable fake `SpeechRecognition` before page scripts run, then verifies discovery, speech-start context capture, dictation and correction, clarification, confirmation, pause/interim cancel, dropdowns, region scrolling, search, back navigation, unsafe-link refusal and speech-permission failure on all four viewports. `npm run lint` syntax-checks every JavaScript file under the app. Playwright starts the static server and tests pointer dwell, safety controls, keyboard draft entry, multiline previews/case changes, accuracy-target visibility/report closing, resize calibration, and the decision lab at 1280×900, 390×740, 390×480, and the compact-height boundary 390×651. The lab tests use controlled local API responses for offline comparison, explicit local routing, cloud/invalid-output rejection, cancellation/retry, and safe report export/import. Its controlled clock advances actual animation frames; these are interface tests, not webcam accuracy/latency measurements. Tests reject external requests in simulation and page exceptions. The GitHub workflow runs the same checks on a standard Ubuntu runner with read-only repository access, no persistent artifact/cache uploads, and a 25-minute limit. Extension tests (`browser-tests/extension.spec.js`) build `dist/extension-test` and load it into full Chromium (the headless shell cannot load extensions).
 
 [CI run 37136868563](https://github.com/twangyal/projects-monorepo/actions/runs/37136868563) verified commit `8c1910b`: **55 Node tests and 48 native Chromium cases passed** (24 navigation, 24 decision lab), alongside lint/build syntax checks. The browser regression also established that all five accuracy target centers and keyboard footer controls remain reachable at the tested sizes. Local Chromium launch was blocked by the development runtime's Unix-socket restriction; native browser verification ran in CI. Physical webcam accuracy, hardware release indicators, and actual TensorFlow memory measurements remain unverified.
 
@@ -147,6 +190,8 @@ Continued the initial prototype by fixing stationary-pointer dwell and repeated 
 Next: measure webcam accuracy/latency and isolate target resolution before evaluating decision models.
 
 ## Privacy and limitations
+
+Spoken web navigation uses the browser's built-in speech recognition. In Chrome and Edge this sends microphone audio to the browser vendor's speech service; the navigator itself never records, uploads or stores audio, transcripts or page content. Typed instructions work without a microphone.
 
 Webcam frames are processed by the browser-side WebGazer dependency; this project does not upload or persist them. Saved estimator data is disabled before camera startup, and each calibration resets only in-memory regression samples. Previous browser storage is left untouched. Pointer movement, ordinary workspace clicks, and held-out checks do not train the estimator. WebGazer's prediction overlay is hidden so it cannot cue the accuracy check. The demo loads WebGazer from a public CDN, so it needs network access on first load. Webcam gaze estimation varies significantly with lighting, camera placement, head movement, calibration quality, and individual users. This prototype is an experiment, not an assistive-device claim.
 
@@ -232,3 +277,28 @@ ambiguity abstention, visible assisted outlines and unchanged hold confirmation.
 79 unit and 84 native Chromium cases pass locally. Filter constants and radii are
 untuned defaults pending physical webcam checks (#132).
 [Verification record](docs/2026-10-07-nearby-assist-verification.md); issue #137.
+
+### Spoken control of ordinary pages — 2026-10-12
+
+First milestone toward the revised destination: context circle, numbered discovery of unannotated controls, speech/typed instructions, rule-based interpretation, clarification, consequential-action confirmation, dictation and correction, scrolling, search and back navigation on a six-page practice site. 109 unit and 124 native Chromium cases pass locally (28 new practice-site cases across four viewports, driven by a controllable fake speech recognizer). Real microphone/speech-service behavior, camera gaze in this runtime, third-party sites and Jev remain unverified.
+[Verification record](docs/2026-10-12-spoken-web-navigation-verification.md); issue #203.
+
+### Camera gaze for spoken navigation — 2026-10-12
+
+The spoken web runtime can now follow webcam gaze after a hands-free, no-click calibration, with spoken or button control of the tracking source, cancel-safe camera startup and release, and per-page recalibration after navigation. 117 unit and 136 native Chromium cases pass locally with a controllable fake estimator; real face-model camera tracking could not run here (tfhub.dev is unreachable). [Verification record](docs/2026-10-12-camera-web-navigation-verification.md); issue #204.
+
+### Real websites through a Chrome extension — 2026-10-12
+
+`npm run build:extension` packages the spoken gaze runtime as an MV3 extension with a pinned, checksum-verified WebGazer. It runs on any website from the popup or Alt+Shift+G, optionally stays on across navigations or starts everywhere after the user grants website access, keeps settings out of website storage and survives strict CSP. 117 unit and 152 native Chromium cases pass locally, including 16 that load the real built extension. [Verification record](docs/2026-10-12-extension-verification.md); issue #205.
+
+### Real-site discovery: web components, frames, script-only clickables — 2026-10-12
+
+Context capture descends into open shadow roots and same-origin frames, and infers pointer-cursor clickables. It reports unreachable cross-origin frames and fixes stale context after a quick stop (trailing capture). 117 unit and 156 native Chromium cases pass locally. [Verification record](docs/2026-10-12-real-site-discovery-verification.md); issue #207.
+
+### Calibration that follows navigation — 2026-10-12
+
+In the extension, camera calibrations are serialized from WebGazer's regression, kept in extension session memory, and restored on the next page when the window size matches (≤ 2 h). Stopping the camera deletes them. 120 unit and 160 native Chromium cases pass locally. [Verification record](docs/2026-10-12-calibration-persistence-verification.md); issue #208.
+
+### Measured spoken phrasing — 2026-10-12
+
+A versioned 120-instruction suite plus a 50-instruction held-out set measures the interpreter. Broadening raised the tuned suite from 91/120 with one unsafe action to 120/120. The held-out set scores 34/50, with 0 unsafe actions on both. 124 unit tests pass, and the 64 web-runtime native cases pass. [Evaluation](docs/2026-10-12-instruction-suite-evaluation.md); issue #209.

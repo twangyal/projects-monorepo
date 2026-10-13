@@ -4,7 +4,10 @@ import argparse
 from pathlib import Path
 import signal
 
+import os
+
 from .server import create_server
+from .spotify import ACCOUNTS_URL, API_URL, SpotifyClient
 from .transport import TransportError, prepare_transport
 
 
@@ -17,7 +20,20 @@ def main():
     parser.add_argument('--tls-cert', type=Path)
     parser.add_argument('--tls-key', type=Path)
     parser.add_argument('--setup-token-file', type=Path)
+    parser.add_argument('--spotify-client-id', default=os.environ.get('DUET_SPOTIFY_CLIENT_ID'),
+                        help='Client ID of your Spotify app (or DUET_SPOTIFY_CLIENT_ID). Enables listening timelines.')
     args = parser.parse_args()
+    spotify = None
+    if args.spotify_client_id:
+        try:
+            # The endpoint overrides exist for tests and accept only 127.0.0.1 fakes.
+            spotify = SpotifyClient(args.spotify_client_id,
+                                    accounts_url=os.environ.get('DUET_SPOTIFY_ACCOUNTS_URL', ACCOUNTS_URL),
+                                    api_url=os.environ.get('DUET_SPOTIFY_API_URL', API_URL))
+        except ValueError as error:
+            parser.error(str(error))
+    # Without a client ID the service is constructed exactly as before.
+    listening = {'spotify': spotify} if spotify else {}
     options = (args.bind, args.origin, args.tls_cert, args.tls_key, args.setup_token_file)
     if any(value is not None for value in options) and any(value is None for value in options):
         parser.error('Provide --bind, --origin, --tls-cert, --tls-key and --setup-token-file together.')
@@ -27,9 +43,9 @@ def main():
             transport = prepare_transport(bind=args.bind, port=args.port, origin=args.origin,
                                           tls_cert=args.tls_cert, tls_key=args.tls_key,
                                           setup_token_file=args.setup_token_file)
-            server = create_server(args.data_dir, args.port, transport=transport)
+            server = create_server(args.data_dir, args.port, transport=transport, **listening)
         else:
-            server = create_server(args.data_dir, args.port)
+            server = create_server(args.data_dir, args.port, **listening)
     except TransportError as error:
         parser.error(str(error))
     except OSError:

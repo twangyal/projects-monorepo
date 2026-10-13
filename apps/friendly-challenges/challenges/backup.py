@@ -236,16 +236,20 @@ def _names(directory, files):
     with os.scandir(directory) as entries:
         for entry in entries:
             files.check()
-            if len(names) >= 5:
+            if len(names) >= 8:
                 raise _error('input', 'Source children are unexpected; preserve and clean up the library before retrying.')
             names.add(entry.name)
     return names
 
 
+# Friend circles live beside the challenge database and are deliberately not archived.
+CIRCLES_NAMES = {'circles.sqlite3', 'circles.sqlite3-journal'}
+
+
 def _source_children(source, files):
     sidecars = _sidecars(source)
     expected = {DATABASE_NAME, LOCK_NAME} | {DATABASE_NAME + suffix for suffix in sidecars}
-    if _names(source, files) != expected:
+    if _names(source, files) - (CIRCLES_NAMES - expected) != expected:
         raise _error('input', 'Source children are unexpected; preserve and clean up the library before retrying.')
     return sidecars
 

@@ -11,6 +11,12 @@ export function recordCalibrationClick(api, event, dot) {
   const x = left + width / 2;
   const y = top + height / 2;
   if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return false;
+  return recordCalibrationSample(api, x, y);
+}
+
+// Trains one screen position; false when the estimator had no eye features to learn from.
+export function recordCalibrationSample(api, x, y) {
+  if (![x, y].every(Number.isFinite)) return false;
   const regression = api.getRegression()[0];
   const before = regression.getData().length;
   api.recordScreenPosition(x, y, 'click');

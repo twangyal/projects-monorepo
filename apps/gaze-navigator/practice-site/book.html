@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Quiet River — Northwind Books</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./site.css" />
+</head>
+<body>
+  <header>
+    <a class="brand" href="index.html">Northwind Books</a>
+    <nav aria-label="Main"><ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="catalog.html">Catalog</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="account.html">Account</a></li>
+      <li><a href="help.html">Help</a></li>
+    </ul></nav>
+    <form class="search" action="search.html" method="get" role="search">
+      <input type="search" name="q" aria-label="Search books" placeholder="Search books" />
+      <button>Search</button>
+    </form>
+    <span>Cart: <span id="cartCount">0</span></span>
+  </header>
+  <main>
+    <h1>The Quiet River</h1>
+    <p class="notice" role="status"></p>
+    <p>A slow journey down a forgotten waterway, told across four seasons.</p>
+    <form data-practice="Practice order placed. Nothing was charged.">
+      <label class="field">Format
+        <select name="format"><option>Paperback</option><option>Hardcover</option><option>Large print</option><option>Audiobook</option></select>
+      </label>
+      <label class="field">Gift note
+        <input name="note" />
+      </label>
+      <button type="button" class="add-to-cart" data-title="The Quiet River">Add to cart</button>
+      <button class="primary">Place order</button>
+    </form>
+    <h2>Reviews</h2>
+    <div class="reviews" tabindex="0" aria-label="Reader reviews">
+      <p>"Gentle and patient." — Ana</p><p>"I read it twice in one week." — Femi</p><p>"The winter chapter is perfect." — Lin</p>
+      <p>"Slow, but rewarding." — Sam</p><p>"Beautiful maps." — Noor</p><p>"A quiet companion." — Jules</p>
+      <p>"Bought copies for friends." — Ravi</p><p>"Made me want to row." — Kim</p>
+    </div>
+  </main>
+  <footer>A fictional practice website. Nothing is sold, sent or stored.</footer>
+  <script type="module" src="./site.js"></script>
+  <script type="module" src="../src/web/boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ask a question</title>
+  <link rel="icon" href="data:," />
+  <style>
+    body { margin: 0; padding: 10px; font: 16px/1.4 Georgia, serif; background: #fff; }
+    textarea, button { font: inherit; padding: 6px 8px; }
+    .notice:empty { display: none; }
+  </style>
+</head>
+<body>
+  <form>
+    <label for="question">Your question</label><br />
+    <textarea id="question" rows="2" cols="34"></textarea><br />
+    <button>Ask</button>
+  </form>
+  <p class="notice" role="status"></p>
+  <script>
+    document.querySelector('form').addEventListener('submit', event => {
+      event.preventDefault();
+      document.querySelector('.notice').textContent = 'Practice question received: ' + document.querySelector('#question').value;
+    });
+  </script>
+</body>
+</html>

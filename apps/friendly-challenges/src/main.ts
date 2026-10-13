@@ -1,6 +1,7 @@
 import './style.css';
 import { ApiError, RequestTimeoutError, request, postImageEvidence, fetchEvidenceImage, fetchImageExport } from './api.ts';
 import { normalizeEvidenceImage } from './evidence-image.ts';
+import { createCircles } from './circles.ts';
 import { loadSessions, readLink, removeSession, saveSession } from './session.ts';
 import type { PrivateLink } from './session.ts';
 import { ID_PATTERN, STAKES } from './types.ts';
@@ -117,6 +118,10 @@ const inviteArbiter = button('Invite arbiter', () => { void issueInvite('arbiter
 const exitPanel = section('Before acceptance'); const declineForm = form('decline-form'); field(declineForm, 'reason', 'Reason to decline', 500, true); submit(declineForm, 'Decline challenge', () => { const s = snapshot; if (s && confirm('Decline this proposal? This closes the challenge permanently.')) void command('/decline', { reason: value(declineForm, 'reason') }, declineForm, 'Challenge declined.', s); }); const withdrawForm = form('withdraw-form'); field(withdrawForm, 'reason', 'Reason to withdraw', 500, true); submit(withdrawForm, 'Withdraw challenge', () => { const s = snapshot; if (s && confirm('Withdraw this proposal? This closes the challenge permanently.')) void command('/withdraw', { reason: value(withdrawForm, 'reason') }, withdrawForm, 'Challenge withdrawn.', s); }); exitPanel.append(declineForm, withdrawForm); right.append(exitPanel);
 const quotaPanel = section('Notebook limits'); const quotaText = el('p', '', 'hint'); quotaPanel.append(quotaText); right.append(quotaPanel);
 const activityPanel = section('Activity', 'The permanent record of agreements and actions.'); const activityList = el('ol', '', 'activity-list'); activityList.id = 'activity-list'; activityPanel.append(activityList); left.append(activityPanel);
+const circles = createCircles({
+  main, dashboard, grid, shareBefore: quotaPanel, announce, leaveDrafts: () => leaveDrafts(), showDashboard: () => showDashboard(),
+  enterCircle: () => { stopSelection(); clearEditors(); workspace.hidden = true; dashboard.hidden = true; pendingLink = null; intent.hidden = true; creationControls(); connection.textContent = 'Your friend circle'; },
+});
 main.append(el('footer', 'Private links are credentials. Share invitations only with the intended person, and keep your own access link private.'));
 
 type Transport = { mode: 'https-lan' | 'http-loopback'; origin: string; setupRequired: boolean };
@@ -193,13 +198,14 @@ function retrySavingAccess(): void {
 function remember(id: string, token: string): void {
   sessions[id] = token; try { saveSession(id, token); unsavedSeats.delete(id); } catch { unsavedSeats.add(id); announce('Your seat works in this page, but browser access could not be saved. Keep My private access link before closing or refreshing.', true); } updateAccessRecovery();
 }
-function stopSelection(): void { retireCreation(); generation += 1; retireImageWork(); readController?.abort(); mutationController?.abort(); clearTimeout(pollTimer); selected = null; snapshot = null; busy = false; closeLink(); updateAccessRecovery(); }
-function showDashboard(): void { stopSelection(); workspace.hidden = true; dashboard.hidden = false; clearEditors(); connection.textContent = 'Your private notebook'; history.replaceState(null, '', '/'); renderRecords(); creationControls(); void refreshRecords(); }
+function stopSelection(): void { circles.setTarget(null); retireCreation(); generation += 1; retireImageWork(); readController?.abort(); mutationController?.abort(); clearTimeout(pollTimer); selected = null; snapshot = null; busy = false; closeLink(); updateAccessRecovery(); }
+function showDashboard(): void { stopSelection(); circles.showList(); workspace.hidden = true; dashboard.hidden = false; clearEditors(); connection.textContent = 'Your private notebook'; history.replaceState(null, '', '/'); renderRecords(); creationControls(); void refreshRecords(); }
 function flushIncoming(): void { if (!busy && deferredLink) { const link = deferredLink; deferredLink = null; incoming(link); } }
 function captureIncoming(): void {
   if (!location.hash) return;
   const source = { search: location.search, hash: location.hash };
   history.replaceState(null, '', `${location.pathname}${location.search}`);
+  if (circles.incoming(source)) return;
   let link: PrivateLink | null = null; try { link = readLink(source); } catch { /* Invalid fragments are removed too. */ }
   if (!link) { announce('This private link is invalid. Its fragment has been removed. Ask for a fresh link.', true); return; }
   if (busy) { deferredLink = link; announce('Private link received. Finish the current action before choosing a seat.'); } else incoming(link);
@@ -208,7 +214,7 @@ window.addEventListener('hashchange', captureIncoming);
 window.addEventListener('popstate', captureIncoming);
 function current(epoch: number, credential: { id: string; token: string }): boolean { return !pageSuspended && epoch === generation && selected?.id === credential.id && selected?.token === credential.token; }
 async function selectChallenge(id: string, token: string, initial?: Snapshot): Promise<void> {
-  stopSelection(); clearEditors(); selected = { id, token }; commandReviewRequired = commandReviews.has(reviewKey(selected)); updateAccessRecovery(); dashboard.hidden = true; creationControls(); workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
+  circles.hide(); stopSelection(); clearEditors(); selected = { id, token }; commandReviewRequired = commandReviews.has(reviewKey(selected)); updateAccessRecovery(); dashboard.hidden = true; creationControls(); workspace.hidden = false; title.textContent = 'Loading challenge…'; status.textContent = 'Loading'; people.textContent = ''; deadlineText.textContent = ''; revision.textContent = ''; columns.hidden = true; finalPanel.hidden = true; history.replaceState(null, '', `/?challenge=${id}`); if (initial) apply(initial); await refreshSelected();
 }
 function apply(next: Snapshot): void {
   if (!selected || next.id !== selected.id || snapshot && next.revision < snapshot.revision) return;
@@ -399,6 +405,7 @@ function eventText(e: ChallengeEvent, s: Snapshot): string {
 }
 function render(): void {
   const s = snapshot; if (!s) return; updateAccessRecovery(); commandReview.hidden = !commandReviewRequired; const mutationBlocked = busy || commandReviewRequired; const party = s.myRole !== 'arbiter'; const proposed = s.status === 'proposed'; const running = s.status === 'active' || s.status === 'disputed'; const disputed = s.status === 'disputed'; const terminal = !proposed && !running; const n = s.arbiterNomination; const p = s.resultProposal;
+  if (selected) circles.setTarget({ id: s.id, token: selected.token, role: s.myRole, otherName: s.myRole === 'opponent' ? s.profiles.proposer.name : s.profiles.opponent?.name ?? 'your opponent' });
   title.textContent = s.terms.title; status.textContent = s.status; status.dataset.status = s.status; revision.textContent = `Revision ${s.revision} · ${s.myRole} seat`;
   people.textContent = `${s.profiles.proposer.name} (proposer) · ${s.profiles.opponent ? `${s.profiles.opponent.name} (opponent)` : 'Opponent has not joined'}${s.profiles.arbiter ? ` · ${s.profiles.arbiter.name} (arbiter)` : ''}`;
   deadlineText.textContent = `${s.deadlinePassed ? 'Deadline passed' : 'Deadline'}: ${when(s.terms.deadline)}. ${s.deadlinePassed ? 'Time alone does not decide a winner. New evidence is marked late; settlement remains available.' : 'Passing the deadline does not automatically decide a winner.'}`;
@@ -572,6 +579,7 @@ async function start(): Promise<void> {
   const original = originalLocation; let link: PrivateLink | null = null;
   try { link = readLink(original); } catch { /* Never consume invalid private links. */ }
   try { sessions = loadSessions(); } catch { announce('Browser access storage is unavailable or damaged. Existing storage was not changed. Seats can work in memory; keep your private access link before closing.', true); }
+  if (circles.incoming(original)) { renderRecords(); if (!dashboard.hidden) { connection.textContent = 'Your private notebook'; void refreshRecords(); circles.showList(); } return; }
   renderRecords(); if (link) incoming(link); else if (original.hash) announce('This private link is invalid. Its fragment has been removed. Ask for a fresh link.', true);
   const id = new URLSearchParams(original.search).get('challenge'); if (id && ID_PATTERN.test(id) && sessions[id]) await selectChallenge(id, sessions[id]!); else { connection.textContent = 'Your private notebook'; void refreshRecords(); }
 }

@@ -15,10 +15,13 @@ from socketserver import TCPServer
 import stat
 import threading
 import time
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlsplit
 import uuid
 
 from .jobs import JobManager
+from .listening import ListeningStore
+from .photos import EXTENSIONS, MAX_PHOTO_BYTES, PhotoError, inspect_photo
+from .spotify import SpotifyClient, SpotifyError
 from .store import DomainError, Store
 from .transport import TransportConfig, validate_transport, matches_setup
 from .https_server import HttpsRuntime, HeaderReader, DeadlineWriter, RequestError
@@ -71,7 +74,7 @@ class DuetServer(ThreadingHTTPServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, data_dir, port, dist_dir, normalize, *, transport=None):
+    def __init__(self, data_dir, port, dist_dir, normalize, *, transport=None, spotify=None, sync_seconds=600):
         if type(port) is not int or not 0 <= port <= 65535:
             raise ValueError('Port must be an integer between 0 and 65535.')
         self.data_dir = Path(data_dir).absolute()
@@ -82,6 +85,12 @@ class DuetServer(ThreadingHTTPServer):
         self.lock = threading.RLock()
         self.jobs = JobManager(self.lock)
         self.store = None
+        self.listening = None
+        # A SpotifyClient when the operator configured a Spotify app; listening features are off otherwise.
+        self.spotify = spotify
+        self.sync_seconds = sync_seconds
+        self._sync_stop = threading.Event()
+        self._sync_thread = None
         self._data_lock = None
         self._data_fd = None
         self._closed = False
@@ -129,8 +138,11 @@ class DuetServer(ThreadingHTTPServer):
                 pass
             with _child_directory(self._data_fd, 'media', create=True):
                 pass
+            with _child_directory(self._data_fd, 'photos', create=True):
+                pass
             self.store = Store(self.data_dir)
             self.store.pause_all()
+            self.listening = ListeningStore(self.data_dir)
             with _child_directory(self._data_fd, '.jobs') as work:
                 for name in os.listdir(work):
                     if re.fullmatch(ID, name):
@@ -140,6 +152,29 @@ class DuetServer(ThreadingHTTPServer):
         except BaseException:
             self.server_close()
             raise
+        if self.spotify is not None:
+            self._sync_thread = threading.Thread(target=self._sync_loop, name='duet-spotify-sync', daemon=True)
+            self._sync_thread.start()
+
+    @property
+    def redirect_uri(self):
+        origin = self.transport.origin if self.transport else f'http://127.0.0.1:{self.server_port}'
+        return f'{origin}/spotify/callback'
+
+    def sync_room(self, room_id, *, force=False):
+        for role in ('host', 'guest'):
+            self.listening.sync(self.spotify, room_id, role, force=force)
+
+    def _sync_loop(self):
+        # Automatic timeline entries need no approval: poll every connection periodically.
+        while not self._sync_stop.wait(self.sync_seconds):
+            try:
+                for room_id, role in self.listening.connected():
+                    if self._sync_stop.is_set():
+                        break
+                    self.listening.sync(self.spotify, room_id, role)
+            except Exception:
+                pass  # Failures are recorded per connection; the loop keeps running.
 
     def server_bind(self):
         if self.transport is None:
@@ -169,12 +204,17 @@ class DuetServer(ThreadingHTTPServer):
             # join before attempting JobManager.close(), which needs that lock.
             self.https_runtime.join()
         self.jobs.close()
+        self._sync_stop.set()
+        if self._sync_thread is not None:
+            self._sync_thread.join(timeout=30)
         self._closed = True
         try:
             if hasattr(self, 'socket'):
                 super().server_close()
             if self.store:
                 self.store.close()
+            if self.listening:
+                self.listening.close()
         finally:
             if self._data_lock is not None:
                 fcntl.flock(self._data_lock, fcntl.LOCK_UN)
@@ -186,11 +226,13 @@ class DuetServer(ThreadingHTTPServer):
 
 
 def create_server(data_dir: Path, port: int = 8766, *, dist_dir: Path | None = None, normalize=None,
-                  transport: TransportConfig | None = None) -> DuetServer:
+                  transport: TransportConfig | None = None, spotify: SpotifyClient | None = None,
+                  sync_seconds: float = 600) -> DuetServer:
     if normalize is None:
         from .media import normalize_audio
         normalize = normalize_audio
-    return DuetServer(data_dir, port, dist_dir, normalize, transport=transport)
+    return DuetServer(data_dir, port, dist_dir, normalize, transport=transport, spotify=spotify,
+                      sync_seconds=sync_seconds)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -265,14 +307,14 @@ class Handler(BaseHTTPRequestHandler):
             allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
             if (len(hosts) != 1 or hosts[0] not in allowed or len(origins) > 1
                     or (origins and origins[0] != 'http://' + hosts[0])
-                    or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
+                    or (self.headers.get('Sec-Fetch-Site') == 'cross-site' and not self._oauth_callback())):
                 raise DomainError(403, 'Only requests from this local Duet service are allowed.')
         else:
             sites = self.headers.get_all('Sec-Fetch-Site', [])
             if (len(hosts) != 1 or hosts[0] != config.authority or len(origins) > 1
                     or origins and origins[0] != config.origin
                     or self.command in ('POST', 'PUT', 'DELETE') and len(origins) != 1
-                    or len(sites) > 1 or 'cross-site' in sites
+                    or len(sites) > 1 or ('cross-site' in sites and not self._oauth_callback())
                     or any(name.lower() == 'forwarded' or name.lower().startswith('x-forwarded-')
                            for name in self.headers)):
                 raise DomainError(403, 'Only requests from the configured Duet origin are allowed.')
@@ -294,10 +336,15 @@ class Handler(BaseHTTPRequestHandler):
                     raise DomainError(403, 'A valid operator setup key is required to create a room.')
         static_room_link = (self.command in ('GET', 'HEAD')
                             and re.fullmatch(r'/\?room=' + ID, self.path))
-        if ('?' in self.path and not static_room_link) or '#' in self.path:
+        if ('?' in self.path and not static_room_link and not self._oauth_callback()) or '#' in self.path:
             raise DomainError(400, 'Query parameters are not accepted by this service.')
         if len(self.path) > 2048:
             raise DomainError(404, 'Route not found.')
+
+    def _oauth_callback(self):
+        # Spotify's redirect is a cross-site top-level GET carrying code/state in the query.
+        # It is the only such exception; the single-use state authenticates it.
+        return self.command == 'GET' and bool(re.fullmatch(r'/spotify/callback\?[A-Za-z0-9_.~%&=-]{1,1500}', self.path))
 
     def _headers(self, status, content_type, size, headers=None):
         if self.owned_connection is not None and not self._response_started:
@@ -421,6 +468,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _route(self):
         method, path, store = self.command, self.path, self.server.store
+        if self._oauth_callback():
+            return self._spotify_callback()
         if path == '/api/status' and method in ('GET', 'HEAD'):
             config = self.server.transport
             transport = (dict(mode='https-lan', origin=config.origin, setupRequired=True) if config
@@ -442,7 +491,9 @@ class Handler(BaseHTTPRequestHandler):
             joined = store.join_room(room_id, body['inviteToken'], body['name'])
             return self._json(200, joined, self._cookie(room_id, joined['token']))
         audio = re.fullmatch(r'/tracks/(' + ID + r')/audio', tail)
-        token, role = self._token(room_id, allow_cookie=bool(audio and method in ('GET', 'HEAD')))
+        # Media elements cannot send a Bearer header, so audio and photos accept the room cookie.
+        photo_read = re.fullmatch(r'/listening/memories/(' + ID + r')/photo', tail) and method in ('GET', 'HEAD')
+        token, role = self._token(room_id, allow_cookie=bool((audio or photo_read) and method in ('GET', 'HEAD')))
         if audio and method in ('GET', 'HEAD'):
             track_id = audio.group(1)
             with self.server.lock:
@@ -462,11 +513,13 @@ class Handler(BaseHTTPRequestHandler):
                 if self.server.jobs.active(room_id):
                     raise DomainError(409, 'Cancel this room’s upload before deleting the room.')
                 store.delete_room(room_id, token)
-                try:
-                    with _child_directory(self.server._data_fd, 'media') as media:
-                        _cleanup_child(media, room_id)
-                except OSError:
-                    pass  # Metadata is authoritative; leftover media cannot be read.
+                self.server.listening.delete_room(room_id)
+                for directory in ('media', 'photos'):
+                    try:
+                        with _child_directory(self.server._data_fd, directory) as parent:
+                            _cleanup_child(parent, room_id)
+                    except OSError:
+                        pass  # Metadata is authoritative; leftover files cannot be read.
             return self._json(200, {'deleted': True})
         if tail == '/access' and method == 'POST':
             self._object('')
@@ -551,10 +604,187 @@ class Handler(BaseHTTPRequestHandler):
         if memory and method == 'DELETE':
             self._object('')
             return self._json(200, store.delete_memory(room_id, token, memory.group(1)))
+        if tail.startswith('/listening'):
+            return self._listening(room_id, role, tail, method)
         if tail == '/export' and method == 'GET':
             exported = store.export_room(room_id, token)
             return self._json(200, exported, {'Content-Disposition': f'attachment; filename="duet-{room_id}.json"'})
         raise DomainError(404, 'Route not found.')
+
+    def _listening_state(self, room_id, include_hidden=False):
+        state = self.server.listening.state(room_id, configured=self.server.spotify is not None,
+                                            include_hidden=include_hidden)
+        state['redirectUri'] = self.server.redirect_uri if self.server.spotify is not None else None
+        return state
+
+    def _listening(self, room_id, role, tail, method):
+        listening, spotify = self.server.listening, self.server.spotify
+        if tail in ('/listening', '/listening/hidden') and method == 'GET':
+            return self._json(200, self._listening_state(room_id, tail == '/listening/hidden'))
+        if tail == '/listening/connect' and method == 'POST':
+            self._object('')
+            if spotify is None:
+                raise DomainError(409, 'Spotify is not set up on this Duet service. The operator needs to register a Spotify app first.')
+            return self._json(200, {'authorizeUrl': listening.begin_auth(spotify, room_id, role, self.server.redirect_uri)})
+        if tail == '/listening/sync' and method == 'POST':
+            self._object('')
+            if spotify is None:
+                raise DomainError(409, 'Spotify is not set up on this Duet service.')
+            self.server.sync_room(room_id, force=True)
+            return self._json(200, self._listening_state(room_id))
+        if tail == '/listening/connection' and method == 'DELETE':
+            self._object('')
+            listening.disconnect(room_id, role)
+            return self._json(200, self._listening_state(room_id))
+        entry = re.fullmatch(r'/listening/entries/([A-Za-z0-9-]{1,120})', tail)
+        if entry and method == 'PUT':
+            body = self._object('hidden caption')
+            listening.set_override(room_id, role, entry.group(1), body['hidden'], body['caption'])
+            return self._json(200, self._listening_state(room_id))
+        if tail == '/listening/manual' and method == 'POST':
+            body = self._object('date title song note')
+            listening.add_manual(room_id, role, body['date'], body['title'], body['song'], body['note'])
+            return self._json(201, self._listening_state(room_id))
+        if tail == '/listening/memories' and method == 'POST':
+            body = self._object('target date text')
+            memory_id = listening.add_memory(room_id, role, body['target'], body['date'], body['text'])
+            return self._json(201, {'memoryId': memory_id, 'listening': self._listening_state(room_id)})
+        memory = re.fullmatch(r'/listening/memories/(' + ID + r')(?P<photo>/photo)?', tail)
+        if memory and memory.group('photo'):
+            return self._memory_photo(room_id, role, memory.group(1), method)
+        if memory and method == 'PUT':
+            body = self._object('date text')
+            listening.update_memory(room_id, role, memory.group(1), body['date'], body['text'])
+            return self._json(200, self._listening_state(room_id))
+        if memory and method == 'DELETE':
+            self._object('')
+            photo = listening.delete_memory(room_id, role, memory.group(1))
+            if photo:
+                self._remove_photo(room_id, memory.group(1), photo)
+            return self._json(200, self._listening_state(room_id))
+        manual = re.fullmatch(r'/listening/manual/(' + ID + r')', tail)
+        if manual and method == 'PUT':
+            body = self._object('date title song note')
+            listening.update_manual(room_id, role, manual.group(1), body['date'], body['title'], body['song'], body['note'])
+            return self._json(200, self._listening_state(room_id))
+        if manual and method == 'DELETE':
+            self._object('')
+            listening.delete_manual(room_id, role, manual.group(1))
+            return self._json(200, self._listening_state(room_id))
+        raise DomainError(404, 'Route not found.')
+
+    def _remove_photo(self, room_id, memory_id, mime):
+        try:
+            with _child_directory(self.server._data_fd, 'photos') as photos:
+                with _child_directory(photos, room_id) as room_directory:
+                    os.unlink(f'{memory_id}.{EXTENSIONS[mime]}', dir_fd=room_directory)
+        except (OSError, KeyError):
+            pass  # The database no longer references it, so it cannot be served.
+
+    def _memory_photo(self, room_id, role, memory_id, method):
+        listening = self.server.listening
+        if method in ('GET', 'HEAD'):
+            mime = listening.photo(room_id, memory_id)
+            if mime not in EXTENSIONS:
+                raise DomainError(404, 'Photo not found.')
+            directories = []
+            try:
+                photos = os.open('photos', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=self.server._data_fd)
+                directories.append(photos)
+                room_directory = os.open(room_id, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=photos)
+                directories.append(room_directory)
+                descriptor = os.open(f'{memory_id}.{EXTENSIONS[mime]}', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=room_directory)
+                stream = os.fdopen(descriptor, 'rb')
+                if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                    stream.close()
+                    raise OSError('Not a regular file')
+            except OSError:
+                raise DomainError(404, 'Photo not found.') from None
+            finally:
+                for directory in reversed(directories):
+                    os.close(directory)
+            return self._file(stream, mime)
+        if method == 'DELETE':
+            self._object('')
+            previous = listening.set_photo(room_id, role, memory_id, None)
+            if previous:
+                self._remove_photo(room_id, memory_id, previous)
+            return self._json(200, self._listening_state(room_id))
+        if method != 'PUT':
+            raise DomainError(404, 'Route not found.')
+        size = self._length(MAX_PHOTO_BYTES)
+        declared = self.headers.get('Content-Type', '').split(';')[0].strip().lower()
+        data = self._body(size)
+        try:
+            mime, _, _ = inspect_photo(data)
+        except PhotoError as error:
+            raise DomainError(400, str(error)) from None
+        # The bytes decide the type; a mismatched declaration is refused rather than trusted.
+        if declared != mime:
+            raise DomainError(400, 'The photo’s contents do not match its declared type.')
+        previous = listening.set_photo(room_id, role, memory_id, mime)
+        try:
+            with _child_directory(self.server._data_fd, 'photos') as photos:
+                with _child_directory(photos, room_id, create=True) as room_directory:
+                    name = f'{memory_id}.{EXTENSIONS[mime]}'
+                    temporary = f'.{memory_id}.{uuid.uuid4().hex}'
+                    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600,
+                                         dir_fd=room_directory)
+                    with os.fdopen(descriptor, 'wb') as output:
+                        output.write(data)
+                        output.flush()
+                        os.fsync(output.fileno())
+                    os.replace(temporary, name, src_dir_fd=room_directory, dst_dir_fd=room_directory)
+        except OSError:
+            listening.set_photo(room_id, role, memory_id, previous)
+            raise DomainError(500, 'The photo could not be saved. The memory text was kept.') from None
+        if previous and previous != mime:
+            self._remove_photo(room_id, memory_id, previous)
+        return self._json(200, self._listening_state(room_id))
+
+    def _redirect(self, location):
+        self._headers(303, 'text/plain; charset=utf-8', 0, {'Location': location})
+
+    def _plain(self, status, message):
+        encoded = message.encode('utf-8')
+        self._headers(status, 'text/plain; charset=utf-8', len(encoded))
+        self.wfile.write(encoded)
+
+    def _spotify_callback(self):
+        listening, spotify = self.server.listening, self.server.spotify
+        try:
+            params = parse_qs(urlsplit(self.path).query, max_num_fields=6, strict_parsing=True)
+        except ValueError:
+            params = {}
+        if any(len(values) != 1 for values in params.values()):
+            params = {}
+        pending = listening.take_state(params.get('state', [None])[0]) if spotify is not None else None
+        if pending is None:
+            return self._plain(400, 'This Spotify connection link expired or was already used. Return to Duet and choose Connect Spotify again.')
+        room_id, role = pending['roomId'], pending['role']
+        if not self.server.store.has_participant(room_id, role):
+            return self._plain(400, 'This Duet room no longer exists.')
+        if 'error' in params or 'code' not in params:
+            listening.record_failure(room_id, role, 'The Spotify connection was cancelled or refused. Nothing was connected.',
+                                     generation=pending['generation'])
+            return self._redirect(f'/?room={room_id}')
+        try:
+            tokens = spotify.exchange(params['code'][0], pending['verifier'], pending['redirectUri'])
+            profile = spotify.profile(tokens['accessToken'])
+            # Serialize the final admission with room deletion, then verify the authorization
+            # generation that survived the network calls. A disconnect wins over a late reply.
+            with self.server.lock:
+                if not self.server.store.has_participant(room_id, role):
+                    return self._plain(400, 'This Duet room no longer exists.')
+                if not listening.connect(room_id, role, tokens, profile, generation=pending['generation']):
+                    return self._redirect(f'/?room={room_id}')
+        except SpotifyError as error:
+            listening.record_failure(room_id, role, f'Spotify connection failed: {error}',
+                                     generation=pending['generation'])
+            return self._redirect(f'/?room={room_id}')
+        # Import the history baseline now, so the timeline is ready when the room reopens.
+        listening.sync(spotify, room_id, role, force=True)
+        return self._redirect(f'/?room={room_id}')
 
     def _upload(self, room_id, token, role):
         size = self._length(MAX_UPLOAD)

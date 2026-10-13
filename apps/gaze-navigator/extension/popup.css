@@ -1,0 +1,9 @@
+body { width: 320px; margin: 0; padding: 14px; font: 14px/1.45 system-ui, sans-serif; color: #eef8f3; background: #0a1b16; }
+h1 { margin: 0 0 8px; font-size: 17px; }
+button { width: 100%; min-height: 44px; margin: 6px 0 10px; border: 1px solid #456b5c; border-radius: 8px; background: #285743; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: .6; cursor: default; }
+fieldset { margin: 8px 0; border: 1px solid #456b5c; border-radius: 8px; }
+label { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
+.note { color: #a9c2b8; font-size: 13px; }
+kbd { padding: 0 4px; border: 1px solid #456b5c; border-radius: 4px; }
+:focus-visible { outline: 3px solid #f5c76b; outline-offset: 1px; }
