@@ -213,13 +213,14 @@ for (const [id, key, factor] of placementFields) input(id).addEventListener('cha
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 
-element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
+element('new-project').addEventListener('click', () => { if (!productDraftGuard()) return; cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
 element('sample').addEventListener('click', () => { cancelLoad(); edit(current => ({ ...current, photo: null })); });
 element('reset-placement').addEventListener('click', () => edit(current => ({ ...current, placement: createProject().placement })));
 element('clear-sketch').addEventListener('click', () => edit(current => ({ ...current, strokes: [] })));
 element('cancel-load').addEventListener('click', () => { cancelLoad(); message('Import cancelled. Your current concept is unchanged.'); });
 
 function travel(direction: 'undo' | 'redo') {
+  if (!productDraftGuard()) return;
   cancelLoad(); cancelGesture();
   if (!(direction === 'undo' ? history.canUndo : history.canRedo)) return;
   project = history[direction](); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); editVersion++;
@@ -306,6 +307,7 @@ input('photo-file').addEventListener('change', async () => {
 });
 input('project-file').addEventListener('change', async () => {
   const file = input('project-file').files?.[0]; input('project-file').value = ''; if (!file) return;
+  if (!productDraftGuard()) return;
   const generation = beginLoad();
   try {
     if (file.size > MAX_PROJECT_BYTES) throw new Error('Project backup exceeds 6 MiB.');
@@ -359,7 +361,13 @@ element('replace-saved').addEventListener('click', async () => {
   finally { replacingSaved = false; updateControls(); }
 });
 
+function productDraftGuard(): boolean {
+  if (productView.dirty()) { message('Apply or discard pending product edits before replacing the project or using history. Your drafts are kept.', true); return false; }
+  return true;
+}
+
 function constructionGuard(ignoreBody=false): boolean {
+  if (!productDraftGuard()) return false;
   const raw = input('title').value !== project.title || element<HTMLTextAreaElement>('note').value !== project.note || placementFields.some(([id,key,factor]) => input(id).value !== String(Number((project.placement[key]*factor).toFixed(2))));
   if (gesture || raw || exportBusy || replacingSaved || (!ignoreBody && bodyView?.dirty())) { message('Finish the active gesture or other raw concept fields before changing construction. Your drafts are kept.', true); return false; }
   return true;

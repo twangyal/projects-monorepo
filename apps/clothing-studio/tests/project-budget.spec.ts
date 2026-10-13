@@ -19,7 +19,11 @@ test('canonical budget rejects a compact backup whose pretty export exceeds 6 Mi
   expect(encoded(JSON.stringify(incoming, null, 2))).toBe(cap + 4);
   await editor.getByLabel('Body length (cm)', { exact: true }).fill('75');
   await page.locator('#project-file').setInputFiles({ name: 'oversized-canonical.json', mimeType: 'application/json', buffer: Buffer.from(compact) });
-  await expect(page.locator('#message')).toContainText('6 MiB');
+  await expect(page.locator('#message')).toContainText('Apply or discard');
   await expect(editor.getByLabel('Body length (cm)', { exact: true })).toHaveValue('75');
+  expect(await backup()).toEqual(before);
+  await editor.getByRole('button', { name: 'Discard all product drafts', exact: true }).click();
+  await page.locator('#project-file').setInputFiles({ name: 'oversized-canonical.json', mimeType: 'application/json', buffer: Buffer.from(compact) });
+  await expect(page.locator('#message')).toContainText('6 MiB');
   expect(await backup()).toEqual(before);
 });

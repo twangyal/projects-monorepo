@@ -40,6 +40,11 @@ The built `dist/` directory can be served by a static web server. Use a current 
 
 Every change is one Undo/Redo step and is saved with the project and its backups. Projects without a 3D design remain valid.
 
+Unapplied product measurements, fit, artwork placement, tech-pack details and costing stay in their fields across part selection, styling and image redraws. **Apply** commits its group; **Discard all product drafts** resets every pending product field without editing the garment. New template/project, backup replacement and Undo/Redo require finishing these drafts first. Artwork side and fit handles require finishing their respective drafts. Costing's material-price list refreshes after Apply/Discard. Drafts are session-only and not included in autosave or exports; commit them before reloading. [Draft verification](docs/2026-10-13-product-drafts-247.md) records the boundaries.
+
+Printable tech-pack export captures one committed design, date and filename. A separate render scene waits for its exact image assets and produces both images; editing remains available while its export button is busy. Uploaded artwork is visible on the outward-facing styling surfaces. [Snapshot verification](docs/2026-10-13-techpack-snapshot-247.md) records actual render and lifecycle checks.
+
+
 How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here, and it is not worn on a body. For fabric drape on a body, see the measured skirt's simulation below. Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
 
 See [3D product editor verification](docs/2026-10-13-product-editor.md).

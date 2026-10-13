@@ -23,6 +23,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
   <div class="product-head"><div><p class="eyebrow">3D PRODUCT DESIGN</p><h3 id="product-heading">Style a garment in 3D</h3>
   <p>Start from a template, then drag fabrics, colors and prints onto any part of the garment, or select a part and choose from the library. Fabrics and prints render at real size.</p></div>
   <div class="product-name"><label class="field">Product name<input id="product-name" maxlength="80" autocomplete="off"></label></div></div>
+  <div class="inline-actions"><button id="discard-product-drafts" class="quiet" disabled>Discard all product drafts</button><span id="product-draft-state" class="fine-print" role="status"></span></div>
   <div class="product-templates" role="list" aria-label="Templates">${TEMPLATES.map(t => `<div role="listitem"><button class="template-card" data-template="${t.id}" aria-label="Use the ${t.name} template: ${t.description}"><strong>${t.name}</strong><span>${t.description}</span></button></div>`).join('')}</div>
   <div class="product-grid">
     <aside class="product-library" aria-label="Library">
@@ -144,13 +145,40 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Validate the complete recoverable graph before invoking the parent commit or reporting success.
   const commit = (next: Project) => options.commit(validateProject(next));
+  type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name';
+  const drafts = new Map<string, string>();
+  const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', ...LEG_FIELDS.map(([id]) => id)]);
+  const groupOf = (id: string): DraftGroup | null => measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
+    : ['artwork-width', 'artwork-x', 'artwork-y'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : null;
+  const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
+  const draftState = () => {
+    ($('discard-product-drafts') as HTMLButtonElement).disabled = !drafts.size;
+    $('product-draft-state').textContent = drafts.size ? 'Unapplied product edits. Apply the relevant group, or discard all product drafts.' : '';
+  };
+  const captureDraft = (event: Event) => {
+    const field = event.target;
+    if ((field instanceof HTMLInputElement || field instanceof HTMLSelectElement) && groupOf(field.id)) { drafts.set(field.id, field.value); draftState(); }
+  };
+  $('product-editor').addEventListener('input', captureDraft, true);
+  $('product-editor').addEventListener('change', captureDraft, true);
+  const restoreDrafts = () => {
+    for (const [id, value] of drafts) { const field = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null; if (field && field.value !== value) field.value = value; }
+    draftState();
+  };
+  $('discard-product-drafts').addEventListener('click', () => { drafts.clear(); shown = ''; render(options.current()); options.notice('All product drafts discarded. Committed design unchanged.'); });
+  const refuseDrafts = () => { options.notice('Apply or discard pending product edits before replacing the design. Your drafts are kept.', true); };
   const product = () => options.current().product ?? null;
   const label = (part: PartId) => partName(product() ?? template('blank'), part);
-  function update(mutate: (draft: Product) => void, text: string) {
+  function update(mutate: (draft: Product) => void, text: string, appliedGroup?: DraftGroup) {
     const current = product() ?? template('blank');
     const draft = structuredClone(current);
-    try { mutate(draft); commit({ ...options.current(), product: validateProduct(draft) }); options.notice(text); }
-    catch (error) { options.notice(error instanceof Error ? error.message : 'That change is not valid.', true); }
+    const savedDrafts = new Map(drafts);
+    try {
+      mutate(draft); const next = validateProject({ ...options.current(), product: validateProduct(draft) });
+      if (appliedGroup) for (const id of drafts.keys()) if (groupOf(id) === appliedGroup) drafts.delete(id);
+      commit(next); options.notice(text);
+    }
+    catch (error) { drafts.clear(); for (const [id, value] of savedDrafts) drafts.set(id, value); restoreDrafts(); options.notice(error instanceof Error ? error.message : 'That change is not valid.', true); }
   }
   function applySwatch(part: PartId, swatch: Swatch) {
     update(draft => {
@@ -241,6 +269,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   });
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-view]')) button.addEventListener('click', () => scene?.setView(button.dataset.view as 'front'));
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-template]')) button.addEventListener('click', () => {
+    if (hasDrafts()) { refuseDrafts(); return; }
     const current = product();
     const name = TEMPLATES.find(item => item.id === button.dataset.template)?.name ?? 'chosen';
     if (current && !window.confirm(`Replace “${current.name}” with the ${name} template? You can undo this.`)) return;
@@ -266,7 +295,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const style = draft.parts[selected];
     for (const id of partsOf(draft)) if (id !== selected) draft.parts[id] = RIB_PARTS.has(id) ? { ...structuredClone(style), material: draft.parts[id].material, print: null } : structuredClone(style);
   }, `Every part now uses the ${label(selected).toLowerCase()} style (rib trims keep their rib knit).`));
-  $('product-name').addEventListener('change', () => update(draft => { draft.name = ($('product-name') as HTMLInputElement).value; }, 'Product renamed.'));
+  $('product-name').addEventListener('change', () => update(draft => { draft.name = ($('product-name') as HTMLInputElement).value; }, 'Product renamed.', 'name'));
   $('apply-measurements').addEventListener('click', () => update(draft => {
     const value = (id: string) => Number(($(id) as HTMLInputElement).value);
     if (isBottoms(draft)) {
@@ -278,7 +307,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     draft.neckline = ($('product-neckline') as HTMLSelectElement).value as Product['neckline'];
     // Artwork that no longer fits the panel is pulled back inside rather than rejected.
     for (const art of draft.artwork) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
-  }, 'Measurements applied to the 3D garment and its pattern pieces.'));
+  }, 'Measurements applied to the 3D garment and its pattern pieces.', 'measurements'));
   // Fit: a point of measure is stored only when it differs from its proportional value.
   const fitValues = (design: Product): Record<FitKey, number> => {
     const d = teeDimensions(design);
@@ -294,8 +323,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if (Math.abs(value - proportional[key]) > 0.06) fit[key] = value;
     }
     if (Object.keys(fit).length) draft.fit = fit; else delete draft.fit;
-  }, 'Fit applied: the pattern pieces, 3D garment and tech pack follow it.'));
-  $('reset-fit').addEventListener('click', () => update(draft => { delete draft.fit; }, 'Fit is proportional to the chest again. You can undo this.'));
+  }, 'Fit applied: the pattern pieces, 3D garment and tech pack follow it.', 'fit'));
+  $('reset-fit').addEventListener('click', () => update(draft => { delete draft.fit; }, 'Fit is proportional to the chest again. You can undo this.', 'fit'));
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-leg-preset]')) button.addEventListener('click', () => update(draft => {
     legMeasurements(draft).inseam = Number(button.dataset.legPreset);
   }, `${button.getAttribute('aria-label')}: the legs, pattern and tech pack follow it.`));
@@ -329,13 +358,18 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const side = ($('artwork-side') as HTMLSelectElement).value, art = draft.artwork.find(item => item.part === side);
     if (!art) throw new Error(`Upload artwork for the ${side} first.`);
     art.widthCm = Number(($('artwork-width') as HTMLInputElement).value); art.xCm = Number(($('artwork-x') as HTMLInputElement).value); art.yCm = Number(($('artwork-y') as HTMLInputElement).value);
-  }, 'Artwork placement applied.'));
+  }, 'Artwork placement applied.', 'artwork'));
   $('remove-artwork').addEventListener('click', () => update(draft => {
     const side = ($('artwork-side') as HTMLSelectElement).value;
     if (!draft.artwork.some(art => art.part === side)) throw new Error(`There is no artwork on the ${side}.`);
     draft.artwork = draft.artwork.filter(art => art.part !== side);
   }, 'Artwork removed.'));
-  $('artwork-side').addEventListener('change', () => render(options.current(), true));
+  let artworkSide = ($('artwork-side') as HTMLSelectElement).value;
+  $('artwork-side').addEventListener('change', () => {
+    const field = $('artwork-side') as HTMLSelectElement;
+    if (hasDrafts('artwork')) { field.value = artworkSide; options.notice('Apply or discard artwork placement drafts before changing side. Your drafts are kept.', true); return; }
+    artworkSide = field.value; render(options.current(), true);
+  });
 
   // Modules: each switch is one undoable edit, and every view follows it.
   const setModules = (change: (current: ReturnType<typeof optionsOf>) => ReturnType<typeof optionsOf>, text: string) => {
@@ -365,7 +399,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Tech pack: details are part of the design; the pack itself is always derived from it.
   $('apply-spec').addEventListener('click', () => update(draft => {
     draft.spec = { styleNumber: ($('spec-style') as HTMLInputElement).value, season: ($('spec-season') as HTMLInputElement).value, sampleSize: ($('spec-size') as HTMLSelectElement).value as Size };
-  }, 'Tech pack details applied.'));
+  }, 'Tech pack details applied.', 'spec'));
   const today = () => new Date().toISOString().slice(0, 10);
   const dataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('The render could not be read.')); reader.readAsDataURL(blob); });
   $('techpack-xlsx').addEventListener('click', () => void exporting(async () => {
@@ -411,12 +445,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     update(draft => { draft.colorways!.find(c => c.id === id)!.units = Number(input.value); }, `Planned units for “${nameOf(id)}” updated.`);
   });
   $('apply-costing').addEventListener('click', () => update(draft => {
-    const prices = { ...costing(draft).fabricPrices };
-    for (const input of document.querySelectorAll<HTMLInputElement>('#fabric-prices input[data-fabric-price]')) prices[input.dataset.fabricPrice!] = Number(input.value);
     const number = (id: string) => { const value = ($(id) as HTMLInputElement).value; if (value.trim() === '') throw new Error('Fill in every costing value.'); return Number(value); };
+    const prices = { ...costing(draft).fabricPrices };
+    for (const input of document.querySelectorAll<HTMLInputElement>('#fabric-prices input[data-fabric-price]')) prices[input.dataset.fabricPrice!] = number(input.id);
     draft.costing = { currency: ($('cost-currency') as HTMLSelectElement).value as Costing['currency'], retail: number('cost-retail'), make: number('cost-make'),
       trims: number('cost-trims'), printPerArtwork: number('cost-print'), fabricPrices: prices };
-  }, 'Costing applied to the range plan.'));
+  }, 'Costing applied to the range plan.', 'costing'));
   $('pattern-dxf').addEventListener('click', () => void exporting(async () => {
     options.download(new Blob([patternDxf(product() ?? template('blank'))], { type: 'application/dxf' }), '-pattern.dxf');
   }));
@@ -469,11 +503,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         <button class="quiet" data-colorway-action="replace" data-colorway="${c.id}" aria-label="Update ${escapeHtml(c.name)} from the current styling">Update</button>
         <button class="quiet" data-colorway-action="delete" data-colorway="${c.id}" aria-label="Delete ${escapeHtml(c.name)}">Delete</button></div></div>`).join('')
       || '<p class="fine-print">No colorways yet. Style the garment, name it above and save it; then restyle and save the next.</p>';
+    if (!hasDrafts('costing')) {
     const inputs = costing(design);
     ($('cost-currency') as HTMLSelectElement).value = inputs.currency;
     for (const [id, value] of [['cost-retail', inputs.retail], ['cost-make', inputs.make], ['cost-trims', inputs.trims], ['cost-print', inputs.printPerArtwork]] as const) ($(id) as HTMLInputElement).value = String(value);
     const used = [...new Set([design.parts, ...(design.colorways ?? []).map(c => c.parts)].flatMap(parts => partsOf(design).map(id => parts[id].material)))];
-    $('fabric-prices').innerHTML = used.map(id => `<label class="field">${escapeHtml(material(id).name)} per m<input type="number" min="0" max="${LIMITS.price[1]}" step="0.01" value="${inputs.fabricPrices[id] ?? DEFAULT_COSTING.fabricPrices[id] ?? 0}" data-fabric-price="${id}"></label>`).join('');
+    $('fabric-prices').innerHTML = used.map(id => `<label class="field">${escapeHtml(material(id).name)} per m<input type="number" min="0" max="${LIMITS.price[1]}" step="0.01" value="${inputs.fabricPrices[id] ?? DEFAULT_COSTING.fabricPrices[id] ?? 0}" id="cost-price-${id}" data-fabric-price="${id}"></label>`).join('');
+    }
     $('range-table').innerHTML = rangeMarkup(design);
     void refreshThumbnails(design);
   }
@@ -524,6 +560,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="group" aria-label="Pattern pieces: ${pieces.map(p => partName(design, p.part)).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${partName(design, piece.part)}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/><text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${partName(design, piece.part)} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm</text></g>`).join('')}${handleLayer}</svg>`;
   }
   function commitFit(key: FitKey, value: number) {
+    if (hasDrafts('fit')) { options.notice('Apply or discard pending fit edits before using fit handles. Your drafts are kept.', true); return; }
     const rounded = Math.round(value * 2) / 2;
     update(draft => { draft.fit = { ...(draft.fit ?? {}), [key]: rounded }; }, `${FIT_NAMES[key]} ${rounded} cm: the pattern, 3D garment and tech pack follow it.`);
     // A refused value snaps the handle back.
@@ -535,6 +572,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const circle = (event.target as Element).closest<SVGCircleElement>('[data-fit-handle]');
     const handle = circle && handlesShown.find(item => item.key === circle.dataset.fitHandle);
     if (!circle || !handle) return;
+    if (hasDrafts('fit')) { options.notice('Apply or discard pending fit edits before using fit handles. Your drafts are kept.', true); return; }
     event.preventDefault();
     circle.setPointerCapture(event.pointerId);
     drag = { handle, circle, layer: circle.parentNode as SVGGElement, value: fitValue(product() ?? template('blank'), handle.key), moved: false };
@@ -570,12 +608,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   });
 
   function render(project: Project, sideOnly = false) {
+    const active = document.activeElement instanceof HTMLInputElement ? document.activeElement : null;
+    const selection = active && drafts.has(active.id) && active.selectionStart !== null ? [active.selectionStart, active.selectionEnd!, active.selectionDirection ?? 'none'] as const : null;
+    const finishDrafts = () => { restoreDrafts(); if (active && selection && document.activeElement === active) active.setSelectionRange(...selection); };
     const design = project.product ?? template('blank');
     if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
-    if (sideOnly) return;
+    if (sideOnly) { finishDrafts(); return; }
     $('inspector-heading').textContent = label(selected);
     const partList = partsOf(design).join();
     if ($('part-list').dataset.parts !== partList) {
@@ -624,6 +665,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${label(selected)} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }
+    finishDrafts();
   }
-  return { render: (project: Project) => render(project) };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts() };
 }
