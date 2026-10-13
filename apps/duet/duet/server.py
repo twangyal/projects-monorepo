@@ -664,7 +664,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, self._listening_state(room_id))
         if tail == '/listening/playlists/preview' and method == 'POST':
             body = self._object('selection')
-            return self._json(200, {'tracks': listening.playlist_preview(room_id, body['selection'])})
+            return self._json(200, {'tracks': listening.playlist_preview(room_id, role, body['selection'])})
         if tail == '/listening/playlists' and method == 'POST':
             body = self._object('name selection')
             if spotify is None:

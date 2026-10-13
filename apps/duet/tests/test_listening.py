@@ -11,7 +11,7 @@ import time
 import unittest
 from urllib.parse import parse_qs, urlsplit
 
-from duet.listening import ListeningStore, derive_timeline
+from duet.listening import ListeningStore, derive_recommendations, derive_timeline
 from duet.server import create_server
 from duet.spotify import SpotifyClient, SpotifyError
 from tests.fake_spotify import FakeSpotify, track
@@ -65,6 +65,35 @@ class DeriveTimelineTests(unittest.TestCase):
                      'note': '', 'createdAt': T0}])
         self.assertEqual(entries[0]['kind'], 'manual', 'a later chosen date sorts first')
         self.assertEqual(entries[1], {**entries[1], 'hidden': True, 'caption': 'Road trip'})
+
+
+class RecommendationTests(unittest.TestCase):
+    def picks(self, connected=('host', 'guest'), **kwargs):
+        values = dict(tracks={}, seen={}, likes={}, overrides={})
+        values.update(kwargs)
+        return derive_recommendations(connected=list(connected), **values)
+
+    def test_partner_favorites_and_repeats_the_other_has_not_heard_are_ranked_with_reasons(self):
+        picks = self.picks(
+            seen={('host', 'loop'): row(T0, T0 + DAY, plays=6), ('host', 'once'): row(T0), ('host', 'shared'): row(T0, plays=9),
+                  ('guest', 'shared'): row(T0), ('host', 'liked'): row(T0, plays=1), ('guest', 'mine'): row(T0, plays=4)},
+            likes={('host', 'liked'): {'addedAt': T0 + 2 * DAY, 'baseline': False},
+                   ('host', 'old-love'): {'addedAt': T0 - DAY, 'baseline': True},
+                   ('guest', 'known'): {'addedAt': T0, 'baseline': True}, ('host', 'known'): {'addedAt': T0, 'baseline': False}})
+        for_guest = [(pick['track']['id'], pick['plays'], pick['liked']) for pick in picks['guest']]
+        # Liked + 1 play (6) outranks 6 plays (6) by recency; a baseline favorite still counts; one play does not.
+        self.assertEqual(for_guest, [('liked', 1, True), ('loop', 6, False), ('old-love', 0, True)])
+        self.assertTrue(all(pick['from'] == 'host' for pick in picks['guest']))
+        self.assertEqual([pick['track']['id'] for pick in picks['host']], ['mine'], 'the guest’s repeats go to the host')
+
+    def test_hidden_songs_and_missing_partners_produce_no_picks(self):
+        seen = {('host', 'secret'): row(T0, plays=5), ('host', 'fave'): row(T0, plays=3)}
+        likes = {('host', 'fave'): {'addedAt': T0, 'baseline': False}}
+        picks = self.picks(seen=seen, likes=likes, overrides={'new-host-secret': {'hidden': True, 'caption': ''},
+                                                              'favorite-host-fave': {'hidden': True, 'caption': ''}})
+        self.assertEqual(picks['guest'], [])
+        self.assertEqual(self.picks(connected=('host',), seen=seen), {'host': [], 'guest': []},
+                         'without the other person’s history, "not heard yet" cannot be judged')
 
 
 class StorageSyncTests(unittest.TestCase):
@@ -230,7 +259,7 @@ class PlaylistTests(StorageSyncTests):
         self.store.add_manual(self.room, 'host', '2025-10-01', 'First date', 'Our song', '')
 
     def titles(self, **selection):
-        return [song['title'] for song in self.store.playlist_preview(self.room, {**EVERYTHING, **selection})]
+        return [song['title'] for song in self.store.playlist_preview(self.room, 'guest', {**EVERYTHING, **selection})]
 
     def test_selection_by_kind_dates_and_memories_skips_hidden_and_written_entries(self):
         self.build_timeline()
@@ -239,11 +268,21 @@ class PlaylistTests(StorageSyncTests):
         self.assertEqual(self.titles(kinds=['new', 'favorite'], memoriesOnly=True), ['Favourite'])
         self.assertEqual(self.titles(**{'from': '2025-10-11', 'to': '2025-10-12'}), ['Fresh'])
         self.assertEqual(self.titles(**{'from': '2030-01-01'}), [])
+        # Ada played "Hidden" once and hid it; nothing of hers qualifies yet, so no picks for Ben.
+        self.assertEqual(self.titles(kinds=['picks']), [])
+        self.play('ada', T0 + 5 * DAY, 'Repeat1', 'On repeat')
+        self.play('ada', T0 + 5 * DAY + MINUTE, 'Repeat1', 'On repeat')
+        self.clock[0] += 600
+        self.store.sync(self.client, self.room, 'host')
+        self.assertEqual(self.titles(kinds=['picks']), ['On repeat'], 'Ada’s repeats Ben has not heard')
+        for_ada = self.store.state(self.room, configured=True)['recommendations']['host']
+        self.assertEqual([(pick['track']['title'], pick['liked'], len(pick['memories'])) for pick in for_ada], [('Favourite', True, 1)],
+                         'Ben’s new favorite, with its memory, is a pick for Ada')
         for bad in [{**EVERYTHING, 'kinds': []}, {**EVERYTHING, 'kinds': ['manual']}, {**EVERYTHING, 'kinds': ['new', 'new']},
                     {**EVERYTHING, 'from': '2025-10-12', 'to': '2025-10-11'}, {**EVERYTHING, 'memoriesOnly': 1},
                     {**EVERYTHING, 'extra': True}, ['both'], {**EVERYTHING, 'to': '2025-02-30'}]:
             with self.assertRaises(Exception) as invalid:
-                self.store.playlist_preview(self.room, bad)
+                self.store.playlist_preview(self.room, 'guest', bad)
             self.assertEqual(invalid.exception.status, 400, bad)
 
     def test_creating_a_private_playlist_in_one_persons_account(self):

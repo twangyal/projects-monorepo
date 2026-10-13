@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS playlists (
 '''
 ROOM_TABLES = ('connections', 'pending', 'auth_failures', 'tracks', 'seen', 'plays', 'likes', 'overrides', 'manual',
                'song_memories', 'grants', 'playlists')
-PLAYLIST_KINDS = ('both', 'new', 'favorite')
+PLAYLIST_KINDS = ('both', 'new', 'favorite', 'picks')
+MAX_RECOMMENDATIONS = 20
 MAX_PLAYLISTS = 50
 MAX_MEMORIES = 300
 MEMORY_TARGET = re.compile(r'(?:track-[A-Za-z0-9]{1,64}|manual-[0-9a-f]{32})\Z')
@@ -106,6 +107,35 @@ def _date(value):
     if not 1900 <= parsed.year <= 2100:
         raise DomainError(400, 'Entry date must be from 1900 through 2100.')
     return value
+
+
+def derive_recommendations(*, tracks, seen, likes, overrides, connected):
+    """Songs each person might share with the other: the partner liked them or played them at least twice,
+    and this person has not been seen playing or liking them. Pure, ranked, explained by its fields."""
+    result = {role: [] for role in ROLES}
+    if set(connected) != set(ROLES):
+        return result  # Without both histories, "not heard yet" cannot be judged.
+    for to in ROLES:
+        frm = 'guest' if to == 'host' else 'host'
+        candidates = {track for (role, track) in list(seen) + list(likes) if role == frm}
+        picks = []
+        for track_id in candidates:
+            if (to, track_id) in seen or (to, track_id) in likes:
+                continue
+            if any((overrides.get(key) or {}).get('hidden') for key in (f'new-{frm}-{track_id}', f'favorite-{frm}-{track_id}')):
+                continue  # Something the partner hid from the shared timeline is not offered either.
+            row, like = seen.get((frm, track_id)), likes.get((frm, track_id))
+            plays = row['plays'] if row else 0
+            if not like and plays < 2:
+                continue
+            at = max(row['lastAt'] if row else 0, like['addedAt'] if like else 0)
+            picks.append({'track': dict(tracks.get(track_id) or {'id': track_id, 'title': 'Unknown song', 'artists': '', 'album': '',
+                                                               'url': f'https://open.spotify.com/track/{track_id}'}),
+                          'from': frm, 'plays': plays, 'liked': like is not None, 'at': at,
+                          'score': (5 if like else 0) + min(plays, 10)})
+        picks.sort(key=lambda pick: (-pick['score'], -pick['at'], pick['track']['id']))
+        result[to] = [{key: value for key, value in pick.items() if key != 'score'} for pick in picks[:MAX_RECOMMENDATIONS]]
+    return result
 
 
 def derive_timeline(*, tracks, seen, plays, likes, overrides, manual):
@@ -359,7 +389,7 @@ class ListeningStore:
             raise DomainError(400, 'Choose which timeline songs to include.')
         kinds = value['kinds']
         if type(kinds) is not list or not kinds or len(set(kinds)) != len(kinds) or any(kind not in PLAYLIST_KINDS for kind in kinds):
-            raise DomainError(400, 'Choose at least one of: songs you both played, first-time songs, new favorites.')
+            raise DomainError(400, 'Choose at least one of: songs you both played, first-time songs, new favorites, your partner\'s picks.')
         start = None if value['from'] in (None, '') else _date(value['from'])
         end = None if value['to'] in (None, '') else _date(value['to'])
         if start and end and start > end:
@@ -369,10 +399,12 @@ class ListeningStore:
         return {'kinds': kinds, 'from': start, 'to': end, 'memoriesOnly': value['memoriesOnly']}
 
     @staticmethod
-    def select_tracks(entries, selection):
-        """Visible timeline songs matching the selection, oldest first, each song once."""
+    def select_tracks(entries, selection, picks=()):
+        """Visible timeline songs (and, for 'picks', the partner's recommendations) matching the selection,
+        oldest first, each song once."""
         chosen, seen = [], set()
-        for entry in sorted(entries, key=lambda item: item['at']):
+        pool = list(entries) + [{**pick, 'kind': 'picks', 'hidden': False} for pick in picks]
+        for entry in sorted(pool, key=lambda item: item['at']):
             if entry['hidden'] or entry['kind'] not in selection['kinds']:
                 continue
             day = time.strftime('%Y-%m-%d', time.gmtime(entry['at'] / 1000))
@@ -387,9 +419,9 @@ class ListeningStore:
             chosen.append({'id': track['id'], 'title': track['title'], 'artists': track['artists']})
         return chosen
 
-    def playlist_preview(self, room_id, selection):
+    def playlist_preview(self, room_id, role, selection):
         state = self.state(room_id, configured=True)
-        return self.select_tracks(state['entries'], self.validate_selection(selection))
+        return self.select_tracks(state['entries'], self.validate_selection(selection), state['recommendations'][role])
 
     def create_playlist(self, client, room_id, role, name, selection):
         name = _text(name, 100, 'Playlist name')
@@ -404,7 +436,8 @@ class ListeningStore:
             raise DomainError(409, 'Reconnect your Spotify to allow Duet to create private playlists (a new permission).')
         if count >= MAX_PLAYLISTS:
             raise DomainError(409, f'This room has already created {MAX_PLAYLISTS} playlists.')
-        tracks = self.select_tracks(self.state(room_id, configured=True)['entries'], selection)
+        current = self.state(room_id, configured=True)
+        tracks = self.select_tracks(current['entries'], selection, current['recommendations'][role])
         if not tracks:
             raise DomainError(409, 'No timeline songs match these choices yet.')
         if len(tracks) > MAX_PLAYLIST_TRACKS:
@@ -592,6 +625,11 @@ class ListeningStore:
             entry['memories'] = by_target.get(target, [])
         hidden = sum(entry['hidden'] for entry in entries)
         visible = entries if include_hidden else [entry for entry in entries if not entry['hidden']]
+        recommendations = derive_recommendations(tracks=tracks, seen=seen, likes=likes, overrides=overrides,
+                                                 connected=[role for role in ROLES if connections[role]])
+        for picks in recommendations.values():
+            for pick in picks:
+                pick['memories'] = by_target.get(f'track-{pick["track"]["id"]}', [])
         return {'configured': configured, 'connections': connections, 'authFailures': failures,
                 'entries': visible[:MAX_TIMELINE], 'hiddenCount': hidden, 'truncated': len(visible) > MAX_TIMELINE,
-                'memories': memories, 'playlists': playlists}
+                'memories': memories, 'playlists': playlists, 'recommendations': recommendations}

@@ -16,9 +16,10 @@ export interface Playlist { id: string; role: Role; name: string; url: string; t
 export interface ListeningState {
   configured: boolean; redirectUri: string | null; connections: Record<Role, Connection | null>;
   authFailures: Partial<Record<Role, string>>; entries: Entry[]; hiddenCount: number; truncated: boolean; memories: Memory[];
-  playlists: Playlist[];
+  playlists: Playlist[]; recommendations: Record<Role, Pick[]>;
 }
-export type PlaylistKind = 'both' | 'new' | 'favorite';
+export interface Pick { track: TrackRef; from: Role; plays: number; liked: boolean; at: number; memories: Memory[] }
+export type PlaylistKind = 'both' | 'new' | 'favorite' | 'picks';
 export interface PlaylistSelection { kinds: PlaylistKind[]; from: string; to: string; memoriesOnly: boolean }
 export interface PlaylistSong { id: string; title: string; artists: string }
 type Api = <T>(path: string, method?: string, body?: unknown) => Promise<{ value: T }>;
@@ -46,6 +47,17 @@ function validPlaylist(value: unknown) {
     typeof value.tracks === 'number' && Number.isInteger(value.tracks) && value.tracks > 0 && value.tracks <= 100 && isTime(value.createdAt);
 }
 
+function validPick(value: unknown) {
+  return isRecord(value) && validTrack(value.track) && ROLES.includes(value.from as Role) && typeof value.plays === 'number' && Number.isInteger(value.plays) &&
+    value.plays >= 0 && typeof value.liked === 'boolean' && isTime(value.at) && Array.isArray(value.memories) && value.memories.every(validMemory);
+}
+
+/** Why a pick is suggested, in the participants' names. */
+export function pickReason(pick: Pick, names: Record<Role, string>): string {
+  const played = pick.plays >= 2 ? `played it ${times(pick.plays)}` : '';
+  return `${names[pick.from]} ${[pick.liked ? 'added it to Liked Songs' : '', played].filter(Boolean).join(' and ')}`;
+}
+
 export function validatePreview(value: unknown): PlaylistSong[] {
   if (!isRecord(value) || !Array.isArray(value.tracks) || !value.tracks.every(song => isRecord(song) && /^[A-Za-z0-9]{1,64}$/.test(String(song.id)) &&
     isText(song.title, 200) && isText(song.artists, 300))) throw new Error('The playlist preview was not understood. Try again.');
@@ -58,7 +70,8 @@ export function validateListening(value: unknown): ListeningState {
   if (!isRecord(value) || typeof value.configured !== 'boolean' || !Array.isArray(value.entries) || !isRecord(value.connections) ||
     !isRecord(value.authFailures) || typeof value.hiddenCount !== 'number' || typeof value.truncated !== 'boolean' ||
     !(value.redirectUri === null || isText(value.redirectUri, 300)) || !Array.isArray(value.memories) || !value.memories.every(validMemory) ||
-    !Array.isArray(value.playlists) || !value.playlists.every(validPlaylist)) fail();
+    !Array.isArray(value.playlists) || !value.playlists.every(validPlaylist) || !isRecord(value.recommendations) ||
+    !ROLES.every(role => { const picks = (value.recommendations as Record<string, unknown>)[role]; return Array.isArray(picks) && picks.length <= 20 && picks.every(validPick); })) fail();
   const state = value as unknown as ListeningState;
   for (const role of ROLES) {
     const connection = state.connections[role] as unknown;
@@ -348,6 +361,34 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     return item;
   }
 
+  function renderPicks(names: Record<Role, string>) {
+    const box = node('section', '', 'shared-picks'); box.id = 'shared-picks';
+    box.append(node('h4', 'Songs to share'));
+    if (!state!.connections.host || !state!.connections.guest) {
+      box.append(node('p', 'Once you have both connected Spotify, Duet suggests songs one of you loves that the other has not played yet.', 'fine'));
+      return box;
+    }
+    const me = context!.myRole, other: Role = me === 'host' ? 'guest' : 'host';
+    for (const to of [me, other]) {
+      const from: Role = to === 'host' ? 'guest' : 'host';
+      const group = node('div', '', 'pick-group'); group.dataset.pickFor = to;
+      group.append(node('h5', to === me ? `For you, from ${names[from]}` : `For ${names[to]}, from you`));
+      const picks = state!.recommendations[to];
+      if (!picks.length) group.append(node('p', to === me ? `Nothing yet. Songs ${names[from]} likes or plays repeatedly that you have not played will appear here.` : `Nothing yet. Songs you like or play repeatedly that ${names[to]} has not played will appear here.`, 'fine'));
+      const list = node('ul');
+      for (const pick of picks) {
+        const item = node('li'); const link = node('a', 'Open in Spotify');
+        link.href = pick.track.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        item.append(node('strong', song(pick.track)), node('span', ` · ${pickReason(pick, names)} · `, 'fine'), link);
+        list.append(item);
+      }
+      if (picks.length) group.append(list);
+      box.append(group);
+    }
+    box.append(node('p', 'Based on what Duet has seen since you connected: recent plays and Liked Songs. “Not played yet” means not seen in that history, so some may be familiar. Songs hidden from the timeline are never suggested. Make a playlist of your picks below.', 'fine'));
+    return box;
+  }
+
   function renderAllMemories() {
     const details = node('details', '', 'all-memories');
     details.open = Boolean(editing?.endsWith(':all'));
@@ -419,7 +460,8 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     };
     const name = node('input'); name.required = true; name.maxLength = 100; name.placeholder = 'Our autumn';
     const kinds: [PlaylistKind, ReturnType<typeof check>][] = [
-      ['both', check('Songs we both played', true)], ['new', check('First-time songs', true)], ['favorite', check('New favorites', true)]];
+      ['both', check('Songs we both played', true)], ['new', check('First-time songs', true)], ['favorite', check('New favorites', true)],
+      ['picks', check('Your partner’s picks for you', false)]];
     const kindSet = node('fieldset'); kindSet.append(node('legend', 'Include'), ...kinds.map(([, item]) => item.wrap));
     const from = node('input'); from.type = 'date'; from.min = '1900-01-01'; from.max = '2100-12-31';
     const to = node('input'); to.type = 'date'; to.min = '1900-01-01'; to.max = '2100-12-31';
@@ -497,16 +539,16 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
   }
 
   // Stable regions: the written-entry and playlist forms are built once so refreshes never discard a draft.
-  let regions: { connections: HTMLElement; status: HTMLElement; toolbar: HTMLElement; entries: HTMLElement; memories: HTMLElement; form: HTMLFormElement;
+  let regions: { connections: HTMLElement; status: HTMLElement; toolbar: HTMLElement; entries: HTMLElement; picks: HTMLElement; memories: HTMLElement; form: HTMLFormElement;
     playlists: ReturnType<typeof renderPlaylistPanel> } | null = null;
 
   function build() {
     container.querySelector('.timeline-body')?.remove();
     const body = node('div', '', 'timeline-body');
     const status = node('p', '', 'fine'); status.id = 'listening-status'; status.setAttribute('role', 'status');
-    regions = { connections: node('div'), status, toolbar: node('div', '', 'timeline-toolbar'), entries: node('div'), memories: node('div'), form: renderManualForm(),
+    regions = { connections: node('div'), status, toolbar: node('div', '', 'timeline-toolbar'), entries: node('div'), picks: node('div'), memories: node('div'), form: renderManualForm(),
       playlists: renderPlaylistPanel() };
-    body.append(regions.connections, regions.status, regions.toolbar, regions.entries, regions.memories, regions.playlists.details, regions.form);
+    body.append(regions.connections, regions.status, regions.toolbar, regions.entries, regions.picks, regions.memories, regions.playlists.details, regions.form);
     container.append(body);
   }
 
@@ -521,6 +563,8 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     // An open inline editor keeps its region until it is saved or closed, so drafts survive refreshes.
     if (!editing || !regions.entries.querySelector('.inline-form')) regions.entries.replaceChildren(renderEntries(names));
     if (!editing || !regions.memories.querySelector('.inline-form')) regions.memories.replaceChildren(renderAllMemories());
+    regions.picks.hidden = !state.configured;
+    regions.picks.replaceChildren(renderPicks(names));
     for (const control of container.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement>('.timeline-body button, .timeline-body input, .timeline-body textarea')) control.disabled = busy;
     refreshPlaylists(names);
   }

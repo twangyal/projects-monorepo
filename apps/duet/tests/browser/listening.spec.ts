@@ -222,6 +222,47 @@ test('a slice of the timeline becomes a private playlist in one person’s Spoti
   }
 });
 
+test('songs one person loves and the other has not played are suggested both ways and become a playlist of picks', async ({ page, browser, baseURL }) => {
+  const suffix = Date.now().toString(36);
+  const [ada, ben] = [`rada${suffix}`, `rben${suffix}`];
+  await spotify({ users: { [ada]: 'Ada Spotify', [ben]: 'Ben Spotify' }, plays: [
+    { user: ada, minutesAgo: 20, id: `Loop${suffix}`, title: 'Night Swim', artist: 'The Tides' },
+    { user: ada, minutesAgo: 10, id: `Loop${suffix}`, title: 'Night Swim', artist: 'The Tides' },
+    { user: ada, minutesAgo: 9, id: `Once${suffix}`, title: 'Played Once' },
+  ] });
+  const { guest, close } = await pair(page, browser, baseURL);
+  try {
+    await expect(section(page).locator('#shared-picks')).toContainText('Once you have both connected Spotify');
+    await connect(page, ada);
+    await connect(guest, ben);
+    await spotify({ likes: [{ user: ben, minutesAgo: 0, id: `Fave${suffix}`, title: 'Harbour Lights', artist: 'The Tides' }] });
+    await section(page).getByRole('button', { name: 'Check Spotify now' }).click();
+    const picks = section(page).locator('#shared-picks');
+    await expect(picks.locator('[data-pick-for="host"]')).toContainText('For you, from Ben');
+    await expect(picks.locator('[data-pick-for="host"]')).toContainText('“Harbour Lights” by The Tides · Ben added it to Liked Songs');
+    await expect(picks.locator('[data-pick-for="guest"]')).toContainText('For Ben, from you');
+    await expect(picks.locator('[data-pick-for="guest"]')).toContainText('“Night Swim” by The Tides · Ada played it twice');
+    await expect(picks).not.toContainText('Played Once');
+
+    // Ben makes a playlist of only his picks from Ada.
+    await guest.reload(); await expect(guest.locator('#room-view')).toBeVisible();
+    await expect(section(guest).locator('[data-pick-for="guest"]')).toContainText('For you, from Ada');
+    const panel = section(guest).locator('#timeline-playlists');
+    await panel.locator('summary').click();
+    for (const label of ['Songs we both played', 'First-time songs', 'New favorites']) await panel.getByLabel(label).uncheck();
+    await panel.getByLabel('Your partner’s picks for you').check();
+    await panel.getByLabel('Playlist name').fill('From Ada');
+    await panel.getByRole('button', { name: 'Preview songs' }).click();
+    await expect(panel.locator('#playlist-preview li')).toHaveText(['“Night Swim” by The Tides']);
+    await panel.getByRole('button', { name: 'Create in my Spotify' }).click();
+    await expect(guest.locator('#notice')).toContainText('Created “From Ada” with 1 song in your Spotify.');
+    const made = (await (await fetch(`${FAKE}/__test/playlists`)).json()).playlists.filter((item: { name: string }) => item.name === 'From Ada');
+    expect(made.map((item: { user: string; uris: string[] }) => [item.user, item.uris])).toEqual([[ben, [`spotify:track:Loop${suffix}`]]]);
+  } finally {
+    await cleanup(page); await close();
+  }
+});
+
 test('a refused Spotify approval returns to the room with an explanation and connects nothing', async ({ page, browser, baseURL }) => {
   const { close } = await pair(page, browser, baseURL);
   try {

@@ -230,3 +230,7 @@ footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1
 .order-buttons .text-button { margin-top: 6px; max-width: 95px; line-height: 1.4; }
 @media (max-width: 520px) { .saved-mix-actions > button { max-width: 100%; white-space: normal; } }
 .playlist-list a { color: #566642; }
+.shared-picks h4 { font: 18px Georgia, serif; color: #646247; margin: 0 0 8px; }
+.shared-picks h5 { margin: 12px 0 6px; font-size: 12px; color: #4d4a33; }
+.shared-picks ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.shared-picks a { color: #566642; }

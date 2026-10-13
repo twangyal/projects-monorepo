@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describe, validateListening, validatePreview, type Entry } from '../src/timeline.ts';
+import { describe, pickReason, validateListening, validatePreview, type Entry, type Pick } from '../src/timeline.ts';
 
 const track = { id: 'Song1', title: 'Our song', artists: 'The Band', album: 'Album', url: 'https://open.spotify.com/track/Song1' };
 const names = { host: 'Ada', guest: 'Ben' } as const;
-const base = { configured: true, redirectUri: 'http://127.0.0.1:8766/spotify/callback', authFailures: {}, hiddenCount: 0, truncated: false, memories: [], playlists: [],
+const base = { configured: true, redirectUri: 'http://127.0.0.1:8766/spotify/callback', authFailures: {}, hiddenCount: 0, truncated: false, memories: [], playlists: [], recommendations: { host: [], guest: [] },
   connections: { host: { displayName: 'ada', connectedAt: 1, syncedAt: 2, error: null, canCreatePlaylists: false }, guest: null } };
 const playlist = { id: 'Play1', role: 'guest', name: 'Our autumn', url: 'https://open.spotify.com/playlist/Play1', tracks: 3, createdAt: 9 };
 const both: Entry = { key: 'both-Song1', kind: 'both', at: 5, hidden: false, caption: '', memoryTarget: 'track-Song1', memories: [], track,
@@ -44,6 +44,18 @@ test('occasion playlists and previews are validated, including their links', () 
   assert.throws(() => validateListening({ ...base, entries: [], connections: { host: { ...base.connections.host, canCreatePlaylists: 'yes' }, guest: null } }), /not understood/);
   assert.deepEqual(validatePreview({ tracks: [{ id: 'Song1', title: 'Our song', artists: 'The Band' }] }), [{ id: 'Song1', title: 'Our song', artists: 'The Band' }]);
   for (const bad of [{}, { tracks: [{ id: 'a/b', title: 'x', artists: '' }] }, { tracks: [{ id: 'Song1', title: 5, artists: '' }] }]) assert.throws(() => validatePreview(bad), /not understood/);
+});
+
+test('partner picks are validated and explained in names', () => {
+  const pick: Pick = { track, from: 'host', plays: 6, liked: true, at: 3, memories: [] };
+  assert.equal(validateListening({ ...base, entries: [], recommendations: { host: [], guest: [pick] } }).recommendations.guest.length, 1);
+  for (const bad of [{ ...pick, from: 'admin' }, { ...pick, plays: -1 }, { ...pick, track: { ...track, url: 'javascript:x' } }, { ...pick, memories: 'none' }]) {
+    assert.throws(() => validateListening({ ...base, entries: [], recommendations: { host: [], guest: [bad] } }), /not understood/);
+  }
+  assert.throws(() => validateListening({ ...base, entries: [], recommendations: { host: [] } }), /not understood/);
+  assert.equal(pickReason(pick, names), 'Ada added it to Liked Songs and played it 6 times');
+  assert.equal(pickReason({ ...pick, liked: false, plays: 2 }, names), 'Ada played it twice');
+  assert.equal(pickReason({ ...pick, plays: 1, from: 'guest' }, names), 'Ben added it to Liked Songs');
 });
 
 test('wording never claims two people listened together', () => {
