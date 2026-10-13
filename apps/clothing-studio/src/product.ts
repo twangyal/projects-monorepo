@@ -328,7 +328,20 @@ export function template(id: string): Product {
 /** Flat width and length of the front (and back) body panel, in cm: half the chest plus 2 cm ease. */
 export function panelSize(m: Measurements) { return { width: m.chest / 2 + 2, length: m.length }; }
 export function sleeveSize(m: Measurements) { const armhole = m.chest * 0.23 + 4; return { capWidth: armhole * 2, cuffWidth: Math.max(28, armhole * 1.55 - m.sleeve * 0.25), length: m.sleeve }; }
-export function neckSize(m: Measurements, neckline: Product['neckline']) { const neck = m.chest * 0.41 + 6; return { length: neckline === 'v' ? neck + 6 : neck, width: 2 }; }
+export const NECK_RIB_RATIO = 0.85;
+/** Neck sewing path from right to left, matching the flat pattern's eight-segment crew curve. */
+function neckPath(half: number, depth: number, v: boolean): { x: number; y: number }[] {
+  if (v) return [{ x: half, y: 0 }, { x: 0, y: depth }, { x: -half, y: 0 }];
+  return Array.from({ length: 9 }, (_, i) => { const t = Math.PI * i / 8; return { x: half * Math.cos(t), y: i === 0 || i === 8 ? 0 : depth * Math.sin(t) }; });
+}
+/** Flat rib sewing length: edited front + back opening, with an explicit 15% reduction assumption. */
+export function neckSize(m: Measurements, neckline: Product['neckline'], fit: Fit = {}) {
+  const half = (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2;
+  const front = neckPath(half, fit.frontNeckDrop ?? (neckline === 'v' ? 15 : 8), neckline === 'v');
+  const back = neckPath(half, 2, false);
+  const length = [front, back].reduce((sum, path) => sum + path.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - path[i].x, p.y - path[i].y), 0), 0);
+  return { length: length * NECK_RIB_RATIO, width: 2 };
+}
 
 export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
@@ -342,7 +355,7 @@ export function teeDimensions(product: Product) {
     hemHalf: (fit.hemWidth ?? panel.width) / 2,
     // Long sleeves taper to a rib cuff; tee sleeves stay open and wide. The cap follows the armhole.
     cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: (armDepth + 2) * 2,
-    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
+    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline, fit).length,
     band: product.base === 'tee' ? 0 : BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
     hoodHeight: 32, hoodHalf: 13, pocketTop: m.length - BAND_CM - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
@@ -455,7 +468,7 @@ function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
   if (isBottoms(product)) return trouserPieces(product);
-  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), neck = neckSize(m, product.neckline);
+  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m);
   const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   // The side seams run from the underarm to the hem width; a body cut above a hem band ends where they cross the band.
   const armY = shoulderDrop + armDepth, hemInset = (y: number) => (half - dims.hemHalf) * (y - armY) / (panel.length - armY);
@@ -466,8 +479,7 @@ export function patternPieces(product: Product): PatternPiece[] {
     const pts = [{ x: half - neckWidth, y: 0 }, { x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: armY },
       ...hem, { x: w, y: armY }, { x: w - scoop, y: shoulderDrop + armDepth * 0.55 }, { x: w - shoulder, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
     // Neckline: a curve for crew/back, a straight V for v-neck fronts.
-    if (front && product.neckline === 'v') pts.push({ x: half, y: neckDepth });
-    else for (let i = 1; i < 8; i++) { const t = Math.PI * i / 8; pts.push({ x: half + neckWidth * Math.cos(t), y: neckDepth * Math.sin(t) }); }
+    pts.push(...neckPath(neckWidth, neckDepth, front && product.neckline === 'v').slice(1, -1).map(p => ({ x: half + p.x, y: p.y })));
     // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
     return pts.map(p => ({ x: p.x + flare(product), y: p.y }));
   };
@@ -485,7 +497,7 @@ export function patternPieces(product: Product): PatternPiece[] {
   });
   const modules = optionsOf(product).chestPocket ? [make('chestPocket', chestPocket(), 1)] : [];
   if (product.base === 'tee') {
-    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1), ...modules];
+    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1), ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band;
@@ -497,7 +509,7 @@ export function patternPieces(product: Product): PatternPiece[] {
     return pts;
   };
   pieces.push(make('sleeveLeft', sleeveOutline(), 1), make('sleeveRight', sleeveOutline(), 1));
-  if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(neck.length, neck.width * 2), 1));
+  if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1));
   // Rib trims are cut about 15% shorter than the edge they finish so they hug it.
   pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1),
     make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
