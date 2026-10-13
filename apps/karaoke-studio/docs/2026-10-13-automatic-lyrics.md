@@ -107,6 +107,6 @@ Python 3.11, Node.js 22, Chromium 141 via `CHROMIUM_PATH`.
 
 ## Not established
 
-- **Language and material.** Languages other than English are not supported by this model. The evaluation covers 20 songs only; subjective correction effort with real users has not been measured.
+- **Language and material.** This model is English-only; other European languages were added later with a second model (see [the multilingual evaluation](2026-10-13-multilingual-lyrics.md)). The evaluation covers 20 songs only; subjective correction effort with real users has not been measured.
 - **Line breaks.** They follow pauses in the singing, not the songwriter's lines. Merge and Split remain the correction tools.
 - **Excluded content.** Archives exclude recognized words. Songs over five minutes remain unsupported.

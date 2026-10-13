@@ -1,6 +1,6 @@
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
-import { parseAlignment, parseTranscript, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
+import { parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
 import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
@@ -501,7 +501,7 @@ function autoControls() {
   else if (!current) status.textContent = 'Checking for recognized lyrics…';
   else if (current.available) {
     const unsure = unsureSummary(current.cues);
-    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.`;
+    status.textContent = `${current.words.toLocaleString('en-US')} words were recognized from the separated vocals by ${recognizerName(current.model)}${current.cues.length ? ` and grouped into ${current.cues.length} lines` : ''}. Recognition of singing makes mistakes${unsure ? `; it was least sure about automatic ${unsure}, so listen to those first` : ''}. Correct words and timing as needed. Pasted lyrics are aligned to these words.`;
   }
   else status.textContent = session?.lyricsModelReady ? 'This clip has no recognized lyrics yet. Transcribe lyrics listens to its separated vocals locally.'
     : 'Automatic lyrics need the local lyric recognition model. Run scripts/setup_lyrics_model.py with this studio’s model directory, refresh this page, then transcribe this clip.';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAlignment, parseTranscript, uncertainSummary, unsureSummary, type AlignedCue } from '../src/auto-lyrics.ts';
+import { parseAlignment, parseTranscript, recognizerName, uncertainSummary, unsureSummary, type AlignedCue } from '../src/auto-lyrics.ts';
 import { draftLines } from '../src/lyrics.ts';
 
 const cue = (start: number, end: number, text: string, matched?: number) => (matched === undefined ? { start, end, text } : { start, end, text, matched });
@@ -12,6 +12,9 @@ test('transcript replies are validated like saved lyrics before they can be revi
   const parsed = parseTranscript(reply, 30);
   assert.deepEqual(parsed, reply);
   assert.equal(parsed.available && unsureSummary(parsed.cues), 'line 2');
+  assert.equal(recognizerName(reply.model), 'the English recognition model');
+  assert.equal(recognizerName('parakeet-tdt-0.6b-v3-int8+silero-vad'), 'the multilingual recognition model');
+  assert.equal(recognizerName('something-else'), 'the local recognition model');
   for (const bad of [{ available: false, extra: 1 }, { ...reply, words: -1 }, { ...reply, cues: [recognized(3, 1, 'backwards', 1)] }, { ...reply, cues: [recognized(1, 40, 'past the clip', 1)] },
     { ...reply, cues: [{ ...cue(1, 2, 'x'), matched: 1 }] }, { ...reply, cues: [cue(1, 2, 'no confidence')] }, { ...reply, cues: [recognized(1, 2, 'x', 2)] }, { ...reply, cues: [recognized(1, 2, '', 1)] }, { ...reply, extra: true }, [], null]) {
     assert.throws(() => parseTranscript(bad, 30), /unreadable|Line 1|between/);
