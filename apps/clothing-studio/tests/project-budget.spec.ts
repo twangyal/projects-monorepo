@@ -1,3 +1,4 @@
+import { pngUrl } from './helpers/raster.ts';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
@@ -8,12 +9,13 @@ test('canonical budget rejects a compact backup whose pretty export exceeds 6 Mi
   await page.getByLabel('Concept name', { exact: true }).fill('Original complete work');
   async function backup() { const wait = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export project backup', exact: true }).click(); return JSON.parse((await readFile((await (await wait).path())!)).toString()); }
   const before = await backup(), incoming = structuredClone(before);
-  // Schema-budget fixture only: deliberately not an image-decode/visual-admission claim.
-  incoming.product.motifs = Array.from({ length: 6 }, (_, i) => ({ id: `m${i}`, name: 'motif', dataUrl: 'data:image/png;base64,' + 'A'.repeat(500000), width: 768, height: 768 }));
-  incoming.product.artwork = ['front', 'back'].map(part => ({ part, dataUrl: 'data:image/png;base64,' + 'A'.repeat(1500000), width: 1024, height: 1024, name: 'art', xCm: 0, yCm: 10, widthCm: 20 }));
+  // Genuine PNG containers padded to exercise the canonical graph budget.
+  incoming.product.motifs = Array.from({ length: 6 }, (_, i) => ({ id: `m${i}`, name: 'motif', dataUrl: pngUrl(768,768,500000), width: 768, height: 768 }));
+  incoming.product.artwork = ['front', 'back'].map(part => ({ part, dataUrl: pngUrl(1024,1024,1500000), width: 1024, height: 1024, name: 'art', xCm: 0, yCm: 10, widthCm: 20 }));
   const encoded = (text: string) => new TextEncoder().encode(text).length;
   const cap = 6 * 1024 * 1024;
-  incoming.product.artwork[0].dataUrl += 'A'.repeat(cap + 4 - encoded(JSON.stringify(incoming, null, 2)));
+  incoming.note += 'a'.repeat((cap + 4 - encoded(JSON.stringify(incoming, null, 2))) % 4);
+  incoming.product.artwork[0].dataUrl = pngUrl(1024,1024,1500000 + cap + 4 - encoded(JSON.stringify(incoming, null, 2)));
   const compact = JSON.stringify(incoming);
   expect(encoded(compact)).toBeLessThan(cap);
   expect(encoded(JSON.stringify(incoming, null, 2))).toBe(cap + 4);

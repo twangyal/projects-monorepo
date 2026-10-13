@@ -1,3 +1,4 @@
+import { pngUrl } from './helpers/raster.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inflateRawSync } from 'node:zlib';
@@ -48,7 +49,7 @@ test('the tech pack is derived from the design: fabrics with consumption, trims,
   const large = buildTechPack({ ...product, spec: { ...product.spec!, sampleSize: 'L' } }, '2026-10-13');
   assert.equal(large.poms[0].values.L, chest.values.M);
   // V-neck and artwork show up where a factory needs them.
-  const v = buildTechPack({ ...product, neckline: 'v', artwork: [{ part: 'back', dataUrl: 'data:image/png;base64,AAAA', width: 200, height: 100, name: 'logo.png', xCm: 0, yCm: 12, widthCm: 20 }] }, '2026-10-13');
+  const v = buildTechPack({ ...product, neckline: 'v', artwork: [{ part: 'back', dataUrl: pngUrl(200,100), width: 200, height: 100, name: 'logo.png', xCm: 0, yCm: 12, widthCm: 20 }] }, '2026-10-13');
   assert.equal(v.poms.find(p => p.code === 'G')!.values.M, 15);
   assert.match(v.construction.find(c => c.area === 'Neck rib')!.detail, /Mitred/);
   const art = v.bom.find(row => row.item.startsWith('A'))!;

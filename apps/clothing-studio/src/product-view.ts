@@ -1,3 +1,4 @@
+import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
@@ -223,14 +224,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     try {
       if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Choose a PNG, JPEG or WebP image of at most 10 MB.');
       if ((product()?.motifs?.length ?? 0) >= LIMITS.motifs) throw new Error(`Keep at most ${LIMITS.motifs} uploaded motifs; remove one first.`);
-      bitmap = await createImageBitmap(file);
+      bitmap = await decodeProductFile(file);
       if (!owned()) return;
       let edge = Math.min(768, Math.max(bitmap.width, bitmap.height)), dataUrl = '', width = 0, height = 0;
-      for (; edge >= 64; edge = Math.round(edge * 0.75)) {
+      for (;;) {
         const scale = edge / Math.max(bitmap.width, bitmap.height), c = document.createElement('canvas');
         width = c.width = Math.max(1, Math.round(bitmap.width * scale)); height = c.height = Math.max(1, Math.round(bitmap.height * scale));
         c.getContext('2d')!.drawImage(bitmap, 0, 0, width, height); dataUrl = c.toDataURL('image/png');
-        if (dataUrl.length <= LIMITS.motifBytes * 1.33) break;
+        if (dataUrl.length <= LIMITS.motifBytes * 1.33 || edge <= 64) break;
+        edge = Math.max(64, Math.round(edge * 0.75));
       }
       if (dataUrl.length > LIMITS.motifBytes * 1.33) throw new Error('That image is too detailed to use as a motif; try a simpler or smaller one.');
       const name = file.name.replace(/\.[^.]+$/, '').slice(0, 60) || 'Uploaded motif';
@@ -338,14 +340,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const side = ($('artwork-side') as HTMLSelectElement).value as Artwork['part'];
     try {
       if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 10 * 1024 * 1024) throw new Error('Choose a PNG, JPEG or WebP image of at most 10 MB.');
-      bitmap = await createImageBitmap(file);
+      bitmap = await decodeProductFile(file);
       if (!owned()) return;
       let edge = Math.min(1024, Math.max(bitmap.width, bitmap.height)), dataUrl = '', width = 0, height = 0;
-      for (; edge >= 128; edge = Math.round(edge * 0.75)) {
+      for (;;) {
         const scale = edge / Math.max(bitmap.width, bitmap.height), c = document.createElement('canvas');
         width = c.width = Math.max(1, Math.round(bitmap.width * scale)); height = c.height = Math.max(1, Math.round(bitmap.height * scale));
         c.getContext('2d')!.drawImage(bitmap, 0, 0, width, height); dataUrl = c.toDataURL('image/png');
-        if (dataUrl.length <= LIMITS.artworkBytes * 1.33) break;
+        if (dataUrl.length <= LIMITS.artworkBytes * 1.33 || edge <= 128) break;
+        edge = Math.max(128, Math.round(edge * 0.75));
       }
       update(draft => {
         draft.artwork = draft.artwork.filter(art => art.part !== side);

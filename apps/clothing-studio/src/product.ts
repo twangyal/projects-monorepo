@@ -1,3 +1,4 @@
+import { validateRasterHeader } from './media.ts';
 // Product designs: a base garment built from named parts, each styled with a fabric, color and optional
 // repeat print, plus placed artwork. Pure data, geometry and validation; rendering lives in product-3d.ts.
 
@@ -171,6 +172,7 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
   if (typeof a.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(a.dataUrl) || a.dataUrl.length > LIMITS.artworkBytes * 1.4) fail('Artwork must be a PNG, JPEG or WebP image of at most 1.5 MB.');
   const width = finite(a.width, [1, 4096], 'Artwork pixel width'), height = finite(a.height, [1, 4096], 'Artwork pixel height');
   if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Artwork pixel size must be whole numbers.');
+  validateRasterHeader({dataUrl:a.dataUrl as string,width,height}, LIMITS.artworkBytes, 4096);
   if (typeof a.name !== 'string' || a.name.length > 120) fail('Artwork name must be at most 120 characters.');
   const panel = panelSize(measurements);
   const widthCm = finite(a.widthCm, LIMITS.artworkWidthCm, 'Artwork width (cm)');
@@ -220,6 +222,7 @@ function validateMotifs(value: unknown): UploadedMotif[] {
     if (typeof m.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(m.dataUrl) || m.dataUrl.length > LIMITS.motifBytes * 1.4) fail('A motif must be a PNG, JPEG or WebP image of at most 600 KB.');
     const width = finite(m.width, [1, 2048], 'Motif pixel width'), height = finite(m.height, [1, 2048], 'Motif pixel height');
     if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Motif pixel size must be whole numbers.');
+    validateRasterHeader({dataUrl:m.dataUrl as string,width,height}, LIMITS.motifBytes, 2048);
     const name = plainText(m.name, 60, 'Motif name');
     return { id: m.id as string, name: name || 'Uploaded motif', dataUrl: m.dataUrl as string, width, height };
   });

@@ -1,3 +1,4 @@
+import { pngUrl } from './helpers/raster.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
@@ -87,7 +88,7 @@ test('repeat layouts place four motifs per tile with the documented offsets', ()
 test('uploaded motifs are validated, referenced by prints and named in the tech pack', async () => {
   const { buildTechPack } = await import('../src/techpack.ts');
   const { printName } = await import('../src/product.ts');
-  const png = 'data:image/png;base64,iVBORw0KGgo=';
+  const png = pngUrl(64,64);
   const base = ringer(), motif = { id: 'm1', name: 'Star', dataUrl: png, width: 64, height: 64 };
   const design = validateProduct({ ...base, motifs: [motif], parts: { ...base.parts, front: { ...base.parts.front, print: { motif: 'upload:m1', color: '#000000', scaleCm: 8, layout: 'half-drop' } } } });
   assert.equal(printName(design.parts.front.print!, design), 'Star');

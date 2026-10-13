@@ -10,7 +10,8 @@ import {
   type Project, type Point, type Stroke, type Placement,
 } from './model.ts';
 import { garmentSvg, previewSize, previewSvg, exportPng, exportGarmentSvg } from './graphics.ts';
-import { importPhoto, validatePhoto } from './media.ts';
+import { importPhoto } from './media.ts';
+import { validateProjectImages } from './project-media.ts';
 import { loadProject, saveProject } from './storage.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -312,7 +313,7 @@ input('project-file').addEventListener('change', async () => {
   try {
     if (file.size > MAX_PROJECT_BYTES) throw new Error('Project backup exceeds 6 MiB.');
     const text = await file.text(); if (generation !== loadGeneration) return;
-    const restored = parseProject(text); await validatePhoto(restored.photo);
+    const restored = parseProject(text); await validateProjectImages(restored);
     if (generation !== loadGeneration) return;
     adoptLoad(generation, () => restored, 'Project backup restored. Undo returns to your previous concept.', true);
   } catch (error) {
