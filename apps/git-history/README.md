@@ -4,7 +4,7 @@ A local evidence explorer for unfamiliar code, with a command line and browser w
 
 You can also explicitly compare two committed source selections, including different paths or functions, with exact line changes and portable comparison exports.
 
-The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, fetch PR discussions, or send source to a service. Commit messages are quoted author statements; a patch alone does not explain why a change was made.
+The tool organizes Git evidence. It does **not** invent author intent, generate semantic AI explanations, or send source to a service. Only when you ask (`--fetch-discussions` or the workbench checkbox) does it contact GitHub, to quote the pull-request discussion behind the report's commits; see [Retrieve pull-request discussion](#retrieve-pull-request-discussion). Commit messages are quoted author statements; a patch alone does not explain why a change was made.
 
 ## Run
 
@@ -29,6 +29,33 @@ For automation:
 python3 -m git_history explain --repo /path/to/repository \
   --file src/example.py --lines 20:45 --format json > report.json
 ```
+
+### Retrieve pull-request discussion
+
+Commit messages are often short. The reasons behind a change are frequently in its pull request: the description, reviewers' questions and answers, and the issue it fixed. Add `--fetch-discussions` to bring that discussion into the report:
+
+```sh
+python3 -m git_history explain --repo /path/to/repository \
+  --file src/example.py --lines 20:45 --fetch-discussions --output report.html
+```
+
+In the browser workbench, tick **Fetch GitHub pull-request discussion for the report's commits** before **Generate report**.
+
+How it works:
+
+- It needs a `github.com` origin remote. Only commits already shown in the report are looked up: range changes first (newest first), then other attributed commits, at most **12**. It uses GitHub's documented "pull requests associated with a commit" endpoint, so squash and rebase merges are found too. Commits pushed directly have no pull request, and the report says how many had one.
+- For each pull request (at most **8**), the report quotes:
+  - its description;
+  - **review comments on the selected file** (or its earlier paths), shown first and highlighted;
+  - written review summaries and conversation comments, up to **30** in total, with the remainder counted and linked;
+  - up to **3 issues it says it closes** (`Fixes #N`, `Closes #N`, `Resolves #N`, same repository).
+
+  Empty approvals are skipped. Every text is limited to 4,000 characters, and truncation is marked.
+- The synopsis gains **Retrieved pull-request discussion**, showing each pull request's title, merge date, first description paragraph, review comments on this file and closed issues. Timeline commits link to their pull request. The JSON report gains `retrieved_discussions` and `synopsis.discussions`. Reports made without the option keep their exact previous shape.
+- Everything retrieved is labelled as **quoted participant text that is not verified**: it can state reasons, but the tool does not establish intent, and discussions may be incomplete or later edited. The report records the retrieval time.
+- Links are accepted only when they point at this repository's pull requests, comments, reviews and issues on `https://github.com`; anything else is dropped and counted. Text renders escaped.
+- Public repositories work without credentials, within GitHub's unauthenticated rate limit of 60 requests an hour (a report makes 12 commit lookups plus at most 6 requests per pull request, usually far fewer than 60). Set `GITHUB_TOKEN` in the environment of the command or the `serve` process to raise the limit or read a private repository. The token is sent only to `api.github.com` and never written into reports.
+- Rate limits, refusals, timeouts (15 s per request, 60 s overall, and within the workbench's 45 s job budget, so **Stop** still works) and malformed replies stop further lookups. Discussion already retrieved is kept, and the report explains what was skipped. Without a GitHub origin the command refuses with exit status 2.
 
 ### Browse in the local workbench
 

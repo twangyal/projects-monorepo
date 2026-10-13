@@ -15,6 +15,7 @@ from .changed_files import list_changed_files, render_changed_files_json
 from .comparison import CompareSelection, CompareTarget, compare_repository
 from .comparison_render import render_comparison_html, render_comparison_json
 from .context import ContextRecords, load_context
+from .discussions import API_URL, DiscussionError, attach_discussions, retrieve_discussions
 from .reader import inspect_repository, list_files, list_functions
 from .render import MAX_REPORT_BYTES, render_html, render_json
 from .runner import GitError, GitRunner
@@ -98,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     serve = commands.add_parser("serve", help="Open a read-only local browser workbench for one repository.")
     serve.add_argument("--repo", required=True, help="Fixed local repository path.")
     serve.add_argument("--port", type=int, default=0, help="Loopback port, 0–65535 (default: OS assigned).")
+    serve.add_argument("--github-api", default=API_URL, help=argparse.SUPPRESS)
     for command in (explain, functions, files):
         command.add_argument("--repo", default=".", help="Local repository path (default: current directory).")
         command.add_argument("--ref", default="HEAD", help="Committed revision (default: HEAD).")
@@ -111,6 +113,10 @@ def main(argv: list[str] | None = None) -> int:
     selection.add_argument("--function", metavar="QUALIFIED_NAME", help="Exact qualified function name from the functions command.")
     explain.add_argument("--max-commits", type=int, default=20, help="At most 1–50 range-changing commits (default: 20).")
     explain.add_argument("--context", metavar="FILE", help="Optional local JSON of unverified discussion excerpts for represented commits.")
+    explain.add_argument("--fetch-discussions", action="store_true",
+                         help="Contact GitHub to retrieve pull-request discussion for report commits (github.com origins only). "
+                              "Uses GITHUB_TOKEN from the environment if set.")
+    explain.add_argument("--github-api", default=API_URL, help=argparse.SUPPRESS)
     explain.add_argument("--format", choices=("html", "json"), default="html")
     explain.add_argument("--output", help="Report file; omitted or '-' writes to stdout.")
     explain.add_argument("--force", action="store_true", help="Replace an existing report output file.")
@@ -210,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 if threading.current_thread() is threading.main_thread():
                     original_term = signal.signal(signal.SIGTERM, terminate)
-                server = create_server(args.repo, args.port)
+                server = create_server(args.repo, args.port, github_api=args.github_api)
                 print(server.url, flush=True)
                 server.serve_forever()
             except KeyboardInterrupt:
@@ -258,6 +264,9 @@ def main(argv: list[str] | None = None) -> int:
         report = inspect_repository(args.repo, args.file, *(args.lines or (None, None)),
                                     ref=args.ref, max_commits=args.max_commits,
                                     function=args.function)
+        if args.fetch_discussions:
+            attach_discussions(report, retrieve_discussions(report, api_url=args.github_api,
+                                                            token=os.environ.get("GITHUB_TOKEN")))
         context = load_context(args.context, report) if args.context is not None else None
         if isinstance(context, ContextRecords):
             report.supplied_context = context
@@ -271,6 +280,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except BrokenPipeError:
         return 1
-    except (GitError, ValueError, OSError, UnicodeError, WorkBudgetError) as error:
+    except (GitError, ValueError, OSError, UnicodeError, WorkBudgetError, DiscussionError) as error:
         print(f"Git history: {error}", file=sys.stderr)
         return 2

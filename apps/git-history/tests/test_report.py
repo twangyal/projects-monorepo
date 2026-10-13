@@ -102,6 +102,8 @@ class ReportTests(unittest.TestCase):
         report = example_report()
         expected = asdict(report)
         expected.pop('supplied_context')
+        # Reports without opt-in discussion retrieval keep their original JSON shape.
+        expected.pop('retrieved_discussions')
         expected["synopsis"] = build_synopsis(report)
         self.assertEqual(json.loads(render_json(report)), expected)
 

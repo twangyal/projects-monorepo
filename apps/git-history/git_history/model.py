@@ -107,6 +107,58 @@ class SuppliedContext:
 
 
 @dataclass
+class RetrievedComment:
+    kind: str  # 'file-review-comment', 'review', 'conversation'
+    author: str
+    url: str
+    created_at: str
+    excerpt: str
+    truncated: bool
+    path: str | None = None
+    line: int | None = None
+
+
+@dataclass
+class RetrievedIssue:
+    number: int
+    url: str
+    title: str
+    author: str
+    state: str
+    excerpt: str
+    truncated: bool
+
+
+@dataclass
+class RetrievedPull:
+    number: int
+    url: str
+    title: str
+    author: str
+    state: str
+    merged_at: str | None
+    created_at: str
+    commits: list[str]
+    description: str
+    description_truncated: bool
+    comments: list[RetrievedComment] = field(default_factory=list)
+    linked_issues: list[RetrievedIssue] = field(default_factory=list)
+    omitted_comments: int = 0
+
+
+@dataclass
+class RetrievedDiscussions:
+    provider: str
+    repository: str
+    retrieved_at: str
+    provenance: str
+    commits_checked: list[str]
+    commits_without_pulls: list[str]
+    pulls: list[RetrievedPull]
+    notes: list[str]
+
+
+@dataclass
 class Report:
     repo_name: str
     revision: str
@@ -123,3 +175,4 @@ class Report:
     schema_version: int = 1
     selected_function: str | None = None
     supplied_context: list[SuppliedContext] | None = None
+    retrieved_discussions: RetrievedDiscussions | None = None
