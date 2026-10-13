@@ -109,4 +109,3 @@ test('a clip without recognized lyrics explains itself, keeps even draft spacing
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-
