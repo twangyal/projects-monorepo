@@ -37,6 +37,31 @@ There is no backend, API key, paid service, model download, or runtime network i
 
 Saved looks preserve snapshots of their pieces, including referenced photos. Later wardrobe edits or deletions do not rewrite the saved look. Removing a look leaves its independent preference example available to correct/delete. Deletions and profile replacement require confirmation; session Undo/Redo supports reversing successful edits. Wear entries belong to the independent saved look and survive changes to the current wardrobe. Dates use real Gregorian YYYY-MM-DD values (years 0001–9999); notes allow 500 characters, occasion 80, with at most 20 entries per look and 100 across the profile. Existing profiles without diaries retain their original fields; optional diary records travel in complete JSON backups and local recovery. Older app versions will reject the added fields and protect their saved copy rather than silently dropping diary data.
 
+## Read colors from your photos
+
+When you choose a **Reference photo** for a piece, Style Studio reads its colors locally and shows **Colors read from this photo**:
+- up to three main colors, with approximate names and shares of the garment;
+- a **Suggested palette** with its reason, for example: "Main color navy (62% of the piece): green-to-blue-to-violet hue."
+
+**Use suggested palette** applies the suggestion to the form; your tag is never changed otherwise. Save the piece as usual.
+
+When you **Assess chosen outfit**, **How the colors work together** compares the main colors of the pieces that have photos:
+- light–dark contrast (strong, moderate or tonal);
+- hue relations between colored pieces (analogous, complementary or contrasting);
+- neutral anchors, and whether the look is all-neutral or has a single color accent.
+
+How it works and its limits:
+
+- The background is estimated from the photo's border and removed; the remaining pixels are grouped into at most three colors in CIELAB space. Everything happens in your browser, and nothing is stored: readings are recomputed from the saved photos, so profiles and backups are unchanged.
+- Palette rules:
+  - **neutral** when saturation is very low;
+  - **bright** when highly saturated at medium lightness;
+  - otherwise **warm** (red to yellow hues) or **cool** (green to blue to violet).
+- These are fixed color rules, not learned recognition or a judgement of taste, and they are separate from your fitted preference model.
+- A garment the same color as its backdrop (white on white) cannot be separated, and the panel says so. Lighting, shadows, patterns and busy backgrounds affect readings. Photograph pieces flat on a plain, contrasting surface for the most useful result, and keep your own tag when it looks wrong.
+
+See [color reading verification](docs/2026-10-13-photo-colors.md).
+
 ## What the model and rules do
 
 The learner uses fourteen declared attributes: four palettes, three fits, four styles, and three formality levels. Tagged examples have one active value in each group; saved outfit examples average the three pieces' vectors. It fits class-balanced, L2-regularized logistic regression in 600 deterministic full-batch steps. Trained parameters are derived again from validated examples rather than stored as trusted imported model weights.
