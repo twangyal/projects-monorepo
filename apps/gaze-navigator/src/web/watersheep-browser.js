@@ -42,7 +42,8 @@ export async function loadWaterSheepInBrowser({ runtimeBase, progress = () => {}
   // Only the wasm binary is a separate file; the bundle carries its own glue code (no dynamic imports).
   ort.env.wasm.wasmPaths = { wasm: `${runtimeBase}ort-wasm-simd-threaded.wasm` };
   ort.env.logLevel = 'error';
-  ort.env.wasm.numThreads = 1;
+  // Threads need cross-origin isolation (the extension's model page has it); ordinary pages run single-threaded.
+  ort.env.wasm.numThreads = globalThis.crossOriginIsolated ? Math.min(4, globalThis.navigator?.hardwareConcurrency || 1) : 1;
   ort.env.wasm.proxy = false;
   const base = `https://huggingface.co/${WATERSHEEP_MODEL.repository}/resolve/${WATERSHEEP_MODEL.revision}/`;
   const json = async path => { const response = await fetch(base + path); if (!response.ok) throw new Error(`The matching model's ${path} could not be downloaded (${response.status}).`); return response.json(); };

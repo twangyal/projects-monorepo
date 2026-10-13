@@ -146,7 +146,7 @@ A live bug found and fixed on the way: the runtime tried to import a separate gl
 
 ## Remaining limits
 
-- In-browser latency of 1.3–3.5 s per assisted instruction is noticeable. Threaded wasm needs cross-origin isolation, which neither ordinary pages nor this extension enable yet.
+- In-browser latency is noticeable. In the extension, the pages are now cross-origin isolated (`cross_origin_embedder_policy: require-corp`, `cross_origin_opener_policy: same-origin`), so ONNX Runtime uses up to 4 wasm threads. A benchmark in an extension page measured the median `decide` call at **1.13–1.20 s with 1 thread and 0.62–0.72 s with 4 threads**, over two runs each. The live extension still downloads, verifies and acts under isolation. The practice site, served without isolation headers, stays single-threaded.
 
 
 - The suites are described contexts, not live pages. Real-site and real-speech evaluation with intended users is still outstanding.

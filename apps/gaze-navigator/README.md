@@ -78,7 +78,7 @@ Model calls take about 0.36 s. First scorings found unsafe picks, which led to s
 Measured live in Chromium on 4 CPU cores:
 
 - the first enable takes about 7–12 s (download included), and later enables about 3 s from cache;
-- each model-assisted instruction takes 1.3–3.5 s, because single-threaded wasm is slower than Node. See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
+- each model-assisted instruction takes 1.3–3.5 s on the practice site, which is single-threaded. In the extension, isolated pages use 4 wasm threads, about halving each model call (0.6–0.7 s against 1.1–1.2 s). See [the WaterSheep notes](docs/2026-10-13-watersheep.md).
 
 Components stay separate so each can be replaced: tracking (`overlay.js` pointer input, `camera-gaze.js` webcam session and `calibration.js` hands-free calibration), context (`page-context.js`), interpretation (`interpreter.js`, a deterministic rule baseline behind a `interpret(utterance, context) → action` contract), coordination (`controller.js`) and execution (`page-actions.js`). Speech uses the browser's Web Speech API (`speech-input.js`).
 
