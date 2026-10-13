@@ -40,11 +40,13 @@ export function writeValue(element, value) {
   }
 }
 
-export function activate(element, name) {
+export function activate(element, name, { preserveFocus = false } = {}) {
   const problem = linkProblem(element);
   if (problem) return { ok: false, message: problem };
-  element.focus({ preventScroll: true });
-  if (element.matches('input:not([type=button]):not([type=submit]):not([type=reset]):not([type=image]):not([type=checkbox]):not([type=radio]), textarea, [contenteditable=""], [contenteditable="true"]')) {
+  // Keyboard commands can select blur-dismissed suggestions without moving website focus.
+  const editable = element.matches('input:not([type=button]):not([type=submit]):not([type=reset]):not([type=image]):not([type=checkbox]):not([type=radio]), textarea, [contenteditable=""], [contenteditable="true"]');
+  if (!preserveFocus || editable) element.focus({ preventScroll: true });
+  if (editable) {
     return { ok: true, message: `${name || 'Field'} is ready for dictation.` };
   }
   element.click();

@@ -49,7 +49,7 @@ export function createController({ window, actions = pageActions, interpret = in
     }
     let result;
     switch (action.type) {
-      case 'activate': result = actions.activate(element, target.name); break;
+      case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'submit': result = actions.submit(element); break;
       case 'select-option': result = actions.selectOption(element, action.optionIndex); break;
       case 'search': {
