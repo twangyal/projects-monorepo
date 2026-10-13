@@ -1,4 +1,5 @@
 """Literal Pillow lyric cards and bounded, local FFmpeg video exports."""
+import functools
 import math
 import os
 from pathlib import Path
@@ -16,6 +17,7 @@ from .limits import (MAX_CARD_BYTES, MAX_CARDS, MAX_VIDEO_BYTES, MAX_VIDEO_FRAME
                      SAMPLE_RATE, VIDEO_TIMEOUT)
 from .model import ValidationError, validate_project
 from .media_io import media_handles
+from .lyrics_auto import sung_count, word_timings
 
 WIDTH, HEIGHT, FPS = 1280, 720, 24
 BACKGROUND = '#14232f'
@@ -47,10 +49,18 @@ def _wrap(text: str, draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, wi
     return lines
 
 
+@functools.lru_cache(maxsize=64)
+def _font(font_path: str, size: int) -> ImageFont.FreeTypeFont:
+    return ImageFont.truetype(font_path, size)
+
+
 def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
-                 size: int, minimum: int, max_height: int, fill: str) -> None:
+                 size: int, minimum: int, max_height: int, fill: str,
+                 sung_chars: int | None = None, sung_fill: str = ACCENT) -> None:
+    """Draw a centred, wrapped text block. With ``sung_chars``, that many leading non-space
+    characters are drawn in ``sung_fill`` for word-by-word karaoke highlighting."""
     for chosen in range(size, minimum - 1, -1):
-        font = ImageFont.truetype(str(font_path), chosen)
+        font = _font(str(font_path), chosen)
         lines = _wrap(text, draw, font, 1000)
         spacing = math.ceil(chosen * 1.25)
         if len(lines) * spacing <= max_height:
@@ -67,12 +77,32 @@ def _center_text(draw: ImageDraw.ImageDraw, text: str, y: int, font_path: Path,
             lines[-1] = lines[-1][:-1]
         lines[-1] += '…'
     total = len(lines) * spacing
+    remaining = sung_chars
     for index, line in enumerate(lines):
-        draw.text((WIDTH / 2, y - total / 2 + (index + 0.5) * spacing), line,
-                  font=font, fill=fill, anchor='mm')
+        line_y = y - total / 2 + (index + 0.5) * spacing
+        if remaining is None:
+            draw.text((WIDTH / 2, line_y), line, font=font, fill=fill, anchor='mm')
+            continue
+        # Same placement as centred text: the sung prefix, then the rest of the line after it.
+        left = WIDTH / 2 + font.getbbox(line, anchor='mm')[0] - font.getbbox(line, anchor='lm')[0]
+        prefix, count = '', 0
+        for char in line:
+            if count >= remaining:
+                break
+            prefix += char
+            count += not char.isspace()
+        rest = line[len(prefix):]
+        if prefix:
+            draw.text((left, line_y), prefix, font=font, fill=sung_fill, anchor='lm')
+        if rest:
+            draw.text((left + draw.textlength(prefix, font=font), line_y), rest, font=font, fill=fill, anchor='lm')
+        remaining -= count
 
 
-def render_card(project: dict, active_index: int | None, output: Path, font_path: Path) -> None:
+def render_card(project: dict, active_index: int | None, output: Path, font_path: Path,
+                sung: list[str] | None = None) -> None:
+    """One video card. ``sung`` lists the active line's words already sung; without it the whole
+    active line is highlighted."""
     project = validate_project(project)
     cues = project['cues']
     if active_index is not None and (type(active_index) is not int or not 0 <= active_index < len(cues)):
@@ -81,8 +111,11 @@ def render_card(project: dict, active_index: int | None, output: Path, font_path
     draw = ImageDraw.Draw(image)
     _center_text(draw, ' '.join(project['title'].split()), 80, font_path, 32, 22, 100, MAIN)
     active = cues[active_index]['text'] if active_index is not None else 'Instrumental break'
-    _center_text(draw, active, 320, font_path, 44, 24, 300,
-                 ACCENT if active_index is not None else MAIN)
+    if active_index is not None and sung is not None:
+        _center_text(draw, active, 320, font_path, 44, 24, 300, MAIN, sum(len(word) for word in sung))
+    else:
+        _center_text(draw, active, 320, font_path, 44, 24, 300,
+                     ACCENT if active_index is not None else MAIN)
     next_index = active_index + 1 if active_index is not None else 0
     if next_index < len(cues):
         _center_text(draw, 'Next: ' + cues[next_index]['text'], 540, font_path, 26, 18, 80, MUTED)
@@ -183,7 +216,8 @@ def _validate_backing(backing: Path, duration: float, cancel: threading.Event,
 
 
 def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
-                 font_path: Path, cancel: threading.Event) -> None:
+                 font_path: Path, cancel: threading.Event, words: list | None = None) -> None:
+    """Render the karaoke video; ``words`` are recognized words that time the word highlighting."""
     deadline = time.monotonic() + VIDEO_TIMEOUT
     project = validate_project(project)
     _remaining(cancel, deadline)
@@ -200,19 +234,24 @@ def export_video(project: dict, backing: Path, output: Path, work_dir: Path,
             states = {}
             card_bytes = 0
             cues = project['cues']
+            timings = word_timings(cues, words or [], project['duration'])
             for frame in range(frame_count):
                 _remaining(cancel, deadline)
                 position = frame / FPS
                 active = next((index for index, cue in enumerate(cues)
                                if cue['start'] <= position < cue['end']), None)
                 upcoming = next((index for index, cue in enumerate(cues) if cue['start'] > position), len(cues))
-                state = (active, upcoming if active is None else None)
+                sung = sung_count(timings[active], position) if active is not None else None
+                state = (active, upcoming if active is None else None, sung)
                 if state not in states:
                     if len(states) >= MAX_CARDS:
                         raise RuntimeError('Video preparation exceeded its card count limit.')
-                    card = directory / f'card{len(states):03}.png'
-                    view = project if active is not None else {**project, 'cues': cues[upcoming:]}
-                    render_card(view, active, card, font_path)
+                    card = directory / f'card{len(states):04}.png'
+                    if active is None:
+                        render_card({**project, 'cues': cues[upcoming:]}, None, card, font_path)
+                    else:
+                        render_card(project, active, card, font_path,
+                                    sung=[word['text'] for word in timings[active][:sung]])
                     _remaining(cancel, deadline)
                     card_bytes += card.stat().st_size
                     if card_bytes > MAX_CARD_BYTES:

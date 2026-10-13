@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TimingCapture } from '../src/sequential-timing.ts';
-import type { Cue } from '../src/lyrics.ts';
+import { MAX_DURATION, type Cue } from '../src/lyrics.ts';
 
 const cue = (text: string): Cue => ({ start: NaN, end: -Infinity, text });
 const words = ['  first 🌿\nline  ', 'second\r\nverse', 'last & <literal>'];
@@ -92,20 +92,21 @@ test('oracle current Unicode semantics preserve BOM and permitted controls while
   for (const text of ['', ' \r\n\t', '\u0085', '\u001c', '\u3000', '\0', 'x\0y', '\ud800', '\udfff', 'x'.repeat(241), '🌿'.repeat(241)]) assert.throws(() => new TimingCapture([cue(text)], 1));
 });
 
-test('oracle exact200 lines and20000 Unicode codepoints complete at actual300-second endpoint', () => {
+test('oracle exact200 lines and20000 Unicode codepoints complete at actual600-second endpoint', () => {
+  assert.equal(MAX_DURATION, 600);
   const texts = Array.from({ length: 200 }, (_, i) => `${String(i).padStart(3, '0')}${'🌿'.repeat(97)}`);
   assert.equal(texts.reduce((sum, text) => sum + [...text].length, 0), 20000);
-  const capture = new TimingCapture(texts.map(cue), 300);
-  for (let i = 0; i < 200; i++) { capture.markStart(i * 1.5); capture.markEnd((i + 1) * 1.5); }
+  const capture = new TimingCapture(texts.map(cue), 600);
+  for (let i = 0; i < 200; i++) { capture.markStart(i * 3); capture.markEnd((i + 1) * 3); }
   const review = capture.review(); assert.equal(review.length, 200);
-  assert.deepEqual(review, texts.map((text, i) => ({ start: i * 1.5, end: (i + 1) * 1.5, text })));
-  assert.equal(review[199].end, 300);
-  assert.throws(() => new TimingCapture([...texts.map(cue), cue('extra')], 300));
-  const excessive = texts.map(cue); excessive[199].text += 'x'; assert.throws(() => new TimingCapture(excessive, 300));
+  assert.deepEqual(review, texts.map((text, i) => ({ start: i * 3, end: (i + 1) * 3, text })));
+  assert.equal(review[199].end, 600);
+  assert.throws(() => new TimingCapture([...texts.map(cue), cue('extra')], 600));
+  const excessive = texts.map(cue); excessive[199].text += 'x'; assert.throws(() => new TimingCapture(excessive, 600));
 });
 
 test('oracle invalid duration and container shapes refuse before any accessor is invoked', () => {
-  for (const duration of [0, .9999999999999999, 300.00000000000006, NaN, Infinity]) assert.throws(() => new TimingCapture([cue('one')], duration));
+  for (const duration of [0, .9999999999999999, 600.0000000000001, NaN, Infinity]) assert.throws(() => new TimingCapture([cue('one')], duration));
   for (const cues of [[], new Array<Cue>(1), Object.assign(Object.create(Array.prototype), { 0: cue('one'), length: 1 })]) assert.throws(() => new TimingCapture(cues as Cue[], 1));
   let reads = 0;
   const indexGetter: Cue[] = []; Object.defineProperty(indexGetter, '0', { enumerable: true, get() { reads++; return cue('one'); } });

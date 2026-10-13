@@ -1,6 +1,7 @@
 import math
 import unittest
 
+from karaoke.limits import MAX_DURATION
 from karaoke.model import (ValidationError, create_project, draft_cues, render_srt,
                            update_project, validate_project)
 
@@ -24,7 +25,7 @@ class ModelTests(unittest.TestCase):
     def test_invalid_fields_and_nonfinite_numbers_are_rejected(self):
         cases = [('id', '../unsafe'), ('id', 'A' * 32), ('schemaVersion', 2),
                  ('schemaVersion', True), ('title', ''), ('title', ' '),
-                 ('title', 'a' * 101), ('title', '\ud800'), ('duration', 0.9), ('duration', 300.1),
+                 ('title', 'a' * 101), ('title', '\ud800'), ('duration', 0.9), ('duration', MAX_DURATION + 0.1),
                  ('duration', math.nan), ('duration', math.inf), ('duration', True),
                  ('revision', True), ('revision', -1), ('cues', 'not a list')]
         for key, value in cases:
@@ -74,7 +75,9 @@ class ModelTests(unittest.TestCase):
             validate_project({**self.project(), 'cues': cues})
 
     def test_full_song_maximum_unicode_document_and_detached_updates(self):
-        original = create_project('a' * 32, '🎵' * 100, 300)
+        self.assertEqual(MAX_DURATION, 600)
+        original = create_project('a' * 32, '🎵' * 100, MAX_DURATION)
+        self.assertEqual(original['duration'], 600.0)
         cues = [dict(start=i, end=i + 1, text='🎵' * 100) for i in range(200)]
         updated = update_project(original, original['title'], cues, 0)
         self.assertEqual(len(updated['cues']), 200)
@@ -86,7 +89,7 @@ class ModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, '20000'):
             validate_project(updated)
         with self.assertRaises(ValidationError):
-            create_project('a' * 32, 'Too long', 300 + 1 / 44100)
+            create_project('a' * 32, 'Too long', MAX_DURATION + 1 / 44100)
 
     def test_draft_unicode_and_raw_whitespace_limits(self):
         self.assertEqual(draft_cues('\u0085One\u2028 Two \x1eThree\u0085', 300),

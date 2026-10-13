@@ -1,9 +1,8 @@
-"""Offline CPU Spleeter worker; TensorFlow stays inside this killable process."""
+"""Offline CPU vocal separation worker; ONNX Runtime stays inside this killable process."""
 from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
-import importlib.metadata
 import json
 import os
 from pathlib import Path
@@ -21,22 +20,18 @@ from karaoke.limits import (  # noqa: E402
     HOP_FRAMES, MAX_DURATION, MAX_WAV_BYTES, OVERLAP_FRAMES, SAMPLE_RATE,
     WINDOW_FRAMES, WORKER_CPU_HARD, WORKER_CPU_SOFT, WORKER_FILE_BYTES,
 )
-from karaoke.pipeline import MODEL_SHA256, model_ready  # noqa: E402
+from karaoke.pipeline import MODEL_DIRECTORY, MODEL_FILE, MODEL_NAME, MODEL_SHA256, model_ready  # noqa: E402
 
 # All destinations are preflighted together before either mutation or cleanup.
 _OUTPUT_NAMES = ('vocals.f32', 'backing.f32', 'vocals.wav', 'backing.wav', 'processing.json')
 _DESTINATIONS = _OUTPUT_NAMES + tuple(name + '.part' for name in _OUTPUT_NAMES)
+SEPARATION_THREADS = max(1, min(4, os.cpu_count() or 1))
 
 
-def configure_runtime(model_root: Path) -> None:
+def configure_runtime() -> None:
     resource.setrlimit(resource.RLIMIT_CPU, (WORKER_CPU_SOFT, WORKER_CPU_HARD))
     resource.setrlimit(resource.RLIMIT_FSIZE, (WORKER_FILE_BYTES, WORKER_FILE_BYTES))
-    os.environ.update({
-        'MODEL_PATH': str(model_root.resolve()), 'CUDA_VISIBLE_DEVICES': '-1',
-        'TF_NUM_INTRAOP_THREADS': '3', 'TF_NUM_INTEROP_THREADS': '1',
-        'OMP_NUM_THREADS': '3', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
-        'TF_CPP_MIN_LOG_LEVEL': '2', 'TF_ENABLE_ONEDNN_OPTS': '0',
-    })
+    os.environ.update({'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1'})
 
 
 def _preflight(output_dir: Path) -> None:
@@ -59,7 +54,7 @@ def separate_windows(
 ) -> dict:
     """Bounded assembly orchestration, independently testable without ML packages.
 
-    Production supplies the actual Spleeter predictor below. Job paths remain
+    Production supplies the MDX-Net predictor below. Job paths remain
     descriptor-anchored: resolving them would discard the parent's owned handle.
     """
     _preflight(output_dir)
@@ -127,7 +122,7 @@ def main() -> None:
     _preflight(args.output_dir)
     if not model_ready(args.model_root):
         raise RuntimeError('Verified model files are missing or corrupt; run explicit model setup.')
-    configure_runtime(args.model_root)
+    configure_runtime()
     network_attempted = False
 
     def deny_network(*_args, **_kwargs):
@@ -145,25 +140,19 @@ def main() -> None:
     try:
         try:
             import numpy as np
-            import tensorflow as tf
-            from spleeter.separator import Separator
+            import onnxruntime
+            from karaoke.mdx import load_model, separate_vocals
         except ModuleNotFoundError as error:
             raise RuntimeError('Install requirements-ml.lock.txt into the documented Python 3.11 environment.') from error
-        tf.config.threading.set_intra_op_parallelism_threads(3)
-        tf.config.threading.set_inter_op_parallelism_threads(1)
-        tf.config.set_visible_devices([], 'GPU')
-        separator = Separator('spleeter:2stems', multiprocess=False)
+        run = load_model(args.model_root / MODEL_DIRECTORY / MODEL_FILE, SEPARATION_THREADS)
 
         def predict(raw: bytes, frames: int) -> tuple[bytes, bytes]:
             waveform = np.frombuffer(raw, dtype='<i2').reshape(frames, 2).astype(np.float32) / 32768
-            predictions = separator.separate(waveform)
-            if not isinstance(predictions, dict) or set(predictions) != {'vocals', 'accompaniment'}:
-                raise RuntimeError('The model did not return both expected stems.')
-            for samples in predictions.values():
+            stems = separate_vocals(waveform, run)
+            for samples in stems:
                 if samples.shape != (frames, 2) or not np.isfinite(samples).all():
                     raise RuntimeError('The model returned invalid or mismatched audio samples.')
-            return tuple(predictions[name].astype('<f4', copy=False).tobytes(order='C')
-                         for name in ('vocals', 'accompaniment'))
+            return tuple(samples.astype('<f4', copy=False).tobytes(order='C') for samples in stems)
 
         def progress(record: dict) -> None:
             print(json.dumps(record, separators=(',', ':')), flush=True)
@@ -172,8 +161,7 @@ def main() -> None:
         if network_attempted:
             raise RuntimeError('The model attempted a network connection despite its local cache.')
         metadata.update({
-            'model': 'spleeter:2stems', 'modelRelease': 'v1.4.0', 'modelArchiveSha256': MODEL_SHA256,
-            'spleeterVersion': importlib.metadata.version('spleeter'), 'tensorflowVersion': tf.__version__,
+            'model': MODEL_NAME, 'modelSha256': MODEL_SHA256, 'onnxruntimeVersion': onnxruntime.__version__,
             'offlineNetworkAttempts': 0, 'workerSeconds': time.perf_counter() - started,
             'peakRssKiB': resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         })

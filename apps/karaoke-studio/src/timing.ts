@@ -9,7 +9,7 @@ function validDuration(duration: number): boolean {
 
 /** Deliberately ignore text validity: an invalid lyric draft is still editable. */
 export function timingError(cues: readonly Cue[], duration: number): string | null {
-  if (!validDuration(duration)) return 'Choose a clip between 1 and 300 seconds.';
+  if (!validDuration(duration)) return `Choose a clip between 1 and ${MAX_DURATION} seconds.`;
   if (!Array.isArray(cues) || cues.length > MAX_CUES) return 'Use at most 200 lyric lines.';
   let previousEnd = 0;
   for (let index = 0; index < cues.length; index++) {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { timingError, proposeBoundary, quantizeBoundaryDelta, timeWindow, timeToPixel, pixelToTime } from '../src/timing.ts';
-import type { Cue } from '../src/lyrics.ts';
+import { MAX_DURATION, type Cue } from '../src/lyrics.ts';
 import { LyricHistory } from '../src/draft-history.ts';
 
 const cues = (): Cue[] => [{ start: 0, end: 1.234567, text: '' }, { start: 1.234567, end: 2.3456789, text: '\0invalid text kept' }];
@@ -9,12 +9,13 @@ const cues = (): Cue[] => [{ start: 0, end: 1.234567, text: '' }, { start: 1.234
 test('timing-only validity ignores invalid lyric text and permits adjacency and gaps', () => {
   assert.equal(timingError(cues(), 3), null);
   assert.equal(timingError([], 1), null);
-  assert.equal(timingError([{ start: 0, end: 300, text: 'x'.repeat(1_000_000) }], 300), null);
+  assert.equal(MAX_DURATION, 600);
+  assert.equal(timingError([{ start: 0, end: MAX_DURATION, text: 'x'.repeat(1_000_000) }], MAX_DURATION), null);
   assert.equal(timingError([{ start: 0.25, end: 0.5, text: '' }, { start: 0.75, end: 1, text: '' }], 1), null);
 });
 
 test('timing validation rejects nonfinite, reversed, overlapping and out-of-clip intervals', () => {
-  for (const duration of [NaN, Infinity, 0, 0.999, 300.001]) assert.ok(timingError([], duration));
+  for (const duration of [NaN, Infinity, 0, 0.999, MAX_DURATION + .001]) assert.ok(timingError([], duration));
   for (const value of [
     [{ start: -0.01, end: 1, text: '' }], [{ start: 1, end: 1, text: '' }],
     [{ start: 1.1, end: 1, text: '' }], [{ start: 0, end: 3.01, text: '' }],
@@ -96,7 +97,8 @@ test('coordinate helpers clamp and return exact endpoints without snapping cue p
     assert.throws(() => timeToPixel(2, window, width));
     assert.throws(() => pixelToTime(20, window, width));
   }
-  for (const invalid of [{ start: 2, end: 2 }, { start: -1, end: 3 }, { start: 0, end: 301 }, { start: 0, end: NaN }]) {
+  assert.equal(pixelToTime(100, { start: 0, end: MAX_DURATION }, 100), MAX_DURATION);
+  for (const invalid of [{ start: 2, end: 2 }, { start: -1, end: 3 }, { start: 0, end: MAX_DURATION + 1 }, { start: 0, end: NaN }]) {
     assert.throws(() => pixelToTime(10, invalid, 100));
   }
 });

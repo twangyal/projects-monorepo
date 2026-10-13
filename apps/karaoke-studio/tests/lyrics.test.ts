@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { draftCues, validateCues, validateTitle, activeCue, formatTime, type Cue } from '../src/lyrics.ts';
+import { draftCues, validateCues, validateTitle, activeCue, formatTime, MAX_ARCHIVE_BYTES, MAX_DURATION, MAX_UPLOAD_BYTES, type Cue } from '../src/lyrics.ts';
 
 test('draft timing splits nonempty lines over the full duration without invented words', () => {
   assert.deepEqual(draftCues('Hello\n\nSecond line\n', 10), [
@@ -10,12 +10,15 @@ test('draft timing splits nonempty lines over the full duration without invented
   assert.throws(() => draftCues('   ', 10));
 });
 
-test('complete songs accept 300 seconds and 200 cues while rejecting the next boundary', () => {
+test('complete songs accept 600 seconds and 200 cues while rejecting the next boundary', () => {
+  assert.equal(MAX_DURATION, 600);
+  assert.equal(MAX_UPLOAD_BYTES, 128 * 1024 * 1024);
+  assert.equal(MAX_ARCHIVE_BYTES, 321_726_592);
   const cues = Array.from({ length: 200 }, (_, i) => ({ start: i, end: i + 1, text: 'Line' }));
-  assert.deepEqual(validateCues(cues, 300), cues);
-  assert.throws(() => validateCues([...cues, { start: 200, end: 201, text: 'Extra' }], 300));
-  for (const duration of [.999, 300.001, Infinity, NaN]) assert.throws(() => validateCues([], duration));
-  assert.equal(draftCues('First\nLast', 300)[1].end, 300);
+  assert.deepEqual(validateCues(cues, MAX_DURATION), cues);
+  assert.throws(() => validateCues([...cues, { start: 200, end: 201, text: 'Extra' }], MAX_DURATION));
+  for (const duration of [.999, MAX_DURATION + .001, Infinity, NaN]) assert.throws(() => validateCues([], duration), /between 1 and 600 seconds/);
+  assert.equal(draftCues('First\nLast', MAX_DURATION)[1].end, MAX_DURATION);
 });
 
 test('cue and combined lyric limits count Unicode code points without splitting astral text', () => {

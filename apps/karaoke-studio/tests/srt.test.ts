@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MAX_SRT_BYTES, parseSrt } from '../src/srt.ts';
+import { MAX_DURATION } from '../src/lyrics.ts';
 
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
 const first = '1\n00:00:00,125 --> 00:00:01,250\nFirst line';
@@ -83,7 +84,8 @@ test('all cue intervals are validated atomically against exact selected duration
   }
   assert.throws(() => parseSrt(encode(`${first}\n\n2\n00:00:01,249 --> 00:00:02,000\nOverlap`), 2));
   assert.throws(() => parseSrt(encode(one('Fractional clip boundary')), .999999999));
-  for (const duration of [NaN, Infinity, -.1, .999, 300.001]) assert.throws(() => parseSrt(encode(first), duration));
+  assert.equal(parseSrt(encode(first), MAX_DURATION).length, 1);
+  for (const duration of [NaN, Infinity, -.1, .999, MAX_DURATION + .001]) assert.throws(() => parseSrt(encode(first), duration));
 });
 
 test('blank content and bare CR are rejected, and internal blanks separate blocks', () => {

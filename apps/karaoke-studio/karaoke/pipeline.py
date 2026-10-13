@@ -22,18 +22,20 @@ from .limits import (DECODE_TIMEOUT, MAX_DECODE_BYTES, MAX_DURATION, MAX_INPUT_B
                      MAX_WAV_BYTES, MAX_WINDOWS, MAX_WORKER_RSS_KIB, MIN_DURATION,
                      SAMPLE_RATE, WORKER_TIMEOUT)
 
-MODEL_FILES = {
-    'checkpoint': '011c96b970c1f56137037924fe1a0f0851369b0ee6692e120aea798615326f48',
-    'model.data-00000-of-00001': '7747f9fd2c782306dbec1504360fbb645a097a48446f23486c3ff9c89bc11788',
-    'model.index': '55661a09f79c86071fc7077b44b4cf1f01b6d82bbbb83ed94cb68a2f9944e378',
-    'model.meta': '6e1f6d86a22bb452a58cb20e3de87b416f8a79e626ca223e20f763ab2d21ec95',
-}
-MODEL_SHA256 = 'f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692'
+# UVR-MDX-NET-Voc_FT, an Ultimate Vocal Remover MDX-Net vocal model (TRvlvr/model_repo), in the ONNX
+# conversion published by sherpa-onnx. Runs in worker.py through karaoke/mdx.py.
+MODEL_NAME = 'UVR-MDX-NET-Voc_FT'
+MODEL_DIRECTORY = 'mdx'
+MODEL_FILE = 'UVR-MDX-NET-Voc_FT.onnx'
+MODEL_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/UVR-MDX-NET-Voc_FT.onnx'
+MODEL_BYTES = 66762795
+MODEL_SHA256 = 'e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4'
+MODEL_FILES = {MODEL_FILE: MODEL_SHA256}
 MAX_METADATA_BYTES = 16 * 1024
 
 
 def model_ready(model_root: Path) -> bool:
-    directory = Path(model_root) / '2stems'
+    directory = Path(model_root) / MODEL_DIRECTORY
     try:
         for name, expected in MODEL_FILES.items():
             path = directory / name
@@ -173,7 +175,7 @@ def _input_format(source: Path) -> str:
     if not source.is_file() or source.is_symlink():
         raise ValueError('Choose a local WAV, MP3, FLAC, or Ogg audio clip.')
     if source.stat().st_size > MAX_INPUT_BYTES:
-        raise ValueError('Audio uploads must be at most 64 MiB.')
+        raise ValueError(f'Audio uploads must be at most {MAX_INPUT_BYTES // 1024**2} MiB.')
     with source.open('rb') as stream:
         header = stream.read(12)
     if header[:4] == b'RIFF' and header[8:12] == b'WAVE':
@@ -211,10 +213,10 @@ def _probe(source: Path, input_format: str, cancel: threading.Event) -> float:
     except (KeyError, TypeError, json.JSONDecodeError) as error:
         raise ValueError('The audio header is invalid or its duration could not be read.') from error
     # MP3/Opus container lengths include encoder delay/padding. Decoded frames
-    # remain strictly capped at 300 seconds; this never truncates actual audio.
+    # remain strictly capped at MAX_DURATION; this never truncates actual audio.
     maximum_probe_duration = MAX_DURATION + .2 if input_format in {'mp3', 'ogg'} else MAX_DURATION
     if not math.isfinite(duration) or not MIN_DURATION <= duration <= maximum_probe_duration:
-        raise ValueError('Choose an audio clip lasting 1–300 seconds. Longer clips are not silently trimmed.')
+        raise ValueError(f'Choose an audio clip lasting {MIN_DURATION}–{MAX_DURATION} seconds. Longer clips are not silently trimmed.')
     return duration
 
 
@@ -282,7 +284,7 @@ def separate_clip(source: Path, output_dir: Path, model_root: Path, cancel: thre
     stage('Checking audio format and duration')
     _probe(source, input_format, cancel)
     if not model_ready(model_root):
-        raise RuntimeError('The verified Spleeter two-stem model is unavailable. Run scripts/setup_model.py before starting a separation job.')
+        raise RuntimeError('The verified vocal separation model is unavailable. Run scripts/setup_model.py before starting a separation job.')
     output_dir.mkdir(parents=True, exist_ok=True)
     # Retain the generated directory, including when a caller supplied a
     # descriptor path. Cleanup must never follow a later directory rebinding.
@@ -320,11 +322,11 @@ def _separate_owned(source: Path, output_dir: Path, model_root: Path, cancel: th
                  cancel, timeout=DECODE_TIMEOUT, stdout_limit=MAX_DECODE_BYTES + 8, stdout_sink=sink)
         size = decoded.stat().st_size
         if not size or size % 8 or size > MAX_DECODE_BYTES:
-            raise ValueError('Decoded audio must last 1–300 seconds and contain complete stereo frames.')
+            raise ValueError(f'Decoded audio must last {MIN_DURATION}–{MAX_DURATION} seconds and contain complete stereo frames.')
         frame_count = size // 8
         duration = frame_count / SAMPLE_RATE
         if not MIN_DURATION <= duration <= MAX_DURATION:
-            raise ValueError('Decoded audio must last 1–300 seconds. Longer clips are not silently trimmed.')
+            raise ValueError(f'Decoded audio must last {MIN_DURATION}–{MAX_DURATION} seconds. Longer clips are not silently trimmed.')
         check()
         peak = scan_float_peak([decoded], frame_count, check)
         gain = normalization_gain(peak)
@@ -352,11 +354,11 @@ def _separate_owned(source: Path, output_dir: Path, model_root: Path, cancel: th
                         or value != completed + 1):
                     raise ValueError('Invalid window progress.')
                 completed = value
-                stage(f'Estimating vocals and backing locally with Spleeter AI — window {value} of {count} complete')
+                stage(f'Estimating vocals and backing locally with the MDX-Net vocal model — window {value} of {count} complete')
             elif 'type' in record:
                 raise ValueError('Unknown worker record.')
 
-        stage('Estimating vocals and backing locally with Spleeter AI')
+        stage('Estimating vocals and backing locally with the MDX-Net vocal model')
         _run([sys.executable, str(Path(__file__).with_name('worker.py')), '--source', str(outputs[0]),
               '--output-dir', str(output_dir), '--model-root', str(model_root)],
              cancel, timeout=WORKER_TIMEOUT, stderr_limit=256 * 1024,
