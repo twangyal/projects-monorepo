@@ -89,10 +89,29 @@ test('selected off-grid phrase replaces once, edits and plays, and real JSON MID
   expect((await savedProject(page)).tracks[0].notes[0].pitch).toBe(70);
 });
 
+test('a channel 10 percussion part imports only as a drum kit track', async ({ page }) => {
+  await loadFixture(page); await pick(page, unsupportedLanesMidi());
+  await lane(page, 9).locator('[name=included]').check();
+  await lane(page, 9).locator('[name=instrument]').selectOption('sine');
+  await page.locator('#midi-start').fill('1'); await page.locator('#midi-end').fill('2');
+  await page.locator('#midi-review').click();
+  await expect(page.locator('#midi-status')).toContainText('Channel 10 is General MIDI percussion; choose the drum kit for it.');
+  await lane(page, 9).locator('[name=instrument]').selectOption('drums');
+  await page.locator('#midi-review').click(); await expect(page.locator('#midi-summary')).toBeVisible();
+  await expect(page.locator('#midi-summary')).toContainText(/percussion keys/i);
+  await replace(page);
+  const imported = await savedProject(page);
+  expect(imported.tracks.map(track => track.instrument)).toEqual(['drums']);
+  expect(imported.tracks[0]!.notes.map(note => [note.pitch, note.start, note.duration])).toEqual([[40, 0, 1]]);
+  await expect(page.locator('#drum-heading')).toHaveText('Drum pattern');
+});
+
 test('unsupported channels stay visible while global MIDI effects reject the whole source', async ({ page }) => {
   await loadFixture(page); const original = await savedProject(page); await pick(page, unsupportedLanesMidi());
-  for (const channel of [0, 3, 9]) { await expect(lane(page, channel)).toBeVisible(); await expect(lane(page, channel).locator('[name=included]')).toBeDisabled(); }
-  await expect(lane(page, 0)).toContainText(/multiple raw tracks/i); await expect(lane(page, 9)).toContainText(/percussion/i);
+  for (const channel of [0, 3]) { await expect(lane(page, channel)).toBeVisible(); await expect(lane(page, channel).locator('[name=included]')).toBeDisabled(); }
+  await expect(lane(page, 0)).toContainText(/multiple raw tracks/i);
+  // Channel 10 percussion is a supported part now, offered for the drum kit.
+  await expect(lane(page, 9).locator('[name=included]')).toBeEnabled(); await expect(lane(page, 9)).toContainText('General MIDI percussion: choose Drum kit');
   await review(page, '1', '5'); await expect(page.locator('#midi-summary')).toContainText(/3.*excluded|excluded.*3/is);
   await page.locator('#midi-cancel').click(); await pick(page, globalUnsupportedMidi());
   await expect(page.locator('#midi-status')).toContainText(/port|unsupported/i); await expect(page.locator('#midi-apply')).toBeDisabled();

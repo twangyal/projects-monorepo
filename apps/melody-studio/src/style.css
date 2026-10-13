@@ -262,3 +262,18 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
 
 .sound-envelope textarea {width:100%;max-width:100%;box-sizing:border-box;resize:vertical;font:inherit;padding:8px;border:1px solid #d5d9dd;border-radius:6px;}
 .sound-envelope svg {display:block;width:100%;height:96px;margin-top:12px;}
+.drum-pattern { margin-bottom: 1.2rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: #fbfaf7; }
+.drum-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+.drum-heading h3 { margin: 0 auto 0 0; font-size: 1rem; }
+.drum-bars { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 650; }
+.drum-bars button { min-width: 44px; min-height: 44px; padding: 0; font-size: 1.1rem; }
+.step-grid { display: grid; gap: 4px; overflow-x: auto; padding-bottom: .3rem; }
+.step-row { display: grid; grid-template-columns: 6.2rem repeat(var(--steps), minmax(26px, 1fr)); gap: 3px; align-items: center; }
+.step-name { font-size: .75rem; font-weight: 650; color: var(--muted); white-space: nowrap; }
+.step { min-width: 26px; height: 30px; padding: 0; border-radius: 5px; border-color: #d6d9e0; background: #fff; }
+.step.beat-start { margin-left: 4px; background: #f1f0ec; }
+.step[aria-pressed="true"] { background: var(--purple); border-color: #5b4294; }
+.step[aria-pressed="true"].is-accent { background: #4e3a94; box-shadow: inset 0 0 0 2px #c8bce8; }
+.step:hover:not(:disabled):not([aria-pressed="true"]) { background: #e9e1f9; }
+.drum-pattern .small { margin-top: .6rem; }
+@media (max-width: 720px) { .step-row { grid-template-columns: 4.6rem repeat(var(--steps), 26px); } }

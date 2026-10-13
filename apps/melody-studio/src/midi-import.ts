@@ -29,7 +29,7 @@ export interface MidiName {
   reason: MidiNameReason | null;
 }
 export type MidiLaneIssueCode =
-  | 'shared-channel' | 'percussion' | 'controller'
+  | 'shared-channel' | 'controller'
   | 'expression' | 'changing-state' | 'ambiguous-notes' | 'empty-lane';
 export interface MidiLaneIssue {
   code: MidiLaneIssueCode;
@@ -153,7 +153,6 @@ const FIXED_META_LENGTHS = new Map([[0, 2], [47, 0], [81, 3], [88, 4], [89, 2]])
 
 const ISSUE_MESSAGES: Record<MidiLaneIssueCode, string> = {
   'shared-channel': 'This channel occurs in multiple raw tracks; their global state cannot be merged safely.',
-  percussion: 'Percussion channel 10 is not represented by the local instruments.',
   controller: 'This channel uses controllers other than static volume CC7.',
   expression: 'This channel uses pressure or pitch bend that cannot be represented.',
   'changing-state': 'This channel changes program or volume after its first note attack.',
@@ -175,7 +174,7 @@ interface LaneState {
 }
 function newLane(channel: number): LaneState {
   return { channel, sourceTracks: [], noteOnCount: 0, notes: [], program: 0, programExplicit: false,
-    volume: 100, volumeExplicit: false, issues: new Set(channel === 9 ? ['percussion'] : []),
+    volume: 100, volumeExplicit: false, issues: new Set(),
     started: false, active: new Map() };
 }
 

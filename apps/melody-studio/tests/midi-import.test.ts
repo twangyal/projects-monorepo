@@ -88,8 +88,9 @@ test('positive attack and nonzero release counts include unsupported and shared 
   assert.equal(result.lanes[0].program, 0);
   assert.equal(result.lanes[0].programExplicit, false);
   assert.equal(result.lanes[0].volume, 100);
-  assert.equal(result.lanes[1].issues[0].code, 'percussion');
-  assert.deepEqual(result.lanes[1].notes, []);
+  // Channel 10 percussion is a supported lane; the drum kit plays it.
+  assert.deepEqual(result.lanes[1].issues, []);
+  assert.deepEqual(result.lanes[1].notes.map(note => note.pitch), [36]);
 });
 
 test('polyphony, touching repeated pitch, velocity-zero off and onset ordering are precise', () => {
@@ -225,7 +226,7 @@ test('all sixteen lanes sort by channel and aggregate every completed attack', (
   assert.deepEqual(result.lanes.map(lane => lane.channel), Array.from({ length: 16 }, (_, i) => i));
   assert.equal(result.noteOnCount, 16);
   assert.equal(result.lanes.reduce((sum, lane) => sum + lane.noteOnCount, 0), 16);
-  assert.equal(result.lanes.filter(lane => !lane.issues.length).length, 15);
+  assert.equal(result.lanes.filter(lane => !lane.issues.length).length, 16);
 });
 
 test('all 8192 completed pairs fit the parser budget without destination truncation', () => {

@@ -111,6 +111,21 @@ Each slider release is one Undo/Redo edit and is kept in autosave, saved copies 
 
 This is the first mixing stage. Per-track insert chains, further buses and sends, stereo delay, effect automation and a mixer view remain part of the ACTIVE DAW destination. See [stereo mix verification](docs/2026-10-13-stereo-mix.md).
 
+## Program drums
+
+Choose **Drum kit** as a track's instrument to turn it into a drum track. A **Drum pattern** step grid appears above the piano roll. It has rows for Kick, Snare, Clap, Closed hat, Open hat, Low tom, High tom and Crash, and sixteen sixteenth-note steps per bar.
+
+- Select a step (or focus it and press Enter or Space) to add or remove a hit. Each hit is one Undo/Redo edit.
+- **Start with a basic beat** fills an empty track with a one-bar groove (kick, snare and eighth-note hats with lighter offbeats).
+- **‹ / ›** move between bars. **Copy bar to next** copies the shown bar over the following one, which makes a loop quick to build.
+- Steps played harder (velocity 0.85 or more) are shown darker.
+
+Hits are ordinary notes whose pitch is a General MIDI percussion key (kick 36, snare 38, clap 39, closed hat 42, open hat 46, toms 45/50, crash 49). So the piano roll, note velocity, sections, quantize, repeat, mute, solo, stereo mix, reverb sends, volume automation, stems, WAV and the composition library all work on drum tracks. Each key plays a deterministic synthesized one-shot. The hit rings for its kit piece's natural length (about 0.1 s for a closed hat, 1.8 s for a crash), whatever the note's duration, and the sound envelope does not apply. Filter, echo and automation still shape the drums. Keys outside the grid's eight rows also play: other General MIDI pieces such as ride, cowbell, tambourine and floor toms use their kit sound, and any remaining key plays a tuned percussion tone.
+
+**Export MIDI** writes drum tracks on General MIDI channel 10, so other music apps play them with their own kits. **MIDI import** now accepts channel 10 as a part when you choose **Drum kit** for it. Key 35 (acoustic kick) becomes the kit's kick (36), and hits shorter than a sixteenth are held for one, as the review discloses.
+
+A track holds at most 256 hits, which is about eleven bars of a busy groove. Longer patterns need more tracks or **Repeat phrase**. The kit is synthesized, not sampled: there is no sample import or kit choice yet. See [drum tracks verification](docs/2026-10-13-drum-tracks.md).
+
 ## Audition an arrangement section
 
 Set **Section start beat** and **Section end beat (exclusive)**, then choose **Play section** or **Loop section**. Beats start at 1: start 9, end 17 selects eight beats starting at internal beat 8. Fractional beats are supported. The end must fit the last note's end plus one; the range must contain at least one 22,050 Hz audio frame. Blank, nonfinite, reversed and out-of-song bounds are refused and remain available for correction. The effective duration is announced when playback starts.
@@ -249,7 +264,7 @@ Choose **Import MIDI file** to inspect a local `.mid` or `.midi` file without ch
 The supported subset is deliberately bounded:
 
 - Standard MIDI formats 0/1, PPQN timing, one constant tempo of 40–240 BPM; absent tempo means 120 BPM. Maximum file size is 1 MiB, with 32 raw tracks, 32,768 events and 8,192 positive note attacks.
-- Up to sixteen source channel parts are shown; choose 1–8 supported parts with 1–256 included notes each in a window of at most 512 beats. Different-pitch polyphony is supported. Shared channels across raw tracks, ambiguous same-pitch pairing, percussion, pitch bend, pressure and unsupported controllers are visible but unselectable.
+- Up to sixteen source channel parts are shown; choose 1–8 supported parts with 1–256 included notes each in a window of at most 512 beats. Different-pitch polyphony is supported. Channel 10 percussion is importable only as a **Drum kit** part. Shared channels across raw tracks, ambiguous same-pitch pairing, pitch bend, pressure and unsupported controllers are visible but unselectable.
 - Static initial program and CC7 volume are shown separately from note velocity. Missing values use disclosed program 0 and CC7 100 defaults. Local instrument mapping is always explicit; it does not reproduce General MIDI sounds. CC7 zero remains silent.
 - Tempo changes, SMPTE timing, SysEx, ports and unknown global metadata reject the file. Supported but omitted text/time/key metadata and note-off release velocities are counted in the review; they do not become performance controls.
 - Names use strict UTF-8 and the existing 80-UTF-16-unit destination limit. Unusable or ambiguous source names need a visible name choice; they are never silently shortened. Safe fallback titles and part names are shown explicitly.

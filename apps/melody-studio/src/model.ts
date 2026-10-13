@@ -80,8 +80,8 @@ export function validateComposition(value: unknown): Composition {
     const track = record(value, path);
     const trackId = id(track.id, `${path} ID`);
     const name = text(track.name, `${path} name`, 80);
-    if (track.instrument !== 'sine' && track.instrument !== 'triangle' && track.instrument !== 'sawtooth') {
-      throw new Error(`${path} instrument must be sine, triangle or sawtooth.`);
+    if (track.instrument !== 'sine' && track.instrument !== 'triangle' && track.instrument !== 'sawtooth' && track.instrument !== 'drums') {
+      throw new Error(`${path} instrument must be sine, triangle, sawtooth or drums.`);
     }
     const instrument = track.instrument;
     const curveDescriptor=Object.getOwnPropertyDescriptor(track,'volumeCurve');

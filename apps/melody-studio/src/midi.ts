@@ -6,7 +6,9 @@ import { compositionDurationBeats, validateComposition } from './model.ts';
 
 const TICKS_PER_BEAT = 480;
 // General MIDI approximations: flute, square lead and saw lead.
-const PROGRAMS = { sine: 73, triangle: 80, sawtooth: 81 };
+const PROGRAMS = { sine: 73, triangle: 80, sawtooth: 81, drums: 0 };
+/** General MIDI reserves channel 10 (index 9) for percussion; melodic parts keep their track index (0–7). */
+const PERCUSSION_CHANNEL = 9;
 
 interface Event { tick: number; order: number; bytes: number[] }
 interface MidiNote { pitch: number; start: number; end: number; velocity: number }
@@ -73,7 +75,8 @@ export function encodeMidi(project: Composition, expression = false): Uint8Array
     { tick: 0, order: 0, bytes: meta(3, [...encoder.encode(valid.title)]) },
     { tick: 0, order: 1, bytes: meta(81, [(tempo >>> 16) & 255, (tempo >>> 8) & 255, tempo & 255]) },
   ], end)];
-  valid.tracks.forEach((part, channel) => {
+  valid.tracks.forEach((part, index) => {
+    const channel = part.instrument === 'drums' ? PERCUSSION_CHANNEL : index;
     const events: Event[] = [
       { tick: 0, order: 0, bytes: meta(3, [...encoder.encode(part.name)]) },
       { tick: 0, order: 1, bytes: [192 | channel, PROGRAMS[part.instrument]] },

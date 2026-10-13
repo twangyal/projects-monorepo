@@ -51,7 +51,7 @@ test('explicit text is never trimmed, truncated or interpreted; UTF16 limits app
         assert.throws(() => buildMidiReview(base(), source(), { ...selected, title }));
 });
 test('mutated preview invariants reject including unselected lanes', () => {
-    const mutate: ((p: MidiPreview) => void)[] = [p => p.noteOnCount++, p => { p.tempo = 120; }, p => { p.ppqn = 0; }, p => { p.lanes[0].notes[0].offTick = p.lastTick + 1; }, p => { p.lanes[0].channel = 1; }, p => { p.lanes[0].sourceTracks = [0, 0]; }, p => { p.lanes[0].notes.push(note(1500, 2500)); p.lanes[0].noteOnCount++; p.noteOnCount++; }, p => { p.lanes[0].issues.push({ code: 'percussion', message: 'Unsupported.' }); }, p => { p.lanes[0].volume = 128; }, p => { p.ignoredMeta.push({ type: 33, count: 1, bytes: 1 }); }];
+    const mutate: ((p: MidiPreview) => void)[] = [p => p.noteOnCount++, p => { p.tempo = 120; }, p => { p.ppqn = 0; }, p => { p.lanes[0].notes[0].offTick = p.lastTick + 1; }, p => { p.lanes[0].channel = 1; }, p => { p.lanes[0].sourceTracks = [0, 0]; }, p => { p.lanes[0].notes.push(note(1500, 2500)); p.lanes[0].noteOnCount++; p.noteOnCount++; }, p => { p.lanes[0].issues.push({ code: 'controller', message: 'Unsupported.' }); }, p => { p.lanes[0].volume = 128; }, p => { p.ignoredMeta.push({ type: 33, count: 1, bytes: 1 }); }];
     for (const action of mutate) {
         const p = source();
         action(p);
@@ -136,10 +136,22 @@ test('default state and selected silent CC7 are explicit without erasing note ve
     }
     assert(review.warnings.length <= 64 && review.warnings.every(text => text.length <= 512));
 });
+test('channel 10 percussion imports only as a drum kit, with GM key 35 playing the kick', () => {
+    const drums = lane(9, [note(997, 1246, 35), note(1246, 1495, 38), note(1495, 1744, 42)]);
+    const preview = source([lane(), drums]);
+    assert.throws(() => buildMidiReview(base(), preview, choices([{ laneId: 'channel-9', name: 'Drums', instrument: 'sine' }])), /percussion.*drum kit/i);
+    const review = buildMidiReview(base(), preview, choices([{ laneId: 'channel-9', name: 'Drums', instrument: 'drums' }]));
+    assert.deepEqual(review.candidate.tracks[0].notes.map(n => [n.pitch, n.start]), [[36, 0], [38, 249 / 997], [42, 498 / 997]]);
+    assert.equal(review.candidate.tracks[0].instrument, 'drums');
+    assert.deepEqual(review.candidate.tracks[0].notes.map(n => n.duration), [0.25, 0.25, 0.25], 'short hits are held for a sixteenth');
+    assert(review.warnings.some(text => /percussion keys.*35.*sixteenth/i.test(text)));
+    // Any channel may be played by the kit.
+    assert.equal(buildMidiReview(base(), source([lane(0, [note(997, 1994, 35)])]), choices([{ laneId: 'channel-0', name: 'Kit', instrument: 'drums' }])).candidate.tracks[0].notes[0].pitch, 36);
+});
 test('unsupported attack counts remain visible and cannot be imported; selected lanes must exist', () => {
     const unsupported = lane(9, []);
     unsupported.noteOnCount = 50;
-    unsupported.issues = [{ code: 'percussion', message: 'Percussion is unsupported.' }];
+    unsupported.issues = [{ code: 'controller', message: 'Controllers are unsupported.' }];
     const preview = source([lane(), unsupported]);
     const review = buildMidiReview(base(), preview, choices());
     assert.equal(review.sourceNoteOnCount, 51);

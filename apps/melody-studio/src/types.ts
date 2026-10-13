@@ -1,4 +1,5 @@
-export type Instrument = 'sine' | 'triangle' | 'sawtooth';
+/** `drums` plays each note's pitch as a General MIDI percussion key. */
+export type Instrument = 'sine' | 'triangle' | 'sawtooth' | 'drums';
 export interface Note {
   id: string;
   pitch: number;

@@ -153,7 +153,7 @@ test('oracle initial program/CC7 uses physical event order and only identical la
   }
 });
 
-test('oracle expressions/controllers/percussion are visible unsupported lanes even outside a phrase', () => {
+test('oracle expressions/controllers are visible unsupported lanes even outside a phrase; percussion is supported', () => {
   validSource();
   for (const unsupported of [[176, 64, 0], [176, 0, 0], [176, 120, 0], [176, 10, 64],
     [160, 60, 50], [208, 50], [224, 0, 64]]) {
@@ -166,9 +166,9 @@ test('oracle expressions/controllers/percussion are visible unsupported lanes ev
     rejects(() => buildMidiReview(base(), source, choices()));
   }
   const percussion = parseMidi(smf([timed([event(0, [153, 60, 100]), event(25, [137, 60, 0])], 100)]));
-  assert.ok(issues(percussion, 9).includes('percussion'));
+  assert.deepEqual(issues(percussion, 9), []);
   assert.equal(percussion.lanes[0].id, 'channel-9');
-  assert.deepEqual(percussion.lanes[0].notes, []);
+  assert.deepEqual(percussion.lanes[0].notes.map(note => note.pitch), [60]);
   const empty = parseMidi(smf([timed([event(0, [192, 73])], 100)]));
   assert.ok(issues(empty).includes('empty-lane'));
 });
