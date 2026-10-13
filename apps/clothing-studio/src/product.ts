@@ -689,9 +689,11 @@ function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, 
   for (let t = 0; t < triangles.length; t += 3) {
     const tri = [triangles[t], triangles[t + 1], triangles[t + 2]], pts = tri.map(i => samples[i]);
     if (!inside({ x: (pts[0].x + pts[1].x + pts[2].x) / 3, y: (pts[0].y + pts[1].y + pts[2].y) / 3 }, polygon)) continue;
+    // Inspect winding in flat coordinates; mapping y downward to world y upward reverses its sign.
+    const cross = (pts[1].x - pts[0].x) * (pts[2].y - pts[0].y) - (pts[1].y - pts[0].y) * (pts[2].x - pts[0].x);
+    if (Math.abs(cross) < 1e-9) continue;
     const [a, b, d] = tri.map(vertex);
-    // Counter-clockwise from outside: flat y grows downward, so the front's order flips.
-    if (side === 'front') group.indices.push(a, d, b); else group.indices.push(a, b, d);
+    if ((side === 'front') === (cross < 0)) group.indices.push(a, b, d); else group.indices.push(a, d, b);
   }
 }
 

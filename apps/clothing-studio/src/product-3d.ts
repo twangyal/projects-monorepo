@@ -4,7 +4,7 @@ import Delaunator from 'delaunator';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { paintTile, tileSizeCm } from './fabric-texture.ts';
+import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
 import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type Product } from './product.ts';
 
 export type View = 'front' | 'back' | 'left' | 'right';
@@ -19,6 +19,8 @@ export class ProductScene {
   private provisional: THREE.Texture[] = [];
   private artworkTextures = new Map<string, THREE.Texture>();
   private frame = 0;
+  private disposed = false;
+  private resizeObserver: ResizeObserver;
   private height = 72;
   private view: View = 'front';
 
@@ -33,21 +35,23 @@ export class ProductScene {
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enablePan = false; this.controls.minDistance = 90; this.controls.maxDistance = 400;
     this.controls.addEventListener('change', () => this.requestRender());
-    new ResizeObserver(() => this.resize()).observe(canvas);
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver.observe(canvas);
     this.resize();
     this.setView('front');
   }
 
   private resize() {
+    if (this.disposed) return;
     const width = this.canvas.clientWidth || 600, height = this.canvas.clientHeight || 520;
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.requestRender();
   }
   requestRender() {
-    if (this.frame) return;
+    if (this.disposed || this.frame) return;
     this.frame = requestAnimationFrame(() => { this.frame = 0; this.renderer.render(this.scene, this.camera); });
   }
-  renderNow() { if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
+  renderNow() { if (this.disposed) return; if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
 
   setView(view: View) {
     this.view = view;
@@ -107,7 +111,7 @@ export class ProductScene {
     if (!texture) {
       const image = new Image(); image.src = art.dataUrl;
       texture = new THREE.Texture(image); texture.colorSpace = THREE.SRGBColorSpace;
-      image.decode().then(() => { texture!.needsUpdate = true; this.requestRender(); }).catch(() => undefined);
+      image.decode().then(() => { if (!this.disposed) { texture!.needsUpdate = true; this.requestRender(); } }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
     const top = topMeasurements(product).length - 4; // the shoulder line, where artwork positions are measured from
@@ -133,6 +137,11 @@ export class ProductScene {
     return hit ? hit.object.userData.part as PartId : null;
   }
 
+  async prepareArtwork() {
+    await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image as HTMLImageElement).decode()));
+    for (const texture of this.artworkTextures.values()) texture.needsUpdate = true;
+  }
+
   async png(view: View): Promise<Blob> {
     const position = this.camera.position.clone(), target = this.controls.target.clone();
     this.setView(view); this.renderNow();
@@ -148,5 +157,29 @@ export class ProductScene {
     return result;
   }
 
-  dispose() { this.controls.dispose(); this.renderer.dispose(); for (const texture of this.textures.values()) texture.dispose(); }
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = 0; this.resizeObserver.disconnect(); this.controls.dispose();
+    for (const child of this.group.children) if (child instanceof THREE.Mesh) {
+      child.geometry.dispose();
+      for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
+    }
+    for (const texture of [...this.textures.values(), ...this.provisional, ...this.artworkTextures.values()]) texture.dispose();
+    this.group.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
+    this.renderer.dispose(); this.renderer.forceContextLoss();
+  }
+}
+
+/** Owned, detached render scene: editing and other exports cannot change its captured design. */
+export async function productSnapshotRenders(product: Product): Promise<{ front: Blob; back: Blob }> {
+  const snapshot = structuredClone(product);
+  await prepareMotifImages(snapshot.motifs ?? []);
+  const scene = new ProductScene(document.createElement('canvas'));
+  try {
+    scene.setProduct(snapshot, null);
+    await scene.prepareArtwork();
+    return { front: await scene.png('front'), back: await scene.png('back') };
+  } finally { scene.dispose(); }
 }

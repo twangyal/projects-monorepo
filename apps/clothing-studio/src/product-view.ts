@@ -115,7 +115,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
   </section>
 </section>`;
 
-export function mountProduct(options: { current: () => Project; commit: (next: Project) => void; notice: (text: string, error?: boolean) => void; download: (blob: Blob, suffix: string) => void }) {
+export function mountProduct(options: { current: () => Project; commit: (next: Project) => void; notice: (text: string, error?: boolean) => void; download: (blob: Blob, suffix: string, title?: string) => void }) {
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   const canvas = $('product-canvas') as HTMLCanvasElement;
   // A decode belongs to the project and editing intent that started it, never the current selection later.
@@ -373,9 +373,16 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     options.download(new Blob([techPackXlsx(pack)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), '-tech-pack.xlsx');
   }));
   $('techpack-html').addEventListener('click', () => void exporting(async () => {
-    const design = product() ?? template('blank'), s = await ready;
-    const images = { diagram: measurementDiagram(design), ...(s ? { front: await dataUrl(await s.png('front')), back: await dataUrl(await s.png('back')) } : {}) };
-    options.download(new Blob([techPackHtml(buildTechPack(design, today()), images)], { type: 'text/html' }), '-tech-pack.html');
+    const button = $('techpack-html') as HTMLButtonElement;
+    if (button.disabled) return;
+    const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), date = today();
+    button.disabled = true;
+    try {
+      const available = await ready;
+      const renders = available ? await (await import('./product-3d.ts')).productSnapshotRenders(design) : null;
+      const images = { diagram: measurementDiagram(design), ...(renders ? { front: await dataUrl(renders.front), back: await dataUrl(renders.back) } : {}) };
+      options.download(new Blob([techPackHtml(buildTechPack(design, date), images)], { type: 'text/html' }), '-tech-pack.html', snapshot.title);
+    } finally { button.disabled = false; }
   }));
 
   // Colorways: snapshots of the part styles, applied back as one undoable edit; units feed the range plan.
