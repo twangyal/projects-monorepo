@@ -22,18 +22,20 @@ from .limits import (DECODE_TIMEOUT, MAX_DECODE_BYTES, MAX_DURATION, MAX_INPUT_B
                      MAX_WAV_BYTES, MAX_WINDOWS, MAX_WORKER_RSS_KIB, MIN_DURATION,
                      SAMPLE_RATE, WORKER_TIMEOUT)
 
-MODEL_FILES = {
-    'checkpoint': '011c96b970c1f56137037924fe1a0f0851369b0ee6692e120aea798615326f48',
-    'model.data-00000-of-00001': '7747f9fd2c782306dbec1504360fbb645a097a48446f23486c3ff9c89bc11788',
-    'model.index': '55661a09f79c86071fc7077b44b4cf1f01b6d82bbbb83ed94cb68a2f9944e378',
-    'model.meta': '6e1f6d86a22bb452a58cb20e3de87b416f8a79e626ca223e20f763ab2d21ec95',
-}
-MODEL_SHA256 = 'f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692'
+# UVR-MDX-NET-Voc_FT, an Ultimate Vocal Remover MDX-Net vocal model (TRvlvr/model_repo), in the ONNX
+# conversion published by sherpa-onnx. Runs in worker.py through karaoke/mdx.py.
+MODEL_NAME = 'UVR-MDX-NET-Voc_FT'
+MODEL_DIRECTORY = 'mdx'
+MODEL_FILE = 'UVR-MDX-NET-Voc_FT.onnx'
+MODEL_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/UVR-MDX-NET-Voc_FT.onnx'
+MODEL_BYTES = 66762795
+MODEL_SHA256 = 'e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4'
+MODEL_FILES = {MODEL_FILE: MODEL_SHA256}
 MAX_METADATA_BYTES = 16 * 1024
 
 
 def model_ready(model_root: Path) -> bool:
-    directory = Path(model_root) / '2stems'
+    directory = Path(model_root) / MODEL_DIRECTORY
     try:
         for name, expected in MODEL_FILES.items():
             path = directory / name
@@ -282,7 +284,7 @@ def separate_clip(source: Path, output_dir: Path, model_root: Path, cancel: thre
     stage('Checking audio format and duration')
     _probe(source, input_format, cancel)
     if not model_ready(model_root):
-        raise RuntimeError('The verified Spleeter two-stem model is unavailable. Run scripts/setup_model.py before starting a separation job.')
+        raise RuntimeError('The verified vocal separation model is unavailable. Run scripts/setup_model.py before starting a separation job.')
     output_dir.mkdir(parents=True, exist_ok=True)
     # Retain the generated directory, including when a caller supplied a
     # descriptor path. Cleanup must never follow a later directory rebinding.
@@ -352,11 +354,11 @@ def _separate_owned(source: Path, output_dir: Path, model_root: Path, cancel: th
                         or value != completed + 1):
                     raise ValueError('Invalid window progress.')
                 completed = value
-                stage(f'Estimating vocals and backing locally with Spleeter AI — window {value} of {count} complete')
+                stage(f'Estimating vocals and backing locally with the MDX-Net vocal model — window {value} of {count} complete')
             elif 'type' in record:
                 raise ValueError('Unknown worker record.')
 
-        stage('Estimating vocals and backing locally with Spleeter AI')
+        stage('Estimating vocals and backing locally with the MDX-Net vocal model')
         _run([sys.executable, str(Path(__file__).with_name('worker.py')), '--source', str(outputs[0]),
               '--output-dir', str(output_dir), '--model-root', str(model_root)],
              cancel, timeout=WORKER_TIMEOUT, stderr_limit=256 * 1024,

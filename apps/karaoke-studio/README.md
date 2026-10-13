@@ -2,7 +2,7 @@
 
 **Product direction (2026-10-08): ACTIVE.** The destination is an automatic song-to-karaoke workflow with lyric transcription and synchronization, followed by user correction when needed. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
-A local karaoke maker: import a complete song or excerpt and it estimates vocals and backing with the pretrained Spleeter model, then recognizes and times the sung lyrics automatically from the separated vocals. Preview the result, correct words and timing where recognition went wrong (or paste the real lyrics and have them aligned to the singing), and export a karaoke video. Automatic lyrics are English-only and imperfect; see [Automatic lyrics](#automatic-lyrics) for measured quality.
+A local karaoke maker: import a complete song or excerpt and it estimates vocals and backing with a pretrained MDX-Net vocal model (UVR-MDX-NET-Voc_FT), then recognizes and times the sung lyrics automatically from the separated vocals. Preview the result, correct words and timing where recognition went wrong (or paste the real lyrics and have them aligned to the singing), and export a karaoke video. Automatic lyrics are English-only and imperfect; see [Automatic lyrics](#automatic-lyrics) for measured quality.
 
 ## Install and run
 
@@ -20,7 +20,7 @@ npm ci
 npm run build
 ```
 
-The core dependency is Pillow; the separate ML lock installs Spleeter 2.4.2, TensorFlow 2.12.1, sherpa-onnx 1.13.8 and their pinned dependencies. Use the same Python 3.11 environment to start the service, because its model subprocess uses that interpreter. Installation requires network access and substantial disk space; no paid service or GPU is required. On Ubuntu, FFmpeg can be installed with `sudo apt-get install ffmpeg`.
+The core dependency is Pillow; the separate ML lock installs ONNX Runtime 1.31.0, sherpa-onnx 1.13.8, NumPy, SciPy and their pinned dependencies (about 360 MB; before #236 it also needed TensorFlow and Spleeter, about 2 GB). Use the same Python 3.11 environment to start the service, because its model subprocess uses that interpreter. Installation requires network access; no paid service or GPU is required. On Ubuntu, FFmpeg can be installed with `sudo apt-get install ffmpeg`.
 
 Explicitly set up the model cache outside Git, then start the service:
 
@@ -220,7 +220,7 @@ For a whole-library backup, stop the service and copy the data directory, includ
 
 ## Automatic lyrics
 
-After separation, the studio listens to the **separated vocals** and recognizes the sung words locally. It splits the vocals into phrases with Silero voice-activity detection, then recognizes them with NVIDIA Parakeet TDT 0.6B v2 (int8, English) through sherpa-onnx, in a network-denied, resource-limited worker. The words are grouped into lines at pauses and saved as the new clip's lyrics, so preview and export work straight away. Each recognized word carries a confidence. The **Automatic lyrics** panel names lines whose words averaged below 0.7, because on real songs such words were right only 29% of the time.
+After separation, the studio listens to the **separated vocals** and recognizes the sung words locally. It splits the vocals into phrases with Silero voice-activity detection, then recognizes them with NVIDIA Parakeet TDT 0.6B v2 (int8, English) through sherpa-onnx, in a network-denied, resource-limited worker. The words are grouped into lines at pauses and saved as the new clip's lyrics, so preview and export work straight away. Each recognized word carries a confidence. The **Automatic lyrics** panel names lines whose words averaged below 0.7, because on real songs such words were right only about 30% of the time.
 
 - **Review automatic lyrics** shows every recognized line, with unsure lines marked, and replaces the current lines as one undoable, unsaved edit.
 - **Create draft timings** with pasted lyrics aligns each line to where its words were sung. The exact text you pasted is kept. Lines that were not clearly heard are named and placed over the unmatched singing between their neighbours.
@@ -229,13 +229,13 @@ After separation, the studio listens to the **separated vocals** and recognizes 
 
 **Measured on 20 English JamendoLyrics songs with reference timings** (5,693 words), running the production path:
 
-- **Recognition:** 41.9% word error rate overall. Songs range from 20.6% to 85.7%, with distorted vocals and dense backing vocals the hardest.
-- **Word timing:** correctly recognized words start a median 0.06 s from the reference.
-- **Automatic lines:** 76% of reference lines have an automatic line starting within 1 s.
-- **Pasted lyrics:** a median 0.14 s start error, with 78% of lines within 1 s. Of the lines the studio reports as heard, 94.5% are within 1 s.
-- **Speed:** about 0.09 s per second of audio on 4 CPU cores.
+- **Recognition:** 30.9% word error rate overall with the MDX-Net vocals (41.9% with Spleeter's, before #236). Songs range from 12.3% to 85.7%, with distorted vocals and dense backing vocals the hardest.
+- **Word timing:** correctly recognized words start a median 0.06 s from the reference; 96.8% are within 0.3 s.
+- **Automatic lines:** 78.5% of reference lines have an automatic line starting within 1 s (76.4% before).
+- **Pasted lyrics:** a median 0.10 s start error, with 86.9% of lines within 1 s (0.14 s and 78.1% before). Of the lines the studio reports as heard, 97.5% are within 1 s.
+- **Speed:** recognition takes about 0.09 s per second of audio on 4 CPU cores, after separation.
 
-See [the design and evaluation notes](docs/2026-10-13-automatic-lyrics.md) and the [per-song results](docs/2026-10-13-automatic-lyrics-evaluation.json). Re-run them with `python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir MODELS --work /tmp/work`.
+See [the design and evaluation notes](docs/2026-10-13-automatic-lyrics.md), the [per-song results with MDX-Net vocals](docs/2026-10-13-lyrics-with-mdx-evaluation.json) and the [earlier Spleeter results](docs/2026-10-13-automatic-lyrics-evaluation.json). Re-run them with `python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir MODELS --work /tmp/work`.
 
 **Model setup.** `python scripts/setup_lyrics_model.py --model-dir MODELS` downloads the pinned archive from the sherpa-onnx GitHub releases:
 
@@ -264,13 +264,13 @@ Measured on the 20 JamendoLyrics songs (5,693 words): with correctly timed lines
 
 ## Ten-minute songs (#233)
 
-Songs up to **10 minutes (600 s)** and **128 MiB** are supported; before #233 the limit was 5 minutes. All limits that follow from duration were raised together: decoded and WAV sizes, the 22 separation windows, waveform frames, portable archives (306.8 MiB), and the job scratch budget (1.6 GiB). The worker's wall-clock and CPU limits doubled to 20 minutes, keeping the earlier headroom. The video deadline stays at 10 minutes.
+Songs up to **10 minutes (600 s)** and **128 MiB** are supported; before #233 the limit was 5 minutes. All limits that follow from duration were raised together: decoded and WAV sizes, the 22 separation windows, waveform frames, portable archives (306.8 MiB), and the job scratch budget (1.6 GiB). The worker's wall-clock limit is now 30 minutes (raised again in #236 for the slower, better separation model). The video deadline stays at 10 minutes.
 
 **Measured with the real models** (2026-10-13, 4 CPU cores) on a 600-second input made of three English JamendoLyrics songs back to back:
 
 | Step | Result |
 | --- | --- |
-| Separation | 245 s for 22 windows (CPU 245 s, peak memory 1.27 GiB) |
+| Separation | 245 s for 22 windows with Spleeter (CPU 245 s, peak memory 1.27 GiB); with the MDX-Net model since #236, 589 s (worker 550 s, peak memory 1.38 GiB) |
 | Recognition | 61 s, peak memory 1.32 GiB; 40.2% WER on the 716 reference words, compared with 30–49% for the same songs run singly; median word onset error 0.068 s, 95.7% within 0.3 s |
 | Video export | 130 s for 127 automatic lines (578 highlight steps), producing a 17 MB MP4 |
 
@@ -280,29 +280,41 @@ Through the real service in Chromium, the same song went from upload to 127 time
 
 
 
-Setup downloads the official [Deezer Spleeter v1.4.0 two-stem checkpoint](https://github.com/deezer/spleeter/releases/download/v1.4.0/2stems.tar.gz), **73,109,797 bytes**, and verifies its pinned SHA-256 against the value published in the official [checksum index](https://github.com/deezer/spleeter/releases/download/v1.4.0/checksum.json):
+## Vocal separation (#236)
+
+Separation uses **UVR-MDX-NET-Voc_FT**, an MDX-Net vocal model from the Ultimate Vocal Remover project, in the ONNX conversion published by sherpa-onnx. It replaced Spleeter 2-stems after a reference-stem comparison on the 50 MUSDB18 test excerpts (global SDR in dB, higher is better):
+
+| Separator | Vocals SDR median (mean) | Backing SDR median (mean) |
+| --- | --- | --- |
+| Spleeter 2-stems (before #236) | 6.46 (6.39) | 11.50 (11.39) |
+| UVR_MDXNET_1_9703 | 7.51 (6.75) | 11.85 (11.95) |
+| **UVR-MDX-NET-Voc_FT (now)** | **9.96 (9.00)** | **14.06 (14.20)** |
+
+The new model is better on 45 of 50 tracks for vocals and 46 of 50 for the backing, by a median of 2.9 dB and 3.2 dB. Roughly, less singing leaks into the karaoke backing and the vocals used for lyric recognition are cleaner. It costs time: a 10-minute song separates in about 9 to 10 minutes on 4 CPU cores, where Spleeter took about 4. See [the separation notes](docs/2026-10-13-separation-quality.md).
+
+Setup downloads the model from the [sherpa-onnx release](https://github.com/k2-fsa/sherpa-onnx/releases/download/source-separation-models/UVR-MDX-NET-Voc_FT.onnx), **66,762,795 bytes**, and verifies its pinned SHA-256 before publishing it to `MODEL_DIR/mdx`:
 
 ```text
-f3a90b39dd2874269e8b05a48a86745df897b848c61f3958efc80a39152bd692
+e411182ce2c53541fefdcc99a8f46f2fe03978eb22038b9497c1d9d95a00fad4
 ```
 
-Only expected checkpoint files are extracted, each with its own pinned checksum, before the cache is published. An existing official archive can be reused without downloading:
+An existing copy can be reused without downloading:
 
 ```sh
 python scripts/setup_model.py \
   --model-dir "$HOME/.cache/karaoke-studio/models" \
-  --archive /path/to/2stems.tar.gz
+  --model /path/to/UVR-MDX-NET-Voc_FT.onnx
 ```
 
-Spleeter's **code** is [MIT-licensed](https://github.com/deezer/spleeter/blob/master/LICENSE). A separate license for the pretrained checkpoint was not established from the checked official documentation; the release archive contains no LICENSE/NOTICE/model card. Weights are not bundled in this repository. Preserve the official provenance and this distinction when using or redistributing artifacts.
+The model comes from the Ultimate Vocal Remover project ([model repository](https://github.com/TRvlvr/model_repo/releases); the UVR application is MIT-licensed), converted to ONNX by sherpa-onnx (Apache-2.0). A separate license for the weights was not established from those publications. Weights are not bundled in this repository. An existing Spleeter cache (`MODEL_DIR/2stems`) is no longer used and can be deleted; run setup once after upgrading. Projects separated with Spleeter, and archives containing them, still open, play, export and restore.
 
-After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker. It processes 30-second windows with two-second overlaps (at most 22 windows for ten minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Exact source sample count and positions are preserved. Spleeter may initialize a prediction session for each call, so warmup is part of the measured runtime. This windowing controls resource use; it does not guarantee inaudible seams or separation quality.
+After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker that runs ONNX Runtime with up to four threads. It processes 30-second windows with two-second overlaps (at most 22 windows for ten minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Inside a window the model runs on 5.8-second segments, one at a time, each with 70 ms of context on both sides that is discarded, so segments join without seams and memory stays near 1.4 GiB whatever the song length. Exact source sample count and positions are preserved. The backing is the source minus the estimated vocals.
 
-Worker limits are twenty minutes of wall time, twenty minutes of CPU time and 3 GiB observed RSS (a ten-minute song used 245 s and 1.3 GiB on 4 cores, see [Ten-minute songs](#ten-minute-songs-233)). Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
+Worker limits are 30 minutes of wall time, four threads' worth of CPU time for that period and 3 GiB observed RSS (a ten-minute song used 550 s and 1.4 GiB on 4 cores). Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may still time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
 
 Uploads/exports require at least 2 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum (ten-minute) song's three WAV files use about 302.8 MiB. Temporary float stems add about 403.8 MiB, with a conservative maximum separation working set around 834.6 MiB on disk including a 128 MiB upload, before small headers. Twenty maximum-duration projects need about 5.9 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
 
-Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain. The default Spleeter configuration estimates a limited frequency range, so high-frequency content can also be affected. Synthetic smoke audio validates inference plumbing, not real-song accuracy. A real singing smoke provides additional runtime evidence but no reference-stem quality score or guarantee. Songs longer than five minutes, broader device testing, subjective boundary listening and reference-stem separation-quality evaluation remain future work.
+Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain; because the backing is the source minus the estimated vocals, anything the model misses as vocals stays in the backing. The reference-stem scores above come from 7-second excerpts of 50 songs; they are not a guarantee for any one song. Broader device testing and subjective listening remain future work.
 
 ## Lyric practice acceptance (#125)
 
@@ -337,7 +349,7 @@ injection while delayed genuine play completion is still checked independently.
 
 ## Fast verification and CI
 
-Fast checks require Python 3.11, FFmpeg, the core dependency, and Ruff; they do **not** require TensorFlow or model weights:
+Fast checks require Python 3.11, FFmpeg, the core dependency, and Ruff; they do **not** require ONNX Runtime or model weights (NumPy, in the dev requirements, runs the separator's signal-processing tests with stand-in models):
 
 ```sh
 python -m pip install -r requirements-core.txt -r requirements-dev.txt

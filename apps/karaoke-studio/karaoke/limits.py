@@ -14,10 +14,12 @@ OVERLAP_FRAMES = 2 * SAMPLE_RATE
 HOP_FRAMES = WINDOW_FRAMES - OVERLAP_FRAMES
 MAX_WINDOWS = 22
 DECODE_TIMEOUT = 60
-# A 10-minute song separated in 245 s (CPU 245 s, 1.3 GiB) on 4 cores; these keep about 5x headroom.
-WORKER_TIMEOUT = 1200
-WORKER_CPU_SOFT = 1200
-WORKER_CPU_HARD = 1205
+# Wall-clock budget per worker. A 10-minute song separated in 550 s (1.4 GiB) on 4 cores with the MDX-Net
+# model, so this keeps about 3x headroom. CPU time counts every thread, and separation runs up to four, so
+# the CPU limits allow four threads for the whole budget.
+WORKER_TIMEOUT = 1800
+WORKER_CPU_SOFT = 4 * WORKER_TIMEOUT
+WORKER_CPU_HARD = WORKER_CPU_SOFT + 5
 MAX_WORKER_RSS_KIB = 3 * 1024**2
 WORKER_FILE_BYTES = MAX_DECODE_BYTES + 4096
 VIDEO_TIMEOUT = 600

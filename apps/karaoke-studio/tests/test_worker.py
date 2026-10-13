@@ -9,7 +9,7 @@ from unittest.mock import patch
 import wave
 
 from karaoke import worker
-from karaoke.limits import WORKER_CPU_HARD, WORKER_CPU_SOFT, WORKER_FILE_BYTES
+from karaoke.limits import WORKER_CPU_HARD, WORKER_CPU_SOFT, WORKER_FILE_BYTES, WORKER_TIMEOUT
 
 
 def source_wav(path: Path, frames: int):
@@ -100,13 +100,14 @@ class WorkerTests(unittest.TestCase):
 
     def test_runtime_configuration_uses_agreed_limits_and_bounded_threads(self):
         with patch.object(worker.resource, 'setrlimit') as limits, patch.dict(os.environ):
-            worker.configure_runtime(self.root)
+            worker.configure_runtime()
             self.assertEqual(limits.call_args_list[0].args, (worker.resource.RLIMIT_CPU, (WORKER_CPU_SOFT, WORKER_CPU_HARD)))
             self.assertEqual(limits.call_args_list[1].args, (worker.resource.RLIMIT_FSIZE, (WORKER_FILE_BYTES, WORKER_FILE_BYTES)))
-            self.assertEqual(os.environ['TF_NUM_INTRAOP_THREADS'], '3')
-            self.assertEqual(os.environ['TF_NUM_INTEROP_THREADS'], '1')
+            self.assertEqual(os.environ['OMP_NUM_THREADS'], '1')
             self.assertEqual(os.environ['OPENBLAS_NUM_THREADS'], '1')
-            self.assertEqual(os.environ['CUDA_VISIBLE_DEVICES'], '-1')
+        self.assertTrue(1 <= worker.SEPARATION_THREADS <= 4)
+        # Every separation thread may run for the whole wall-clock budget.
+        self.assertGreaterEqual(WORKER_CPU_SOFT, worker.SEPARATION_THREADS * WORKER_TIMEOUT)
 
 
 if __name__ == '__main__':

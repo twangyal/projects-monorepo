@@ -297,6 +297,25 @@ if __name__ == '__main__':
     unittest.main()
 
 
+class SeparationModelProcessingTests(unittest.TestCase):
+    """Archives carry the MDX-Net processing record, and projects separated with Spleeter stay restorable (#236)."""
+
+    def test_each_model_is_admitted_with_its_own_provenance_fields_only(self):
+        import json
+        from karaoke.archive import ArchiveError, _processing
+        base = {'frameCount': 44100, 'sampleRate': 44100, 'duration': 1, 'chunkScheme': 'linear-sample-center-overlap'}
+        mdx = {**base, 'model': 'UVR-MDX-NET-Voc_FT', 'modelSha256': 'e' * 64, 'onnxruntimeVersion': '1.23.2'}
+        spleeter = {**base, 'model': 'spleeter:2stems', 'modelRelease': 'v1.4.0', 'modelArchiveSha256': 'f' * 64,
+                    'spleeterVersion': '2.4.2', 'tensorflowVersion': '2.12.1'}
+        for record in (mdx, spleeter, base):
+            self.assertEqual(_processing(json.dumps(record).encode(), 44100), record)
+        for record in ({**mdx, 'modelRelease': 'v1.4.0'}, {**mdx, 'tensorflowVersion': '2.12.1'}, {**spleeter, 'onnxruntimeVersion': '1.23.2'},
+                       {**spleeter, 'modelSha256': 'e' * 64}, {**mdx, 'modelSha256': 'E' * 64}, {**mdx, 'onnxruntimeVersion': 'not a version'},
+                       {**mdx, 'model': ['UVR-MDX-NET-Voc_FT']}, {**mdx, 'model': 'UVR-MDX-NET-Inst_HQ_3'}, {**spleeter, 'modelRelease': 'v1.5.0'}):
+            with self.subTest(record=record), self.assertRaises(ArchiveError):
+                _processing(json.dumps(record).encode(), 44100)
+
+
 class TenMinuteProcessingTests(unittest.TestCase):
     """Archives keep the processing record of a maximum-length song (#233): 22 windows, not 11."""
 

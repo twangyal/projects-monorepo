@@ -7,6 +7,7 @@ the mixture minus the vocals.
 
 Separators:
 - ``spleeter``: the production Spleeter 2-stems model, as the worker runs it;
+- ``mdx``: the production UVR-MDX-NET-Voc_FT separator (``karaoke/mdx.py``, from the model directory);
 - ``uvr:PATH``: a UVR MDX-Net ONNX model through sherpa-onnx (stem 0 vocals, stem 1 backing).
 
 Metric: signal-to-distortion ratio per track, 10 log10(sum s^2 / sum (s - estimate)^2), the
@@ -26,9 +27,12 @@ import os
 from pathlib import Path
 import statistics
 import subprocess
+import sys
 import time
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 RATE = 44100
 SILENT_RMS = 10 ** (-40 / 20)
@@ -65,6 +69,14 @@ def spleeter_separator(model_dir: Path, threads: int):
         stems = separator.separate(mixture.astype(np.float32))
         return stems['vocals'], stems['accompaniment']
     return separate, {'model': 'spleeter:2stems', 'modelRelease': 'v1.4.0'}
+
+
+def mdx_separator(model_dir: Path, threads: int):
+    import onnxruntime
+    from karaoke.mdx import load_model, separate_vocals
+    from karaoke.pipeline import MODEL_DIRECTORY, MODEL_FILE, MODEL_NAME
+    run = load_model(model_dir / MODEL_DIRECTORY / MODEL_FILE, threads)
+    return (lambda mixture: separate_vocals(mixture, run)), {'model': f'{MODEL_NAME} (studio)', 'onnxruntimeVersion': onnxruntime.__version__}
 
 
 def uvr_separator(model: Path, threads: int):
@@ -104,6 +116,8 @@ def main() -> None:
     for spec in args.separator:
         if spec == 'spleeter':
             separate, details = spleeter_separator(args.model_dir, args.threads)
+        elif spec == 'mdx':
+            separate, details = mdx_separator(args.model_dir, args.threads)
         elif spec.startswith('uvr:'):
             separate, details = uvr_separator(Path(spec[4:]), args.threads)
         else:

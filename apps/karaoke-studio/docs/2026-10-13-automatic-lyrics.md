@@ -1,5 +1,7 @@
 # Automatic lyric transcription and synchronization — issue #214
 
+> **Update (#236):** separation now uses an MDX-Net vocal model. On the same songs the word error rate fell from 41.9% to 30.9%, and pasted-lyrics lines within 1 s rose from 78.1% to 86.9%. See [the separation notes](2026-10-13-separation-quality.md). The figures below are the original Spleeter measurements.
+
 ## Intended outcome and gap
 
 `docs/PRODUCT_DIRECTION.md` asks Karaoke Studio to transcribe and synchronize lyrics automatically after upload. Manual editing should be the correction workflow. Before this work, users supplied every word and timed every line themselves. Earlier attempts were blocked because model hosts were unreachable. GitHub release assets turned out to be reachable, and that unblocked this work.

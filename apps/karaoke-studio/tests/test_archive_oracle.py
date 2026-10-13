@@ -308,7 +308,8 @@ class ArchiveOracleTests(unittest.TestCase):
                       dict(frameCount=44099), dict(windowCount=23),
                       dict(windowRanges=[dict(start=0, frames=44101)]),
                       dict(windowRanges=[dict(start=1, frames=1), dict(start=0, frames=1)]),
-                      dict(spleeterVersion='version with spaces')]:
+                      dict(spleeterVersion='version with spaces'),
+                      dict(model='UVR-MDX-NET-Voc_FT', spleeterVersion='2.4.2')]:
             with self.subTest(claim=claim), self.assertRaises(ArchiveError):
                 self.restore(stored_zip(members(processing=encoded(claim))))
         with self.assertRaises(ArchiveError):

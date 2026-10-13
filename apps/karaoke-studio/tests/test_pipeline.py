@@ -37,19 +37,20 @@ class PipelineTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def test_model_ready_verifies_all_actual_files_and_rejects_corruption_or_symlinks(self) -> None:
-        model = self.root / 'models' / '2stems'
+        model = self.root / 'models' / pipeline.MODEL_DIRECTORY
         model.mkdir(parents=True)
+        self.assertEqual(list(pipeline.MODEL_FILES), [pipeline.MODEL_FILE])
         manifest = {name: hashlib.sha256(name.encode()).hexdigest() for name in pipeline.MODEL_FILES}
         for name in manifest:
             (model / name).write_bytes(name.encode())
         with patch.object(pipeline, 'MODEL_FILES', manifest):
             self.assertTrue(pipeline.model_ready(model.parent))
-            (model / 'model.index').write_bytes(b'broken')
+            (model / pipeline.MODEL_FILE).write_bytes(b'broken')
             self.assertFalse(pipeline.model_ready(model.parent))
-            (model / 'model.index').unlink()
-            target = self.root / 'index'
-            target.write_bytes(b'model.index')
-            (model / 'model.index').symlink_to(target)
+            (model / pipeline.MODEL_FILE).unlink()
+            target = self.root / 'weights'
+            target.write_bytes(pipeline.MODEL_FILE.encode())
+            (model / pipeline.MODEL_FILE).symlink_to(target)
             self.assertFalse(pipeline.model_ready(model.parent))
         self.assertFalse(pipeline.model_ready(self.root / 'missing'))
 
@@ -224,14 +225,26 @@ class PipelineTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'memory limit'):
             pipeline._run([sys.executable, '-c', 'import time; data=bytearray(10000000); time.sleep(10)'], threading.Event(), timeout=2, rss_limit_kib=1)
 
-    def test_explicit_model_setup_rejects_corrupt_archive_without_publishing_files(self) -> None:
-        from scripts.setup_model import setup_model
-        archive = self.root / 'wrong.tar.gz'
-        archive.write_bytes(b'corrupt archive')
+    def test_explicit_model_setup_verifies_the_pinned_file_before_publishing_it(self) -> None:
+        import scripts.setup_model as setup
+        wrong = self.root / 'wrong.onnx'
+        wrong.write_bytes(b'corrupt model')
         model_root = self.root / 'model-cache'
         with self.assertRaisesRegex(RuntimeError, 'SHA256|pinned'):
-            setup_model(model_root, archive)
+            setup.setup_model(model_root, wrong)
         self.assertEqual(list(model_root.iterdir()), [])
+        right = self.root / 'right.onnx'
+        right.write_bytes(b'x' * len(b'corrupt model'))
+        digest = hashlib.sha256(right.read_bytes()).hexdigest()
+        with patch.object(setup, 'MODEL_BYTES', len(b'corrupt model')), patch.object(setup, 'MODEL_SHA256', digest):
+            with self.assertRaisesRegex(RuntimeError, 'SHA256'):
+                setup.setup_model(model_root, wrong)
+            self.assertEqual(list(model_root.iterdir()), [])
+            with patch.object(pipeline, 'MODEL_FILES', {pipeline.MODEL_FILE: digest}):
+                destination = setup.setup_model(model_root, right)
+                self.assertEqual(destination, model_root.resolve() / pipeline.MODEL_DIRECTORY)
+                self.assertTrue(pipeline.model_ready(model_root))
+                self.assertEqual(setup.setup_model(model_root), destination)
 
     def test_exact_thirty_second_compressed_clips_allow_encoder_padding_in_probe_metadata(self) -> None:
         original = self.root / 'original.wav'
@@ -312,7 +325,7 @@ class PipelineTests(unittest.TestCase):
             duration = pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
         self.assertEqual(duration, 600)
         self.assertEqual(observed['timeout'], WORKER_TIMEOUT)
-        self.assertEqual(WORKER_TIMEOUT, 1200)
+        self.assertEqual(WORKER_TIMEOUT, 1800)
         self.assertEqual(observed['rss_limit_kib'], 3 * 1024 * 1024)
         for name in ['source.wav', 'vocals.wav', 'backing.wav']:
             with wave.open(str(output_dir / name), 'rb') as audio:

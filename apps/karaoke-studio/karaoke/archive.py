@@ -210,12 +210,22 @@ def _project(value):
         _fail('Saved project fields or cue intervals are invalid for an archive.')
 
 
+_MODEL_FIELDS = {
+    'spleeter:2stems': {'modelRelease', 'modelArchiveSha256', 'spleeterVersion', 'tensorflowVersion'},
+    'UVR-MDX-NET-Voc_FT': {'modelSha256', 'onnxruntimeVersion'},
+}
+
+
 def _processing(raw, frames):
     value = _strict_json(raw)
     if type(value) is not dict:
         _fail('Processing metadata must be an approved object.')
-    exact = {'model': 'spleeter:2stems', 'modelRelease': 'v1.4.0',
-             'chunkScheme': 'linear-sample-center-overlap'}
+    # Projects separated before the MDX-Net model (Spleeter) remain restorable; each model has its own
+    # provenance fields.
+    model = value.get('model', 'spleeter:2stems')
+    if type(model) is not str or model not in _MODEL_FIELDS:
+        _fail('Processing metadata names an unsupported separation model.')
+    exact = {'chunkScheme': 'linear-sample-center-overlap'} | ({'modelRelease': 'v1.4.0'} if model == 'spleeter:2stems' else {})
     integers = {'offlineNetworkAttempts': (0, 1000000), 'peakRssKiB': (0, 1000000000),
                 'windowFrames': (1, 1323000), 'overlapFrames': (0, 88200),
                 'hopFrames': (1, 1323000), 'windowCount': (1, MAX_WINDOWS),
@@ -224,11 +234,12 @@ def _processing(raw, frames):
                'sourcePeak': (0, 1000000), 'stemPeak': (0, 1000000),
                'sourceGain': (0, 1), 'stemGain': (0, 1),
                'duration': (frames / SAMPLE_RATE, frames / SAMPLE_RATE)}
-    allowed = set(exact) | set(integers) | set(numbers) | {
-        'modelArchiveSha256', 'spleeterVersion', 'tensorflowVersion', 'windowRanges'}
+    allowed = set(exact) | set(integers) | set(numbers) | {'model', 'windowRanges'} | _MODEL_FIELDS[model]
     if not set(value) <= allowed:
         _fail('Processing metadata contains unsupported or private fields.')
     for key, item in value.items():
+        if key == 'model':
+            continue
         if key in exact:
             if type(item) is not str or item != exact[key]:
                 _fail()
@@ -236,9 +247,9 @@ def _processing(raw, frames):
             _integer(item, *integers[key])
         elif key in numbers:
             _number(item, *numbers[key])
-        elif key == 'modelArchiveSha256':
+        elif key in ('modelArchiveSha256', 'modelSha256'):
             _hex(item, 64)
-        elif key in ('spleeterVersion', 'tensorflowVersion'):
+        elif key in ('spleeterVersion', 'tensorflowVersion', 'onnxruntimeVersion'):
             if type(item) is not str or re.fullmatch(r'[A-Za-z0-9.+_-]{1,64}', item) is None:
                 _fail()
         elif key == 'windowRanges':

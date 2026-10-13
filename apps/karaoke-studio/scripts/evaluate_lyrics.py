@@ -2,8 +2,9 @@
 
 Uses a local checkout of the JamendoLyrics dataset (https://github.com/f90/jamendolyrics, MIT
 code; Creative Commons songs). Audio is never committed. Each English song runs through the
-production path: ``separate_clip`` (decode + Spleeter) then ``transcribe_vocals`` (VAD + Parakeet).
-Songs longer than the app's 300-second limit are evaluated on their first 300 seconds.
+production path: ``separate_clip`` (decode + MDX-Net vocal separation) then ``transcribe_vocals`` (VAD + Parakeet).
+Songs longer than ``--max-seconds`` (default: the app's limit) are evaluated on their first ``--max-seconds``.
+The #214 baseline used 300 s; pass ``--max-seconds 300`` to compare with it.
 
 Reports, per song and overall:
 - word error rate (WER) of recognized words against the reference lyrics;
@@ -40,7 +41,7 @@ def edit_distance(a: list[str], b: list[str]) -> int:
     return previous[-1]
 
 
-def process(song: Path, work: Path, model_dir: Path) -> dict:
+def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DURATION) -> dict:
     from karaoke.pipeline import separate_clip
     from karaoke.transcription import transcribe_vocals
     result, separated = work / 'transcript.json', work / 'separation.json'
@@ -56,8 +57,8 @@ def process(song: Path, work: Path, model_dir: Path) -> dict:
     else:
         work.mkdir(parents=True, exist_ok=True)
         source = work / 'input.wav'
-        # Bounded copy: the app refuses clips over 300 s rather than trimming them.
-        subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', str(song), '-t', str(MAX_DURATION), '-ac', '2', '-ar', '44100',
+        # Bounded copy: the app refuses clips over its limit rather than trimming them.
+        subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', str(song), '-t', str(max_seconds), '-ac', '2', '-ar', '44100',
                         '-c:a', 'pcm_s16le', str(source)], check=True)
         duration = separate_clip(source, media, model_dir, cancel, lambda _s: None)
         separated.write_text(json.dumps({'duration': duration}))
@@ -81,6 +82,7 @@ def main() -> None:
     parser.add_argument('--model-dir', type=Path, required=True)
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--max-seconds', type=float, default=MAX_DURATION)
     args = parser.parse_args()
     rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == 'English']
     totals = dict(errors=0, reference=0)
@@ -88,7 +90,7 @@ def main() -> None:
     confidence_pairs, heard_lines = [], []
     for row in rows:
         name = Path(row['Filepath']).stem
-        transcript = process(args.dataset / 'mp3' / row['Filepath'], args.work / name, args.model_dir)
+        transcript = process(args.dataset / 'mp3' / row['Filepath'], args.work / name, args.model_dir, args.max_seconds)
         duration, words = transcript['duration'], transcript['words']
         timing = list(csv.DictReader((args.dataset / 'annotations' / 'words' / f'{name}.csv').open()))
         reference_words = (args.dataset / 'lyrics' / f'{name}.words.txt').read_text().split()
