@@ -8,9 +8,10 @@
 import { readFile } from 'node:fs/promises';
 import { interpret } from '../src/web/interpreter.js';
 import { createAssistedInterpreter } from '../src/web/assisted-interpreter.js';
-import { HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter, evaluateInterpreterAsync } from '../src/web/instruction-suite.js';
+import { HELD_OUT_2_SUITE, HELD_OUT_SUITE, SUITE, SUITE_VERSION, evaluateInterpreter, evaluateInterpreterAsync } from '../src/web/instruction-suite.js';
 
-const runs = [evaluateInterpreter(interpret), evaluateInterpreter(interpret, HELD_OUT_SUITE, `${SUITE_VERSION}-held-out`)];
+const runs = [evaluateInterpreter(interpret), evaluateInterpreter(interpret, HELD_OUT_SUITE, `${SUITE_VERSION}-held-out`),
+  evaluateInterpreter(interpret, HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2`)];
 const modelAt = process.argv.indexOf('--watersheep');
 if (modelAt > 0) {
   const directory = process.argv[modelAt + 1];
@@ -21,7 +22,8 @@ if (modelAt > 0) {
   const calls = [];
   const timed = name => async (...args) => { const started = performance.now(); try { return await model[name](...args); } finally { calls.push(performance.now() - started); } };
   const assisted = createAssistedInterpreter({ model: { decide: timed('decide'), yes: timed('yes') } });
-  for (const [suite, name] of [[SUITE, `${SUITE_VERSION}+watersheep`], [HELD_OUT_SUITE, `${SUITE_VERSION}-held-out+watersheep`]]) {
+  for (const [suite, name] of [[SUITE, `${SUITE_VERSION}+watersheep`], [HELD_OUT_SUITE, `${SUITE_VERSION}-held-out+watersheep`],
+    [HELD_OUT_2_SUITE, `${SUITE_VERSION}-held-out-2+watersheep`]]) {
     const run = await evaluateInterpreterAsync(assisted, suite, name);
     const sorted = [...calls].sort((a, b) => a - b);
     run.summary.modelCalls = calls.length;

@@ -221,6 +221,64 @@ const HELD_OUT = [
 
 export const HELD_OUT_SUITE = HELD_OUT.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
 
+// Second held-out set (2026-10-13), written before WaterSheep's design was changed again and scored
+// once, to test whether a model's target choice generalizes. It leans toward paraphrased and indirect
+// names for controls, with negatives where nothing in the circle fits. Never tune on it.
+const HELD_OUT_2 = [
+  ['activate', 'navigation', 'show me how much it costs', act(2)],
+  ['activate', 'navigation', 'open the prices', act(2)],
+  ['activate', 'navigation', 'open the cost page', act(2)],
+  ['activate', 'navigation', 'I want to get in touch', act(3)],
+  ['activate', 'navigation', 'take me to support', act(3)],
+  ['activate', 'navigation', 'open the contact page please', act(3)],
+  ['activate', 'navigation', 'click the login', act(4)],
+  ['activate', 'navigation', 'press log on', act(4)],
+  ['activate', 'navigation', 'go to my account', act(4)],
+  ['activate', 'navigation', 'go to the start page', act(1)],
+  ['activate', 'navigation', 'open the front page', act(1)],
+  ['activate', 'navigation', 'click the button', act(4)],
+  ['activate', 'product', 'put it in my basket', act(2)],
+  ['activate', 'product', 'add this one to the cart', act(2)],
+  ['activate', 'product', 'check out now', act(3)],
+  ['activate', 'product', 'complete my purchase', act(3)],
+  ['activate', 'product', 'see what people said about it', act(4)],
+  ['activate', 'product', 'open customer reviews', act(4)],
+  ['activate', 'product', 'show the ratings', act(4)],
+  ['activate', 'product', 'open the comments', act(4)],
+  ['activate', 'form', 'press the send button', act(6)],
+  ['activate', 'form', 'tick the copy box', act(4)],
+  ['activate', 'form', 'email me a copy', act(4)],
+  ['activate', 'form', 'open the topic list', act(5)],
+  ['activate', 'form', 'go to the email field', act(2)],
+  ['activate', 'form', 'click on the name box', act(1)],
+  ['activate', 'list', 'open the first article', act(1)],
+  ['activate', 'list', 'open the third story', act(3)],
+  ['select', 'product', 'pick the hardback', option(1, 1)],
+  ['select', 'product', 'the paperback edition', option(1, 0)],
+  ['select', 'product', 'choose the audio version', option(1, 3)],
+  ['select', 'product', 'switch format to large print', option(1, 2)],
+  ['select', 'form', 'choose a problem with my order', option(5, 1)],
+  ['select', 'form', 'set the subject to book suggestion', option(5, 2)],
+  ['clarify', 'list', 'remove it', clarify(4, 5)],
+  ['dictate', 'focused', 'write thanks so much', edit(3, 'append', { text: 'thanks so much' })],
+  ['edit', 'focused', 'erase everything', edit(3, 'clear')],
+  ['edit', 'focused', 'take back that change', edit(3, 'undo')],
+  ['scroll', 'empty', 'move down the page', scroll('down')],
+  ['scroll', 'empty', 'scroll back up', scroll('up')],
+  ['navigate', 'empty', 'previous page please', plain('back')],
+  ['control', 'navigation', 'stop everything', plain('cancel')],
+  ['control', 'navigation', 'wait a sec', plain('pause')],
+  ['control', 'navigation', 'yes do it', plain('confirm')],
+  ['control', 'navigation', "no don't", plain('deny')],
+  ['refuse', 'navigation', 'open the blog', plain('unknown')],
+  ['refuse', 'navigation', 'click download', plain('unknown')],
+  ['refuse', 'navigation', 'open the shopping basket', plain('unknown')],
+  ['refuse', 'product', 'open the size guide', plain('unknown')],
+  ['refuse', 'form', 'attach a file', plain('unknown')],
+];
+
+export const HELD_OUT_2_SUITE = HELD_OUT_2.map(([category, context, say, expected], index) => ({ id: index + 1, category, context, say, expected }));
+
 // Actions that change the page. A wrong one is an unintended action, the costliest failure.
 const PAGE_ACTIONS = new Set(['activate', 'select-option', 'edit', 'search', 'submit', 'scroll', 'back', 'forward', 'choose']);
 
