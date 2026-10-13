@@ -2,18 +2,27 @@
 // repeat print, plus placed artwork. Pure data, geometry and validation; rendering lives in product-3d.ts.
 
 /** Base products. Each declares the parts a design styles; the 3D shell, pattern and tech pack follow them. */
-export const BASES = ['tee', 'sweatshirt', 'hoodie'] as const;
+export const BASES = ['tee', 'sweatshirt', 'hoodie', 'trousers'] as const;
 export type Base = typeof BASES[number];
-export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie' };
-export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket'] as const;
+export const BASE_NAMES: Record<Base, string> = { tee: 'T-shirt', sweatshirt: 'Crew sweatshirt', hoodie: 'Pullover hoodie', trousers: 'Pull-on trousers' };
+export const PART_IDS = ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket', 'chestPocket', 'waistband'] as const;
 export type PartId = typeof PART_IDS[number];
 export const PART_NAMES: Record<PartId, string> = { front: 'Front body', back: 'Back body', sleeveLeft: 'Left sleeve', sleeveRight: 'Right sleeve', neckband: 'Neck rib',
-  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket' };
+  cuffLeft: 'Left cuff', cuffRight: 'Right cuff', hemBand: 'Hem band', hood: 'Hood', pocket: 'Pocket', chestPocket: 'Chest pocket', waistband: 'Waistband' };
 export const BASE_PARTS: Record<Base, readonly PartId[]> = {
   tee: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband'],
   sweatshirt: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'neckband', 'cuffLeft', 'cuffRight', 'hemBand'],
   hoodie: ['front', 'back', 'sleeveLeft', 'sleeveRight', 'cuffLeft', 'cuffRight', 'hemBand', 'hood', 'pocket'],
+  // Shorts and trousers: front and back leg panels (cut in pairs) and an elasticated waistband.
+  trousers: ['front', 'back', 'waistband'],
 };
+/** A part's display name on this design: the front and back of shorts and trousers are leg panels. */
+export function partName(product: Pick<Product, 'base'>, part: PartId): string {
+  if (isBottoms(product) && (part === 'front' || part === 'back')) return part === 'front' ? 'Front legs' : 'Back legs';
+  return PART_NAMES[part];
+}
+/** Bottoms take leg measurements (waist, hip, rise, inseam, leg opening) instead of chest, length and sleeve. */
+export function isBottoms(product: Pick<Product, 'base'>): boolean { return product.base === 'trousers'; }
 /** Parts knitted as rib trims: they keep their rib fabric when a style is copied to every part. */
 export const RIB_PARTS: ReadonlySet<PartId> = new Set(['neckband', 'cuffLeft', 'cuffRight', 'hemBand']);
 /** The parts of this design: its base's parts plus any optional module parts, in display order. */
@@ -32,14 +41,14 @@ export interface Options { hem: Hem; chestPocket: boolean }
 export const DEFAULT_OPTIONS: Options = { hem: 'straight', chestPocket: false };
 export function optionsOf(product: Pick<Product, 'options'>): Options { return product.options ?? DEFAULT_OPTIONS; }
 export function hemAllowed(base: Base, hem: Hem): boolean { return hem === 'straight' || base === 'tee'; }
-export function chestPocketAllowed(base: Base): boolean { return base !== 'hoodie'; }
+export function chestPocketAllowed(base: Base): boolean { return base === 'tee' || base === 'sweatshirt'; }
 /** Sleeve-length presets in cm; the measurement stays editable. */
 export const SLEEVE_PRESETS = [{ id: 'short', name: 'Short', cm: 21 }, { id: 'elbow', name: 'Elbow', cm: 35 }, { id: 'long', name: 'Long', cm: 60 }] as const;
 
 /** The design with new module options: a new chest pocket starts in the front body's style, here and in every colorway. */
 export function withOptions(product: Product, next: Options): Product {
   if (!hemAllowed(product.base, next.hem)) fail(`A ${BASE_NAMES[product.base].toLowerCase()} has a rib hem band, so its hem stays straight.`);
-  if (next.chestPocket && !chestPocketAllowed(product.base)) fail('A hoodie has a kangaroo pocket instead of a chest pocket.');
+  if (next.chestPocket && !chestPocketAllowed(product.base)) fail(product.base === 'hoodie' ? 'A hoodie has a kangaroo pocket instead of a chest pocket.' : 'A chest pocket goes on a top.');
   const draft = structuredClone(product);
   const setPocket = (parts: Record<PartId, PartStyle>) => {
     if (next.chestPocket) parts.chestPocket ??= structuredClone(parts.front);
@@ -79,6 +88,8 @@ export interface UploadedMotif { id: string; name: string; dataUrl: string; widt
 export interface PartStyle { material: string; color: string; print: Print | null }
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number }
 export interface Measurements { chest: number; length: number; sleeve: number }
+/** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
+export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number }
 export interface Spec { styleNumber: string; season: string; sampleSize: Size }
 export const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
 export type Size = typeof SIZES[number];
@@ -90,7 +101,8 @@ export type Currency = typeof CURRENCIES[number];
 export interface Costing { currency: Currency; retail: number; make: number; trims: number; printPerArtwork: number; fabricPrices: Record<string, number> }
 export interface Product {
   /** Exactly the design's parts (partsOf) are present in `parts`. */
-  base: Base; name: string; measurements: Measurements; neckline: 'crew' | 'v';
+  /** Tops take Measurements; bottoms (isBottoms) take LegMeasurements. Bottoms keep a 'crew' neckline value. */
+  base: Base; name: string; measurements: Measurements | LegMeasurements; neckline: 'crew' | 'v';
   parts: Record<PartId, PartStyle>; artwork: Artwork[];
   /** Module choices; absent until one is changed (then DEFAULT_OPTIONS apply). */
   options?: Options;
@@ -105,7 +117,7 @@ export interface Product {
 }
 
 export const LIMITS = {
-  chest: [80, 150], length: [55, 90], sleeve: [10, 65], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
+  chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -120,6 +132,15 @@ function plain(value: unknown, keys: readonly string[], label: string): Record<s
 const finite = (value: unknown, [low, high]: readonly [number, number], label: string): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= low && value <= high ? value : fail(`${label} must be from ${low} to ${high}.`);
 const hex = (value: unknown, label: string): string => typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : fail(`${label} must be a six-digit hex color.`);
+
+/** A top's measurements; bottoms have none of these. */
+export function topMeasurements(product: Pick<Product, 'base' | 'measurements'>): Measurements {
+  return isBottoms(product) ? fail('Shorts and trousers use leg measurements.') : product.measurements as Measurements;
+}
+/** Shorts' and trousers' leg measurements. */
+export function legMeasurements(product: Pick<Product, 'base' | 'measurements'>): LegMeasurements {
+  return isBottoms(product) ? product.measurements as LegMeasurements : fail('Only shorts and trousers have leg measurements.');
+}
 
 export function material(id: string): Material { return MATERIALS.find(item => item.id === id) ?? fail('Choose a fabric from the library.'); }
 
@@ -205,10 +226,20 @@ export function validateProduct(value: unknown): Product {
   if (!BASES.includes(p.base as Base)) fail('Choose a base product from the library.');
   const base = p.base as Base;
   if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > LIMITS.name) fail('Product name must contain 1–80 characters.');
-  const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
-  const measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
+  let measurements: Measurements | LegMeasurements;
+  if (base === 'trousers') {
+    const m = plain(p.measurements, ['waist', 'hip', 'rise', 'inseam', 'legOpening'], 'Leg measurements');
+    measurements = { waist: finite(m.waist, LIMITS.waist, 'Waist (cm)'), hip: finite(m.hip, LIMITS.hip, 'Hip (cm)'), rise: finite(m.rise, LIMITS.rise, 'Front rise (cm)'),
+      inseam: finite(m.inseam, LIMITS.inseam, 'Inseam (cm)'), legOpening: finite(m.legOpening, LIMITS.legOpening, 'Leg opening (cm)') };
+    if (measurements.hip < measurements.waist) fail('Hip must be at least the waist: the waistband has to pull on over the hips.');
+    if (measurements.legOpening > measurements.hip * 0.8) fail('Leg opening must be narrower than the thigh (at most 80% of the hip).');
+  } else {
+    const m = plain(p.measurements, ['chest', 'length', 'sleeve'], 'Measurements');
+    measurements = { chest: finite(m.chest, LIMITS.chest, 'Chest (cm)'), length: finite(m.length, LIMITS.length, 'Body length (cm)'), sleeve: finite(m.sleeve, LIMITS.sleeve, 'Sleeve length (cm)') };
+  }
   if (p.neckline !== 'crew' && p.neckline !== 'v') fail('Neckline must be crew or v.');
   if (base === 'hoodie' && p.neckline !== 'crew') fail('A hoodie has a hood, not a V-neck.');
+  if (base === 'trousers' && p.neckline !== 'crew') fail('Shorts and trousers have no neckline.');
   let options: Options | undefined;
   if (p.options !== undefined) {
     const o = plain(p.options, ['hem', 'chestPocket'], 'Modules');
@@ -223,7 +254,8 @@ export function validateProduct(value: unknown): Product {
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
   if (!Array.isArray(p.artwork) || p.artwork.length > 2) fail('Place at most one artwork on the front and one on the back.');
-  const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements));
+  if (base === 'trousers' && (p.artwork as unknown[]).length) fail('Artwork placement is available on tops.');
+  const artwork = (p.artwork as unknown[]).map(item => validateArtwork(item, measurements as Measurements));
   if (new Set(artwork.map(item => item.part)).size !== artwork.length) fail('Place at most one artwork per side.');
   let spec: Spec | undefined;
   if (p.spec !== undefined) {
@@ -241,6 +273,7 @@ const allParts = (part: PartStyle, overrides: Partial<Record<PartId, PartStyle>>
   Object.fromEntries(BASE_PARTS[base].map(id => [id, overrides[id] ?? (RIB_PARTS.has(id) ? { ...part, material: 'rib-220', print: null } : part)])) as Record<PartId, PartStyle>;
 const measurements: Measurements = { chest: 104, length: 72, sleeve: 21 };
 const fleece: Measurements = { chest: 112, length: 70, sleeve: 62 };
+const legFit: LegMeasurements = { waist: 76, hip: 102, rise: 28, inseam: 78, legOpening: 42 };
 
 /** Base products are blank; templates are remixable designs built on them (as in product-library tools). */
 export const TEMPLATES: readonly { id: string; name: string; description: string; product: Product }[] = [
@@ -259,6 +292,10 @@ export const TEMPLATES: readonly { id: string; name: string; description: string
     product: { base: 'sweatshirt', name: 'Crew sweatshirt', measurements: fleece, neckline: 'crew', parts: allParts(style('terry-300', '#b7b4ad'), {}, 'sweatshirt'), artwork: [] } },
   { id: 'hoodie', name: 'Pullover hoodie', description: 'Navy French terry with a hood, kangaroo pocket and rib trims.',
     product: { base: 'hoodie', name: 'Pullover hoodie', measurements: { ...fleece, length: 72 }, neckline: 'crew', parts: allParts(style('terry-300', '#1f2a4f'), {}, 'hoodie'), artwork: [] } },
+  { id: 'shorts', name: 'Pull-on shorts', description: 'Washed linen shorts with an elasticated waistband.',
+    product: { base: 'trousers', name: 'Pull-on shorts', measurements: { ...legFit, inseam: 18, legOpening: 58 }, neckline: 'crew', parts: allParts(style('linen-170', '#c9b48f'), {}, 'trousers'), artwork: [] } },
+  { id: 'trousers', name: 'Straight trousers', description: 'Indigo denim twill, straight leg, elasticated waist.',
+    product: { base: 'trousers', name: 'Straight trousers', measurements: legFit, neckline: 'crew', parts: allParts(style('denim-340', '#2d3f5c'), {}, 'trousers'), artwork: [] } },
 ];
 export function template(id: string): Product {
   const found = TEMPLATES.find(item => item.id === id) ?? fail('Choose a template from the library.');
@@ -275,7 +312,7 @@ export function neckSize(m: Measurements, neckline: Product['neckline']) { const
 export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
 export function teeDimensions(product: Product) {
-  const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, shoulderDrop = 4, armDepth = m.chest * 0.23 + 2;
+  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, shoulderDrop = 4, armDepth = m.chest * 0.23 + 2;
   return {
     panelWidth: panel.width, length: m.length, half, neckHalf: m.chest * 0.08 + 7, shoulderX: half * 0.86 + 1, shoulderDrop,
     armDepth, sleeveLength: m.sleeve,
@@ -292,10 +329,95 @@ export function teeDimensions(product: Product) {
 }
 
 export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number }
+
+/** The garment's overall height in the 3D view, in cm (hem at 0). */
+export function garmentHeight(product: Product): number {
+  if (isBottoms(product)) return trouserDimensions(product).length + WAISTBAND_CM;
+  return topMeasurements(product).length + (product.base === 'hoodie' ? 30 : 0);
+}
+
+// Shorts and trousers ------------------------------------------------------------------------------
+
+export const WAISTBAND_CM = 4;
+/** Leg-length presets (inseam, cm); the measurement stays editable. */
+export const LEG_PRESETS = [{ id: 'shorts', name: 'Shorts', inseam: 18 }, { id: 'cropped', name: 'Cropped', inseam: 58 }, { id: 'full', name: 'Full length', inseam: 78 }] as const;
+
+/**
+ * Every derived trouser dimension in cm, from one place. The style is pull-on: the panels are cut straight at the
+ * waist wide enough to pass the hips, and an elastic in the waistband gathers them to the waist.
+ */
+export function trouserDimensions(product: Product) {
+  const m = legMeasurements(product);
+  const frontHip = m.hip / 4 + 1, backHip = m.hip / 4 + 2, frontCrotch = m.hip * 0.05, backCrotch = m.hip * 0.1;
+  return {
+    ...m, frontHip, backHip, frontCrotch, backCrotch, hipDepth: m.rise * 0.7, backRaise: 3, length: m.rise + m.inseam,
+    outseam: m.rise + m.inseam + WAISTBAND_CM, frontHem: m.legOpening / 2 - 1, backHem: m.legOpening / 2 + 1,
+    // A leg is one front and one back panel; measured 2.5 cm below the crotch, after the crotch curve.
+    thighHalf: (frontHip + frontCrotch + backHip + backCrotch) / 2 - 1,
+    elastic: m.waist - 4, waistbandLength: m.hip + 6,
+    // The 3D view: gathered waist, hip and the leg's centre and half-width at the hem.
+    waistHalf: m.waist / 4 + 1.5, hipHalf: m.hip / 4 + 1.5,
+  };
+}
+
+function makePiece(part: PartId, outline: { x: number; y: number }[], cutCount: number): PatternPiece {
+  return { part, outline, cutCount, width: Math.max(...outline.map(p => p.x)), height: Math.max(...outline.map(p => p.y)), areaCm2: area(outline) };
+}
+
+/** Front and back leg panels (each cut as a mirrored pair, side seam on the left) and the folded waistband. */
+function trouserPieces(product: Product): PatternPiece[] {
+  const d = trouserDimensions(product);
+  const panel = (front: boolean) => {
+    const hip = front ? d.frontHip : d.backHip, crotch = front ? d.frontCrotch : d.backCrotch, raise = front ? 0 : d.backRaise;
+    const hem = front ? d.frontHem : d.backHem, centre = (hip + crotch) / 2, hipY = raise + d.hipDepth, crotchY = raise + d.rise, hemY = crotchY + d.inseam;
+    // The back rises 3 cm higher at the centre back seam than at the side.
+    const pts = [{ x: 0.5, y: raise }, { x: hip - 0.5, y: 0 }];
+    // Centre seam: straight down to the hip line, then the crotch curve out to the inseam.
+    for (let i = 0; i <= 6; i++) { const t = Math.PI / 2 * i / 6; pts.push({ x: hip + crotch * (1 - Math.cos(t)), y: hipY + (crotchY - hipY) * Math.sin(t) }); }
+    pts.push({ x: centre + hem / 2, y: hemY }, { x: centre - hem / 2, y: hemY }, { x: 0, y: hipY });
+    return pts;
+  };
+  const band = [{ x: 0, y: 0 }, { x: d.waistbandLength, y: 0 }, { x: d.waistbandLength, y: WAISTBAND_CM * 2 }, { x: 0, y: WAISTBAND_CM * 2 }];
+  return [makePiece('front', panel(true), 2), makePiece('back', panel(false), 2), makePiece('waistband', band, 1)];
+}
+
+/**
+ * The flat front (and back) of shorts or trousers in cm, x across from the centre and y down from the waist: the
+ * gathered waist, hips, two legs and the crotch point between them. Side seams and inseams join front to back;
+ * the waist and the leg hems stay open.
+ */
+export function trouserSilhouette(product: Product): Silhouette {
+  const d = trouserDimensions(product), half = d.legOpening / 4, centre = Math.max(d.hipHalf * 0.5 + 2.5, half + 1);
+  const side: Pt[] = [];
+  for (let i = 0; i <= 4; i++) { const t = i / 4; side.push({ x: d.waistHalf + (d.hipHalf - d.waistHalf) * Math.sin(t * Math.PI / 2), y: d.hipDepth * t }); }
+  side.push({ x: d.hipHalf, y: d.rise });
+  const mirror = (p: Pt) => ({ x: -p.x, y: p.y });
+  const right = [...side, { x: centre + half, y: d.length }, { x: centre - half, y: d.length }];
+  const points = [...right, { x: 0, y: d.rise }, ...right.map(mirror).reverse()];
+  // Edge i runs from point i to i + 1: side seams and inseams are joined; the hems and the waist (last edge) are open.
+  const n = side.length, pinned = points.map((_, i) => i !== n && i !== points.length - n - 2 && i !== points.length - 1);
+  return { points, pinned, neck: points.map(() => false), armholes: [] };
+}
+
+function trouserMesh(product: Product, Delaunator: DelaunatorLike): PartMesh[] {
+  const d = trouserDimensions(product), depth = d.hip / (2 * Math.PI) * 0.85, s = trouserSilhouette(product);
+  const groups = new Map<PartId, PartMesh>(PART_IDS.map(id => [id, { part: id, positions: [], uvs: [], indices: [] }]));
+  const height = (p: Pt, sign: number) => { const dist = Math.min(seamDistance(p, s), depth); return dist < 1e-6 ? 0 : sign * depth * Math.sqrt(1 - (1 - dist / depth) ** 2); };
+  for (const side of ['front', 'back'] as const) fillRegion(groups.get(side)!, s.points, Delaunator, p => height(p, side === 'front' ? 1 : -1), d.length, side);
+  // The waistband rises from the open waist edge: front left to right, then back right to left.
+  const ring: { x: number; y: number; z: number }[] = [];
+  for (const sign of [1, -1]) for (let i = 0; i <= 16; i++) {
+    const x = sign * (-d.waistHalf + 2 * d.waistHalf * i / 16);
+    ring.push({ x, y: d.length, z: height({ x, y: 0 }, sign) });
+  }
+  neckRib(groups.get('waistband')!, ring, WAISTBAND_CM);
+  return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
+}
 function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; }
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
-  const m = product.measurements, panel = panelSize(m), sleeve = sleeveSize(m), neck = neckSize(m, product.neckline);
+  if (isBottoms(product)) return trouserPieces(product);
+  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), neck = neckSize(m, product.neckline);
   const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   const body = (front: boolean) => {
     const neckDepth = front ? (product.neckline === 'v' ? 15 : 8) : 2;
@@ -371,7 +493,7 @@ interface Silhouette { points: Pt[]; pinned: boolean[]; neck: boolean[]; armhole
  * back meet (shoulders, sleeve edges, sides); the hem, cuffs and neck stay open. `armholes` are the sleeve seams.
  */
 export function teeSilhouette(product: Product, side: 'front' | 'back'): Silhouette {
-  const m = product.measurements, half = panelSize(m).width / 2;
+  const m = topMeasurements(product), half = panelSize(m).width / 2;
   const { neckHalf, shoulderX, shoulderDrop, armDepth } = teeDimensions(product);
   const angle = teeDimensions(product).sleeveAngle * Math.PI / 180, dir = { x: Math.cos(angle), y: Math.sin(angle) }, perp = { x: -Math.sin(angle), y: Math.cos(angle) };
   const shoulder = { x: shoulderX, y: shoulderDrop }, underarm = { x: half, y: shoulderDrop + armDepth };
@@ -421,7 +543,8 @@ function seamDistance(p: Pt, s: Silhouette): number {
  * hem, cuffs and neck stay open. y is up (hem at 0), z toward the viewer, units cm. UVs are flat cm.
  */
 export function teeMesh(product: Product, Delaunator: { from(points: number[][]): { triangles: Uint32Array | number[] } }): PartMesh[] {
-  const m = product.measurements, depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
+  if (isBottoms(product)) return trouserMesh(product, Delaunator);
+  const m = topMeasurements(product), depth = m.chest / (2 * Math.PI) * 0.85, top = m.length, dims = teeDimensions(product);
   const groups = new Map<PartId, PartMesh>();
   for (const id of PART_IDS) groups.set(id, { part: id, positions: [], uvs: [], indices: [] });
   for (const side of ['front', 'back'] as const) {
@@ -463,34 +586,7 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
     }
     for (const { part, polygon } of regions) {
       const lift = part === 'pocket' ? 0.5 : part === 'chestPocket' ? 0.35 : 0;
-      const samples: Pt[] = [];
-      for (let i = 0; i < polygon.length; i++) {
-        const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 1.5));
-        for (let k = 0; k < n; k++) samples.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
-      }
-      const xs = polygon.map(p => p.x), ys = polygon.map(p => p.y), boundary = samples.length;
-      for (let y = Math.min(...ys) + 1; y < Math.max(...ys); y += 2) for (let x = Math.min(...xs) + 1; x < Math.max(...xs); x += 2) {
-        const p = { x, y };
-        if (inside(p, polygon) && samples.slice(0, boundary).every(q => Math.hypot(q.x - x, q.y - y) > 0.9)) samples.push(p);
-      }
-      const triangles = Delaunator.from(samples.map(p => [p.x, p.y])).triangles, group = groups.get(part)!, ids = new Map<number, number>();
-      const vertex = (index: number) => {
-        let id = ids.get(index);
-        if (id === undefined) {
-          const p = samples[index]; id = group.positions.length / 3; ids.set(index, id);
-          group.positions.push(p.x, top - p.y, height(p) + lift);
-          // Seen from behind, the back's prints read left to right like the front's.
-          group.uvs.push(side === 'front' ? p.x : -p.x, p.y);
-        }
-        return id;
-      };
-      for (let t = 0; t < triangles.length; t += 3) {
-        const tri = [triangles[t], triangles[t + 1], triangles[t + 2]], pts = tri.map(i => samples[i]);
-        if (!inside({ x: (pts[0].x + pts[1].x + pts[2].x) / 3, y: (pts[0].y + pts[1].y + pts[2].y) / 3 }, polygon)) continue;
-        const [a, b, d] = tri.map(vertex);
-        // Counter-clockwise from outside: flat y grows downward, so the front's order flips.
-        if (side === 'front') group.indices.push(a, d, b); else group.indices.push(a, b, d);
-      }
+      fillRegion(groups.get(part)!, polygon, Delaunator, p => height(p) + lift, top, side);
     }
   }
   // The open neck edge, front curve (left to right) then back curve (right to left).
@@ -504,6 +600,42 @@ export function teeMesh(product: Product, Delaunator: { from(points: number[][])
   if (product.base === 'hoodie') hoodMesh(groups.get('hood')!, ring, new Set(fronts), dims);
   else neckRib(groups.get('neckband')!, ring, neckSize(m, product.neckline).width);
   return partsOf(product).map(id => groups.get(id)!).filter(group => group.indices.length);
+}
+
+type DelaunatorLike = { from(points: number[][]): { triangles: Uint32Array | number[] } };
+/**
+ * Triangulates a flat region (boundary samples every 1.5 cm plus a 2 cm interior grid) into `group`: x stays, y is
+ * flipped so the hem sits at 0 below `top`, z comes from `z`, and UVs are flat cm (mirrored on the back so prints
+ * read left to right from behind).
+ */
+function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, z: (p: Pt) => number, top: number, side: 'front' | 'back') {
+  const samples: Pt[] = [];
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 1.5));
+    for (let k = 0; k < n; k++) samples.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
+  }
+  const xs = polygon.map(p => p.x), ys = polygon.map(p => p.y), boundary = samples.length;
+  for (let y = Math.min(...ys) + 1; y < Math.max(...ys); y += 2) for (let x = Math.min(...xs) + 1; x < Math.max(...xs); x += 2) {
+    const p = { x, y };
+    if (inside(p, polygon) && samples.slice(0, boundary).every(q => Math.hypot(q.x - x, q.y - y) > 0.9)) samples.push(p);
+  }
+  const triangles = Delaunator.from(samples.map(p => [p.x, p.y])).triangles, ids = new Map<number, number>();
+  const vertex = (index: number) => {
+    let id = ids.get(index);
+    if (id === undefined) {
+      const p = samples[index]; id = group.positions.length / 3; ids.set(index, id);
+      group.positions.push(p.x, top - p.y, z(p));
+      group.uvs.push(side === 'front' ? p.x : -p.x, p.y);
+    }
+    return id;
+  };
+  for (let t = 0; t < triangles.length; t += 3) {
+    const tri = [triangles[t], triangles[t + 1], triangles[t + 2]], pts = tri.map(i => samples[i]);
+    if (!inside({ x: (pts[0].x + pts[1].x + pts[2].x) / 3, y: (pts[0].y + pts[1].y + pts[2].y) / 3 }, polygon)) continue;
+    const [a, b, d] = tri.map(vertex);
+    // Counter-clockwise from outside: flat y grows downward, so the front's order flips.
+    if (side === 'front') group.indices.push(a, d, b); else group.indices.push(a, b, d);
+  }
 }
 
 /** Neck rib: a band rising from the open neck edge. */

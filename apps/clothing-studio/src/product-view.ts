@@ -2,8 +2,8 @@
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
-  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, PART_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
-  chestPocketAllowed, hemAllowed, optionsOf, withOptions,
+  LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
+  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import type { Project } from './model.ts';
@@ -14,6 +14,9 @@ import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const PALETTE = ['#f4f2ec', '#1c1c1e', '#1f2a4f', '#3f5468', '#9fae91', '#d89476', '#b23a2e', '#e9c46a', '#efe8d8', '#7b6d8d'];
 const DRAG_TYPE = 'application/x-clothing-swatch';
+// Shorts and trousers: input id, label and LIMITS key of each leg measurement.
+const LEG_FIELDS = [['product-waist', 'Waist, relaxed', 'waist'], ['product-hip', 'Hip', 'hip'], ['product-rise', 'Front rise', 'rise'],
+  ['product-inseam', 'Inseam', 'inseam'], ['product-leg-opening', 'Leg opening', 'legOpening']] as const;
 type Swatch = { kind: 'material'; id: string } | { kind: 'color'; value: string } | { kind: 'print'; motif: PrintMotif };
 
 export const productMarkup = `<section class="panel product-panel" id="product-editor" aria-labelledby="product-heading">
@@ -47,23 +50,27 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Repeat size (cm)<input id="print-scale" type="number" min="${LIMITS.scaleCm[0]}" max="${LIMITS.scaleCm[1]}" step="0.5"></label></div>
       <button id="apply-all-parts" class="quiet">Use this style on every part</button>
       <p class="eyebrow">MEASUREMENTS</p>
-      <div class="measure-grid"><label class="field">Chest (cm)<input id="product-chest" type="number" min="${LIMITS.chest[0]}" max="${LIMITS.chest[1]}" step="1"></label>
+      <div class="measure-grid" id="top-measures"><label class="field">Chest (cm)<input id="product-chest" type="number" min="${LIMITS.chest[0]}" max="${LIMITS.chest[1]}" step="1"></label>
         <label class="field">Body length (cm)<input id="product-length" type="number" min="${LIMITS.length[0]}" max="${LIMITS.length[1]}" step="1"></label>
         <label class="field">Sleeve length (cm)<input id="product-sleeve" type="number" min="${LIMITS.sleeve[0]}" max="${LIMITS.sleeve[1]}" step="1"></label>
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
+      <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
       <p class="eyebrow">MODULES</p>
-      <div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
+      <div id="top-modules"><div class="measure-grid"><label class="field">Hem<select id="product-hem">${HEMS.map(h => `<option value="${h}">${HEM_NAMES[h]}</option>`).join('')}</select></label>
         <label class="check-field"><input id="product-chest-pocket" type="checkbox"> Add a chest pocket</label></div>
-      <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div>
+      <div class="inline-actions sleeve-presets" role="group" aria-label="Sleeve length presets"><span class="fine-print">Sleeve</span>${SLEEVE_PRESETS.map(p => `<button class="quiet" data-sleeve-preset="${p.cm}" aria-label="${p.name} sleeve, ${p.cm} cm">${p.name}</button>`).join('')}</div></div>
+      <div class="inline-actions sleeve-presets" id="leg-modules" role="group" aria-label="Leg length presets" hidden><span class="fine-print">Leg</span>${LEG_PRESETS.map(p => `<button class="quiet" data-leg-preset="${p.inseam}" aria-label="${p.name}, ${p.inseam} cm inseam">${p.name}</button>`).join('')}</div>
       <p id="module-help" class="fine-print"></p>
       <p class="eyebrow">ARTWORK</p>
+      <p id="artwork-note" class="fine-print" hidden>Artwork placement is available on tops.</p>
+      <div id="artwork-controls" class="artwork-controls">
       <label class="field">Artwork side<select id="artwork-side"><option value="front">Front</option><option value="back">Back</option></select></label>
       <label class="button quiet file-button">Upload artwork (PNG, JPEG, WebP)<input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
       <div class="measure-grid"><label class="field">Artwork width (cm)<input id="artwork-width" type="number" min="${LIMITS.artworkWidthCm[0]}" max="${LIMITS.artworkWidthCm[1]}" step="0.5"></label>
         <label class="field">From centre (cm)<input id="artwork-x" type="number" step="0.5"></label>
         <label class="field">Below shoulder (cm)<input id="artwork-y" type="number" step="0.5"></label></div>
-      <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button></div>
+      <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button></div></div>
     </aside>
   </div>
   <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div>
@@ -121,6 +128,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   }
 
   const product = () => options.current().product ?? null;
+  const label = (part: PartId) => partName(product() ?? template('blank'), part);
   function update(mutate: (draft: Product) => void, text: string) {
     const current = product() ?? template('blank');
     const draft = structuredClone(current);
@@ -133,7 +141,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       if (swatch.kind === 'material') { material(swatch.id); style.material = swatch.id; }
       else if (swatch.kind === 'color') style.color = swatch.value;
       else style.print = { motif: swatch.motif, color: style.print?.color ?? '#1f2a4f', scaleCm: style.print?.scaleCm ?? 6, layout: style.print?.layout ?? 'grid' };
-    }, `${PART_NAMES[part]}: ${swatch.kind === 'material' ? material(swatch.id).name : swatch.kind === 'color' ? `color ${swatch.value}` : `${printName({ motif: swatch.motif, color: '', scaleCm: 6, layout: 'grid' }, product() ?? {})} print`}.`);
+    }, `${label(part)}: ${swatch.kind === 'material' ? material(swatch.id).name : swatch.kind === 'color' ? `color ${swatch.value}` : `${printName({ motif: swatch.motif, color: '', scaleCm: 6, layout: 'grid' }, product() ?? {})} print`}.`);
   }
   const parseSwatch = (raw: string | undefined): Swatch | null => { try { return raw ? JSON.parse(raw) as Swatch : null; } catch { return null; } };
 
@@ -184,7 +192,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
         draft.motifs = [...motifs, { id: `m${n}`, name, dataUrl, width, height }];
         const current = draft.parts[selected].print;
         draft.parts[selected].print = { motif: `upload:m${n}`, color: current?.color ?? '#1f2a4f', scaleCm: current?.scaleCm ?? 8, layout: current?.layout ?? 'grid' };
-      }, `“${name}” repeats on the ${PART_NAMES[selected].toLowerCase()}. Choose its repeat and size in cm below, or drag it onto other parts.`);
+      }, `“${name}” repeats on the ${label(selected).toLowerCase()}. Choose its repeat and size in cm below, or drag it onto other parts.`);
     } catch (error) { options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
   });
   // Repaint the garment, pieces and thumbnails once an uploaded motif has decoded.
@@ -225,25 +233,34 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('part-print').addEventListener('change', () => {
     const motif = ($('part-print') as HTMLSelectElement).value;
     if (motif) applySwatch(selected, { kind: 'print', motif: motif as Print['motif'] });
-    else update(draft => { draft.parts[selected].print = null; }, `${PART_NAMES[selected]}: print removed.`);
+    else update(draft => { draft.parts[selected].print = null; }, `${label(selected)}: print removed.`);
   });
   for (const id of ['print-color', 'print-layout', 'print-scale']) $(id).addEventListener('change', () => update(draft => {
     const print = draft.parts[selected].print;
     if (!print) throw new Error('Choose a print for this part first.');
     print.color = ($('print-color') as HTMLInputElement).value; print.layout = ($('print-layout') as HTMLSelectElement).value as Print['layout'];
     print.scaleCm = Number(($('print-scale') as HTMLInputElement).value);
-  }, `${PART_NAMES[selected]}: print updated.`));
+  }, `${label(selected)}: print updated.`));
   $('apply-all-parts').addEventListener('click', () => update(draft => {
     const style = draft.parts[selected];
     for (const id of partsOf(draft)) if (id !== selected) draft.parts[id] = RIB_PARTS.has(id) ? { ...structuredClone(style), material: draft.parts[id].material, print: null } : structuredClone(style);
-  }, `Every part now uses the ${PART_NAMES[selected].toLowerCase()} style (rib trims keep their rib knit).`));
+  }, `Every part now uses the ${label(selected).toLowerCase()} style (rib trims keep their rib knit).`));
   $('product-name').addEventListener('change', () => update(draft => { draft.name = ($('product-name') as HTMLInputElement).value; }, 'Product renamed.'));
   $('apply-measurements').addEventListener('click', () => update(draft => {
-    draft.measurements = { chest: Number(($('product-chest') as HTMLInputElement).value), length: Number(($('product-length') as HTMLInputElement).value), sleeve: Number(($('product-sleeve') as HTMLInputElement).value) };
+    const value = (id: string) => Number(($(id) as HTMLInputElement).value);
+    if (isBottoms(draft)) {
+      draft.measurements = Object.fromEntries(LEG_FIELDS.map(([id, , key]) => [key, value(id)])) as unknown as Product['measurements'];
+      return;
+    }
+    const m = { chest: value('product-chest'), length: value('product-length'), sleeve: value('product-sleeve') };
+    draft.measurements = m;
     draft.neckline = ($('product-neckline') as HTMLSelectElement).value as Product['neckline'];
     // Artwork that no longer fits the panel is pulled back inside rather than rejected.
-    for (const art of draft.artwork) { const half = draft.measurements.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, draft.measurements.length); }
+    for (const art of draft.artwork) { const half = m.chest / 4 + 1; art.xCm = Math.max(-half, Math.min(half, art.xCm)); art.yCm = Math.min(art.yCm, m.length); }
   }, 'Measurements applied to the 3D garment and its pattern pieces.'));
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-leg-preset]')) button.addEventListener('click', () => update(draft => {
+    legMeasurements(draft).inseam = Number(button.dataset.legPreset);
+  }, `${button.getAttribute('aria-label')}: the legs, pattern and tech pack follow it.`));
 
   // Artwork: transparent PNG kept, scaled to at most 1024 px.
   $('artwork-file').addEventListener('change', async () => {
@@ -263,7 +280,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       const side = ($('artwork-side') as HTMLSelectElement).value as Artwork['part'];
       update(draft => {
         draft.artwork = draft.artwork.filter(art => art.part !== side);
-        draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), xCm: 0, yCm: side === 'front' ? 10 : 12, widthCm: Math.min(24, draft.measurements.chest / 4) });
+        draft.artwork.push({ part: side, dataUrl, width, height, name: file.name.slice(0, 120), xCm: 0, yCm: side === 'front' ? 10 : 12, widthCm: Math.min(24, topMeasurements(draft).chest / 4) });
       }, `Artwork placed on the ${side}. Adjust its width and position below.`);
     } catch (error) { options.notice(error instanceof Error ? error.message : 'That image could not be used.', true); }
   });
@@ -295,7 +312,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     setModules(current => ({ ...current, chestPocket: on }), on ? 'Chest pocket added in the front body’s style. Style it like any other part.' : 'Chest pocket removed. You can undo this.');
   });
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-sleeve-preset]')) button.addEventListener('click', () => update(draft => {
-    draft.measurements.sleeve = Number(button.dataset.sleevePreset);
+    topMeasurements(draft).sleeve = Number(button.dataset.sleevePreset);
   }, `${button.getAttribute('aria-label')}: the sleeves, pattern and tech pack follow it.`));
 
   // Exports.
@@ -432,7 +449,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       const { canvas: tile, tileCm } = paintTile(design.parts[id], undefined, design.motifs);
       return `<pattern id="fill-${id}" patternUnits="userSpaceOnUse" width="${tileCm}" height="${tileCm}"><image href="${tile.toDataURL('image/png')}" width="${tileCm}" height="${tileCm}"/></pattern>`;
     }).join('');
-    return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="img" aria-label="Pattern pieces: ${pieces.map(p => PART_NAMES[p.part]).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${PART_NAMES[piece.part]}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/><text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${PART_NAMES[piece.part]} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm</text></g>`).join('')}</svg>`;
+    return `<svg viewBox="-2 -2 ${x + 4} ${height + 12}" width="${(x + 4) * scale}" role="img" aria-label="Pattern pieces: ${pieces.map(p => partName(design, p.part)).join(', ')}"><defs>${defs}</defs>${placed.map(({ piece, at }) => `<g transform="translate(${at} 0)" data-piece="${piece.part}" class="pattern-piece${piece.part === selected ? ' is-selected' : ''}" tabindex="0" role="button" aria-label="${partName(design, piece.part)}, ${piece.width.toFixed(1)} by ${piece.height.toFixed(1)} cm"><polygon points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="url(#fill-${piece.part})" stroke="#4b3b2f" stroke-width="0.4"/><text x="${piece.width / 2}" y="${height + 8}" text-anchor="middle" font-size="3.4">${partName(design, piece.part)} · ${piece.width.toFixed(0)}×${piece.height.toFixed(0)} cm</text></g>`).join('')}</svg>`;
   }
   $('product-pieces').addEventListener('click', event => {
     const piece = (event.target as Element).closest<SVGGElement>('[data-piece]'); if (!piece) return;
@@ -450,11 +467,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
     if (sideOnly) return;
-    $('inspector-heading').textContent = PART_NAMES[selected];
+    $('inspector-heading').textContent = label(selected);
     const partList = partsOf(design).join();
     if ($('part-list').dataset.parts !== partList) {
       $('part-list').dataset.parts = partList;
-      $('part-list').innerHTML = partsOf(design).map(id => `<label><input type="radio" name="product-part" value="${id}"> ${PART_NAMES[id]}</label>`).join('');
+      $('part-list').innerHTML = partsOf(design).map(id => `<label><input type="radio" name="product-part" value="${id}"> ${partName(design, id)}</label>`).join('');
     }
     for (const radio of document.querySelectorAll<HTMLInputElement>('input[name=product-part]')) radio.checked = radio.value === selected;
     // A hoodie has a hood instead of a V-neck.
@@ -463,7 +480,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-hem') as HTMLSelectElement).value = modules.hem;
     ($('product-hem') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=curved]')!.disabled = !hemAllowed(design.base, 'curved');
     pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
-    $('module-help').textContent = design.base === 'tee' ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
+    $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';
     ($('part-material') as HTMLSelectElement).value = style.material; ($('part-color') as HTMLInputElement).value = style.color;
     renderMotifs(design);
@@ -474,8 +491,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('print-color') as HTMLInputElement).value = style.print?.color ?? '#1f2a4f'; ($('print-layout') as HTMLSelectElement).value = style.print?.layout ?? 'grid';
     ($('print-scale') as HTMLInputElement).value = String(style.print?.scaleCm ?? 6);
     ($('product-name') as HTMLInputElement).value = design.name;
-    ($('product-chest') as HTMLInputElement).value = String(design.measurements.chest); ($('product-length') as HTMLInputElement).value = String(design.measurements.length);
-    ($('product-sleeve') as HTMLInputElement).value = String(design.measurements.sleeve); ($('product-neckline') as HTMLSelectElement).value = design.neckline;
+    const bottoms = isBottoms(design);
+    for (const [id, hidden] of [['top-measures', bottoms], ['leg-measures', !bottoms], ['top-modules', bottoms], ['leg-modules', !bottoms],
+      ['artwork-controls', bottoms], ['artwork-note', !bottoms]] as const) $(id).hidden = hidden;
+    if (bottoms) { const m = legMeasurements(design); for (const [id, , key] of LEG_FIELDS) ($(id) as HTMLInputElement).value = String(m[key]); }
+    else {
+      const m = topMeasurements(design);
+      ($('product-chest') as HTMLInputElement).value = String(m.chest); ($('product-length') as HTMLInputElement).value = String(m.length); ($('product-sleeve') as HTMLInputElement).value = String(m.sleeve);
+    }
+    ($('product-neckline') as HTMLSelectElement).value = design.neckline;
     ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';
     ($('spec-size') as HTMLSelectElement).value = design.spec?.sampleSize ?? 'M';
     const signature = JSON.stringify([design, selected, !!project.product]);
@@ -485,7 +509,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       renderRange(design);
       scene?.setProduct(design, selected);
-      $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${PART_NAMES[selected]} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
+      $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${label(selected)} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }
   }

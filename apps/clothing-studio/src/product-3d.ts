@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, tileSizeCm } from './fabric-texture.ts';
-import { material, PART_NAMES, teeMesh, type PartId, type Product } from './product.ts';
+import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type Product } from './product.ts';
 
 export type View = 'front' | 'back' | 'left' | 'right';
 export class ProductScene {
@@ -20,6 +20,7 @@ export class ProductScene {
   private artworkTextures = new Map<string, THREE.Texture>();
   private frame = 0;
   private height = 72;
+  private view: View = 'front';
 
   constructor(private canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
@@ -49,7 +50,8 @@ export class ProductScene {
   renderNow() { if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
 
   setView(view: View) {
-    // Taller products (a hood) are framed from further away.
+    this.view = view;
+    // Taller products (a hood, trousers) are framed from further away.
     const distance = 210 * Math.max(1, this.height / 80), direction = { front: [0, 0.12, 1], back: [0, 0.12, -1], left: [1, 0.12, 0], right: [-1, 0.12, 0] }[view];
     this.controls.target.set(0, this.height / 2 + 4, 0);
     this.camera.position.set(direction[0] * distance, this.height / 2 + 4 + direction[1] * distance, direction[2] * distance);
@@ -76,8 +78,11 @@ export class ProductScene {
     for (const texture of this.provisional.splice(0)) texture.dispose();
     for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
-    // A hood rises well above the shoulders, so the framing grows with it.
-    this.height = product.measurements.length + (product.base === 'hoodie' ? 36 : 6);
+    // The framing follows the garment: a hood rises above the shoulders, and trousers are long.
+    const previous = this.height;
+    this.height = garmentHeight(product) + 6;
+    // A garment of a different height (another base, longer legs) is re-framed from the current side.
+    if (Math.abs(this.height - previous) > 0.5) this.setView(this.view);
     for (const part of teeMesh(product, Delaunator)) {
       const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
       const geometry = new THREE.BufferGeometry();
@@ -88,7 +93,7 @@ export class ProductScene {
       const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.DoubleSide,
         emissive: new THREE.Color(part.part === selected ? 0x553311 : 0x000000), emissiveIntensity: part.part === selected ? 0.35 : 0 });
       const mesh = new THREE.Mesh(geometry, surface);
-      mesh.name = PART_NAMES[part.part]; mesh.userData.part = part.part;
+      mesh.name = partName(product, part.part); mesh.userData.part = part.part;
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true);
@@ -105,7 +110,7 @@ export class ProductScene {
       image.decode().then(() => { texture!.needsUpdate = true; this.requestRender(); }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
-    const top = product.measurements.length - 4; // the shoulder line, where artwork positions are measured from
+    const top = topMeasurements(product).length - 4; // the shoulder line, where artwork positions are measured from
     const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
     // Project straight onto the panel from outside, centred where the artwork's centre should sit.
     const x = front ? art.xCm : -art.xCm, y = top - art.yCm - heightCm / 2;

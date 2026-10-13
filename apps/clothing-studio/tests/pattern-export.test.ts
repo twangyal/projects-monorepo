@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { patternPieces, template } from '../src/product.ts';
+import { patternPieces, template, topMeasurements } from '../src/product.ts';
 import { cleanOutline, layoutPattern, offsetOutline, patternDxf, patternSvg } from '../src/pattern-export.ts';
 
 const area = (points: { x: number; y: number }[]) => { let s = 0; for (let i = 0; i < points.length; i++) { const a = points[i], b = points[(i + 1) % points.length]; s += a.x * b.y - b.x * a.y; } return Math.abs(s) / 2; };
@@ -38,7 +38,7 @@ test('the DXF holds a closed cutting and sewing polyline per piece in millimetre
   assert.ok(pairs.every((pair, i) => pair[1] !== 'POLYLINE' || pair[0] !== '0' || pairs.slice(i, i + 5).some(p => p[0] === '70' && p[1] === '1')));
   // The sewing line ends above the hem band; mitred corners put the cutting line at least 1 cm beyond it.
   const front = layout.pieces[0], span = (points: { y: number }[]) => Math.max(...points.map(p => p.y)) - Math.min(...points.map(p => p.y));
-  assert.ok(Math.abs(span(front.sewing) - (product.measurements.length - 6)) < 1e-6, 'hoodie front ends above the hem band');
+  assert.ok(Math.abs(span(front.sewing) - (topMeasurements(product).length - 6)) < 1e-6, 'hoodie front ends above the hem band');
   assert.ok(span(front.cutting) - span(front.sewing) >= 2 - 1e-9 && span(front.cutting) - span(front.sewing) < 3);
   const vertexYs = pairs.filter(pair => pair[0] === '20').map(pair => Number(pair[1]));
   assert.ok(Math.min(...vertexYs) < -700, 'y in mm, pointing up');

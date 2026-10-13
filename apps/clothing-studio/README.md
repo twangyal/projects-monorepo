@@ -101,6 +101,25 @@ Each part takes fabrics, colors, prints and uploaded motifs like any other, and 
 
 These are styling models, like the tee: the hood and pocket shapes are fixed proportions, not a fitted draft.
 
+### Shorts and trousers (#239)
+
+The **Pull-on shorts** and **Straight trousers** templates use the trousers base: pull-on, with an elasticated waistband. Their parts are the front legs, back legs and waistband, each styled like any other part.
+
+- **Measurements.** Waist (relaxed), hip, front rise, inseam and leg opening replace chest, length and sleeve. The waistband has to pull on over the hips, so the hip must be at least the waist; the leg opening must fit the thigh. **Leg: Shorts, Cropped or Full length** set the inseam to 18, 58 or 78 cm.
+- **3D.** Two legs are joined at the side seams and inseams and meet at the crotch. They are open at the hems, and the waistband sits on the open waist. The view re-frames when the garment's height changes.
+- **Pattern.** The front and back leg panels are each cut as a mirrored pair. The back has the longer crotch extension and rises 3 cm higher at the centre back. The waistband is cut on the fold, long enough to pass the hips. DXF and SVG export include them.
+- **Tech pack.** Points of measure:
+  - waist, relaxed and extended;
+  - hip;
+  - front and back rise, measured along the centre seams;
+  - thigh;
+  - inseam and outseam;
+  - leg opening;
+  - waistband height.
+
+  The bill of materials adds the waistband elastic (relaxed waist less 4 cm) and labels. Construction covers inseams, side seams, crotch seam, elasticated waistband and leg hems, and the diagram shows the leg panels.
+- **Artwork placement** is for tops for now.
+
 ### Modules (#237)
 
 The **Modules** controls in the inspector switch parts of a base product. Every view follows the change: the 3D garment, the linked pattern pieces, the DXF and SVG pattern, the tech pack, consumption and costing. Each switch is one undoable edit and is saved with the project.

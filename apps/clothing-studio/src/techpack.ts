@@ -1,6 +1,6 @@
 // Automatic tech pack: generated from the current product design, so it is always in sync with it.
 // Pure builder plus a dependency-free .xlsx writer and a printable HTML document.
-import { BASE_NAMES, POCKET_FOLD_CM, material, optionsOf, printName, LAYOUT_NAMES, PART_NAMES, SIZES, patternPieces, teeDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
+import { BASE_NAMES, POCKET_FOLD_CM, partName, WAISTBAND_CM, isBottoms, material, optionsOf, printName, LAYOUT_NAMES, SIZES, patternPieces, teeDimensions, topMeasurements, trouserDimensions, type PartId, type PartStyle, type Product, type Size } from './product.ts';
 
 export interface BomRow { item: string; description: string; color: string; placement: string; quantity: string }
 export interface Pom { code: string; name: string; howToMeasure: string; tolerance: number; values: Record<Size, number> }
@@ -31,21 +31,27 @@ export function fabricUsage(product: Product): FabricUsage[] {
 
 export function buildTechPack(product: Product, date: string): TechPack {
   const spec = product.spec ?? { styleNumber: '', season: '', sampleSize: 'M' as Size };
-  const dims = teeDimensions(product), modules = optionsOf(product);
   // Fabrics: one BoM line per distinct fabric + color + print, with its parts and estimated consumption.
   const bom: BomRow[] = fabricUsage(product).map((usage, index) => {
     const { style } = usage, fabric = material(style.material);
     const colours = style.print?.motif.startsWith('upload:') ? 'from supplied artwork in its own colours' : `${style.print?.color} on ground`;
     const print = style.print ? `; ${printName(style.print, product)} print ${colours}, ${LAYOUT_NAMES[style.print.layout].toLowerCase()} repeat ${style.print.scaleCm} cm` : '';
     return { item: `F${index + 1} ${fabric.name}`, description: `${fabric.composition}, ${fabric.gsm} gsm${print}`, color: style.color,
-      placement: usage.parts.map(part => PART_NAMES[part]).join(', '),
+      placement: usage.parts.map(part => partName(product, part)).join(', '),
       quantity: `${usage.areaM2.toFixed(2)} m² (≈ ${usage.linearM.toFixed(2)} m at ${FABRIC_WIDTH_CM} cm wide)` };
   });
-  bom.push(
-    { item: 'T1 Sewing thread', description: '100% polyester core-spun, Tex 27', color: 'Match each fabric', placement: 'All seams', quantity: '1 cone per colour' },
-    { item: 'T2 Neck label', description: 'Woven label, 5 × 2 cm', color: '—', placement: 'Centre back neck', quantity: '1 pc' },
-    { item: 'T3 Care and content label', description: 'Printed satin label', color: 'White', placement: 'Left side seam, 8 cm above hem', quantity: '1 pc' },
-  );
+  const label = (code: string, item: string, description: string, placement: string): BomRow => ({ item: `${code} ${item}`, description, color: '—', placement, quantity: '1 pc' });
+  bom.push({ item: 'T1 Sewing thread', description: '100% polyester core-spun, Tex 27', color: 'Match each fabric', placement: 'All seams', quantity: '1 cone per colour' });
+  if (isBottoms(product)) {
+    const legs = trouserDimensions(product);
+    bom.push({ item: 'T2 Waistband elastic', description: 'Knitted elastic, 3 cm wide', color: 'White', placement: 'Waistband channel', quantity: `${cm(legs.elastic)} (relaxed waist less 4 cm)` },
+      label('T3', 'Waistband label', 'Woven label, 5 × 2 cm', 'Centre back waistband, inside'),
+      { ...label('T4', 'Care and content label', 'Printed satin label', 'Left side seam, 10 cm below the waistband'), color: 'White' });
+    return { ...trouserPack(product, spec, date), bom };
+  }
+  bom.push(label('T2', 'Neck label', 'Woven label, 5 × 2 cm', 'Centre back neck'),
+    { ...label('T3', 'Care and content label', 'Printed satin label', 'Left side seam, 8 cm above hem'), color: 'White' });
+  const dims = teeDimensions(product), modules = optionsOf(product);
   for (const art of product.artwork) {
     const height = art.widthCm * art.height / art.width;
     bom.push({ item: `A${art.part === 'front' ? 1 : 2} Artwork`, description: `${art.name || 'Artwork'} — screen print or DTG`, color: 'Per artwork file',
@@ -53,9 +59,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
       quantity: `${cm(art.widthCm)} × ${cm(height)}` });
   }
   // Points of measure for the sample size, graded by fixed increments per size step.
-  const base = SIZES.indexOf(spec.sampleSize), long = product.measurements.sleeve > 40;
-  const pom = (code: string, name: string, howToMeasure: string, value: number, grade: number, tolerance: number): Pom =>
-    ({ code, name, howToMeasure, tolerance, values: Object.fromEntries(SIZES.map((size, i) => [size, round(value + (i - base) * grade)])) as Record<Size, number> });
+  const long = topMeasurements(product).sleeve > 40, pom = pomMaker(spec.sampleSize);
   const poms = [
     pom('A', 'Chest width (½)', '2.5 cm below armhole, side seam to side seam', dims.panelWidth, 2.5, 1),
     pom('B', 'Body length', 'High point shoulder to hem', dims.length, 1.5, 1),
@@ -109,6 +113,48 @@ export function buildTechPack(product: Product, date: string): TechPack {
   return {
     name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: BASE_NAMES[product.base], neckline: product.base === 'hoodie' ? 'Hood' : product.neckline === 'v' ? 'V-neck' : 'Crew neck', date,
     bom, poms, construction,
+    notes: [
+      `Consumption is estimated from finished pattern areas plus ${Math.round((WASTE - 1) * 100)}% for seam allowance and cutting waste; confirm with a marker.`,
+      `Points of measure are for the sample size (${spec.sampleSize}); other sizes use fixed grade increments. Confirm with a fit sample.`,
+      'Generated by Clothing Studio from the 3D design; the garment shape is a styling model, not a fitted drape.',
+    ],
+  };
+}
+
+/** Points of measure for the sample size, graded by fixed increments per size step. */
+function pomMaker(sampleSize: Size) {
+  const base = SIZES.indexOf(sampleSize);
+  return (code: string, name: string, howToMeasure: string, value: number, grade: number, tolerance: number): Pom =>
+    ({ code, name, howToMeasure, tolerance, values: Object.fromEntries(SIZES.map((size, i) => [size, round(value + (i - base) * grade)])) as Record<Size, number> });
+}
+
+/** Shorts and trousers: leg points of measure and construction; the bill of materials is shared. */
+function trouserPack(product: Product, spec: NonNullable<Product['spec']>, date: string): Omit<TechPack, 'bom'> {
+  const d = trouserDimensions(product), pom = pomMaker(spec.sampleSize), shorts = d.inseam < 35;
+  // Rises are measured along the centre seam: from the centre waist (outline point 1) round the crotch curve (to point 8).
+  const seam = (part: 'front' | 'back') => { const o = patternPieces(product).find(piece => piece.part === part)!.outline; let length = 0; for (let i = 1; i < 8; i++) length += Math.hypot(o[i + 1].x - o[i].x, o[i + 1].y - o[i].y); return length; };
+  const poms = [
+    pom('A', 'Waist (½), relaxed', 'Along the top of the waistband, elastic relaxed', d.waist / 2, 2.5, 1),
+    pom('B', 'Waist (½), extended', 'Along the top of the waistband, fully stretched', d.waistbandLength / 2, 2.5, 1),
+    pom('C', 'Hip (½)', `${cm(d.hipDepth)} below the waist seam, side seam to side seam`, (d.frontHip + d.backHip) - 1, 2.5, 1),
+    pom('D', 'Front rise', 'Waist seam to the inseam, along the centre front seam', seam('front'), 0.5, 0.5),
+    pom('E', 'Back rise', 'Waist seam to the inseam, along the centre back seam', seam('back'), 0.75, 0.5),
+    pom('F', 'Thigh (½)', '2.5 cm below the crotch, across the leg', d.thighHalf, 1, 0.5),
+    pom('G', 'Inseam', 'Crotch seam to hem along the inside leg', d.inseam, 0, 1),
+    pom('H', 'Outseam', 'Top of the waistband to hem along the side seam', d.outseam, 0.5, 1),
+    pom('I', 'Leg opening (½)', 'Along the hem edge', d.legOpening / 2, 0.5, 0.5),
+    pom('J', 'Waistband height', 'Finished', WAISTBAND_CM, 0, 0.25),
+  ];
+  const construction: ConstructionRow[] = [
+    { area: 'Inseams', operation: '4-thread overlock, then topstitch', detail: 'Join each front leg to its back leg from hem to crotch' },
+    { area: 'Side seams', operation: '4-thread overlock', detail: 'Waist to hem; insert the care label at the left side' },
+    { area: 'Crotch seam', operation: 'Overlock, then double-stitch through the crotch', detail: 'Join the two legs from centre front waist through the crotch to centre back waist' },
+    { area: 'Waistband', operation: 'Close into a loop, fold, insert elastic, then attach with a 4-thread overlock', detail: `${cm(WAISTBAND_CM)} finished; 3 cm elastic ${cm(d.elastic)} long, ends overlapped 2 cm and box-stitched; topstitch 1 cm from the top edge` },
+    { area: 'Leg hems', operation: shorts ? 'Double-turn 1.5 cm and edgestitch' : 'Double-turn 2 cm and edgestitch', detail: `Leg opening ${cm(d.legOpening)} around` },
+  ];
+  return {
+    name: product.name, styleNumber: spec.styleNumber, season: spec.season, sampleSize: spec.sampleSize, base: shorts ? 'Pull-on shorts' : BASE_NAMES[product.base],
+    neckline: 'Elasticated waistband', date, poms, construction,
     notes: [
       `Consumption is estimated from finished pattern areas plus ${Math.round((WASTE - 1) * 100)}% for seam allowance and cutting waste; confirm with a marker.`,
       `Points of measure are for the sample size (${spec.sampleSize}); other sizes use fixed grade increments. Confirm with a fit sample.`,
@@ -200,6 +246,7 @@ ${techPackSections(pack, images.diagram, 2)}
 
 /** Flat front sketch and sleeve with the points of measure drawn on them (cm user units). */
 export function measurementDiagram(product: Product): string {
+  if (isBottoms(product)) return trouserDiagram(product);
   const pieces = patternPieces(product), front = pieces.find(p => p.part === 'front')!, sleeve = pieces.find(p => p.part === 'sleeveLeft')!;
   const d = teeDimensions(product), w = front.width, gap = 14, sx = w + gap;
   const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
@@ -221,5 +268,22 @@ ${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDept
 ${arrow(w + 2.5, d.shoulderDrop, w + 2.5, d.shoulderDrop + d.armDepth, 'D', w + 4, d.shoulderDrop + d.armDepth / 2)}
 ${pocketMarks}${hemMarks}
 ${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}
+</svg>`;
+}
+
+/** Shorts and trousers: the front and back leg panels with their measurements. */
+function trouserDiagram(product: Product): string {
+  const pieces = patternPieces(product), front = pieces.find(p => p.part === 'front')!, back = pieces.find(p => p.part === 'back')!;
+  const d = trouserDimensions(product), gap = 16, bx = front.width + gap;
+  const arrow = (x1: number, y1: number, x2: number, y2: number, code: string, lx: number, ly: number) =>
+    `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#b5452b" stroke-width="0.5" marker-start="url(#pom-arrow)" marker-end="url(#pom-arrow)"/><text x="${lx}" y="${ly}" font-size="4.2" fill="#b5452b" font-weight="700">${code}</text>`;
+  const outline = (piece: typeof front, dx: number) => `<polygon transform="translate(${dx} 0)" points="${piece.outline.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ')}" fill="#f6f2ea" stroke="#333" stroke-width="0.5"/>`;
+  const crotchY = d.rise, hemY = d.rise + d.inseam, centre = (d.frontHip + d.frontCrotch) / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 ${bx + back.width + 16} ${Math.max(front.height, back.height) + 16}" role="img" aria-label="Measurement diagram" font-family="system-ui, sans-serif"><defs><marker id="pom-arrow" viewBox="0 0 4 4" refX="2" refY="2" markerWidth="3" markerHeight="3" orient="auto-start-reverse"><path d="M0,0 L4,2 L0,4 z" fill="#b5452b"/></marker></defs>
+${outline(front, 0)}${outline(back, bx)}
+${arrow(0, d.hipDepth, d.frontHip, d.hipDepth, 'C', d.frontHip / 2 - 2, d.hipDepth - 1.5)}${arrow(d.frontHip + 2.5, 0, d.frontHip + 2.5, crotchY, 'D', d.frontHip + 4, crotchY / 2)}
+${arrow(centre + d.frontHem / 2 + 3, crotchY + 2, centre + d.frontHem / 2 + 3, hemY, 'G', centre + d.frontHem / 2 + 4.5, (crotchY + hemY) / 2)}${arrow(-3, 0, -3, hemY, 'H', -7.5, hemY / 2)}
+${arrow(centre - d.frontHem / 2, hemY + 3, centre + d.frontHem / 2, hemY + 3, 'I', centre - 1.5, hemY + 7.5)}${arrow(0, crotchY + 2.5, d.frontHip + d.frontCrotch, crotchY + 2.5, 'F', (d.frontHip + d.frontCrotch) / 2 - 1.5, crotchY + 6.5)}
+${arrow(bx + d.backHip + d.backCrotch + 2.5, 0, bx + d.backHip + d.backCrotch + 2.5, d.backRaise + crotchY, 'E', bx + d.backHip + d.backCrotch + 4, (d.backRaise + crotchY) / 2)}
 </svg>`;
 }

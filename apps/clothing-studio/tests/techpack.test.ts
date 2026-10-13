@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inflateRawSync } from 'node:zlib';
-import { template, validateProduct, type Product } from '../src/product.ts';
+import { template, validateProduct, type Product, topMeasurements } from '../src/product.ts';
 import { buildTechPack, crc32, measurementDiagram, techPackHtml, techPackXlsx } from '../src/techpack.ts';
 
 /** Minimal ZIP reader (store or deflate) to check the workbook really is a valid package. */
@@ -36,14 +36,14 @@ test('the tech pack is derived from the design: fabrics with consumption, trims,
   const area = (row: { quantity: string }) => Number(/^([\d.]+) m²/.exec(row.quantity)![1]);
   // Front and back are each about 60 × 72 cm; with 15% waste the body fabric is near 2 × 0.43 × 1.15 m².
   assert.ok(area(fabrics[0]) > 0.8 && area(fabrics[0]) < 1.1, fabrics[0].quantity);
-  const bigger = buildTechPack({ ...product, measurements: { ...product.measurements, chest: product.measurements.chest + 20 } }, '2026-10-13');
+  const bigger = buildTechPack({ ...product, measurements: { ...topMeasurements(product), chest: topMeasurements(product).chest + 20 } }, '2026-10-13');
   assert.ok(area(bigger.bom[0]) > area(fabrics[0]), 'consumption follows the measurements');
   // Points of measure A–K; the sample size column equals the design; grading is monotonic.
   assert.deepEqual(pack.poms.map(p => p.code), [...'ABCDEFGHIJK']);
   const chest = pack.poms[0];
-  assert.equal(chest.values.M, Math.round((product.measurements.chest / 2 + 2) * 2) / 2);
+  assert.equal(chest.values.M, Math.round((topMeasurements(product).chest / 2 + 2) * 2) / 2);
   assert.ok(chest.values.XS < chest.values.S && chest.values.S < chest.values.M && chest.values.M < chest.values.L && chest.values.L < chest.values.XL);
-  assert.equal(pack.poms.find(p => p.code === 'B')!.values.M, product.measurements.length);
+  assert.equal(pack.poms.find(p => p.code === 'B')!.values.M, topMeasurements(product).length);
   // Changing the sample size re-centres the grade on the design's measurements.
   const large = buildTechPack({ ...product, spec: { ...product.spec!, sampleSize: 'L' } }, '2026-10-13');
   assert.equal(large.poms[0].values.L, chest.values.M);

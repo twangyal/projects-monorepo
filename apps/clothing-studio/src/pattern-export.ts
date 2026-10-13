@@ -1,6 +1,6 @@
 // Pattern export for cutting: each piece's finished outline (the sewing line) plus a cutting line with seam
 // allowance, a grainline and labels, as DXF (AutoCAD R12 ASCII, millimetres) or a printable 1:1 SVG (cm).
-import { BASE_NAMES, PART_NAMES, material, patternPieces, type PatternPiece, type Product } from './product.ts';
+import { BASE_NAMES, material, partName, patternPieces, type PatternPiece, type Product } from './product.ts';
 
 type Pt = { x: number; y: number };
 export const SEAM_ALLOWANCE_CM = 1;
@@ -53,7 +53,7 @@ export function layoutPattern(product: Product, allowance = SEAM_ALLOWANCE_CM): 
     const xs = sewing.map(p => p.x), ys = sewing.map(p => p.y), cx = (Math.min(...xs) + Math.max(...xs)) / 2, top = Math.min(...ys), bottom = Math.max(...ys);
     const grain: [Pt, Pt] = [shift({ x: cx, y: top + (bottom - top) * 0.2 }), shift({ x: cx, y: top + (bottom - top) * 0.8 })];
     const fabric = material(product.parts[piece.part].material).name;
-    laid.push({ piece, label: PART_NAMES[piece.part], detail: `${product.name} · ${BASE_NAMES[product.base]} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric}`,
+    laid.push({ piece, label: partName(product, piece.part), detail: `${product.name} · ${BASE_NAMES[product.base]} · size ${size} · cut ${piece.cutCount}${piece.cutCount > 1 ? ' (mirror)' : ''} · ${fabric}`,
       sewing: sewing.map(shift), cutting: cutting.map(shift), grain, at: { x, y: allowance } });
     x += Math.max(...cutting.map(p => p.x)) - minX + GAP_CM;
   }

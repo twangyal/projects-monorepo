@@ -19,7 +19,7 @@ test('a hoodie and a sweatshirt are styled part by part, including hood, pocket 
   await expect(editor(page).getByRole('radio', { name: 'Hood' })).toBeVisible();
   await expect(editor(page).getByRole('radio', { name: 'Neck rib' })).toHaveCount(0);
   // The hood is drawn above the shoulders.
-  await expect.poll(() => painted(page, 0.5, 0.12)).toBeGreaterThan(40);
+  await expect.poll(() => painted(page, 0.5, 0.3)).toBeGreaterThan(40);
   // Style the hood and pocket separately.
   await editor(page).getByRole('radio', { name: 'Hood' }).check();
   await editor(page).getByRole('button', { name: 'Apply color #b23a2e', exact: true }).click();

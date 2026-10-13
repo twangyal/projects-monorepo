@@ -88,7 +88,7 @@ Each milestone delivers a usable end-to-end slice. All of it stays local and acc
    - Tile motifs or uploads in standard, half-brick, half-drop and mirror repeats.
    - Duplicate designs as colorways side by side.
    - A costing table built from material consumption estimated from pattern areas.
-4. **More base products and modular options** (sweatshirt and hoodie done in #234; hem shape, chest pocket and sleeve-length modules done in #237; shorts and trousers still to do).
+4. **More base products and modular options** (sweatshirt and hoodie done in #234; hem shape, chest pocket and sleeve-length modules done in #237; pull-on shorts and trousers done in #239).
    - Hoodie, sweatshirt, shorts and trousers, plus the existing skirt.
    - Modules such as sleeve length, neckline, hem and pocket.
 5. **Pattern editing in the product editor** (DXF and printable 1:1 pattern export with seam allowance done in #235; editing and DXF import still to do).

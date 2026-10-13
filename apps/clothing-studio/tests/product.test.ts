@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import Delaunator from 'delaunator';
 import { motifPlacements } from '../src/fabric-texture.ts';
 import { validateProject, createProject } from '../src/model.ts';
-import { MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeMesh, teeSilhouette, template, validateProduct, type Product } from '../src/product.ts';
+import { MATERIALS, TEMPLATES, partsOf, panelSize, patternPieces, teeMesh, teeSilhouette, template, validateProduct, type Product, topMeasurements } from '../src/product.ts';
 
 const ringer = () => template('ringer');
 
@@ -17,7 +17,7 @@ test('templates are valid remixable products and validation refuses anything out
     ['color', p => { p.parts.back.color = 'red'; }],
     ['print', p => { p.parts.front.print = { motif: 'plaid' as never, color: '#000000', scaleCm: 5, layout: 'grid' }; }],
     ['repeat', p => { p.parts.front.print = { motif: 'dots', color: '#000000', scaleCm: 1, layout: 'grid' }; }],
-    ['chest', p => { p.measurements.chest = 300; }],
+    ['chest', p => { topMeasurements(p).chest = 300; }],
     ['part', p => { delete (p.parts as Record<string, unknown>).neckband; }],
     ['extra', p => { (p as unknown as Record<string, unknown>).price = 1; }],
     ['sample size', p => { p.spec = { styleNumber: 'A', season: 'B', sampleSize: 'XXL' as never }; }],
@@ -37,9 +37,9 @@ test('pattern pieces follow the measurements', () => {
   const p = ringer(), pieces = patternPieces(p);
   assert.deepEqual(pieces.map(piece => piece.part), [...partsOf(p)]);
   const front = pieces[0];
-  assert.equal(front.width, panelSize(p.measurements).width);
-  assert.equal(front.height, p.measurements.length);
-  const wider = patternPieces({ ...p, measurements: { ...p.measurements, chest: p.measurements.chest + 20 } });
+  assert.equal(front.width, panelSize(topMeasurements(p)).width);
+  assert.equal(front.height, topMeasurements(p).length);
+  const wider = patternPieces({ ...p, measurements: { ...topMeasurements(p), chest: topMeasurements(p).chest + 20 } });
   assert.ok(wider[0].areaCm2 > front.areaCm2 && wider[2].areaCm2 > pieces[2].areaCm2);
   const v = patternPieces({ ...p, neckline: 'v' });
   assert.ok(Math.max(...v[0].outline.slice(10).map(pt => pt.y)) === 15, 'the V-neck front dips 15 cm');
@@ -55,7 +55,7 @@ test('the 3D garment joins front and back exactly along the seams, leaves hem, c
   }
   const body = meshes.find(m => m.part === 'front')!, back = meshes.find(m => m.part === 'back')!;
   const points = (mesh: typeof body) => Array.from({ length: mesh.positions.length / 3 }, (_, i) => ({ x: mesh.positions[i * 3], y: mesh.positions[i * 3 + 1], z: mesh.positions[i * 3 + 2] }));
-  const f = points(body), b = points(back), half = panelSize(p.measurements).width / 2, top = p.measurements.length;
+  const f = points(body), b = points(back), half = panelSize(topMeasurements(p)).width / 2, top = topMeasurements(p).length;
   assert.ok(f.every(q => q.z >= 0) && b.every(q => q.z <= 0), 'front faces the viewer, back faces away');
   // Side seams: vertices on x = ±half are pinned at z = 0 on both sides, so the shell is closed there.
   const side = (pts: typeof f) => pts.filter(q => Math.abs(Math.abs(q.x) - half) < 1e-9 && q.y < top - 35);
@@ -73,7 +73,7 @@ test('the 3D garment joins front and back exactly along the seams, leaves hem, c
   assert.ok(Math.abs(Math.max(...us) - Math.min(...us) - 2 * half) < 1e-9, 'front body UVs span its flat width in cm');
   assert.equal(front.points.length, 21, '12 corners and 9 neckline points');
   // Measurements reshape the garment.
-  const long = teeMesh({ ...p, measurements: { ...p.measurements, sleeve: 60 } }, Delaunator).find(m => m.part === 'sleeveLeft')!;
+  const long = teeMesh({ ...p, measurements: { ...topMeasurements(p), sleeve: 60 } }, Delaunator).find(m => m.part === 'sleeveLeft')!;
   assert.ok(Math.max(...long.positions.filter((_, i) => i % 3 === 0)) > Math.max(...sleeve.map(q => q.x)) + 25);
 });
 
@@ -133,12 +133,12 @@ test('sweatshirts and hoodies have their own parts, rib bands, hood and pocket i
     assert.ok(teeDimensions(design).cuffHalf < teeDimensions(template('ringer')).cuffHalf);
     const pieces = patternPieces(design);
     assert.deepEqual(pieces.map(piece => piece.part).sort(), [...parts(design)].sort());
-    assert.equal(pieces.find(piece => piece.part === 'front')!.height, design.measurements.length - BAND_CM, 'the body ends above the hem band');
+    assert.equal(pieces.find(piece => piece.part === 'front')!.height, topMeasurements(design).length - BAND_CM, 'the body ends above the hem band');
   }
   // The hood rises above the shoulders and stays open at the face; the pocket sits proud of the front body.
   const meshes = teeMesh(hoodie, Delaunator), hood = meshes.find(mesh => mesh.part === 'hood')!, pocket = meshes.find(mesh => mesh.part === 'pocket')!;
   const hoodY = hood.positions.filter((_, i) => i % 3 === 1);
-  assert.ok(Math.max(...hoodY) > hoodie.measurements.length + 30, 'hood height');
+  assert.ok(Math.max(...hoodY) > topMeasurements(hoodie).length + 30, 'hood height');
   const front = meshes.find(mesh => mesh.part === 'front')!;
   const zAt = (mesh: typeof front, x: number, y: number) => { let best = Infinity, z = 0; for (let i = 0; i < mesh.positions.length; i += 3) { const d = Math.hypot(mesh.positions[i] - x, mesh.positions[i + 1] - y); if (d < best) { best = d; z = mesh.positions[i + 2]; } } return z; };
   assert.ok(zAt(pocket, 0, 15) > zAt(front, 0, 15), 'pocket is on top of the front');
@@ -182,8 +182,8 @@ test('modules: a curved hem and a chest pocket follow through validation, 3D, pa
   // Pattern: the body hem curves up to the side seams; the pocket piece carries its top facing.
   const pieces = patternPieces(curved), front = pieces.find(piece => piece.part === 'front')!, dims = teeDimensions(curved);
   const lowest = (x: number) => Math.max(...front.outline.filter(p => Math.abs(p.x - x) < 1e-9).map(p => p.y));
-  assert.equal(front.height, curved.measurements.length, 'centre length is the body length');
-  assert.equal(lowest(0), curved.measurements.length - HEM_CURVE_CM, 'the side seam is shorter');
+  assert.equal(front.height, topMeasurements(curved).length, 'centre length is the body length');
+  assert.equal(lowest(0), topMeasurements(curved).length - HEM_CURVE_CM, 'the side seam is shorter');
   assert.ok(front.areaCm2 < patternPieces(tee).find(piece => piece.part === 'front')!.areaCm2);
   const pocket = pieces.find(piece => piece.part === 'chestPocket')!;
   assert.deepEqual([pocket.width, pocket.height, pocket.cutCount], [dims.chestPocketWidth, dims.chestPocketHeight + POCKET_FOLD_CM, 1]);
@@ -192,14 +192,14 @@ test('modules: a curved hem and a chest pocket follow through validation, 3D, pa
   const meshes = teeMesh(curved, Delaunator), byPart = new Map(meshes.map(mesh => [mesh.part, mesh]));
   assert.deepEqual(meshes.map(mesh => mesh.part), [...partsOf(curved)]);
   const ys = (part: 'front' | 'chestPocket', near: (x: number) => boolean) => { const mesh = byPart.get(part)!, out: number[] = []; for (let i = 0; i < mesh.positions.length; i += 3) if (near(mesh.positions[i])) out.push(mesh.positions[i + 1]); return out; };
-  const half = panelSize(curved.measurements).width / 2;
+  const half = panelSize(topMeasurements(curved)).width / 2;
   assert.ok(Math.abs(Math.min(...ys('front', x => Math.abs(x) < 1))) < 1e-9, 'hem at centre front reaches the full length');
   assert.ok(Math.abs(Math.min(...ys('front', x => Math.abs(x - half) < 1e-6)) - HEM_CURVE_CM) < 1e-9, 'hem at the side seam rises by the curve');
   const body = byPart.get('front')!, patch = byPart.get('chestPocket')!;
   const xs = patch.positions.filter((_, i) => i % 3 === 0);
   assert.ok(Math.min(...xs) > 0, 'chest pocket on the wearer’s left (viewer’s right)');
   const zAt = (mesh: typeof body, x: number, y: number) => { let best = Infinity, z = 0; for (let i = 0; i < mesh.positions.length; i += 3) { const d = Math.hypot(mesh.positions[i] - x, mesh.positions[i + 1] - y); if (d < best) { best = d; z = mesh.positions[i + 2]; } } return z; };
-  const py = curved.measurements.length - dims.chestPocketY - dims.chestPocketHeight / 2;
+  const py = topMeasurements(curved).length - dims.chestPocketY - dims.chestPocketHeight / 2;
   assert.ok(zAt(patch, dims.chestPocketX, py) > zAt(body, dims.chestPocketX, py), 'pocket on top of the front');
 
   // Tech pack: pocket fabric, measurements and construction; curved-hem side length and hem detail.
@@ -216,4 +216,62 @@ test('modules: a curved hem and a chest pocket follow through validation, 3D, pa
   const { layoutPattern, patternDxf } = await import('../src/pattern-export.ts');
   assert.match(patternDxf(curved), /\nChest pocket\n/);
   assert.equal(layoutPattern(curved).pieces.length, patternPieces(curved).length);
+});
+
+test('shorts and trousers: leg measurements, two-leg 3D, paired leg panels, waistband and a trouser tech pack', async () => {
+  const { buildTechPack, fabricUsage, measurementDiagram } = await import('../src/techpack.ts');
+  const { WAISTBAND_CM, garmentHeight, legMeasurements, partName, trouserDimensions, trouserSilhouette, withOptions } = await import('../src/product.ts');
+  const shorts = template('shorts'), trousers = template('trousers');
+  assert.deepEqual([...partsOf(trousers)], ['front', 'back', 'waistband']);
+  assert.deepEqual([partName(trousers, 'front'), partName(trousers, 'back'), partName(template('ringer'), 'front')], ['Front legs', 'Back legs', 'Front body']);
+  assert.deepEqual(legMeasurements(shorts), { waist: 76, hip: 102, rise: 28, inseam: 18, legOpening: 58 });
+  assert.throws(() => topMeasurements(trousers), /leg measurements/);
+  // Validation: leg measurements belong to bottoms, the waistband must pass the hips, and tops-only modules are refused.
+  assert.throws(() => validateProduct({ ...trousers, measurements: template('ringer').measurements }), /Leg measurements/);
+  assert.throws(() => validateProduct({ ...template('ringer'), measurements: trousers.measurements }), Error);
+  assert.throws(() => validateProduct({ ...trousers, measurements: { ...legMeasurements(trousers), waist: 110, hip: 100 } }), /pull on over the hips/);
+  assert.throws(() => validateProduct({ ...trousers, measurements: { ...legMeasurements(trousers), legOpening: 85 } }), /Leg opening/);
+  assert.throws(() => validateProduct({ ...trousers, neckline: 'v' }), /no neckline/);
+  assert.throws(() => validateProduct({ ...trousers, artwork: template('ringer').artwork.concat([{ part: 'front', dataUrl: 'data:image/png;base64,AA==', width: 1, height: 1, name: 'a', xCm: 0, yCm: 5, widthCm: 5 }]) }), /tops/);
+  assert.throws(() => withOptions(trousers, { hem: 'straight', chestPocket: true }), /top/);
+  assert.throws(() => withOptions(trousers, { hem: 'curved', chestPocket: false }), /hem/);
+
+  // Pattern: front and back leg panels cut in mirrored pairs; the back is 3 cm taller at the centre back; a folded waistband.
+  const d = trouserDimensions(trousers), pieces = patternPieces(trousers), byPart = new Map(pieces.map(piece => [piece.part, piece]));
+  assert.deepEqual(pieces.map(piece => [piece.part, piece.cutCount]), [['front', 2], ['back', 2], ['waistband', 1]]);
+  assert.equal(byPart.get('front')!.height, d.rise + d.inseam);
+  assert.equal(byPart.get('back')!.height, d.rise + d.inseam + d.backRaise);
+  assert.ok(byPart.get('back')!.width > byPart.get('front')!.width, 'the back has the longer crotch extension');
+  assert.deepEqual([byPart.get('waistband')!.width, byPart.get('waistband')!.height], [legMeasurements(trousers).hip + 6, WAISTBAND_CM * 2]);
+  const area = (design: typeof trousers) => fabricUsage(design).reduce((sum, usage) => sum + usage.areaM2, 0);
+  assert.ok(area(trousers) > area(shorts) * 1.6, 'full-length legs use much more fabric');
+
+  // 3D: two legs open at the hems and joined at the side seams and inseams; the waistband sits on the open waist.
+  const meshes = teeMesh(trousers, Delaunator), mesh = new Map(meshes.map(m => [m.part, m]));
+  assert.deepEqual(meshes.map(m => m.part), ['front', 'back', 'waistband']);
+  const points = (part: 'front' | 'back' | 'waistband') => { const m = mesh.get(part)!; return Array.from({ length: m.positions.length / 3 }, (_, i) => ({ x: m.positions[i * 3], y: m.positions[i * 3 + 1], z: m.positions[i * 3 + 2] })); };
+  const front = points('front'), back = points('back'), s = trouserSilhouette(trousers);
+  const hemInner = s.points[7].x, hemOuter = s.points[6].x;
+  assert.ok(front.every(q => q.z >= 0) && back.every(q => q.z <= 0));
+  const hem = front.filter(q => q.y < 1e-9 && q.x > hemInner + 4 && q.x < hemOuter - 4);
+  assert.ok(hem.length > 3 && hem.every(q => q.z > 3), 'the right leg hem is open');
+  assert.ok(!front.some(q => q.y < 10 && Math.abs(q.x) < hemInner - 1), 'nothing between the legs at the hem');
+  const crotch = front.filter(q => Math.abs(q.x) < 1e-9 && Math.abs(q.y - legMeasurements(trousers).inseam) < 1e-9);
+  assert.ok(crotch.length && crotch.every(q => Math.abs(q.z) < 1e-9), 'front and back meet at the crotch');
+  const outerSeam = front.filter(q => Math.abs(q.x - d.hipHalf) < 1e-9);
+  assert.ok(outerSeam.length > 5 && outerSeam.every(q => Math.abs(q.z) < 1e-9), 'side seams are joined');
+  const band = points('waistband');
+  assert.ok(Math.abs(Math.max(...band.map(q => q.y)) - (d.length + WAISTBAND_CM)) < 1e-9 && Math.abs(Math.min(...band.map(q => q.y)) - d.length) < 1e-9);
+  assert.equal(garmentHeight(trousers), d.length + WAISTBAND_CM);
+
+  // Tech pack: trouser measurements, elastic, construction and the leg-panel diagram.
+  const pack = buildTechPack(trousers, '2026-10-13'), shortPack = buildTechPack(shorts, '2026-10-13');
+  assert.equal(pack.poms.map(p => p.code).join(''), 'ABCDEFGHIJ');
+  assert.deepEqual([pack.base, shortPack.base, pack.neckline], ['Pull-on trousers', 'Pull-on shorts', 'Elasticated waistband']);
+  assert.equal(pack.poms.find(p => p.code === 'G')!.values.M, 78);
+  assert.ok(pack.poms.find(p => p.code === 'E')!.values.M > pack.poms.find(p => p.code === 'D')!.values.M, 'back rise is longer than front rise');
+  assert.match(pack.bom.find(row => row.item.includes('elastic'))!.quantity, /^72\.0 cm/);
+  assert.match(pack.bom[0].placement, /Front legs, Back legs, Waistband/);
+  assert.ok(['Inseams', 'Side seams', 'Crotch seam', 'Waistband', 'Leg hems'].every(area => pack.construction.some(row => row.area === area)));
+  assert.match(measurementDiagram(trousers), />E<\/text>/);
 });
