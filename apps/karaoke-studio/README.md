@@ -39,7 +39,7 @@ The lyric recognition setup downloads about 483 MB and installs about 662 MB; wi
 
 ## Make a karaoke song
 
-1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–300 seconds** (five minutes), at most **64 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
+1. Choose a local **WAV, MP3, FLAC, or Ogg** song lasting **1–600 seconds** (ten minutes), at most **128 MiB**. Longer audio is rejected rather than silently trimmed. Inputs are decoded to stereo, 44.1 kHz, 16-bit PCM. Remote URLs, playlists, and video inputs are unsupported.
 2. Wait for separation and lyric recognition, then audition **Original**, **Vocals**, and **Backing**. Original playback uses the decoded source. Listen for remaining vocals and altered instruments before exporting.
 3. The clip opens with **automatically recognized, timed lyric lines** already saved, so the preview and export work straight away. Listen and correct misheard words and timing. If you have the real lyrics, paste them one line per cue and press **Create draft timings**: each line is aligned to where it was sung, and lines whose words were not clearly heard are named so you can check them. Without recognized lyrics, pasted lines are evenly spaced instead. You can also choose **Import timed lyrics (SRT)** to review existing timings before replacing the current cues.
 4. Use **Time lines while listening** to mark each supplied line during playback, review the complete result, and apply the times together. You can also correct individual start/end seconds. The **Original audio waveform** provides a full-song overview and 60/15/5-second detail windows. Click either view or use **Seek in song** to find a phrase, select its lyric line, then drag its start/end handle or use the arrow keys. **Mark start** and **Mark end** also use the current playback position; **Play line** plays that cue once and pauses at its end. The preview lights up the active line **word by word** as it is sung, shows upcoming text, and displays an instrumental break between cues. The exported video highlights words the same way (see [Word-by-word highlighting](#word-by-word-highlighting)).
@@ -170,8 +170,8 @@ replace your input fields or clear incomplete text/timing drafts.
 
 Waveform loading streams the local normalized WAV in a browser worker. Each
 441-frame/10 ms bin retains exact signed 16-bit minimum and maximum values across
-both channels, including opposite-phase audio. A five-minute song has 30,000
-bins and 120,000 bytes of peak data. The final partial bin uses only real samples.
+both channels, including opposite-phase audio. A ten-minute song has 60,000
+bins and 240,000 bytes of peak data. The final partial bin uses only real samples.
 Container overhead is limited to 4 KiB, and the whole load has a 30-second deadline.
 **Stop waveform** releases pending work; **Retry waveform** starts a new attempt.
 Playback and manual timing continue to work after a stopped or failed load.
@@ -210,7 +210,7 @@ Use **Import project archive** to add a restored clip to the current library wit
 
 Cancel an accepted archive job with the existing job control. **Cancel archive upload** stops the browser request, but a lost response can leave acceptance uncertain. Use **Check restore status** to inspect the current library/job before retrying; it preserves the editor and does not repeat the import or cancel unrelated work. It also retries a failed provenance read. Ordinary editing/audio/video remain usable when provenance is unavailable, while archive backup waits for that check to recover.
 
-This is a versioned, uncompressed application format, limited to **160 MiB**, not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–300-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 180-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
+This is a versioned, uncompressed application format, limited to **306.8 MiB** (three maximum WAVs plus 4 MiB), not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–300-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 180-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
 
 The archive is **unencrypted private audio and lyrics**. Checksums detect corruption, not authentic provenance, media rights or separation quality. Imported audio and processing claims remain visibly **unverified** after restart and re-export; they never change local model readiness. Missing metadata is identified separately. Unrecognized/private processing metadata or a malformed provenance sidecar blocks backup visibly without changing the project. Stored local metadata is also not independently authenticated.
 
@@ -262,7 +262,23 @@ The preview and the exported MP4 colour each word as it starts being sung, like 
 
 Measured on the 20 JamendoLyrics songs (5,693 words): with correctly timed lines, highlights start a median **0.068 s** from the sung word, with 90% within 0.3 s; length estimates alone give 0.136 s and 75%. With automatically aligned pasted lyrics, the median is 0.109 s and 71% are within 0.3 s, limited by misplaced lines. See [the word-highlighting notes](docs/2026-10-13-word-highlighting.md).
 
-## Model provenance and limitations
+## Ten-minute songs (#233)
+
+Songs up to **10 minutes (600 s)** and **128 MiB** are supported; before #233 the limit was 5 minutes. All limits that follow from duration were raised together: decoded and WAV sizes, the 22 separation windows, waveform frames, portable archives (306.8 MiB), and the job scratch budget (1.6 GiB). The worker's wall-clock and CPU limits doubled to 20 minutes, keeping the earlier headroom. The video deadline stays at 10 minutes.
+
+**Measured with the real models** (2026-10-13, 4 CPU cores) on a 600-second input made of three English JamendoLyrics songs back to back:
+
+| Step | Result |
+| --- | --- |
+| Separation | 245 s for 22 windows (CPU 245 s, peak memory 1.27 GiB) |
+| Recognition | 61 s, peak memory 1.32 GiB; 40.2% WER on the 716 reference words, compared with 30–49% for the same songs run singly; median word onset error 0.068 s, 95.7% within 0.3 s |
+| Video export | 130 s for 127 automatic lines (578 highlight steps), producing a 17 MB MP4 |
+
+Recognition and timing quality held over the full length.
+
+Through the real service in Chromium, the same song went from upload to 127 timed lyric lines in 315 s and exported a 599.96 s MP4 in 144 s. Details are in [the ten-minute notes](docs/2026-10-13-ten-minute-songs.md).
+
+
 
 Setup downloads the official [Deezer Spleeter v1.4.0 two-stem checkpoint](https://github.com/deezer/spleeter/releases/download/v1.4.0/2stems.tar.gz), **73,109,797 bytes**, and verifies its pinned SHA-256 against the value published in the official [checksum index](https://github.com/deezer/spleeter/releases/download/v1.4.0/checksum.json):
 
@@ -280,11 +296,11 @@ python scripts/setup_model.py \
 
 Spleeter's **code** is [MIT-licensed](https://github.com/deezer/spleeter/blob/master/LICENSE). A separate license for the pretrained checkpoint was not established from the checked official documentation; the release archive contains no LICENSE/NOTICE/model card. Weights are not bundled in this repository. Preserve the official provenance and this distinction when using or redistributing artifacts.
 
-After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker. It processes 30-second windows with two-second overlaps (at most eleven windows for five minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Exact source sample count and positions are preserved. Spleeter may initialize a prediction session for each call, so warmup is part of the measured runtime. This windowing controls resource use; it does not guarantee inaudible seams or separation quality.
+After installation/setup, separation operates on the cached model locally; the model worker rejects intercepted network calls and records offline checks in `processing.json`. Each job starts a new CPU worker. It processes 30-second windows with two-second overlaps (at most 22 windows for ten minutes). Overlaps use complementary linear sample weights; both complete stems receive one shared gain after assembly. Exact source sample count and positions are preserved. Spleeter may initialize a prediction session for each call, so warmup is part of the measured runtime. This windowing controls resource use; it does not guarantee inaudible seams or separation quality.
 
-Worker limits are ten minutes of wall time, ten minutes of CPU time and 3 GiB observed RSS. Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
+Worker limits are twenty minutes of wall time, twenty minutes of CPU time and 3 GiB observed RSS (a ten-minute song used 245 s and 1.3 GiB on 4 cores, see [Ten-minute songs](#ten-minute-songs-233)). Decode has a 60-second subprocess deadline; video validation, card preparation and encoding share a ten-minute deadline with a 128 MiB output cap. Slower systems may time out. Uploads retain the five-second inactivity limit and have a 60-second absolute deadline. Job progress reports actual completed inference windows.
 
-Uploads/exports require at least 1 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum song's three WAV files use about 151.4 MiB. Temporary float stems add about 201.9 MiB, with a conservative maximum separation working set around 417.3 MiB on disk including a 64 MiB upload, before small headers. Twenty maximum-duration projects need about 2.96 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
+Uploads/exports require at least 2 GiB free space on the owned job filesystem; this check cannot reserve space against other programs. A maximum (ten-minute) song's three WAV files use about 302.8 MiB. Temporary float stems add about 403.8 MiB, with a conservative maximum separation working set around 834.6 MiB on disk including a 128 MiB upload, before small headers. Twenty maximum-duration projects need about 5.9 GiB for WAVs alone, and optional maximum-size videos add 2.5 GiB. Disk exhaustion fails without replacing completed work. Smoke reports distinguish measured peaks from these calculated bounds.
 
 Vocals and accompaniment are **estimates**. Residual singing, lost instruments, reverb, and other separation artifacts can remain. The default Spleeter configuration estimates a limited frequency range, so high-frequency content can also be affected. Synthetic smoke audio validates inference plumbing, not real-song accuracy. A real singing smoke provides additional runtime evidence but no reference-stem quality score or guarantee. Songs longer than five minutes, broader device testing, subjective boundary listening and reference-stem separation-quality evaluation remain future work.
 

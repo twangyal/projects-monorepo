@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TimingCapture } from '../src/sequential-timing.ts';
-import type { Cue } from '../src/lyrics.ts';
+import { MAX_DURATION, type Cue } from '../src/lyrics.ts';
 
 const cues = (texts = ['First', 'Second']): Cue[] => texts.map(text => ({ start: NaN, end: -1, text }));
 function unchanged(capture: TimingCapture, action: () => void): void {
@@ -72,13 +72,13 @@ for (const phase of ['start', 'end', 'review'] as const) test(`cancel is termina
   unchanged(capture, () => capture.markStart(2)); unchanged(capture, () => capture.markEnd(3)); unchanged(capture, () => capture.review());
 });
 
-test('complete maximum 200 lines / 20000 Unicode points / 300 seconds is retained verbatim', () => {
+test('complete maximum 200 lines / 20000 Unicode points / 600 seconds is retained verbatim', () => {
   const texts = Array.from({ length: 200 }, (_, i) => i % 2 ? '🎵'.repeat(100) : 'x'.repeat(100));
-  const capture = new TimingCapture(cues(texts), 300);
-  for (let i = 0; i < 200; i++) { capture.markStart(i * 1.5); capture.markEnd((i + 1) * 1.5); }
-  assert.deepEqual(capture.review(), texts.map((text, i) => ({ start: i * 1.5, end: (i + 1) * 1.5, text })));
-  const over = [...texts]; over[199] += '🎵'; assert.throws(() => new TimingCapture(cues(over), 300));
-  assert.throws(() => new TimingCapture(cues(Array(201).fill('Line')), 300));
+  const capture = new TimingCapture(cues(texts), MAX_DURATION);
+  for (let i = 0; i < 200; i++) { capture.markStart(i * 3); capture.markEnd((i + 1) * 3); }
+  assert.deepEqual(capture.review(), texts.map((text, i) => ({ start: i * 3, end: (i + 1) * 3, text })));
+  const over = [...texts]; over[199] += '🎵'; assert.throws(() => new TimingCapture(cues(over), MAX_DURATION));
+  assert.throws(() => new TimingCapture(cues(Array(201).fill('Line')), MAX_DURATION));
 });
 
 test('existing Python whitespace, BOM and literal control policy is reused without new normalization', () => {
@@ -90,7 +90,7 @@ test('existing Python whitespace, BOM and literal control policy is reused witho
 });
 
 test('duration and cue collection reject sparse/inherited/accessor admission without invoking readers', () => {
-  for (const duration of [.999, 300.001, NaN, Infinity, -Infinity, '1', true, null]) assert.throws(() => new TimingCapture(cues(), duration as number));
+  for (const duration of [.999, MAX_DURATION + .001, NaN, Infinity, -Infinity, '1', true, null]) assert.throws(() => new TimingCapture(cues(), duration as number));
   for (const input of [[], new Array(1), null, {}, Object.assign(Object.create(Array.prototype), { length: 1, 0: cues()[0] })]) assert.throws(() => new TimingCapture(input as Cue[], 1));
   let reads = 0;
   const index: Cue[] = []; Object.defineProperty(index, '0', { enumerable: true, get() { reads++; return cues()[0]; } });

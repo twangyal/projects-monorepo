@@ -1,10 +1,12 @@
 export interface Cue { start: number; end: number; text: string }
 export interface Project { schemaVersion: 1; id: string; title: string; duration: number; revision: number; cues: Cue[] }
 
-export const MAX_DURATION = 300;
+export const MAX_DURATION = 600;
 export const MAX_CUES = 200;
 export const MAX_LYRIC_CHARS = 20000;
-export const MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 128 * 1024 * 1024;
+/** Three canonical WAV stems at the longest duration plus small JSON members, as the studio allows. */
+export const MAX_ARCHIVE_BYTES = 3 * (MAX_DURATION * 44_100 * 4 + 4096) + 4 * 1024 * 1024;
 
 // Python str.strip() whitespace: unlike JS trim(), NEL/control separators are
 // whitespace and the Unicode BOM is not. Preserve text rather than normalizing it.
@@ -29,7 +31,7 @@ export function validateTitle(title: unknown): string {
 }
 
 export function validateCues(cues: Cue[], duration: number): Cue[] {
-  if (!Number.isFinite(duration) || duration < 1 || duration > MAX_DURATION) throw new Error('Choose a clip between 1 and 300 seconds.');
+  if (!Number.isFinite(duration) || duration < 1 || duration > MAX_DURATION) throw new Error(`Choose a clip between 1 and ${MAX_DURATION} seconds.`);
   if (!Array.isArray(cues) || cues.length > MAX_CUES) throw new Error('Use at most 200 lyric lines.');
   let previous = 0, characters = 0;
   return cues.map((cue, index) => {

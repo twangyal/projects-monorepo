@@ -272,7 +272,7 @@ class KaraokeServer(ThreadingHTTPServer):
         self.check_storage()
         space = os.fstatvfs(self._directory_fds[self.work_dir])
         if space.f_bavail * space.f_frsize < MIN_FREE_BYTES:
-            raise RequestError(507, "At least 1 GiB of free local disk space is required for a media job.")
+            raise RequestError(507, f"At least {MIN_FREE_BYTES // 1024**3} GiB of free local disk space is required for a media job.")
         name = uuid.uuid4().hex
         parent_fd = self._directory_fds[self.work_dir]
         os.mkdir(name, dir_fd=parent_fd)
@@ -463,7 +463,7 @@ class KaraokeServer(ThreadingHTTPServer):
         self.check_storage()
         space = os.fstatvfs(self._directory_fds[self.work_dir])
         if space.f_bavail * space.f_frsize < MIN_FREE_BYTES:
-            raise RequestError(507, "At least 1 GiB of free local disk space is required for an archive job.")
+            raise RequestError(507, f"At least {MIN_FREE_BYTES // 1024**3} GiB of free local disk space is required for an archive job.")
 
     def archive_info(self, project_id):
         fd = self._open_project(project_id)

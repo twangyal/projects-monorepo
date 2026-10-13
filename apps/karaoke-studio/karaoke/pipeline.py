@@ -173,7 +173,7 @@ def _input_format(source: Path) -> str:
     if not source.is_file() or source.is_symlink():
         raise ValueError('Choose a local WAV, MP3, FLAC, or Ogg audio clip.')
     if source.stat().st_size > MAX_INPUT_BYTES:
-        raise ValueError('Audio uploads must be at most 64 MiB.')
+        raise ValueError(f'Audio uploads must be at most {MAX_INPUT_BYTES // 1024**2} MiB.')
     with source.open('rb') as stream:
         header = stream.read(12)
     if header[:4] == b'RIFF' and header[8:12] == b'WAVE':
@@ -211,10 +211,10 @@ def _probe(source: Path, input_format: str, cancel: threading.Event) -> float:
     except (KeyError, TypeError, json.JSONDecodeError) as error:
         raise ValueError('The audio header is invalid or its duration could not be read.') from error
     # MP3/Opus container lengths include encoder delay/padding. Decoded frames
-    # remain strictly capped at 300 seconds; this never truncates actual audio.
+    # remain strictly capped at MAX_DURATION; this never truncates actual audio.
     maximum_probe_duration = MAX_DURATION + .2 if input_format in {'mp3', 'ogg'} else MAX_DURATION
     if not math.isfinite(duration) or not MIN_DURATION <= duration <= maximum_probe_duration:
-        raise ValueError('Choose an audio clip lasting 1–300 seconds. Longer clips are not silently trimmed.')
+        raise ValueError(f'Choose an audio clip lasting {MIN_DURATION}–{MAX_DURATION} seconds. Longer clips are not silently trimmed.')
     return duration
 
 
@@ -320,11 +320,11 @@ def _separate_owned(source: Path, output_dir: Path, model_root: Path, cancel: th
                  cancel, timeout=DECODE_TIMEOUT, stdout_limit=MAX_DECODE_BYTES + 8, stdout_sink=sink)
         size = decoded.stat().st_size
         if not size or size % 8 or size > MAX_DECODE_BYTES:
-            raise ValueError('Decoded audio must last 1–300 seconds and contain complete stereo frames.')
+            raise ValueError(f'Decoded audio must last {MIN_DURATION}–{MAX_DURATION} seconds and contain complete stereo frames.')
         frame_count = size // 8
         duration = frame_count / SAMPLE_RATE
         if not MIN_DURATION <= duration <= MAX_DURATION:
-            raise ValueError('Decoded audio must last 1–300 seconds. Longer clips are not silently trimmed.')
+            raise ValueError(f'Decoded audio must last {MIN_DURATION}–{MAX_DURATION} seconds. Longer clips are not silently trimmed.')
         check()
         peak = scan_float_peak([decoded], frame_count, check)
         gain = normalization_gain(peak)

@@ -15,6 +15,8 @@ import zipfile
 from unittest.mock import patch
 
 from karaoke import server as service
+from karaoke.archive import MAX_ARCHIVE_BYTES
+from karaoke.limits import MAX_INPUT_BYTES
 from karaoke.model import create_project
 import test_server as server_fixtures
 
@@ -82,7 +84,8 @@ class ArchiveServerTests(unittest.TestCase):
         return self.wait_job(result['job']['id'])
 
     def test_no_model_export_import_exact_audio_saved_fields_and_provenance(self):
-        self.assertEqual(self.request('GET', '/api/session')[2]['maxArchiveBytes'], 160 * 1024**2)
+        self.assertEqual(MAX_ARCHIVE_BYTES, 321_726_592)
+        self.assertEqual(self.request('GET', '/api/session')[2]['maxArchiveBytes'], MAX_ARCHIVE_BYTES)
         exported = self.export_job()
         self.assertEqual(exported['status'], 'complete', exported)
         self.assertEqual(exported['kind'], 'archive-export')
@@ -127,7 +130,7 @@ class ArchiveServerTests(unittest.TestCase):
             self.assertEqual(self.request('POST', path, value)[0], 400)
         self.assertEqual(self.request('POST', path, {'revision': 6})[0], 409)
         for headers, expected in [({'Content-Type': 'text/plain'}, 400),
-                                  ({'Content-Type': 'application/zip', 'Content-Length': str(160*1024**2+1)}, 413),
+                                  ({'Content-Type': 'application/zip', 'Content-Length': str(MAX_ARCHIVE_BYTES + 1)}, 413),
                                   ({'Content-Type': 'application/zip', 'Transfer-Encoding': 'chunked'}, 400),
                                   ({'Content-Type': 'application/zip', 'X-Karaoke-Token': 'wrong'}, 403)]:
             self.assertEqual(self.request('POST', '/api/archives', b'x', headers)[0], expected)
@@ -422,7 +425,7 @@ class ArchiveServerTests(unittest.TestCase):
         self.addCleanup(connection.close)
         headers = (f'POST /api/archives HTTP/1.1\r\nHost: 127.0.0.1:{self.server.server_port}\r\n'
                    f'X-Karaoke-Token: {self.token}\r\nContent-Type: application/zip\r\n'
-                   f'Content-Length: {64 * 1024**2 + 1}\r\nConnection: close\r\n\r\n')
+                   f'Content-Length: {MAX_INPUT_BYTES + 1}\r\nConnection: close\r\n\r\n')
         connection.sendall(headers.encode() + b'PK')
         deadline = time.monotonic() + 1
         while not self.server.uploading and time.monotonic() < deadline:

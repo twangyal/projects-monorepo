@@ -136,10 +136,10 @@ test('independent expected-duration guard allows one frame only, not one10msbin'
   assert.throws(() => normalized(wav, 1.01));
 });
 
-test('independent300second producer stays at30000minmaxpairs with exact terminal impulse', () => {
-  const frames = 13_230_000;
+test('independent600second producer stays at60000minmaxpairs with exact terminal impulse', () => {
+  const frames = 26_460_000;
   const reducer = new Pcm16PeakReducer(frames);
-  const parser = new NormalizedWavPeaks(300);
+  const parser = new NormalizedWavPeaks(600);
   const header = riff(chunk('fmt ', format()), chunk('data', new Uint8Array()));
   new DataView(header.buffer).setUint32(4, 36 + frames * 4, true);
   new DataView(header.buffer).setUint32(40, frames * 4, true);
@@ -149,15 +149,15 @@ test('independent300second producer stays at30000minmaxpairs with exact terminal
   while (remaining > 16384) { reducer.push(block); parser.push(block); remaining -= 16384; }
   const tail = pcm(remaining); sample(tail, remaining - 1, -32768, 32767); reducer.push(tail); parser.push(tail);
   const result = reducer.finish();
-  assert.equal(result.frameCount / result.sampleRate, 300);
-  assert.equal(result.minima.length, 30000);
-  assert.equal(result.minima.byteLength + result.maxima.byteLength, 120000);
-  assert.equal(result.minima[29999], -32768); assert.equal(result.maxima[29999], 32767);
-  assert.equal(result.minima[29998], 0); assert.equal(result.maxima[29998], 0);
+  assert.equal(result.frameCount / result.sampleRate, 600);
+  assert.equal(result.minima.length, 60000);
+  assert.equal(result.minima.byteLength + result.maxima.byteLength, 240000);
+  assert.equal(result.minima[59999], -32768); assert.equal(result.maxima[59999], 32767);
+  assert.equal(result.minima[59998], 0); assert.equal(result.maxima[59998], 0);
   assert.deepEqual(parser.finish(), result);
   assert.throws(() => new Pcm16PeakReducer(frames + 1));
   const oversized = header.slice();
   new DataView(oversized.buffer).setUint32(4, 36 + (frames + 1) * 4, true);
   new DataView(oversized.buffer).setUint32(40, (frames + 1) * 4, true);
-  assert.throws(() => new NormalizedWavPeaks(300).push(oversized));
+  assert.throws(() => new NormalizedWavPeaks(600).push(oversized));
 });

@@ -305,7 +305,7 @@ class ArchiveOracleTests(unittest.TestCase):
         self.restore(stored_zip(members(processing=b'{}')))
         for claim in [dict(privatePath='/private/not-to-echo'), dict(model='other'),
                       dict(stemGain=1.1), dict(offlineNetworkAttempts=True),
-                      dict(frameCount=44099), dict(windowCount=12),
+                      dict(frameCount=44099), dict(windowCount=23),
                       dict(windowRanges=[dict(start=0, frames=44101)]),
                       dict(windowRanges=[dict(start=1, frames=1), dict(start=0, frames=1)]),
                       dict(spleeterVersion='version with spaces')]:

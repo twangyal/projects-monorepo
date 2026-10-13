@@ -1,4 +1,5 @@
 import { MAX_WAVEFORM_BYTES, NormalizedWavPeaks, WaveformError } from './waveform.ts';
+import { MAX_DURATION } from './lyrics.ts';
 import type { WaveformWorkerReply, WaveformWorkerRequest } from './waveform.ts';
 
 let used = false;
@@ -13,7 +14,7 @@ function request(value: unknown): WaveformWorkerRequest {
   const candidate = value as Record<string, unknown>;
   if (typeof candidate.projectId !== 'string' || !/^[0-9a-f]{32}$/.test(candidate.projectId)
     || typeof candidate.duration !== 'number' || !Number.isFinite(candidate.duration)
-    || candidate.duration < 1 || candidate.duration > 300) {
+    || candidate.duration < 1 || candidate.duration > MAX_DURATION) {
     throw new WaveformError('Invalid waveform project or duration. Reload the project and retry.');
   }
   return { projectId: candidate.projectId, duration: candidate.duration };

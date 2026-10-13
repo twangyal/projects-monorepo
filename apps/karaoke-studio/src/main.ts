@@ -1,7 +1,7 @@
 import {readReply,validateProject,validateSaveReply,UnconfirmedReplyError} from './project-admission.ts';
 import './style.css';
 import { parseAlignment, parseTranscript, uncertainSummary, unsureSummary, UNSURE_CONFIDENCE, type Transcript } from './auto-lyrics.ts';
-import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
+import { activeCue, draftCues, draftLines, formatTime, validateCues, validateTitle, MAX_ARCHIVE_BYTES, MAX_UPLOAD_BYTES, type Project } from './lyrics.ts';
 import { LyricHistory, type LyricDraft, type RawTiming } from './draft-history.ts';
 import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
@@ -24,7 +24,7 @@ app.innerHTML = `
     <div id="job-panel" role="status" hidden><div class="job-copy"><span class="spinner" aria-hidden="true"></span><div><strong id="job-title"></strong><p id="job-stage"></p></div></div><button id="cancel-job">Cancel job</button></div>
     <div class="workspace-grid">
       <aside class="song-panel panel"><div class="panel-title"><span class="step">01</span><h3>Your song clip</h3></div>
-        <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br><span id="upload-limits">1–300 seconds · up to 64 MiB</span></span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
+        <label class="upload-zone"><span class="upload-icon" aria-hidden="true">↑</span><strong>Choose an audio clip</strong><span>WAV, MP3, FLAC or Ogg<br><span id="upload-limits">1–600 seconds · up to 128 MiB</span></span><input id="audio-file" type="file" accept=".wav,.mp3,.flac,.ogg,audio/wav,audio/mpeg,audio/flac,audio/ogg" aria-label="Upload song clip" disabled></label>
         <p id="model-help" class="model-help" hidden>Install the local separation model first. From the app directory, run <code>python scripts/setup_model.py --help</code> and follow the README setup steps, then refresh.</p>
         <p class="fine">The model estimates vocals and backing locally. Listen for remaining vocals or altered instruments before exporting.</p>
         <div class="divider"></div><label class="field">Saved clips<select id="projects"><option value="">Choose a saved clip</option></select></label><p id="library-count" class="fine">Projects are saved in your local studio folder.</p>
@@ -37,7 +37,7 @@ app.innerHTML = `
         <button id="archive-upload-cancel" class="text-button" hidden>Cancel archive upload</button>
         <button id="archive-recheck" class="text-button">Check restore status</button>
         <p id="archive-result" class="fine" role="status" hidden></p><button id="open-imported" class="quiet" hidden>Open imported clip</button></section>
-        <button id="delete-project" class="text-button full" disabled>Delete selected clip</button><div class="local-note"><strong>Room for the complete song.</strong><p>Import complete songs up to 5 minutes. Local CPU separation and video export can take several minutes; cancellation remains available while processing.</p></div>
+        <button id="delete-project" class="text-button full" disabled>Delete selected clip</button><div class="local-note"><strong>Room for the complete song.</strong><p>Import complete songs up to 10 minutes. Local CPU separation and video export can take several minutes; cancellation remains available while processing.</p></div>
       </aside>
       <section class="stage-panel panel" aria-labelledby="stage-heading"><div class="panel-title"><span class="step">02</span><h3 id="stage-heading">Listen & preview</h3><span class="small-tag">LIVE LYRIC PREVIEW</span></div>
         <div class="stage-wrap"><canvas id="stage" width="1280" height="720" role="img" aria-label="Karaoke lyric preview"></canvas><p id="current-line" class="sr-only" aria-live="polite">Instrumental break</p></div>
@@ -960,8 +960,8 @@ element<HTMLInputElement>('archive-file').addEventListener('change', async event
   if (!file || !session || archiveBusy() || restoreUncertain) return;
   retireSrt('Importing an archive cancelled the lyric import review.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
-  const limit = Math.min(160 * 1024 ** 2, session.maxArchiveBytes);
-  if (!Number.isFinite(limit) || file.size < 1 || file.size > limit) { message('Choose a nonempty Karaoke project archive no larger than 160 MiB.', true); return; }
+  const limit = Math.min(MAX_ARCHIVE_BYTES, session.maxArchiveBytes);
+  if (!Number.isFinite(limit) || file.size < 1 || file.size > limit) { message(`Choose a nonempty Karaoke project archive no larger than ${Math.floor(limit / 1024 ** 2)} MiB.`, true); return; }
   rememberArchiveFocus(); timeline.cancelGesture();
   const operation = ++archiveOperation, controller = new AbortController();
   archiveUpload = controller; requestingJob = true; controls();

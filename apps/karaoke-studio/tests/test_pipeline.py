@@ -17,6 +17,7 @@ from unittest.mock import patch
 import wave
 
 from karaoke import pipeline
+from karaoke.limits import MAX_DURATION, WORKER_TIMEOUT
 
 
 def fixture_wav(path: Path, duration: float, sample_rate: int = 44100) -> None:
@@ -69,7 +70,7 @@ class PipelineTests(unittest.TestCase):
             output.seek(pipeline.MAX_INPUT_BYTES)
             output.write(b'0')
         with patch.object(pipeline, '_run') as run:
-            with self.assertRaisesRegex(ValueError, '64 MiB'):
+            with self.assertRaisesRegex(ValueError, 'at most 128 MiB'):
                 pipeline.separate_clip(source, self.root / 'out', self.root / 'models', threading.Event(), lambda _: None)
             run.assert_not_called()
 
@@ -87,10 +88,10 @@ class PipelineTests(unittest.TestCase):
                 pipeline._write_source(array.array('f', [0, bad]), output)
 
     def test_real_ffprobe_rejects_clips_outside_duration_bounds_without_silent_truncation(self) -> None:
-        for duration in [0.8, 300.1]:
+        for duration in [0.8, MAX_DURATION + 0.1]:
             source = self.root / 'input.audio'
             fixture_wav(source, duration)
-            with self.assertRaisesRegex(ValueError, '1.*300|300.*seconds'):
+            with self.assertRaisesRegex(ValueError, '1–600 seconds'):
                 pipeline.separate_clip(source, self.root / 'out', self.root / 'models', threading.Event(), lambda _: None)
         self.assertFalse((self.root / 'out' / 'source.wav').exists())
 
@@ -151,7 +152,7 @@ class PipelineTests(unittest.TestCase):
                 options['stdout_sink'].truncate(pipeline.MAX_DECODE_BYTES + 8)
             return b'', b''
         with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_probe', return_value=1), patch.object(pipeline, '_run', side_effect=run):
-            with self.assertRaisesRegex(ValueError, '300|duration'):
+            with self.assertRaisesRegex(ValueError, '1–600 seconds'):
                 pipeline.separate_clip(source, self.root / 'out', self.root / 'models', threading.Event(), lambda _: None)
         self.assertEqual(list((self.root / 'out').iterdir()), [])
 
@@ -241,14 +242,14 @@ class PipelineTests(unittest.TestCase):
             self.assertGreaterEqual(pipeline._probe(compressed, format_name, threading.Event()), 30)
 
     def test_shared_full_song_limits_are_exact_and_probe_padding_never_changes_decode_bound(self) -> None:
-        self.assertEqual(pipeline.MAX_INPUT_BYTES, 64 * 1024 * 1024)
-        self.assertEqual(pipeline.MAX_DECODE_BYTES, 300 * 44100 * 8)
-        value = {'format': {'format_name': 'mp3', 'duration': '300.15'}, 'streams': [
+        self.assertEqual(pipeline.MAX_INPUT_BYTES, 128 * 1024 * 1024)
+        self.assertEqual(pipeline.MAX_DECODE_BYTES, 600 * 44100 * 8)
+        value = {'format': {'format_name': 'mp3', 'duration': '600.15'}, 'streams': [
             {'codec_type': 'audio', 'sample_rate': '44100', 'channels': 2}]}
         with patch.object(pipeline, '_run', side_effect=lambda *_args, **_options: (json.dumps(value).encode(), b'')):
-            self.assertEqual(pipeline._probe(self.root / 'source.mp3', 'mp3', threading.Event()), 300.15)
-            value['format']['duration'] = '300.201'
-            with self.assertRaisesRegex(ValueError, '300'):
+            self.assertEqual(pipeline._probe(self.root / 'source.mp3', 'mp3', threading.Event()), 600.15)
+            value['format']['duration'] = '600.201'
+            with self.assertRaisesRegex(ValueError, '1–600 seconds'):
                 pipeline._probe(self.root / 'source.mp3', 'mp3', threading.Event())
 
     def test_subprocess_stream_sink_does_not_duplicate_stdout_and_honors_byte_bound(self) -> None:
@@ -289,9 +290,9 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(output.read_bytes(), previous)
         self.assertFalse(output.with_suffix('.wav.part').exists())
 
-    def test_five_minute_complete_decode_is_streamed_and_exact_frames_survive_fake_inference(self) -> None:
+    def test_ten_minute_complete_decode_is_streamed_and_exact_frames_survive_fake_inference(self) -> None:
         source = self.root / 'input.audio'
-        fixture_wav(source, 300)
+        fixture_wav(source, MAX_DURATION)
         output_dir = self.root / 'out'
         actual = pipeline._run
         observed = {}
@@ -309,12 +310,13 @@ class PipelineTests(unittest.TestCase):
             return actual(command, cancel, **options)
         with patch.object(pipeline, 'model_ready', return_value=True), patch.object(pipeline, '_run', side_effect=run):
             duration = pipeline.separate_clip(source, output_dir, self.root / 'models', threading.Event(), lambda _: None)
-        self.assertEqual(duration, 300)
-        self.assertEqual(observed['timeout'], 600)
+        self.assertEqual(duration, 600)
+        self.assertEqual(observed['timeout'], WORKER_TIMEOUT)
+        self.assertEqual(WORKER_TIMEOUT, 1200)
         self.assertEqual(observed['rss_limit_kib'], 3 * 1024 * 1024)
         for name in ['source.wav', 'vocals.wav', 'backing.wav']:
             with wave.open(str(output_dir / name), 'rb') as audio:
-                self.assertEqual(audio.getnframes(), 13_230_000)
+                self.assertEqual(audio.getnframes(), 26_460_000)
 
     def test_reported_transient_rss_peak_and_oversized_metadata_cannot_publish_and_clean_scratch(self) -> None:
         source = self.root / 'input.audio'

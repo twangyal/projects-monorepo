@@ -1,3 +1,5 @@
+import { MAX_DURATION } from './lyrics.ts';
+
 export interface WaveformPeaks {
   frameCount: number;
   sampleRate: 44100;
@@ -16,8 +18,8 @@ export type WaveformWorkerReply =
   | { type: 'ready'; peaks: WaveformPeaks }
   | { type: 'error'; message: string };
 
-export const MAX_WAVEFORM_BYTES = 52_924_096;
-const MAX_FRAMES = 13_230_000;
+export const MAX_WAVEFORM_BYTES = MAX_DURATION * 44_100 * 4 + 4096;
+const MAX_FRAMES = MAX_DURATION * 44_100;
 
 /** All messages originate here, rather than in untrusted media or responses. */
 export class WaveformError extends Error {}
@@ -107,8 +109,8 @@ export class NormalizedWavPeaks {
   #closed = false;
 
   constructor(expectedDuration: number) {
-    if (typeof expectedDuration !== 'number' || !Number.isFinite(expectedDuration) || expectedDuration < 1 || expectedDuration > 300) {
-      fail('Expected waveform duration must be 1–300 seconds.');
+    if (typeof expectedDuration !== 'number' || !Number.isFinite(expectedDuration) || expectedDuration < 1 || expectedDuration > MAX_DURATION) {
+      fail(`Expected waveform duration must be 1–${MAX_DURATION} seconds.`);
     }
     this.#expectedDuration = expectedDuration;
   }
@@ -154,7 +156,7 @@ export class NormalizedWavPeaks {
       if (!this.#formatSeen || this.#dataSeen) fail('WAV must contain one format chunk before exactly one data chunk.');
       if (size % 4 !== 0) fail('WAV data must contain complete stereo PCM16 frames.');
       const frameCount = size / 4;
-      if (frameCount < 44100 || frameCount > MAX_FRAMES) fail('Normalized WAV duration must be 1–300 seconds.');
+      if (frameCount < 44100 || frameCount > MAX_FRAMES) fail(`Normalized WAV duration must be 1–${MAX_DURATION} seconds.`);
       const expectedFrames = this.#expectedDuration * 44100;
       const roundoff = Number.EPSILON * Math.max(frameCount, expectedFrames) * 4;
       if (Math.abs(frameCount - expectedFrames) > 1 + roundoff) {

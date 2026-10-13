@@ -13,6 +13,7 @@ from karaoke.chunks import (
     scan_float_peak,
     write_pcm16_wav,
 )
+from karaoke.limits import MAX_DURATION
 
 
 def floats(frames):
@@ -48,6 +49,8 @@ class IndependentChunkTests(unittest.TestCase):
             58 * 44100: [(0, 1323000), (1234800, 1323000)],
             300 * 44100: [(index * 1234800, 1323000) for index in range(10)]
             + [(12348000, 882000)],
+            600 * 44100: [(index * 1234800, 1323000) for index in range(21)]
+            + [(25930800, 529200)],
             1323001: [(0, 1323000), (1234800, 88201)],
         }
         for count, expected in cases.items():
@@ -55,7 +58,7 @@ class IndependentChunkTests(unittest.TestCase):
                 actual = [(item.start, item.frames) for item in plan_windows(count)]
                 self.assertEqual(actual, expected)
                 self.assertEqual(actual[-1][0] + actual[-1][1], count)
-                self.assertLessEqual(len(actual), 11)
+                self.assertLessEqual(len(actual), 22)
 
     def test_single_window_stays_in_original_positions_with_independent_channels(self):
         voice = [(0, 0), (0.25, -0.5), (1, -1), (0, 0), (-0.75, 0.125)]
@@ -154,7 +157,7 @@ class IndependentChunkTests(unittest.TestCase):
             assembly.finish()
 
     def test_invalid_counts_and_triple_overlap_are_rejected(self):
-        for count in [True, 0, -1, 1.5, 300 * 44100 + 1]:
+        for count in [True, 0, -1, 1.5, MAX_DURATION * 44100 + 1]:
             with self.subTest(count=count), self.assertRaises((ValueError, TypeError)):
                 plan_windows(count)
         for window, overlap in [(8, 5), (8, 8), (8, -1), (0, 0)]:

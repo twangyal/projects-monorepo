@@ -295,3 +295,22 @@ class ArchiveTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TenMinuteProcessingTests(unittest.TestCase):
+    """Archives keep the processing record of a maximum-length song (#233): 22 windows, not 11."""
+
+    def test_processing_record_of_a_ten_minute_song_is_admitted_and_one_window_more_is_not(self):
+        import json
+        from karaoke.archive import ArchiveError, _processing
+        from karaoke.chunks import plan_windows
+        from karaoke.limits import MAX_DURATION, MAX_WINDOWS, SAMPLE_RATE
+        frames = MAX_DURATION * SAMPLE_RATE
+        windows = plan_windows(frames)
+        self.assertEqual(len(windows), MAX_WINDOWS)
+        record = {'frameCount': frames, 'sampleRate': SAMPLE_RATE, 'duration': frames / SAMPLE_RATE, 'windowCount': len(windows),
+                  'windowRanges': [{'start': w.start, 'frames': w.frames} for w in windows], 'model': 'spleeter:2stems', 'modelRelease': 'v1.4.0'}
+        self.assertEqual(_processing(json.dumps(record).encode(), frames)['windowCount'], MAX_WINDOWS)
+        too_many = {**record, 'windowCount': MAX_WINDOWS + 1, 'windowRanges': [*record['windowRanges'], {'start': frames - 1, 'frames': 1}]}
+        with self.assertRaises(ArchiveError):
+            _processing(json.dumps(too_many).encode(), frames)

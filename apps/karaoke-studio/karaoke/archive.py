@@ -17,16 +17,17 @@ import time
 from typing import BinaryIO, Callable
 import zlib
 
-from .limits import MAX_JSON_BYTES, MAX_WAV_BYTES, MAX_DURATION, MAX_CUES, SAMPLE_RATE
+from .limits import MAX_JSON_BYTES, MAX_WAV_BYTES, MAX_DURATION, MAX_CUES, MAX_WINDOWS, SAMPLE_RATE
 from .model import ValidationError, validate_project
 
-MAX_ARCHIVE_BYTES = 160 * 1024**2
+# Three canonical WAV stems at the longest supported duration, plus small JSON members.
+MAX_ARCHIVE_BYTES = 3 * MAX_WAV_BYTES + 4 * 1024**2
 MAX_MANIFEST_BYTES = 8 * 1024
 MAX_PROCESSING_BYTES = 16 * 1024
 MAX_ARCHIVE_CENTRAL_BYTES = 4096
 MAX_ARCHIVE_ENTRIES = 6
 MAX_PORTABLE_REVISION = 2147483647
-ARCHIVE_TIMEOUT = 180
+ARCHIVE_TIMEOUT = 360
 _BLOCK = 65536
 _LOCAL = struct.Struct('<4s5H3I2H')
 _CENTRAL = struct.Struct('<4s6H3I5H2I')
@@ -217,7 +218,7 @@ def _processing(raw, frames):
              'chunkScheme': 'linear-sample-center-overlap'}
     integers = {'offlineNetworkAttempts': (0, 1000000), 'peakRssKiB': (0, 1000000000),
                 'windowFrames': (1, 1323000), 'overlapFrames': (0, 88200),
-                'hopFrames': (1, 1323000), 'windowCount': (1, 11),
+                'hopFrames': (1, 1323000), 'windowCount': (1, MAX_WINDOWS),
                 'frameCount': (frames, frames), 'sampleRate': (SAMPLE_RATE, SAMPLE_RATE)}
     numbers = {'workerSeconds': (0, 1000000), 'inferenceSeconds': (0, 1000000),
                'sourcePeak': (0, 1000000), 'stemPeak': (0, 1000000),
@@ -241,7 +242,7 @@ def _processing(raw, frames):
             if type(item) is not str or re.fullmatch(r'[A-Za-z0-9.+_-]{1,64}', item) is None:
                 _fail()
         elif key == 'windowRanges':
-            if type(item) is not list or len(item) > 11:
+            if type(item) is not list or len(item) > MAX_WINDOWS:
                 _fail()
             previous = -1
             for window in item:
