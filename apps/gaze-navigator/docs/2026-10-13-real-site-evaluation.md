@@ -13,7 +13,7 @@ The product direction defines success as people completing useful tasks on real 
 - **Outcomes.** Each step is recorded as done (the intended effect), unintended (the page changed in another way), failed, or unanswered-question. Utterances and questions are counted.
 - **Conditions.** Every task runs with the rules alone and with **Smarter target matching** (WaterSheep, the real model).
 
-The thirteen tasks (the last six were added in #238 to cover text entry, correction, dropdowns, scrolling and pagination):
+The seventeen tasks (six were added in #238 for text entry, correction, dropdowns, scrolling and pagination, and four in #240 for menus, disclosure toggles and checkboxes):
 
 | Site | Task | Steps |
 | --- | --- | --- |
@@ -30,13 +30,19 @@ The thirteen tasks (the last six were added in #238 to cover text entry, correct
 | Python docs | Switch to the dark theme | "choose dark" (a dropdown with no label) |
 | GOV.UK | Go to the second page of search results | "next page" |
 | MDN | Scroll the reference sidebar, not the page | "scroll the list down" |
+| GOV.UK | Open the navigation menu, then close it | "show the navigation menu", "close the menu" |
+| Wikipedia | Open the page tools menu | "open tools" |
+| GOV.UK | Show the search filters | "open filter and sort" |
+| Wikipedia | Tick and untick "Keep me logged in" (without logging in) | "tick keep me logged in", "untick it" |
 
 ## Results
 
 | Condition | Tasks completed | Steps done | Unintended actions | Utterances | Questions |
 | --- | --- | --- | --- | --- | --- |
-| Rules only | 11 / 13 | 17 / 19 | 0 | 19 | 0 |
-| Rules + WaterSheep | **13 / 13** | **19 / 19** | **0** | 19 | 0 |
+| Rules only | 15 / 17 | 23 / 25 | 0 | 25 | 0 |
+| Rules + WaterSheep | **17 / 17** | **25 / 25** | **0** | 25 | 0 |
+
+An earlier full run with WaterSheep on the same build completed 16/17: "show me the past versions of this page" was not resolved that time. Run on its own three more times, it succeeded each time. The cause of the one miss was not established, and both runs are in the JSON record.
 
 The rules alone miss only the two everyday phrasings. With WaterSheep both succeed on the live pages: "show me the past versions of this page" opened **View history**, and "take me to the stuff about cars" opened **Driving and transport**. Dictation, the spoken correction, Enter, both dropdowns (including one with no label), page and region scrolling, and pagination all worked with the rules alone. Per-step replies are in [`2026-10-13-real-site-evaluation.json`](2026-10-13-real-site-evaluation.json).
 
@@ -52,10 +58,16 @@ The rules alone miss only the two everyday phrasings. With WaterSheep both succe
 - Two failures were task-script mistakes: Wikipedia replaces its search input on focus, and the Python docs have a hidden duplicate theme dropdown.
 - The remaining two were the everyday phrasings.
 
+**Third round (#240).** A first rules-only run of the four new tasks found two more real gaps:
+- **"close the menu" did nothing.** "Close" was not understood, and GOV.UK renames the open menu's button to "Hide navigation menu", so the name did not match either. The page context now records whether a toggle is open (`aria-expanded`, or an open `<details>`). "Close", "hide", "collapse" and "dismiss" act on an open toggle matching the words, or on a Close/Hide/× control. With neither in the circle, the words are an ordinary control name, so "close account" keeps its confirmation.
+- **"open filter and sort" asked for confirmation.** GOV.UK's filter toggle is a `<button>` inside the search form with no `type`, so it defaulted to a submit button and was treated as consequential. Buttons with `aria-expanded` are now disclosures, not submits; consequential names still ask. The practice search page reproduces both, and its browser test fails without the fix.
+
+Two task-script mistakes were also corrected: the menu button's renaming, and a list entry that was not present on every load.
+
 The instruction suites are unchanged: 120/120, held-out 34/50 and held-out-2 18/50 with the rules, all with 0 unsafe.
 
 ## Limits
 
-- Thirteen tasks on four sites, written by the developer; the first runs informed the script fixes. These results show the pipeline working on real pages, not task completion rates for the intended users.
+- Seventeen tasks on four sites, written by the developer; the first runs informed the script fixes. These results show the pipeline working on real pages, not task completion rates for the intended users.
 - The pointer stands in for gaze, so gaze jitter and calibration error are not exercised. Typed text stands in for speech, so recognition errors are not exercised.
 - Live sites change; rerun the script to refresh the record.

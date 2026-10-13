@@ -245,3 +245,22 @@ test('typed corrections still reach the field that had focus before the instruct
   await expect(status(page)).toContainText('first select the text field');
   await expect(page.getByLabel('Message')).toHaveValue('Meet on Friday');
 });
+
+test('a disclosure toggle inside a form opens without a confirmation; the form\'s real submit still asks', async ({ page }) => {
+  await page.goto('/practice-site/search.html?q=river');
+  const toggle = page.getByRole('button', { name: 'Filter and sort' });
+  await look(page, toggle);
+  await typeInstruction(page, 'open filter and sort');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(status(page)).toHaveText('Filter and sort activated.');
+  await look(page, page.getByRole('button', { name: 'Apply filters' }));
+  await typeInstruction(page, 'apply filters');
+  await expect(status(page)).toContainText('may have consequences');
+  await typeInstruction(page, 'cancel');
+  await expect(page).toHaveURL(/search\.html\?q=river$/);
+  // "Hide the filters" closes the open toggle.
+  await look(page, toggle);
+  await typeInstruction(page, 'hide the filters');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#filter-panel')).toBeHidden();
+});

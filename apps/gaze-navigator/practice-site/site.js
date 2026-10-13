@@ -55,3 +55,12 @@ if (!customElements.get('nb-feedback')) {
 for (const topic of document.querySelectorAll('.topic')) {
   topic.addEventListener('click', () => say(topic.dataset.answer));
 }
+
+// Search filters: the toggle shows the panel without submitting its form.
+const filterToggle = document.getElementById('filter-toggle');
+filterToggle?.addEventListener('click', event => {
+  event.preventDefault();
+  const open = filterToggle.getAttribute('aria-expanded') !== 'true';
+  filterToggle.setAttribute('aria-expanded', String(open));
+  document.getElementById('filter-panel').hidden = !open;
+});

@@ -2,7 +2,7 @@
 // (it rests on the control a person would look at) and typed text stands in for speech. Each step records
 // whether the intended effect happened, how many utterances it took, questions asked and unintended effects.
 // This is an automated proxy for real use, not a study with intended users or real gaze/speech input.
-//   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT]
+//   node scripts/evaluate-real-sites.mjs --extension DIR [--assist] [--json OUT] [--only 'text in a task goal']
 // DIR must be an extension build with host access granted (automation cannot click the permission prompt).
 import { chromium } from '@playwright/test';
 import { mkdtempSync, writeFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const argument = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : null; };
-const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json');
+const extension = argument('--extension'), assist = process.argv.includes('--assist'), output = argument('--json'), only = argument('--only');
 if (!extension) throw new Error('Give an extension build with --extension DIR.');
 
 const link = name => page => page.getByRole('link', { name, exact: typeof name === 'string' }).first();
@@ -22,6 +22,8 @@ const scrolled = selector => page => page.evaluate(css => css ? document.querySe
 // `measure` is read before the step; `done` then receives it.
 // Wikipedia swaps in a new search input on focus, so text is read from the focused field.
 const typed = text => async page => (await page.evaluate(() => document.activeElement?.value)) === text;
+const menu = page => page.locator('#super-navigation-menu-toggle');
+const expanded = (locate, value) => async page => (await locate(page).getAttribute('aria-expanded')) === value;
 const grew = selector => ({ measure: scrolled(selector), done: async (page, before) => (await scrolled(selector)(page)) > before + 100 });
 
 // Each task: a goal a person might have, as steps of (where they look, what they say, what should happen).
@@ -70,6 +72,22 @@ export const TASKS = [
   { site: 'GOV.UK', goal: 'Go to the second page of search results', start: 'https://www.gov.uk/search/all?keywords=passport', steps: [
     { look: link(/^Next page/), say: 'next page', target: 'Next page', done: url(/page=2/) },
   ] },
+  // Added in #240: menus, disclosure widgets and checkboxes.
+  { site: 'GOV.UK', goal: 'Open the navigation menu, then close it', start: 'https://www.gov.uk/', steps: [
+    // The button is renamed "Hide navigation menu" once open, so it is found by id.
+    { look: menu, say: 'show the navigation menu', done: async page => (await menu(page).getAttribute('aria-expanded')) === 'true' },
+    { look: menu, say: 'close the menu', done: async page => (await menu(page).getAttribute('aria-expanded')) === 'false' },
+  ] },
+  { site: 'Wikipedia', goal: 'Open the page tools menu', start: 'https://en.wikipedia.org/wiki/Ada_Lovelace', steps: [
+    { look: page => page.locator('#vector-page-tools-dropdown-label'), say: 'open tools', done: async page => page.locator('#vector-page-tools-dropdown-checkbox').isChecked() },
+  ] },
+  { site: 'GOV.UK', goal: 'Show the search filters', start: 'https://www.gov.uk/search/all?keywords=passport', steps: [
+    { look: button('Filter and sort'), say: 'open filter and sort', target: 'Filter and sort', done: expanded(button('Filter and sort'), 'true') },
+  ] },
+  { site: 'Wikipedia', goal: 'Tick and untick "Keep me logged in" without logging in', start: 'https://en.wikipedia.org/wiki/Special:UserLogin', steps: [
+    { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'tick keep me logged in', done: async page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked() },
+    { look: page => page.getByRole('checkbox', { name: /Keep me logged in/ }).first(), say: 'untick it', done: async page => !(await page.getByRole('checkbox', { name: /Keep me logged in/ }).first().isChecked()) },
+  ] },
   { site: 'MDN', goal: 'Scroll the reference sidebar, not the page', start: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a', steps: [
     { look: page => page.locator('#main-sidebar a').nth(8), say: 'scroll the list down', ...grew('#main-sidebar') },
   ] },
@@ -85,7 +103,7 @@ async function run() {
   await control.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
   await control.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
   const results = [];
-  for (const task of TASKS) {
+  for (const task of TASKS.filter(item => !only || item.goal.includes(only))) {
     const page = await context.newPage();
     const panel = page.locator('#gaze-web-navigator section'), status = panel.locator('.status');
     const record = { site: task.site, goal: task.goal, steps: [], completed: false };
@@ -97,6 +115,7 @@ async function run() {
         const box = panel.getByLabel('Smarter target matching');
         if (!(await box.isChecked())) await box.check();
         await page.waitForFunction(() => /is on|could not/.test(document.querySelector('#gaze-web-navigator')?.shadowRoot.querySelector('.assist-state').textContent ?? ''), null, { timeout: 300000 });
+        record.assistState = await panel.locator('.assist-state').textContent();
       }
       for (const step of task.steps) {
         const entry = { say: step.say, utterances: 0, questions: 0, outcome: 'failed', replies: [] };

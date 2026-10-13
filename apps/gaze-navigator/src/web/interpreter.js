@@ -267,6 +267,28 @@ export function interpret(utterance, context = { elements: [] }) {
     if (picked) return picked;
   }
 
+  // Closing something: a toggle that is open ("close the menu" when its button now reads "Hide navigation menu"),
+  // or a Close/Hide/Collapse/Dismiss control. With neither in the circle, the words are an ordinary control name
+  // ("close account"), which keeps its usual handling and confirmation.
+  const closing = /^(?:close|hide|collapse|dismiss|shut)(?:\s+(?:the\s+)?(.+))?$/.exec(text);
+  if (closing) {
+    const subject = closing[1] && !DEICTIC.test(closing[1]) ? closing[1] : null;
+    const act = element => ({ type: 'activate', targetId: element.id });
+    const closers = context.elements.filter(element => element.expanded === true ||
+      ((element.role === 'button' || element.role === 'link') && /^(?:close|hide|collapse|dismiss)\b|^[×✕✖]$/i.test((element.name ?? '').trim())));
+    if (closers.length) {
+      if (!subject) return deictic(closers, act);
+      // "the menu" is only a role word: prefer closers whose name says it, else ask among them all.
+      if (!tokens(subject).length) {
+        const word = normalize(subject);
+        const saying = closers.filter(element => ` ${normalize(element.name ?? '')} `.includes(` ${word} `));
+        return deictic(saying.length ? saying : closers, act);
+      }
+      const named = rank(subject, closers, null);
+      if (named.length) return resolve(subject, closers, null, act);
+    }
+  }
+
   const verbless = text.replace(ACTIVATE_VERB, '');
   const hint = /\s(link|button|tab|checkbox|box|field|menu|option)$/.exec(verbless)?.[1];
   const query = verbless.replace(/^the\s+/, '').trim();
