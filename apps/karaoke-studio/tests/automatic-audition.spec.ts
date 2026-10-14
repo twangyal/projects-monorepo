@@ -129,3 +129,88 @@ test('track changes retire audition and a held native play result cannot revive 
   await page.setViewportSize({ width: 390, height: 740 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 }));
+
+
+test('recognized words can be corrected during audition, filtered and applied as one undoable edit', async ({ page }) => withClip(page, async id => {
+  const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  await page.getByLabel('Lyric line 2', { exact: true }).fill('My existing correction');
+  await page.getByLabel('Start line 2', { exact: true }).fill('');
+  await page.getByLabel('Clip title', { exact: true }).fill('My corrected title');
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Keep my pasted draft');
+  const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const corrected = page.getByLabel('Reviewed lyric line 3', { exact: true });
+  await expect(corrected).toBeVisible();
+  await page.getByRole('button', { name: 'Repeat automatic line 3', exact: true }).click();
+  await corrected.fill('Sing it back 🎵\nCorrected chorus');
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await expect(corrected).toHaveValue('Sing it back 🎵\nCorrected chorus');
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(corrected).toHaveValue('Sing it back 🎵\nCorrected chorus');
+  expect(await editor(page)).toEqual(before);
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 3', { exact: true })).toHaveValue('Sing it back 🎵\nCorrected chorus');
+  await expect(page.getByLabel('Lyric line 1', { exact: true })).toHaveValue('Hello little world');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  expect(await editor(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 3', { exact: true })).toHaveValue('Sing it back 🎵\nCorrected chorus');
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+}));
+
+test('invalid hidden reviewed text blocks complete apply while captured audition stays available', async ({ page }) => withClip(page, async () => {
+  const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const line = page.getByLabel('Reviewed lyric line 1', { exact: true });
+  await expect(line).toBeVisible();
+  await line.fill('');
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeDisabled();
+  await expect(page.locator('#automatic-review-error')).toContainText('Line 1');
+  await page.getByRole('button', { name: 'Listen to automatic line 3', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).uncheck();
+  await line.fill('🎵'.repeat(241));
+  await expect(page.locator('#automatic-review-error')).toContainText('240 characters');
+  await line.fill('🎵'.repeat(240));
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeEnabled();
+  await expect(page.locator('#automatic-review-error')).toHaveText('');
+  expect(await editor(page)).toEqual(before);
+}));
+
+test('cancel discards only reviewed corrections and a fresh review restores recognized words', async ({ page }) => withClip(page, async id => {
+  await page.setViewportSize({ width: 390, height: 740 });
+  const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const line = page.getByLabel('Reviewed lyric line 3', { exact: true });
+  await expect(line).toBeVisible();
+  await line.fill('Do not apply these words');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Cancel lyric import', exact: true }).click();
+  expect(await editor(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(line).toHaveValue('Sing it back to me');
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+}));
+
+
+test('saving applied review corrections persists them without rewriting recognition', async ({ page }) => withClip(page, async id => {
+  const transcript = await (await page.request.get(`/api/projects/${id}/transcript`)).json();
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const line = page.getByLabel('Reviewed lyric line 3', { exact: true });
+  await expect(line).toBeVisible();
+  await line.fill('The words I actually sang');
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect(page.locator('#message')).toHaveText('Lyrics and timing saved locally.');
+  const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  expect(saved.cues[2]).toEqual({ start: 8.85, end: 11.75, text: 'The words I actually sang' });
+  expect(await (await page.request.get(`/api/projects/${id}/transcript`)).json()).toEqual(transcript);
+  await page.reload();
+  await expect(page.getByLabel('Lyric line 3', { exact: true })).toHaveValue('The words I actually sang');
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(page.getByLabel('Reviewed lyric line 3', { exact: true })).toHaveValue('Sing it back to me');
+}));

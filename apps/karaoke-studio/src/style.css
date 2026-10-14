@@ -817,3 +817,8 @@ button {
 .auto-lyrics h4 { margin:0 0 .6rem; font-size:.9rem; color:#436158; }
 @media(max-width:700px) { .auto-lyrics { padding:1rem .8rem; } }
 #srt-review-list li[data-unsure] strong { color:#8a4b12; }
+
+#srt-review-list .field { margin: .5rem 0; }
+#srt-review-list textarea { width: 100%; min-height: 56px; resize: vertical; }
+#srt-review-list details { margin: .5rem 0; font-size: .85rem; }
+#automatic-review-error { color: #8a3012; }

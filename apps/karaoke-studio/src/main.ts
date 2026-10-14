@@ -51,7 +51,7 @@ app.innerHTML = `
         <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><div class="field"><label for="recognition-choice">Recognition for this retry</label><select id="recognition-choice" disabled><option value="auto">Automatic language choice</option><option value="english">English</option><option value="multilingual">Multilingual (25 European languages)</option></select></div><p class="fine">If the language choice sounds wrong, select a model and transcribe again. The selected model must be installed locally. Retrying keeps your lyric edits; review and apply the new result when ready.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div></section>
         <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
         <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
-        <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><p id="automatic-review-count" class="fine"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
+        <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><p id="automatic-review-count" class="fine"></p><p class="fine">Correct words here while listening. Timings stay as recognized; replace cues to edit timings or line breaks in the main editor. Cancel discards these reviewed corrections.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
@@ -85,6 +85,7 @@ let srtEpoch = 0;
 interface SrtOwner { epoch: number; projectId: string; project: number; edit: number; deadline: number }
 let srtOwner: SrtOwner | null = null;
 let automaticReview = false;
+let automaticReviewText: string[] = [];
 let automaticAuditionOwner: SrtOwner | null = null;
 let srtReview: { owner: SrtOwner; cues: Project['cues']; applied: string } | null = null;
 let srtTimer: ReturnType<typeof setTimeout> | undefined;
@@ -482,21 +483,32 @@ function srtCurrent(owner: SrtOwner): boolean {
 function srtControls() {
   const allowed = srtAllowed();
   element<HTMLInputElement>('srt-file').disabled = !allowed;
-  element<HTMLButtonElement>('srt-apply').disabled = !allowed || !srtReview || !srtCurrent(srtReview.owner);
+  let reviewError = '';
+  if (automaticReview && srtReview && working) {
+    try { reviewedAutomaticCues(); }
+    catch (error) { reviewError = error instanceof Error ? error.message : 'Check every reviewed lyric line.'; }
+  }
+  element('automatic-review-error').textContent = reviewError;
+  element<HTMLButtonElement>('srt-apply').disabled = !allowed || !srtReview || !srtCurrent(srtReview.owner) || !!reviewError;
   element<HTMLButtonElement>('srt-cancel').hidden = !srtOwner;
   automaticReviewControls();
 }
 function retireSrt(text: string) {
   if (!srtOwner && !srtReview) return;
   if (automaticAuditionOwner) retirePractice('The automatic review changed. Listening stopped; lyric edits are kept.');
-  automaticReview = false; element('automatic-review-tools').hidden = true;
+  automaticReview = false; automaticReviewText = []; element('automatic-review-tools').hidden = true;
   srtEpoch++; clearTimeout(srtTimer); srtTimer = undefined; srtOwner = null; srtReview = null;
   element('srt-review').hidden = true; element('srt-review-list').replaceChildren();
   element('srt-status').textContent = text; srtControls();
 }
+function reviewedAutomaticCues(): Project['cues'] {
+  if (!srtReview || !working || automaticReviewText.length !== srtReview.cues.length) throw new Error('Review every automatic lyric line before applying.');
+  return validateCues(srtReview.cues.map((cue, index) => ({ ...cue, text: automaticReviewText[index] })), working.duration);
+}
 function automaticReviewControls(): void {
   const live = automaticReview && !!srtReview && srtCurrent(srtReview.owner);
   const ready = live && srtAllowed() && practiceMediaReady(false);
+  for (const text of document.querySelectorAll<HTMLTextAreaElement>('#srt-review-list textarea')) text.disabled = !live || !srtAllowed();
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-automatic-listen]')) button.disabled = !ready;
   const owned = live && automaticAuditionOwner === srtReview?.owner;
   element<HTMLButtonElement>('automatic-listen-pause').disabled = !owned || !practice.active || timingBusy();
@@ -572,11 +584,15 @@ async function loadTranscript() {
 element('auto-review').addEventListener('click', () => {
   const current = working && transcript?.projectId === working.id ? transcript.value : null;
   if (!current?.available || !srtAllowed() || !working) return;
+  if (automaticReview && srtReview && srtCurrent(srtReview.owner)) {
+    element('srt-review').scrollIntoView({ block: 'nearest' }); return;
+  }
   retireSrt('');
   const owner: SrtOwner = { epoch: ++srtEpoch, projectId: working.id, project: loadedProjectGeneration, edit: editGeneration, deadline: performance.now() + 10000 };
   srtOwner = owner;
   srtReview = { owner, cues: current.cues.map(({ start, end, text }) => ({ start, end, text })), applied: 'Automatic lyrics applied as one edit. Listen, correct any words or timing, then use Save lyrics.' };
   element('srt-summary').textContent = `${current.cues.length} automatically recognized lines to replace ${working.cues.length} current lines for “${working.title}”. Words and timing come from the separated vocals and may contain mistakes.`;
+  automaticReviewText = current.cues.map(cue => cue.text);
   automaticReview = true; element('automatic-review-tools').hidden = false;
   element<HTMLInputElement>('automatic-unsure-only').checked = false;
   const recognition = transcriptEpoch;
@@ -585,7 +601,17 @@ element('auto-review').addEventListener('click', () => {
     const row = document.createElement('li'); row.dataset.srtCue = String(index);
     const unsure = cue.confidence < UNSURE_CONFIDENCE; if (unsure) row.dataset.unsure = 'true';
     const time = document.createElement('strong'); time.textContent = `${index + 1}. ${srtTime(cue.start)} --> ${srtTime(cue.end)}${unsure ? ' · recognition unsure — listen' : ''}`;
-    const text = document.createElement('pre'); text.textContent = cue.text; row.append(time, text);
+    const label = document.createElement('label'); label.className = 'field';
+    label.textContent = `Reviewed lyric line ${index + 1}`;
+    const text = document.createElement('textarea'); text.rows = 2; text.value = cue.text;
+    text.addEventListener('input', () => {
+      if (!automaticReview || !srtReview || srtReview.owner !== owner || !srtCurrent(owner) || !srtAllowed()) return;
+      automaticReviewText[index] = text.value; srtControls();
+    });
+    label.append(text);
+    const original = document.createElement('details'), summary = document.createElement('summary'), words = document.createElement('pre');
+    summary.textContent = 'Originally recognized words'; words.textContent = cue.text; original.append(summary, words);
+    row.append(time, label, original);
     const actions = document.createElement('div'); actions.className = 'timing-actions';
     for (const [mode, verb] of [['once', 'Listen to'], ['repeat', 'Repeat']] as const) {
       const button = document.createElement('button'); button.textContent = `${verb} automatic line ${index + 1}`;
@@ -649,10 +675,14 @@ element('srt-apply').addEventListener('click', () => {
   retirePractice('Replacing lyric cues stopped practice.');
   const review = srtReview;
   if (!review || !srtCurrent(review.owner) || !srtAllowed() || !working || !lyricHistory) return;
+  let cues: Project['cues'];
+  try { cues = automaticReview ? reviewedAutomaticCues() : structuredClone(review.cues); }
+  catch (error) {
+    element('automatic-review-error').textContent = error instanceof Error ? error.message : 'Check every reviewed lyric line.'; return;
+  }
   timeline.cancelGesture();
   // Keep the exact pre-application native spelling, including blank invalid times.
   lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
-  const cues = structuredClone(review.cues);
   retireSrt('Lyric cues replaced in memory. The title and pasted words were kept; use Save lyrics when ready.');
   retireTiming('Other editor or studio work cancelled the timing session. Staged times were not applied.');
   working.cues = cues; renderCues(); changed();
