@@ -83,7 +83,7 @@ export const LAYOUT_NAMES: Record<Layout, string> = { grid: 'Standard', 'half-dr
 
 /** A library motif, or `upload:<id>` for a motif the designer uploaded to this design. */
 export type PrintMotif = Motif | `upload:${string}`;
-export interface Print { motif: PrintMotif; color: string; scaleCm: number; layout: Layout }
+export interface Print { motif: PrintMotif; color: string; scaleCm: number; layout: Layout; direction?: 'horizontal' | 'vertical' }
 /** A designer's own motif image, repeated like library motifs (drawn as uploaded; print color does not tint it). */
 export interface UploadedMotif { id: string; name: string; dataUrl: string; width: number; height: number }
 export interface PartStyle { material: string; color: string; print: Print | null }
@@ -160,11 +160,13 @@ export function material(id: string): Material { return MATERIALS.find(item => i
 
 function validatePrint(value: unknown, uploaded: ReadonlySet<string>): Print | null {
   if (value === null) return null;
-  const p = plain(value, ['motif', 'color', 'scaleCm', 'layout'], 'Print');
+  const directional = !!value && typeof value === 'object' && Object.hasOwn(value, 'direction');
+  const p = plain(value, ['motif', 'color', 'scaleCm', 'layout', ...(directional ? ['direction'] : [])], 'Print');
   const upload = typeof p.motif === 'string' && p.motif.startsWith('upload:') ? p.motif.slice(7) : null;
   if (upload !== null ? !uploaded.has(upload) : !MOTIFS.includes(p.motif as Motif)) fail('Choose a print from the library or an uploaded motif.');
   if (!LAYOUTS.includes(p.layout as Layout)) fail('Print repeat must be standard, half drop, half brick or mirror.');
-  return { motif: p.motif as PrintMotif, color: hex(p.color, 'Print color'), scaleCm: finite(p.scaleCm, LIMITS.scaleCm, 'Print repeat size (cm)'), layout: p.layout as Layout };
+  if (directional && (p.motif !== 'stripe' || !['horizontal', 'vertical'].includes(p.direction as string))) fail('Stripe direction must be horizontal or vertical and only applies to stripes.');
+  return { motif: p.motif as PrintMotif, color: hex(p.color, 'Print color'), scaleCm: finite(p.scaleCm, LIMITS.scaleCm, 'Print repeat size (cm)'), layout: p.layout as Layout, ...(directional ? { direction: p.direction as Print['direction'] } : {}) };
 }
 function validateArtwork(value: unknown, measurements: Measurements): Artwork {
   const rotated = !!value && typeof value === 'object' && Object.hasOwn(value, 'rotation');
@@ -233,6 +235,7 @@ function validateMotifs(value: unknown): UploadedMotif[] {
 }
 /** The display name of a part's print. */
 export function printName(print: Print, product: Pick<Product, 'motifs'>): string {
+  if (print.motif === 'stripe' && print.direction === 'vertical') return 'Vertical stripe';
   if (print.motif.startsWith('upload:')) return product.motifs?.find(m => `upload:${m.id}` === print.motif)?.name ?? 'Uploaded motif';
   return MOTIF_NAMES[print.motif as Motif];
 }

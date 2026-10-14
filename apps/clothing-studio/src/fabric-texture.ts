@@ -80,7 +80,7 @@ export function paintTile(style: PartStyle, canvas: HTMLCanvasElement = document
       }
     }
   } else if (print) {
-    if (print.motif === 'stripe') { ctx.fillStyle = print.color; ctx.fillRect(0, 0, TILE_PX, TILE_PX * 0.4); }
+    if (print.motif === 'stripe') { ctx.fillStyle = print.color; ctx.fillRect(0, 0, print.direction === 'vertical' ? TILE_PX * 0.4 : TILE_PX, print.direction === 'vertical' ? TILE_PX : TILE_PX * 0.4); }
     else if (print.motif === 'gingham') {
       ctx.fillStyle = print.color; ctx.globalAlpha = 0.55; ctx.fillRect(0, 0, TILE_PX / 2, TILE_PX); ctx.fillRect(0, 0, TILE_PX, TILE_PX / 2);
       ctx.globalAlpha = 0.45; ctx.fillRect(0, 0, TILE_PX / 2, TILE_PX / 2); ctx.globalAlpha = 1;
