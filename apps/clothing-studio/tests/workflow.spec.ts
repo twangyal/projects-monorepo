@@ -33,8 +33,8 @@ test('creates a distinct concept, sketches, places it, restores locally and roun
   await page.mouse.up();
   await page.getByLabel('Upload body photo').setInputFiles({ name: 'sample.png', mimeType: 'image/png', buffer: await photoBytes(page) });
   await expect(page.locator('#photo-name')).toHaveText('sample.png');
-  await page.getByLabel('Rotation').fill('12');
-  await page.getByLabel('Rotation').press('Tab');
+  await page.getByLabel('Rotation', { exact: true }).fill('12');
+  await page.getByLabel('Rotation', { exact: true }).press('Tab');
   await page.getByRole('group', { name: 'Photo overlay placement', exact: true }).press('ArrowRight');
   await expect(page.getByText('Locally saved', { exact: true })).toBeVisible();
   const saved = await backup(page);
