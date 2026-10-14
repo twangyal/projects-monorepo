@@ -1,0 +1,29 @@
+# Clothing workspace, material research and stripe direction — acceptance
+
+## Scope and current direction
+
+Issues #255, #256 and #257 address the owner's 2026-10-14 Clothing feedback: a 3D-first workspace, explicit research into material physics, and the concrete vertical-stripe interpretation gap. Clothing remains ACTIVE against the professional garment-design destination. Broader AI interpretation, measured fabric calibration, self/layer contact, additional construction and real physical fit validation remain unfinished. Composure and Shot Studio are owner-DEFERRED; project #8 remains skipped. Owner direction commits `1e74fbde7977977b91a2951c9a2b6e445463c820` and `a4b174c0c1f702fab55017034cadd7fa5ed99ed0` were read and retained before integration, including the newly explicit Gaze extension-first destination.
+
+## Published changes
+
+- #255: source `58c0bee01ca1b428d795aec8ab36be5d2a2eb796` centers the mounted garment and adds six task panels plus secondary native dialogs and a real optional expanded view. Keyboard focus/Escape, in-task feedback, phone containment, raw fields and pending real image decoding are covered. Review found hidden modal feedback and phone overflow; both were reproduced/fixed. A held decode exposed view-only navigation retiring image work; its failing regression was fixed without relaxing real edit ownership.
+- #256: `105ac5e12c252e7c4d08cb3330c7108e6d59ee3c` adds [primary-source research, current-solver audit and measured next-milestone criteria](2026-10-14-clothing-material-physics-research.md). Research only: no measured sample, new solver behavior or calibration claim. Independent review checked unit conversions, source attribution and the audit against actual code.
+- #257: `7f4090300d3f6fd79b6bc6ce7273f021376971cf` adds optional strict horizontal/vertical stripe direction, preserving old horizontal projects. The local interpreter and contextual control produce the same shared tile in 3D, linked patterns, front PNG and GLB texture; tech packs name vertical stripes. Direction persists through exact complete backup, Undo/Redo and reload. Review reproduced first-token selection for conflicting directions; a failing unit regression led to refusal before mutation. Physical grain is separate, and this is not an AI integration.
+
+## Verification evidence
+
+| Gate | Published head / app tree | Observed result |
+| --- | --- | --- |
+| #255 source CI [38647130818](https://github.com/twangyal/projects-monorepo/actions/runs/38647130818) | `58c0bee01ca1b428d795aec8ab36be5d2a2eb796`; app `6cd64024952fcc7f38c858348adefc8390cccc1e` | 111 units, 137 browser cases, lint/type/build passed |
+| #255/#256 main CI [38647729108](https://github.com/twangyal/projects-monorepo/actions/runs/38647729108) | `105ac5e12c252e7c4d08cb3330c7108e6d59ee3c`; same app tree | 111 units/lint/type/build passed; browser 134/137, three rotation reload races failed |
+| Initial #257 source CI [38648099950](https://github.com/twangyal/projects-monorepo/actions/runs/38648099950) | `7f4090300d3f6fd79b6bc6ce7273f021376971cf` | Cancelled when superseded by the save-order correction |
+| Corrected source CI [38648414051](https://github.com/twangyal/projects-monorepo/actions/runs/38648414051) | `8f023ccff961bb664b272da4b89fc7727b98641b`; app `c887f6b0c40837fcc38662916baeff0d8d2c12d0` | 114 units, 139 browser cases, lint/type/build passed |
+| Final main CI [38649133520](https://github.com/twangyal/projects-monorepo/actions/runs/38649133520) | merge `988589e874355b765496e28ce00300c5afa4d8f5`; same final app tree | 114 units, 139 browser cases, lint/type/build passed |
+
+Local #255 checks passed 111 units/lint/type/build and four focused native cases. One complete local attempt passed 132/137: two direct-pointer gestures were offscreen after expanded-layout reload, one motif centre crop retained the old narrow-canvas framing, and two storage-harness pages were removed by a concurrent non-harness build. Tests now scroll real targets and use a stable 900 × 1000 motif viewport, preserving all original behavior/pixel thresholds; the isolated 17-case rerun passed. A second local full attempt passed 136/137, with the remaining failure an ENOENT during browser-context trace cleanup after another task reused the artifact directory. Artifact paths were separated, and both product cases passed in isolation. These local attempts are not represented as clean full-suite passes. The full hosted source gate is the clean complete 137-case observation.
+
+Main confirmation exposed three artwork-rotation test-ordering races after Redo: immediate reload ran before the 200ms debounced native save completed. The correction `8f023ccff961bb664b272da4b89fc7727b98641b` waits for the actual current-version “Locally saved” state before the unchanged reload/rotation assertions. Independent review traced that state to native transaction completion; all four cases then passed locally. This changes synchronization only, not production save semantics.
+
+Local #257 checks passed 114 units/lint/type/build and two focused native workflows. They inspect actual pixel axes of the linked tile, downloaded front PNG and the GLB's embedded front texture, plus tech-pack text, exact backup/history/reload, 390px layout and unchanged complete backup on conflicting wording. The new interpreter unit test failed for missing vertical support before implementation; the review conflict regression also failed before its fix. Independent review then confirmed conflict refusal and retained handling of repeated identical directions. Existing test assertions, geometry bounds, resource limits and browser security were retained.
+
+The local browser was portable Chromium 143 with web security enabled. Hosted CI uses the workflow's installed Chromium; neither synthetic acceptance nor hosted-browser success establishes physical fit, calibrated material behavior, intended-user editing effort or broader device usability.
