@@ -99,6 +99,26 @@ Shared recommendations, occasion playlists and listening together support the Sp
 
 Success means meaningful events appear from real listening activity with little effort, users can correct and curate their history, and song-linked text/photo memories remain easy to revisit. Test actual integration and timeline relevance as well as reliable storage.
 
+## 12. Style Studio
+
+### Owner update — 2026-10-14: guided, visual onboarding
+
+After trying Style Studio, the owner reported that the first screen contains too much information and that the app asks for too much manual entry. The requested direction is a screen-by-screen experience with picture-based preference choices at the beginning, similar to choosing favorite genres and artists during Spotify onboarding. Pinterest was suggested as a possible source of inspiration, alongside ready-made examples users can choose from.
+
+Style Studio remains a personal style assistant for matching existing taste, exploring a new style and dressing for an occasion. The next Style Studio milestone should make that experience approachable from the first visit. Existing wardrobe, feedback, saved-look and wear-history capabilities are foundations to reorganize around this flow.
+
+The revised experience should:
+
+- **Present one focused screen at a time.** Guide users through getting started, choosing visual preferences and reaching suggestions. Show only the information and controls relevant to the current step, with clear next/back navigation and preserved choices. Returning users should reach their looks or wardrobe without repeating onboarding. Detailed explanations, profile management, exports and advanced controls should be available when needed rather than filling the opening screen.
+- **Learn taste through pictures.** Begin with a manageable selection of outfit/style images that users can select, like, pass on or skip. Use the Spotify reference for the ease of choosing visual examples; exact screen counts, selection thresholds and interface details require subsequent design. Let users revisit and refine their choices. Show recognizable clothing and outfit imagery, rather than making abstract tags or long forms the primary way to express taste.
+- **Reduce required typing and setup.** Do not require users to name and tag a wardrobe, understand the model or enter every preference before receiving a useful first result. Use supplied examples and sensible, editable defaults to make first-use exploration possible. Add personal wardrobe pieces progressively when useful; keep detailed tags, notes and other optional information out of the critical path. Distinguish example outfits from clothes the user actually owns, and sample preferences from their explicit choices.
+- **Investigate Pinterest or a comparable visual source.** Assess whether a supported integration can let users select inspiration or bring in their own references. Verify actual API access, permissions, image-use rights, privacy and any costs before choosing an implementation. Pinterest is an option to evaluate, not an established capability or a mandatory dependency. A curated, appropriately licensed image collection should provide a useful onboarding path without a third-party account; unavailable integration must not block the guided visual experience.
+- **Turn choices into useful suggestions.** Visual selections must inform the user's retained preferences and subsequent results, rather than acting as a decorative tour. Explain results briefly and offer simple feedback to refine them. Keep early results honest about limited preference evidence and whether they use examples or the user's wardrobe; do not claim automatic clothing recognition or calibrated recommendation quality without evidence.
+
+Success means a new user can understand what to do, choose pictured examples and reach relevant-looking suggestions with little typing and without confronting every form at once. Evaluate the complete first-use journey on desktop and phone, including screen clarity, required input, time/effort to the first useful result, back/skip behavior, retained choices and recommendation usefulness. Passing existing storage or model tests alone does not establish that this usability problem is resolved.
+
+Scheduled development should read this update before selecting or resuming Style Studio work, reconcile older plans with it, and prioritize a coherent visual-onboarding-to-suggestions milestone over adding more fields or polishing the current all-in-one page. Preserve existing user profiles and useful functionality as the interface changes. This update records requested future work; the current application has not yet been redesigned and Style Studio remains ACTIVE. Other projects' direction and the existing portfolio focus remain in force.
+
 ## 13. Stock Notebook
 
 Retain the original stock-research vision: turn a broad investing idea into visible screening criteria and an understandable, source-linked research summary, distinguishing supplied facts, derived observations and generated claims.
