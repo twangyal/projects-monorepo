@@ -92,6 +92,16 @@ Success means a user can enter the app, focus on the 3D garment, find a relevant
 
 Scheduled development should read this update before selecting or resuming Clothing Studio work and prioritize a coherent 3D-first interaction flow over adding more controls to the existing all-in-one page. This records requested future work; neither the workspace redesign nor AI integration is complete, and Clothing Studio remains ACTIVE. Other projects' direction and the existing portfolio focus are unchanged.
 
+### Owner follow-up — 2026-10-14: material-dependent cloth physics
+
+Draping a garment over a body/model must involve cloth physics, with different materials producing meaningfully different behavior. Changing a fabric must affect how the garment hangs, folds, stretches and contacts the body, as well as its visible texture. This is part of the intended 3D garment experience and should remain prominent in the revised workspace.
+
+Research is an explicit part of this milestone. Investigate suitable simulation methods and credible material data, including fabric mass per area, directional stretch and shear, bending stiffness, damping, thickness and contact friction. Examine the effects of garment construction, seams, body shape, gravity, body contact and cloth self-collision and contact between layers. Fabric names alone do not establish physical properties: document parameter sources, units, calibration methods and assumptions, and distinguish measured values from approximate presets. Choose implementation milestones based on that research and the existing solver rather than prescribing an unverified physics engine.
+
+The current XPBD top-drape implementation already uses gravity, stretch, bending and body friction, with approximate relative fabric settings and a chest-based body proxy. It is a foundation, not evidence of calibrated material behavior or realistic personalized fit. Research and development should address those limitations, including layered garments, body/contact fidelity and extension beyond the currently supported draped garments, without relabeling the existing approximation as physically validated.
+
+Evaluate representative fabrics on the same garment and body so observed differences can be attributed to materials; compare with credible reference drapes or physical samples where available. Check fold/strain behavior, stretching along different fabric directions, contact and penetration, settling stability, and useful interaction/performance on supported devices. Keep limitations visible and make failed or unstable simulations understandable. Appearance alone does not validate physical fit or manufacturing readiness. Scheduled Clothing Studio work should include this research and validation alongside the 3D-first redesign; this follow-up records future requirements and does not claim that they are delivered.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
