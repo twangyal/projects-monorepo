@@ -93,9 +93,10 @@ Use these statuses in `PROJECT_IDEAS.md`:
 - `ACTIVE` — meaningful product development remains against the intended vision
 - `MAINTENANCE` — the intended product experience is substantially delivered and evaluated in relevant real use; no major capability gap remains that requires active development
 - `BLOCKED` — cannot reasonably proceed without external information or resources
+- `DEFERRED` — paused by the owner; exclude from scheduled/autonomous task selection until the owner explicitly resumes it
 - `DONE` — fulfills its intended purpose and has no obvious high-value missing work
 
-All fourteen implemented apps are ACTIVE under the 2026-10-08 direction reset. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
+Thirteen implemented apps remain ACTIVE under the revised direction. Composure is owner-DEFERRED as of 2026-10-14 after browser testing; do not resume its development or choose a platform migration without a new owner instruction. See `docs/PRODUCT_DIRECTION.md` section 17. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
 
 ## Independence
 

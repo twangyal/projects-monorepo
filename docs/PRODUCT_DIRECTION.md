@@ -6,7 +6,7 @@ This is the current product-direction source of truth. Where earlier description
 
 ## Portfolio-wide development standard
 
-All fourteen implemented applications remain ACTIVE. The eleven previously marked MAINTENANCE have meaningful product development ahead of them. The phone-restriction and handwriting projects retain their recorded BLOCKED status; paper trading remains explicitly skipped. ACTIVE identifies unfinished product development, not a requirement to develop every application concurrently.
+Thirteen implemented applications remain ACTIVE. Composure is DEFERRED by the owner as of 2026-10-14 after browser testing; follow its hold below. The previous MAINTENANCE labels do not establish completion of the revised visions. The phone-restriction and handwriting projects retain their recorded BLOCKED status; paper trading remains explicitly skipped. ACTIVE identifies unfinished product development, not a requirement to develop every application concurrently.
 
 A functioning prototype, bounded vertical slice, completed issue, passing test suite, or reliable storage/export workflow is an intermediate achievement. None alone establishes completion of the intended product. Historical acceptance receipts continue to describe the exact milestones they measured; they must not be presented as acceptance of these broader visions.
 
@@ -157,3 +157,13 @@ Show the proposed interpretation as editable criteria, resolve ambiguity and uns
 Use genuinely free model access if a suitable option is available. Verify pricing, quotas, data handling and overage behavior before choosing a provider; do not assume a free tier prevents charges. Paid AI-model API integration is deferred unless the owner later authorizes spending. If no suitable no-cost service is available, document that specific dependency and continue independent product work without claiming the interpretation milestone is complete.
 
 Success for this milestone means varied ordinary requests produce correct, inspectable screening criteria, uncertainty is handled usefully, and failure preserves the user's current work. Measure interpretation quality on representative requests rather than accepting any syntactically valid response. The earlier failed local paraphrase experiment remains evidence about that experiment; it does not replace the new API-based direction.
+
+## 17. Composure
+
+### Owner update — 2026-10-14: deferred pending platform reconsideration
+
+After trying the browser app, the owner said Composure does not work as a browser app and asked to defer it. Composure is now DEFERRED. This is the owner's assessment of the product/platform experience, not a newly diagnosed technical failure or a claim that its earlier automated checks failed.
+
+Exclude Composure from scheduled and autonomous development until the owner explicitly resumes it. Do not select browser polishing, new features, additional acceptance work or a platform migration as a way to continue this deferred project. The earlier goal of a heart-rate-driven horror game remains recorded, but a suitable platform and experience must be reconsidered before resumption; no native, desktop, mobile or game-engine replacement has been selected.
+
+Retain the existing source, tests, research and historical acceptance evidence for possible future use. Deferral is not completion, maintenance acceptance, deletion or an instruction to disable the hosted test copy. Other projects' direction and priorities remain unchanged.

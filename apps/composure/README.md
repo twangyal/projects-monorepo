@@ -1,8 +1,10 @@
 # Composure
 
+**DEFERRED — owner update, 2026-10-14.** After trying this browser app, the owner deferred the project because the browser experience does not work for their intended use. Scheduled/autonomous development is paused until the owner explicitly resumes it and the platform is reconsidered. Preserve this implementation and its historical evidence; no replacement platform has been selected. See [product direction, section 17](../../docs/PRODUCT_DIRECTION.md#17-composure).
+
 An original short observatory escape game for catalog project #17. Use declared simulated readings or explicitly connect a device broadcasting the standard Bluetooth Heart Rate Service. Rising game tension slows movement, increases noise and adds aim jitter. Find the fuse and key, restore power, steady the lock, and escape before the corridor seals.
 
-The simulator works without a sensor. The Bluetooth software flow is tracked in [#61](https://github.com/twangyal/projects-monorepo/issues/61); **physical smartwatch compatibility and measurement accuracy remain unverified** in [#62](https://github.com/twangyal/projects-monorepo/issues/62). The catalog stays ACTIVE. Inputs influence an authored game mechanic, not an inference about emotions or health. The original simulated milestone is recorded in [#39](https://github.com/twangyal/projects-monorepo/issues/39).
+The simulator works without a sensor. The Bluetooth software flow is tracked in [#61](https://github.com/twangyal/projects-monorepo/issues/61); **physical smartwatch compatibility and measurement accuracy remain unverified** in [#62](https://github.com/twangyal/projects-monorepo/issues/62). The catalog is now DEFERRED; the checks below describe the retained implementation. Inputs influence an authored game mechanic, not an inference about emotions or health. The original simulated milestone is recorded in [#39](https://github.com/twangyal/projects-monorepo/issues/39).
 
 ## Run
 
