@@ -84,7 +84,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <label class="button quiet file-button">Upload artwork (PNG, JPEG, WebP)<input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp"></label>
       <div class="measure-grid"><label class="field">Artwork width (cm)<input id="artwork-width" type="number" min="${LIMITS.artworkWidthCm[0]}" max="${LIMITS.artworkWidthCm[1]}" step="0.5"></label>
         <label class="field">From centre (cm)<input id="artwork-x" type="number" step="0.5"></label>
-        <label class="field">Below shoulder (cm)<input id="artwork-y" type="number" step="0.5"></label></div>
+        <label class="field">Below shoulder (cm)<input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p>
       <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button></div></div>
     </aside>
   </div>
@@ -219,7 +219,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const drafts = new Map<string, string>();
   const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', ...LEG_FIELDS.map(([id]) => id)]);
   const groupOf = (id: string): DraftGroup | null => id === 'garment-drape-chest' ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
-    : ['artwork-width', 'artwork-x', 'artwork-y'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : null;
+    : ['artwork-width', 'artwork-x', 'artwork-y', 'artwork-rotation'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : null;
   const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
   const draftState = () => {
     ($('discard-product-drafts') as HTMLButtonElement).disabled = !drafts.size;
@@ -450,6 +450,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const side = ($('artwork-side') as HTMLSelectElement).value, art = draft.artwork.find(item => item.part === side);
     if (!art) throw new Error(`Upload artwork for the ${side} first.`);
     art.widthCm = Number(($('artwork-width') as HTMLInputElement).value); art.xCm = Number(($('artwork-x') as HTMLInputElement).value); art.yCm = Number(($('artwork-y') as HTMLInputElement).value);
+    art.rotation = ($('artwork-rotation') as HTMLInputElement).valueAsNumber;
   }, 'Artwork placement applied.', 'artwork'));
   $('remove-artwork').addEventListener('click', () => update(draft => {
     const side = ($('artwork-side') as HTMLSelectElement).value;
@@ -724,7 +725,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const design = project.product ?? template('blank');
     if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
-    ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? '');
+    ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? ''); ($('artwork-rotation') as HTMLInputElement).value = String(art ? art.rotation ?? 0 : '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
     if (sideOnly) { finishDrafts(); return; }
     $('inspector-heading').textContent = label(selected);

@@ -87,7 +87,7 @@ export interface Print { motif: PrintMotif; color: string; scaleCm: number; layo
 /** A designer's own motif image, repeated like library motifs (drawn as uploaded; print color does not tint it). */
 export interface UploadedMotif { id: string; name: string; dataUrl: string; width: number; height: number }
 export interface PartStyle { material: string; color: string; print: Print | null }
-export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number }
+export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number; /** Clockwise viewed from outside, about the existing centre; absent means zero. */ rotation?: number }
 export interface Measurements { chest: number; length: number; sleeve: number }
 /**
  * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), neck width (F), front
@@ -167,7 +167,8 @@ function validatePrint(value: unknown, uploaded: ReadonlySet<string>): Print | n
   return { motif: p.motif as PrintMotif, color: hex(p.color, 'Print color'), scaleCm: finite(p.scaleCm, LIMITS.scaleCm, 'Print repeat size (cm)'), layout: p.layout as Layout };
 }
 function validateArtwork(value: unknown, measurements: Measurements): Artwork {
-  const a = plain(value, ['part', 'dataUrl', 'width', 'height', 'name', 'xCm', 'yCm', 'widthCm'], 'Artwork');
+  const rotated = !!value && typeof value === 'object' && Object.hasOwn(value, 'rotation');
+  const a = plain(value, ['part', 'dataUrl', 'width', 'height', 'name', 'xCm', 'yCm', 'widthCm', ...(rotated ? ['rotation'] : [])], 'Artwork');
   if (a.part !== 'front' && a.part !== 'back') fail('Artwork goes on the front or back.');
   if (typeof a.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(a.dataUrl) || a.dataUrl.length > LIMITS.artworkBytes * 1.4) fail('Artwork must be a PNG, JPEG or WebP image of at most 1.5 MB.');
   const width = finite(a.width, [1, 4096], 'Artwork pixel width'), height = finite(a.height, [1, 4096], 'Artwork pixel height');
@@ -177,7 +178,8 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
   const panel = panelSize(measurements);
   const widthCm = finite(a.widthCm, LIMITS.artworkWidthCm, 'Artwork width (cm)');
   return { part: a.part as Artwork['part'], dataUrl: a.dataUrl as string, width, height, name: a.name as string, xCm: finite(a.xCm, [-panel.width / 2, panel.width / 2], 'Artwork horizontal position (cm)'),
-    yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm };
+    yCm: finite(a.yCm, [0, panel.length], 'Artwork distance below the neck (cm)'), widthCm,
+    ...(rotated ? { rotation: finite(a.rotation, [-180, 180], 'Artwork rotation (degrees)') } : {}) };
 }
 
 function validateParts(value: unknown, uploaded: ReadonlySet<string>, ids: readonly PartId[]): Record<PartId, PartStyle> {

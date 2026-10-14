@@ -166,7 +166,7 @@ export class ProductScene {
     const ray = new THREE.Raycaster(new THREE.Vector3(x, y, front ? 200 : -200), new THREE.Vector3(0, 0, front ? -1 : 1));
     const hit = ray.intersectObject(supporting)[0];
     if (!hit) { restGeometry?.dispose(); return; }
-    const orientation = new THREE.Euler(0, front ? 0 : Math.PI, 0);
+    const orientation = new THREE.Euler(0, front ? 0 : Math.PI, -(art.rotation ?? 0) * Math.PI / 180);
     let geometry: THREE.BufferGeometry;
     try { geometry = new DecalGeometry(supporting, hit.point, orientation, new THREE.Vector3(art.widthCm, heightCm, 30)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
     finally { restGeometry?.dispose(); }
