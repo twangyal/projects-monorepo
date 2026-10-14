@@ -594,3 +594,12 @@ Uploads and **Automatic language choice** use the existing automatic recognizer 
 The requested model must already be installed and checksum verified. A missing model fails with its explicit setup command; no other model is substituted. Retrying refreshes the recognized words but keeps saved cues, current corrections, title and pasted words. Use **Review automatic lyrics** and **Replace lyric cues** to apply a result as one undoable edit, then save separately. Failed or cancelled retries keep the earlier transcript. The choice resets to Automatic when opening a clip and is not stored in project archives.
 
 This gives a correction path for the first-100-word heuristic; it does not establish quality for mixed-language songs or the other unmeasured languages. Multilingual word-onset/line-alignment measurements and user-measured correction effort remain open. See [verification notes](docs/2026-10-14-recognizer-choice-251.md).
+
+
+### Listen before applying automatic lyrics (#252)
+
+Choose **Review automatic lyrics** to audition the recognition result before replacing any editor cues. Each line has **Listen** (once) and **Repeat**, with **Pause/Resume reviewed passage** and **Stop reviewed passage**. Playback uses that recognized line's captured times on the selected Original, Vocals or Backing track at normal 1× speed. It works even while your title or cue times have invalid raw edits; those fields, pasted words, history and existing practice-range selection remain unchanged.
+
+**Show only uncertain automatic lines** focuses the list on lines below the existing confidence threshold, keeping their original numbers. The count explicitly states that **Replace lyric cues still applies every recognized line**, including hidden ones, as one undoable edit. Listening/filtering does not apply or save anything. Changing the filter stops the current reviewed passage. Cancelling/replacing the review, changing lyrics/clip/track, starting other media work or leaving the page retires listening; delayed native playback results cannot revive it. Imported SRT retains its existing independent review behavior.
+
+Confidence is a model signal, not a guarantee that unflagged lyrics are correct. This supplies a faster review path; reduced real-user correction effort has not been measured. See [verification notes](docs/2026-10-14-automatic-audition-252.md).
