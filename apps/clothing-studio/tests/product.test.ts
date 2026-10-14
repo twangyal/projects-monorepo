@@ -321,3 +321,16 @@ test('fit: edited points of measure drive the pattern, the 3D shell and the tech
   assert.throws(() => validateProduct({ ...template('trousers'), fit: { hemWidth: 50 } }), /tops/);
   assert.deepEqual(validateProduct(JSON.parse(JSON.stringify(fitted))), fitted, 'saved projects round-trip');
 });
+
+test('stripe direction survives validation while legacy prints and invalid direction data stay strict', () => {
+  const p = template('breton');
+  assert.equal(p.parts.front.print!.direction, undefined);
+  p.parts.front.print!.direction = 'vertical';
+  assert.deepEqual(validateProduct(p), p);
+  for (const direction of [null, undefined, 90, 'diagonal', '']) {
+    const bad = structuredClone(p); Reflect.set(bad.parts.front.print!, 'direction', direction);
+    assert.throws(() => validateProduct(bad), /Stripe direction/);
+  }
+  const dots = structuredClone(p); dots.parts.front.print!.motif = 'dots';
+  assert.throws(() => validateProduct(dots), /only applies to stripes/);
+});

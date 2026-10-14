@@ -129,6 +129,13 @@ export function readStylePrompt(prompt: string, current: PartStyle): StyleReadin
   const plain = /\b(plain|solid|no print|without (a )?print)\b/.exec(text);
   if (plain && !motif) { claim(plain); understood.push('no print'); }
 
+  const stripe = motif === 'stripe' || (!motif && !plain && current.print?.motif === 'stripe');
+  const directions = stripe ? [...text.matchAll(/\b(horizontal|vertical)\b/g)] : [];
+  if (new Set(directions.map(match => match[1])).size > 1) throw new Error('Specify one stripe direction: horizontal or vertical.');
+  for (const match of directions) claim(match);
+  const direction = directions[0]?.[1] as Print['direction'];
+  if (direction) understood.push(`stripe direction: ${direction}`);
+
   let layout: Layout | null = null;
   for (const [pattern, id] of LAYOUT_WORDS) { const match = claim(pattern.exec(text)); if (match) { layout = id; understood.push(`repeat: ${id}`); break; } }
   let scale: number | null = null;
@@ -154,11 +161,15 @@ export function readStylePrompt(prompt: string, current: PartStyle): StyleReadin
 
   const style: PartStyle = { material, color: ground ?? current.color, print: current.print };
   if (plain && !motif) style.print = null;
-  else if (motif || (current.print && (ink || layout || scale !== null))) {
+  else if (motif || (current.print && (ink || layout || scale !== null || direction))) {
     const base: Print = current.print ?? { motif: motif ?? 'stripe', color: '#1f2a4f', scaleCm: 6, layout: 'grid' };
     // A new motif starts at its own usual size and a standard repeat; an existing print keeps what was not described.
     const fresh = motif !== null && (!current.print || motif !== current.print.motif);
     style.print = { motif: motif ?? base.motif, color: ink ?? base.color, scaleCm: scale ?? (fresh ? defaultScale(motif!) : base.scaleCm), layout: layout ?? (fresh ? 'grid' : base.layout) };
+    if (stripe) {
+      const nextDirection = direction ?? (!fresh ? base.direction : undefined);
+      if (nextDirection) style.print.direction = nextDirection;
+    }
   }
   if (!understood.length) throw new Error(`No fabric, colour or print was recognised in “${prompt.trim().slice(0, 60)}”. Try words like "linen", "navy", "breton stripe" or "small floral".`);
 

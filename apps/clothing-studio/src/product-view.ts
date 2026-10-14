@@ -57,6 +57,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <label class="field">Print<select id="part-print"><option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}</select></label>
       <div class="print-options"><div class="color-row"><label for="print-color">Print color</label><input id="print-color" type="color"></div>
         <label class="field">Repeat<select id="print-layout">${LAYOUTS.map(l => `<option value="${l}">${LAYOUT_NAMES[l]}</option>`).join('')}</select></label>
+        <label class="field">Stripe direction<select id="stripe-direction"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></label>
         <label class="field">Repeat size (cm)<input id="print-scale" type="number" min="${LIMITS.scaleCm[0]}" max="${LIMITS.scaleCm[1]}" step="0.5"></label></div>
       <button id="apply-all-parts" class="quiet">Use this style on every part</button>
       <p class="eyebrow">MEASUREMENTS</p>
@@ -366,6 +367,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     print.color = ($('print-color') as HTMLInputElement).value; print.layout = ($('print-layout') as HTMLSelectElement).value as Print['layout'];
     print.scaleCm = Number(($('print-scale') as HTMLInputElement).value);
   }, `${label(selected)}: print updated.`));
+  $('stripe-direction').addEventListener('change', () => update(draft => {
+    const print = draft.parts[selected].print;
+    if (print?.motif !== 'stripe') throw new Error('Choose stripes before setting their direction.');
+    print.direction = ($('stripe-direction') as HTMLSelectElement).value as Print['direction'];
+  }, `${label(selected)}: stripe direction updated.`));
   $('apply-all-parts').addEventListener('click', () => update(draft => {
     const style = draft.parts[selected];
     for (const id of partsOf(draft)) if (id !== selected) draft.parts[id] = RIB_PARTS.has(id) ? { ...structuredClone(style), material: draft.parts[id].material, print: null } : structuredClone(style);
@@ -753,6 +759,8 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     for (const id of ['print-color', 'print-layout', 'print-scale']) ($(id) as HTMLInputElement).disabled = !style.print;
     // Uploaded motifs are drawn in their own colors.
     ($('print-color') as HTMLInputElement).disabled = !style.print || style.print.motif.startsWith('upload:');
+    ($('stripe-direction') as HTMLSelectElement).disabled = style.print?.motif !== 'stripe';
+    ($('stripe-direction') as HTMLSelectElement).value = style.print?.direction ?? 'horizontal';
     ($('print-color') as HTMLInputElement).value = style.print?.color ?? '#1f2a4f'; ($('print-layout') as HTMLSelectElement).value = style.print?.layout ?? 'grid';
     ($('print-scale') as HTMLInputElement).value = String(style.print?.scaleCm ?? 6);
     ($('product-name') as HTMLInputElement).value = design.name;

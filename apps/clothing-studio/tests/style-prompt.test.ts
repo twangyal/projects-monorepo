@@ -58,3 +58,19 @@ test('accents and synonyms are understood together, and modifiers keep light col
   assert.notEqual(lilac, '#f7f7f4');
   assert.ok(parseInt(lilac.slice(1, 3), 16) < 235, 'a pastel lilac is still lilac, not white');
 });
+
+test('stripe direction is explicit, preserved when omitted and never claimed for another motif', () => {
+  const result = readStylePrompt('navy vertical stripes', blank);
+  assert.equal(Reflect.get(result.style.print!, 'direction'), 'vertical');
+  assert.deepEqual(result.ignored, []);
+  assert.ok(result.understood.includes('stripe direction: vertical'));
+  assert.equal(Reflect.get(readStylePrompt('stripes 5 cm', result.style).style.print!, 'direction'), 'vertical');
+  assert.notEqual(Reflect.get(readStylePrompt('horizontal stripes', result.style).style.print!, 'direction'), 'vertical');
+  assert.equal(Reflect.get(readStylePrompt('dots', result.style).style.print!, 'direction'), undefined);
+  assert.deepEqual(readStylePrompt('vertical dots', blank).ignored, ['vertical']);
+});
+
+test('conflicting stripe directions are refused instead of committing the first word', () => {
+  for (const prompt of ['change horizontal stripes to vertical','not horizontal, vertical stripes','vertical and horizontal stripes'])
+    assert.throws(() => readStylePrompt(prompt,blank), /Specify one stripe direction/);
+});
