@@ -178,7 +178,7 @@ function finishLoad(generation: number) {
 function adoptLoad(generation: number, transform: (current: Project) => Project, text: string, wholeProject = false) {
   if (generation !== loadGeneration) return;
   // Consume the admitted token before shared edit/commit retires old imports.
-  retireLoad(); edit(transform); if (wholeProject) { constructionView.reset(); gradingView.reset(); bodyView?.reset(); } message(text);
+  retireLoad(); edit(transform); if (wholeProject) { productView.reset(); constructionView.reset(); gradingView.reset(); bodyView?.reset(); } message(text);
 }
 
 function edit(transform: (current: Project) => Project) {
@@ -214,7 +214,7 @@ for (const [id, key, factor] of placementFields) input(id).addEventListener('cha
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 
-element('new-project').addEventListener('click', () => { if (!productDraftGuard()) return; cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
+element('new-project').addEventListener('click', () => { if (!productDraftGuard()) return; cancelLoad(); edit(() => createProject()); productView?.reset(); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
 element('sample').addEventListener('click', () => { cancelLoad(); edit(current => ({ ...current, photo: null })); });
 element('reset-placement').addEventListener('click', () => edit(current => ({ ...current, placement: createProject().placement })));
 element('clear-sketch').addEventListener('click', () => edit(current => ({ ...current, strokes: [] })));
@@ -224,7 +224,7 @@ function travel(direction: 'undo' | 'redo') {
   if (!productDraftGuard()) return;
   cancelLoad(); cancelGesture();
   if (!(direction === 'undo' ? history.canUndo : history.canRedo)) return;
-  project = history[direction](); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); editVersion++;
+  project = history[direction](); productView?.reset(); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); editVersion++;
   renderViews(); updateControls(); scheduleSave(); message('');
 }
 element('undo').addEventListener('click', () => travel('undo'));

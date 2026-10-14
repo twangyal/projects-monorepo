@@ -1,3 +1,5 @@
+import { deformArtwork } from './artwork-deformation.ts';
+import type { BodyProxy, GarmentDrapeResult } from './garment-drape.ts';
 // Real-time WebGL view of a product design: one mesh per part, physically scaled fabric tiles, artwork decals.
 import * as THREE from 'three';
 import Delaunator from 'delaunator';
@@ -5,7 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
-import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type Product } from './product.ts';
+import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
 
 export type View = 'front' | 'back' | 'left' | 'right';
 export class ProductScene {
@@ -14,6 +16,8 @@ export class ProductScene {
   private camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
   private controls: OrbitControls;
   private group = new THREE.Group();
+  /** The body a drape was simulated on; kept out of `group` so exports carry only the garment. */
+  private body = new THREE.Group();
   private parts = new Map<PartId, THREE.Mesh>();
   private textures = new Map<string, THREE.CanvasTexture>();
   private provisional: THREE.Texture[] = [];
@@ -28,7 +32,7 @@ export class ProductScene {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.add(this.group);
+    this.scene.add(this.group); this.scene.add(this.body);
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0a0, 1.6));
     const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(60, 120, 160); this.scene.add(key);
     const rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(-120, 60, -140); this.scene.add(rim);
@@ -78,19 +82,24 @@ export class ProductScene {
     return { texture, tileCm };
   }
 
-  setProduct(product: Product, selected: PartId | null) {
+  /** Shows the product; with a drape, each part takes its simulated shape and the body it hangs on is shown. */
+  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null, showBody = true) {
     for (const texture of this.provisional.splice(0)) texture.dispose();
+    this.setBody(showBody ? drape?.body ?? null : null);
     for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
     // The framing follows the garment: a hood rises above the shoulders, and trousers are long.
     const previous = this.height;
-    this.height = garmentHeight(product) + 6;
+    // A draped top is framed with the body's head in view.
+    this.height = Math.max(garmentHeight(product), drape && showBody ? topMeasurements(product).length + 32 : 0) + 6;
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous) > 0.5) this.setView(this.view);
-    for (const part of teeMesh(product, Delaunator)) {
+    const restParts = teeMesh(product, Delaunator);
+    for (const part of restParts) {
       const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(part.positions, 3));
+      const draped = drape?.parts.find(item => item.part === part.part);
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(draped && draped.positions.length === part.positions.length ? draped.positions : part.positions, 3));
       // UVs are in cm; dividing by the tile's fabric size repeats it at physical scale.
       geometry.setAttribute('uv', new THREE.Float32BufferAttribute(part.uvs.map(value => value / tileCm), 2));
       geometry.setIndex(part.indices); geometry.computeVertexNormals();
@@ -101,11 +110,44 @@ export class ProductScene {
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true);
-    for (const art of product.artwork) this.addArtwork(product, art);
+    for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
     this.requestRender();
   }
 
-  private addArtwork(product: Product, art: Product['artwork'][number]) {
+  private setBody(body: BodyProxy | null) {
+    for (const child of [...this.body.children]) { this.body.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
+    if (!body) return;
+    const skin = () => new THREE.MeshStandardMaterial({ color: 0xc9cdd3, roughness: 0.85, metalness: 0 });
+    // Torso: stadium sections joined into a tube, down to a little below the hip.
+    const sections = [...body.torso.slice(0, 4), { ...body.torso[3]!, y: body.torso[3]!.y - 12 }], around = 40, positions: number[] = [], indices: number[] = [];
+    for (const section of sections) {
+      const straight = section.halfWidth - section.halfDepth;
+      for (let i = 0; i < around; i++) {
+        const angle = 2 * Math.PI * i / around, cos = Math.cos(angle);
+        positions.push(Math.sign(Math.round(cos * 1e9)) * straight + section.halfDepth * cos, section.y, section.halfDepth * Math.sin(angle));
+      }
+    }
+    for (let r = 0; r + 1 < sections.length; r++) for (let i = 0; i < around; i++) {
+      const a = r * around + i, b = r * around + (i + 1) % around, c = a + around, d = b + around;
+      indices.push(a, c, b, b, c, d);
+    }
+    const torso = new THREE.BufferGeometry();
+    torso.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); torso.setIndex(indices); torso.computeVertexNormals();
+    const mesh = new THREE.Mesh(torso, skin()); mesh.name = 'Body'; this.body.add(mesh);
+    for (const capsule of body.capsules) {
+      const a = new THREE.Vector3(...capsule.a), b = new THREE.Vector3(...capsule.b), length = a.distanceTo(b);
+      for (const [at, radius] of [[a, capsule.radius], [b, capsule.end]] as const) {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 14), skin()); ball.position.copy(at); this.body.add(ball);
+      }
+      if (length < 1e-6) continue;
+      const limb = new THREE.Mesh(new THREE.CylinderGeometry(capsule.end, capsule.radius, length, 20, 1, true), skin());
+      limb.position.copy(a).add(b).multiplyScalar(0.5);
+      limb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      this.body.add(limb);
+    }
+  }
+
+  private addArtwork(product: Product, art: Product['artwork'][number], rest: PartMesh | null) {
     const target = this.parts.get(art.part)!;
     let texture = this.artworkTextures.get(art.dataUrl);
     if (!texture) {
@@ -114,15 +156,20 @@ export class ProductScene {
       image.decode().then(() => { if (!this.disposed) { texture!.needsUpdate = true; this.requestRender(); } }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
+    let supporting = target;
+    let restGeometry: THREE.BufferGeometry | null = null;
+    if (rest) { restGeometry = new THREE.BufferGeometry(); restGeometry.setAttribute('position',new THREE.Float32BufferAttribute(rest.positions,3)); restGeometry.setIndex(rest.indices); restGeometry.computeVertexNormals(); supporting = new THREE.Mesh(restGeometry,target.material); supporting.updateMatrixWorld(true); }
     const top = topMeasurements(product).length - 4; // the shoulder line, where artwork positions are measured from
     const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
     // Project straight onto the panel from outside, centred where the artwork's centre should sit.
     const x = front ? art.xCm : -art.xCm, y = top - art.yCm - heightCm / 2;
     const ray = new THREE.Raycaster(new THREE.Vector3(x, y, front ? 200 : -200), new THREE.Vector3(0, 0, front ? -1 : 1));
-    const hit = ray.intersectObject(target)[0];
-    if (!hit) return;
+    const hit = ray.intersectObject(supporting)[0];
+    if (!hit) { restGeometry?.dispose(); return; }
     const orientation = new THREE.Euler(0, front ? 0 : Math.PI, 0);
-    const geometry = new DecalGeometry(target, hit.point, orientation, new THREE.Vector3(art.widthCm, heightCm, 30));
+    let geometry: THREE.BufferGeometry;
+    try { geometry = new DecalGeometry(supporting, hit.point, orientation, new THREE.Vector3(art.widthCm, heightCm, 30)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
+    finally { restGeometry?.dispose(); }
     const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
     decal.name = `${front ? 'Front' : 'Back'} artwork`; decal.userData.part = art.part;
     this.group.add(decal);
@@ -161,7 +208,7 @@ export class ProductScene {
     if (this.disposed) return;
     this.disposed = true;
     if (this.frame) cancelAnimationFrame(this.frame);
-    this.frame = 0; this.resizeObserver.disconnect(); this.controls.dispose();
+    this.frame = 0; this.setBody(null); this.resizeObserver.disconnect(); this.controls.dispose();
     for (const child of this.group.children) if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
       for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
@@ -173,23 +220,23 @@ export class ProductScene {
 }
 
 /** Own one immutable scene for the full asynchronous export and always release its resources. */
-async function withProductSnapshot<T>(product: Product, exportScene: (scene: ProductScene) => Promise<T>): Promise<T> {
-  const snapshot = structuredClone(product);
+async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>): Promise<T> {
+  const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null;
   await prepareMotifImages(snapshot.motifs ?? []);
   const scene = new ProductScene(document.createElement('canvas'));
   try {
-    scene.setProduct(snapshot, null);
+    scene.setProduct(snapshot, null, settled, false);
     await scene.prepareArtwork();
     return await exportScene(scene);
   } finally { scene.dispose(); }
 }
 
-export function productSnapshotRenders(product: Product): Promise<{ front: Blob; back: Blob }> {
-  return withProductSnapshot(product, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
+export function productSnapshotRenders(product: Product, drape: GarmentDrapeResult | null = null): Promise<{ front: Blob; back: Blob }> {
+  return withProductSnapshot(product, drape, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
 }
-export function productSnapshotPng(product: Product, view: 'front' | 'back'): Promise<Blob> {
-  return withProductSnapshot(product, scene => scene.png(view));
+export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null): Promise<Blob> {
+  return withProductSnapshot(product, drape, scene => scene.png(view));
 }
-export function productSnapshotGlb(product: Product): Promise<ArrayBuffer> {
-  return withProductSnapshot(product, scene => scene.glb());
+export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null): Promise<ArrayBuffer> {
+  return withProductSnapshot(product, drape, scene => scene.glb());
 }

@@ -1,3 +1,4 @@
+import { BODY_CHEST, defaultBodyChest, validateBodyChest, type GarmentDrapeResult } from './garment-drape.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
@@ -39,6 +40,9 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <div class="product-stage">
       <canvas id="product-canvas" aria-label="3D garment. Drag to orbit; click a part to select it." tabindex="0"></canvas>
       <div class="view-buttons" role="group" aria-label="Camera view">${['front', 'back', 'left', 'right'].map(v => `<button data-view="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
+      <div class="drape-controls" id="garment-drape-controls"><label class="field">Body chest girth (cm)<input id="garment-drape-chest" type="number" min="${BODY_CHEST[0]}" max="${BODY_CHEST[1]}" step="1"></label>
+        <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
+        <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
       <p id="product-status" class="fine-print" role="status"></p>
     </div>
@@ -134,6 +138,67 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const ready = import('./product-3d.ts').then(({ ProductScene }) => { scene = new ProductScene(canvas); shown = ''; render(options.current()); return scene; })
     .catch(() => { $('product-status').textContent = 'This browser could not start the 3D view (WebGL is required). Pattern pieces and editing still work.'; return null; });
 
+  // Draping on a body: simulated in a worker, and kept while the design's shape, fabrics and the body stay the same, so
+  // recolouring keeps the drape and a change of measurements, fit, modules or fabric drapes again. The body is a view
+  // setting for this session, not part of the design.
+  let draping = false, bodyChest: number | null = null, drape: { key: string; result: GarmentDrapeResult } | null = null;
+  let drapeWorker: Worker | null = null, drapeTimer = 0, drapeKey = '', failedDrapeKey = '';
+  let departed = false;
+  const chestFor = (design: Product) => bodyChest ?? defaultBodyChest(design);
+  const drapeKeyOf = (design: Product) => JSON.stringify([design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline,
+    partsOf(design).map(id => design.parts[id].material), chestFor(design)]);
+  const currentDrape = (design: Product) => (draping && !isBottoms(design) && drape?.key === drapeKeyOf(design) ? drape.result : null);
+  function stopDrape() { drapeWorker?.terminate(); drapeWorker = null; window.clearTimeout(drapeTimer); drapeKey = ''; }
+  function startDrape(design: Product) {
+    const key = drapeKeyOf(design);
+    if (departed || drapeKey === key || failedDrapeKey === key) return;
+    stopDrape(); drapeKey = key;
+    $('garment-drape-status').textContent = 'Draping on the body…';
+    // Rapid edits (typing a measurement) start one simulation, for the last of them.
+    drapeTimer = window.setTimeout(() => {
+      let worker: Worker;
+      try { worker = new Worker(new URL('./garment-drape.worker.ts', import.meta.url), { type: 'module' }); }
+      catch { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape worker could not start. Choose Drape again to retry, or Show styling shell.'; return; }
+      drapeWorker = worker;
+      worker.onmessage = (event: MessageEvent<{ kind: 'progress'; frame: number; frames: number } | { kind: 'result'; result: GarmentDrapeResult } | { kind: 'error'; message: string }>) => {
+        if (worker !== drapeWorker || departed) return;
+        if (key !== drapeKeyOf(options.current().product ?? template('blank'))) { stopDrape(); return; }
+        const data = event.data;
+        if (data.kind === 'progress') { $('garment-drape-status').textContent = `Draping on the body… ${Math.round(100 * data.frame / data.frames)}%`; return; }
+        worker.terminate(); drapeWorker = null; drapeKey = '';
+        if (data.kind === 'result') { drape = { key, result: data.result }; shown = ''; render(options.current()); }
+        else { failedDrapeKey = key; $('garment-drape-status').textContent = `${data.message} Choose Drape again to retry, or Show styling shell.`; }
+      };
+      worker.onerror = () => { if (worker === drapeWorker) { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape simulation could not run. Choose Drape again to retry, or Show styling shell.'; } };
+      try { worker.postMessage({ product: design, bodyChest: chestFor(design) }); }
+      catch { failedDrapeKey = key; stopDrape(); $('garment-drape-status').textContent = 'The drape worker could not receive this design. Choose Drape again to retry.'; }
+    }, 250);
+  }
+  function drapeSummary(design: Product, result: GarmentDrapeResult): string {
+    const { ease, contact, residualSpeed } = result.metrics;
+    return `Draped on a body with a ${result.body.chest} cm chest: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; `
+      + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`;
+  }
+  function applyBody(): boolean {
+    const raw = ($('garment-drape-chest') as HTMLInputElement).value;
+    try {
+      if (!raw.trim()) throw new Error('Body chest must be from 70 to 140 cm.');
+      bodyChest = validateBodyChest(Number(raw)); drafts.delete('garment-drape-chest'); draftState(); failedDrapeKey = ''; return true;
+    } catch (error) { options.notice((error as Error).message, true); return false; }
+  }
+  function setDraping(on: boolean) {
+    if (on && !applyBody()) return;
+    if (!on) { stopDrape(); drape = null; }
+    else { drape = null; failedDrapeKey = ''; stopDrape(); }
+    draping = on; shown = ''; render(options.current());
+  }
+  $('garment-drape-on').addEventListener('click', () => setDraping(true));
+  $('garment-drape-off').addEventListener('click', () => setDraping(false));
+  $('apply-garment-body').addEventListener('click', () => { if (applyBody()) { shown = ''; render(options.current()); options.notice('Body settings applied for this session.'); } });
+  window.addEventListener('pagehide', () => { departed = true; stopDrape(); draping = false; drape = null; });
+  window.addEventListener('pageshow', () => { departed = false; shown = ''; render(options.current()); });
+
+
   // Library previews use the same tiles as the garment.
   for (const preview of document.querySelectorAll<HTMLCanvasElement>('[data-material-preview]')) {
     const tile = paintTile({ material: preview.dataset.materialPreview!, color: '#d8d2c4', print: null }).canvas;
@@ -146,10 +211,10 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Validate the complete recoverable graph before invoking the parent commit or reporting success.
   const commit = (next: Project) => options.commit(validateProject(next));
-  type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name';
+  type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name' | 'body';
   const drafts = new Map<string, string>();
   const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', ...LEG_FIELDS.map(([id]) => id)]);
-  const groupOf = (id: string): DraftGroup | null => measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
+  const groupOf = (id: string): DraftGroup | null => id === 'garment-drape-chest' ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
     : ['artwork-width', 'artwork-x', 'artwork-y'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : null;
   const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
   const draftState = () => {
@@ -393,19 +458,25 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     topMeasurements(draft).sleeve = Number(button.dataset.sleevePreset);
   }, `${button.getAttribute('aria-label')}: the sleeves, pattern and tech pack follow it.`));
 
+  function captureDrape(design: Product): GarmentDrapeResult | null {
+    const result = currentDrape(design);
+    if (draping && !isBottoms(design) && !result) throw new Error('Wait for the top to settle, or choose Show styling shell before exporting.');
+    return result ? structuredClone(result) : null;
+  }
+
   // Exports.
   const exporting = async (action: () => Promise<void>) => { try { await action(); } catch (error) { options.notice(error instanceof Error ? error.message : 'Export failed.', true); } };
   for (const [id, kind, suffix] of [['product-png-front', 'front', '-front.png'], ['product-png-back', 'back', '-back.png'], ['product-glb', 'glb', '.glb']] as const) {
     const button = $(id) as HTMLButtonElement;
     button.addEventListener('click', () => void exporting(async () => {
       if (button.disabled) return;
-      const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank');
+      const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), settled = captureDrape(design);
       button.disabled = true;
       try {
         if (!await ready) throw new Error('The 3D view is unavailable.');
         const exports = await import('./product-3d.ts');
-        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design)], {type:'model/gltf-binary'})
-          : await exports.productSnapshotPng(design, kind);
+        const blob = kind === 'glb' ? new Blob([await exports.productSnapshotGlb(design, settled)], {type:'model/gltf-binary'})
+          : await exports.productSnapshotPng(design, kind, settled);
         options.download(blob, suffix, snapshot.title);
       } finally { button.disabled = false; }
     }));
@@ -424,11 +495,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   $('techpack-html').addEventListener('click', () => void exporting(async () => {
     const button = $('techpack-html') as HTMLButtonElement;
     if (button.disabled) return;
-    const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), date = today();
+    const snapshot = structuredClone(options.current()), design = snapshot.product ?? template('blank'), date = today(), settled = captureDrape(design);
     button.disabled = true;
     try {
       const available = await ready;
-      const renders = available ? await (await import('./product-3d.ts')).productSnapshotRenders(design) : null;
+      const renders = available ? await (await import('./product-3d.ts')).productSnapshotRenders(design, settled) : null;
       const images = { diagram: measurementDiagram(design), ...(renders ? { front: await dataUrl(renders.front), back: await dataUrl(renders.back) } : {}) };
       options.download(new Blob([techPackHtml(buildTechPack(design, date), images)], { type: 'text/html' }), '-tech-pack.html', snapshot.title);
     } finally { button.disabled = false; }
@@ -670,17 +741,26 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     ($('product-neckline') as HTMLSelectElement).value = design.neckline;
     ($('spec-style') as HTMLInputElement).value = design.spec?.styleNumber ?? ''; ($('spec-season') as HTMLInputElement).value = design.spec?.season ?? '';
     ($('spec-size') as HTMLSelectElement).value = design.spec?.sampleSize ?? 'M';
-    const signature = JSON.stringify([design, selected, !!project.product]);
+    const draped = currentDrape(design), chestInput = $('garment-drape-chest') as HTMLInputElement;
+    if (draped && drapeKey && drapeKey !== drapeKeyOf(design)) stopDrape();
+    if (!hasDrafts('body')) chestInput.value = bottoms ? '' : String(chestFor(design));
+    for (const id of ['garment-drape-on', 'garment-drape-chest', 'apply-garment-body']) ($(id) as HTMLInputElement).disabled = bottoms;
+    $('garment-drape-on').textContent = draping ? 'Drape again' : 'Drape on a body'; $('garment-drape-off').hidden = !draping;
+    if (bottoms) { stopDrape(); drape = null; $('garment-drape-status').textContent = 'Draping on a body is available for tops.'; }
+    else if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
+    else if (draped) $('garment-drape-status').textContent = drapeSummary(design, draped);
+    else startDrape(design);
+    const signature = JSON.stringify([design, selected, !!project.product, draping && !bottoms, drape?.key ?? '', !!draped]);
     if (signature !== shown) {
       shown = signature;
       $('product-pieces').innerHTML = piecesSvg(design);
       $('techpack-preview').innerHTML = techPackSections(buildTechPack(design, today()), measurementDiagram(design), 5);
       renderRange(design);
-      scene?.setProduct(design, selected);
+      scene?.setProduct(design, selected, draped);
       $('product-status').textContent = project.product ? `Editing ${design.name}. Selected: ${label(selected)} — ${material(style.material).name}${style.print ? `, ${printName(style.print, design)} print` : ''}.`
         : 'Choose a template to start, or style the blank tee shown.';
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts() };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { stopDrape(); draping = false; drape = null; bodyChest = null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }

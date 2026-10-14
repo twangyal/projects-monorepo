@@ -4,7 +4,7 @@
 
 A local garment design workspace. **Style a garment in 3D**: start from a template, drag fabrics, colors and prints onto each part of a real-time 3D tee, place artwork, see the linked pattern pieces, and export renders or a 3D model. The concept tee sketchbook, photo overlay and measured skirt construction are still here. No account, backend, image model, or paid service is required. Photos and projects stay in your browser.
 
-The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape, depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
+The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape (see Drape on a body for tops), depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
 
 ## Run
 
@@ -49,9 +49,32 @@ Front/back PNG, GLB and printable tech-pack exports capture the committed design
 Printable tech-pack export captures one committed design, date and filename. A separate render scene waits for its exact image assets and produces both images; editing remains available while its export button is busy. Uploaded artwork is visible on the outward-facing styling surfaces. [Snapshot verification](docs/2026-10-13-techpack-snapshot-247.md) records actual render and lifecycle checks.
 
 
-How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape here, and it is not worn on a body. For fabric drape on a body, see the measured skirt's simulation below. Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
+How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape. To see a top worn, use **Drape on a body** (below). Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
 
 See [3D product editor verification](docs/2026-10-13-product-editor.md).
+
+### Drape on a body (#248)
+
+**Drape on a body** shows how a top hangs. It works for tees, sweatshirts and hoodies:
+
+1. Enter the body's chest girth, then choose **Apply body settings** or **Drape on a body**. The default is the garment chest minus 10 cm, and 70–140 cm is supported.
+2. Choose **Drape on a body**. The simulation runs in a background worker and takes a few seconds.
+3. The 3D view shows the garment settled on a body, with its fabrics, prints and artwork. The status reports the ease at the chest and how much of the garment rests on the body.
+
+The drape stays while only colours or prints change. Changing measurements, fit, modules, neckline or a part's fabric drapes the garment again automatically. **Show styling shell** returns to the shell. Body settings are view-only for this session. Unapplied input survives selection/redraw; **Discard all product drafts** restores it, and replacement/history require Apply/Discard. While a simulation is pending, PNG/GLB/printable export asks you to wait or show the shell. Once settled, those exports capture the draped garment without the body proxy; flat pattern and measurement exports remain the design’s cutting/construction data. Artwork follows its original fabric triangles through deformation. Worker failure requires deliberate retry; changing to bottoms, replacing/travelling a project or leaving retires pending work.
+
+How the drape is made:
+- **Cloth.** The garment's own 3D parts become one cloth, sewn where they meet.
+  - Rest lengths are flat fabric lengths from the silhouette, unfolded across front-to-back seams so seams hold no crease.
+  - The neck rib follows the flat neckline.
+  - The hood keeps its modelled height.
+  - Pockets ride on the front body.
+- **Solver.** An XPBD solver adds gravity, stretch, bending and friction against the body. The cloth starts as the styling shell and shrinks onto a body that grows inside it, then settles under gravity.
+- **Body proxy.** It is built from the chest girth with standard proportions: stadium-shaped torso sections, sloped shoulders, neck and head. Its arms are posed along the sleeves and tapered to fit inside them.
+- **Fabric.** Weight comes from each part's material (g/m²). Stretch and bending come from its construction: knits stretch most, twill and canvas bend least.
+
+**Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a proxy from one measurement, not an avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
+
 
 ### Automatic tech pack (#227)
 
