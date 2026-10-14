@@ -59,6 +59,8 @@ for (const side of ['front','back'] as const) for (const angle of [90,-90]) test
   }
   await page.getByRole('button',{name:'Undo',exact:true}).click(); await expect(field).toHaveValue('0');
   await page.getByRole('button',{name:'Redo',exact:true}).click(); await expect(field).toHaveValue(String(angle));
+  // Redo queues a debounced native save; restoration is tested only after it commits.
+  await expect(page.locator('#save-state')).toHaveText('Locally saved');
   await page.reload(); await expect(page.locator('#artwork-rotation')).toHaveValue(side==='front'?String(angle):'');
   if(side==='back') {await page.locator('#artwork-side').selectOption('back');await expect(page.locator('#artwork-rotation')).toHaveValue(String(angle));}
 });
