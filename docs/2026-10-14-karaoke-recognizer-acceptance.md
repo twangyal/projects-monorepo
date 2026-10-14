@@ -1,0 +1,24 @@
+# Karaoke recognizer correction and reproducible evaluation — 2026-10-14
+
+## Changes
+
+- #251: users can retry separated vocals with Automatic, English or Multilingual. Automatic uploads are unchanged. Explicit choices use only the requested verified local model, and unavailable models fail with setup instructions. Saved cues and current corrections are kept until deliberate review/apply; failed or cancelled recognition keeps the earlier transcript. The choice resets on opening another clip and does not alter saved/portable schemas.
+- #241: the existing evaluation runner accepts the same model choice, shares identical separated vocals across model comparisons, and binds cached results to source bytes, clip cap, separator/model pins and production implementation. Reports retain actual recognizer and cache identity. Legacy unbound evidence is preserved but ignored. The roadmap and evaluation instructions describe the remaining multilingual timing/correction-effort work.
+
+Implementation history: [deeb03d](https://github.com/twangyal/projects-monorepo/commit/deeb03d172203d87a50ef095436e48c65a72340f), [f798a29](https://github.com/twangyal/projects-monorepo/commit/f798a29a178fbe6be81b7d9cd4fbe7cc11917d89), [9799b16](https://github.com/twangyal/projects-monorepo/commit/9799b1609da3c4728befa739f9dd4cd04dd0c2ff).
+
+## Verification
+
+- Independent reviews found no critical/important issues in the feature, cache identity or fixture cleanup. Reviewers independently passed 22 lyric tests and four cache tests.
+- Local focused lyric/evaluation checks: 26 passed; TypeScript: 128 passed; ESLint/typecheck/build and Python compileall passed.
+- Full local Python: 206 run, one failure in unchanged `test_subprocess_rss_limit_is_enforced` (timeout rather than memory-limit error). The local runtime does not reliably expose child procfs entries; isolation reproduced the failure. No production resource limit was relaxed. Supported hosted Linux passed RSS enforcement in the first candidate gate.
+- Focused portable Chromium 143: three automatic-lyrics cases passed after repairing an explicit label association; the final fixture-cleanup test passed separately and checks the original fixture ID set is preserved. Web security was enabled. These are fixture recognizers, not quality measurements.
+- First hosted gate [38527247997](https://github.com/twangyal/projects-monorepo/actions/runs/38527247997): 202 Python / 128 TypeScript plus Ruff/ESLint/typecheck/build passed; 99 browser cases passed, two failed. The new retry test left its two uploads behind and exhausted the real 20-project quota in the shared test service, causing the later one-MiB invalid-title and invalid-cue cases to fail. Cleanup now removes only the test's new IDs in `finally` and asserts every original ID survives. The quota and all production safeguards remain unchanged.
+- Wider first portable-browser run: 92 passed / 9 failed. Retained failures were `practice.spec.ts:19` (repeat overshoot 0.162661 s vs 0.15 s), `practice.spec.ts:86` (pause expectation), `recovery.spec.ts:251` (separation completed before cancellation), `sequential-timing.spec.ts:13` (mark button remained disabled), `sequential-timing.spec.ts:29` (end expectation), `workflow.spec.ts:109` (trace teardown ENOENT), `workflow.spec.ts:203` and both `workflow.spec.ts:230` cases (quota). The trace teardown occurred after a focused runner was started concurrently with the same default artifact directory; that run is not a full passing gate. The non-quota production assertions passed in the isolated first hosted gate. No tolerance or assertion was relaxed.
+- Repaired combined candidate [38528389899](https://github.com/twangyal/projects-monorepo/actions/runs/38528389899) on `9799b16`: hosted Python, TypeScript, lint/type/build stages passed; full standard-Chromium browser gate is pending. Candidate tree `8c2e0f28951c84233ccb85ccefcd32df8d507e49`; Karaoke app tree `127ccf413a4d6ce9199e887d64bbf7ec1dd9a2ba`.
+
+## Integration state and remaining work
+
+The candidate is on `autonomous/karaoke-evaluation-cache-241`. Main remains at owner-merged `fe473a2`; integrate only after the repaired full hosted gate succeeds, rereading main and preserving intervening owner work. The candidate changes Karaoke and its roadmap only; all other applications, product direction and project #8's skip instruction are preserved. No pull request was created.
+
+#251 remains open until that gate and integration are accepted. #241 remains open for actual per-language word-onset/automatic-line/supplied-line measurements and user correction effort. The workspace lacks JamendoLyrics audio/annotations and verified ML models, so no new real-song evaluation was performed. Existing 59-song WER is retained supplied evidence, with mixed-language and other-language limits. No model downloads, paid services or external production changes were made.
