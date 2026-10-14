@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS connections (
 CREATE TABLE IF NOT EXISTS pending (
   state TEXT PRIMARY KEY, room_id TEXT NOT NULL, role TEXT NOT NULL, verifier TEXT NOT NULL,
   redirect_uri TEXT NOT NULL, created_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS auth_generations (
+  room_id TEXT NOT NULL, role TEXT NOT NULL, generation TEXT NOT NULL, PRIMARY KEY (room_id, role));
 CREATE TABLE IF NOT EXISTS auth_failures (
   room_id TEXT NOT NULL, role TEXT NOT NULL, message TEXT NOT NULL, at REAL NOT NULL, PRIMARY KEY (room_id, role));
 CREATE TABLE IF NOT EXISTS tracks (
@@ -76,7 +78,7 @@ CREATE TABLE IF NOT EXISTS playlists (
   id TEXT NOT NULL, room_id TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, url TEXT NOT NULL,
   tracks INTEGER NOT NULL, created_at REAL NOT NULL, PRIMARY KEY (room_id, id));
 '''
-ROOM_TABLES = ('connections', 'pending', 'auth_failures', 'tracks', 'seen', 'plays', 'likes', 'overrides', 'manual',
+ROOM_TABLES = ('connections', 'pending', 'auth_generations', 'auth_failures', 'tracks', 'seen', 'plays', 'likes', 'overrides', 'manual',
                'song_memories', 'grants', 'playlists')
 PLAYLIST_KINDS = ('both', 'new', 'favorite', 'picks')
 MAX_RECOMMENDATIONS = 20
@@ -205,6 +207,18 @@ class ListeningStore:
         self.database.execute('PRAGMA journal_mode=WAL')
         self.database.execute('PRAGMA synchronous=FULL')
         self.database.executescript(SCHEMA)
+        # Existing credentials remain usable; old pending callbacks must be restarted.
+        with self._transaction():
+            for table in ('connections', 'pending'):
+                columns = {row[1] for row in self.database.execute(f'PRAGMA table_info({table})')}
+                if 'generation' not in columns:
+                    self.database.execute(f'ALTER TABLE {table} ADD COLUMN generation TEXT')
+                    if table == 'pending':
+                        self.database.execute('DELETE FROM pending')
+                    else:
+                        for room_id, role in self.database.execute('SELECT room_id, role FROM connections').fetchall():
+                            self.database.execute('UPDATE connections SET generation=? WHERE room_id=? AND role=?',
+                                                  (uuid.uuid4().hex, room_id, role))
         self.closed = False
 
     def close(self):
@@ -236,12 +250,15 @@ class ListeningStore:
 
     def begin_auth(self, client, room_id, role, redirect_uri):
         state = secrets.token_urlsafe(32)
+        generation = uuid.uuid4().hex
         verifier, challenge = pkce_pair()
         now = self.now()
         with self._transaction() as db:
             db.execute('DELETE FROM pending WHERE created_at < ?', (now - STATE_SECONDS,))
             db.execute('DELETE FROM pending WHERE room_id=? AND role=?', (room_id, role))
-            db.execute('INSERT INTO pending VALUES (?,?,?,?,?,?)', (state, room_id, role, verifier, redirect_uri, now))
+            db.execute('INSERT OR REPLACE INTO auth_generations VALUES (?,?,?)', (room_id, role, generation))
+            db.execute('INSERT INTO pending VALUES (?,?,?,?,?,?,?)',
+                       (state, room_id, role, verifier, redirect_uri, now, generation))
         return client.authorize_url(state, challenge, redirect_uri)
 
     def take_state(self, state):
@@ -249,22 +266,33 @@ class ListeningStore:
         if type(state) is not str or not re.fullmatch(r'[A-Za-z0-9_-]{20,100}', state):
             return None
         with self._transaction() as db:
-            row = db.execute('SELECT room_id, role, verifier, redirect_uri, created_at FROM pending WHERE state=?',
+            row = db.execute('SELECT room_id, role, verifier, redirect_uri, created_at, generation FROM pending WHERE state=?',
                              (state,)).fetchone()
             db.execute('DELETE FROM pending WHERE state=?', (state,))
         if row is None or self.now() - row[4] > STATE_SECONDS:
             return None
-        return {'roomId': row[0], 'role': row[1], 'verifier': row[2], 'redirectUri': row[3]}
+        return {'roomId': row[0], 'role': row[1], 'verifier': row[2], 'redirectUri': row[3], 'generation': row[5]}
 
-    def record_failure(self, room_id, role, message):
+    @staticmethod
+    def _auth_current(db, room_id, role, generation):
+        return db.execute('SELECT 1 FROM auth_generations WHERE room_id=? AND role=? AND generation=?',
+                          (room_id, role, generation)).fetchone() is not None
+
+    def record_failure(self, room_id, role, message, *, generation=None):
         with self._transaction() as db:
+            if generation is not None and not self._auth_current(db, room_id, role, generation):
+                return False
             db.execute('INSERT OR REPLACE INTO auth_failures VALUES (?,?,?,?)', (room_id, role, message[:300], self.now()))
 
-    def connect(self, room_id, role, tokens, profile):
+    def connect(self, room_id, role, tokens, profile, *, generation=None):
         now = self.now()
         if not tokens.get('refreshToken'):
             raise SpotifyError('Spotify did not provide lasting access. Try connecting again.')
         with self._transaction() as db:
+            if generation is not None and not self._auth_current(db, room_id, role, generation):
+                return False
+            db.execute('DELETE FROM auth_generations WHERE room_id=? AND role=?', (room_id, role))
+            db.execute('DELETE FROM pending WHERE room_id=? AND role=?', (room_id, role))
             db.execute('DELETE FROM auth_failures WHERE room_id=? AND role=?', (room_id, role))
             db.execute('INSERT OR REPLACE INTO grants VALUES (?,?,?)', (room_id, role, tokens.get('scope')))
             existing = db.execute('SELECT spotify_user FROM connections WHERE room_id=? AND role=?', (room_id, role)).fetchone()
@@ -278,14 +306,15 @@ class ListeningStore:
             for table in ('seen', 'plays', 'likes'):
                 db.execute(f'DELETE FROM {table} WHERE room_id=? AND role=?', (room_id, role))
             db.execute('INSERT OR REPLACE INTO connections (room_id, role, refresh_token, access_token, expires_at, '
-                       'spotify_user, display_name, connected_at, cursor_ms, synced_at, sync_error, retry_at) '
-                       'VALUES (?,?,?,?,?,?,?,?,NULL,NULL,NULL,0)',
+                       'spotify_user, display_name, connected_at, cursor_ms, synced_at, sync_error, retry_at, generation) '
+                       'VALUES (?,?,?,?,?,?,?,?,NULL,NULL,NULL,0,?)',
                        (room_id, role, tokens['refreshToken'], tokens['accessToken'], now + tokens['expiresIn'] - 30,
-                        profile['id'], profile['name'], now))
+                        profile['id'], profile['name'], now, uuid.uuid4().hex))
+        return True
 
     def disconnect(self, room_id, role):
         with self._transaction() as db:
-            for table in ('connections', 'seen', 'plays', 'likes', 'auth_failures', 'pending', 'grants'):
+            for table in ('connections', 'seen', 'plays', 'likes', 'auth_failures', 'pending', 'auth_generations', 'grants'):
                 db.execute(f'DELETE FROM {table} WHERE room_id=? AND role=?', (room_id, role))
             # Song metadata no longer referenced by anyone's listening is removed too.
             db.execute('DELETE FROM tracks WHERE room_id=? AND track_id NOT IN '
@@ -305,7 +334,7 @@ class ListeningStore:
 
     def _credentials(self, room_id, role):
         with self._transaction() as db:
-            return db.execute('SELECT refresh_token, access_token, expires_at, cursor_ms, connected_at, synced_at, retry_at '
+            return db.execute('SELECT refresh_token, access_token, expires_at, cursor_ms, connected_at, synced_at, retry_at, generation '
                               'FROM connections WHERE room_id=? AND role=?', (room_id, role)).fetchone()
 
     def sync(self, client, room_id, role, *, force=False):
@@ -313,24 +342,27 @@ class ListeningStore:
         row = self._credentials(room_id, role)
         if row is None:
             return False
-        refresh_token, access_token, expires_at, cursor, connected_at, synced_at, retry_at = row
+        refresh_token, access_token, expires_at, cursor, connected_at, synced_at, retry_at, generation = row
         now = self.now()
         if now < retry_at and not force:
             return False
         try:
-            access_token = self._fresh_access(client, room_id, role, refresh_token, access_token, expires_at)
+            access_token = self._fresh_access(client, room_id, role, refresh_token, access_token, expires_at, generation)
+            if access_token is None:
+                return False
             plays = client.recently_played(access_token, cursor)
             likes = client.saved_tracks(access_token)
         except SpotifyError as error:
             delay = error.retry_after if error.status == 429 and error.retry_after else (60 if error.status == 429 else 0)
             message = 'Spotify access was revoked or expired. Disconnect and connect again.' if error.status in (400, 401) else str(error)
             with self._transaction() as db:
-                db.execute('UPDATE connections SET sync_error=?, retry_at=? WHERE room_id=? AND role=?',
-                           (message, now + min(delay, 3600), room_id, role))
+                db.execute('UPDATE connections SET sync_error=?, retry_at=? WHERE room_id=? AND role=? AND generation=?',
+                           (message, now + min(delay, 3600), room_id, role, generation))
             return False
         baseline = synced_at is None
         with self._transaction() as db:
-            if db.execute('SELECT 1 FROM connections WHERE room_id=? AND role=?', (room_id, role)).fetchone() is None:
+            if db.execute('SELECT 1 FROM connections WHERE room_id=? AND role=? AND generation=?',
+                          (room_id, role, generation)).fetchone() is None:
                 return False  # Disconnected while fetching: discard the results.
             newest = cursor or 0
             for play in sorted(plays, key=lambda item: item['playedAt']):
@@ -366,16 +398,22 @@ class ListeningStore:
                        (newest or None, now, room_id, role))
         return True
 
-    def _fresh_access(self, client, room_id, role, refresh_token, access_token, expires_at):
-        """A valid access token, refreshing (and keeping any rotated refresh token) when needed."""
+    def _fresh_access(self, client, room_id, role, refresh_token, access_token, expires_at, generation):
+        """A valid access token, refreshing (and keeping any rotated refresh token) when needed.
+
+        None when the connection was replaced or removed while refreshing: its tokens are not stored over the newer one.
+        """
         now = self.now()
         if access_token and now < expires_at:
             return access_token
         tokens = client.refresh(refresh_token)
         with self._transaction() as db:
-            db.execute('UPDATE connections SET access_token=?, expires_at=?, refresh_token=? WHERE room_id=? AND role=?',
+            db.execute('UPDATE connections SET access_token=?, expires_at=?, refresh_token=? WHERE room_id=? AND role=? AND generation=?',
                        (tokens['accessToken'], now + tokens['expiresIn'] - 30, tokens['refreshToken'] or refresh_token,
-                        room_id, role))
+                        room_id, role, generation))
+            if db.execute('SELECT 1 FROM connections WHERE room_id=? AND role=? AND generation=?',
+                          (room_id, role, generation)).fetchone() is None:
+                return None
             if tokens.get('scope'):
                 db.execute('UPDATE grants SET scope=? WHERE room_id=? AND role=?', (tokens['scope'], room_id, role))
         return tokens['accessToken']
@@ -442,9 +480,11 @@ class ListeningStore:
             raise DomainError(409, 'No timeline songs match these choices yet.')
         if len(tracks) > MAX_PLAYLIST_TRACKS:
             raise DomainError(409, f'A Duet playlist holds at most {MAX_PLAYLIST_TRACKS} songs. Narrow the dates or kinds.')
-        refresh_token, access_token, expires_at = row[0], row[1], row[2]
+        refresh_token, access_token, expires_at, generation = row[0], row[1], row[2], row[7]
         try:
-            access = self._fresh_access(client, room_id, role, refresh_token, access_token, expires_at)
+            access = self._fresh_access(client, room_id, role, refresh_token, access_token, expires_at, generation)
+            if access is None:
+                raise DomainError(409, 'Your Spotify connection changed. Try again.')
             playlist = client.create_playlist(access, name, 'Made with Duet from our shared listening timeline.')
         except SpotifyError as error:
             if error.status == 403:

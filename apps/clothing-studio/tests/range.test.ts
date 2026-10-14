@@ -1,3 +1,4 @@
+import { pngUrl } from './helpers/raster.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { template, validateProduct, type Product } from '../src/product.ts';
@@ -37,7 +38,7 @@ test('unit cost adds fabric by consumption and price, trims, printing per artwor
   assert.equal(row.margin, Math.round(((35 - row.unitCost) / 35) * 1000) / 10);
   // Denim sleeves cost more than slub ones; artwork adds its print cost; units multiply.
   const denim = { ...product.parts, sleeveLeft: { ...product.parts.sleeveLeft, material: 'denim-340' }, sleeveRight: { ...product.parts.sleeveRight, material: 'denim-340' } };
-  const withArt: Product = { ...product, artwork: [{ part: 'front', dataUrl: 'data:image/png;base64,AAAA', width: 10, height: 10, name: 'a', xCm: 0, yCm: 8, widthCm: 10 }],
+  const withArt: Product = { ...product, artwork: [{ part: 'front', dataUrl: pngUrl(10,10), width: 10, height: 10, name: 'a', xCm: 0, yCm: 8, widthCm: 10 }],
     colorways: [{ id: 'c1', name: 'Ecru', parts: product.parts, units: 100 }, { id: 'c2', name: 'Denim sleeves', parts: denim, units: 50 }] };
   const plan = rangePlan(withArt);
   assert.deepEqual(plan.rows.map(r => r.name), ['Ecru', 'Denim sleeves']);

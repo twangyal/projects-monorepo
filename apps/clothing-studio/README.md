@@ -40,6 +40,15 @@ The built `dist/` directory can be served by a static web server. Use a current 
 
 Every change is one Undo/Redo step and is saved with the project and its backups. Projects without a 3D design remain valid.
 
+Uploaded motifs and artwork are inspected before decoding; saved assets must have bounded containers and matching encoded, declared and decoded dimensions. Tiny logos retain their size. Invalid backup/restore assets preserve current work and protect the saved record. See [raster admission verification](docs/2026-10-13-product-raster-247.md).
+
+Unapplied product measurements, fit, artwork placement, tech-pack details and costing stay in their fields across part selection, styling and image redraws. **Apply** commits its group; **Discard all product drafts** resets every pending product field without editing the garment. New template/project, backup replacement and Undo/Redo require finishing these drafts first. Artwork side and fit handles require finishing their respective drafts. Costing's material-price list refreshes after Apply/Discard. Drafts are session-only and not included in autosave or exports; commit them before reloading. [Draft verification](docs/2026-10-13-product-drafts-247.md) records the boundaries.
+
+Front/back PNG, GLB and printable tech-pack exports capture the committed design and concept filename before preparing images. Each uses an independent scene, leaves the visible camera and editing available, and releases temporary resources on success or failure. Only the initiating export button is busy. See [standalone export verification](docs/2026-10-13-standalone-snapshots-250.md).
+
+Printable tech-pack export captures one committed design, date and filename. A separate render scene waits for its exact image assets and produces both images; editing remains available while its export button is busy. Uploaded artwork is visible on the outward-facing styling surfaces. [Snapshot verification](docs/2026-10-13-techpack-snapshot-247.md) records actual render and lifecycle checks.
+
+
 How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape. To see a top worn, use **Drape on a body** (below). Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
 
 See [3D product editor verification](docs/2026-10-13-product-editor.md).
@@ -48,11 +57,11 @@ See [3D product editor verification](docs/2026-10-13-product-editor.md).
 
 **Drape on a body** shows how a top hangs. It works for tees, sweatshirts and hoodies:
 
-1. Enter the body's chest girth. The default is the garment chest minus 10 cm, and 70–140 cm is supported.
+1. Enter the body's chest girth, then choose **Apply body settings** or **Drape on a body**. The default is the garment chest minus 10 cm, and 70–140 cm is supported.
 2. Choose **Drape on a body**. The simulation runs in a background worker and takes a few seconds.
 3. The 3D view shows the garment settled on a body, with its fabrics, prints and artwork. The status reports the ease at the chest and how much of the garment rests on the body.
 
-The drape stays while only colours or prints change. Changing measurements, fit, modules, neckline or a part's fabric drapes the garment again automatically. **Show styling shell** returns to the shell. The body is a view setting for this session, not part of the design or its exports. GLB export stays garment-only.
+The drape stays while only colours or prints change. Changing measurements, fit, modules, neckline or a part's fabric drapes the garment again automatically. **Show styling shell** returns to the shell. Body settings are view-only for this session. Unapplied input survives selection/redraw; **Discard all product drafts** restores it, and replacement/history require Apply/Discard. While a simulation is pending, PNG/GLB/printable export asks you to wait or show the shell. Once settled, those exports capture the draped garment without the body proxy; flat pattern and measurement exports remain the design’s cutting/construction data. Artwork follows its original fabric triangles through deformation. Worker failure requires deliberate retry; changing to bottoms, replacing/travelling a project or leaving retires pending work.
 
 How the drape is made:
 - **Cloth.** The garment's own 3D parts become one cloth, sewn where they meet.
@@ -65,6 +74,7 @@ How the drape is made:
 - **Fabric.** Weight comes from each part's material (g/m²). Stretch and bending come from its construction: knits stretch most, twill and canvas bend least.
 
 **Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a proxy from one measurement, not an avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
+
 
 ### Automatic tech pack (#227)
 

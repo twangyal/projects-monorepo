@@ -150,7 +150,10 @@ export function validateProject(value: unknown): Project {
   const grading = Object.hasOwn(project, 'grading') ? validateGrading(project.grading) : undefined;
   if (grading) { if (!construction) throw new Error('Grading requires a measured construction.'); gradedSizes(construction, grading); }
   const product = Object.hasOwn(project, 'product') ? validateProduct(project.product) : undefined;
-  return { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(product ? {product} : {}) };
+  const admitted: Project = { schemaVersion: 1, title, note, garment, strokes, placement, photo, ...(construction ? {construction} : {}), ...(grading ? {grading} : {}), ...(bodyMeasurements?{bodyMeasurements}:{}), ...(product ? {product} : {}) };
+  // Admission, history and autosave must never accept a graph that its canonical backup cannot reopen.
+  boundedJson(JSON.stringify(admitted, null, 2));
+  return admitted;
 }
 
 function boundedJson(text: string): string {

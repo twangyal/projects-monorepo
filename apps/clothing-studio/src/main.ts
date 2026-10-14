@@ -10,7 +10,8 @@ import {
   type Project, type Point, type Stroke, type Placement,
 } from './model.ts';
 import { garmentSvg, previewSize, previewSvg, exportPng, exportGarmentSvg } from './graphics.ts';
-import { importPhoto, validatePhoto } from './media.ts';
+import { importPhoto } from './media.ts';
+import { validateProjectImages } from './project-media.ts';
 import { loadProject, saveProject } from './storage.ts';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -177,7 +178,7 @@ function finishLoad(generation: number) {
 function adoptLoad(generation: number, transform: (current: Project) => Project, text: string, wholeProject = false) {
   if (generation !== loadGeneration) return;
   // Consume the admitted token before shared edit/commit retires old imports.
-  retireLoad(); edit(transform); if (wholeProject) { constructionView.reset(); gradingView.reset(); bodyView?.reset(); } message(text);
+  retireLoad(); edit(transform); if (wholeProject) { productView.reset(); constructionView.reset(); gradingView.reset(); bodyView?.reset(); } message(text);
 }
 
 function edit(transform: (current: Project) => Project) {
@@ -213,16 +214,17 @@ for (const [id, key, factor] of placementFields) input(id).addEventListener('cha
   edit(current => ({ ...current, placement: { ...current.placement, [key]: Number(input(id).value) / factor } }));
 });
 
-element('new-project').addEventListener('click', () => { cancelLoad(); edit(() => createProject()); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
+element('new-project').addEventListener('click', () => { if (!productDraftGuard()) return; cancelLoad(); edit(() => createProject()); productView?.reset(); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); message('Started a new concept. Undo restores the previous one.'); });
 element('sample').addEventListener('click', () => { cancelLoad(); edit(current => ({ ...current, photo: null })); });
 element('reset-placement').addEventListener('click', () => edit(current => ({ ...current, placement: createProject().placement })));
 element('clear-sketch').addEventListener('click', () => edit(current => ({ ...current, strokes: [] })));
 element('cancel-load').addEventListener('click', () => { cancelLoad(); message('Import cancelled. Your current concept is unchanged.'); });
 
 function travel(direction: 'undo' | 'redo') {
+  if (!productDraftGuard()) return;
   cancelLoad(); cancelGesture();
   if (!(direction === 'undo' ? history.canUndo : history.canRedo)) return;
-  project = history[direction](); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); editVersion++;
+  project = history[direction](); productView?.reset(); constructionView?.reset(); gradingView?.reset(); bodyView?.reset(); editVersion++;
   renderViews(); updateControls(); scheduleSave(); message('');
 }
 element('undo').addEventListener('click', () => travel('undo'));
@@ -306,11 +308,12 @@ input('photo-file').addEventListener('change', async () => {
 });
 input('project-file').addEventListener('change', async () => {
   const file = input('project-file').files?.[0]; input('project-file').value = ''; if (!file) return;
+  if (!productDraftGuard()) return;
   const generation = beginLoad();
   try {
     if (file.size > MAX_PROJECT_BYTES) throw new Error('Project backup exceeds 6 MiB.');
     const text = await file.text(); if (generation !== loadGeneration) return;
-    const restored = parseProject(text); await validatePhoto(restored.photo);
+    const restored = parseProject(text); await validateProjectImages(restored);
     if (generation !== loadGeneration) return;
     adoptLoad(generation, () => restored, 'Project backup restored. Undo returns to your previous concept.', true);
   } catch (error) {
@@ -359,14 +362,24 @@ element('replace-saved').addEventListener('click', async () => {
   finally { replacingSaved = false; updateControls(); }
 });
 
+function productDraftGuard(): boolean {
+  if (productView.dirty()) { message('Apply or discard pending product edits before replacing the project or using history. Your drafts are kept.', true); return false; }
+  return true;
+}
+
 function constructionGuard(ignoreBody=false): boolean {
+  if (!productDraftGuard()) return false;
   const raw = input('title').value !== project.title || element<HTMLTextAreaElement>('note').value !== project.note || placementFields.some(([id,key,factor]) => input(id).value !== String(Number((project.placement[key]*factor).toFixed(2))));
   if (gesture || raw || exportBusy || replacingSaved || (!ignoreBody && bodyView?.dirty())) { message('Finish the active gesture or other raw concept fields before changing construction. Your drafts are kept.', true); return false; }
   return true;
 }
 const productView = mountProduct({current:()=>project,commit:next=>edit(()=>next),notice:message,download});
 const constructionView = mountConstruction({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
-const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,notice:message,download});
+const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),guard:()=>{
+  if (!constructionGuard()) return false;
+  if (constructionView.dirty() || gradingView.dirty()) { message('Apply or discard pending pattern and grading edits before changing drape. Your drafts are kept.', true); return false; }
+  return true;
+},notice:message,download});
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 

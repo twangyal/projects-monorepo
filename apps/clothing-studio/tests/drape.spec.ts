@@ -79,3 +79,16 @@ test('simulation uses entered body measurements, can be cancelled, and fits a ph
   expect(clearance).toBeGreaterThanOrEqual(0.3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('changing drape fabric preserves unapplied measured-pattern drafts', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Apply measured pattern', exact: true }).click();
+  const before = await backup(page);
+  await page.getByLabel('Waist circumference (cm)', { exact: true }).fill('90');
+  await page.getByLabel('Fabric', { exact: true }).selectOption('denim');
+  await expect(page.getByLabel('Waist circumference (cm)', { exact: true })).toHaveValue('90');
+  expect(await backup(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Discard pattern edits', exact: true }).click();
+  await page.getByLabel('Fabric', { exact: true }).selectOption('denim');
+  expect((await backup(page)).construction.fabric).toBe('denim');
+});

@@ -190,3 +190,24 @@ test('a model-assisted answer follows only while it is still the latest instruct
   const failing = createController({ window: {}, actions: page.actions, assistant: { needs: () => true, improve: () => Promise.reject(new Error('down')) } });
   assert.equal((await failing.handle('show the ratings', context).followUp).tone, 'error');
 });
+
+test('search in a non-search field requires confirmation before writing or submitting', () => {
+  const page = fakePage();
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, page.node('Message'), { role: 'textbox', editable: true })] };
+  assert.equal(controller.handle('find hello', context).pending?.kind, 'confirm');
+  assert.deepEqual(page.log, []);
+  assert.equal(controller.handle('confirm', context).performed, 'search');
+  assert.deepEqual(page.log, [['write', 'Message', 'hello'], ['submit', 'Message']]);
+});
+
+test('confirmation refuses a target removed after the question', () => {
+  const page = fakePage();
+  const controller = createController({ window: {}, actions: page.actions });
+  const element = page.node('Delete account');
+  const context = { elements: [describe(1, element, { consequential: true })] };
+  controller.handle('delete account', context);
+  element.isConnected = false;
+  assert.match(controller.handle('confirm', context).message, /no longer on the page/);
+  assert.deepEqual(page.log, []);
+});

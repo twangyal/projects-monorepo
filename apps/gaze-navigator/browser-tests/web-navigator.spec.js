@@ -265,46 +265,50 @@ test('a disclosure toggle inside a form opens without a confirmation; the form\'
   await expect(page.locator('#filter-panel')).toBeHidden();
 });
 
-test('typing without leaving the page keeps a site\'s suggestion list open to choose from', async ({ page }) => {
-  await page.goto('/practice-site/index.html');
-  const box = page.getByRole('searchbox', { name: 'Search books' }), list = page.getByRole('listbox', { name: 'Suggestions' });
-  const keep = panel(page).getByRole('button', { name: 'Type without leaving the page' });
-  const typeKeepingFocus = async text => { await keep.click(); await expect(keep).toHaveAttribute('aria-pressed', 'true'); await page.keyboard.type(text); await page.keyboard.press('Enter'); };
-  await look(page, box);
-  await typeKeepingFocus('type riv');
-  await expect(box).toHaveValue('riv');
-  await expect(box).toBeFocused();
-  await expect(list).toBeVisible();
-  // The regular instruction box takes focus, and the site closes its list, as many sites do.
-  await panel(page).getByLabel('Typed instruction').focus();
-  await expect(list).toBeHidden();
-  await box.focus();
-  await page.keyboard.type('e');
-  await expect(list).toBeVisible();
-  // With focus kept, the suggestion can be chosen by name.
-  await look(page, page.getByRole('option', { name: 'The Quiet River' }));
-  // The option and the link inside it are one target, so there is no question between identical choices.
-  await expect(panel(page).locator('.context li').filter({ hasText: 'The Quiet River' })).toHaveCount(1);
-  await typeKeepingFocus('choose the quiet river');
-  await page.waitForURL('**/practice-site/book.html');
+test('search fallback into a message waits for confirmation before sending', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await page.locator('form.search').evaluate(form => form.remove());
+  await look(page, page.getByLabel('Message', { exact: true }));
+  await typeInstruction(page, 'find hello');
+  await expect(status(page)).toContainText('may have consequences');
+  await expect(page.getByLabel('Message', { exact: true })).toHaveValue('');
+  await expect(page.locator('.notice')).toBeEmpty();
+  await panel(page).locator('.prompt').getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByLabel('Message', { exact: true })).toHaveValue('hello');
+  await expect(page.locator('.notice')).toHaveText('Practice message sent. Nothing left this page.');
+});
 
-  // Alt+Shift+K starts typing to the navigator; keys go to it, not the page, and Escape stops.
-  await look(page, page.getByRole('searchbox', { name: 'Search books' }));
-  await page.getByRole('searchbox', { name: 'Search books' }).focus();
-  await page.keyboard.press('Alt+Shift+K');
-  await expect(panel(page).getByRole('button', { name: 'Type without leaving the page' })).toHaveAttribute('aria-pressed', 'true');
-  await page.keyboard.type('abc');
-  await expect(panel(page).locator('.transcript')).toHaveText('Typing to the navigator: abc');
-  await expect(page.getByRole('searchbox', { name: 'Search books' })).toHaveValue('');
-  await page.keyboard.press('Escape');
-  await expect(panel(page).getByRole('button', { name: 'Type without leaving the page' })).toHaveAttribute('aria-pressed', 'false');
-  await page.keyboard.type('x');
-  await expect(page.getByRole('searchbox', { name: 'Search books' })).toHaveValue('x');
-  // After using a setting in the panel, the mode still captures (only the panel's own text field opts out).
-  await panel(page).locator('details.settings').evaluate(details => { details.open = true; });
-  await panel(page).getByLabel('Speak feedback').focus();
-  await page.keyboard.press('Alt+Shift+K');
-  await page.keyboard.type('go back');
-  await expect(panel(page).locator('.transcript')).toHaveText('Typing to the navigator: go back');
-  await page.keyboard.press('Escape');
+test('pagehide and navigator stop discard queued speech confirmations', async ({ page }) => {
+  for (const lifecycle of ['pagehide', 'stop']) {
+    await page.goto('/practice-site/account.html');
+    const start = panel(page).getByRole('button', { name: 'Start listening' });
+    if (await start.count()) await start.click();
+    await look(page, page.getByRole('button', { name: 'Delete account' }));
+    await page.evaluate(() => window.__speech.say('delete account'));
+    await expect(status(page)).toContainText('may have consequences');
+    await page.evaluate(action => {
+      if (action === 'stop') window.gazeNavigator.stop();
+      else window.dispatchEvent(new PageTransitionEvent('pagehide'));
+      window.__speech.say('confirm');
+    }, lifecycle);
+    await expect(page.locator('.notice')).toBeEmpty();
+    expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(false);
+    expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('gaze-web-navigator')).listening)).toBe(true);
+  }
+});
+
+test('a BFCache return shows stopped speech and permits an explicit restart', async ({ page }) => {
+  await page.goto('/practice-site/account.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+  });
+  await expect(panel(page).getByRole('button', { name: 'Start listening' })).toHaveAttribute('aria-pressed', 'false');
+  expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(false);
+  expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem('gaze-web-navigator')).listening)).toBe(true);
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  expect(await page.evaluate(() => window.__speech.instances.at(-1).running)).toBe(true);
+  await page.evaluate(() => window.__speech.fail('not-allowed'));
+  await expect(panel(page).getByRole('button', { name: 'Start listening' })).toHaveAttribute('aria-pressed', 'false');
 });

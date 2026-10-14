@@ -178,7 +178,7 @@ Playback and manual timing continue to work after a stopped or failed load.
 Peaks are temporary and are recomputed when a project is reopened. No model,
 network service, project migration or extra setup is needed for this view.
 
-Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; this is line-level karaoke, not word-by-word highlighting. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
+Videos contain the estimated backing and rendered lyric cards at **1280×720, 24 fps, H.264/AAC**. Timings are represented on the video frame grid; saved or estimated word starts drive word-by-word highlighting within each line. Bundled DejaVu Sans provides consistent typography; its license is in `assets/DejaVuSans.LICENSE`. Not every writing system/glyph is supported.
 
 ## Local projects and backups
 
@@ -210,7 +210,7 @@ Use **Import project archive** to add a restored clip to the current library wit
 
 Cancel an accepted archive job with the existing job control. **Cancel archive upload** stops the browser request, but a lost response can leave acceptance uncertain. Use **Check restore status** to inspect the current library/job before retrying; it preserves the editor and does not repeat the import or cancel unrelated work. It also retries a failed provenance read. Ordinary editing/audio/video remain usable when provenance is unavailable, while archive backup waits for that check to recover.
 
-This is a versioned, uncompressed application format, limited to **306.8 MiB** (three maximum WAVs plus 4 MiB), not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–300-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 180-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
+This is a versioned, uncompressed application format, limited to **306.8 MiB** (three maximum WAVs plus 4 MiB), not a general ZIP importer. It admits only project/manifest JSON, three canonical 44.1 kHz stereo PCM16 WAVs and optional bounded processing metadata. It rejects extra paths/files, links, compression, encryption, ZIP64, duplicate/unknown JSON fields, inconsistent lengths and mismatched hashes/CRC. Processing stays within existing 1–600-second limits, with 64 KiB streaming buffers, a 60-second upload deadline and a separate 360-second archive-job deadline. Restore requires Linux with atomic no-replace directory publication; unsupported systems fail before upload admission. Existing directory ownership and cleanup protections still apply.
 
 The archive is **unencrypted private audio and lyrics**. Checksums detect corruption, not authentic provenance, media rights or separation quality. Imported audio and processing claims remain visibly **unverified** after restart and re-export; they never change local model readiness. Missing metadata is identified separately. Unrecognized/private processing metadata or a malformed provenance sidecar blocks backup visibly without changing the project. Stored local metadata is also not independently authenticated.
 
@@ -578,3 +578,10 @@ that owned service on the same port/library, update its PID variable and run
 `--verify-restart`. Optional `KARAOKE_PYTHON` selects the core interpreter. The
 runner owns its browsers, never its service, and neither generates model stems
 nor claims subjective alignment quality.
+
+
+### Canonical handoff review (#242)
+
+Songs producing more than 200 short automatic lines are regrouped into longer contiguous lines so the whole song remains represented. Complete text beyond the existing character/cue bounds is refused rather than silently cropped. Alignment and word-highlighting matching share a one-million-cell computation ceiling per request; beyond it, all supplied words remain and unmatched timing estimates are flagged for correction. Submillisecond cue boundaries remain valid. Recognition refresh retires cached and pending preview timings even when saved cues are unchanged.
+
+The original branch gate and real-song reports describe their exact measured snapshots. Current integration evidence and retained local verification limits are recorded in [handoff verification](docs/2026-10-13-integration-242.md). These English-only results do not establish multilingual lyrics or uniformly accurate recognition.

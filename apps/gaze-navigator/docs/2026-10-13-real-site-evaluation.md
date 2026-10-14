@@ -8,12 +8,12 @@ The product direction defines success as people completing useful tasks on real 
 
 `scripts/evaluate-real-sites.mjs` drives the **real extension build** in Chromium on live sites. Host access is pre-granted, because automation cannot click the permission prompt.
 
-- **Simulated input.** For each step, the pointer rests on the control a person would look at, standing in for gaze. The instruction is typed, standing in for speech, using "Type without leaving the page" so that the page keeps focus as it would with speech (since #244).
+- **Simulated input.** For each step, the pointer rests on the control a person would look at, standing in for gaze, and the instruction is typed, standing in for speech.
 - **Questions.** Numbered questions are answered with the number shown for the intended control, and confirmations with "confirm".
 - **Outcomes.** Each step is recorded as done (the intended effect), unintended (the page changed in another way), failed, or unanswered-question. Utterances and questions are counted.
 - **Conditions.** Every task runs with the rules alone and with **Smarter target matching** (WaterSheep, the real model).
 
-The nineteen tasks (six were added in #238 for text entry, correction, dropdowns, scrolling and pagination, four in #240 for menus, disclosure toggles and checkboxes, and two in #244 for a documentation search box and a search suggestion):
+The seventeen tasks (six were added in #238 for text entry, correction, dropdowns, scrolling and pagination, and four in #240 for menus, disclosure toggles and checkboxes):
 
 | Site | Task | Steps |
 | --- | --- | --- |
@@ -34,17 +34,15 @@ The nineteen tasks (six were added in #238 for text entry, correction, dropdowns
 | Wikipedia | Open the page tools menu | "open tools" |
 | GOV.UK | Show the search filters | "open filter and sort" |
 | Wikipedia | Tick and untick "Keep me logged in" (without logging in) | "tick keep me logged in", "untick it" |
-| Python docs | Search the documentation | "search for json decoder" (quick search box) |
-| Wikipedia | Dictate part of a name, then choose the suggested article | "type Ada Lov", "choose Ada Lovelace" |
 
 ## Results
 
 | Condition | Tasks completed | Steps done | Unintended actions | Utterances | Questions |
 | --- | --- | --- | --- | --- | --- |
-| Rules only | 17 / 19 | 26 / 28 | 0 | 28 | 0 |
-| Rules + WaterSheep | **18 / 19** | **27 / 28** | **0** | 27 | 0 |
+| Rules only | 15 / 17 | 23 / 25 | 0 | 25 | 0 |
+| Rules + WaterSheep | **17 / 17** | **25 / 25** | **0** | 25 | 0 |
 
-The one miss with WaterSheep was the search-suggestion task: Wikipedia's suggestion list did not appear within 10 s that time. That happened intermittently in other runs too, with or without the model, so it is the live site, not the navigator. In #240, an earlier full run with WaterSheep missed "show me the past versions of this page" once. Run on its own three more times, it succeeded each time; the cause was not established.
+An earlier full run with WaterSheep on the same build completed 16/17: "show me the past versions of this page" was not resolved that time. Run on its own three more times, it succeeded each time. The cause of the one miss was not established, and both runs are in the JSON record.
 
 The rules alone miss only the two everyday phrasings. With WaterSheep both succeed on the live pages: "show me the past versions of this page" opened **View history**, and "take me to the stuff about cars" opened **Driving and transport**. Dictation, the spoken correction, Enter, both dropdowns (including one with no label), page and region scrolling, and pagination all worked with the rules alone. Per-step replies are in [`2026-10-13-real-site-evaluation.json`](2026-10-13-real-site-evaluation.json).
 
@@ -66,19 +64,10 @@ The rules alone miss only the two everyday phrasings. With WaterSheep both succe
 
 Two task-script mistakes were also corrected: the menu button's renaming, and a list entry that was not present on every load.
 
-**Fourth round (#244).** A documentation quick search passed with the rules alone. Choosing a Wikipedia search suggestion found three more problems:
-- **The typed instruction box took focus.** Dictating "type Ada Lov" opens Wikipedia's suggestions, because the navigator fires real input events. But typing the next instruction into the navigator's box moved focus out of the search field, and Wikipedia closed the list. Speech never moves focus, but keyboard users of the typed fallback could not pick a suggestion. **Type without leaving the page** (Alt+Shift+K, or the panel button) now captures keystrokes for the navigator while the page keeps focus. Enter runs the instruction and Escape stops, and the page sees none of the keys. The harness now types this way.
-- **Names ran text together.** The suggestion's title and description were read as "Ada LovelaceEnglish mathematician", so "Ada Lovelace" matched it no better than "Ada Lovelace (microarchitecture)". Names now put spaces between block-level parts and skip hidden text.
-- **Duplicates.** Each suggestion counted twice, as the option and the link inside it, so the navigator asked between identical choices. A control inside another with the same name is now one target.
-- **Brackets.** A name with a bracketed qualifier right after the spoken words ranks just below the unqualified one, so "choose Ada Lovelace" picks the mathematician.
-
-The practice site gained a suggestion list that closes on blur, like Wikipedia's. Browser tests fail without the focus and duplicate fixes.
-
 The instruction suites are unchanged: 120/120, held-out 34/50 and held-out-2 18/50 with the rules, all with 0 unsafe.
 
 ## Limits
 
-- Nineteen tasks on four sites, written by the developer; the first runs informed the script fixes.
-- The harness types instructions to stand in for speech. Since #244 it types without moving focus, but key timing and recognition errors of real speech are still not exercised. These results show the pipeline working on real pages, not task completion rates for the intended users.
+- Seventeen tasks on four sites, written by the developer; the first runs informed the script fixes. These results show the pipeline working on real pages, not task completion rates for the intended users.
 - The pointer stands in for gaze, so gaze jitter and calibration error are not exercised. Typed text stands in for speech, so recognition errors are not exercised.
 - Live sites change; rerun the script to refresh the record.

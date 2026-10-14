@@ -14,6 +14,10 @@ export function motifImage(dataUrl: string): HTMLImageElement | null {
   }
   return image.complete && image.naturalWidth ? image : null;
 }
+/** Wait for the snapshot's exact uploaded motifs before painting export textures. */
+export async function prepareMotifImages(motifs: readonly UploadedMotif[]) {
+  await Promise.all(motifs.map(motif => { motifImage(motif.dataUrl); return images.get(motif.dataUrl)!.decode(); }));
+}
 /** Called whenever an uploaded motif finishes decoding, so views can repaint. */
 export function onMotifImage(listener: () => void) { listeners.add(listener); }
 

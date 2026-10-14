@@ -113,3 +113,41 @@ validation added. The Chromium end-to-end case now uploads a genuine 24×16 PNG
 from one seat and confirms that the other seat's browser decodes it at 24 px,
 that only the author can edit, that an edit keeps the photo, and that the
 memory remains listed after a disconnect.
+
+## Handoff review: stale Spotify work (2026-10-12)
+
+A connection now has a durable random generation, and each authorization
+attempt has a separate durable generation. Disconnecting, replacing a
+connection, starting another authorization, or deleting its room invalidates
+older work. The callback checks the authorization generation after its network
+calls; its final room check and connection admission share the existing
+room-deletion lock. Sync admits fetched history, refreshed credentials and
+errors only for the connection generation that started the request. Existing
+connections receive identities transactionally on migration; legacy pending
+callbacks are discarded and must be restarted. No generation or credential is
+added to public listening replies.
+
+Three regressions failed before this repair: old-account history committed
+into a replacement connection, a callback restored a disconnected connection,
+and a callback restored listening after room deletion. The repaired listening
+suite passes 24 cases, including refresh/error isolation, superseded
+authorization and restart identity checks. Together with the six existing
+photo/memory cases, the focused Python gate passes 30 cases. The unchanged
+TypeScript gate passes 23 cases, ESLint, type checking and production build.
+
+**Historical photo admission blocker (before the #216 decoder repair):** the current header inspector accepts
+incomplete media, including a 24-byte PNG prefix and a 10-byte GIF header.
+Its JPEG/GIF/WebP acceptance fixtures do not contain decodable image payloads.
+The signature and dimension checks establish passive format admission only;
+they do not establish complete decoding or rejection of all damaged images.
+A repair must validate full media with bounded time, memory, diagnostics and
+local-only decoder input, and replace those fixtures with genuine complete
+images. The existing isolated FFmpeg runner is a candidate; no decoder change
+or relaxed resource guard was made during this stale-account repair.
+
+
+## Photo admission repair — #216
+
+Photos now pass the existing isolated FFmpeg runner with fixed raster demuxers and file/pipe-only protocols. Its five-second deadline, 512 MiB process bound and streamed 32-million-pixel aggregate cap constrain full decoding. Images retain the 5 MiB and 12,000-px-side limits and add a 16-million-pixel individual limit. PNG chunks require valid lengths, CRCs and ending. GIF blocks, frame rectangles, color tables and sub-block terminators must be complete, and output must contain exactly the expected number of full canvas frames. Animated PNG/WebP are refused until full animation decoding is supported. Original accepted bytes are stored unchanged; this checks fully decoded pixels rather than canonical bitstream identity, and FFmpeg may tolerate some JPEG entropy damage.
+
+The old header-only JPEG/GIF/WebP acceptance fixtures are replaced by complete synthetic raster images. Six real-decoder inspection cases cover passive formats, missing payloads, truncated containers, a damaged later GIF frame, a salvaged partial sub-block, frame-count mismatch, animated PNG refusal, dimensions, and generic worker refusal without private diagnostic disclosure. Independent review reproduced the GIF/APNG failures before their repair and independently confirmed all six cases after it. Full hosted HTTP/media/browser outcomes are linked in [the canonical integration report](../../../docs/2026-10-12-integration-review-216.md); no local /proc guard was bypassed.

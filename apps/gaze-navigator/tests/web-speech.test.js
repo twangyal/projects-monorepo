@@ -71,7 +71,7 @@ test('permission errors stop listening; transient errors stop after repeated fai
   assert.equal(recognition.starts, 1, 'no restart after refusal');
 
   speech.start();
-  for (let i = 0; i < 3; i++) recognition.onerror({ error: 'network' });
+  for (let i = 0; i < 3; i++) instances.at(-1).onerror({ error: 'network' });
   assert.equal(speech.listening, false);
   assert.match(errors.at(-1), /could not reach its service/);
 });
@@ -91,4 +91,20 @@ test('each new utterance in a continuous session signals its start once', () => 
   recognition.onend();
   emit(recognition, 0, result('back', true));
   assert.equal(starts, 4, 'indexes restart with a new session');
+});
+
+test('stopping ignores queued speech events and a previous session after restart', () => {
+  const { window, instances } = fakeWindow();
+  const heard = [];
+  const speech = createSpeechInput(window, { onFinal: text => heard.push(text) });
+  speech.start();
+  const old = instances[0];
+  speech.stop();
+  emit(old, 0, result('confirm', true));
+  assert.deepEqual(heard, [], 'queued final must not execute after stop');
+  speech.start();
+  emit(old, 0, result('confirm', true));
+  assert.deepEqual(heard, [], 'old recognition must not execute in the new session');
+  emit(instances.at(-1), 0, result('open help', true));
+  assert.deepEqual(heard, ['open help']);
 });

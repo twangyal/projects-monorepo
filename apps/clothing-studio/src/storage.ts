@@ -1,5 +1,5 @@
 import { validateProject, type Project } from './model.ts';
-import { validatePhoto } from './media.ts';
+import { validateProjectImages } from './project-media.ts';
 
 const DATABASE_NAME = 'clothing-studio';
 const STORE_NAME = 'project';
@@ -80,13 +80,13 @@ export async function loadProject(): Promise<Project | null> {
   });
   if (record.count === 0) return null;
   const project = validateProject(record.value);
-  await validatePhoto(project.photo);
+  await validateProjectImages(project);
   return project;
 }
 
 export async function saveProject(project: Project): Promise<void> {
   const safe = validateProject(project);
-  await validatePhoto(safe.photo);
+  await validateProjectImages(safe);
   await transact('readwrite', 'save', store => {
     store.put(safe, PROJECT_KEY); return () => undefined;
   });

@@ -1,3 +1,4 @@
+import { validateRasterHeader } from './media.ts';
 // Product designs: a base garment built from named parts, each styled with a fabric, color and optional
 // repeat print, plus placed artwork. Pure data, geometry and validation; rendering lives in product-3d.ts.
 
@@ -171,6 +172,7 @@ function validateArtwork(value: unknown, measurements: Measurements): Artwork {
   if (typeof a.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(a.dataUrl) || a.dataUrl.length > LIMITS.artworkBytes * 1.4) fail('Artwork must be a PNG, JPEG or WebP image of at most 1.5 MB.');
   const width = finite(a.width, [1, 4096], 'Artwork pixel width'), height = finite(a.height, [1, 4096], 'Artwork pixel height');
   if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Artwork pixel size must be whole numbers.');
+  validateRasterHeader({dataUrl:a.dataUrl as string,width,height}, LIMITS.artworkBytes, 4096);
   if (typeof a.name !== 'string' || a.name.length > 120) fail('Artwork name must be at most 120 characters.');
   const panel = panelSize(measurements);
   const widthCm = finite(a.widthCm, LIMITS.artworkWidthCm, 'Artwork width (cm)');
@@ -220,6 +222,7 @@ function validateMotifs(value: unknown): UploadedMotif[] {
     if (typeof m.dataUrl !== 'string' || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(m.dataUrl) || m.dataUrl.length > LIMITS.motifBytes * 1.4) fail('A motif must be a PNG, JPEG or WebP image of at most 600 KB.');
     const width = finite(m.width, [1, 2048], 'Motif pixel width'), height = finite(m.height, [1, 2048], 'Motif pixel height');
     if (!Number.isInteger(width) || !Number.isInteger(height)) fail('Motif pixel size must be whole numbers.');
+    validateRasterHeader({dataUrl:m.dataUrl as string,width,height}, LIMITS.motifBytes, 2048);
     const name = plainText(m.name, 60, 'Motif name');
     return { id: m.id as string, name: name || 'Uploaded motif', dataUrl: m.dataUrl as string, width, height };
   });
@@ -328,7 +331,20 @@ export function template(id: string): Product {
 /** Flat width and length of the front (and back) body panel, in cm: half the chest plus 2 cm ease. */
 export function panelSize(m: Measurements) { return { width: m.chest / 2 + 2, length: m.length }; }
 export function sleeveSize(m: Measurements) { const armhole = m.chest * 0.23 + 4; return { capWidth: armhole * 2, cuffWidth: Math.max(28, armhole * 1.55 - m.sleeve * 0.25), length: m.sleeve }; }
-export function neckSize(m: Measurements, neckline: Product['neckline']) { const neck = m.chest * 0.41 + 6; return { length: neckline === 'v' ? neck + 6 : neck, width: 2 }; }
+export const NECK_RIB_RATIO = 0.85;
+/** Neck sewing path from right to left, matching the flat pattern's eight-segment crew curve. */
+function neckPath(half: number, depth: number, v: boolean): { x: number; y: number }[] {
+  if (v) return [{ x: half, y: 0 }, { x: 0, y: depth }, { x: -half, y: 0 }];
+  return Array.from({ length: 9 }, (_, i) => { const t = Math.PI * i / 8; return { x: half * Math.cos(t), y: i === 0 || i === 8 ? 0 : depth * Math.sin(t) }; });
+}
+/** Flat rib sewing length: edited front + back opening, with an explicit 15% reduction assumption. */
+export function neckSize(m: Measurements, neckline: Product['neckline'], fit: Fit = {}) {
+  const half = (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2;
+  const front = neckPath(half, fit.frontNeckDrop ?? (neckline === 'v' ? 15 : 8), neckline === 'v');
+  const back = neckPath(half, 2, false);
+  const length = [front, back].reduce((sum, path) => sum + path.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - path[i].x, p.y - path[i].y), 0), 0);
+  return { length: length * NECK_RIB_RATIO, width: 2 };
+}
 
 export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
@@ -342,7 +358,7 @@ export function teeDimensions(product: Product) {
     hemHalf: (fit.hemWidth ?? panel.width) / 2,
     // Long sleeves taper to a rib cuff; tee sleeves stay open and wide. The cap follows the armhole.
     cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: (armDepth + 2) * 2,
-    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline).length,
+    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline, fit).length,
     band: product.base === 'tee' ? 0 : BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
     hoodHeight: 32, hoodHalf: 13, pocketTop: m.length - BAND_CM - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
@@ -455,7 +471,7 @@ function area(points: { x: number; y: number }[]) { let s = 0; for (let i = 0; i
 /** Simplified flat pattern pieces (finished size, no seam allowance) in cm, origin at the top-left. */
 export function patternPieces(product: Product): PatternPiece[] {
   if (isBottoms(product)) return trouserPieces(product);
-  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), neck = neckSize(m, product.neckline);
+  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m);
   const dims = teeDimensions(product), w = panel.width, half = w / 2, shoulderDrop = dims.shoulderDrop, neckWidth = dims.neckHalf, armDepth = dims.armDepth;
   // The side seams run from the underarm to the hem width; a body cut above a hem band ends where they cross the band.
   const armY = shoulderDrop + armDepth, hemInset = (y: number) => (half - dims.hemHalf) * (y - armY) / (panel.length - armY);
@@ -466,8 +482,7 @@ export function patternPieces(product: Product): PatternPiece[] {
     const pts = [{ x: half - neckWidth, y: 0 }, { x: shoulder, y: shoulderDrop }, { x: scoop, y: shoulderDrop + armDepth * 0.55 }, { x: 0, y: armY },
       ...hem, { x: w, y: armY }, { x: w - scoop, y: shoulderDrop + armDepth * 0.55 }, { x: w - shoulder, y: shoulderDrop }, { x: half + neckWidth, y: 0 }];
     // Neckline: a curve for crew/back, a straight V for v-neck fronts.
-    if (front && product.neckline === 'v') pts.push({ x: half, y: neckDepth });
-    else for (let i = 1; i < 8; i++) { const t = Math.PI * i / 8; pts.push({ x: half + neckWidth * Math.cos(t), y: neckDepth * Math.sin(t) }); }
+    pts.push(...neckPath(neckWidth, neckDepth, front && product.neckline === 'v').slice(1, -1).map(p => ({ x: half + p.x, y: p.y })));
     // A flared (A-line) hem is wider than the chest: shift the piece so it starts at x = 0 like the others.
     return pts.map(p => ({ x: p.x + flare(product), y: p.y }));
   };
@@ -485,7 +500,7 @@ export function patternPieces(product: Product): PatternPiece[] {
   });
   const modules = optionsOf(product).chestPocket ? [make('chestPocket', chestPocket(), 1)] : [];
   if (product.base === 'tee') {
-    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(neck.length, neck.width * 2), 1), ...modules];
+    return [make('front', body(true), 1), make('back', body(false), 1), make('sleeveLeft', sleevePiece(), 1), make('sleeveRight', sleevePiece(), 1), make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1), ...modules];
   }
   // Sweatshirts and hoodies: body and sleeves end above rib bands cut on the fold (band height × 2).
   const band = dims.band;
@@ -497,7 +512,7 @@ export function patternPieces(product: Product): PatternPiece[] {
     return pts;
   };
   pieces.push(make('sleeveLeft', sleeveOutline(), 1), make('sleeveRight', sleeveOutline(), 1));
-  if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(neck.length, neck.width * 2), 1));
+  if (product.base === 'sweatshirt') pieces.push(make('neckband', rect(dims.ribLength, dims.ribHeight * 2), 1));
   // Rib trims are cut about 15% shorter than the edge they finish so they hug it.
   pieces.push(make('cuffLeft', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1), make('cuffRight', rect(dims.cuffHalf * 2 * 0.85, band * 2), 1),
     make('hemBand', rect(dims.hemHalf * 2 * 2 * 0.85, band * 2), 1));
@@ -677,9 +692,11 @@ function fillRegion(group: PartMesh, polygon: Pt[], Delaunator: DelaunatorLike, 
   for (let t = 0; t < triangles.length; t += 3) {
     const tri = [triangles[t], triangles[t + 1], triangles[t + 2]], pts = tri.map(i => samples[i]);
     if (!inside({ x: (pts[0].x + pts[1].x + pts[2].x) / 3, y: (pts[0].y + pts[1].y + pts[2].y) / 3 }, polygon)) continue;
+    // Inspect winding in flat coordinates; mapping y downward to world y upward reverses its sign.
+    const cross = (pts[1].x - pts[0].x) * (pts[2].y - pts[0].y) - (pts[1].y - pts[0].y) * (pts[2].x - pts[0].x);
+    if (Math.abs(cross) < 1e-9) continue;
     const [a, b, d] = tri.map(vertex);
-    // Counter-clockwise from outside: flat y grows downward, so the front's order flips.
-    if (side === 'front') group.indices.push(a, d, b); else group.indices.push(a, b, d);
+    if ((side === 'front') === (cross < 0)) group.indices.push(a, b, d); else group.indices.push(a, d, b);
   }
 }
 

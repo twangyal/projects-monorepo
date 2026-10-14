@@ -1,3 +1,4 @@
+import {validateHarmonics,harmonicTable} from './sound-harmonics.ts';
 import {validateVolumeCurve,volumeCurveLevel} from './volume-curve.ts';
 import { MAX_COMPOSITION_BEATS, MAX_RENDER_FRAMES } from './limits.ts';
 import { DEFAULT_ENVELOPE, envelopeLevel, validateEnvelope } from './sound-envelope.ts';
@@ -210,10 +211,11 @@ export function renderDry(project: Composition, sampleRate = 22050, onlyTrack?: 
   const frames = Math.ceil((endSeconds + tailSeconds) * sampleRate);
   if (!Number.isSafeInteger(frames) || frames > MAX_RENDER_FRAMES) throw new RangeError('Rendered audio exceeds the frame budget. Lower the sample rate or shorten the composition.');
   const result = new Float32Array(frames);
-  const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve; gain: number }>();
+  const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; harmonics?:number[]; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve; gain: number }>();
   for (const track of project.tracks) {
     if (track.muted || track.volume === 0 || (onlyTrack !== undefined && track.id !== onlyTrack)) continue;
     const envelope = track.envelope === undefined ? DEFAULT_ENVELOPE : validateEnvelope(track.envelope);
+    const harmonics=track.harmonics===undefined?undefined:validateHarmonics(track.harmonics);
     const filter = track.filter === undefined ? undefined : validateFilter(track.filter);
     const echo = track.echo === undefined ? undefined : validateEcho(track.echo);
     const volumeCurve = track.volumeCurve === undefined ? undefined : validateVolumeCurve(track.volumeCurve);
@@ -224,27 +226,27 @@ export function renderDry(project: Composition, sampleRate = 22050, onlyTrack?: 
       // filter state and release. Beat offsets are rounded only at placement.
       for (let tap = 0; tap <= (echo?.repeats ?? 0); tap++) {
         const delayed = tap === 0 ? note : {...note, start: note.start + tap * echo!.beats};
-        const key = `${track.instrument}:${delayed.pitch}:${delayed.start}:${track.instrument === 'drums' ? 0 : delayed.duration}:${track.instrument === 'drums' ? '' : JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(volumeRamp)}:${JSON.stringify(volumeCurve)}`;
+        const key = `${track.instrument}:${delayed.pitch}:${delayed.start}:${track.instrument === 'drums' ? 0 : delayed.duration}:${track.instrument === 'drums' ? '' : JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(harmonics)}:${JSON.stringify(volumeRamp)}:${JSON.stringify(volumeCurve)}`;
         const gain = track.volume * note.velocity * 0.4 * (tap === 0 ? 1 : echo!.decay ** tap);
         const existing = groups.get(key);
         if (existing) existing.gain += gain;
-        else groups.set(key, { note: delayed, instrument: track.instrument, envelope, filter, volumeRamp, volumeCurve, gain });
+        else groups.set(key, { note: delayed, instrument: track.instrument, envelope, filter, harmonics, volumeRamp, volumeCurve, gain });
       }
     }
   }
   // Identical oscillators add linearly. Sum their gains once to avoid rendering
   // duplicate sample streams and accumulating thousands of Float32 rounding errors.
-  const voices = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; placements: { start: number; gain: number; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve }[] }>();
-  for (const { note, instrument, envelope, filter, volumeRamp, volumeCurve, gain } of groups.values()) {
-    const key = `${instrument}:${note.pitch}:${instrument === 'drums' ? 0 : note.duration}:${instrument === 'drums' ? '' : JSON.stringify(envelope)}:${JSON.stringify(filter)}`;
+  const voices = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; harmonics?:number[]; placements: { start: number; gain: number; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve }[] }>();
+  for (const { note, instrument, envelope, filter, harmonics, volumeRamp, volumeCurve, gain } of groups.values()) {
+    const key = `${instrument}:${note.pitch}:${instrument === 'drums' ? 0 : note.duration}:${instrument === 'drums' ? '' : JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(harmonics)}`;
     const placement = { start: Math.round(note.start * secondsPerBeat * sampleRate), gain, volumeRamp, volumeCurve };
     const existing = voices.get(key);
     if (existing) existing.placements.push(placement);
-    else voices.set(key, { note, instrument, envelope, filter, placements: [placement] });
+    else voices.set(key, { note, instrument, envelope, filter, harmonics, placements: [placement] });
   }
   // Render each distinct pitch/duration only once, then mix its placements.
   // Keeping only the current waveform bounds extra memory to one note's length.
-  for (const { note, instrument, envelope, filter, placements } of voices.values()) {
+  for (const { note, instrument, envelope, filter, harmonics, placements } of voices.values()) {
     if (instrument === 'drums') {
       const voice = drumVoice(note.pitch, sampleRate);
       const shape = filter ? lowpass(filter, sampleRate) : null;
@@ -259,7 +261,7 @@ export function renderDry(project: Composition, sampleRate = 22050, onlyTrack?: 
     const decaySamples = envelope.decay * sampleRate;
     const length = Math.ceil((duration + envelope.release) * sampleRate);
     const step = hz / sampleRate * OSCILLATOR_TABLE_SIZE;
-    const table = oscillatorTables[instrument];
+    const table = harmonics?harmonicTable(harmonics,hz,sampleRate,OSCILLATOR_TABLE_SIZE):oscillatorTables[instrument];
     const waveform = new Float64Array(length);
     const shape = filter ? lowpass(filter, sampleRate) : null;
     for (let i = 0; i < length; i++) {

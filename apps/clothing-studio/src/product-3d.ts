@@ -1,12 +1,13 @@
+import { deformArtwork } from './artwork-deformation.ts';
+import type { BodyProxy, GarmentDrapeResult } from './garment-drape.ts';
 // Real-time WebGL view of a product design: one mesh per part, physically scaled fabric tiles, artwork decals.
 import * as THREE from 'three';
 import Delaunator from 'delaunator';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { paintTile, tileSizeCm } from './fabric-texture.ts';
-import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type Product } from './product.ts';
-import type { BodyProxy, GarmentDrapeResult } from './garment-drape.ts';
+import { paintTile, prepareMotifImages, tileSizeCm } from './fabric-texture.ts';
+import { garmentHeight, material, partName, teeMesh, topMeasurements, type PartId, type PartMesh, type Product } from './product.ts';
 
 export type View = 'front' | 'back' | 'left' | 'right';
 export class ProductScene {
@@ -22,6 +23,8 @@ export class ProductScene {
   private provisional: THREE.Texture[] = [];
   private artworkTextures = new Map<string, THREE.Texture>();
   private frame = 0;
+  private disposed = false;
+  private resizeObserver: ResizeObserver;
   private height = 72;
   private view: View = 'front';
 
@@ -36,21 +39,23 @@ export class ProductScene {
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enablePan = false; this.controls.minDistance = 90; this.controls.maxDistance = 400;
     this.controls.addEventListener('change', () => this.requestRender());
-    new ResizeObserver(() => this.resize()).observe(canvas);
+    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver.observe(canvas);
     this.resize();
     this.setView('front');
   }
 
   private resize() {
+    if (this.disposed) return;
     const width = this.canvas.clientWidth || 600, height = this.canvas.clientHeight || 520;
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.requestRender();
   }
   requestRender() {
-    if (this.frame) return;
+    if (this.disposed || this.frame) return;
     this.frame = requestAnimationFrame(() => { this.frame = 0; this.renderer.render(this.scene, this.camera); });
   }
-  renderNow() { if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
+  renderNow() { if (this.disposed) return; if (this.frame) { cancelAnimationFrame(this.frame); this.frame = 0; } this.renderer.render(this.scene, this.camera); }
 
   setView(view: View) {
     this.view = view;
@@ -78,18 +83,19 @@ export class ProductScene {
   }
 
   /** Shows the product; with a drape, each part takes its simulated shape and the body it hangs on is shown. */
-  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null) {
+  setProduct(product: Product, selected: PartId | null, drape: GarmentDrapeResult | null = null, showBody = true) {
     for (const texture of this.provisional.splice(0)) texture.dispose();
-    this.setBody(drape?.body ?? null);
+    this.setBody(showBody ? drape?.body ?? null : null);
     for (const child of [...this.group.children]) { this.group.remove(child); if (child instanceof THREE.Mesh) { child.geometry.dispose(); (child.material as THREE.Material).dispose(); } }
     this.parts.clear();
     // The framing follows the garment: a hood rises above the shoulders, and trousers are long.
     const previous = this.height;
     // A draped top is framed with the body's head in view.
-    this.height = Math.max(garmentHeight(product), drape ? topMeasurements(product).length + 32 : 0) + 6;
+    this.height = Math.max(garmentHeight(product), drape && showBody ? topMeasurements(product).length + 32 : 0) + 6;
     // A garment of a different height (another base, longer legs) is re-framed from the current side.
     if (Math.abs(this.height - previous) > 0.5) this.setView(this.view);
-    for (const part of teeMesh(product, Delaunator)) {
+    const restParts = teeMesh(product, Delaunator);
+    for (const part of restParts) {
       const style = product.parts[part.part], { texture, tileCm } = this.texture(style, product.motifs);
       const geometry = new THREE.BufferGeometry();
       const draped = drape?.parts.find(item => item.part === part.part);
@@ -104,7 +110,7 @@ export class ProductScene {
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true);
-    for (const art of product.artwork) this.addArtwork(product, art);
+    for (const art of product.artwork) this.addArtwork(product, art, drape ? restParts.find(part => part.part === art.part)! : null);
     this.requestRender();
   }
 
@@ -141,24 +147,29 @@ export class ProductScene {
     }
   }
 
-  private addArtwork(product: Product, art: Product['artwork'][number]) {
+  private addArtwork(product: Product, art: Product['artwork'][number], rest: PartMesh | null) {
     const target = this.parts.get(art.part)!;
     let texture = this.artworkTextures.get(art.dataUrl);
     if (!texture) {
       const image = new Image(); image.src = art.dataUrl;
       texture = new THREE.Texture(image); texture.colorSpace = THREE.SRGBColorSpace;
-      image.decode().then(() => { texture!.needsUpdate = true; this.requestRender(); }).catch(() => undefined);
+      image.decode().then(() => { if (!this.disposed) { texture!.needsUpdate = true; this.requestRender(); } }).catch(() => undefined);
       this.artworkTextures.set(art.dataUrl, texture);
     }
+    let supporting = target;
+    let restGeometry: THREE.BufferGeometry | null = null;
+    if (rest) { restGeometry = new THREE.BufferGeometry(); restGeometry.setAttribute('position',new THREE.Float32BufferAttribute(rest.positions,3)); restGeometry.setIndex(rest.indices); restGeometry.computeVertexNormals(); supporting = new THREE.Mesh(restGeometry,target.material); supporting.updateMatrixWorld(true); }
     const top = topMeasurements(product).length - 4; // the shoulder line, where artwork positions are measured from
     const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
     // Project straight onto the panel from outside, centred where the artwork's centre should sit.
     const x = front ? art.xCm : -art.xCm, y = top - art.yCm - heightCm / 2;
     const ray = new THREE.Raycaster(new THREE.Vector3(x, y, front ? 200 : -200), new THREE.Vector3(0, 0, front ? -1 : 1));
-    const hit = ray.intersectObject(target)[0];
-    if (!hit) return;
+    const hit = ray.intersectObject(supporting)[0];
+    if (!hit) { restGeometry?.dispose(); return; }
     const orientation = new THREE.Euler(0, front ? 0 : Math.PI, 0);
-    const geometry = new DecalGeometry(target, hit.point, orientation, new THREE.Vector3(art.widthCm, heightCm, 30));
+    let geometry: THREE.BufferGeometry;
+    try { geometry = new DecalGeometry(supporting, hit.point, orientation, new THREE.Vector3(art.widthCm, heightCm, 30)); if (restGeometry) deformArtwork(geometry,restGeometry,target.geometry); }
+    finally { restGeometry?.dispose(); }
     const decal = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.9 }));
     decal.name = `${front ? 'Front' : 'Back'} artwork`; decal.userData.part = art.part;
     this.group.add(decal);
@@ -171,6 +182,11 @@ export class ProductScene {
     const ray = new THREE.Raycaster(); ray.setFromCamera(pointer, this.camera);
     const hit = ray.intersectObjects([...this.parts.values()])[0];
     return hit ? hit.object.userData.part as PartId : null;
+  }
+
+  async prepareArtwork() {
+    await Promise.all([...this.artworkTextures.values()].map(texture => (texture.image as HTMLImageElement).decode()));
+    for (const texture of this.artworkTextures.values()) texture.needsUpdate = true;
   }
 
   async png(view: View): Promise<Blob> {
@@ -188,5 +204,39 @@ export class ProductScene {
     return result;
   }
 
-  dispose() { this.controls.dispose(); this.renderer.dispose(); for (const texture of this.textures.values()) texture.dispose(); }
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = 0; this.setBody(null); this.resizeObserver.disconnect(); this.controls.dispose();
+    for (const child of this.group.children) if (child instanceof THREE.Mesh) {
+      child.geometry.dispose();
+      for (const material of Array.isArray(child.material) ? child.material : [child.material]) material.dispose();
+    }
+    for (const texture of [...this.textures.values(), ...this.provisional, ...this.artworkTextures.values()]) texture.dispose();
+    this.group.clear(); this.parts.clear(); this.textures.clear(); this.provisional = []; this.artworkTextures.clear();
+    this.renderer.dispose(); this.renderer.forceContextLoss();
+  }
+}
+
+/** Own one immutable scene for the full asynchronous export and always release its resources. */
+async function withProductSnapshot<T>(product: Product, drape: GarmentDrapeResult | null, exportScene: (scene: ProductScene) => Promise<T>): Promise<T> {
+  const snapshot = structuredClone(product), settled = drape ? structuredClone(drape) : null;
+  await prepareMotifImages(snapshot.motifs ?? []);
+  const scene = new ProductScene(document.createElement('canvas'));
+  try {
+    scene.setProduct(snapshot, null, settled, false);
+    await scene.prepareArtwork();
+    return await exportScene(scene);
+  } finally { scene.dispose(); }
+}
+
+export function productSnapshotRenders(product: Product, drape: GarmentDrapeResult | null = null): Promise<{ front: Blob; back: Blob }> {
+  return withProductSnapshot(product, drape, async scene => ({front: await scene.png('front'), back: await scene.png('back')}));
+}
+export function productSnapshotPng(product: Product, view: 'front' | 'back', drape: GarmentDrapeResult | null = null): Promise<Blob> {
+  return withProductSnapshot(product, drape, scene => scene.png(view));
+}
+export function productSnapshotGlb(product: Product, drape: GarmentDrapeResult | null = null): Promise<ArrayBuffer> {
+  return withProductSnapshot(product, drape, scene => scene.glb());
 }

@@ -302,9 +302,10 @@ function drawBlock(text: string, y: number, initialSize: number, minSize: number
 // export uses the same timing, so the preview shows the words lighting up as they will in the video.
 let wordTiming: { key: string; value: WordTiming } | null = null;
 let wordTimingWanted = '', wordTimingTimer = 0;
+let wordTimingEpoch = 0;
 function currentWordTiming(project: Project): WordTiming | null {
   const cues = project.cues.map(({ start, end, text }) => ({ start, end, text }));
-  const key = `${project.id}|${JSON.stringify(cues)}`;
+  const key = `${wordTimingEpoch}|${project.id}|${JSON.stringify(cues)}`;
   if (wordTiming?.key === key) return wordTiming.value;
   if (wordTimingWanted !== key) {
     wordTimingWanted = key; window.clearTimeout(wordTimingTimer);
@@ -507,6 +508,10 @@ function autoControls() {
     : 'Automatic lyrics need the local lyric recognition model. Run scripts/setup_lyrics_model.py with this studio’s model directory, refresh this page, then transcribe this clip.';
 }
 async function loadTranscript() {
+  // Recognition can change while saved cues stay identical. Retire both cached
+  // timing and pending replies before admitting the new transcript generation.
+  wordTimingEpoch++; wordTiming = null; wordTimingWanted = '';
+  window.clearTimeout(wordTimingTimer);
   if (!working) { transcript = null; autoControls(); return; }
   const project = working, epoch = ++transcriptEpoch;
   transcript = null; autoControls();

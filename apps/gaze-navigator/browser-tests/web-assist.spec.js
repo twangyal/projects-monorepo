@@ -92,3 +92,30 @@ test('a newer instruction or cancel discards a pending model answer, and failure
   await expect(status(page)).toContainText('No control called');
   expect(new URL(page.url()).pathname).toBe('/practice-site/index.html');
 });
+
+for (const lifecycle of ['stop', 'pagehide', 'disable matching']) {
+  test(`a delayed model answer cannot activate after ${lifecycle}`, async ({ page }) => {
+    await page.goto('/practice-site/index.html');
+    await turnOnMatching(page);
+    await look(page, page.getByRole('link', { name: 'Contact', exact: true }));
+    await page.evaluate(() => {
+      const decide = window.__gazeTestAssistant.decide;
+      window.__gazeTestAssistant.decide = async (...args) => {
+        await new Promise(resolve => { window.__releaseAnswer = resolve; });
+        return decide(...args);
+      };
+    });
+    await typeInstruction(page, 'open the page to reach you');
+    await expect(status(page)).toHaveText('Working out which control you mean…');
+    await expect.poll(() => page.evaluate(() => typeof window.__releaseAnswer)).toBe('function');
+    if (lifecycle === 'disable matching') await panel(page).getByLabel('Smarter target matching').uncheck();
+    else await page.evaluate(action => {
+      if (action === 'stop') window.gazeNavigator.stop();
+      else window.dispatchEvent(new PageTransitionEvent('pagehide'));
+    }, lifecycle);
+    await page.evaluate(() => window.__releaseAnswer());
+    await expect.poll(() => page.evaluate(() => window.__assist.calls.length)).toBe(1);
+    await page.waitForTimeout(100);
+    expect(new URL(page.url()).pathname).toBe('/practice-site/index.html');
+  });
+}

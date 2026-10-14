@@ -63,3 +63,14 @@ All four are with the default body (10 cm ease).
 - **Body.** The proxy comes from one measurement, not a personal avatar. Its arms are posed to suit the sleeves. On steep-sleeved sweatshirts and hoodies they are slimmer than a real arm.
 - **Contact.** There is no cloth-to-cloth contact or fabric thickness beyond the contact offsets. A hood lies down rather than up.
 - **Coverage.** Bottoms are not draped. There is no strain or fit-pressure map yet.
+
+
+## Canonical integration — 2026-10-14, #248
+
+The earlier numerical/results section is pinned supplied source evidence from4fdcc56. Canonical integration selectively reuses that solver against maina9d1540, preserving247/250 raster, geometry, draft and immutable export repairs. The solver's original five tests independently pass with canonical geometry. Current local gate passes102units, ESLint, TypeScript and production build; the focused10-case native acceptance passes, following an earlier19-case compatibility gate. Full hosted receipts are recorded in248 after publication.
+
+Body-chest raw input is an owned product draft with Apply/Discard and replacement/history guards; settings and simulation remain session-only. Timers/workers retire on bottom templates, pagehide, New/import/history and superseded shapes. Wrong-current-key messages are rejected; cached settledA cancels WorkerB instead of allowing it to overwrite A. Constructor/message errors retain deliberate retry without automatic reruns.
+
+PNG/GLB/printable exports capture committed product, title and a cloned settled result, excluding the body proxy and refusing pending simulation. Proxy geometries are released with scene disposal. Artwork is projected onto the original shell, then each clipped vertex follows its original supporting triangle's barycentric weights into the draped mesh; UVs remain unchanged. This fixes disappearing lower-side artwork and fabric sliding found independently. Native actualGLB checks preserve the front's solver positions and include the original edge logo; independent checking found69finite decal vertices, unchangedUVs and maximum surface distance8.6e-7cm.
+
+Four initial native regressions reproduced raw body-input loss, departure/bottoms lifecycle gaps and shell-only exports. Two review regressions reproduced cached-worker retention and missing edge artwork before repair. Corrected real worker cases include startup-failure retry and a held genuine retired result after Show styling shell. An analytic unequal-stretch/bending check verifies decal coordinates and unchangedUVs. Independent read-only review accepts both repairs. Tee/front-side and hoodie/front-back views were visually inspected. These checks do not establish physical anatomy, calibrated fabric, realistic hood layering or manufacture; the approximations above remain ACTIVE work. No prompt-style delta or broadPR249 merge is included. Project8 stays skipped.

@@ -199,3 +199,38 @@ export async function validatePhoto(photo: Photo | null): Promise<void> {
     if (bitmap.width !== photo.width || bitmap.height !== photo.height) throw new Error('Decoded photo dimensions do not match the saved photo metadata.');
   } finally { bitmap.close(); }
 }
+
+export interface RasterAsset { dataUrl: string; width: number; height: number }
+/** Bounded, canonical raster envelope used by all product assets before native decode. */
+export function validateRasterHeader(asset: RasterAsset, maxBytes: number, maxEdge: number): {bytes: Uint8Array; mimeType: string} {
+  if (typeof asset.dataUrl !== 'string' || asset.dataUrl.length > Math.ceil(maxBytes / 3) * 4 + 32) throw new Error('The encoded product image exceeds its size limit.');
+  const match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(asset.dataUrl);
+  if (!match) throw new Error('Product images must contain PNG, JPEG or WebP base64 data.');
+  let binary: string;
+  try { binary = atob(match[2]!); if (btoa(binary) !== match[2]) throw new Error('Noncanonical base64'); }
+  catch { throw new Error('The product image has invalid base64 data.'); }
+  if (binary.length > maxBytes) throw new Error('The product image exceeds its byte limit.');
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0)), mimeType = match[1]!;
+  const header = inspectImageHeader(bytes, mimeType);
+  if (header.width > maxEdge || header.height > maxEdge) throw new Error(`Saved product images must be at most ${maxEdge} pixels on each edge.`);
+  if (header.width !== asset.width || header.height !== asset.height) throw new Error('Saved product image dimensions do not match its encoded metadata.');
+  return {bytes, mimeType};
+}
+
+/** Upload admission, before canvas normalization. Caller owns and closes the returned bitmap. */
+export async function decodeProductFile(file: File): Promise<ImageBitmap> {
+  if (!file.size || file.size > MAX_INPUT_BYTES) throw new Error('Choose a nonempty image no larger than 10 MiB.');
+  const header = inspectImageHeader(new Uint8Array(await file.arrayBuffer()), file.type);
+  const bitmap = await decodeImage(file);
+  const matches = (bitmap.width === header.width && bitmap.height === header.height) ||
+    (header.format === 'jpeg' && bitmap.width === header.height && bitmap.height === header.width);
+  if (!matches) { bitmap.close(); throw new Error('Decoded product image dimensions do not match its image header.'); }
+  return bitmap;
+}
+
+export async function validateRaster(asset: RasterAsset, maxBytes: number, maxEdge: number): Promise<void> {
+  const {bytes, mimeType} = validateRasterHeader(asset, maxBytes, maxEdge);
+  const bitmap = await decodeImage(new Blob([Uint8Array.from(bytes)], {type:mimeType}));
+  try { if (bitmap.width !== asset.width || bitmap.height !== asset.height) throw new Error('Decoded product image dimensions do not match its saved metadata.'); }
+  finally { bitmap.close(); }
+}

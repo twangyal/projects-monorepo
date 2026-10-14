@@ -25,6 +25,8 @@ HARD_CHARS = 40
 UNSURE = 0.7
 LEAD_IN = 0.15
 HOLD = 0.35
+# Shared work ceiling per request, including all word-highlight lines.
+MAX_ALIGNMENT_CELLS = 1_000_000
 
 
 def _clean(word: object) -> dict | None:
@@ -57,12 +59,14 @@ def _finish(groups: list[list[dict]], duration: float, scores: list[float] | Non
     """Interval rules shared by both modes: ordered, non-overlapping, inside the clip, bounded text."""
     cues = []
     total = 0
+    if len(groups) > MAX_CUES:
+        raise ValueError('The complete lyrics exceed the line limit; shorten or regroup them.')
     for index, group in enumerate(groups):
-        if len(cues) >= MAX_CUES:
-            break
-        text = ' '.join(word['text'] for word in group)[:MAX_CUE_CHARS].strip()
-        if not text or total + len(text) > MAX_LYRIC_CHARS:
-            break
+        text = ' '.join(word['text'] for word in group).strip()
+        if len(text) > MAX_CUE_CHARS or total + len(text) > MAX_LYRIC_CHARS:
+            raise ValueError('The complete lyrics exceed the text limit; shorten or regroup them.')
+        if not text:
+            continue
         previous_end = cues[-1]['end'] if cues else 0.0
         next_start = max(groups[index + 1][0]['start'] - LEAD_IN, 0.0) if index + 1 < len(groups) else duration
         start = max(previous_end, group[0]['start'] - LEAD_IN, 0.0)
@@ -100,6 +104,18 @@ def words_to_cues(words: list, duration: float, confidence: bool = False) -> lis
                 line.append(word)
                 continue
         groups.append([word])
+    if len(groups) > MAX_CUES:
+        # Longer songs retain every word by using fewer, longer contiguous lines.
+        # Never silently publish only the beginning of a transcript.
+        target_chars = max(HARD_CHARS, math.ceil(sum(len(w['text']) + 1 for w in words) / MAX_CUES))
+        groups = []
+        length = 0
+        for word in words:
+            if not groups or length >= target_chars or length + len(word['text']) > MAX_CUE_CHARS:
+                groups.append([])
+                length = 0
+            groups[-1].append(word)
+            length += len(word['text']) + 1
     if not confidence:
         return _finish(groups, duration)
     return _finish(groups, duration, [sum(w['confidence'] for w in group) / len(group) for group in groups], 'confidence')
@@ -123,10 +139,15 @@ def _similar(a: str, b: str) -> bool:
     return common / max(len(a), len(b)) >= 0.6
 
 
-def _align(reference: list[str], heard: list[str]) -> list[int | None]:
+def _align(reference: list[str], heard: list[str], cell_budget: int = MAX_ALIGNMENT_CELLS) -> list[int | None]:
     """For each reference token, the index of the heard token it matches (global alignment)."""
     n, m = len(reference), len(heard)
-    # Banded edit distance would be faster; songs are bounded (≤ ~3,000 x ~1,500 tokens).
+    if reference == heard:
+        return list(range(n))
+    if n * m > cell_budget:
+        # Oversized work receives explicit unmatched estimates, preserving all
+        # supplied words without running a quadratic HTTP-handler computation.
+        return [None] * n
     previous = list(range(m + 1))
     moves = []
     for i in range(1, n + 1):
@@ -250,6 +271,7 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
     """
     words = clean_words(words, duration)
     result = []
+    remaining_cells = MAX_ALIGNMENT_CELLS
     for cue in cues:
         start, end = float(cue['start']), float(cue['end'])
         tokens = cue['text'].split()
@@ -263,7 +285,10 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
         sing_end = max(end - min(HOLD, span * 0.2), sing_start)
         nearby = [w for w in words if w['end'] > start - NEARBY and w['start'] < end + NEARBY]
         reference = [_token(token) for token in tokens]
-        matches = _align(reference, [_token(w['text']) for w in nearby]) if nearby else [None] * len(tokens)
+        cells = len(reference) * len(nearby)
+        matches = _align(reference, [_token(w['text']) for w in nearby], remaining_cells) if nearby else [None] * len(tokens)
+        if cells <= remaining_cells:
+            remaining_cells -= cells
         anchors: list[float | None] = [None] * len(tokens)
         last = -math.inf
         for index, match in enumerate(matches):
@@ -299,7 +324,7 @@ def word_timings(cues: list[dict], words: list, duration: float) -> list[list[di
                 stop = group[k + 1] if k + 1 < MAX_STEPS else len(tokens)
                 for j in range(begin, stop):
                     starts[j] = starts[begin]
-        result.append([dict(text=token, start=round(at, 3), heard=anchors[k] is not None)
+        result.append([dict(text=token, start=min(max(round(at, 3), start), end), heard=anchors[k] is not None)
                        for k, (token, at) in enumerate(zip(tokens, starts, strict=True))])
     return result
 
