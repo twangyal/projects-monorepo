@@ -96,7 +96,7 @@ Use these statuses in `PROJECT_IDEAS.md`:
 - `DEFERRED` — paused by the owner; exclude from scheduled/autonomous task selection until the owner explicitly resumes it
 - `DONE` — fulfills its intended purpose and has no obvious high-value missing work
 
-Thirteen implemented apps remain ACTIVE under the revised direction. Composure is owner-DEFERRED as of 2026-10-14 after browser testing; do not resume its development or choose a platform migration without a new owner instruction. See `docs/PRODUCT_DIRECTION.md` section 17. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
+Twelve implemented apps remain ACTIVE under the revised direction. Composure and Shot Studio are owner-DEFERRED as of 2026-10-14; do not resume their development, export/acceptance investigations or choose a platform migration without a new owner instruction. See `docs/PRODUCT_DIRECTION.md` sections 7 and 17. The phone-restriction and handwriting projects retain their recorded blockers, and paper trading remains skipped. A completed prototype, bounded MVP or successful automated gate is an intermediate milestone. Before a future MAINTENANCE or DONE transition, document evidence against the intended vision and remaining user-facing gaps; do not reduce the vision to justify the status.
 
 ## Independence
 

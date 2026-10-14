@@ -6,7 +6,7 @@ This is the current product-direction source of truth. Where earlier description
 
 ## Portfolio-wide development standard
 
-Thirteen implemented applications remain ACTIVE. Composure is DEFERRED by the owner as of 2026-10-14 after browser testing; follow its hold below. The previous MAINTENANCE labels do not establish completion of the revised visions. The phone-restriction and handwriting projects retain their recorded BLOCKED status; paper trading remains explicitly skipped. ACTIVE identifies unfinished product development, not a requirement to develop every application concurrently.
+Twelve implemented applications remain ACTIVE. Composure and Shot Studio are DEFERRED by the owner as of 2026-10-14; follow their holds below. The previous MAINTENANCE labels do not establish completion of the revised visions. The phone-restriction and handwriting projects retain their recorded BLOCKED status; paper trading remains explicitly skipped. ACTIVE identifies unfinished product development, not a requirement to develop every application concurrently.
 
 A functioning prototype, bounded vertical slice, completed issue, passing test suite, or reliable storage/export workflow is an intermediate achievement. None alone establishes completion of the intended product. Historical acceptance receipts continue to describe the exact milestones they measured; they must not be presented as acceptance of these broader visions.
 
@@ -41,6 +41,12 @@ Users should be able to develop ideas into complete, polished productions. The r
 Current short recording/composition limits and simple instruments describe the prototype. Preserve its working capture, transcription, reference comparison and editing foundations while designing a credible path beyond those limits. A short-continuation learner does not by itself fulfill broad arrangement assistance.
 
 Success requires a musician to create, edit, arrange, mix and export a useful complete production with dependable sound and responsive control. Evaluate actual vocal capture, musical usefulness and end-to-end production, not only synthetic audio or persistence tests. Focused milestones remain intermediate achievements.
+
+### Owner update — 2026-10-14: focused sections and contextual controls
+
+The owner confirmed that Melody Studio, Motion Studio and Lens Studio all show too much information on one page. For Melody, make composing and listening understandable through focused sections and contextual panels/modals. Keep the arrangement/piano roll and essential playback controls prominent. Reveal note/track editing, recording, instruments/effects, references, project/library management, exports and detailed explanations in the relevant section or dialog instead of displaying every form at once. Exact navigation and grouping require design; this feedback does not prescribe a particular DAW layout or reduce the full-DAW destination.
+
+Prioritize a coherent navigation and information-density milestone when resuming Melody work. A user should be able to load or capture an idea, edit it, listen and find an export without confronting unrelated settings. Preserve notes, audio, selection, raw drafts, Undo/Redo, recovery and deliberate playback behavior when switching sections or opening/closing dialogs. Check desktop and phone usability, discoverability and keyboard/modal focus, including clear close/back behavior. This records future work, not a delivered redesign; Melody remains ACTIVE.
 
 ## 5. Clothing Studio
 
@@ -112,6 +118,14 @@ Automatic transcription and alignment are central unfinished capabilities. Evalu
 
 This lyric-automation clarification applies to project 6, Karaoke Studio. Melody Studio retains the full-DAW direction above.
 
+## 7. Shot Studio
+
+### Owner update — 2026-10-14: deferred
+
+The owner asked to defer Shot Studio after reviewing the available apps. Set its status to DEFERRED and exclude it from scheduled/autonomous development until the owner explicitly resumes it. Do not choose browser polish, new features, export investigations or a replacement platform as an automatic continuation of this project. No replacement platform has been selected.
+
+Preserve the virtual-filmmaking vision, current source, tests, research, historical acceptance evidence and known unresolved export/headset limits for possible future use. Deferral does not establish completion or direct deletion or shutdown of the hosted test copy. Other projects retain their own direction and priorities.
+
 ## 9. Duet
 
 Spotify integration and an automatically maintained shared musical timeline are the main points of Duet. The app turns a couple's listening activity into a musical history of their relationship.
@@ -125,6 +139,14 @@ Verify Spotify's available APIs, access requirements, permissions, history cover
 Shared recommendations, occasion playlists and listening together support the Spotify/timeline experience. Existing uploaded-audio rooms and dated text memories are foundations, not fulfillment of the central integration and automatically populated timeline.
 
 Success means meaningful events appear from real listening activity with little effort, users can correct and curate their history, and song-linked text/photo memories remain easy to revisit. Test actual integration and timeline relevance as well as reliable storage.
+
+## 11. Motion Studio
+
+### Owner update — 2026-10-14: focused sections and contextual controls
+
+The owner confirmed the same crowded-page feedback for Motion Studio: use sections and modals to expose options and information more efficiently. Keep the artwork stage, timeline and essential drawing/playback actions prominent. Organize layer/exposure editing, pose/keyframe tools, stroke details, in-between reviews, project management, sharing and exports into focused sections or contextual panels/dialogs instead of one long page of controls. Use the selected artwork and task to reveal relevant options; exact grouping and navigation require subsequent design.
+
+Prioritize a usable draw-to-animation interaction flow when resuming Motion work. A user should be able to start or open artwork, draw, set movement, preview and find an export without reading every advanced feature. Preserve artwork, images, cels, poses, selection, pending drafts/gestures, history and recovery across navigation; opening or closing a dialog must not silently commit or discard edits. Check desktop/phone discovery, screen density, keyboard focus and clear close/back behavior. Retain the broader authored-animation and useful AI-assistance vision; this update records future work and Motion remains ACTIVE.
 
 ## 12. Style Studio
 
@@ -157,6 +179,14 @@ Show the proposed interpretation as editable criteria, resolve ambiguity and uns
 Use genuinely free model access if a suitable option is available. Verify pricing, quotas, data handling and overage behavior before choosing a provider; do not assume a free tier prevents charges. Paid AI-model API integration is deferred unless the owner later authorizes spending. If no suitable no-cost service is available, document that specific dependency and continue independent product work without claiming the interpretation milestone is complete.
 
 Success for this milestone means varied ordinary requests produce correct, inspectable screening criteria, uncertainty is handled usefully, and failure preserves the user's current work. Measure interpretation quality on representative requests rather than accepting any syntactically valid response. The earlier failed local paraphrase experiment remains evidence about that experiment; it does not replace the new API-based direction.
+
+## 16. Lens Studio
+
+### Owner update — 2026-10-14: focused sections and contextual controls
+
+The owner confirmed the same crowded-page feedback for Lens Studio: use focused sections and modals so the photo experiment is understandable without displaying every option and explanation at once. Keep the source/result comparison and essential framing controls prominent. Organize photo/project opening, focal/perspective settings, depth painting/selection or estimation, mask exchange, recovery/exports and detailed simulation information into discoverable sections and contextual panels/dialogs. Keep information needed to interpret a result available at the point of use. Exact grouping and navigation require subsequent design.
+
+Prioritize a coherent import-to-comparison flow when resuming Lens work. A user should be able to open a photo or demo, change framing or perspective, compare the result and find an export without confronting unrelated forms. Preserve source pixels, depth masks, applied settings, raw drafts, selection/history and recovery when navigating. Retain ownership/cancellation of pending image/model/render work so dismissed or superseded operations cannot apply later unexpectedly. Check desktop/phone discovery, keyboard/modal focus and clear close/back behavior. The original photo-simulation and depth/reconstruction goals remain in force; this records future work and Lens remains ACTIVE.
 
 ## 17. Composure
 

@@ -1,5 +1,7 @@
 # Lens Studio
 
+**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 16](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. This redesign is requested future work.
+
 A private photo workspace for exploring focal framing and depth-aware perspective. Depth planes can be painted by hand or proposed by a learned depth model running locally. Import a photo, declare the source and target focal lengths, compare the original with the simulated result, then save a PNG or an editable project backup. Everything runs in your browser; photos are not uploaded.
 
 ## Run locally

@@ -2,7 +2,7 @@
 
 An autonomous portfolio-project workspace. `PROJECT_IDEAS.md` is the prioritized backlog and `AGENTS.md` defines the development policy.
 
-The [product direction](docs/PRODUCT_DIRECTION.md) records the revised visions and completion standard. Thirteen implemented apps remain in active development; Composure is owner-deferred pending platform reconsideration. Working prototypes and completed first milestones do not establish readiness for maintenance.
+The [product direction](docs/PRODUCT_DIRECTION.md) records the revised visions and completion standard. Twelve implemented apps remain in active development; Composure and Shot Studio are owner-deferred. Working prototypes and completed first milestones do not establish readiness for maintenance.
 
 ## Development branch
 
@@ -21,7 +21,7 @@ The [product direction](docs/PRODUCT_DIRECTION.md) records the revised visions a
 | Duet | Active | `apps/duet` |
 | Style Studio | Active | `apps/style-studio` |
 | Friendly Challenges | Active | `apps/friendly-challenges` |
-| Shot Studio | Active | `apps/shot-studio` |
+| Shot Studio | Deferred | `apps/shot-studio` |
 | Lens Studio | Active | `apps/lens-studio` |
 | Stock Notebook | Active | `apps/stock-notebook` |
 | Composure | Deferred | `apps/composure` |

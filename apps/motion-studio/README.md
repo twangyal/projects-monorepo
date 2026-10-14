@@ -1,5 +1,7 @@
 # Motion Studio
 
+**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 11](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. This redesign is requested future work.
+
 A local drawing and animation workspace: make original freehand artwork, create independent held drawings, review geometric in-betweens, combine artwork with layer poses and imported images, and export a GIF. Keep up to eight independently editable projects in your browser and download portable backups. An optional local service publishes immutable private snapshot links for viewing, downloads and explicit local copies. AI assistance and live synchronization remain future work.
 
 ## Run

@@ -1,5 +1,7 @@
 # Shot Studio
 
+**DEFERRED — owner update, 2026-10-14.** Scheduled/autonomous development is paused until the owner explicitly resumes Shot Studio. Preserve the current implementation, historical evidence and unresolved export/headset limits. No replacement platform has been selected. See [product direction, section 7](../../docs/PRODUCT_DIRECTION.md#7-shot-studio).
+
 A local 3D filmmaking sketchbook for idea #7. Stage two block characters in a
 courtyard, choose looping actions or author timed movement, visibility and action cues, adjust lighting, compose static or
 traveling cameras, rehearse or scrub the shot list, retain alternate recorded takes, assemble copied scenes into editable sequences, add a local sequence soundtrack, and export WebM films. Native browser
