@@ -38,3 +38,18 @@ v3 cannot simply replace v2: it is 11 points worse on English singing. The studi
 - **Speed.** English songs pay for the extra pass: the v3 prefix, a model switch, then v2 on the whole song. In this evaluation, recognition of English songs averaged 42.7 s against 22.9 s with v3 alone, measured while other work shared the CPU.
 - **Coverage.** Mixed-language songs are recognized with the model chosen from their first 100 words. Only French, German and Spanish were measured; v3's other 21 languages are untested on singing.
 - **Size.** The sample is small: 59 songs.
+
+
+## Completing the timing evaluation (#241)
+
+The retained multilingual summary above contains WER only. Per-language word-onset and automatic/supplied-line timing measurements still need to be retained; the 2026-10-14 review did not rerun the songs. `scripts/evaluate_lyrics.py` produces those metrics through the production path and now accepts `--model-choice auto|english|multilingual`, matching the studio's retry selection. Run in the documented Python 3.11 ML environment with verified models and the local JamendoLyrics audio/annotations, for example:
+
+```bash
+python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir /path/to/models --work /path/to/evaluation --language French --max-seconds 120 --model-choice auto --output french-auto.json
+python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir /path/to/models --work /path/to/evaluation --language French --max-seconds 120 --model-choice english --output french-english.json
+python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir /path/to/models --work /path/to/evaluation --language French --max-seconds 120 --model-choice multilingual --output french-multilingual.json
+```
+
+For the original comparison use all 20 English songs capped at 300 seconds, all 19 French songs capped at 120 seconds, and German/Spanish capped at 120 seconds with `--limit 10`. Keep the dataset order. Share the same work directory to reuse identical separated vocals across recognizers. Cache identity includes audio SHA-256, clip cap, separation-model pin and production code; each recognition result separately includes choice, installed selected-model pins and recognition code. Reports name the actual recognizer and retain these identities. An old unbound `transcript.json` is preserved as historical evidence and is never accepted as a current run. Changing the clip cap, input bytes, model set or implementation cannot silently reuse its timings.
+
+Four injected-inference tests cover distinct chosen-model results sharing identical vocals, source/clip changes, changed installed-model sets and preserved-but-rejected legacy caches. Fixtures verify cache behavior only. The current workspace has neither dataset audio/annotations nor verified models, so real-song results remain required. User-measured correction effort also remains open.

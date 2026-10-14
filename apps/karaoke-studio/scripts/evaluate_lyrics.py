@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import math
 import json
 from pathlib import Path
 import statistics
@@ -42,15 +44,39 @@ def edit_distance(a: list[str], b: list[str]) -> int:
     return previous[-1]
 
 
-def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DURATION) -> dict:
-    from karaoke.pipeline import separate_clip
-    from karaoke.transcription import transcribe_vocals
-    result, separated = work / 'transcript.json', work / 'separation.json'
+def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DURATION,
+            *, model_choice: str = 'auto') -> dict:
+    from karaoke.pipeline import MODEL_SHA256, separate_clip
+    from karaoke.transcription import installed_models, selected_models, transcribe_vocals, validate_transcript
+    if type(max_seconds) not in (int, float) or not math.isfinite(max_seconds) or not 1 <= max_seconds <= MAX_DURATION:
+        raise ValueError(f'Evaluation length must be 1–{MAX_DURATION} seconds.')
+    models = selected_models(installed_models(model_dir), model_choice)
+
+    def digest(path):
+        with path.open('rb') as source:
+            return hashlib.file_digest(source, 'sha256').hexdigest()
+
+    def identity(value):
+        return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+    app = Path(__file__).resolve().parents[1] / 'karaoke'
+    # Source bytes and bounded production configuration identify the separated vocals. Model
+    # comparisons share those same vocals, but never another clip length or input song.
+    clip = dict(audioSha256=digest(song), maxSeconds=max_seconds, separatorSha256=MODEL_SHA256,
+                implementation={name: digest(app / name) for name in ('pipeline.py', 'worker.py', 'mdx.py', 'chunks.py', 'limits.py')})
+    work = work / 'clips' / identity(clip)
+    recognition = dict(modelChoice=model_choice, models={model.name: model.files for model in models},
+                       implementation={name: digest(app / name) for name in ('transcription.py', 'transcribe_worker.py')})
+    result, separated = work / f'transcript-{identity(recognition)}.json', work / 'separation.json'
     if result.exists():
         value = json.loads(result.read_text())
-        if all('confidence' in word for word in value['words']):
-            return value
-        result.unlink()
+        duration = value['duration']
+        if not 0 < duration <= max_seconds:
+            raise ValueError('Cached evaluation duration exceeds this clip bound.')
+        validate_transcript({key: value[key] for key in ('model', 'words', 'seconds')}, duration)
+        if value['model'] not in {model.name for model in models}:
+            raise ValueError('Cached evaluation transcript came from another recognizer.')
+        return value
     media = work / 'media'
     cancel = threading.Event()
     if separated.exists():
@@ -62,13 +88,15 @@ def process(song: Path, work: Path, model_dir: Path, max_seconds: float = MAX_DU
         subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', str(song), '-t', str(max_seconds), '-ac', '2', '-ar', '44100',
                         '-c:a', 'pcm_s16le', str(source)], check=True)
         duration = separate_clip(source, media, model_dir, cancel, lambda _s: None)
-        separated.write_text(json.dumps({'duration': duration}))
+        separated.write_text(json.dumps({'duration': duration, **clip}))
         for name in ('source.wav', 'backing.wav'):
             (media / name).unlink(missing_ok=True)
         source.unlink()
     (work / 'words.json').unlink(missing_ok=True)
-    transcript = transcribe_vocals(media / 'vocals.wav', work / 'words.json', model_dir, duration, cancel, lambda _s: None)
-    value = dict(duration=duration, **transcript)
+    transcript = transcribe_vocals(media / 'vocals.wav', work / 'words.json', model_dir, duration, cancel,
+                                   lambda _s: None, model_choice=model_choice)
+    value = dict(duration=duration, audioSha256=clip['audioSha256'], maxSeconds=max_seconds,
+                 modelChoice=model_choice, cacheIdentity=dict(clip=identity(clip), recognition=identity(recognition)), **transcript)
     result.write_text(json.dumps(value))
     return value
 
@@ -85,6 +113,7 @@ def main() -> None:
     parser.add_argument('--output', type=Path)
     parser.add_argument('--max-seconds', type=float, default=MAX_DURATION)
     parser.add_argument('--language', default='English', help='JamendoLyrics language: English, French, German or Spanish')
+    parser.add_argument('--model-choice', choices=('auto', 'english', 'multilingual'), default='auto')
     parser.add_argument('--limit', type=int, help='Only the first N songs of the language (in dataset order)')
     args = parser.parse_args()
     rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == args.language][:args.limit]
@@ -93,7 +122,7 @@ def main() -> None:
     confidence_pairs, heard_lines = [], []
     for row in rows:
         name = Path(row['Filepath']).stem
-        transcript = process(args.dataset / 'mp3' / row['Filepath'], args.work / name, args.model_dir, args.max_seconds)
+        transcript = process(args.dataset / 'mp3' / row['Filepath'], args.work / name, args.model_dir, args.max_seconds, model_choice=args.model_choice)
         duration, words = transcript['duration'], transcript['words']
         timing = list(csv.DictReader((args.dataset / 'annotations' / 'words' / f'{name}.csv').open()))
         reference_words = (args.dataset / 'lyrics' / f'{name}.words.txt').read_text().split()
@@ -122,14 +151,16 @@ def main() -> None:
         line_errors += song_lines
         heard_lines += [(cue['matched'] >= 0.5, error) for cue, error in zip(aligned, song_lines)]
         report.append(dict(
-            song=name, genre=row['Genre'], polyphonic=row['Polyphonic'] == 'true', seconds=round(duration, 1),
+            song=name, model=transcript['model'], modelChoice=args.model_choice, audioSha256=transcript['audioSha256'],
+            cacheIdentity=transcript['cacheIdentity'], genre=row['Genre'], polyphonic=row['Polyphonic'] == 'true', seconds=round(duration, 1),
             wer=round(errors / len(reference), 3), onsetMedian=round(statistics.median(song_onsets), 3) if song_onsets else None,
             automaticLineStartsWithin1s=round(hits / len(lines), 3) if lines else None,
             alignedLineStartMedian=round(statistics.median(song_lines), 3) if song_lines else None,
             alignedWithin1s=share(song_lines, 1), recognitionSeconds=round(transcript['seconds'], 1)))
         print(json.dumps(report[-1]), flush=True)
     summary = dict(
-        songs=len(report), referenceWords=totals['reference'], wer=round(totals['errors'] / totals['reference'], 3),
+        language=args.language, maxSeconds=args.max_seconds, modelChoice=args.model_choice,
+        models=sorted({r["model"] for r in report}), songs=len(report), referenceWords=totals['reference'], wer=round(totals['errors'] / totals['reference'], 3),
         medianSongWer=round(statistics.median(r['wer'] for r in report), 3),
         wordOnsetMedian=round(statistics.median(onsets), 3), wordOnsetWithin0_3s=share(onsets, .3), wordOnsetWithin1s=share(onsets, 1),
         automaticLineStartsWithin1s=round(auto_hits / auto_lines, 3),
