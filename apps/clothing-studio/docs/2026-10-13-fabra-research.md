@@ -95,6 +95,6 @@ Each milestone delivers a usable end-to-end slice. All of it stays local and acc
    - Edit piece measurements and seams with live 3D, building on the skirt pattern work.
    - Drape the T-shirt.
    - DXF import and export.
-6. **Assistive generation.**
+6. **Assistive generation** (describing a style in words, read by a local deterministic interpreter, done in #245).
    - Prompt-to-material and prompt-to-print using local procedural generators.
    - Model-based images only with a genuinely free provider or owner-authorized spending.

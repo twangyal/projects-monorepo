@@ -30,6 +30,13 @@ function cues(value: unknown, duration: number, score: 'matched' | 'confidence')
   return result;
 }
 
+/** Which recognizer heard a clip, in words: the studio uses its English model for English songs. */
+export function recognizerName(model: string): string {
+  if (model.startsWith('parakeet-tdt-0.6b-v2')) return 'the English recognition model';
+  if (model.startsWith('parakeet-tdt-0.6b-v3')) return 'the multilingual recognition model';
+  return 'the local recognition model';
+}
+
 export function parseTranscript(value: unknown, duration: number): Transcript {
   const reply = record(value);
   if (reply.available === false && Object.keys(reply).length === 1) return { available: false };

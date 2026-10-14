@@ -84,7 +84,7 @@ function sourceText(value: unknown): string {
   return text;
 }
 function instrument(value: unknown): Instrument {
-  if (value !== 'sine' && value !== 'triangle' && value !== 'sawtooth') invalid('Choose a local instrument for every selected channel.');
+  if (value !== 'sine' && value !== 'triangle' && value !== 'sawtooth' && value !== 'drums') invalid('Choose a local instrument for every selected channel.');
   return value;
 }
 function name(value: unknown): MidiName {
@@ -148,7 +148,7 @@ function preview(value: unknown): MidiPreview {
   if (!tempoExplicit && tempoMicros !== 500000) invalid();
   const title = name(root.title);
   let previousChannel = -1, totalAttacks = 0, supportedPairs = 0;
-  const issueCodes = ['shared-channel', 'percussion', 'controller', 'expression', 'changing-state', 'ambiguous-notes', 'empty-lane'];
+  const issueCodes = ['shared-channel', 'controller', 'expression', 'changing-state', 'ambiguous-notes', 'empty-lane'];
   const lanes: MidiLane[] = array(root.lanes, LIMITS.lanes).map(value => {
     const part = object(value, ['id', 'channel', 'sourceTracks', 'name', 'noteOnCount', 'notes', 'program', 'programExplicit', 'volume', 'volumeExplicit', 'issues']);
     const channel = integer(part.channel, 0, 15);
@@ -166,7 +166,6 @@ function preview(value: unknown): MidiPreview {
       seenIssues.add(code);
       return { code: code as MidiLane['issues'][number]['code'], message };
     });
-    if (channel === 9 && !seenIssues.has('percussion')) invalid();
     if (tracks.length > 1 && !seenIssues.has('shared-channel')) invalid();
     if (!attacks && !seenIssues.has('empty-lane')) invalid();
     const program = integer(part.program, 0, 127), volume = integer(part.volume, 0, 127);
@@ -245,6 +244,8 @@ export function buildMidiReview(base: Composition, source: MidiPreview, choices:
     const choice = checkedChoices.lanes.find(choice => choice.laneId === part.id);
     if (!choice) continue;
     if (part.issues.length) invalid(`Channel ${part.channel + 1} is unsupported; deselect that part.`);
+    // General MIDI channel 10 carries percussion keys, which only the drum kit plays as drums.
+    if (part.channel === 9 && choice.instrument !== 'drums') invalid('Channel 10 is General MIDI percussion; choose the drum kit for it.');
     let outsideNotes = 0;
     const notes: Composition['tracks'][number]['notes'] = [];
     for (const note of part.notes) {
@@ -253,8 +254,11 @@ export function buildMidiReview(base: Composition, source: MidiPreview, choices:
         invalid(`Channel ${part.channel + 1} note ticks ${note.onTick}–${note.offTick} cross the source window boundary. Adjust the window or deselect that part.`);
       }
       if (notes.length >= 256) invalid('Each selected part must contain at most 256 included notes.');
-      notes.push({ id: allocate(), pitch: note.pitch, start: (note.onTick - startTick) / checkedSource.ppqn,
-        duration: (note.offTick - note.onTick) / checkedSource.ppqn, velocity: note.velocity / 127 });
+      // Drum hits are one-shots: GM key 35 (acoustic bass drum) plays as the kit's kick inside the editor's
+      // C2–C7 range, and hits shorter than a sixteenth (common in drum MIDI) are held for one, which the kit does not hear.
+      const drums = choice.instrument === 'drums', duration = (note.offTick - note.onTick) / checkedSource.ppqn;
+      notes.push({ id: allocate(), pitch: drums && note.pitch === 35 ? 36 : note.pitch, start: (note.onTick - startTick) / checkedSource.ppqn,
+        duration: drums ? Math.max(0.25, duration) : duration, velocity: note.velocity / 127 });
     }
     if (!notes.length) invalid(`Channel ${part.channel + 1} has no whole notes inside the chosen window.`);
     includedNotes += notes.length;
@@ -278,6 +282,7 @@ export function buildMidiReview(base: Composition, source: MidiPreview, choices:
   if (checkedSource.ignoredReleaseVelocityCount) warnings.push(`${checkedSource.ignoredReleaseVelocityCount} nonzero source note-off release velocities are omitted.`);
   if (!checkedSource.tempoExplicit) warnings.push('Source tempo defaults to 120 BPM; this is an initial-state convention.');
   if (checkedSource.lanes.some(part => !part.programExplicit || !part.volumeExplicit)) warnings.push('Absent initial program/CC7 use GM program 0 and CC7 100 defaults; these do not establish an external receiver state.');
+  if (tracks.some(part => part.instrument === 'drums')) warnings.push('Drum kit parts play General MIDI percussion keys with the local synthesized kit; key 35 plays as the kick (36) and hits shorter than a sixteenth are held for one. Same-key rolls faster than sixteenths merge on MIDI re-export.');
   if (tracks.some(part => part.volume === 0)) warnings.push('A selected channel has source CC7 zero and imports as a silent track; onset velocity remains separate.');
   const review: MidiImportReview = { base: checkedBase, candidate, choices: checkedChoices, lanes,
     sourceNoteOnCount: checkedSource.noteOnCount, includedNotes, excludedNoteOnCount: excluded, warnings };

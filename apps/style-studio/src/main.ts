@@ -9,7 +9,8 @@ import { averageFeatures, featuresFromTags, tagsFromFeatures } from './features.
 import { assessOutfit, generateAlternatives, trainPreferenceModel } from './model.ts';
 import { ProjectHistory } from './history.ts';
 import { openProjectStore, SavedCopyConflict, SavedCopyProtected, type ProjectStore } from './storage.ts';
-import { exportLookPng, normalizePhoto, validateProjectPhotos } from './images.ts';
+import { exportLookPng, normalizePhoto, readPhotoColors, validateProjectPhotos } from './images.ts';
+import { colorHarmony, type GarmentColors } from './color-read.ts';
 import {
   CATEGORIES, FITS, FORMALITIES, LIMITS, PALETTES, STYLES,
   type Category, type Label, type Mode, type Occasion, type PhotoAsset,
@@ -25,7 +26,7 @@ mount.innerHTML = `
   <section class="hero" aria-labelledby="hero-title"><div><p class="eyebrow">A wardrobe that feels like you</p><h1 id="hero-title">Good style starts<br>with <em>your taste.</em></h1><p class="hero-copy">Keep the pieces you own. Teach us what you like. Find a few new ways to wear them.</p><button id="load-sample" class="button secondary">Load sample profile</button><p class="quiet">Original sample pieces and labels. Replacing your profile is confirmed and undoable.</p></div><aside class="model-panel" aria-labelledby="model-heading"><div class="panel-top"><span class="eyebrow">Your preference notebook</span><span class="dot" aria-hidden="true"></span></div><h2 id="model-heading">Learning your point of view</h2><p id="model-status" role="status"></p><div id="model-counts" class="counts"></div><p class="quiet">A small model learns from your Like / Pass labels and the tags you enter. Photos are references only; there is no automatic image recognition.</p><p class="quiet">Scores describe estimated taste alignment, not probabilities, fit or objective fashion quality.</p></aside></section>
   <section class="profile-bar" aria-label="Profile and backup"><form id="profile-form"><label for="profile-title">Profile title</label><div class="inline"><input id="profile-title" name="title" maxlength="80" required><button class="button subtle" type="submit">Save profile title</button></div></form><div class="profile-actions"><button id="undo" class="button subtle">Undo</button><button id="redo" class="button subtle">Redo</button><button id="export-profile" class="button subtle">Export profile</button><button id="import-profile" class="button subtle">Import profile</button><input id="profile-import" type="file" accept=".json,application/json" class="visually-hidden" aria-label="Choose profile JSON"><button id="new-profile" class="button subtle">New profile</button></div><div class="save-line"><p id="save-status" role="status">Opening local storage…</p><button id="retry-save" class="button subtle" hidden>Retry saving</button><button id="retry-load" class="button subtle">Reload saved profile</button><button id="replace-saved-copy" class="button subtle">Replace saved copy</button></div></section>
   <div class="message-line"><p id="message" role="status" aria-live="polite">Start with your own pieces, or load the sample profile to try the complete flow.</p><button id="cancel-operation" class="button subtle" hidden>Cancel operation</button></div>
-  <section id="wardrobe" class="workspace-section" aria-labelledby="wardrobe-heading"><div class="section-heading"><div><p class="eyebrow">01 / The pieces you reach for</p><h2 id="wardrobe-heading">Your wardrobe</h2></div><p id="wardrobe-count" class="section-caption"></p></div><div class="section-layout"><form id="piece-form" class="editor-panel"><h3 id="piece-form-heading">Add a wardrobe piece</h3><p class="quiet">Use your own photo or keep an illustrated reference. Describe the piece yourself.</p><label for="piece-name">Piece name</label><input id="piece-name" name="name" required maxlength="80" placeholder="The linen shirt"><label for="piece-category">Category</label><select id="piece-category" name="category"><option value="top">Top</option><option value="bottom">Bottom</option><option value="shoes">Shoes</option></select><div id="piece-tags" class="tag-fields"></div><label for="piece-photo">Reference photo (optional)</label><input id="piece-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="piece-photo-preview" class="photo-draft"></div><p id="piece-photo-status" class="quiet" role="status"></p><button id="remove-piece-photo" class="text-button" type="button" hidden>Remove reference photo</button><div class="form-actions"><button id="piece-submit" class="button" type="submit">Add wardrobe piece</button><button id="cancel-piece-edit" class="button subtle" type="button" hidden>Cancel edit</button></div></form><div><div id="wardrobe-list" class="wardrobe-grid"></div><p id="wardrobe-empty" class="empty">A favorite shirt, a reliable pair of trousers, the shoes you always wear. Add one of each to start making looks.</p></div></div></section>
+  <section id="wardrobe" class="workspace-section" aria-labelledby="wardrobe-heading"><div class="section-heading"><div><p class="eyebrow">01 / The pieces you reach for</p><h2 id="wardrobe-heading">Your wardrobe</h2></div><p id="wardrobe-count" class="section-caption"></p></div><div class="section-layout"><form id="piece-form" class="editor-panel"><h3 id="piece-form-heading">Add a wardrobe piece</h3><p class="quiet">Use your own photo or keep an illustrated reference. Describe the piece yourself.</p><label for="piece-name">Piece name</label><input id="piece-name" name="name" required maxlength="80" placeholder="The linen shirt"><label for="piece-category">Category</label><select id="piece-category" name="category"><option value="top">Top</option><option value="bottom">Bottom</option><option value="shoes">Shoes</option></select><div id="piece-tags" class="tag-fields"></div><label for="piece-photo">Reference photo (optional)</label><input id="piece-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="piece-photo-preview" class="photo-draft"></div><p id="piece-photo-status" class="quiet" role="status"></p><div id="piece-color-read" class="color-read" aria-live="polite" hidden></div><button id="remove-piece-photo" class="text-button" type="button" hidden>Remove reference photo</button><div class="form-actions"><button id="piece-submit" class="button" type="submit">Add wardrobe piece</button><button id="cancel-piece-edit" class="button subtle" type="button" hidden>Cancel edit</button></div></form><div><div id="wardrobe-list" class="wardrobe-grid"></div><p id="wardrobe-empty" class="empty">A favorite shirt, a reliable pair of trousers, the shoes you always wear. Add one of each to start making looks.</p></div></div></section>
   <section id="taste" class="workspace-section" aria-labelledby="taste-heading"><div class="section-heading"><div><p class="eyebrow">02 / Your likes, your labels</p><h2 id="taste-heading">Teach your taste</h2></div><p id="example-count" class="section-caption"></p></div><div class="section-layout"><form id="example-form" class="editor-panel"><h3>Keep an outfit opinion</h3><p class="quiet">An outfit can be a reference you like or one you would pass on. Enter the tags you see.</p><label for="example-caption">Outfit caption</label><input id="example-caption" name="caption" required maxlength="160" placeholder="Relaxed weekend layers"><div id="example-tags" class="tag-fields"></div><label for="example-label">Your opinion</label><select id="example-label" name="label"><option value="like">Like</option><option value="pass">Pass</option></select><label for="example-photo">Outfit reference photo (optional)</label><input id="example-photo" type="file" accept="image/jpeg,image/png,image/webp"><div id="example-photo-preview" class="photo-draft"></div><p id="example-photo-status" class="quiet" role="status"></p><button id="remove-example-photo" class="text-button" type="button" hidden>Remove reference photo</button><button id="example-submit" class="button" type="submit">Teach my taste</button></form><div><div id="example-list" class="example-list"></div><p id="example-empty" class="empty">Your opinions make this personal. Start with at least eight examples, including three Likes and three Passes.</p></div></div></section>
   <section id="assessment" class="workspace-section" aria-labelledby="assessment-heading"><div class="section-heading"><div><p class="eyebrow">03 / A second look</p><h2 id="assessment-heading">Does this feel like you?</h2></div><p class="section-caption">You describe the outfit. Your model supplies the estimate.</p></div><div class="assessment-layout"><form id="assessment-form" class="editor-panel"><h3>Assess a new outfit</h3><div id="assessment-tags" class="tag-fields"></div><button class="button" type="submit">Assess this outfit</button></form><div id="assessment-result" class="assessment-result" role="status"><p class="eyebrow">Taste alignment</p><h3>Your point of view, made visible.</h3><p>Choose the tags that describe a look, then assess it against your labeled examples.</p></div></div></section>
   <section id="compose" class="workspace-section" aria-labelledby="compose-heading"><div class="section-heading"><div><p class="eyebrow">Your pieces, your choice</p><h2 id="compose-heading">Build a look you chose</h2></div></div><div class="assessment-layout"><form id="compose-form" class="editor-panel"><p class="quiet">Choose one owned piece from each category. Assess their declared tags or save the complete combination. Saving does not teach a Like or Pass opinion.</p><label for="compose-top">Outfit top</label><select id="compose-top" name="top"><option value="">Choose top</option></select><label for="compose-bottom">Outfit bottom</label><select id="compose-bottom" name="bottom"><option value="">Choose bottom</option></select><label for="compose-shoes">Outfit shoes</label><select id="compose-shoes" name="shoes"><option value="">Choose shoes</option></select><label for="compose-name">Chosen look name</label><input id="compose-name" name="name" maxlength="80" required><label for="compose-notes">Chosen look notes</label><textarea id="compose-notes" name="notes" maxlength="500" rows="3"></textarea><div class="form-actions"><button id="compose-assess" class="button secondary" type="button">Assess chosen outfit</button><button class="button" type="submit">Save chosen outfit</button><button id="compose-discard" class="button subtle" type="button">Discard chosen outfit edits</button></div></form><div id="compose-result" class="assessment-result" role="status"></div></div></section>
@@ -217,9 +218,40 @@ function renderPhotoDraft(kind: 'piece' | 'example'): void {
   const area = element(`#${kind}-photo-preview`); area.replaceChildren();
   const asset = draft.asset ?? project.photos.find(photo => photo.id === draft.existingId);
   if (asset) { const image = node('img'); image.src = asset.dataUrl; image.alt = 'Selected local reference photo'; area.append(image); }
+  if (kind === 'piece') renderColorRead(asset ?? null);
   element(`#remove-${kind}-photo`).hidden = !(draft.asset || draft.existingId);
   element<HTMLButtonElement>(`#${kind}-submit`).disabled = draft.busy;
   storageControls();
+}
+function swatches(colors: GarmentColors): HTMLElement {
+  const list = node('ul', 'swatches');
+  for (const color of colors.colors) {
+    const item = node('li'); const chip = node('span', 'swatch'); chip.style.background = color.hex; chip.setAttribute('aria-hidden', 'true');
+    item.append(chip, `${color.name} ${Math.round(color.share * 100)}%`); list.append(item);
+  }
+  return list;
+}
+let colorReadFor = '';
+/** Suggest the palette tag from the photo's measured colors. Applying it is always an explicit choice. */
+function renderColorRead(asset: PhotoAsset | null): void {
+  const area = element('#piece-color-read');
+  if (!asset) { colorReadFor = ''; area.hidden = true; area.replaceChildren(); return; }
+  if (colorReadFor === asset.id) return;
+  colorReadFor = asset.id; area.hidden = false;
+  area.replaceChildren(node('p', 'quiet', 'Reading the colors in this photo…'));
+  void readPhotoColors(asset).then(colors => {
+    if (colorReadFor !== asset.id) return;
+    if (!colors) { area.replaceChildren(node('p', 'quiet', 'The garment could not be separated from its background, so no colors were read. Tag the palette yourself.')); return; }
+    const use = node('button', 'button subtle', `Use suggested palette: ${titleCase(colors.palette)}`) as HTMLButtonElement;
+    use.type = 'button'; use.id = 'use-suggested-palette';
+    use.addEventListener('click', () => {
+      interact(); field(pieceForm, 'palette').value = colors.palette; pieceForm.dataset.dirty = 'true';
+      message(`Palette set to ${titleCase(colors.palette)} from the photo. Save the piece to keep it.`);
+    });
+    area.replaceChildren(node('p', 'eyebrow', 'Colors read from this photo'), swatches(colors),
+      node('p', '', `Suggested palette: ${titleCase(colors.palette)}. ${colors.reason}`), use,
+      node('p', 'quiet', 'Measured locally from the photo’s pixels against its background. Lighting and backdrop affect it; keep your own tag if it looks wrong.'));
+  }).catch(() => { if (colorReadFor === asset.id) area.replaceChildren(node('p', 'quiet', 'This photo’s colors could not be read. Tag the palette yourself.')); });
 }
 function clearPhotoDraft(kind: 'piece' | 'example'): void {
   const draft = photoDrafts[kind]; draft.controller?.abort(); draft.sequence++;
@@ -440,6 +472,26 @@ function renderComposition(): void {
   const score = assessOutfit(averageFeatures(pieces), model);
   if (score) output.append(scoreContent(score));
   else output.append(node('p', '', model.status === 'insufficient' ? model.reason : 'Your model is not ready.'), node('p', 'quiet', 'No learned score is shown until there are enough explicit labels. You can still save this outfit.'));
+  output.append(colorNotes(pieces));
+}
+/** How the pieces' photographed colors relate, by disclosed rules; filled in once the photos are read. */
+function colorNotes(pieces: readonly Piece[]): HTMLElement {
+  const section = node('div', 'color-notes'); section.id = 'compose-colors';
+  section.append(node('p', 'eyebrow', 'How the colors work together'), node('p', 'quiet', 'Reading the pieces’ photos…'));
+  const signature = JSON.stringify(pieces.map(piece => [piece.id, piece.photoId]));
+  void Promise.all(pieces.map(piece => {
+    const photo = project.photos.find(item => item.id === piece.photoId);
+    return photo ? readPhotoColors(photo).catch(() => null) : Promise.resolve(null);
+  })).then(readings => {
+    let current = '';
+    try { current = JSON.stringify(chosenPieces().map(piece => [piece.id, piece.photoId])); } catch { return; }
+    if (!section.isConnected || current !== signature) return;
+    const list = node('ul');
+    for (const note of colorHarmony(pieces.map((piece, index) => ({ label: piece.name, colors: readings[index] })))) list.append(node('li', '', note));
+    section.replaceChildren(node('p', 'eyebrow', 'How the colors work together'), list,
+      node('p', 'quiet', 'Measured from your photos with fixed color rules (lightness contrast, hue relations, neutral anchors). These describe the colors; they are not learned from your labels or a judgement of taste.'));
+  });
+  return section;
 }
 for (const event of ['input','change']) composeForm.addEventListener(event, () => {
   composeForm.dataset.dirty = 'true'; compositionAssessed = false; renderComposition();

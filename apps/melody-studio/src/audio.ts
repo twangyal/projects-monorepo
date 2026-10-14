@@ -5,6 +5,7 @@ import { DEFAULT_ENVELOPE, envelopeLevel, validateEnvelope } from './sound-envel
 import { lowpass, validateFilter } from './sound-filter.ts';
 import { validateEcho } from './sound-echo.ts';
 import { validateVolumeRamp, volumeRampLevel } from './volume-ramp.ts';
+import { drumSeconds, drumVoice } from './drums.ts';
 import type { Composition, Note, SoundEnvelope, SoundFilter, VolumeRamp, VolumeCurve } from './types.ts';
 
 const MIN_HZ = 440 * 2 ** ((36 - 69) / 12);
@@ -170,6 +171,23 @@ export function transcribe(samples: Float32Array, sampleRate: number, tempo: num
 
 /** Deterministic local synthesis, with short release tails and peak-limited mixing. */
 export function renderComposition(project: Composition, sampleRate = 22050): Float32Array {
+  const result = renderDry(project, sampleRate);
+  limitPeak([result]);
+  return result;
+}
+
+/** Scale every channel together so the loudest sample is at most 0.95. */
+export function limitPeak(channels: Float32Array[]): void {
+  let peak = 0;
+  for (const channel of channels) for (const sample of channel) peak = Math.max(peak, Math.abs(sample));
+  if (peak > 0.95) for (const channel of channels) for (let i = 0; i < channel.length; i++) channel[i] *= 0.95 / peak;
+}
+
+/**
+ * The unlimited mono sum of audible tracks (or only `onlyTrack`). Its length always covers the whole
+ * composition's notes, echoes and releases, plus `tailSeconds`, so per-track renders line up.
+ */
+export function renderDry(project: Composition, sampleRate = 22050, onlyTrack?: string, tailSeconds = 0): Float32Array {
   checkSampleRate(sampleRate);
   checkTempo(project.tempo);
   const secondsPerBeat = 60 / project.tempo;
@@ -182,14 +200,20 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
   for (const track of project.tracks) {
     const settings = track.envelope === undefined ? DEFAULT_ENVELOPE : validateEnvelope(track.envelope);
     const echo = track.echo === undefined ? undefined : validateEcho(track.echo);
-    for (const note of track.notes) endSeconds = Math.max(endSeconds, (note.start + note.duration + (echo ? echo.beats * echo.repeats : 0)) * secondsPerBeat + settings.release);
+    for (const note of track.notes) {
+      const delay = echo ? echo.beats * echo.repeats : 0;
+      // Drum hits ring for their kit piece's length regardless of note duration or envelope.
+      const ring = track.instrument === 'drums' ? Math.max((note.start + note.duration + delay) * secondsPerBeat, (note.start + delay) * secondsPerBeat + drumSeconds(note.pitch))
+        : (note.start + note.duration + delay) * secondsPerBeat + settings.release;
+      endSeconds = Math.max(endSeconds, ring);
+    }
   }
-  const frames = Math.ceil(endSeconds * sampleRate);
+  const frames = Math.ceil((endSeconds + tailSeconds) * sampleRate);
   if (!Number.isSafeInteger(frames) || frames > MAX_RENDER_FRAMES) throw new RangeError('Rendered audio exceeds the frame budget. Lower the sample rate or shorten the composition.');
   const result = new Float32Array(frames);
   const groups = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; harmonics?:number[]; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve; gain: number }>();
   for (const track of project.tracks) {
-    if (track.muted || track.volume === 0) continue;
+    if (track.muted || track.volume === 0 || (onlyTrack !== undefined && track.id !== onlyTrack)) continue;
     const envelope = track.envelope === undefined ? DEFAULT_ENVELOPE : validateEnvelope(track.envelope);
     const harmonics=track.harmonics===undefined?undefined:validateHarmonics(track.harmonics);
     const filter = track.filter === undefined ? undefined : validateFilter(track.filter);
@@ -202,7 +226,7 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
       // filter state and release. Beat offsets are rounded only at placement.
       for (let tap = 0; tap <= (echo?.repeats ?? 0); tap++) {
         const delayed = tap === 0 ? note : {...note, start: note.start + tap * echo!.beats};
-        const key = `${track.instrument}:${delayed.pitch}:${delayed.start}:${delayed.duration}:${JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(harmonics)}:${JSON.stringify(volumeRamp)}:${JSON.stringify(volumeCurve)}`;
+        const key = `${track.instrument}:${delayed.pitch}:${delayed.start}:${track.instrument === 'drums' ? 0 : delayed.duration}:${track.instrument === 'drums' ? '' : JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(harmonics)}:${JSON.stringify(volumeRamp)}:${JSON.stringify(volumeCurve)}`;
         const gain = track.volume * note.velocity * 0.4 * (tap === 0 ? 1 : echo!.decay ** tap);
         const existing = groups.get(key);
         if (existing) existing.gain += gain;
@@ -214,7 +238,7 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
   // duplicate sample streams and accumulating thousands of Float32 rounding errors.
   const voices = new Map<string, { note: Note; instrument: typeof project.tracks[number]['instrument']; envelope: Readonly<SoundEnvelope>; filter?: SoundFilter; harmonics?:number[]; placements: { start: number; gain: number; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve }[] }>();
   for (const { note, instrument, envelope, filter, harmonics, volumeRamp, volumeCurve, gain } of groups.values()) {
-    const key = `${instrument}:${note.pitch}:${note.duration}:${JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(harmonics)}`;
+    const key = `${instrument}:${note.pitch}:${instrument === 'drums' ? 0 : note.duration}:${instrument === 'drums' ? '' : JSON.stringify(envelope)}:${JSON.stringify(filter)}:${JSON.stringify(harmonics)}`;
     const placement = { start: Math.round(note.start * secondsPerBeat * sampleRate), gain, volumeRamp, volumeCurve };
     const existing = voices.get(key);
     if (existing) existing.placements.push(placement);
@@ -223,6 +247,12 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
   // Render each distinct pitch/duration only once, then mix its placements.
   // Keeping only the current waveform bounds extra memory to one note's length.
   for (const { note, instrument, envelope, filter, harmonics, placements } of voices.values()) {
+    if (instrument === 'drums') {
+      const voice = drumVoice(note.pitch, sampleRate);
+      const shape = filter ? lowpass(filter, sampleRate) : null;
+      mixPlacements(shape ? voice.map(sample => shape(sample)) : voice, placements, result, sampleRate, secondsPerBeat);
+      continue;
+    }
     const hz = 440 * 2 ** ((note.pitch - 69) / 12);
     const duration = note.duration * secondsPerBeat;
     const durationSamples = duration * sampleRate;
@@ -242,19 +272,21 @@ export function renderComposition(project: Composition, sampleRate = 22050): Flo
       const level = envelopeLevel(i, durationSamples, attackSamples, decaySamples, envelope.sustain, releaseSamples);
       waveform[i] = (shape ? shape(wave) : wave) * level;
     }
-    for (const { start, gain, volumeRamp, volumeCurve } of placements) {
-      const mixLength = Math.min(length, result.length - start);
-      if (volumeRamp || volumeCurve) {
-        for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain * (volumeRamp ? volumeRampLevel(volumeRamp, (start + i) / sampleRate / secondsPerBeat) : 1) * (volumeCurve ? volumeCurveLevel(volumeCurve, (start + i) / sampleRate / secondsPerBeat) : 1);
-      } else {
-        for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain;
-      }
+    mixPlacements(waveform, placements, result, sampleRate, secondsPerBeat);
+  }
+  return result;
+}
+
+function mixPlacements(waveform: Float64Array, placements: { start: number; gain: number; volumeRamp?: VolumeRamp; volumeCurve?: VolumeCurve }[], result: Float32Array, sampleRate: number, secondsPerBeat: number) {
+  const length = waveform.length;
+  for (const { start, gain, volumeRamp, volumeCurve } of placements) {
+    const mixLength = Math.min(length, result.length - start);
+    if (volumeRamp || volumeCurve) {
+      for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain * (volumeRamp ? volumeRampLevel(volumeRamp, (start + i) / sampleRate / secondsPerBeat) : 1) * (volumeCurve ? volumeCurveLevel(volumeCurve, (start + i) / sampleRate / secondsPerBeat) : 1);
+    } else {
+      for (let i = 0; i < mixLength; i++) result[start + i] += waveform[i] * gain;
     }
   }
-  let peak = 0;
-  for (const sample of result) peak = Math.max(peak, Math.abs(sample));
-  if (peak > 0.95) for (let i = 0; i < result.length; i++) result[i] *= 0.95 / peak;
-  return result;
 }
 
 export function createDemoMelody(sampleRate = 22050): Float32Array {

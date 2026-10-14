@@ -426,9 +426,10 @@ $('report-form').addEventListener('submit', event => {
       if (authored.revision !== identity.revision) throw new Error('The authored revision differs from this selection. Refresh evidence in None mode, then explicitly update the bound revision before validating.');
       contextText = serializeContextDraft(authored);
     }
-    const args = { ...identity, context: contextText };
+    const discussions = $('fetch-discussions').checked;
+    const args = { ...identity, context: contextText, ...(discussions ? { discussions: true } : {}) };
     const captured = { mode, contextText, identity, authoredEpoch, inputEpoch, uploadEpoch: contextGeneration };
-    const description = `${visible(identity.path)} · ${identity.revision} · ${identity.selection.function ? 'function ' + visible(identity.selection.function) : 'lines ' + identity.selection.start + ':' + identity.selection.end} · up to ${identity.max_commits} commits · ${mode === 'authored' ? 'authored discussion, supplied and unverified' : contextText === null ? 'no supplied context' : 'unverified context: ' + visible(contextName)}`;
+    const description = `${visible(identity.path)} · ${identity.revision} · ${identity.selection.function ? 'function ' + visible(identity.selection.function) : 'lines ' + identity.selection.start + ':' + identity.selection.end} · up to ${identity.max_commits} commits · ${mode === 'authored' ? 'authored discussion, supplied and unverified' : contextText === null ? 'no supplied context' : 'unverified context: ' + visible(contextName)}${discussions ? ' · GitHub pull-request discussion retrieved' : ''}`;
     queueJob('report', args, result => {
       if (captured.mode !== contextMode || captured.authoredEpoch !== authoredEpoch || captured.inputEpoch !== inputEpoch || captured.uploadEpoch !== contextGeneration) throw new Error('Context intent changed.');
       if (typeof result.html !== 'string' || typeof result.json !== 'string') throw new Error('Invalid history result.');

@@ -24,7 +24,7 @@ import threading
 import time
 import uuid
 
-from .spotify import SpotifyError, pkce_pair
+from .spotify import MAX_PLAYLIST_TRACKS, PLAYLIST_SCOPE, SpotifyError, pkce_pair
 from .store import DomainError
 
 ROLES = ('host', 'guest')
@@ -72,9 +72,17 @@ CREATE TABLE IF NOT EXISTS manual (
 CREATE TABLE IF NOT EXISTS song_memories (
   id TEXT PRIMARY KEY, room_id TEXT NOT NULL, target TEXT NOT NULL, label TEXT NOT NULL, author TEXT NOT NULL,
   date TEXT NOT NULL, text TEXT NOT NULL, photo TEXT, created_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS grants (
+  room_id TEXT NOT NULL, role TEXT NOT NULL, scope TEXT, PRIMARY KEY (room_id, role));
+CREATE TABLE IF NOT EXISTS playlists (
+  id TEXT NOT NULL, room_id TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, url TEXT NOT NULL,
+  tracks INTEGER NOT NULL, created_at REAL NOT NULL, PRIMARY KEY (room_id, id));
 '''
 ROOM_TABLES = ('connections', 'pending', 'auth_generations', 'auth_failures', 'tracks', 'seen', 'plays', 'likes', 'overrides', 'manual',
-               'song_memories')
+               'song_memories', 'grants', 'playlists')
+PLAYLIST_KINDS = ('both', 'new', 'favorite', 'picks')
+MAX_RECOMMENDATIONS = 20
+MAX_PLAYLISTS = 50
 MAX_MEMORIES = 300
 MEMORY_TARGET = re.compile(r'(?:track-[A-Za-z0-9]{1,64}|manual-[0-9a-f]{32})\Z')
 PHOTO_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif')
@@ -101,6 +109,35 @@ def _date(value):
     if not 1900 <= parsed.year <= 2100:
         raise DomainError(400, 'Entry date must be from 1900 through 2100.')
     return value
+
+
+def derive_recommendations(*, tracks, seen, likes, overrides, connected):
+    """Songs each person might share with the other: the partner liked them or played them at least twice,
+    and this person has not been seen playing or liking them. Pure, ranked, explained by its fields."""
+    result = {role: [] for role in ROLES}
+    if set(connected) != set(ROLES):
+        return result  # Without both histories, "not heard yet" cannot be judged.
+    for to in ROLES:
+        frm = 'guest' if to == 'host' else 'host'
+        candidates = {track for (role, track) in list(seen) + list(likes) if role == frm}
+        picks = []
+        for track_id in candidates:
+            if (to, track_id) in seen or (to, track_id) in likes:
+                continue
+            if any((overrides.get(key) or {}).get('hidden') for key in (f'new-{frm}-{track_id}', f'favorite-{frm}-{track_id}')):
+                continue  # Something the partner hid from the shared timeline is not offered either.
+            row, like = seen.get((frm, track_id)), likes.get((frm, track_id))
+            plays = row['plays'] if row else 0
+            if not like and plays < 2:
+                continue
+            at = max(row['lastAt'] if row else 0, like['addedAt'] if like else 0)
+            picks.append({'track': dict(tracks.get(track_id) or {'id': track_id, 'title': 'Unknown song', 'artists': '', 'album': '',
+                                                               'url': f'https://open.spotify.com/track/{track_id}'}),
+                          'from': frm, 'plays': plays, 'liked': like is not None, 'at': at,
+                          'score': (5 if like else 0) + min(plays, 10)})
+        picks.sort(key=lambda pick: (-pick['score'], -pick['at'], pick['track']['id']))
+        result[to] = [{key: value for key, value in pick.items() if key != 'score'} for pick in picks[:MAX_RECOMMENDATIONS]]
+    return result
 
 
 def derive_timeline(*, tracks, seen, plays, likes, overrides, manual):
@@ -257,7 +294,15 @@ class ListeningStore:
             db.execute('DELETE FROM auth_generations WHERE room_id=? AND role=?', (room_id, role))
             db.execute('DELETE FROM pending WHERE room_id=? AND role=?', (room_id, role))
             db.execute('DELETE FROM auth_failures WHERE room_id=? AND role=?', (room_id, role))
-            # Reconnecting starts a fresh baseline for this person.
+            db.execute('INSERT OR REPLACE INTO grants VALUES (?,?,?)', (room_id, role, tokens.get('scope')))
+            existing = db.execute('SELECT spotify_user FROM connections WHERE room_id=? AND role=?', (room_id, role)).fetchone()
+            if existing and existing[0] == profile['id']:
+                # Re-authorizing the same account (for example to grant a new permission) keeps their listening.
+                db.execute('UPDATE connections SET refresh_token=?, access_token=?, expires_at=?, display_name=?, sync_error=NULL, '
+                           'retry_at=0 WHERE room_id=? AND role=?',
+                           (tokens['refreshToken'], tokens['accessToken'], now + tokens['expiresIn'] - 30, profile['name'], room_id, role))
+                return
+            # Connecting a different account starts a fresh baseline for this person.
             for table in ('seen', 'plays', 'likes'):
                 db.execute(f'DELETE FROM {table} WHERE room_id=? AND role=?', (room_id, role))
             db.execute('INSERT OR REPLACE INTO connections (room_id, role, refresh_token, access_token, expires_at, '
@@ -269,7 +314,7 @@ class ListeningStore:
 
     def disconnect(self, room_id, role):
         with self._transaction() as db:
-            for table in ('connections', 'seen', 'plays', 'likes', 'auth_failures', 'pending', 'auth_generations'):
+            for table in ('connections', 'seen', 'plays', 'likes', 'auth_failures', 'pending', 'auth_generations', 'grants'):
                 db.execute(f'DELETE FROM {table} WHERE room_id=? AND role=?', (room_id, role))
             # Song metadata no longer referenced by anyone's listening is removed too.
             db.execute('DELETE FROM tracks WHERE room_id=? AND track_id NOT IN '
@@ -302,16 +347,9 @@ class ListeningStore:
         if now < retry_at and not force:
             return False
         try:
-            if not access_token or now >= expires_at:
-                tokens = client.refresh(refresh_token)
-                access_token = tokens['accessToken']
-                with self._transaction() as db:
-                    db.execute('UPDATE connections SET access_token=?, expires_at=?, refresh_token=? WHERE room_id=? AND role=? AND generation=?',
-                               (access_token, now + tokens['expiresIn'] - 30, tokens['refreshToken'] or refresh_token,
-                                room_id, role, generation))
-                    if db.execute('SELECT 1 FROM connections WHERE room_id=? AND role=? AND generation=?',
-                                  (room_id, role, generation)).fetchone() is None:
-                        return False
+            access_token = self._fresh_access(client, room_id, role, refresh_token, access_token, expires_at, generation)
+            if access_token is None:
+                return False
             plays = client.recently_played(access_token, cursor)
             likes = client.saved_tracks(access_token)
         except SpotifyError as error:
@@ -359,6 +397,111 @@ class ListeningStore:
             db.execute('UPDATE connections SET cursor_ms=?, synced_at=?, sync_error=NULL, retry_at=0 WHERE room_id=? AND role=?',
                        (newest or None, now, room_id, role))
         return True
+
+    def _fresh_access(self, client, room_id, role, refresh_token, access_token, expires_at, generation):
+        """A valid access token, refreshing (and keeping any rotated refresh token) when needed.
+
+        None when the connection was replaced or removed while refreshing: its tokens are not stored over the newer one.
+        """
+        now = self.now()
+        if access_token and now < expires_at:
+            return access_token
+        tokens = client.refresh(refresh_token)
+        with self._transaction() as db:
+            db.execute('UPDATE connections SET access_token=?, expires_at=?, refresh_token=? WHERE room_id=? AND role=? AND generation=?',
+                       (tokens['accessToken'], now + tokens['expiresIn'] - 30, tokens['refreshToken'] or refresh_token,
+                        room_id, role, generation))
+            if db.execute('SELECT 1 FROM connections WHERE room_id=? AND role=? AND generation=?',
+                          (room_id, role, generation)).fetchone() is None:
+                return None
+            if tokens.get('scope'):
+                db.execute('UPDATE grants SET scope=? WHERE room_id=? AND role=?', (tokens['scope'], room_id, role))
+        return tokens['accessToken']
+
+    # Occasion playlists ------------------------------------------------------------------------
+
+    @staticmethod
+    def validate_selection(value):
+        """Which timeline songs go into a playlist: entry kinds, optional date range, memories only."""
+        if type(value) is not dict or set(value) != {'kinds', 'from', 'to', 'memoriesOnly'}:
+            raise DomainError(400, 'Choose which timeline songs to include.')
+        kinds = value['kinds']
+        if type(kinds) is not list or not kinds or len(set(kinds)) != len(kinds) or any(kind not in PLAYLIST_KINDS for kind in kinds):
+            raise DomainError(400, 'Choose at least one of: songs you both played, first-time songs, new favorites, your partner\'s picks.')
+        start = None if value['from'] in (None, '') else _date(value['from'])
+        end = None if value['to'] in (None, '') else _date(value['to'])
+        if start and end and start > end:
+            raise DomainError(400, 'The playlist start date must be on or before its end date.')
+        if type(value['memoriesOnly']) is not bool:
+            raise DomainError(400, 'Choose whether to include only songs with memories.')
+        return {'kinds': kinds, 'from': start, 'to': end, 'memoriesOnly': value['memoriesOnly']}
+
+    @staticmethod
+    def select_tracks(entries, selection, picks=()):
+        """Visible timeline songs (and, for 'picks', the partner's recommendations) matching the selection,
+        oldest first, each song once."""
+        chosen, seen = [], set()
+        pool = list(entries) + [{**pick, 'kind': 'picks', 'hidden': False} for pick in picks]
+        for entry in sorted(pool, key=lambda item: item['at']):
+            if entry['hidden'] or entry['kind'] not in selection['kinds']:
+                continue
+            day = time.strftime('%Y-%m-%d', time.gmtime(entry['at'] / 1000))
+            if (selection['from'] and day < selection['from']) or (selection['to'] and day > selection['to']):
+                continue
+            if selection['memoriesOnly'] and not entry['memories']:
+                continue
+            track = entry['track']
+            if track['id'] in seen:
+                continue
+            seen.add(track['id'])
+            chosen.append({'id': track['id'], 'title': track['title'], 'artists': track['artists']})
+        return chosen
+
+    def playlist_preview(self, room_id, role, selection):
+        state = self.state(room_id, configured=True)
+        return self.select_tracks(state['entries'], self.validate_selection(selection), state['recommendations'][role])
+
+    def create_playlist(self, client, room_id, role, name, selection):
+        name = _text(name, 100, 'Playlist name')
+        selection = self.validate_selection(selection)
+        row = self._credentials(room_id, role)
+        if row is None:
+            raise DomainError(409, 'Connect your Spotify before creating a playlist in it.')
+        with self._transaction() as db:
+            grant = db.execute('SELECT scope FROM grants WHERE room_id=? AND role=?', (room_id, role)).fetchone()
+            count = db.execute('SELECT count(*) FROM playlists WHERE room_id=?', (room_id,)).fetchone()[0]
+        if grant is None or grant[0] is None or PLAYLIST_SCOPE not in grant[0].split():
+            raise DomainError(409, 'Reconnect your Spotify to allow Duet to create private playlists (a new permission).')
+        if count >= MAX_PLAYLISTS:
+            raise DomainError(409, f'This room has already created {MAX_PLAYLISTS} playlists.')
+        current = self.state(room_id, configured=True)
+        tracks = self.select_tracks(current['entries'], selection, current['recommendations'][role])
+        if not tracks:
+            raise DomainError(409, 'No timeline songs match these choices yet.')
+        if len(tracks) > MAX_PLAYLIST_TRACKS:
+            raise DomainError(409, f'A Duet playlist holds at most {MAX_PLAYLIST_TRACKS} songs. Narrow the dates or kinds.')
+        refresh_token, access_token, expires_at, generation = row[0], row[1], row[2], row[7]
+        try:
+            access = self._fresh_access(client, room_id, role, refresh_token, access_token, expires_at, generation)
+            if access is None:
+                raise DomainError(409, 'Your Spotify connection changed. Try again.')
+            playlist = client.create_playlist(access, name, 'Made with Duet from our shared listening timeline.')
+        except SpotifyError as error:
+            if error.status == 403:
+                raise DomainError(409, 'Spotify refused to create the playlist. Reconnect your Spotify to grant playlist access.') from None
+            raise DomainError(502, str(error)) from None
+        try:
+            client.add_items(access, playlist['id'], [track['id'] for track in tracks])
+        except SpotifyError as error:
+            # The empty playlist already exists in their account; say so rather than leave it unexplained.
+            raise DomainError(502, f'Spotify created the playlist “{name}” but did not add its songs ({error}) '
+                                   'You can delete the empty playlist in Spotify and try again.') from None
+        record = {'id': playlist['id'], 'role': role, 'name': name, 'url': playlist['url'], 'tracks': len(tracks),
+                  'createdAt': self.now() * 1000}
+        with self._transaction() as db:
+            db.execute('INSERT OR REPLACE INTO playlists VALUES (?,?,?,?,?,?,?)',
+                       (playlist['id'], room_id, role, name, playlist['url'], len(tracks), self.now()))
+        return record
 
     @staticmethod
     def _track(db, room_id, track):
@@ -482,10 +625,15 @@ class ListeningStore:
     def state(self, room_id, *, configured, include_hidden=False):
         with self._transaction() as db:
             connections = {role: None for role in ROLES}
-            for role, name, connected_at, synced_at, error in db.execute(
-                    'SELECT role, display_name, connected_at, synced_at, sync_error FROM connections WHERE room_id=?', (room_id,)):
+            for role, name, connected_at, synced_at, error, scope in db.execute(
+                    'SELECT c.role, c.display_name, c.connected_at, c.synced_at, c.sync_error, g.scope FROM connections c '
+                    'LEFT JOIN grants g ON g.room_id=c.room_id AND g.role=c.role WHERE c.room_id=?', (room_id,)):
                 connections[role] = {'displayName': name, 'connectedAt': connected_at * 1000,
-                                     'syncedAt': synced_at * 1000 if synced_at else None, 'error': error}
+                                     'syncedAt': synced_at * 1000 if synced_at else None, 'error': error,
+                                     'canCreatePlaylists': bool(scope) and PLAYLIST_SCOPE in scope.split()}
+            playlists = [{'id': row[0], 'role': row[1], 'name': row[2], 'url': row[3], 'tracks': row[4], 'createdAt': row[5] * 1000}
+                         for row in db.execute('SELECT id, role, name, url, tracks, created_at FROM playlists WHERE room_id=? '
+                                               'ORDER BY created_at DESC', (room_id,))]
             failures = {role: message for role, message, at in db.execute(
                 'SELECT role, message, at FROM auth_failures WHERE room_id=?', (room_id,)) if self.now() - at < STATE_SECONDS}
             tracks = {row[0]: {'id': row[0], 'title': row[1], 'artists': row[2], 'album': row[3], 'url': row[4]}
@@ -517,6 +665,11 @@ class ListeningStore:
             entry['memories'] = by_target.get(target, [])
         hidden = sum(entry['hidden'] for entry in entries)
         visible = entries if include_hidden else [entry for entry in entries if not entry['hidden']]
+        recommendations = derive_recommendations(tracks=tracks, seen=seen, likes=likes, overrides=overrides,
+                                                 connected=[role for role in ROLES if connections[role]])
+        for picks in recommendations.values():
+            for pick in picks:
+                pick['memories'] = by_target.get(f'track-{pick["track"]["id"]}', [])
         return {'configured': configured, 'connections': connections, 'authFailures': failures,
                 'entries': visible[:MAX_TIMELINE], 'hiddenCount': hidden, 'truncated': len(visible) > MAX_TIMELINE,
-                'memories': memories}
+                'memories': memories, 'playlists': playlists, 'recommendations': recommendations}

@@ -7,3 +7,11 @@
 .wear-entry { padding: .65rem 0; border-bottom: 1px solid var(--line, #dedbd0); overflow-wrap: anywhere; }
 .wear-entry p { margin: .35rem 0; }
 .wear-memory { white-space: pre-wrap; }
+.color-read { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #f7f6ee; display: grid; gap: 8px; font-size: 13px; overflow-wrap: anywhere; }
+.color-read .button { justify-self: start; }
+.swatches { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 13px; }
+.swatches li { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #8c8c80; display: inline-block; }
+.color-notes { margin-top: 16px; padding-top: 14px; border-top: 1px solid #dadbce; }
+.color-notes ul { margin: 8px 0; padding-left: 20px; font-size: 14px; }
+.color-notes li { margin: 4px 0; }

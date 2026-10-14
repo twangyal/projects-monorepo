@@ -1,7 +1,8 @@
 """Measure automatic lyrics on real songs with word-level reference timings.
 
 Uses a local checkout of the JamendoLyrics dataset (https://github.com/f90/jamendolyrics, MIT
-code; Creative Commons songs). Audio is never committed. Each English song runs through the
+code; Creative Commons songs). Audio is never committed. Each song in ``--language`` (English by
+default; the dataset also has French, German and Spanish) runs through the
 production path: ``separate_clip`` (decode + MDX-Net vocal separation) then ``transcribe_vocals`` (VAD + Parakeet).
 Songs longer than ``--max-seconds`` (default: the app's limit) are evaluated on their first ``--max-seconds``.
 The #214 baseline used 300 s; pass ``--max-seconds 300`` to compare with it.
@@ -83,8 +84,10 @@ def main() -> None:
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--max-seconds', type=float, default=MAX_DURATION)
+    parser.add_argument('--language', default='English', help='JamendoLyrics language: English, French, German or Spanish')
+    parser.add_argument('--limit', type=int, help='Only the first N songs of the language (in dataset order)')
     args = parser.parse_args()
-    rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == 'English']
+    rows = [r for r in csv.DictReader((args.dataset / 'JamendoLyrics.csv').open()) if r['Language'] == args.language][:args.limit]
     totals = dict(errors=0, reference=0)
     onsets, line_errors, auto_hits, auto_lines, report = [], [], 0, 0, []
     confidence_pairs, heard_lines = [], []

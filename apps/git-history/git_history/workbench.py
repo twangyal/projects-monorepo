@@ -6,6 +6,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
 import json
 import math
+import os
 from pathlib import Path
 import re
 import secrets
@@ -14,6 +15,7 @@ from socketserver import ThreadingMixIn
 import threading
 import time
 
+from .discussions import API_URL, GitHubClient
 from .work_budget import (
     WorkBudgetError, WorkCancelled, check_work_budget, work_budget,
 )
@@ -110,7 +112,13 @@ def _job_args(value: object) -> tuple[str, dict]:
             raise ValueError('Unsupported language.')
     else:
         names = {'revision', 'path'} | ({'selection', 'max_commits', 'context'} if operation == 'report' else set())
-        args = _keys(request['args'], names)
+        raw = request['args']
+        # Opting in to discussion retrieval is an optional report field; older clients omit it.
+        if operation == 'report' and type(raw) is dict and 'discussions' in raw:
+            names |= {'discussions'}
+        args = _keys(raw, names)
+        if 'discussions' in args and type(args['discussions']) is not bool:
+            raise ValueError('Discussion retrieval must be true or false.')
         revision = _text(args['revision'], 64)
         if not _REVISION.fullmatch(revision):
             raise ValueError('Use the full immutable revision returned by discovery.')
@@ -167,9 +175,10 @@ def _parse_json(raw: bytes) -> object:
         raise ValueError('Supply valid UTF-8 JSON with unique fields and finite values.') from None
 
 
-def _execute_operation(repo: Path, operation: str, args: dict) -> object:
+def _execute_operation(repo: Path, operation: str, args: dict, github_api: str = API_URL) -> object:
     """Real read-only operation boundary, also usable for controlled test fixtures."""
     from .context import ContextRecords, parse_context
+    from .discussions import DiscussionError, attach_discussions, retrieve_discussions
     from .reader import ReaderError, inspect_repository, list_files, list_functions, read_source
     from .render import render_html, render_json
 
@@ -219,6 +228,12 @@ def _execute_operation(repo: Path, operation: str, args: dict) -> object:
         report = read(inspect_repository, repo, args['path'], selection.get('start'), selection.get('end'),
                       ref=args['revision'], function=selection.get('function'), max_commits=args['max_commits'])
         check_work_budget()
+        if args.get('discussions'):
+            try:
+                attach_discussions(report, retrieve_discussions(report, api_url=github_api, token=os.environ.get('GITHUB_TOKEN')))
+            except DiscussionError as error:
+                raise _ActionableError(str(error)) from None
+            check_work_budget()
         context = validated(parse_context, args['context'], report) if args['context'] is not None else None
         if isinstance(context, ContextRecords):
             report.supplied_context = context
@@ -455,8 +470,10 @@ class WorkbenchServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
     allow_reuse_address = False
 
-    def __init__(self, repo: Path, repo_name: str, port: int, job_timeout: float, request_timeout: float):
+    def __init__(self, repo: Path, repo_name: str, port: int, job_timeout: float, request_timeout: float,
+                 github_api: str = API_URL):
         self.repo = repo
+        self.github_api = github_api
         self.repo_name = repo_name
         self.token = secrets.token_hex(32)
         self.job_timeout = job_timeout
@@ -526,7 +543,9 @@ class WorkbenchServer(ThreadingMixIn, HTTPServer):
         try:
             with work_budget(self.job_timeout, job.cancel):
                 check_work_budget()
-                result = _execute_operation(self.repo, operation, args)
+                # The operation boundary keeps its three-argument contract unless GitHub is to be contacted.
+                extra = (self.github_api,) if operation == 'report' and args.get('discussions') else ()
+                result = _execute_operation(self.repo, operation, args, *extra)
                 check_work_budget()
                 reply = _encode({'id': job.id, 'state': 'complete', 'result': result})
                 check_work_budget()
@@ -606,7 +625,7 @@ class WorkbenchServer(ThreadingMixIn, HTTPServer):
 
 
 def create_server(repo: str | Path, port: int = 0, *, job_timeout: float = 45.0,
-                  request_timeout: float = 5.0) -> WorkbenchServer:
+                  request_timeout: float = 5.0, github_api: str = API_URL) -> WorkbenchServer:
     """Validate one local repo and create an unstarted loopback service."""
     from .reader import _resolve_repository
     _integer(port, 0, 65535)
@@ -615,4 +634,5 @@ def create_server(repo: str | Path, port: int = 0, *, job_timeout: float = 45.0,
             raise ValueError('Invalid service time budget.')
     with work_budget():
         _git, root, _revision = _resolve_repository(repo, 'HEAD')
-    return WorkbenchServer(root, root.name, port, job_timeout, request_timeout)
+    GitHubClient('owner', 'repo', api_url=github_api)  # Refuse any address but GitHub or a loopback test double.
+    return WorkbenchServer(root, root.name, port, job_timeout, request_timeout, github_api)

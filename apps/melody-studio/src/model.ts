@@ -1,3 +1,4 @@
+import { validatePan, validateReverb, validateSend } from './mix-settings.ts';
 import {validateHarmonics} from './sound-harmonics.ts';
 import {validateVolumeCurve} from './volume-curve.ts';
 import { validateEnvelope } from './sound-envelope.ts';
@@ -80,8 +81,8 @@ export function validateComposition(value: unknown): Composition {
     const track = record(value, path);
     const trackId = id(track.id, `${path} ID`);
     const name = text(track.name, `${path} name`, 80);
-    if (track.instrument !== 'sine' && track.instrument !== 'triangle' && track.instrument !== 'sawtooth') {
-      throw new Error(`${path} instrument must be sine, triangle or sawtooth.`);
+    if (track.instrument !== 'sine' && track.instrument !== 'triangle' && track.instrument !== 'sawtooth' && track.instrument !== 'drums') {
+      throw new Error(`${path} instrument must be sine, triangle, sawtooth or drums.`);
     }
     const instrument = track.instrument;
     const harmonicDescriptor=Object.getOwnPropertyDescriptor(track,'harmonics');
@@ -102,9 +103,9 @@ export function validateComposition(value: unknown): Composition {
       const velocity = number(note.velocity, `${notePath} velocity`, 0, 1);
       return { id: noteId, pitch, start, duration, velocity };
     });
-    return { id: trackId, name, instrument, volume, muted: track.muted, notes, ...(harmonicDescriptor?{harmonics:validateHarmonics(harmonicDescriptor.value)}:{}), ...(Object.hasOwn(track, 'envelope') ? { envelope: validateEnvelope(track.envelope) } : {}), ...(Object.hasOwn(track, 'filter') ? { filter: validateFilter(track.filter) } : {}), ...(Object.hasOwn(track, 'echo') ? { echo: validateEcho(track.echo) } : {}), ...(Object.hasOwn(track, 'volumeRamp') ? { volumeRamp: validateVolumeRamp(track.volumeRamp) } : {}), ...(Object.hasOwn(track, 'volumeCurve') ? {volumeCurve:validateVolumeCurve(curveDescriptor!.value)} : {}) };
+    return { id: trackId, name, instrument, volume, muted: track.muted, notes, ...(harmonicDescriptor?{harmonics:validateHarmonics(harmonicDescriptor.value)}:{}), ...(Object.hasOwn(track, 'envelope') ? { envelope: validateEnvelope(track.envelope) } : {}), ...(Object.hasOwn(track, 'filter') ? { filter: validateFilter(track.filter) } : {}), ...(Object.hasOwn(track, 'echo') ? { echo: validateEcho(track.echo) } : {}), ...(Object.hasOwn(track, 'volumeRamp') ? { volumeRamp: validateVolumeRamp(track.volumeRamp) } : {}), ...(Object.hasOwn(track, 'volumeCurve') ? {volumeCurve:validateVolumeCurve(curveDescriptor!.value)} : {}), ...(Object.hasOwn(track, 'pan') ? { pan: validatePan(track.pan) } : {}), ...(Object.hasOwn(track, 'reverbSend') ? { reverbSend: validateSend(track.reverbSend) } : {}) };
   });
-  return { version: 1, title, tempo, tracks };
+  return { version: 1, title, tempo, tracks, ...(Object.hasOwn(project, 'reverb') ? { reverb: validateReverb(project.reverb) } : {}) };
 }
 
 export function parseComposition(json: string): Composition {

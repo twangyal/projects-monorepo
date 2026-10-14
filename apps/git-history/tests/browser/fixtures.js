@@ -16,7 +16,8 @@ export const SOURCE = '# Literal <img src=x onerror="globalThis.OWNED=1">\ndef c
 
 export const test = base.extend({
   missingNative: [false, { option: true }],
-  workbench: async ({ missingNative }, use) => {
+  githubDiscussion: [false, { option: true }],
+  workbench: async ({ missingNative, githubDiscussion }, use) => {
     const directory = await mkdtemp(join(tmpdir(), 'git-history-browser-'));
     const repo = join(directory, 'repository');
     await mkdir(repo);
@@ -45,6 +46,7 @@ export const test = base.extend({
       ] };
       const args = [join(APP, 'tests/browser/launch_service.py'), '--repo', repo];
       if (missingNative) args.push('--missing-native');
+      if (githubDiscussion) args.push('--github-pull', changed);
       service = spawn(PYTHON, args, { cwd: directory, env: { ...process.env, PYTHONPATH: '' }, stdio: ['ignore', 'pipe', 'pipe'] });
       let stderr = '';
       service.stderr.on('data', chunk => { if (stderr.length < 8192) stderr += chunk.toString(); });

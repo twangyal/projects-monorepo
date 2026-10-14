@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True)
     parser.add_argument("--missing-native", action="store_true")
+    parser.add_argument("--github-pull", help="Serve a loopback GitHub API with one pull request for this commit.")
     args = parser.parse_args()
     if os.environ.get("GIT_HISTORY_BROWSER_INSTALLED") != "1":
         sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -21,7 +22,10 @@ def main():
     if args.missing_native:
         os.environ["GIT_HISTORY_BROWSER_REAL_PYTHON"] = real_python
         sys.executable = str(Path(__file__).with_name("python_without_site.py"))
-    server = create_server(args.repo, port=0)
+    fake = None
+    if args.github_pull:
+        fake = _fake_github(args.github_pull)
+    server = create_server(args.repo, port=0, **({"github_api": fake.url} if fake else {}))
     try:
         native_available = not args.missing_native and all(
             version(package) == expected
@@ -45,6 +49,24 @@ def main():
         pass
     finally:
         server.server_close()
+        if fake is not None:
+            fake.__exit__()
+
+
+def _fake_github(commit):
+    # Load the standard-library fake by path so installed-wheel runs never import the source tree.
+    from importlib.util import module_from_spec, spec_from_file_location
+    spec = spec_from_file_location("fake_github", Path(__file__).resolve().parents[1] / "fake_github.py")
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    fake = module.FakeGitHub(owner="fixture", repo="local-evidence").__enter__()
+    fake.pull(1, 'Raise the return value <img src=x onerror="globalThis.OWNED=1">',
+              'The caller needed a two-step offset.\n\nCloses #3.\n<script>globalThis.OWNED=1</script>', user="maintainer")
+    fake.commit_pulls[commit] = [1]
+    fake.comments[1] = [fake.review_comment(1, 11, "src/original.py", "Why two rather than one? <b>bold</b>", line=4)]
+    fake.reviews[1] = [fake.review(1, 12, "Two matches the documented offset.", "APPROVED")]
+    fake.issue(3, "Offset is off by one", "Results were one lower than documented.")
+    return fake
 
 
 if __name__ == "__main__":

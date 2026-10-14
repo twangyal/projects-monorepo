@@ -11,6 +11,7 @@ import {
 import { validateProject, type Project } from './model.ts';
 import { buildTechPack, measurementDiagram, techPackHtml, techPackSections, techPackXlsx } from './techpack.ts';
 import { patternDxf, patternSvg } from './pattern-export.ts';
+import { readStylePrompt } from './style-prompt.ts';
 import { costing, CURRENCY_SYMBOLS, DEFAULT_COSTING, nextColorwayId, rangePlan, rangePlanXlsx } from './range.ts';
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -48,6 +49,9 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     </div>
     <aside class="product-inspector" aria-label="Selected part">
       <h4 id="inspector-heading">Front body</h4>
+      <div class="describe-style"><label class="field">Describe a style<input id="style-prompt" maxlength="200" autocomplete="off" placeholder="e.g. navy breton stripe on heavyweight ecru jersey"></label>
+        <div class="inline-actions"><button id="describe-part">Apply to this part</button><button id="describe-all" class="quiet">Apply to every part</button></div>
+        <p id="describe-result" class="fine-print" role="status"></p></div>
       <label class="field">Fabric<select id="part-material">${MATERIALS.map(m => `<option value="${m.id}">${m.name} · ${m.gsm} gsm</option>`).join('')}</select></label>
       <div class="color-row"><label for="part-color">Fabric color</label><input id="part-color" type="color"></div>
       <label class="field">Print<select id="part-print"><option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}</select></label>
@@ -362,6 +366,26 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const style = draft.parts[selected];
     for (const id of partsOf(draft)) if (id !== selected) draft.parts[id] = RIB_PARTS.has(id) ? { ...structuredClone(style), material: draft.parts[id].material, print: null } : structuredClone(style);
   }, `Every part now uses the ${label(selected).toLowerCase()} style (rib trims keep their rib knit).`));
+  // Describe a style: read locally, applied as one undoable edit, with what was understood and ignored reported.
+  const describe = (everyPart: boolean) => {
+    const prompt = ($('style-prompt') as HTMLInputElement).value;
+    let summary = '';
+    update(draft => {
+      const reading = readStylePrompt(prompt, draft.parts[selected]);
+      if (everyPart) {
+        for (const id of partsOf(draft)) {
+          const style = readStylePrompt(prompt, draft.parts[id]).style;
+          // Rib trims keep their rib knit and stay plain, as with "Use this style on every part".
+          draft.parts[id] = RIB_PARTS.has(id) ? { material: draft.parts[id].material, color: style.color, print: null } : style;
+        }
+      } else draft.parts[selected] = reading.style;
+      summary = `Understood: ${reading.understood.join('; ')}.${reading.ignored.length ? ` Not understood: ${reading.ignored.join(', ')}.` : ''}`;
+    }, everyPart ? 'The description now styles every part (rib trims keep their rib knit). You can undo this.' : `${label(selected)} restyled from the description. You can undo this.`);
+    $('describe-result').textContent = summary;
+  };
+  $('describe-part').addEventListener('click', () => describe(false));
+  $('describe-all').addEventListener('click', () => describe(true));
+  $('style-prompt').addEventListener('keydown', event => { if ((event as KeyboardEvent).key === 'Enter') { event.preventDefault(); describe(false); } });
   $('product-name').addEventListener('change', () => update(draft => { draft.name = ($('product-name') as HTMLInputElement).value; }, 'Product renamed.', 'name'));
   $('apply-measurements').addEventListener('click', () => update(draft => {
     const value = (id: string) => Number(($(id) as HTMLInputElement).value);

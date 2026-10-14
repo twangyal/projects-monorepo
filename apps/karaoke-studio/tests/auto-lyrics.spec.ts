@@ -36,7 +36,7 @@ test('a new song arrives with automatically timed lyrics that preview word by wo
   await importClip(page, 16);
   await expect(page.locator('#message')).toContainText('Your stems and 3 automatically timed lyric lines are ready');
   expect(await lines(page)).toEqual(['Hello little world', 'This is our chorus', 'Sing it back to me']);
-  await expect(page.locator('#auto-status')).toContainText('12 words were recognized from the separated vocals and grouped into 3 lines');
+  await expect(page.locator('#auto-status')).toContainText('12 words were recognized from the separated vocals by the English recognition model and grouped into 3 lines');
   await expect(page.locator('#auto-status')).toContainText('it was least sure about automatic line 3, so listen to those first');
   await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
   await expect(page.getByRole('button', { name: 'Export karaoke MP4', exact: true })).toBeEnabled();

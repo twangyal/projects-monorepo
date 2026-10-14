@@ -662,6 +662,15 @@ class Handler(BaseHTTPRequestHandler):
             if photo:
                 self._remove_photo(room_id, memory.group(1), photo)
             return self._json(200, self._listening_state(room_id))
+        if tail == '/listening/playlists/preview' and method == 'POST':
+            body = self._object('selection')
+            return self._json(200, {'tracks': listening.playlist_preview(room_id, role, body['selection'])})
+        if tail == '/listening/playlists' and method == 'POST':
+            body = self._object('name selection')
+            if spotify is None:
+                raise DomainError(409, 'Spotify is not set up on this Duet service.')
+            playlist = listening.create_playlist(spotify, room_id, role, body['name'], body['selection'])
+            return self._json(201, {'playlist': playlist, 'listening': self._listening_state(room_id)})
         manual = re.fullmatch(r'/listening/manual/(' + ID + r')', tail)
         if manual and method == 'PUT':
             body = self._object('date title song note')

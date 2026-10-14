@@ -2,7 +2,7 @@
 
 **Product direction (2026-10-08): ACTIVE.** The destination is an automatic song-to-karaoke workflow with lyric transcription and synchronization, followed by user correction when needed. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
-A local karaoke maker: import a complete song or excerpt and it estimates vocals and backing with a pretrained MDX-Net vocal model (UVR-MDX-NET-Voc_FT), then recognizes and times the sung lyrics automatically from the separated vocals. Preview the result, correct words and timing where recognition went wrong (or paste the real lyrics and have them aligned to the singing), and export a karaoke video. Automatic lyrics are English-only and imperfect; see [Automatic lyrics](#automatic-lyrics) for measured quality.
+A local karaoke maker: import a complete song or excerpt and it estimates vocals and backing with a pretrained MDX-Net vocal model (UVR-MDX-NET-Voc_FT), then recognizes and times the sung lyrics automatically from the separated vocals. Preview the result, correct words and timing where recognition went wrong (or paste the real lyrics and have them aligned to the singing), and export a karaoke video. Automatic lyrics cover English and 24 other European languages and are imperfect; see [Automatic lyrics](#automatic-lyrics) for measured quality.
 
 ## Install and run
 
@@ -220,7 +220,7 @@ For a whole-library backup, stop the service and copy the data directory, includ
 
 ## Automatic lyrics
 
-After separation, the studio listens to the **separated vocals** and recognizes the sung words locally. It splits the vocals into phrases with Silero voice-activity detection, then recognizes them with NVIDIA Parakeet TDT 0.6B v2 (int8, English) through sherpa-onnx, in a network-denied, resource-limited worker. The words are grouped into lines at pauses and saved as the new clip's lyrics, so preview and export work straight away. Each recognized word carries a confidence. The **Automatic lyrics** panel names lines whose words averaged below 0.7, because on real songs such words were right only about 30% of the time.
+After separation, the studio listens to the **separated vocals** and recognizes the sung words locally. It splits the vocals into phrases with Silero voice-activity detection, then recognizes them with NVIDIA Parakeet TDT 0.6B (int8) through sherpa-onnx, in a network-denied, resource-limited worker. **Songs in English and 24 other European languages** are recognized: v2 for English, which it recognizes best, and v3 for the others. The multilingual model hears a song's first 100 words; if they read as English, the English model recognizes the song again. The panel names the model that heard the clip. The words are grouped into lines at pauses and saved as the new clip's lyrics, so preview and export work straight away. Each recognized word carries a confidence. The **Automatic lyrics** panel names lines whose words averaged below 0.7, because on real songs such words were right only about 30% of the time.
 
 - **Review automatic lyrics** shows every recognized line, with unsure lines marked, and replaces the current lines as one undoable, unsaved edit.
 - **Create draft timings** with pasted lyrics aligns each line to where its words were sung. The exact text you pasted is kept. Lines that were not clearly heard are named and placed over the unmatched singing between their neighbours.
@@ -237,14 +237,26 @@ After separation, the studio listens to the **separated vocals** and recognizes 
 
 See [the design and evaluation notes](docs/2026-10-13-automatic-lyrics.md), the [per-song results with MDX-Net vocals](docs/2026-10-13-lyrics-with-mdx-evaluation.json) and the [earlier Spleeter results](docs/2026-10-13-automatic-lyrics-evaluation.json). Re-run them with `python scripts/evaluate_lyrics.py --dataset /path/to/jamendolyrics --model-dir MODELS --work /tmp/work`.
 
-**Model setup.** `python scripts/setup_lyrics_model.py --model-dir MODELS` downloads the pinned archive from the sherpa-onnx GitHub releases:
+**Other languages** (JamendoLyrics, songs evaluated on their first 120 s, same production path):
 
-- `sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2`, 482,468,385 bytes, SHA-256 `157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad`;
-- `silero_vad.onnx`, SHA-256 `9e2449e1…1fd6`.
+| Songs | Multilingual model (v3) | English model (v2) |
+| --- | --- | --- |
+| 20 English (first 300 s) | 42.3% WER | **30.9%** |
+| 19 French | **44.1%** | 91.5% |
+| 10 German | **25.4%** | 95.7% |
+| 10 Spanish | **46.2%** | 86.5% |
 
-It verifies every extracted file against its pinned checksum, then publishes `MODELS/lyrics-asr`. Pass `--archive` and `--vad` to reuse existing official files. Licenses:
+Choosing by the first 100 recognized words picked the better model for all 59 songs, and the production path with both models installed reproduced each language's better WER exactly: English songs began with 28–46% distinctive English function words, the others with at most 9% (threshold 18%). See [the multilingual evaluation](docs/2026-10-13-multilingual-lyrics.md).
 
-- Parakeet TDT 0.6B v2: CC-BY-4.0 (NVIDIA);
+**Model setup.** `python scripts/setup_lyrics_model.py --model-dir MODELS` downloads both pinned archives from the sherpa-onnx GitHub releases:
+
+- `sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2` (English), 482,468,385 bytes, SHA-256 `157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad`, published as `MODELS/lyrics-asr`;
+- `sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2` (multilingual), 487,170,055 bytes, SHA-256 `5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf`, published as `MODELS/lyrics-asr-v3`;
+- `silero_vad.onnx`, SHA-256 `9e2449e1…1fd6`, beside each.
+
+It verifies every extracted file against its pinned checksum before publishing a directory. `--only english` or `--only multilingual` installs one; automatic lyrics then use it for every song. An existing English-only install keeps working, and running setup again adds the multilingual model. Pass `--archive` (once per archive) and `--vad` to reuse existing official files. Licenses:
+
+- Parakeet TDT 0.6B v2 and v3: CC-BY-4.0 (NVIDIA);
 - sherpa-onnx: Apache-2.0;
 - Silero VAD: MIT.
 

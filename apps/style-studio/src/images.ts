@@ -1,3 +1,4 @@
+import { readGarmentColors, type GarmentColors } from './color-read.ts';
 import { validateProject } from './domain.ts';
 import { inspectPhotoHeader, validatePhotoAsset } from './photo-header.ts';
 import { ID_PATTERN, LIMITS, type PhotoAsset, type Piece, type Project } from './types.ts';
@@ -198,4 +199,23 @@ export async function exportLookPng(project: Project, lookId: string, signal?: A
     ctx.fillStyle='#665F55';ctx.font='14px sans-serif';ctx.fillText('Style Studio · reference photos and original garment sketches; not a try-on or fit prediction.',64,963);
     const blob=await encode(canvas,'image/png',signal);check(signal);return blob;
   } finally { for(const bitmap of decoded.values())bitmap.close();canvas.width=canvas.height=0; }
+}
+
+const colorReads = new Map<string, Promise<GarmentColors | null>>();
+/** Read a normalized photo's garment colors locally. Photos are immutable per ID, so readings are cached. */
+export function readPhotoColors(asset: PhotoAsset): Promise<GarmentColors | null> {
+  const cached = colorReads.get(asset.id);
+  if (cached) return cached;
+  const reading = (async () => {
+    const image = new Image(); image.src = asset.dataUrl; await image.decode();
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 96;
+    try {
+      const ctx = context(canvas); ctx.drawImage(image, 0, 0, 96, 96);
+      return readGarmentColors(ctx.getImageData(0, 0, 96, 96).data, 96, 96);
+    } finally { canvas.width = canvas.height = 0; }
+  })();
+  if (colorReads.size > 200) colorReads.clear();
+  colorReads.set(asset.id, reading);
+  reading.catch(() => colorReads.delete(asset.id));
+  return reading;
 }

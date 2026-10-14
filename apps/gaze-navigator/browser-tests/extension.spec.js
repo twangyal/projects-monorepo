@@ -41,7 +41,10 @@ const test = base.extend({
   },
   worker: async ({ context }, use) => {
     const [existing] = context.serviceWorkers();
-    await use(existing ?? await context.waitForEvent('serviceworker'));
+    const worker = existing ?? await context.waitForEvent('serviceworker');
+    // Under load the worker can be reached before its global scope and extension APIs exist, so poll from here.
+    await expect.poll(() => worker.evaluate(() => Boolean(globalThis.chrome?.storage?.local)).catch(() => false), { timeout: 10000 }).toBe(true);
+    await use(worker);
   },
   // An extension page used to talk to the background worker and the isolated world.
   control: async ({ context, worker }, use) => {

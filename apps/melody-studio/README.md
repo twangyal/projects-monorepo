@@ -66,7 +66,7 @@ Drafts remain separate from playback and files until Apply. Blank, nonfinite and
 
 Complete projects, the saved composition library, duplication, Undo/Redo and reload preserve applied echoes. Shared synthesis includes echoes in playback, solo, backing, edited-note comparison and WAV/stem exports. Whole-song and aligned track WAV include the complete echo/release tail; sections and reference comparison keep their existing exclusive window bounds. MIDI does not include custom effects. Old projects omit echo and keep their original PCM. Echo tails can extend beyond the 512-beat note timeline. The 40-million-frame synthesis allocation guard remains in force: an excessive render refuses instead of truncating the tail; shorten the song or use a lower render sample rate in a programmatic renderer.
 
-This is finite mono echo, not reverb, stereo delay, live-input processing, mixer routing or musician-quality acceptance. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
+This is finite echo per track. A shared stereo reverb bus is available under [Mix in stereo](#mix-in-stereo); stereo delay, live-input processing, fuller mixer routing and musician-quality acceptance are still to come. Those remain part of the ACTIVE DAW destination. See [echo verification](docs/2026-10-09-sound-echo.md).
 
 ### Fade a track over song time
 
@@ -95,6 +95,36 @@ Choose **Export MIDI with volume automation** to carry the combined committed vo
 Expression is sampled at1/16beat and rounded to0–127; rounded curve/ramp breakpoint ticks and the song endpoint are included. For maximum graphs the grid automatically becomes1/8or1/4beat to keep the complete file under the existing32,768event ceiling. Repeated values are omitted. Timing uses480ticks/beat, so sub-tick features cannot be represented exactly. Muted tracks contain no new expression events. All events stop at the original MIDI note-timeline end; custom synth envelopes, filter, echo and their tails are not represented.
 
 External instruments may ignore CC11 or map it differently; this is not PCM-equivalent sound or continuous automation. Melody’s current MIDI importer deliberately reports unsupported controllers and excludes affected lanes; it does **not** restore these expression curves. Use a complete project backup for exact Melody recovery. The standard controller mapping is documented by [the MIDI Association](https://midi.org/midi-1-0-control-change-messages), verified2026-10-12. This export milestone ([#198](https://github.com/twangyal/projects-monorepo/issues/198)) advances the ACTIVE DAW workflow without claiming external-instrument acceptance.
+
+## Mix in stereo
+
+Each track's **Stereo mix** controls place it in the stereo field and send it to a shared reverb.
+
+- **Pan** runs from 100% left to 100% right. It uses a balance law: a centred track keeps its full level in both speakers, and panning only turns down the opposite side.
+- **Reverb send** sets how much of the track feeds the song's single **reverb bus**. The bus has **Reverb size** (longer, denser tail) and **Reverb return** (how loud the reverb comes back). Its settings are shared by all tracks and stored with the song.
+
+The reverb is a deterministic algorithmic stereo reverb (eight damped combs and four allpasses per channel, Freeverb-style), with left and right decorrelated. When any track sends to it, the song gets 0.75–4 seconds of tail after the last sound. The whole mix is peak-limited across both channels together.
+
+As soon as an audible track is panned or sends to the reverb, playback, section play and loop, **Solo track**, **Export WAV** and **Export track WAV** all become 22,050 Hz 16-bit **stereo**. A stem keeps its own pan and its share of the reverb. Songs with every track centred and no sends render exactly as before, sample for sample, and still export mono WAV.
+
+Each slider release is one Undo/Redo edit and is kept in autosave, saved copies and project files. Moving pan back to centre, or the send to 0%, removes the setting. **Export MIDI** adds CC10 (pan) and CC91 (reverb send) only for tracks where they are set; external instruments decide how to use them.
+
+This is the first mixing stage. Per-track insert chains, further buses and sends, stereo delay, effect automation and a mixer view remain part of the ACTIVE DAW destination. See [stereo mix verification](docs/2026-10-13-stereo-mix.md).
+
+## Program drums
+
+Choose **Drum kit** as a track's instrument to turn it into a drum track. A **Drum pattern** step grid appears above the piano roll. It has rows for Kick, Snare, Clap, Closed hat, Open hat, Low tom, High tom and Crash, and sixteen sixteenth-note steps per bar.
+
+- Select a step (or focus it and press Enter or Space) to add or remove a hit. Each hit is one Undo/Redo edit.
+- **Start with a basic beat** fills an empty track with a one-bar groove (kick, snare and eighth-note hats with lighter offbeats).
+- **‹ / ›** move between bars. **Copy bar to next** copies the shown bar over the following one, which makes a loop quick to build.
+- Steps played harder (velocity 0.85 or more) are shown darker.
+
+Hits are ordinary notes whose pitch is a General MIDI percussion key (kick 36, snare 38, clap 39, closed hat 42, open hat 46, toms 45/50, crash 49). So the piano roll, note velocity, sections, quantize, repeat, mute, solo, stereo mix, reverb sends, volume automation, stems, WAV and the composition library all work on drum tracks. Each key plays a deterministic synthesized one-shot. The hit rings for its kit piece's natural length (about 0.1 s for a closed hat, 1.8 s for a crash), whatever the note's duration, and the sound envelope does not apply. Filter, echo and automation still shape the drums. Keys outside the grid's eight rows also play: other General MIDI pieces such as ride, cowbell, tambourine and floor toms use their kit sound, and any remaining key plays a tuned percussion tone.
+
+**Export MIDI** writes drum tracks on General MIDI channel 10, so other music apps play them with their own kits. **MIDI import** now accepts channel 10 as a part when you choose **Drum kit** for it. Key 35 (acoustic kick) becomes the kit's kick (36), and hits shorter than a sixteenth are held for one, as the review discloses.
+
+A track holds at most 256 hits, which is about eleven bars of a busy groove. Longer patterns need more tracks or **Repeat phrase**. The kit is synthesized, not sampled: there is no sample import or kit choice yet. See [drum tracks verification](docs/2026-10-13-drum-tracks.md).
 
 ## Audition an arrangement section
 
@@ -234,7 +264,7 @@ Choose **Import MIDI file** to inspect a local `.mid` or `.midi` file without ch
 The supported subset is deliberately bounded:
 
 - Standard MIDI formats 0/1, PPQN timing, one constant tempo of 40–240 BPM; absent tempo means 120 BPM. Maximum file size is 1 MiB, with 32 raw tracks, 32,768 events and 8,192 positive note attacks.
-- Up to sixteen source channel parts are shown; choose 1–8 supported parts with 1–256 included notes each in a window of at most 512 beats. Different-pitch polyphony is supported. Shared channels across raw tracks, ambiguous same-pitch pairing, percussion, pitch bend, pressure and unsupported controllers are visible but unselectable.
+- Up to sixteen source channel parts are shown; choose 1–8 supported parts with 1–256 included notes each in a window of at most 512 beats. Different-pitch polyphony is supported. Channel 10 percussion is importable only as a **Drum kit** part. Shared channels across raw tracks, ambiguous same-pitch pairing, pitch bend, pressure and unsupported controllers are visible but unselectable.
 - Static initial program and CC7 volume are shown separately from note velocity. Missing values use disclosed program 0 and CC7 100 defaults. Local instrument mapping is always explicit; it does not reproduce General MIDI sounds. CC7 zero remains silent.
 - Tempo changes, SMPTE timing, SysEx, ports and unknown global metadata reject the file. Supported but omitted text/time/key metadata and note-off release velocities are counted in the review; they do not become performance controls.
 - Names use strict UTF-8 and the existing 80-UTF-16-unit destination limit. Unusable or ambiguous source names need a visible name choice; they are never silently shortened. Safe fallback titles and part names are shown explicitly.

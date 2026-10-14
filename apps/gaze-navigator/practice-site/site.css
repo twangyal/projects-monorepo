@@ -27,3 +27,8 @@ footer { padding: 24px; color: #6b6052; text-align: center; }
 iframe { width: min(100%, 420px); border: 1px solid #d9cdb8; border-radius: 8px; background: #fff; }
 iframe.ask { height: 150px; }
 iframe.map { height: 70px; }
+
+.search { position: relative; }
+.suggestions { position: absolute; top: 100%; left: 0; z-index: 5; margin: 2px 0 0; padding: 4px 0; list-style: none; min-width: 14rem; background: #fff; border: 1px solid #c9c9c9; border-radius: 6px; box-shadow: 0 4px 12px rgb(0 0 0 / 12%); }
+.suggestions [role=option] { padding: 6px 10px; cursor: pointer; }
+.suggestions [role=option]:hover { background: #eef3fb; }

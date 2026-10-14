@@ -11,11 +11,17 @@ export type Entry =
   | BaseEntry & { kind: 'new'; track: TrackRef; role: Role; plays: number }
   | BaseEntry & { kind: 'favorite'; track: TrackRef; role: Role }
   | BaseEntry & { kind: 'manual'; id: string; role: Role; date: string; title: string; song: string; note: string };
-interface Connection { displayName: string; connectedAt: number; syncedAt: number | null; error: string | null }
+interface Connection { displayName: string; connectedAt: number; syncedAt: number | null; error: string | null; canCreatePlaylists: boolean }
+export interface Playlist { id: string; role: Role; name: string; url: string; tracks: number; createdAt: number }
 export interface ListeningState {
   configured: boolean; redirectUri: string | null; connections: Record<Role, Connection | null>;
   authFailures: Partial<Record<Role, string>>; entries: Entry[]; hiddenCount: number; truncated: boolean; memories: Memory[];
+  playlists: Playlist[]; recommendations: Record<Role, Pick[]>;
 }
+export interface Pick { track: TrackRef; from: Role; plays: number; liked: boolean; at: number; memories: Memory[] }
+export type PlaylistKind = 'both' | 'new' | 'favorite' | 'picks';
+export interface PlaylistSelection { kinds: PlaylistKind[]; from: string; to: string; memoriesOnly: boolean }
+export interface PlaylistSong { id: string; title: string; artists: string }
 type Api = <T>(path: string, method?: string, body?: unknown) => Promise<{ value: T }>;
 interface Context { api: Api; upload: (path: string, file: File) => Promise<unknown>; roomId: string; myRole: Role; names: () => Record<Role, string> }
 
@@ -35,17 +41,43 @@ function validMemory(value: unknown) {
     isText(value.text, 1000) && typeof value.photo === 'boolean' && isTime(value.createdAt);
 }
 
+function validPlaylist(value: unknown) {
+  return isRecord(value) && /^[A-Za-z0-9]{1,64}$/.test(String(value.id)) && ROLES.includes(value.role as Role) && isText(value.name, 100) &&
+    typeof value.url === 'string' && /^https:\/\/open\.spotify\.com\/playlist\/[A-Za-z0-9]{1,64}$/.test(value.url) &&
+    typeof value.tracks === 'number' && Number.isInteger(value.tracks) && value.tracks > 0 && value.tracks <= 100 && isTime(value.createdAt);
+}
+
+function validPick(value: unknown) {
+  return isRecord(value) && validTrack(value.track) && ROLES.includes(value.from as Role) && typeof value.plays === 'number' && Number.isInteger(value.plays) &&
+    value.plays >= 0 && typeof value.liked === 'boolean' && isTime(value.at) && Array.isArray(value.memories) && value.memories.every(validMemory);
+}
+
+/** Why a pick is suggested, in the participants' names. */
+export function pickReason(pick: Pick, names: Record<Role, string>): string {
+  const played = pick.plays >= 2 ? `played it ${times(pick.plays)}` : '';
+  return `${names[pick.from]} ${[pick.liked ? 'added it to Liked Songs' : '', played].filter(Boolean).join(' and ')}`;
+}
+
+export function validatePreview(value: unknown): PlaylistSong[] {
+  if (!isRecord(value) || !Array.isArray(value.tracks) || !value.tracks.every(song => isRecord(song) && /^[A-Za-z0-9]{1,64}$/.test(String(song.id)) &&
+    isText(song.title, 200) && isText(song.artists, 300))) throw new Error('The playlist preview was not understood. Try again.');
+  return value.tracks as PlaylistSong[];
+}
+
 // Replies are checked before rendering so a malformed service reply cannot inject links or crash the view.
 export function validateListening(value: unknown): ListeningState {
   const fail = () => { throw new Error('The listening timeline reply was not understood. Refresh and try again.'); };
   if (!isRecord(value) || typeof value.configured !== 'boolean' || !Array.isArray(value.entries) || !isRecord(value.connections) ||
     !isRecord(value.authFailures) || typeof value.hiddenCount !== 'number' || typeof value.truncated !== 'boolean' ||
-    !(value.redirectUri === null || isText(value.redirectUri, 300)) || !Array.isArray(value.memories) || !value.memories.every(validMemory)) fail();
+    !(value.redirectUri === null || isText(value.redirectUri, 300)) || !Array.isArray(value.memories) || !value.memories.every(validMemory) ||
+    !Array.isArray(value.playlists) || !value.playlists.every(validPlaylist) || !isRecord(value.recommendations) ||
+    !ROLES.every(role => { const picks = (value.recommendations as Record<string, unknown>)[role]; return Array.isArray(picks) && picks.length <= 20 && picks.every(validPick); })) fail();
   const state = value as unknown as ListeningState;
   for (const role of ROLES) {
     const connection = state.connections[role] as unknown;
     if (connection !== null && !(isRecord(connection) && isText(connection.displayName, 100) && isTime(connection.connectedAt) &&
-      (connection.syncedAt === null || isTime(connection.syncedAt)) && (connection.error === null || isText(connection.error, 300)))) fail();
+      (connection.syncedAt === null || isTime(connection.syncedAt)) && (connection.error === null || isText(connection.error, 300)) &&
+      typeof connection.canCreatePlaylists === 'boolean')) fail();
     const failure = state.authFailures[role] as unknown;
     if (failure !== undefined && !isText(failure, 300)) fail();
   }
@@ -329,6 +361,34 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     return item;
   }
 
+  function renderPicks(names: Record<Role, string>) {
+    const box = node('section', '', 'shared-picks'); box.id = 'shared-picks';
+    box.append(node('h4', 'Songs to share'));
+    if (!state!.connections.host || !state!.connections.guest) {
+      box.append(node('p', 'Once you have both connected Spotify, Duet suggests songs one of you loves that the other has not played yet.', 'fine'));
+      return box;
+    }
+    const me = context!.myRole, other: Role = me === 'host' ? 'guest' : 'host';
+    for (const to of [me, other]) {
+      const from: Role = to === 'host' ? 'guest' : 'host';
+      const group = node('div', '', 'pick-group'); group.dataset.pickFor = to;
+      group.append(node('h5', to === me ? `For you, from ${names[from]}` : `For ${names[to]}, from you`));
+      const picks = state!.recommendations[to];
+      if (!picks.length) group.append(node('p', to === me ? `Nothing yet. Songs ${names[from]} likes or plays repeatedly that you have not played will appear here.` : `Nothing yet. Songs you like or play repeatedly that ${names[to]} has not played will appear here.`, 'fine'));
+      const list = node('ul');
+      for (const pick of picks) {
+        const item = node('li'); const link = node('a', 'Open in Spotify');
+        link.href = pick.track.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        item.append(node('strong', song(pick.track)), node('span', ` · ${pickReason(pick, names)} · `, 'fine'), link);
+        list.append(item);
+      }
+      if (picks.length) group.append(list);
+      box.append(group);
+    }
+    box.append(node('p', 'Based on what Duet has seen since you connected: recent plays and Liked Songs. “Not played yet” means not seen in that history, so some may be familiar. Songs hidden from the timeline are never suggested. Make a playlist of your picks below.', 'fine'));
+    return box;
+  }
+
   function renderAllMemories() {
     const details = node('details', '', 'all-memories');
     details.open = Boolean(editing?.endsWith(':all'));
@@ -389,15 +449,106 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     return form;
   }
 
-  // Stable regions: the written-entry form is built once so refreshes never discard a draft.
-  let regions: { connections: HTMLElement; status: HTMLElement; toolbar: HTMLElement; entries: HTMLElement; memories: HTMLElement; form: HTMLFormElement } | null = null;
+  // Occasion playlists: a chosen slice of the timeline becomes a private playlist in the requester's own Spotify.
+  function renderPlaylistPanel() {
+    const details = node('details', '', 'playlist-panel'); details.id = 'timeline-playlists';
+    const form = node('form', '', 'playlist-form');
+    const field = (label: string, input: HTMLInputElement) => { const wrap = node('label', label); wrap.append(input); return wrap; };
+    const check = (label: string, checked: boolean) => {
+      const input = node('input'); input.type = 'checkbox'; input.checked = checked;
+      const wrap = node('label', '', 'check'); wrap.append(input, ` ${label}`); return { wrap, input };
+    };
+    const name = node('input'); name.required = true; name.maxLength = 100; name.placeholder = 'Our autumn';
+    const kinds: [PlaylistKind, ReturnType<typeof check>][] = [
+      ['both', check('Songs we both played', true)], ['new', check('First-time songs', true)], ['favorite', check('New favorites', true)],
+      ['picks', check('Your partner’s picks for you', false)]];
+    const kindSet = node('fieldset'); kindSet.append(node('legend', 'Include'), ...kinds.map(([, item]) => item.wrap));
+    const from = node('input'); from.type = 'date'; from.min = '1900-01-01'; from.max = '2100-12-31';
+    const to = node('input'); to.type = 'date'; to.min = '1900-01-01'; to.max = '2100-12-31';
+    const memories = check('Only songs with memories', false);
+    const previewButton = node('button', 'Preview songs'); previewButton.type = 'button'; previewButton.className = 'quiet';
+    const create = node('button', 'Create in my Spotify'); create.className = 'primary'; create.dataset.playlistCreate = '';
+    const hint = node('p', '', 'fine'); hint.id = 'playlist-hint';
+    const preview = node('div', '', 'playlist-preview'); preview.id = 'playlist-preview'; preview.setAttribute('aria-live', 'polite');
+    const made = node('div', '', 'playlist-list'); made.id = 'playlist-list';
+    const selection = (): PlaylistSelection => ({ kinds: kinds.filter(([, item]) => item.input.checked).map(([kind]) => kind), from: from.value, to: to.value, memoriesOnly: memories.input.checked });
+    const clearPreview = () => preview.replaceChildren();
+    for (const input of [from, to, memories.input, ...kinds.map(([, item]) => item.input)]) input.addEventListener('change', clearPreview);
+
+    previewButton.addEventListener('click', () => void (async () => {
+      if (!context || busy) return;
+      const current = session; busy = true; render();
+      try {
+        const songs = validatePreview((await context.api<unknown>(path('/playlists/preview'), 'POST', { selection: selection() })).value);
+        if (current !== session) return;
+        const list = node('ol'); for (const item of songs) list.append(node('li', song({ ...item, album: '', url: '' })));
+        preview.replaceChildren(node('p', songs.length ? `${songs.length} song${songs.length === 1 ? '' : 's'}, oldest first${songs.length > 100 ? ' — a playlist holds at most 100, so narrow the choices' : ''}:` : 'No timeline songs match these choices yet.'), ...(songs.length ? [list] : []));
+      } catch (error) {
+        if (current === session) notify(error instanceof Error ? error.message : 'The preview could not be loaded.', true);
+      } finally {
+        if (current === session) { busy = false; render(); }
+      }
+    })());
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      void (async () => {
+        if (!context || busy) return;
+        const current = session; busy = true; render();
+        try {
+          const reply = await context.api<{ playlist: unknown; listening: unknown }>(path('/playlists'), 'POST', { name: name.value, selection: selection() });
+          if (current !== session) return;
+          if (!isRecord(reply.value) || !validPlaylist(reply.value.playlist)) throw new Error('The new playlist reply was not understood. Check your Spotify.');
+          state = validateListening(reply.value.listening);
+          const created = reply.value.playlist as Playlist;
+          notify(`Created “${created.name}” with ${created.tracks} song${created.tracks === 1 ? '' : 's'} in your Spotify.`);
+          name.value = ''; clearPreview();
+        } catch (error) {
+          if (current === session) notify(error instanceof Error ? error.message : 'The playlist could not be created.', true);
+        } finally {
+          if (current === session) { busy = false; render(); }
+        }
+      })();
+    });
+
+    const actions = node('div', '', 'actions'); actions.append(previewButton, create);
+    form.append(field('Playlist name', name), kindSet, field('From', from), field('To', to), memories.wrap, hint, actions, preview);
+    details.append(node('summary', 'Make a playlist from our timeline'),
+      node('p', 'Choose a slice of your timeline — a trip, a month, the songs you wrote memories for — and Duet creates it as a private playlist in your own Spotify account, oldest song first. It never changes your other playlists.', 'fine'),
+      form, made);
+    return { details, hint, create, made };
+  }
+
+  function refreshPlaylists(names: Record<Role, string>) {
+    const panel = regions!.playlists, mine = state!.connections[context!.myRole];
+    panel.details.hidden = !state!.configured;
+    const blocked = !mine ? 'Connect your Spotify above to create playlists in it.' :
+      !mine.canCreatePlaylists ? 'Duet needs one more permission to create private playlists. Reconnecting keeps your timeline.' : '';
+    panel.hint.textContent = blocked;
+    if (mine && !mine.canCreatePlaylists) panel.hint.append(' ', button('Reconnect my Spotify', () => void connect()));
+    panel.create.disabled = busy || Boolean(blocked);
+    if (!state!.playlists.length) { panel.made.replaceChildren(); return; }
+    const list = node('ul');
+    for (const playlist of state!.playlists) {
+      const item = node('li'), link = node('a', playlist.name);
+      link.href = playlist.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      item.append(link, ` · ${playlist.tracks} song${playlist.tracks === 1 ? '' : 's'} · in ${names[playlist.role]}’s Spotify · ${timeLabel(playlist.createdAt)}`);
+      list.append(item);
+    }
+    panel.made.replaceChildren(node('h5', 'Playlists made from this timeline'), list);
+  }
+
+  // Stable regions: the written-entry and playlist forms are built once so refreshes never discard a draft.
+  let regions: { connections: HTMLElement; status: HTMLElement; toolbar: HTMLElement; entries: HTMLElement; picks: HTMLElement; memories: HTMLElement; form: HTMLFormElement;
+    playlists: ReturnType<typeof renderPlaylistPanel> } | null = null;
 
   function build() {
     container.querySelector('.timeline-body')?.remove();
     const body = node('div', '', 'timeline-body');
     const status = node('p', '', 'fine'); status.id = 'listening-status'; status.setAttribute('role', 'status');
-    regions = { connections: node('div'), status, toolbar: node('div', '', 'timeline-toolbar'), entries: node('div'), memories: node('div'), form: renderManualForm() };
-    body.append(regions.connections, regions.status, regions.toolbar, regions.entries, regions.memories, regions.form);
+    regions = { connections: node('div'), status, toolbar: node('div', '', 'timeline-toolbar'), entries: node('div'), picks: node('div'), memories: node('div'), form: renderManualForm(),
+      playlists: renderPlaylistPanel() };
+    body.append(regions.connections, regions.status, regions.toolbar, regions.entries, regions.picks, regions.memories, regions.playlists.details, regions.form);
     container.append(body);
   }
 
@@ -412,7 +563,10 @@ export function createTimeline(container: HTMLElement, notify: (message: string,
     // An open inline editor keeps its region until it is saved or closed, so drafts survive refreshes.
     if (!editing || !regions.entries.querySelector('.inline-form')) regions.entries.replaceChildren(renderEntries(names));
     if (!editing || !regions.memories.querySelector('.inline-form')) regions.memories.replaceChildren(renderAllMemories());
+    regions.picks.hidden = !state.configured;
+    regions.picks.replaceChildren(renderPicks(names));
     for (const control of container.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement>('.timeline-body button, .timeline-body input, .timeline-body textarea')) control.disabled = busy;
+    refreshPlaylists(names);
   }
 
   return {

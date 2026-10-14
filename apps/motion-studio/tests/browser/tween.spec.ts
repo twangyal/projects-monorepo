@@ -43,6 +43,19 @@ test('generated drawing remains separately editable and original endpoints survi
   await open(page);await apply(page);const before=await backup(page);await scrub(page,4);await page.locator('#ink').fill('#ffff00');await page.locator('#stage').scrollIntoViewIfNeeded();const box=(await page.locator('#stage').boundingBox())!;await page.mouse.click(box.x+500*box.width/640,box.y+300*box.height/360);const edited=await backup(page);expect(edited.layers[0].cels[2].strokes).toHaveLength(3);for(const index of [0,1,3,4])expect(edited.layers[0].cels[index]).toEqual(before.layers[0].cels[index]);await page.locator('#undo').click();expect(await backup(page)).toEqual(before);await page.locator('#redo').click();expect(await backup(page)).toEqual(edited);
 });
 
+test('Suggest pairs from shapes reproduces the authored correspondence and direction, and its result applies like an explicit one',async({page})=>{
+  await open(page);await page.locator('#make-tween').click();await expect(page.locator('#tween-panel')).toBeVisible();
+  await page.getByRole('button',{name:'Suggest pairs from shapes',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'Ending stroke for starting stroke 1',exact:true})).toHaveValue('1');
+  await expect(page.getByRole('combobox',{name:'Ending stroke for starting stroke 2',exact:true})).toHaveValue('0');
+  await expect(page.getByRole('checkbox',{name:'Reverse ending stroke for starting stroke 1',exact:true})).toBeChecked();
+  await expect(page.getByRole('checkbox',{name:'Reverse ending stroke for starting stroke 2',exact:true})).not.toBeChecked();
+  await expect(page.locator('#tween-status')).toContainText('Suggested 2 pairs');
+  await expect(page.locator('.tween-check')).toHaveCount(0);
+  await page.locator('#tween-count').fill('3');await review(page);await page.locator('#tween-apply').click();
+  await expect(page.locator('#stage')).toHaveAttribute('data-frame','2');expectCandidate(await backup(page));
+});
+
 test('invalid and changed-back count text preserves its node and requires a fresh review',async({page})=>{
   await open(page);await configure(page);await review(page);const count=page.locator('#tween-count');await count.evaluate(node=>node.setAttribute('data-native-identity','original'));await count.fill('-');await page.locator('#tween-review').click();await expect(count).toHaveValue('-');await expect(count).toHaveAttribute('data-native-identity','original');await expect(page.locator('#tween-apply')).toBeDisabled();expect(await stored(page)).toEqual(endpoints());await count.fill('3');await expect(page.locator('#tween-apply')).toBeDisabled();await review(page);await count.fill('4');await count.fill('3');await expect(page.locator('#tween-apply')).toBeDisabled();await expect(count).toBeFocused();await review(page);await page.locator('#tween-discard').click();expect(await backup(page)).toEqual(endpoints());
 });

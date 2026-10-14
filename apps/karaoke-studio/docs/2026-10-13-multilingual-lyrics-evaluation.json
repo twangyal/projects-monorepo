@@ -1,0 +1,86 @@
+{
+ "date": "2026-10-13",
+ "dataset": "JamendoLyrics (MIT code; Creative Commons songs); first 300 s for English, first 120 s otherwise; German and Spanish: first 10 songs in dataset order",
+ "results": {
+  "English": {
+   "multilingual": {
+    "songs": 20,
+    "referenceWords": 5693,
+    "wer": 0.423,
+    "medianSongWer": 0.416
+   },
+   "english": {
+    "songs": 20,
+    "referenceWords": 5693,
+    "wer": 0.309,
+    "medianSongWer": 0.285
+   },
+   "automatic": {
+    "songs": 20,
+    "referenceWords": 5693,
+    "wer": 0.309,
+    "medianSongWer": 0.285
+   }
+  },
+  "French": {
+   "multilingual": {
+    "songs": 19,
+    "referenceWords": 3612,
+    "wer": 0.441,
+    "medianSongWer": 0.428
+   },
+   "english": {
+    "songs": 19,
+    "referenceWords": 3612,
+    "wer": 0.915,
+    "medianSongWer": 0.917
+   },
+   "automatic": {
+    "songs": 19,
+    "referenceWords": 3612,
+    "wer": 0.441,
+    "medianSongWer": 0.428
+   }
+  },
+  "German": {
+   "multilingual": {
+    "songs": 10,
+    "referenceWords": 1571,
+    "wer": 0.254,
+    "medianSongWer": 0.271
+   },
+   "english": {
+    "songs": 10,
+    "referenceWords": 1571,
+    "wer": 0.957,
+    "medianSongWer": 0.959
+   },
+   "automatic": {
+    "songs": 10,
+    "referenceWords": 1571,
+    "wer": 0.254,
+    "medianSongWer": 0.271
+   }
+  },
+  "Spanish": {
+   "multilingual": {
+    "songs": 10,
+    "referenceWords": 1240,
+    "wer": 0.462,
+    "medianSongWer": 0.399
+   },
+   "english": {
+    "songs": 10,
+    "referenceWords": 1240,
+    "wer": 0.865,
+    "medianSongWer": 0.872
+   },
+   "automatic": {
+    "songs": 10,
+    "referenceWords": 1240,
+    "wer": 0.462,
+    "medianSongWer": 0.399
+   }
+  }
+ }
+}

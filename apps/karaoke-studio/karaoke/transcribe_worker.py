@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+import gc
 import json
 import os
 from pathlib import Path
@@ -16,26 +17,32 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from karaoke.limits import (  # noqa: E402
     MAX_DURATION, MAX_WAV_BYTES, SAMPLE_RATE, WORKER_CPU_HARD, WORKER_CPU_SOFT,
 )
-from karaoke.transcription import ASR_DIRECTORY, MODEL_NAME, MAX_WORDS, asr_ready  # noqa: E402
+from karaoke.transcription import (  # noqa: E402
+    DETECTION_WORDS, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, AsrModel, installed_models, sounds_english,
+)
 
 RATE = 16000
 # Voice activity on separated vocals: phrases of at most 20 s, split at pauses of 0.4 s.
 VAD = dict(threshold=0.4, min_silence_duration=0.4, min_speech_duration=0.25, max_speech_duration=20.0)
 
 
-def load(model_root: Path, threads: int = 3):
+def load(model_root: Path, model: AsrModel, threads: int = 3):
     import sherpa_onnx
-    directory = Path(model_root) / ASR_DIRECTORY
-    recognizer = sherpa_onnx.OfflineRecognizer.from_transducer(
+    directory = Path(model_root) / model.directory
+    return sherpa_onnx.OfflineRecognizer.from_transducer(
         str(directory / 'encoder.int8.onnx'), str(directory / 'decoder.int8.onnx'), str(directory / 'joiner.int8.onnx'),
         str(directory / 'tokens.txt'), num_threads=threads, model_type='nemo_transducer')
+
+
+def vad_settings(model_root: Path, model: AsrModel):
+    import sherpa_onnx
     config = sherpa_onnx.VadModelConfig()
-    config.silero_vad.model = str(directory / 'silero_vad.onnx')
+    config.silero_vad.model = str(Path(model_root) / model.directory / VAD_FILE)
     for name, value in VAD.items():
         setattr(config.silero_vad, name, value)
     config.sample_rate = RATE
     config.num_threads = 1
-    return recognizer, config
+    return config
 
 
 def to_16k_mono(raw: bytes, frames: int):
@@ -78,7 +85,8 @@ def words_from(tokens, timestamps, durations, offset: float, log_probs=()) -> li
     return [word for word in words if len(word['text']) <= 60]
 
 
-def recognize(samples, recognizer, vad_config, progress: Callable[[int, int], None] | None = None) -> list[dict]:
+def phrases_of(samples, vad_config) -> list[tuple[int, object]]:
+    """Sung phrases as (start sample, samples) at 16 kHz."""
     import numpy as np
     import sherpa_onnx
     detector = sherpa_onnx.VoiceActivityDetector(vad_config, buffer_size_in_seconds=MAX_DURATION + 30)
@@ -95,20 +103,49 @@ def recognize(samples, recognizer, vad_config, progress: Callable[[int, int], No
         drain()
     detector.flush()
     drain()
+    return phrases
+
+
+def recognize_phrase(recognizer, start: int, phrase) -> list[dict]:
+    stream = recognizer.create_stream()
+    stream.accept_waveform(RATE, phrase)
+    recognizer.decode_stream(stream)
+    result = stream.result
+    return words_from(list(result.tokens), list(result.timestamps), list(getattr(result, 'durations', []) or []), start / RATE,
+                      list(getattr(result, 'ys_log_probs', []) or []))
+
+
+def recognize(phrases, load_model: Callable[[AsrModel], object], models: tuple[AsrModel, ...],
+              progress: Callable[[int, int], None] | None = None) -> tuple[AsrModel, list[dict]]:
+    """Recognize every phrase with the model that suits the song's language.
+
+    With one model installed it hears everything. With both, the multilingual model hears phrases
+    until it has ``DETECTION_WORDS`` words (or the song ends); if they read as English, the English
+    model hears the whole song again, otherwise the multilingual model carries on.
+    """
+    total = len(phrases)
+    report = progress or (lambda _completed, _total: None)
+    model = models[0] if len(models) == 1 else MULTILINGUAL
+    recognizer = load_model(model)
     words: list[dict] = []
-    if progress:
-        progress(0, len(phrases))
-    for count, (start, phrase) in enumerate(phrases, 1):
-        stream = recognizer.create_stream()
-        stream.accept_waveform(RATE, phrase)
-        recognizer.decode_stream(stream)
-        result = stream.result
-        words.extend(words_from(list(result.tokens), list(result.timestamps), list(getattr(result, 'durations', []) or []), start / RATE,
-                                list(getattr(result, 'ys_log_probs', []) or [])))
-        if progress:
-            progress(count, len(phrases))
+    report(0, total)
+    done = 0
+    if len(models) > 1:
+        while done < total and len(words) < DETECTION_WORDS:
+            words.extend(recognize_phrase(recognizer, *phrases[done]))
+            done += 1
+            report(done, total)
+        if sounds_english([word['text'] for word in words]):
+            del recognizer  # free the multilingual model before loading the English one
+            gc.collect()
+            model, recognizer, words, done = ENGLISH, load_model(ENGLISH), [], 0
+            report(0, total)
+    for start, phrase in phrases[done:]:
+        words.extend(recognize_phrase(recognizer, start, phrase))
+        done += 1
+        report(done, total)
     words.sort(key=lambda word: (word['start'], word['end']))
-    return words[:MAX_WORDS]
+    return model, words[:MAX_WORDS]
 
 
 def main() -> None:
@@ -119,7 +156,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.output.exists() or args.output.is_symlink():
         raise ValueError('The transcript destination already exists.')
-    if not asr_ready(args.model_root):
+    models = installed_models(args.model_root)
+    if not models:
         raise RuntimeError('Verified lyric recognition model files are missing or corrupt; run explicit model setup.')
     resource.setrlimit(resource.RLIMIT_CPU, (WORKER_CPU_SOFT, WORKER_CPU_HARD))
     os.environ.update({'OMP_NUM_THREADS': '3', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1'})
@@ -143,7 +181,7 @@ def main() -> None:
         raw = audio.readframes(frames)
     started = time.perf_counter()
     try:
-        recognizer, vad_config = load(args.model_root)
+        vad_config = vad_settings(args.model_root, models[0])
     except ModuleNotFoundError as error:
         raise RuntimeError('Install requirements-ml.lock.txt (including sherpa-onnx) into the documented Python 3.11 environment.') from error
     samples = to_16k_mono(raw, frames)
@@ -152,10 +190,10 @@ def main() -> None:
     def progress(completed: int, total: int) -> None:
         print(json.dumps({'type': 'progress', 'completed': completed, 'total': total}), flush=True)
 
-    words = recognize(samples, recognizer, vad_config, progress)
+    model, words = recognize(phrases_of(samples, vad_config), lambda chosen: load(args.model_root, chosen), models, progress)
     temporary = args.output.with_suffix('.json.part')
     with temporary.open('x', encoding='utf-8') as stream:
-        stream.write(json.dumps({'model': MODEL_NAME, 'words': words, 'seconds': round(time.perf_counter() - started, 3)}))
+        stream.write(json.dumps({'model': model.name, 'words': words, 'seconds': round(time.perf_counter() - started, 3)}))
     temporary.replace(args.output)
 
 

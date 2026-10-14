@@ -6,7 +6,9 @@ import { compositionDurationBeats, validateComposition } from './model.ts';
 
 const TICKS_PER_BEAT = 480;
 // General MIDI approximations: flute, square lead and saw lead.
-const PROGRAMS = { sine: 73, triangle: 80, sawtooth: 81 };
+const PROGRAMS = { sine: 73, triangle: 80, sawtooth: 81, drums: 0 };
+/** General MIDI reserves channel 10 (index 9) for percussion; melodic parts keep their track index (0–7). */
+const PERCUSSION_CHANNEL = 9;
 
 interface Event { tick: number; order: number; bytes: number[] }
 interface MidiNote { pitch: number; start: number; end: number; velocity: number }
@@ -65,7 +67,7 @@ export function encodeMidi(project: Composition, expression = false): Uint8Array
   const valid = validateComposition(project);
   const end = Math.round(compositionDurationBeats(valid) * TICKS_PER_BEAT);
   const automated=valid.tracks.filter(p=>!p.muted&&(p.volumeCurve||p.volumeRamp));
-  const baseEvents=3+valid.tracks.reduce((n,p)=>n+4+p.notes.length*2,0);
+  const baseEvents=3+valid.tracks.reduce((n,p)=>n+6+p.notes.length*2,0);
   const step=[30,60,120].find(step=>baseEvents+automated.reduce((n,p)=>n+Math.ceil(end/step)+2+(p.volumeCurve?.length??0)+(p.volumeRamp?2:0),0)<=MIDI_IMPORT_LIMITS.events)!;
   const tempo = Math.round(60_000_000 / valid.tempo);
   const encoder = new TextEncoder();
@@ -73,12 +75,16 @@ export function encodeMidi(project: Composition, expression = false): Uint8Array
     { tick: 0, order: 0, bytes: meta(3, [...encoder.encode(valid.title)]) },
     { tick: 0, order: 1, bytes: meta(81, [(tempo >>> 16) & 255, (tempo >>> 8) & 255, tempo & 255]) },
   ], end)];
-  valid.tracks.forEach((part, channel) => {
+  valid.tracks.forEach((part, index) => {
+    const channel = part.instrument === 'drums' ? PERCUSSION_CHANNEL : index;
     const events: Event[] = [
       { tick: 0, order: 0, bytes: meta(3, [...encoder.encode(part.name)]) },
       { tick: 0, order: 1, bytes: [192 | channel, PROGRAMS[part.instrument]] },
       { tick: 0, order: 2, bytes: [176 | channel, 7, Math.round(part.volume * 127)] },
     ];
+    // Stereo mix: CC10 pan (0 left, 64 centre, 127 right) and CC91 reverb send, only when set.
+    if (part.pan !== undefined) events.push({ tick: 0, order: 2, bytes: [176 | channel, 10, 64 + Math.round(part.pan * 63)] });
+    if (part.reverbSend !== undefined) events.push({ tick: 0, order: 2, bytes: [176 | channel, 91, Math.round(part.reverbSend * 127)] });
     if (expression && !part.muted && (part.volumeCurve || part.volumeRamp)) {
       const ticks=new Set<number>([0,end]);for(let tick=0;tick<=end;tick+=step)ticks.add(tick);
       for(const beat of [...(part.volumeCurve?.map(p=>p.beat)??[]),...(part.volumeRamp?[part.volumeRamp.start,part.volumeRamp.end]:[])]){const tick=Math.round(beat*TICKS_PER_BEAT);if(tick<=end)ticks.add(tick);}

@@ -23,7 +23,13 @@ function visibleText(node) {
   if (node.tagName === 'IMG') return ` ${node.getAttribute('alt') ?? ''} `;
   // Form controls inside a label contribute their own values, not their option lists.
   if (node.getAttribute?.('aria-hidden') === 'true' || ['SCRIPT', 'STYLE', 'TEMPLATE', 'SELECT', 'TEXTAREA'].includes(node.tagName)) return '';
-  return [...node.childNodes].map(visibleText).join('');
+  if (node.tagName === 'BR') return ' ';
+  // Hidden text is not part of the name, and block-level parts are separate words: a suggestion reading
+  // "Ada Lovelace" above "English mathematician" is not named "Ada LovelaceEnglish mathematician".
+  const display = node.ownerDocument?.defaultView?.getComputedStyle?.(node).display ?? 'inline';
+  if (display === 'none') return '';
+  const text = [...node.childNodes].map(visibleText).join('');
+  return display === 'inline' || display === 'contents' ? text : ` ${text} `;
 }
 
 export function roleOf(element) {
@@ -264,8 +270,13 @@ export function captureContext(document, { x, y, radius, exclude = null, limit =
   // A generic focusable container is redundant when it contains a more specific control.
   const kept = candidates.filter(({ element }) => roleOf(element) !== 'generic' ||
     !candidates.some(other => other.element !== element && composedContains(element, other.element)));
-  kept.sort((a, b) => a.distance - b.distance);
-  const elements = kept.slice(0, limit).map((candidate, index) => ({
+  // A control inside another with the same name (a link inside a suggestion's list option) is one target, not two
+  // identical choices: the inner one is kept, and a click on it reaches the outer one too.
+  const names = new Map(kept.map(candidate => [candidate, accessibleName(candidate.element)]));
+  const distinct = kept.filter(outer => !(names.get(outer) && kept.some(inner => inner !== outer &&
+    composedContains(outer.element, inner.element) && names.get(inner) === names.get(outer))));
+  distinct.sort((a, b) => a.distance - b.distance);
+  const elements = distinct.slice(0, limit).map((candidate, index) => ({
     id: index + 1, element: candidate.element, rect: candidate.rect, distance: candidate.distance, frames: candidate.frames,
     ...describe(candidate.element),
   }));

@@ -46,6 +46,8 @@
           <nav class="pager" aria-label="Function pages"><button id="function-prev" type="button" disabled>Previous functions</button><span id="function-page">0 functions</span><button id="function-next" type="button" disabled>Next functions</button></nav>
           <form id="report-form">
             <div class="selection-grid"><label for="selection-mode">Selection<select id="selection-mode"><option value="lines">Manual line range</option><option value="function" disabled>Selected function</option></select></label><label for="start-line">Start line<input id="start-line" name="start" inputmode="numeric" value="1" autocomplete="off"></label><label for="end-line">End line<input id="end-line" name="end" inputmode="numeric" value="1" autocomplete="off"></label><label for="max-commits">Maximum commits<input id="max-commits" name="max_commits" inputmode="numeric" value="20" autocomplete="off"></label></div>
+            <label class="discussion-option" for="fetch-discussions"><input id="fetch-discussions" name="fetch_discussions" type="checkbox"> Fetch GitHub pull-request discussion for the report's commits</label>
+            <p class="hint">Off by default. When checked, the service contacts api.github.com (github.com origins only) and quotes pull-request descriptions, reviews and closing issues as unverified participant text. It uses <code>GITHUB_TOKEN</code> from the service's environment if set.</p>
             <p id="selected-function" class="hint">No named function selected</p>
             <p class="hint">Select 1–200 lines and 1–50 commits. Long or ambiguous functions need an explicit smaller manual range.</p>
           </form>

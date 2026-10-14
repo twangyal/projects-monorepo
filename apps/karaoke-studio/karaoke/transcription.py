@@ -1,35 +1,80 @@
 """Automatic lyric transcription of separated vocals in a killable offline subprocess.
 
 The parent process imports no ML packages. ``transcribe_vocals`` runs ``transcribe_worker.py`` on a
-vocals WAV and returns validated, timed words. Recognition uses NVIDIA's Parakeet TDT 0.6B v2
-(int8, English) through sherpa-onnx, with Silero voice-activity detection splitting the vocals into
-sung phrases. Models are installed explicitly by ``scripts/setup_lyrics_model.py``; nothing is
-downloaded at run time.
+vocals WAV and returns validated, timed words. Silero voice-activity detection splits the vocals into
+sung phrases, recognized through sherpa-onnx by NVIDIA's Parakeet TDT 0.6B (int8): v2 for English
+songs, v3 for the 24 other European languages it covers. With both installed, v3 hears the song's
+first words and an English song is then recognized by v2. Models are installed explicitly by
+``scripts/setup_lyrics_model.py``; nothing is downloaded at run time.
 """
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 import hashlib
 import json
 import math
 from pathlib import Path
 import sys
 import threading
+import unicodedata
 
 from .limits import MAX_DURATION, MAX_WORKER_RSS_KIB, WORKER_TIMEOUT
 from .pipeline import _run
 
-ASR_DIRECTORY = 'lyrics-asr'
 ASR_RELEASE = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/'
-ASR_ARCHIVE = 'sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2'
-ASR_FILES = {
-    'encoder.int8.onnx': 'a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab',
-    'decoder.int8.onnx': 'b6bb64963457237b900e496ee9994b59294526439fbcc1fecf705b31a15c6b4e',
-    'joiner.int8.onnx': '7946164367946e7f9f29a122407c3252b680dbae9a51343eb2488d057c3c43d2',
-    'tokens.txt': 'ec182b70dd42113aff6c5372c75cac58c952443eb22322f57bbd7f53977d497d',
-    'silero_vad.onnx': '9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6',
-}
-MODEL_NAME = 'parakeet-tdt-0.6b-v2-int8+silero-vad'
+VAD_FILE = 'silero_vad.onnx'
+VAD_SHA256 = '9e2449e1087496d8d4caba907f23e0bd3f78d91fa552479bb9c23ac09cbb1fd6'
+
+
+@dataclass(frozen=True)
+class AsrModel:
+    """One installable recognizer: its stored name, directory and pinned files (Silero VAD included)."""
+    key: str
+    name: str
+    directory: str
+    archive: str
+    archive_bytes: int
+    archive_sha256: str
+    files: dict[str, str]
+
+
+# Parakeet v2 recognizes English singing best (30.9% WER on 20 English songs against v3's 42.3%);
+# v3 covers 25 European languages (25.4% German, 44.1% French). Each has its own directory.
+ENGLISH = AsrModel(
+    'english', 'parakeet-tdt-0.6b-v2-int8+silero-vad', 'lyrics-asr',
+    'sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2', 482468385,
+    '157c157bc51155e03e37d2466522a3a737dd9c72bb25f36eb18912964161e1ad', {
+        'encoder.int8.onnx': 'a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab',
+        'decoder.int8.onnx': 'b6bb64963457237b900e496ee9994b59294526439fbcc1fecf705b31a15c6b4e',
+        'joiner.int8.onnx': '7946164367946e7f9f29a122407c3252b680dbae9a51343eb2488d057c3c43d2',
+        'tokens.txt': 'ec182b70dd42113aff6c5372c75cac58c952443eb22322f57bbd7f53977d497d',
+        VAD_FILE: VAD_SHA256,
+    })
+MULTILINGUAL = AsrModel(
+    'multilingual', 'parakeet-tdt-0.6b-v3-int8+silero-vad', 'lyrics-asr-v3',
+    'sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2', 487170055,
+    '5793d0fd397c5778d2cf2126994d58e9d56b1be7c04d13c7a15bb1b4eafb16bf', {
+        'encoder.int8.onnx': 'acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247',
+        'decoder.int8.onnx': '179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e',
+        'joiner.int8.onnx': '3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3',
+        'tokens.txt': 'd58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d',
+        VAD_FILE: VAD_SHA256,
+    })
+ASR_MODELS = (ENGLISH, MULTILINGUAL)
+KNOWN_MODELS = frozenset(model.name for model in ASR_MODELS)
+
+# Language choice from the multilingual model's first words: function words that are English and
+# not common words of the other languages it covers (so not "a", "in", "is", "so", "was", "will").
+ENGLISH_MARKERS = frozenset("""
+the and you to of my it that your we for with this are but not don't i'm it's can't won't i'll we're
+you're they're i've just what when like yeah know get got never there they she his our out down if
+let can be how why who where some heart only feel way think could would should through every
+""".split())
+DETECTION_WORDS = 100
+# On 52 JamendoLyrics songs, the first 100 words of English songs were 28-46% markers; French,
+# German and Spanish songs at most 9%.
+ENGLISH_SHARE = 0.18
 MAX_WORDS = 6000
 MAX_TRANSCRIPT_BYTES = 1024 * 1024
 
@@ -37,18 +82,18 @@ MAX_TRANSCRIPT_BYTES = 1024 * 1024
 _verified: dict[str, tuple] = {}
 
 
-def asr_ready(model_root: Path) -> bool:
-    """All pinned files present with matching SHA-256 (re-hashed only when a file's metadata changes)."""
-    directory = Path(model_root) / ASR_DIRECTORY
+def model_ready(model_root: Path, model: AsrModel) -> bool:
+    """All of ``model``'s pinned files present with matching SHA-256 (re-hashed only when a file's metadata changes)."""
+    directory = Path(model_root) / model.directory
     try:
-        stats = [(directory / name).stat(follow_symlinks=False) for name in ASR_FILES]
+        stats = [(directory / name).stat(follow_symlinks=False) for name in model.files]
         signature = tuple((info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns) for info in stats)
     except OSError:
         return False
     if _verified.get(str(directory)) == signature:
         return True
     try:
-        for name, expected in ASR_FILES.items():
+        for name, expected in model.files.items():
             path = directory / name
             if path.is_symlink() or not path.is_file() or path.stat().st_size > 800_000_000:
                 return False
@@ -64,11 +109,37 @@ def asr_ready(model_root: Path) -> bool:
         return False
 
 
+def installed_models(model_root: Path) -> tuple[AsrModel, ...]:
+    return tuple(model for model in ASR_MODELS if model_ready(model_root, model))
+
+
+def asr_ready(model_root: Path) -> bool:
+    """Automatic lyrics work with either recognizer; with both, each song gets the better one."""
+    return bool(installed_models(model_root))
+
+
+def archive_model(archive: Path) -> AsrModel | None:
+    """The model whose pinned archive size ``archive`` has (its checksum is verified before extraction)."""
+    size = Path(archive).stat().st_size
+    return next((model for model in ASR_MODELS if model.archive_bytes == size), None)
+
+
+def _plain(word: str) -> str:
+    return unicodedata.normalize('NFC', word.lower().replace('\u2019', "'")).strip('.,!?;:"()\'«»¿¡-')
+
+
+def sounds_english(words: list[str]) -> bool:
+    """Whether the first ``DETECTION_WORDS`` recognized words read as English."""
+    sample = [_plain(word) for word in words[:DETECTION_WORDS]]
+    sample = [word for word in sample if word]
+    return len(sample) >= 5 and sum(word in ENGLISH_MARKERS for word in sample) >= ENGLISH_SHARE * len(sample)
+
+
 def validate_transcript(value: object, duration: float) -> dict:
     """Strict shape for stored transcripts: model name, timed words and processing time."""
     if not isinstance(value, dict) or set(value) != {'model', 'words', 'seconds'}:
         raise ValueError('The lyric transcript has an unexpected shape.')
-    if value['model'] != MODEL_NAME:
+    if value['model'] not in KNOWN_MODELS:
         raise ValueError('The lyric transcript came from an unknown model.')
     seconds = value['seconds']
     if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds < 0:
@@ -89,7 +160,7 @@ def validate_transcript(value: object, duration: float) -> dict:
                 or not previous - 1e-6 <= start <= end <= min(duration, MAX_DURATION) + 0.5):
             raise ValueError('A transcript word has invalid text or timing.')
         previous = start
-    return dict(model=MODEL_NAME, words=words, seconds=float(seconds))
+    return dict(model=value['model'], words=words, seconds=float(seconds))
 
 
 def transcribe_vocals(vocals: Path, output: Path, model_root: Path, duration: float,

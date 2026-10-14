@@ -63,6 +63,8 @@ test('two named orders retain original labels votes and media through current re
   await page.getByRole('button',{name:`Add to current mix ${SONGS[0].title}`,exact:true}).click();await expect(page.locator('#playlist .song-link')).toHaveText([SONGS[2].title,SONGS[0].title]);expect((await snapshot(page)).savedMixes).toEqual([first]);
   await playlist(guest,[ids[1]]); const second=await save(guest,'Morning'); expect(second.entries).toEqual(entries(ids,[1]));
   const library=await snapshot(page); expect(library.savedMixes).toEqual([first,second]); expect(library.savedMixesRevision).toBe(2);
+  // Rebuild from the guest's newer current mix, as a person would after seeing it arrive.
+  await expect(page.locator('#playlist .song-link')).toHaveText([SONGS[1].title]);
   await page.locator('#build-mix').click(); await expect(page.locator('#playlist .song-link')).toHaveCount(3);
   const after=await snapshot(page);expect(after.savedMixes).toEqual([first,second]);expect(after.ratings).toEqual(before.ratings);expect(after.tracks).toEqual(before.tracks);expect(await audioFingerprints(page)).toEqual(mediaBefore);
   expect(await page.locator('#saved-mixes-list script').count()).toBe(0);

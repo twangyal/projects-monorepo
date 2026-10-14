@@ -13,6 +13,33 @@ def commit_anchor(commit: str) -> str:
     return "commit-" + quote(commit, safe="")
 
 
+def pull_anchor(number: int) -> str:
+    return f"pull-{number}"
+
+
+def _first_paragraph(text: str) -> str:
+    for paragraph in text.split("\n\n"):
+        if paragraph.strip():
+            return paragraph.strip()
+    return ""
+
+
+def _discussions(report: Report) -> list[dict]:
+    result = []
+    for pull in report.retrieved_discussions.pulls:
+        excerpt = _first_paragraph(pull.description)
+        result.append({
+            "number": pull.number, "title": pull.title, "url": pull.url, "state": pull.state,
+            "merged_at": pull.merged_at, "evidence_anchor": pull_anchor(pull.number),
+            "commits": [{"commit": commit, "evidence_anchor": commit_anchor(commit)} for commit in pull.commits],
+            "description_excerpt": excerpt[:MAX_MESSAGE_EXCERPT],
+            "description_truncated": len(excerpt) > MAX_MESSAGE_EXCERPT or pull.description_truncated,
+            "file_comment_count": sum(item.kind == "file-review-comment" for item in pull.comments),
+            "linked_issues": [{"number": issue.number, "title": issue.title, "url": issue.url} for issue in pull.linked_issues],
+        })
+    return result
+
+
 def build_synopsis(report: Report) -> dict:
     """Summarize observations, preserving Git's existing range-change order."""
     attribution = {}
@@ -56,7 +83,16 @@ def build_synopsis(report: Report) -> dict:
         "or of the selected range's introduction. Whole-file rename similarity is heuristic "
         "and does not establish function continuity."
     )
-    return {
+    retrieved = report.retrieved_discussions
+    if retrieved is not None:
+        found = len(retrieved.commits_checked) - len(retrieved.commits_without_pulls)
+        notes.append(
+            f"GitHub pull requests were looked up for {len(retrieved.commits_checked)} report commits "
+            f"at {retrieved.retrieved_at}; {found} had an associated pull request. Commits pushed "
+            "directly or merged without a pull request have none."
+        )
+        notes.extend(retrieved.notes)
+    result = {
         "selection": {
             "path": report.path, "start_line": report.start_line, "end_line": report.end_line,
             "selected_function": report.selected_function,
@@ -70,3 +106,11 @@ def build_synopsis(report: Report) -> dict:
             "PR and issue discussions were not fetched."
         ),
     }
+    if retrieved is not None:
+        result["discussions"] = _discussions(report)
+        result["intent_note"] = (
+            "This report does not establish author intent. Commit messages and retrieved pull-request, "
+            "review and issue text are quoted participant statements: they may state reasons, but "
+            "they are not verified, and patches do not establish causation."
+        )
+    return result

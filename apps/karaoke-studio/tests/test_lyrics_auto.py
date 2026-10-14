@@ -1,4 +1,6 @@
 """Automatic lyric lines and supplied-lyric alignment (pure, no ML packages)."""
+import dataclasses
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -6,13 +8,17 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 import wave
 import zipfile
 
 from karaoke.lyrics_auto import MAX_STEPS, align_lines, sung_count, word_timings, words_to_cues
 from karaoke.model import validate_project
-from karaoke.transcribe_worker import words_from
-from karaoke.transcription import MODEL_NAME, asr_ready, validate_transcript
+from karaoke import transcribe_worker, transcription
+from karaoke.transcribe_worker import recognize, words_from
+from karaoke.transcription import (
+    ENGLISH, MULTILINGUAL, archive_model, asr_ready, installed_models, model_ready, sounds_english, validate_transcript,
+)
 
 
 def words(spec):
@@ -143,8 +149,12 @@ class TranscriptTests(unittest.TestCase):
         self.assertEqual(words_from([' la'], [0.0], [], 0)[0]['confidence'], 1.0, 'no probabilities reported')
 
     def test_stored_transcripts_are_strictly_validated(self):
-        good = dict(model=MODEL_NAME, words=SUNG, seconds=3.5)
+        good = dict(model=ENGLISH.name, words=SUNG, seconds=3.5)
         self.assertEqual(validate_transcript(json.loads(json.dumps(good)), 40.0)['words'], SUNG)
+        # Either recognizer's transcripts are readable and keep their model; unknown models are not.
+        self.assertEqual(validate_transcript(dict(good, model=MULTILINGUAL.name), 40.0)['model'], MULTILINGUAL.name)
+        with self.assertRaises(ValueError):
+            validate_transcript(dict(good, model='whisper-large'), 40.0)
         for bad in (dict(good, model='other'), dict(good, extra=1), dict(good, words=[dict(text='x', start=5, end=4, confidence=1)]),
                     dict(good, words=[dict(text='x', start=1, end=99, confidence=1)]), dict(good, seconds=-1),
                     dict(good, words=[dict(text='late', start=5, end=6, confidence=1), dict(text='early', start=1, end=2, confidence=1)]),
@@ -152,13 +162,91 @@ class TranscriptTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_transcript(bad, 40.0)
 
-    def test_model_readiness_requires_every_pinned_file(self):
+    def test_model_readiness_requires_every_pinned_file_of_either_model(self):
         with tempfile.TemporaryDirectory() as directory:
-            self.assertFalse(asr_ready(Path(directory)))
-            (Path(directory) / 'lyrics-asr').mkdir()
-            for name in ('encoder.int8.onnx', 'decoder.int8.onnx', 'joiner.int8.onnx', 'tokens.txt', 'silero_vad.onnx'):
-                (Path(directory) / 'lyrics-asr' / name).write_bytes(b'not the model')
-            self.assertFalse(asr_ready(Path(directory)))
+            root = Path(directory)
+            self.assertFalse(asr_ready(root))
+            (root / ENGLISH.directory).mkdir()
+            for name in ENGLISH.files:
+                (root / ENGLISH.directory / name).write_bytes(b'not the model')
+            self.assertFalse(asr_ready(root))
+            # Stand-in models pinned to the files' real checksums: either one makes lyrics available.
+            pinned = {name: hashlib.sha256(b'not the model').hexdigest() for name in ENGLISH.files}
+            english = dataclasses.replace(ENGLISH, files=pinned)
+            multilingual = dataclasses.replace(MULTILINGUAL, files=pinned)
+            with mock.patch.object(transcription, 'ASR_MODELS', (english, multilingual)):
+                self.assertEqual(installed_models(root), (english,))
+                self.assertTrue(asr_ready(root))
+                (root / ENGLISH.directory / 'tokens.txt').write_bytes(b'changed')
+                self.assertFalse(asr_ready(root))
+            self.assertFalse(model_ready(root, MULTILINGUAL))
+
+    def test_english_is_recognized_from_the_first_words(self):
+        self.assertTrue(sounds_english('Lay awake at night wondering how could I let it get this way'.split()))
+        self.assertTrue(sounds_english('I don\u2019t know where the road is taking us tonight'.split()))
+        self.assertFalse(sounds_english('je ne sais pas où va la route ce soir mon amour'.split()))
+        self.assertFalse(sounds_english('ich weiß nicht wohin die Straße uns heute Nacht führt'.split()))
+        self.assertFalse(sounds_english('no sé a dónde nos lleva el camino esta noche'.split()))
+        # Words that are also Italian, German or Dutch ("a", "in", "is", "was", "so") do not count.
+        self.assertFalse(sounds_english('a casa in giardino so was is a in'.split()))
+        self.assertFalse(sounds_english(['the', 'you']), 'too few words to tell')
+        # Only the first words decide.
+        self.assertFalse(sounds_english('la vie en rose'.split() * 30 + 'the and you the and you'.split() * 20))
+
+    def test_archives_are_matched_to_their_model_by_pinned_size(self):
+        with tempfile.TemporaryDirectory() as directory:
+            other = Path(directory) / 'other.tar.bz2'
+            other.write_bytes(b'x' * 10)
+            self.assertIsNone(archive_model(other))
+            with mock.patch.object(transcription, 'ASR_MODELS', (dataclasses.replace(ENGLISH, archive_bytes=10), MULTILINGUAL)):
+                self.assertEqual(archive_model(other).key, 'english')
+
+
+class RecognizerChoiceTests(unittest.TestCase):
+    """Which model hears the song, with stand-in recognizers (no ML packages)."""
+
+    def run_choice(self, models, language):
+        sung = {'en': 'the night is young and you are mine tonight love'.split(),
+                'fr': 'la nuit est jeune et toi tu es à moi'.split()}[language]
+        phrases = [(index * 16000, index) for index in range(40)]
+        loads, heard = [], []
+
+        def phrase_words(recognizer, start, phrase):
+            heard.append((recognizer, phrase))
+            return [dict(text=f'{recognizer}:{word}' if recognizer == 'english' else word, start=start / 16000 + i * 0.1,
+                         end=start / 16000 + i * 0.1 + 0.08, confidence=0.9) for i, word in enumerate(sung)]
+
+        def load(model):
+            loads.append(model.key)
+            return model.key
+
+        progress = []
+        with mock.patch.object(transcribe_worker, 'recognize_phrase', phrase_words):
+            model, result = recognize(phrases, load, models, lambda done, total: progress.append((done, total)))
+        return model, result, loads, heard, progress
+
+    def test_english_songs_are_heard_again_by_the_english_model(self):
+        model, result, loads, heard, progress = self.run_choice((ENGLISH, MULTILINGUAL), 'en')
+        self.assertEqual((model, loads), (ENGLISH, ['multilingual', 'english']))
+        # 10 words a phrase: the multilingual model hears 10 phrases, then English hears all 40.
+        self.assertEqual(sum(1 for recognizer, _ in heard if recognizer == 'multilingual'), 10)
+        self.assertEqual([phrase for recognizer, phrase in heard if recognizer == 'english'], list(range(40)))
+        self.assertTrue(all(word['text'].startswith('english:') for word in result))
+        self.assertEqual(len(result), 400)
+        self.assertEqual(progress[-1], (40, 40))
+
+    def test_other_languages_continue_with_the_multilingual_model(self):
+        model, result, loads, heard, progress = self.run_choice((ENGLISH, MULTILINGUAL), 'fr')
+        self.assertEqual((model, loads), (MULTILINGUAL, ['multilingual']))
+        self.assertEqual([phrase for _, phrase in heard], list(range(40)), 'each phrase heard once')
+        self.assertEqual(len(result), 400)
+        self.assertEqual(progress, [(0, 40)] + [(done, 40) for done in range(1, 41)])
+
+    def test_a_single_installed_model_hears_everything(self):
+        for models, language in (((ENGLISH,), 'fr'), ((MULTILINGUAL,), 'en')):
+            model, _result, loads, heard, _progress = self.run_choice(models, language)
+            self.assertEqual((model, loads), (models[0], [models[0].key]))
+            self.assertEqual(len(heard), 40)
 
 
 def silent_separation(source, output_dir, model_root, cancel, stage):
@@ -185,7 +273,7 @@ class ServerLyricsTests(unittest.TestCase):
                 self.fail_next = False
                 raise RuntimeError('Recognition broke.')
             assert Path(vocals).is_file()
-            transcript = dict(model=MODEL_NAME, words=SUNG, seconds=0.1)
+            transcript = dict(model=ENGLISH.name, words=SUNG, seconds=0.1)
             Path(output).write_text(json.dumps(transcript))
             return transcript
 

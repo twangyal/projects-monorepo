@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { describe, validateListening, type Entry } from '../src/timeline.ts';
+import { describe, pickReason, validateListening, validatePreview, type Entry, type Pick } from '../src/timeline.ts';
 
 const track = { id: 'Song1', title: 'Our song', artists: 'The Band', album: 'Album', url: 'https://open.spotify.com/track/Song1' };
 const names = { host: 'Ada', guest: 'Ben' } as const;
-const base = { configured: true, redirectUri: 'http://127.0.0.1:8766/spotify/callback', authFailures: {}, hiddenCount: 0, truncated: false, memories: [],
-  connections: { host: { displayName: 'ada', connectedAt: 1, syncedAt: 2, error: null }, guest: null } };
+const base = { configured: true, redirectUri: 'http://127.0.0.1:8766/spotify/callback', authFailures: {}, hiddenCount: 0, truncated: false, memories: [], playlists: [], recommendations: { host: [], guest: [] },
+  connections: { host: { displayName: 'ada', connectedAt: 1, syncedAt: 2, error: null, canCreatePlaylists: false }, guest: null } };
+const playlist = { id: 'Play1', role: 'guest', name: 'Our autumn', url: 'https://open.spotify.com/playlist/Play1', tracks: 3, createdAt: 9 };
 const both: Entry = { key: 'both-Song1', kind: 'both', at: 5, hidden: false, caption: '', memoryTarget: 'track-Song1', memories: [], track,
   people: { host: { firstAt: 1, lastAt: 2, plays: 3 }, guest: { firstAt: 4, lastAt: 4, plays: 1 } }, withinThirtyMinutes: false };
 
@@ -31,6 +32,30 @@ test('malformed replies and unsafe links are rejected before rendering', () => {
     { ...base, entries: [{ ...both, memories: [{ id: '../x', target: 'track-Song1', label: 'Song', role: 'host', date: '2025-01-01', text: 'x', photo: false, createdAt: 1 }] }] },
   ];
   for (const reply of bad) assert.throws(() => validateListening(reply), /not understood/);
+});
+
+test('occasion playlists and previews are validated, including their links', () => {
+  assert.equal(validateListening({ ...base, entries: [], playlists: [playlist] }).playlists[0]!.name, 'Our autumn');
+  for (const bad of [{ ...playlist, url: 'https://evil.example/playlist/Play1' }, { ...playlist, url: 'javascript:alert(1)' },
+    { ...playlist, tracks: 0 }, { ...playlist, tracks: 101 }, { ...playlist, role: 'admin' }, { ...playlist, id: '../x' }]) {
+    assert.throws(() => validateListening({ ...base, entries: [], playlists: [bad] }), /not understood/);
+  }
+  assert.throws(() => validateListening({ ...base, entries: [], playlists: undefined }), /not understood/);
+  assert.throws(() => validateListening({ ...base, entries: [], connections: { host: { ...base.connections.host, canCreatePlaylists: 'yes' }, guest: null } }), /not understood/);
+  assert.deepEqual(validatePreview({ tracks: [{ id: 'Song1', title: 'Our song', artists: 'The Band' }] }), [{ id: 'Song1', title: 'Our song', artists: 'The Band' }]);
+  for (const bad of [{}, { tracks: [{ id: 'a/b', title: 'x', artists: '' }] }, { tracks: [{ id: 'Song1', title: 5, artists: '' }] }]) assert.throws(() => validatePreview(bad), /not understood/);
+});
+
+test('partner picks are validated and explained in names', () => {
+  const pick: Pick = { track, from: 'host', plays: 6, liked: true, at: 3, memories: [] };
+  assert.equal(validateListening({ ...base, entries: [], recommendations: { host: [], guest: [pick] } }).recommendations.guest.length, 1);
+  for (const bad of [{ ...pick, from: 'admin' }, { ...pick, plays: -1 }, { ...pick, track: { ...track, url: 'javascript:x' } }, { ...pick, memories: 'none' }]) {
+    assert.throws(() => validateListening({ ...base, entries: [], recommendations: { host: [], guest: [bad] } }), /not understood/);
+  }
+  assert.throws(() => validateListening({ ...base, entries: [], recommendations: { host: [] } }), /not understood/);
+  assert.equal(pickReason(pick, names), 'Ada added it to Liked Songs and played it 6 times');
+  assert.equal(pickReason({ ...pick, liked: false, plays: 2 }, names), 'Ada played it twice');
+  assert.equal(pickReason({ ...pick, plays: 1, from: 'guest' }, names), 'Ben added it to Liked Songs');
 });
 
 test('wording never claims two people listened together', () => {
