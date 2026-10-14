@@ -1,5 +1,7 @@
 # Gaze Navigator
 
+**Owner direction update (2026-10-14): extension-first.** The Chrome extension is the primary product for gaze/voice control on real websites. The website supports onboarding and practice. Prioritize usable extension installation/setup, contextual controls, navigation/calibration continuity and real-user acceptance. A standalone system-wide app is a future possibility. See [product direction, section 1](../../docs/PRODUCT_DIRECTION.md#1-gaze-navigator).
+
 **Product direction (2026-10-08): ACTIVE.** The destination is gaze context plus spoken instructions interpreted on real websites, with WaterSheep (replacing Jev, per the owner on 2026-10-13) as the intended model interpreter. See [the portfolio direction](../../docs/PRODUCT_DIRECTION.md) for the full vision and acceptance expectations. The implementation and verification described below are current milestones, not completion of that destination.
 
 A small browser-first vertical slice for project #1, **Eye detector with agentic AI**.

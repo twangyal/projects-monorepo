@@ -18,7 +18,7 @@ MAINTENANCE is appropriate only when the intended product experience is substant
 
 ## 1. Gaze Navigator
 
-Gaze Navigator helps people who have difficulty using a mouse or keyboard interact with websites through gaze and spoken instructions. A visible context circle indicates the area they are looking at. When they speak, the app captures that context, interprets their instruction with Jev, and performs the intended browser action. It provides accessible feedback, asks when the target is unclear, and supports immediate cancellation.
+Gaze Navigator helps people who have difficulty using a mouse or keyboard interact with websites through gaze and spoken instructions. A visible context circle indicates the area they are looking at. When they speak, the app captures that context, interprets their instruction with the rule baseline and optional on-device WaterSheep target matching, and performs the intended browser action. It provides accessible feedback, asks when the target is unclear, and supports immediate cancellation.
 
 The core experience includes:
 
@@ -31,6 +31,16 @@ The core experience includes:
 Success means someone can complete useful tasks on real websites with manageable effort and few unintended actions. Evaluate task completion, effort, unintended actions, clarification and recovery with intended users and real tracking/speech input. The practice inbox, dwell controls and separate model lab are supporting prototypes, not the completion target.
 
 Jev was the intended interpreter; on 2026-10-13 the owner replaced it with WaterSheep (see the owner update below). Its suitability and integration still require evidence. Browser integration, speech recognition, the exact instant context is captured, confirmation rules and supported platforms remain technical design questions. Preserve separate tracking, context, interpretation and execution responsibilities so failures and cancellation can be handled coherently.
+
+### Owner update — 2026-10-14: browser extension as the primary product
+
+After testing the practice website and discussing a standalone app versus a browser plugin, the owner chose the extension: “extension is the plan.” Make the browser extension the primary Gaze Navigator product. Continue from the existing Chrome Manifest V3 extension and shared navigation runtime. The intended experience is controlling the website the user is already visiting through gaze context and spoken instructions, with a compact contextual overlay and accessible pause/cancel/recovery controls.
+
+Use the website for onboarding, guided practice, calibration instruction and demonstrations. Practice inboxes, synthetic decision labs and a separate browser tab are supporting tools; future milestones should prioritize a usable extension experience on real websites. Make installation, permission setup, camera/speech readiness and starting/stopping navigation understandable. Support deliberate continuity across page changes with clear calibration reuse/recalibration and permission boundaries; do not require users to reopen the practice site to operate each page.
+
+Evaluate actual extension installation and use with intended users, real camera/microphone input and representative websites, including navigation, text entry/correction, ambiguity, consequential-action confirmation and immediate cancellation. Preserve the existing rule baseline, optional local WaterSheep matching, privacy boundaries and explicit control over website access. The extension implementation already exists; this direction does not claim that distribution, physical-input reliability or intended-user acceptance is complete.
+
+A standalone desktop app for control outside the browser is a possible later direction, not the current delivery target or an instruction to begin an operating-system integration or migration. Scheduled Gaze work should follow this extension-first direction; Gaze Navigator remains ACTIVE and the broader accessibility goals remain unchanged.
 
 ## 3. Melody Studio
 
