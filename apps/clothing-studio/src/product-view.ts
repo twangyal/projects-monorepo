@@ -130,7 +130,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const canvas = $('product-canvas') as HTMLCanvasElement;
   // A decode belongs to the project and editing intent that started it, never the current selection later.
   let assetGeneration = 0;
-  const retireAssets = () => { assetGeneration++; };
+  const retireAssets = (event?: Event) => {
+    // Opening/closing a view does not change the design or retire its pending image decode.
+    if (event?.target instanceof Element && event.target.closest('[data-workspace-navigation]')) return;
+    assetGeneration++;
+  };
   const root = document.getElementById('app')!;
   for (const event of ['input', 'change', 'pointerdown', 'keydown', 'click', 'drop']) root.addEventListener(event, retireAssets, true);
   window.addEventListener('pagehide', retireAssets);

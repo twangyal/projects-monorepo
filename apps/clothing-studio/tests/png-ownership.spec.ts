@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 interface EncoderProbe{hold:boolean;ready:boolean;release:(()=>void)|null}
 async function bytes(page:Page,id:string){const pending=page.waitForEvent('download');await page.locator(`#${id}`).click();const download=await pending;return{filename:download.suggestedFilename(),bytes:await readFile((await download.path())!)};}

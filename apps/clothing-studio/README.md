@@ -24,6 +24,18 @@ npm run preview
 
 The built `dist/` directory can be served by a static web server. Use a current browser with IndexedDB, SVG, Canvas and `createImageBitmap`; Chromium is automated below. Photo decoding can vary between browsers. No external assets, telemetry, or network requests are needed by the production app. The development server uses its local hot-reload connection.
 
+## Focused garment workspace (#255)
+
+The studio opens on the **3D garment**. Select its parts directly or with the part buttons, orbit, or choose a camera view. The tool bar opens one task at a time:
+
+- **Templates**, **Materials & prints**, **Artwork**, **Patterns & measurements**, **Body & drape**, and **Exports** keep the garment beside the task on desktop. On a phone the task follows the garment; **Back to garment** returns to its tool button.
+- **Tech pack**, **Range plan**, **Concept sketch**, and **Skirt construction** open accessible secondary dialogs. Escape or **Back to garment** closes them and returns keyboard focus. Validation and live feedback appear inside the active task, then return to the workspace when it closes.
+- **Show all tools** opens an expanded workspace for cross-tool work. **Focus on garment** returns to the uncluttered view. This is a session view choice, not project data.
+
+Switching or closing a task does not apply, discard or recreate fields: unapplied drafts, pending image decoding and the mounted garment stay intact. Existing Apply/Discard, replacement/history guards, Save, upload ownership and captured export rules still apply. View changes do not add Undo steps. Body simulation remains the existing approximate material-dependent XPBD model; this layout does not calibrate fabric properties or establish physical fit. “Describe a style” remains the existing local parser; AI interpretation and faithful stripe-direction controls remain future work.
+
+The original sketch/photo and skirt capabilities remain available through their named dialogs. Existing automated feature gates explicitly enter the real **Show all tools** view through a browser helper; independent focused-workspace tests start in the actual default and exercise navigation, dialogs, phone layout, raw drafts, validation feedback and held native artwork decoding. See [workspace verification](docs/2026-10-14-focused-workspace-255.md).
+
 ## Style a garment in 3D
 
 **3D product design** follows the approachable workflow of web-based product design tools such as Fabra: start from a product or template, style it part by part in real-time 3D, and export. See the [research and roadmap](docs/2026-10-13-fabra-research.md).

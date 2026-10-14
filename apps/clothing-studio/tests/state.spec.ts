@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 
 interface RestoreWindow extends Window {
   __releaseRestore: () => void;
@@ -58,6 +58,7 @@ test('a slow startup restore cannot overwrite text typed before blur', async ({ 
 
 test('a slow startup restore cannot replace an active sketch gesture', async ({ page }) => {
   await page.goto('/'); await portrait(page); await delayRestore(page);
+  await page.locator('#sketch-surface').scrollIntoViewIfNeeded();
   const bounds = (await page.locator('#sketch-surface').boundingBox())!;
   await page.mouse.move(bounds.x + bounds.width * .45, bounds.y + bounds.height * .5);
   await page.mouse.down();

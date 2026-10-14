@@ -1,3 +1,4 @@
+import { mountWorkspace } from './workspace.ts';
 import {mountBody} from './body-view.ts';
 import {mountGrading} from './grading-view.ts';
 import {constructionMarkup,mountConstruction} from './construction-view.ts';
@@ -384,6 +385,7 @@ const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 
 window.addEventListener('pagehide', retireLoad);
+mountWorkspace();
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;

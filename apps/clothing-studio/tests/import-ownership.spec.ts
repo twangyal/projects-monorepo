@@ -1,5 +1,5 @@
 /** Independent #118 original graph and native file/bitmap completion ownership oracle. */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 import type { Project } from '../src/model.ts';
 

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 
 async function download(page: Page, name: string) { const wait = page.waitForEvent('download'); await page.getByRole('button', { name, exact: true }).click(); return readFile((await (await wait).path())!); }
@@ -13,6 +13,8 @@ const redShare = (page: Page) => page.locator('#product-canvas').evaluate(node =
 
 test('an uploaded motif repeats in the chosen layout and size on the 3D garment, the pattern and the tech pack', async ({ page }) => {
   test.setTimeout(120000);
+  // Keep the garment's centre crop meaningful in the now full-width 3D workspace.
+  await page.setViewportSize({ width: 900, height: 1000 });
   await page.goto('/');
   await editor(page).getByRole('button', { name: /^Use the Blank tee template/ }).click();
   await expect(editor(page).locator('#product-status')).toContainText('Editing Blank tee');

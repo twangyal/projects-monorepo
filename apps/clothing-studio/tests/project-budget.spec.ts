@@ -1,5 +1,5 @@
 import { pngUrl } from './helpers/raster.ts';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 
 test('canonical budget rejects a compact backup whose pretty export exceeds 6 MiB, retaining current work and raw input', async ({ page }) => {

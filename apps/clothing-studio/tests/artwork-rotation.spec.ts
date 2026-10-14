@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 async function download(page: Page, name: string) {
   const wait = page.waitForEvent('download'); await page.getByRole('button', {name,exact:true}).click();

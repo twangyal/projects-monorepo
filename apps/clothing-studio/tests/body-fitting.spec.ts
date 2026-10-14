@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';import {readFile} from 'node:fs/promises';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';import {readFile} from 'node:fs/promises';
 async function bytes(page:Page,name:string){const wait=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();return readFile((await (await wait).path())!);}
 async function backup(page:Page){return JSON.parse((await bytes(page,'Export project backup')).toString());}
 async function applyBody(page:Page){await page.getByLabel('Use body measurements',{exact:true}).check();await page.getByLabel('Body waist circumference (cm)',{exact:true}).fill('76');await page.getByLabel('Body hip circumference (cm)',{exact:true}).fill('100');await page.getByLabel('Waist-to-hip depth (cm)',{exact:true}).fill('20');await page.getByRole('button',{name:'Apply body measurements',exact:true}).click();}

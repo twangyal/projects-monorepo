@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 async function download(page:Page,name:string){const [file]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name,exact:true}).click()]);return (await readFile((await file.path())!)).toString();}
 async function backup(page:Page){return JSON.parse(await download(page,'Export project backup'));}

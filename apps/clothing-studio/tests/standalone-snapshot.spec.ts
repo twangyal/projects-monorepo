@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 const hash=(b:Buffer)=>createHash('sha256').update(b).digest('hex');

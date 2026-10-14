@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 for (const [id, value, panel] of [['product-length', '75', ''], ['fit-frontNeckDrop', '10', '#fit-panel'], ['spec-style', 'Pending style', ''], ['cost-make', '12', '']] as const) {
   test(`unapplied ${id} survives part selection and unrelated style edits until deliberate apply or discard`, async ({ page }) => {

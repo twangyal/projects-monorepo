@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 import { png } from './helpers/raster.ts';
 async function backup(page: Page) { const wait = page.waitForEvent('download'); await page.locator('#backup').click(); return JSON.parse((await readFile((await (await wait).path())!)).toString()); }

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 interface AssetOracle { waiting: boolean; closed: number; release: () => void }
 declare global { interface Window { assetOracle: AssetOracle } }

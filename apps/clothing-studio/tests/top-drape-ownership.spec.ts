@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 async function setup(page:Page){await page.addInitScript(()=>{
  const state={starts:0,terms:0,result:null as unknown};Object.assign(window,{topDrapeProbe:state});

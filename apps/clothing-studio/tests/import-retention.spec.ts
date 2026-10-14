@@ -1,4 +1,5 @@
-import { test, expect, chromium, type Page } from '@playwright/test';
+import {expandTools} from './helpers/expanded-workspace.ts';
+import { test, expect, chromium, type Page } from './helpers/expanded-workspace.ts';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -64,7 +65,7 @@ async function open(page: Page, project: Project, name: string) {
   await page.locator('#project-file').setInputFiles({ name, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(project)) });
 }
 async function setup(page: Page) {
-  await install(page); await page.goto('/');
+  await install(page); await page.goto('/'); await expandTools(page);
   await expect(page.locator('#save-state')).not.toContainText('Checking');
   const photo = await page.evaluate(() => {
     const c = document.createElement('canvas'); c.width = 64; c.height = 80;
@@ -126,7 +127,7 @@ test('maximum artwork and exact-cap held File preserve complete backup and PNG t
     expect(await png(page)).toEqual(originalPng);
     await expect(page.locator('#save-state')).toHaveText('Locally saved');
     await context.close(); context = await launch();
-    const reopened = context.pages()[0]; await reopened.goto(baseURL!);
+    const reopened = context.pages()[0]; await reopened.goto(baseURL!); await expandTools(reopened);
     await expect(reopened.locator('#save-state')).toHaveText('Locally saved');
     expect(await backup(reopened)).toEqual(expected); expect(await stored(reopened)).toEqual(expected);
     expect(await png(reopened)).toEqual(originalPng);

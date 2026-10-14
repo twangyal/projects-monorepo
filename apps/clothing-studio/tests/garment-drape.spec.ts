@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 
 const editor = (page: Page) => page.locator('#product-editor');
 const status = (page: Page) => editor(page).locator('#garment-drape-status');

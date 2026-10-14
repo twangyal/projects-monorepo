@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 async function stored(page:Page, value?:unknown):Promise<unknown>{return page.evaluate(async({value,write})=>{
   const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('clothing-studio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
@@ -53,7 +53,8 @@ for (const surface of ['sketch-surface', 'preview-surface']) test(`replacement s
   await title(page, 'Committed edit during replacement');
   const committed = await backup(page);
   await page.clock.install();
-  const target = page.locator(`#${surface}`), box = (await target.boundingBox())!;
+  const target = page.locator(`#${surface}`); await target.scrollIntoViewIfNeeded();
+  const box = (await target.boundingBox())!;
   await page.mouse.move(box.x + box.width * .4, box.y + box.height * .4); await page.mouse.down();
   await page.mouse.move(box.x + box.width * .6, box.y + box.height * .6, { steps: 4 });
   if (surface === 'sketch-surface') await expect(page.locator('#stroke-count')).toHaveText('1 stroke');

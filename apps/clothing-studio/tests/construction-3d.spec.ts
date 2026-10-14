@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 async function backup(page:Page){const [file]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export project backup',exact:true}).click()]);return JSON.parse((await readFile((await file.path())!)).toString());}
 async function point(page:Page){return (await page.locator('#construction-shell [data-face="0"]').getAttribute('points'))!.split(' ')[0].split(',').map(Number);}
