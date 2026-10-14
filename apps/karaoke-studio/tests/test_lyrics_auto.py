@@ -205,7 +205,7 @@ class TranscriptTests(unittest.TestCase):
 class RecognizerChoiceTests(unittest.TestCase):
     """Which model hears the song, with stand-in recognizers (no ML packages)."""
 
-    def run_choice(self, models, language):
+    def run_choice(self, models, language, choice="auto"):
         sung = {'en': 'the night is young and you are mine tonight love'.split(),
                 'fr': 'la nuit est jeune et toi tu es à moi'.split()}[language]
         phrases = [(index * 16000, index) for index in range(40)]
@@ -222,7 +222,7 @@ class RecognizerChoiceTests(unittest.TestCase):
 
         progress = []
         with mock.patch.object(transcribe_worker, 'recognize_phrase', phrase_words):
-            model, result = recognize(phrases, load, models, lambda done, total: progress.append((done, total)))
+            model, result = recognize(phrases, load, models, lambda done, total: progress.append((done, total)), model_choice=choice)
         return model, result, loads, heard, progress
 
     def test_english_songs_are_heard_again_by_the_english_model(self):
@@ -242,11 +242,50 @@ class RecognizerChoiceTests(unittest.TestCase):
         self.assertEqual(len(result), 400)
         self.assertEqual(progress, [(0, 40)] + [(done, 40) for done in range(1, 41)])
 
+    def test_an_explicit_choice_bypasses_detection_and_hears_every_phrase(self):
+        for choice, chosen, language in (("english", ENGLISH, "fr"), ("multilingual", MULTILINGUAL, "en")):
+            model, result, loads, heard, progress = self.run_choice((ENGLISH, MULTILINGUAL), language, choice)
+            self.assertEqual((model, loads), (chosen, [choice]))
+            self.assertEqual([phrase for _, phrase in heard], list(range(40)))
+            self.assertEqual(len(result), 400)
+            self.assertEqual(progress, [(0, 40)] + [(done, 40) for done in range(1, 41)])
+
+    def test_missing_or_invalid_choice_never_loads_a_fallback(self):
+        for choice, models in (("english", (MULTILINGUAL,)), ("multilingual", (ENGLISH,)), ("auto", ())):
+            with self.assertRaisesRegex(RuntimeError, "setup_lyrics_model.py"):
+                self.run_choice(models, "en", choice)
+        for choice in ("French", None, True, ["english"]):
+            with self.assertRaises(ValueError):
+                self.run_choice((ENGLISH, MULTILINGUAL), "en", choice)
+
     def test_a_single_installed_model_hears_everything(self):
         for models, language in (((ENGLISH,), 'fr'), ((MULTILINGUAL,), 'en')):
             model, _result, loads, heard, _progress = self.run_choice(models, language)
             self.assertEqual((model, loads), (models[0], [models[0].key]))
             self.assertEqual(len(heard), 40)
+
+
+class TranscriptionChoiceBoundaryTests(unittest.TestCase):
+    def test_parent_passes_choice_to_worker_and_keeps_installed_model_error_explicit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / 'transcript.json'
+            command = []
+
+            def run(args, *_args, **_kwargs):
+                command.extend(args)
+                output.write_text(json.dumps(dict(model=MULTILINGUAL.name, words=SUNG, seconds=0.1)))
+
+            with mock.patch.object(transcription, 'installed_models', return_value=(ENGLISH, MULTILINGUAL)), mock.patch.object(transcription, '_run', run):
+                result = transcription.transcribe_vocals(root / 'vocals.wav', output, root, 40, threading.Event(), lambda _: None, model_choice='multilingual')
+            self.assertEqual(result['model'], MULTILINGUAL.name)
+            self.assertEqual(command[command.index('--model-choice') + 1], 'multilingual')
+            output.unlink()
+            with mock.patch.object(transcription, 'installed_models', return_value=(ENGLISH,)), mock.patch.object(transcription, '_run') as worker:
+                with self.assertRaisesRegex(RuntimeError, '--only multilingual'):
+                    transcription.transcribe_vocals(root / 'vocals.wav', output, root, 40, threading.Event(), lambda _: None, model_choice='multilingual')
+                worker.assert_not_called()
+            self.assertFalse(output.exists())
 
 
 def silent_separation(source, output_dir, model_root, cancel, stage):
@@ -342,6 +381,44 @@ class ServerLyricsTests(unittest.TestCase):
         self.assertIn('project.json', names)
         self.assertNotIn('transcript.json', names)
 
+    def test_chosen_retry_preserves_saved_cues_and_failed_retry_preserves_transcript(self):
+        self.helper.upload()
+        project = self.request('GET', '/api/projects')[2]['projects'][0]
+        base = f'/api/projects/{project["id"]}'
+        before = self.request('GET', base + '/transcript')[2]
+        original = self.server.transcribe
+
+        def chosen(*args, model_choice="auto"):
+            self.assertEqual(model_choice, 'multilingual')
+            transcript = original(*args)
+            transcript['model'] = MULTILINGUAL.name
+            Path(args[1]).write_text(json.dumps(transcript))
+            return transcript
+
+        self.server.transcribe = chosen
+        status, _, started = self.request('POST', base + '/transcribe', {'modelChoice': 'multilingual'})
+        self.assertEqual(status, 202, started)
+        self.assertEqual(self.helper.wait_job(started['job']['id'])['status'], 'complete')
+        after = self.request('GET', base + '/transcript')[2]
+        self.assertEqual(after['model'], MULTILINGUAL.name)
+        self.assertNotEqual(after['model'], before['model'])
+        self.assertEqual(self.request('GET', base)[2], project)
+
+        def missing(*args, **kwargs):
+            raise RuntimeError('Requested English model missing; run scripts/setup_lyrics_model.py --only english.')
+
+        self.server.transcribe = missing
+        status, _, started = self.request('POST', base + '/transcribe', {'modelChoice': 'english'})
+        self.assertEqual(status, 202, started)
+        failed = self.helper.wait_job(started['job']['id'])
+        self.assertEqual(failed['status'], 'failed')
+        self.assertIn('setup_lyrics_model.py', failed['error'])
+        self.assertEqual(self.request('GET', base + '/transcript')[2], after)
+        self.assertEqual(self.request('GET', base)[2], project)
+        for bad in ({'modelChoice': 'French'}, {'modelChoice': None}, {'modelChoice': []}, {'modelChoice': True},
+                    {'modelChoice': 'auto', 'extra': 1}):
+            self.assertEqual(self.request('POST', base + '/transcribe', bad)[0], 400)
+
     def test_recognition_failure_keeps_the_clip_and_a_missing_transcript_is_explained(self):
         self.fail_next = True
         job = self.helper.upload()
@@ -371,14 +448,15 @@ class ServerLyricsTests(unittest.TestCase):
         self.server.transcriber_ready = lambda _root: True
         gate = threading.Event()
 
-        def slow(vocals, output, model_root, duration, cancel, stage):
+        def slow(vocals, output, model_root, duration, cancel, stage, *, model_choice="auto"):
+            self.assertEqual(model_choice, "multilingual")
             gate.set()
             while not cancel.wait(0.01):
                 pass
             raise RuntimeError('cancelled')
 
         self.server.transcribe = slow
-        started = self.request('POST', f'/api/projects/{project["id"]}/transcribe', {})[2]['job']
+        started = self.request('POST', f'/api/projects/{project["id"]}/transcribe', {'modelChoice': 'multilingual'})[2]['job']
         gate.wait(2)
         self.request('POST', f'/api/jobs/{started["id"]}/cancel', {})
         deadline = time.monotonic() + 3

@@ -585,3 +585,12 @@ nor claims subjective alignment quality.
 Songs producing more than 200 short automatic lines are regrouped into longer contiguous lines so the whole song remains represented. Complete text beyond the existing character/cue bounds is refused rather than silently cropped. Alignment and word-highlighting matching share a one-million-cell computation ceiling per request; beyond it, all supplied words remain and unmatched timing estimates are flagged for correction. Submillisecond cue boundaries remain valid. Recognition refresh retires cached and pending preview timings even when saved cues are unchanged.
 
 The original branch gate and real-song reports describe their exact measured snapshots. Current integration evidence and retained local verification limits are recorded in [handoff verification](docs/2026-10-13-integration-242.md). These English-only results do not establish multilingual lyrics or uniformly accurate recognition.
+
+
+### Correcting the recognition language (#251)
+
+Uploads and **Automatic language choice** use the existing automatic recognizer selection. If a song is misclassified, choose **English** or **Multilingual (25 European languages)** under **Recognition for this retry**, then use **Transcribe again**. The chosen model hears the entire separated vocal track without the language-detection pass. This is a model choice, not a forced language within the multilingual model.
+
+The requested model must already be installed and checksum verified. A missing model fails with its explicit setup command; no other model is substituted. Retrying refreshes the recognized words but keeps saved cues, current corrections, title and pasted words. Use **Review automatic lyrics** and **Replace lyric cues** to apply a result as one undoable edit, then save separately. Failed or cancelled retries keep the earlier transcript. The choice resets to Automatic when opening a clip and is not stored in project archives.
+
+This gives a correction path for the first-100-word heuristic; it does not establish quality for mixed-language songs or the other unmeasured languages. Multilingual word-onset/line-alignment measurements and user-measured correction effort remain open. See [verification notes](docs/2026-10-14-recognizer-choice-251.md).

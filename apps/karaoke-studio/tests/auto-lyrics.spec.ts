@@ -109,3 +109,31 @@ test('a clip without recognized lyrics explains itself, keeps even draft spacing
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+
+test('retry choice refreshes recognition while corrections survive until deliberate review', async ({ page }) => {
+  await importClip(page, 16);
+  const choice = page.getByLabel('Recognition for this retry', { exact: true });
+  await expect(choice).toHaveValue('auto');
+  await page.getByLabel('Lyric line 2', { exact: true }).fill('My corrected chorus');
+  await choice.selectOption('multilingual');
+  const requested = page.waitForRequest(request => request.url().endsWith('/transcribe') && request.method() === 'POST');
+  await page.getByRole('button', { name: 'Transcribe again', exact: true }).click();
+  expect((await requested).postDataJSON()).toEqual({ modelChoice: 'multilingual' });
+  await expect(choice).toBeDisabled();
+  await expect(page.locator('#message')).toContainText('Lyrics recognized', { timeout: 15000 });
+  await expect(page.locator('#auto-status')).toContainText('multilingual recognition model');
+  expect(await lines(page)).toEqual(['Hello little world', 'My corrected chorus', 'Sing it back to me']);
+  await expect(page.locator('#save-state')).toContainText('Unsaved lyric edits');
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  expect(await lines(page)).toEqual(['Hello little world', 'This is our chorus', 'Sing it back to me']);
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  expect(await lines(page)).toEqual(['Hello little world', 'My corrected chorus', 'Sing it back to me']);
+  // Opening a different clip resets this per-retry choice; no model choice is persisted in a project.
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect(page.locator('#save-state')).toHaveText('Saved in your local studio.');
+  await page.getByLabel('Upload song clip').setInputFiles({ name: 'next.wav', mimeType: 'audio/wav', buffer: tone(16) });
+  await expect(page.locator('#message')).toContainText('Your stems', { timeout: 15000 });
+  await expect(choice).toHaveValue('auto');
+});

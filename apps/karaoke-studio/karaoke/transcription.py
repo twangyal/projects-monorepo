@@ -113,6 +113,17 @@ def installed_models(model_root: Path) -> tuple[AsrModel, ...]:
     return tuple(model for model in ASR_MODELS if model_ready(model_root, model))
 
 
+def selected_models(models: tuple[AsrModel, ...], choice: str = 'auto') -> tuple[AsrModel, ...]:
+    """A deliberate retry choice never silently falls back to another installed model."""
+    if not isinstance(choice, str) or choice not in ('auto', 'english', 'multilingual'):
+        raise ValueError('Choose Automatic, English, or Multilingual lyric recognition.')
+    selected = models if choice == 'auto' else tuple(model for model in models if model.key == choice)
+    if not selected:
+        option = '' if choice == 'auto' else f' --only {choice}'
+        raise RuntimeError(f'The requested lyric recognition model is unavailable. Run scripts/setup_lyrics_model.py{option} with this studio’s model directory, then retry.')
+    return selected
+
+
 def asr_ready(model_root: Path) -> bool:
     """Automatic lyrics work with either recognizer; with both, each song gets the better one."""
     return bool(installed_models(model_root))
@@ -164,10 +175,9 @@ def validate_transcript(value: object, duration: float) -> dict:
 
 
 def transcribe_vocals(vocals: Path, output: Path, model_root: Path, duration: float,
-                      cancel: threading.Event, stage: Callable[[str], None]) -> dict:
+                      cancel: threading.Event, stage: Callable[[str], None], *, model_choice: str = 'auto') -> dict:
     """Write ``output`` (a new transcript JSON) and return the validated transcript."""
-    if not asr_ready(model_root):
-        raise RuntimeError('The verified lyric recognition model is unavailable. Run scripts/setup_lyrics_model.py first.')
+    selected_models(installed_models(model_root), model_choice)
     if output.exists() or output.is_symlink():
         raise ValueError('The transcript destination already exists.')
     stage('Recognizing sung lyrics locally from the separated vocals')
@@ -184,7 +194,7 @@ def transcribe_vocals(vocals: Path, output: Path, model_root: Path, duration: fl
 
     try:
         _run([sys.executable, str(Path(__file__).with_name('transcribe_worker.py')), '--vocals', str(vocals),
-              '--output', str(output), '--model-root', str(Path(model_root).resolve())],
+              '--output', str(output), '--model-root', str(Path(model_root).resolve()), '--model-choice', model_choice],
              cancel, timeout=WORKER_TIMEOUT, stderr_limit=256 * 1024, rss_limit_kib=MAX_WORKER_RSS_KIB,
              stdout_line_callback=progress)
         if output.is_symlink() or not output.is_file() or output.stat().st_size > MAX_TRANSCRIPT_BYTES:

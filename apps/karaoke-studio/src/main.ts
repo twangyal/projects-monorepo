@@ -48,7 +48,7 @@ app.innerHTML = `
         <div class="secondary-exports"><button id="lyrics-download" class="text-button" disabled>Export timed lyrics</button><button id="video-download" class="text-button" hidden>Download MP4 again</button><span>1280 × 720 · 24 fps · estimated backing</span></div>
       </section>
       <section class="lyrics-panel panel" aria-labelledby="lyrics-heading"><div class="panel-title"><span class="step">03</span><h3 id="lyrics-heading">Make room for the words</h3><span class="small-tag">AUTOMATIC, THEN YOURS</span></div>
-        <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div></section>
+        <section class="auto-lyrics" aria-labelledby="auto-heading"><h4 id="auto-heading">Automatic lyrics</h4><p id="auto-status" class="fine" aria-live="polite">Choose a clip to see the lyrics recognized from its vocals.</p><div class="field"><label for="recognition-choice">Recognition for this retry</label><select id="recognition-choice" disabled><option value="auto">Automatic language choice</option><option value="english">English</option><option value="multilingual">Multilingual (25 European languages)</option></select></div><p class="fine">If the language choice sounds wrong, select a model and transcribe again. The selected model must be installed locally. Retrying keeps your lyric edits; review and apply the new result when ready.</p><div class="timing-actions"><button id="auto-review" hidden>Review automatic lyrics</button><button id="auto-transcribe" hidden>Transcribe lyrics</button></div></section>
         <section id="timing-workbench" aria-label="Waveform timing workbench"></section>
         <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
@@ -498,6 +498,7 @@ function autoControls() {
   review.hidden = !current?.available; review.disabled = !allowed || !current?.available || !current.cues.length;
   transcribe.hidden = !working || !session?.lyricsModelReady; transcribe.disabled = !allowed;
   transcribe.textContent = current?.available ? 'Transcribe again' : 'Transcribe lyrics';
+  element<HTMLSelectElement>('recognition-choice').disabled = !allowed || !session?.lyricsModelReady;
   if (!working) status.textContent = 'Choose a clip to see the lyrics recognized from its vocals.';
   else if (!current) status.textContent = 'Checking for recognized lyrics…';
   else if (current.available) {
@@ -547,8 +548,9 @@ element('auto-transcribe').addEventListener('click', async () => {
   retirePractice('Transcribing lyrics stopped practice.');
   if (!working || !srtAllowed() || timingOwner) return;
   retireSrt('Transcribing lyrics cancelled the lyric import review.');
+  const modelChoice = element<HTMLSelectElement>('recognition-choice').value;
   requestingJob = true; controls();
-  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/transcribe`, json('POST', {})); message(''); startPolling(job); }
+  try { const { job } = await request<{ job: Job }>(`/api/projects/${working.id}/transcribe`, json('POST', { modelChoice })); message(''); startPolling(job); }
   catch (error) { message(error instanceof Error ? error.message : 'Could not start lyric recognition.', true); }
   finally { requestingJob = false; controls(); }
 });
@@ -694,6 +696,7 @@ async function openProject(id: string) {
   if (generation !== projectGeneration) return;
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
+  element<HTMLSelectElement>('recognition-choice').value = 'auto';
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
   element<HTMLInputElement>('title').value = project.title;

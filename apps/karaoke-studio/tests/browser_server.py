@@ -35,18 +35,18 @@ FIXTURE_WORDS = [(text, start, start + 0.4) for text, start in (
     ('Sing', 9.0), ('it', 9.5), ('back', 10.0), ('to', 10.5), ('me', 11.0))]
 
 
-def fixture_transcription(vocals, output, model_root, duration, cancel, stage):
+def fixture_transcription(vocals, output, model_root, duration, cancel, stage, *, model_choice='auto'):
     """Deterministic recognized words for the 16-second lyrics fixture; other clips behave like a
     recognition failure (no transcript), so existing flows keep starting without lyrics."""
     import json
-    from karaoke.transcription import ENGLISH
+    from karaoke.transcription import ENGLISH, MULTILINGUAL
     stage('Recognizing fixture lyrics for browser verification')
     for _ in range(10):
         if cancel.wait(.03):
             raise RuntimeError('Cancelled fixture job.')
     if abs(duration - LYRICS_FIXTURE_SECONDS) > 1e-6:
         raise RuntimeError('No fixture lyrics for this clip.')
-    transcript = dict(model=ENGLISH.name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s >= 9 else 0.95) for t, s, e in FIXTURE_WORDS], seconds=0.3)
+    transcript = dict(model=(MULTILINGUAL if model_choice == 'multilingual' else ENGLISH).name, words=[dict(text=t, start=s, end=e, confidence=0.4 if s >= 9 else 0.95) for t, s, e in FIXTURE_WORDS], seconds=0.3)
     Path(output).write_text(json.dumps(transcript))
     return transcript
 

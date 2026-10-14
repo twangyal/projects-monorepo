@@ -596,7 +596,7 @@ class KaraokeServer(ThreadingHTTPServer):
             cleanup()
             raise
 
-    def start_transcribe(self, project: dict):
+    def start_transcribe(self, project: dict, model_choice: str = 'auto'):
         if self._closing or self.uploading:
             raise JobBusy("An audio upload is in progress. Wait before transcribing.")
         if not self.lyrics_ready():
@@ -612,7 +612,8 @@ class KaraokeServer(ThreadingHTTPServer):
                     owned_project = self._descriptor_path(project_fd)
                     with inherit_media_handles(work_fd, project_fd):
                         self.transcribe(owned_project / "vocals.wav", owned_work / _TRANSCRIPT,
-                                        self.model_dir, project["duration"], cancel, stage)
+                                        self.model_dir, project["duration"], cancel, stage,
+                                        **({"model_choice": model_choice} if model_choice != "auto" else {}))
                     self.check_storage()
                 finally:
                     os.close(project_fd)
@@ -1002,9 +1003,15 @@ class Handler(BaseHTTPRequestHandler):
                 if (set(value) != {"revision"} or type(value["revision"]) is not int
                         or not 0 <= value["revision"] <= MAX_PORTABLE_REVISION):
                     raise RequestError(400, "Provide one portable saved revision when backing up.")
-            elif self.command == "POST" and resource in ("export", "transcribe"):
+            elif self.command == "POST" and resource == "export":
                 if self._read_json():
                     raise RequestError(400, "This action takes an empty JSON object.")
+            elif self.command == "POST" and resource == "transcribe":
+                value = self._read_json()
+                model_choice = value.get("modelChoice", "auto")
+                if (set(value) - {"modelChoice"} or not isinstance(model_choice, str)
+                        or model_choice not in ("auto", "english", "multilingual")):
+                    raise RequestError(400, "Choose Automatic, English, or Multilingual lyric recognition.")
             elif self.command == "POST" and resource == "word-timings":
                 value = self._read_json()
                 if set(value) != {"cues"} or not isinstance(value["cues"], list):
@@ -1059,7 +1066,7 @@ class Handler(BaseHTTPRequestHandler):
                 if self.command == "POST" and resource == "export":
                     job = server.start_export(project)
                 if self.command == "POST" and resource == "transcribe":
-                    job = server.start_transcribe(project)
+                    job = server.start_transcribe(project, model_choice)
                 if resource in ("transcript", "align") and (read or self.command == "POST"):
                     transcript = server.read_transcript(project)
                 if self.command == "POST" and resource == "word-timings":

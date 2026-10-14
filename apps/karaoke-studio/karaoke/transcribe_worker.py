@@ -18,7 +18,7 @@ from karaoke.limits import (  # noqa: E402
     MAX_DURATION, MAX_WAV_BYTES, SAMPLE_RATE, WORKER_CPU_HARD, WORKER_CPU_SOFT,
 )
 from karaoke.transcription import (  # noqa: E402
-    DETECTION_WORDS, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, AsrModel, installed_models, sounds_english,
+    DETECTION_WORDS, ENGLISH, MAX_WORDS, MULTILINGUAL, VAD_FILE, AsrModel, installed_models, selected_models, sounds_english,
 )
 
 RATE = 16000
@@ -116,13 +116,14 @@ def recognize_phrase(recognizer, start: int, phrase) -> list[dict]:
 
 
 def recognize(phrases, load_model: Callable[[AsrModel], object], models: tuple[AsrModel, ...],
-              progress: Callable[[int, int], None] | None = None) -> tuple[AsrModel, list[dict]]:
+              progress: Callable[[int, int], None] | None = None, *, model_choice: str = 'auto') -> tuple[AsrModel, list[dict]]:
     """Recognize every phrase with the model that suits the song's language.
 
     With one model installed it hears everything. With both, the multilingual model hears phrases
     until it has ``DETECTION_WORDS`` words (or the song ends); if they read as English, the English
     model hears the whole song again, otherwise the multilingual model carries on.
     """
+    models = selected_models(models, model_choice)
     total = len(phrases)
     report = progress or (lambda _completed, _total: None)
     model = models[0] if len(models) == 1 else MULTILINGUAL
@@ -153,6 +154,7 @@ def main() -> None:
     parser.add_argument('--vocals', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--model-root', type=Path, required=True)
+    parser.add_argument('--model-choice', choices=('auto', 'english', 'multilingual'), default='auto')
     args = parser.parse_args()
     if args.output.exists() or args.output.is_symlink():
         raise ValueError('The transcript destination already exists.')
@@ -190,7 +192,7 @@ def main() -> None:
     def progress(completed: int, total: int) -> None:
         print(json.dumps({'type': 'progress', 'completed': completed, 'total': total}), flush=True)
 
-    model, words = recognize(phrases_of(samples, vad_config), lambda chosen: load(args.model_root, chosen), models, progress)
+    model, words = recognize(phrases_of(samples, vad_config), lambda chosen: load(args.model_root, chosen), models, progress, model_choice=args.model_choice)
     temporary = args.output.with_suffix('.json.part')
     with temporary.open('x', encoding='utf-8') as stream:
         stream.write(json.dumps({'model': model.name, 'words': words, 'seconds': round(time.perf_counter() - started, 3)}))
