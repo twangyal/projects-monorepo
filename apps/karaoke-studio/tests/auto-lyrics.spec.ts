@@ -112,6 +112,8 @@ test('a clip without recognized lyrics explains itself, keeps even draft spacing
 
 
 test('retry choice refreshes recognition while corrections survive until deliberate review', async ({ page }) => {
+  const before = new Set<string>((await (await page.request.get('/api/projects')).json()).projects.map((project: { id: string }) => project.id));
+  try {
   await importClip(page, 16);
   const choice = page.getByLabel('Recognition for this retry', { exact: true });
   await expect(choice).toHaveValue('auto');
@@ -136,4 +138,14 @@ test('retry choice refreshes recognition while corrections survive until deliber
   await page.getByLabel('Upload song clip').setInputFiles({ name: 'next.wav', mimeType: 'audio/wav', buffer: tone(16) });
   await expect(page.locator('#message')).toContainText('Your stems', { timeout: 15000 });
   await expect(choice).toHaveValue('auto');
+  } finally {
+    // This test owns its two uploads. Keep the shared fixture library's real quota unchanged.
+    const session = await (await page.request.get('/api/session')).json();
+    const projects = (await (await page.request.get('/api/projects')).json()).projects;
+    for (const project of projects) if (!before.has(project.id)) {
+      const response = await page.request.delete(`/api/projects/${project.id}`, { headers: { 'X-Karaoke-Token': session.token }, data: {} });
+      expect(response.ok()).toBe(true);
+    }
+    expect((await (await page.request.get('/api/projects')).json()).projects.map((project: { id: string }) => project.id).sort()).toEqual([...before].sort());
+  }
 });
