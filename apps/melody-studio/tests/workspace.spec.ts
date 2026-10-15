@@ -146,3 +146,19 @@ test('focused capture demo produces editable notes and an exportable retained ta
  await view(page,'Project & export');const result=await readRoll(page);expect(result.assets).toHaveLength(1);expect(result.document.composition.tracks[0].notes.length).toBeGreaterThan(3);
  const bytes=await rollDownload(page,'Export WAV');expect(bytes.toString('ascii',0,4)).toBe('RIFF');expect(bytes.toString('ascii',8,12)).toBe('WAVE');
 });
+
+for(const utility of ['Stop audio','About these tools'])test(`workspace utility ${utility} preserves unapplied track text`,async({page})=>{
+ await open(page);await view(page,'Sound');await page.locator('#track-name').fill('Retained utility draft');
+ const control=utility==='Stop audio'?page.getByRole('button',{name:utility,exact:true}):page.locator('#workspace-guidance summary');
+ await control.focus();await page.keyboard.press('Enter');await view(page,'Project & export');
+ expect(await readRoll(page)).toEqual(rollBackup());await view(page,'Sound');await expect(page.locator('#track-name')).toHaveValue('Retained utility draft');
+});
+
+test('passive title blur toward an audio utility keeps an authorized library read',async({page})=>{
+ await installProbe(page);await open(page);await view(page,'Project & export');
+ await seedRows(page,[literalRow(2)]);await selectCopy(page,literalRow(2).id);
+ await page.locator('#project-title').fill('Unapplied title before authorized Open');await control(page,'holdRead');
+ await page.locator('#library-open').click();await expect.poll(async()=>(await probe(page)).pendingReads).toBe(1);
+ await page.getByRole('button',{name:'Stop audio',exact:true}).focus();await page.keyboard.press('Enter');
+ await control(page,'releaseRead');await expect(page.locator('#project-title')).toHaveValue(originalCopy(2).document.composition.title);
+});

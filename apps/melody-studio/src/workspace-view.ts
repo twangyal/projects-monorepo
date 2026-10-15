@@ -14,7 +14,8 @@ const groups: Partial<Record<WorkspaceView, string>> = {
  arrange: '.arrangement-tools, #continuation-panel, #track-timing, [aria-labelledby="section-heading"], [aria-labelledby="quantize-heading"], [aria-labelledby="phrase-pitch-heading"], [aria-labelledby="dynamics-heading"]',
  reference: '#reference-panel', project: '#composition-library, #midi-import, [aria-labelledby="save-heading"], footer',
 };
-export const workspaceControl = '[data-workspace-view], #workspace-mode, #workspace-back, #workspace-recovery';
+export const workspaceControl = '[data-workspace-view], #workspace-mode, #workspace-back, #workspace-recovery, #workspace-stop';
+export const workspacePresentation = `${workspaceControl}, #workspace-guidance summary, #roll-guidance summary`;
 export function createWorkspaceView(root: HTMLElement, options: { canNavigate: () => boolean; captureActive: () => boolean; saveState: () => { message: string; recovery: boolean; visible: boolean }; stopAudio: () => void }) {
  let view: WorkspaceView = 'compose', expanded = false, navigating = false;
  const markup = () => `<section class="workspace-tools" aria-label="Workspace tools"><div class="workspace-navigation" role="group" aria-label="Choose workspace tools">${Object.entries(views).map(([key, [label]]) => `<button type="button" data-workspace-view="${key}" aria-pressed="false">${label}</button>`).join('')}</div><div class="workspace-utilities"><button type="button" id="workspace-back">Back to compose</button><button type="button" id="workspace-mode" aria-pressed="false">Expand workspace</button><button type="button" id="workspace-stop">Stop audio</button></div><details id="workspace-guidance"><summary>About these tools</summary><p id="workspace-help" class="small"></p></details><p id="workspace-feedback" role="status" class="small"></p><p id="workspace-save-feedback" role="status" class="small"></p><button type="button" id="workspace-recovery" hidden>Review save recovery</button></section>`;
@@ -56,10 +57,10 @@ export function createWorkspaceView(root: HTMLElement, options: { canNavigate: (
   } finally { navigating = false; }
  }
  root.addEventListener('pointerdown', event => {
-  if ((event.target as HTMLElement).closest(workspaceControl)) event.preventDefault();
+  if ((event.target as HTMLElement).closest(workspacePresentation)) event.preventDefault();
  }, true);
  root.addEventListener('click', event => {
-  const button = (event.target as HTMLElement).closest<HTMLButtonElement>(`${workspaceControl}, #workspace-stop`);
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>(workspaceControl);
   if (!button || !root.contains(button)) return;
   event.preventDefault(); event.stopPropagation();
   if (button.id === 'workspace-stop') { options.stopAudio(); return; }

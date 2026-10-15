@@ -1,4 +1,4 @@
-import {createWorkspaceView, workspaceControl} from './workspace-view.ts';
+import {createWorkspaceView, workspaceControl, workspacePresentation} from './workspace-view.ts';
 import {DEFAULT_HARMONICS,validateHarmonics} from './sound-harmonics.ts';
 import {parseVolumeCurve,formatVolumeCurve} from './volume-curve.ts';
 import {joinNextNote} from './note-join.ts';
@@ -914,7 +914,7 @@ function releaseActionPointer(flush = true): void {
 root.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0 || actionPointer) return;
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
-  if (!button || button.disabled || button.hasAttribute('data-note') || button.matches(`${workspaceControl}, #workspace-stop`) || !root.contains(button)) return;
+  if (!button || button.disabled || button.hasAttribute('data-note') || button.matches(workspaceControl) || !root.contains(button)) return;
   if (libraryHost.contains(button)) event.preventDefault();
   if (['split-note','join-note'].includes(button.dataset.action ?? '')) { event.preventDefault(); if (!articulationDraftGuard()) { event.stopImmediatePropagation(); return; } }
   if (sectionEditAction(button.dataset.action) && !sectionArrangementGuard()) {
@@ -1266,14 +1266,14 @@ function applyChangedField(event: Event) {
 // A blur caused by opening/closing tools is navigation, not an edit commit.
 // Check after native focus movement; input events have already retained raw text.
 let explicitFieldCommit = false;
-const basicTextFields = new Set(['project-title', 'tempo', 'track-name', 'pan', 'reverb-send', 'reverb-size', 'reverb-level']);
+const basicTextFields = new Set(['project-title', 'tempo', 'track-name']);
 app.addEventListener('change', event => {
   const input = event.target as HTMLInputElement;
   if (explicitFieldCommit || !basicTextFields.has(input.id)) { applyChangedField(event); return; }
   if (workspace.navigating) return;
   const view = workspace.view;
   queueMicrotask(() => {
-    if (input.isConnected && workspace.view === view && !document.activeElement?.closest(workspaceControl)) applyChangedField(event);
+    if (input.isConnected && workspace.view === view && !document.activeElement?.closest(workspacePresentation)) applyChangedField(event);
   });
 });
 app.addEventListener('keydown', event => {
@@ -1784,7 +1784,10 @@ for (const type of ['pointerdown', 'pointerup', 'pointercancel'] as const) root.
   queueMicrotask(() => libraryView?.sync());
 }, true);
 for (const type of ['input', 'change', 'click'] as const) root.addEventListener(type, event => {
-  if (!workspace.navigating && !(event.target as HTMLElement).closest(workspaceControl) && !libraryHost.contains(event.target as Node)) libraryView?.retire();
+  // Text input already retires dependent work; passive blur toward a utility
+  // must not retire an authorized read. Applied changes advance editorIntent.
+  if (type === 'change' && basicTextFields.has((event.target as HTMLElement).id)) return;
+  if (!workspace.navigating && !(event.target as HTMLElement).closest(workspacePresentation) && !libraryHost.contains(event.target as Node)) libraryView?.retire();
 }, true);
 libraryView = createLibraryView(libraryHost, {
   state: () => {
