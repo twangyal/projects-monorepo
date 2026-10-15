@@ -162,6 +162,10 @@ The owner confirmed the same crowded-page feedback for Motion Studio: use sectio
 
 Prioritize a usable draw-to-animation interaction flow when resuming Motion work. A user should be able to start or open artwork, draw, set movement, preview and find an export without reading every advanced feature. Preserve artwork, images, cels, poses, selection, pending drafts/gestures, history and recovery across navigation; opening or closing a dialog must not silently commit or discard edits. Check desktop/phone discovery, screen density, keyboard focus and clear close/back behavior. Retain the broader authored-animation and useful AI-assistance vision; this update records future work and Motion remains ACTIVE.
 
+### Focused workspace milestone delivered (2026-10-15, #263)
+
+Motion now opens around the artwork stage with contextual Draw, Layers, Poses, Drawings, Projects, Share, Export and Help sections and a real expanded workspace. Mounted raw fields, selection, history, reviewed in-betweens and owned work survive navigation; Back/Escape, playback stop and export cancellation stay reachable. Final-source CI passes 273 units and 197 native browser cases, including desktop/phone authoring and decoded exports. See `docs/2026-10-15-motion-workspace-integration.md` for integrated evidence, retained first failures and the portable-browser maximum-export limit. This addresses information density; useful learned assistance, live synchronization and intended-person evaluation remain ACTIVE.
+
 ## 12. Style Studio
 
 ### Owner update — 2026-10-14: guided, visual onboarding
