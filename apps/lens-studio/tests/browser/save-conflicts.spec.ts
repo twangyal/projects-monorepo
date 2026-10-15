@@ -1,5 +1,5 @@
 /** Independent Lens saved-copy oracle. Native IDB and bitmap decoding remain real. */
-import { expect, test } from '@playwright/test';
+import { expect, test } from './expanded-workspace';
 import type {} from '../storage-harness.ts';
 import type { Project } from '../../src/types.ts';
 import type { SavedCopyReceipt } from '../../src/storage.ts';

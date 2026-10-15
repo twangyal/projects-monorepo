@@ -1,6 +1,6 @@
 # Lens Studio
 
-**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 16](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. This redesign is requested future work.
+**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 16](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. The focused workspace milestone #262 now provides the section navigation below; the broader depth/reconstruction destination remains ACTIVE.
 
 A private photo workspace for exploring focal framing and depth-aware perspective. Depth planes can be painted by hand or proposed by a learned depth model running locally. Import a photo, declare the source and target focal lengths, compare the original with the simulated result, then save a PNG or an editable project backup. Everything runs in your browser; photos are not uploaded.
 
@@ -23,14 +23,27 @@ npm run preview -- --host 127.0.0.1 --port 4260 --strictPort
 
 The application has no backend, account or API key. Estimated depth needs the model file once; see [Estimated depth](#estimated-depth). Browser storage belongs to the exact origin; changing host or port opens a different notebook. Use **Download project** before moving between origins or clearing browser data.
 
+## Focused workspace
+
+Start in **Open**, with photo/project import and the authored demo. After opening a study, **Compare** keeps the source, projected result, Undo/Redo and essential framing settings prominent. **Camera mode & depth distances** expands the perspective acknowledgment and relative-distance fields.
+
+- **Depth** reveals brush/region/color assignment, source zoom/pan and reviewed local depth estimation. Painting is deliberate in this section (or the expanded workspace); the comparison photo otherwise supports phone scrolling without changing labels.
+- **Mask exchange** imports, reviews and downloads an external label PNG.
+- **Project & export** holds the study title, PNG/project downloads and saved-copy recovery. **Review save recovery** reaches it even before a photo loads; save status and active-operation cancellation stay visible across sections.
+- **Help** explains the declared projection and its limits. Essential interpretation remains beside the result and depth tools.
+
+Use **Back to comparison** or Escape to return, with keyboard focus restored to the section opener. Before a photo exists, Back/Escape returns to **Open**. Escape first cancels an unfinished depth gesture or discards a reviewed external mask. **Expand workspace** shows the same mounted tools together; **Focus workspace** restores sections.
+
+Switching sections never applies fields, changes masks/history, or cancels an authorized read/render/estimate. Raw title/numeric/tool drafts and reviewed proposals remain in memory. Apply/Save title commits deliberately; backups contain committed work only. Finish or explicitly cancel an active depth gesture before switching. Pending operations retain their own cancellation and stale-result checks; opening a section does not start an estimate or playback.
+
 ## A first study
 
-1. Choose **Import photo** for a PNG, JPEG or static WebP, or **Try authored demo** for an original three-plane illustration.
+1. In **Open**, choose **Import photo** for a PNG, JPEG or static WebP, or **Try authored demo** for an original three-plane illustration.
 2. Set **Source focal length** and **Target focal length**, then apply the settings. Both values must use the same sensor/crop basis. The default 50 mm is a declaration to edit, not detected camera metadata.
 3. In **Fixed camera**, a longer focal length crops into the center; a shorter length makes the known image occupy less of the frame. Use **Shift X** and **Shift Y** to move that framing on the output plane.
-4. To explore perspective, acknowledge the manual-plane approximation and choose **Manual perspective**. Assign source pixels to near, subject or far with the source-view brush, **Rectangle**, **Polygon outline**, **Connected color**, or **Fill plane**. Adjust relative near/far distances and focal length. All pixels initially belong to the subject, so a new photo will not show depth differences until you assign near or far pixels.
+4. To explore perspective, expand **Camera mode & depth distances**, acknowledge the manual-plane approximation and choose **Manual perspective**. Open **Depth** and assign source pixels to near, subject or far with the source-view brush, **Rectangle**, **Polygon outline**, **Connected color**, or **Fill plane**. Adjust relative near/far distances and focal length. All pixels initially belong to the subject, so a new photo will not show depth differences until you assign near or far pixels.
    Use **Source zoom** (Fit/2×/4×) and Pan controls to trace detailed regions. View changes preserve saved pixels and cancel unfinished selections.
-5. Use **Undo**, **Redo** and **Reset projection** to compare choices. Export the result with **Export PNG** and retain editable work with **Download project**. **Import project** reopens that backup.
+5. Use **Undo**, **Redo** and **Reset projection** to compare choices. In **Project & export**, export the result with **Export PNG** and retain editable work with **Download project**. **Open → Import project** reopens that backup.
 
 The original and result stay at the same dimensions and aspect ratio. A checkerboard represents transparency. Original transparency is retained; missing field of view and newly uncovered regions also remain transparent. No content is generated to fill them.
 

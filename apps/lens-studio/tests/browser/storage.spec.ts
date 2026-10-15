@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './expanded-workspace';
 import type {} from '../storage-harness.ts';
 import { pngHeader } from '../photo-fixtures.ts';
 

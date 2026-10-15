@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './expanded-workspace';
 import { writeFile } from 'node:fs/promises';
 import { originalStudy, winnerStudy, originalPixels, sha256, backup, rendered, saved, rawRow, projectOf, openOriginal, restoreOriginal, rename, winner, protection, conflict, checkPng, transactionGate, waitGate, releaseGate, cleanupGate, abortNextPut, holdDecode, waitDecode, releaseDecode, holdFile, waitFile, releaseFile } from './saved-copy-fixtures.ts';
 

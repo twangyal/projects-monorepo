@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './expanded-workspace';
 import { PNG } from 'pngjs';
 import type {} from '../jobs-harness.ts';
 

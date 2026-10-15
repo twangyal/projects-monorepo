@@ -23,12 +23,13 @@ function button(label: string, action: () => void, className = ''): HTMLButtonEl
 function percent(share: number): string { return `${Math.round(share * 100)}%`; }
 
 /** “Estimated depth”: a learned proposal for the three editable planes, reviewed before it replaces the mask. */
-export function mountDepthPanel(host: DepthHost): { element: HTMLElement; refresh(): void } {
+export function mountDepthPanel(host: DepthHost): { element: HTMLElement; activity: HTMLElement; refresh(): void } {
   const panel = el('section', '', 'panel'); panel.id = 'depth-estimate-panel';
   panel.append(el('h2', 'Estimated depth'), el('p', `${DEPTH_MODEL.name} (${DEPTH_MODEL.license}) estimates relative depth in this browser. It proposes which plane each pixel belongs to; values are not distances, and edges, glass, reflections and thin objects are often wrong. Review the proposal, then correct it with the authored-depth tools.`, 'hint'));
   const status = el('p', '', 'hint'); status.id = 'depth-estimate-status'; status.setAttribute('role', 'status');
   const estimate = button('Estimate depth', () => { void run(); }, 'primary');
   const cancel = button('Cancel estimate', () => controller?.abort()); cancel.hidden = true;
+  const activity = el('div', '', 'depth-activity'); activity.hidden=true; const activityStatus=el('span'); activityStatus.setAttribute('role','status'); activity.append(activityStatus,cancel);
   const modelField = el('label', 'Choose depth model file', 'field'); modelField.hidden = true;
   const modelInput = el('input'); modelInput.type = 'file'; modelInput.accept = '.onnx'; modelInput.id = 'depth-model-file'; modelField.append(modelInput);
   const modelHelp = el('p', `This installation does not host the model. Run npm run fetch-depth-model where the app is built, or download ${DEPTH_MODEL.source} (${(DEPTH_MODEL.bytes / 1e6).toFixed(1)} MB) and choose it here. It is checked against its pinned SHA-256 and stays on this device.`, 'hint'); modelHelp.hidden = true;
@@ -47,7 +48,7 @@ export function mountDepthPanel(host: DepthHost): { element: HTMLElement; refres
   const apply = button('Apply proposal as depth mask', applyProposal, 'primary');
   const discard = button('Discard estimate', () => { estimateState = null; review.hidden = true; status.textContent = 'Estimate discarded. The depth mask was not changed.'; refresh(); });
   review.append(el('p', 'Click the subject in this preview to centre the subject band on its depth, or adjust both limits. Applying replaces the whole depth mask as one undoable edit.', 'hint'), apply, discard);
-  panel.append(status, estimate, cancel, modelField, modelHelp, review);
+  panel.append(status, estimate, modelField, modelHelp, review);
 
   let controller: AbortController | null = null;
   let estimateState: { photoId: string; width: number; height: number; depth: Float32Array; thresholds: Thresholds } | null = null;
@@ -110,8 +111,10 @@ export function mountDepthPanel(host: DepthHost): { element: HTMLElement; refres
       estimateState = { photoId: photo.id, width: result.width, height: result.height, depth: result.values, thresholds: defaultThresholds(result.values) };
       review.hidden = false; draw();
       status.textContent = `Depth estimated in ${result.seconds.toFixed(1)} s. Review the proposal; nothing has changed yet.`;
+      host.announce('Depth estimate ready. Open Depth to review; the study has not changed.');
     } catch (error) {
       status.textContent = error instanceof DOMException && error.name === 'AbortError' ? 'Depth estimation canceled. Nothing was changed.' : error instanceof Error ? error.message : 'Depth estimation failed.';
+      if(host.project()?.photo.id===photo.id)host.announce(status.textContent);
     } finally { if (controller === own) controller = null; refresh(); }
   }
 
@@ -129,12 +132,12 @@ export function mountDepthPanel(host: DepthHost): { element: HTMLElement; refres
   function refresh(): void {
     const project = host.project(), busy = !!controller;
     if (estimateState && project?.photo.id !== estimateState.photoId) { estimateState = null; review.hidden = true; }
-    estimate.disabled = !project || busy || host.locked(); cancel.hidden = !busy;
+    estimate.disabled = !project || busy || host.locked(); cancel.hidden = !busy; activity.hidden=!busy; activityStatus.textContent='Depth estimate running · return to Depth to review. Photos stay on this device.';
     apply.disabled = !estimateState || host.locked(); discard.disabled = !estimateState;
     farInput.disabled = nearInput.disabled = !estimateState;
     if (!project) status.textContent = '';
     else if (!busy && !estimateState && !status.textContent) status.textContent = 'Estimate depth to get a starting proposal for the three planes.';
   }
   refresh();
-  return { element: panel, refresh };
+  return { element: panel, activity, refresh };
 }

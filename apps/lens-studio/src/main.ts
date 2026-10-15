@@ -1,3 +1,4 @@
+import {createPhotoWorkspace} from './workspace-view.ts';
 import { mountDepthPanel } from './depth-panel.ts';
 import {maskPng,maskRaster,reviewMask} from './depth-mask.ts';
 import {readMask} from './depth-mask-job.ts';
@@ -35,14 +36,14 @@ const introduction = el('div', '', 'introduction'); introduction.append(el('p', 
 const imports = el('div', '', 'import-bar');
 const photoInput = field(imports, 'photo-import', 'Import photo', 'file'); photoInput.accept = 'image/png,image/jpeg,image/webp';
 const projectInput = field(imports, 'project-import', 'Import project', 'file'); projectInput.accept = '.json,application/json';
-const demoButton = button('Try authored demo', () => { void stageDemo(); }); const cancelButton = button('Cancel operation', cancelOperation); cancelButton.id = 'cancel-operation'; cancelButton.hidden = true; imports.append(demoButton, cancelButton); main.append(imports);
+const demoButton = button('Try authored demo', () => { void stageDemo(); }); const cancelButton = button('Cancel operation', cancelOperation); cancelButton.id = 'cancel-operation'; cancelButton.hidden = true; imports.append(demoButton); main.append(imports);
 const empty = panel('Start with one photo', 'PNG, JPEG or static WebP, up to 8 MiB. Photos stay in this browser. You can also try the original three-plane illustration.');
 empty.append(el('p', 'No photo has been loaded. The demo is authored geometry, not estimated depth.', 'empty')); main.append(empty);
 const workspace = el('div', '', 'workspace'); workspace.hidden = true; main.append(workspace);
 const toolbar = el('div', '', 'toolbar'); const undoButton = button('Undo', undo); const redoButton = button('Redo', redo); const resetButton = button('Reset projection', () => { if (project) commit(resetProjection(project)); }); const pngButton = button('Export PNG', () => { void downloadPng(); }, 'primary'); const jsonButton = button('Download project', downloadProject); const renderButton = button('Render preview', () => { if (!exportLocked) queuePreview(); }); toolbar.append(undoButton, redoButton, resetButton, renderButton, pngButton, jsonButton); workspace.append(toolbar);
 const titleForm = el('form', '', 'title-form'); titleForm.id = 'title-form'; const titleInput = field(titleForm, 'project-title', 'Study title'); titleInput.maxLength = 160; titleInput.required = true;
 const saveTitle = button('Save title', () => {}); saveTitle.type = 'submit'; titleForm.append(saveTitle); titleForm.addEventListener('submit', (e) => { e.preventDefault(); if (!project || exportLocked) return; try { commit(validateProject({ ...project, title: titleInput.value.trim() })); titleDirty = false; refreshControls(); } catch { announce('Use a study title with 1–80 characters.', true); } }); titleInput.addEventListener('input', () => { titleDirty = true; invalidateStage(); }); workspace.append(titleForm);
-const layout = el('div', '', 'editor-layout'); const controls = el('aside', '', 'controls'); const comparison = el('section', '', 'comparison'); layout.append(controls, comparison); workspace.append(layout);
+const layout = el('div', '', 'editor-layout'); const controls = el('aside', '', 'controls'); const comparison = el('section', '', 'comparison'); layout.append(comparison, controls); workspace.append(layout);
 const settingsPanel = panel('Projection', 'Source and target must use the same sensor or equivalent focal-length basis. No camera metadata is assumed.');
 const modes = el('fieldset', '', 'mode-options'); modes.append(el('legend', 'Camera mode'));
 function modeRadio(name: string, value: Settings['mode']): HTMLInputElement {
@@ -79,7 +80,7 @@ const maskCanvas=el('canvas');maskCanvas.style.imageRendering='pixelated';maskCa
 const maskApply=el('button','Apply depth mask','primary');maskApply.type='button';maskApply.addEventListener('click',()=>{const review=maskProposal;if(!review||!project||exportLocked||gesture||review.generation!==generation||review.lifetime!==lifetime||review.intent!==editorIntent)return;commit(review.project);announce(review.changed?'Depth mask applied as one undoable edit. Photo, settings and unapplied fields were kept.':'Mask is identical; history was kept.');});
 const maskDiscard=button('Discard depth mask',()=>announce('Depth mask review discarded; committed study kept.'));maskReview.append(maskSummary,maskCanvas,maskApply,maskDiscard);maskPanel.append(maskReview);controls.append(maskPanel);
 const comparisonHeader = el('div', '', 'comparison-heading'); const comparisonTitle = el('h2', 'Source & result'); const projectionSummary = el('p', '', 'hint'); projectionSummary.id = 'projection-summary'; comparisonHeader.append(comparisonTitle, projectionSummary); comparison.append(comparisonHeader);
-const frames = el('div', '', 'frames'); const sourceFigure = el('figure'); const resultFigure = el('figure'); const sourceCaption = el('figcaption', 'Original · paint depth here'); const resultCaption = el('figcaption', 'Projected result');
+const frames = el('div', '', 'frames'); const sourceFigure = el('figure'); const resultFigure = el('figure'); const sourceCaption = el('figcaption', 'Original · assign planes in Depth'); const resultCaption = el('figcaption', 'Projected result');
 const sourceCanvas = el('canvas'); sourceCanvas.id = 'source-canvas'; sourceCanvas.setAttribute('aria-label', 'Original photo; paint depth assignments here'); sourceCanvas.tabIndex = 0;
 const resultCanvas = el('canvas'); resultCanvas.id = 'result-canvas'; resultCanvas.setAttribute('aria-label', 'Projected result with transparent unknown regions');
 const sourceSurface = el('div', '', 'canvas-surface'); const resultSurface = el('div', '', 'canvas-surface'); sourceSurface.append(sourceCanvas); resultSurface.append(resultCanvas); sourceFigure.append(sourceCaption, sourceSurface); resultFigure.append(resultCaption, resultSurface); frames.append(sourceFigure, resultFigure); comparison.append(frames);
@@ -102,6 +103,7 @@ const storagePanel = el('section', '', 'storage-controls'); storagePanel.setAttr
 const drainStatus = el('p', 'Waiting for a previous photo or storage operation to finish before recovery. Keep editing and download your current project; reload this app if cleanup does not finish.', 'hint'); drainStatus.id = 'storage-drain-status'; drainStatus.hidden = true;
 storagePanel.append(saveStatus, drainStatus, retryButton, reloadButton, replaceButton); main.append(storagePanel);
 comparison.append(missing, renderStatus, el('p', 'Original transparency is retained; uncovered regions stay transparent. No content was generated.', 'notice'), el('p', 'This is a declared pinhole projection study over three flat planes, whether you painted them or applied an estimate. It does not recover hidden detail, add optical blur or calibrate a real camera.', 'hint'));
+const helpPanel = panel('Understand the simulation', 'Photos stay local. Focal lengths are declarations on the same sensor basis, not detected metadata.'); helpPanel.append(introduction, el('p', 'Fixed camera changes framing. Manual perspective uses three camera-parallel planes; unknown and uncovered regions stay transparent. Relative estimated depth is not a calibrated distance. Use Depth to review or paint assignments and Project & export for backups and recovery.', 'hint')); main.append(helpPanel);
 main.append(el('footer', 'Local by design · one photo · no account · download a project backup for recovery outside this browser.'));
 
 let maskProposal: {project:Project;changed:number;generation:number;lifetime:number;intent:number;fields:Map<HTMLInputElement,string>}|null=null;
@@ -117,6 +119,10 @@ interface StorageOwner { controller: AbortController; intent: number; generation
 let editorIntent = 0, lifetime = 0;
 const depthUi = mountDepthPanel({ project: () => project, locked: () => exportLocked || !!gesture, commit, announce });
 controls.insertBefore(depthUi.element, maskPanel);
+const activity = el('div', '', 'workspace-activity'); activity.append(cancelButton, depthUi.activity); main.insertBefore(activity, workspace);
+// Keep save feedback visible even when the recovery controls are in another section.
+main.insertBefore(saveStatus, activity);
+const perspectiveDetails=el('details');perspectiveDetails.className='perspective-details';perspectiveDetails.append(el('summary','Camera mode & depth distances'), modes, ackLabel, numeric.get('near')!.parentElement!, numeric.get('far')!.parentElement!);settingsForm.insertBefore(perspectiveDetails,settingsError);
 let terminal = false, initialPending = true;
 let initialOwner: StorageOwner | null = null, recoveryOwner: StorageOwner | null = null;
 let store: ProjectStore | null = null, storageReady = false, protectedStorage = false;
@@ -164,14 +170,15 @@ function retireIntent(): void {
   invalidateStage();
 }
 app.addEventListener('input', retireIntent, true);
-app.addEventListener('change', event=>{const target=event.target;if(target instanceof HTMLInputElement&&maskProposal?.fields.get(target)===target.value)return;retireIntent();}, true);
+app.addEventListener('change', event=>{const target=event.target;if(target instanceof HTMLInputElement&&(['text','number'].includes(target.type)||maskProposal?.fields.get(target)===target.value))return;retireIntent();}, true);
 app.addEventListener('submit', retireIntent, true);
 function syncModes(): void { fixedRadio.checked = project?.settings.mode !== 'perspective'; perspectiveRadio.checked = project?.settings.mode === 'perspective'; perspectiveRadio.disabled = exportLocked || !ackInput.checked; }
 function syncNumeric(force = false): void { if (!project) return; for (const [name, input] of numeric) if (force || !numericDirty.has(name)) input.value = String(project.settings[name]); }
 function refreshControls(): void {
-  workspace.hidden = !project; empty.hidden = !!project; syncModes(); syncNumeric(); if (project && !titleDirty) titleInput.value = project.title;
+  workspace.hidden = !project; empty.hidden = !!project; titleForm.hidden=!project; focused.sync(); syncModes(); syncNumeric(); if (project && !titleDirty) titleInput.value = project.title;
   undoButton.disabled = exportLocked || !!gesture || !history?.canUndo; redoButton.disabled = exportLocked || !!gesture || !history?.canRedo;
   for (const n of [maskInput, maskDownload, maskApply, photoInput, projectInput, demoButton, resetButton, renderButton, pngButton, jsonButton, titleInput, saveTitle, fixedRadio, ackInput, fillButton, brushInput, toolInput, toleranceInput, overlayInput, applyButton, ...numeric.values()]) n.disabled = exportLocked;
+  pngButton.disabled=jsonButton.disabled=exportLocked||!project;
   perspectiveRadio.disabled = exportLocked || !ackInput.checked; for (const n of paintControls.querySelectorAll<HTMLInputElement>('input[type=radio]')) n.disabled = exportLocked;
   sourceZoom.disabled=exportLocked||!project;for(const pan of panButtons)pan.disabled=exportLocked||!project||sourceZoom.value==='1';cancelDepth.disabled=exportLocked||!gesture;toleranceInput.parentElement!.hidden=toolInput.value!=='color';
   cancelButton.hidden = !operation && !previewBusy && !initialPending && !recoveryOwner; refreshStorageControls(); depthUi.refresh();
@@ -192,7 +199,7 @@ function redo(): void { if (exportLocked || gesture) return; retireIntent(); if 
 function publish(next: Project, raster: Raster, restored = false, nextHistory = new History(next)): void { if (gesture) cancelGesture();
   project = next; source = raster; history = nextHistory; generation += 1; frame = null; frameGeneration = -1; numericDirty.clear(); titleDirty = false; settingsError.hidden = true; ackInput.checked = next.settings.mode === 'perspective';
   sourceCanvas.width = next.photo.width; sourceCanvas.height = next.photo.height; resultCanvas.width = next.photo.width; resultCanvas.height = next.photo.height; setSourceZoom(true); missing.textContent = 'Missing coverage: waiting for result'; savedGeneration = restored ? generation : -1;
-  if (restored) storageMessage('Saved locally · restored this study'); refreshControls(); drawSource(); queuePreview(); if (!restored) queueSave();
+  if (restored) storageMessage('Saved locally · restored this study'); focused.published(); refreshControls(); drawSource(); queuePreview(); if (!restored) queueSave();
 }
 function drawSource(): void {
   if (!source || !project) return; const ctx = sourceCanvas.getContext('2d'); if (!ctx) return; presentFrame(ctx, source);
@@ -286,7 +293,7 @@ async function downloadPng(): Promise<void> {
   finally { if (operation === op) { operation = null; exportLocked = false; refreshControls(); renderStatus.textContent = frame ? 'Projection ready' : 'Waiting for preview'; if (frameGeneration !== generation) queuePreview(); } }
 }
 function sourcePoint(event: PointerEvent): Point { const bounds = sourceCanvas.getBoundingClientRect(); return { x: Math.max(0, Math.min(sourceCanvas.width, (event.clientX - bounds.left) / bounds.width * sourceCanvas.width)), y: Math.max(0, Math.min(sourceCanvas.height, (event.clientY - bounds.top) / bounds.height * sourceCanvas.height)) }; }
-sourceCanvas.addEventListener('pointerdown', (e) => { if (!project || exportLocked || gesture || !e.isPrimary || e.button !== 0) return; retireIntent(); const tool=toolInput.value as 'brush'|RegionTool|'color';const radius=tool==='brush'?Number(brushInput.value):1; if (!Number.isInteger(radius) || radius < 1 || radius > 100) { announce('Brush size must be a whole number from 1 to 100 source pixels.', true); return; } const point=sourcePoint(e),scrollLeft=sourceSurface.scrollLeft,scrollTop=sourceSurface.scrollTop;let region:ColorRegion|undefined;if(tool==='color'){if(!source)return;try{const raw=toleranceInput.value;if(!/^\d{1,3}$/.test(raw))throw new Error('Invalid tolerance');region=prepareColorRegion(project,source,selectedPlane,{x:Math.min(source.width-1,Math.floor(point.x)),y:Math.min(source.height-1,Math.floor(point.y))},Number(raw));}catch{announce('Color tolerance must be a whole number from 0 through 255; your mask was kept.',true);return;}}invalidateStage(); gesture = { pointer: e.pointerId, scrollLeft, scrollTop, points: [point], plane: selectedPlane, radius, tool, region, project, generation }; sourceCanvas.setPointerCapture(e.pointerId); refreshControls(); drawSource(); });
+sourceCanvas.addEventListener('pointerdown', (e) => { if (!focused.canPaint() || !project || exportLocked || gesture || !e.isPrimary || e.button !== 0) return; retireIntent(); const tool=toolInput.value as 'brush'|RegionTool|'color';const radius=tool==='brush'?Number(brushInput.value):1; if (!Number.isInteger(radius) || radius < 1 || radius > 100) { announce('Brush size must be a whole number from 1 to 100 source pixels.', true); return; } const point=sourcePoint(e),scrollLeft=sourceSurface.scrollLeft,scrollTop=sourceSurface.scrollTop;let region:ColorRegion|undefined;if(tool==='color'){if(!source)return;try{const raw=toleranceInput.value;if(!/^\d{1,3}$/.test(raw))throw new Error('Invalid tolerance');region=prepareColorRegion(project,source,selectedPlane,{x:Math.min(source.width-1,Math.floor(point.x)),y:Math.min(source.height-1,Math.floor(point.y))},Number(raw));}catch{announce('Color tolerance must be a whole number from 0 through 255; your mask was kept.',true);return;}}invalidateStage(); gesture = { pointer: e.pointerId, scrollLeft, scrollTop, points: [point], plane: selectedPlane, radius, tool, region, project, generation }; sourceCanvas.setPointerCapture(e.pointerId); refreshControls(); drawSource(); });
 sourceCanvas.addEventListener('pointermove', (e) => { if (!gesture || gesture.pointer !== e.pointerId) return; if(cancelMovedGesture())return; if(gesture.tool==='color')return;if(gesture.tool==='rectangle'){gesture.points=[gesture.points[0],sourcePoint(e)];scheduleSourceDraw();return;} if (gesture.points.length >= LIMITS.brushPoints) { announce('This stroke is too long. Use a shorter stroke; the unfinished gesture was discarded.', true); cancelGesture(); return; } gesture.points.push(sourcePoint(e)); scheduleSourceDraw(); });
 sourceCanvas.addEventListener('pointerup', (e) => { if (!gesture || gesture.pointer !== e.pointerId) return; if(cancelMovedGesture())return; const captured = gesture; gesture = null; if (sourceCanvas.hasPointerCapture(e.pointerId)) sourceCanvas.releasePointerCapture(e.pointerId); if (captured.generation !== generation) { announce('Unfinished stroke discarded because the study changed. Your newer edits were kept.'); refreshControls(); drawSource(); return; } try { commit(captured.tool==='color'?captured.region!.project:captured.tool==='brush'?paintMask(captured.project,captured.plane,captured.radius,[...captured.points,sourcePoint(e)]):assignRegion(captured.project,captured.plane,captured.tool,captured.tool==='rectangle'?[captured.points[0],sourcePoint(e)]:[...captured.points,sourcePoint(e)])); } catch { announce('Stroke could not be applied. Use a shorter stroke; your mask was kept.', true); } refreshControls(); drawSource(); });
 function cancelMovedGesture(): boolean { if(!gesture || gesture.scrollLeft===sourceSurface.scrollLeft && gesture.scrollTop===sourceSurface.scrollTop)return false;cancelGesture();announce('Depth gesture canceled because the source view moved; committed mask retained.');return true; }
@@ -425,4 +432,7 @@ window.addEventListener('pagehide', event => {
   if (!event.persisted) { terminal = true; if (store) retireStore(store); }
   refreshControls();
 });
+const exportPanel=panel('Project & export', 'Download project keeps the normalized photo, applied settings and complete depth mask. Unapplied fields stay in this page only.'); exportPanel.append(titleForm,pngButton,jsonButton,storagePanel);main.insertBefore(exportPanel, workspace);
+const focused=createPhotoWorkspace({main,perspectiveDetails,hasProject:()=>!!project,canNavigate:()=>{if(!gesture)return true;announce('Finish or cancel the depth gesture before switching tools.');return false;},groups:{compare:[settingsPanel],open:[imports],depth:[paintPanel,depthUi.element,sourceViewControls],mask:[maskPanel],project:[exportPanel],help:[helpPanel]}});
+// Focused source painting is deliberate; comparison clicks never author a mask.
 refreshControls(); void start();

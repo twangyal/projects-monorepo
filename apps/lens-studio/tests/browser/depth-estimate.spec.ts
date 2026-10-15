@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './expanded-workspace';
 import { readFile } from 'node:fs/promises';
 import { independentPng } from '../oracle/fixtures';
 import type { Project } from '../../src/types';

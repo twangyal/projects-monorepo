@@ -1,9 +1,9 @@
 import {deflateSync} from 'node:zlib';
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './expanded-workspace';
 import {readFile,mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {chromium} from '@playwright/test';
+import {chromium,expandedPage} from './expanded-workspace';
 import {PNG} from 'pngjs';
 import {independentPng} from '../oracle/fixtures';
 import type {Project} from '../../src/types';
@@ -61,6 +61,6 @@ test('review is usable on a 390px screen with keyboard Apply and visible palette
 });
 test('applied labels and complete photo settings survive a full browser process restart',async({baseURL})=>{
  const directory=await mkdtemp(join(tmpdir(),'lens-mask-restart-')),options={baseURL,acceptDownloads:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})};let context=await chromium.launchPersistentContext(directory,options);
- try{let page=await context.newPage();await setup(page);await page.getByLabel('Import depth mask',{exact:true}).setInputFiles(mask());await expect(page.locator('#mask-review')).toBeVisible();await page.getByRole('button',{name:'Apply depth mask',exact:true}).click();const expected=await backup(page);await expect(page.locator('#save-status')).toContainText('Saved locally');await context.close();context=await chromium.launchPersistentContext(directory,options);page=await context.newPage();await page.goto('/');await expect(page.locator('#render-status')).toContainText('Projection ready');expect(await backup(page)).toEqual(expected);}
+ try{let page=await context.newPage();expandedPage(page);await setup(page);await page.getByLabel('Import depth mask',{exact:true}).setInputFiles(mask());await expect(page.locator('#mask-review')).toBeVisible();await page.getByRole('button',{name:'Apply depth mask',exact:true}).click();const expected=await backup(page);await expect(page.locator('#save-status')).toContainText('Saved locally');await context.close();context=await chromium.launchPersistentContext(directory,options);page=await context.newPage();expandedPage(page);await page.goto('/');await expect(page.locator('#render-status')).toContainText('Projection ready');expect(await backup(page)).toEqual(expected);}
  finally{await context.close();await rm(directory,{recursive:true,force:true});}
 });
