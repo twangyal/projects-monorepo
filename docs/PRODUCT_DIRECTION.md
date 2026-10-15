@@ -186,6 +186,10 @@ Success means a new user can understand what to do, choose pictured examples and
 
 Scheduled development should read this update before selecting or resuming Style Studio work, reconcile older plans with it, and prioritize a coherent visual-onboarding-to-suggestions milestone over adding more fields or polishing the current all-in-one page. Preserve existing user profiles and useful functionality as the interface changes. This update records requested future work; the current application has not yet been redesigned and Style Studio remains ACTIVE. Other projects' direction and the existing portfolio focus remain in force.
 
+### Guided visual milestone delivered — 2026-10-15 (#264)
+
+Style now offers a no-typing pictured-choice → example-inspiration path, with twelve original outfit illustrations, explicit correctable votes and no inserted owned clothes or supplied personal preferences. Sparse tag matching and the existing sufficiently trained model are distinguished, including visible sample-label provenance. Focused screens, More tools and a real expanded view retain raw editor/history/operation owners; keyboard and restore-time navigation preserve deliberate choices. Final-source CI passes 64 units and 78 native browser cases. See `docs/2026-10-15-style-onboarding-integration.md` for integrated evidence, source research and retained failures. This addresses first-use information density and a first source of visual taste evidence; intended-user usefulness and the broader style-assistant goals remain ACTIVE.
+
 ## 13. Stock Notebook
 
 Retain the original stock-research vision: turn a broad investing idea into visible screening criteria and an understandable, source-linked research summary, distinguishing supplied facts, derived observations and generated claims.
