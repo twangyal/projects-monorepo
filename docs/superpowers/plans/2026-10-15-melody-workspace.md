@@ -27,11 +27,11 @@ Files: create `src/workspace-view.ts` and `tests/workspace.spec.ts` within Melod
 - [x] Implement `createWorkspaceView(root, {canNavigate, captureActive, saveState, stopAudio})` with `sync`, `select`, `focus`, `expanded`, `view`, `navigating`; no model mutations or DOM reparenting.
 - [x] Integrate render synchronization, note selection and blur-safe navigation with explicit Enter field application.
 - [x] Test retained audio/reference bytes, selection/history, real export/reload and cancellation in focused desktop/phone flows.
-- [ ] Run targeted browser gates, check, then full legacy browser suite through the actual expanded product view.
-- [ ] Review, fix findings, document verification and commit #261.
+- [x] Run targeted browser gates, check, then full legacy browser suite through the actual expanded product view.
+- [x] Review, fix findings, document verification and commit #261.
 
 ## Task 2: Integration and durable evidence
 
-- [ ] Update README and portfolio roadmap with actual delivered scope and limitations.
-- [ ] Publish via connected GitHub tools with leased refs; verify source/main CI where available.
+- [x] Update README and portfolio roadmap with actual delivered scope and limitations.
+- [x] Publish via connected GitHub tools with leased refs; verify source/main CI where available.
 - [ ] Update issue with exact evidence; close only when completion criteria are met.

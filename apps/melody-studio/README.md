@@ -12,7 +12,9 @@ Start in **Compose** with tracks, the piano roll and playback. The workspace too
 
 Switching tools keeps the same mounted controls, raw drafts, selection and session history. It does not apply a field, start audio or cancel an already-authorized import/library read. Basic text fields can be deliberately applied with Enter after returning to a retained draft; sound and note forms retain their own Apply/Discard controls. Drafts remain memory-only: a reload restores committed work, and the existing departure warning protects unapplied changes where the browser permits it.
 
-**Stop audio** stays in the workspace toolbar. Active capture/render operations also retain their existing Finish/Cancel controls after navigation. Project files, saved compositions, MIDI import and MIDI/WAV exports are in **Project & export**; original-take comparison and saved-copy recovery are in **Reference**. These are modeless sections: ordinary Tab navigation works, with no dialog focus trap.
+**Stop audio** stays in the workspace toolbar. Active capture/render operations also retain their existing Finish/Cancel controls after navigation. Project files, saved compositions, MIDI import and MIDI/WAV exports are in **Project & export**; original-take comparison, project-import cancellation and saved-copy recovery are in **Reference**. These are modeless sections: ordinary Tab navigation works, with no dialog focus trap.
+
+Verification and integration evidence: [#261 receipt](../../docs/2026-10-15-melody-workspace-integration.md).
 
 ## Split a sustained note
 

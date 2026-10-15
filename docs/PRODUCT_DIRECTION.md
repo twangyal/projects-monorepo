@@ -58,6 +58,10 @@ The owner confirmed that Melody Studio, Motion Studio and Lens Studio all show t
 
 Prioritize a coherent navigation and information-density milestone when resuming Melody work. A user should be able to load or capture an idea, edit it, listen and find an export without confronting unrelated settings. Preserve notes, audio, selection, raw drafts, Undo/Redo, recovery and deliberate playback behavior when switching sections or opening/closing dialogs. Check desktop and phone usability, discoverability and keyboard/modal focus, including clear close/back behavior. This records future work, not a delivered redesign; Melody remains ACTIVE.
 
+### Delivery note — 2026-10-15 (#261)
+
+The focused composing milestone now provides Compose, Capture, Sound, Notes, Arrange, Reference and Project & export sections plus an expanded workspace. Mounted controls and passive-navigation guards retain drafts and operation ownership; the toolbar exposes audio stop, save/recovery status and clear back behavior. Source verification passes428 unit and247 native browser tests, including desktop/phone creative flows, raw drafts and pending-operation races. See `docs/2026-10-15-melody-workspace-integration.md` for integration evidence and retained failures. This addresses the information-density milestone; intended-musician usability, broader production capability and the full DAW destination remain ACTIVE.
+
 ## 5. Clothing Studio
 
 Clothing Studio is a professional garment-design application with the depth and creative control of tools like CLO. It enables users to develop clothing from an idea into an editable, three-dimensional garment, refine its construction and materials, evaluate it on a personalized body, and prepare it for presentation or physical production.
