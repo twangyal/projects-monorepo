@@ -1,5 +1,5 @@
 /** Independent real IndexedDB oracle. No producer implementation supplies expected records. */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 import type { Project, SavedLook } from '../../src/types.ts';
 import type { SavedCopyReceipt } from '../../src/storage.ts';

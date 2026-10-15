@@ -1,0 +1,25 @@
+# Guided visual onboarding (#264) — 2026-10-15
+
+## Outcome and design
+
+The first visit offers one focused screen: choose original illustrated outfits or skip directly to inspiration. Twelve references support deliberate Like/Pass/Skip; existing votes show Clear. No personal names, wardrobe pieces or tag entry are required before the first results. Each vote is an existing schema-1 tagged preference record with a stable catalog identity, not an inserted owned garment. Correction replaces the same opinion; history, autosave and full backups preserve it. Unrelated imported identity collisions and capacity refusals are atomic.
+
+First inspiration ranks original examples by disclosed tag overlap while evidence is sparse. Once the existing 8-total / 3-Like / 3-Pass model gate is met, it uses the production logistic model. This is provisional alignment, not calibrated taste accuracy, image recognition, physical fit or a shopping catalog. Known sample labels remain visibly distinguished from personal feedback; existing/imported labels are used as supplied. All-pass results remain empty and actionable.
+
+The existing editor stays mounted behind focused screens and an actual expanded view. Raw fields/carets, pending photos/imports, history, model and storage owners remain authoritative. Navigation changes no profile and does not cancel owned work. Main actions stay visible; secondary actions use More tools. Recovery is globally visible when needed and always available in Profile & backup; errors and pending-operation cancellation stay above the current screen. Back/Escape and a functional keyboard skip route expose and focus visible headings. Explicit navigation while a real saved photo decodes wins over default startup-screen selection.
+
+## Verification checkpoint
+
+- Fresh pinned dependencies; original baseline passes60 unit tests, ESLint, TypeScript and production build.
+- Four additional domain cases pass: exact explicit/correctable backup records without owned/sample insertion, sparse ranking responding to changed preferences, exact production-model score parity, and atomic full-profile/collision/unknown-ID refusal.
+- Nine focused native browser cases pass: desktop1440 / phone390 no-typing first choices/results and complete backup/reload; keyboard skip and mounted raw field/caret retention; skip without forced repetition; sample provenance after reload; phone first-image placement and secondary menu; vote correction/Undo/Redo/Clear; a held actual File.text import across navigation and late cancellation; real native photo decode during restore with explicit screen retention.
+- Read-only independent review found hidden skip targeting and sample provenance loss. Both were reproduced with native RED cases, repaired and re-reviewed with no remaining Critical or Important findings. A separate native RED case exposed restore completion overriding explicit navigation; the explicit-selection guard repairs it.
+- The complete existing editor suite uses the real Expand workspace action; original assertions, storage deadlines, export/media expectations and trust boundaries stay intact. Source and integrated-main results are authoritative in the [root integration record](../../../docs/2026-10-15-style-onboarding-integration.md) after publication.
+
+## Retained intermediate outcomes
+
+The first native first-use run fails on the missing guided heading at both widths, then passes after implementation. An initial machine config lookup referenced an absent previous-run temporary file; configuration was recreated locally. The first full invocation passes47/71 and fails24 fixture reads because its custom outDir did not populate the normal dist paths read by existing storage tests. Building the expected harness restores those tests; the next complete invocation passes74/74. A later complete invocation passes77/77 after density/history/import cases. The phone density probe first observes773px to the first picture; a partial navigation repair still observes658px. Compact contextual controls, status spacing and first-screen copy repair the original under600px gate without weakening it. A test-only createImageBitmap overload typing error was corrected before observing the actual restore-navigation RED. One machine-config normal-build command omitted npm's argument separator, so Vite attempted wildcard-interface discovery and refused startup; the separator/explicit-loopback configuration was corrected. These are not product pass claims.
+
+## Limits and retained direction
+
+Local native checks use portable Chromium143.0.7499.0 with machine launch configuration; CI uses its pinned Playwright browser. Viewport emulation and original SVG references do not establish intended-user effort, real-world recommendation usefulness, physical touch or garment fit. The small illustrative catalog is a first source of taste evidence, not a broad fashion taxonomy. No external image, provider inference, paid service or Pinterest account is required. See the visual-source assessment for why Pinterest remains unselected. Style remains ACTIVE under the owner's broader style-assistant vision. Project #8 remains skipped.

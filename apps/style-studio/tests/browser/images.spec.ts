@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './expanded-workspace.ts';
 import type { PhotoAsset, Piece, Project } from '../../src/types.ts';
 
 test.beforeEach(async ({ page }) => {

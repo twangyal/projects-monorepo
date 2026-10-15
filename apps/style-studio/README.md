@@ -1,6 +1,6 @@
 # Style Studio
 
-A local wardrobe and preference notebook. Add pieces you own, teach it with outfit examples you like or pass on, assess a tagged outfit, and save combinations for an occasion. Everything runs in your browser, including a small preference model fitted from your labels.
+A local style and wardrobe notebook. Start with pictured outfit choices, see example inspiration without typing, then add pieces you own and build wearable looks. Everything runs in your browser, including a small preference model fitted from saved labels.
 
 Photos are optional visual references. **You supply the tags**; this version does not recognize garments, analyze bodies, predict physical fit, or search a shopping catalog. Its score estimates alignment with the labels you supplied, not attractiveness or an objectively correct outfit.
 
@@ -23,7 +23,19 @@ npm run preview -- --host 127.0.0.1
 
 There is no backend, API key, paid service, model download, or runtime network inference. Browser storage belongs to this exact browser profile and origin; changing the host or port starts a different storage location.
 
-## Make it yours
+## Start with pictures
+
+Choose **Choose pictured styles** to browse twelve original outfit illustrations. Use **Like**, **Pass**, or **Skip**; no minimum is required. Each Like/Pass saves one correctable opinion, never example clothes or supplied sample votes. **Clear** removes your opinion for that picture; Undo/Redo can reverse it. **See inspiration** shows up to three example outfits influenced by saved profile labels. These are inspiration, not clothes you own or shopping listings. You can also skip directly to unranked examples.
+
+With sparse evidence, inspiration uses a disclosed tag-overlap rule (average similarity to Likes minus average similarity to Passes across palette, fit, style and formality). It is not a fitted model or recognition of the picture. Once the existing eight-example / three-Like / three-Pass gate is met, inspiration uses the same fitted preference model as the rest of the app. Imported labels are used as supplied; known sample labels remain explicitly identified as not your own preferences. Passing every pictured outfit offers a clear empty state rather than inventing a match.
+
+Picture opinions use the existing schema-1 example format and travel in complete JSON backups and autosave. The bundled catalog uses stable identities; changing a vote updates that same record. An unrelated imported record with a catalog identity is protected rather than overwritten. New users do not need wardrobe pieces, tags or a profile name before seeing inspiration. Returning profiles open directly to inspiration; a local presentation preference remembers skipping the introductory screen even with an empty profile. If that optional preference cannot be stored, the profile remains usable.
+
+**Inspiration**, **Picture preferences**, **Wardrobe**, and **Profile & backup** are the main screens. **More tools** reveals **Your taste**, **Build a look**, **Suggest owned looks**, and **Saved looks**. **Expand workspace** reveals the existing full editor; **Focus workspace**, Back, Escape, and the keyboard skip link provide clear navigation. Original editor fields, raw photo drafts, selections and async operations remain mounted. A screen explicitly chosen during restore stays selected when photo decoding finishes. Undo/Redo, save status, errors and pending-operation cancellation remain available; storage recovery appears globally when needed and is always reachable in Profile & backup. Switching screens alone neither applies fields nor cancels owned work.
+
+The pictures are original repository-native SVG garment illustrations. No Pinterest images are downloaded, no account is required, and no external image or inference request is made. See [visual source assessment](docs/2026-10-15-visual-sources.md) and [verification](docs/2026-10-15-visual-onboarding.md). Actual intended-user taste relevance and physical garment fit remain unvalidated.
+
+## Add your own wardrobe and refine your taste
 
 1. Add tops, bottoms, and shoes under **Add wardrobe piece**. Name and explicitly tag each piece's palette, fit, style, and formality. An optional photo is normalized locally.
 2. Use **Teach my taste** to label examples **Like** or **Pass**. The model needs at least eight examples, including three of each label. Before that, it explains the missing evidence and shows unranked outfit ideas.

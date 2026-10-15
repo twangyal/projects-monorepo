@@ -1,4 +1,4 @@
-import {expect,test,type Page} from '@playwright/test';
+import {expect,test,type Page} from './expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 import {createDemoProject} from '../../src/demo.ts';
 import type {Project} from '../../src/types.ts';

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { expect, test, type Download, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Download, type Locator, type Page } from './expanded-workspace.ts';
 import type { Category, Label, Project, Tags } from '../../src/types.ts';
 
 const liked: Tags = { palette: 'cool', fit: 'fitted', style: 'minimal', formality: 'smart' };

@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './expanded-workspace.ts';
 
 /** A 360×480 photo of a simple garment silhouette on a backdrop, drawn natively and encoded as PNG. */
 async function garmentPhoto(page: Page, backdrop: string, garment: string, shape: 'top' | 'bottom' | 'shoes'): Promise<Buffer> {

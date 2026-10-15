@@ -1,3 +1,5 @@
+import {mountStyleJourney} from './style-journey.ts';
+import {voteOnInspiration} from './inspiration.ts';
 import './style.css';
 import {
   addPiece, addTaggedExample, addWear, createProject, deleteExample, deleteLook, deletePiece, deleteWear,
@@ -140,6 +142,7 @@ exampleForm.addEventListener('input', () => { exampleForm.dataset.dirty = 'true'
 exampleForm.addEventListener('change', () => { exampleForm.dataset.dirty = 'true'; });
 
 function storageControls(): void {
+  journey?.sync();
   const outstanding = startupPending || saving || recoveryOwner !== null;
   element<HTMLButtonElement>('#retry-save').hidden = !saveFailed || preserveStoredData || !storageReady;
   element<HTMLButtonElement>('#retry-save').disabled = outstanding;
@@ -663,6 +666,7 @@ function renderLooks(): void {
   element('#look-empty').hidden = project.looks.length > 0; element('#look-count').textContent = `${project.looks.length} / ${LIMITS.looks} looks`;
 }
 function render(): void {
+  journey?.sync();
   if (profileForm.dataset.dirty !== 'true') field(profileForm, 'title').value = project.title;
   element('#model-status').textContent = model.status === 'trained' ? 'Your personal model is ready. Small datasets make these estimates provisional.' : model.reason;
   const counts = element('#model-counts'); counts.replaceChildren();
@@ -838,6 +842,7 @@ element('#replace-saved-copy').addEventListener('click', () => {
   })();
 });
 
+const journey=mountStyleJourney(mount,{project:()=>project,ready:()=>!startupPending&&!recoveryOwner&&!terminal,recovery:()=>preserveStoredData||saveFailed||reopenNeeded,vote:(id,label)=>{if(startupPending||recoveryOwner||terminal)return;attempt(()=>{publish(voteOnInspiration(project,id,label),'Pictured preference saved.');});}});
 render(); storageControls();
 void (async () => {
   const initialGeneration = generation, ownedLifetime = lifetime;

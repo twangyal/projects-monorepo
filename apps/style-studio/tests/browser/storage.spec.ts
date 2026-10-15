@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './expanded-workspace.ts';
 import {writeFile} from 'node:fs/promises';
 import {originalProfile,WINNER_PNG,profileHash,exportProfile,savedProfile,durableProfile,projectOf,openOriginal,renameProfile,restoredTab,addWinner,protectProfile,transactionGate,waitGate,releaseGate,abortNextPut,holdStartupDecode,waitDecode,releaseDecode,holdFile,waitFile,releaseFile} from './saved-copy-fixtures.ts';
 
