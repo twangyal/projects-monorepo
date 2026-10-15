@@ -175,9 +175,23 @@ not a fresh live-model or physical-input evaluation.
   assertion stopped those cases before the task steps.
 - Follow-up source `8bd6f9e477044c6f29a18a19c8e7ddf929bb48d1`:
   [Gaze checks 38677801091](https://github.com/twangyal/projects-monorepo/actions/runs/38677801091)
-  is pending. The corrected native case separately checks the actual loaded
+  passes **166 unit and 264 full-Chromium browser cases**, lint and build.
+  All four profiles still report a blank assignment; the complete keyboard/draft
+  task passes at every viewport with truthful popup feedback. The corrected
+  native case separately checks the actual loaded
   manifest, command presence, an active N or explicitly blank assignment, logs
   that assignment, checks truthful popup feedback, and executes the complete
   keyboard/draft task. The manifest/controller collision regression remains.
   Independent review found no material issue in this follow-up. Physical OS
   shortcut delivery remains unverified.
+
+
+## Canonical integration
+
+The final application subtree is `d816be2ca99c35d452358a15dae87d1a546c8699`,
+identical to accepted source `8bd6f9e477044c6f29a18a19c8e7ddf929bb48d1`.
+Later checkpoint/integration changes affect only this record and
+`PROJECT_IDEAS.md`. The first two milestones are already on main at
+`a5d27a039286b00899aacbf4bacde5a61ec3340a`; the final integration includes their
+reviewed history and the accepted shortcut follow-up. A fresh combined main
+check is pending and will be recorded when it completes.
