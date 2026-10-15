@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './helpers/expanded-workspace.ts';
 import {openRoll,readRoll,rollBackup,rollDownload,assertWav,assertMidi} from './roll-edit-fixtures.ts';
 import {downloadedBytes} from './browser/continuation-fixtures.ts';
 

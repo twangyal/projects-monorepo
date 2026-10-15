@@ -1,3 +1,4 @@
+import {createWorkspaceView, workspaceControl} from './workspace-view.ts';
 import {DEFAULT_HARMONICS,validateHarmonics} from './sound-harmonics.ts';
 import {parseVolumeCurve,formatVolumeCurve} from './volume-curve.ts';
 import {joinNextNote} from './note-join.ts';
@@ -51,6 +52,7 @@ libraryHost.id = 'composition-library'; libraryHost.setAttribute('aria-labelledb
 const timingHost = document.createElement('section');
 timingHost.id = 'track-timing'; timingHost.setAttribute('aria-labelledby', 'timing-heading');
 root.append(app, timingHost, libraryHost, referenceHost, midiHost);
+root.insertAdjacentHTML('afterbegin', `<header class="site-header"><div class="brand"><span class="brand-mark" aria-hidden="true">m<span>♪</span></span><div><p class="eyebrow">FROM A HUM TO SOMETHING MORE</p><h1>Melody Studio</h1></div></div><span class="privacy-badge"><span aria-hidden="true">●</span> Made here. Stays here.</span></header>`);
 let timingView: ReturnType<typeof createTimingView> | null = null;
 let libraryView: ReturnType<typeof createLibraryView> | null = null;
 let storage: Storage | null = null;
@@ -156,6 +158,12 @@ const roll = createRollController(root, {
   },
   status: text => { rollMessage = text; const node = app.querySelector('#roll-status'); if (node) node.textContent = text; },
 });
+const workspace = createWorkspaceView(root, {
+  canNavigate: () => !roll.active,
+  captureActive: () => !!busy && busy !== 'loading',
+  saveState: () => ({ message: saveMessage, recovery: recovery || saveFailed || manualSaveRequired, visible: recovery || saveFailed || manualSaveRequired || unsaved || saving || hasSavedCopy }),
+  stopAudio: () => { if (capture || nativeAudioPending || busy && busy !== 'loading') cancelCapture(); else { stopPlayback(); announce('Playback stopped.'); } },
+});
 let midiEpoch = 0;
 let midiReading = false;
 let midiSource: MidiPreview | null = null;
@@ -193,7 +201,7 @@ function newEditorIntent() {
   midiReading = false; midiReview = null;
   const ack = midiHost.querySelector<HTMLInputElement>('#midi-discard-ack'); if (ack) ack.checked = false;
   if (hadImport) midiStatus('The editor changed. Review this phrase again. If a file was still loading, choose it again.');
-  updateMidiControls(); updateReference(); timingView?.sync();
+  updateMidiControls(); updateReference(); timingView?.sync(); workspace.sync();
 }
 function mixValues(track: Track, song: Composition): Record<string, number> {
   const bus = song.reverb ?? DEFAULT_REVERB;
@@ -245,6 +253,7 @@ const disabled = () => busy || startup ? 'disabled' : '';
 function announce(text: string) {
   message = text;
   document.querySelector('#notice')!.textContent = message;
+  workspace.sync();
 }
 
 function commit(next: Composition, text?: string, redraw = true, document?: MelodyDocument, incoming: readonly ReferenceAsset[] = []) {
@@ -436,7 +445,7 @@ function render() {
   let focusSelector: string | null = null;
   if (focused && app.contains(focused)) {
     if (focused.id) focusSelector = `#${CSS.escape(focused.id)}`;
-    else for (const attribute of ['name', 'data-action', 'data-note', 'data-track']) {
+    else for (const attribute of ['name', 'data-action', 'data-note', 'data-track', 'data-workspace-view']) {
       const value = focused.getAttribute(attribute);
       if (value) { focusSelector = `[${attribute}="${CSS.escape(value)}"]`; break; }
     }
@@ -456,13 +465,12 @@ function render() {
   const top = Math.min(96, Math.max(72, ...pitches) + 2);
   const rows = top - bottom + 1;
   app.innerHTML = `
-    <header class="site-header"><div class="brand"><span class="brand-mark" aria-hidden="true">m<span>♪</span></span><div><p class="eyebrow">FROM A HUM TO SOMETHING MORE</p><h1>Melody Studio</h1></div></div><span class="privacy-badge"><span aria-hidden="true">●</span> Made here. Stays here.</span></header>
     <main id="workspace">
       <section class="project-bar" aria-label="Project settings"><div class="project-title"><label for="project-title">Project title</label><input id="project-title" value="${escape(String(fieldValue('project-title', project.title)))}" maxlength="80" ${disabled()} /></div><div class="tempo-field"><label for="tempo">Tempo (BPM)</label><input id="tempo" type="number" min="40" max="240" step="any" value="${escape(String(fieldValue('tempo', project.tempo)))}" ${disabled()} /></div><div class="transport"><button class="primary" data-action="play" ${busy || !totalNotes || playing ? 'disabled' : ''} aria-label="Play composition"><span aria-hidden="true">▶</span> Play</button><button data-action="stop" ${!playing && !playbackJob && !capture?.backed ? 'disabled' : ''} aria-label="Stop playback">■ Stop</button></div><div class="history-controls"><button data-action="undo" title="Undo (Ctrl/Cmd+Z)" ${busy || !history.canUndo ? 'disabled' : ''}>Undo</button><button data-action="redo" title="Redo (Ctrl/Cmd+Shift+Z)" ${busy || !history.canRedo ? 'disabled' : ''}>Redo</button></div><span class="project-stats">${project.tracks.length} ${project.tracks.length === 1 ? 'track' : 'tracks'} · ${totalNotes} notes</span></section>
       <div id="notice" class="notice" role="status" aria-live="polite">${escape(message)}</div>
       <section class="capture-card" aria-labelledby="capture-heading"><div><p class="eyebrow">01 / CATCH AN IDEA</p><h2 id="capture-heading">Your next song starts with a hum.</h2><p>Sing one clear melody, then make it your own.<br />Record up to 20 seconds or bring in an audio file.</p></div><div class="capture-controls"><div class="button-row"><button class="record-button" data-action="record" ${disabled()}><span class="record-dot" aria-hidden="true"></span> Record melody</button><button id="record-backed" data-action="record-backed" ${disabled()}>Record with backing</button><label class="file-button ${busy ? 'is-disabled' : ''}">Import audio<input id="audio-file" type="file" accept="audio/*" aria-label="Import audio file" ${disabled()} /></label></div><div class="button-row"><button class="quiet" data-action="demo" ${disabled()}>Try demo melody</button><span class="small">No microphone needed</span></div><p class="small backing-guidance">Record with backing uses the other committed tracks and a four-beat count-in. Apply or discard unapplied fields and suggestions first. Use headphones, then listen back and check the detected timing.</p><div class="capture-progress" ${!busy || busy === 'loading' ? 'hidden' : ''}><span id="capture-state">${capture?.backed ? escape(backedCaptureLabel) : busy === 'requesting' ? 'Waiting for microphone permission…' : busy === 'recording' ? 'Recording…' : busy === 'rendering' ? 'Rendering your composition…' : 'Finding the notes…'}</span><button data-action="finish-record" ${capture?.backed ? (busy !== 'recording' ? 'disabled' : '') : (busy !== 'recording' ? 'hidden' : '')}>Finish recording</button><button data-action="cancel">Cancel</button></div></div></section>
       <section class="studio" aria-label="Composition editor"><aside class="tracks-panel"><div class="section-heading"><div><p class="eyebrow">02 / BUILD YOUR SOUND</p><h2>Tracks</h2></div><button class="icon-button" data-action="add-track" aria-label="Add track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>+</button></div><div class="track-list">${project.tracks.map((item, index) => `<button class="track-card ${item.id === track.id ? 'is-selected' : ''}" data-track="${escape(item.id)}" aria-label="Select track: ${escape(item.name)}" aria-pressed="${item.id === track.id}" ${disabled()}><span class="track-icon" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><span><strong>${escape(item.name)}</strong><small>${item.notes.length} notes · ${item.muted ? 'muted' : INSTRUMENT_LABELS[item.instrument]}</small></span></button>`).join('')}</div><div class="track-settings"><label for="track-name">Track name</label><input id="track-name" value="${escape(String(fieldValue('track-name', track.name)))}" maxlength="80" ${disabled()} /><label for="instrument">Instrument</label><select id="instrument" ${disabled()}><option value="sine" ${fieldValue('instrument', track.instrument) === 'sine' ? 'selected' : ''}>Soft keys</option><option value="triangle" ${fieldValue('instrument', track.instrument) === 'triangle' ? 'selected' : ''}>Warm flute</option><option value="sawtooth" ${fieldValue('instrument', track.instrument) === 'sawtooth' ? 'selected' : ''}>Bright synth</option><option value="drums" ${fieldValue('instrument', track.instrument) === 'drums' ? 'selected' : ''}>Drum kit</option></select><label for="volume">Track volume <span>${Math.round(track.volume * 100)}%</span></label><input id="volume" type="range" min="0" max="1" step="0.05" value="${escape(String(fieldValue('volume', track.volume)))}" ${disabled()} /><label class="checkbox-label"><input id="muted" type="checkbox" ${fieldValue('muted', track.muted) ? 'checked' : ''} ${disabled()} /> Mute track</label>${mixPanel(track)}<fieldset class="sound-envelope"><legend>Sound envelope</legend>${ENVELOPE_KEYS.map(key => `<label for="sound-${key}">${key[0].toUpperCase()+key.slice(1)}${key === 'sustain' ? ' level' : ' (seconds)'}</label><input id="sound-${key}" type="number" min="0" max="${key === 'sustain' ? 1 : 2}" step="any" value="${escape(String(fieldValue(`sound-${key}`, (track.envelope ?? DEFAULT_ENVELOPE)[key])))}" ${disabled()} />`).join('')}<button data-action="apply-envelope" ${disabled()}>Apply sound envelope</button><button class="quiet" data-action="discard-envelope" ${disabled()}>Discard sound edits</button><p class="small">Linear attack, decay, sustain and release. Project/WAV retain this sound; MIDI does not carry custom envelopes.</p></fieldset><fieldset class="sound-envelope"><legend>Sound filter</legend><label class="checkbox-label"><input id="filter-enabled" type="checkbox" ${fieldValue('filter-enabled', !!track.filter) ? 'checked' : ''} ${disabled()} /> Enable low-pass filter</label><label for="filter-cutoff">Filter cutoff (Hz)</label><input id="filter-cutoff" type="number" min="20" max="10000" step="any" value="${escape(String(fieldValue('filter-cutoff', (track.filter ?? DEFAULT_FILTER).cutoff)))}" ${disabled()} /><label for="filter-resonance">Filter resonance (Q)</label><input id="filter-resonance" type="number" min="0.5" max="8" step="any" value="${escape(String(fieldValue('filter-resonance', (track.filter ?? DEFAULT_FILTER).resonance)))}" ${disabled()} /><button data-action="apply-filter" ${disabled()}>Apply sound filter</button><button class="quiet" data-action="discard-filter" ${disabled()}>Discard filter edits</button><p class="small">Cut bright harmonics; raise Q for emphasis near the cutoff. Apply with Enable unchecked to bypass. Project/WAV retain this sound; MIDI does not.</p></fieldset><fieldset class="sound-envelope"><legend>Sound echo</legend><label class="checkbox-label"><input id="echo-enabled" type="checkbox" ${fieldValue('echo-enabled', !!track.echo) ? 'checked' : ''} ${disabled()} /> Enable rhythmic echo</label>${(['beats','decay','repeats'] as const).map(key => `<label for="echo-${key}">${key === 'beats' ? 'Echo spacing (beats)' : key === 'decay' ? 'Echo decay' : 'Echo repeats'}</label><input id="echo-${key}" type="number" min="${key === 'beats' ? .25 : key === 'decay' ? .05 : 1}" max="${key === 'beats' ? 4 : key === 'decay' ? .95 : 8}" step="${key === 'repeats' ? 1 : 'any'}" value="${escape(String(fieldValue(`echo-${key}`, (track.echo ?? DEFAULT_ECHO)[key])))}" ${disabled()} />`).join('')}<button data-action="apply-echo" ${disabled()}>Apply sound echo</button><button class="quiet" data-action="discard-echo" ${disabled()}>Discard echo edits</button><p class="small">Repeat each voice at beat intervals with decaying level. Full WAV includes the tail; sections crop it. MIDI omits echo.</p></fieldset>${harmonicPanel(track)}${volumeRampPanel(track)}${volumeCurvePanel(track)}<button class="quiet" data-action="solo-track" ${busy || playing || !track.notes.length ? 'disabled' : ''}>Solo track</button><button class="quiet danger" data-action="delete-track" ${busy || project.tracks.length <= 1 ? 'disabled' : ''}>Delete track</button></div><div class="arrangement-tools"><p class="eyebrow">ARRANGE THIS TRACK</p><button data-action="duplicate-track" ${busy || project.tracks.length >= 8 ? 'disabled' : ''}>Duplicate track</button><div class="transpose-controls" role="group" aria-label="Transpose track"><button data-action="transpose:-12" aria-label="Transpose down an octave" ${busy || !track.notes.length ? 'disabled' : ''}>−12</button><button data-action="transpose:-1" aria-label="Transpose down a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>−1</button><button data-action="transpose:1" aria-label="Transpose up a semitone" ${busy || !track.notes.length ? 'disabled' : ''}>+1</button><button data-action="transpose:12" aria-label="Transpose up an octave" ${busy || !track.notes.length ? 'disabled' : ''}>+12</button></div><button data-action="repeat-phrase" ${busy || !track.notes.length ? 'disabled' : ''}>Repeat phrase</button><p class="small">Shift pitch by semitones. Notes stay within C2–C7 and ${MAX_COMPOSITION_BEATS} beats.</p></div></aside>
-      <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div>${track.instrument === 'drums' ? drumPanel(track) : ''}<div class="roll-controls"><label for="roll-tool">Piano roll tool<select id="roll-tool" ${disabled()}><option value="move" ${rollTool === 'move' ? 'selected' : ''}>Move notes</option><option value="draw" ${rollTool === 'draw' ? 'selected' : ''}>Draw note</option></select></label><label for="roll-snap">Snap movement<select id="roll-snap" ${disabled()}><option value="0.25" ${rollSnap === .25 ? 'selected' : ''}>Quarter beat</option><option value="0.125" ${rollSnap === .125 ? 'selected' : ''}>Eighth beat</option><option value="0" ${rollSnap === 0 ? 'selected' : ''}>Off</option></select></label></div><p id="roll-help" class="small">Move or resize in increments from the original timing; fractional offsets stay intact. Drawing snaps the start and duration. Focus a note: arrows move; Shift+Left/Right resize; Enter opens its numeric fields. Draw on empty space, or use Add note.</p><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid ${rollTool === 'draw' ? 'is-draw' : ''}" data-beats="${beats}" data-top="${top}" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''} ${seedIds.has(item.id) ? 'is-seed' : ''}" data-note="${escape(item.id)}" aria-describedby="roll-help" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span><span data-roll-resize aria-hidden="true" title="Drag to resize"></span></button>`).join('')}${proposedNotes.map((item, index) => `<span class="note-event proposal-note" data-proposal-index="${index}" role="img" aria-label="Suggested ${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}; not saved" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px">${noteName(item.pitch)}</span>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
+      <div class="editor-panel"><div class="editor-heading"><div><h2>${escape(track.name)}</h2><p class="small">Select a note to edit its pitch and timing.</p></div><button data-action="add-note" ${busy || track.notes.length >= 256 ? 'disabled' : ''}><span aria-hidden="true">+</span> Add note</button></div>${track.instrument === 'drums' ? drumPanel(track) : ''}<div class="roll-controls"><label for="roll-tool">Piano roll tool<select id="roll-tool" ${disabled()}><option value="move" ${rollTool === 'move' ? 'selected' : ''}>Move notes</option><option value="draw" ${rollTool === 'draw' ? 'selected' : ''}>Draw note</option></select></label><label for="roll-snap">Snap movement<select id="roll-snap" ${disabled()}><option value="0.25" ${rollSnap === .25 ? 'selected' : ''}>Quarter beat</option><option value="0.125" ${rollSnap === .125 ? 'selected' : ''}>Eighth beat</option><option value="0" ${rollSnap === 0 ? 'selected' : ''}>Off</option></select></label></div><details id="roll-guidance" class="roll-guidance"><summary>Piano roll help</summary><p id="roll-help" class="small">Move or resize in increments from the original timing; fractional offsets stay intact. Drawing snaps the start and duration. Focus a note: arrows move; Shift+Left/Right resize; Enter opens its numeric fields. Draw on empty space, or use Add note.</p></details><div class="piano-roll" aria-label="Piano roll"><div class="roll-inner" style="--beats:${beats};--rows:${rows};min-width:${Math.max(640, beats * 36)}px"><div class="beat-ruler">${Array.from({ length: beats }, (_, i) => `<span>${i + 1}</span>`).join('')}</div><div class="pitch-labels">${Array.from({ length: rows }, (_, i) => `<span>${noteName(top - i)}</span>`).join('')}</div><div class="roll-grid ${rollTool === 'draw' ? 'is-draw' : ''}" data-beats="${beats}" data-top="${top}" style="height:${rows * 22}px">${track.notes.map(item => `<button class="note-event ${item.id === selectedNoteId ? 'is-selected' : ''} ${seedIds.has(item.id) ? 'is-seed' : ''}" data-note="${escape(item.id)}" aria-describedby="roll-help" aria-label="${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}" aria-pressed="${item.id === selectedNoteId}" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px" ${disabled()}><span>${noteName(item.pitch)}</span><span data-roll-resize aria-hidden="true" title="Drag to resize"></span></button>`).join('')}${proposedNotes.map((item, index) => `<span class="note-event proposal-note" data-proposal-index="${index}" role="img" aria-label="Suggested ${noteName(item.pitch)}, beat ${item.start + 1}, duration ${item.duration}; not saved" style="left:${item.start / beats * 100}%;width:${item.duration / beats * 100}%;top:${(top - item.pitch) * 22 + 2}px">${noteName(item.pitch)}</span>`).join('')}${!track.notes.length ? '<div class="empty-roll"><span aria-hidden="true">♫</span><strong>A little space for a big idea.</strong><p>Record, import, or add your first note.</p></div>' : ''}</div></div></div>
       <p id="roll-status" class="small" aria-live="polite">${escape(rollMessage)}</p>
       <form id="note-form" class="note-editor"><div class="note-editor-title"><strong>${note ? `Edit ${noteName(note.pitch)}` : 'Note details'}</strong><span class="small">${note ? 'Timing is measured in beats.' : 'Choose a note in the piano roll.'}</span></div><fieldset ${!note || busy ? 'disabled' : ''}><legend class="sr-only">Selected note</legend><label>Pitch (MIDI)<input name="pitch" type="number" min="36" max="96" step="1" value="${escape(draft?.pitch ?? '60')}" /></label><label>Start beat<input name="start" type="number" min="1" max="${MAX_COMPOSITION_BEATS + .75}" step="any" value="${escape(draft?.start ?? '1')}" /></label><label>Duration (beats)<input name="duration" type="number" min="0.25" max="16" step="any" value="${escape(draft?.duration ?? '1')}" /></label><label>Velocity<input name="velocity" type="number" min="0" max="1" step="any" value="${escape(draft?.velocity ?? '0.8')}" /></label><button type="submit">Apply note</button><button type="button" class="quiet" data-action="discard-note-edits">Discard note edits</button><button type="button" class="quiet danger" data-action="delete-note">Delete note</button></fieldset></form><fieldset class="note-editor" ${!note || busy ? 'disabled' : ''}><legend>Note articulation</legend><label for="note-split-at">Split at beat</label><input id="note-split-at" type="text" inputmode="decimal" maxlength="40" value="${escape(splitBeat)}" aria-describedby="note-split-help" /><button type="button" data-action="split-note">Split selected note</button><button type="button" data-action="join-note">Join next matching note</button><p id="note-split-help" class="small">Song beats start at 1. Enter an exact point inside this note, leaving at least 0.25 beats on both sides. Each half starts a new attack and release, including its echo. No grid snapping. Join combines this note with exactly one touching next note of the same pitch and velocity into a sustained voice (at most 16 beats). Only boundary roundoff is normalized. Undo restores the originals.</p></fieldset>${continuationPanel(selection, seedError)}</div></section>
       <section class="save-panel" aria-labelledby="section-heading"><div><p class="eyebrow">ARRANGEMENT AUDITION</p><h2 id="section-heading">Work on a section.</h2><p id="section-help" class="small">Beats start at 1; the end is exclusive. Committed synthesized mix only. Session-only range; hard loop boundaries can click. Duplicate inserts after the end. Remove deletes the section and closes the gap on all tracks. Crossing notes must be included whole; reference recordings stay unchanged. Both edits support Undo. End beat at most ${compositionDurationBeats(project) + 1}.</p></div><div class="export-actions"><label for="section-start">Section start beat<input id="section-start" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionStart)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><label for="section-end">Section end beat (exclusive)<input id="section-end" type="text" inputmode="decimal" maxlength="40" value="${escape(sectionEnd)}" aria-describedby="section-help" ${busy && !playbackJob ? 'disabled' : ''} /></label><button data-action="play-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Play section</button><button data-action="loop-section" ${busy || playing || !totalNotes ? 'disabled' : ''}>Loop section</button><button data-action="duplicate-section" ${busy || !totalNotes ? 'disabled' : ''}>Duplicate section</button><button data-action="remove-section" ${busy || !totalNotes ? 'disabled' : ''}>Remove section and close gap</button><button data-action="wav-section" ${busy || !totalNotes ? 'disabled' : ''}>Export section WAV</button></div></section>
@@ -472,14 +480,16 @@ function render() {
       <section class="save-panel" aria-labelledby="save-heading"><div><p class="eyebrow">03 / KEEP IT GOING</p><h2 id="save-heading">Take your idea with you.</h2><p id="save-status" class="small" aria-live="polite">${escape(saveMessage)}</p></div><div class="export-actions"><button data-action="save" ${disabled()}>Save project file</button><label class="file-button ${busy ? 'is-disabled' : ''}">Open project<input id="project-file" type="file" accept=".json,application/json" aria-label="Open project file" ${disabled()} /></label><button data-action="midi" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI</button><button data-action="midi-expression" ${busy || !totalNotes ? 'disabled' : ''}>Export MIDI with volume automation</button><button data-action="wav" ${busy || !totalNotes ? 'disabled' : ''}>Export WAV</button><button data-action="wav-track" ${busy || !track.notes.length ? 'disabled' : ''}>Export track WAV</button></div></section>
       <footer><div class="button-row"><button class="quiet" data-action="example" ${disabled()}>Load example</button><button class="quiet" data-action="new" ${disabled()}>New project</button></div><p>A music sketchbook, built for first ideas. Single-voice pitch detection, editable by you.<br />Successful takes retain a normalized listen-back copy on this device. Export a project backup before clearing browser data.</p></footer>
     </main>`;
+  workspace.sync();
   const newRoll = app.querySelector<HTMLElement>('.piano-roll');
   if (newRoll && rollScroll) { newRoll.scrollLeft = rollScroll.left; newRoll.scrollTop = rollScroll.top; }
   if (focusSelector) {
     const replacement = app.querySelector<HTMLElement>(focusSelector);
-    replacement?.focus({ preventScroll: true });
+    if (replacement?.getClientRects().length && !replacement.matches(':disabled')) replacement.focus({ preventScroll: true });
+    else workspace.focus();
     if (replacement instanceof HTMLInputElement && inputSelection?.start !== null && inputSelection?.start !== undefined && inputSelection.end !== null) replacement.setSelectionRange(inputSelection.start, inputSelection.end, inputSelection.direction ?? 'none');
   }
-  updateMidiControls(); updateReference(); timingView?.sync();
+  updateMidiControls(); updateReference(); timingView?.sync(); workspace.sync();
 }
 
 function confirmReplace() {
@@ -904,7 +914,7 @@ function releaseActionPointer(flush = true): void {
 root.addEventListener('pointerdown', event => {
   if (!event.isPrimary || event.button !== 0 || actionPointer) return;
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
-  if (!button || button.disabled || button.hasAttribute('data-note') || !root.contains(button)) return;
+  if (!button || button.disabled || button.hasAttribute('data-note') || button.matches(`${workspaceControl}, #workspace-stop`) || !root.contains(button)) return;
   if (libraryHost.contains(button)) event.preventDefault();
   if (['split-note','join-note'].includes(button.dataset.action ?? '')) { event.preventDefault(); if (!articulationDraftGuard()) { event.stopImmediatePropagation(); return; } }
   if (sectionEditAction(button.dataset.action) && !sectionArrangementGuard()) {
@@ -952,7 +962,7 @@ app.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
   if (!button || button.disabled || startup) return;
   if (button.dataset.track && !busy) { newEditorIntent(); clearContinuation(); if (comparisonOwner) stopPlayback(false); activeTrackId = button.dataset.track; selectedNoteId = null; drumBar = 0; defaultSeedCount(); render(); return; }
-  if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
+  if (button.dataset.note && !busy) { newEditorIntent(); selectedNoteId = button.dataset.note; render(); if (!workspace.expanded) workspace.select('notes', false); document.querySelector<HTMLInputElement>('[name=pitch]')?.focus(); return; }
   const action = button.dataset.action;
   if (busy && action !== 'cancel' && action !== 'finish-record' && action !== 'stop' && !(action === 'discard-continuation' && auditionOwner)) return;
   if (sectionEditAction(action) && !sectionArrangementGuard()) return;
@@ -1154,7 +1164,7 @@ app.addEventListener('click', event => {
       const end = Math.max(0, ...currentTrack().notes.map(note => note.start + note.duration));
       if (end + 1 > MAX_COMPOSITION_BEATS) { announce(`This track has reached ${MAX_COMPOSITION_BEATS} beats. Move or shorten a note before adding more.`); break; }
       const note = createNote(60, end);
-      if (editTrack(track => track.notes.push(note), 'Note added. Adjust its pitch and timing below.', false)) { selectedNoteId = note.id; render(); }
+      if (editTrack(track => track.notes.push(note), 'Note added. Adjust its pitch and timing below.', false)) { selectedNoteId = note.id; render(); if (!workspace.expanded) workspace.select('notes'); }
       break;
     }
     case 'delete-note': editTrack(track => { track.notes = track.notes.filter(note => note.id !== selectedNoteId); }, 'Note deleted.'); selectedNoteId = null; break;
@@ -1220,7 +1230,7 @@ app.addEventListener('input', event => {
   updateMidiControls();
 });
 
-app.addEventListener('change', event => {
+function applyChangedField(event: Event) {
   const input = event.target as HTMLInputElement;
   if (busy || startup) return;
   if (projectFields.has(input.id) || trackFields.has(input.id) || ['continuation-length', 'audio-file', 'project-file', 'roll-tool', 'roll-snap'].includes(input.id)) newEditorIntent();
@@ -1252,6 +1262,23 @@ app.addEventListener('change', event => {
       break;
     }
   } } catch (error) { announce(error instanceof Error ? error.message : 'That edit is not valid. Your draft is kept.'); }
+}
+// A blur caused by opening/closing tools is navigation, not an edit commit.
+// Check after native focus movement; input events have already retained raw text.
+let explicitFieldCommit = false;
+const basicTextFields = new Set(['project-title', 'tempo', 'track-name', 'pan', 'reverb-send', 'reverb-size', 'reverb-level']);
+app.addEventListener('change', event => {
+  const input = event.target as HTMLInputElement;
+  if (explicitFieldCommit || !basicTextFields.has(input.id)) { applyChangedField(event); return; }
+  if (workspace.navigating) return;
+  const view = workspace.view;
+  queueMicrotask(() => {
+    if (input.isConnected && workspace.view === view && !document.activeElement?.closest(workspaceControl)) applyChangedField(event);
+  });
+});
+app.addEventListener('keydown', event => {
+  const input = event.target as HTMLInputElement;
+  if (event.key === 'Enter' && basicTextFields.has(input.id)) { event.preventDefault(); explicitFieldCommit = true; try { input.dispatchEvent(new Event('change', { bubbles: true })); } finally { explicitFieldCommit = false; } }
 });
 
 app.addEventListener('submit', event => {
@@ -1459,6 +1486,7 @@ function syncSaveStatus(): void {
   if (load) { load.hidden = !recovery; load.disabled = startup || saving || replacing || !!busy; }
   const replace = referenceHost.querySelector<HTMLButtonElement>('#replace-saved-copy');
   if (replace) { replace.hidden = !recovery; replace.disabled = startup || saving || replacing || !!busy; }
+  workspace.sync();
 }
 function queueSave(): void {
   unsaved = true;
@@ -1756,7 +1784,7 @@ for (const type of ['pointerdown', 'pointerup', 'pointercancel'] as const) root.
   queueMicrotask(() => libraryView?.sync());
 }, true);
 for (const type of ['input', 'change', 'click'] as const) root.addEventListener(type, event => {
-  if (!libraryHost.contains(event.target as Node)) libraryView?.retire();
+  if (!workspace.navigating && !(event.target as HTMLElement).closest(workspaceControl) && !libraryHost.contains(event.target as Node)) libraryView?.retire();
 }, true);
 libraryView = createLibraryView(libraryHost, {
   state: () => {

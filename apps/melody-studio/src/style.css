@@ -277,3 +277,51 @@ footer p { text-align: right; color: #7f8390; font-size: .65rem; max-width: 560p
 .step:hover:not(:disabled):not([aria-pressed="true"]) { background: #e9e1f9; }
 .drum-pattern .small { margin-top: .6rem; }
 @media (max-width: 720px) { .step-row { grid-template-columns: 4.6rem repeat(var(--steps), 26px); } }
+
+/* View changes hide mounted controls, preserving drafts and operation owners. */
+.workspace-tools { position: sticky; top: 0; z-index: 20; padding: .65rem; margin: .8rem 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 3px 12px #2530440d; }
+.workspace-navigation, .workspace-utilities { display: flex; flex-wrap: wrap; gap: .35rem; }
+.workspace-navigation button { padding: .5rem .7rem; font-size: .8rem; }
+.workspace-navigation button[aria-pressed=true] { background: var(--purple); color: white; border-color: var(--purple); }
+.workspace-utilities { margin-top: .45rem; }
+.workspace-utilities button { font-size: .7rem; padding: .35rem .6rem; }
+.workspace-tools p { margin: .4rem 0 0; overflow-wrap: anywhere; }
+#workspace-feedback { color: var(--ink); font-weight: 600; }
+[data-workspace-expanded=false] .track-settings .sound-envelope { margin-top: 1.2rem; }
+@media (max-width: 600px) {
+ .workspace-tools { padding: .45rem; }
+ .workspace-navigation { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); }
+ .workspace-navigation button { white-space: normal; min-width: 0; padding: .45rem .2rem; font-size: .68rem; }
+ .workspace-tools .small { font-size: .65rem; }
+}
+/* The toolbar is a root sibling so it stays available through persistent hosts. */
+.workspace-tools { width: calc(100% - 4rem); max-width: 1261px; margin: 0 auto .8rem; }
+.workspace-tools summary, .roll-guidance summary { cursor: pointer; color: var(--muted); font-size: .72rem; margin-top: .4rem; }
+.roll-guidance { margin: .4rem 0; }
+[data-workspace-expanded=false] .track-settings, [data-workspace-expanded=false] .arrangement-tools,
+[data-workspace-expanded=false] .note-editor, [data-workspace-expanded=false] .save-panel,
+[data-workspace-expanded=false] #continuation-panel, [data-workspace-expanded=false] > section,
+[data-workspace-expanded=false] .capture-card, [data-workspace-expanded=false] .project-bar, [data-workspace-expanded=false] .studio { scroll-margin-top: var(--workspace-toolbar-height, 220px); }
+@media (max-width: 720px) {
+ .workspace-tools { width: calc(100% - 2rem); }
+ [data-workspace-expanded=false] .project-bar { display: grid; grid-template-columns: minmax(0,1fr) 100px; gap: .5rem; padding: .7rem; margin-bottom: .8rem; }
+ [data-workspace-expanded=false] .project-title { min-width: 0; }
+ [data-workspace-expanded=false] .tempo-field { width: auto; }
+ [data-workspace-expanded=false] .project-title input { font-size: .9rem; }
+ [data-workspace-expanded=false] .transport button, [data-workspace-expanded=false] .history-controls button { font-size: .75rem; padding: .5rem .4rem; }
+ [data-workspace-expanded=false] .history-controls { justify-content: end; }
+ [data-workspace-expanded=false] .tracks-panel { padding: .6rem .8rem; }
+ [data-workspace-expanded=false] .section-heading { margin-bottom: .4rem; }
+ [data-workspace-expanded=false] .section-heading .eyebrow { display: none; }
+ [data-workspace-expanded=false] .track-list { flex-direction: row; overflow-x: auto; }
+ [data-workspace-expanded=false] .track-card { flex: 0 0 auto; width: auto; max-width: 220px; padding: .45rem; }
+ [data-workspace-expanded=false] .editor-panel { padding: .8rem; }
+ [data-workspace-expanded=false] .editor-heading { margin-bottom: .5rem; }
+}
+@media (max-width: 720px) {
+ [data-workspace-expanded=false] .roll-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .5rem; }
+ [data-workspace-expanded=false] .roll-controls label { min-width: 0; max-width: none; }
+}
+@media (max-width: 720px) {
+ [data-workspace-expanded=false] .site-header { height: 72px; }
+}

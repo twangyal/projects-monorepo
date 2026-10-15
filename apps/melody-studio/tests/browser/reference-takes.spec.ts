@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import {expandedPage} from '../helpers/expanded-workspace.ts';
+import { expect, test } from '../helpers/expanded-workspace.ts';
 
 test('the editor exposes retained reference takes and bounded comparison controls', async ({ page }) => {
   await page.goto('/');
@@ -10,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { chromium, type Page, type Download } from '@playwright/test';
+import { chromium, type Page, type Download } from '../helpers/expanded-workspace.ts';
 import { decodeMidi, decodeWav } from './continuation-fixtures.ts';
 import type { Composition } from '../../src/types.ts';
 
@@ -360,9 +361,9 @@ test('references survive closing and relaunching a real persistent Chromium proc
   const launchOptions = { headless: true, executablePath: process.env.CHROMIUM_PATH || undefined };
   let context = await chromium.launchPersistentContext(profile, launchOptions);
   try {
-    let page = await context.newPage(); page.on('dialog', dialog => dialog.accept()); await page.goto(baseURL); await open(page); await saved(page);
+    let page = await context.newPage();expandedPage(page); page.on('dialog', dialog => dialog.accept()); await page.goto(baseURL); await open(page); await saved(page);
     const original = await backup(page); await context.close(); context = await chromium.launchPersistentContext(profile, launchOptions);
-    page = await context.newPage(); await page.goto(baseURL); await expect(page.locator('#reference-summary')).toContainText('120');
+    page = await context.newPage();expandedPage(page); await page.goto(baseURL); await expect(page.locator('#reference-summary')).toContainText('120');
     expect(await backup(page)).toEqual(original); const actual = await idb(page); expect(actual.assets[0].digest).toBe(original.assets[0].sha256);
   } finally { await context.close(); await rm(profile, { recursive: true, force: true }); }
 });

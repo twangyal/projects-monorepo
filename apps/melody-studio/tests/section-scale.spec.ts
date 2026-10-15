@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './helpers/expanded-workspace.ts';
 import {openRoll,readRoll,rollDownload,rollBackup,assertMidi,assertWav} from './roll-edit-fixtures.ts';
 import {savedProject} from './browser/continuation-fixtures.ts';
 function fixture(){const p=rollBackup();p.document.composition.tracks[0].notes.push({id:'following',pitch:65,start:3,duration:.5,velocity:.4});return p;}

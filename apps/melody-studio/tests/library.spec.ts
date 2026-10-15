@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import {expandedPage} from './helpers/expanded-workspace.ts';
+import { expect, test } from './helpers/expanded-workspace.ts';
 import { loadOriginal, originalBytes, originalCopy, workspaceBytes } from './library-fixtures.ts';
 
 test('library baseline: complete original audio project exposes explicit saved-copy controls', async ({ page }) => {
@@ -9,7 +10,7 @@ test('library baseline: complete original audio project exposes explicit saved-c
   await expect(page.locator('#library-create')).toHaveText('Save new copy');
 });
 
-import { chromium, type Page } from '@playwright/test';
+import { chromium, type Page } from './helpers/expanded-workspace.ts';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -183,8 +184,8 @@ test('library full Chromium process restart retains exact audio bytes and keyboa
   const profile = await mkdtemp(join(tmpdir(), 'melody-library-oracle-')); const options = { baseURL, viewport: { width: 390, height: 844 }, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) };
   let context = await chromium.launchPersistentContext(profile, options);
   try {
-    let page = await context.newPage(); await loadOriginal(page); const copy = await createCopy(page, 'Restart retained Ω');
-    await context.close(); context = await chromium.launchPersistentContext(profile, options); page = await context.newPage(); await page.goto('/');
+    let page = await context.newPage();expandedPage(page); await loadOriginal(page); const copy = await createCopy(page, 'Restart retained Ω');
+    await context.close(); context = await chromium.launchPersistentContext(profile, options); page = await context.newPage();expandedPage(page); await page.goto('/');
     await selectCopy(page, copy.id); expect(await rows(page)).toEqual([copy]); expect(await downloadBytes(page, '#library-download')).toEqual(originalBytes(originalCopy()));
     await page.locator('#library-label').fill('Keyboard duplicate'); await page.locator('#library-create').focus(); await page.keyboard.press('Enter');
     await expect.poll(async () => (await rows(page)).length).toBe(2); await expect(page.locator('#library-status')).toHaveAttribute('role', 'status');

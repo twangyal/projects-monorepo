@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from '../helpers/expanded-workspace.ts';
 import { phraseMidi, globalUnsupportedMidi, unsupportedLanesMidi, channelEvents } from './midi-import-fixtures.ts';
 import { loadFixture, phraseFixture, savedProject, downloadedBytes, decodeWav, rmsAt, installAudioProbe, audioProbe } from './continuation-fixtures.ts';
 

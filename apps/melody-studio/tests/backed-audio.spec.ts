@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 type Result = { rate:number;sourceFrame:number;startFrame:number;requestedEnd:number;messages:Record<string,unknown>[];samples:number[]|null;maximumOutput:number;closed:boolean;sourceStops:number;initialReadyCount:number };
 type Harness = { configure(options:{rate:number;mode:string;channels?:number}):void;state():{running:boolean;result:Result|null;failure:string|null};settled():Promise<void>|null };
 async function capture(page:Page,mode:string,rate=44100,channels=2):Promise<Result>{

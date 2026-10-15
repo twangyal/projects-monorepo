@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { openRoll, readRoll, rollDownload } from './roll-edit-fixtures.ts';
 
 const step = (page: Page, name: string, beat: number, sub: number) => page.getByRole('button', { name: `${name}, beat ${beat} step ${sub}`, exact: true });

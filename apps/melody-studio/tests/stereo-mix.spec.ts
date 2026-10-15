@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { openRoll, readRoll, rollDownload } from './roll-edit-fixtures.ts';
 
 function wav(bytes: Buffer): { channels: number; frames: number; sample: (frame: number, channel: number) => number } {

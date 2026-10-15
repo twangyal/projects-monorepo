@@ -1,4 +1,5 @@
-import {test,expect} from '@playwright/test';
+import {expandedPage} from './helpers/expanded-workspace.ts';
+import {test,expect} from './helpers/expanded-workspace.ts';
 import {installAudioProbe,audioProbe,controlProbe} from './browser/continuation-fixtures.ts';
 import {writeFile} from 'node:fs/promises';
 import {openRoll,rollBackup,readRoll,rollDownload,dragNote,gridPoint,geometry,assertMidi,assertWav,storedRoll} from './roll-edit-fixtures.ts';
@@ -41,7 +42,7 @@ test('subthreshold movement selects without history and impossible negative move
 });
 
 test('native touch movement and 390px keyboard controls retain reference and avoid page overflow',async({browser},info)=>{
-  const context=await browser.newContext({baseURL:info.project.use.baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();try{
+  const context=await browser.newContext({baseURL:info.project.use.baseURL,viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();expandedPage(page);try{
     await openRoll(page);const original=await readRoll(page),g=await geometry(page),box=await page.locator('[data-note="fractional-low"]').boundingBox();if(!box)throw Error('note missing');await page.evaluate(()=>{const events:unknown[]=[];(window as unknown as {rollTouchEvents:unknown[]}).rollTouchEvents=events;for(const kind of ['pointerdown','pointermove','pointerup','pointercancel','lostpointercapture','gotpointercapture','scroll'])window.addEventListener(kind,event=>{const e=event as PointerEvent;const r=document.querySelector('.roll-grid')!.getBoundingClientRect();events.push({kind,id:e.pointerId,primary:e.isPrimary,button:e.button,x:e.clientX,y:e.clientY,target:(e.target as Element).outerHTML?.slice(0,180),scrollY,rect:{x:r.x,y:r.y,width:r.width,height:r.height},status:document.querySelector('#roll-status')?.textContent});},true);});const client=await context.newCDPSession(page);const x=box.x+5,y=box.y+8;await writeFile(info.outputPath('touch-geometry.json'),JSON.stringify({grid:g,note:box,x,y,hit:await page.evaluate(({x,y})=>({tag:document.elementFromPoint(x,y)?.outerHTML,viewport:{width:innerWidth,height:innerHeight},scrollY}),{x,y})},null,2));await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+.25*g.width/g.beats,y:y-22,id:1}]});await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await writeFile(info.outputPath('touch-events.json'),JSON.stringify(await page.evaluate(()=>(window as unknown as {rollTouchEvents:unknown[]}).rollTouchEvents),null,2));const expected=structuredClone(original);Object.assign(expected.document.composition.tracks[0].notes[0],{start:1/3+.25,pitch:61});expect(await readRoll(page)).toEqual(expected);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:info.outputPath('roll-390px.png'),fullPage:true});
   }finally{await context.close();}
 });

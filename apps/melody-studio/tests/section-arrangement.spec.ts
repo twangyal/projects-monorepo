@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 import { openRoll, readRoll, rollBackup, type RollBackup } from './roll-edit-fixtures.ts';
 import { decodeMidi, decodeWav, savedProject } from './browser/continuation-fixtures.ts';
 

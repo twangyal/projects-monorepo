@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './helpers/expanded-workspace.ts';
 import { writeFile } from 'node:fs/promises';
 import { originalBacking, open, backup, microphone, probe, awaitElapsed, releasePermission, released, assertBacking, assertMicrophone, stored, exportBytes, assertExports, type CompleteBackup } from './backed-recording-fixtures.ts';
 

@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './helpers/expanded-workspace.ts';
 import {readFile} from 'node:fs/promises';
 import {openRoll,readRoll,rollBackup} from './roll-edit-fixtures.ts';
 import {decodeMidi,decodeWav} from './browser/continuation-fixtures.ts';

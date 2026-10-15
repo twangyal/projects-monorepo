@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/expanded-workspace.ts';
 import type { Composition, Note } from '../../src/types.ts';
 import {
   audioProbe, controlProbe, decodeMidi, decodeWav, downloadedBytes, expectedMidiNotes,

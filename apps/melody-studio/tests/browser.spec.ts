@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 
 test('compose, edit, layer, play, persist and export', async ({ page }) => {
   const errors: string[] = [];

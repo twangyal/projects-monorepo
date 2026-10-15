@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 import { savedProject } from './browser/continuation-fixtures.ts';
 
 test('capture, duplicate, transpose, repeat, undo and export a layered idea', async ({ page }) => {

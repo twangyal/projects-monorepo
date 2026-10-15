@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/expanded-workspace.ts';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 

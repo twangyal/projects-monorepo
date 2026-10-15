@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {openRoll,readRoll} from './roll-edit-fixtures.ts';
 import {loadFixture,phraseFixture,savedProject} from './browser/continuation-fixtures.ts';
 

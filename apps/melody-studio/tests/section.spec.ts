@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/expanded-workspace.ts';
 import { readFile } from 'node:fs/promises';
 import { installAudioProbe, audioProbe, controlProbe } from './browser/continuation-fixtures.ts';
 

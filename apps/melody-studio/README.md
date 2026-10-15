@@ -6,6 +6,14 @@
 
 A local browser music sketchbook: record or import a single hummed melody, turn it into editable notes, compare corrections with a retained reference take, layer tracks, and export a composition. Pitch detection and synthesis remain deterministic. A small local statistical learner can continue an explicitly selected ending with inspectable, reversible note proposals; broader generative arrangement remains future work.
 
+## Focused workspace
+
+Start in **Compose** with tracks, the piano roll and playback. The workspace toolbar opens **Capture**, **Sound**, **Notes**, **Arrange**, **Reference**, or **Project & export** tools. Selecting a note opens its numeric editor; adding a note opens Notes. **Back to compose** or Escape returns to composing. **Expand workspace** shows every tool for an advanced single-page workflow; **Focus workspace** returns to the selected section.
+
+Switching tools keeps the same mounted controls, raw drafts, selection and session history. It does not apply a field, start audio or cancel an already-authorized import/library read. Basic text fields can be deliberately applied with Enter after returning to a retained draft; sound and note forms retain their own Apply/Discard controls. Drafts remain memory-only: a reload restores committed work, and the existing departure warning protects unapplied changes where the browser permits it.
+
+**Stop audio** stays in the workspace toolbar. Active capture/render operations also retain their existing Finish/Cancel controls after navigation. Project files, saved compositions, MIDI import and MIDI/WAV exports are in **Project & export**; original-take comparison and saved-copy recovery are in **Reference**. These are modeless sections: ordinary Tab navigation works, with no dialog focus trap.
+
 ## Split a sustained note
 
 Select a piano-roll note, then enter **Split at beat** and choose **Split selected note**. Song beats start at 1. The point is exact and ignores the roll grid; both halves must be at least 0.25 beats. Only machine-roundoff near that minimum is normalized. The original ID stays on the first half; the second receives a new ID, retaining pitch and velocity. Other notes, track sounds and reference takes stay unchanged. A full 256-note track refuses the split.

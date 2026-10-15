@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';import {openRoll,readRoll,rollDownload} from './roll-edit-fixtures.ts';import type {Composition} from '../src/types.ts';import {decodeWav,savedProject} from './browser/continuation-fixtures.ts';
+import {test,expect} from './helpers/expanded-workspace.ts';import {openRoll,readRoll,rollDownload} from './roll-edit-fixtures.ts';import type {Composition} from '../src/types.ts';import {decodeWav,savedProject} from './browser/continuation-fixtures.ts';
 function assertToneWav(bytes:Buffer,p:Composition){
  const wav=decodeWav(bytes),rate=22050,seconds=60/p.tempo;
  expect(wav.sampleRate).toBe(rate);

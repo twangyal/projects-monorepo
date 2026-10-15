@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './helpers/expanded-workspace.ts';
 import {openRoll,readRoll,rollDownload} from './roll-edit-fixtures.ts';
 import {decodeWav,savedProject} from './browser/continuation-fixtures.ts';
 import type {Composition} from '../src/types.ts';

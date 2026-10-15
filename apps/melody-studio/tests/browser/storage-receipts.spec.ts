@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from '../helpers/expanded-workspace.ts';
 import { createHash } from 'node:crypto';
 import type { ReferenceStorage, SavedCopyConflict } from '../../src/reference-storage.ts';
 import type { ReferenceBundle } from '../../src/reference-types.ts';

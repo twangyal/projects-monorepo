@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page} from './helpers/expanded-workspace.ts';
 import {openRoll,readRoll,rollDownload} from './roll-edit-fixtures.ts';
 import {decodeWav,savedProject} from './browser/continuation-fixtures.ts';
 async function setCurve(page:Page){await page.getByLabel('Enable volume curve',{exact:true}).check();await page.getByLabel('Volume curve points',{exact:true}).fill('1 1\n2 0\n3 .5\n4 .25');await page.getByRole('button',{name:'Apply volume curve',exact:true}).click();}
