@@ -13,10 +13,17 @@ function failed() {
 }
 async function refresh() {
   const request = ++generation; clearTimeout(timer);
-  const [status, granted] = await Promise.all([
-    chrome.runtime.sendMessage({ type: 'gaze:page-status', tabId: tab.id }),
-    chrome.permissions.contains(ALL_SITES),
-  ]);
+  let status, granted;
+  try {
+    [status, granted] = await Promise.all([
+      chrome.runtime.sendMessage({ type: 'gaze:page-status', tabId: tab.id }),
+      chrome.permissions.contains(ALL_SITES),
+    ]);
+  } catch (error) {
+    // A retired poll's rejection must not replace a newer toggle/retry result.
+    if (request !== generation) return;
+    throw error;
+  }
   if (request !== generation) return;
   if (!status || !['on', 'off', 'starting', 'failed', 'unavailable'].includes(status.phase)) throw new Error('Page state unavailable');
   $('state').textContent = status.phase === 'on' ? 'On for this page.' : status.phase === 'starting' ? 'Starting on this page… You can turn it off while it starts.' : status.phase === 'off' ? 'Off for this page.' : status.message;
