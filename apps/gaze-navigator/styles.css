@@ -115,3 +115,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 /* Nearby assist: a dashed amber outline distinguishes inferred targets from direct hits. */
 [data-gaze-target].gaze-focus.gaze-assisted { outline: 3px dashed #f5c76b; outline-offset: 2px; }
 #gazeCursor.ambiguous { border-style: dashed; border-color: #f5c76b; box-shadow: 0 0 0 6px rgba(245,199,107,.2); }
+
+.extension-start { display: inline-flex; align-items: center; min-height: 48px; padding: 10px 20px; border: 1px solid #75e5b4; border-radius: 10px; color: #9beec7; font-weight: 750; text-underline-offset: 4px; }
+.extension-start:focus-visible { outline: 3px solid #ffd684; outline-offset: 3px; }

@@ -94,6 +94,9 @@ Components stay separate so each can be replaced: tracking (`overlay.js` pointer
 
 ### On real websites (Chrome extension)
 
+Open [the extension setup guide](extension-setup.html) for installation, deliberate website-access choices, a first real-page task, optional speech/camera setup and recovery. The landing page now leads to this guide; the dwell lab and built-in bookshop remain separate practice tools. Leave the installed extension off on the built-in practice site to avoid two panels. No store installer or installation detection is provided.
+
+
 ```bash
 cd apps/gaze-navigator
 npm run build:extension      # fetches pinned WebGazer 3.3.0 with npm, verifies its SHA-256, writes dist/extension

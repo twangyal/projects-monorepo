@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Set up Gaze Navigator</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./extension-setup.css" />
+</head>
+<body>
+  <a class="skip" href="#steps">Skip to setup steps</a>
+  <header>
+    <a class="brand" href="./index.html">Gaze Navigator</a>
+    <span>Chrome extension · Experimental</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow">A way into the web</p>
+      <h1 id="title">Your websites. Your way in.</h1>
+      <p class="lede">Look at part of a website, then say what you want to do. The extension puts a context circle and a small control panel on the page you are already visiting.</p>
+      <p>Begin with pointer context and typed instructions. Add speech and webcam gaze when you are ready.</p>
+      <div class="actions"><a class="primary" href="#install">Set up the extension</a><a href="./practice-site/index.html">Try built-in practice</a></div>
+      <p class="note">Built-in practice runs on this site without installation. It does not check that the extension works on other websites. Leave the extension off on practice pages to avoid two panels.</p>
+    </section>
+
+    <nav aria-label="Setup sections"><a href="#install">1 · Install</a><a href="#access">2 · Website access</a><a href="#first-task">3 · First task</a><a href="#input">4 · Input choices</a><a href="#recovery">Help &amp; recovery</a></nav>
+    <div id="steps" tabindex="-1">
+      <section id="install" aria-labelledby="install-title">
+        <p class="eyebrow">1 · One-time setup</p><h2 id="install-title">Install in desktop Chrome</h2>
+        <p>The extension currently loads from a local build. There is no Chrome Web Store installer yet. Building and loading it may need help from someone comfortable with a terminal.</p>
+        <p>This guide cannot detect or install the extension for you.</p>
+        <details>
+          <summary>Build and load the extension</summary>
+          <ol>
+            <li>Get the <a href="https://github.com/twangyal/projects-monorepo">project source</a> and open a terminal in the repository. Install Node.js 22.18 or newer and npm.</li>
+            <li>Run these commands. The build downloads the pinned camera library; internet access is needed.
+              <pre><code>cd apps/gaze-navigator
+npm ci
+npm run build:extension</code></pre>
+            </li>
+            <li>In desktop Chrome 116 or newer, enter <code>chrome://extensions</code> in the address bar. Enable <strong>Developer mode</strong>, choose <strong>Load unpacked</strong>, and select <code>apps/gaze-navigator/dist/extension</code>.</li>
+            <li>Find <strong>Gaze Navigator</strong> in Chrome's extensions menu. Pin it if you want the toolbar button always visible. Open a normal website before opening its popup.</li>
+          </ol>
+          <p>For build details and current limits, read the <a href="https://github.com/twangyal/projects-monorepo/blob/main/apps/gaze-navigator/README.md">setup and development README</a>.</p>
+        </details>
+      </section>
+
+      <section id="access" aria-labelledby="access-title">
+        <p class="eyebrow">2 · Your choice</p><h2 id="access-title">Choose where it runs</h2>
+        <p>Start with <strong>Turn on for this page</strong> in the toolbar popup. By default, the navigator stops when that page changes. This first step does not require access to every website.</p>
+        <div class="choices">
+          <article><h3>Stay in this tab</h3><p><strong>Stay on in this tab when pages change</strong> asks for optional website access, then continues in the tab you turned on. Turning that tab off ends its continuation.</p></article>
+          <article><h3>Start on every website</h3><p><strong>Start automatically on every website</strong> asks for the same optional access and starts on ordinary pages as they load. Turn this preference off when you no longer want automatic starts.</p></article>
+        </div>
+        <p class="note">Refusing access keeps the browsing choice off. You can keep using deliberate page-by-page activation. Chrome protects its own pages and the web store; neither access choice unlocks them.</p>
+      </section>
+
+      <section id="first-task" aria-labelledby="first-title">
+        <p class="eyebrow">3 · A small first task</p><h2 id="first-title">Open one familiar link</h2>
+        <ol>
+          <li>Visit an ordinary website you know. Open the toolbar popup and choose <strong>Turn on for this page</strong>. Wait for the page panel to say <strong>Ready</strong>.</li>
+          <li>Move your pointer onto a familiar link, such as About or Pricing. The circle shows the nearby area; <strong>In the circle</strong> lists the controls it can currently see.</li>
+          <li>In <strong>Typed instruction</strong>, enter <strong>open about</strong> (use the name of your actual link), then choose <strong>Do it</strong>. Moving into the panel keeps your last website context.</li>
+          <li>If several targets match, answer the numbered question. Consequential actions need confirmation; choose <strong>Cancel</strong> when unsure. With default page-only access, the panel stops when the link loads a new page: reopen the toolbar popup and choose <strong>Turn on for this page</strong> there before trying <strong>go back</strong>. If you chose tab continuation in step 2, wait for its new panel instead.</li>
+        </ol>
+        <p>The same instructions work in <a href="./practice-site/index.html">the fictional bookshop practice site</a>, which has a built-in navigator. Its Catalog link is a useful first target: <strong>open catalog</strong>.</p>
+        <p class="note">Keep the toolbar popup closed while using the website panel. For a keyboard command without leaving website focus, the page panel also supports <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>, then typing and Enter; Escape cancels. The extension's Chrome shortcut also uses this key combination for page on/off, so use the popup if Chrome captures it.</p>
+      </section>
+
+      <section id="input" aria-labelledby="input-title">
+        <p class="eyebrow">4 · At your pace</p><h2 id="input-title">Choose how to give instructions</h2>
+        <p>Pointer context and typing are ready first. Turning the panel on does not establish camera or microphone readiness.</p>
+        <details id="speech"><summary>Add spoken instructions</summary>
+          <p>Choose <strong>Start listening</strong> in the page panel and allow the browser's microphone request. Look at a control, then say its action and name, such as “open catalog.” Context is captured when speech begins.</p>
+          <p>Use “pause,” “resume” or “cancel” to recover. <strong>Stop listening</strong> ends recognition. If microphone access is refused or speech is unavailable, use typed instructions and check that website's microphone permission in Chrome.</p>
+          <p class="note">Spoken commands are currently English. Recognition uses the browser's speech service and may use its network service; the navigator does not store audio or transcripts.</p>
+        </details>
+        <details id="camera"><summary>Add webcam gaze</summary>
+          <p>Open <strong>Tracking and settings</strong>, choose <strong>Camera</strong>, and allow the website's camera request. Keep your head comfortable and follow the <strong>9 calibration dots</strong> with your eyes; the timed calibration needs no clicks.</p>
+          <p>After calibration the circle follows your gaze. Choose <strong>Recalibrate</strong> if it drifts, or <strong>Pointer</strong> to stop the camera. A failed camera start leaves typed and pointer control available.</p>
+          <p class="note">The extension can reuse calibration at the same window size for up to two hours during the browser session. A resize or expired calibration requires a new one. Switching to Pointer deletes it. Face models need internet access; tiny training eye patches stay only in extension session memory, separate from website storage. Physical accuracy and intended-user usability remain unverified.</p>
+        </details>
+        <details><summary>Optional smarter matching</summary>
+          <p><strong>Smarter target matching</strong> in Tracking and settings uses WaterSheep on your device for names that differ from the page's words. It downloads about 158 MB once. Start with the ordinary rule-based instructions; matching quality varies and does not replace confirmation or Cancel.</p>
+        </details>
+      </section>
+
+      <section id="recovery" aria-labelledby="recovery-title">
+        <p class="eyebrow">Stay in control</p><h2 id="recovery-title">Pause, stop or try again</h2>
+        <dl>
+          <dt>The wrong target is offered</dt><dd>Use <strong>Cancel</strong> before confirming. Move the circle, check its target list, and try a more specific name. Pause suspends navigation; it leaves the camera running.</dd>
+          <dt>You want the panel and inputs off</dt><dd>Open the toolbar popup and choose <strong>Turn off for this page</strong>. This also cancels startup in progress. You can turn it on again on the same page.</dd>
+          <dt>The popup says it cannot check or access this page</dt><dd>Choose <strong>Check this page again</strong>. On a protected browser page, open a normal website and reopen the popup. If a normal page still fails, reload it and try again.</dd>
+          <dt>A browsing choice did not save</dt><dd>Read the popup's feedback. Permission refusal keeps the option off; a save failure keeps your previous choice. Retry the choice when ready.</dd>
+        </dl>
+        <p>Some website controls and cross-origin frames are unreachable. This is an experimental accessibility interface; real camera/microphone reliability and evaluation with intended users are still in progress.</p>
+      </section>
+    </div>
+    <footer><a href="./index.html">Open the dwell and accuracy lab</a><span>Practice tools support the extension; they do not install it.</span></footer>
+  </main>
+</body>
+</html>
