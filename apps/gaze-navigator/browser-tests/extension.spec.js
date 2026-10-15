@@ -241,8 +241,12 @@ test('popup controls describe the actual page and explain protected-page recover
 });
 
 test('registered page toggle leaves keyboard command entry free and retains website drafts',async({context,control})=>{
- const commands=await control.evaluate(()=>chrome.commands.getAll());
- expect(commands.find(command=>command.name==='toggle-navigator')?.shortcut).toBe('Alt+Shift+N');
+ const binding=await control.evaluate(async()=>({declared:chrome.runtime.getManifest().commands['toggle-navigator'].suggested_key.default,registered:(await chrome.commands.getAll()).find(command=>command.name==='toggle-navigator')}));
+ expect(binding.declared).toBe('Alt+Shift+N');expect(binding.registered?.name).toBe('toggle-navigator');
+ // A suggested key can legitimately be unassigned; do not mistake it for an active binding.
+ expect(['','Alt+Shift+N']).toContain(binding.registered.shortcut);console.log('Actual page-toggle assignment:',JSON.stringify(binding.registered.shortcut));
+ if(!binding.registered.shortcut)await expect(control.locator('#shortcut')).toContainText('No page on/off shortcut is assigned');
+ else await expect(control.locator('#shortcut')).toContainText(`Page on/off: ${binding.registered.shortcut}`);
  const page=await context.newPage();await page.goto('http://shop.example/contact');const id=await tabId(control,'http://shop.example/*');
  expect(await control.evaluate(tab=>chrome.runtime.sendMessage({type:'gaze:start',tabId:tab}),id)).toBe('on');await expect(status(page)).toContainText('Ready on');
  const field=page.getByLabel('Message'),ordinary=panel(page).getByLabel('Typed instruction');

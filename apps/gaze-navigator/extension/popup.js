@@ -2,7 +2,7 @@
 const PREFERENCES = 'preferences';
 const ALL_SITES = { origins: ['<all_urls>'] };
 const $ = id => document.getElementById(id);
-let tab, generation = 0, timer;
+let tab, generation = 0, shortcutGeneration = 0, timer;
 let preferences = { persist: false, autoStart: false };
 
 function feedback(text = '') { $('feedback').textContent = text; $('feedback').hidden = !text; }
@@ -38,7 +38,27 @@ async function refresh() {
     : 'Staying on after a page change, or starting everywhere, needs website access. You will be asked only when you choose either option.';
   if (status.phase === 'starting') timer = setTimeout(() => { refresh().catch(failed); }, 250);
 }
+async function refreshShortcut() {
+  const request = ++shortcutGeneration;
+  let text;
+  try {
+    const commands = await chrome.commands.getAll();
+    const shortcut = commands.find(command => command.name === 'toggle-navigator')?.shortcut;
+    if (!shortcut) {
+      text = 'No page on/off shortcut is assigned. Use the toolbar popup, or assign one at chrome://extensions/shortcuts. Keep it different from Alt+Shift+G, which enters commands while the navigator is on.';
+    } else {
+      const normalized = shortcut.toLowerCase().replace(/option|⌥/g, 'alt').replace(/⇧/g, 'shift').replace(/[+\s]/g, '');
+      text = ['altshiftg', 'shiftaltg'].includes(normalized)
+        ? `Page on/off is assigned to ${shortcut}, which conflicts with command entry. Change it in chrome://extensions/shortcuts or use the toolbar popup. Command entry while on: Alt+Shift+G.`
+        : `Page on/off: ${shortcut}. Command entry while on: Alt+Shift+G. Review chrome://extensions/shortcuts to change bindings.`;
+    }
+  } catch {
+    text = 'Could not check the page on/off shortcut. Use the toolbar popup or review chrome://extensions/shortcuts. Command entry while on: Alt+Shift+G.';
+  }
+  if (request === shortcutGeneration) $('shortcut').textContent = text;
+}
 async function initialize() {
+  void refreshShortcut();
   $('browsing').disabled = true;
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!Number.isInteger(tab?.id)) throw new Error('No current page');
