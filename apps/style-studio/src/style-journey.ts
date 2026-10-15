@@ -1,6 +1,6 @@
 import {INSPIRATION,inspirationIdeas,picturedOpinion,type Inspiration} from './inspiration.ts';
 import type {Label,Project} from './types.ts';
-interface JourneyHost {project():Project;ready():boolean;recovery():boolean;vote(id:string,label:Label|null):void}
+interface JourneyHost {present?():void;project():Project;ready():boolean;recovery():boolean;vote(id:string,label:Label|null):void}
 type View='welcome'|'pictures'|'inspiration'|'wardrobe'|'taste'|'compose'|'ideas'|'saved'|'profile';
 /** Presentation only: original editor nodes, raw fields and async owners remain mounted. */
 export function mountStyleJourney(app:HTMLElement,host:JourneyHost){
@@ -38,6 +38,7 @@ export function mountStyleJourney(app:HTMLElement,host:JourneyHost){
  function select(view:View){initialized=true;current=view;expanded=false;more.open=false;sync();focus();}
  function finish(){try{localStorage.setItem('style-studio:journey-finished','true');}catch{/* Presentation preference only; profile storage remains authoritative. */}select('inspiration');}
  function sync(){
+  main.dataset.styleExpanded=String(expanded);
   if(!initialized&&host.ready()){
    initialized=true;let seen=false;try{seen=localStorage.getItem('style-studio:journey-finished')==='true';}catch{/* Optional presentation preference. */}
    const p=host.project();if(p.pieces.length||p.examples.length||p.looks.length||seen)current='inspiration';
@@ -56,11 +57,12 @@ export function mountStyleJourney(app:HTMLElement,host:JourneyHost){
    for(const {outfit,value} of suggested.ideas){const card=make('article','','inspiration-result');card.dataset.outfit=outfit.id;card.append(outfitArt(outfit),make('p','Example outfit · not in your wardrobe','eyebrow'),make('h2',outfit.name),make('p',`${outfit.tags.palette} · ${outfit.tags.fit} · ${outfit.tags.style} · ${outfit.tags.formality}`,'quiet'));if(suggested.kind==='learned')card.append(make('p',`${Math.round(value)} / 100 · provisional alignment`));card.append(action('Choose my opinion',()=>{select('pictures');const target=cards.find(x=>x.outfit.id===outfit.id)!.card;target.scrollIntoView({block:'center'});target.querySelector('button')!.focus();}));results.append(card);}
    if(!suggested.ideas.length)results.append(make('p','You passed on every example. Revisit your choices or add your own references in Your taste.','empty'));
   }
+  host.present?.();
  }
  window.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented&&(expanded||current!=='inspiration')){event.preventDefault();finish();links.get('inspiration')!.focus({preventScroll:true});}});
  // Existing anchor links reveal their target without resetting editor state.
  app.addEventListener('click',event=>{const anchor=(event.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');const view=anchor?.getAttribute('href')?.slice(1) as View;if(view in groups){event.preventDefault();select(view);}});
- sync();return {sync};
+ sync();return {sync,show:select};
 }
 function outfitArt(outfit:Inspiration):SVGSVGElement{
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 300 320');svg.setAttribute('role','img');svg.setAttribute('aria-label',`${outfit.name}: ${outfit.tags.fit} ${outfit.tags.style} outfit illustration, not a photograph`);

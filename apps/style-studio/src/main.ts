@@ -1,3 +1,4 @@
+import {mountQuickWardrobe,starterPiece} from './quick-wardrobe.ts';
 import {mountStyleJourney} from './style-journey.ts';
 import {voteOnInspiration} from './inspiration.ts';
 import './style.css';
@@ -110,6 +111,8 @@ let saving = false;
 let saveFailed = false;
 
 let editingPiece: string | null = null;
+let quickCategory: Category | null = null;
+let quickAutoName = '';
 let assessedTags: Tags | null = null;
 let suggestionSignature: string | null = null;
 let operation: AbortController | null = null;
@@ -248,7 +251,7 @@ function renderColorRead(asset: PhotoAsset | null): void {
     const use = node('button', 'button subtle', `Use suggested palette: ${titleCase(colors.palette)}`) as HTMLButtonElement;
     use.type = 'button'; use.id = 'use-suggested-palette';
     use.addEventListener('click', () => {
-      interact(); field(pieceForm, 'palette').value = colors.palette; pieceForm.dataset.dirty = 'true';
+      interact(); field(pieceForm, 'palette').value = colors.palette; pieceForm.dataset.dirty = 'true';quickIntake.sync();
       message(`Palette set to ${titleCase(colors.palette)} from the photo. Save the piece to keep it.`);
     });
     area.replaceChildren(node('p', 'eyebrow', 'Colors read from this photo'), swatches(colors),
@@ -290,8 +293,8 @@ for (const kind of ['piece', 'example'] as const) {
 }
 
 function resetPieceForm(): void {
-  editingPiece = null; pieceForm.reset(); clearPhotoDraft('piece');
-  pieceForm.dataset.dirty = 'false';
+  quickCategory=null;quickAutoName='';
+  editingPiece = null; pieceForm.reset(); pieceForm.dataset.dirty = 'false'; clearPhotoDraft('piece');
   element('#piece-form-heading').textContent = 'Add a wardrobe piece';
   element('#piece-submit').textContent = 'Add wardrobe piece'; element('#cancel-piece-edit').hidden = true;
 }
@@ -363,7 +366,8 @@ function renderWardrobe(): void {
       const actions = card.querySelector('.card-actions')!;
       actions.append(button('Edit piece', 'text-button', () => {
         const current = project.pieces.find(item => item.id === piece.id); if (!current) return;
-        interact(); clearPhotoDraft('piece'); editingPiece = current.id;
+        if(quickCategory!==null){message('Finish or explicitly discard the quick piece before editing saved clothing.',true);return;}
+        interact(); clearPhotoDraft('piece'); editingPiece = current.id;quickCategory=null;quickAutoName='';quickIntake.expand();quickIntake.sync();
         pieceForm.dataset.dirty = 'false';
         field(pieceForm, 'name').value = current.name; field(pieceForm, 'category').value = current.category; writeTags(pieceForm, current.tags);
         photoDrafts.piece.existingId = current.photoId; renderPhotoDraft('piece');
@@ -842,7 +846,15 @@ element('#replace-saved-copy').addEventListener('click', () => {
   })();
 });
 
-const journey=mountStyleJourney(mount,{project:()=>project,ready:()=>!startupPending&&!recoveryOwner&&!terminal,recovery:()=>preserveStoredData||saveFailed||reopenNeeded,vote:(id,label)=>{if(startupPending||recoveryOwner||terminal)return;attempt(()=>{publish(voteOnInspiration(project,id,label),'Pictured preference saved.');});}});
+function startQuickPiece(category:Category):void {
+  if(startupPending||recoveryOwner||terminal||operation||photoDrafts.piece.busy)return;
+  if(editingPiece||pieceForm.dataset.dirty==='true'||photoDrafts.piece.asset||photoDrafts.piece.existingId){message('Finish or explicitly discard the current piece before starting another.',true);return;}
+  attempt(()=>{const proposal=starterPiece(project,category);interact();quickCategory=category;quickAutoName=proposal.name;field(pieceForm,'name').value=proposal.name;field(pieceForm,'category').value=category;writeTags(pieceForm,proposal.tags);pieceForm.dataset.dirty='true';quickIntake.collapse();quickIntake.sync();element('#piece-photo').focus();});
+}
+const quickIntake=mountQuickWardrobe(mount,{project:()=>project,ready:()=>!startupPending&&!recoveryOwner&&!terminal&&!operation&&!photoDrafts.piece.busy,quick:()=>quickCategory!==null,draft:()=>pieceForm.dataset.dirty==='true'||photoDrafts.piece.busy||photoDrafts.piece.asset!==null,editing:()=>editingPiece!==null,review:()=>`${field(pieceForm,'name').value} · ${field(pieceForm,'category').value} · ${tagsText(readTags(pieceForm))}`,start:startQuickPiece,discard:()=>{if(window.confirm('Discard this piece draft, its unapplied fields and unsubmitted photo? The saved profile stays unchanged.')){interact();resetPieceForm();}},ideas:()=>{journey.show('ideas');suggestionForm.requestSubmit();}});
+pieceForm.addEventListener('input',()=>quickIntake.sync());
+pieceForm.addEventListener('change',event=>{if(quickCategory!==null&&event.target===field(pieceForm,'category')){quickCategory=field(pieceForm,'category').value as Category;if(field(pieceForm,'name').value===quickAutoName)attempt(()=>{quickAutoName=starterPiece(project,quickCategory!).name;field(pieceForm,'name').value=quickAutoName;});}quickIntake.sync();});
+const journey=mountStyleJourney(mount,{present:()=>quickIntake.sync(),project:()=>project,ready:()=>!startupPending&&!recoveryOwner&&!terminal,recovery:()=>preserveStoredData||saveFailed||reopenNeeded,vote:(id,label)=>{if(startupPending||recoveryOwner||terminal)return;attempt(()=>{publish(voteOnInspiration(project,id,label),'Pictured preference saved.');});}});
 render(); storageControls();
 void (async () => {
   const initialGeneration = generation, ownedLifetime = lifetime;
