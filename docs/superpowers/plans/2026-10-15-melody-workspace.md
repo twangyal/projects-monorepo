@@ -34,4 +34,4 @@ Files: create `src/workspace-view.ts` and `tests/workspace.spec.ts` within Melod
 
 - [x] Update README and portfolio roadmap with actual delivered scope and limitations.
 - [x] Publish via connected GitHub tools with leased refs; verify source/main CI where available.
-- [ ] Update issue with exact evidence; close only when completion criteria are met.
+- [x] Update issue with exact evidence; close only when completion criteria are met. Source and integrated main CI passed428 unit and247 browser tests; retained local/main first-attempt failures are recorded in the integration receipt.

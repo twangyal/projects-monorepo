@@ -19,12 +19,16 @@ Source code commits: [38b8b46](https://github.com/twangyal/projects-monorepo/com
 | Final local focused + stereo gates |20 passed (18 focused,2 existing stereo) |
 | Updated local unit/lint/types |428 units passed; lint/types passed |
 | Final source CI |[38714678813](https://github.com/twangyal/projects-monorepo/actions/runs/38714678813):428 units,247 browser tests, lint/types/build passed |
-| Main CI |Pending integration run |
-| Final full local guarded tree |In progress; result will be recorded below |
+| Main CI |[38715392686 attempt 2](https://github.com/twangyal/projects-monorepo/actions/runs/38715392686/attempts/2):428 units,247 browser tests, lint/types/build passed on integrated commit4ade7d7 |
+| Final full local guarded tree |246/247; bounded-history download event timed out. The unchanged isolated case passed in45.4 seconds |
 
 Independent read-only review found no definite newly introduced Critical/Important correctness defect. Its visible-focus acceptance gap and redundant fixture wrapping were addressed; later layout corrections passed native geometry and visual desktop/phone inspection.
 
 Retained failures: first local233 run had231 passes plus a synthetic microphone failure and short-playback timing failure; both passed isolated unchanged. The full serial pre-guard checkpoint and [first source CI38713547011](https://github.com/twangyal/projects-monorepo/actions/runs/38713547011) each passed243/244, exposing range changes incorrectly treated as navigation blur. Restricting that guard to actual text fields restored the unchanged stereo assertions. Additional native RED cases caught utility-focus draft application and passive-blur library retirement; all now pass. No assertion or deadline was weakened.
+
+Final local full-suite coverage passed246/247: the bounded audio-history case (`tests/browser/reference-takes.spec.ts:371`) timed out waiting for a native download event after the application announced the project file saved. The unchanged isolated rerun passed. This local full-suite run is not reported as green.
+
+[Main attempt1](https://github.com/twangyal/projects-monorepo/actions/runs/38715392686/attempts/1) passed246/247 browser tests; the harmonic-tone round-trip test stalled waiting for the workspace-mode control after reload. Its trace shows reload completed early and the toolbar rendered; the visibility-wait stall has an unconfirmed cause. The unchanged full rerun passed247/247. No code, assertion or test deadline changed between these main attempts. These outcomes are retained as intermittent verification limitations, not claimed as diagnosed fixes.
 
 ## Limits
 
