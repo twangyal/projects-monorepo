@@ -8,8 +8,11 @@
 <body>
   <h1>Gaze Navigator</h1>
   <p id="state" role="status">Checking this page…</p>
+  <p id="feedback" role="alert" hidden></p>
   <button id="toggle" disabled>Turn on for this page</button>
-  <fieldset>
+  <button id="retry" hidden>Check this page again</button>
+  <p id="page-help" class="note"></p>
+  <fieldset id="browsing" disabled>
     <legend>While browsing</legend>
     <label><input type="checkbox" id="persist" /> Stay on in this tab when pages change</label>
     <label><input type="checkbox" id="autoStart" /> Start automatically on every website</label>

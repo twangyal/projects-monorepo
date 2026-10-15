@@ -199,3 +199,43 @@ test('smarter matching runs in one shared offscreen document and acts on a diffe
   expect(await page.evaluate(() => [sessionStorage.length, localStorage.length, typeof window.__gazeTestAssistant])).toEqual([0, 0, 'undefined']);
   expect(await control.evaluate(() => chrome.offscreen.hasDocument()), 'one shared model host').toBe(true);
 });
+
+test('same-page restart recreates one live navigator and status follows a non-persistent navigation', async ({context,control}) => {
+  const page=await context.newPage();await page.goto('http://shop.example/');
+  const id=await tabId(control,'http://shop.example/*');
+  const call=type=>control.evaluate(({type,id})=>chrome.runtime.sendMessage({type,tabId:id}),{type,id});
+  for(let cycle=0;cycle<3;cycle++){
+    expect(await call('gaze:start')).toBe('on');await expect(status(page)).toContainText('Ready on');await expect(overlay(page)).toHaveCount(1);
+    expect(await call('gaze:status')).toEqual({on:true});
+    expect(await call('gaze:stop')).toBe('off');await expect(overlay(page)).toHaveCount(0);expect(await call('gaze:status')).toEqual({on:false});
+  }
+  expect(await call('gaze:start')).toBe('on');await expect(status(page)).toContainText('Ready on');
+  await page.goto('http://shop.example/about');await expect(overlay(page)).toHaveCount(0);
+  expect(await call('gaze:status')).toEqual({on:false});
+});
+
+test('a held native startup can be stopped and cannot remove its newer replacement',async({context,control})=>{
+ const page=await context.newPage();await page.goto('http://shop.example/');const id=await tabId(control,'http://shop.example/*');
+ await control.evaluate(async tab=>chrome.scripting.executeScript({target:{tabId:tab},func:()=>{
+  const get=chrome.storage.session.get.bind(chrome.storage.session);let first=true;
+  chrome.storage.session.get=async keys=>{const result=await get(keys);if(first&&keys==='gaze-web-navigator'){first=false;chrome.storage.session.get=get;await new Promise(resolve=>{globalThis.releaseNavigatorStartup=resolve;});globalThis.oldNavigatorStartupReleased=true;}return result;};
+ }}),id);
+ const call=type=>control.evaluate(({type,id})=>chrome.runtime.sendMessage({type,tabId:id}),{type,id});
+ expect(await call('gaze:start')).toBe('on');
+ await expect.poll(()=>control.evaluate(async tab=>(await chrome.scripting.executeScript({target:{tabId:tab},func:()=>typeof globalThis.releaseNavigatorStartup}))[0].result,id)).toBe('function');
+ expect(await call('gaze:stop')).toBe('off');await expect(overlay(page)).toHaveCount(0);
+ expect(await call('gaze:start')).toBe('on');await expect(status(page)).toContainText('Ready on');
+ await control.evaluate(async tab=>chrome.scripting.executeScript({target:{tabId:tab},func:()=>globalThis.releaseNavigatorStartup()}),id);
+ await expect.poll(()=>control.evaluate(async tab=>(await chrome.scripting.executeScript({target:{tabId:tab},func:()=>globalThis.oldNavigatorStartupReleased}))[0].result,id)).toBe(true);
+ await expect(overlay(page)).toHaveCount(1);expect(await call('gaze:status')).toEqual({on:true});
+ expect(await call('gaze:stop')).toBe('off');await expect(overlay(page)).toHaveCount(0);
+});
+
+test('popup controls describe the actual page and explain protected-page recovery',async({context,control})=>{
+ const page=await context.newPage();await page.goto('http://shop.example/');await page.bringToFront();await control.reload();
+ await expect(control.locator('#state')).toHaveText('Off for this page.');
+ await control.getByRole('button',{name:'Turn on for this page',exact:true}).click();await expect(status(page)).toContainText('Ready on');await expect(control.locator('#state')).toHaveText('On for this page.');
+ await control.getByRole('button',{name:'Turn off for this page',exact:true}).click();await expect(overlay(page)).toHaveCount(0);await expect(control.locator('#state')).toHaveText('Off for this page.');
+ await page.goto('chrome://version');await page.bringToFront();await control.reload();
+ await expect(control.locator('#state')).toContainText('does not allow navigator access');await expect(control.locator('#toggle')).toBeDisabled();await expect(control.getByRole('button',{name:'Check this page again',exact:true})).toBeVisible();
+});

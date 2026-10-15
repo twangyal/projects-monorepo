@@ -29,8 +29,25 @@ async function hostAccess() {
   return chrome.permissions.contains({ origins: ['<all_urls>'] });
 }
 
+// Serialize short injection operations per tab, without waiting for module/camera startup.
+const operations = new Map();
+const intents = new Map();
+function enqueue(tabId, intent, operation, explicit = false) {
+  const result = (operations.get(tabId) ?? Promise.resolve()).catch(() => {}).then(() => explicit || intents.get(tabId) === intent ? operation() : 'off');
+  operations.set(tabId, result);
+  const release = () => { if (operations.get(tabId) === result) operations.delete(tabId); };
+  result.then(release, release);
+  return result;
+}
+function run(tabId, mode, intent = null) {
+  const explicit = !intent;
+  if (explicit) { intent = {}; intents.set(tabId, intent); }
+  // Explicit toggles retain ordering/parity; only automatic continuation can be retired.
+  return enqueue(tabId, intent, () => runNow(tabId, mode, () => explicit || intents.get(tabId) === intent), explicit);
+}
+
 // Runs the content toggle in the top frame. Resolves to 'on', 'off' or an error message.
-async function run(tabId, mode) {
+async function runNow(tabId, mode, current) {
   try {
     const [result] = await chrome.scripting.executeScript({
       target: { tabId },
@@ -40,10 +57,12 @@ async function run(tabId, mode) {
       },
       args: [mode],
     });
+    if (!current()) return 'off';
     const action = result?.result;
     if (action === 'running') return 'on';
     if (action === 'start') {
       await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+      if (!current()) return 'off';
       await setEnabled(tabId, true);
       await chrome.action.setBadgeText({ tabId, text: 'ON' });
       return 'on';
@@ -63,18 +82,52 @@ chrome.commands.onCommand.addListener((command, tab) => {
 
 chrome.tabs.onUpdated.addListener(async (tabId, change, tab) => {
   if (change.status !== 'complete' || !/^(https?|file):/.test(tab.url ?? '')) return;
+  const intent = intents.get(tabId) ?? {};
+  intents.set(tabId, intent);
+  // Read continuation state after earlier explicit operations have committed it.
+  await operations.get(tabId)?.catch(() => {});
+  if (intents.get(tabId) !== intent) return;
   const [tabs, prefs] = await Promise.all([enabledTabs(), preferences()]);
-  if (!(prefs.autoStart || (prefs.persist && tabs[tabId]))) return;
-  if (!(await hostAccess())) {
-    // Without host access the activeTab grant ended with the navigation; ask for one click.
-    await chrome.action.setBadgeText({ tabId, text: 'OFF' });
-    await chrome.action.setTitle({ tabId, title: 'Gaze Navigator stopped after navigation. Open it to turn it back on.' });
+  if (intents.get(tabId) !== intent) return;
+  if (!(prefs.autoStart || (prefs.persist && tabs[tabId]))) {
+    await enqueue(tabId, intent, async () => {
+      await setEnabled(tabId, false);
+      await chrome.action.setBadgeText({ tabId, text: '' });
+    });
     return;
   }
-  await run(tabId, 'start');
+  if (!(await hostAccess())) {
+    // Without host access the activeTab grant ended with the navigation; ask for one click.
+    await enqueue(tabId, intent, async () => {
+      await chrome.action.setBadgeText({ tabId, text: 'OFF' });
+      await chrome.action.setTitle({ tabId, title: 'Gaze Navigator stopped after navigation. Open it to turn it back on.' });
+    });
+    return;
+  }
+  await run(tabId, 'start', intent);
 });
 
-chrome.tabs.onRemoved.addListener(tabId => setEnabled(tabId, false));
+chrome.tabs.onRemoved.addListener(tabId => {
+  const intent = {}; intents.set(tabId, intent);
+  enqueue(tabId, intent, async () => {
+    await setEnabled(tabId, false);
+    if (intents.get(tabId) === intent) intents.delete(tabId);
+  }).catch(() => {});
+});
+
+// Stored continuation intent is not evidence that the current document is running.
+async function pageStatus(tabId) {
+  try {
+    const [probe] = await chrome.scripting.executeScript({ target: { tabId }, func: () => ({
+      on: Boolean(globalThis.__gazeNavigatorRunning),
+      phase: globalThis.__gazeNavigatorError ? 'failed' : !globalThis.__gazeNavigatorRunning ? 'off' : globalThis.__gazeNavigatorReady ? 'on' : 'starting',
+      message: globalThis.__gazeNavigatorError ?? '',
+    }) });
+    return probe?.result ?? { on: false, phase: 'off', message: '' };
+  } catch {
+    return { on: false, phase: 'unavailable', message: 'This page does not allow navigator access. Open a normal website, then reopen Gaze Navigator. Browser pages and the web store are protected.' };
+  }
+}
 
 // Smarter matching: the model runs in one offscreen document shared by all tabs.
 async function ensureOffscreen() {
@@ -105,7 +158,11 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return true;
   }
   if (message?.type === 'gaze:status') {
-    enabledTabs().then(tabs => respond({ on: Boolean(tabs[message.tabId]) }));
+    pageStatus(message.tabId).then(status => respond({ on: status.on }));
+    return true;
+  }
+  if (message?.type === 'gaze:page-status') {
+    pageStatus(message.tabId).then(respond);
     return true;
   }
   return false;

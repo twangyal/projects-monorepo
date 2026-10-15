@@ -2,18 +2,8 @@
 import { startWebNavigator } from './overlay.js';
 
 const KEY = 'gaze-web-navigator';
-const stored = (await chrome.storage.session.get(KEY))[KEY] ?? {};
 
 const CALIBRATION = 'gaze-calibration';
-
-// Extension session storage is in memory only and unreachable from websites.
-const store = {
-  load: () => stored,
-  save: settings => { chrome.storage.session.set({ [KEY]: settings }).catch(() => {}); },
-  loadCalibration: async () => (await chrome.storage.session.get(CALIBRATION))[CALIBRATION] ?? null,
-  saveCalibration: calibration => { chrome.storage.session.set({ [CALIBRATION]: calibration }).catch(() => {}); },
-  clearCalibration: () => { chrome.storage.session.remove(CALIBRATION).catch(() => {}); },
-};
 
 // Asks the background worker to inject the bundled estimator; a fresh load replaces the old instance.
 async function loadCamera({ fresh = false } = {}) {
@@ -38,9 +28,17 @@ async function loadAssistant(progress) {
   return { decide: (...args) => call('decide', args), yes: (...args) => call('yes', args) };
 }
 
-const navigator = startWebNavigator({ window, store, loadCamera, loadAssistant });
-globalThis.__gazeNavigatorStop = () => {
-  navigator.stop();
-  globalThis.__gazeNavigatorRunning = false;
-  globalThis.__gazeNavigatorStop = undefined;
-};
+// Explicit factory: the imported module is cached, but each owned start needs a fresh runtime.
+export async function startExtensionNavigator({ isCurrent = () => true } = {}) {
+  const stored = (await chrome.storage.session.get(KEY))[KEY] ?? {};
+  if (!isCurrent()) return null;
+  // Extension session storage is in memory only and unreachable from websites.
+  const store = {
+    load: () => stored,
+    save: settings => { chrome.storage.session.set({ [KEY]: settings }).catch(() => {}); },
+    loadCalibration: async () => (await chrome.storage.session.get(CALIBRATION))[CALIBRATION] ?? null,
+    saveCalibration: calibration => { chrome.storage.session.set({ [CALIBRATION]: calibration }).catch(() => {}); },
+    clearCalibration: () => { chrome.storage.session.remove(CALIBRATION).catch(() => {}); },
+  };
+  return startWebNavigator({ window, store, loadCamera, loadAssistant });
+}
