@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './expanded-workspace';
 import type { DrawingLayer, ImageLayer } from '../src/model.ts';
 
 test.beforeEach(async ({ page }) => {

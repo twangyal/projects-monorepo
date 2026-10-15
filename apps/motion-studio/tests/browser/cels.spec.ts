@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Download } from '@playwright/test';
+import { test, expect, type Page, type Download } from '../expanded-workspace';
 import { readFile } from 'node:fs/promises';
 import { parseGIF, decompressFrames } from 'gifuct-js';
 import { nativeCurrent, nativeCurrentRaw, nativeLegacyRaw } from '../native-saved-project.ts';

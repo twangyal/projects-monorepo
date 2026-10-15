@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './expanded-workspace';
 import { readFile } from 'node:fs/promises';
 import { deflateSync } from 'node:zlib';
 import { createProject, validateProject, type Project } from '../src/model.ts';

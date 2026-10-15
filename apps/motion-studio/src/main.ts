@@ -1,3 +1,4 @@
+import {mountAnimationWorkspace} from './workspace-view.ts';
 import './style.css';
 import { playbackFrame } from './playback.ts';
 import { createStrokeEditor, StrokeDrag, uniformCanvas } from './stroke-editor.ts';
@@ -201,6 +202,7 @@ async function flushActiveSave(): Promise<boolean> {
 }
 function draw() { const visible = gesture?.preview || project; renderFrame(ctx, visible, frame, assets); renderNeighborDrawings(onionContext, onionEnabled && !playing ? neighborDrawings(visible, selected, frame) : []); strokeEditor.overlay(overlayContext, visible); canvas.dataset.frame = String(frame); }
 function controls() {
+  workspaceView?.sync();
   privateLinks.update();
   const locked = busy || exporting || !!gesture;
   const authoringLocked = locked || restorePending || retryPending || libraryPending;
@@ -560,7 +562,8 @@ function setPose() {
 for (const property of poseProperties) {
   const input = el<HTMLInputElement>(`pose-${property}`);
   input.addEventListener('input', () => markDraft(`pose-${property}`));
-  input.addEventListener('change', setPose);
+  // A focus move to workspace navigation must not apply a raw pose draft.
+  input.addEventListener('change',()=>{if(workspaceView?.navigating)return;const owner=operation;setTimeout(()=>{if(owner!==operation||workspaceView?.isControl(document.activeElement))return;setPose();},0);});
 }
 el('set-key').addEventListener('click', setPose);
 el('easing').addEventListener('change', () => { markDraft('easing'); setPose(); });
@@ -1063,6 +1066,7 @@ el('recovery-retry').addEventListener('click', async () => {
   try { await restoreSaved(false); }
   finally { retryPending = false; updateSaveState(); controls(); }
 });
+const workspaceView=mountAnimationWorkspace(app,{canNavigate:()=>{if(!gesture)return true;tell('Finish or cancel the current gesture before switching tools.',true);return false;},playing:()=>playing,stop:pause});
 refresh(); selectMode('draw');
 void restoreSaved(true).finally(() => {
   restorePending = false; busy = false;

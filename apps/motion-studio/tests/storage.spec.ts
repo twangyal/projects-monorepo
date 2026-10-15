@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './expanded-workspace';
 import { readFile } from 'node:fs/promises';
 import { nativeCurrent } from './native-saved-project.ts';
 

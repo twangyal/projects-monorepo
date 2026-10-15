@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './expanded-workspace';
 import { decompressFrames, parseGIF } from 'gifuct-js';
 
 test.beforeEach(async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../expanded-workspace';
 import type { Project } from '../../src/model.ts';
 import type { ProjectLibrary } from '../../src/library-storage.ts';
 

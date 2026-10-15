@@ -1,6 +1,6 @@
 # Motion Studio
 
-**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 11](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. This redesign is requested future work.
+**Owner direction update (2026-10-14):** Reduce the crowded single-page interface using focused sections and contextual panels/modals, while keeping the main creative workspace prominent and preserving existing edits. See [product direction, section 11](../../docs/PRODUCT_DIRECTION.md) before selecting or resuming work. The focused workspace is implemented in [#263](https://github.com/twangyal/projects-monorepo/issues/263); the broader animation and learned-assistance vision remains ACTIVE.
 
 A local drawing and animation workspace: make original freehand artwork, create independent held drawings, review geometric in-betweens, combine artwork with layer poses and imported images, and export a GIF. Keep up to eight independently editable projects in your browser and download portable backups. An optional local service publishes immutable private snapshot links for viewing, downloads and explicit local copies. AI assistance and live synchronization remain future work.
 
@@ -15,6 +15,16 @@ npm run dev
 ```
 
 Open the localhost URL printed by Vite. No account, backend, API key, paid service, or model download is needed. `npm run build` creates a static site in `dist/`; `npm run preview` serves that build locally.
+
+## Focused workspace
+
+The stage opens first, with drawing tools beside it on desktop and below it on phones. **Draw**, **Layers**, **Poses**, **Drawings**, **Projects**, **Share**, **Export** and **Help** show contextual tools without recreating the editor. **Expand workspace** reveals all tools; **Focus workspace**, **Back to canvas** and Escape return to a focused view with visible keyboard focus.
+
+Choose **Layers** to add/select artwork and **Poses** to edit movement. **Drawings** manages held exposures and reviewed geometric in-betweens. **Projects** contains the demo, project settings, editable backups, saved projects and recovery. **Export** contains rendered PNG, GIF and frame ZIP actions; **Share** keeps optional private publishing separate. New project and Undo/Redo stay in the header. Playback can always be stopped with **Stop animation**, and an active export retains its global progress and **Cancel export** action across sections.
+
+Changing sections keeps mounted raw pose/stroke fields, selected artwork, history, reviewed in-betweens and owned imports/exports. Navigation does not apply those raw edits. Apply or discard them deliberately before changing artwork; pose fields still commit on ordinary numeric change outside workspace navigation, and **Set keyframe** is available explicitly. A queued pose blur cannot commit after page suspension retires its editor authority. Section changes are refused during an active canvas gesture.
+
+See [workspace verification](docs/2026-10-15-focused-workspace.md) for measured checks and limits.
 
 ## Draw, pose, and animate
 

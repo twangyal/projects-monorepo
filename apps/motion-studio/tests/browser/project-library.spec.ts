@@ -1,4 +1,4 @@
-import { chromium, expect, test } from '@playwright/test';
+import { chromium, expect, test, expandedPage } from '../expanded-workspace';
 import { deflateSync } from 'node:zlib';
 
 // Original literal fixtures frozen before reading the new library producers.
@@ -354,7 +354,7 @@ test('complete browser-process restart restores exact active project and indepen
   const fs = await import('node:fs/promises'), os = await import('node:os'), path = await import('node:path');
   const profile = await fs.mkdtemp(path.join(os.tmpdir(), 'motion104-persistent-'));
   const owner: { context?: import('@playwright/test').BrowserContext } = {};
-  const start = async () => { const context = await chromium.launchPersistentContext(profile, { ...testInfo.project.use.launchOptions, baseURL }); owner.context = context; const page = context.pages()[0]; page.on('dialog', dialog => dialog.accept()); return page; };
+  const start = async () => { const context = await chromium.launchPersistentContext(profile, { ...testInfo.project.use.launchOptions, baseURL }); owner.context = context; const page = context.pages()[0]; expandedPage(page); page.on('dialog', dialog => dialog.accept()); return page; };
   try {
     let page = await start(); await ready(page); const a = libraryFixture('A'), b = libraryFixture('B'); const idA = await importFixture(page, a), idB = await importFixture(page, b); const before = await nativeDownload(page); const raw = await inspectLibrary(page);
     await owner.context!.close(); delete owner.context;

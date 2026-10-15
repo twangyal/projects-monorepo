@@ -1,4 +1,4 @@
-import {test,expect,type Page,type Download} from '@playwright/test';
+import {test,expect,type Page,type Download} from '../expanded-workspace';
 import {endpoints,applied,coreAt,type Film} from './tween-fixtures.ts';
 import {readFile,writeFile} from 'node:fs/promises';
 import {parseGIF,decompressFrames} from 'gifuct-js';

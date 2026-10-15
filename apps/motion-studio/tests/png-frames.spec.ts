@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './expanded-workspace';
 import { readFile, writeFile } from 'node:fs/promises';
 import { inspectFrames } from './png-archive-oracle.ts';
 import { PNG } from 'pngjs';

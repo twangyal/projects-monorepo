@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './expanded-workspace';
 import { parseGIF, decompressFrames } from 'gifuct-js';
 import type { Project, DrawingLayer } from '../src/model.ts';
 

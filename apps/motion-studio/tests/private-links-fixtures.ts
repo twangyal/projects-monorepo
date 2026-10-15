@@ -1,4 +1,4 @@
-import { test as base, expect, type Browser, type Page } from '@playwright/test';
+import { test as base, expect, type Browser, type Page, expandedBrowser } from './expanded-workspace';
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdtemp, readFile, writeFile, chmod, rm, access } from 'node:fs/promises';
@@ -37,6 +37,7 @@ export const test = base.extend<{ lan: PrivateLan }>({
       };
       await start();
       browser = await playwright.chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}), args: [`--ignore-certificate-errors-spki-list=${spki}`] });
+      expandedBrowser(browser);
       const session = await browser.newBrowserCDPSession(), processes = await session.send('SystemInfo.getProcessInfo'); browserPids.push(...processes.processInfo.filter(item => item.type === 'browser').map(item => item.id)); await session.detach();
       await writeFile(info.outputPath('public-certificate-receipt.json'), JSON.stringify({ certificateSha256: sha(certificate), spki, browserVersion: browser.version(), trust: 'Strict Node CA readiness; Chromium exact fixture SPKI only', physicalDevices: false }, null, 2));
       await use({ origin, setup, browser, restart: async () => { await stop(); await start(); } });
