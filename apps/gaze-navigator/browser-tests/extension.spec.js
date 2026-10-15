@@ -239,3 +239,17 @@ test('popup controls describe the actual page and explain protected-page recover
  await page.goto('chrome://version');await page.bringToFront();await control.reload();
  await expect(control.locator('#state')).toContainText('does not allow navigator access');await expect(control.locator('#toggle')).toBeDisabled();await expect(control.getByRole('button',{name:'Check this page again',exact:true})).toBeVisible();
 });
+
+test('registered page toggle leaves keyboard command entry free and retains website drafts',async({context,control})=>{
+ const commands=await control.evaluate(()=>chrome.commands.getAll());
+ expect(commands.find(command=>command.name==='toggle-navigator')?.shortcut).toBe('Alt+Shift+N');
+ const page=await context.newPage();await page.goto('http://shop.example/contact');const id=await tabId(control,'http://shop.example/*');
+ expect(await control.evaluate(tab=>chrome.runtime.sendMessage({type:'gaze:start',tabId:tab}),id)).toBe('on');await expect(status(page)).toContainText('Ready on');
+ const field=page.getByLabel('Message'),ordinary=panel(page).getByLabel('Typed instruction');
+ await ordinary.fill('unfinished navigator draft');await field.fill('unfinished website draft');await field.focus();
+ await page.keyboard.press('Alt+Shift+G');await page.keyboard.type('open home');
+ await expect(field).toBeFocused();await expect(field).toHaveValue('unfinished website draft');await expect(ordinary).toHaveValue('open home');
+ await page.keyboard.press('Escape');await expect(ordinary).toHaveValue('unfinished navigator draft');await expect(page).toHaveURL('http://shop.example/contact');expect(await field.evaluate(node=>node.readOnly)).toBe(false);
+ await page.keyboard.press('Alt+Shift+G');await page.keyboard.type('pause');await page.keyboard.press('Enter');await expect(status(page)).toContainText(/paused/i);await expect(field).toHaveValue('unfinished website draft');await expect(ordinary).toHaveValue('unfinished navigator draft');
+ expect(await control.evaluate(tab=>chrome.runtime.sendMessage({type:'gaze:status',tabId:tab}),id)).toEqual({on:true});
+});

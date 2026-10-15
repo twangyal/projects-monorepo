@@ -102,7 +102,7 @@ cd apps/gaze-navigator
 npm run build:extension      # fetches pinned WebGazer 3.3.0 with npm, verifies its SHA-256, writes dist/extension
 ```
 
-In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select `apps/gaze-navigator/dist/extension`. Then open any website and use the toolbar popup's **Turn on for this page**, or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>.
+In Chrome (116+), open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked** and select `apps/gaze-navigator/dist/extension`. Then open any website and use the toolbar popup's **Turn on for this page**, or the suggested page-toggle shortcut <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>. The in-page command editor keeps **Alt+Shift+G**. Existing installations can retain older/custom bindings; review `chrome://extensions/shortcuts` and keep page toggle distinct from command entry. Reserved or unassigned shortcuts can be replaced there; the toolbar popup remains available.
 
 - By default the extension uses only `activeTab` + `scripting` + `storage`: it runs on the page you turned it on for and stops when that page changes.
 - **Stay on in this tab when pages change** and **Start automatically on every website** ask for optional access to websites (`<all_urls>`), because restarting after a navigation needs host access. Auto-start makes the navigator hands-free after this one-time setup.
@@ -333,7 +333,7 @@ The spoken web runtime can now follow webcam gaze after a hands-free, no-click c
 
 ### Real websites through a Chrome extension — 2026-10-12
 
-`npm run build:extension` packages the spoken gaze runtime as an MV3 extension with a pinned, checksum-verified WebGazer. It runs on any website from the popup or Alt+Shift+G, optionally stays on across navigations or starts everywhere after the user grants website access, keeps settings out of website storage and survives strict CSP. 117 unit and 152 native Chromium cases pass locally, including 16 that load the real built extension. [Verification record](docs/2026-10-12-extension-verification.md); issue #205.
+`npm run build:extension` packages the spoken gaze runtime as an MV3 extension with a pinned, checksum-verified WebGazer. It runs on any website from the popup or its registered page-toggle shortcut, optionally stays on across navigations or starts everywhere after the user grants website access, keeps settings out of website storage and survives strict CSP. 117 unit and 152 native Chromium cases pass locally, including 16 that load the real built extension. [Verification record](docs/2026-10-12-extension-verification.md); issue #205.
 
 ### Real-site discovery: web components, frames, script-only clickables — 2026-10-12
 

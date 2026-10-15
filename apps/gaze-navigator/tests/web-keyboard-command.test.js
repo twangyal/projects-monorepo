@@ -134,3 +134,13 @@ test('modifier keydown preserves capture until the following shortcut or paste',
   s.key('Enter');
   assert.deepEqual(s.submitted, ['open Ada Lovelace']);
 });
+
+import { readFile } from 'node:fs/promises';
+test('the extension page-toggle binding does not enter the in-page command editor', async () => {
+  const manifest = JSON.parse(await readFile('extension/manifest.json', 'utf8'));
+  const binding = manifest.commands['toggle-navigator'].suggested_key.default;
+  const s = session();
+  s.key(binding.split('+').at(-1), { altKey: binding.includes('Alt+'), shiftKey: binding.includes('Shift+'), ctrlKey: binding.includes('Ctrl+'), metaKey: binding.includes('Command+') });
+  assert.equal(s.commands.active, false, 'page toggle and command entry must use distinct bindings');
+  s.start(); assert.equal(s.commands.active, true, 'existing command entry stays available'); s.commands.stop();
+});
