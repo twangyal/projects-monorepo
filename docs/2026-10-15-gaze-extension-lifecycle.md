@@ -46,8 +46,8 @@ review reported no remaining material defect in this bounded change.
 Local Node tests: **163 passed**. Lint checks **88 JavaScript files**; test
 extension packaging passes. Local portable Chromium cannot load extension service
 workers, so its failed fixture initialization is a tooling limitation, not a
-native-extension pass. Full Chromium hosted acceptance is required before
-integration; its result and exact source/main revisions will be recorded here.
+native-extension pass. The full Chromium hosted source and main gates below
+provide the native extension evidence and exact accepted revisions.
 
 The native additions load the built test extension into full Chromium and cover:
 
@@ -140,8 +140,8 @@ a different binding; the toolbar remains available. See Chrome's
 [Commands API](https://developer.chrome.com/docs/extensions/reference/api/commands).
 
 Final local combined gate: **166 unit tests**, syntax over **89 JavaScript
-files**, test extension build and diff whitespace check pass. Native hosted
-source and main results will be recorded before issues are closed.
+files**, test extension build and diff whitespace check pass. The hosted source
+and main results below complete the automated acceptance record.
 
 
 ## Production packaging check
@@ -193,5 +193,16 @@ identical to accepted source `8bd6f9e477044c6f29a18a19c8e7ddf929bb48d1`.
 Later checkpoint/integration changes affect only this record and
 `PROJECT_IDEAS.md`. The first two milestones are already on main at
 `a5d27a039286b00899aacbf4bacde5a61ec3340a`; the final integration includes their
-reviewed history and the accepted shortcut follow-up. A fresh combined main
-check is pending and will be recorded when it completes.
+reviewed history and the accepted shortcut follow-up.
+
+Main integration `eab6f9402279c744b7f09f30316fa801093fb681` passes
+[Gaze checks 38678684336](https://github.com/twangyal/projects-monorepo/actions/runs/38678684336):
+**166 unit tests, 264 full-Chromium browser cases, lint and build**. The main
+checkout's separate local unit rerun also passes 166 tests. All four main
+profiles retain the explicitly logged blank assignment and complete the keyboard
+and draft-preservation task. The earlier main onboarding gate
+[38677836483](https://github.com/twangyal/projects-monorepo/actions/runs/38677836483)
+also passes 163 unit and 260 browser cases. Issues #258, #259 and #260 are closed.
+This final receipt changes only root documentation; the accepted app subtree
+remains unchanged. Project #8 remains SKIP, and the owner-deferred projects are
+untouched. Physical-input acceptance remains open in #132.
