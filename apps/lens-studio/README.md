@@ -25,7 +25,7 @@ The application has no backend, account or API key. Estimated depth needs the mo
 
 ## Focused workspace
 
-Start in **Open**, with photo/project import and the authored demo. After opening a study, **Compare** keeps the source, projected result, Undo/Redo and essential framing settings prominent. **Camera mode & depth distances** expands the perspective acknowledgment and relative-distance fields.
+Start in **Open**, with photo/project import and the authored demo. After opening a study, **Compare** keeps the source, projected result, Undo/Redo and essential framing settings prominent. **Adjust framing** brings the settings into view and focuses Target focal length, especially useful on phone. **Camera mode & depth distances** expands the perspective acknowledgment and relative-distance fields.
 
 - **Depth** reveals brush/region/color assignment, source zoom/pan and reviewed local depth estimation. Painting is deliberate in this section (or the expanded workspace); the comparison photo otherwise supports phone scrolling without changing labels.
 - **Mask exchange** imports, reviews and downloads an external label PNG.

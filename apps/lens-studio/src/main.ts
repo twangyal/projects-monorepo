@@ -170,6 +170,7 @@ function retireIntent(): void {
   invalidateStage();
 }
 app.addEventListener('input', retireIntent, true);
+// Input already retires older work; a later passive text/number blur is not a new intent.
 app.addEventListener('change', event=>{const target=event.target;if(target instanceof HTMLInputElement&&(['text','number'].includes(target.type)||maskProposal?.fields.get(target)===target.value))return;retireIntent();}, true);
 app.addEventListener('submit', retireIntent, true);
 function syncModes(): void { fixedRadio.checked = project?.settings.mode !== 'perspective'; perspectiveRadio.checked = project?.settings.mode === 'perspective'; perspectiveRadio.disabled = exportLocked || !ackInput.checked; }
@@ -433,6 +434,6 @@ window.addEventListener('pagehide', event => {
   refreshControls();
 });
 const exportPanel=panel('Project & export', 'Download project keeps the normalized photo, applied settings and complete depth mask. Unapplied fields stay in this page only.'); exportPanel.append(titleForm,pngButton,jsonButton,storagePanel);main.insertBefore(exportPanel, workspace);
-const focused=createPhotoWorkspace({main,perspectiveDetails,hasProject:()=>!!project,canNavigate:()=>{if(!gesture)return true;announce('Finish or cancel the depth gesture before switching tools.');return false;},groups:{compare:[settingsPanel],open:[imports],depth:[paintPanel,depthUi.element,sourceViewControls],mask:[maskPanel],project:[exportPanel],help:[helpPanel]}});
+const focused=createPhotoWorkspace({main,perspectiveDetails,framingInput:numeric.get('targetFocal')!,hasProject:()=>!!project,canNavigate:()=>{if(!gesture)return true;announce('Finish or cancel the depth gesture before switching tools.');return false;},groups:{compare:[settingsPanel],open:[imports],depth:[paintPanel,depthUi.element,sourceViewControls],mask:[maskPanel],project:[exportPanel],help:[helpPanel]}});
 // Focused source painting is deliberate; comparison clicks never author a mask.
 refreshControls(); void start();
