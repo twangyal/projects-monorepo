@@ -202,6 +202,10 @@ The owner confirmed the same crowded-page feedback for Lens Studio: use focused 
 
 Prioritize a coherent import-to-comparison flow when resuming Lens work. A user should be able to open a photo or demo, change framing or perspective, compare the result and find an export without confronting unrelated forms. Preserve source pixels, depth masks, applied settings, raw drafts, selection/history and recovery when navigating. Retain ownership/cancellation of pending image/model/render work so dismissed or superseded operations cannot apply later unexpectedly. Check desktop/phone discovery, keyboard/modal focus and clear close/back behavior. The original photo-simulation and depth/reconstruction goals remain in force; this records future work and Lens remains ACTIVE.
 
+### Delivery note — 2026-10-15 (#262)
+
+Lens now opens into a focused photo flow with Compare, Open, Depth, Mask exchange, Project & export and Help sections, plus a real expanded workspace. Navigation retains mounted raw fields, proposals/history and owned work; global cancellation/recovery and a direct phone framing shortcut remain reachable. Final source CI passes95 units and102 native browser cases. See `docs/2026-10-15-lens-workspace-integration.md` for integrated evidence, local baseline failures and verification-process limitations. This addresses the information-density milestone; intended-person usefulness and broader depth/reconstruction remain ACTIVE.
+
 ## 17. Composure
 
 ### Owner update — 2026-10-14: deferred pending platform reconsideration
