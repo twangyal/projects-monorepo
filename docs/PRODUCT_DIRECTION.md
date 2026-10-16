@@ -152,6 +152,11 @@ Automatic transcription and alignment are central unfinished capabilities. Evalu
 
 This lyric-automation clarification applies to project 6, Karaoke Studio. Melody Studio retains the full-DAW direction above.
 
+
+### Automatic review timing correction — 2026-10-16 (#271)
+
+Karaoke's automatic review now stages corrected words and start/end seconds together, supports native playhead marks, and auditions the edited interval before a deliberate one-step Apply. Original recognition remains visible and unchanged; all hidden lines must validate, Cancel preserves the editor, and Save remains separate. Timing edits retire owned playback and late native play results. See `docs/2026-10-16-karaoke-review-timing-integration.md` for review, retained local failures and final software gates. Final source/main CI pass 206 Python, 131 TypeScript and 114 browser cases plus project checks; local browser verification passes 114 cases, with the local Python failure retained in that receipt. This improves the correction workflow; real-song alignment quality, physical latency and intended-user correction effort remain unverified in #241. Karaoke stays ACTIVE.
+
 ## 7. Shot Studio
 
 ### Owner update — 2026-10-14: deferred
