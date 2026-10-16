@@ -197,20 +197,124 @@ test('cancel discards only reviewed corrections and a fresh review restores reco
 }));
 
 
-test('saving applied review corrections persists them without rewriting recognition', async ({ page }) => withClip(page, async id => {
+test('saving applied reviewed words and times persists them without rewriting recognition', async ({ page }) => withClip(page, async id => {
   const transcript = await (await page.request.get(`/api/projects/${id}/transcript`)).json();
   await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
   const line = page.getByLabel('Reviewed lyric line 3', { exact: true });
   await expect(line).toBeVisible();
   await line.fill('The words I actually sang');
+  await page.getByLabel('Reviewed start line 3 (seconds)', { exact: true }).fill('12.125');
+  await page.getByLabel('Reviewed end line 3 (seconds)', { exact: true }).fill('13.875');
   await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
   await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
   await expect(page.locator('#message')).toHaveText('Lyrics and timing saved locally.');
   const saved = await (await page.request.get(`/api/projects/${id}`)).json();
-  expect(saved.cues[2]).toEqual({ start: 8.85, end: 11.75, text: 'The words I actually sang' });
+  expect(saved.cues[2]).toEqual({ start: 12.125, end: 13.875, text: 'The words I actually sang' });
   expect(await (await page.request.get(`/api/projects/${id}/transcript`)).json()).toEqual(transcript);
   await page.reload();
   await expect(page.getByLabel('Lyric line 3', { exact: true })).toHaveValue('The words I actually sang');
+  await expect(page.getByLabel('Start line 3', { exact: true })).toHaveValue('12.125');
+  await expect(page.getByLabel('End line 3', { exact: true })).toHaveValue('13.875');
   await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
   await expect(page.getByLabel('Reviewed lyric line 3', { exact: true })).toHaveValue('Sing it back to me');
+}));
+
+test('reviewed timing auditions the staged interval and applies words and times in one recoverable edit', async ({ page }) => withClip(page, async id => {
+  const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  await page.getByLabel('Start line 2', { exact: true }).fill('');
+  await page.getByLabel('Clip title', { exact: true }).fill('My title');
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Keep this paste');
+  const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const start = page.getByLabel('Reviewed start line 3 (seconds)', { exact: true });
+  await expect(start).toBeVisible();
+  await start.fill('12.125');
+  await page.getByLabel('Reviewed end line 3 (seconds)', { exact: true }).fill('13.875');
+  await page.getByLabel('Reviewed lyric line 3', { exact: true }).fill('Corrected final words');
+  await page.getByRole('button', { name: 'Listen to automatic line 3', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  expect(await page.locator('audio').evaluate(a => (a as HTMLAudioElement).currentTime)).toBeGreaterThanOrEqual(12.125);
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused), { timeout: 5000 }).toBe(true);
+  expect(await page.locator('audio').evaluate(a => (a as HTMLAudioElement).currentTime)).toBeCloseTo(13.875, 1);
+  expect(await editor(page)).toEqual(before);
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+  await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  await expect(page.getByLabel('Start line 3', { exact: true })).toHaveValue('12.125');
+  await expect(page.getByLabel('End line 3', { exact: true })).toHaveValue('13.875');
+  await expect(page.getByLabel('Lyric line 3', { exact: true })).toHaveValue('Corrected final words');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click(); expect(await editor(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await expect(page.getByLabel('Start line 3', { exact: true })).toHaveValue('12.125');
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+}));
+
+test('invalid hidden reviewed timing blocks complete apply without blocking another line audition', async ({ page }) => withClip(page, async () => {
+  const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  const start = page.getByLabel('Reviewed start line 1 (seconds)', { exact: true });
+  await start.fill('');
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).check();
+  await expect(start).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeDisabled();
+  await expect(page.locator('#automatic-review-error')).toContainText('Line 1');
+  await page.getByRole('button', { name: 'Listen to automatic line 3', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  await page.getByLabel('Show only uncertain automatic lines', { exact: true }).uncheck();
+  await expect(start).toHaveValue('');
+  await start.fill('0.85000');
+  const end = page.getByLabel('Reviewed end line 1 (seconds)', { exact: true });
+  await end.fill('4.01'); // Next recognized line starts at 3.85.
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeDisabled();
+  await expect(page.locator('#automatic-review-error')).toContainText('Line 2');
+  await end.fill('2.75');
+  await expect(page.getByRole('button', { name: 'Replace lyric cues', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(start).toHaveValue('0.85000');
+  expect(await editor(page)).toEqual(before);
+}));
+
+test('keyboard playhead marks stage exact boundaries on phone and cancel restores recognition', async ({ page }) => withClip(page, async id => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  const before = await editor(page);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  for (const [boundary, at] of [['start', 12.125], ['end', 13.875]] as const) {
+    await page.locator('audio').evaluate((a, at) => { const audio = a as HTMLAudioElement; audio.pause(); audio.currentTime = at; }, at);
+    await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).seeking)).toBe(false);
+    const actual = await page.locator('audio').evaluate(a => (a as HTMLAudioElement).currentTime);
+    expect(actual).toBeCloseTo(at, 5);
+    const button = page.getByRole('button', { name: `Mark reviewed ${boundary} line 3 at playhead`, exact: true });
+    await button.focus(); await button.press('Enter');
+    await expect(page.getByLabel(`Reviewed ${boundary} line 3 (seconds)`, { exact: true })).toHaveValue(String(actual));
+  }
+  await expect(page.locator('#srt-review-list li').nth(2).locator('strong')).toContainText('00:00:08,850 --> 00:00:11,750');
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(page.getByLabel('Reviewed start line 3 (seconds)', { exact: true })).toHaveValue('12.125');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/karaoke271-review-phone.png', fullPage: true });
+  await page.getByRole('button', { name: 'Cancel lyric import', exact: true }).click();
+  expect(await editor(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await expect(page.getByLabel('Reviewed start line 3 (seconds)', { exact: true })).toHaveValue('8.85');
+  await expect(page.getByLabel('Reviewed end line 3 (seconds)', { exact: true })).toHaveValue('11.75');
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+}));
+
+test('timing edits retire held native audition and a late play result cannot restart it', async ({ page }) => withClip(page, async () => {
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.locator('audio').evaluate(audio => {
+    const element = audio as HTMLAudioElement, native = element.play.bind(element);
+    element.play = () => new Promise<void>((resolve, reject) => {
+      native().then(() => { (window as Window & { releaseTimingPlay?: () => void }).releaseTimingPlay = resolve; }, reject);
+    });
+  });
+  await page.getByRole('button', { name: 'Repeat automatic line 3', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => typeof (window as Window & { releaseTimingPlay?: () => void }).releaseTimingPlay)).toBe('function');
+  await page.getByLabel('Reviewed start line 3 (seconds)', { exact: true }).fill('9.125');
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  await page.evaluate(() => (window as Window & { releaseTimingPlay?: () => void }).releaseTimingPlay!());
+  await expect(page.getByRole('button', { name: 'Pause reviewed passage', exact: true })).toBeDisabled();
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  await expect(page.getByLabel('Reviewed start line 3 (seconds)', { exact: true })).toHaveValue('9.125');
+  await expect(page.locator('#srt-review')).toBeVisible();
 }));

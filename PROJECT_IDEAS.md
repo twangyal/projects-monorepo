@@ -104,6 +104,8 @@ Integration #242 reviews the completed automatic English lyrics, word highlighti
 
 Acceptance #253: reviewed word correction passes source and main CI: 206 Python / 128 TypeScript / 109 browser cases plus project checks. [Acceptance](docs/2026-10-14-review-and-artwork-acceptance.md) records evidence and remaining quality limits.
 
+Milestone #271 lets Karaoke users correct automatic words and line times together while listening, mark native playhead boundaries, audition staged intervals and apply one undoable edit. Original recognition and saved cues remain separate. This software flow does not establish automatic-alignment accuracy or real-user correction-effort gains; #241 and the ACTIVE destination remain open.
+
 ## 7. Direct a movie in VR
 
 Path: apps/shot-studio

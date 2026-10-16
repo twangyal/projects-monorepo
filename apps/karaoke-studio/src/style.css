@@ -822,3 +822,8 @@ button {
 #srt-review-list textarea { width: 100%; min-height: 56px; resize: vertical; }
 #srt-review-list details { margin: .5rem 0; font-size: .85rem; }
 #automatic-review-error { color: #8a3012; }
+
+.automatic-review-timing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; margin-top: .8rem; }
+.automatic-review-timing input { width: 100%; min-width: 0; min-height: 44px; }
+.automatic-review-timing button { width: 100%; min-height: 44px; white-space: normal; }
+@media (max-width: 600px) { .automatic-review-timing { grid-template-columns: minmax(0, 1fr); } }

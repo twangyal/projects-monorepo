@@ -1,0 +1,9 @@
+# Correct automatic line timing during review — #271
+
+The existing recognition review now stages literal words plus raw start/end strings. All-line validation is detached and atomic; single-line audition admits only that interval so other incomplete corrections do not prevent listening. The unchanged PracticeController owns native seeking, play, boundaries, pause/resume and retirement. Each timing change retires the current reviewed audition; stale native play completion cannot adopt edited times. No automatic playback follows correction.
+
+Original recognized text and times remain visible. Native playhead marking uses the current loaded track's clock, without rounding or latency compensation. Raw timing fields accept finite decimal seconds (including exponent notation), retain invalid spelling, and reject blanks, nonfinite values, overlap, reversed/zero intervals and out-of-clip times before Apply. Hidden lines are validated too. Phone layout stacks timing groups; controls have explicit line/boundary labels and native keyboard buttons.
+
+Apply uses the established complete-review and LyricHistory path. It records exact prior main-editor numeric spellings, replaces words/times as one unsaved edit, and preserves title and unapplied pasted words. Save is separate and leaves original recognition unchanged. Cancel/replacement clears staged review, not current lyrics. Existing clip/track/job/page lifecycle ownership is retained. No backend, schema, model, dependency, security or workflow changes.
+
+Verification and retained first failures are recorded in the repository integration receipt. Synthetic recognized words and separated tone fixtures exercise real HTTP, WAV/native media, storage and video paths; they do not measure singing recognition, alignment quality, device latency or user correction effort. Project #6 stays ACTIVE; #241 remains open for those real-song measurements.
