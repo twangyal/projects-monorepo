@@ -86,6 +86,8 @@ Milestone #266 adds a worker-backed, unit-aware static tensile swatch comparison
 
 Milestone #267 adds an independent worker-backed cantilever bending comparison with illustrative directional N·m coefficients, cubic elements, same-scale curves and explicit signed/magnitude reaction results. This extends the material-law foundation without changing garment drape or claiming calibrated cloth. Membrane coupling/contact/real-specimen validation remain unfinished; Clothing stays ACTIVE.
 
+Milestone #268 adds an independent coupled orthotropic membrane comparison:0°/45°/90°grain, transverse contraction/shear, SI energy/resultants, two mesh resolutions/diagonals and numerical JSON. Profiles remain illustrative; affine patch consistency is not general mesh convergence. Garment dynamics/contact/material calibration remain unfinished and Clothing stays ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`

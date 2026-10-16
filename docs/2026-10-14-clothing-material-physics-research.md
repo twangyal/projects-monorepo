@@ -71,3 +71,7 @@ The controlled tensile harness now implements a narrowly stated static axial str
 ### Independent bending foundation — #267 (2026-10-15)
 
 A separate small-deflection Euler–Bernoulli cantilever now exercises dimensional bending energy and EI=D*width,8/16 cubic elements, signed reactions, independent density and same-scale numerical export. Coefficients remain explicitly illustrative. See `apps/clothing-studio/docs/2026-10-15-bending-swatches.md`. This is a reduced strip, not a shell law, dynamic mesh convergence result, measured specimen calibration or garment integration; the original research acceptance gaps remain.
+
+### Coupled in-plane foundation — #268 (2026-10-16)
+
+The independent membrane experiment now defines a stable orthotropic linear energy with directional stretch, coupling and engineering shear in N/m; fixed flat material coordinates,0/45/90degree grain, constant-strain triangles and both diagonals/resolutions are inspectable. The affine traction patch tests numerical assembly and contraction/bias response, not general nonuniform convergence, nonlinear cloth or dynamic garment integration. See `apps/clothing-studio/docs/2026-10-16-membrane-swatches.md`. Real-material fitting/held-out observations and shell bending, timestep/contact/construction gates above remain required; the current garment solver is unchanged.

@@ -1,3 +1,4 @@
+import {mountMembrane} from './membrane-view.ts';
 import {mountBending} from './bending-view.ts';
 import {mountTensile} from './tensile-view.ts';
 import { mountWorkspace } from './workspace.ts';
@@ -390,6 +391,7 @@ window.addEventListener('pagehide', retireLoad);
 mountWorkspace();
 mountTensile(element('workspace-body'));
 mountBending(element('workspace-body'));
+mountMembrane(element('workspace-body'));
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;

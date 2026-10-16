@@ -96,6 +96,10 @@ In **Body & drape**, expand **Tensile swatch comparison** to compare two clearly
 
 **Body & drape → Bending swatch comparison** compares two illustrative directional cantilevers under a small end force. Adjust dimensions, grain and8/16 cubic beam elements, inspect the actual-scale curve, and download complete SI results including energy, rotation and signed support reactions plus labeled magnitudes. Cancellation, invalidation and retry preserve the garment and pending photo/import owners. These bending coefficients are independent of tensile stiffness and density; no garment-physics calibration or fit is established. See [model, numerical checks and limits](docs/2026-10-15-bending-swatches.md).
 
+### Coupled membrane swatches (#268)
+
+**Body & drape → Membrane swatch comparison** compares illustrative warp/weft/bias response under uniform axial traction, including transverse contraction and engineering shear. Choose4×4/8×8 cells and either triangle diagonal, inspect actual-scale meshes, and export complete SI profiles/nodes/strains/stress-resultants/energy/reactions. The left edge can contract; this is a small-strain affine membrane experiment, not calibrated cloth or a garment-solver change. Current-input-only export and owned cancellation/retry preserve the garment. See [model, boundary convention and limits](docs/2026-10-16-membrane-swatches.md).
+
 ### Automatic tech pack (#227)
 
 Below the 3D editor, **Factory-ready tech pack** is generated from the design and updates with every change.
