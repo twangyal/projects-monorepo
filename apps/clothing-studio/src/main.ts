@@ -187,7 +187,7 @@ function edit(transform: (current: Project) => Project) {
   startupTouched = true; retireLoad();
   cancelGesture(); commit(transform(project));
 }
-function editorInputIntent() { startupTouched = true; retireLoad(); }
+function editorInputIntent(event:Event) { if(event.target instanceof Element&&event.target.closest('[data-independent-experiment]'))return; startupTouched = true; retireLoad(); }
 app.addEventListener('input', editorInputIntent, true);
 app.addEventListener('change', editorInputIntent, true);
 for (const id of ['title', 'note']) input(id).addEventListener('input', () => {

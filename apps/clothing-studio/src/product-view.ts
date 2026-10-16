@@ -133,7 +133,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   let assetGeneration = 0;
   const retireAssets = (event?: Event) => {
     // Opening/closing a view does not change the design or retire its pending image decode.
-    if (event?.target instanceof Element && event.target.closest('[data-workspace-navigation]')) return;
+    if (event?.target instanceof Element && event.target.closest('[data-workspace-navigation],[data-independent-experiment]')) return;
     assetGeneration++;
   };
   const root = document.getElementById('app')!;
