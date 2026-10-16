@@ -65,6 +65,8 @@ test('colorways are saved, compared as renders, costed into a range plan, applie
   expect(workbook.bytes.subarray(0, 2).toString()).toBe('PK');
   expect(workbook.bytes.toString('latin1')).toContain('Ecru and navy');
 
+  // Undo schedules a new native save; export completion is not its durability boundary.
+  await expect(page.locator('#save-state')).toHaveText('Locally saved');
   await page.reload();
   await expect(cards).toHaveCount(2);
   await page.setViewportSize({ width: 390, height: 844 });
