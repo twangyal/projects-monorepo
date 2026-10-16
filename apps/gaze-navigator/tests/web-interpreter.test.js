@@ -167,3 +167,17 @@ test('a name qualified in brackets right after the spoken words ranks below the 
   // Asking for the qualified one still finds it.
   assert.deepEqual(interpret('choose Ada Lovelace microarchitecture', suggestions), { type: 'activate', targetId: 2 });
 });
+
+
+test('spoken selection and explicit insertion preserve wording and ordinary dictation', () => {
+  const page = { elements: [element(1, 'Message', 'textbox', { editable: true })], focusedId: 1 };
+  for (const [said, position] of [['select all text', 'all'], ['move cursor to the start', 'start'], ['move the cursor to end', 'end']]) {
+    assert.deepEqual(interpret(said, page), { type: 'select-text', targetId: 1, position });
+  }
+  assert.deepEqual(interpret('insert Hi, Sam! at the cursor', page).edit, { kind: 'insert-selection', text: 'Hi, Sam!', requireSelection: false });
+  assert.deepEqual(interpret('replace selected text with Friday!', page).edit, { kind: 'insert-selection', text: 'Friday!', requireSelection: true });
+  assert.deepEqual(interpret('insert hello', page).edit, { kind: 'append', text: 'hello' });
+  const ambiguous = interpret('select all text', { elements: [element(1, 'Name', 'textbox', { editable: true, distance: 5 }), element(2, 'Message', 'textbox', { editable: true })] });
+  assert.equal(ambiguous.type, 'clarify');
+  assert.deepEqual(ambiguous.choose(2), { type: 'select-text', targetId: 2, position: 'all' });
+});

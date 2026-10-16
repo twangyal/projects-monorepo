@@ -312,3 +312,89 @@ test('a BFCache return shows stopped speech and permits an explicit restart', as
   await page.evaluate(() => window.__speech.fail('not-allowed'));
   await expect(panel(page).getByRole('button', { name: 'Start listening' })).toHaveAttribute('aria-pressed', 'false');
 });
+
+
+test('spoken selection replaces and inserts inside website text with exact caret and undo', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  const field = page.getByLabel('Message');
+  await field.fill('Meet Tuesday at noon');
+  await look(page, field);
+  await field.evaluate(element => {
+    element.focus();
+    element.setSelectionRange(5, 12);
+    window.__fieldEvents = [];
+    for (const type of ['input', 'change']) element.addEventListener(type, event => window.__fieldEvents.push([event.type, element.value]));
+  });
+  const say = text => page.evaluate(text => window.__speech.say(text), text);
+  await say('replace selected text with Friday');
+  await expect(field).toHaveValue('Meet Friday at noon');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([11, 11]);
+  expect(await page.evaluate(() => window.__fieldEvents)).toEqual([['input', 'Meet Friday at noon'], ['change', 'Meet Friday at noon']]);
+  await say('undo');
+  await expect(field).toHaveValue('Meet Tuesday at noon');
+  await field.evaluate(element => element.setSelectionRange(5, 5));
+  await say('insert "next " at the cursor');
+  await expect(field).toHaveValue('Meet next Tuesday at noon');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([10, 10]);
+  await say('move cursor to the start');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([0, 0]);
+  await say('move cursor to the end');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([25, 25]);
+  await say('select all text');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([0, 25]);
+  await say('replace selected text with Done!');
+  await expect(field).toHaveValue('Done!');
+  await say('undo');
+  await expect(field).toHaveValue('Meet next Tuesday at noon');
+  await say('undo');
+  await expect(field).toHaveValue('Meet Tuesday at noon');
+  await say('undo');
+  await expect(status(page)).toContainText('Nothing to undo');
+});
+
+test('spoken selection refuses incompatible fields and a missing selected range without text changes', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  const field = page.getByLabel('Your name');
+  await field.fill('Keep this');
+  await look(page, field);
+  await field.evaluate(element => { element.focus(); element.setSelectionRange(2, 2); });
+  const say = text => page.evaluate(text => window.__speech.say(text), text);
+  await say('replace selected text with lost');
+  await expect(status(page)).toContainText('No text is selected');
+  await say('undo');
+  await expect(status(page)).toContainText('Nothing to undo');
+  await page.evaluate(() => window.__speech.begin());
+  await field.evaluate(element => { element.readOnly = true; });
+  await say('insert lost at the cursor');
+  await expect(status(page)).toContainText('does not support');
+  await expect(field).toHaveValue('Keep this');
+  await field.evaluate(element => { element.readOnly = false; });
+  await field.evaluate(element => { element.type = 'email'; });
+  await look(page, field);
+  await say('select all text');
+  await expect(status(page)).toContainText('does not support');
+  await say('insert lost at the cursor');
+  await expect(status(page)).toContainText('does not support');
+  await expect(field).toHaveValue('Keep this');
+});
+
+test('native selection respects pause and direct command entry keeps the website selection', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  const field = page.getByLabel('Your name');
+  await field.fill('Ada Byron');
+  await look(page, field);
+  await field.evaluate(element => { element.focus(); element.setSelectionRange(4, 9); });
+  await page.keyboard.press('Alt+Shift+G');
+  await page.keyboard.type('replace selected text with Lovelace');
+  await page.keyboard.press('Enter');
+  await expect(field).toHaveValue('Ada Lovelace');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  await look(page, field);
+  await page.evaluate(() => window.__speech.say('pause'));
+  await page.evaluate(() => window.__speech.say('select all text'));
+  await expect(status(page)).toContainText('Paused');
+  await page.evaluate(() => window.__speech.say('insert lost at the cursor'));
+  await expect(field).toHaveValue('Ada Lovelace');
+});

@@ -28,7 +28,26 @@ export function readValue(element) {
   return 'value' in element && element.tagName !== 'BUTTON' ? element.value : element.textContent;
 }
 
-export function writeValue(element, value) {
+// Selection APIs are deliberately limited to native, writable text controls. Rich-text
+// editors and input types such as email/number do not expose compatible offsets.
+export function readSelection(element) {
+  if (!['INPUT', 'TEXTAREA'].includes(element.tagName) || element.readOnly ||
+      element.matches(':disabled') || element.closest('[inert]') || element.getAttribute('aria-disabled') === 'true') return null;
+  const start = element.selectionStart;
+  const end = element.selectionEnd;
+  return Number.isInteger(start) && Number.isInteger(end) ? { start, end } : null;
+}
+
+export function selectText(element, position) {
+  if (!readSelection(element)) return { ok: false, message: 'Selection commands need a writable native text field. This field does not support them.' };
+  const length = element.value.length;
+  const start = position === 'end' ? length : 0;
+  element.focus({ preventScroll: true });
+  element.setSelectionRange(start, position === 'all' ? length : start);
+  return { ok: true, message: position === 'all' ? 'All text selected.' : `Cursor moved to the ${position}.` };
+}
+
+export function writeValue(element, value, { caret = value.length } = {}) {
   element.focus({ preventScroll: true });
   if ('value' in element && element.tagName !== 'BUTTON') setNativeValue(element, value);
   else element.textContent = value;
@@ -36,7 +55,7 @@ export function writeValue(element, value) {
   element.dispatchEvent(new view.InputEvent('input', { bubbles: true, inputType: 'insertText' }));
   element.dispatchEvent(new view.Event('change', { bubbles: true }));
   if (typeof element.setSelectionRange === 'function' && element.type !== 'number' && element.type !== 'email') {
-    element.setSelectionRange(value.length, value.length);
+    element.setSelectionRange(caret, caret);
   }
 }
 

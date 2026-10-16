@@ -211,3 +211,41 @@ test('confirmation refuses a target removed after the question', () => {
   assert.match(controller.handle('confirm', context).message, /no longer on the page/);
   assert.deepEqual(page.log, []);
 });
+
+
+test('selection-only commands keep text history; insertion is exact and undoable', () => {
+  const page = fakePage();
+  const field = page.node('Message');
+  let selection = { start: 5, end: 12 };
+  page.actions.readSelection = () => selection;
+  page.actions.selectText = (_, position) => { page.log.push(['selection', position]); return { ok: true, message: 'Selected.' }; };
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, field, { role: 'textbox', editable: true })], focusedId: 1 };
+  page.values.set(field, 'Meet Tuesday at noon');
+  controller.handle('select all text', context);
+  assert.match(controller.handle('undo', context).message, /Nothing to undo/);
+  controller.handle('replace selected text with Friday', context);
+  assert.equal(page.values.get(field), 'Meet Friday at noon');
+  controller.handle('undo', context);
+  assert.equal(page.values.get(field), 'Meet Tuesday at noon');
+  selection = { start: 5, end: 5 };
+  controller.handle('insert "next " at the cursor', context);
+  assert.equal(page.values.get(field), 'Meet next Tuesday at noon');
+  controller.handle('pause', context);
+  assert.match(controller.handle('select all text', context).message, /Paused/);
+  assert.equal(page.log.filter(row => row[0] === 'selection').length, 1);
+});
+
+test('unsupported or empty selections refuse without creating an undo entry', () => {
+  const page = fakePage();
+  const field = page.node('Message');
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, field, { role: 'textbox', editable: true })], focusedId: 1 };
+  page.values.set(field, 'Keep this');
+  for (const selection of [null, { start: 3, end: 3 }]) {
+    page.actions.readSelection = () => selection;
+    assert.equal(controller.handle('replace selected text with lost', context).tone, 'error');
+    assert.equal(page.values.get(field), 'Keep this');
+    assert.match(controller.handle('undo', context).message, /Nothing to undo/);
+  }
+});

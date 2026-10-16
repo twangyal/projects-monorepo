@@ -257,3 +257,26 @@ test('registered page toggle leaves keyboard command entry free and retains webs
  await page.keyboard.press('Alt+Shift+G');await page.keyboard.type('pause');await page.keyboard.press('Enter');await expect(status(page)).toContainText(/paused/i);await expect(field).toHaveValue('unfinished website draft');await expect(ordinary).toHaveValue('unfinished navigator draft');
  expect(await control.evaluate(tab=>chrome.runtime.sendMessage({type:'gaze:status',tabId:tab}),id)).toEqual({on:true});
 });
+
+
+test('extension corrects selected native text on a strict-CSP website and keeps undo', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/contact');
+  await expect(status(page)).toContainText('Ready');
+  const field = page.getByLabel('Message');
+  await field.fill('Meet Tuesday at noon');
+  await look(page, field);
+  await field.evaluate(element => { element.focus(); element.setSelectionRange(5, 12); });
+  await page.keyboard.press('Alt+Shift+G');
+  await page.keyboard.type('replace selected text with Friday');
+  await page.keyboard.press('Enter');
+  await expect(field).toHaveValue('Meet Friday at noon');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([11, 11]);
+  await look(page, field);
+  await typeInstruction(page, 'select all text');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([0, 19]);
+  await typeInstruction(page, 'undo');
+  await expect(field).toHaveValue('Meet Tuesday at noon');
+  expect(await page.evaluate(() => [sessionStorage.length, localStorage.length])).toEqual([0, 0]);
+});

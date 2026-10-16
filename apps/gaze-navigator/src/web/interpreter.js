@@ -210,6 +210,19 @@ export function interpret(utterance, context = { elements: [] }) {
 
   // Text editing keeps the user's original wording, capitalization and punctuation.
   let match;
+  if (/^select all(?: text)?$/.test(text)) {
+    return chooseField(null, context, element => ({ type: 'select-text', targetId: element.id, position: 'all' }));
+  }
+  if ((match = /^move (?:the )?(?:cursor|caret) to (?:the )?(start|end)$/.exec(text))) {
+    const position = match[1];
+    return chooseField(null, context, element => ({ type: 'select-text', targetId: element.id, position }));
+  }
+  if ((match = /^insert\s+(.+)\s+at (?:the )?(?:cursor|caret)$/i.exec(command))) {
+    return chooseField(null, context, edit('insert-selection', { text: unquote(match[1]), requireSelection: false }));
+  }
+  if ((match = /^replace (?:the )?selected text with\s+(.+)$/i.exec(command))) {
+    return chooseField(null, context, edit('insert-selection', { text: unquote(match[1]), requireSelection: true }));
+  }
   if ((match = /^(?:search(?: for)?|look up|look for|find)\s+(.+)$/i.exec(command))) {
     const query = unquote(match[1]);
     const act = element => ({ type: 'search', targetId: element.id, text: query });

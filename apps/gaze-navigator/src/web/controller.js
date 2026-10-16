@@ -28,7 +28,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       if (confirmable(action, target)) {
@@ -44,13 +44,14 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     let result;
     switch (action.type) {
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'submit': result = actions.submit(element); break;
+      case 'select-text': result = actions.selectText(element, action.position); break;
       case 'select-option': result = actions.selectOption(element, action.optionIndex); break;
       case 'search': {
         remember(element);
@@ -78,14 +79,24 @@ export function createController({ window, actions = pageActions, interpret = in
   function edit(element, name, change) {
     const before = actions.readValue(element) ?? '';
     const values = history.get(element) ?? [];
-    const after = applyEdit(before, change, values);
+    const selection = change.kind === 'insert-selection' ? actions.readSelection(element) : null;
+    if (change.kind === 'insert-selection' && !selection) {
+      return { ok: false, message: 'Insertion commands need a writable native text field. This field does not support them.' };
+    }
+    if (change.kind === 'insert-selection' && change.requireSelection && selection.start === selection.end) {
+      return { ok: false, message: 'No text is selected. Say “select all text” or select the words first.' };
+    }
+    const after = change.kind === 'insert-selection'
+      ? before.slice(0, selection.start) + change.text + before.slice(selection.end)
+      : applyEdit(before, change, values);
     const label = name || 'the field';
     if (after === null) {
       return { ok: false, message: change.kind === 'undo' ? `Nothing to undo in ${label}.` : `"${change.find}" was not found in ${label}.` };
     }
     if (change.kind === 'undo') values.pop();
     else remember(element);
-    actions.writeValue(element, after);
+    actions.writeValue(element, after, change.kind === 'insert-selection'
+      ? { caret: selection.start + change.text.length } : undefined);
     return { ok: true, message: after ? `${label}: ${after}` : `${label} cleared.` };
   }
 

@@ -54,6 +54,12 @@ Serve this directory as above and open `http://localhost:4173/practice-site/inde
 
 Discovery reaches controls inside open shadow roots (web components) and same-origin iframes, including pointer input over those frames. It also finds script-only "Clickable" elements that set a pointer cursor without any role. Cross-origin frames inside the circle are listed as content the navigator cannot reach. Try it on the practice site's **Help** page. The panel keeps tracking and settings in a **Tracking and settings** disclosure, and opens the element list by default only on tall screens, so it covers less of small screens.
 
+### Correcting a native text selection
+
+In a writable text input or textarea, say **“select all text”**, **“move cursor to the start”**, or **“move cursor to the end”**. Say **“insert Hello at the cursor”** to insert at the caret (or replace the selected range), or **“replace selected text with Hello”** to require a nonempty selection. Quoted text preserves intentional spaces: `insert "next " at the cursor`. These explicit insertions add no automatic spaces. Ordinary `type Hello` / `insert Hello` still append with the existing dictation spacing.
+
+The focused field must be in the gaze circle; otherwise the usual nearby-field choice and clarification apply. Insertion is one text Undo step, while selecting/moving the cursor adds none. Use speech or Alt+Shift+G to keep a website's selection while issuing a correction. These commands refuse read-only/disabled fields, rich-text editors and native input types without selection offsets (for example email and number); existing whole-field dictation remains available where supported. Physical speech/gaze usability is still unverified.
+
 Execution never opens `javascript:` or other non-web link schemes, writes fields through native value setters plus `input`/`change` events so framework-managed forms see the change, keeps a 20-step per-field undo history, and acts only on elements captured inside the circle (plus the page's single search field for "search for…"). The panel lives in an open shadow root that context capture ignores, and a spacer reserves room so it never permanently covers the end of a page.
 
 Interpretation quality is measured on a fixed suite: `npm run evaluate:instructions` scores 120 tuned phrasings (120/120) and 50 held-out phrasings (34/50, 68%). Both suites have zero wrong page actions; every miss is a question or an explanation. See [the evaluation](docs/2026-10-12-instruction-suite-evaluation.md). This is the baseline a model interpreter must beat.
