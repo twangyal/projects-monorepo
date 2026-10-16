@@ -126,6 +126,10 @@ Evaluate representative fabrics on the same garment and body so observed differe
 
 Body & drape now includes an independent static tensile comparison with two illustrative directional profiles, explicit SI mass/energy/force response,8/16-element checks, captured numerical JSON and owned cancellation. Material extensional coefficient and coupon force/extension stiffness are distinguished. Local and source/main CI pass121 units and146 native browser cases with project checks; see `docs/2026-10-15-clothing-tensile-integration.md`. The current garment solver stays unchanged. This axial foundation does not deliver membrane shear, bending/contact, calibrated materials or physical fit; the above research gates and ACTIVE destination remain in force.
 
+### Bending-law foundation delivered — 2026-10-15 (#267)
+
+Body & drape also offers an independent static cantilever comparison with two illustrative directional bending profiles, dimensioned D/EI, cubic curves, signed support reactions, explicit magnitudes, numerical JSON and owned cancellation. Local and source/main CI pass127 units and151 native browser cases with project checks. See `docs/2026-10-15-clothing-bending-integration.md`. This beam experiment supplies a controlled bending foundation alongside266; membrane shear/coupling, nonlinear garment dynamics/contact and measured-material/physical-fit validation remain unfinished. Existing garment drape and the full ACTIVE destination remain unchanged.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
