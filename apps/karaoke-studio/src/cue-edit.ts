@@ -42,8 +42,8 @@ export function shiftCues(cues: Cue[], duration: number, rawSeconds: string): Cu
   if (!before.length) throw new Error('Create at least one valid lyric line before shifting timing.');
   const delta = Number(raw);
   const after = validateCues(before.map(cue => ({ ...cue, start: cue.start + delta, end: cue.end + delta })), duration);
-  if (after.every((cue, index) => cue.start === before[index].start && cue.end === before[index].end)) {
-    throw new Error('The shift is too small to change these times. Choose a larger number of seconds.');
+  if (after.some((cue, index) => cue.start === before[index].start || cue.end === before[index].end)) {
+    throw new Error('The shift is too small to change every boundary. Choose a larger number of seconds.');
   }
   return after;
 }

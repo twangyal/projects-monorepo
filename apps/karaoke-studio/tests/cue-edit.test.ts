@@ -85,6 +85,7 @@ test('whole-clip shifts refuse invalid offsets and out-of-clip proposals without
   const source = [{ start: 1, end: 2, text: 'First' }, { start: 3.5, end: 4.75, text: 'Next' }], before = structuredClone(source);
   for (const shift of ['', ' ', '0', '-0', 'NaN', 'Infinity', '0x1', '1e309', '-1.001', '1.251', '1e-300']) assert.throws(() => shiftCues(source, 6, shift));
   assert.deepEqual(source, before);
+  assert.throws(() => shiftCues([{ start: 0, end: 1, text: 'First' }, { start: 2, end: 3, text: 'Second' }], 4, '1e-20'), /too small/);
   assert.deepEqual(shiftCues(source, 6, '-1')[0], { start: 0, end: 1, text: 'First' });
   assert.deepEqual(shiftCues(source, 6, '1.25')[1], { start: 4.75, end: 6, text: 'Next' });
 });

@@ -183,7 +183,7 @@ test('whole-clip shift preserves words gaps raw history and drafts before delibe
 
 test('refused shifts preserve native playback and pending import while a valid shift retires both', async ({ page }) => {
   await open(page);
-  for (const [label, value] of [['Start line 1', '1'], ['End line 1', '2'], ['Start line 2', '3.5'], ['End line 2', '4.75']]) await page.getByLabel(label, { exact: true }).fill(value);
+  for (const [label, value] of [['Start line 1', '0'], ['End line 1', '2'], ['Start line 2', '3.5'], ['End line 2', '4.75']]) await page.getByLabel(label, { exact: true }).fill(value);
   await page.getByLabel('Import timed lyrics (SRT)', { exact: true }).setInputFiles({ name: 'pending.srt', mimeType: 'application/x-subrip', buffer: Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nPending imported words\n') });
   await expect(page.locator('#srt-review')).toBeVisible();
   await page.getByRole('button', { name: 'Repeat range', exact: true }).click();
@@ -192,7 +192,7 @@ test('refused shifts preserve native playback and pending import while a valid s
   const before = await timingEditor(page);
   await page.getByText('Shift all lyric timing', { exact: true }).click();
   const shift = page.getByLabel('Timing shift (seconds)', { exact: true });
-  for (const value of ['', '0', 'oops', 'Infinity', '-1.01', '1.26']) {
+  for (const value of ['', '0', 'oops', 'Infinity', '1e-20', '-1.01', '1.26']) {
     await shift.fill(value); await page.getByRole('button', { name: 'Shift all lyric times', exact: true }).click();
     await expect(shift).toHaveValue(value);
     await expect(page.locator('#timing-shift-status')).not.toHaveText('');
@@ -203,7 +203,7 @@ test('refused shifts preserve native playback and pending import while a valid s
   await shift.fill('.25'); await page.getByRole('button', { name: 'Shift all lyric times', exact: true }).click();
   await expect(page.locator('#srt-review')).toBeHidden();
   await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
-  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('1.25');
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('0.25');
 });
 
 test('phone keyboard shift keeps an invalid title and refuses incomplete timing without consuming Redo', async ({ page }) => {
