@@ -280,3 +280,57 @@ test('extension corrects selected native text on a strict-CSP website and keeps 
   await expect(field).toHaveValue('Meet Tuesday at noon');
   expect(await page.evaluate(() => [sessionStorage.length, localStorage.length])).toEqual([0, 0]);
 });
+
+test('extension ordinary edits preserve a focused readonly field and recheck confirmed search', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/contact');
+  await expect(status(page)).toContainText('Ready');
+  const field = page.getByLabel('Message');
+  await field.fill('Keep this');
+  await field.evaluate(element => {
+    element.readOnly = true;
+    element.focus();
+    element.style.cssText = 'position:fixed;top:50px;left:0;width:120px;height:45px';
+    const other = document.createElement('textarea');
+    other.id = 'extension-neighbor';
+    other.setAttribute('aria-label', 'Other message');
+    other.value = 'Unrelated';
+    other.style.cssText = 'position:fixed;top:50px;left:130px;width:120px;height:45px';
+    document.body.append(other);
+    window.__extensionEdits = [];
+    for (const node of [element, other]) for (const type of ['input', 'change']) {
+      node.addEventListener(type, event => window.__extensionEdits.push(event.type));
+    }
+    window.__submitted = 0;
+    const form = document.createElement('form');
+    element.before(form);
+    form.append(element);
+    form.addEventListener('submit', event => { event.preventDefault(); window.__submitted++; });
+  });
+  await page.mouse.move(125, 70);
+  await expect(panel(page).locator('.context li', { hasText: 'Other message' })).toBeAttached();
+  await page.keyboard.press('Alt+Shift+G');
+  await page.keyboard.type('clear it');
+  await page.keyboard.press('Enter');
+  await expect(status(page)).toContainText('not writable');
+  await expect(field).toHaveValue('Keep this');
+  await expect(page.locator('#extension-neighbor')).toHaveValue('Unrelated');
+  // Search may deliberately select a search field; this page has none. Its
+  // ordinary textarea must still be writable when confirmation is accepted.
+  await field.evaluate(element => { element.readOnly = false; element.focus(); });
+  await look(page, field);
+  await typeInstruction(page, 'find replacement');
+  await expect(status(page)).toContainText('may have consequences');
+  await field.evaluate(element => { element.readOnly = true; });
+  await typeInstruction(page, 'confirm');
+  await expect(status(page)).toContainText('not writable');
+  await expect(field).toHaveValue('Keep this');
+  await expect(page.locator('#extension-neighbor')).toHaveValue('Unrelated');
+  expect(await page.evaluate(() => window.__extensionEdits)).toEqual([]);
+  expect(await page.evaluate(() => window.__submitted)).toBe(0);
+  await field.evaluate(element => { element.readOnly = false; element.focus(); });
+  await look(page, field);
+  await typeInstruction(page, 'undo');
+  await expect(status(page)).toContainText('Nothing to undo');
+});

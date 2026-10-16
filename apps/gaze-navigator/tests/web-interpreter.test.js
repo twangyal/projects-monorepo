@@ -198,3 +198,22 @@ test('terminal speech punctuation does not turn explicit insertion into append',
       { kind: 'insert-selection', text: 'Hi, Sam!', requireSelection: false });
   }
 });
+
+
+test('ordinary text commands retain focused noneditable text fields instead of editing neighbors', () => {
+  const page = { elements: [element(1, 'Locked message', 'textbox'), element(2, 'Other message', 'textbox', { editable: true })], focusedId: 1 };
+  for (const said of ['type hello', 'clear it', 'replace Tuesday with Friday', 'change it to Hello', 'delete last word', 'new line', 'undo']) {
+    assert.equal(interpret(said, page).targetId, 1, said);
+  }
+  assert.equal(interpret('type hello into other message', page).targetId, 2);
+  assert.equal(interpret('type hello in the locked message field', page).targetId, 1);
+  assert.equal(interpret('change locked message to Hello', page).targetId, 1);
+});
+
+test('named readonly fields participate in target resolution without redirecting fuzzy matches', () => {
+  const page = { elements: [element(1, 'Message', 'textbox'), element(2, 'Message notes', 'textbox', { editable: true })], focusedId: 2 };
+  assert.equal(interpret('type hello into message', page).targetId, 1);
+  assert.equal(interpret('clear the message field', page).targetId, 1);
+  assert.equal(interpret('change message to Hello', page).targetId, 1);
+  assert.equal(interpret('type hello into message notes', page).targetId, 2);
+});

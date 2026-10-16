@@ -424,3 +424,78 @@ test('fresh speech context keeps a focused read-only field from redirecting into
   await expect(field).toHaveValue('Locked');
   await expect(page.locator('#writable-neighbor')).toHaveValue('Keep');
 });
+
+test('ordinary speech refuses a focused read-only field without editing the writable neighbor', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  const field = page.getByLabel('Your name');
+  await field.fill('Keep Tuesday');
+  await field.evaluate(element => {
+    element.readOnly = true;
+    element.focus();
+    element.style.cssText = 'position:fixed;top:50px;left:0;width:120px;height:45px';
+    const other = document.createElement('input');
+    other.id = 'ordinary-neighbor';
+    other.setAttribute('aria-label', 'Other message');
+    other.value = 'Unrelated';
+    other.style.cssText = 'position:fixed;top:50px;left:130px;width:120px;height:45px';
+    document.body.append(other);
+    window.__ordinaryEvents = [];
+    for (const node of [element, other]) for (const type of ['input', 'change']) {
+      node.addEventListener(type, event => window.__ordinaryEvents.push([event.type, node.value]));
+    }
+  });
+  await page.mouse.move(125, 70);
+  await expect(panel(page).locator('.context li', { hasText: 'Other message' })).toBeAttached();
+  const say = text => page.evaluate(text => window.__speech.say(text), text);
+  for (const command of ['type hello', 'clear it', 'replace Tuesday with Friday', 'delete last word', 'new line', 'undo']) {
+    await page.evaluate(() => window.__speech.begin());
+    await say(command);
+    await expect(status(page)).toContainText('not writable');
+  }
+  await expect(field).toHaveValue('Keep Tuesday');
+  await expect(page.locator('#ordinary-neighbor')).toHaveValue('Unrelated');
+  expect(await page.evaluate(() => window.__ordinaryEvents)).toEqual([]);
+  await say('type hello into other message');
+  await expect(page.locator('#ordinary-neighbor')).toHaveValue('Unrelated hello');
+  await expect(field).toHaveValue('Keep Tuesday');
+});
+
+test('late native and ARIA locks refuse speech without consuming text undo or dispatching edits', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  const field = page.getByLabel('Your name');
+  await field.fill('Keep');
+  await look(page, field);
+  await field.focus();
+  const say = text => page.evaluate(text => window.__speech.say(text), text);
+  await say('type this');
+  await expect(field).toHaveValue('Keep this');
+  await field.evaluate(element => {
+    window.__lockedEvents = [];
+    for (const type of ['input', 'change']) element.addEventListener(type, event => window.__lockedEvents.push(event.type));
+  });
+  for (const kind of ['readOnly', 'disabled', 'inert', 'aria-readonly', 'aria-disabled']) {
+    await look(page, field);
+    await field.focus();
+    await page.evaluate(() => window.__speech.begin());
+    await field.evaluate((element, kind) => {
+      if (kind === 'readOnly' || kind === 'disabled') element[kind] = true;
+      else element.setAttribute(kind, kind === 'inert' ? '' : 'true');
+    }, kind);
+    await say('clear it');
+    await expect(status(page)).toContainText('not writable');
+    await expect(field).toHaveValue('Keep this');
+    await field.evaluate((element, kind) => {
+      if (kind === 'readOnly' || kind === 'disabled') element[kind] = false;
+      else element.removeAttribute(kind);
+    }, kind);
+  }
+  expect(await page.evaluate(() => window.__lockedEvents)).toEqual([]);
+  await look(page, field);
+  await field.focus();
+  await say('undo');
+  await expect(field).toHaveValue('Keep');
+  await say('undo');
+  await expect(status(page)).toContainText('Nothing to undo');
+});

@@ -108,8 +108,16 @@ function deictic(elements, act, noun = 'control') {
   return clarify(touching.length ? touching : elements, act);
 }
 
+// Keep nonwritable text targets in intent resolution: filtering them out can redirect
+// an edit into a different field. Execution checks current DOM writability.
+function textField(element) {
+  return element.editable || ['textbox', 'searchbox'].includes(element.role) ||
+    element.element?.tagName === 'TEXTAREA' ||
+    (element.element?.tagName === 'INPUT' && element.element.readOnly);
+}
+
 function chooseField(fieldName, context, act) {
-  const fields = context.elements.filter(element => element.editable);
+  const fields = context.elements.filter(textField);
   if (fieldName) return resolve(fieldName, fields, null, act, 'text field');
   const focused = fields.find(element => element.id === context.focusedId);
   if (focused) return act(focused);
@@ -245,7 +253,7 @@ export function interpret(utterance, context = { elements: [] }) {
     const into = /^(.+)\s+into\s+(?:the\s+)?(.+)$/i.exec(match[1]);
     // "in the email field" names a field only when it ends with field/box and matches one.
     const named = /^(.+)\s+in\s+(?:the\s+)?(.+?)\s+(?:field|box)$/i.exec(match[1]);
-    const namedField = named && context.elements.some(element => element.editable && matchScore(named[2], element.name) >= 0.5);
+    const namedField = named && context.elements.some(element => textField(element) && matchScore(named[2], element.name) >= 0.5);
     const [content, field] = quoted ? [quoted[1], quoted[2]] : into ? [into[1], into[2]] : namedField ? [named[1], named[2]] : [match[1], null];
     return chooseField(field?.replace(/\s+(field|box|input)$/i, ''), context, edit('append', { text: content }));
   }
@@ -263,10 +271,10 @@ export function interpret(utterance, context = { elements: [] }) {
     if (selects.length) {
       return selectOption(value, selects) ?? { type: 'unknown', message: `"${value}" is not one of the choices in ${selects[0].name}.` };
     }
-    const fields = context.elements.filter(element => element.editable && matchScore(target, element.name) >= 0.5);
+    const fields = context.elements.filter(element => textField(element) && matchScore(target, element.name) >= 0.5);
     if (fields.length) return resolve(target, fields, null, edit('replace-all', { text: unquote(value) }), 'text field');
     // Correcting words inside a field needs that field to be focused; a merely gazed field is a guess.
-    const focused = context.elements.find(element => element.editable && element.id === context.focusedId);
+    const focused = context.elements.find(element => textField(element) && element.id === context.focusedId);
     if (!focused) return { type: 'unknown', message: `Nothing called "${target}" is inside the gaze circle. To correct words, first select the text field.` };
     return edit('replace', { find: unquote(target), text: unquote(value) })(focused);
   }

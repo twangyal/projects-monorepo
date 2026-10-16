@@ -249,3 +249,58 @@ test('unsupported or empty selections refuse without creating an undo entry', ()
     assert.match(controller.handle('undo', context).message, /Nothing to undo/);
   }
 });
+
+
+test('nonwritable field refusal preserves text, neighbors and existing undo history', () => {
+  const page = fakePage();
+  const field = page.node('Message'), neighbor = page.node('Other message');
+  let writable = true;
+  page.actions.canWrite = element => element !== field || writable;
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, field, { role: 'textbox', editable: true }), describe(2, neighbor, { role: 'textbox', editable: true })], focusedId: 1 };
+  page.values.set(field, 'Keep Tuesday');
+  page.values.set(neighbor, 'Unrelated text');
+  controller.handle('type please', context);
+  const count = page.log.length;
+  writable = false;
+  for (const said of ['type lost', 'clear it', 'replace Tuesday with Friday', 'delete last word', 'new line', 'undo']) {
+    assert.match(controller.handle(said, context).message, /not writable/);
+  }
+  assert.equal(page.log.length, count);
+  assert.equal(page.values.get(field), 'Keep Tuesday please');
+  assert.equal(page.values.get(neighbor), 'Unrelated text');
+  writable = true;
+  controller.handle('undo', context);
+  assert.equal(page.values.get(field), 'Keep Tuesday');
+  assert.match(controller.handle('undo', context).message, /Nothing to undo/);
+});
+
+test('confirmed searches recheck writability before writing, history or submit', () => {
+  const page = fakePage();
+  const field = page.node('Message');
+  let writable = true;
+  page.actions.canWrite = () => writable;
+  page.values.set(field, 'Keep this');
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, field, { role: 'textbox', editable: true })], focusedId: 1 };
+  assert.equal(controller.handle('find replacement', context).pending.kind, 'confirm');
+  writable = false;
+  assert.match(controller.handle('confirm', context).message, /not writable/);
+  assert.deepEqual(page.log, []);
+  assert.equal(page.values.get(field), 'Keep this');
+  writable = true;
+  assert.match(controller.handle('undo', context).message, /Nothing to undo/);
+});
+
+test('clarified edits refuse a field locked after the question instead of using another', () => {
+  const page = fakePage();
+  const first = page.node('First message'), second = page.node('Second message');
+  let locked = false;
+  page.actions.canWrite = element => !(locked && element === second);
+  const controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, first, { role: 'textbox', editable: true, distance: 5 }), describe(2, second, { role: 'textbox', editable: true, distance: 8 })] };
+  assert.equal(controller.handle('clear it', context).pending.kind, 'clarify');
+  locked = true;
+  assert.match(controller.handle('2', { elements: [] }).message, /not writable/);
+  assert.deepEqual(page.log, []);
+});

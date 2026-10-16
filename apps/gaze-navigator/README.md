@@ -54,6 +54,12 @@ Serve this directory as above and open `http://localhost:4173/practice-site/inde
 
 Discovery reaches controls inside open shadow roots (web components) and same-origin iframes, including pointer input over those frames. It also finds script-only "Clickable" elements that set a pointer cursor without any role. Cross-origin frames inside the circle are listed as content the navigator cannot reach. Try it on the practice site's **Help** page. The panel keeps tracking and settings in a **Tracking and settings** disclosure, and opens the element list by default only on tall screens, so it covers less of small screens.
 
+### Writable-field protection (#274)
+
+Ordinary typing, clearing, correction and text Undo keep the focused or explicitly named text field as their target, including when that field is read-only. They refuse a nonwritable target instead of silently choosing a writable neighbor. Explicitly naming another writable field still works. Before a text edit or search writes anything, the runtime rechecks current native read-only/disabled state, inert ancestors, and ARIA read-only/disabled restrictions. Refused actions dispatch no edit events and do not consume text history; searches also recheck after confirmation. Selection commands retain their existing native-field restrictions.
+
+[Verification and boundaries](../../docs/2026-10-16-gaze-writable-fields.md) distinguish hosted Node/Chromium checks from the unavailable local execution environment. This does not establish real microphone/webcam or broad framework acceptance.
+
 ### Correcting a native text selection
 
 In a writable text input or textarea, say **“select all text”**, **“move cursor to the start”**, or **“move cursor to the end”**. Say **“insert Hello at the cursor”** to insert at the caret (or replace the selected range), or **“replace selected text with Hello”** to require a nonempty selection. Quoted text preserves intentional spaces: `insert "next " at the cursor`. These explicit insertions add no automatic spaces. Ordinary `type Hello` / `insert Hello` still append with the existing dictation spacing.

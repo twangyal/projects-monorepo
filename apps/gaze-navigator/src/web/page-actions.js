@@ -1,6 +1,8 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
+import { isEditable } from './page-context.js';
+
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
 function linkProblem(element) {
@@ -28,11 +30,17 @@ export function readValue(element) {
   return 'value' in element && element.tagName !== 'BUTTON' ? element.value : element.textContent;
 }
 
+// Captured context can outlive a field's editable state. Check the current DOM
+// before writing or consuming history, including native and ARIA restrictions.
+export function canWrite(element) {
+  return isEditable(element) && !element.matches(':disabled') && !element.closest('[inert]') &&
+    !element.closest('[aria-disabled="true"], [aria-readonly="true"]');
+}
+
 // Selection APIs are deliberately limited to native, writable text controls. Rich-text
 // editors and input types such as email/number do not expose compatible offsets.
 export function readSelection(element) {
-  if (!['INPUT', 'TEXTAREA'].includes(element.tagName) || element.readOnly ||
-      element.matches(':disabled') || element.closest('[inert]') || element.getAttribute('aria-disabled') === 'true') return null;
+  if (!['INPUT', 'TEXTAREA'].includes(element.tagName) || !canWrite(element)) return null;
   const start = element.selectionStart;
   const end = element.selectionEnd;
   return Number.isInteger(start) && Number.isInteger(end) ? { start, end } : null;

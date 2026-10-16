@@ -27,10 +27,19 @@ export function createController({ window, actions = pageActions, interpret = in
     return false;
   }
 
+  function writingProblem(action, element) {
+    if (['edit', 'search'].includes(action.type) && actions.canWrite?.(element) === false) {
+      return reply('That field is not writable or does not support text editing. Look at a writable field and try again.', 'error');
+    }
+    return null;
+  }
+
   function perform(action, context) {
     if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
+      const problem = writingProblem(action, target.element);
+      if (problem) return problem;
       if (confirmable(action, target)) {
         pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
         const label = target.name || target.role;
@@ -47,6 +56,10 @@ export function createController({ window, actions = pageActions, interpret = in
     if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
+    // Repeat after clarification/confirmation: page scripts may have locked the
+    // original field since capture. Refusal must precede history, events or submit.
+    const problem = writingProblem(action, element);
+    if (problem) return problem;
     let result;
     switch (action.type) {
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
