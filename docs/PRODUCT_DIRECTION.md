@@ -157,6 +157,11 @@ This lyric-automation clarification applies to project 6, Karaoke Studio. Melody
 
 Karaoke's automatic review now stages corrected words and start/end seconds together, supports native playhead marks, and auditions the edited interval before a deliberate one-step Apply. Original recognition remains visible and unchanged; all hidden lines must validate, Cancel preserves the editor, and Save remains separate. Timing edits retire owned playback and late native play results. See `docs/2026-10-16-karaoke-review-timing-integration.md` for review, retained local failures and final software gates. Final source/main CI pass 206 Python, 131 TypeScript and 114 browser cases plus project checks; local browser verification passes 114 cases, with the local Python failure retained in that receipt. This improves the correction workflow; real-song alignment quality, physical latency and intended-user correction effort remain unverified in #241. Karaoke stays ACTIVE.
 
+
+### Whole-clip synchronization correction — 2026-10-16 (#272)
+
+Karaoke's cue editor now shifts every line by one explicit signed-seconds offset as a single unsaved Undo/Redo edit, preserving literal words, lengths, gaps, title and pasted drafts. Complete invalid or out-of-clip proposals refuse without clipping or retiring active work; a successful shift retires obsolete playback/import/timing work. Save and current exports remain separate. See `docs/2026-10-16-karaoke-timing-shift-integration.md` for review, first failures and final gates. Final local browser117/117 and TypeScript134/project checks pass; final source/main CI passes206 Python,134 TypeScript and117 browser cases plus project checks. The preceding local Python/Ruff limitations remain recorded. This is manual bulk correction, not delay detection or real-song alignment/effort acceptance. Karaoke remains ACTIVE.
+
 ## 7. Shot Studio
 
 ### Owner update — 2026-10-14: deferred
