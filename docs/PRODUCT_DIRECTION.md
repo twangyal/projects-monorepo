@@ -130,6 +130,10 @@ Body & drape now includes an independent static tensile comparison with two illu
 
 Body & drape also offers an independent static cantilever comparison with two illustrative directional bending profiles, dimensioned D/EI, cubic curves, signed support reactions, explicit magnitudes, numerical JSON and owned cancellation. Local and source/main CI pass127 units and151 native browser cases with project checks. See `docs/2026-10-15-clothing-bending-integration.md`. This beam experiment supplies a controlled bending foundation alongside266; membrane shear/coupling, nonlinear garment dynamics/contact and measured-material/physical-fit validation remain unfinished. Existing garment drape and the full ACTIVE destination remain unchanged.
 
+### Coupled membrane foundation — 2026-10-16 (#268)
+
+Body & drape now includes a static orthotropic membrane comparison with directional stretch, transverse coupling and engineering shear,0/45/90degree grain and inspectable triangle meshes/numerical JSON. Coefficients are illustrative, and the affine traction patch checks assembly rather than general mesh convergence. Local and final source/main CI pass134 units and156 native browser cases with project checks. See `docs/2026-10-16-clothing-membrane-integration.md` for first failures, native-save barrier repair and deferred unloaded interior-mesh overlay. The current garment solver is unchanged; nonlinear/dynamic shell behavior, contact, measured-material and physical-fit validation remain unfinished. Clothing stays ACTIVE.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
