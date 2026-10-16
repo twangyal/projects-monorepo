@@ -24,4 +24,6 @@ The controller's injectable action doubles may omit the optional guard; the prod
 
 This does not promise atomicity against arbitrary hostile website focus/event callbacks, broad framework compatibility, rich-text editing fidelity, or real microphone/webcam usefulness. Physical camera acceptance remains in #132. No dependency, host permission, billing, paid service or owner-deferred/skipped project is changed.
 
-Hosted final-source and canonical main results will be recorded after completion. Issue #274 remains open until those results are assessed.
+The first complete source gate [38967436091](https://github.com/twangyal/projects-monorepo/actions/runs/38967436091), job117197765204, passes176 units and292 browser cases but fails8 new-fixture executions (two cases at four viewports). The extension locator matched both Message and Other message; it is corrected to an exact label. The late-lock fixture counted a pending browser change from the earlier successful fill/dictation when focus left. That fixture now settles the earlier native edit before monitoring refused operations and logs the settled event's trusted flag. Its all-event zero-change assertion, retained values and Undo assertions remain unchanged. The extension fixture likewise settles its initial fill before monitoring. No production guard, deadline or expected protection is relaxed.
+
+Corrected final-source and canonical main results will be recorded after completion. Issue #274 remains open until those results are assessed.

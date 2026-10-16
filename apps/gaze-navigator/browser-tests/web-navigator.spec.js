@@ -471,6 +471,16 @@ test('late native and ARIA locks refuse speech without consuming text undo or di
   const say = text => page.evaluate(text => window.__speech.say(text), text);
   await say('type this');
   await expect(field).toHaveValue('Keep this');
+  const settledChanges = await field.evaluate(element => {
+    const events = [];
+    const changed = event => events.push({ type: event.type, trusted: event.isTrusted, value: element.value });
+    element.addEventListener('change', changed);
+    element.blur();
+    element.removeEventListener('change', changed);
+    return events;
+  });
+  console.log('Prior fixture edit settled before refusal monitoring:', JSON.stringify(settledChanges));
+  await field.focus();
   await field.evaluate(element => {
     window.__lockedEvents = [];
     for (const type of ['input', 'change']) element.addEventListener(type, event => window.__lockedEvents.push(event.type));

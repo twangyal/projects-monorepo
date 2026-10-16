@@ -286,8 +286,9 @@ test('extension ordinary edits preserve a focused readonly field and recheck con
   const page = await context.newPage();
   await page.goto('http://shop.example/contact');
   await expect(status(page)).toContainText('Ready');
-  const field = page.getByLabel('Message');
+  const field = page.getByLabel('Message', { exact: true });
   await field.fill('Keep this');
+  await field.blur(); // Settle the fixture's earlier native fill before monitoring refusals.
   await field.evaluate(element => {
     element.readOnly = true;
     element.focus();
