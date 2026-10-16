@@ -398,3 +398,29 @@ test('native selection respects pause and direct command entry keeps the website
   await page.evaluate(() => window.__speech.say('insert lost at the cursor'));
   await expect(field).toHaveValue('Ada Lovelace');
 });
+
+
+test('fresh speech context keeps a focused read-only field from redirecting into a writable neighbor', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  const field = page.getByLabel('Your name');
+  await field.fill('Locked');
+  await field.evaluate(element => {
+    element.readOnly = true;
+    element.focus();
+    const neighbor = document.createElement('input');
+    neighbor.id = 'writable-neighbor';
+    neighbor.setAttribute('aria-label', 'Writable neighbor');
+    neighbor.value = 'Keep';
+    neighbor.style.cssText = 'position:fixed;top:50px;left:130px;width:120px;height:45px';
+    element.style.cssText = 'position:fixed;top:50px;left:0;width:120px;height:45px';
+    document.body.append(neighbor);
+  });
+  await page.mouse.move(125, 70);
+  await expect(panel(page).locator('.context li', { hasText: 'Writable neighbor' })).toBeAttached();
+  await page.evaluate(() => window.__speech.begin());
+  await page.evaluate(() => window.__speech.say('insert lost at the cursor.'));
+  await expect(status(page)).toContainText('does not support');
+  await expect(field).toHaveValue('Locked');
+  await expect(page.locator('#writable-neighbor')).toHaveValue('Keep');
+});

@@ -181,3 +181,20 @@ test('spoken selection and explicit insertion preserve wording and ordinary dict
   assert.equal(ambiguous.type, 'clarify');
   assert.deepEqual(ambiguous.choose(2), { type: 'select-text', targetId: 2, position: 'all' });
 });
+
+
+test('selection commands retain a focused read-only field instead of redirecting to its neighbor', () => {
+  const page = { elements: [element(1, 'Locked message', 'textbox'), element(2, 'Other message', 'textbox', { editable: true })], focusedId: 1 };
+  assert.equal(interpret('insert hello at the cursor', page).targetId, 1);
+  assert.equal(interpret('select all text', page).targetId, 1);
+  assert.equal(interpret('move cursor to end', page).targetId, 1);
+  assert.equal(interpret('replace selected text with hello', page).targetId, 1);
+});
+
+test('terminal speech punctuation does not turn explicit insertion into append', () => {
+  const page = { elements: [element(1, 'Message', 'textbox', { editable: true })], focusedId: 1 };
+  for (const suffix of ['.', '!', '?', '…']) {
+    assert.deepEqual(interpret('insert "Hi, Sam!" at the cursor' + suffix, page).edit,
+      { kind: 'insert-selection', text: 'Hi, Sam!', requireSelection: false });
+  }
+});
