@@ -499,3 +499,34 @@ test('late native and ARIA locks refuse speech without consuming text undo or di
   await say('undo');
   await expect(status(page)).toContainText('Nothing to undo');
 });
+
+test('live write guard follows native fields through shadow hosts and same-origin frames', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  const checks = await page.evaluate(async () => {
+    const { canWrite } = await import('/src/web/page-actions.js');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const field = document.createElement('input');
+    host.attachShadow({ mode: 'open' }).append(field);
+    const results = [canWrite(field)];
+    host.inert = true;
+    results.push(canWrite(field));
+    host.inert = false;
+    host.setAttribute('aria-readonly', 'true');
+    results.push(canWrite(field));
+    const frame = document.createElement('iframe');
+    frame.srcdoc = '<input aria-label="Frame text">';
+    const loaded = new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+    document.body.append(frame);
+    await loaded;
+    const inside = frame.contentDocument.querySelector('input');
+    results.push(canWrite(inside));
+    frame.inert = true;
+    results.push(canWrite(inside));
+    frame.inert = false;
+    frame.setAttribute('aria-disabled', 'true');
+    results.push(canWrite(inside));
+    return results;
+  });
+  expect(checks).toEqual([true, false, false, true, false, false]);
+});

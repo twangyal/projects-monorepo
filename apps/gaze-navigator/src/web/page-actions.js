@@ -33,8 +33,18 @@ export function readValue(element) {
 // Captured context can outlive a field's editable state. Check the current DOM
 // before writing or consuming history, including native and ARIA restrictions.
 export function canWrite(element) {
-  return isEditable(element) && !element.matches(':disabled') && !element.closest('[inert]') &&
-    !element.closest('[aria-disabled="true"], [aria-readonly="true"]');
+  if (!isEditable(element) || element.matches(':disabled')) return false;
+  // Context discovery crosses these boundaries, so a lock on a shadow host or
+  // same-origin frame must also invalidate an already captured child field.
+  for (let scope = element; scope;) {
+    if (scope.closest('[inert], [aria-disabled="true"], [aria-readonly="true"]')) return false;
+    try {
+      scope = scope.getRootNode().host ?? scope.ownerDocument.defaultView.frameElement;
+    } catch {
+      return false; // A frame that became inaccessible cannot authorize a write.
+    }
+  }
+  return true;
 }
 
 // Selection APIs are deliberately limited to native, writable text controls. Rich-text
