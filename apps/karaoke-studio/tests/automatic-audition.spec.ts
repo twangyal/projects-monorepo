@@ -318,3 +318,21 @@ test('timing edits retire held native audition and a late play result cannot res
   await expect(page.getByLabel('Reviewed start line 3 (seconds)', { exact: true })).toHaveValue('9.125');
   await expect(page.locator('#srt-review')).toBeVisible();
 }));
+
+test('repeat wraps actual native playback to the staged start instead of recognized timing', async ({ page }) => withClip(page, async () => {
+  await page.getByRole('button', { name: 'Review automatic lyrics', exact: true }).click();
+  await page.getByLabel('Reviewed start line 3 (seconds)', { exact: true }).fill('12.125');
+  await page.getByLabel('Reviewed end line 3 (seconds)', { exact: true }).fill('13.875');
+  await page.locator('audio').evaluate(a => {
+    const audio = a as HTMLAudioElement;
+    const state: { seeks: number[] } = { seeks: [] };
+    (window as Window & { stagedRepeat?: typeof state }).stagedRepeat = state;
+    audio.addEventListener('seeking', () => state.seeks.push(audio.currentTime));
+  });
+  await page.getByRole('button', { name: 'Repeat automatic line 3', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as Window & { stagedRepeat?: { seeks: number[] } }).stagedRepeat!.seeks.length), { timeout: 7000 }).toBeGreaterThanOrEqual(2);
+  const seeks = await page.evaluate(() => (window as Window & { stagedRepeat?: { seeks: number[] } }).stagedRepeat!.seeks);
+  expect(seeks[0]).toBeCloseTo(12.125, 5); expect(seeks[1]).toBeCloseTo(12.125, 5);
+  await page.getByRole('button', { name: 'Stop reviewed passage', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+}));
