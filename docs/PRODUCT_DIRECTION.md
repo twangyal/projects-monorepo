@@ -42,6 +42,10 @@ Evaluate actual extension installation and use with intended users, real camera/
 
 A standalone desktop app for control outside the browser is a possible later direction, not the current delivery target or an instruction to begin an operating-system integration or migration. Scheduled Gaze work should follow this extension-first direction; Gaze Navigator remains ACTIVE and the broader accessibility goals remain unchanged.
 
+### Delivery note — 2026-10-16 (#273)
+
+The extension's shared runtime now supports spoken native-field select-all, cursor start/end and explicit insertion/replacement at the current selection, with exact text, caret placement and ordinary text Undo. It retains focused read-only identity for these new commands and refuses unsupported targets. Ordinary append dictation is unchanged. Source CI passes 171 unit and 284 native browser cases; [the integration record](2026-10-16-gaze-selection-integration.md) preserves review fixes and the failed local portable-extension attempt. Gaze remains ACTIVE; physical speech/gaze and intended-user acceptance are unverified. A separately reproduced older ordinary-edit targeting defect is tracked as next-priority issue #274.
+
 ## 3. Melody Studio
 
 Melody Studio's destination is a respectable, full music-production DAW with the depth and creative control associated with tools such as FL Studio. Most of the original voice-to-music vision remains: users can capture hummed or sung ideas, review and edit notes, choose sounds, layer parts and use AI assistance while retaining musical control. The destination is not limited to a simple sketchbook.
