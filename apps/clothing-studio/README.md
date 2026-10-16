@@ -88,6 +88,10 @@ How the drape is made:
 **Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a proxy from one measurement, not an avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
 
 
+### Controlled material swatches (#266)
+
+In **Body & drape**, expand **Tensile swatch comparison** to compare two clearly illustrative axial materials under the same force. Choose coupon dimensions, warp/weft grain and8/16elements, run the worker, inspect actual-scale deformation and download complete SI inputs/results. Material extensional coefficient and coupon force/extension stiffness are reported separately. Changing inputs invalidates export; Cancel retires pending work. The experiment is session-only and preserves garment edits. It does not change the garment solver or establish calibrated cloth, bending, shear, contact or fit. See [model, checks and limits](docs/2026-10-15-tensile-swatches.md).
+
 ### Automatic tech pack (#227)
 
 Below the 3D editor, **Factory-ready tech pack** is generated from the design and updates with every change.

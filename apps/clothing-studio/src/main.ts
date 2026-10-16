@@ -1,3 +1,4 @@
+import {mountTensile} from './tensile-view.ts';
 import { mountWorkspace } from './workspace.ts';
 import {mountBody} from './body-view.ts';
 import {mountGrading} from './grading-view.ts';
@@ -386,6 +387,7 @@ bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{i
 
 window.addEventListener('pagehide', retireLoad);
 mountWorkspace();
+mountTensile(element('workspace-body'));
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;

@@ -63,3 +63,7 @@ Completion criteria for that implementation:
 - Preserve current saved projects, cancellation, owned worker disposal, phone responsiveness and export snapshots. Existing physical-fit limits stay visible.
 
 Physical coupon/garment measurements and reuse rights are missing, but development of the unit-aware harness is unblocked. This research closes #256's investigation only; it does not complete the owner's material-physics requirement or justify a MAINTENANCE status.
+
+### Axial first implementation — #266 (2026-10-15)
+
+The controlled tensile harness now implements a narrowly stated static axial strip, with SI energy/mass/force checks,0°/90° illustrative coefficients,8/16element comparisons, independent material/coupon stiffness and numerical JSON. It is available in Body & drape without changing garment physics. See `apps/clothing-studio/docs/2026-10-15-tensile-swatches.md` and the integration receipt for actual gates. This does not fulfill the above membrane/shear/bending/time-integration/diagonal/contact/physical-reference acceptance criteria; those remain the next substantive stages.

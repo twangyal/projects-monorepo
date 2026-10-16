@@ -82,6 +82,8 @@ Milestone #247 integrates the independently reviewed Fabra-style product editor 
 
 Artwork milestone #254 adds staged front/back graphic rotation around the existing centre, preserved through placement Apply/Undo, saved designs and PNG/GLB/tech-pack exports. Legacy artwork remains upright. This styling capability does not establish calibrated cloth behaviour or physical fit. Source and canonical-main CI pass 111 unit and 133 browser cases plus lint/type/build; [acceptance](docs/2026-10-14-review-and-artwork-acceptance.md) preserves the first ambiguous legacy-test failure and exact-selector repair.
 
+Milestone #266 adds a worker-backed, unit-aware static tensile swatch comparison under Body & drape, with illustrative warp/weft profiles, common-scale deformation, numerical receipts, explicit material/coupon stiffness and cancellation. This axial first step follows #256 research; it leaves the garment solver unchanged and does not complete membrane/bending/contact calibration or physical validation. Clothing remains ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`
