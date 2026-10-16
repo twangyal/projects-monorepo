@@ -44,7 +44,7 @@ for (const kind of ['motif', 'artwork'] as const) for (const scenario of ['raw d
     }
     if (scenario !== 'raw draft') await expect.poll(async () => {
       const saved = await stored(page) as typeof before;
-      return scenario === 'new template' ? saved.product?.name : kind === 'motif' ? saved.product?.motifs?.[0]?.name : saved.product?.artwork?.[0]?.name;
+      return scenario === 'new template' ? saved?.product?.name : kind === 'motif' ? saved?.product?.motifs?.[0]?.name : saved?.product?.artwork?.[0]?.name;
     }).toBe(scenario === 'new template' ? 'Ringer tee' : kind === 'motif' ? 'fresh' : 'fresh.png');
     // Read native persistence without clicking an export button: the tested editing action alone retires the decode.
     const newer = scenario === 'raw draft' ? before : await stored(page) as typeof before;
