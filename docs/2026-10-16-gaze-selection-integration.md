@@ -31,7 +31,8 @@ Review declined selection-only history pollution, existing append regression and
 - Initial hosted source run [38930311329](https://github.com/twangyal/projects-monorepo/actions/runs/38930311329) was cancelled after publication of the reviewed fix, and is not a pass.
 
 - Reviewed source [CI 38930615699](https://github.com/twangyal/projects-monorepo/actions/runs/38930615699), job `117073582212`: **171 units and all 284 native browser cases pass** (8.9m browser suite), with syntax/test-extension build. The extension's strict-CSP selected-text/Undo flow passes in standard hosted Chromium.
-- Main was advanced with expected-head protection from the recorded base to the exact reviewed source. Canonical main CI will be recorded after completion.
+- Main was advanced with expected-head protection from the recorded base to the exact reviewed source. Canonical [main CI 38932137888](https://github.com/twangyal/projects-monorepo/actions/runs/38932137888), job `117078510747`, passes **171 unit and all 284 native browser cases** (8.2m browser suite), with syntax/test-extension build. The test run uses the same reviewed source tree. Subsequent receipt/direction/roadmap commits change only root documentation; application and workflow diffs against the tested source are empty.
+- Repository state was reassessed after integration: issue #274 is the next-priority known software defect; physical-input/model/data gates remain separately open. No project status is promoted and the owner's deferred/skipped work is unchanged.
 
 ## Remaining acceptance
 

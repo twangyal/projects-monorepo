@@ -44,7 +44,7 @@ A standalone desktop app for control outside the browser is a possible later dir
 
 ### Delivery note — 2026-10-16 (#273)
 
-The extension's shared runtime now supports spoken native-field select-all, cursor start/end and explicit insertion/replacement at the current selection, with exact text, caret placement and ordinary text Undo. It retains focused read-only identity for these new commands and refuses unsupported targets. Ordinary append dictation is unchanged. Source CI passes 171 unit and 284 native browser cases; [the integration record](2026-10-16-gaze-selection-integration.md) preserves review fixes and the failed local portable-extension attempt. Gaze remains ACTIVE; physical speech/gaze and intended-user acceptance are unverified. A separately reproduced older ordinary-edit targeting defect is tracked as next-priority issue #274.
+The extension's shared runtime now supports spoken native-field select-all, cursor start/end and explicit insertion/replacement at the current selection, with exact text, caret placement and ordinary text Undo. It retains focused read-only identity for these new commands and refuses unsupported targets. Ordinary append dictation is unchanged. Source and canonical main CI pass 171 unit and 284 native browser cases; [the integration record](2026-10-16-gaze-selection-integration.md) preserves review fixes and the failed local portable-extension attempt. Gaze remains ACTIVE; physical speech/gaze and intended-user acceptance are unverified. A separately reproduced older ordinary-edit targeting defect is tracked as next-priority issue #274.
 
 ## 3. Melody Studio
 
