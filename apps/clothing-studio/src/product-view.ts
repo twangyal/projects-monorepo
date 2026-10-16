@@ -186,9 +186,10 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }, 250);
   }
   function drapeSummary(design: Product, result: GarmentDrapeResult): string {
-    const { ease, contact, residualSpeed } = result.metrics;
+    const { ease, contact, residualSpeed, maxStrain } = result.metrics;
     return `Draped on a body with a ${result.body.chest} cm chest: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; ${Number(result.body.waist.toFixed(2))} cm waist / ${Number(result.body.hip.toFixed(2))} cm hip on the proxy; `
-      + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`;
+      + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`
+      + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension). Enlarge the garment or reduce the proxy girths before interpreting this preview.` : '');
   }
   function applyBody(): boolean {
     const raw = ($('garment-drape-chest') as HTMLInputElement).value;

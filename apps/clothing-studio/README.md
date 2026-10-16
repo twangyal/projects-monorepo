@@ -82,10 +82,10 @@ How the drape is made:
   - The hood keeps its modelled height.
   - Pockets ride on the front body.
 - **Solver.** An XPBD solver adds gravity, stretch, bending and friction against the body. The cloth starts as the styling shell and shrinks onto a body that grows inside it, then settles under gravity.
-- **Body proxy.** It is built from the chest girth with standard proportions: stadium-shaped torso sections, sloped shoulders, neck and head. Its arms are posed along the sleeves and tapered to fit inside them.
+- **Body proxy.** It is built from chest girth plus optional waist/hip girths: stadium-shaped torso sections with assumed heights/depth, sloped shoulders, neck and head. Blank optional fields retain chest-based proportions. Its arms are posed along the sleeves and tapered to fit inside them.
 - **Fabric.** Weight comes from each part's material (g/m²). Stretch and bending come from its construction: knits stretch most, twill and canvas bend least.
 
-**Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a proxy from one measurement, not an avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
+**Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a measurement proxy with assumed heights, depths and limbs, not a personalized anatomical avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
 
 
 ### Entered torso girths (#269)
