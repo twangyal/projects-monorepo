@@ -1,0 +1,21 @@
+import {isBottoms,material,partsOf,RIB_PARTS,type Product} from './product.ts';
+import {validateTopBodyShape,type GarmentDrapeResult} from './garment-drape.ts';
+export interface ComparisonBody {chest:number;waist:number;hip:number}
+/** Comparison copies only; choosing one is a separate explicit project edit. */
+export function fabricVariants(source:Product,materials:[string,string]):[Product,Product]{
+ if(isBottoms(source))throw new Error('Fabric drape comparison is available for tops.');
+ if(materials.length!==2||materials[0]===materials[1])throw new Error('Choose two different fabrics.');
+ materials.forEach(id=>material(id));
+ return materials.map(id=>{const candidate=structuredClone(source);for(const part of partsOf(candidate))if(!RIB_PARTS.has(part))candidate.parts[part].material=id;return candidate;}) as [Product,Product];
+}
+export function comparisonWarnings(result:GarmentDrapeResult):string[]{
+ const m=result.metrics;
+ return[...(m.maxStrain>1?['Excessive numerical stretch: enlarge the garment or reduce the body girths.']:[]),...(m.residualSpeed>10?['Still moving at the end of the solve; convergence is not established.']:[]),...(m.minClearance<.34?['Nominal body clearance was undershot; inspect contact carefully.']:[])];
+}
+/** Captures the existing worker's fixed default solve, not a calibrated fabric experiment. */
+export function comparisonReceipt(source:Product,body:ComparisonBody,materials:[string,string],results:[GarmentDrapeResult,GarmentDrapeResult]){
+ const shape=validateTopBodyShape(body.chest,body),products=fabricVariants(source,materials);
+ if(results.length!==2||results.some(r=>r.body.chest!==body.chest||r.body.waist!==shape.waist||r.body.hip!==shape.hip||!Object.values(r.metrics).every(Number.isFinite)||r.parts.some(p=>!p.positions.every(Number.isFinite))))throw new Error('Comparison results must be finite and match the captured body.');
+ return{schema:1,experiment:'matched-garment-fabrics-v1',solver:'xpbd-top-heuristic-v1',settings:{frames:240,substeps:10,frameSeconds:1/60},units:{positions:'cm',speed:'cm/s',strain:'dimensionless edge extension',arealDensity:'g/m²'},body:{...body},source:structuredClone(source),assumptions:['Approximate isotropic texture-based stretch and bending; no measured specimen calibration.','Same pattern, body, mesh and solve settings; fabric replaced on non-rib parts only.','Rib trims, colors, prints, artwork and saved colorways retained. Pockets are carried offsets.','No cloth self/layer contact; body dimensions and contact are approximations.','Matched fixed front/back camera and lighting; garment-only snapshots. Differences do not validate physical fit.'],candidates:products.map((product,i)=>({material:{...material(materials[i]!)},product,warnings:comparisonWarnings(results[i]!),result:{...structuredClone(results[i]!),parts:results[i]!.parts.map(p=>({part:p.part,positions:Array.from(p.positions)}))}}))};
+}
+export type GarmentComparisonReceipt=ReturnType<typeof comparisonReceipt>;

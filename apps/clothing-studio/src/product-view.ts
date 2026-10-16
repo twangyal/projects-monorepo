@@ -1,3 +1,4 @@
+import {mountGarmentComparison} from './garment-comparison-view.ts';
 import { BODY_CHEST, BODY_WAIST, BODY_HIP, defaultBodyChest, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
@@ -260,10 +261,14 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     try {
       mutate(draft); const next = validateProject({ ...options.current(), product: validateProduct(draft) });
       if (appliedGroup) for (const id of drafts.keys()) if (groupOf(id) === appliedGroup) drafts.delete(id);
-      commit(next); options.notice(text);
+      commit(next); options.notice(text); return true;
     }
-    catch (error) { drafts.clear(); for (const [id, value] of savedDrafts) drafts.set(id, value); restoreDrafts(); options.notice(error instanceof Error ? error.message : 'That change is not valid.', true); }
+    catch (error) { drafts.clear(); for (const [id, value] of savedDrafts) drafts.set(id, value); restoreDrafts(); options.notice(error instanceof Error ? error.message : 'That change is not valid.', true); return false; }
   }
+  const fabricComparison=mountGarmentComparison($('garment-drape-controls'),{
+    capture:()=>{if(hasDrafts())throw new Error('Apply or discard pending product edits before comparing or choosing a fabric.');const design=product();if(!design||isBottoms(design))throw new Error('Choose a top to compare fabrics.');return{product:design,body:{chest:chestFor(design),...shapeFor(design)}};},
+    apply:id=>{retireAssets();return update(draft=>{for(const part of partsOf(draft))if(!RIB_PARTS.has(part))draft.parts[part].material=id;},'Comparison fabric applied to non-rib parts.');},
+  });
   function applySwatch(part: PartId, swatch: Swatch) {
     update(draft => {
       const style = draft.parts[part];
@@ -742,6 +747,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const selection = active && drafts.has(active.id) && active.selectionStart !== null ? [active.selectionStart, active.selectionEnd!, active.selectionDirection ?? 'none'] as const : null;
     const finishDrafts = () => { restoreDrafts(); if (active && selection && document.activeElement === active) active.setSelectionRange(...selection); };
     const design = project.product ?? template('blank');
+    fabricComparison.sync(project.product??null,isBottoms(design)?null:{chest:chestFor(design),...shapeFor(design)});
     if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? ''); ($('artwork-rotation') as HTMLInputElement).value = String(art ? art.rotation ?? 0 : '');
@@ -814,5 +820,5 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { fabricComparison.reset(); stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }

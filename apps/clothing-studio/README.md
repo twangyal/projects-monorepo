@@ -88,6 +88,10 @@ How the drape is made:
 **Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a measurement proxy with assumed heights, depths and limbs, not a personalized anatomical avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
 
 
+### Compare fabrics on the same garment (#270)
+
+**Body & drape → Compare fabrics on this garment** runs two chosen fabrics on the same committed top and entered body, showing matched front/back draped views and numerical diagnostics. Comparison preserves the design; **Use [fabric]** applies the chosen fabric to non-rib parts as one undoable edit. Colors, prints, artwork, rib trims and saved colorways are retained. Download the complete captured numerical receipt, or cancel and retry without changing the project. This uses the current approximate garment physics, not calibrated fabric data or the independent swatch laws. See [workflow, ownership and limits](docs/2026-10-16-garment-fabric-comparison.md).
+
 ### Entered torso girths (#269)
 
 **Body & drape → Waist and hip (optional)** accepts independent waist/hip girths for the top proxy. Blank uses the existing chest-based proportions. Apply validates all body fields together, preserves raw drafts and reruns the owned garment worker when accepted girths change. Body dimensions remain session-only; body heights/depth/limbs and fabric/contact are still approximate. Captured garment exports retain the actual draped positions. See [geometry, workflow and limits](docs/2026-10-16-top-body-shape.md).
