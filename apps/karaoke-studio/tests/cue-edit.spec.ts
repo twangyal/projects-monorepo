@@ -143,3 +143,87 @@ test('reopened literal CRLF cue translates native textarea caret without alterin
     { start: .25, end: 2, text: 'a\r\n🌓' }, { start: 2, end: 4, text: 'b' },
   ]);
 });
+
+async function timingEditor(page: Page) {
+  return page.evaluate(() => ({ title: (document.querySelector('#title') as HTMLInputElement).value,
+    paste: (document.querySelector('#lyric-draft') as HTMLTextAreaElement).value,
+    fields: [...document.querySelectorAll('#cue-list input,#cue-list textarea')].map(n => (n as HTMLInputElement).value) }));
+}
+
+test('whole-clip shift preserves words gaps raw history and drafts before deliberate save and SRT export', async ({ page }) => {
+  await open(page);
+  const id = new URL(page.url()).searchParams.get('project')!;
+  const saved = await (await page.request.get(`/api/projects/${id}`)).json();
+  for (const [label, value] of [['Start line 1', '1.000'], ['End line 1', '2.000'], ['Start line 2', '3.500'], ['End line 2', '4.750']]) await page.getByLabel(label, { exact: true }).fill(value);
+  await page.getByLabel('Clip title', { exact: true }).fill('Shifted study');
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied words kept');
+  const before = await timingEditor(page);
+  await page.getByText('Shift all lyric timing', { exact: true }).click();
+  const shift = page.getByLabel('Timing shift (seconds)', { exact: true }); await expect(shift).toBeVisible();
+  await shift.fill('+0.25');
+  await page.getByRole('button', { name: 'Shift all lyric times', exact: true }).click();
+  for (const [label, value] of [['Start line 1', '1.25'], ['End line 1', '2.25'], ['Start line 2', '3.75'], ['End line 2', '5']]) await expect(page.getByLabel(label, { exact: true })).toHaveValue(value);
+  await expect(page.getByLabel('Lyric line 1', { exact: true })).toHaveValue('First 🌓 phrase');
+  await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveValue('Next 🎵');
+  expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click(); expect(await timingEditor(page)).toEqual(before);
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('1.25');
+  await page.getByRole('button', { name: 'Discard pasted draft', exact: true }).click();
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('saved locally');
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export timed lyrics', exact: true }).click();
+  const srt = await readFile((await (await download).path())!, 'utf8');
+  expect(srt).toContain('00:00:01,250 --> 00:00:02,250'); expect(srt).toContain('00:00:03,750 --> 00:00:05,000');
+  await page.reload();
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('1.25');
+  await expect(page.getByLabel('End line 2', { exact: true })).toHaveValue('5');
+  await page.getByText('Shift all lyric timing', { exact: true }).click(); await expect(shift).toHaveValue('');
+});
+
+test('refused shifts preserve native playback and pending import while a valid shift retires both', async ({ page }) => {
+  await open(page);
+  for (const [label, value] of [['Start line 1', '1'], ['End line 1', '2'], ['Start line 2', '3.5'], ['End line 2', '4.75']]) await page.getByLabel(label, { exact: true }).fill(value);
+  await page.getByLabel('Import timed lyrics (SRT)', { exact: true }).setInputFiles({ name: 'pending.srt', mimeType: 'application/x-subrip', buffer: Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nPending imported words\n') });
+  await expect(page.locator('#srt-review')).toBeVisible();
+  await page.getByRole('button', { name: 'Repeat range', exact: true }).click();
+  await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  await expect(page.getByRole('button', { name: 'Pause practice', exact: true })).toBeEnabled();
+  const before = await timingEditor(page);
+  await page.getByText('Shift all lyric timing', { exact: true }).click();
+  const shift = page.getByLabel('Timing shift (seconds)', { exact: true });
+  for (const value of ['', '0', 'oops', 'Infinity', '-1.01', '1.26']) {
+    await shift.fill(value); await page.getByRole('button', { name: 'Shift all lyric times', exact: true }).click();
+    await expect(shift).toHaveValue(value);
+    await expect(page.locator('#timing-shift-status')).not.toHaveText('');
+    expect(await timingEditor(page)).toEqual(before); await expect(page.locator('#srt-review')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pause practice', exact: true })).toBeEnabled();
+    await expect.poll(() => page.locator('audio').evaluate(a => !(a as HTMLAudioElement).paused)).toBe(true);
+  }
+  await shift.fill('.25'); await page.getByRole('button', { name: 'Shift all lyric times', exact: true }).click();
+  await expect(page.locator('#srt-review')).toBeHidden();
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('1.25');
+});
+
+test('phone keyboard shift keeps an invalid title and refuses incomplete timing without consuming Redo', async ({ page }) => {
+  await open(page); await page.setViewportSize({ width: 390, height: 844 });
+  for (const [label, value] of [['Start line 1', '1.000'], ['End line 1', '2.000'], ['Start line 2', '3.500'], ['End line 2', '4.750']]) await page.getByLabel(label, { exact: true }).fill(value);
+  await page.getByLabel('Clip title', { exact: true }).fill('');
+  const before = await timingEditor(page);
+  await page.getByText('Shift all lyric timing', { exact: true }).click();
+  const shift = page.getByLabel('Timing shift (seconds)', { exact: true }); await shift.fill('-.5');
+  const apply = page.getByRole('button', { name: 'Shift all lyric times', exact: true }); await apply.focus(); await apply.press('Enter');
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('0.5');
+  await expect(page.getByLabel('End line 2', { exact: true })).toHaveValue('4.25');
+  await expect(page.getByLabel('Clip title', { exact: true })).toHaveValue('');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click(); expect(await timingEditor(page)).toEqual(before);
+  await shift.fill('0'); await apply.click();
+  await expect(page.getByRole('button', { name: 'Redo lyric edit', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await page.getByLabel('Start line 1', { exact: true }).fill('');
+  const invalid = await timingEditor(page); await shift.fill('.25'); await apply.click();
+  expect(await timingEditor(page)).toEqual(invalid);
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('');
+});

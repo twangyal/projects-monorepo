@@ -71,3 +71,25 @@ test('split retains the 20,000-character maximum while merge charges its new sep
   const full = [...shorter, ...shorter.map((cue, i) => ({ ...cue, start: i + 100, end: i + 101 }))];
   assert.throws(() => mergeCue(full, 0, 200), /20,000/);
 });
+
+test('whole-clip shifts preserve literal words lengths and gaps in detached results', async () => {
+  const { shiftCues } = await import('../src/cue-edit.ts');
+  const source = [{ start: 1, end: 2, text: 'First 🌓\r\nphrase' }, { start: 3.5, end: 4.75, text: 'Next 🎵' }];
+  const before = structuredClone(source);
+  assert.deepEqual(shiftCues(source, 6, '+.25'), [{ start: 1.25, end: 2.25, text: 'First 🌓\r\nphrase' }, { start: 3.75, end: 5, text: 'Next 🎵' }]);
+  assert.deepEqual(shiftCues(source, 6, '-5e-1'), [{ start: .5, end: 1.5, text: 'First 🌓\r\nphrase' }, { start: 3, end: 4.25, text: 'Next 🎵' }]);
+  assert.deepEqual(source, before);
+});
+test('whole-clip shifts refuse invalid offsets and out-of-clip proposals without cropping', async () => {
+  const { shiftCues } = await import('../src/cue-edit.ts');
+  const source = [{ start: 1, end: 2, text: 'First' }, { start: 3.5, end: 4.75, text: 'Next' }], before = structuredClone(source);
+  for (const shift of ['', ' ', '0', '-0', 'NaN', 'Infinity', '0x1', '1e309', '-1.001', '1.251', '1e-300']) assert.throws(() => shiftCues(source, 6, shift));
+  assert.deepEqual(source, before);
+  assert.deepEqual(shiftCues(source, 6, '-1')[0], { start: 0, end: 1, text: 'First' });
+  assert.deepEqual(shiftCues(source, 6, '1.25')[1], { start: 4.75, end: 6, text: 'Next' });
+});
+test('whole-clip shifts require the complete existing cue graph before proposing any result', async () => {
+  const { shiftCues } = await import('../src/cue-edit.ts');
+  assert.throws(() => shiftCues([], 6, '.25'), /lyric line/);
+  for (const cue of [{ start: NaN, end: 2, text: 'First' }, { start: 1, end: 2, text: '' }, { start: 3, end: 2, text: 'First' }]) assert.throws(() => shiftCues([cue], 6, '.25'));
+});

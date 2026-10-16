@@ -31,3 +31,19 @@ export function mergeCue(cues: Cue[], index: number, duration: number): Cue[] {
   next.splice(index, 2, { start: first.start, end: second.end, text: `${first.text}\n${second.text}` });
   return validateCues(next, duration);
 }
+
+/** Shift the complete valid graph; never clamp, crop, or mutate current cues. */
+export function shiftCues(cues: Cue[], duration: number, rawSeconds: string): Cue[] {
+  const raw = rawSeconds.trim();
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(raw) || !Number.isFinite(Number(raw)) || Number(raw) === 0) {
+    throw new Error('Enter a nonzero finite timing shift in seconds. Positive moves later; negative moves earlier.');
+  }
+  const before = validateCues(cues, duration);
+  if (!before.length) throw new Error('Create at least one valid lyric line before shifting timing.');
+  const delta = Number(raw);
+  const after = validateCues(before.map(cue => ({ ...cue, start: cue.start + delta, end: cue.end + delta })), duration);
+  if (after.every((cue, index) => cue.start === before[index].start && cue.end === before[index].end)) {
+    throw new Error('The shift is too small to change these times. Choose a larger number of seconds.');
+  }
+  return after;
+}

@@ -106,6 +106,8 @@ Acceptance #253: reviewed word correction passes source and main CI: 206 Python 
 
 Milestone #271 lets Karaoke users correct automatic words and line times together while listening, mark native playhead boundaries, audition staged intervals and apply one undoable edit. Original recognition and saved cues remain separate. This software flow does not establish automatic-alignment accuracy or real-user correction-effort gains; #241 and the ACTIVE destination remain open.
 
+Milestone #272 adds an explicit whole-clip timing shift for consistently early/late cues, preserving words, gaps and one-step unsaved history. Complete invalid or out-of-clip proposals are refused without cropping; Save remains separate. Real-song alignment/correction effort and the ACTIVE destination remain open.
+
 ## 7. Direct a movie in VR
 
 Path: apps/shot-studio

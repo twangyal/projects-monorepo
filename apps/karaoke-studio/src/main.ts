@@ -7,7 +7,7 @@ import { MAX_SRT_BYTES, parseSrt } from './srt.ts';
 import { TimingCapture } from './sequential-timing.ts';
 import { mountTimeline } from './timeline.ts';
 import { proposeBoundary, timingError } from './timing.ts';
-import { splitCue, mergeCue } from './cue-edit.ts';
+import { splitCue, mergeCue, shiftCues } from './cue-edit.ts';
 import { createPracticeRange, type PracticeMode } from './practice.ts';
 import { PracticeController } from './practice-controller.ts';
 import { reviewedCues, reviewedRange, type ReviewedCue } from './automatic-review.ts';
@@ -54,6 +54,7 @@ app.innerHTML = `
         <section class="sequential-timing" aria-labelledby="timing-heading"><h4 id="timing-heading">Time lines while listening</h4><p class="fine">Time the existing lyric lines with this player. Unapplied pasted words are not included. Begin, play or resume the audio, then mark each line’s start and end. Leave instrumental gaps by waiting before the next start.</p><div class="timing-actions"><button id="timing-begin">Begin timing session</button><button id="timing-mark" hidden>Mark line start</button><button id="timing-end-final" hidden>End final line at clip end</button><button id="timing-cancel" class="text-button" hidden>Cancel timing session</button></div><p id="timing-status" class="fine" aria-live="polite">Choose a clip with lyric lines, load a track, then begin.</p><p id="timing-line"></p><section id="timing-review" aria-label="Review captured timings" hidden><h4>Review captured timings</h4><p id="timing-summary"></p><ol id="timing-review-list" aria-label="Captured lyric intervals"></ol><button id="timing-apply" class="quiet">Apply captured timings</button></section></section>
         <section class="srt-import" aria-label="Import timed lyrics"><label class="field">Import timed lyrics (SRT)<input id="srt-file" type="file" accept=".srt,application/x-subrip,text/plain" disabled></label><p class="fine">Up to 128 KiB UTF-8. Numbered SRT cues with millisecond times; multiline words are kept. Use plain text or &amp;lt; / &amp;gt; for angle brackets. Only &amp;amp;, &amp;lt; and &amp;gt; are decoded once.</p><p id="srt-status" class="fine" aria-live="polite"></p><section id="srt-review" aria-label="Review timed lyrics" hidden><h4>Review timed lyrics</h4><p id="srt-summary"></p><p class="fine">Replace only this clip’s lyric cues in memory. The title and pasted words stay unchanged. Undo restores your previous cues; use Save lyrics when ready.</p><div id="automatic-review-tools" hidden><label><input id="automatic-unsure-only" type="checkbox"> Show only uncertain automatic lines</label><p id="automatic-review-count" class="fine"></p><p class="fine">Correct words and start/end seconds here while listening, or mark a boundary from the player. Listen and Repeat use the reviewed times. Timing edits stop the reviewed passage. Original recognized times stay above each line. Apply replaces all lines together; Cancel discards reviewed corrections. Split or merge lines in the main editor after applying.</p><p id="automatic-review-error" class="fine" role="alert"></p><div class="timing-actions"><button id="automatic-listen-pause" disabled>Pause reviewed passage</button><button id="automatic-listen-stop" disabled>Stop reviewed passage</button></div><p id="automatic-listen-status" class="fine" role="status">Choose Listen or Repeat beside a recognized line. Nothing is applied.</p></div><ol id="srt-review-list" aria-label="Imported lyric cues"></ol><button id="srt-apply" class="quiet">Replace lyric cues</button></section><button id="srt-cancel" class="text-button" hidden>Cancel lyric import</button></section>
         <div class="lyric-intro"><label class="field">Paste lyrics, one line per cue<textarea id="lyric-draft" rows="4" placeholder="The opening line…&#10;And the next one…" disabled></textarea></label><div><button id="draft-timings" disabled>Create draft timings</button><button id="discard-draft" class="text-button" hidden>Discard pasted draft</button><p id="draft-help" class="fine">When automatic lyrics are available, pasted lines are aligned to the sung vocals. Otherwise they are evenly spaced as a starting point. Listen and correct each line.</p><p id="lyric-limits" class="fine">Up to 200 cues · 240 characters per cue · 20,000 lyric characters. Unicode characters count once; pasted whitespace also counts.</p></div></div>
+        <details class="timing-shift"><summary>Shift all lyric timing</summary><p class="fine">Move every current cue by the same number of seconds: positive is later, negative is earlier. Words, line lengths and gaps stay together. The complete result must fit inside this clip; nothing is cropped. This makes one unsaved Undo/Redo edit. Unapplied pasted words are not included.</p><label class="field">Timing shift (seconds)<input id="timing-shift-seconds" type="text" inputmode="decimal" placeholder="For example +0.25 or -0.5" disabled></label><button id="timing-shift-apply" class="quiet" disabled>Shift all lyric times</button><p id="timing-shift-status" class="fine" role="status" aria-live="polite"></p></details>
         <div class="draft-history" role="group" aria-label="Lyric draft history"><button id="undo-lyrics" class="quiet" disabled>Undo lyric edit</button><button id="redo-lyrics" class="quiet" disabled>Redo lyric edit</button><span class="fine">Up to 30 edits until you save or open another clip.</span></div>
         <p id="cue-validation" role="status" class="validation"></p><div id="cue-list"><p class="empty">Your lyric lines will appear here after you create draft timings.</p></div>
       </section>
@@ -215,6 +216,8 @@ function controls() {
   element<HTMLButtonElement>('discard-draft').disabled = busy || saving;
   element<HTMLButtonElement>('undo-lyrics').disabled = !working || !lyricHistory?.canUndo || busy || saving;
   element<HTMLButtonElement>('redo-lyrics').disabled = !working || !lyricHistory?.canRedo || busy || saving;
+  element<HTMLInputElement>('timing-shift-seconds').disabled = !working || busy || saving || aligning;
+  element<HTMLButtonElement>('timing-shift-apply').disabled = !working?.cues.length || busy || saving || aligning;
   element('discard-draft').hidden = !draftDirty;
   for (const control of element('cue-list').querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>('input,textarea,button')) control.disabled = busy || saving;
   for (const control of document.querySelectorAll<HTMLButtonElement>('[data-track]')) control.disabled = !working;
@@ -748,6 +751,24 @@ function editCueStructure(index: number, kind: 'split' | 'merge'): void {
       : 'Lines merged with a newline, including any gap between them. Undo restores both original intervals.');
   } catch (error) { message(error instanceof Error ? error.message : 'Cue edit could not be applied. Current words and timings were kept.', true); }
 }
+element('timing-shift-seconds').addEventListener('input', () => { element('timing-shift-status').textContent = ''; });
+element('timing-shift-apply').addEventListener('click', () => {
+  if (!working || !lyricHistory || !srtAllowed()) return;
+  let cues: Project['cues'];
+  try { cues = shiftCues(working.cues, working.duration, element<HTMLInputElement>('timing-shift-seconds').value); }
+  catch (error) {
+    element('timing-shift-status').textContent = `${error instanceof Error ? error.message : 'Check the timing shift.'} Current lyrics and editor values were kept.`;
+    return;
+  }
+  retirePractice('Shifting lyric times stopped practice.');
+  retireSrt('Shifting lyric times cancelled the lyric import review.');
+  retireTiming('Shifting lyric times cancelled the timing session. Staged times were not applied.');
+  timeline.cancelGesture();
+  lyricHistory.record(draftSnapshot()); lyricHistory.endGroup();
+  working.cues = cues; renderCues(); changed();
+  element('timing-shift-status').textContent = `Shifted all ${cues.length} lyric lines as one unsaved edit. Undo restores the previous times; use Save lyrics when ready.`;
+});
+
 function renderCues(rawTimings: RawTiming[] = []) {
   const list = element('cue-list'); list.replaceChildren();
   if (!working?.cues.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = 'Paste your words above, then create draft timings to begin.'; list.append(empty); return; }
@@ -813,6 +834,7 @@ async function openProject(id: string) {
   audio.pause(); audio.removeAttribute('src'); audio.load();
   loadedProjectGeneration++; editGeneration++;
   element<HTMLSelectElement>('recognition-choice').value = 'auto';
+  if (working?.id !== project.id) { element<HTMLInputElement>('timing-shift-seconds').value = ''; element('timing-shift-status').textContent = ''; }
   working = structuredClone(project); dirty = false; draftDirty = false; videoUrl = null;
   archiveInfo = null; archiveInfoState = 'loading'; void loadArchiveInfo();
   element<HTMLInputElement>('title').value = project.title;
