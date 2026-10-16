@@ -134,6 +134,10 @@ Body & drape also offers an independent static cantilever comparison with two il
 
 Body & drape now includes a static orthotropic membrane comparison with directional stretch, transverse coupling and engineering shear,0/45/90degree grain and inspectable triangle meshes/numerical JSON. Coefficients are illustrative, and the affine traction patch checks assembly rather than general mesh convergence. Local and final source/main CI pass134 units and156 native browser cases with project checks. See `docs/2026-10-16-clothing-membrane-integration.md` for first failures, native-save barrier repair and deferred unloaded interior-mesh overlay. The current garment solver is unchanged; nonlinear/dynamic shell behavior, contact, measured-material and physical-fit validation remain unfinished. Clothing stays ACTIVE.
 
+### Entered top torso girths — 2026-10-16 (#269)
+
+The top-body proxy now accepts independent optional waist/hip girths while blank fields preserve its original chest-derived proportions. Session-only settings reach actual drape geometry/cache identity and captured exports, with atomic validation, retained raw drafts and stale-result protection. Extreme mismatches now report excessive numerical edge extension separately from residual motion. See `docs/2026-10-16-clothing-top-body-integration.md` for boundary measurements, retained failures, review and final gates. Final local and source/main CI pass137 units and161 native browser cases with project checks. This improves the entered-body experience without establishing anatomical accuracy or physical fit; body heights/depth/limbs and XPBD materials/contact remain approximations. Persistent personalized avatars and calibrated garment physics remain unfinished, and Clothing stays ACTIVE.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
