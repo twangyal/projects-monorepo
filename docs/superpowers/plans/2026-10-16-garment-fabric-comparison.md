@@ -35,4 +35,4 @@ Interfaces: mountGarmentComparison(host,{capture:()=>{product,body},apply:(mater
 - [x] Implement panel, ownership/invalidation/URL lifecycle, explicit Apply hooks and responsive cards. Native tests must pass.
 - [x] Add held native worker/render boundaries, cancel/input/body/project/pagehide, failure retry and pending draft/artwork/import tests; watch missing behavior RED before repairs where found.
 - [x] Run npm run check and all focused native cases; commit implementation/docs.
-- [ ] Freeze source, run full native suite and source CI; independent whole-branch review once; fix Important/Critical with RED→GREEN and green suite. Integrate with head lease, inspect main CI and commit root evidence/direction only. Close270 when actual gates complete.
+- [x] Freeze source, run full native suite and source CI; independent whole-branch review once; fix Important/Critical with RED→GREEN and green suite. Integrate with head lease, inspect main CI and commit root evidence/direction only. Close270 when actual gates complete.
