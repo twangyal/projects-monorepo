@@ -1,3 +1,4 @@
+import {mountBending} from './bending-view.ts';
 import {mountTensile} from './tensile-view.ts';
 import { mountWorkspace } from './workspace.ts';
 import {mountBody} from './body-view.ts';
@@ -388,6 +389,7 @@ bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{i
 window.addEventListener('pagehide', retireLoad);
 mountWorkspace();
 mountTensile(element('workspace-body'));
+mountBending(element('workspace-body'));
 window.addEventListener('beforeunload', event => { if (unsaved) { event.preventDefault(); event.returnValue = ''; } });
 renderViews(); updateControls();
 const startupVersion = editVersion, startupGeneration = loadGeneration;

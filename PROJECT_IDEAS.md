@@ -84,6 +84,8 @@ Artwork milestone #254 adds staged front/back graphic rotation around the existi
 
 Milestone #266 adds a worker-backed, unit-aware static tensile swatch comparison under Body & drape, with illustrative warp/weft profiles, common-scale deformation, numerical receipts, explicit material/coupon stiffness and cancellation. This axial first step follows #256 research; it leaves the garment solver unchanged and does not complete membrane/bending/contact calibration or physical validation. Clothing remains ACTIVE.
 
+Milestone #267 adds an independent worker-backed cantilever bending comparison with illustrative directional N·m coefficients, cubic elements, same-scale curves and explicit signed/magnitude reaction results. This extends the material-law foundation without changing garment drape or claiming calibrated cloth. Membrane coupling/contact/real-specimen validation remain unfinished; Clothing stays ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`

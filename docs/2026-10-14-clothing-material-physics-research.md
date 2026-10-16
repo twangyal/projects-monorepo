@@ -67,3 +67,7 @@ Physical coupon/garment measurements and reuse rights are missing, but developme
 ### Axial first implementation — #266 (2026-10-15)
 
 The controlled tensile harness now implements a narrowly stated static axial strip, with SI energy/mass/force checks,0°/90° illustrative coefficients,8/16element comparisons, independent material/coupon stiffness and numerical JSON. It is available in Body & drape without changing garment physics. See `apps/clothing-studio/docs/2026-10-15-tensile-swatches.md` and the integration receipt for actual gates. This does not fulfill the above membrane/shear/bending/time-integration/diagonal/contact/physical-reference acceptance criteria; those remain the next substantive stages.
+
+### Independent bending foundation — #267 (2026-10-15)
+
+A separate small-deflection Euler–Bernoulli cantilever now exercises dimensional bending energy and EI=D*width,8/16 cubic elements, signed reactions, independent density and same-scale numerical export. Coefficients remain explicitly illustrative. See `apps/clothing-studio/docs/2026-10-15-bending-swatches.md`. This is a reduced strip, not a shell law, dynamic mesh convergence result, measured specimen calibration or garment integration; the original research acceptance gaps remain.
