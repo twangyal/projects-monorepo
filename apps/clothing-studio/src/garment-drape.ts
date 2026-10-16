@@ -7,7 +7,7 @@ import { isBottoms, material, teeDimensions, topMeasurements, type Material, typ
  * - Rest lengths are flat fabric distances: the body, sleeves, cuffs and bands are meshed from the flat silhouette, so
  *   each vertex's x and y are its position on the flat garment. Across a seam (front to back) bending rest lengths are
  *   measured unfolded, so seams do not hold a crease. The neck rib and hood keep their modelled 3D lengths.
- * - The body is a proxy from one measurement (chest), with standard proportions: a torso of stadium-shaped sections,
+ * - The body is a proxy from chest and optional waist/hip girths, with assumed heights/depth/limbs: a torso of stadium-shaped sections,
  *   sloped shoulders, neck, head and arms along the sleeve angle. It grows from inside the garment to full size before
  *   gravity starts, so the cloth starts outside it.
  * - Fabric weight comes from each part's library material (g/m²); stretch and bending from its construction (knits
@@ -26,6 +26,17 @@ const MODELLED: ReadonlySet<PartId> = new Set(['neckband', 'hood']);
 const CARRIED: ReadonlyMap<PartId, number> = new Map([['pocket', 0.5], ['chestPocket', 0.35]]);
 
 export const BODY_CHEST = [70, 140] as const;
+export const BODY_WAIST = [50, 180] as const;
+export const BODY_HIP = [50, 220] as const;
+export interface TopBodyShape { waist?: number; hip?: number }
+export function validateTopBodyShape(chest:number, shape:TopBodyShape = {}):{waist:number;hip:number}{
+  validateBodyChest(chest);
+  if(!shape||typeof shape!=='object'||Array.isArray(shape))throw new Error('Enter optional body waist and hip measurements.');
+  const waist=shape.waist===undefined?chest*.86:shape.waist,hip=shape.hip===undefined?chest*1.02:shape.hip;
+  if(typeof waist!=='number'||!Number.isFinite(waist)||waist<BODY_WAIST[0]||waist>BODY_WAIST[1])throw new Error('Body waist must be from 50 to 180 cm, or blank for automatic proportions.');
+  if(typeof hip!=='number'||!Number.isFinite(hip)||hip<BODY_HIP[0]||hip>BODY_HIP[1])throw new Error('Body hip must be from 50 to 220 cm, or blank for automatic proportions.');
+  return{waist,hip};
+}
 const GRAVITY = 981;
 const OFFSET = 0.35;      // fabric thickness kept from the body, cm
 // The hood falls back onto the garment; there is no cloth-to-cloth contact, so it keeps a layer's distance from the
@@ -54,16 +65,16 @@ type Vec = [number, number, number];
 export interface Capsule { a: Vec; b: Vec; radius: number; end: number; limb?: boolean }
 /** A torso section at height y: a stadium (rounded rectangle) with this half-width and half-depth. */
 export interface TorsoSection { y: number; halfWidth: number; halfDepth: number }
-export interface BodyProxy { chest: number; torso: TorsoSection[]; capsules: Capsule[] }
+export interface BodyProxy { chest: number; waist: number; hip: number; torso: TorsoSection[]; capsules: Capsule[] }
 
 /** Half-width of a stadium section of circumference c whose depth is `ratio` of its width. */
 const stadiumHalfWidth = (c: number, ratio: number) => c / (4 + ratio * (2 * Math.PI - 4));
 
 /** The body proxy for a top, standing so that its shoulders carry the garment's shoulder line. */
-export function bodyProxy(product: Product, chest: number): BodyProxy {
-  validateBodyChest(chest);
+export function bodyProxy(product: Product, chest: number, shape:TopBodyShape = {}): BodyProxy {
+  const {waist,hip}=validateTopBodyShape(chest,shape);
   const d = teeDimensions(product), top = d.length;
-  const depth = 0.7, chestHalf = stadiumHalfWidth(chest, depth), waistHalf = stadiumHalfWidth(chest * 0.86, depth), hipHalf = stadiumHalfWidth(chest * 1.02, 0.74);
+  const depth = 0.7, chestHalf = stadiumHalfWidth(chest, depth), waistHalf = stadiumHalfWidth(waist, depth), hipHalf = stadiumHalfWidth(hip, 0.74);
   const shoulderHalf = chest * 0.235, shoulderRadius = chestHalf * depth * 0.8;
   // The shoulder tops sit just under the garment's shoulder points; the torso section there is the shoulder capsule's.
   const torsoTop = top - d.shoulderDrop - OFFSET - shoulderRadius, armpit = top - d.shoulderDrop - chest * 0.21;
@@ -95,7 +106,7 @@ export function bodyProxy(product: Product, chest: number): BodyProxy {
     capsules.push({ a: at(0), b: at(reach), radius: upper, end: opening, limb: true });
     capsules.push({ a: at(reach), b: at(Math.max(reach, 62) + 4), radius: opening, end: wrist, limb: true });
   }
-  return { chest, torso, capsules };
+  return { chest, waist, hip, torso, capsules };
 }
 
 /**
@@ -303,9 +314,9 @@ export interface GarmentDrapeResult { parts: { part: PartId; positions: Float32A
  * same inputs; `progress` receives completed frames and can return false to stop early.
  */
 export function simulateGarment(product: Product, meshes: PartMesh[], bodyChest: number,
-  options: { frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
+  options: { bodyShape?:TopBodyShape; frames?: number; substeps?: number; progress?: (frame: number, frames: number) => boolean | void } = {}): GarmentDrapeResult {
   if (isBottoms(product)) throw new Error('Draping on a body is available for tops.');
-  const body = bodyProxy(product, validateBodyChest(bodyChest)), cloth = buildCloth(product, meshes);
+  const body = bodyProxy(product, validateBodyChest(bodyChest),options.bodyShape), cloth = buildCloth(product, meshes);
   const frames = options.frames ?? 240, substeps = options.substeps ?? 10, dt = FRAME / substeps;
   if (!Number.isInteger(frames) || frames <= GROW_FRAMES || frames > 2000 || !Number.isInteger(substeps) || substeps < 1 || substeps > 60) throw new Error('Simulation steps are out of range.');
   const positions = Float32Array.from(cloth.positions), previous = Float32Array.from(positions), velocity = new Float32Array(positions.length);

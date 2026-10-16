@@ -88,6 +88,8 @@ Milestone #267 adds an independent worker-backed cantilever bending comparison w
 
 Milestone #268 adds an independent coupled orthotropic membrane comparison:0°/45°/90°grain, transverse contraction/shear, SI energy/resultants, two mesh resolutions/diagonals and numerical JSON. Profiles remain illustrative; affine patch consistency is not general mesh convergence. Garment dynamics/contact/material calibration remain unfinished and Clothing stays ACTIVE.
 
+Milestone #269 adds optional independent waist/hip inputs to the top body proxy, atomic body Apply, preserved raw drafts and actual worker/cache/export propagation. Blank retains original proportions. Session-only dimensions and assumed torso heights/depth/limbs do not establish anatomy or physical fit; Clothing stays ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`
