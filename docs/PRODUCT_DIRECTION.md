@@ -122,6 +122,10 @@ The current XPBD top-drape implementation already uses gravity, stretch, bending
 
 Evaluate representative fabrics on the same garment and body so observed differences can be attributed to materials; compare with credible reference drapes or physical samples where available. Check fold/strain behavior, stretching along different fabric directions, contact and penetration, settling stability, and useful interaction/performance on supported devices. Keep limitations visible and make failed or unstable simulations understandable. Appearance alone does not validate physical fit or manufacturing readiness. Scheduled Clothing Studio work should include this research and validation alongside the 3D-first redesign; this follow-up records future requirements and does not claim that they are delivered.
 
+### Material-law foundation delivered — 2026-10-15 (#266)
+
+Body & drape now includes an independent static tensile comparison with two illustrative directional profiles, explicit SI mass/energy/force response,8/16-element checks, captured numerical JSON and owned cancellation. Material extensional coefficient and coupon force/extension stiffness are distinguished. Local and source/main CI pass121 units and146 native browser cases with project checks; see `docs/2026-10-15-clothing-tensile-integration.md`. The current garment solver stays unchanged. This axial foundation does not deliver membrane shear, bending/contact, calibrated materials or physical fit; the above research gates and ACTIVE destination remain in force.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
