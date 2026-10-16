@@ -1,4 +1,4 @@
-import {MATERIALS,isBottoms,type Product} from './product.ts';
+import {MATERIALS,isBottoms,partsOf,RIB_PARTS,type Product} from './product.ts';
 import {fabricVariants,comparisonReceipt,type ComparisonBody,type GarmentComparisonReceipt} from './garment-comparison.ts';
 import type {GarmentDrapeResult} from './garment-drape.ts';
 interface Capture {product:Product;body:ComparisonBody}
@@ -36,7 +36,7 @@ export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Cap
   let owned:number|undefined;
   invalidate('Preparing comparison…');
   try{
-   const capture=options.capture();if(!same(current,capture))throw new Error('The garment changed. Run again.');
+   const capture=options.capture();sync(capture.product,capture.body);
    const materials:[string,string]=[(form.elements.namedItem('fabricA') as HTMLSelectElement).value,(form.elements.namedItem('fabricB') as HTMLSelectElement).value];
    const source=structuredClone(capture.product),products=fabricVariants(source,materials),token=++generation;owned=token;
    origin=capture;run.disabled=true;cancel.hidden=false;
@@ -52,8 +52,10 @@ export function mountGarmentComparison(host:HTMLElement,options:{capture:()=>Cap
    for(let i=0;i<2;i++){
     const candidate=data.candidates[i]!,card=document.createElement('article'),heading=document.createElement('h5'),images=document.createElement('div'),metrics=document.createElement('p'),use=document.createElement('button');card.className='garment-comparison-card';images.className='garment-comparison-images';heading.textContent=`${candidate.material.name} · ${candidate.material.gsm} gsm`;
     for(const view of ['front','back'] as const){const image=document.createElement('img'),url=URL.createObjectURL(renders[i]![view]);urls.push(url);image.src=url;image.alt=`${candidate.material.name}, matched ${view} drape`;images.append(image);}
-    const m=candidate.result.metrics;metrics.textContent=`${(m.maxStrain*100).toFixed(1)}% maximum edge extension · ${m.residualSpeed.toFixed(2)} cm/s final speed · ${m.minClearance.toFixed(3)} cm minimum body clearance · ${(m.contact*100).toFixed(1)}% contact. ${candidate.warnings.join(' ')}`;
-    use.type='button';use.textContent=`Use ${candidate.material.name}`;use.addEventListener('click',()=>{
+    const alreadyUsed=partsOf(source).every(part=>RIB_PARTS.has(part)||source.parts[part].material===candidate.material.id);
+    const m=candidate.result.metrics;metrics.textContent=`${(m.maxStrain*100).toFixed(1)}% maximum edge extension · ${m.residualSpeed.toFixed(2)} cm/s final speed · ${m.minClearance.toFixed(3)} cm minimum body clearance · ${(m.contact*100).toFixed(1)}% contact. ${candidate.warnings.join(' ')}${alreadyUsed?' Already used on all non-rib parts.':''}`;
+    use.type='button';use.disabled=alreadyUsed;use.textContent=`Use ${candidate.material.name}`;use.addEventListener('click',()=>{
+     if(use.disabled)return;
      try{const latest=options.capture();if(!receipt||!same(origin,latest))throw new Error('The garment or body changed. Run a new comparison.');if(!options.apply(candidate.material.id))throw new Error('The fabric choice could not be applied. Your design is unchanged.');invalidate(`${candidate.material.name} applied to non-rib parts. Undo restores the previous fabrics.`);}
      catch(error){status.textContent=error instanceof Error?error.message:'The fabric could not be applied.';}
     });card.append(heading,images,metrics,use);cards.append(card);
