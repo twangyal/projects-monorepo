@@ -9,7 +9,7 @@ export function solveBending(profile:BendingProfile,raw:TensileInput){
  if(profile.provenance!=='illustrative'||![profile.densityKgM2,profile.warpBendingNm,profile.weftBendingNm].every(n=>typeof n==='number'&&Number.isFinite(n)&&n>0))throw new Error('Finite positive illustrative bending coefficients are required.');
  const L=input.lengthCm/100,W=input.widthCm/100,n=input.segments,h=L/n,D=input.grain===0?profile.warpBendingNm:profile.weftBendingNm,EI=D*W,F=input.forceN;
  const expectedTip=F*L**3/(3*EI),expectedSlope=F*L**2/(2*EI);
- if(!Number.isFinite(expectedTip)||!Number.isFinite(expectedSlope)||expectedTip>L*.1||expectedSlope>.15)throw new Error('Outside the small-bending range: tip must stay within 10% of length and slope within 0.15 rad. Reduce force.');
+ if(!Number.isFinite(expectedTip)||!Number.isFinite(expectedSlope)||expectedTip>L*.1*(1+8*Number.EPSILON)||expectedSlope>.15*(1+8*Number.EPSILON))throw new Error('Outside the small-bending range: tip must stay within 10% of length and slope within 0.15 rad. Reduce force.');
  const size=2*(n+1),K=Array.from({length:size},()=>new Float64Array(size));
  const element=[[12,6*h,-12,6*h],[6*h,4*h*h,-6*h,2*h*h],[-12,-6*h,12,-6*h],[6*h,2*h*h,-6*h,4*h*h]],factor=EI/h**3;
  for(let e=0;e<n;e++)for(let i=0;i<4;i++)for(let j=0;j<4;j++)K[e*2+i]![e*2+j]+=factor*element[i]![j]!;

@@ -10,3 +10,5 @@ Architecture: SI Euler–Bernoulli cubic beam elements, clamped displacement/rot
 Energy: integral(EI*w''²/2)dx - F*w(L). Standard cubic Hermite4×4 stiffness, reduced linear solve fixing both clamp DOFs. Closed form w(x)=F*x²*(3L-x)/(6EI), theta(L)=F*L²/(2EI), U=F*w(L)/2. Primary reference: MIT2.002 David Parks,2004 lecture2 tip-loaded cantilever. Coefficients are our illustrative values, not measured fabrics.
 
 Progress:126 units/check and five focused native cases pass after review repairs. Full151-case local run is in progress. Curve polyline and reaction-sign ambiguities have actual RED→GREEN checks. Ruling: show signed support reactions and explicit magnitudes; ambiguous force conventions would mislead a future calibration. Existing cloth solver remains unchanged.
+
+Boundary follow-up: exact nominal3mN equality fails due floating-point evaluation of the declared limit. RED→GREEN test admits an8*machine-epsilon relative comparison allowance, not a physical deformation margin, and refuses0.003001N.127 units/check and five native flows pass before the final complete151-case run. Backup parity now seeds a real garment.
