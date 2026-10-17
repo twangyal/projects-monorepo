@@ -152,7 +152,7 @@ Body & drape can now compare two library fabrics on the same captured top/body w
 
 ### Entered chest depth — 2026-10-17 (#276)
 
-Top draping now accepts optional straight front-to-back chest depth while preserving chest girth, legacy blank-field geometry, atomic raw drafts and owned results. Actual garment exports and matched fabric receipts use the changed proxy. Reviewed source passes 145 unit and 177 native browser cases; canonical main verification is pending. [The integration record](2026-10-17-clothing-chest-depth-integration.md) preserves exact bounds, regression/review evidence and remaining anatomical/material/physical-fit limits. Clothing stays ACTIVE.
+Top draping now accepts optional straight front-to-back chest depth while preserving chest girth, legacy blank-field geometry, atomic raw drafts and owned results. Actual garment exports and matched fabric receipts use the changed proxy. Reviewed source and canonical main pass 145 unit and 177 native browser cases. [The integration record](2026-10-17-clothing-chest-depth-integration.md) preserves exact bounds, regression/review evidence and remaining anatomical/material/physical-fit limits. Clothing stays ACTIVE.
 
 ## 6. Karaoke Studio
 
