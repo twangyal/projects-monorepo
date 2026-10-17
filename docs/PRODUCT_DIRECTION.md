@@ -54,6 +54,10 @@ Native text fields now support spoken literal phrase selection and explicit repe
 
 Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source and canonical-main CI pass186 units/all368 browser cases across three isolated shards, including the injected extension flow.
 
+### Native checkbox state — 2026-10-17 (#286)
+
+Explicit check/tick and uncheck/untick now retain the requested native binary-checkbox state, with no-op event suppression, one native click for changes, current DOM/focus guards and honest canceled/site-overridden outcomes. Named/gazed/ordinal clarification and consequential confirmation/cancel remain; custom ARIA and mixed-state controls refuse. [Source/canonical verification](2026-10-17-gaze-checkbox-state-integration.md) records190units/all396source browser cases and main acceptance. Physical speech/gaze and intended-user task completion remain unverified; Gaze stays ACTIVE.
+
 ## 3. Melody Studio
 
 Melody Studio's destination is a respectable, full music-production DAW with the depth and creative control associated with tools such as FL Studio. Most of the original voice-to-music vision remains: users can capture hummed or sung ideas, review and edit notes, choose sounds, layer parts and use AI assistance while retaining musical control. The destination is not limited to a simple sketchbook.

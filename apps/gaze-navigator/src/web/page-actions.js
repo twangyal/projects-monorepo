@@ -46,6 +46,25 @@ export function canWrite(element) {
   return isEditable(element) && unlocked(element);
 }
 
+export function setChecked(element, checked) {
+  const available = () => element.tagName === 'INPUT' && element.type === 'checkbox' &&
+    element.isConnected && !element.readOnly && unlocked(element);
+  if (typeof checked !== 'boolean' || !available()) return { ok: false, message: 'This command needs an available native checkbox. Custom ARIA controls are not supported.' };
+  if (element.indeterminate) return { ok: false, message: 'This checkbox has a mixed state. Choose its state on the website before using check or uncheck.' };
+  if (element.checked === checked) return { ok: true, message: `Checkbox is already ${checked ? 'checked' : 'unchecked'}.` };
+  const before = element.checked;
+  element.focus({ preventScroll: true });
+  if (!available() || !ownsFocus(element) || element.checked !== before || element.indeterminate) {
+    return { ok: false, message: 'The checkbox changed while focusing it. Look at it and try again.' };
+  }
+  // Native activation supplies input/change, shadow propagation and canceled
+  // click rollback. Never overwrite a website's preventDefault or state update.
+  element.click();
+  if (!available()) return { ok: false, message: 'The website replaced, removed or locked the checkbox. Check the current control before continuing.' };
+  const ok = element.checked === checked && !element.indeterminate;
+  return { ok, message: ok ? `Checkbox ${checked ? 'checked' : 'unchecked'}.` : 'The website did not retain the requested checkbox state. Check it before continuing.' };
+}
+
 export function setRangeValue(element, value) {
   const available = () => element.tagName === 'INPUT' && element.type === 'range' &&
     element.isConnected && !element.readOnly && unlocked(element);

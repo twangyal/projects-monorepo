@@ -25,6 +25,11 @@ Integration #246 lands reviewed opt-in on-device WaterSheep matching and expande
 
 Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](docs/2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source and canonical-main CI pass186 units/all368 browser cases across three isolated shards, including the injected extension flow.
 
+
+### Native checkbox state — 2026-10-17 (#286)
+
+Explicit check/tick and uncheck/untick now retain the requested native binary-checkbox state, with no-op event suppression, one native click for changes, current DOM/focus guards and honest canceled/site-overridden outcomes. Named/gazed/ordinal clarification and consequential confirmation/cancel remain; custom ARIA and mixed-state controls refuse. [Source/canonical verification](docs/2026-10-17-gaze-checkbox-state-integration.md) records190units/all396source browser cases and main acceptance. Physical speech/gaze and intended-user task completion remain unverified; Gaze stays ACTIVE.
+
 ## 2. Schedule app that bricks your phone
 
 Path: N/A

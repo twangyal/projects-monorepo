@@ -56,6 +56,8 @@ Discovery reaches controls inside open shadow roots (web components) and same-or
 
 ### Writable-field protection (#274)
 
+**Checkbox state:** “check Newsletter” / “tick Newsletter” and “uncheck Newsletter” / “untick that checkbox” set a native checkbox to the requested state. Repeating a request that is already satisfied sends no click or edit events. An actual change uses one native click, respecting the website's event handlers and canceled activation; a refused, replaced or overridden result is reported. Ambiguity, pause/cancel and consequential confirmation still apply. Custom ARIA checkbox/switch widgets and mixed/indeterminate native states are refused by these commands. Ordinary “click” / “toggle” activation is unchanged. [Software verification](docs/2026-10-17-checkbox-state.md) does not establish physical speech/gaze or intended-user acceptance.
+
 Ordinary typing, clearing, correction and text Undo keep the focused or explicitly named text field as their target, including when that field is read-only. They refuse a nonwritable target instead of silently choosing a writable neighbor. Explicitly naming another writable field still works. Before a text edit or search writes anything, the runtime rechecks current native read-only/disabled state, inert ancestors, and ARIA read-only/disabled restrictions. Refused actions dispatch no edit events and do not consume text history; searches also recheck after confirmation. Selection commands retain their existing native-field restrictions.
 
 [Verification and boundaries](../../docs/2026-10-16-gaze-writable-fields.md) distinguish hosted Node/Chromium checks from the unavailable local execution environment. This does not establish real microphone/webcam or broad framework acceptance.

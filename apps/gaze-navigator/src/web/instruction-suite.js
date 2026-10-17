@@ -1,6 +1,6 @@
 // Versioned spoken-instruction suite for measuring interpreters on ordinary phrasing.
 // Contexts are described gaze contexts (no DOM); expectations are typed actions.
-export const SUITE_VERSION = 'spoken-web-v1';
+export const SUITE_VERSION = 'spoken-web-v2-checkbox-state';
 
 const el = (id, role, name, extra = {}) => ({ id, role, name, distance: id === 1 ? 0 : 10 * id, editable: false, ...extra });
 const field = (id, name, extra = {}) => el(id, 'textbox', name, { editable: true, value: '', ...extra });
@@ -56,8 +56,8 @@ const CASES = [
   ['activate', 'product', 'open reviews', act(4)],
   ['activate', 'product', 'show reviews', act(4)],
   ['activate', 'product', 'click this', act(1)],
-  ['activate', 'form', 'check send me a copy', act(4)],
-  ['activate', 'form', 'tick send me a copy', act(4)],
+  ['activate', 'form', 'check send me a copy', { type: 'check', targetId: 4, checked: true }],
+  ['activate', 'form', 'tick send me a copy', { type: 'check', targetId: 4, checked: true }],
   ['activate', 'form', 'send message', act(6)],
   ['activate', 'list', 'open the second read more', act(2)],
   ['activate', 'list', 'click the first remove', act(4)],
@@ -179,7 +179,7 @@ const HELD_OUT = [
   ['activate', 'navigation', 'go to the third link', act(3)],
   ['activate', 'navigation', 'sign in please', act(4)],
   ['activate', 'navigation', 'login', act(4)],
-  ['activate', 'form', 'uncheck send me a copy', act(4)],
+  ['activate', 'form', 'uncheck send me a copy', { type: 'check', targetId: 4, checked: false }],
   ['activate', 'form', 'click send', act(6)],
   ['activate', 'product', 'buy it now', act(3)],
   ['activate', 'product', 'add this to the cart', act(2)],
@@ -246,7 +246,7 @@ const HELD_OUT_2 = [
   ['activate', 'product', 'show the ratings', act(4)],
   ['activate', 'product', 'open the comments', act(4)],
   ['activate', 'form', 'press the send button', act(6)],
-  ['activate', 'form', 'tick the copy box', act(4)],
+  ['activate', 'form', 'tick the copy box', { type: 'check', targetId: 4, checked: true }],
   ['activate', 'form', 'email me a copy', act(4)],
   ['activate', 'form', 'open the topic list', act(5)],
   ['activate', 'form', 'go to the email field', act(2)],

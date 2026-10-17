@@ -246,6 +246,16 @@ export function interpret(utterance, context = { elements: [] }) {
   if ((match = /^replace (?:the )?selected text with\s+(.+)$/i.exec(command))) {
     return chooseSelectionField(context, edit('insert-selection', { text: unquote(match[1]), requireSelection: true }));
   }
+  const checkboxState = /^(check|uncheck|tick|untick)(?:\s+(.+))?$/.exec(text);
+  if (checkboxState && !/^check out(?: now)?$/.test(text)) {
+    const candidates = context.elements.filter(element => ['checkbox', 'switch'].includes(element.role));
+    const subject = checkboxState[2]?.replace(/^the\s+/, '');
+    const act = element => ({ type: 'check', targetId: element.id, checked: ['check', 'tick'].includes(checkboxState[1]) });
+    const counted = subject && ORDINAL.exec(subject);
+    if (counted) return ordinal(counted[1], counted[2], candidates, act);
+    return !subject || DEICTIC.test(subject) || /^(?:(?:this|that) )?(?:checkbox|switch|box)$/.test(subject)
+      ? deictic(candidates, act, 'checkbox') : resolve(subject, candidates, null, act, 'checkbox');
+  }
   // Explicit slider intent stays separate from ordinary text/option commands.
   const sliderSet = /^(?:set|change) (?:the )?(?:(.*?) )?slider to (.+)$/i.exec(command);
   const sliderUndo = /^undo (?:the )?(?:(.*?) )?slider$/i.exec(command);
