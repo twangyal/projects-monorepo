@@ -172,7 +172,7 @@ Research #279 supplies a [reproducible pinned CPU probe and evidence history](re
 
 ### Reusable entered bodies — 2026-10-17 (#280)
 
-Named top-body measurement profiles now provide explicit local Save, selection preview, deliberate Use, update/rename, confirmed delete and separate JSON backup/import. Body drafts and current garments are retained on refusal; using a profile follows actual worker/comparison/export geometry and retires old work. Reload/new concepts do not apply a profile automatically. This is a reuse workflow for the existing approximate body, not anatomical reconstruction or calibrated fit. [Workflow and verification](../apps/clothing-studio/docs/2026-10-17-top-body-profiles.md) records passing source156-unit/195-browser gates; [the integration record](2026-10-17-clothing-body-profiles-integration.md) tracks canonical main acceptance. Clothing remains ACTIVE.
+Named top-body measurement profiles now provide explicit local Save, selection preview, deliberate Use, update/rename, confirmed delete and separate JSON backup/import. Body drafts and current garments are retained on refusal; using a profile follows actual worker/comparison/export geometry and retires old work. Reload/new concepts do not apply a profile automatically. This is a reuse workflow for the existing approximate body, not anatomical reconstruction or calibrated fit. [Workflow and verification](../apps/clothing-studio/docs/2026-10-17-top-body-profiles.md) records passing local production/source/main156-unit/195-browser gates; [the integration record](2026-10-17-clothing-body-profiles-integration.md) tracks canonical main acceptance. Clothing remains ACTIVE.
 
 ## 6. Karaoke Studio
 
