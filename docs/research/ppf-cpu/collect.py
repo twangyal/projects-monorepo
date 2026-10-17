@@ -17,7 +17,7 @@ receipt=json.loads(path.read_text()) if path.is_file() else {'schema':1,'status'
 code_path=out/'fixture-exit-code.txt';code=int(code_path.read_text().strip()) if code_path.is_file() else None
 receipt['fixture_step_outcome']=args.outcome;receipt['fixture_exit_code']=code
 if code in [124,137]:receipt['status']='timed_out'
-elif args.outcome!='success' and receipt['status'] in ['passed_upstream_fixture','passed_static_fixture']:receipt['status']='failed_execution_gate'
+elif args.outcome!='success' and receipt['status'] in ['passed_upstream_fixture','passed_static_fixture','passed_curved_fixture']:receipt['status']='failed_execution_gate'
 elif receipt['status']=='started':receipt['status']='interrupted'
 supervisor=out/'supervisor.json'
 if supervisor.is_file() and json.loads(supervisor.read_text()).get('remaining_children',0):
@@ -39,7 +39,7 @@ expected=receipt.get('frames_per_case')
 frames={item['path'] for item in manifest if re.fullmatch(r'native-cache/sessions/cpu-contact-(?:held|through)/session/output/vert_[0-9]+\.bin',item['path'])}
 actual=len(frames)
 required={f'native-cache/sessions/cpu-contact-{name}/session/output/vert_{i}.bin' for name in ['held','through'] for i in range(expected or 0)}
-missing=receipt['status'] in ['passed_upstream_fixture','passed_static_fixture'] and expected is not None and frames!=required
+missing=receipt['status'] in ['passed_upstream_fixture','passed_static_fixture','passed_curved_fixture'] and expected is not None and frames!=required
 if missing:
     receipt['status']='failed_evidence_collection'
     receipt['evidence_error']=f'Expected exact per-case output frame set ({expected*2} files), retained {actual} numeric output frames.'
