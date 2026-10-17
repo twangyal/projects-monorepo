@@ -246,6 +246,19 @@ export function interpret(utterance, context = { elements: [] }) {
   if ((match = /^replace (?:the )?selected text with\s+(.+)$/i.exec(command))) {
     return chooseSelectionField(context, edit('insert-selection', { text: unquote(match[1]), requireSelection: true }));
   }
+  // Explicit slider intent stays separate from ordinary text/option commands.
+  const sliderSet = /^(?:set|change) (?:the )?(?:(.*?) )?slider to (.+)$/i.exec(command);
+  const sliderUndo = /^undo (?:the )?(?:(.*?) )?slider$/i.exec(command);
+  if (sliderSet || sliderUndo) {
+    const name = (sliderSet ?? sliderUndo)[1];
+    const number = sliderSet?.[2];
+    if (sliderSet && (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(number) || !Number.isFinite(Number(number)))) {
+      return { type: 'unknown', message: 'Say an exact numeric slider value, such as “set Volume slider to 40”. Use the slider’s own units.' };
+    }
+    const sliders = context.elements.filter(element => element.role === 'slider');
+    const act = element => ({ type: 'range', targetId: element.id, ...(sliderUndo ? { undo: true } : { value: Number(number) }) });
+    return name ? resolve(name, sliders, null, act, 'slider') : deictic(sliders, act, 'slider');
+  }
   if ((match = /^(?:search(?: for)?|look up|look for|find)\s+(.+)$/i.exec(command))) {
     const query = unquote(match[1]);
     const act = element => ({ type: 'search', targetId: element.id, text: query });

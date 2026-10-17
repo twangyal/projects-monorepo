@@ -32,19 +32,46 @@ export function readValue(element) {
 
 // Captured context can outlive a field's editable state. Check the current DOM
 // before writing or consuming history, including native and ARIA restrictions.
-export function canWrite(element) {
-  if (!isEditable(element) || element.matches(':disabled')) return false;
-  // Context discovery crosses these boundaries, so a lock on a shadow host or
-  // same-origin frame must also invalidate an already captured child field.
+function unlocked(element) {
+  if (element.matches(':disabled')) return false;
   for (let scope = element; scope;) {
     if (scope.closest('[inert], [aria-disabled="true"], [aria-readonly="true"]')) return false;
-    try {
-      scope = scope.getRootNode().host ?? scope.ownerDocument.defaultView.frameElement;
-    } catch {
-      return false; // A frame that became inaccessible cannot authorize a write.
-    }
+    try { scope = scope.getRootNode().host ?? scope.ownerDocument.defaultView.frameElement; }
+    catch { return false; }
   }
   return true;
+}
+
+export function canWrite(element) {
+  return isEditable(element) && unlocked(element);
+}
+
+export function setRangeValue(element, value) {
+  const available = () => element.tagName === 'INPUT' && element.type === 'range' &&
+    element.isConnected && !element.readOnly && unlocked(element);
+  if (!available()) return { ok: false, message: 'This command needs an available native range slider. Custom ARIA sliders are not supported.' };
+  if (typeof value !== 'number' || !Number.isFinite(value)) return { ok: false, message: 'Say a finite numeric slider value.' };
+  // Range setters silently clamp and snap. The detached native control must
+  // retain exactly the requested number before any live focus, event or write.
+  const probe = element.cloneNode(false);
+  setNativeValue(probe, String(value));
+  if (probe.valueAsNumber !== value || !probe.validity.valid) {
+    return { ok: false, message: `That exact value is outside the slider’s range or step. Current limits: ${element.min || '0'} to ${element.max || '100'}, step ${element.step || '1'}.` };
+  }
+  const before = element.value;
+  if (Number(before) === value) return { ok: true, changed: false, message: `Slider is already ${before}.` };
+  const capture = () => JSON.stringify([element.value, element.min, element.max, element.step, element.getAttribute('value')]);
+  const snapshot = capture();
+  element.focus({ preventScroll: true });
+  if (!available() || !ownsFocus(element) || capture() !== snapshot) {
+    return { ok: false, message: 'The slider changed while focusing it. Look at it and try again.' };
+  }
+  setNativeValue(element, String(value));
+  const view = element.ownerDocument.defaultView;
+  element.dispatchEvent(new view.Event('input', { bubbles: true }));
+  element.dispatchEvent(new view.Event('change', { bubbles: true }));
+  const ok = element.valueAsNumber === value;
+  return { ok, changed: element.value !== before, before, message: ok ? `Slider set to ${element.value}.` : `The website changed the slider to ${element.value}. Check it before continuing.` };
 }
 
 // Selection APIs are deliberately limited to native, writable text controls. Rich-text

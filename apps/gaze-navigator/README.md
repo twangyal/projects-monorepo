@@ -60,6 +60,16 @@ Ordinary typing, clearing, correction and text Undo keep the focused or explicit
 
 [Verification and boundaries](../../docs/2026-10-16-gaze-writable-fields.md) distinguish hosted Node/Chromium checks from the unavailable local execution environment. This does not establish real microphone/webcam or broad framework acceptance.
 
+### Setting native sliders (#283)
+
+Look at a native range slider and say **“set Volume slider to 40”** (using its name), or **“set slider to 40”** for the slider under the circle. Signed decimals such as `set Balance slider to -0.25` work in the control's own numeric units. The word **slider** makes this explicit; ordinary text/option commands retain their existing meaning. Percentages and spoken number words are not converted. Equal names ask a numbered question; Cancel/Pause retire the pending action.
+
+The exact value must fit the slider's current min/max/step. The runtime refuses silent browser clamping or rounding; it also rechecks native type, connection, disabled/read-only/inert/ARIA locks across shadow/frame ancestors and focus-handler changes before dispatching input/change. Custom ARIA sliders need widget-specific keyboard behavior and are refused. A website can react to those ordinary events; if it changes the requested value, feedback reports the observed value rather than claiming success.
+
+**“Undo Volume slider”** or **“undo slider”** restores the last changed value for that same element (up to20 changes, session only). Text Undo is separate. Refusals, unchanged values and invalid/locked Undo preserve the history; an old value that no longer fits current limits refuses until the limits permit it again. Navigation/replacement does not transfer history to a different element.
+
+[Verification and remaining limits](../../docs/2026-10-17-gaze-native-sliders.md) separate actual DOM/browser checks from real speech, webcam and intended-user acceptance.
+
 ### Correcting a native text selection
 
 In a writable text input or textarea, say **“select all text”**, **“move cursor to the start”**, or **“move cursor to the end”**. Say **“insert Hello at the cursor”** to insert at the caret (or replace the selected range), or **“replace selected text with Hello”** to require a nonempty selection. Quoted text preserves intentional spaces: `insert "next " at the cursor`. These explicit insertions add no automatic spaces. Ordinary `type Hello` / `insert Hello` still append with the existing dictation spacing.
