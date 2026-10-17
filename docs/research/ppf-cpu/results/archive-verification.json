@@ -1,0 +1,18 @@
+{
+  "archive_sha256": "8d76cb3451f4958cb0dff80a3fbacfe3137f06881c12fd3c2ff3028d3ae60ce7",
+  "original_ci_conclusion": "failure: index maps miscounted as output frames",
+  "native_manifest_hashes_and_sizes_verified": 220,
+  "actual_output_frames": 26,
+  "float32_values_finite": 3900,
+  "vertices_per_frame": 50,
+  "per_case_exact_numbered_frame_set": true,
+  "fixture_original_exit_code": 0,
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 7.046824263000019,
+    "remaining_children": 0
+  },
+  "audit_scope": "Archive integrity and frame admission only; not independent physical validation or a green CI result."
+}
