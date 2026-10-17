@@ -71,7 +71,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
       <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder, neck, armhole, hem, sleeve opening</summary>
-        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Values you leave unchanged keep scaling with the chest.</p>
+        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm.</p>
         <div class="measure-grid">${FIT_KEYS.map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div>
         <div class="inline-actions"><button id="apply-fit">Apply fit</button><button id="reset-fit" class="quiet">Back to proportional</button></div>
       </details>
@@ -465,7 +465,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Fit: a point of measure is stored only when it differs from its proportional value.
   const fitValues = (design: Product): Record<FitKey, number> => {
     const d = teeDimensions(design);
-    return { shoulderWidth: d.shoulderX * 2, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+    return { shoulderWidth: d.shoulderX * 2, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
   };
   $('apply-fit').addEventListener('click', () => update(draft => {
     const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
@@ -699,9 +699,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     select.innerHTML = `<option value="">No print</option>${MOTIFS.map(m => `<option value="${m}">${MOTIF_NAMES[m]}</option>`).join('')}${motifs.map(m => `<option value="upload:${m.id}">${escapeHtml(m.name)} (your motif)</option>`).join('')}`;
   }
 
-  // Direct pattern editing: handles on the front piece move its shoulder point, neck point, neck drop, underarm and
+  // Direct pattern editing: front and back neckline handles plus front-piece handles move its shoulder point, neck point, neck drop, underarm and
   // hem corner. Each is a slider over one fit measurement; a drag or an arrow key is one undoable edit.
-  type Handle = { key: FitKey; axis: 'x' | 'y'; x: number; y: number; label: string; value: (x: number, y: number) => number; widens: boolean };
+  type Handle = { part?: 'front' | 'back'; key: FitKey; axis: 'x' | 'y'; x: number; y: number; label: string; value: (x: number, y: number) => number; widens: boolean };
   let handlesShown: Handle[] = [];
   function fitHandles(design: Product): Handle[] {
     if (isBottoms(design)) return [];
@@ -711,6 +711,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     return [
       { key: 'shoulderWidth', axis: 'x', x: cx - d.shoulderX, y: d.shoulderDrop, label: 'Shoulder point', value: x => 2 * (cx - x), widens: true },
       { key: 'neckWidth', axis: 'x', x: cx - d.neckHalf, y: 0, label: 'Neck point', value: x => 2 * (cx - x), widens: true },
+      { key: 'backNeckDrop', part: 'back', axis: 'y', x: cx, y: d.neckDepthBack, label: 'Back neck', value: (_, y) => y, widens: false },
       { key: 'frontNeckDrop', axis: 'y', x: cx, y: d.neckDepthFront, label: 'Front neck', value: (_, y) => y, widens: false },
       { key: 'armholeDepth', axis: 'y', x: cx - d.half, y: armY, label: 'Underarm', value: (_, y) => y - d.shoulderDrop, widens: false },
       { key: 'hemWidth', axis: 'x', x: cx - d.half + inset, y: hemY - (d.band ? 0 : d.hemCurve), label: 'Hem corner',
@@ -722,8 +723,9 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const pieces = patternPieces(design), gap = 6, scale = 3;
     let x = 0; const placed = pieces.map(piece => { const at = x; x += piece.width + gap; return { piece, at }; });
     handlesShown = fitHandles(design);
+    const partAt = (part: 'front' | 'back') => placed.find(item => item.piece.part === part)?.at ?? 0;
     const frontAt = placed.find(item => item.piece.part === 'front')?.at ?? 0;
-    const handles = handlesShown.map(h => `<circle data-fit-handle="${h.key}" cx="${h.x.toFixed(2)}" cy="${h.y.toFixed(2)}" r="1.5" tabindex="0" role="slider" aria-label="${h.label}: ${FIT_NAMES[h.key]}"
+    const handles = handlesShown.map(h => `<circle data-fit-handle="${h.key}" data-fit-part="${h.part ?? 'front'}" cx="${(h.x + partAt(h.part ?? 'front') - frontAt).toFixed(2)}" cy="${h.y.toFixed(2)}" r="1.5" tabindex="0" role="slider" aria-label="${h.label}: ${FIT_NAMES[h.key]}"
       aria-valuemin="${LIMITS.fit[h.key][0]}" aria-valuemax="${LIMITS.fit[h.key][1]}" aria-valuenow="${(Math.round(fitValue(design, h.key) * 10) / 10)}" aria-valuetext="${(Math.round(fitValue(design, h.key) * 10) / 10)} cm" aria-orientation="${h.axis === 'x' ? 'horizontal' : 'vertical'}"><title>${h.label}: drag to change ${FIT_NAMES[h.key].toLowerCase()}</title></circle>`).join('');
     const handleLayer = handles ? `<g class="fit-handles" transform="translate(${frontAt} 0)">${handles}<text class="fit-readout" x="0" y="-0.5" font-size="3"></text></g>` : '';
     const height = Math.max(...pieces.map(p => p.height));

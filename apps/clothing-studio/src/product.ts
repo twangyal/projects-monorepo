@@ -91,13 +91,13 @@ export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: numbe
 export interface Measurements { chest: number; length: number; sleeve: number }
 /**
  * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), neck width (F), front
- * neck drop (G), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
- * out keeps its proportion of the chest.
+ * neck drop (G), back neck drop (H), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
+ * out keeps its default (chest-based proportions where applicable; back neck drop is 2 cm).
  */
-export const FIT_KEYS = ['shoulderWidth', 'neckWidth', 'frontNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening'] as const;
+export const FIT_KEYS = ['shoulderWidth', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening'] as const;
 export type FitKey = typeof FIT_KEYS[number];
 export type Fit = Partial<Record<FitKey, number>>;
-export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop',
+export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop',
   armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
 export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number }
@@ -131,7 +131,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  fit: { shoulderWidth: [30, 70], neckWidth: [12, 28], frontNeckDrop: [2, 25], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30] } as Record<FitKey, readonly [number, number]>,
+  fit: { shoulderWidth: [30, 70], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -346,7 +346,7 @@ function neckPath(half: number, depth: number, v: boolean): { x: number; y: numb
 export function neckSize(m: Measurements, neckline: Product['neckline'], fit: Fit = {}) {
   const half = (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2;
   const front = neckPath(half, fit.frontNeckDrop ?? (neckline === 'v' ? 15 : 8), neckline === 'v');
-  const back = neckPath(half, 2, false);
+  const back = neckPath(half, fit.backNeckDrop ?? 2, false);
   const length = [front, back].reduce((sum, path) => sum + path.slice(1).reduce((n, p, i) => n + Math.hypot(p.x - path[i].x, p.y - path[i].y), 0), 0);
   return { length: length * NECK_RIB_RATIO, width: 2 };
 }
@@ -363,7 +363,7 @@ export function teeDimensions(product: Product) {
     hemHalf: (fit.hemWidth ?? panel.width) / 2,
     // Long sleeves taper to a rib cuff; tee sleeves stay open and wide. The cap follows the armhole.
     cuffHalf: fit.sleeveOpening ?? (product.base === 'tee' ? Math.max(sleeve.cuffWidth / 2, 10) : Math.max(9, m.chest * 0.1)), capWidth: (armDepth + 2) * 2,
-    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline, fit).length,
+    neckDepthFront: fit.frontNeckDrop ?? (product.neckline === 'v' ? 15 : 8), neckDepthBack: fit.backNeckDrop ?? 2, ribHeight: neckSize(m, product.neckline).width, ribLength: neckSize(m, product.neckline, fit).length,
     band: product.base === 'tee' ? 0 : BAND_CM, sleeveAngle: product.base === 'tee' ? 38 : 58,
     hoodHeight: 32, hoodHalf: 13, pocketTop: m.length - BAND_CM - 22, pocketHalfTop: panel.width * 0.27, pocketHalfBottom: panel.width * 0.31,
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
