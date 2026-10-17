@@ -33,3 +33,9 @@ test('leaving the artwork tool cancels picking without changing placement drafts
  await setup(page);await page.locator('#pick-artwork').click();await page.locator('#workspace-artwork').getByRole('button',{name:'Back to garment',exact:true}).click();
  await expect(page.locator('#pick-artwork')).toHaveAttribute('aria-pressed','false');await page.getByRole('button',{name:'Artwork',exact:true}).click();await expect(page.locator('#artwork-x')).toHaveValue('0');await expect(page.locator('#artwork-y')).toHaveValue('10');
 });
+
+for(const side of ['front','back'] as const)test(`${side} lower canvas picks move the artwork centre downward`,async({page})=>{
+ await setup(page,side);await page.locator('#artwork-width').fill('20');
+ const pick=async(y:number)=>{await page.locator('#pick-artwork').click();const box=(await page.locator('#product-canvas').boundingBox())!;await page.mouse.click(box.x+box.width*.48,box.y+box.height*y);await expect(page.locator('#artwork-placement-status')).toContainText('Apply placement');return Number(await page.locator('#artwork-y').inputValue());};
+ const upper=await pick(.45),lower=await pick(.60);expect(lower).toBeGreaterThan(upper+5);
+});
