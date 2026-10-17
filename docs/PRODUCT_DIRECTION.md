@@ -160,7 +160,7 @@ Artwork users can choose a visible front/back garment point, review centimetre d
 
 ### Editable back-neck construction — 2026-10-17 (#278)
 
-The linked fit workflow now edits finished back-neck drop independently of the front through numeric input and a back-pattern keyboard/pointer handle. Actual opening geometry, neck-rib cutting length, tech-packH, drape and captured exports share the dimension. Omitted settings preserve original2cm geometry and existing draft/history/recovery rules. Local and source verification pass151 units and all188 native cases; [the integration record](2026-10-17-clothing-back-neck-integration.md) tracks full gates and limits. Hood side-pattern engineering and physical fit remain unfinished; Clothing stays ACTIVE.
+The linked fit workflow now edits finished back-neck drop independently of the front through numeric input and a back-pattern keyboard/pointer handle. Actual opening geometry, neck-rib cutting length, tech-packH, drape and captured exports share the dimension. Omitted settings preserve original2cm geometry and existing draft/history/recovery rules. Local, source and main verification pass151 units and all188 native cases; [the integration record](2026-10-17-clothing-back-neck-integration.md) tracks full gates and limits. Hood side-pattern engineering and physical fit remain unfinished; Clothing stays ACTIVE.
 
 ### Owner-requested solver investigation — 2026-10-17
 
