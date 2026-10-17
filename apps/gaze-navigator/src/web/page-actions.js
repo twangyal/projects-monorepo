@@ -77,6 +77,21 @@ function phraseSelection(value, text, occurrence) {
   return { ok: true, ...range };
 }
 
+function ownsFocus(element) {
+  // A child document can retain its activeElement after an outer field gains
+  // focus, so check the entire host/frame chain rather than just the leaf root.
+  for (let scope = element; scope;) {
+    const root = scope.getRootNode();
+    if (root.activeElement !== scope) return false;
+    try {
+      scope = root.host ?? scope.ownerDocument.defaultView.frameElement;
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function selectText(element, position, { text, occurrence = null } = {}) {
   if (!readSelection(element)) return { ok: false, message: 'Selection commands need a writable native text field. This field does not support them.' };
   const value = element.value;
@@ -86,7 +101,7 @@ export function selectText(element, position, { text, occurrence = null } = {}) 
   if (!range.ok) return range;
   element.focus({ preventScroll: true });
   // A site's focus handler can replace or lock the field before offsets apply.
-  if (element.value !== value || !readSelection(element) || element.isConnected === false) {
+  if (element.value !== value || !readSelection(element) || element.isConnected === false || !ownsFocus(element)) {
     return { ok: false, message: 'The field changed while focusing it. Look at it and try again.' };
   }
   element.setSelectionRange(range.start, range.end);

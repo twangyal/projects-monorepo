@@ -238,3 +238,12 @@ test('phrase selection retains readonly identity and ordinary field clarificatio
   assert.equal(asked.type, 'clarify');
   assert.deepEqual(asked.choose(2), { type: 'select-text', targetId: 2, position: 'phrase', text: 'Tuesday', occurrence: 2 });
 });
+
+
+test('literal phrase selection keeps trailing words that resemble polite command filler', () => {
+  const page = { elements: [element(1, 'Message', 'textbox', { editable: true })], focusedId: 1 };
+  for (const suffix of ['please', 'for me']) {
+    assert.equal(interpret('select text next ' + suffix, page).text, 'next ' + suffix);
+    assert.equal(interpret('select second occurrence of next ' + suffix, page).text, 'next ' + suffix);
+  }
+});

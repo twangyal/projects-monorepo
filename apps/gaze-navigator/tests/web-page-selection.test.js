@@ -7,7 +7,7 @@ function field(value) {
   return {
     tagName: 'TEXTAREA', value, selectionStart: 2, selectionEnd: 2, readOnly: false,
     ownerDocument: { defaultView: { frameElement: null } },
-    matches: () => false, closest: () => null, getRootNode: () => ({}), focus() {},
+    matches: () => false, closest: () => null, getRootNode() { return { activeElement: this }; }, focus() {},
     setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; },
   };
 }
@@ -55,4 +55,20 @@ test('phrase selection rechecks value and writability after focus before applyin
     assert.equal(select(element, 'Tuesday').ok, false);
     assert.deepEqual(range(element), [2, 2]);
   }
+});
+
+
+test('phrase selection refuses focus redirected to another field or outside its frame', () => {
+  const element = field('Meet Tuesday');
+  const root = { activeElement: element };
+  element.getRootNode = () => root;
+  element.focus = () => { root.activeElement = field('Unrelated'); };
+  assert.equal(select(element, 'Tuesday').ok, false);
+  assert.deepEqual(range(element), [2, 2]);
+  const framed = field('Meet Tuesday');
+  const frame = field('');
+  frame.getRootNode = () => ({ activeElement: {} });
+  framed.ownerDocument.defaultView.frameElement = frame;
+  assert.equal(select(framed, 'Tuesday').ok, false);
+  assert.deepEqual(range(framed), [2, 2]);
 });

@@ -600,6 +600,13 @@ test('phrase selection preserves Unicode offsets, punctuation and quoted spaces 
   await expect(field).toHaveValue('İ 😀 café a+b [x]. later ');
   await typeInstruction(page, 'undo');
   await expect(field).toHaveValue('İ 😀 café a+b [x]. next ');
+  await field.fill('next');
+  await field.evaluate(element => element.setSelectionRange(2, 2));
+  for (const suffix of ['please', 'for me']) {
+    await typeInstruction(page, 'select text next ' + suffix);
+    await expect(status(page)).toContainText('not found');
+    expect(await selection()).toEqual([2, 2]);
+  }
 });
 
 test('phrase selection refuses stale focus values and current locks without touching a neighbor', async ({ page }) => {
@@ -623,4 +630,29 @@ test('phrase selection refuses stale focus values and current locks without touc
   expect(result.ok).toBe(false);
   expect(result.message).toContain('changed');
   await expect(field).toHaveValue('Changed by website');
+});
+
+test('phrase selection checks actual focus through shadow roots and same-origin frames', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  const results = await page.evaluate(async () => {
+    const { selectText } = await import('/src/web/page-actions.js');
+    const other = document.createElement('textarea');
+    other.value = 'Unrelated'; document.body.append(other);
+    const host = document.createElement('div'); document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<textarea>Meet Tuesday</textarea>';
+    const frame = document.createElement('iframe');
+    const loaded = new Promise(resolve => { frame.onload = resolve; });
+    frame.srcdoc = '<textarea>Meet Tuesday</textarea>'; document.body.append(frame); await loaded;
+    const native = document.createElement('textarea'); native.value = 'Meet Tuesday'; document.body.append(native);
+    return [native, shadow.querySelector('textarea'), frame.contentDocument.querySelector('textarea')].map(element => {
+      const accepted = selectText(element, 'phrase', { text: 'Tuesday' });
+      const selected = [element.selectionStart, element.selectionEnd];
+      other.focus(); other.setSelectionRange(0, 9); element.setSelectionRange(2, 2);
+      element.addEventListener('focus', () => other.focus(), { once: true });
+      const refused = selectText(element, 'phrase', { text: 'Tuesday' });
+      return { accepted: accepted.ok, selected, refused: refused.ok, after: [element.selectionStart, element.selectionEnd], neighbor: [other.value, other.selectionStart, other.selectionEnd], focused: document.activeElement === other };
+    });
+  });
+  expect(results).toEqual(Array(3).fill({ accepted: true, selected: [5, 12], refused: false, after: [2, 2], neighbor: ['Unrelated', 0, 9], focused: true }));
 });

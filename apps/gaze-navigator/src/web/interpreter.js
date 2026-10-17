@@ -229,7 +229,7 @@ export function interpret(utterance, context = { elements: [] }) {
   if (/^select all(?: text)?$/.test(text)) {
     return chooseSelectionField(context, element => ({ type: 'select-text', targetId: element.id, position: 'all' }));
   }
-  if ((match = /^select (?:the )?(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|last|\d{1,2}(?:st|nd|rd|th)?) occurrence of|text)\s+(.+)$/i.exec(command))) {
+  if ((match = /^select (?:the )?(?:(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|last|\d{1,2}(?:st|nd|rd|th)?) occurrence of|text)\s+(.+)$/i.exec(raw))) {
     const occurrence = !match[1] ? null : match[1].toLowerCase() === 'last' ? 'last' : parseNumber(match[1]) ?? Number.parseInt(match[1], 10);
     // Speech may put command punctuation after a closing quote; punctuation
     // inside quotes, and unquoted literal text, remain part of the phrase.
