@@ -48,7 +48,7 @@ The extension's shared runtime now supports spoken native-field select-all, curs
 
 ### Delivery note — 2026-10-17 (#275)
 
-Native text fields now support spoken literal phrase selection and explicit repeated-occurrence choice, followed by existing exact correction and text Undo. The runtime refuses an ambiguous or absent phrase and rechecks actual focus through shadow/frame boundaries. Reviewed source CI passes 184 unit and 320 native browser cases; canonical main verification is pending. [The integration record](2026-10-17-gaze-phrase-selection.md) preserves review regressions, local/hosted gates and remaining physical-input limits. Gaze remains ACTIVE against the full extension-first destination.
+Native text fields now support spoken literal phrase selection and explicit repeated-occurrence choice, followed by existing exact correction and text Undo. The runtime refuses an ambiguous or absent phrase and rechecks actual focus through shadow/frame boundaries. Reviewed source and canonical main CI both pass 184 unit and 320 native browser cases. [The integration record](2026-10-17-gaze-phrase-selection.md) preserves review regressions, local/hosted gates and remaining physical-input limits. Gaze remains ACTIVE against the full extension-first destination.
 
 ## 3. Melody Studio
 
