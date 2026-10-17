@@ -46,6 +46,10 @@ A standalone desktop app for control outside the browser is a possible later dir
 
 The extension's shared runtime now supports spoken native-field select-all, cursor start/end and explicit insertion/replacement at the current selection, with exact text, caret placement and ordinary text Undo. It retains focused read-only identity for these new commands and refuses unsupported targets. Ordinary append dictation is unchanged. Source and canonical main CI pass 171 unit and 284 native browser cases; [the integration record](2026-10-16-gaze-selection-integration.md) preserves review fixes and the failed local portable-extension attempt. Gaze remains ACTIVE; physical speech/gaze and intended-user acceptance are unverified. The older ordinary-edit targeting defect has an implemented fix in #274; [its verification record](2026-10-16-gaze-writable-fields.md) records source checks and canonical verification status.
 
+### Delivery note — 2026-10-17 (#275)
+
+Native text fields now support spoken literal phrase selection and explicit repeated-occurrence choice, followed by existing exact correction and text Undo. The runtime refuses an ambiguous or absent phrase and rechecks actual focus through shadow/frame boundaries. Reviewed source CI passes 184 unit and 320 native browser cases; canonical main verification is pending. [The integration record](2026-10-17-gaze-phrase-selection.md) preserves review regressions, local/hosted gates and remaining physical-input limits. Gaze remains ACTIVE against the full extension-first destination.
+
 ## 3. Melody Studio
 
 Melody Studio's destination is a respectable, full music-production DAW with the depth and creative control associated with tools such as FL Studio. Most of the original voice-to-music vision remains: users can capture hummed or sung ideas, review and edit notes, choose sounds, layer parts and use AI assistance while retaining musical control. The destination is not limited to a simple sketchbook.
