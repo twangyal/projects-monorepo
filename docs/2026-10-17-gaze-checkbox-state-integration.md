@@ -1,6 +1,6 @@
 # Gaze native checkbox state integration (#286)
 
-## Accepted source
+## Initial checkbox execution source
 
 Implementation `b898af88d78c8a49599ef21b1e57bcc4f4aae522`, source tree `444d05d53bebe1e290da245365d9605a0d9fbe50`, app tree `df817baf381e0189217e7de3c96c59c33266bbdf`.
 
@@ -23,3 +23,8 @@ The pre-fix native browser reproduced uncheck checking an empty control; parser 
 ## Canonical main
 
 Pending main integration/complete CI. No physical speech/gaze or intended-user acceptance is claimed; Gaze remains ACTIVE and issue132 remains open. Clothing research #285 is preserved. Project8 remains skipped.
+
+
+## Final scorer correction
+
+A final self-check caught missing check/range/select-text entries in PAGE_ACTIONS. Wrong targets/states were being classified as abstained rather than unsafe. Paired sync/async regression failed before repair and passed afterward; full local gate191units plus syntax/build passes. [Actual RED output](2026-10-17-gaze-checkbox-scorer-red.txt). Thresholds/scoring categories are unchanged; the action list now covers the newly supported page actions. New source/main gates supersede the190-test checkpoint for final acceptance.
