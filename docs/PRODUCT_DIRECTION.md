@@ -158,6 +158,12 @@ Top draping now accepts optional straight front-to-back chest depth while preser
 
 Artwork users can choose a visible front/back garment point, review centimetre drafts and Apply one undoable edit, including on draped surfaces. Numeric placement remains available. Owned picking cancels on Escape, tool navigation or a changed design/side. Corrected source and canonical main CI pass148 units and all184 native cases after a review-caught vertical UV inversion was reproduced and repaired; [the integration record](2026-10-17-clothing-artwork-placement-integration.md) tracks complete source/main gates. This improves direct design control without completing image generation, general decal warping or physical fitting. Clothing stays ACTIVE.
 
+### Owner-requested solver investigation — 2026-10-17
+
+The owner asked to investigate [PPF Contact Solver](https://github.com/st-tech/ppf-contact-solver) for Clothing Studio. [The pinned source review and evaluation proposal](2026-10-17-clothing-ppf-contact-solver-research.md) identify a promising optional native backend for higher-quality shell/contact simulation. This is a candidate to evaluate, not a selected engine or completed integration. Upstream is offline and not production-ready; CPU/Metal support exists but is described as slow, and browser use needs a separate native compute path. Fabric presets use normalized conventions and do not establish measured equivalents of our library materials or physical fit.
+
+Scheduled material-physics work should consider a bounded coupon/contact and one-garment/two-material comparison, measuring actual latency, failure, strain and penetration while preserving physical units, material provenance, rest geometry, seams, UVs and owned design/export snapshots. Keep the responsive 3D workspace and current preview available while evaluating. No paid compute or remote upload model has been selected. Source review alone does not fulfill the material-physics requirement; Clothing remains ACTIVE.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.

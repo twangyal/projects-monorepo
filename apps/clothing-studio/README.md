@@ -6,6 +6,8 @@ A local garment design workspace. **Style a garment in 3D**: start from a templa
 
 The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape (see Drape on a body for tops), depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
 
+Physics candidate research: [PPF Contact Solver evaluation](../../docs/2026-10-17-clothing-ppf-contact-solver-research.md) reviews an optional native drape backend, material conventions and the next comparison milestone. This is source research only; the shipping application still uses its browser-worker XPBD solver, with no PPF integration or new backend requirement.
+
 ## Run
 
 Use Node **22.18+** (CI uses Node 24) and npm:
