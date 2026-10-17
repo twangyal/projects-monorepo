@@ -52,7 +52,7 @@ Native text fields now support spoken literal phrase selection and explicit repe
 
 ### Native range control — 2026-10-17 (#283)
 
-Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source CI passes186 units/all368 browser cases across three isolated shards; canonical-main acceptance is recorded with actual results there.
+Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source and canonical-main CI pass186 units/all368 browser cases across three isolated shards, including the injected extension flow.
 
 ## 3. Melody Studio
 
