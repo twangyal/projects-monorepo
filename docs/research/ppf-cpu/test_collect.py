@@ -57,4 +57,21 @@ class RealFrameAdmission(unittest.TestCase):
                 self.assertEqual(result.returncode,1 if omit else 0,result.stdout+result.stderr)
                 self.assertEqual(receipt['status'],'failed_evidence_collection' if omit else 'passed_upstream_fixture')
 
+class TensileFrameAdmission(unittest.TestCase):
+    def test_three_case_frame_sets_and_missing_control(self):
+        for omit in [False,True]:
+            with self.subTest(omit=omit),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp);out=root/'report';cache=root/'cache';out.mkdir()
+                (out/'receipt.json').write_text(json.dumps({'status':'passed_tensile_fixture','frames_per_case':2,'case_names':['soft','stiff','density'],'case_session_prefix':'cpu-tensile-'}))
+                (out/'fixture-exit-code.txt').write_text('0')
+                for case in ['soft','stiff','density']:
+                    output=cache/'sessions'/('cpu-tensile-'+case)/'session'/'output';output.mkdir(parents=True)
+                    for i in range(2):
+                        if omit and case=='density' and i==1:continue
+                        (output/f'vert_{i}.bin').write_bytes(b'frame')
+                result=subprocess.run([sys.executable,str(SCRIPT),'--out',str(out),'--cache',str(cache),'--outcome','success'],capture_output=True,text=True)
+                receipt=json.loads((out/'receipt.json').read_text())
+                self.assertEqual(result.returncode,1 if omit else 0,result.stdout+result.stderr)
+                self.assertEqual(receipt['status'],'failed_evidence_collection' if omit else 'passed_tensile_fixture')
+
 if __name__=='__main__':unittest.main()
