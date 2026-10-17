@@ -65,3 +65,5 @@ Six analytical metric tests ran against a deliberate stub: five assertion failur
 Review confirms the intended per-face tangent limitation. Physical specimen validation, directional calibration, bending response, garment/seams/body/layers and usable native compute integration remain future work.
 
 Audit review also exposed missing pin membership/velocity validation and triangle-order loss. Retained [actual RED regressions](results/tensile-regression-red.txt) reproduce those omissions and altered material UV acceptance; repaired replay now checks actual pin indices/settings, no operations/pull overrides, zero velocities/UVs and ordered triangles. All36 harness tests pass locally.
+
+Follow-up #287 strengthens the reusable tensile auditor to verify every native rod/shell-classification range/count and alternate-rest flag/frame count. Six real metadata mutations reproduced missing admission checks before repair. The original #285 archive passes the stricter replay unchanged; original native results and physical limits stand. These additional oracle regressions are local verification, not a new native run.

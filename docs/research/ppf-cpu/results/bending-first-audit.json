@@ -1,0 +1,30 @@
+{
+  "archive_sha256": "8df6a44235f9e9fb3b6c02caa011393d36c5e333bd24feba5b47792c31090c6e",
+  "archive_bytes": 1380774,
+  "native_files_verified": 1764,
+  "raw_frames": 802,
+  "finite_float32_coordinates": 105864,
+  "recomputed": {
+    "soft": {
+      "tip_descent_m": 0.08981878682971,
+      "clamp_drift_m": 4.029517552663789e-10,
+      "max_edge_strain": 0.0016642602428869058,
+      "final_window_step_m": 5.404881435836445e-08,
+      "checked_vertex_frames": 17644
+    },
+    "stiff": {
+      "tip_descent_m": 0.009055308531969786,
+      "clamp_drift_m": 4.029517552663789e-10,
+      "max_edge_strain": 0.00031777206529293167,
+      "final_window_step_m": 0.0,
+      "checked_vertex_frames": 17644
+    }
+  },
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 3.2876559659999884,
+    "remaining_children": 0
+  }
+}
