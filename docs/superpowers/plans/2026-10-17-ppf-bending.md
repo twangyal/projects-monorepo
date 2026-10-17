@@ -34,3 +34,5 @@
 
 
 Post-acceptance validation follow-up: `.github/workflows/clothing-ppf-harness.yml` runs the existing standard-library oracle/collector/replay regressions on relevant main/PR changes without a native rebuild. This adds durable automated coverage for the reviewed metadata corrections; numerical protocol and shipping applications are unchanged. Its actual hosted outcome is recorded in the issue and final integration receipt.
+
+Hosted follow-up result: mainCI39078537742/job117530602299 passes54standard-library regressions in13.944seconds at651e5d2ec00e11e7df417e57c5bf4562352a19ef. Native probe/metrics/inputs and accepted Clothing app remain unchanged.

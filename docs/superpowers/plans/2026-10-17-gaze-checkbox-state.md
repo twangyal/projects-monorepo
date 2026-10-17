@@ -1,6 +1,6 @@
 # Gaze checkbox state Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make check/uncheck requests retain the requested binary native-checkbox state (#286).
 **Architecture:** Interpreter produces a checked-state action; controller preserves clarification/confirmation; executor makes zero or one native click after current DOM/focus guards and verifies the outcome.
@@ -31,4 +31,4 @@
 **Files:** README, overlay help, project evidence and root direction/roadmap.
 - [x] Request read-only review; reproduce/fix important findings.
 - [x] Publish source via connected GitHub tools; inspect complete three-shard hosted gates.
-- [ ] Integrate verified source into current main without PR; verify main gates and update/close #286 with exact limits.
+- [x] Integrate verified source into current main without PR; verify main gates and update/close #286 with exact limits.
