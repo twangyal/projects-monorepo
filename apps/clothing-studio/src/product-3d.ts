@@ -1,4 +1,5 @@
 import { deformArtwork } from './artwork-deformation.ts';
+import { ARTWORK_SHOULDER_OFFSET } from './artwork-placement.ts';
 import type { BodyProxy, GarmentDrapeResult } from './garment-drape.ts';
 // Real-time WebGL view of a product design: one mesh per part, physically scaled fabric tiles, artwork decals.
 import * as THREE from 'three';
@@ -106,7 +107,7 @@ export class ProductScene {
       const surface = new THREE.MeshStandardMaterial({ map: texture, roughness: 1 - material(style.material).sheen * 3, metalness: 0, side: THREE.DoubleSide,
         emissive: new THREE.Color(part.part === selected ? 0x553311 : 0x000000), emissiveIntensity: part.part === selected ? 0.35 : 0 });
       const mesh = new THREE.Mesh(geometry, surface);
-      mesh.name = partName(product, part.part); mesh.userData.part = part.part;
+      mesh.name = partName(product, part.part); mesh.userData.part = part.part; mesh.userData.tileCm = tileCm;
       this.group.add(mesh); this.parts.set(part.part, mesh);
     }
     this.group.updateMatrixWorld(true);
@@ -159,7 +160,7 @@ export class ProductScene {
     let supporting = target;
     let restGeometry: THREE.BufferGeometry | null = null;
     if (rest) { restGeometry = new THREE.BufferGeometry(); restGeometry.setAttribute('position',new THREE.Float32BufferAttribute(rest.positions,3)); restGeometry.setIndex(rest.indices); restGeometry.computeVertexNormals(); supporting = new THREE.Mesh(restGeometry,target.material); supporting.updateMatrixWorld(true); }
-    const top = topMeasurements(product).length - 4; // the shoulder line, where artwork positions are measured from
+    const top = topMeasurements(product).length - ARTWORK_SHOULDER_OFFSET; // the shoulder line, where artwork positions are measured from
     const front = art.part === 'front', heightCm = art.widthCm * art.height / art.width;
     // Project straight onto the panel from outside, centred where the artwork's centre should sit.
     const x = front ? art.xCm : -art.xCm, y = top - art.yCm - heightCm / 2;
@@ -182,6 +183,17 @@ export class ProductScene {
     const ray = new THREE.Raycaster(); ray.setFromCamera(pointer, this.camera);
     const hit = ray.intersectObjects([...this.parts.values()])[0];
     return hit ? hit.object.userData.part as PartId : null;
+  }
+
+  /** Visible surface to original fabric cm, including when the mesh is draped. */
+  pickArtworkPoint(clientX:number, clientY:number, side:'front'|'back') {
+    const box=this.canvas.getBoundingClientRect();
+    const pointer=new THREE.Vector2(((clientX-box.left)/box.width)*2-1,-((clientY-box.top)/box.height)*2+1);
+    const ray=new THREE.Raycaster(); ray.setFromCamera(pointer,this.camera);
+    const hit=ray.intersectObjects([...this.parts.values(),...this.body.children])[0];
+    if (!hit?.uv || hit.object.userData.part!==side) return null;
+    const scale=hit.object.userData.tileCm as number;
+    return {part:side,x:hit.uv.x*scale,y:hit.uv.y*scale};
   }
 
   async prepareArtwork() {

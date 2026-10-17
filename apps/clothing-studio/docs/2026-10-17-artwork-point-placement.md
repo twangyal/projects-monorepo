@@ -1,0 +1,11 @@
+# Direct artwork centre picking — #277
+
+A deliberate Artwork mode fills existing centimetre placement drafts from a visible front/back surface point. Users retain width/rotation, review the values and Apply one ordinary history edit. Numeric controls remain available for keyboard placement. Dragging orbits; a click/tap selects one point. Empty space, wrong parts, body occlusion and unsupported widths/positions refuse.
+
+Mesh texture coordinates already encode flat fabric centimetres, outward-facing on front and back; raycast interpolation multiplied by that part's tile scale recovers them even after draping. The chosen y is an image centre: existing top-edge y = garment length − 4 cm shoulder offset − fabric y − image height/2. Back coordinates are not flipped twice. Width/height and current rotation are preserved, and no project data changes until Apply.
+
+Picking belongs to the current committed product and artwork side. Escape cancels it before the workspace handles Escape; tool navigation, side/product changes and page departure retire it. Position drafts use the existing capture/Discard/Apply machinery. The pure coordinate helper stays separate from Three.js so the renderer remains dynamically loaded.
+
+Initial Node tests fail against the missing API, then full check passes 147 units, lint, types and build. Initial native checks pass front/back and draped-phone flows but fail Escape because workspace document capture prevents a window-bubble handler; the handler moves to window capture and cancels before workspace navigation. The corrected four native cases pass. A further native regression reproduces armed mode surviving tool closure; workspace navigation now retires it without changing drafts. All five focused native cases then pass, along with the complete 147-unit check, lint, types and build. An initial browser probe could not build before the new helper API existed, and an anchored grep probe found no tests; neither is accepted as browser RED evidence. Actual native Escape/tool-close failures and subsequent full gates are recorded in issue #277. Final integration evidence is tracked there.
+
+This does not add image generation, physical-fit claims or freeform decal warping. Current image admission, asset ownership, draft/history and captured export boundaries remain.
