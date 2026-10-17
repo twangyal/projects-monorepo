@@ -23,6 +23,8 @@ Integration #216 repairs confirmation/camera/speech lifecycle ownership and pres
 
 Integration #246 lands reviewed opt-in on-device WaterSheep matching and expanded real-page controls with canonical guards restored. Its hosted source gate passes 139 unit and 208 native browser cases; retained real-site/model reports are developer-authored measurements with simulated-input limits. Physical evaluation #132, broader intended-user acceptance remain open. Keyboard command mode (#244) now preserves website focus and ordinary drafts, with safe modifier/paste editing, dynamic-frame discovery and cancellation. The accepted source gate passes 148 unit and 240 native browser cases; physical keyboard/screen-reader and fresh Wikipedia evaluation remain separate.
 
+Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](docs/2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source CI passes186 units/all368 browser cases across three isolated shards; canonical-main acceptance is recorded with actual results there.
+
 ## 2. Schedule app that bricks your phone
 
 Path: N/A

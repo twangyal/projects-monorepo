@@ -16,6 +16,11 @@ concurrency:
 
 jobs:
   verify:
+    name: Verify (shard ${{ matrix.shard }}/3)
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -34,5 +39,5 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - run: npm run test:browser -- --shard=${{ matrix.shard }}/3
       # Results stay in job logs. No persistent artifacts or caches are uploaded.

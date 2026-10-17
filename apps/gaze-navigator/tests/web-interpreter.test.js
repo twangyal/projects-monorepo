@@ -247,3 +247,21 @@ test('literal phrase selection keeps trailing words that resemble polite command
     assert.equal(interpret('select second occurrence of next ' + suffix, page).text, 'next ' + suffix);
   }
 });
+
+test('explicit slider values preserve signed decimals and never become text dictation', () => {
+  const page = context(element(1, 'Volume', 'slider'), element(2, 'Message', 'textbox', { editable: true }));
+  assert.deepEqual(interpret('set Volume slider to 40', page), { type: 'range', targetId: 1, value: 40 });
+  assert.deepEqual(interpret('please set the slider to -0.25', page), { type: 'range', targetId: 1, value: -0.25 });
+  assert.deepEqual(interpret('undo Volume slider', page), { type: 'range', targetId: 1, undo: true });
+  assert.deepEqual(interpret('undo slider', page), { type: 'range', targetId: 1, undo: true });
+  for (const value of ['NaN', '40 percent', '1e3', 'infinity']) assert.equal(interpret(`set slider to ${value}`, page).type, 'unknown');
+  assert.equal(interpret('set slider to 40', context(element(1, 'Message', 'textbox', { editable: true }))).type, 'unknown');
+  assert.deepEqual(interpret('set message to 40', page), { type: 'edit', targetId: 2, edit: { kind: 'replace-all', text: '40' } });
+});
+
+test('explicit slider ambiguity carries the exact value or Undo until deliberate choice', () => {
+  const page = context({ ...element(1, 'Volume', 'slider'), distance: 20 }, element(2, 'Volume', 'slider'));
+  const question = interpret('set Volume slider to 40', page);
+  assert.equal(question.type, 'clarify');assert.deepEqual(question.choose(2), { type: 'range', targetId: 2, value: 40 });
+  assert.deepEqual(interpret('undo Volume slider', page).choose(1), { type: 'range', targetId: 1, undo: true });
+});

@@ -8,7 +8,7 @@ const extension = join(process.cwd(), 'dist', 'extension-test');
 
 // A small third-party site with a strict CSP and no navigator code.
 const SITE = {
-  '/': ['Example Shop', '<nav><a href="/about">About us</a> <a href="/contact">Contact</a></nav><p>Welcome.</p><button>Buy now</button>'],
+  '/': ['Example Shop', '<nav><a href="/about">About us</a> <a href="/contact">Contact</a></nav><p>Welcome.</p><label>Playback volume<input id="volume" type="range" value="50"></label><button>Buy now</button>'],
   '/about': ['About Example Shop', '<p>We sell examples.</p><a href="/">Home</a>'],
   '/contact': ['Contact Example Shop', '<label>Message <textarea></textarea></label><a href="/">Home</a>'],
 };
@@ -368,4 +368,17 @@ test('extension selects repeated phrases on strict-CSP content before exact corr
   await command('undo');
   await expect(status(page)).toContainText('Nothing to undo');
   expect(await page.evaluate(() => [sessionStorage.length, localStorage.length])).toEqual([0, 0]);
+});
+
+
+test('injected extension sets and undoes a real strict-CSP website slider', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/');await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await page.evaluate(() => { window.rangeEvents=[];for (const type of ['input','change']) document.querySelector('#volume').addEventListener(type,event=>window.rangeEvents.push([type,event.target.value])); });
+  const slider = page.getByLabel('Playback volume');await look(page,slider);
+  await typeInstruction(page,'set Playback volume slider to 35');await expect(slider).toHaveValue('35');
+  await expect(status(page)).toContainText('Slider set to 35');
+  await typeInstruction(page,'undo Playback volume slider');await expect(slider).toHaveValue('50');
+  expect(await page.evaluate(() => window.rangeEvents)).toEqual([['input','35'],['change','35'],['input','50'],['change','50']]);
 });

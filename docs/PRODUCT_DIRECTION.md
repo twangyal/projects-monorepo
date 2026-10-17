@@ -50,6 +50,10 @@ The extension's shared runtime now supports spoken native-field select-all, curs
 
 Native text fields now support spoken literal phrase selection and explicit repeated-occurrence choice, followed by existing exact correction and text Undo. The runtime refuses an ambiguous or absent phrase and rechecks actual focus through shadow/frame boundaries. Reviewed source and canonical main CI both pass 184 unit and 320 native browser cases. [The integration record](2026-10-17-gaze-phrase-selection.md) preserves review regressions, local/hosted gates and remaining physical-input limits. Gaze remains ACTIVE against the full extension-first destination.
 
+### Native range control — 2026-10-17 (#283)
+
+Native slider milestone #283 adds explicit exact numeric set/Undo commands for actual page range inputs, with named/gazed clarification, current min/max/step admission, native events, focus/lock rechecks and separate session history. The [verification record](2026-10-17-gaze-native-sliders.md) distinguishes native DOM software tests from unverified physical speech/gaze and custom ARIA widgets. The extension-first destination remains ACTIVE; reviewed source CI passes186 units/all368 browser cases across three isolated shards; canonical-main acceptance is recorded with actual results there.
+
 ## 3. Melody Studio
 
 Melody Studio's destination is a respectable, full music-production DAW with the depth and creative control associated with tools such as FL Studio. Most of the original voice-to-music vision remains: users can capture hummed or sung ideas, review and edit notes, choose sounds, layer parts and use AI assistance while retaining musical control. The destination is not limited to a simple sketchbook.

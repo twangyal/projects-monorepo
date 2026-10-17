@@ -18,6 +18,7 @@ export function createController({ window, actions = pageActions, interpret = in
   let pending = null;
   let turn = 0;
   const history = new WeakMap();
+  const rangeHistory = new WeakMap();
 
   const reply = (message, tone = 'info', extra = {}) => ({ message, tone, pending: pending && { kind: pending.kind, candidates: pending.candidates ?? null }, ...extra });
 
@@ -35,7 +36,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function perform(action, context) {
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text'].includes(action.type)) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range'].includes(action.type)) {
       const target = targetOf(context, action.targetId);
       if (!target?.element?.isConnected) return reply('That control is no longer on the page. Look at it again.', 'error');
       const problem = writingProblem(action, target.element);
@@ -53,7 +54,7 @@ export function createController({ window, actions = pageActions, interpret = in
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
-    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text'].includes(action.type) && !element?.isConnected) {
+    if (['activate', 'submit', 'edit', 'search', 'select-option', 'select-text', 'range'].includes(action.type) && !element?.isConnected) {
       return reply('That control is no longer on the page. Look at it again.', 'error');
     }
     // Repeat after clarification/confirmation: page scripts may have locked the
@@ -74,6 +75,17 @@ export function createController({ window, actions = pageActions, interpret = in
         break;
       }
       case 'edit': result = edit(element, target.name, action.edit); break;
+      case 'range': {
+        const values = rangeHistory.get(element) ?? [];
+        if (action.undo && !values.length) { result = { ok: false, message: 'Nothing to undo in this slider.' }; break; }
+        result = actions.setRangeValue(element, action.undo ? Number(values.at(-1)) : action.value);
+        if (result.changed) {
+          if (action.undo) { if (result.ok) values.pop(); }
+          else { values.push(result.before); if (values.length > HISTORY_LIMIT) values.shift(); }
+          rangeHistory.set(element, values);
+        }
+        break;
+      }
       case 'scroll': result = actions.scroll(context.region, action.direction, action.amount, window); break;
       case 'back':
       case 'forward': result = actions.navigate(window, action.type); break;
