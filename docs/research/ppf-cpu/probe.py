@@ -44,10 +44,16 @@ try:
     os.chdir(upstream)
     from frontend import App
     original_create=App.create
+    original_data_dir=App.get_data_dirpath
+    App.get_data_dirpath=staticmethod(lambda: str(cache / 'sessions'))
     def create_in_probe_cache(name, cache_dir=''):
         if name not in ['cpu-contact-held','cpu-contact-through'] or cache_dir:
             raise ValueError('Unexpected fixture app/cache request')
-        return original_create(name, cache_dir=str(cache))
+        app=original_create(name, cache_dir=str(cache / 'meshes'))
+        # Session outputs/logs use the application data root, not its mesh cache.
+        if not Path(app._root).resolve().is_relative_to(cache):
+            raise ValueError('Native session escaped the dedicated synthetic data root')
+        return app
     # Only storage is redirected through the documented API; fixture source,
     # physical parameters, solver calls and every numerical assertion stay intact.
     App.create=staticmethod(create_in_probe_cache)
@@ -55,6 +61,7 @@ try:
         namespace = runpy.run_path(str(fixture), run_name='__main__')
     finally:
         App.create=staticmethod(original_create)
+        App.get_data_dirpath=staticmethod(original_data_dir)
     receipt.update(status='passed_upstream_fixture', held=namespace['held'], contact_disabled=namespace['through'],
                    frames_per_case=namespace['FRAMES'] + 1, vertices_per_case=namespace['LOWER_COUNT'] + namespace['UPPER_COUNT'],
                    simulated_seconds=namespace['ELAPSED'], gap_metres=namespace['DROP'],
