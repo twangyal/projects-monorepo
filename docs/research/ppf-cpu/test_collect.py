@@ -30,6 +30,8 @@ class EvidenceCollection(unittest.TestCase):
         receipt,_=self.collect(None,'skipped');self.assertEqual(receipt['status'],'not_executed')
     def test_failed_execution_gate_overrides_a_claimed_pass(self):
         receipt,_=self.collect({'status':'passed_upstream_fixture'},'failure',1);self.assertEqual(receipt['status'],'failed_execution_gate')
+    def test_static_fixture_success_cannot_override_a_failed_execution_gate(self):
+        receipt,_=self.collect({'status':'passed_static_fixture'},'failure',1);self.assertEqual(receipt['status'],'failed_execution_gate')
     def test_confirmed_pass_retains_original_measurements(self):
         receipt,_=self.collect({'status':'passed_upstream_fixture','held':{'crossings':0}},'success',0)
         self.assertEqual(receipt['status'],'passed_upstream_fixture');self.assertEqual(receipt['held'],{'crossings':0})
