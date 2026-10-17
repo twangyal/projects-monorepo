@@ -68,8 +68,12 @@ export function setRangeValue(element, value) {
   }
   setNativeValue(element, String(value));
   const view = element.ownerDocument.defaultView;
-  element.dispatchEvent(new view.Event('input', { bubbles: true }));
+  const retired = () => ({ ok: false, changed: element.value !== before, before,
+    message: 'The website replaced, removed or locked the slider. Check the current control before continuing.' });
+  element.dispatchEvent(new view.Event('input', { bubbles: true, composed: true }));
+  if (!available()) return retired();
   element.dispatchEvent(new view.Event('change', { bubbles: true }));
+  if (!available()) return retired();
   const ok = element.valueAsNumber === value;
   return { ok, changed: element.value !== before, before, message: ok ? `Slider set to ${element.value}.` : `The website changed the slider to ${element.value}. Check it before continuing.` };
 }

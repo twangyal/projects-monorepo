@@ -126,3 +126,31 @@ test('a website overriding the input event reports its observed value and retain
   await expect(page.locator('#a')).toHaveValue('80');
   await command(page, 'undo slider');await expect(page.locator('#a')).toHaveValue('50');
 });
+
+test('shadow component hosts observe the same input propagation as a native slider gesture', async ({ page }) => {
+  await setup(page, '<div id="host"></div>');
+  await page.evaluate(() => {
+    const host = document.querySelector('#host');host.attachShadow({ mode: 'open' }).innerHTML = '<input type="range" value="50">';
+    const slider = host.shadowRoot.querySelector('input');window.propagation=[];
+    for (const [scope,name] of [[host.shadowRoot,'root'],[document,'document']]) for (const type of ['input','change']) {
+      scope.addEventListener(type, event => window.propagation.push([name,type,event.composed]));
+    }
+    window.sliderContext = () => ({ elements:[{id:1,element:slider,name:'Volume',role:'slider',distance:0}] });
+  });
+  await page.locator('#host input').press('ArrowRight');
+  const native = await page.evaluate(() => { const result=window.propagation;window.propagation=[];document.querySelector('#host').shadowRoot.querySelector('input').value='50';return result; });
+  await command(page, 'set slider to 51');
+  expect(await page.evaluate(() => window.propagation)).toEqual(native);
+});
+
+test('a site replacing or removing a slider during input cannot produce false success or a late change', async ({ page }) => {
+  for (const event of ['input','change']) {
+    await setup(page);
+    await page.locator('#a').evaluate((element,event) => element.addEventListener(event, () => { const replacement=element.cloneNode();replacement.value='50';element.replaceWith(replacement); }, { once:true }),event);
+    const result = await command(page,'set slider to 70');
+    expect(result.tone).toBe('error');expect(result.performed).toBeNull();
+    await expect(page.locator('#a')).toHaveValue('50');
+    if(event==='input') expect(await page.evaluate(() => window.sliderEvents)).toEqual([['a','input','70']]);
+    expect((await command(page,'undo slider')).message).toContain('Nothing to undo');
+  }
+});
