@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 import platform
 import runpy
-import shutil
 import subprocess
 import sys
 import time
@@ -33,6 +32,7 @@ receipt = {
     'logical_cpus': os.cpu_count(), 'status': 'started',
     'backend': 'cpu', 'build_resource_file': 'build-resources.txt',
 }
+(out / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
 started = time.perf_counter()
 try:
     # The existing fixture's geometry, parameters, frame admission and all assertions run unchanged.
@@ -49,16 +49,4 @@ except BaseException as exc:
     raise
 finally:
     receipt['fixture_wall_seconds'] = time.perf_counter() - started
-    # A fresh CI home contains only these synthetic test scenes. Retain every original vertex frame.
-    cache = Path.home() / '.cache/ppf-cts'
-    frames = []
-    if cache.is_dir():
-        for path in sorted(cache.rglob('vert_*.bin')):
-            relative = path.relative_to(cache)
-            target = out / 'frames' / relative
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(path, target)
-            frames.append({'path': str(Path('frames') / relative), 'bytes': path.stat().st_size,
-                           'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
-    receipt['retained_vertex_frames'] = frames
     (out / 'receipt.json').write_text(json.dumps(receipt, indent=2, allow_nan=False) + '\n')
