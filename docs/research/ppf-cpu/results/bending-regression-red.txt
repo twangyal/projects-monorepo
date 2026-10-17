@@ -1,0 +1,192 @@
+/tmp/bending287-red.txt
+FFFFF
+======================================================================
+FAIL: test_admission_refuses_unsettled_stretch_and_reversed_response (test_bending_metrics.BendingMetrics.test_admission_refuses_unsettled_stretch_and_reversed_response)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_metrics.py", line 27, in test_admission_refuses_unsettled_stretch_and_reversed_response
+    with self.assertRaises(ValueError):admit(bad)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_edge_stretch_and_clamp_drift (test_bending_metrics.BendingMetrics.test_edge_stretch_and_clamp_drift)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_metrics.py", line 13, in test_edge_stretch_and_clamp_drift
+    f=frames();f[100][43][0]+=.01;self.assertGreater(measure(f,strip()[0])['max_edge_strain'],.5)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 not greater than 0.5
+
+======================================================================
+FAIL: test_missing_nonfinite_wrong_rest_refused (test_bending_metrics.BendingMetrics.test_missing_nonfinite_wrong_rest_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_metrics.py", line 19, in test_missing_nonfinite_wrong_rest_refused
+    with self.assertRaises(ValueError):measure(f,rest)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_motion_not_hidden_by_equal_last_frames (test_bending_metrics.BendingMetrics.test_motion_not_hidden_by_equal_last_frames)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_metrics.py", line 16, in test_motion_not_hidden_by_equal_last_frames
+    f=frames();f[-10][40][1]=.001;self.assertGreater(measure(f,strip()[0])['final_window_step_m'],.0009)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 not greater than 0.0009
+
+======================================================================
+FAIL: test_tip_clamp_and_rest_zero (test_bending_metrics.BendingMetrics.test_tip_clamp_and_rest_zero)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_metrics.py", line 10, in test_tip_clamp_and_rest_zero
+    m=measure(frames(.001),strip()[0]);self.assertAlmostEqual(m['tip_descent_m'],.001);self.assertEqual(m['clamp_drift_m'],0)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0.0 != 0.001 within 7 places (0.001 difference)
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.100s
+
+FAILED (failures=5)
+
+
+/tmp/bending287-controls-red.txt
+...F.....
+======================================================================
+FAIL: test_control_refuses_extra_changed_native_input (test_bending_audit.NativeAudit.test_control_refuses_extra_changed_native_input)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 83, in test_control_refuses_extra_changed_native_input
+    with self.assertRaises(ValueError):verify_controls(z,paths)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.182s
+
+FAILED (failures=1)
+
+
+/tmp/bending287-metadata-red.txt
+FFFFFF.........
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_bending_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'has_bend_rest_vert=true')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 88, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_bending_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'has_rest_vert_anim=true')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 88, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_bending_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'rest_vert_anim_frames=17')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 88, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_bending_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'shell_vert_start=5')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 88, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_bending_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'shell_vert_end=40')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 88, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_bending_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'shell_count=12')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_bending_audit.py", line 88, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.436s
+
+FAILED (failures=6)
+
+
+/tmp/tensile285-metadata-red.txt
+FFFFFF........
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_tensile_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'has_bend_rest_vert=true')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_tensile_audit.py", line 78, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_tensile_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'has_rest_vert_anim=true')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_tensile_audit.py", line 78, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_tensile_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'rest_vert_anim_frames=17')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_tensile_audit.py", line 78, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_tensile_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'shell_vert_start=5')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_tensile_audit.py", line 78, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_tensile_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'shell_vert_end=40')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_tensile_audit.py", line 78, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_alternate_rest_and_shell_ranges_refused (test_tensile_audit.NativeAudit.test_alternate_rest_and_shell_ranges_refused) (entry=b'shell_count=12')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-bending-287/docs/research/ppf-cpu/test_tensile_audit.py", line 78, in test_alternate_rest_and_shell_ranges_refused
+    with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.206s
+
+FAILED (failures=6)

@@ -17,7 +17,7 @@ receipt=json.loads(path.read_text()) if path.is_file() else {'schema':1,'status'
 code_path=out/'fixture-exit-code.txt';code=int(code_path.read_text().strip()) if code_path.is_file() else None
 receipt['fixture_step_outcome']=args.outcome;receipt['fixture_exit_code']=code
 if code in [124,137]:receipt['status']='timed_out'
-elif args.outcome!='success' and receipt['status'] in ['passed_upstream_fixture','passed_static_fixture','passed_curved_fixture','passed_tensile_fixture']:receipt['status']='failed_execution_gate'
+elif args.outcome!='success' and receipt['status'] in ['passed_upstream_fixture','passed_static_fixture','passed_curved_fixture','passed_tensile_fixture','passed_bending_fixture']:receipt['status']='failed_execution_gate'
 elif receipt['status']=='started':receipt['status']='interrupted'
 supervisor=out/'supervisor.json'
 if supervisor.is_file() and json.loads(supervisor.read_text()).get('remaining_children',0):
@@ -38,11 +38,11 @@ receipt['retained_native_files']=manifest
 expected=receipt.get('frames_per_case')
 case_names=receipt.get('case_names',['held','through'])
 prefix=receipt.get('case_session_prefix','cpu-contact-')
-if prefix not in ['cpu-contact-','cpu-tensile-'] or not case_names or any(not re.fullmatch(r'[a-z]+',n) for n in case_names):raise ValueError('Invalid evidence case names.')
+if prefix not in ['cpu-contact-','cpu-tensile-','cpu-bending-'] or not case_names or any(not re.fullmatch(r'[a-z]+',n) for n in case_names):raise ValueError('Invalid evidence case names.')
 frames={item['path'] for item in manifest if re.fullmatch(r'native-cache/sessions/'+re.escape(prefix)+r'(?:'+ '|'.join(case_names)+r')/session/output/vert_[0-9]+\.bin',item['path'])}
 actual=len(frames)
 required={f'native-cache/sessions/{prefix}{name}/session/output/vert_{i}.bin' for name in case_names for i in range(expected or 0)}
-missing=receipt['status'] in ['passed_upstream_fixture','passed_static_fixture','passed_curved_fixture','passed_tensile_fixture'] and expected is not None and frames!=required
+missing=receipt['status'] in ['passed_upstream_fixture','passed_static_fixture','passed_curved_fixture','passed_tensile_fixture','passed_bending_fixture'] and expected is not None and frames!=required
 if missing:
     receipt['status']='failed_evidence_collection'
     receipt['evidence_error']=f'Expected exact per-case output frame set ({expected*len(case_names)} files), retained {actual} numeric output frames.'

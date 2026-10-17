@@ -38,7 +38,7 @@ def native_case(z,paths,name):
     require(set(pin)=={'operation_count','pin','pull','pin_group_id'} and pin['operation_count']==0 and pin['pin']==4 and pin['pull']==0. and str(pin['pin_group_id']).startswith('strip:pin_'),'Unexpected pin settings.')
     require(not any(k.startswith('pin-') and k!='pin-0' for k in info),'Unexpected pin operation/group.')
     require(prefix+'bin/pin-pullw-0.bin' not in paths,'Unexpected pin pull override.')
-    for key,value in {'vert':84,'tri':120,'static_vert':0,'static_tri':0,'pin_block':1,'rod':0,'tet':0,'wall':0,'sphere':0,'stitch':0}.items():require(counts[key]==value,'Unexpected native scene count: '+key)
+    for key,value in {'vert':84,'tri':120,'static_vert':0,'static_tri':0,'pin_block':1,'rod':0,'tet':0,'wall':0,'sphere':0,'stitch':0,'display_pin_block':0,'rod_vert_start':0,'rod_vert_end':0,'shell_vert_start':0,'rod_count':0,'has_rest_vert':False,'has_rest_vert_anim':False,'rest_vert_anim_frames':0,'has_bend_rest_vert':False,'shell_vert_end':84,'shell_count':120}.items():require(counts[key]==value,'Unexpected native scene count: '+key)
     geometry=json.loads(z.read(name+'-geometry.json'));rows=geometry['authored_to_solved']
     require(len(rows)==84 and all(type(i) is int for i in rows) and sorted(rows)==list(range(84)),'Nonbijective rest map.')
     require(sorted(decode('pin-ind-0.bin','Q',4))==sorted(rows[80:84]),'Wrong native pin membership.')

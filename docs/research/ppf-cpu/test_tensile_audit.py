@@ -15,7 +15,7 @@ class NativeAudit(unittest.TestCase):
         for key,value in {**PARAMETERS,**CASES['soft'],'shrink-x':1.,'shrink-y':1.,'bend-warp':0.,'bend-weft':0.,'bending-damping':0.,'pressure':0.,'plasticity':0.,'bend-plasticity':0.}.items():put('param/tri-'+key+'.bin','B' if key=='model' else 'f',[2 if key=='model' else value]*120)
         def toml(value):return json.dumps(value)
         files[prefix+'param.toml']=('[param]\n'+'\n'.join(k.replace('-','_')+' = '+toml(v) for k,v in SESSION.items())).encode()
-        files[prefix+'info.toml']=b'[count]\nvert=84\ntri=120\nstatic_vert=0\nstatic_tri=0\npin_block=1\nrod=0\ntet=0\nwall=0\nsphere=0\nstitch=0\n[pin-0]\noperation_count=0\npin=4\npull=0.0\npin_group_id="strip:pin_0"\n'
+        files[prefix+'info.toml']=b'[count]\nvert=84\ntri=120\nstatic_vert=0\nstatic_tri=0\npin_block=1\nrod=0\ntet=0\nwall=0\nsphere=0\nstitch=0\ndisplay_pin_block=0\nrod_vert_start=0\nrod_vert_end=0\nshell_vert_start=0\nrod_count=0\nhas_rest_vert=false\nhas_rest_vert_anim=false\nrest_vert_anim_frames=0\nhas_bend_rest_vert=false\nshell_vert_end=84\nshell_count=120\n[pin-0]\noperation_count=0\npin=4\npull=0.0\npin_group_id="strip:pin_0"\n'
         files[prefix+'stdout.log']=b'complete';files[prefix+'error.log']=b''
         files['soft-geometry.json']=json.dumps({'authored_to_solved':list(range(84))}).encode()
         for i in range(151):
@@ -71,3 +71,8 @@ class NativeAudit(unittest.TestCase):
     def test_authored_material_uv_change_refused(self):
         files=self.fixture();files['native-cache/sessions/cpu-tensile-soft/session/bin/uv.bin']=struct.pack('<720f',1,*([0.]*719))
         with self.assertRaises(ValueError):self.run_case(files)
+
+    def test_alternate_rest_and_shell_ranges_refused(self):
+        for entry in [b'has_bend_rest_vert=true',b'has_rest_vert_anim=true',b'rest_vert_anim_frames=17',b'shell_vert_start=5',b'shell_vert_end=40',b'shell_count=12']:
+            files=self.fixture();key='native-cache/sessions/cpu-tensile-soft/session/info.toml';field=entry.split(b'=')[0];files[key]=b'\n'.join(entry if line.startswith(field+b'=') else line for line in files[key].split(b'\n'))
+            with self.subTest(entry=entry),self.assertRaises(ValueError):self.run_case(files)
