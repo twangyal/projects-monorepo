@@ -1,5 +1,5 @@
 import {mountGarmentComparison} from './garment-comparison-view.ts';
-import { BODY_CHEST, BODY_WAIST, BODY_HIP, defaultBodyChest, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
+import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, defaultBodyChest, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
 // linked pattern pieces, and export renders or a 3D model. Every change is one undoable project edit.
@@ -43,7 +43,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <canvas id="product-canvas" aria-label="3D garment. Drag to orbit; click a part to select it." tabindex="0"></canvas>
       <div class="view-buttons" role="group" aria-label="Camera view">${['front', 'back', 'left', 'right'].map(v => `<button data-view="${v}">${v[0].toUpperCase() + v.slice(1)}</button>`).join('')}</div>
       <div class="drape-controls" id="garment-drape-controls"><label class="field">Body chest girth (cm)<input id="garment-drape-chest" type="number" min="${BODY_CHEST[0]}" max="${BODY_CHEST[1]}" step="1"></label>
-        <details id="top-body-shape"><summary>Waist and hip (optional)</summary><div class="measure-grid"><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Entered girths shape the torso only; heights, depth, shoulders and arms remain assumed. Body settings are session-only and do not establish physical fit.</p></details>
+        <details id="top-body-shape"><summary>Waist, hip and depth (optional)</summary><div class="measure-grid"><label class="field">Body waist girth (cm, optional)<input id="garment-drape-waist" type="number" min="${BODY_WAIST[0]}" max="${BODY_WAIST[1]}" step="0.1"></label><label class="field">Body hip girth (cm, optional)<input id="garment-drape-hip" type="number" min="${BODY_HIP[0]}" max="${BODY_HIP[1]}" step="0.1"></label><label class="field">Chest front-to-back depth (cm, optional)<input id="garment-drape-depth" type="number" min="${BODY_CHEST_DEPTH[0]}" max="${BODY_CHEST_DEPTH[1]}" step="0.1"></label></div><p class="fine-print">Blank uses chest-based proportions. Measure chest depth as a straight front-to-back distance at chest level, not a curved tape arc. Chest depth changes chest and waist cross-sections at the entered girths. Hip depth, heights, shoulders and arms remain assumed. Body settings are session-only and do not establish physical fit.</p></details>
         <button id="apply-garment-body" class="quiet">Apply body settings</button><button id="garment-drape-on">Drape on a body</button><button id="garment-drape-off" class="quiet" hidden>Show styling shell</button>
         <p id="garment-drape-status" class="fine-print" role="status"></p></div>
       <div class="part-list" id="part-list" role="radiogroup" aria-label="Garment parts"></div>
@@ -152,11 +152,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Draping on a body: simulated in a worker, and kept while the design's shape, fabrics and the body stay the same, so
   // recolouring keeps the drape and a change of measurements, fit, modules or fabric drapes again. The body is a view
   // setting for this session, not part of the design.
-  let draping = false, bodyChest: number | null = null, bodyWaist: number | null = null, bodyHip: number | null = null, drape: { key: string; result: GarmentDrapeResult } | null = null;
+  let draping = false, bodyChest: number | null = null, bodyWaist: number | null = null, bodyHip: number | null = null, bodyDepth: number | null = null, drape: { key: string; result: GarmentDrapeResult } | null = null;
   let drapeWorker: Worker | null = null, drapeTimer = 0, drapeKey = '', failedDrapeKey = '';
   let departed = false;
   const chestFor = (design: Product) => bodyChest ?? defaultBodyChest(design);
-  const shapeFor = (design: Product) => validateTopBodyShape(chestFor(design), {waist:bodyWaist??undefined,hip:bodyHip??undefined});
+  const shapeFor = (design: Product) => validateTopBodyShape(chestFor(design), {waist:bodyWaist??undefined,hip:bodyHip??undefined,chestDepth:bodyDepth??undefined});
   const drapeKeyOf = (design: Product) => JSON.stringify([design.base, design.measurements, design.fit ?? null, design.options ?? null, design.neckline,
     partsOf(design).map(id => design.parts[id].material), chestFor(design), shapeFor(design)]);
   const currentDrape = (design: Product) => (draping && !isBottoms(design) && drape?.key === drapeKeyOf(design) ? drape.result : null);
@@ -188,20 +188,20 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   }
   function drapeSummary(design: Product, result: GarmentDrapeResult): string {
     const { ease, contact, residualSpeed, maxStrain } = result.metrics;
-    return `Draped on a body with a ${result.body.chest} cm chest: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; ${Number(result.body.waist.toFixed(2))} cm waist / ${Number(result.body.hip.toFixed(2))} cm hip on the proxy; `
+    return `Draped on a body with a ${result.body.chest} cm chest: ${ease >= 0 ? `${Math.round(ease * 10) / 10} cm of ease` : `${Math.round(-ease * 10) / 10} cm smaller than the body`} at the chest; ${Number(result.body.waist.toFixed(2))} cm waist / ${Number(result.body.hip.toFixed(2))} cm hip / ${Number(result.body.chestDepth.toFixed(2))} cm chest depth on the proxy; `
       + `the fabric rests on the body over ${Math.round(contact * 100)}% of its surface${residualSpeed > 10 ? ' and was still settling' : ''}. ${partName(design, 'front')} and every other part keep their fabrics and prints.`
       + (maxStrain > 1 ? ` Excessive numerical stretch (${Math.round(maxStrain * 100)}% maximum structural-edge extension). Enlarge the garment or reduce the proxy girths before interpreting this preview.` : '');
   }
   function applyBody(): boolean {
     const raw = ($('garment-drape-chest') as HTMLInputElement).value;
-    const waistRaw=($('garment-drape-waist') as HTMLInputElement).value,hipRaw=($('garment-drape-hip') as HTMLInputElement).value;
+    const waistRaw=($('garment-drape-waist') as HTMLInputElement).value,hipRaw=($('garment-drape-hip') as HTMLInputElement).value,depthRaw=($('garment-drape-depth') as HTMLInputElement).value;
     try {
-      if(['garment-drape-chest','garment-drape-waist','garment-drape-hip'].some(id=>($<HTMLInputElement>(id)).validity.badInput))throw new Error('Enter complete body measurements, or clear an optional field.');
+      if(['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth'].some(id=>($<HTMLInputElement>(id)).validity.badInput))throw new Error('Enter complete body measurements, or clear an optional field.');
       if (!raw.trim()) throw new Error('Body chest must be from 70 to 140 cm.');
-      const chest=validateBodyChest(Number(raw)),waist=waistRaw.trim()?Number(waistRaw):null,hip=hipRaw.trim()?Number(hipRaw):null;
-      validateTopBodyShape(chest,{waist:waist??undefined,hip:hip??undefined});
-      bodyChest=chest;bodyWaist=waist;bodyHip=hip;
-      for(const id of ['garment-drape-chest','garment-drape-waist','garment-drape-hip'])drafts.delete(id);
+      const chest=validateBodyChest(Number(raw)),waist=waistRaw.trim()?Number(waistRaw):null,hip=hipRaw.trim()?Number(hipRaw):null,depth=depthRaw.trim()?Number(depthRaw):null;
+      validateTopBodyShape(chest,{waist:waist??undefined,hip:hip??undefined,chestDepth:depth??undefined});
+      bodyChest=chest;bodyWaist=waist;bodyHip=hip;bodyDepth=depth;
+      for(const id of ['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth'])drafts.delete(id);
       draftState();failedDrapeKey='';return true;
     } catch (error) { options.notice((error as Error).message, true); return false; }
   }
@@ -233,7 +233,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name' | 'body';
   const drafts = new Map<string, string>();
   const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', ...LEG_FIELDS.map(([id]) => id)]);
-  const groupOf = (id: string): DraftGroup | null => ['garment-drape-chest','garment-drape-waist','garment-drape-hip'].includes(id) ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
+  const groupOf = (id: string): DraftGroup | null => ['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth'].includes(id) ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
     : ['artwork-width', 'artwork-x', 'artwork-y', 'artwork-rotation'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : null;
   const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
   const draftState = () => {
@@ -799,10 +799,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       chestInput.value = bottoms ? '' : String(chestFor(design));
       ($('garment-drape-waist') as HTMLInputElement).value=bottoms||bodyWaist===null?'':String(bodyWaist);
       ($('garment-drape-hip') as HTMLInputElement).value=bottoms||bodyHip===null?'':String(bodyHip);
+      ($('garment-drape-depth') as HTMLInputElement).value=bottoms||bodyDepth===null?'':String(bodyDepth);
     }
     ($('garment-drape-waist') as HTMLInputElement).placeholder=bottoms?'':`Auto: ${Number((chestFor(design)*.86).toFixed(2))}`;
     ($('garment-drape-hip') as HTMLInputElement).placeholder=bottoms?'':`Auto: ${Number((chestFor(design)*1.02).toFixed(2))}`;
-    for (const id of ['garment-drape-on', 'garment-drape-chest', 'garment-drape-waist', 'garment-drape-hip', 'apply-garment-body']) ($(id) as HTMLInputElement).disabled = bottoms;
+    for (const id of ['garment-drape-on', 'garment-drape-chest', 'garment-drape-waist', 'garment-drape-hip', 'garment-drape-depth', 'apply-garment-body']) ($(id) as HTMLInputElement).disabled = bottoms;
     $('garment-drape-on').textContent = draping ? 'Drape again' : 'Drape on a body'; $('garment-drape-off').hidden = !draping;
     if (bottoms) { stopDrape(); drape = null; $('garment-drape-status').textContent = 'Draping on a body is available for tops.'; }
     else if (!draping) $('garment-drape-status').textContent = 'The garment is shown as a styling shell. Drape it on a body to see how it hangs.';
@@ -820,5 +821,5 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { fabricComparison.reset(); stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { fabricComparison.reset(); stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }

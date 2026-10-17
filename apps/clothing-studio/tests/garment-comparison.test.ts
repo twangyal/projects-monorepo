@@ -29,3 +29,11 @@ test('receipt retains both actual garment results and matching captured body as 
  for(let i=0;i<2;i++){assert.deepEqual(data.candidates[i].result.parts[0].positions,Array.from(results[i]!.parts[0]!.positions));assert.deepEqual(data.candidates[i].result.metrics,results[i]!.metrics);assert.equal(data.candidates[i].product.parts.front.material,ids[i]);assert.ok(data.candidates[i].result.parts.every((p:{positions:number[]})=>p.positions.every(Number.isFinite)));}
  assert.notDeepEqual(data.candidates[0].result.parts[0].positions,data.candidates[1].result.parts[0].positions);
 });
+
+test('comparison receipt retains entered depth and rejects a result solved on another depth',()=>{
+ const source=template('ringer'),ids:[string,string]=['jersey-180','denim-340'],body={chest:94,waist:80,hip:110,chestDepth:20};
+ const results=fabricVariants(source,ids).map(p=>simulateGarment(p,teeMesh(p,Delaunator),94,{frames:90,bodyShape:body}));
+ const receipt=comparisonReceipt(source,body,ids,results as [typeof results[0],typeof results[0]]);
+ assert.equal(receipt.body.chestDepth,20);assert.equal(receipt.candidates[0]!.result.body.chestDepth,20);
+ assert.throws(()=>comparisonReceipt(source,{...body,chestDepth:22},ids,results as [typeof results[0],typeof results[0]]),/captured body/);
+});

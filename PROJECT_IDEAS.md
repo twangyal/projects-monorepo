@@ -93,6 +93,8 @@ Milestone #268 adds an independent coupled orthotropic membrane comparison:0°/4
 
 Milestone #269 adds optional independent waist/hip inputs to the top body proxy, atomic body Apply, preserved raw drafts and actual worker/cache/export propagation. Blank retains original proportions. Session-only dimensions and assumed torso heights/depth/limbs do not establish anatomy or physical fit; Clothing stays ACTIVE.
 
+Milestone #276 adds optional front-to-back chest depth at fixed girth for actual top draping and captured fabric comparisons, preserving legacy blank-field geometry and atomic body drafts. Full verification is in progress; [geometry, evidence and remaining fit limits](apps/clothing-studio/docs/2026-10-17-chest-depth.md) keep this separate from calibrated anatomy or materials. Clothing remains ACTIVE.
+
 Milestone #270 adds matched two-fabric garment comparison on the same committed top/body, actual front/back solved views, numerical receipts and deliberate one-step material choice. Comparison preserves drafts/history/assets and exposes the existing approximate physics limits. Measured materials, garment shell/contact calibration and physical fitting remain unfinished; Clothing stays ACTIVE.
 
 ## 6. AI karaoke generator

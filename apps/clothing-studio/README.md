@@ -82,7 +82,7 @@ How the drape is made:
   - The hood keeps its modelled height.
   - Pockets ride on the front body.
 - **Solver.** An XPBD solver adds gravity, stretch, bending and friction against the body. The cloth starts as the styling shell and shrinks onto a body that grows inside it, then settles under gravity.
-- **Body proxy.** It is built from chest girth plus optional waist/hip girths: stadium-shaped torso sections with assumed heights/depth, sloped shoulders, neck and head. Blank optional fields retain chest-based proportions. Its arms are posed along the sleeves and tapered to fit inside them.
+- **Body proxy.** It is built from chest girth plus optional waist/hip girths and chest depth: stadium-shaped torso sections with assumed heights and hip depth, sloped shoulders, neck and head. Blank optional fields retain chest-based proportions. Its arms are posed along the sleeves and tapered to fit inside them.
 - **Fabric.** Weight comes from each part's material (g/m²). Stretch and bending come from its construction: knits stretch most, twill and canvas bend least.
 
 **Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a measurement proxy with assumed heights, depths and limbs, not a personalized anatomical avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
@@ -94,7 +94,13 @@ How the drape is made:
 
 ### Entered torso girths (#269)
 
-**Body & drape → Waist and hip (optional)** accepts independent waist/hip girths for the top proxy. Blank uses the existing chest-based proportions. Apply validates all body fields together, preserves raw drafts and reruns the owned garment worker when accepted girths change. Body dimensions remain session-only; body heights/depth/limbs and fabric/contact are still approximate. Captured garment exports retain the actual draped positions. See [geometry, workflow and limits](docs/2026-10-16-top-body-shape.md).
+**Body & drape → Waist, hip and depth (optional)** accepts independent waist/hip girths for the top proxy. Blank uses the existing chest-based proportions. Apply validates all body fields together, preserves raw drafts and reruns the owned garment worker when accepted girths change. Body dimensions remain session-only; body heights, hip depth, limbs and fabric/contact are still approximate. Captured garment exports retain the actual draped positions. See [geometry, workflow and limits](docs/2026-10-16-top-body-shape.md).
+
+### Entered chest depth (#276)
+
+Under **Body & drape → Waist, hip and depth (optional)**, enter **Chest front-to-back depth** as a straight distance at chest level, not a curved tape arc. Blank keeps the original proportions exactly. The proxy accepts 10–44 cm, also bounded by chest girth ÷ π: a stadium section cannot be deeper than the circle of the same circumference. Apply validates chest, waist, hip and depth together; rejected values remain editable until corrected or discarded.
+
+Entered depth changes chest width while preserving chest circumference. Waist uses the same depth/width ratio at its own girth; hip depth/width remains the existing assumption. The changed proxy reaches actual worker draping, cached-result retirement, garment PNG/GLB snapshots and matched fabric comparisons, whose numerical receipt retains captured depth. These are session-only settings. This does not add anatomical reconstruction, measured shoulder/arm geometry, calibrated materials or physical-fit acceptance. See [geometry and validation](docs/2026-10-17-chest-depth.md).
 
 ### Controlled material swatches (#266)
 
