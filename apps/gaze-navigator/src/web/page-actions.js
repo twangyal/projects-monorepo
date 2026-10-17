@@ -56,13 +56,41 @@ export function readSelection(element) {
   return Number.isInteger(start) && Number.isInteger(end) ? { start, end } : null;
 }
 
-export function selectText(element, position) {
+// Literal, nonoverlapping matches use the original string's UTF-16 offsets.
+// Lowercasing the value first would shift offsets for characters such as İ.
+function phraseSelection(value, text, occurrence) {
+  if (typeof text !== 'string' || !text.length) return { ok: false, message: 'Say the text to select.' };
+  if (occurrence != null && occurrence !== 'last' && (!Number.isInteger(occurrence) || occurrence < 1)) {
+    return { ok: false, message: 'Say a positive occurrence number, or last.' };
+  }
+  const pattern = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'giu');
+  let count = 0, range;
+  for (const match of value.matchAll(pattern)) {
+    count++;
+    if (occurrence == null || occurrence === 'last' || count === occurrence) {
+      range = { start: match.index, end: match.index + match[0].length };
+    }
+  }
+  if (!count) return { ok: false, message: 'That text was not found in this field. Check the words and try again.' };
+  if (occurrence == null && count > 1) return { ok: false, message: `That text occurs ${count} times. Say “select first occurrence of” followed by the text, or choose another occurrence.` };
+  if (!range) return { ok: false, message: `Only ${count} occurrence${count === 1 ? '' : 's'} found. Choose an available occurrence.` };
+  return { ok: true, ...range };
+}
+
+export function selectText(element, position, { text, occurrence = null } = {}) {
   if (!readSelection(element)) return { ok: false, message: 'Selection commands need a writable native text field. This field does not support them.' };
-  const length = element.value.length;
+  const value = element.value;
+  const length = value.length;
   const start = position === 'end' ? length : 0;
+  const range = position === 'phrase' ? phraseSelection(value, text, occurrence) : { ok: true, start, end: position === 'all' ? length : start };
+  if (!range.ok) return range;
   element.focus({ preventScroll: true });
-  element.setSelectionRange(start, position === 'all' ? length : start);
-  return { ok: true, message: position === 'all' ? 'All text selected.' : `Cursor moved to the ${position}.` };
+  // A site's focus handler can replace or lock the field before offsets apply.
+  if (element.value !== value || !readSelection(element) || element.isConnected === false) {
+    return { ok: false, message: 'The field changed while focusing it. Look at it and try again.' };
+  }
+  element.setSelectionRange(range.start, range.end);
+  return { ok: true, message: position === 'phrase' ? 'Text selected. Say “replace selected text with” followed by the correction.' : position === 'all' ? 'All text selected.' : `Cursor moved to the ${position}.` };
 }
 
 export function writeValue(element, value, { caret = value.length } = {}) {

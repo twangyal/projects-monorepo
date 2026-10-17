@@ -217,3 +217,24 @@ test('named readonly fields participate in target resolution without redirecting
   assert.equal(interpret('change message to Hello', page).targetId, 1);
   assert.equal(interpret('type hello into message notes', page).targetId, 2);
 });
+
+test('phrase selection preserves literal text and explicitly numbers repeated occurrences', () => {
+  const page = { elements: [element(1, 'Message', 'textbox', { editable: true })], focusedId: 1 };
+  for (const [said, text, occurrence] of [
+    ['select text Tuesday', 'Tuesday', null],
+    ['select text "a+b [x]".', 'a+b [x]', null],
+    ['select text " next "', ' next ', null],
+    ['select the second occurrence of Tuesday', 'Tuesday', 2],
+    ['select 12th occurrence of "Hi!"', 'Hi!', 12],
+    ['select last occurrence of café', 'café', 'last'],
+  ]) assert.deepEqual(interpret(said, page), { type: 'select-text', targetId: 1, position: 'phrase', text, occurrence }, said);
+  assert.deepEqual(interpret('select all text', page), { type: 'select-text', targetId: 1, position: 'all' });
+});
+
+test('phrase selection retains readonly identity and ordinary field clarification', () => {
+  const fields = [element(1, 'Locked message', 'textbox', { distance: 5 }), element(2, 'Other message', 'textbox', { editable: true, distance: 5 })];
+  assert.equal(interpret('select text Tuesday', { elements: fields, focusedId: 1 }).targetId, 1);
+  const asked = interpret('select second occurrence of Tuesday', { elements: fields });
+  assert.equal(asked.type, 'clarify');
+  assert.deepEqual(asked.choose(2), { type: 'select-text', targetId: 2, position: 'phrase', text: 'Tuesday', occurrence: 2 });
+});

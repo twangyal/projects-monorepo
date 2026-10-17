@@ -335,3 +335,37 @@ test('extension ordinary edits preserve a focused readonly field and recheck con
   await typeInstruction(page, 'undo');
   await expect(status(page)).toContainText('Nothing to undo');
 });
+
+test('extension selects repeated phrases on strict-CSP content before exact correction and undo', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({ preferences: { autoStart: true, persist: false } }));
+  const page = await context.newPage();
+  await page.goto('http://shop.example/contact');
+  await expect(status(page)).toContainText('Ready');
+  const field = page.getByLabel('Message', { exact: true });
+  await field.fill('Meet Tuesday, then Tuesday');
+  await field.blur();
+  await look(page, field);
+  await field.evaluate(element => {
+    element.focus(); element.setSelectionRange(2, 2);
+    window.__phraseEvents = [];
+    for (const type of ['input', 'change']) element.addEventListener(type, event => window.__phraseEvents.push(event.type));
+  });
+  const command = async text => {
+    await page.keyboard.press('Alt+Shift+G');
+    await page.keyboard.type(text);
+    await page.keyboard.press('Enter');
+  };
+  await command('select text Tuesday');
+  await expect(status(page)).toContainText('occurs 2 times');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([2, 2]);
+  await command('select last occurrence of Tuesday');
+  expect(await field.evaluate(element => [element.selectionStart, element.selectionEnd])).toEqual([19, 26]);
+  expect(await page.evaluate(() => window.__phraseEvents)).toEqual([]);
+  await command('replace selected text with Friday');
+  await expect(field).toHaveValue('Meet Tuesday, then Friday');
+  await command('undo');
+  await expect(field).toHaveValue('Meet Tuesday, then Tuesday');
+  await command('undo');
+  await expect(status(page)).toContainText('Nothing to undo');
+  expect(await page.evaluate(() => [sessionStorage.length, localStorage.length])).toEqual([0, 0]);
+});

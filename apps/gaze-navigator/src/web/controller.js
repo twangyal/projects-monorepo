@@ -64,7 +64,7 @@ export function createController({ window, actions = pageActions, interpret = in
     switch (action.type) {
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'submit': result = actions.submit(element); break;
-      case 'select-text': result = actions.selectText(element, action.position); break;
+      case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
       case 'select-option': result = actions.selectOption(element, action.optionIndex); break;
       case 'search': {
         remember(element);

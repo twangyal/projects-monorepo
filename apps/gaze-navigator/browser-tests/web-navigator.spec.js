@@ -540,3 +540,87 @@ test('live write guard follows native fields through shadow hosts and same-origi
   });
   expect(checks).toEqual([true, false, false, true, false, false]);
 });
+
+test('spoken phrase selection corrects interior text and counts repeated occurrences without a pointer range', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  await panel(page).getByRole('button', { name: 'Start listening' }).click();
+  const field = page.getByLabel('Message', { exact: true });
+  await field.fill('Meet Tuesday, then Tuesday');
+  await field.blur();
+  await look(page, field);
+  await field.evaluate(element => {
+    element.focus();
+    element.setSelectionRange(2, 2);
+    window.__phraseEvents = [];
+    for (const type of ['input', 'change']) element.addEventListener(type, event => window.__phraseEvents.push(event.type));
+  });
+  const say = text => page.evaluate(text => window.__speech.say(text), text);
+  const selection = () => field.evaluate(element => [element.selectionStart, element.selectionEnd]);
+  await say('select text Tuesday');
+  await expect(status(page)).toContainText('occurs 2 times');
+  expect(await selection()).toEqual([2, 2]);
+  await say('select third occurrence of Tuesday');
+  await expect(status(page)).toContainText('Only 2');
+  expect(await selection()).toEqual([2, 2]);
+  await say('select second occurrence of Tuesday');
+  expect(await selection()).toEqual([19, 26]);
+  expect(await page.evaluate(() => window.__phraseEvents)).toEqual([]);
+  await say('replace selected text with Friday');
+  await expect(field).toHaveValue('Meet Tuesday, then Friday');
+  expect(await selection()).toEqual([25, 25]);
+  await say('select text missing');
+  await expect(status(page)).toContainText('not found');
+  expect(await selection()).toEqual([25, 25]);
+  await say('undo');
+  await expect(field).toHaveValue('Meet Tuesday, then Tuesday');
+  await say('select first occurrence of Tuesday');
+  expect(await selection()).toEqual([5, 12]);
+  await say('undo');
+  await expect(status(page)).toContainText('Nothing to undo');
+  await say('pause');
+  await say('select last occurrence of Tuesday');
+  expect(await selection()).toEqual([5, 12]);
+});
+
+test('phrase selection preserves Unicode offsets, punctuation and quoted spaces in native fields', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  const field = page.getByLabel('Your name');
+  await field.fill('İ 😀 café a+b [x]. next ');
+  await field.blur();
+  await look(page, field);
+  await field.focus();
+  const selection = () => field.evaluate(element => [element.selectionStart, element.selectionEnd]);
+  await typeInstruction(page, 'select text CAFÉ');
+  expect(await selection()).toEqual([5, 9]);
+  await typeInstruction(page, 'select text "a+b [x].".');
+  expect(await selection()).toEqual([10, 18]);
+  await typeInstruction(page, 'select text " next "');
+  expect(await selection()).toEqual([18, 24]);
+  await typeInstruction(page, 'insert " later " at the cursor');
+  await expect(field).toHaveValue('İ 😀 café a+b [x]. later ');
+  await typeInstruction(page, 'undo');
+  await expect(field).toHaveValue('İ 😀 café a+b [x]. next ');
+});
+
+test('phrase selection refuses stale focus values and current locks without touching a neighbor', async ({ page }) => {
+  await page.goto('/practice-site/contact.html');
+  const field = page.getByLabel('Message', { exact: true });
+  await field.fill('Meet Tuesday');
+  await field.blur();
+  await look(page, field);
+  await field.evaluate(element => { element.focus(); element.setSelectionRange(2, 2); element.readOnly = true; });
+  await typeInstruction(page, 'select text Tuesday');
+  await expect(status(page)).toContainText('does not support');
+  await expect(field).toHaveValue('Meet Tuesday');
+  await expect(page.getByLabel('Your name')).toHaveValue('');
+  const result = await field.evaluate(async element => {
+    element.readOnly = false;
+    element.blur();
+    element.addEventListener('focus', () => { element.value = 'Changed by website'; }, { once: true });
+    const { selectText } = await import('/src/web/page-actions.js');
+    return selectText(element, 'phrase', { text: 'Tuesday' });
+  });
+  expect(result.ok).toBe(false);
+  expect(result.message).toContain('changed');
+  await expect(field).toHaveValue('Changed by website');
+});
