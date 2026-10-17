@@ -1,6 +1,6 @@
 # Gaze native checkbox state integration (#286)
 
-## Accepted source
+## Initial checkbox execution source
 
 Implementation `b898af88d78c8a49599ef21b1e57bcc4f4aae522`, source tree `444d05d53bebe1e290da245365d9605a0d9fbe50`, app tree `df817baf381e0189217e7de3c96c59c33266bbdf`.
 
@@ -22,4 +22,16 @@ The pre-fix native browser reproduced uncheck checking an empty control; parser 
 
 ## Canonical main
 
-Pending main integration/complete CI. No physical speech/gaze or intended-user acceptance is claimed; Gaze remains ACTIVE and issue132 remains open. Clothing research #285 is preserved. Project8 remains skipped.
+The original190-test checkpoint main `6478a30e4b6203c8306652797679bf8845ac06eb` passed [CI39077676585](https://github.com/twangyal/projects-monorepo/actions/runs/39077676585):140/146/110browser cases with190units per runner. This remains historical execution evidence; final scorer acceptance uses the corrected source below. No physical speech/gaze or intended-user acceptance is claimed; Gaze remains ACTIVE and issue132 remains open. Clothing research #285 is preserved. Project8 remains skipped.
+
+
+## Final scorer correction
+
+A final self-check caught missing check/range/select-text entries in PAGE_ACTIONS. Wrong targets/states were being classified as abstained rather than unsafe. Paired sync/async regression failed before repair and passed afterward; full local gate191units plus syntax/build passes. [Actual RED output](2026-10-17-gaze-checkbox-scorer-red.txt). Thresholds/scoring categories are unchanged; the action list now covers the newly supported page actions. New source/main gates supersede the190-test checkpoint for final acceptance.
+
+
+## Corrected accepted source
+
+Corrected source `02126ed5dc6027175992e773b51ab60bfb0e40f5`, tree `803f5f39bea10156e84146785fdc06e4bc6ded1e`, app tree **`760096ab1c2e9c2ec24a679cdf30e7e3b43093fd`** passed [CI39077869489](https://github.com/twangyal/projects-monorepo/actions/runs/39077869489):191units/lint/extension build on every runner, all396browser cases. Jobs117528670053/117528670083/117528669816 pass140/146/110cases (4.5m/2.7m/2.3m). No app files changed after this corrected source. Main integration additionally preserves native bending#287 and clarifies its workflow label/documentation; no new physical-material claim.
+
+Final canonical191-test CI is pending below; keep issue286 open until recorded.

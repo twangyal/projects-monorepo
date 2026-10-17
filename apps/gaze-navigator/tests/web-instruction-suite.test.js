@@ -32,3 +32,13 @@ test('a broken interpreter is scored as unsafe or abstaining, never crashing the
   const throwing = evaluateInterpreter(() => { throw new Error('model offline'); });
   assert.equal(throwing.summary.abstained, SUITE.length);
 });
+
+test('wrong checkbox range and selection actions are unsafe rather than abstentions in both scorers', async () => {
+  const {evaluateInterpreterAsync}=await import('../src/web/instruction-suite.js');
+  const suite=[{id:1,category:'state',context:'form',say:'check send me a copy',expected:{type:'check',targetId:4,checked:true}}];
+  for(const wrong of [{type:'check',targetId:4,checked:false},{type:'check',targetId:1,checked:true},{type:'range',targetId:4,value:20},{type:'select-text',targetId:3,position:'all'}]){
+    for(const result of [evaluateInterpreter(()=>wrong,suite),await evaluateInterpreterAsync(async()=>wrong,suite)]){
+      assert.equal(result.summary.unsafe,1,JSON.stringify(wrong));assert.equal(result.summary.abstained,0);
+    }
+  }
+});

@@ -56,7 +56,7 @@ Native slider milestone #283 adds explicit exact numeric set/Undo commands for a
 
 ### Native checkbox state — 2026-10-17 (#286)
 
-Explicit check/tick and uncheck/untick now retain the requested native binary-checkbox state, with no-op event suppression, one native click for changes, current DOM/focus guards and honest canceled/site-overridden outcomes. Named/gazed/ordinal clarification and consequential confirmation/cancel remain; custom ARIA and mixed-state controls refuse. [Source/canonical verification](2026-10-17-gaze-checkbox-state-integration.md) records190units/all396source browser cases and main acceptance. Physical speech/gaze and intended-user task completion remain unverified; Gaze stays ACTIVE.
+Explicit check/tick and uncheck/untick now retain the requested native binary-checkbox state, with no-op event suppression, one native click for changes, current DOM/focus guards and honest canceled/site-overridden outcomes. Named/gazed/ordinal clarification and consequential confirmation/cancel remain; custom ARIA and mixed-state controls refuse. [Source/canonical verification](2026-10-17-gaze-checkbox-state-integration.md) records191units/all396corrected-source browser cases and canonical acceptance. Physical speech/gaze and intended-user task completion remain unverified; Gaze stays ACTIVE.
 
 ## 3. Melody Studio
 
