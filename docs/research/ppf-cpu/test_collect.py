@@ -35,4 +35,22 @@ class EvidenceCollection(unittest.TestCase):
         self.assertEqual(receipt['status'],'passed_upstream_fixture');self.assertEqual(receipt['held'],{'crossings':0})
         self.assertEqual(len(receipt['retained_native_files']),3)
 
+class RealFrameAdmission(unittest.TestCase):
+    def test_frame_set_excludes_native_index_maps_and_requires_each_case(self):
+        for omit in [False,True]:
+            with self.subTest(omit=omit),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp);out=root/'report';cache=root/'cache';out.mkdir()
+                (out/'receipt.json').write_text(json.dumps({'status':'passed_upstream_fixture','frames_per_case':2}))
+                (out/'fixture-exit-code.txt').write_text('0')
+                for name in ['cpu-contact-held','cpu-contact-through']:
+                    session=cache/'sessions'/name/'session';(session/'output').mkdir(parents=True);(session/'bin').mkdir()
+                    (session/'bin'/'vert_dmap.bin').write_bytes(b'index map')
+                    for i in range(2):
+                        if omit and name=='cpu-contact-through' and i==1:continue
+                        (session/'output'/f'vert_{i}.bin').write_bytes(b'frame')
+                result=subprocess.run([sys.executable,str(SCRIPT),'--out',str(out),'--cache',str(cache),'--outcome','success'],capture_output=True,text=True)
+                receipt=json.loads((out/'receipt.json').read_text())
+                self.assertEqual(result.returncode,1 if omit else 0,result.stdout+result.stderr)
+                self.assertEqual(receipt['status'],'failed_evidence_collection' if omit else 'passed_upstream_fixture')
+
 if __name__=='__main__':unittest.main()

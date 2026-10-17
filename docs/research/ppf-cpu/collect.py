@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 
@@ -34,11 +35,14 @@ if cache.is_dir():
             for block in iter(lambda:stream.read(1024*1024),b''):digest.update(block)
         manifest.append({'path':str(Path('native-cache')/relative),'bytes':source.stat().st_size,'sha256':digest.hexdigest()})
 receipt['retained_native_files']=manifest
-expected=receipt.get('frames_per_case');actual=sum(Path(item['path']).name.startswith('vert_') and Path(item['path']).suffix=='.bin' for item in manifest)
-missing=receipt['status']=='passed_upstream_fixture' and expected is not None and actual!=expected*2
+expected=receipt.get('frames_per_case')
+frames={item['path'] for item in manifest if re.fullmatch(r'native-cache/sessions/cpu-contact-(?:held|through)/session/output/vert_[0-9]+\.bin',item['path'])}
+actual=len(frames)
+required={f'native-cache/sessions/cpu-contact-{name}/session/output/vert_{i}.bin' for name in ['held','through'] for i in range(expected or 0)}
+missing=receipt['status']=='passed_upstream_fixture' and expected is not None and frames!=required
 if missing:
     receipt['status']='failed_evidence_collection'
-    receipt['evidence_error']=f'Expected {expected*2} raw vertex frames, retained {actual}.'
+    receipt['evidence_error']=f'Expected exact per-case output frame set ({expected*2} files), retained {actual} numeric output frames.'
 path.write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n')
 print(json.dumps({'status':receipt['status'],'native_files':len(manifest),'vertex_frames':actual}))
 if missing:raise SystemExit(1)
