@@ -154,6 +154,10 @@ Body & drape can now compare two library fabrics on the same captured top/body w
 
 Top draping now accepts optional straight front-to-back chest depth while preserving chest girth, legacy blank-field geometry, atomic raw drafts and owned results. Actual garment exports and matched fabric receipts use the changed proxy. Reviewed source and canonical main pass 145 unit and 177 native browser cases. [The integration record](2026-10-17-clothing-chest-depth-integration.md) preserves exact bounds, regression/review evidence and remaining anatomical/material/physical-fit limits. Clothing stays ACTIVE.
 
+### Direct artwork placement — 2026-10-17 (#277)
+
+Artwork users can choose a visible front/back garment point, review centimetre drafts and Apply one undoable edit, including on draped surfaces. Numeric placement remains available. Owned picking cancels on Escape, tool navigation or a changed design/side. The corrected source CI passes148 units and all184 native cases after a review-caught vertical UV inversion was reproduced and repaired; [the integration record](2026-10-17-clothing-artwork-placement-integration.md) tracks complete source/main gates. This improves direct design control without completing image generation, general decal warping or physical fitting. Clothing stays ACTIVE.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.

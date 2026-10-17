@@ -1,4 +1,5 @@
 import {mountGarmentComparison} from './garment-comparison-view.ts';
+import {placementFromSurface} from './artwork-placement.ts';
 import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, defaultBodyChest, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
 import { decodeProductFile } from './media.ts';
 // The product editor: start from a template, style each part in real-time 3D, place artwork, see the
@@ -88,7 +89,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="measure-grid"><label class="field">Artwork width (cm)<input id="artwork-width" type="number" min="${LIMITS.artworkWidthCm[0]}" max="${LIMITS.artworkWidthCm[1]}" step="0.5"></label>
         <label class="field">From centre (cm)<input id="artwork-x" type="number" step="0.5"></label>
         <label class="field">Below shoulder (cm)<input id="artwork-y" type="number" step="0.5"></label><label class="field">Artwork rotation (degrees)<input id="artwork-rotation" type="number" min="-180" max="180" step="1"></label></div><p class="fine-print">Positive angles turn clockwise when viewed from outside. Rotation is about the artwork centre; width and position stay unchanged.</p>
-      <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button></div></div>
+      <div class="inline-actions"><button id="apply-artwork">Apply placement</button><button id="remove-artwork" class="quiet">Remove artwork</button><button id="pick-artwork" class="quiet" aria-pressed="false" disabled>Pick artwork centre in 3D</button></div><p id="artwork-placement-status" class="fine-print" role="status">Pick a centre on the visible garment, then Apply placement. Numeric fields are the keyboard alternative; Escape cancels picking.</p></div>
     </aside>
   </div>
   <div class="pattern-strip"><div><p class="eyebrow">LINKED PATTERN PIECES</p><p class="fine-print">Finished size in cm, without seam allowance. The same fabrics and prints as the 3D garment; click a piece to select its part.</p></div><div id="product-pieces"></div>
@@ -346,9 +347,47 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     selected = part; applySwatch(part, swatch);
   });
   let down: { x: number; y: number } | null = null;
+  let pickOwner:{design:Product;side:Artwork['part']}|null=null;
+  function finishPicking(message:string) {
+    pickOwner=null;
+    $('pick-artwork').setAttribute('aria-pressed','false');
+    canvas.style.cursor='';
+    $('artwork-placement-status').textContent=message;
+  }
+  $('pick-artwork').addEventListener('click',()=>{
+    if(pickOwner){finishPicking('Picking cancelled. Placement drafts are kept.');return;}
+    const design=product(),side=($('artwork-side') as HTMLSelectElement).value as Artwork['part'];
+    const art=design?.artwork.find(item=>item.part===side),width=($('artwork-width') as HTMLInputElement).valueAsNumber;
+    if(!scene||!design||!art){finishPicking('Upload artwork and wait for the 3D view before picking.');return;}
+    if(!Number.isFinite(width)||width<LIMITS.artworkWidthCm[0]||width>LIMITS.artworkWidthCm[1]){finishPicking('Artwork width must be from 3 to 40 cm before picking.');return;}
+    pickOwner={design,side};$('pick-artwork').setAttribute('aria-pressed','true');canvas.style.cursor='crosshair';
+    $('artwork-placement-status').textContent=`Click the visible ${side} body panel at the artwork centre. Drag to orbit; Escape cancels.`;
+    scene.setView(side);canvas.scrollIntoView({block:'center'});canvas.focus({preventScroll:true});
+  });
+  window.addEventListener('keydown',event=>{
+    if(pickOwner&&event.key==='Escape'){event.preventDefault();event.stopPropagation();finishPicking('Picking cancelled. Placement drafts are kept.');$('pick-artwork').focus({preventScroll:true});}
+  },true);
+  window.addEventListener('pagehide',()=>finishPicking('Picking stopped on leaving the page.'));
+  root.addEventListener('click',event=>{
+    if(pickOwner&&event.target instanceof Element&&event.target.closest('[data-workspace-navigation],#workspace-mode'))finishPicking('Picking cancelled on leaving the artwork tool. Placement drafts are kept.');
+  },true);
   canvas.addEventListener('pointerdown', event => { down = { x: event.clientX, y: event.clientY }; });
   canvas.addEventListener('pointerup', event => {
     if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4) { down = null; return; }
+    if(pickOwner){
+      down=null;if(event.button!==0||!event.isPrimary)return;
+      const owner=pickOwner,design=product(),side=($('artwork-side') as HTMLSelectElement).value;
+      if(design!==owner.design||side!==owner.side){finishPicking('The design or artwork side changed. Pick again.');return;}
+      try{
+        const point=scene?.pickArtworkPoint(event.clientX,event.clientY,owner.side),art=design.artwork.find(item=>item.part===owner.side);
+        if(!point||!art)throw new Error(`Choose a point on the visible ${owner.side} body panel.`);
+        const placement=placementFromSurface(design,art,point,($('artwork-width') as HTMLInputElement).valueAsNumber);
+        for(const [id,value]of [['artwork-x',placement.xCm],['artwork-y',placement.yCm]] as const){const field=$(id) as HTMLInputElement;field.value=String(value);field.dispatchEvent(new Event('input',{bubbles:true}));}
+        finishPicking('Point chosen. Review the coordinates, then Apply placement; Discard restores your previous placement.');
+        $('apply-artwork').focus();
+      }catch(error){$('artwork-placement-status').textContent=error instanceof Error?error.message:'Choose a point on the garment.';}
+      return;
+    }
     down = null; const part = scene?.pick(event.clientX, event.clientY);
     if (part) { selected = part; render(options.current()); }
   });
@@ -747,11 +786,13 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const selection = active && drafts.has(active.id) && active.selectionStart !== null ? [active.selectionStart, active.selectionEnd!, active.selectionDirection ?? 'none'] as const : null;
     const finishDrafts = () => { restoreDrafts(); if (active && selection && document.activeElement === active) active.setSelectionRange(...selection); };
     const design = project.product ?? template('blank');
+    if(pickOwner&&(pickOwner.design!==design||pickOwner.side!==($('artwork-side') as HTMLSelectElement).value))finishPicking('The design or artwork side changed. Pick again.');
     fabricComparison.sync(project.product??null,isBottoms(design)?null:{chest:chestFor(design),...shapeFor(design)});
     if (!partsOf(design).includes(selected)) selected = 'front';
     const style = design.parts[selected], side = ($('artwork-side') as HTMLSelectElement).value, art = design.artwork.find(item => item.part === side);
     ($('artwork-width') as HTMLInputElement).value = String(art?.widthCm ?? ''); ($('artwork-x') as HTMLInputElement).value = String(art?.xCm ?? ''); ($('artwork-y') as HTMLInputElement).value = String(art?.yCm ?? ''); ($('artwork-rotation') as HTMLInputElement).value = String(art ? art.rotation ?? 0 : '');
     $('remove-artwork').toggleAttribute('disabled', !art); $('apply-artwork').toggleAttribute('disabled', !art);
+    $('pick-artwork').toggleAttribute('disabled', !art);
     if (sideOnly) { finishDrafts(); return; }
     $('inspector-heading').textContent = label(selected);
     const partList = partsOf(design).join();
