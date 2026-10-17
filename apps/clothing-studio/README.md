@@ -6,7 +6,7 @@ A local garment design workspace. **Style a garment in 3D**: start from a templa
 
 The **approximate photo overlay** is a visual design aid. It does not estimate measurements, garment fit, fabric drape (see Drape on a body for tops), depth, or body occlusion. Textures are procedural graphics. The concept note records your idea; it does not generate designs. Realistic try-on, generated concepts, and sewing/manufacturing patterns are future projects.
 
-Physics candidate research: [PPF Contact Solver evaluation](../../docs/2026-10-17-clothing-ppf-contact-solver-research.md) reviews an optional native drape backend, material conventions and the next comparison milestone. This is source research only; the shipping application still uses its browser-worker XPBD solver, with no PPF integration or new backend requirement.
+Physics candidate research: [PPF Contact Solver evaluation](../../docs/2026-10-17-clothing-ppf-contact-solver-research.md) reviews an optional native drape backend, material conventions and the next comparison milestone. A pinned native CPU contact feasibility run is now recorded in [the evidence report](../../docs/research/ppf-cpu/results/evaluation.md); garment performance and calibrated fabric behavior remain unverified. The shipping application still uses its browser-worker XPBD solver, with no PPF integration or new backend requirement.
 
 ## Run
 
@@ -70,6 +70,10 @@ Printable tech-pack export captures one committed design, date and filename. A s
 How the 3D garment is built: the tee's flat front and back silhouettes (shoulders, sloped sleeves, side seams, neckline) are triangulated, and each side is shaped outward by its distance from the seams where front and back are joined. The shoulders, sleeve edges and sides therefore meet exactly, while the hem, cuffs and neck stay open. Sleeves join the body along their armhole seams without gaps. This is a **styling model** built from the measurements, not a fitted drape: fabric weight and stretch do not change its shape. To see a top worn, use **Drape on a body** (below). Rendering uses WebGL; if it is unavailable, the pattern pieces and editing still work.
 
 See [3D product editor verification](docs/2026-10-13-product-editor.md).
+
+### Reuse top-body measurements (#280)
+
+**Body & drape → Saved body profiles** saves named applied measurements for another design or visit. Select to preview, choose **Use selected body profile** to apply, and update/rename or confirm deletion deliberately. Profiles survive reload but never apply automatically. Download/import a separate JSON backup; it contains private measurements. Body drafts must be applied or discarded first. Garment data and Undo stay unchanged. See [workflow, storage recovery and limits](docs/2026-10-17-top-body-profiles.md). These profiles reuse the existing approximate body, not an anatomical avatar or physical-fit validation.
 
 ### Drape on a body (#248)
 

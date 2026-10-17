@@ -1,3 +1,4 @@
+import {mountTopBodyProfiles} from './top-body-profiles-view.ts';
 import {mountGarmentComparison} from './garment-comparison-view.ts';
 import {placementFromSurface} from './artwork-placement.ts';
 import { BODY_CHEST, BODY_WAIST, BODY_HIP, BODY_CHEST_DEPTH, defaultBodyChest, validateBodyChest, validateTopBodyShape, type GarmentDrapeResult } from './garment-drape.ts';
@@ -269,6 +270,11 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   const fabricComparison=mountGarmentComparison($('garment-drape-controls'),{
     capture:()=>{if(hasDrafts())throw new Error('Apply or discard pending product edits before comparing or choosing a fabric.');const design=product();if(!design||isBottoms(design))throw new Error('Choose a top to compare fabrics.');return{product:design,body:{chest:chestFor(design),...shapeFor(design)}};},
     apply:id=>{retireAssets();return update(draft=>{for(const part of partsOf(draft))if(!RIB_PARTS.has(part))draft.parts[part].material=id;},'Comparison fabric applied to non-rib parts.');},
+  });
+  const bodyProfiles=mountTopBodyProfiles($('garment-drape-controls'),{
+    capture:()=>{const design=product();if(!design||isBottoms(design))throw new Error('Choose a top to save body measurements.');if(hasDrafts('body'))throw new Error('Apply or discard body drafts before saving a profile.');return{chest:chestFor(design),waist:bodyWaist,hip:bodyHip,chestDepth:bodyDepth};},
+    use:body=>{const design=product();if(!design||isBottoms(design))throw new Error('Choose a top to use a body profile.');if(hasDrafts('body'))throw new Error('Apply or discard body drafts before using a profile.');validateTopBodyShape(body.chest,{waist:body.waist??undefined,hip:body.hip??undefined,chestDepth:body.chestDepth??undefined});retireAssets();stopDrape();drape=null;failedDrapeKey='';bodyChest=body.chest;bodyWaist=body.waist;bodyHip=body.hip;bodyDepth=body.chestDepth;shown='';render(options.current());},
+    download:options.download,
   });
   function applySwatch(part: PartId, swatch: Swatch) {
     update(draft => {
@@ -864,5 +870,5 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     }
     finishDrafts();
   }
-  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { fabricComparison.reset(); stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
+  return { render: (project: Project) => render(project), dirty: () => hasDrafts(), reset: () => { bodyProfiles.reset(); fabricComparison.reset(); stopDrape(); draping = false; drape = null; bodyChest = null; bodyWaist=null; bodyHip=null; bodyDepth=null; failedDrapeKey = ''; shown = ''; render(options.current()); } };
 }
