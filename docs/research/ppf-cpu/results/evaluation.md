@@ -19,7 +19,20 @@ The first collector was corrected after review: initial receipts survive timeout
 
 ## Final execution
 
-[Final run 39016841320](https://github.com/twangyal/projects-monorepo/actions/runs/39016841320), source `a3707a5b82b455018830319c86f0b5678598f4d5`, is still building as of 2026-10-17 08:25 UTC. The corrected harness has not yet earned complete native acceptance. Keep #279 open until its actual outcome and archive are inspected; record failure rather than promoting the preliminary pass if the corrected run fails.
+[Native run 39016841320](https://github.com/twangyal/projects-monorepo/actions/runs/39016841320), source `a3707a5b82b455018830319c86f0b5678598f4d5`, built and passed the original physics fixture. **Overall CI failed** in the collector: it counted two `session/bin/vert_dmap.bin` index maps as output frames and reported28 instead of26. The archive does retain all26 actual numeric output frames, both complete native stdout/error logs, and220 native files. The supervisor reports exit0 and zero remaining children.
+
+| Measurement | Contact enabled | Contact disabled |
+|---|---:|---:|
+| Segment/triangle crossings | 0 | 0 |
+| Wrong-side vertex frames | 0 | 125 |
+| First wrong-side saved frame | none | 8 |
+| Upper-sheet mean descent (m) | 0.06555342674255371 | 0.20241397619247437 |
+
+Build wall421.05s; fixture wall6.881764869s (7.046824263s including supervisor cleanup); per-process maximum RSS1427196KiB build /72088KiB fixture. Ubuntu24.04 x86_64,4 logical CPUs; Rust1.99.1, Cargo1.99.1, Python3.12.15, g++13.3.0. These are tiny-fixture observations, not garment performance estimates.
+
+[Pristine native-run.zip](native-run.zip) is166976 bytes, SHA-256 `8d76cb3451f4958cb0dff80a3fbacfe3137f06881c12fd3c2ff3028d3ae60ce7`, matching GitHub's artifact digest. [native-run.json](native-run.json) preserves the original failed-collection status and full manifest with explicit CI/replay annotations. Every one of the220 retained native files was independently checked against its recorded byte count/SHA-256. Original physics exit0 and numerical assertions passed; no original failed receipt was overwritten.
+
+The collector now requires each exact per-case `session/output/vert_<numeric>.bin` set, excluding index maps. A regression reproducing this real failure went RED then GREEN; all7 local harness tests pass, including missing-frame refusal. A derived replay restores the pre-collector success status from the original successful fixture step/exit0 and runs the corrected collector on the pristine extracted native cache: passed,220 native files,26 output frames. This is an evidence-collector replay, **not a new native solver execution or a green CI claim**. Issue #279 remains open pending fresh end-to-end CI of the corrected collector; [fresh run39017488693](https://github.com/twangyal/projects-monorepo/actions/runs/39017488693) tests source `2efc226d56dd3c9874ec74aec9ffeda81c6e5be8`. Read the issue for its latest outcome.
 
 ## Interpretation and next admission gates
 
