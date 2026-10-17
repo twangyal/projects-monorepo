@@ -1,0 +1,86 @@
+name: Clothing PPF static collider research
+on:
+  workflow_dispatch:
+  push:
+    branches: [autonomous/clothing-ppf-static-281]
+    paths:
+      - '.github/workflows/clothing-ppf-static.yml'
+      - 'docs/research/ppf-cpu/**'
+permissions:
+  contents: read
+concurrency:
+  group: ppf-static-research-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contact-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    env:
+      PYTHONUNBUFFERED: '1'
+      CARGO_TARGET_DIR: ${{ github.workspace }}/upstream/target/cpu
+      REPORT: ${{ github.workspace }}/ppf-cpu-report
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: st-tech/ppf-contact-solver
+          ref: 6b30976f86e6b94d68d459e5237d59704c7d1384
+          path: upstream
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Record environment and exact source
+        run: |
+          set -euo pipefail
+          mkdir -p "$REPORT"
+          { date -u +%FT%TZ; uname -srmo; nproc; rustc -vV; cargo -V; python --version; g++ --version | head -1; } > "$REPORT/environment.txt"
+          git -C upstream rev-parse HEAD > "$REPORT/upstream-revision.txt"
+          git -C upstream status --porcelain > "$REPORT/upstream-initial-status.txt"
+          cp upstream/Cargo.lock "$REPORT/upstream-Cargo.lock"
+          cp upstream/LICENSE "$REPORT/upstream-LICENSE"
+      - name: Install documented upstream frontend dependencies
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$REPORT/requirements.txt"
+          import runpy
+          ns = runpy.run_path('warmup.py')
+          print('\n'.join(ns['python_packages']() + ns['tetra_packages']()))
+          PY
+          python -m pip install --only-binary=:all: -r "$REPORT/requirements.txt" 2>&1 | tee "$REPORT/dependencies.log"
+          python -m pip freeze > "$REPORT/pip-freeze.txt"
+      - name: Build the real locked CPU backend
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          /usr/bin/time -v -o "$REPORT/build-resources.txt" cargo build --locked --release --features cpu 2>&1 | tee "$REPORT/build.log"
+      - name: Check evidence collector
+        run: python -m unittest discover -s docs/research/ppf-cpu -p 'test_*.py'
+      - name: Execute frozen static-collider and disabled-contact fixtures
+        id: fixture
+        run: |
+          set -euo pipefail
+          set +e
+          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/static_probe.py --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          printf '%s\n' "${statuses[0]}" > "$REPORT/fixture-exit-code.txt"
+          [ "${statuses[0]}" -eq 0 ] && [ "${statuses[1]}" -eq 0 ] || exit 1
+          grep -q 'cpu static collider fixture: PASS' "$REPORT/fixture.log"
+      - name: Collect native logs and frames after success, failure or timeout
+        if: always()
+        env:
+          FIXTURE_OUTCOME: ${{ steps.fixture.outcome }}
+        run: python docs/research/ppf-cpu/collect.py --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" --outcome "${FIXTURE_OUTCOME:-skipped}"
+      - name: Retain complete evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ppf-static-contact-${{ github.sha }}
+          path: ppf-cpu-report/
+          if-no-files-found: error
+          retention-days: 14

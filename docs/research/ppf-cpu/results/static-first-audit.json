@@ -1,0 +1,76 @@
+{
+  "archive_sha256": "66cbdd7f00486400eee60f9999927c61818c3dabdd6ac86d14eaddbeede78e1a",
+  "archive_bytes": 161459,
+  "native_files_verified": 238,
+  "raw_output_frames": 26,
+  "finite_float32_coordinates": 1950,
+  "recomputed_metrics": {
+    "held": {
+      "wrong_side": 0,
+      "first_wrong_side": null,
+      "min_clearance": 0.000826716423034668,
+      "descent": 0.029042639732360875,
+      "covered_vertex_frames": 325
+    },
+    "through": {
+      "wrong_side": 200,
+      "first_wrong_side": 5,
+      "min_clearance": -0.17241400480270386,
+      "descent": 0.20241397619247437,
+      "covered_vertex_frames": 325
+    }
+  },
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 3.0361660669999537,
+    "remaining_children": 0
+  },
+  "receipt_without_manifest": {
+    "schema": 1,
+    "experiment": "cpu-static-triangle-plane-v1",
+    "status": "passed_static_fixture",
+    "upstream_revision": "6b30976f86e6b94d68d459e5237d59704c7d1384",
+    "backend": "cpu",
+    "scope": "One synthetic static plane and falling cloth; not curved bodies, garment/seam admission or physical material validation.",
+    "fixture_sha256": "3f63b785cec4a3480dc8fb80e137df950ab6f2090a05519c422f3001fd3545cf",
+    "oracle_sha256": "94f2725a641c90b260c7a0cea10fbbc3096dc1bbdf2e4aa2bb07d82e780da3f2",
+    "python": "3.12.15",
+    "machine": "x86_64",
+    "logical_cpus": 4,
+    "frames_per_case": 13,
+    "vertices_per_case": 25,
+    "simulated_seconds": 0.2,
+    "gap_metres": 0.03,
+    "theoretical_free_fall_metres": 0.19600000000000006,
+    "held": {
+      "wrong_side": 0,
+      "first_wrong_side": null,
+      "min_clearance": 0.000826716423034668,
+      "descent": 0.029042639732360875,
+      "covered_vertex_frames": 325,
+      "static_vertices": 25,
+      "static_triangles": 32,
+      "solved_vertices": 25,
+      "finished": true
+    },
+    "contact_disabled": {
+      "wrong_side": 200,
+      "first_wrong_side": 5,
+      "min_clearance": -0.17241400480270386,
+      "descent": 0.20241397619247437,
+      "covered_vertex_frames": 325,
+      "static_vertices": 25,
+      "static_triangles": 32,
+      "solved_vertices": 25,
+      "finished": true
+    },
+    "fixture_wall_seconds": 2.912050625000006,
+    "fixture_step_outcome": "success",
+    "fixture_exit_code": 0
+  },
+  "build_resources": "\tCommand being timed: \"cargo build --locked --release --features cpu\"\n\tUser time (seconds): 633.67\n\tSystem time (seconds): 21.20\n\tPercent of CPU this job got: 155%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 7:01.91\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 1425292\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 2166\n\tMinor (reclaiming a frame) page faults: 3861904\n\tVoluntary context switches: 25809\n\tInvoluntary context switches: 62308\n\tSwaps: 0\n\tFile system inputs: 376624\n\tFile system outputs: 2177792\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+  "fixture_resources": "\tCommand being timed: \"python docs/research/ppf-cpu/supervise.py --seconds 300 --out /home/runner/work/projects-monorepo/projects-monorepo/ppf-cpu-report -- python docs/research/ppf-cpu/static_probe.py --upstream upstream --out /home/runner/work/projects-monorepo/projects-monorepo/ppf-cpu-report --cache /home/runner/work/projects-monorepo/projects-monorepo/ppf-native-cache\"\n\tUser time (seconds): 1.24\n\tSystem time (seconds): 0.23\n\tPercent of CPU this job got: 48%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:03.08\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 72384\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 6\n\tMinor (reclaiming a frame) page faults: 18382\n\tVoluntary context switches: 1038\n\tInvoluntary context switches: 642\n\tSwaps: 0\n\tFile system inputs: 4976\n\tFile system outputs: 6824\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+  "environment": "2026-10-17T13:15:53Z\nLinux 6.17.0-1022-azure x86_64 GNU/Linux\n4\nrustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.1\nLLVM version: 23.1.1\ncargo 1.99.1 (5f94df478 2026-08-27)\nPython 3.12.15\ng++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\n"
+}
