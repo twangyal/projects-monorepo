@@ -156,7 +156,7 @@ Top draping now accepts optional straight front-to-back chest depth while preser
 
 ### Direct artwork placement — 2026-10-17 (#277)
 
-Artwork users can choose a visible front/back garment point, review centimetre drafts and Apply one undoable edit, including on draped surfaces. Numeric placement remains available. Owned picking cancels on Escape, tool navigation or a changed design/side. The corrected source CI passes148 units and all184 native cases after a review-caught vertical UV inversion was reproduced and repaired; [the integration record](2026-10-17-clothing-artwork-placement-integration.md) tracks complete source/main gates. This improves direct design control without completing image generation, general decal warping or physical fitting. Clothing stays ACTIVE.
+Artwork users can choose a visible front/back garment point, review centimetre drafts and Apply one undoable edit, including on draped surfaces. Numeric placement remains available. Owned picking cancels on Escape, tool navigation or a changed design/side. Corrected source and canonical main CI pass148 units and all184 native cases after a review-caught vertical UV inversion was reproduced and repaired; [the integration record](2026-10-17-clothing-artwork-placement-integration.md) tracks complete source/main gates. This improves direct design control without completing image generation, general decal warping or physical fitting. Clothing stays ACTIVE.
 
 ## 6. Karaoke Studio
 
