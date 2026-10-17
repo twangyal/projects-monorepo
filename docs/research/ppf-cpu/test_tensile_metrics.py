@@ -29,3 +29,10 @@ class TensileMetrics(unittest.TestCase):
         with self.assertRaises(ValueError):admit(bad)
         bad=copy.deepcopy(cases);bad['soft']['final_window_step_m']=.001
         with self.assertRaises(ValueError):admit(bad)
+
+class NativeProtocol(unittest.TestCase):
+    def test_workflow_uses_probe_success_marker(self):
+        from pathlib import Path
+        root=Path(__file__).resolve().parents[3]
+        workflow=(root/'.github/workflows/clothing-ppf-tensile.yml').read_text()
+        self.assertIn("grep -q 'cpu tensile fixture: PASS'",workflow)

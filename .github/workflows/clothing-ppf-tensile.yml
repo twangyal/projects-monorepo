@@ -70,7 +70,7 @@ jobs:
           set -e
           printf '%s\n' "${statuses[0]}" > "$REPORT/fixture-exit-code.txt"
           [ "${statuses[0]}" -eq 0 ] && [ "${statuses[1]}" -eq 0 ] || exit 1
-          grep -q 'cpu tensile response fixture: PASS' "$REPORT/fixture.log"
+          grep -q 'cpu tensile fixture: PASS' "$REPORT/fixture.log"
       - name: Collect native logs and frames after success, failure or timeout
         if: always()
         env:
