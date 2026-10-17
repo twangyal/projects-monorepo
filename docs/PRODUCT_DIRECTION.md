@@ -158,6 +158,10 @@ Top draping now accepts optional straight front-to-back chest depth while preser
 
 Artwork users can choose a visible front/back garment point, review centimetre drafts and Apply one undoable edit, including on draped surfaces. Numeric placement remains available. Owned picking cancels on Escape, tool navigation or a changed design/side. Corrected source and canonical main CI pass148 units and all184 native cases after a review-caught vertical UV inversion was reproduced and repaired; [the integration record](2026-10-17-clothing-artwork-placement-integration.md) tracks complete source/main gates. This improves direct design control without completing image generation, general decal warping or physical fitting. Clothing stays ACTIVE.
 
+### Editable back-neck construction — 2026-10-17 (#278)
+
+The linked fit workflow now edits finished back-neck drop independently of the front through numeric input and a back-pattern keyboard/pointer handle. Actual opening geometry, neck-rib cutting length, tech-packH, drape and captured exports share the dimension. Omitted settings preserve original2cm geometry and existing draft/history/recovery rules. Local and source verification pass151 units and all188 native cases; [the integration record](2026-10-17-clothing-back-neck-integration.md) tracks full gates and limits. Hood side-pattern engineering and physical fit remain unfinished; Clothing stays ACTIVE.
+
 ### Owner-requested solver investigation — 2026-10-17
 
 The owner asked to investigate [PPF Contact Solver](https://github.com/st-tech/ppf-contact-solver) for Clothing Studio. [The pinned source review and evaluation proposal](2026-10-17-clothing-ppf-contact-solver-research.md) identify a promising optional native backend for higher-quality shell/contact simulation. This is a candidate to evaluate, not a selected engine or completed integration. Upstream is offline and not production-ready; CPU/Metal support exists but is described as slow, and browser use needs a separate native compute path. Fabric presets use normalized conventions and do not establish measured equivalents of our library materials or physical fit.
