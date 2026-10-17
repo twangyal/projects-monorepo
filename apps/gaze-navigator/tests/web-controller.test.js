@@ -304,3 +304,14 @@ test('clarified edits refuse a field locked after the question instead of using 
   assert.match(controller.handle('2', { elements: [] }).message, /not writable/);
   assert.deepEqual(page.log, []);
 });
+
+test('checkbox state keeps consequential clarification and cancellation before execution', () => {
+  const page=fakePage();page.actions.setChecked=(element,checked)=>{page.log.push(['check',element.name,checked]);return{ok:true,message:'state set'};};
+  const controller=createController({window:{},actions:page.actions});
+  const context={elements:[describe(1,page.node('Agree'),{role:'checkbox',consequential:true}),describe(2,page.node('Agree'),{role:'checkbox',consequential:true})]};
+  assert.equal(controller.handle('check Agree',context).pending.kind,'clarify');
+  assert.equal(controller.handle('two',context).pending.kind,'confirm');assert.deepEqual(page.log,[]);
+  controller.handle('cancel',context);controller.handle('confirm',context);assert.deepEqual(page.log,[]);
+  controller.handle('uncheck Agree',context);controller.handle('two',context);assert.equal(controller.handle('confirm',context).performed,'check');
+  assert.deepEqual(page.log,[['check','Agree',false]]);
+});

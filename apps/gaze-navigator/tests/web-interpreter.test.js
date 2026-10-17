@@ -265,3 +265,22 @@ test('explicit slider ambiguity carries the exact value or Undo until deliberate
   assert.equal(question.type, 'clarify');assert.deepEqual(question.choose(2), { type: 'range', targetId: 2, value: 40 });
   assert.deepEqual(interpret('undo Volume slider', page).choose(1), { type: 'range', targetId: 1, undo: true });
 });
+
+test('explicit checkbox state survives interpretation and does not become a generic click', () => {
+  const page=context(element(1,'Newsletter','checkbox'),element(2,'Check balance','button'));
+  for (const word of ['check','tick']) assert.deepEqual(interpret(`${word} Newsletter`,page),{type:'check',targetId:1,checked:true});
+  for (const word of ['uncheck','untick']) assert.deepEqual(interpret(`${word} that checkbox`,page),{type:'check',targetId:1,checked:false});
+  assert.deepEqual(interpret('click Newsletter',page),{type:'activate',targetId:1});
+  assert.equal(interpret('check balance',page).type,'unknown');
+});
+
+test('checkbox state preserves reading-order ordinal requests', () => {
+  const page=context(element(1,'Newsletter','checkbox'),element(2,'Offers','checkbox'));
+  assert.deepEqual(interpret('check second checkbox',page),{type:'check',targetId:2,checked:true});
+  assert.deepEqual(interpret('uncheck first checkbox',page),{type:'check',targetId:1,checked:false});
+});
+
+test('the established checkout phrase retains ordinary consequential activation', () => {
+  const page=context(element(1,'Check out now','button',{consequential:true}));
+  assert.deepEqual(interpret('check out now',page),{type:'activate',targetId:1});
+});

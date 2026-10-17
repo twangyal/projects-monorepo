@@ -1,0 +1,20 @@
+# Native checkbox state (#286)
+
+Previously, “check” and “uncheck” were generic clicks: “uncheck Newsletter” on an empty native checkbox actually checked it. This was reproduced in a real Chromium browser before implementation. Explicit check/tick and uncheck/untick now carry the requested boolean state through naming, gaze targeting, reading-order ordinals, ambiguity and consequential confirmation.
+
+Execution supports connected, available binary native checkboxes. Already-correct requests send no click/input/change. An actual change uses one native click, preserving ordinary browser event order, shadow propagation and preventDefault rollback. Current native/ARIA/fieldset/inert restrictions are rechecked through shadow/frame ancestors. Focus-time replacement, locks, redirects and checked/mixed-state changes refuse before activation; post-click replacement/locks/overrides are reported honestly. Mixed/indeterminate and custom ARIA checkbox/switch controls refuse without mutation. “Click” and “toggle” remain ordinary website activation. The existing “check out now” phrase retains its ordinary matching path rather than becoming checkbox intent.
+
+No checkbox Undo history is added: the opposite state command deliberately requests reversal. Native input handlers can themselves have website effects; this flow retains existing consequential-target confirmation, rather than promising reversibility of website side effects.
+
+## Evidence and retained failures
+
+- A parser test first returned generic activate instead of the requested checked state. The native browser first checked an empty control in response to uncheck. Both passed after the state action/executor change.
+- Review found that the early state branch bypassed reading-order ordinal parsing. A new `check second checkbox` / `uncheck first checkbox` regression failed, then passed after routing through the existing ordinal resolver with the checked-state action preserved.
+- The first complete unit gate passed187/188: four old instruction fixtures still expected generic activate for check/tick/uncheck. Their expected actions now assert the explicit boolean state, and the suite version is `spoken-web-v2-checkbox-state`. Inputs,120/50/50 suite sizes, scoring rules, unsafe-action checks and accuracy thresholds are unchanged. Historical v1 results remain historical rather than claiming identical expected-action semantics.
+- A new checkout unit initially used a fixture whose label did not match even through the old generic path. Correcting the label to the actual requested phrase tests preservation of that path; this was a test-fixture mismatch, not evidence of a runtime regression.
+
+Local checks and complete hosted source/main gates are recorded below as they finish. Portable local Chromium checks cannot establish the installed full-Chrome MV3 extension flow; hosted extension cases supply that software evidence. No physical microphone/webcam or intended-user acceptance is claimed (#132).
+
+## Scope of validation
+
+Focused browser cases cover no-op/state/event order, consequential clarification/cancel/confirmation, mixed/custom/native/ancestor locks, stale type/connection, focus races, canceled click/site override/replacement, and nested shadow/same-origin-frame execution/refusal across all four configured viewports. A strict-CSP real injected-extension case exercises repeated check/uncheck through the visible typed instruction flow. These are software tests, not accessibility field evaluation.

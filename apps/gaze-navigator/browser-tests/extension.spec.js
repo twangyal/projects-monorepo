@@ -382,3 +382,19 @@ test('injected extension sets and undoes a real strict-CSP website slider', asyn
   await typeInstruction(page,'undo Playback volume slider');await expect(slider).toHaveValue('50');
   expect(await page.evaluate(() => window.rangeEvents)).toEqual([['input','35'],['change','35'],['input','50'],['change','50']]);
 });
+
+test('injected extension check and uncheck retain requested native website state', async ({ context, worker }) => {
+  await worker.evaluate(() => chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+  const page=await context.newPage();await page.goto('http://shop.example/');await expect(status(page)).toContainText('Ready on "Example Shop"');
+  await page.evaluate(()=>{
+    const label=document.createElement('label');label.textContent='Newsletter';const input=document.createElement('input');input.type='checkbox';input.id='newsletter';label.append(input);document.body.prepend(label);
+    window.checkEvents=[];for(const type of ['click','input','change'])input.addEventListener(type,()=>window.checkEvents.push([type,input.checked]));
+  });
+  const checkbox=page.getByLabel('Newsletter');await look(page,checkbox);
+  await typeInstruction(page,'uncheck Newsletter');await expect(checkbox).not.toBeChecked();
+  await typeInstruction(page,'check Newsletter');await expect(checkbox).toBeChecked();
+  await typeInstruction(page,'check Newsletter');await expect(checkbox).toBeChecked();
+  await expect(status(page)).toContainText('already checked');
+  await typeInstruction(page,'uncheck Newsletter');await expect(checkbox).not.toBeChecked();
+  expect(await page.evaluate(()=>window.checkEvents)).toEqual([['click',true],['input',true],['change',true],['click',false],['input',false],['change',false]]);
+});
