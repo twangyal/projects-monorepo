@@ -65,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/probe.py --upstream upstream --out "$REPORT" 2>&1 | tee "$REPORT/fixture.log"
+          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/probe.py --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
           statuses=("${PIPESTATUS[@]}")
           set -e
           printf '%s\n' "${statuses[0]}" > "$REPORT/fixture-exit-code.txt"
@@ -75,7 +75,7 @@ jobs:
         if: always()
         env:
           FIXTURE_OUTCOME: ${{ steps.fixture.outcome }}
-        run: python docs/research/ppf-cpu/collect.py --out "$REPORT" --cache "$HOME/.cache/ppf-cts" --outcome "${FIXTURE_OUTCOME:-skipped}"
+        run: python docs/research/ppf-cpu/collect.py --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" --outcome "${FIXTURE_OUTCOME:-skipped}"
       - name: Retain complete evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4

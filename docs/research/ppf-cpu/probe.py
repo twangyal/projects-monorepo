@@ -16,10 +16,14 @@ REVISION = '6b30976f86e6b94d68d459e5237d59704c7d1384'
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--upstream', required=True, type=Path)
 parser.add_argument('--out', required=True, type=Path)
+parser.add_argument('--cache', required=True, type=Path)
 args = parser.parse_args()
 upstream = args.upstream.resolve()
 out = args.out.resolve()
 out.mkdir(parents=True, exist_ok=True)
+cache=args.cache.resolve()
+if cache.exists() and any(cache.iterdir()):raise SystemExit('Use an empty dedicated native cache for this synthetic probe.')
+cache.mkdir(parents=True,exist_ok=True)
 actual = subprocess.check_output(['git', '-C', str(upstream), 'rev-parse', 'HEAD'], text=True).strip()
 if actual != REVISION:
     raise SystemExit(f'Refusing unpinned source: {actual}')
@@ -38,7 +42,19 @@ try:
     # The existing fixture's geometry, parameters, frame admission and all assertions run unchanged.
     sys.path.insert(0, str(upstream))
     os.chdir(upstream)
-    namespace = runpy.run_path(str(fixture), run_name='__main__')
+    from frontend import App
+    original_create=App.create
+    def create_in_probe_cache(name, cache_dir=''):
+        if name not in ['cpu-contact-held','cpu-contact-through'] or cache_dir:
+            raise ValueError('Unexpected fixture app/cache request')
+        return original_create(name, cache_dir=str(cache))
+    # Only storage is redirected through the documented API; fixture source,
+    # physical parameters, solver calls and every numerical assertion stay intact.
+    App.create=staticmethod(create_in_probe_cache)
+    try:
+        namespace = runpy.run_path(str(fixture), run_name='__main__')
+    finally:
+        App.create=staticmethod(original_create)
     receipt.update(status='passed_upstream_fixture', held=namespace['held'], contact_disabled=namespace['through'],
                    frames_per_case=namespace['FRAMES'] + 1, vertices_per_case=namespace['LOWER_COUNT'] + namespace['UPPER_COUNT'],
                    simulated_seconds=namespace['ELAPSED'], gap_metres=namespace['DROP'],
