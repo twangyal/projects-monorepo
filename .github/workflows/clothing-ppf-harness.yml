@@ -1,0 +1,30 @@
+name: Clothing PPF evidence harness
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/clothing-ppf-harness.yml'
+      - 'docs/research/ppf-cpu/**'
+  pull_request:
+    paths:
+      - '.github/workflows/clothing-ppf-harness.yml'
+      - 'docs/research/ppf-cpu/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ppf-evidence-harness-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  oracle-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run standard-library geometry, collector and native-input replay regressions
+        run: python -m unittest discover -s docs/research/ppf-cpu -p 'test_*.py'

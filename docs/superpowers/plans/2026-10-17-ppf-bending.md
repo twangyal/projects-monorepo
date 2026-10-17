@@ -31,3 +31,6 @@
 - [x] Reuse manifest verification and independently verify frozen actual native input/output buffers, pins and parameters; test corruption refusal.
 - [x] Replay actual archive, compare controls, request read-only review and fix important findings with regressions.
 - [x] Commit evidence, integrate into latest canonical main, update #287 according to actual gates. Preserve app unchanged.
+
+
+Post-acceptance validation follow-up: `.github/workflows/clothing-ppf-harness.yml` runs the existing standard-library oracle/collector/replay regressions on relevant main/PR changes without a native rebuild. This adds durable automated coverage for the reviewed metadata corrections; numerical protocol and shipping applications are unchanged. Its actual hosted outcome is recorded in the issue and final integration receipt.

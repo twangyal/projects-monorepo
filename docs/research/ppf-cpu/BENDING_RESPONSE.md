@@ -34,7 +34,7 @@ The standard-library audit never unpickles artifacts. It verifies checksum/full 
 
 Five analytical tests first failed against a stub oracle, then passed after measurement implementation. Tests subsequently cover rigid translation preserving edge strain, exact1%affine extension and malformed vertex cardinality. Archive corruption cases cover missing inputs/frames, wrong maps/material/topology, changed triangle order, pin membership/pull/operations/overrides, velocity/UV, undeclared static geometry and manifest corruption. An added cross-control test genuinely failed before the checker existed, then passed when extra changed native buffers were refused.
 
-Source `5c013a9056f1c0a0a3459c3617573c90bae07b61` launches native CI39077437821. All41then-current harness tests pass locally; the completed native evidence and later replay suite will be recorded after execution. Initial source review found no important probe/measurement blocker; its warning about accidentally copying tensile's zero bending-damping override was applied to the audit before native admission.
+Source `5c013a9056f1c0a0a3459c3617573c90bae07b61` launches native CI39077437821. All41then-current harness tests passed; completed native evidence and the final replay suite are recorded below. Initial source review found no important probe/measurement blocker; its warning about accidentally copying tensile's zero bending-damping override was applied to the audit before native admission.
 
 Bending accuracy against specimens, physical property mapping, directional calibration, continuous contact, garment/seam/layer behavior, native compute UX and runtime scaling remain open.
 
