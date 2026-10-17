@@ -1,0 +1,1370 @@
+{
+  "schema": 1,
+  "experiment": "cpu-curved-static-sphere-v1",
+  "status": "passed_curved_fixture",
+  "upstream_revision": "6b30976f86e6b94d68d459e5237d59704c7d1384",
+  "backend": "cpu",
+  "scope": "One synthetic faceted convex sphere and falling sheet; not anatomy, garment/seam or physical material validation.",
+  "fixture_sha256": "726c6164d0c32672ee79a8dce15391cd90c870c39b0267cfd082d34c26b0c0f5",
+  "oracle_sha256": "28a17810aa919a9df3db07da1686e9470efbb2cc0bcd83761b4563897d83e756",
+  "geometry_sha256": "0e6d6bb3b227200b4c14703bc71bbd320b8fcafbfbb13858db90a3e8000bd69d",
+  "python": "3.12.15",
+  "machine": "x86_64",
+  "logical_cpus": 4,
+  "frames_per_case": 19,
+  "vertices_per_case": 81,
+  "simulated_seconds": 0.3,
+  "gap_metres": 0.03,
+  "theoretical_free_fall_metres": 0.441,
+  "held": {
+    "inside_vertex_frames": 0,
+    "penetrating_triangle_frames": 0,
+    "first_penetrating_frame": null,
+    "minimum_halfspace_separation": 0.0007437696422240014,
+    "mean_descent": 0.055321044392055985,
+    "final_height_range": 0.06871366500854492,
+    "checked_vertex_frames": 1539,
+    "checked_triangle_frames": 2432,
+    "static_vertices": 114,
+    "static_triangles": 224,
+    "solved_vertices": 81,
+    "finished": true
+  },
+  "contact_disabled": {
+    "inside_vertex_frames": 813,
+    "penetrating_triangle_frames": 1454,
+    "first_penetrating_frame": 5,
+    "minimum_halfspace_separation": -0.1894595508383694,
+    "mean_descent": 0.44757580757141113,
+    "final_height_range": 0.0,
+    "checked_vertex_frames": 1539,
+    "checked_triangle_frames": 2432,
+    "static_vertices": 114,
+    "static_triangles": 224,
+    "solved_vertices": 81,
+    "finished": true
+  },
+  "fixture_wall_seconds": 3.9912679130000015,
+  "fixture_step_outcome": "success",
+  "fixture_exit_code": 0,
+  "retained_native_files": [
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/color.bin",
+      "bytes": 972,
+      "sha256": "135ae2400a1b0f3903c8e86d6cc22e93e8dfe56b05f8ef9184e8f6cea4770a44"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/displacement.bin",
+      "bytes": 48,
+      "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/object_vert.bin",
+      "bytes": 324,
+      "sha256": "7119f314d3837dac54bf984118de657f6f1e6dfd2a2b2a20510454f762dddf11"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-bending-damping.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-contact-gap.bin",
+      "bytes": 896,
+      "sha256": "f2ce0406f45b25e84d72ba547c84ce7eccdbbef53dc6572d5cb9a852b18246ef"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-contact-offset.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-deformation-damping.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-friction.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-plasticity-threshold.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-plasticity.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/static-pressure.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bend-plasticity-threshold.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bend-plasticity.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bend-rest-from-geometry.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bend-warp.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bend-weft.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bend.bin",
+      "bytes": 512,
+      "sha256": "dc729248a3189ea01c04278713f5d2d7607ee486ed1fa37abd88cc0a176f85bd"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-bending-damping.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-contact-gap.bin",
+      "bytes": 512,
+      "sha256": "da764135a2a4b7141e8938882115ecd5be89c0f9aa9225113fc50b106ad85196"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-contact-offset.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-deformation-damping.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-density.bin",
+      "bytes": 512,
+      "sha256": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-friction.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-model.bin",
+      "bytes": 128,
+      "sha256": "9e50f90fd035924a202c1f5c5246acc40ab0c3211366e89f0c5d9cf42a6a8d78"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-plasticity-threshold.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-plasticity.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-poiss-rat.bin",
+      "bytes": 512,
+      "sha256": "b9df497eff302c179edff3d6c69e10cbac3c8a26f2eb08df6f62767e47d53390"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-pressure.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-shrink-x.bin",
+      "bytes": 512,
+      "sha256": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-shrink-y.bin",
+      "bytes": 512,
+      "sha256": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-strain-limit.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/param/tri-young-mod.bin",
+      "bytes": 512,
+      "sha256": "a0d76c4f549a710bec13272ade1a7c972d876c11d06d7f0e82df00788f5214d0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/static_color.bin",
+      "bytes": 1368,
+      "sha256": "6e2a8758974e0c50aed1daa76e2a6d18e98fb11e8d3b14ee44a330fc273f9ae4"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/static_tri.bin",
+      "bytes": 5376,
+      "sha256": "397cf51b6b94df31f3a7a14d36726121acd180b0db82d7680973a67161306514"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/static_vert.bin",
+      "bytes": 2736,
+      "sha256": "8dab4a2b81a33465981522a2a78b0de57b34db8eb7173486404766f84702522f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/static_vert_dmap.bin",
+      "bytes": 456,
+      "sha256": "b960fb5cb94682dfc4a873035d65f8befdcb9bed0e7db0feb905f0dcf437b38c"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/tri.bin",
+      "bytes": 3072,
+      "sha256": "5bbdee6ffe37d3f3dc88a7a388a8564bd2c5218d45d51b2d03b6657e4fcc2a86"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/uv.bin",
+      "bytes": 3072,
+      "sha256": "e80232b4d18d0bb7e794be263ba937626f383f9917d4b8a737ba893a8f752293"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/vel.bin",
+      "bytes": 972,
+      "sha256": "96c5023576733f88726277165f7fa44936426956bcbcca126d7f1169216e1a4b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/vert.bin",
+      "bytes": 1944,
+      "sha256": "a5dde7798bcb940cab859ccadd0c6fcdea8de98d778cda30d9acf908e8b550a9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/bin/vert_dmap.bin",
+      "bytes": 324,
+      "sha256": "7a8b1a34e75aa5fbf031c7421e947187b330767b31eb814c0602a8da8967bbe9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/command.sh",
+      "bytes": 493,
+      "sha256": "397edac1d70370a63c0bac4e121fea64db67b7c1e6c47f90b9ae6fcd77bfb2ee"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/display_pin_map.pickle",
+      "bytes": 64,
+      "sha256": "1126a48553bb346af74a451c164a78323094d81cb64c775a809d7b7da71de744"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/error.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/fixed_session.pickle",
+      "bytes": 97187,
+      "sha256": "4dd526994733324f07e91156913984bc51878085c2d43b26e9d544b114f9aef0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/info.toml",
+      "bytes": 358,
+      "sha256": "2b6a39712fa1a2c478d6194a6fea773642f7a7c29db5895910da1e2e55abda7d"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/map.pickle",
+      "bytes": 180,
+      "sha256": "d5272005dd063483d1e6dfe68bf24b34a3c33b1de086485634c844f457e83801"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/crash_signal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.SL_toi.out",
+      "bytes": 968,
+      "sha256": "99daf54cea66365bbaac15b02fdb085d17c2c03b8f0543848961dff0017d053a"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.aabb_update.out",
+      "bytes": 2860,
+      "sha256": "96976680ae31b15145b6f4bf7a03cf40ddf1b43136d5d8bd97c45768861b009f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.asm_contact.out",
+      "bytes": 1936,
+      "sha256": "c6cbd1f785ed2d4031ddf6f35e9cb8aeca9f40e2169767408cc4538c706c2cff"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.asm_copy.out",
+      "bytes": 1936,
+      "sha256": "098062fe10b419df1da83f2d2d05575560cf9aabe002c79095f2f45d5ec9dea9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.asm_elastic.out",
+      "bytes": 1936,
+      "sha256": "9cefd390ebad07d923c031f43286f467550fa44a9a91f675bd01eada71a7e630"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.asm_strainlimit.out",
+      "bytes": 1936,
+      "sha256": "7fad74f74d553dbed4c35ef7e356124f5b41af9522d02fb874852b9ddcf867b5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.check_intersection.out",
+      "bytes": 924,
+      "sha256": "b0caf8ff199141f092fc640d90bb03e5134250803df2130d20923ae6296e658a"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.commit.out",
+      "bytes": 924,
+      "sha256": "f3609f4acdfe0deebdef469770db5d0eb5de71498e438d7634f46df53fe7b8c8"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.contact_toi.out",
+      "bytes": 1144,
+      "sha256": "add69a03ecebc0c53950e4cfcdda58a3c0c4d9a84387566b493efd39397b6af0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.dt.out",
+      "bytes": 924,
+      "sha256": "77b554bca76a33fc97f7063f7044f72282686887b45d64ca7b9947b1c5b59643"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.dyn_consumed.out",
+      "bytes": 968,
+      "sha256": "e07f06ce875b50644421d179ef0d82f4a29862966e3a92be27343a5cecf5457b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.final_dt.out",
+      "bytes": 924,
+      "sha256": "9abfcccf22ba610e66b5fa4241abe36459c6651c7e9b7a6b619abbb4fe0e4834"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.iter.out",
+      "bytes": 1061,
+      "sha256": "4ec01d0c2027f5368ad5737605b7e5e239b727c61649a65cd42b83a855d1da42"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.lbvh_build.out",
+      "bytes": 924,
+      "sha256": "479047a09446a791cb38eba1574b625b775a33fedd684d6e98a0a1465d4b9515"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.line_search.out",
+      "bytes": 1936,
+      "sha256": "b6669202a1616d0ce65cba90e6bffbcd7aaccfdde3661c258b53b4e2147d0bfd"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.linsolve.out",
+      "bytes": 1936,
+      "sha256": "e5f3ff317bb4d30f316c92843147277ecc556ced7759b08925075236efbce711"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.matrix_assembly.out",
+      "bytes": 1936,
+      "sha256": "b8da0cdcee212883a9a77f5139f1ccb5c8aa6ca6ea2fed113888d684b0d7e889"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.max_dx.out",
+      "bytes": 1936,
+      "sha256": "e47714d837bced88f2bd035484c32452a3fa5eb4deff831043b0a55d126db714"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.max_sigma.out",
+      "bytes": 913,
+      "sha256": "0536372881325f8b00c2ccf125867778ff722109def8570ad27a06f8b7756f99"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.max_u.out",
+      "bytes": 913,
+      "sha256": "b734b717bf162d288774a655e954fa002e2b494788b14b6bb7c02c7d28443efb"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.newton_steps.out",
+      "bytes": 462,
+      "sha256": "b89556e8faa77ccc139b0819fd6162b5a1fd5ef185cc4442585ea779d346c27d"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.nt_head.out",
+      "bytes": 1936,
+      "sha256": "f7ba60ef35ee2b194c0fd8989bbac07a9da32e974f63b79993364537c29662a8"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.nt_mid.out",
+      "bytes": 1936,
+      "sha256": "a2945dfa07ec45f0e505f5b4c32e9a0d51384a2ca63ecd56298dd82fffe202ef"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.nt_tail.out",
+      "bytes": 1936,
+      "sha256": "2b28f8ca421efebd47512e29440d05eb5288302374387a54ccf211cebb6f19e0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.num_contact.out",
+      "bytes": 968,
+      "sha256": "e07f06ce875b50644421d179ef0d82f4a29862966e3a92be27343a5cecf5457b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.out",
+      "bytes": 462,
+      "sha256": "69a07ed6dc850bb4531331c482b786ac62862eb6ff7faba1c68386bda5f86d2f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.playback.out",
+      "bytes": 462,
+      "sha256": "5e69c86ffe6ba7af4777b0c1022b921bf1ee3a5633afff8240f5d1febae959a0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.pre_newton.out",
+      "bytes": 924,
+      "sha256": "595dbd7c7ca8e2c3f3a47d677d1a4d33bdba5f05ccfd40e37284bbaf53980153"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.reresid.out",
+      "bytes": 1936,
+      "sha256": "f1084a5c55f67ac816624cd3cfb265e6495922154d9d03e856f806af5937d2b7"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.schwarz_fallback.out",
+      "bytes": 968,
+      "sha256": "e07f06ce875b50644421d179ef0d82f4a29862966e3a92be27343a5cecf5457b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.toi.out",
+      "bytes": 1144,
+      "sha256": "add69a03ecebc0c53950e4cfcdda58a3c0c4d9a84387566b493efd39397b6af0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.toi_advanced.out",
+      "bytes": 594,
+      "sha256": "aea99c60a403eae9822062d1eccd0638855b4910dce821a2ccc65470491cca4b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/advance.toi_recale.out",
+      "bytes": 968,
+      "sha256": "99daf54cea66365bbaac15b02fdb085d17c2c03b8f0543848961dff0017d053a"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/frame_to_time.out",
+      "bytes": 316,
+      "sha256": "fe32f3f31afd91c48b5de6f35c677ac489af89dabc653c5d1b2dab49b6208d58"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/initialize.check_intersection.out",
+      "bytes": 22,
+      "sha256": "297a236f4283dd143c54e175036312e9bcf91f96226bc8e3953f7d5baad5a8df"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/initialize.lbvh_build.out",
+      "bytes": 22,
+      "sha256": "dc07da8ce92fa802d1d2a72c82b1028c280a85954ef196fea5ae0ee9fbed471e"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/initialize.out",
+      "bytes": 11,
+      "sha256": "fff59f96fbbc0963eba33923f9e7ae55e66976c98485cc4aaa7555b335cf099e"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/time_per_frame.out",
+      "bytes": 88,
+      "sha256": "a5c34065516a5aa579b4d4c52e532520594c637ccbf8a8def86ffe0adfc0733c"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/data/total_mass.out",
+      "bytes": 16,
+      "sha256": "05e52a22f53791a9d3054debfe38918a09ed218ae4e04e539b80bc089c0e0fae"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/finished.txt",
+      "bytes": 36,
+      "sha256": "f77ad9124e6abfd0a0cbb9f1e104763592ac307dffac915afe26e06fabb59953"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/initialize_finish.txt",
+      "bytes": 36,
+      "sha256": "4f95e8c217a42f0e9d87de32072b9916e029586ab80c07120d63d41339f1b299"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_0.cbor",
+      "bytes": 703,
+      "sha256": "57fc89f16637be1411cffcbf11a895f1420608608faedcfc2be7ded2ae0d8c10"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_1.cbor",
+      "bytes": 733,
+      "sha256": "321327e959e5c90f0bf7d904a07bf8f16b4cf9c356e4671dbb1215777a4e0cea"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_10.cbor",
+      "bytes": 745,
+      "sha256": "b6ca8059dac537d69e174783ec5b3beccdbe6387bbda0ec5c47ca6a98c5c0f19"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_11.cbor",
+      "bytes": 743,
+      "sha256": "77d261cb598e5b24405c72e8426739383a38717d4277a064fd4010ecbde1cb40"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_12.cbor",
+      "bytes": 745,
+      "sha256": "5a5a4b8d74612d10f165b1d1cf6eecad39da6741f634b4efb122cc122cb029ca"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_13.cbor",
+      "bytes": 743,
+      "sha256": "f1357970772e4a0cdae7bb3d6859b173d117ba0d829e7b049917bce26f6af5f9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_14.cbor",
+      "bytes": 745,
+      "sha256": "237f50af53cbd141ea97a1c19db48e1374e043c3ec97da09bc95751e1edf8b4f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_15.cbor",
+      "bytes": 739,
+      "sha256": "29d4c4fa836cc55b2ddf38b25b2897954d0fc34ccec080bef37eff3436e6c00d"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_16.cbor",
+      "bytes": 745,
+      "sha256": "5a0eb31a0b38aa8a7f733f493977795acee7b3369590d8d5678b248a6b8229c6"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_17.cbor",
+      "bytes": 745,
+      "sha256": "813e9310a00b64bd5fd17a9d7cc0a5bdfd7d510f3b06ed92426b1a6b3b23ab53"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_18.cbor",
+      "bytes": 745,
+      "sha256": "b88a65a3af22d571193c6cda0a4b7aef9add6ceb16c20e7c15b9d7551a604cd1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_2.cbor",
+      "bytes": 739,
+      "sha256": "9037cb15f33a2de75af4d0604a0837ed1b8dae0c8e112aafeeda97758b221298"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_3.cbor",
+      "bytes": 739,
+      "sha256": "6a2c326faaba81e3884c31096b7f6c1147e182c3a860708b31a2fe13902eccd7"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_4.cbor",
+      "bytes": 741,
+      "sha256": "0aed111d2a1f4b63ea3b149553a48be19359a04df4ef5061ebcaa20f1d0fa276"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_5.cbor",
+      "bytes": 745,
+      "sha256": "62f00ef039503f241f79d60c379ee1caee8c62c7f3748e362119b6d1737f4557"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_6.cbor",
+      "bytes": 745,
+      "sha256": "fbefb7fda5df5386d6daeea5a74f638a83f0c98a59cc32a71620ca901b5085c3"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_7.cbor",
+      "bytes": 745,
+      "sha256": "660ab915fe4f6f0eb036b219d27b3098a0622a2cb097471eba6c1147d3ba98c9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_8.cbor",
+      "bytes": 745,
+      "sha256": "70ec29491d4827b4c7f988be0c5ef32635379b80851f4a2d19c8c008eb38c8dd"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_9.cbor",
+      "bytes": 745,
+      "sha256": "03b7f1c60c73c3014d62f8ab2f40072fe1f6cea32eaf40192e609ae6af00bbdf"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/statistics_manifest.cbor",
+      "bytes": 241,
+      "sha256": "5e30093e2b6b5c5bf05ad63587abb585f6fe10465fca97ee67a09e232e472582"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/status.cbor",
+      "bytes": 140,
+      "sha256": "8fa33c59926a6ea5017360998013db8413ebba8258c3c0a2e2097f406b047999"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/status.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_0.bin",
+      "bytes": 972,
+      "sha256": "7b4a41370d925a8aafdcaa7fcc5bd53b84f9dbc853b05e01e17ca089ca4dae7b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_1.bin",
+      "bytes": 972,
+      "sha256": "13613404b60f903a38d2d6ce071a7832d55e365d083bc800a9b559ec8c8309db"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_10.bin",
+      "bytes": 972,
+      "sha256": "d77a2f8426378870590092175e8bb6754136ef5bbc9307788f90e25c903d8b5c"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_11.bin",
+      "bytes": 972,
+      "sha256": "3d7f75595f4dd3677cca289b0675fe643654b524ca2b6e9a596a4f2722627519"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_12.bin",
+      "bytes": 972,
+      "sha256": "9a134348e23ce65ab67aa9e2e7cc71f294189711eadad63148d121ab7d59aa38"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_13.bin",
+      "bytes": 972,
+      "sha256": "3e65e7286354324816c7a4e29163fad2ad3512f14f5bebe5a6453d4b1c9a9039"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_14.bin",
+      "bytes": 972,
+      "sha256": "f46f1ddc25b2b464164cce479e78c14e5ea17c54edc227dfe1883b3a84f93f77"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_15.bin",
+      "bytes": 972,
+      "sha256": "d376c3a0d72f4b780f2caf018cfccc67757144d66cb8b82428d7be4f6884b7b9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_16.bin",
+      "bytes": 972,
+      "sha256": "55220e7b0cfc6bee6f5c3ac6c7dcfec6b4716a11abed457824805c03bf79120f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_17.bin",
+      "bytes": 972,
+      "sha256": "2633d8e808829398c0701ed1b63714015575253a7c870e382801a8df65580a4b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_18.bin",
+      "bytes": 972,
+      "sha256": "a4bfb17a0fa72502287710ae5e0c0665519e6b0a241289c051824f17da1e7af9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_2.bin",
+      "bytes": 972,
+      "sha256": "0317a4cd2d16a5cdbc0f273e1dfee56b1838627e574f1cbf5b898932875b11df"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_3.bin",
+      "bytes": 972,
+      "sha256": "d2d2f4552072fe50ff76ae8a91193b574780582640db1a9a1810e0bfa736f7b4"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_4.bin",
+      "bytes": 972,
+      "sha256": "97b3aee30b066e7d036ecb4a9cfb795de77c4d93ab24fefca53e9ddc6f42e699"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_5.bin",
+      "bytes": 972,
+      "sha256": "4c9ee601822f47e13a3d87c3a01cb4255484b6a01c9f4104cbc3a3d1d7aa8ad4"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_6.bin",
+      "bytes": 972,
+      "sha256": "b5ff012efbaf10aa6ca1207594ee235f0c5e4efec4e8e1269f494f606cdb6ba2"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_7.bin",
+      "bytes": 972,
+      "sha256": "48262f33b4330214c543a01683a8fe56ad2689534b25cdae01c35336b72c2689"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_8.bin",
+      "bytes": 972,
+      "sha256": "e04e6585ce5f1fcf9d76eab953b9b73f7aa22a8078e29c050ef7ea0d80a318b3"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/output/vert_9.bin",
+      "bytes": 972,
+      "sha256": "cf0370b9cd5b4c552dec944af5fade330ae23374d3c95fdfd6d72df1b0907f20"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/param.toml",
+      "bytes": 799,
+      "sha256": "011a830f23c3621670457218cdec0167e479a4f68103ffc0cc86aad33bcc95c6"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/param_summary.txt",
+      "bytes": 1949,
+      "sha256": "bcc561ddf740395aa0748a9944af104ff368e50964b5169bc2f1bb17cc05a168"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/statistics_input.cbor",
+      "bytes": 738,
+      "sha256": "93fc3d219530eb50d5e024f10e9d543c8f8a17a50c1f16d8f50659b8c201bdab"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-held/session/stdout.log",
+      "bytes": 45609,
+      "sha256": "6089c06e84223926c70999a3ff9f12285ca38fe84e9ad4cd73cc686f827514c4"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/color.bin",
+      "bytes": 972,
+      "sha256": "135ae2400a1b0f3903c8e86d6cc22e93e8dfe56b05f8ef9184e8f6cea4770a44"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/displacement.bin",
+      "bytes": 48,
+      "sha256": "17b0761f87b081d5cf10757ccc89f12be355c70e2e29df288b65b30710dcbcd1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/object_vert.bin",
+      "bytes": 324,
+      "sha256": "7119f314d3837dac54bf984118de657f6f1e6dfd2a2b2a20510454f762dddf11"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-bending-damping.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-contact-gap.bin",
+      "bytes": 896,
+      "sha256": "f2ce0406f45b25e84d72ba547c84ce7eccdbbef53dc6572d5cb9a852b18246ef"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-contact-offset.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-deformation-damping.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-friction.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-plasticity-threshold.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-plasticity.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/static-pressure.bin",
+      "bytes": 896,
+      "sha256": "d54f02b97ed5bc2a642756268b41d4b8f7a077e73224e1580d22436834a14db5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bend-plasticity-threshold.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bend-plasticity.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bend-rest-from-geometry.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bend-warp.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bend-weft.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bend.bin",
+      "bytes": 512,
+      "sha256": "dc729248a3189ea01c04278713f5d2d7607ee486ed1fa37abd88cc0a176f85bd"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-bending-damping.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-contact-gap.bin",
+      "bytes": 512,
+      "sha256": "da764135a2a4b7141e8938882115ecd5be89c0f9aa9225113fc50b106ad85196"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-contact-offset.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-deformation-damping.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-density.bin",
+      "bytes": 512,
+      "sha256": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-friction.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-model.bin",
+      "bytes": 128,
+      "sha256": "9e50f90fd035924a202c1f5c5246acc40ab0c3211366e89f0c5d9cf42a6a8d78"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-plasticity-threshold.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-plasticity.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-poiss-rat.bin",
+      "bytes": 512,
+      "sha256": "b9df497eff302c179edff3d6c69e10cbac3c8a26f2eb08df6f62767e47d53390"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-pressure.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-shrink-x.bin",
+      "bytes": 512,
+      "sha256": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-shrink-y.bin",
+      "bytes": 512,
+      "sha256": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-strain-limit.bin",
+      "bytes": 512,
+      "sha256": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/param/tri-young-mod.bin",
+      "bytes": 512,
+      "sha256": "a0d76c4f549a710bec13272ade1a7c972d876c11d06d7f0e82df00788f5214d0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/static_color.bin",
+      "bytes": 1368,
+      "sha256": "6e2a8758974e0c50aed1daa76e2a6d18e98fb11e8d3b14ee44a330fc273f9ae4"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/static_tri.bin",
+      "bytes": 5376,
+      "sha256": "397cf51b6b94df31f3a7a14d36726121acd180b0db82d7680973a67161306514"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/static_vert.bin",
+      "bytes": 2736,
+      "sha256": "8dab4a2b81a33465981522a2a78b0de57b34db8eb7173486404766f84702522f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/static_vert_dmap.bin",
+      "bytes": 456,
+      "sha256": "b960fb5cb94682dfc4a873035d65f8befdcb9bed0e7db0feb905f0dcf437b38c"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/tri.bin",
+      "bytes": 3072,
+      "sha256": "5bbdee6ffe37d3f3dc88a7a388a8564bd2c5218d45d51b2d03b6657e4fcc2a86"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/uv.bin",
+      "bytes": 3072,
+      "sha256": "e80232b4d18d0bb7e794be263ba937626f383f9917d4b8a737ba893a8f752293"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/vel.bin",
+      "bytes": 972,
+      "sha256": "96c5023576733f88726277165f7fa44936426956bcbcca126d7f1169216e1a4b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/vert.bin",
+      "bytes": 1944,
+      "sha256": "a5dde7798bcb940cab859ccadd0c6fcdea8de98d778cda30d9acf908e8b550a9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/bin/vert_dmap.bin",
+      "bytes": 324,
+      "sha256": "7a8b1a34e75aa5fbf031c7421e947187b330767b31eb814c0602a8da8967bbe9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/command.sh",
+      "bytes": 499,
+      "sha256": "f3f6f6c0f96713e65a2b82eaccc237d2197b88d06dcb12f7572629ce18753079"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/display_pin_map.pickle",
+      "bytes": 64,
+      "sha256": "1126a48553bb346af74a451c164a78323094d81cb64c775a809d7b7da71de744"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/error.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/fixed_session.pickle",
+      "bytes": 97208,
+      "sha256": "de624310d1445e0da9aa7cf3400b595dc0b76ed9e089ba45e0a4d8c32232176e"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/info.toml",
+      "bytes": 358,
+      "sha256": "2b6a39712fa1a2c478d6194a6fea773642f7a7c29db5895910da1e2e55abda7d"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/map.pickle",
+      "bytes": 180,
+      "sha256": "d5272005dd063483d1e6dfe68bf24b34a3c33b1de086485634c844f457e83801"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/crash_signal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.SL_toi.out",
+      "bytes": 792,
+      "sha256": "d020eb7b45c425e2612abe1410ec447291cf578882aab9e26d77369a98473d46"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.asm_contact.out",
+      "bytes": 1584,
+      "sha256": "b6650c089abe2e208161998378626784d4defc19f4bdacbcd0e2936c2da7f9bb"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.asm_copy.out",
+      "bytes": 1584,
+      "sha256": "77dca9a97ba93d18238d9dbac16cbcd210d3917e2eeff89d4cdda5176c61bb90"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.asm_elastic.out",
+      "bytes": 1584,
+      "sha256": "e9c9ee3ea3689e9b3cfd3dc94b73132760fc95d2f8e59fb37265899c3376c542"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.asm_strainlimit.out",
+      "bytes": 1584,
+      "sha256": "ecad4eedefd5ca64bb5d39c2f54777c7a420e52b9c5cde548a064ff0b80c8e14"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.commit.out",
+      "bytes": 792,
+      "sha256": "cd8aeeca491f5e92fdd2f152c46a0d55b628f23b3fe314c803168ad8ec995dd7"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.contact_toi.out",
+      "bytes": 792,
+      "sha256": "d020eb7b45c425e2612abe1410ec447291cf578882aab9e26d77369a98473d46"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.dt.out",
+      "bytes": 792,
+      "sha256": "65c65f8b98ecd640db5254f723671a3fdff87f25c2dc3ef9bef1ebe9876b485b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.final_dt.out",
+      "bytes": 792,
+      "sha256": "65c65f8b98ecd640db5254f723671a3fdff87f25c2dc3ef9bef1ebe9876b485b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.iter.out",
+      "bytes": 828,
+      "sha256": "d0f96d4f183621c46bb6a61e8f132d62d0ca581612fe696a8d7cc5daffd9527b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.line_search.out",
+      "bytes": 1584,
+      "sha256": "efa7f07c63868c9bde012c939778658b00ef226f169b84b3e341e2a0cd687592"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.linsolve.out",
+      "bytes": 1584,
+      "sha256": "e71047187ab2c05d61d2ff7b96627fca30fd325c22290877a91448565f22c224"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.matrix_assembly.out",
+      "bytes": 1584,
+      "sha256": "53ead81dbf16605d41a16e514c1677a45f451d9207e3da484e3aa792a91cf718"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.max_dx.out",
+      "bytes": 1584,
+      "sha256": "f852663dfc35f6232b594580db12982d7e94dc0b382a0b842b2f462dc93427af"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.max_sigma.out",
+      "bytes": 781,
+      "sha256": "7e9e9198400890fb026bc7fd28941bbef0edf11df333a819964ad12576939b1c"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.max_u.out",
+      "bytes": 781,
+      "sha256": "03c842db0838f5e8b2adaa647d249f239db07829b09aa669d469475057d16a47"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.newton_steps.out",
+      "bytes": 396,
+      "sha256": "28131cf56feeb93914868cedbdf52d3169f1d0320315ea8acaded1a3cf42d174"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.nt_head.out",
+      "bytes": 1584,
+      "sha256": "ad763bf3867236af9ebc45425ceafd0e9ce128a762762d0e21b5afb4dcb50ef8"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.nt_mid.out",
+      "bytes": 1584,
+      "sha256": "68d52e81a5b503e0b6c91315c08267cd85c753720a84ef4ce1697646222ea59a"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.nt_tail.out",
+      "bytes": 1584,
+      "sha256": "9062310ee0b12a50aac6d843aa44a93a201f230543ef4961bf29a14d0095ff2f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.num_contact.out",
+      "bytes": 792,
+      "sha256": "f7c106df358dd5cf2ade8c1213559b43e0d494aa24542df93a578691f8a61e59"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.out",
+      "bytes": 396,
+      "sha256": "b8c36e8b443f15086b2c4003a93f8f4bf54b363cb0a81fb1dce664acb49e7c3f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.playback.out",
+      "bytes": 396,
+      "sha256": "28131cf56feeb93914868cedbdf52d3169f1d0320315ea8acaded1a3cf42d174"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.pre_newton.out",
+      "bytes": 792,
+      "sha256": "dfdd1e4b5bea312069ab20f1822eba9e58511851352b887120cd7138b9683eaf"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.reresid.out",
+      "bytes": 1584,
+      "sha256": "fd9bd21287d33767580fbc4f4928beb33c2777764316c0c984d196ca07842b27"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.schwarz_fallback.out",
+      "bytes": 792,
+      "sha256": "f7c106df358dd5cf2ade8c1213559b43e0d494aa24542df93a578691f8a61e59"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.toi.out",
+      "bytes": 792,
+      "sha256": "d020eb7b45c425e2612abe1410ec447291cf578882aab9e26d77369a98473d46"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.toi_advanced.out",
+      "bytes": 396,
+      "sha256": "28131cf56feeb93914868cedbdf52d3169f1d0320315ea8acaded1a3cf42d174"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/advance.toi_recale.out",
+      "bytes": 792,
+      "sha256": "d020eb7b45c425e2612abe1410ec447291cf578882aab9e26d77369a98473d46"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/frame_to_time.out",
+      "bytes": 316,
+      "sha256": "fe32f3f31afd91c48b5de6f35c677ac489af89dabc653c5d1b2dab49b6208d58"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/initialize.out",
+      "bytes": 11,
+      "sha256": "3a4fe867665bb23fe86f983b7095ed5463487574f85be6ac4dbfe02cd7c26d9b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/time_per_frame.out",
+      "bytes": 85,
+      "sha256": "73e45e5acdce6f3d4ccd2578f29085257ae08155cb2234d744f8eff4974424be"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/data/total_mass.out",
+      "bytes": 16,
+      "sha256": "05e52a22f53791a9d3054debfe38918a09ed218ae4e04e539b80bc089c0e0fae"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/finished.txt",
+      "bytes": 36,
+      "sha256": "f49470969cc41e388e908e178ef23ca0ccba9822c536bf72a2d0f6c365df84d2"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/initialize_finish.txt",
+      "bytes": 36,
+      "sha256": "298515914f62a9966c59a0f628c9d5f49260af15b3fb4d0cf24d58d57336d2ff"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_0.cbor",
+      "bytes": 703,
+      "sha256": "57fc89f16637be1411cffcbf11a895f1420608608faedcfc2be7ded2ae0d8c10"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_1.cbor",
+      "bytes": 731,
+      "sha256": "70dc6bbbb84aab602805055a38e00265b5b2e5412675972c237e5f28e67cb503"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_10.cbor",
+      "bytes": 739,
+      "sha256": "15955d512df6b949a0f125dc5552a0a483fbd251ed4b8dfeeb9f39de7ebef1f1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_11.cbor",
+      "bytes": 739,
+      "sha256": "e048ed6134ee9551b8679fdb9416f212118e3675a73607dc6eb49acde0d848eb"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_12.cbor",
+      "bytes": 739,
+      "sha256": "f1eb6df883c302027ebaa60b64a99e7e5f42d85e8e15961e4c45a62fcd8fd3f0"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_13.cbor",
+      "bytes": 739,
+      "sha256": "e536256eeddfc066eecd539c711269ea4bcdcbc7c29649b1e990e00d6cf2058b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_14.cbor",
+      "bytes": 741,
+      "sha256": "152a11a899c34caf7e6fffc8cdf51cfdd673fc397a2dd987d87f104e2d3b1de5"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_15.cbor",
+      "bytes": 733,
+      "sha256": "ceb9ac14f9a14dcb039984233c6bdd9254e1153812d728978a089ed0140b0ac4"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_16.cbor",
+      "bytes": 741,
+      "sha256": "75df801067b50ecdc0366814cc9dd9abdb057ccb2e37480848288dee528fd6a9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_17.cbor",
+      "bytes": 739,
+      "sha256": "b4c5310a367a82cb1d05cec20f196edf948fab82ac38eeebcb24c6d41f146c22"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_18.cbor",
+      "bytes": 741,
+      "sha256": "d7ac4ec0675c7fb0850347f9669900142b327c939036c1a932760454fc18bd23"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_2.cbor",
+      "bytes": 739,
+      "sha256": "d67ba96fe3410a3e46f02da13b748d43d01d53bc3e8306f411e708f6ba91311e"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_3.cbor",
+      "bytes": 739,
+      "sha256": "ec59d8dc7be60ce86e17d545034ec860d5d25b5d25925347d54a162b563db9f2"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_4.cbor",
+      "bytes": 739,
+      "sha256": "152166324b3a3149cf39d0d289d7793430e1588c735d7931a2ba86c314b28e1d"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_5.cbor",
+      "bytes": 739,
+      "sha256": "24bbb973a11f348bd4b3bb2aacf8b266de6d0113af86a541223524b00632e556"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_6.cbor",
+      "bytes": 739,
+      "sha256": "881de187ad9060a1089ea3f12640a15ca4809a4f083cfe7678da843bcc208edb"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_7.cbor",
+      "bytes": 739,
+      "sha256": "2a832c718805be781ea84de5b6e4974417262c55a38cacbd46142dc81fac645a"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_8.cbor",
+      "bytes": 739,
+      "sha256": "97b50b691f1b61a433179ca758550ecd150f2924ae7a21168bb47c1fc48dd3fd"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_9.cbor",
+      "bytes": 739,
+      "sha256": "24d36e665a1c0582cb82ae3d748f212a902bdad1d4bc79d7768a3ed3f2ea5ccb"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/statistics_manifest.cbor",
+      "bytes": 241,
+      "sha256": "5e30093e2b6b5c5bf05ad63587abb585f6fe10465fca97ee67a09e232e472582"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/status.cbor",
+      "bytes": 140,
+      "sha256": "f5c183c43c605a358a1b30260c4d9a6d91c0d4c87efc92f23a6ae1379c9f06c9"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/status.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_0.bin",
+      "bytes": 972,
+      "sha256": "7b4a41370d925a8aafdcaa7fcc5bd53b84f9dbc853b05e01e17ca089ca4dae7b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_1.bin",
+      "bytes": 972,
+      "sha256": "46a293d980804b7b3f4cf2cfb5cddd997606b2ad5a0375b39cd2e6ef2da9fe3f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_10.bin",
+      "bytes": 972,
+      "sha256": "24d431a2bf53349ad1c2e6cdc061278ea21f22d0d6abe3373f921cff3da6617b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_11.bin",
+      "bytes": 972,
+      "sha256": "b3ca7a194b62a764fec597ca5c2b36063d3407503825b4397b976d686aa11ab1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_12.bin",
+      "bytes": 972,
+      "sha256": "29abf97bfc5c91b23fd5e909882c41e80132e1d2e88a0fb105c3fb2dd3f3d21f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_13.bin",
+      "bytes": 972,
+      "sha256": "a90d195bb49bfea5037cb37ecce98e18fb71fbc7c884b742a1a1d47fff731ae6"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_14.bin",
+      "bytes": 972,
+      "sha256": "7b6bca26e5e4e5aba0c0830f1523200d0488d6835f893f3ffe2461e754618356"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_15.bin",
+      "bytes": 972,
+      "sha256": "0e7176d9d648c26f8aec9459dbfd093bb898f1f62b01fec0e8aacf63a0c7be76"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_16.bin",
+      "bytes": 972,
+      "sha256": "048f32a614df89f9962d0a8c095323b1e8a8d9c9afdbf57c285cce66fddb7ef1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_17.bin",
+      "bytes": 972,
+      "sha256": "05bfae7e837167e6ba45c48da0089d5bd404832c7b44d7bfef0bec8cac4043b7"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_18.bin",
+      "bytes": 972,
+      "sha256": "151812c70da6d09d32ac2d15aec8aee7c51ddfe4a2b2b44d38bc8cffea4ebd32"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_2.bin",
+      "bytes": 972,
+      "sha256": "789c1a0c067987e088c09685c148fabf7b97a43b6efbacc85a4f5c5e0d8591a1"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_3.bin",
+      "bytes": 972,
+      "sha256": "f3be0c6ce622a2da75db6d9034e52934b63fc156126de69849f2b47267e152a7"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_4.bin",
+      "bytes": 972,
+      "sha256": "a9194c632d55d1f4ab621e04939b6a2af7c354c662963e38eed58c702583035f"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_5.bin",
+      "bytes": 972,
+      "sha256": "2a3cf22a3d7e77b2afe0ef56b96ec9b1dfd6410fa3d4b7db93a6aa3a932aa566"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_6.bin",
+      "bytes": 972,
+      "sha256": "9de61219708e4599e5219e74d768c8dfb79159f1ffe3761fa11b96eefffde378"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_7.bin",
+      "bytes": 972,
+      "sha256": "365998335664db7f5a0aa74449f2fbced4d8952ba5f92583f67215a35f853397"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_8.bin",
+      "bytes": 972,
+      "sha256": "adc601a03bbbbf53de12711cb04e715db2b5a1a0a9cde4b8c194428254f25e9b"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/output/vert_9.bin",
+      "bytes": 972,
+      "sha256": "a046f54859b24beaf550f473432307b40c24257144f538fea2a8a7149908a389"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/param.toml",
+      "bytes": 798,
+      "sha256": "944524ecbfb536e12e2f5d28a7285af7a245f91faf079e0d4f114cb847274f3d"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/param_summary.txt",
+      "bytes": 1949,
+      "sha256": "bcc561ddf740395aa0748a9944af104ff368e50964b5169bc2f1bb17cc05a168"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/statistics_input.cbor",
+      "bytes": 738,
+      "sha256": "93fc3d219530eb50d5e024f10e9d543c8f8a17a50c1f16d8f50659b8c201bdab"
+    },
+    {
+      "path": "native-cache/sessions/cpu-contact-through/session/stdout.log",
+      "bytes": 31938,
+      "sha256": "791f15a3e8165948855d4d9acaa1a493d2377b8993c13f733c1e06aaa4ab12ce"
+    }
+  ],
+  "provenance": {
+    "workflow_run": 39056778354,
+    "job": 117466246316,
+    "source_commit": "ea2db166b136480474646275312b856b4838b5ca",
+    "artifact_id": 12109373688,
+    "archive_bytes": 215185,
+    "archive_sha256": "66f5c7eff0cab10f815db3a377a154456c2cbcd7b733eaa178474f615fa2b54a"
+  }
+}
