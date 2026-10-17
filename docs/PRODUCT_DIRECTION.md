@@ -150,6 +150,10 @@ The top-body proxy now accepts independent optional waist/hip girths while blank
 
 Body & drape can now compare two library fabrics on the same captured top/body with actual worker solves, matched front/back garment views and complete numerical receipts. Comparing preserves the current design; an explicit changed choice applies non-rib materials as one undoable edit, preserving rib trims, colors, prints, artwork and saved colorways. Already-used choices are disabled, and each new run adopts the current committed capture. Raw draft, worker/render retirement, retry and pending-image/import paths are covered. See `docs/2026-10-16-clothing-fabric-comparison-integration.md` for review, first failures and final gates. Final local and source/main CI pass 140 units and 172 native browser cases with project checks. This is controlled design exploration with the existing approximate solver, not integration of the independent swatch laws or physical fabric/fit calibration. Clothing remains ACTIVE.
 
+### Entered chest depth — 2026-10-17 (#276)
+
+Top draping now accepts optional straight front-to-back chest depth while preserving chest girth, legacy blank-field geometry, atomic raw drafts and owned results. Actual garment exports and matched fabric receipts use the changed proxy. Reviewed source passes 145 unit and 177 native browser cases; canonical main verification is pending. [The integration record](2026-10-17-clothing-chest-depth-integration.md) preserves exact bounds, regression/review evidence and remaining anatomical/material/physical-fit limits. Clothing stays ACTIVE.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
