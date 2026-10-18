@@ -1,0 +1,95 @@
+{
+  "archive_sha256": "e6fbf817f58861c8eff5465c0a20ae28e1372ac86c313b39efc46a65f3e0ed66",
+  "archive_bytes": 4138649,
+  "source_commit": "a89798b797ff08fed62e5772634ef831984a8a71",
+  "run_url": "https://github.com/twangyal/projects-monorepo/actions/runs/39136433639",
+  "result": "admitted_native_captured_inertia_bounded_motion_only",
+  "native_files_verified": 278,
+  "raw_frames": 38,
+  "native_saved_duration_seconds": 0.3,
+  "finite_float32_coordinates": 268242,
+  "only_changed_native_bin": [
+    "param/tri-young-mod.bin"
+  ],
+  "recomputed": {
+    "soft": {
+      "saved_frames": 19,
+      "vertices_per_frame": 2353,
+      "unique_intrinsic_edges": 6834,
+      "maximum_vertex_displacement_m": 0.109071879576652,
+      "final_vertex_rms_displacement_m": 0.05492332012722775,
+      "initial_maximum_absolute_edge_strain": 4.3034882570718525,
+      "maximum_saved_absolute_edge_strain": 4.39709486896763,
+      "final_maximum_absolute_edge_strain": 0.29865654102897254,
+      "initial_maximum_stitch_gap_m": 0.0505405766295473,
+      "maximum_saved_stitch_gap_m": 0.0505405766295473,
+      "final_maximum_stitch_gap_m": 0.001423474663212303,
+      "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+    },
+    "stiff": {
+      "saved_frames": 19,
+      "vertices_per_frame": 2353,
+      "unique_intrinsic_edges": 6834,
+      "maximum_vertex_displacement_m": 0.11405867795121562,
+      "final_vertex_rms_displacement_m": 0.05870820521672134,
+      "initial_maximum_absolute_edge_strain": 4.3034882570718525,
+      "maximum_saved_absolute_edge_strain": 4.477674009376801,
+      "final_maximum_absolute_edge_strain": 0.1999731066953081,
+      "initial_maximum_stitch_gap_m": 0.0505405766295473,
+      "maximum_saved_stitch_gap_m": 0.0505405766295473,
+      "final_maximum_stitch_gap_m": 0.0014444450216429452,
+      "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+    }
+  },
+  "final_vertex_rms_difference_m": 0.015167032052440643,
+  "reported_native_mass_diagnostic_kg": 0.15158243,
+  "predicted_initial_area_mass_kg": 0.15157942363410457,
+  "captured_browser_cloth_mass_kg": 0.15157942020794368,
+  "reported_diagnostic_vs_captured_difference_percent": 0.001985620509814545,
+  "mass_convention": "Accurately summed native face masses recover captured physical mass; the printed total uses an independently reproduced sequential float32 reduction. Source GSM remains separately preserved. Original seam-quotient particle masses match, not native degrees of freedom or complete dynamics.",
+  "native_mass_reductions": {
+    "soft": {
+      "accurate_face_mass_kg": 0.15157942444511718,
+      "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+    },
+    "stiff": {
+      "accurate_face_mass_kg": 0.15157942444511718,
+      "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+    }
+  },
+  "mass_parameters": {
+    "method": "captured-physical-face-mass-to-native-initial-area-v1",
+    "source_artifact_sha256": {
+      "garment-first.json.gz": "9d42e001549f4dc8b4558b14b33a58404c02204a22a93b2c16fda31db17fc045",
+      "garment-rest-candidate.json.gz": "65b7803437d3c6cdddd81fe23118b222a2bd2ee5b6f3b428e5d50093ae14041e",
+      "garment-body-candidate.json.gz": "bd9ea2954855b0ba2db985c27feb0079af6eaac73806a581046ee0831e431965"
+    },
+    "predicted_native_total_mass_kg": 0.1515794236341101,
+    "captured_browser_total_mass_kg": 0.15157942020794368,
+    "maximum_source_particle_mass_relative_error": 4.642120092990254e-06,
+    "source_particles": 2331,
+    "native_vertices": 2353,
+    "faces": 4480,
+    "effective_density_min_kg_m2": 0.027810482806815626,
+    "effective_density_max_kg_m2": 0.22435130359303868,
+    "matching_namespace": "Original2331-class seam quotient; native2353 DOFs are not dynamically equivalent.",
+    "scope": "Effective solver coefficients recover source-quotient lumped masses; captured_face_density retains source GSM. No calibrated fabric or sewn/fit acceptance."
+  },
+  "native_case_wall_seconds": {
+    "soft": 18.025322738,
+    "stiff": 20.021617767000066
+  },
+  "receipt_wall_seconds_excluding_preparation": 40.30911872799993,
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 42.672036918,
+    "remaining_children": 0
+  },
+  "limits": [
+    "Detached collar assembly pose, not original dressed-pose acceptance.",
+    "0.3s is not settling, seam-quality, continuous-time contact or physical-material/fit acceptance.",
+    "Initial maximum edge strain exceeds430%; do not interpret this transient as calibrated fabric behavior."
+  ]
+}

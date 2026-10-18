@@ -62,3 +62,8 @@ Local85-test research suite passes31.253s. Independent read-only review verifies
 ## Captured inertia preparation — issue289
 
 [Per-face effective density adapter](research/ppf-cpu/GARMENT_INERTIA.md) preserves literal captured GSM separately and matches each original seam-quotient particle mass within4.65ppm. Three new regressions bring local research verification to88 passing tests in37.022s; independent read-only review found no important issue. A fresh bounded native matched-inertia experiment remains pending, with no claim of equal solver dynamics or physical fit. Issue289 remains open.
+
+
+### Native captured-inertia result
+
+Native run39136433639/job117701763953 passes on exact main preparation source a89798b797ff08fed62e5772634ef831984a8a71. Independent replay retains all38 frames/278 native files and verifies exact source/export/controls and0..0.3s raw timestamps. Full4,138,649-byte archive SHA256 is e6fbf817f58861c8eff5465c0a20ae28e1372ac86c313b39efc46a65f3e0ed66. Accurately summed raw native face masses match captured mass within0.03ppm. A failed initial audit exposed the lossy sequential float32 `total_mass.out` diagnostic; the final auditor independently reproduces that reduction, preserves the10ppm physical criterion and records the failed check. See the [full protocol/result/limitations](research/ppf-cpu/GARMENT_INERTIA.md). Final evidence integration and canonical checks are recorded in issue289. Shipping app bytes remain unchanged.

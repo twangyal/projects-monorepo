@@ -1,0 +1,19 @@
+...........................................E................................................
+======================================================================
+ERROR: test_complete_actual_native_result_replays (test_garment_inertia_audit.InertiaAudit.test_complete_actual_native_result_replays)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_inertia_audit.py", line 12, in test_complete_actual_native_result_replays
+    r=audit(ARCHIVE)
+      ^^^^^^^^^^^^^^
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/garment_inertia_audit.py", line 59, in audit
+    require(math.isclose(masses[name],predicted_mass,rel_tol=1e-5),'Native mass differs from density times initial area (float32 sum tolerance10ppm).')
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/garment_admission.py", line 23, in require
+    if not condition:raise ValueError(message)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Native mass differs from density times initial area (float32 sum tolerance10ppm).
+
+----------------------------------------------------------------------
+Ran 92 tests in 54.422s
+
+FAILED (errors=1)

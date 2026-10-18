@@ -1,0 +1,13 @@
+E
+======================================================================
+ERROR: test_exact_saved_times_and_indices_are_required (test_garment_inertia_audit.NativeFrameTiming.test_exact_saved_times_and_indices_are_required)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_inertia_audit.py", line 36, in test_exact_saved_times_and_indices_are_required
+    from garment_inertia_audit import verify_frame_times
+ImportError: cannot import name 'verify_frame_times' from 'garment_inertia_audit' (/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/garment_inertia_audit.py)
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (errors=1)
