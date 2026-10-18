@@ -1,0 +1,38 @@
+✖ native research capture retains actual topology, welds, UVs and rest constraints in SI (106.4828ms)
+✔ capture owns values, is deterministic, and follows entered body and pattern edits (141.516404ms)
+✔ initial bridge refuses unsupported carried/layered garments and invalid bodies (1.423671ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 426.573875
+
+✖ failing tests:
+
+test at apps/clothing-studio/tests/native-garment-snapshot.test.ts:8:1
+✖ native research capture retains actual topology, welds, UVs and rest constraints in SI (106.4828ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+  + undefined
+  - {
+  -   chest: 104,
+  -   length: 72,
+  -   sleeve: 21
+  - }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/apps/clothing-studio/tests/native-garment-snapshot.test.ts:12:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { chest: 104, length: 72, sleeve: 21 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

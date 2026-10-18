@@ -1,0 +1,9 @@
+{
+  "bytes": 436020,
+  "sha256": "bd9ea2954855b0ba2db985c27feb0079af6eaac73806a581046ee0831e431965",
+  "vertices": 19574,
+  "triangles": 39144,
+  "signed_volume_m3": 0.09774675660051357,
+  "maximum_vertex_field_residual_m": 0.01260619770961123,
+  "status": "candidate_closed_body_mesh_only"
+}

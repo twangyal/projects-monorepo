@@ -1,0 +1,142 @@
+F.FFFFFFFFFFFFFF
+======================================================================
+FAIL: test_actual_tee_is_captured_but_neither_naive_rest_mapping_is_admitted (test_garment_admission.GarmentAdmission.test_actual_tee_is_captured_but_neither_naive_rest_mapping_is_admitted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 17, in test_actual_tee_is_captured_but_neither_naive_rest_mapping_is_admitted
+    self.assertEqual(result['status'],'blocked_native_mapping')
+AssertionError: 'admitted' != 'blocked_native_mapping'
+- admitted
++ blocked_native_mapping
+
+
+======================================================================
+FAIL: test_ordered_topology_and_shell_mapping_remain_cross_checked (test_garment_admission.GarmentAdmission.test_ordered_topology_and_shell_mapping_remain_cross_checked)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 54, in test_ordered_topology_and_shell_mapping_remain_cross_checked
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f26085fb380>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847c720>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847c860>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847c7c0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847c900>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847c9a0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847ca40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847cae0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847cb80>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847cc20>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847ccc0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data (test_garment_admission.GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data) (change=<function GarmentAdmission.test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data.<locals>.<lambda> at 0x7f260847cd60>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 48, in test_packet_refuses_corrupt_geometry_units_mappings_and_rest_data
+    with self.assertRaises(ValueError):audit(value)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_source_verification_refuses_changed_source_bytes (test_garment_admission.GarmentAdmission.test_source_verification_refuses_changed_source_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_admission.py", line 58, in test_source_verification_refuses_changed_source_bytes
+    with self.assertRaises(ValueError):audit(value,root)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.384s
+
+FAILED (failures=15)

@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "status": "blocked_native_mapping",
+  "native_solver_executed": false,
+  "source_files_verified": true,
+  "source_sha256": {
+    "src/product.ts": "1f58f574e41ad3aaeaefb195bb48ecfe82c8e03cd9c0a28037be9026e8517508",
+    "src/media.ts": "b74f99fd99dd523c9d174ff8612ddea1cea6761a3983d07f4f51d5b836eb6144",
+    "src/garment-drape.ts": "2a2c0c68eb0d2ddfb6bb3b2cfcf21884ae5c9c918f96a2abdbedf65a8e7c624a",
+    "src/native-garment-snapshot.ts": "53bc0d5551f6a5f393d6c745f20a7869d04e156dbb421f3d63620a7611384e57",
+    "scripts/export-native-garment.ts": "f8db0bfabe00d619c7f010175cebd43b46b427be6595ef07bc28f170a9afcb38",
+    "package-lock.json": "12edcd288840b541b61524f2fce0a85f59af3621fb46d399484e9e5e342d5c60"
+  },
+  "particles": 2331,
+  "authored_triangles": 4484,
+  "weld_collapsed_triangles": 4,
+  "structural_edges": 6833,
+  "bending_distance_constraints": 6607,
+  "seam_groups": 198,
+  "nonmanifold_edges": 0,
+  "boundary_edges": 226,
+  "intrinsic_rest_area_m2": 0.8317973233119653,
+  "initial_shell_area_m2": 1.0949390670497898,
+  "direct_shell": {
+    "mismatched_edges": 3553,
+    "max_rest_error_m": 0.07602169629150307
+  },
+  "flattened_xy": {
+    "mismatched_edges": 58,
+    "max_rest_error_m": 0.021658644302006216
+  },
+  "parts": {
+    "front": {
+      "render_triangles": 1918,
+      "weld_collapsed_triangles": 0,
+      "intrinsic_rest_area_m2": 0.3571992045519991,
+      "initial_shell_area_m2": 0.44720788178286086,
+      "direct_shell_max_rest_error_m": 0.05925694423983724,
+      "flattened_xy_max_rest_error_m": 5.23247993995668e-08
+    },
+    "back": {
+      "render_triangles": 1990,
+      "weld_collapsed_triangles": 0,
+      "intrinsic_rest_area_m2": 0.3711574810346716,
+      "initial_shell_area_m2": 0.46318081891889873,
+      "direct_shell_max_rest_error_m": 0.05925694423983724,
+      "flattened_xy_max_rest_error_m": 5.23247993995668e-08
+    },
+    "sleeveLeft": {
+      "render_triangles": 260,
+      "weld_collapsed_triangles": 0,
+      "intrinsic_rest_area_m2": 0.04472010726710082,
+      "initial_shell_area_m2": 0.08236300890858449,
+      "direct_shell_max_rest_error_m": 0.06108593389515138,
+      "flattened_xy_max_rest_error_m": 5.23247993995668e-08
+    },
+    "sleeveRight": {
+      "render_triangles": 272,
+      "weld_collapsed_triangles": 0,
+      "intrinsic_rest_area_m2": 0.04472010715139641,
+      "initial_shell_area_m2": 0.08229653320091793,
+      "direct_shell_max_rest_error_m": 0.05942516766843969,
+      "flattened_xy_max_rest_error_m": 5.23247993995668e-08
+    },
+    "neckband": {
+      "render_triangles": 44,
+      "weld_collapsed_triangles": 4,
+      "intrinsic_rest_area_m2": 0.0140004233067973,
+      "initial_shell_area_m2": 0.01989082423852791,
+      "direct_shell_max_rest_error_m": 0.07602169629150307,
+      "flattened_xy_max_rest_error_m": 0.021658644302006216
+    }
+  },
+  "body": {
+    "initial_inside_vertex_count": 0,
+    "minimum_full_body_gap_m": 0.015988710352740965,
+    "triangle_interior_contact_checked": false,
+    "native_static_collider_prepared": false
+  },
+  "blockers": [
+    "Direct-shell native rest lengths differ from the browser structural rest metric.",
+    "Flattened XY also changes wrapped neck-rib rest lengths.",
+    "Four render rib faces collapse after seam welding and need explicit native face/export mapping.",
+    "Body proxy is an analytic union, not an admitted closed native triangle collider; initial triangle-interior clearance and controlled initialization remain unverified.",
+    "Browser distance bending and approximate compliance/mass conventions are not native shell constitutive coefficients."
+  ],
+  "scope": "Actual application geometry preflight only; no native response, garment performance, physical fabric or fit validation.",
+  "packet_bytes": 148675,
+  "packet_sha256": "9d42e001549f4dc8b4558b14b33a58404c02204a22a93b2c16fda31db17fc045"
+}
