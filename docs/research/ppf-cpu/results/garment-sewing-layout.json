@@ -1,0 +1,14 @@
+{
+  "method": "cut-open-aabb-separated-collar-v1",
+  "collar_rise_m": 0.05050103051757801,
+  "cloth_pair_clearance_m": 0.0025,
+  "body_pair_clearance_m": 0.0055,
+  "numerical_margin_m": 1e-06,
+  "cut_half_gap_m": 0.002,
+  "cut_pair_gap_m": 0.003999999999999999,
+  "collar_vertices": 42,
+  "collar_triangles": 40,
+  "obstacle_cloth_triangles": 4440,
+  "obstacle_static_triangles": 39144,
+  "scope": "Conservative collar-to-shirt/body initial separation only. Native self-contact/export/solver admission and sewn pose remain unverified."
+}
