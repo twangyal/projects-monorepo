@@ -434,3 +434,7 @@ The linked preview adds an open, two-ring circular measurement proxy at the skir
 [Body comparison evidence](docs/2026-10-12-body-measurements.md) records the local verification and physical limits.
 
 When a profile and grading rule are saved, the **Committed relative sizes** table also shows waist and hip differences for every derived size. Values are garment minus entered body circumferences in cm; negative means smaller, zero equal, positive larger. Each size independently reports **Not reached** when it ends above the entered hip depth. Profile edits and history update every row; removing the profile restores the original garment-only columns. The focusable table scrolls horizontally on narrow screens. These comparisons are geometry only and do not recommend a comfortable size or validate physical fit. Graded pattern exports retain their original garment-only bytes. Tracked in [#202](https://github.com/twangyal/projects-monorepo/issues/202).
+
+### Native garment research capture (#288)
+
+The research-only fixed tee capture retains the application’s full topology, seam maps, UVs, rest constraints, masses, collision clearance and entered-body primitives. [Reproduction and admission](../../docs/research/ppf-cpu/GARMENT_BRIDGE.md) quantify why direct-shell and fully flattened native rest mappings are unsuitable. No new native garment solver is enabled; the current preview remains in use.
