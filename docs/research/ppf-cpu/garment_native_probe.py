@@ -10,6 +10,7 @@ import sys
 import time
 import traceback
 from garment_native_inputs import load_inputs,REVISION,CASES,OBJECT,SESSION
+from garment_native_export import verify_export
 
 
 def main():
@@ -21,7 +22,7 @@ def main():
     revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
     if revision!=REVISION:raise ValueError('Unpinned source.')
     inputs=load_inputs(Path(__file__).with_name('results'))
-    receipt={'schema':1,'experiment':'actual-garment-native-strict-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':OBJECT,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Strict unchanged original pose; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    receipt={'schema':1,'experiment':'actual-garment-native-strict-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':OBJECT,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Strict unchanged original pose; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
     started=time.perf_counter()
     def save():(out/'receipt.json').write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n')
     save()
@@ -48,13 +49,17 @@ def main():
                 if not np.array_equal(fixed.vertex(True),np.array(inputs['initial'])) or not np.array_equal(fixed._tri,np.array(inputs['faces'])):raise ValueError('Native first-visit repacking differs from the declared exact map.')
                 if not np.array_equal(fixed._stitch_ind,np.array(inputs['stitch_indices'])) or not np.array_equal(fixed._stitch_w,np.array(inputs['stitch_weights'])):raise ValueError('Native stitch ABI drift.')
                 # Pinned private ABI: alternate rest positions, not appearance UVs,
-                # supply the original intrinsic metric. Verify exported bytes later.
+                # supply the original intrinsic metric. Raw exported bytes are verified before execution.
                 fixed._concat_rest_vert=np.array(inputs['rest'],dtype=np.float64)
                 fixed._rest_vert_mask=np.ones(len(inputs['rest']),dtype=np.uint8)
                 fixed._tri_param['density']=inputs['face_density'][:]
                 session=app.session.create(fixed)
                 for key,value in SESSION.items():session.param.set(key,value)
                 receipt['stage']='native_session_build';save();session=session.build()
+                receipt['stage']='native_export_admission';save()
+                directory=Path(session.info.path)
+                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young)
+                save()
                 receipt['stage']='native_execution';save();case_start=time.perf_counter();session.start(blocking=True)
                 if not session.finished():raise ValueError('Native process did not finish.')
                 output=Path(session.output.path)

@@ -1,0 +1,113 @@
+FFFFFFFFFFFE
+======================================================================
+ERROR: test_exported_payload_is_checked_before_execution (test_garment_native_export.NativeExport.test_exported_payload_is_checked_before_execution)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 25, in test_exported_payload_is_checked_before_execution
+    self.assertEqual(result['solved_vertices'],2353)
+                     ~~~~~~^^^^^^^^^^^^^^^^^^^
+KeyError: 'solved_vertices'
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/rest_vert.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/rest_vert_mask.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/uv.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/param/tri-density.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/stitch_ind.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/stitch_w.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/static_tri.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/static_vert.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/tri.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse) (name='bin/vel.bin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 33, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_changes_to_actual_native_buffers_and_control_metadata_refuse (test_garment_native_export.NativeExport.test_changes_to_actual_native_buffers_and_control_metadata_refuse)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_export.py", line 36, in test_changes_to_actual_native_buffers_and_control_metadata_refuse
+    with self.assertRaises(ValueError):verify_export(files.__getitem__,data,500.)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.182s
+
+FAILED (failures=11, errors=1)
