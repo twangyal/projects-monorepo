@@ -11,21 +11,29 @@ import time
 import traceback
 from garment_native_inputs import load_inputs,REVISION,CASES,OBJECT,SESSION
 from garment_native_export import verify_export
+from garment_native_initialization import separate_rib,CLOTH_OFFSET_M,BODY_OFFSET_M,RIB_OFFSET_M,CUT_HALF_GAP_M
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ['upstream','out','cache']:parser.add_argument('--'+key,type=Path,required=True)
+    parser.add_argument('--initialization',choices=['strict','separated'],default='strict')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
     revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
     if revision!=REVISION:raise ValueError('Unpinned source.')
     inputs=load_inputs(Path(__file__).with_name('results'))
-    receipt={'schema':1,'experiment':'actual-garment-native-strict-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':OBJECT,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Strict unchanged original pose; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    original_inputs=inputs
+    controls=OBJECT if args.initialization=='strict' else {**OBJECT,'contact-offset':CLOTH_OFFSET_M}
+    body_offset=0. if args.initialization=='strict' else BODY_OFFSET_M
+    if args.initialization=='separated':inputs=separate_rib(original_inputs)
+    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
     started=time.perf_counter()
     def save():(out/'receipt.json').write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n')
+    if args.initialization=='separated':receipt['initialization_parameters']={'rib_normal_offset_m':RIB_OFFSET_M,'cut_half_gap_m':CUT_HALF_GAP_M,'combined_cloth_body_offset_m':CLOTH_OFFSET_M+BODY_OFFSET_M}
     save()
+    (out/'native-blueprint-original.json.gz').write_bytes(gzip.compress((json.dumps(original_inputs,separators=(',',':'))+'\n').encode(),mtime=0))
     (out/'native-blueprint.json.gz').write_bytes(gzip.compress((json.dumps(inputs,separators=(',',':'))+'\n').encode(),mtime=0))
     try:
         sys.path.insert(0,str(upstream));os.chdir(upstream)
@@ -33,18 +41,28 @@ def main():
         from frontend import App
         original=App.get_data_dirpath;App.get_data_dirpath=staticmethod(lambda:str(cache/'sessions'))
         try:
-            for name,young in CASES.items():
-                receipt.update(stage='asset_upload',current_case=name);save()
+            def build_scene(name,prepared,young):
                 app=App.create('cpu-garment-'+name,cache_dir=str(cache/'meshes'))
                 if not Path(app._root).resolve().is_relative_to(cache):raise ValueError('Session escaped synthetic cache.')
-                app.asset.add.tri('tee',np.array(inputs['initial'],dtype=np.float64),np.array(inputs['faces'],dtype=np.uint32))
-                app.asset.add.tri('body',np.array(inputs['body_vertices'],dtype=np.float64),np.array(inputs['body_faces'],dtype=np.uint32))
-                app.asset.add.stitch('seams',(np.array(inputs['stitch_indices'],dtype=np.uint32),np.array(inputs['stitch_weights'],dtype=np.float32)))
-                scene=app.scene.create();cloth=scene.add('tee').stitch('seams');body=scene.add('body');body.pin()
-                for key,value in {**OBJECT,'young-mod':young}.items():cloth.param.set(key,value)
-                cloth.set_uv([np.array(face,dtype=np.float32) for face in inputs['uv']])
-                receipt['stage']='strict_scene_build';save()
-                fixed=scene.build()
+                app.asset.add.tri('tee',np.array(prepared['initial'],dtype=np.float64),np.array(prepared['faces'],dtype=np.uint32))
+                app.asset.add.tri('body',np.array(prepared['body_vertices'],dtype=np.float64),np.array(prepared['body_faces'],dtype=np.uint32))
+                app.asset.add.stitch('seams',(np.array(prepared['stitch_indices'],dtype=np.uint32),np.array(prepared['stitch_weights'],dtype=np.float32)))
+                scene=app.scene.create();cloth=scene.add('tee').stitch('seams');body=scene.add('body');body.pin();body.param.set('contact-offset',body_offset)
+                for key,value in {**controls,'young-mod':young}.items():cloth.param.set(key,value)
+                cloth.set_uv([np.array(face,dtype=np.float32) for face in prepared['uv']])
+                return app,body,scene.build()
+            if args.initialization=='separated':
+                from frontend._scene_ import ValidationError
+                receipt['stage']='padding_only_scene_build';save()
+                try:
+                    build_scene('padding',original_inputs,CASES['soft'])
+                    receipt['padding_only_admission']={'status':'passed_scene_build'}
+                except ValidationError as error:
+                    receipt['padding_only_admission']={'status':'refused_scene_build','error':str(error),'violations':json.loads(json.dumps(error.violations,default=lambda v:v.tolist() if hasattr(v,'tolist') else str(v)))}
+                save()
+            for name,young in CASES.items():
+                receipt.update(stage='strict_scene_build' if args.initialization=='strict' else 'initialized_scene_build',current_case=name);save()
+                app,body,fixed=build_scene(name,inputs,young)
                 if not body.static:raise ValueError('Body did not become a genuine static collider.')
                 if not np.array_equal(fixed.vertex(True),np.array(inputs['initial'])) or not np.array_equal(fixed._tri,np.array(inputs['faces'])):raise ValueError('Native first-visit repacking differs from the declared exact map.')
                 if not np.array_equal(fixed._stitch_ind,np.array(inputs['stitch_indices'])) or not np.array_equal(fixed._stitch_w,np.array(inputs['stitch_weights'])):raise ValueError('Native stitch ABI drift.')
@@ -58,7 +76,7 @@ def main():
                 receipt['stage']='native_session_build';save();session=session.build()
                 receipt['stage']='native_export_admission';save()
                 directory=Path(session.info.path)
-                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young)
+                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young,object_parameters=controls,body_contact_offset=body_offset)
                 save()
                 receipt['stage']='native_execution';save();case_start=time.perf_counter();session.start(blocking=True)
                 if not session.finished():raise ValueError('Native process did not finish.')
