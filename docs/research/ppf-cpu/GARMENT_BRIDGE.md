@@ -67,3 +67,21 @@ python docs/research/ppf-cpu/garment_rest_adapter.py docs/research/ppf-cpu/resul
 ```
 
 The candidate is **not the native6-wide barycentric stitch ABI**, and no native solver has executed it. Finite-stiffness stitches/contact exclusions and cross-seam hinge behavior need explicit validation; recovering a topological quotient is not evidence of dynamic equivalence. Native rest-area mass also differs from the browser’s modelled-rib shell-area convention. Body triangulation/contact, material coefficients, settling/runtime and actual two-material comparison remain open. The original preflight correctly continues to reject both naive mappings; this candidate does not erase its measured failures. [Actual adapter RED](results/garment-rest-adapter-red.txt) precedes the three passing adapter tests.
+
+## Closed faceted body candidate
+
+`garment_body_mesh.py` now converts the same captured analytic proxy to a closed, outward-oriented marching-tetrahedra surface at a declared2cm lattice step. The source torso continues below its last section; an explicit cap at−0.6m closes this candidate below the garment. Bounds, asymmetric grid origin and grid dimensions are retained. It samples the existing stadium/tapered-capsule field, including its approximations/discontinuities, rather than substituting an anatomical avatar.
+
+[Complete body candidate](results/garment-body-candidate.json.gz),436020bytes, SHA-256 `bd9ea2954855b0ba2db985c27feb0079af6eaac73806a581046ee0831e431965`, has19574 vertices/39144 triangles and signed volume0.0977467566m³. [Summary](results/garment-body-candidate-summary.json) retains those measurements. Every edge has exactly two oppositely oriented incident faces. Independent review also found one connected component, no duplicate faces and Euler characteristic2, and rebuilt the entire actual candidate identically. Those topology checks do not establish native contact accuracy.
+
+The maximum absolute **proxy-field residual** at candidate vertices is0.0126061977m. This is not a Hausdorff/geometric-error bound: the source field is not an exact Euclidean signed-distance field, and torso/capsule joins include sharp transitions. The39k-triangle cost and12.6mm residual are explicit reasons to keep collider accuracy, convergence and CPU performance open. Garment triangle interiors, continuous contact, native static-collider ingestion and fitted drape have not been admitted or executed.
+
+```sh
+python docs/research/ppf-cpu/garment_body_mesh.py docs/research/ppf-cpu/results/garment-first.json.gz /absolute/new-body-candidate.json.gz
+```
+
+Four body-mesher tests cover an independent sphere’s closed orientation/volume and surface error, the actual body’s closed topology/explicit limits, invalid/clipped grids and wrong-unit packet refusal before output. [Initial RED](results/garment-body-mesh-red.txt) and [review-caught units RED](results/garment-body-units-red.txt) are retained. The CLI now audits the complete source packet before meshing; no wrong-unit candidate is written. CI regenerates and compares this entire candidate and summary as well.
+
+## Software verification so far
+
+Initial reviewed capture source `6aa97eacfc7034a074fa0427a5073d4c1a7a9da2` passes [application CI39096525216](https://github.com/twangyal/projects-monorepo/actions/runs/39096525216), job117584032509:159 units, lint, production build and all195 native browser cases (4.4min). The research module is not imported by the shipping workspace, whose built asset hashes stay unchanged. Its [preflight CI39096525244](https://github.com/twangyal/projects-monorepo/actions/runs/39096525244) passes packet/report reconstruction. Reviewed cut-rib source `850f2060780c01cf162990d1fea5e92b0ab4c73d` passes [preflight CI39096808156](https://github.com/twangyal/projects-monorepo/actions/runs/39096808156). Body-candidate and canonical verification are recorded after their actual gates complete. No native solver runs are hidden behind these software checks.

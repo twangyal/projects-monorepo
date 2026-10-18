@@ -1,0 +1,13 @@
+F...
+======================================================================
+FAIL: test_cli_refuses_wrong_packet_units_before_writing_a_candidate (test_garment_body_mesh.BodyMesh.test_cli_refuses_wrong_packet_units_before_writing_a_candidate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-288/docs/research/ppf-cpu/test_garment_body_mesh.py", line 51, in test_cli_refuses_wrong_packet_units_before_writing_a_candidate
+    self.assertNotEqual(run.returncode,0,'wrong-unit packet must refuse')
+AssertionError: 0 == 0 : wrong-unit packet must refuse
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.232s
+
+FAILED (failures=1)

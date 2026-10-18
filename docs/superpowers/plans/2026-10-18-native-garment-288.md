@@ -11,3 +11,5 @@ Design: a deterministic, research-only CLI captures the fixed blank tee /94cm bo
 - [ ] Commit/integrate verified progress and update #288 with concrete remaining native-mapping work. Keep issue open until broader native comparison criteria are met.
 
 - [x] Continue with an explicit cut-rib rest candidate: all valid ordered faces/UVs, original pose and seam quotient, all structural lengths within2µm; independent source and retained-candidate review. Native stitch/bending/mass/body admission remains separate.
+
+- [x] Build and independently review a closed faceted body candidate from the captured analytic proxy, with explicit2cm grid/−0.6m cap, actual complexity/field residual, input refusal and full artifact replay. This is not native contact/fit admission.

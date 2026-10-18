@@ -77,3 +77,17 @@ jobs:
           summary = {'bytes':len(raw), 'sha256':hashlib.sha256(raw).hexdigest(), 'vertices':len(retained['initial_positions_m']), 'faces':len(retained['faces']), 'sew_pairs':len(retained['sew_pairs']), 'maximum_structural_rest_error_m':retained['maximum_structural_rest_error_m'], 'status':retained['status']}
           assert summary == json.loads(Path('docs/research/ppf-cpu/results/garment-rest-candidate-summary.json').read_text()), 'Retained candidate summary drift.'
           PY
+      - name: Reproduce the reviewed faceted body candidate
+        run: |
+          set -euo pipefail
+          python docs/research/ppf-cpu/garment_body_mesh.py docs/research/ppf-cpu/results/garment-first.json.gz "$RUNNER_TEMP/garment-body-reproduced.json.gz"
+          python - <<'PY'
+          import gzip, hashlib, json, os
+          from pathlib import Path
+          raw = Path('docs/research/ppf-cpu/results/garment-body-candidate.json.gz').read_bytes()
+          retained = json.loads(gzip.decompress(raw))
+          actual = json.loads(gzip.decompress((Path(os.environ['RUNNER_TEMP']) / 'garment-body-reproduced.json.gz').read_bytes()))
+          assert actual == retained, 'Retained complete body candidate differs from actual mesher.'
+          summary = {'bytes':len(raw), 'sha256':hashlib.sha256(raw).hexdigest(), 'vertices':len(retained['vertices_m']), 'triangles':len(retained['triangles']), 'signed_volume_m3':retained['signed_volume_m3'], 'maximum_vertex_field_residual_m':retained['maximum_vertex_field_residual_m'], 'status':retained['status']}
+          assert summary == json.loads(Path('docs/research/ppf-cpu/results/garment-body-candidate-summary.json').read_text()), 'Retained body summary drift.'
+          PY
