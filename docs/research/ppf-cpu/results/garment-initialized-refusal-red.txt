@@ -1,0 +1,16 @@
+.E..
+======================================================================
+ERROR: test_retained_initialized_refusal_replays (test_garment_native_refusal.InitializedRefusal.test_retained_initialized_refusal_replays)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_refusal.py", line 33, in test_retained_initialized_refusal_replays
+    r=audit_initialized(Path(__file__).with_name('results')/'garment-initialized-first.zip')
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/garment_native_refusal.py", line 53, in audit_initialized
+    raise ValueError('Not implemented')
+ValueError: Not implemented
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.145s
+
+FAILED (errors=1)

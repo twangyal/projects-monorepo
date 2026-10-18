@@ -1,0 +1,37 @@
+{
+  "archive_sha256": "392171f0f69ba5b06c1f2312b0695770587bea1beb2f2c86a4e6fa780594e379",
+  "upstream_revision": "6b30976f86e6b94d68d459e5237d59704c7d1384",
+  "source_commit": "5dc38f14141b15d562e74851fc85e33768751572",
+  "run_url": "https://github.com/twangyal/projects-monorepo/actions/runs/39115026324",
+  "result": "initialized_scene_refused",
+  "native_frames": 0,
+  "native_files": 0,
+  "padding_only": {
+    "intersection_parts": {
+      "front/neckband": 14,
+      "back/neckband": 11,
+      "neckband/neckband": 1
+    },
+    "reported_proximity_pairs": 173,
+    "sampled_proximity_pairs": 100,
+    "proximity_parts": {
+      "front/neckband": 82,
+      "back/neckband": 18
+    }
+  },
+  "initialized": {
+    "intersection_parts": {
+      "front/neckband": 13,
+      "back/neckband": 6
+    },
+    "reported_proximity_pairs": 7,
+    "sampled_proximity_pairs": 7,
+    "proximity_parts": {
+      "front/neckband": 7
+    }
+  },
+  "fixture_wall_seconds": 1.7061678549999897,
+  "supervisor_wall_seconds": 2.0753559649999715,
+  "remaining_children": 0,
+  "limitation": "Both control and initialized scenes refused before native export/execution. Reduced counts do not establish valid geometry, material behavior or fit."
+}

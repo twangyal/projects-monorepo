@@ -26,3 +26,29 @@ class NativeRefusal(unittest.TestCase):
                 for n,v in files.items():z.writestr(n,v)
             stream.seek(0)
             with self.subTest(mode=mode),self.assertRaises(ValueError):audit(stream,verify_archive_hash=False)
+
+class InitializedRefusal(unittest.TestCase):
+    def test_retained_initialized_refusal_replays(self):
+        from garment_native_refusal import audit_initialized
+        r=audit_initialized(Path(__file__).with_name('results')/'garment-initialized-first.zip')
+        self.assertEqual(r['initialized']['intersection_parts'],{'front/neckband':13,'back/neckband':6})
+        self.assertEqual(r['initialized']['proximity_parts'],{'front/neckband':7})
+        self.assertEqual(r['padding_only']['reported_proximity_pairs'],173)
+        self.assertEqual(r['padding_only']['sampled_proximity_pairs'],100)
+        self.assertEqual(r['native_frames'],0)
+    def test_changed_initialization_and_control_cannot_masquerade_as_evidence(self):
+        from garment_native_refusal import audit_initialized
+        import io
+        path=Path(__file__).with_name('results')/'garment-initialized-first.zip'
+        with zipfile.ZipFile(path) as z:original={n:z.read(n) for n in z.namelist()}
+        for mode in ['blueprint','control','output']:
+            files=original.copy()
+            if mode=='blueprint':files['native-blueprint.json.gz']=files['native-blueprint-original.json.gz']
+            if mode=='control':
+                r=json.loads(files['receipt.json']);r['padding_only_admission']['status']='passed_scene_build';files['receipt.json']=json.dumps(r).encode()
+            if mode=='output':files['native-cache/sessions/cpu-garment-soft/session/output/vert_0.bin']=b'fake'
+            stream=io.BytesIO()
+            with zipfile.ZipFile(stream,'w') as z:
+                for n,v in files.items():z.writestr(n,v)
+            stream.seek(0)
+            with self.subTest(mode=mode),self.assertRaises(ValueError):audit_initialized(stream,verify_archive_hash=False)
