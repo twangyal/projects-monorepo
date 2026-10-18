@@ -1,4 +1,4 @@
-name: Clothing actual garment strict native research
+name: Clothing actual garment native initialization research
 on:
   workflow_dispatch:
   push:
@@ -60,7 +60,7 @@ jobs:
           /usr/bin/time -v -o "$REPORT/build-resources.txt" cargo build --locked --release --features cpu 2>&1 | tee "$REPORT/build.log"
       - name: Check evidence collector
         run: python -m unittest discover -s docs/research/ppf-cpu -p 'test_*.py'
-      - name: Attempt strict actual-garment scene and bounded native motion
+      - name: Compare padding admission and attempt initialized native motion
         id: fixture
         run: |
           set -euo pipefail

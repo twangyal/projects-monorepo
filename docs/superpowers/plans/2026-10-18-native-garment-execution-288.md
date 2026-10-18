@@ -6,10 +6,12 @@ Design: use pinned upstream6b30976, the existing bounded supervisor/always-run c
 
 Frozen initial attempt: two synthetic normalized coefficient choices (young500/2000, bend20, per-face density from the captured GSM library labels, held equal across cases, BW,nu.3), all other controls equal; gravity9.8m/s²,dt1/120,fps60,18frames plusrest (0.3s). This is a bounded admission/motion probe, not settling/material calibration or wearable-fit acceptance. Runtime cap300s includes scene preparation. Refusal/timeout/nonfinite/missing evidence are failures, not accepted results. If strict frontend refuses before native ingestion, retain its exact report and do not invent solved frames; resolve or record the specific blocker before unrelated work.
 
-- [ ] Actual RED tests for exact stitch ABI, input hashes, permutation identity and complete collector status/frame handling.
-- [ ] Implement native probe and small independent preparation/receipt helper, respecting complete source/rest/UV/body inputs.
-- [ ] Run a real pinned CPU admission/execution in hosted CI and retain all native logs/frames or exact refusal.
-- [ ] Review source and actual evidence independently; repair important findings and verify available gates.
+- [x] Actual RED tests for exact stitch ABI, input hashes, permutation identity and complete collector status/frame handling.
+- [x] Implement native probe and small independent preparation/receipt helper, respecting complete source/rest/UV/body inputs.
+- [x] Run a real pinned CPU admission/execution in hosted CI and retain all native logs/frames or exact refusal.
+- [x] Review source and actual evidence independently; repair important findings and verify available gates.
 - [ ] Commit/integrate durable results; update #288 and roadmap with actual remaining work, without claiming physical fit or engine adoption.
 
 Controlled follow-up after real strict refusal: all 26 intersections involve the collar. Preserve the first archive unchanged. Run padding-only scene admission on the original pose using cloth offset 0.25 mm and body offset 3.25 mm (combined unchanged 3.5 mm). Then run the two material cases with only the 42 rib initial vertices displaced 5 mm along outward area-weighted normals and the two cut rows displaced ±2 mm tangentially. Preserve rest metric/topology/material density/body/UVs/stitches. Keep all intersection/contact gates. Require exact native export bytes including static padding before starting either session. Changed initialization is experimental and does not accept the original captured pose. Local 74-test suite passes before this follow-up.
+
+Evidence checkpoint: strict run39114026348 is retained and independently replayed (zero solver frames). 76 local tests pass, including corrupted archive/blueprint/receipt/output refusal. Source and initialization reviewed independently with no important remaining findings. Native initialized run39115026324 remains pending; main application tree is unchanged.
