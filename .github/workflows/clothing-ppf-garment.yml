@@ -63,3 +63,17 @@ jobs:
           print(json.dumps(actual, indent=2))
           PYREPORT
           python -m unittest discover -s docs/research/ppf-cpu -p 'test_garment*.py'
+      - name: Reproduce the reviewed cut-rib rest candidate
+        run: |
+          set -euo pipefail
+          python docs/research/ppf-cpu/garment_rest_adapter.py docs/research/ppf-cpu/results/garment-first.json.gz "$RUNNER_TEMP/garment-rest-reproduced.json.gz"
+          python - <<'PY'
+          import gzip, hashlib, json, os
+          from pathlib import Path
+          raw = Path('docs/research/ppf-cpu/results/garment-rest-candidate.json.gz').read_bytes()
+          retained = json.loads(gzip.decompress(raw))
+          actual = json.loads(gzip.decompress((Path(os.environ['RUNNER_TEMP']) / 'garment-rest-reproduced.json.gz').read_bytes()))
+          assert actual == retained, 'Retained rest candidate differs from actual complete mapping.'
+          summary = {'bytes':len(raw), 'sha256':hashlib.sha256(raw).hexdigest(), 'vertices':len(retained['initial_positions_m']), 'faces':len(retained['faces']), 'sew_pairs':len(retained['sew_pairs']), 'maximum_structural_rest_error_m':retained['maximum_structural_rest_error_m'], 'status':retained['status']}
+          assert summary == json.loads(Path('docs/research/ppf-cpu/results/garment-rest-candidate-summary.json').read_text()), 'Retained candidate summary drift.'
+          PY
