@@ -30,3 +30,5 @@ The collector command must run after failure as well as success; do not use a su
 Actual garment native admission: [protocol, strict refusal, durable archive and controlled initialization](GARMENT_NATIVE.md).
 
 Actual native garment motion: [detached sewing geometry, complete raw replay, measured strain/seam and mass limitations](GARMENT_SEWING.md).
+
+Captured inertia follow-through: [per-face adapter, source preservation, validation and pending native gate](GARMENT_INERTIA.md).

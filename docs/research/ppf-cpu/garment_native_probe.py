@@ -12,6 +12,7 @@ import traceback
 from garment_native_inputs import load_inputs,REVISION,CASES,OBJECT,SESSION
 from garment_native_export import verify_export
 from garment_sewing_layout import sewing_layout
+from garment_mass import match_browser_inertia
 from garment_native_initialization import separate_rib,CLOTH_OFFSET_M,BODY_OFFSET_M,RIB_OFFSET_M,CUT_HALF_GAP_M
 
 
@@ -19,6 +20,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ['upstream','out','cache']:parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--initialization',choices=['strict','separated','sewing'],default='strict')
+    parser.add_argument('--mass-convention',choices=['captured-density','browser-inertia'],default='captured-density')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
@@ -30,11 +32,14 @@ def main():
     body_offset=0. if args.initialization=='strict' else BODY_OFFSET_M
     if args.initialization=='separated':inputs=separate_rib(original_inputs)
     if args.initialization=='sewing':inputs,layout=sewing_layout(original_inputs)
-    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    if args.mass_convention=='browser-inertia':inputs,mass_mapping=match_browser_inertia(original_inputs,inputs,Path(__file__).with_name('results'))
+    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
     started=time.perf_counter()
     def save():(out/'receipt.json').write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n')
     if args.initialization=='separated':receipt['initialization_parameters']={'rib_normal_offset_m':RIB_OFFSET_M,'cut_half_gap_m':CUT_HALF_GAP_M,'combined_cloth_body_offset_m':CLOTH_OFFSET_M+BODY_OFFSET_M}
     if args.initialization=='sewing':receipt['initialization_parameters']=layout
+    receipt['mass_convention']=args.mass_convention
+    if args.mass_convention=='browser-inertia':receipt['mass_parameters']=mass_mapping
     save()
     (out/'native-blueprint-original.json.gz').write_bytes(gzip.compress((json.dumps(original_inputs,separators=(',',':'))+'\n').encode(),mtime=0))
     (out/'native-blueprint.json.gz').write_bytes(gzip.compress((json.dumps(inputs,separators=(',',':'))+'\n').encode(),mtime=0))

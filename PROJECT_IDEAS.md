@@ -257,3 +257,5 @@ Description: A horror game that uses heart-rate readings from a supported smartw
 [^art]: [Glaze: Protecting Artists from Style Mimicry by Text-to-Image Models](https://arxiv.org/abs/2302.04222) and [Adversarial Perturbations Cannot Reliably Protect Artists From Generative AI](https://arxiv.org/abs/2406.12027).
 
 [^lens]: [ZoomShop: Depth-Aware Editing of Photographic Composition](https://lseancs.github.io/zoomshop/), a related research example of depth-aware image editing and newly exposed image regions.
+
+Research follow-through for Clothing #289: per-face effective native densities now preserve source GSM separately and match original seam-quotient particle masses within4.65ppm (88 local research tests). Native matched-inertia execution/independent raw-mass replay remains pending; see `docs/research/ppf-cpu/GARMENT_INERTIA.md`. Project status remains ACTIVE; project #8 remains skipped.
