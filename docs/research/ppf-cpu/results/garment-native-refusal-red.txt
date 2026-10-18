@@ -1,0 +1,16 @@
+E.
+======================================================================
+ERROR: test_retained_strict_refusal_replays (test_garment_native_refusal.NativeRefusal.test_retained_strict_refusal_replays)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_garment_native_refusal.py", line 8, in test_retained_strict_refusal_replays
+    result=audit(Path(__file__).with_name('results')/'garment-strict-first.zip')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/garment_native_refusal.py", line 2, in audit
+    raise ValueError('Not implemented')
+ValueError: Not implemented
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.727s
+
+FAILED (errors=1)

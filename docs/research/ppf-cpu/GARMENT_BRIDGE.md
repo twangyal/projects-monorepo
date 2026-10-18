@@ -85,3 +85,7 @@ Four body-mesher tests cover an independent sphere’s closed orientation/volume
 ## Software verification so far
 
 Initial reviewed capture source `6aa97eacfc7034a074fa0427a5073d4c1a7a9da2` passes [application CI39096525216](https://github.com/twangyal/projects-monorepo/actions/runs/39096525216), job117584032509:159 units, lint, production build and all195 native browser cases (4.4min). The research module is not imported by the shipping workspace, whose built asset hashes stay unchanged. Its [preflight CI39096525244](https://github.com/twangyal/projects-monorepo/actions/runs/39096525244) passes packet/report reconstruction. Reviewed cut-rib source `850f2060780c01cf162990d1fea5e92b0ab4c73d` passes [preflight CI39096808156](https://github.com/twangyal/projects-monorepo/actions/runs/39096808156). Final body source83c714f passes preflight39096930890/job117585217529 with12 research tests and complete artifact replay. Canonical commit6a29662 passes159 app units/all195 browser cases,66 research tests and complete preflight replay; [canonical integration evidence](../../2026-10-18-clothing-native-garment-integration.md) retains exact commits, jobs and counts. No native solver runs are hidden behind these software checks.
+
+## Native frontend follow-through
+
+The first actual CPU/frontend attempt now refuses original scene admission; see [native evidence and controlled follow-up](GARMENT_NATIVE.md). The capture/rest/body candidates alone do not establish solver motion.

@@ -26,3 +26,5 @@ python3 docs/research/ppf-cpu/collect.py --out /absolute/report --cache /absolut
 ```
 
 The collector command must run after failure as well as success; do not use a surrounding `set -e` shell that skips it. The workflow adds `/usr/bin/time -v` resource receipts, complete build/frontend logs and an always-upload artifact around these steps. Treat either a nonzero fixture or collector exit as failure. The supervisor requires Linux procfs and subreaper support; it fails closed elsewhere.
+
+Actual garment native admission: [protocol, strict refusal, durable archive and controlled initialization](GARMENT_NATIVE.md).
