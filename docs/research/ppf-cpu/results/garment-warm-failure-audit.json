@@ -1,4 +1,27 @@
 {
+  "initial_contact_witness": {
+    "static_vertex": 1198,
+    "dynamic_triangle": 4351,
+    "dynamic_vertices": [
+      2282,
+      2275,
+      2283
+    ],
+    "face_source": {
+      "part": "sleeveRight",
+      "render_triangle": 183
+    },
+    "coordinate_convention": "float32-rounded native input positions; float64 closest-point calculation",
+    "triangle_separation_m": 0.0032682072573128685,
+    "vertex_pair_separations_m": [
+      0.016194795966765454,
+      0.00996207121717461,
+      0.004979287101415841
+    ],
+    "combined_contact_offset_m": 0.0034999999999999996,
+    "offset_shortfall_m": 0.00023179274268713117,
+    "scope": "One independently reproduced initial triangle-interior barrier violation, not exhaustive contact clearance or physical fit."
+  },
   "archive_sha256": "53acab060975ff61ac5d3f9db404ee20ddb5a3adf829653fa503aa2f65d1e7a2",
   "archive_bytes": 2269521,
   "source_commit": "e694571c86f17b2627c3b507a79b5c43deaf34d5",

@@ -6,6 +6,8 @@ class WarmFailureAudit(unittest.TestCase):
  def test_complete_failure_has_only_initial_frame(self):
   r=audit(ARCHIVE)
   self.assertEqual((r['native_files_verified'],r['raw_frames'],r['motion_frames']),(82,1,0))
+  self.assertLess(r['initial_contact_witness']['triangle_separation_m'],.0035)
+  self.assertGreater(min(r['initial_contact_witness']['vertex_pair_separations_m']),.0035)
  def test_false_success_missing_frame_changed_rest_and_invented_motion_refuse(self):
   with zipfile.ZipFile(ARCHIVE) as z:original={n:z.read(n) for n in z.namelist()}
   prefix='native-cache/sessions/cpu-garment-soft/session/'
@@ -23,3 +25,11 @@ class WarmFailureAudit(unittest.TestCase):
     for n,v in files.items():z.writestr(n,v)
    stream.seek(0)
    with self.subTest(mode=mode),self.assertRaises(ValueError):audit(stream,verify_archive_hash=False)
+
+class PointTriangleWitness(unittest.TestCase):
+ def test_vertex_edge_and_interior_closest_points(self):
+  from garment_warm_failure_audit import closest_triangle_point
+  triangle=((0.,0.,0.),(1.,0.,0.),(0.,1.,0.))
+  for point,expected in [((-1.,-1.,0.),(0.,0.,0.)),((2.,0.,0.),(1.,0.,0.)),((0.,2.,0.),(0.,1.,0.)),((.5,-1.,0.),(.5,0.,0.)),((-1.,.5,0.),(0.,.5,0.)),((1.,1.,0.),(.5,.5,0.)),((.2,.3,1.),(.2,.3,0.))]:
+   actual=closest_triangle_point(point,*triangle)
+   for a,b in zip(actual,expected):self.assertAlmostEqual(a,b)
