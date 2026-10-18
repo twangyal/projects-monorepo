@@ -28,3 +28,7 @@ python3 -m unittest discover -s docs/research/ppf-cpu -p 'test_*.py'
 ```
 
 The shipping workspace does not import the new research module. No shipping surface, pattern, body or solver implementation is changed. Issue290 stays open until the preparation's actual native behavior and remaining assembly limitations are recorded.
+
+## Unsewn stitch-force control
+
+A separately labelled `--unsewn-control` experiment admits only warm-sewing initialization and changes just the object stitch stiffness from1 to0. It preserves all22 seam rows/weights and the same prepared geometry, intrinsic rest, captured inertia and strict contacts. The exported zero stitch scalar is verified byte for byte; default runs still require1. Its distinct success status is `passed_unsewn_diagnostic_motion`, never assembled-garment acceptance. The dedicated `autonomous/clothing-ppf-garment-unsewn-290` push selects this diagnostic; ordinary manual dispatch retains its proven sewing default. Actual diagnostic outcome is pending. This isolates whether stitch forces are necessary for the observed failure, not whether stitches are the only cause or whether the garment fits.

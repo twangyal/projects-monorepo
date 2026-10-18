@@ -8,7 +8,7 @@ on:
         options: [sewing, warm-sewing]
         default: sewing
   push:
-    branches: [autonomous/clothing-ppf-garment-native-288, autonomous/clothing-ppf-garment-initialized-288, autonomous/clothing-ppf-garment-sewing-288, autonomous/clothing-ppf-garment-mass-289, autonomous/clothing-ppf-garment-warm-290]
+    branches: [autonomous/clothing-ppf-garment-native-288, autonomous/clothing-ppf-garment-initialized-288, autonomous/clothing-ppf-garment-sewing-288, autonomous/clothing-ppf-garment-mass-289, autonomous/clothing-ppf-garment-warm-290, autonomous/clothing-ppf-garment-unsewn-290]
     paths:
       - '.github/workflows/clothing-ppf-garment-native.yml'
       - 'docs/research/ppf-cpu/**'
@@ -22,7 +22,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     env:
-      INITIALIZATION: ${{ github.event_name == 'push' && github.ref_name == 'autonomous/clothing-ppf-garment-warm-290' && 'warm-sewing' || inputs.initialization || 'sewing' }}
+      INITIALIZATION: ${{ github.event_name == 'push' && (github.ref_name == 'autonomous/clothing-ppf-garment-warm-290' || github.ref_name == 'autonomous/clothing-ppf-garment-unsewn-290') && 'warm-sewing' || inputs.initialization || 'sewing' }}
+      UNSEWN_CONTROL: ${{ github.event_name == 'push' && github.ref_name == 'autonomous/clothing-ppf-garment-unsewn-290' && 'true' || 'false' }}
       PYTHONUNBUFFERED: '1'
       CARGO_TARGET_DIR: ${{ github.workspace }}/upstream/target/cpu
       REPORT: ${{ github.workspace }}/ppf-cpu-report
@@ -71,13 +72,15 @@ jobs:
         id: fixture
         run: |
           set -euo pipefail
+          extra=()
+          if [ "$UNSEWN_CONTROL" = true ]; then extra+=(--unsewn-control); fi
           set +e
-          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/garment_native_probe.py --initialization "$INITIALIZATION" --mass-convention browser-inertia --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
+          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/garment_native_probe.py --initialization "$INITIALIZATION" "${extra[@]}" --mass-convention browser-inertia --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
           statuses=("${PIPESTATUS[@]}")
           set -e
           printf '%s\n' "${statuses[0]}" > "$REPORT/fixture-exit-code.txt"
           [ "${statuses[0]}" -eq 0 ] && [ "${statuses[1]}" -eq 0 ] || exit 1
-          grep -q 'cpu actual garment motion probe: PASS' "$REPORT/fixture.log"
+          grep -Eq 'cpu (actual garment motion probe|unsewn diagnostic motion): PASS' "$REPORT/fixture.log"
       - name: Collect native logs and frames after success, failure or timeout
         if: always()
         env:
