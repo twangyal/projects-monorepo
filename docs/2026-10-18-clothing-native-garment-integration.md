@@ -1,0 +1,37 @@
+# Actual garment native-candidate bridge — #288
+
+## Intended outcome
+
+Evaluate Clothing Studio's actual linked garment and entered-body proxy in the candidate solver, retaining pattern rest lengths, seams, UVs and material provenance. Accepted native coupon/contact fixtures did not supply this bridge. This milestone now provides three complete, independently reviewed, reproducible artifacts while leaving the native two-material comparison open.
+
+- Full application capture:2331 cloth particles,4484 render triangles,6833 structural edges,6607 distance-bending constraints and198 seam groups; actual initial positions, authored UVs, collision clearance, masses and body/material labels are retained. Direct-shell native rest differs on3553 edges (maximum76.022mm); flattening the whole welded mesh differs on58 rib edges (maximum21.659mm). Four neck-rib render faces already collapse in the browser weld.
+- Explicit cut-rib candidate:2353 vertices/4480 valid ordered faces and22 semantic sewing pairs preserve all valid source faces/UVs, original initial pose and the original2331 welded equivalence classes. Every structural rest length matches within52.3nm, below the unchanged2µm tolerance. This is not yet the native stitch ABI or dynamic seam/bending equivalence.
+- Closed faceted body candidate:19574vertices/39144triangles at2cm sampling, explicit−0.6m lower cap, outward closed edge incidence and positive signed volume. Maximum proxy-field residual12.606mm is not a geometric/Hausdorff error bound. Triangle-interior/continuous garment contact, convergence and native performance remain unverified.
+
+[Protocol, complete artifacts, hashes, measured limitations, review history and reproduction](research/ppf-cpu/GARMENT_BRIDGE.md). No user project/photo/upload is read. The capture uses the fixed existing Blank tee and94cm body. No native garment solve, engine adoption, physical fabric calibration, anatomical fit or manufacturing validation is claimed. Shipping workspace/worker behavior is unchanged; the research module is not imported by the application bundle. Clothing remains ACTIVE and project #8 remains skipped.
+
+## Source evidence
+
+Three coherent source commits:
+
+1. `6aa97eacfc7034a074fa0427a5073d4c1a7a9da2`: full capture/independent admission. [App CI39096525216](https://github.com/twangyal/projects-monorepo/actions/runs/39096525216), job117584032509, passes159 units, lint, production build and all195 browser cases (4.4min). [Preflight39096525244](https://github.com/twangyal/projects-monorepo/actions/runs/39096525244) passes full packet/report reconstruction.
+2. `850f2060780c01cf162990d1fea5e92b0ab4c73d`: reviewed cut-rib rest mapping. [Preflight39096808156](https://github.com/twangyal/projects-monorepo/actions/runs/39096808156) passes full candidate/summary equality and associated tests.
+3. `83c714f56ca300ded8b07972333eb1c27b564dbf`: reviewed body mesh/input admission. [Final source preflight39096930890](https://github.com/twangyal/projects-monorepo/actions/runs/39096930890), job117585217529, passes all12 garment research tests and complete garment/rest/body artifact and report/summary replay. Local complete research suite passes66 tests in16.606s.
+
+The application tree is exactly `fa3ff79dc8f8f51e54c678adf23a699e58a8b1e1` at both initial app-gated and final source commits. Later source commits change research/root documentation and workflow only. Final source repository tree `8c3315f6747ffb2a1b850a69e73f13a519a50563` is the exact tree integrated in canonical commit `6a29662435614d44082b5069eadd61b9ddc75682`, with latest main and accepted source as parents. No PR was created, following AGENTS.md.
+
+## Canonical verification
+
+Canonical commit `6a29662435614d44082b5069eadd61b9ddc75682` passes [full research harness39096993033](https://github.com/twangyal/projects-monorepo/actions/runs/39096993033), job117585398001:66 tests in19.090s. [Canonical preflight39096993034](https://github.com/twangyal/projects-monorepo/actions/runs/39096993034), job117585398040, passes12 garment research tests in6.429s plus complete packet/report/rest/body/summary replay. [Canonical app CI39096993037](https://github.com/twangyal/projects-monorepo/actions/runs/39096993037), job117585397973, passes159 units, lint, production build and all195 native browser cases (3.9min). All three canonical gates completed successfully against the exact integrated tree.
+
+## Retained failures and review repairs
+
+Actual failing tests against deliberate capture/admission/rest/meshing stubs precede implementation. An initial body-vertex-overlap expectation was disproved by the actual capture: zero initial inside vertices, minimum15.989mm vertex gap; tests/report were corrected without claiming triangle-interior clearance. A malformed optional-module test fixture was repaired to use the existing validated module constructor. One local typecheck ran during the units-schema edit and saw the old type/new test mismatch; final stable app checks pass.
+
+Independent read-only review inspected source and actual artifacts. It found omitted per-particle collision clearance and ambiguous centimetre design metadata; capture now includes clearance and explicitly named measurements_cm/fit_cm. Retained report/candidate/summary drift is guarded in CI. A body-CLI wrong-unit regression reproduced successful output before input admission; complete packet audit now refuses before writing. Original RED evidence remains linked from the protocol. Later independent replay confirms complete artifact identity, valid-face coverage, all referenced cut-candidate vertices, original sewing quotient and body closed orientation; it also observed one connected body component/no duplicate faces/Euler characteristic2. None substitutes for native/physical evaluation.
+
+## Durable remaining work
+
+[Issue288](https://github.com/twangyal/projects-monorepo/issues/288) stays open. Encode and independently replay the upstream rest/stitch ABI; verify finite-stiffness seam/contact exclusions and cross-seam bending; choose and document a native-versus-browser mass convention; admit the faceted body and triangle clearance/initialization; then execute the bounded actual garment/two-normalized-material CPU comparison with complete native logs/frames and latency/failure/strain/settling measurements. Preserve normalized-versus-measured material distinctions and existing responsive preview until the candidate earns adoption.
+
+The final receipt update changes root/research documentation and plan status only; it preserves the accepted application tree and all three packet artifacts.

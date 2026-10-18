@@ -8,7 +8,7 @@ Design: a deterministic, research-only CLI captures the fixed blank tee /94cm bo
 - [x] Implement capture/CLI and independent report with frozen tolerances and provenance.
 - [x] Generate and retain a complete actual packet/report; reproduce in lightweight CI without solver rebuild.
 - [x] Review source and actual evidence; repair findings, verify app and research gates.
-- [ ] Commit/integrate verified progress and update #288 with concrete remaining native-mapping work. Keep issue open until broader native comparison criteria are met.
+- [x] Commit/integrate verified progress and update #288 with concrete remaining native-mapping work. Keep issue open until broader native comparison criteria are met.
 
 - [x] Continue with an explicit cut-rib rest candidate: all valid ordered faces/UVs, original pose and seam quotient, all structural lengths within2µm; independent source and retained-candidate review. Native stitch/bending/mass/body admission remains separate.
 
