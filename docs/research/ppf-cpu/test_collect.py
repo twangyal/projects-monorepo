@@ -75,3 +75,20 @@ class TensileFrameAdmission(unittest.TestCase):
                 self.assertEqual(receipt['status'],'failed_evidence_collection' if omit else 'passed_tensile_fixture')
 
 if __name__=='__main__':unittest.main()
+
+class GarmentFrameAdmission(unittest.TestCase):
+    def test_garment_motion_success_requires_both_complete_case_frame_sets(self):
+        for omit in [False,True]:
+            with self.subTest(omit=omit),tempfile.TemporaryDirectory() as temp:
+                root=Path(temp);out=root/'report';cache=root/'cache';out.mkdir()
+                (out/'receipt.json').write_text(json.dumps({'status':'passed_garment_motion_probe','frames_per_case':2,'case_names':['soft','stiff'],'case_session_prefix':'cpu-garment-'}))
+                (out/'fixture-exit-code.txt').write_text('0')
+                for case in ['soft','stiff']:
+                    output=cache/'sessions'/('cpu-garment-'+case)/'session'/'output';output.mkdir(parents=True)
+                    for i in range(2):
+                        if omit and case=='stiff' and i==1:continue
+                        (output/f'vert_{i}.bin').write_bytes(b'frame')
+                result=subprocess.run([sys.executable,str(SCRIPT),'--out',str(out),'--cache',str(cache),'--outcome','success'],capture_output=True,text=True)
+                receipt=json.loads((out/'receipt.json').read_text())
+                self.assertEqual(result.returncode,1 if omit else 0,result.stdout+result.stderr)
+                self.assertEqual(receipt['status'],'failed_evidence_collection' if omit else 'passed_garment_motion_probe')

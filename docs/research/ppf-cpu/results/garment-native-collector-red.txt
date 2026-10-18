@@ -1,0 +1,29 @@
+......FF..
+======================================================================
+FAIL: test_garment_motion_success_requires_both_complete_case_frame_sets (test_collect.GarmentFrameAdmission.test_garment_motion_success_requires_both_complete_case_frame_sets) (omit=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_collect.py", line 93, in test_garment_motion_success_requires_both_complete_case_frame_sets
+    self.assertEqual(result.returncode,1 if omit else 0,result.stdout+result.stderr)
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/collect.py", line 41, in <module>
+    if prefix not in ['cpu-contact-','cpu-tensile-','cpu-bending-'] or not case_names or any(not re.fullmatch(r'[a-z]+',n) for n in case_names):raise ValueError('Invalid evidence case names.')
+                                                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Invalid evidence case names.
+
+
+======================================================================
+FAIL: test_garment_motion_success_requires_both_complete_case_frame_sets (test_collect.GarmentFrameAdmission.test_garment_motion_success_requires_both_complete_case_frame_sets) (omit=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-ppf-garment-native-288/docs/research/ppf-cpu/test_collect.py", line 94, in test_garment_motion_success_requires_both_complete_case_frame_sets
+    self.assertEqual(receipt['status'],'failed_evidence_collection' if omit else 'passed_garment_motion_probe')
+AssertionError: 'passed_garment_motion_probe' != 'failed_evidence_collection'
+- passed_garment_motion_probe
++ failed_evidence_collection
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.358s
+
+FAILED (failures=2)
