@@ -51,6 +51,7 @@ export function createController({ window, actions = pageActions, interpret = in
   }
 
   function execute(action, context) {
+    const executionTurn = turn;
     pending = null;
     const target = targetOf(context, action.targetId);
     const element = target?.element;
@@ -91,6 +92,13 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'back':
       case 'forward': result = actions.navigate(window, action.type); break;
       default: return reply('That action is not supported yet.', 'error');
+    }
+    if (result.followUp) {
+      const followUp = Promise.resolve(result.followUp)
+        .catch(() => ({ ok: false, message: 'The website state could not be checked. Check the control before continuing.' }))
+        .then(later => executionTurn === turn && !paused
+          ? reply(later.message, later.ok ? 'success' : 'error', { performed: later.ok ? action.type : null }) : null);
+      return reply(result.message, 'info', { performed: null, followUp });
     }
     return reply(result.message, result.ok ? 'success' : 'error', { performed: result.ok ? action.type : null });
   }
@@ -191,7 +199,11 @@ export function createController({ window, actions = pageActions, interpret = in
         if (assistant?.needs(utterance, context, action)) {
           const followUp = assistant.improve(utterance, context, action).catch(() => action)
             // A newer instruction (including cancel or pause) makes this answer stale.
-            .then(improved => (current === turn && !paused ? respond(improved, context) : null));
+            .then(improved => {
+              if (current !== turn || paused) return null;
+              const response = respond(improved, context);
+              return response.followUp ?? response;
+            });
           return reply('Working out which control you mean…', 'info', { assisting: true, followUp });
         }
         return respond(action, context);

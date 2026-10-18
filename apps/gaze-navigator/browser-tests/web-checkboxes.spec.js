@@ -28,13 +28,13 @@ test('ambiguous and consequential requests preserve desired state through cancel
   await expect(page.locator('#a')).not.toBeChecked();await expect(page.locator('#b')).toBeChecked();
 });
 
-test('mixed custom disabled readonly and ancestor-locked controls refuse without native activation',async({page})=>{
+test('mixed missing-state disabled readonly and ancestor-locked controls refuse without native activation',async({page})=>{
   for(const effect of ['e.indeterminate=true','e.disabled=true','e.readOnly=true','e.parentElement.inert=true','e.parentElement.setAttribute("aria-disabled","true")','e.parentElement.setAttribute("aria-readonly","true")','e.type="radio"','e.remove()']){
     await setup(page);const result=await page.evaluate(effect=>{const context=window.checkContext(),e=document.querySelector('#a');Function('e',effect)(e);return window.checkController.handle('check Newsletter',context);},effect);
     expect(result.tone,effect).toBe('error');expect(await page.evaluate(()=>window.checkEvents),effect).toEqual([]);
   }
-  await setup(page,'<div id="a" role="checkbox" aria-label="Newsletter" aria-checked="false" tabindex="0"></div>');
-  expect((await command(page,'check Newsletter')).tone).toBe('error');await expect(page.locator('#a')).toHaveAttribute('aria-checked','false');expect(await page.evaluate(()=>window.checkEvents)).toEqual([]);
+  await setup(page,'<div id="a" role="checkbox" aria-label="Newsletter" tabindex="0"></div>');
+  expect((await command(page,'check Newsletter')).tone).toBe('error');await expect(page.locator('#a')).not.toHaveAttribute('aria-checked');expect(await page.evaluate(()=>window.checkEvents)).toEqual([]);
 });
 
 test('focus-time locking replacement state changes and redirects refuse before clicking',async({page})=>{

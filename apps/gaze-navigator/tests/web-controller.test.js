@@ -315,3 +315,35 @@ test('checkbox state keeps consequential clarification and cancellation before e
   controller.handle('uncheck Agree',context);controller.handle('two',context);assert.equal(controller.handle('confirm',context).performed,'check');
   assert.deepEqual(page.log,[['check','Agree',false]]);
 });
+
+test('custom state acknowledgment is reported only for the current instruction',async()=>{
+ for(const next of [null,'cancel','pause','open Help']){
+  const page=fakePage();let finish;page.actions.setChecked=()=>({message:'Checking requested state…',followUp:new Promise(resolve=>{finish=resolve;})});
+  const c=createController({window:{},actions:page.actions}),context={elements:[describe(1,page.node('Newsletter'),{role:'switch'}),describe(2,page.node('Help'))]};
+  const r=c.handle('check Newsletter',context);assert.equal(r.performed,null);assert.equal(typeof r.followUp?.then,'function');
+  if(next)c.handle(next,context);finish({ok:true,message:'Switch checked.'});
+  const done=await r.followUp;if(next)assert.equal(done,null);else{assert.equal(done.tone,'success');assert.equal(done.performed,'check');}
+ }
+});
+
+test('failed custom acknowledgment is handled without an unhandled rejection',async()=>{
+ const page=fakePage();page.actions.setChecked=()=>({message:'Checking state…',followUp:Promise.reject(new Error('site callback failed'))});
+ const c=createController({window:{},actions:page.actions});
+ const r=c.handle('check Newsletter',{elements:[describe(1,page.node('Newsletter'),{role:'checkbox'})]});
+ assert.equal(typeof r.followUp?.then,'function');assert.equal((await r.followUp).tone,'error');
+});
+
+for (const cancel of [false, true]) test(`assisted check awaits final website state${cancel ? ' and retires cancelled feedback' : ''}`, async () => {
+ const {createAssistedInterpreter}=await import('../src/web/assisted-interpreter.js');
+ const page=fakePage();let finish, started;
+ const began=new Promise(resolve=>{started=resolve;});
+ page.actions.setChecked=()=>{started();return {message:'Checking…',followUp:new Promise(resolve=>{finish=resolve;})};};
+ const assistant=createAssistedInterpreter({model:{decide:async()=>({probs:[.91,.04,.05]})}});
+ const c=createController({window:{},actions:page.actions,assistant});
+ const context={elements:['Newsletter weekly','Newsletter monthly'].map((name,i)=>describe(i+1,page.node(name),{role:'switch',checked:false}))};
+ const first=c.handle('check Newsletter',context);await began;
+ if(cancel)c.handle('cancel',context);
+ finish({ok:true,message:'Switch checked.'});
+ const done=await first.followUp;
+ if(cancel)assert.equal(done,null);else{assert.equal(done.message,'Switch checked.');assert.equal(done.performed,'check');assert.equal(done.followUp,undefined);}
+});

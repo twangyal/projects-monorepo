@@ -237,7 +237,8 @@ function describe(element) {
   } else if (description.editable) {
     description.value = element.value ?? element.textContent ?? '';
   } else if (['checkbox', 'radio', 'switch'].includes(role)) {
-    description.checked = element.checked ?? element.getAttribute('aria-checked') === 'true';
+    if (element.tagName === 'INPUT' && ['checkbox', 'radio'].includes(element.type)) description.checked = element.checked;
+    else if (['true', 'false'].includes(element.getAttribute('aria-checked'))) description.checked = element.getAttribute('aria-checked') === 'true';
   }
   // Disclosure state: an open menu or panel can be closed by name ("close the menu").
   if (disclosure) description.expanded = element.getAttribute('aria-expanded') === 'true';

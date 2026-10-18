@@ -46,10 +46,42 @@ export function canWrite(element) {
   return isEditable(element) && unlocked(element);
 }
 
+function setAriaChecked(element, checked) {
+  const role = element.getAttribute('role')?.trim();
+  const state = () => {
+    const value = element.getAttribute('aria-checked');
+    return value === 'true' ? true : value === 'false' ? false : null;
+  };
+  const available = () => ['checkbox', 'switch'].includes(role) && element.getAttribute('role')?.trim() === role &&
+    !['INPUT', 'SELECT', 'TEXTAREA', 'OPTION'].includes(element.tagName) &&
+    !(element.tagName === 'A' && element.hasAttribute('href')) &&
+    !(element.tagName === 'BUTTON' && element.form && ['submit', 'reset'].includes(element.type)) &&
+    element.isConnected && !element.readOnly && unlocked(element) &&
+    typeof element.focus === 'function' && typeof element.click === 'function';
+  if (typeof checked !== 'boolean' || !available() || state() === null) {
+    return { ok: false, message: 'This command needs an available binary checkbox or switch. Missing, mixed or invalid ARIA state is not supported.' };
+  }
+  const label = role === 'switch' ? 'Switch' : 'Checkbox';
+  if (state() === checked) return { ok: true, message: `${label} is already ${checked ? 'checked' : 'unchecked'}.` };
+  const before = state();
+  element.focus({ preventScroll: true });
+  if (!available() || !ownsFocus(element) || state() !== before) {
+    return { ok: false, message: 'The control changed while focusing it. Look at it and try again.' };
+  }
+  // The website owns state and events. Never assign aria-checked or retry a
+  // click; let its click microtasks drain, then report only the retained state.
+  element.click();
+  return { message: 'Checking the requested control state…', followUp: new Promise(resolve => element.ownerDocument.defaultView.setTimeout(resolve, 0)).then(() => {
+    const ok = available() && state() === checked;
+    return { ok, message: ok ? `${label} ${checked ? 'checked' : 'unchecked'}.` : 'The website did not retain an available control with the requested state. Check it before continuing.' };
+  }) };
+}
+
 export function setChecked(element, checked) {
+  if (!(element.tagName === 'INPUT' && element.type === 'checkbox')) return setAriaChecked(element, checked);
   const available = () => element.tagName === 'INPUT' && element.type === 'checkbox' &&
     element.isConnected && !element.readOnly && unlocked(element);
-  if (typeof checked !== 'boolean' || !available()) return { ok: false, message: 'This command needs an available native checkbox. Custom ARIA controls are not supported.' };
+  if (typeof checked !== 'boolean' || !available()) return { ok: false, message: 'This command needs an available native checkbox.' };
   if (element.indeterminate) return { ok: false, message: 'This checkbox has a mixed state. Choose its state on the website before using check or uncheck.' };
   if (element.checked === checked) return { ok: true, message: `Checkbox is already ${checked ? 'checked' : 'unchecked'}.` };
   const before = element.checked;

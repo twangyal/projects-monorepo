@@ -398,3 +398,16 @@ test('injected extension check and uncheck retain requested native website state
   await typeInstruction(page,'uncheck Newsletter');await expect(checkbox).not.toBeChecked();
   expect(await page.evaluate(()=>window.checkEvents)).toEqual([['click',true],['input',true],['change',true],['click',false],['input',false],['change',false]]);
 });
+
+test('injected extension check commands observe website-owned custom switch updates',async({context,worker})=>{
+ await worker.evaluate(()=>chrome.storage.local.set({preferences:{autoStart:true,persist:false}}));
+ const page=await context.newPage();await page.goto('http://shop.example/');await expect(status(page)).toContainText('Ready on "Example Shop"');
+ await page.evaluate(()=>{
+  const e=document.createElement('button');e.type='button';e.id='newsletter-switch';e.setAttribute('role','switch');e.setAttribute('aria-checked','false');e.textContent='Newsletter';document.body.prepend(e);
+  window.ariaClicks=0;e.addEventListener('click',()=>{window.ariaClicks++;queueMicrotask(()=>e.setAttribute('aria-checked',e.getAttribute('aria-checked')==='true'?'false':'true'));});
+ });
+ const widget=page.getByRole('switch',{name:'Newsletter'});await look(page,widget);
+ await typeInstruction(page,'check Newsletter');await expect(widget).toHaveAttribute('aria-checked','true');await expect(status(page)).toContainText('Switch checked');
+ await typeInstruction(page,'tick Newsletter');await expect(status(page)).toContainText('already checked');expect(await page.evaluate(()=>window.ariaClicks)).toBe(1);
+ await typeInstruction(page,'uncheck Newsletter');await expect(widget).toHaveAttribute('aria-checked','false');await expect(status(page)).toContainText('Switch unchecked');expect(await page.evaluate(()=>window.ariaClicks)).toBe(2);
+});

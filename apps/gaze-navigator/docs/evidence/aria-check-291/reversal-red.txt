@@ -1,0 +1,52 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:36] "GET / HTTP/1.1" 200 -
+
+Running 1 test using 1 worker
+
+(node:33) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /practice-site/contact.html HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /practice-site/site.css HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /practice-site/site.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/boot.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/overlay.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/watersheep-browser.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/page-context.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/controller.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/assisted-interpreter.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/speech-input.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/keyboard-command.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/gaze-filter.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/camera-gaze.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/calibration-store.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/interpreter.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/watersheep.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/camera-loader.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/web/page-actions.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/camera-calibration.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/camera-cleanup.js HTTP/1.1" 200 -
+[WebServer] 127.0.0.1 - - [18/Oct/2026 15:20:39] "GET /src/camera-retirement.js HTTP/1.1" 200 -
+  ✘  1 [desktop] › browser-tests/web-aria-checks.spec.js:92:1 › nested website microtasks cannot report a state already reversed (283ms)
+
+
+  1) [desktop] › browser-tests/web-aria-checks.spec.js:92:1 › nested website microtasks cannot report a state already reversed 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "error"
+    Received: "success"
+
+      93 |  await setup(page,{effect:'none'});
+      94 |  await page.locator('#a').evaluate(e=>e.addEventListener('click',()=>{e.setAttribute('aria-checked','true');queueMicrotask(()=>queueMicrotask(()=>e.setAttribute('aria-checked','false')));}));
+    > 95 |  expect((await command(page,'check Newsletter')).tone).toBe('error');
+         |                                                        ^
+      96 |  await expect(page.locator('#a')).toHaveAttribute('aria-checked','false');
+      97 |  expect(await page.evaluate(()=>window.events)).toEqual(['click']);
+      98 | });
+        at /workspace/scratch/dea0b0842cca/gaze-aria-check-291/apps/gaze-navigator/browser-tests/web-aria-checks.spec.js:95:56
+
+    Error Context: test-results/web-aria-checks-nested-web-83443-rt-a-state-already-reversed-desktop/error-context.md
+
+  1 failed
+    [desktop] › browser-tests/web-aria-checks.spec.js:92:1 › nested website microtasks cannot report a state already reversed 
