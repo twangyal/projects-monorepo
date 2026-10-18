@@ -438,3 +438,5 @@ When a profile and grading rule are saved, the **Committed relative sizes** tabl
 ### Native garment research capture (#288)
 
 The research-only fixed tee capture retains the application’s full topology, seam maps, UVs, rest constraints, masses, collision clearance and entered-body primitives. [Reproduction and admission](../../docs/research/ppf-cpu/GARMENT_BRIDGE.md) quantify why direct-shell and fully flattened native rest mappings are unsuitable. No new native garment solver is enabled; the current preview remains in use.
+
+Research follow-through #290 evaluates the existing browser body-growth endpoint as a separate native initial pose, preserving original rest/mass/body mapping and all frozen captures. [Preparation, verification and explicit assembly limitations](../../docs/research/ppf-cpu/GARMENT_WARM_START.md) report reduced starting strain but a larger detached collar gap; native admission remains pending. The shipping preview is unchanged.

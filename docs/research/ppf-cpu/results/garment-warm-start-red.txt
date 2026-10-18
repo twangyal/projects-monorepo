@@ -1,0 +1,54 @@
+✖ native warm start preserves every captured field except explicitly prepared positions (216.725028ms)
+✖ native warm start uses the real growth endpoint in original particle namespace (567.788856ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 987.024759
+
+✖ failing tests:
+
+test at apps/clothing-studio/tests/native-garment-warm-start.test.ts:9:1
+✖ native warm start preserves every captured field except explicitly prepared positions (216.725028ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 45
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/clothing-rest-pose-290/apps/clothing-studio/tests/native-garment-warm-start.test.ts:13:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.start (node:internal/test_runner/test:1242:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 45,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/clothing-studio/tests/native-garment-warm-start.test.ts:23:1
+✖ native warm start uses the real growth endpoint in original particle namespace (567.788856ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 0
+  - 0.000010192579356953501
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/dea0b0842cca/clothing-rest-pose-290/apps/clothing-studio/tests/native-garment-warm-start.test.ts:29:59)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 0.000010192579356953501,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

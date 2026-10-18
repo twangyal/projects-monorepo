@@ -1,0 +1,28 @@
+# Browser growth endpoint as native preparation — issue290
+
+The captured tee's430.349% maximum initial edge extension is deliberate styling inflation in `teeMesh`, not incorrect intrinsic rest lengths. The browser solver eases those shell lengths to the actual pattern metric during45 body-growth frames before gravity. The native bridge previously used the cold shell directly. Changing pattern rest lengths to match a display surface would erase its intended construction.
+
+This separate research path freezes the existing browser growth endpoint. `captureGarmentWarmStart` executes the real solver through frame45, retains the complete original packet and records positions in the original2331-particle namespace. It declares zero gravity frames,10substeps and a deliberate zero-velocity native handoff. This is geometric preconditioning, not a native solve or settling result.
+
+The208,019-byte [capture](results/garment-warm-start.json.gz) has SHA256 `4a099ec5510d177c16ec54cd3ed23ac4cdd0c9d85d56409840f307b6497f3504`. Its eight source hashes include the unchanged original six dependencies and the new helper/exporter. CI regenerates the complete decompressed capture separately from the immutable original capture. No user project or uploaded asset is read.
+
+The Python adapter admits exact source/rest/material/body/seam provenance and preparation controls, then maps source particles through the existing authored-to-native permutation. Only initial coordinates change. Captured-inertia compensation still uses the original physical fabric convention; source GSM and every intrinsic rest coordinate stay inspectable.
+
+## Preparation measurements and limitations
+
+[Full preparation receipt](results/garment-warm-preparation.json) reports maximum absolute structural edge strain43.8517% after growth (430.349% cold), minimum point clearance3.49997mm, contact19.91% and residual speed785.82mm/s. The endpoint is emphatically not settled. Its old XPBD point-contact model supplies no triangle/self-contact guarantee.
+
+Applying the existing conservative collar AABB layout to this new shape requires295.751mm upward collar translation, giving295.758mm initial sewing gap. This is much larger than the cold layout's50.541mm gap: lower panel distortion comes with a worse detached assembly distance under this layout. That trade-off must remain visible. No credible sewn garment is accepted from these preparation metrics.
+
+The native `--initialization warm-sewing --mass-convention browser-inertia` path attempts the pinned strict frontend/export checks and bounded two-material run. All old command options and archives remain available. **Actual native admission/execution is pending.** Preserve a refusal rather than allowing existing intersections or disabling contacts. Even success would establish only bounded assembly motion, not physical fabric/fit or engine adoption.
+
+## Verification
+
+Baseline application159 tests pass. Two new meaningful RED/GREEN tests reproduce the original endpoint and exact particle/seam correspondence. Final local application161 tests, lint, typecheck and production build pass. Full research94 tests pass in89.758s. Independent read-only review passes the two new TypeScript tests,39 garment Python tests, typecheck/lint and complete serialized capture/source-hash reproduction with no important findings. Browser CI and native execution remain pending.
+
+```sh
+node --experimental-strip-types apps/clothing-studio/scripts/export-native-warm-start.ts /absolute/new-warm-start.json.gz
+python3 -m unittest discover -s docs/research/ppf-cpu -p 'test_*.py'
+```
+
+The shipping workspace does not import the new research module. No shipping surface, pattern, body or solver implementation is changed. Issue290 stays open until the preparation's actual native behavior and remaining assembly limitations are recorded.

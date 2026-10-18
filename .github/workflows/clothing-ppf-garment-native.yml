@@ -2,7 +2,7 @@ name: Clothing actual garment native initialization research
 on:
   workflow_dispatch:
   push:
-    branches: [autonomous/clothing-ppf-garment-native-288, autonomous/clothing-ppf-garment-initialized-288, autonomous/clothing-ppf-garment-sewing-288, autonomous/clothing-ppf-garment-mass-289]
+    branches: [autonomous/clothing-ppf-garment-native-288, autonomous/clothing-ppf-garment-initialized-288, autonomous/clothing-ppf-garment-sewing-288, autonomous/clothing-ppf-garment-mass-289, autonomous/clothing-ppf-garment-warm-290]
     paths:
       - '.github/workflows/clothing-ppf-garment-native.yml'
       - 'docs/research/ppf-cpu/**'
@@ -65,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/garment_native_probe.py --initialization sewing --mass-convention browser-inertia --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
+          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/garment_native_probe.py --initialization warm-sewing --mass-convention browser-inertia --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
           statuses=("${PIPESTATUS[@]}")
           set -e
           printf '%s\n' "${statuses[0]}" > "$REPORT/fixture-exit-code.txt"

@@ -7,6 +7,8 @@ on:
       - 'apps/clothing-studio/src/garment-drape.ts'
       - 'apps/clothing-studio/src/native-garment-snapshot.ts'
       - 'apps/clothing-studio/scripts/export-native-garment.ts'
+      - 'apps/clothing-studio/src/native-garment-warm-start.ts'
+      - 'apps/clothing-studio/scripts/export-native-warm-start.ts'
       - 'apps/clothing-studio/package-lock.json'
       - 'docs/research/ppf-cpu/garment*'
       - 'docs/research/ppf-cpu/test_garment*'
@@ -63,6 +65,14 @@ jobs:
           print(json.dumps(actual, indent=2))
           PYREPORT
           python -m unittest discover -s docs/research/ppf-cpu -p 'test_garment*.py'
+      - name: Reproduce separate browser growth endpoint without replacing the cold capture
+        run: |
+          node --experimental-strip-types apps/clothing-studio/scripts/export-native-warm-start.ts "$RUNNER_TEMP/garment-warm.json.gz"
+          python - <<'PYWARM'
+          import gzip,os
+          from pathlib import Path
+          assert gzip.decompress(Path(os.environ['RUNNER_TEMP']).joinpath('garment-warm.json.gz').read_bytes()) == gzip.decompress(Path('docs/research/ppf-cpu/results/garment-warm-start.json.gz').read_bytes())
+          PYWARM
       - name: Reproduce the reviewed cut-rib rest candidate
         run: |
           set -euo pipefail

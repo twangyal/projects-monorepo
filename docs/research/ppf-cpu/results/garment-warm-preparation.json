@@ -1,0 +1,56 @@
+{
+  "preparation": {
+    "capture_sha256": "4a099ec5510d177c16ec54cd3ed23ac4cdd0c9d85d56409840f307b6497f3504",
+    "source_sha256": {
+      "src/product.ts": "1f58f574e41ad3aaeaefb195bb48ecfe82c8e03cd9c0a28037be9026e8517508",
+      "src/media.ts": "b74f99fd99dd523c9d174ff8612ddea1cea6761a3983d07f4f51d5b836eb6144",
+      "src/garment-drape.ts": "2a2c0c68eb0d2ddfb6bb3b2cfcf21884ae5c9c918f96a2abdbedf65a8e7c624a",
+      "src/native-garment-snapshot.ts": "53bc0d5551f6a5f393d6c745f20a7869d04e156dbb421f3d63620a7611384e57",
+      "scripts/export-native-garment.ts": "f8db0bfabe00d619c7f010175cebd43b46b427be6595ef07bc28f170a9afcb38",
+      "package-lock.json": "12edcd288840b541b61524f2fce0a85f59af3621fb46d399484e9e5e342d5c60",
+      "src/native-garment-warm-start.ts": "2ded72f5b8482b31f3d264e2184e6d3b671922c78e11440beebf5f0cd13c79d8",
+      "scripts/export-native-warm-start.ts": "a4b40fe7426efa79ce5a2585f812bf1395e09612316bd6d83daaefbc040f5a00"
+    },
+    "growth_frames": 45,
+    "gravity_frames": 0,
+    "prepared_source_particles": 2331,
+    "maximum_absolute_edge_strain": 0.43851676639011217,
+    "reported_browser_metrics": {
+      "ease": 10,
+      "minClearance": 0.3499973201315463,
+      "contact": 0.19905619905619906,
+      "maxStrain": 0.4385167663901135,
+      "residualSpeed": 78.58163888922576
+    },
+    "velocity_handoff": "reset-to-zero-for-native-experiment",
+    "scope": "Browser geometric preconditioning, not settled/native-contact/physical-fit acceptance."
+  },
+  "detached_collar": {
+    "method": "cut-open-aabb-separated-collar-v1",
+    "collar_rise_m": 0.2957511247483287,
+    "cloth_pair_clearance_m": 0.0025,
+    "body_pair_clearance_m": 0.0055,
+    "numerical_margin_m": 1e-06,
+    "cut_half_gap_m": 0.002,
+    "cut_pair_gap_m": 0.004,
+    "collar_vertices": 42,
+    "collar_triangles": 40,
+    "obstacle_cloth_triangles": 4440,
+    "obstacle_static_triangles": 39144,
+    "scope": "Conservative collar-to-shirt/body initial separation only. Native self-contact/export/solver admission and sewn pose remain unverified."
+  },
+  "initialized_diagnostics": {
+    "saved_frames": 2,
+    "vertices_per_frame": 2353,
+    "unique_intrinsic_edges": 6834,
+    "maximum_vertex_displacement_m": 0.0,
+    "final_vertex_rms_displacement_m": 0.0,
+    "initial_maximum_absolute_edge_strain": 0.43851664820921554,
+    "maximum_saved_absolute_edge_strain": 0.43851664820921554,
+    "final_maximum_absolute_edge_strain": 0.43851664820921554,
+    "initial_maximum_stitch_gap_m": 0.29575788711360096,
+    "maximum_saved_stitch_gap_m": 0.29575788711360096,
+    "final_maximum_stitch_gap_m": 0.29575788711360096,
+    "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+  }
+}
