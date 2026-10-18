@@ -1,6 +1,6 @@
 # Actual garment native admission (#288)
 
-The actual fixed tee, cut-rib rest candidate and closed static-body candidate have now reached the real pinned native frontend. **The original initialization is refused; no garment solver motion is accepted.** Clothing remains ACTIVE and its browser solver is unchanged.
+The actual fixed tee, cut-rib rest candidate and closed static-body candidate have now reached the real pinned native frontend. **The original initialization is refused. A later geometry-derived detached sewing pose now passes native byte admission and bounded motion; see [actual sewing result](GARMENT_SEWING.md).** Clothing remains ACTIVE and its browser solver is unchanged.
 
 ## First strict attempt: 2026-10-18
 
@@ -41,4 +41,4 @@ python docs/research/ppf-cpu/garment_native_refusal.py --initialized docs/resear
 
 ## Remaining admission gate
 
-Keep #288 open. Resolve the actual collar/panel surface compatibility while preserving the authored intrinsic metric, source face provenance and semantic sewing correspondence; a different contact-compatible initialization or explicitly reviewed remeshing must earn strict native admission. The experiments show that padding redistribution alone cannot resolve the26 original intersections, and this normal-offset/cut separation still leaves19 panel intersections. Do not keep increasing arbitrary offsets or disable contact/intersection checks to force a pass. Native rest/stitch byte verification and the two-material motion/strain/settling measurements remain unexecuted. Physical fabric calibration, anatomical fit and engine adoption remain separate unaccepted work.
+Historical gate (resolved for the detached assembly pose by [the sewing experiment](GARMENT_SEWING.md)): resolve the actual collar/panel surface compatibility while preserving the authored intrinsic metric, source face provenance and semantic sewing correspondence; a different contact-compatible initialization or explicitly reviewed remeshing must earn strict native admission. The experiments show that padding redistribution alone cannot resolve the26 original intersections, and this normal-offset/cut separation still leaves19 panel intersections. Do not keep increasing arbitrary offsets or disable contact/intersection checks to force a pass. The later sewing experiment verifies native rest/stitch bytes and bounded two-coefficient motion/strain; settling remains unaccepted. Physical fabric calibration, anatomical fit and engine adoption remain separate unaccepted work.

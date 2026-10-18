@@ -89,3 +89,7 @@ Initial reviewed capture source `6aa97eacfc7034a074fa0427a5073d4c1a7a9da2` passe
 ## Native frontend follow-through
 
 The first actual CPU/frontend attempt now refuses original scene admission; see [native evidence and controlled follow-up](GARMENT_NATIVE.md). The capture/rest/body candidates alone do not establish solver motion.
+
+## Admitted detached native assembly
+
+The subsequent [geometry-derived sewing pose](GARMENT_SEWING.md) now passes actual native input/scene admission and a complete bounded two-coefficient motion comparison. Original failed poses remain retained. Native mass uses initial3D area and is30.54% above captured browser mass; historical rest-area assumptions are superseded by that actual measurement. Matched inertia (#289), settling, calibrated fabric/fit and engine adoption remain open.

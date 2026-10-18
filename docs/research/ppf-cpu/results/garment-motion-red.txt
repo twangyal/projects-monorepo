@@ -1,0 +1,66 @@
+FFFFFFF
+======================================================================
+FAIL: test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse (test_garment_motion.GarmentMotion.test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse) (frames=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 22, in test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse
+    with self.subTest(frames=frames),self.assertRaises(ValueError):measure(s,frames)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse (test_garment_motion.GarmentMotion.test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse) (frames=[[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 22, in test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse
+    with self.subTest(frames=frames),self.assertRaises(ValueError):measure(s,frames)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse (test_garment_motion.GarmentMotion.test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse) (frames=[[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], [[0.0, 0.0, 0.0]]])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 22, in test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse
+    with self.subTest(frames=frames),self.assertRaises(ValueError):measure(s,frames)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse (test_garment_motion.GarmentMotion.test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse) (frames=[[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], [[nan, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 22, in test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse
+    with self.subTest(frames=frames),self.assertRaises(ValueError):measure(s,frames)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse (test_garment_motion.GarmentMotion.test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse) (frames=[[[0.1, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 22, in test_missing_nonfinite_misindexed_and_wrong_initial_frames_refuse
+    with self.subTest(frames=frames),self.assertRaises(ValueError):measure(s,frames)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_rest_reference_and_transient_strain_are_not_replaced_by_initial_or_final_shape (test_garment_motion.GarmentMotion.test_rest_reference_and_transient_strain_are_not_replaced_by_initial_or_final_shape)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 15, in test_rest_reference_and_transient_strain_are_not_replaced_by_initial_or_final_shape
+    self.assertAlmostEqual(r['initial_maximum_absolute_edge_strain'],.5)
+AssertionError: 0.0 != 0.5 within 7 places (0.5 difference)
+
+======================================================================
+FAIL: test_rigid_motion_has_no_membrane_strain_and_retains_seam_distance (test_garment_motion.GarmentMotion.test_rigid_motion_has_no_membrane_strain_and_retains_seam_distance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_motion.py", line 8, in test_rigid_motion_has_no_membrane_strain_and_retains_seam_distance
+    self.assertAlmostEqual(r['maximum_vertex_displacement_m'],math.hypot(.25,.1))
+AssertionError: 0.0 != 0.2692582403567252 within 7 places (0.2692582403567252 difference)
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=7)

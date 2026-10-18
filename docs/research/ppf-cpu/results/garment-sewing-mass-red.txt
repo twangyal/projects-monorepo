@@ -1,0 +1,22 @@
+FF
+======================================================================
+FAIL: test_complete_actual_native_result_replays (test_garment_sewing_audit.SewingAudit.test_complete_actual_native_result_replays)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_sewing_audit.py", line 13, in test_complete_actual_native_result_replays
+    self.assertAlmostEqual(r.get('native_total_cloth_mass_kg',0.),.1978686)
+AssertionError: 0.0 != 0.1978686 within 7 places (0.1978686 difference)
+
+======================================================================
+FAIL: test_incomplete_frames_modified_rest_extra_control_and_false_success_refuse (test_garment_sewing_audit.SewingAudit.test_incomplete_frames_modified_rest_extra_control_and_false_success_refuse) (mode='mass')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-collar-admission-288/docs/research/ppf-cpu/test_garment_sewing_audit.py", line 30, in test_incomplete_frames_modified_rest_extra_control_and_false_success_refuse
+    with self.subTest(mode=mode),self.assertRaises(ValueError):audit(stream,verify_archive_hash=False)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 8.756s
+
+FAILED (failures=2)
