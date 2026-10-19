@@ -16,13 +16,14 @@ class RepeatabilityArchive(unittest.TestCase):
  def test_resigned_changes_cannot_bypass_semantic_controls(self):
   with zipfile.ZipFile(ROOT/'garment-repeatability-one.zip') as z:original={n:z.read(n) for n in z.namelist()}
   prefix='native-cache/sessions/cpu-garment-second/session/'
-  for mode in ['rest','late-frame','timing','completion','thread','source','dynamic-sidecar','command','host-environment']:
+  for mode in ['rest','late-frame','timing','completion','thread','source','dynamic-sidecar','command','host-environment','declared-patch']:
    files=original.copy();r=json.loads(files['receipt.json'])
    if mode=='rest':files[prefix+'bin/rest_vert.bin']=bytes(len(files[prefix+'bin/rest_vert.bin']))
    if mode=='late-frame':del files[prefix+'output/vert_60.bin']
    if mode=='timing':files[prefix+'output/data/frame_to_time.out']=b'0 0\n'
    if mode=='completion':r['cases']={}
    if mode=='thread':r['execution_settings']['requested_threads']=4
+   if mode=='declared-patch':files['research-patch.json']=b'{}'
    if mode=='command':files[prefix+'command.sh']=files[prefix+'command.sh'].replace(b'"$@"',b'--frames 1')
    if mode=='host-environment':
     host=json.loads(files['thread-settings.json']);host['variables']['RAYON_NUM_THREADS']='4';files['thread-settings.json']=json.dumps(host).encode()

@@ -31,13 +31,15 @@ from garment_endpoint_diagnostics import endpoint_diagnostics
 
 COMMAND='#!/bin/bash\nSOLVER_PATH="/home/runner/work/projects-monorepo/projects-monorepo/upstream/target/cpu/release/ppf-contact-solver"\n\nif [ ! -f "$SOLVER_PATH" ]; then\n    echo "Error: Solver does not exist at $SOLVER_PATH" >&2\n    exit 1\nfi\n\n"$SOLVER_PATH" --path "/home/runner/work/projects-monorepo/projects-monorepo/ppf-native-cache/sessions/cpu-garment-CASE_NAME/session" --output "/home/runner/work/projects-monorepo/projects-monorepo/ppf-native-cache/sessions/cpu-garment-CASE_NAME/session/output" "$@"\n'
 PROFILES={'one':('17f70fb343db69a176c27262e78566d60090fe65ccdb5c62c9b72d253bcc82a8',1,12164672367),'four':('d29bff83e39b5bb5031f15d2a3d0e8beb6f8b61e23f879ae45e8935808180d0d',4,12164054710)}
+PATCHED_PROFILES={} # Populated only after actual native archives are retained and hashed.
 THREAD_VARIABLES=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
 @cache
 def prepared_inputs():return rebuild(Path(__file__).with_name('results'))
 
 def audit(path,verify_archive_hash=True,profile="one"):
- require(profile in PROFILES,'Unknown repeatability profile.')
- archive_hash,threads,artifact_id=PROFILES[profile]
+ require(profile in {**PROFILES,**PATCHED_PROFILES},'Unknown repeatability profile.')
+ patched=profile in PATCHED_PROFILES
+ archive_hash,threads,artifact_id=({**PROFILES,**PATCHED_PROFILES})[profile]
  sources={**LONG_SOURCE_SHA256,'garment_native_probe.py':'a08f7974dc38fca3e98f97394e0669eca8261d3f24883815e260f93b939c00c9'}
  frame_count=61;session={**SESSION,'frames':60};cases={'first':500.,'second':500.}
  variables={key:str(threads) for key in THREAD_VARIABLES}
@@ -46,6 +48,11 @@ def audit(path,verify_archive_hash=True,profile="one"):
  if verify_archive_hash:require(digest==archive_hash,'Changed cleared native archive.')
  original,inputs,wp,cp,layout,mass=prepared_inputs()
  with zipfile.ZipFile(io.BytesIO(raw)) as z:
+  if patched:
+   from garment_mesh_patch_evidence import verify_research_patch
+   patch=verify_research_patch(z)
+  else:
+   require('research-patch.json' not in z.namelist(),'Unexpected research patch in unchanged-backend profile.');patch=None
   r=json.loads(z.read('receipt.json'));paths=verify_manifest(z,r)
   require(json.loads(gzip.decompress(z.read('native-blueprint-original.json.gz')))==original,'Changed original blueprint.')
   require(json.loads(gzip.decompress(z.read('native-blueprint.json.gz')))==inputs,'Changed cleared blueprint.')
@@ -95,6 +102,7 @@ def audit(path,verify_archive_hash=True,profile="one"):
    require(set(bins['first'])==set(bins['second']),'Material bin names differ.')
    changed=sorted(p for p in bins['first'] if bins['first'][p]!=bins['second'][p]);require(changed==[],'Same-material native input bytes differ.')
    for p in ['info.toml','param.toml']:require(z.read('native-cache/sessions/cpu-garment-first/session/'+p)==z.read('native-cache/sessions/cpu-garment-second/session/'+p),'Material metadata differs.')
+  raw_frame_hashes={name:[hashlib.sha256(z.read(f'native-cache/sessions/cpu-garment-{name}/session/output/vert_{i}.bin')).hexdigest() for i in range(frame_count)] for name in cases}
   identical_raw=sum(z.read(f'native-cache/sessions/cpu-garment-first/session/output/vert_{i}.bin')==z.read(f'native-cache/sessions/cpu-garment-second/session/output/vert_{i}.bin') for i in range(frame_count))
   reference=Path(__file__).with_name('results')/'garment-relaxation-native.zip'
   reference_raw=reference.read_bytes()
@@ -106,7 +114,7 @@ def audit(path,verify_archive_hash=True,profile="one"):
    require(bins['first']==reference_bins,'Native inputs changed from original one-second soft material.')
    for meta in ['info.toml','param.toml']:require(z.read('native-cache/sessions/cpu-garment-first/session/'+meta)==ref.read(prefix+meta),'Reference scene/session metadata differs.')
   for name in cases:diagnostics[name]['endpoint']=endpoint_diagnostics(inputs,frames[name],1/60)
-  return {'archive_sha256':digest,'archive_bytes':len(raw),'artifact_id':artifact_id,'source_commit':'650535a031badf8a6ea33f9f0dea8c819b5aeb11','run_url':'https://github.com/twangyal/projects-monorepo/actions/runs/39203144766','native_files_verified':len(paths),'identical_native_input_bytes':True,'original_soft_reference_inputs_identical':True,'requested_execution_settings':settings,'host':host,'cases':diagnostics,'identical_raw_frames':identical_raw,'trajectory':trajectory_comparison(frames['first'],frames['second']),'supervisor':supervisor,'limits':['One pair per requested environment on separate hosts does not isolate causal thread effects.','Nonzero differences are measured variation, not a population tolerance or material discrimination.','Endpoint collar/shirt threshold counts include stitched neighborhoods and do not reproduce native contact-policy filtering; final snapshots/secants do not establish continuous contact or instantaneous velocity.','No settling, seam-quality, physical fit or backend adoption acceptance.']}
+  return {'archive_sha256':digest,'archive_bytes':len(raw),'artifact_id':artifact_id,'source_commit':'d56b1d61faa95b557fd61274db51c5d619ca367b' if patched else '650535a031badf8a6ea33f9f0dea8c819b5aeb11','run_url':'https://github.com/twangyal/projects-monorepo/actions/runs/'+('39205289113' if patched else '39203144766'),'research_patch':patch,'native_files_verified':len(paths),'identical_native_input_bytes':True,'original_soft_reference_inputs_identical':True,'requested_execution_settings':settings,'host':host,'cases':diagnostics,'identical_raw_frames':identical_raw,'raw_frame_sha256':raw_frame_hashes,'trajectory':trajectory_comparison(frames['first'],frames['second']),'supervisor':supervisor,'limits':['One pair per requested environment on separate hosts does not isolate causal thread effects.','Nonzero differences are measured variation, not a population tolerance or material discrimination.','Endpoint collar/shirt threshold counts include stitched neighborhoods and do not reproduce native contact-policy filtering; final snapshots/secants do not establish continuous contact or instantaneous velocity.','No settling, seam-quality, physical fit or backend adoption acceptance.']}
 
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--profile',choices=list(PROFILES),required=True);a=p.parse_args();print(json.dumps(audit(a.archive,profile=a.profile),indent=2,allow_nan=False))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--profile',choices=list(PROFILES)+list(PATCHED_PROFILES),required=True);a=p.parse_args();print(json.dumps(audit(a.archive,profile=a.profile),indent=2,allow_nan=False))
