@@ -8,7 +8,7 @@ The accepted short and one-second experiments export identical inputs but their 
 
 All five requested thread variables must consistently specify either `1` or `4`: `RAYON_NUM_THREADS`, `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `MKL_NUM_THREADS`, `NUMEXPR_NUM_THREADS`. These are inherited environment requests, not measurements of actual native workers. The new workflow runs the two configurations on separate CI hosts and retains CPU, affinity, compiler, dependencies, source hashes, complete raw sessions and requested settings. Each job keeps the 300-second fixture supervisor and a 25-minute outer bound; ordinary cancellation/outer-runner loss can still prevent collection. A configuration contrast across separate hosts does not establish a causal thread-count effect.
 
-The dedicated branch `autonomous/clothing-ppf-garment-repeatability-290` triggers both matrix jobs. Manual dispatch runs the same fixed protocol. Independent review found no control/workflow blocker; focused RED/GREEN tests verify the case plan, required settings and rejection of changed preparation/mass/duration/stitches. Full source regression and actual native outcomes are recorded as they complete. Native results are currently pending; the presence of the harness does not establish repeatability.
+The dedicated branch `autonomous/clothing-ppf-garment-repeatability-290` triggers both matrix jobs. Manual dispatch runs the same fixed protocol. Independent review found no control/workflow blocker; focused RED/GREEN tests verify the case plan, required settings and rejection of changed preparation/mass/duration/stitches. Full source regression and actual native outcomes are recorded as they complete. The original-backend results below measure variation; the harness alone does not establish repeatability.
 
 ## Independent evidence requirements
 
@@ -23,3 +23,24 @@ python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_repeatabil
 ```
 
 Use the existing external supervisor and always-run collector for a real native attempt, as shown in the workflow and research README. The command above alone does not impose the time/cleanup bound.
+
+## Recorded original-backend result (19 October 2026)
+
+[Run 39203144766](https://github.com/twangyal/projects-monorepo/actions/runs/39203144766), source `650535a031badf8a6ea33f9f0dea8c819b5aeb11`, completed both independent pairs against unchanged upstream `6b30976f86e6b94d68d459e5237d59704c7d1384`. Each archive retains 122 actual frames and 446 checksum-verified native files. The independent replay reconstructs preparation/inertia, verifies the exact exported controls, rejects unexpected session sidecars or altered invocation, verifies completion/timing/cleanup and compares every input binary and scene/session metadata. Inputs also match the prior one-second soft-material reference byte for byte. Session pickles are retained but never loaded.
+
+| Requested environment | Maximum saved-vertex difference | All-saved vertex RMS | Maximum frame RMS | Final-frame RMS | Byte-identical frames |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| One thread | 17.4446 mm | 1.0780 mm | 3.2760 mm | 0.0270 mm | 1 / 61 |
+| Four threads | 26.6953 mm | 2.5521 mm | 7.6048 mm | 0.0633 mm | 1 / 61 |
+
+Only the initial frame matches exactly in either pair. Nonzero same-material variation is established for these bounded observations; broad determinism and a repeatable garment-material response are not established. The small final differences would hide the larger intermediate disagreement. One pair per environment, on separate hosts, cannot identify a causal thread-count effect or define a population tolerance. The scheduler source uses fixed reduction/chunk ordering; ordinary parallel scatter is not assumed to explain this result.
+
+The frozen archives are [one-thread](results/garment-repeatability-one.zip) (6,866,819 bytes, SHA-256 `17f70fb343db69a176c27262e78566d60090fe65ccdb5c62c9b72d253bcc82a8`, artifact 12164672367) and [four-thread](results/garment-repeatability-four.zip) (6,874,683 bytes, SHA-256 `d29bff83e39b5bb5031f15d2a3d0e8beb6f8b61e23f879ae45e8935808180d0d`, artifact 12164054710). Full per-frame metrics, strain/seam diagnostics and final-snapshot/secant checks are retained in the matching `*-audit.json` files. Endpoint threshold counts include sewn neighborhoods and do not reproduce native contact filtering; they are not trajectory or fit acceptance.
+
+```sh
+python3 docs/research/ppf-cpu/garment_repeatability_audit.py docs/research/ppf-cpu/results/garment-repeatability-one.zip --profile one
+python3 docs/research/ppf-cpu/garment_repeatability_audit.py docs/research/ppf-cpu/results/garment-repeatability-four.zip --profile four
+python3 -m unittest discover -s docs/research/ppf-cpu -p 'test_garment_repeatability*.py'
+```
+
+A separate [test-only mesh-order diagnostic](GARMENT_MESH_ORDER.md) tests the pinned source's unordered edge/hinge emission. It does not modify these baseline runs, prove their cause or authorize backend adoption. Next work is to establish the ordering behavior experimentally, then evaluate any declared research-only repair against the frozen baselines before broader garments/bodies or sustained settling.

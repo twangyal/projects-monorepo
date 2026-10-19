@@ -34,3 +34,5 @@ Actual native garment motion: [detached sewing geometry, complete raw replay, me
 Captured inertia follow-through: [per-face adapter, source preservation, validation and pending native gate](GARMENT_INERTIA.md).
 
 Cleared browser-prepared native motion: [complete triangle-surface gate, two-material actual motion, retained archive/replay and limits](GARMENT_CLEARANCE.md).
+
+Same-material native control: [frozen one/four-thread pairs, whole-trajectory replay and ordering investigation](GARMENT_REPEATABILITY.md).

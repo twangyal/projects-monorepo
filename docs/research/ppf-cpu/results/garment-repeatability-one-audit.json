@@ -1,0 +1,470 @@
+{
+  "archive_sha256": "17f70fb343db69a176c27262e78566d60090fe65ccdb5c62c9b72d253bcc82a8",
+  "archive_bytes": 6866819,
+  "artifact_id": 12164672367,
+  "source_commit": "650535a031badf8a6ea33f9f0dea8c819b5aeb11",
+  "run_url": "https://github.com/twangyal/projects-monorepo/actions/runs/39203144766",
+  "native_files_verified": 446,
+  "identical_native_input_bytes": true,
+  "original_soft_reference_inputs_identical": true,
+  "requested_execution_settings": {
+    "requested_threads": 1,
+    "variables": {
+      "RAYON_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "scope": "Requested inherited environment, not a measurement of actual native worker counts."
+  },
+  "host": {
+    "variables": {
+      "RAYON_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "logical_cpu_count": 4,
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "cases": {
+    "first": {
+      "raw_frames": 61,
+      "motion_frames": 60,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 61,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.3013281684206624,
+        "final_vertex_rms_displacement_m": 0.0409031732714123,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.34528633642481155,
+        "final_maximum_absolute_edge_strain": 0.31168572252041793,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014217400457123836,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      },
+      "endpoint": {
+        "last_saved_interval_secant_speed": {
+          "maximum_m_s": 0.004426940930952988,
+          "rms_m_s": 0.000916878676011946
+        },
+        "cloth_body_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0034999999999999996,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0034999999999999996,
+          "tested_triangle_pairs": 58701,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        },
+        "collar_shirt_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0005,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0005,
+          "tested_triangle_pairs": 148,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        }
+      }
+    },
+    "second": {
+      "raw_frames": 61,
+      "motion_frames": 60,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 61,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.2998879765428508,
+        "final_vertex_rms_displacement_m": 0.04090265497638978,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.3434308904447365,
+        "final_maximum_absolute_edge_strain": 0.31173621603283763,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014217912520003264,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      },
+      "endpoint": {
+        "last_saved_interval_secant_speed": {
+          "maximum_m_s": 0.004741083892174598,
+          "rms_m_s": 0.0008538059964876477
+        },
+        "cloth_body_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0034999999999999996,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0034999999999999996,
+          "tested_triangle_pairs": 58669,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        },
+        "collar_shirt_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0005,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0005,
+          "tested_triangle_pairs": 148,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        }
+      }
+    }
+  },
+  "identical_raw_frames": 1,
+  "trajectory": {
+    "saved_frames": 61,
+    "vertices_per_frame": 2353,
+    "maximum_vertex_difference_m": 0.01744455542221862,
+    "all_saved_vertex_rms_difference_m": 0.001077975391618424,
+    "maximum_frame_rms_difference_m": 0.0032760096664255322,
+    "final_vertex_rms_difference_m": 2.6961512264048632e-05,
+    "identical_coordinate_frames": 1,
+    "by_frame": [
+      {
+        "frame": 0,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 1,
+        "maximum_vertex_difference_m": 1.0446194014988339e-06,
+        "vertex_rms_difference_m": 9.97303967519659e-08
+      },
+      {
+        "frame": 2,
+        "maximum_vertex_difference_m": 1.7261244251752342e-06,
+        "vertex_rms_difference_m": 3.009170816473149e-07
+      },
+      {
+        "frame": 3,
+        "maximum_vertex_difference_m": 0.004355491889393899,
+        "vertex_rms_difference_m": 0.0009799061147432577
+      },
+      {
+        "frame": 4,
+        "maximum_vertex_difference_m": 0.010268906853923317,
+        "vertex_rms_difference_m": 0.001734114308252834
+      },
+      {
+        "frame": 5,
+        "maximum_vertex_difference_m": 0.015011097116312636,
+        "vertex_rms_difference_m": 0.002318700178443841
+      },
+      {
+        "frame": 6,
+        "maximum_vertex_difference_m": 0.005861831513669071,
+        "vertex_rms_difference_m": 0.0022538456875581575
+      },
+      {
+        "frame": 7,
+        "maximum_vertex_difference_m": 0.007733251264820143,
+        "vertex_rms_difference_m": 0.0025691270413782537
+      },
+      {
+        "frame": 8,
+        "maximum_vertex_difference_m": 0.012762134922317432,
+        "vertex_rms_difference_m": 0.003086585666777661
+      },
+      {
+        "frame": 9,
+        "maximum_vertex_difference_m": 0.01744455542221862,
+        "vertex_rms_difference_m": 0.0032760096664255322
+      },
+      {
+        "frame": 10,
+        "maximum_vertex_difference_m": 0.009169231510614672,
+        "vertex_rms_difference_m": 0.002935165945574464
+      },
+      {
+        "frame": 11,
+        "maximum_vertex_difference_m": 0.007453822674015562,
+        "vertex_rms_difference_m": 0.0027760734491306506
+      },
+      {
+        "frame": 12,
+        "maximum_vertex_difference_m": 0.005296681148908309,
+        "vertex_rms_difference_m": 0.0023198377414271132
+      },
+      {
+        "frame": 13,
+        "maximum_vertex_difference_m": 0.0036495625398599587,
+        "vertex_rms_difference_m": 0.0016755105859700707
+      },
+      {
+        "frame": 14,
+        "maximum_vertex_difference_m": 0.002846171543453366,
+        "vertex_rms_difference_m": 0.0010680557619183473
+      },
+      {
+        "frame": 15,
+        "maximum_vertex_difference_m": 0.002852363553478749,
+        "vertex_rms_difference_m": 0.0006930284683520201
+      },
+      {
+        "frame": 16,
+        "maximum_vertex_difference_m": 0.002688468269807665,
+        "vertex_rms_difference_m": 0.0006081994693208179
+      },
+      {
+        "frame": 17,
+        "maximum_vertex_difference_m": 0.0023663947385362608,
+        "vertex_rms_difference_m": 0.000649825869912461
+      },
+      {
+        "frame": 18,
+        "maximum_vertex_difference_m": 0.0020232841383415008,
+        "vertex_rms_difference_m": 0.000680884189979271
+      },
+      {
+        "frame": 19,
+        "maximum_vertex_difference_m": 0.0018995308930610001,
+        "vertex_rms_difference_m": 0.0006591271985915468
+      },
+      {
+        "frame": 20,
+        "maximum_vertex_difference_m": 0.0019373323589591217,
+        "vertex_rms_difference_m": 0.0006037937200460966
+      },
+      {
+        "frame": 21,
+        "maximum_vertex_difference_m": 0.0018982243505277128,
+        "vertex_rms_difference_m": 0.0005319682567970443
+      },
+      {
+        "frame": 22,
+        "maximum_vertex_difference_m": 0.0018106839624763783,
+        "vertex_rms_difference_m": 0.0004555874107469209
+      },
+      {
+        "frame": 23,
+        "maximum_vertex_difference_m": 0.0016341936350071575,
+        "vertex_rms_difference_m": 0.0003923732902600264
+      },
+      {
+        "frame": 24,
+        "maximum_vertex_difference_m": 0.0013656141582015868,
+        "vertex_rms_difference_m": 0.0003391612991111846
+      },
+      {
+        "frame": 25,
+        "maximum_vertex_difference_m": 0.0012541767293256525,
+        "vertex_rms_difference_m": 0.0002885756406861099
+      },
+      {
+        "frame": 26,
+        "maximum_vertex_difference_m": 0.0013925315186653449,
+        "vertex_rms_difference_m": 0.0002458048172683379
+      },
+      {
+        "frame": 27,
+        "maximum_vertex_difference_m": 0.0014399443834019815,
+        "vertex_rms_difference_m": 0.00022283604526244775
+      },
+      {
+        "frame": 28,
+        "maximum_vertex_difference_m": 0.00142478281044941,
+        "vertex_rms_difference_m": 0.00022275955777726654
+      },
+      {
+        "frame": 29,
+        "maximum_vertex_difference_m": 0.0013381062609275074,
+        "vertex_rms_difference_m": 0.00023341488418188137
+      },
+      {
+        "frame": 30,
+        "maximum_vertex_difference_m": 0.0012113899808070617,
+        "vertex_rms_difference_m": 0.00024090722237397164
+      },
+      {
+        "frame": 31,
+        "maximum_vertex_difference_m": 0.0010863531330464484,
+        "vertex_rms_difference_m": 0.00023748973177006798
+      },
+      {
+        "frame": 32,
+        "maximum_vertex_difference_m": 0.0009873484834823916,
+        "vertex_rms_difference_m": 0.00022146399569744003
+      },
+      {
+        "frame": 33,
+        "maximum_vertex_difference_m": 0.000871772170484884,
+        "vertex_rms_difference_m": 0.00019547697580851647
+      },
+      {
+        "frame": 34,
+        "maximum_vertex_difference_m": 0.0007611969828685271,
+        "vertex_rms_difference_m": 0.0001634343948188555
+      },
+      {
+        "frame": 35,
+        "maximum_vertex_difference_m": 0.0006483829541944428,
+        "vertex_rms_difference_m": 0.00012945063037177616
+      },
+      {
+        "frame": 36,
+        "maximum_vertex_difference_m": 0.0005787501727247314,
+        "vertex_rms_difference_m": 9.770346597806265e-05
+      },
+      {
+        "frame": 37,
+        "maximum_vertex_difference_m": 0.0004708276974235613,
+        "vertex_rms_difference_m": 7.364481162461337e-05
+      },
+      {
+        "frame": 38,
+        "maximum_vertex_difference_m": 0.0003451291018194432,
+        "vertex_rms_difference_m": 6.316115019895073e-05
+      },
+      {
+        "frame": 39,
+        "maximum_vertex_difference_m": 0.0003206182688714809,
+        "vertex_rms_difference_m": 6.664946258522355e-05
+      },
+      {
+        "frame": 40,
+        "maximum_vertex_difference_m": 0.0003497783248956135,
+        "vertex_rms_difference_m": 7.685464427408655e-05
+      },
+      {
+        "frame": 41,
+        "maximum_vertex_difference_m": 0.0003810384577610509,
+        "vertex_rms_difference_m": 8.729132067323532e-05
+      },
+      {
+        "frame": 42,
+        "maximum_vertex_difference_m": 0.0004365755742312751,
+        "vertex_rms_difference_m": 9.492892422603061e-05
+      },
+      {
+        "frame": 43,
+        "maximum_vertex_difference_m": 0.00048235363340054825,
+        "vertex_rms_difference_m": 9.868369278440572e-05
+      },
+      {
+        "frame": 44,
+        "maximum_vertex_difference_m": 0.000506548625653811,
+        "vertex_rms_difference_m": 9.844650774424538e-05
+      },
+      {
+        "frame": 45,
+        "maximum_vertex_difference_m": 0.0005266051607838029,
+        "vertex_rms_difference_m": 9.458451077693351e-05
+      },
+      {
+        "frame": 46,
+        "maximum_vertex_difference_m": 0.0005321223322696919,
+        "vertex_rms_difference_m": 8.78311826956708e-05
+      },
+      {
+        "frame": 47,
+        "maximum_vertex_difference_m": 0.0005083117082451279,
+        "vertex_rms_difference_m": 7.914457760476858e-05
+      },
+      {
+        "frame": 48,
+        "maximum_vertex_difference_m": 0.0004603397633257923,
+        "vertex_rms_difference_m": 6.963254626200777e-05
+      },
+      {
+        "frame": 49,
+        "maximum_vertex_difference_m": 0.0003942006909501242,
+        "vertex_rms_difference_m": 6.0435133957968456e-05
+      },
+      {
+        "frame": 50,
+        "maximum_vertex_difference_m": 0.0003258956519700227,
+        "vertex_rms_difference_m": 5.254635435899737e-05
+      },
+      {
+        "frame": 51,
+        "maximum_vertex_difference_m": 0.00025282410729630017,
+        "vertex_rms_difference_m": 4.655737379881306e-05
+      },
+      {
+        "frame": 52,
+        "maximum_vertex_difference_m": 0.00020342097945912625,
+        "vertex_rms_difference_m": 4.245384160647253e-05
+      },
+      {
+        "frame": 53,
+        "maximum_vertex_difference_m": 0.00017884233477819035,
+        "vertex_rms_difference_m": 3.966070612597098e-05
+      },
+      {
+        "frame": 54,
+        "maximum_vertex_difference_m": 0.00016919339719878354,
+        "vertex_rms_difference_m": 3.7399690941291485e-05
+      },
+      {
+        "frame": 55,
+        "maximum_vertex_difference_m": 0.000168859709811406,
+        "vertex_rms_difference_m": 3.50904572362761e-05
+      },
+      {
+        "frame": 56,
+        "maximum_vertex_difference_m": 0.0001628719613128199,
+        "vertex_rms_difference_m": 3.25468110355988e-05
+      },
+      {
+        "frame": 57,
+        "maximum_vertex_difference_m": 0.0001575555665788819,
+        "vertex_rms_difference_m": 2.998193361009436e-05
+      },
+      {
+        "frame": 58,
+        "maximum_vertex_difference_m": 0.00015642647677288355,
+        "vertex_rms_difference_m": 2.7893234978257577e-05
+      },
+      {
+        "frame": 59,
+        "maximum_vertex_difference_m": 0.000161589417515315,
+        "vertex_rms_difference_m": 2.6811208341474943e-05
+      },
+      {
+        "frame": 60,
+        "maximum_vertex_difference_m": 0.00016599506963706616,
+        "vertex_rms_difference_m": 2.6961512264048632e-05
+      }
+    ],
+    "scope": "All saved vertex coordinates only; numerical equality is distinct from raw-byte equality. No tolerance or broad repeatability/physical acceptance is inferred."
+  },
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 97.73535438900001,
+    "remaining_children": 0
+  },
+  "limits": [
+    "One pair per requested environment on separate hosts does not isolate causal thread effects.",
+    "Nonzero differences are measured variation, not a population tolerance or material discrimination.",
+    "Endpoint collar/shirt threshold counts include stitched neighborhoods and do not reproduce native contact-policy filtering; final snapshots/secants do not establish continuous contact or instantaneous velocity.",
+    "No settling, seam-quality, physical fit or backend adoption acceptance."
+  ]
+}
