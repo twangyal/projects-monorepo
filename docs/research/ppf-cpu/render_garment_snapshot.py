@@ -1,5 +1,6 @@
 """Render exact saved native triangle geometry; no contact/physical-fit proof."""
-import argparse,gzip,json,struct,zipfile
+import argparse,gzip,io,json,struct,zipfile
+from garment_archive_storage import read_archive
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -7,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('archive',type=Path);p.add_argument('out',type=Path);p.add_argument('--frames',type=int,nargs='+',default=[0,60,180]);a=p.parse_args()
-with zipfile.ZipFile(a.archive) as z:
+with zipfile.ZipFile(io.BytesIO(read_archive(a.archive))) as z:
  data=json.loads(gzip.decompress(z.read('native-blueprint.json.gz')))
  body=np.asarray(data['body_vertices']);bodyfaces=np.asarray(data['body_faces']);faces=np.asarray(data['faces'])
  fig,axes=plt.subplots(2,len(a.frames),figsize=(4.2*len(a.frames),10),squeeze=False,sharex=True,sharey=True)

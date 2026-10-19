@@ -36,3 +36,7 @@ Captured inertia follow-through: [per-face adapter, source preservation, validat
 Cleared browser-prepared native motion: [complete triangle-surface gate, two-material actual motion, retained archive/replay and limits](GARMENT_CLEARANCE.md).
 
 Same-material native control: [frozen one/four-thread pairs, whole-trajectory replay and ordering investigation](GARMENT_REPEATABILITY.md).
+
+Repaired native material response: [controlled Young500/2000 cohort, full archives, source-derived geometry and independent replay](GARMENT_MATERIAL_COHORT.md).
+
+Longer native observation: [explicit three-second duration protocol and evidence](GARMENT_DURATION_STUDY.md).
