@@ -40,3 +40,8 @@ python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_clearance_
 ## Rejected nearby collar comparison
 
 An offline comparison applied the existing `separate_rib` after the same warm/outward preparation, omitting the conservative sewing-layout collar translation. Its initial stitch gap drops to6.013mm and cloth/body clearance still passes6mm, but rib/shirt admission finds90 pairs below2.5mm, including an actual intersection. It is rejected before native execution. The [receipt](results/garment-clearance-near-collar-rejected.json) records initial geometry only, not saved motion. A smaller initial seam gap alone is insufficient grounds to replace the admitted layout.
+
+
+## Bounded one-second observation
+
+The dedicated `autonomous/clothing-ppf-garment-relaxation-290` branch passes `--frames 60`, requesting 61 saved frames including frame 0. The default remains 18 intervals/19 frames. Only the session frame limit changes; geometry, rest state, material, captured inertia, body contacts, collision checks and stitch stiffness remain identical. Export admission verifies the explicitly declared session and refuses other control drift. This is a bounded motion observation, not settling or physical-fit acceptance. Source `99eb1e9b` passed 111 research tests locally and 54 garment preflight checks in CI; native results are pending until the raw archive is retained and audited.

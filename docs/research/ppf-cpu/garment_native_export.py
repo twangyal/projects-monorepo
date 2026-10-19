@@ -8,8 +8,10 @@ from garment_native_inputs import OBJECT,SESSION
 def flat(rows):return [v for row in rows for v in row]
 
 
-def verify_export(read,inputs,young,object_parameters=None,body_contact_offset=0.):
+def verify_export(read,inputs,young,object_parameters=None,body_contact_offset=0.,session_parameters=None):
     object_parameters=OBJECT if object_parameters is None else object_parameters
+    session_parameters=SESSION if session_parameters is None else session_parameters
+    require(set(session_parameters)==set(SESSION) and type(session_parameters["frames"]) is int and session_parameters["frames"] in [18,60] and all(session_parameters[k]==v for k,v in SESSION.items() if k!="frames"),"Undeclared session change.")
     def get(path):
         try:return read(path)
         except (KeyError,OSError) as error:raise ValueError('Missing native input: '+path) from error
@@ -30,5 +32,5 @@ def verify_export(read,inputs,young,object_parameters=None,body_contact_offset=0
         except (KeyError,FileNotFoundError):continue
         require(not value,'Unexpected native intersection allowance: '+name)
     params=tomllib.loads(get('param.toml').decode())['param']
-    for key,value in SESSION.items():require(params[key.replace('-','_')]==value,'Unexpected effective session control: '+key)
+    for key,value in session_parameters.items():require(params[key.replace('-','_')]==value,'Unexpected effective session control: '+key)
     return {'solved_vertices':2353,'shell_triangles':4480,'static_vertices':19574,'static_triangles':39144,'stitch_rows':22,'native_export_bytes_verified':True}
