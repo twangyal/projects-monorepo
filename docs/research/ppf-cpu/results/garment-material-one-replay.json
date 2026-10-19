@@ -1,0 +1,633 @@
+{
+  "archive_sha256": "e41f7f362b46440f1d218398fae5e5a74be500f0af546c04a35e3dc248d960a9",
+  "archive_bytes": 6878193,
+  "artifact_id": 12182450858,
+  "source_commit": "a340f5d18ac5b2b7eaf50eb0c73d750fe2fd7907",
+  "observation": "one-second",
+  "one_second_prefix_identical_raw_frames": null,
+  "run_url": "https://github.com/twangyal/projects-monorepo/actions/runs/39241347732",
+  "research_patch": {
+    "schema": 1,
+    "experiment": "canonical-derived-mesh-order-v1",
+    "upstream_revision": "6b30976f86e6b94d68d459e5237d59704c7d1384",
+    "source_path": "crates/ppf-cts-solver/src/mesh.rs",
+    "base_mesh_sha256": "17361cfee9af9f686b9c929fc59db4ec014412fccd3409a51b0298c1daef490f",
+    "patched_mesh_sha256": "29ba8fa8ef9e45a4ba8c323d644aed557939afab1f0d74bbb4bc8aa93f89be50",
+    "patch_sha256": "b816533c4ff05fda40f32ae9c223aa1212b184a691c0ea0244526f8bb1caaafa",
+    "scope": "Research-only ordered edge/hinge maps. Changes derived element/accumulation order; no physical equivalence, broad determinism or backend adoption acceptance.",
+    "recorded_native_executable_sha256": "1fc9623761c2e18792b8a98554a9332b209fa83b4cd6c0b48ca7f3e1d16257fd",
+    "scope_of_executable_digest": "Recorded CI executable digest; executable bytes are not retained or independently rebuilt by replay."
+  },
+  "native_files_verified": 446,
+  "only_changed_material_bin": [
+    "param/tri-young-mod.bin"
+  ],
+  "original_material_reference_inputs_identical": true,
+  "canonical500_control_identical_raw_frames": 61,
+  "requested_execution_settings": {
+    "requested_threads": 1,
+    "variables": {
+      "RAYON_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "scope": "Requested inherited environment, not a measurement of actual native worker counts."
+  },
+  "host": {
+    "variables": {
+      "RAYON_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1"
+    },
+    "logical_cpu_count": 4,
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "cases": {
+    "soft": {
+      "raw_frames": 61,
+      "motion_frames": 60,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 61,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.301091795985057,
+        "final_vertex_rms_displacement_m": 0.04090440391703678,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.34894174071951034,
+        "final_maximum_absolute_edge_strain": 0.3116329318534876,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014217963772019302,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      },
+      "saved_motion_windows": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 1.0,
+          "saved_intervals": 60,
+          "maximum_secant_speed_m_s": 3.2130088384974185,
+          "rms_secant_speed_m_s": 0.14838407259402658
+        }
+      ],
+      "endpoint": {
+        "last_saved_interval_secant_speed": {
+          "maximum_m_s": 0.005129654316685602,
+          "rms_m_s": 0.000890876735230423
+        },
+        "cloth_body_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0034999999999999996,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0034999999999999996,
+          "tested_triangle_pairs": 58736,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        },
+        "collar_shirt_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0005,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0005,
+          "tested_triangle_pairs": 148,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        }
+      }
+    },
+    "stiff": {
+      "raw_frames": 61,
+      "motion_frames": 60,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 61,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.28883625504578786,
+        "final_vertex_rms_displacement_m": 0.040412909717990476,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.3126823290899403,
+        "final_maximum_absolute_edge_strain": 0.19005785640121742,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.001442314297073979,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      },
+      "saved_motion_windows": [
+        {
+          "start_seconds": 0.0,
+          "end_seconds": 1.0,
+          "saved_intervals": 60,
+          "maximum_secant_speed_m_s": 3.4417856778819162,
+          "rms_secant_speed_m_s": 0.16433182873417534
+        }
+      ],
+      "endpoint": {
+        "last_saved_interval_secant_speed": {
+          "maximum_m_s": 0.03057120436884418,
+          "rms_m_s": 0.0016284305530310011
+        },
+        "cloth_body_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0034999999999999996,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0034999999999999996,
+          "tested_triangle_pairs": 55178,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        },
+        "collar_shirt_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0005,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0005,
+          "tested_triangle_pairs": 149,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        }
+      }
+    }
+  },
+  "identical_raw_frames": 1,
+  "raw_frame_sha256": {
+    "soft": [
+      "d57a1bcaa08036eb0ed8cdbbef8d9110fa226592fb4abd2955d54bf1e07c514a",
+      "72b90f08afc85bd41c1dc6d2da1303577f96f980d2f772cb5e52de97142544f2",
+      "2a7cd2d630d517724e584075031fafd50e0c5c4bf710a63ed70a7910ff07668c",
+      "f0b8b1553cddf570b1324db86d9b0fc8b093159351f46cebe46f5521af7b8352",
+      "30341423cd3c98f812fa875701f452e17c56ac001d7cab863ae39877792ef9ef",
+      "05b3e45721a891847aa16117c134ee4f1406ac7ac940ea3016fc810f4aecaca3",
+      "809748d023724b70f03bd0b24a9c9ebc31b6f869b0820b4a3be7ec573d9f61bd",
+      "26ac00f937c40f9f6e61d9096b424904b89b79b997a3c9ba2516a44abe416ec9",
+      "a9a3c7608b062b71716bbec78afcf40b0c6765238e5cb26593cd0dd3ea436247",
+      "c79e6b084c95fa363389312de624726993f66dcb97f11e9facb6c75bd9181e54",
+      "5dcde7ad45806250a11b1b1ceb9880628a088ac1b4c8baecf54a0c8ba4aad4d7",
+      "ae77fb6217cc015e050c32bb2620fe8634e08055e3c407a7d228dac7cd2c7160",
+      "73989a23655b7a8343c576004c16543a06b3279f424ec83a59e4ebccdcf1941d",
+      "d239682bc30ee1838d2235da4e4729d3f2251e482c3d3a7294d110673bb8cd95",
+      "e12701e295e58c400cae8022acafa07cdc2aabde77816d284aa2ef460b743f85",
+      "b87da74a74aa3bf672665bea4cc74ac0b4ac00b9023debadd6ffa1c3d94c16bf",
+      "6c492308db5e79023dbd761277eb6810154c6a079b5aeec261510da8282c8ae4",
+      "4e8570431eb1e4571b2dd5d3a82af8eddabe7ba4c9ce6c5161729d40e3125d82",
+      "9e38cacbd55859a66b26a6e20fbc03e856649a3f5422a31e18956a98b366caff",
+      "7b55c70a0978f3e171644f85769e488773497f2225d61e7dd47da9afeee4193c",
+      "e15272c23ff71d929553af20adb7ef011a8b964e8d7e9aae19b7f28284f2f80c",
+      "1a7d646e2808d843dec0bddddfc769a2fc1949cb9bf09b439a13e545538a0497",
+      "97482faa260164d5ce538e9aff64c0a08f541f4c621242800e6fbc758732e148",
+      "a1cc33aacf19e080720407e47ff6c5dd30801ee96e3482c6e9cf70ce0dd2a2d1",
+      "d4d8e575dfa5727a32cc0d8f0ca0cd6dfd9c0afd14ef1ab86ddf661d8361c9e9",
+      "a293d301bc17b457edf70c5ac32cc0ddbab40594e917d8f2a92b3719ac863f19",
+      "e29c5601e27a552eb7137a2664e2c1acb615e39370757ca8af572eeb3e559237",
+      "d8013fbc2b56f349955631819af41223ed2d9f6367d134a5f285f80184d30dd8",
+      "c7a5c09afe57941cf2330729bd03abdf57948a1cea1ef0a19423c8b591059c66",
+      "eb4c27f9d00f9b70eba930f18f6554c711de462d7fbfd3f63ae25af8307f8699",
+      "b6c05e9636ca9b17c4bf1debae4995fa7a1322db15af89a027ea38437340b224",
+      "632fb8f3efb73fd7c955889caa24a90777110f5d0cc51b1af9ddc921c8a6a254",
+      "aab6d0183207444da0256d8f3e365ec6c438f725326ae91ac0764b0f2043d86f",
+      "9ac89750c45590d7b714a5dc379f34f1c89549cbdae171742a64bfcd793f2884",
+      "49a2d488eeb0bd127b8e37ca819dcd68bafd0a3b1db238871de004d49441478a",
+      "d20b436a0267b62a1a41e5217a6e09b9ac975eccb5483d58c60c8d195255f2fc",
+      "ce95cefce1e95461a5234080d26cd5adebd0012ec285ea1ba02f05dbb3f76051",
+      "0609170d7b757d04cbb0cd32e8c672cd1940dc6b30a747691380e9d3f7de52c6",
+      "22d8964c8ac76e6d0ae3831a13071ddb40cbe4f9a1517e94cf15c31c9f2da0f9",
+      "e1bde086571ae3013141a446af1387e74ac95844d92d676aae9c6cf9dab64eea",
+      "9d542d1998976bd0d8f1576558cb05cadfd56c9e67427061f10dc04e8bc44bda",
+      "4654934630fd147800cbb303c684240a9df53daa0aa81739ea698e3d39a044b6",
+      "7994954996b4ee6b6a6b6532c36bdcf51ea5880798e8c7bb2ea777bb516ede76",
+      "f160a7bf25e9b03611b583ac54441ebf537e43e3ef000ee48fdcf558f163536f",
+      "1bf961f9cbac01989c1eb0e2b544dc3b4788f2df655dc1b99bd19fb85133de40",
+      "246cb6d769723a81aa8f4e0d756fc5f0d6630fb3d97751a5534577d6731b6f37",
+      "35eea9a39ef09ab82e5e458d4137d54c2353f68b93fbc8369fabe412fea2ccab",
+      "9bd6f9a79fc2be683e51ec7abaf35aeac5fa209366faa4d3e27f21be482517fa",
+      "f2b342e003059da48a17cd1b8ef44557ae07c9596f1b667c9806b590ff4c2f2e",
+      "66bdf7ed420bcb747b1145917a50d199a360af54df3cd2d3239ffecef596c7dd",
+      "dec60f3a7b47a6e7d5f4c078a83da051d7f711dfe7d2ae8bc9b2dd2c19859250",
+      "464f8a0a076108677a959a4cc2e452f10f41aaa054fa93b87ce6e0fe83d7259d",
+      "52260fe2987cf93c18c964e2d53a164c4dd04e8cb1770992789eaa566dad5267",
+      "d274aff63b56361a55c0913b1f58aefede3625d3264ed07e1206e0fbac130cf7",
+      "3614770518202363065a81546d9b72454123c61f6cd157788eedebd09b500b22",
+      "acad1a92c52f1951e56ea8eabc529ba759b31498e6f1c30e09074ac559943dbe",
+      "e2767385ae20757cf9027da0da6c18691d398f0acf64018439894fba4441b931",
+      "f802d9364cdbf85e532653027f395684cdc54f16ab11fbf989a0670845cc08f0",
+      "1c66480e7549b51944155fa07345ef2e13d8b3aeb727e86ad84b462f90ce8d66",
+      "3c778c7ead28906a2ff061a9414ec6a17516b9305d6d8f5b5554a447aec27e53",
+      "e1e5abe21029ad133bb762655b16daeda83dcf7ea817f454033a601a0bf88ae4"
+    ],
+    "stiff": [
+      "d57a1bcaa08036eb0ed8cdbbef8d9110fa226592fb4abd2955d54bf1e07c514a",
+      "a91c5e7a644c35d0e57e1db859e6b89f0bfb99a4adebad535325fba02f5d28d8",
+      "24f8a9550f87f5bde4da59d3f598bb5c413cf234c64a8f6001850e984af7f93c",
+      "dcb443de2f3de21b67f8d9e8c781d75ef50bdb03d69ad633cb82e339a7204ad7",
+      "77c850c76641d5a5aca3e1cae3efa775ccf39769299c8e7063423a5f277ecfba",
+      "88d6dbc7001f3deccdf7e7e40a1493b9212ad9d42fac1662f8ae9bb1cee56f9f",
+      "535286927bf49b94f6275b95cf7d5c4d0d61d8b1e266d5897628130778c99f1a",
+      "5330af5c9f6872d8a7801ea04bc361d726c199a8265952fcec315e60b99a048f",
+      "fe3a280f5aad47c3a0d69a3dbeb203bf9bb8a0646c58053ea4b48f6105314397",
+      "720954ace5e84909a8887bdbc871e802363607f9f156455dbe3228661b255832",
+      "90f26065359860decbfcb59b5591b84cfc4552c957597d0daf51e1f107eecd8b",
+      "587dafd301c5ae9ffcf3d96137d8f645e66acb2925994c6607bd2f9e32a0f472",
+      "d8b96d81ef2118b930e4fbd69bf613c9336c6e07037f3ecb15efdbe7e6bd68b5",
+      "b614d6a806e563a8a766a268dc6bd6f761201fe4ce63b079fb48b59360c1cf7b",
+      "4097c717ef213814a3a86eda6da0f7d394d3781f197696e1d4a0b0ec2e453710",
+      "1ca31c5f15cec6ed5bfd131c9007a2ed8ecb87cb49c69c72a9bb245ecac86180",
+      "00f04e4de819fa8dd2a403832ff55e0c41cf5d0e191ff4eaf8c12629f7a240d3",
+      "e4f1ae16fa3bae6c2b50cc62d0eeec4c9a4ce2d6b728d45ed4234f4cd8d92e6e",
+      "d1f67ea302fc824898741e7b49bc60616e8ae4708e7176a2733c7f051ff1c22d",
+      "52875dcf1fe15ba128cf45446a4e85c2a16a5f870ac869e62cc7d324afe961c7",
+      "700eace7536ad02fab99cafe9d8d0567998eb99e71f57aab8914bc0a02c52f5f",
+      "07b6c43d2a6d75223c03c82bb51418f912750174e12c752b31c5c5f3c61eb6fb",
+      "6a36a6825483f848bda2eac83a4555aff05d61ae9fbe07b8389bec1995c948ad",
+      "d0538cd06bfc4cd62e4265e4568438853a2d36b87929ec50ebcefdd2ceda7d11",
+      "ba6ec62645b2976ee812fa178ff32e7821ebeb2f532fb5ac5b3c488b48301aeb",
+      "a91a8d56ebead89ff28657d2e3bb27123a3f3c60cd9b7fe287189d138f6b912f",
+      "663aac7ca214d3a599f2ea2d88a58c0330f4a6ba226a65186a479c4bef9b0309",
+      "7206bbc3692c80d329607f589607806d2261e5e85d0df20884b74de66b94948d",
+      "9bad69a15862f2dc6b6126144ecf069ddde88fc01756cc93f7396a95c01d358b",
+      "b3ecf6806db0607758ffec40e4b0bbfc9e1a954e14eefe134add0812bb27fa48",
+      "993a3b7cf4db847b663871d1f48617d6ae9d10f43b5dbddcef7ccb799751ef76",
+      "672e3f335094d149fdeaa18e2c4b1454b2ffa7e1a2ffe68c374a812ab469e5f9",
+      "f388d139b5e3f03a092a65fe07f21774a4b5770f617810d6006a2362aaf8c4f9",
+      "335d042997c536636dbf931604ad22668f8b1c84a16f9eb0fe778f3e0ebea276",
+      "2d8a0a9910f69b47f4547acc538a86fab2950211519eae57967e950d05550ebb",
+      "255f737cf2107ba2760a4d836ccb0cb73abe14bccf2a0c3800267a55ea3d3b96",
+      "4816c8159e7c70a7d91dd5041d8cf70b99b8385ebc0ac1c441537130b9762c98",
+      "1b6c73457e3c110d88da59dbe2b2cf4b681698174c29851bfc41299e55a4bc0a",
+      "c56f21fd16d62f69e534802d7bd4391d8b0bf233514f3e18403524024bde9a59",
+      "68ad866a5be128672a25408f0f990248e04ed95b5350f0b566d1cddce0d3668f",
+      "93e47dc39339ccd5bfff664dc98f5b53f757e3bc2f837225c29fc0b5daa1ea31",
+      "160c3eec2da8b9abb70847a1cbb9309cd5c7fe4a6139ba3a5891b61a067b38d7",
+      "1c1d78cf57f07760cbf48064c684bade69d708d191e850016b85eb680c800b29",
+      "7cd311318ff77e411a82621b45f610243af38ffc99083136394c4ba852e3c57b",
+      "d9e88e7fb94bc2db0d5b6e9b1457bdd39b827fb9d426feee029fdae664cfc32c",
+      "51352d693489991a573c3384a18e1abfa87491b4c7b089cff1d3d4fa220eb2d8",
+      "70a9dcdb3d270b4b85fb2720cb34f3e26532872263e1793ff8de90f0b10bf553",
+      "fe38ecb05d02044d4994404b8030647d2cf007bd17d0c16e6c438bd2b12d614b",
+      "56d0e8b316dd9b433cb1b2b0d3fc99f183bf02487e7e8ae1e444f34395160251",
+      "104dc056d86d55664d15d5aa51fbb2138d250ad560074fe0137cbd13913eff6a",
+      "890ac247acd54d621e79c07dd2e671a9916f3443031da3008227a02d40488ca4",
+      "4cce604bfc73d2c03fe23b33c3de940affdc267bf19ae377bf766b0d8ab4294a",
+      "525e952dc20ab9a0f2b4e20d80e4df525ab712a0ba009093c45956faeb2f6516",
+      "e631e0603181e8b24581623baee5e91a543f4ac57251e3147435153355ca233d",
+      "43f743d5814be5923666f7afe76602e386a7edc4698e35e46901eb9ab80a6505",
+      "97bf1533a0d49c65a477b07e365cd236da7fe5f55efc6478129c84b3335fdc30",
+      "ff5b6db9a020c58faaaa432cf7127eb1b354cd45f6bc848b8c0281fac61f62c2",
+      "fe158d44fb43f4665b280d42bf855ed09efe0d44ff13d8b79b29d2e30c591661",
+      "1d8a30cf783d785b5431be46662b73e74c13e5a6d9d6ebda7fe2e6f101dac154",
+      "c63758c433e239485685eeefc71c604f16087c9f25042ef5fe95f9278ef023de",
+      "d94279ae8a1cc5531b8369e73fbb69be64b7541c0df303b5abf1b7662ec9897b"
+    ]
+  },
+  "trajectory": {
+    "saved_frames": 61,
+    "vertices_per_frame": 2353,
+    "maximum_vertex_difference_m": 0.03494094861501316,
+    "all_saved_vertex_rms_difference_m": 0.017607385787005943,
+    "maximum_frame_rms_difference_m": 0.019390736541088367,
+    "final_vertex_rms_difference_m": 0.018165216420071812,
+    "identical_coordinate_frames": 1,
+    "by_frame": [
+      {
+        "frame": 0,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 1,
+        "maximum_vertex_difference_m": 0.01152237703611791,
+        "vertex_rms_difference_m": 0.0025311691501078534
+      },
+      {
+        "frame": 2,
+        "maximum_vertex_difference_m": 0.01022653026731095,
+        "vertex_rms_difference_m": 0.005461049316164479
+      },
+      {
+        "frame": 3,
+        "maximum_vertex_difference_m": 0.013745497898127975,
+        "vertex_rms_difference_m": 0.010159464263833096
+      },
+      {
+        "frame": 4,
+        "maximum_vertex_difference_m": 0.01904768792241494,
+        "vertex_rms_difference_m": 0.014364296980210248
+      },
+      {
+        "frame": 5,
+        "maximum_vertex_difference_m": 0.024654554620035355,
+        "vertex_rms_difference_m": 0.017653892795151806
+      },
+      {
+        "frame": 6,
+        "maximum_vertex_difference_m": 0.028202694566173987,
+        "vertex_rms_difference_m": 0.01910557822384358
+      },
+      {
+        "frame": 7,
+        "maximum_vertex_difference_m": 0.02828591326498087,
+        "vertex_rms_difference_m": 0.019390736541088367
+      },
+      {
+        "frame": 8,
+        "maximum_vertex_difference_m": 0.026126421354500894,
+        "vertex_rms_difference_m": 0.01880827101549684
+      },
+      {
+        "frame": 9,
+        "maximum_vertex_difference_m": 0.025431299763178487,
+        "vertex_rms_difference_m": 0.0181528784285406
+      },
+      {
+        "frame": 10,
+        "maximum_vertex_difference_m": 0.024745110496443533,
+        "vertex_rms_difference_m": 0.017224722811088607
+      },
+      {
+        "frame": 11,
+        "maximum_vertex_difference_m": 0.03132481998715617,
+        "vertex_rms_difference_m": 0.017309408891532124
+      },
+      {
+        "frame": 12,
+        "maximum_vertex_difference_m": 0.03192529106058248,
+        "vertex_rms_difference_m": 0.017566560216262458
+      },
+      {
+        "frame": 13,
+        "maximum_vertex_difference_m": 0.02929928536457298,
+        "vertex_rms_difference_m": 0.01775483288238622
+      },
+      {
+        "frame": 14,
+        "maximum_vertex_difference_m": 0.02542758455019581,
+        "vertex_rms_difference_m": 0.01803465116833291
+      },
+      {
+        "frame": 15,
+        "maximum_vertex_difference_m": 0.026898223562627673,
+        "vertex_rms_difference_m": 0.018398291163003892
+      },
+      {
+        "frame": 16,
+        "maximum_vertex_difference_m": 0.029235314245618434,
+        "vertex_rms_difference_m": 0.018868763108097347
+      },
+      {
+        "frame": 17,
+        "maximum_vertex_difference_m": 0.0314112397429486,
+        "vertex_rms_difference_m": 0.01918954574865854
+      },
+      {
+        "frame": 18,
+        "maximum_vertex_difference_m": 0.033315807856668773,
+        "vertex_rms_difference_m": 0.019256341847778972
+      },
+      {
+        "frame": 19,
+        "maximum_vertex_difference_m": 0.03459579317740971,
+        "vertex_rms_difference_m": 0.019098625431114027
+      },
+      {
+        "frame": 20,
+        "maximum_vertex_difference_m": 0.03494094861501316,
+        "vertex_rms_difference_m": 0.018805628503857467
+      },
+      {
+        "frame": 21,
+        "maximum_vertex_difference_m": 0.03425919522161165,
+        "vertex_rms_difference_m": 0.01842068078830044
+      },
+      {
+        "frame": 22,
+        "maximum_vertex_difference_m": 0.03291723888012671,
+        "vertex_rms_difference_m": 0.018038589421317693
+      },
+      {
+        "frame": 23,
+        "maximum_vertex_difference_m": 0.031441374226125134,
+        "vertex_rms_difference_m": 0.0177365132408092
+      },
+      {
+        "frame": 24,
+        "maximum_vertex_difference_m": 0.03025436248205697,
+        "vertex_rms_difference_m": 0.01754485030323378
+      },
+      {
+        "frame": 25,
+        "maximum_vertex_difference_m": 0.029408706372462137,
+        "vertex_rms_difference_m": 0.017478228601771922
+      },
+      {
+        "frame": 26,
+        "maximum_vertex_difference_m": 0.028980442142917853,
+        "vertex_rms_difference_m": 0.017514591050163165
+      },
+      {
+        "frame": 27,
+        "maximum_vertex_difference_m": 0.028885810726343435,
+        "vertex_rms_difference_m": 0.017621973054600826
+      },
+      {
+        "frame": 28,
+        "maximum_vertex_difference_m": 0.029157084179128948,
+        "vertex_rms_difference_m": 0.01777678488553341
+      },
+      {
+        "frame": 29,
+        "maximum_vertex_difference_m": 0.029669864075313756,
+        "vertex_rms_difference_m": 0.01794885830455985
+      },
+      {
+        "frame": 30,
+        "maximum_vertex_difference_m": 0.03036065336332064,
+        "vertex_rms_difference_m": 0.018109036307308073
+      },
+      {
+        "frame": 31,
+        "maximum_vertex_difference_m": 0.03106542075705174,
+        "vertex_rms_difference_m": 0.018235836853583494
+      },
+      {
+        "frame": 32,
+        "maximum_vertex_difference_m": 0.03167576856034782,
+        "vertex_rms_difference_m": 0.01831935738781835
+      },
+      {
+        "frame": 33,
+        "maximum_vertex_difference_m": 0.032122444300727554,
+        "vertex_rms_difference_m": 0.018360396788985343
+      },
+      {
+        "frame": 34,
+        "maximum_vertex_difference_m": 0.032388554142827715,
+        "vertex_rms_difference_m": 0.018366356596807562
+      },
+      {
+        "frame": 35,
+        "maximum_vertex_difference_m": 0.032498695766423114,
+        "vertex_rms_difference_m": 0.018346634340907598
+      },
+      {
+        "frame": 36,
+        "maximum_vertex_difference_m": 0.03249307912644367,
+        "vertex_rms_difference_m": 0.018311536982698124
+      },
+      {
+        "frame": 37,
+        "maximum_vertex_difference_m": 0.03242244271046112,
+        "vertex_rms_difference_m": 0.018271690280237833
+      },
+      {
+        "frame": 38,
+        "maximum_vertex_difference_m": 0.03234343787677066,
+        "vertex_rms_difference_m": 0.018236020661172383
+      },
+      {
+        "frame": 39,
+        "maximum_vertex_difference_m": 0.03224442321324664,
+        "vertex_rms_difference_m": 0.018209907102282773
+      },
+      {
+        "frame": 40,
+        "maximum_vertex_difference_m": 0.032147175466860405,
+        "vertex_rms_difference_m": 0.01819485361275391
+      },
+      {
+        "frame": 41,
+        "maximum_vertex_difference_m": 0.032060360424000574,
+        "vertex_rms_difference_m": 0.018189666271438185
+      },
+      {
+        "frame": 42,
+        "maximum_vertex_difference_m": 0.03199233322487784,
+        "vertex_rms_difference_m": 0.01819161440266255
+      },
+      {
+        "frame": 43,
+        "maximum_vertex_difference_m": 0.03194400773147779,
+        "vertex_rms_difference_m": 0.01819748380470714
+      },
+      {
+        "frame": 44,
+        "maximum_vertex_difference_m": 0.031906115586769875,
+        "vertex_rms_difference_m": 0.018204140189204427
+      },
+      {
+        "frame": 45,
+        "maximum_vertex_difference_m": 0.03188032401251979,
+        "vertex_rms_difference_m": 0.018209105899989392
+      },
+      {
+        "frame": 46,
+        "maximum_vertex_difference_m": 0.031870614329786,
+        "vertex_rms_difference_m": 0.018210976586153012
+      },
+      {
+        "frame": 47,
+        "maximum_vertex_difference_m": 0.031854120731382406,
+        "vertex_rms_difference_m": 0.018209424259440134
+      },
+      {
+        "frame": 48,
+        "maximum_vertex_difference_m": 0.03183188114502461,
+        "vertex_rms_difference_m": 0.018204848225083767
+      },
+      {
+        "frame": 49,
+        "maximum_vertex_difference_m": 0.03180761176438732,
+        "vertex_rms_difference_m": 0.018198100546120425
+      },
+      {
+        "frame": 50,
+        "maximum_vertex_difference_m": 0.03178634577606275,
+        "vertex_rms_difference_m": 0.018190330246362234
+      },
+      {
+        "frame": 51,
+        "maximum_vertex_difference_m": 0.031772398131146844,
+        "vertex_rms_difference_m": 0.018182662612438377
+      },
+      {
+        "frame": 52,
+        "maximum_vertex_difference_m": 0.03176819112956952,
+        "vertex_rms_difference_m": 0.018175770563669324
+      },
+      {
+        "frame": 53,
+        "maximum_vertex_difference_m": 0.03177148943922829,
+        "vertex_rms_difference_m": 0.018169736961080072
+      },
+      {
+        "frame": 54,
+        "maximum_vertex_difference_m": 0.03177967359553412,
+        "vertex_rms_difference_m": 0.018164787857868625
+      },
+      {
+        "frame": 55,
+        "maximum_vertex_difference_m": 0.03179101443283301,
+        "vertex_rms_difference_m": 0.018161219344083036
+      },
+      {
+        "frame": 56,
+        "maximum_vertex_difference_m": 0.03180425492607298,
+        "vertex_rms_difference_m": 0.018159143728123543
+      },
+      {
+        "frame": 57,
+        "maximum_vertex_difference_m": 0.03181831230880058,
+        "vertex_rms_difference_m": 0.018158599543461953
+      },
+      {
+        "frame": 58,
+        "maximum_vertex_difference_m": 0.03183282862503574,
+        "vertex_rms_difference_m": 0.018159373623003124
+      },
+      {
+        "frame": 59,
+        "maximum_vertex_difference_m": 0.031848635429172004,
+        "vertex_rms_difference_m": 0.01816144639934264
+      },
+      {
+        "frame": 60,
+        "maximum_vertex_difference_m": 0.031865482151967314,
+        "vertex_rms_difference_m": 0.018165216420071812
+      }
+    ],
+    "scope": "All saved vertex coordinates only; numerical equality is distinct from raw-byte equality. No tolerance or broad repeatability/physical acceptance is inferred."
+  },
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 112.74796208099997,
+    "remaining_children": 0
+  },
+  "limits": [
+    "One pair per requested environment on separate hosts does not isolate causal thread effects.",
+    "Young is a normalized solver parameter, not a calibrated physical fabric; this cohort supplies no population tolerance.",
+    "Endpoint collar/shirt threshold counts include stitched neighborhoods and do not reproduce native contact-policy filtering; final snapshots/secants do not establish continuous contact or instantaneous velocity.",
+    "No settling, seam-quality, physical fit or backend adoption acceptance."
+  ]
+}

@@ -1,13 +1,45 @@
 # Declared canonical-mesh material cohort — #290
 
-## Intended outcome and question
+## Outcome and fixed protocol
 
-Credible garment material response requires the same garment/body/rest/inertia/seams and a repeatable solver. The canonical-mesh same-material experiment reproduced four one-second trajectories, but it did not compare two materials. This bounded follow-through runs normalized Young500/2000 on two recorded requested1/4-thread environments under the same exact research patch. It is normalized parameter response, not measured fabric calibration or a shipping-backend decision.
+The repaired Young500/2000 cohort completes both materials on two recorded requested1/4-thread environments. All61saved frames per material are byte-identical across these two observed hosts. Soft500 also matches all61frames of the frozen canonical500 control. The materials have different motion: maximum saved-vertex difference34.941mm, whole-trajectory RMS17.607mm, final vertex RMS18.165mm. This is bounded normalized parameter response for one synthetic garment/preparation/body, not measured fabric calibration, a population tolerance or a shipping-backend decision.
 
-## Fixed protocol
+Native [run39241347732](https://github.com/twangyal/projects-monorepo/actions/runs/39241347732) at `a340f5d18ac5b2b7eaf50eb0c73d750fe2fd7907` passes both jobs. The exact three-token research patch, upstream revision, original/modified mesh source, patch and complete upstream diff are verified independently. The workflow records the actual executable digest; replay does not retain/rebuild that executable. The shipping browser solver is unchanged.
 
-Use unchanged `garment_native_probe.py` ordinary soft/stiff cases, cleared warm preparation, browser inertia, normal stitches and contacts,60intervals/61saved frames, fresh per-job cache and the existing300-second supervisor. The dedicated workflow retains the same exact patch/base/patched-source/diff/build provenance as the canonical control, complete logs and outputs even after failure, thread requests, CPU/affinity and resolved dependencies. Each job has a25-minute outer bound. Separate hosts do not isolate causal thread effects; thread values are requests, not measured worker counts.
+The ordinary `soft`/`stiff` cases use cleared warm preparation, browser inertia, normal stitches/contacts,60intervals/61saved frames, fresh per-job caches and the existing300-second whole-pair supervisor. Rest, body, seams, object/session controls and native input bytes match the frozen original one-second experiment. Only `param/tri-young-mod.bin` differs within each pair. Both jobs report no remaining child processes; supervisor wall times are112.748/100.079seconds. Separate hosts and one pair/profile do not isolate causal thread effects; thread values are requests, not measured worker counts or a performance comparison.
 
-Independent replay must rebuild preparation/inertia, verify exact source hashes and exported bytes, require only `param/tri-young-mod.bin` to differ within each material pair, verify all61native frames/timing/initial values/completion/mass/cleanup, and compute whole-trajectory and endpoint diagnostics. Compare each material across jobs, and compare the soft case with the frozen canonical500 control. Freeze full archives with official digests; never overwrite original unpatched or same-material observations. Do not invent a response or settling tolerance after observing results. Preserve failures without calling them complete motion.
+## Retained evidence
 
-Dedicated source branch: `autonomous/clothing-ppf-canonical-material-290`. Native [run39241347732](https://github.com/twangyal/projects-monorepo/actions/runs/39241347732) passes on both requested environments. Independent replay verifies446nativefiles/archive and all61saved frames/case. Only `param/tri-young-mod.bin` differs within each pair; all61frames per material are byte-identical across the two observed hosts, and soft500 matches the previous canonical500 control. Young500/2000 differ by34.941mm maximum saved-vertex distance,17.607mm whole-trajectory RMS and18.165mm final RMS. Three archive tests pass, including10 re-signed semantic counterexamples and refusal of unpatched/same-material evidence. Full archives and final independent replay will be retained with the integration record. If this gate succeeds, the next question is whether a longer observation preserves the common prefix and shows continued relaxation/construction quality. Bounded saved motion alone does not establish sustained settling, continuous contact, physical fit or calibrated fabric.
+| Requested environment | Native artifact | Bytes | SHA-256 | Replay |
+| --- | --- | --- | --- | --- |
+| 1 | [12182450858](https://github.com/twangyal/projects-monorepo/actions/runs/39241347732/artifacts/12182450858) / [full ZIP](results/garment-material-one.zip) | 6,878,193 | `e41f7f362b46440f1d218398fae5e5a74be500f0af546c04a35e3dc248d960a9` | [JSON](results/garment-material-one-replay.json) |
+| 4 | [12182535783](https://github.com/twangyal/projects-monorepo/actions/runs/39241347732/artifacts/12182535783) / [full ZIP](results/garment-material-four.zip) | 6,876,068 | `adb968450a6e82b26dd50601c6bfcb282ac12c71f279b054af6f9d4860ba1818` | [JSON](results/garment-material-four-replay.json) |
+
+Each archive retains446verified native files and122raw vertex frames, plus full source/build/dependency/CPU/affinity/thread/provenance records. All native float32 coordinates, initial values, timing, completion, captured mass, commands, sidecars and process cleanup are independently admitted. Original unpatched and same-material archives remain unchanged. Three targeted archive tests pass, including10re-signed semantic counterexamples and refusal of unpatched/same-material evidence.
+
+```sh
+python3 docs/research/ppf-cpu/garment_material_cohort_audit.py docs/research/ppf-cpu/results/garment-material-one.zip --profile one
+python3 docs/research/ppf-cpu/garment_material_cohort_audit.py docs/research/ppf-cpu/results/garment-material-four.zip --profile four
+python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_material_cohort_audit.py
+```
+
+## One-second diagnostics
+
+Both environments produce exactly the same saved geometry and diagnostics:
+
+| Final saved observation | Young500 | Young2000 |
+| --- | --- | --- |
+| Maximum absolute intrinsic-edge strain | 31.1633% | 19.0058% |
+| Maximum stitch gap | 1.421796mm | 1.442314mm |
+| Last saved-interval RMS secant speed | 0.890877mm/s | 1.628431mm/s |
+| Last saved-interval maximum secant speed | 5.129654mm/s | 30.571204mm/s |
+| Cloth/body triangle threshold violations at3.5mm | 0 | 0 |
+| Collar/shirt threshold violations at0.5mm | 0 | 0 |
+
+Threshold results apply only to that final saved snapshot. Collar/shirt queries include stitched neighborhoods and do not reproduce native contact-policy filtering; neither query establishes full cloth self-contact, inside/outside correctness or continuous-time safety. High intrinsic strain and the declared detached-collar initialization remain construction/calibration questions. Low final saved secants alone do not establish sustained settling or instantaneous velocity.
+
+![Exact initial and one-second native triangle geometry](results/garment-material-one.png)
+
+The projection uses the retained blueprint and raw saved coordinates, with a common scale and triangle-depth ordering; it is illustrative, not a contact/fit test. To reproduce it, install optional NumPy/Matplotlib and run `python3 docs/research/ppf-cpu/render_garment_snapshot.py docs/research/ppf-cpu/results/garment-material-one.zip /tmp/material.png --frames 0 60`. Independent replay/tests remain standard-library-only.
+
+The prerequisite for the [explicit three-second observation](GARMENT_DURATION_STUDY.md) is now met. That study changes only the admitted frame limit, preserves the300-second pair supervisor, and tests the shared first-second prefix and subsequent motion windows. Broader repetitions, representative garments/bodies, construction quality, timestep/resolution sensitivity and independent physical references remain open in #290. Clothing stays ACTIVE; project #8 remains skipped.
