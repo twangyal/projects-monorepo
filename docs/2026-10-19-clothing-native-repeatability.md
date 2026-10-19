@@ -10,7 +10,7 @@ Source `650535a031badf8a6ea33f9f0dea8c819b5aeb11` runs two fresh same-material s
 
 Independent review demonstrated and helped close a re-signed dynamic-sidecar mutation gap. Replay now rejects unknown session sidecars, changed invocation/environment/rest/source, incomplete final frames, changed timing and completion. Whole-trajectory comparison refuses incomplete/nonfinite coordinate namespaces. Archive SHA-256 values match official GitHub artifact digests.
 
-Evidence commit `f7ca4cfbcae3338e1e45eca56ffe277392f7bd09` is integrated into main. Local 129 research regressions pass in 154.083 s. Main verification: [research 129](https://github.com/twangyal/projects-monorepo/actions/runs/39205008491), [garment 67](https://github.com/twangyal/projects-monorepo/actions/runs/39205008497), [application 161 unit/195 browser](https://github.com/twangyal/projects-monorepo/actions/runs/39205008538), all passed.
+Evidence commit `f7ca4cfbcae3338e1e45eca56ffe277392f7bd09` is integrated into main. Local 129 research regressions pass in 154.083 s. Main verification: [research 129](https://github.com/twangyal/projects-monorepo/actions/runs/39205008491), [garment 72](https://github.com/twangyal/projects-monorepo/actions/runs/39205008497), [application 161 unit/195 browser](https://github.com/twangyal/projects-monorepo/actions/runs/39205008538), all passed.
 
 ## Source-grounded ordering diagnostic and research-only repair
 
@@ -29,3 +29,5 @@ The repaired Rust/native outcomes and independent replay establish this bounded 
 ## Final integration validation
 
 All 136 research regressions pass locally in 195.844 seconds. After adding explicit golden assertions for the observed canonical 61/61 raw-frame equality and zero coordinate difference, all three canonical archive/provenance tests pass again in 15.708 seconds. The matrix reproduction command completes successfully, re-auditing both archives before comparison. Independent review rechecked both official archive hashes and all 244 saved-frame hashes, and found no blocker. Exact local/remote tree equality and clean staged diff checks precede integration. Final main CI status is recorded in #290; the earlier main f7ca4cf verification above remains separately identified.
+
+Implementation commit `ea1ed9d74b732bb280861a16361aae0637b00714` passes final main [research CI: 136 tests in 280.858 seconds](https://github.com/twangyal/projects-monorepo/actions/runs/39206857553) and [garment preflight: 79 tests in 263.038 seconds](https://github.com/twangyal/projects-monorepo/actions/runs/39206857569), including packet/warm/rest/body reproduction. The [application CI result](https://github.com/twangyal/projects-monorepo/actions/runs/39206857542) is recorded in #290. The original f7ca4cf garment preflight count above is 72; the 67-test count applies to the earlier controls source650535a.
