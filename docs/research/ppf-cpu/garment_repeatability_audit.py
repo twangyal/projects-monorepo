@@ -31,7 +31,7 @@ from garment_endpoint_diagnostics import endpoint_diagnostics
 
 COMMAND='#!/bin/bash\nSOLVER_PATH="/home/runner/work/projects-monorepo/projects-monorepo/upstream/target/cpu/release/ppf-contact-solver"\n\nif [ ! -f "$SOLVER_PATH" ]; then\n    echo "Error: Solver does not exist at $SOLVER_PATH" >&2\n    exit 1\nfi\n\n"$SOLVER_PATH" --path "/home/runner/work/projects-monorepo/projects-monorepo/ppf-native-cache/sessions/cpu-garment-CASE_NAME/session" --output "/home/runner/work/projects-monorepo/projects-monorepo/ppf-native-cache/sessions/cpu-garment-CASE_NAME/session/output" "$@"\n'
 PROFILES={'one':('17f70fb343db69a176c27262e78566d60090fe65ccdb5c62c9b72d253bcc82a8',1,12164672367),'four':('d29bff83e39b5bb5031f15d2a3d0e8beb6f8b61e23f879ae45e8935808180d0d',4,12164054710)}
-PATCHED_PROFILES={} # Populated only after actual native archives are retained and hashed.
+PATCHED_PROFILES={'canonical-one':('694137f6ba4e64d4ef7412b9a114f41b753ea5c686555aae827b5b5b8ba5c23c',1,12165876515),'canonical-four':('becd330d2d7945a61f2c33fb680078d140699dc15818327f0480528ee9c7603b',4,12166106392)}
 THREAD_VARIABLES=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
 @cache
 def prepared_inputs():return rebuild(Path(__file__).with_name('results'))

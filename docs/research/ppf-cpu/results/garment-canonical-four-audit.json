@@ -1,0 +1,610 @@
+{
+  "archive_sha256": "becd330d2d7945a61f2c33fb680078d140699dc15818327f0480528ee9c7603b",
+  "archive_bytes": 6878605,
+  "artifact_id": 12166106392,
+  "source_commit": "d56b1d61faa95b557fd61274db51c5d619ca367b",
+  "run_url": "https://github.com/twangyal/projects-monorepo/actions/runs/39205289113",
+  "research_patch": {
+    "schema": 1,
+    "experiment": "canonical-derived-mesh-order-v1",
+    "upstream_revision": "6b30976f86e6b94d68d459e5237d59704c7d1384",
+    "source_path": "crates/ppf-cts-solver/src/mesh.rs",
+    "base_mesh_sha256": "17361cfee9af9f686b9c929fc59db4ec014412fccd3409a51b0298c1daef490f",
+    "patched_mesh_sha256": "29ba8fa8ef9e45a4ba8c323d644aed557939afab1f0d74bbb4bc8aa93f89be50",
+    "patch_sha256": "b816533c4ff05fda40f32ae9c223aa1212b184a691c0ea0244526f8bb1caaafa",
+    "scope": "Research-only ordered edge/hinge maps. Changes derived element/accumulation order; no physical equivalence, broad determinism or backend adoption acceptance.",
+    "recorded_native_executable_sha256": "1fc9623761c2e18792b8a98554a9332b209fa83b4cd6c0b48ca7f3e1d16257fd",
+    "scope_of_executable_digest": "Recorded CI executable digest; executable bytes are not retained or independently rebuilt by replay."
+  },
+  "native_files_verified": 446,
+  "identical_native_input_bytes": true,
+  "original_soft_reference_inputs_identical": true,
+  "requested_execution_settings": {
+    "requested_threads": 4,
+    "variables": {
+      "RAYON_NUM_THREADS": "4",
+      "OMP_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "NUMEXPR_NUM_THREADS": "4"
+    },
+    "scope": "Requested inherited environment, not a measurement of actual native worker counts."
+  },
+  "host": {
+    "variables": {
+      "RAYON_NUM_THREADS": "4",
+      "OMP_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "NUMEXPR_NUM_THREADS": "4"
+    },
+    "logical_cpu_count": 4,
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "cases": {
+    "first": {
+      "raw_frames": 61,
+      "motion_frames": 60,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 61,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.301091795985057,
+        "final_vertex_rms_displacement_m": 0.04090440391703678,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.34894174071951034,
+        "final_maximum_absolute_edge_strain": 0.3116329318534876,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014217963772019302,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      },
+      "endpoint": {
+        "last_saved_interval_secant_speed": {
+          "maximum_m_s": 0.005129654316685602,
+          "rms_m_s": 0.000890876735230423
+        },
+        "cloth_body_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0034999999999999996,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0034999999999999996,
+          "tested_triangle_pairs": 58736,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        },
+        "collar_shirt_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0005,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0005,
+          "tested_triangle_pairs": 148,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        }
+      }
+    },
+    "second": {
+      "raw_frames": 61,
+      "motion_frames": 60,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 61,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.301091795985057,
+        "final_vertex_rms_displacement_m": 0.04090440391703678,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.34894174071951034,
+        "final_maximum_absolute_edge_strain": 0.3116329318534876,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014217963772019302,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      },
+      "endpoint": {
+        "last_saved_interval_secant_speed": {
+          "maximum_m_s": 0.005129654316685602,
+          "rms_m_s": 0.000890876735230423
+        },
+        "cloth_body_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0034999999999999996,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0034999999999999996,
+          "tested_triangle_pairs": 58736,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        },
+        "collar_shirt_surface": {
+          "method": "float32-triangle-surface-distance-spatial-hash-v1",
+          "required_clearance_m": 0.0005,
+          "violations": 0,
+          "minimum_separation_m": null,
+          "clearance_lower_bound_m": 0.0005,
+          "tested_triangle_pairs": 148,
+          "witness": null,
+          "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+        }
+      }
+    }
+  },
+  "identical_raw_frames": 61,
+  "raw_frame_sha256": {
+    "first": [
+      "d57a1bcaa08036eb0ed8cdbbef8d9110fa226592fb4abd2955d54bf1e07c514a",
+      "72b90f08afc85bd41c1dc6d2da1303577f96f980d2f772cb5e52de97142544f2",
+      "2a7cd2d630d517724e584075031fafd50e0c5c4bf710a63ed70a7910ff07668c",
+      "f0b8b1553cddf570b1324db86d9b0fc8b093159351f46cebe46f5521af7b8352",
+      "30341423cd3c98f812fa875701f452e17c56ac001d7cab863ae39877792ef9ef",
+      "05b3e45721a891847aa16117c134ee4f1406ac7ac940ea3016fc810f4aecaca3",
+      "809748d023724b70f03bd0b24a9c9ebc31b6f869b0820b4a3be7ec573d9f61bd",
+      "26ac00f937c40f9f6e61d9096b424904b89b79b997a3c9ba2516a44abe416ec9",
+      "a9a3c7608b062b71716bbec78afcf40b0c6765238e5cb26593cd0dd3ea436247",
+      "c79e6b084c95fa363389312de624726993f66dcb97f11e9facb6c75bd9181e54",
+      "5dcde7ad45806250a11b1b1ceb9880628a088ac1b4c8baecf54a0c8ba4aad4d7",
+      "ae77fb6217cc015e050c32bb2620fe8634e08055e3c407a7d228dac7cd2c7160",
+      "73989a23655b7a8343c576004c16543a06b3279f424ec83a59e4ebccdcf1941d",
+      "d239682bc30ee1838d2235da4e4729d3f2251e482c3d3a7294d110673bb8cd95",
+      "e12701e295e58c400cae8022acafa07cdc2aabde77816d284aa2ef460b743f85",
+      "b87da74a74aa3bf672665bea4cc74ac0b4ac00b9023debadd6ffa1c3d94c16bf",
+      "6c492308db5e79023dbd761277eb6810154c6a079b5aeec261510da8282c8ae4",
+      "4e8570431eb1e4571b2dd5d3a82af8eddabe7ba4c9ce6c5161729d40e3125d82",
+      "9e38cacbd55859a66b26a6e20fbc03e856649a3f5422a31e18956a98b366caff",
+      "7b55c70a0978f3e171644f85769e488773497f2225d61e7dd47da9afeee4193c",
+      "e15272c23ff71d929553af20adb7ef011a8b964e8d7e9aae19b7f28284f2f80c",
+      "1a7d646e2808d843dec0bddddfc769a2fc1949cb9bf09b439a13e545538a0497",
+      "97482faa260164d5ce538e9aff64c0a08f541f4c621242800e6fbc758732e148",
+      "a1cc33aacf19e080720407e47ff6c5dd30801ee96e3482c6e9cf70ce0dd2a2d1",
+      "d4d8e575dfa5727a32cc0d8f0ca0cd6dfd9c0afd14ef1ab86ddf661d8361c9e9",
+      "a293d301bc17b457edf70c5ac32cc0ddbab40594e917d8f2a92b3719ac863f19",
+      "e29c5601e27a552eb7137a2664e2c1acb615e39370757ca8af572eeb3e559237",
+      "d8013fbc2b56f349955631819af41223ed2d9f6367d134a5f285f80184d30dd8",
+      "c7a5c09afe57941cf2330729bd03abdf57948a1cea1ef0a19423c8b591059c66",
+      "eb4c27f9d00f9b70eba930f18f6554c711de462d7fbfd3f63ae25af8307f8699",
+      "b6c05e9636ca9b17c4bf1debae4995fa7a1322db15af89a027ea38437340b224",
+      "632fb8f3efb73fd7c955889caa24a90777110f5d0cc51b1af9ddc921c8a6a254",
+      "aab6d0183207444da0256d8f3e365ec6c438f725326ae91ac0764b0f2043d86f",
+      "9ac89750c45590d7b714a5dc379f34f1c89549cbdae171742a64bfcd793f2884",
+      "49a2d488eeb0bd127b8e37ca819dcd68bafd0a3b1db238871de004d49441478a",
+      "d20b436a0267b62a1a41e5217a6e09b9ac975eccb5483d58c60c8d195255f2fc",
+      "ce95cefce1e95461a5234080d26cd5adebd0012ec285ea1ba02f05dbb3f76051",
+      "0609170d7b757d04cbb0cd32e8c672cd1940dc6b30a747691380e9d3f7de52c6",
+      "22d8964c8ac76e6d0ae3831a13071ddb40cbe4f9a1517e94cf15c31c9f2da0f9",
+      "e1bde086571ae3013141a446af1387e74ac95844d92d676aae9c6cf9dab64eea",
+      "9d542d1998976bd0d8f1576558cb05cadfd56c9e67427061f10dc04e8bc44bda",
+      "4654934630fd147800cbb303c684240a9df53daa0aa81739ea698e3d39a044b6",
+      "7994954996b4ee6b6a6b6532c36bdcf51ea5880798e8c7bb2ea777bb516ede76",
+      "f160a7bf25e9b03611b583ac54441ebf537e43e3ef000ee48fdcf558f163536f",
+      "1bf961f9cbac01989c1eb0e2b544dc3b4788f2df655dc1b99bd19fb85133de40",
+      "246cb6d769723a81aa8f4e0d756fc5f0d6630fb3d97751a5534577d6731b6f37",
+      "35eea9a39ef09ab82e5e458d4137d54c2353f68b93fbc8369fabe412fea2ccab",
+      "9bd6f9a79fc2be683e51ec7abaf35aeac5fa209366faa4d3e27f21be482517fa",
+      "f2b342e003059da48a17cd1b8ef44557ae07c9596f1b667c9806b590ff4c2f2e",
+      "66bdf7ed420bcb747b1145917a50d199a360af54df3cd2d3239ffecef596c7dd",
+      "dec60f3a7b47a6e7d5f4c078a83da051d7f711dfe7d2ae8bc9b2dd2c19859250",
+      "464f8a0a076108677a959a4cc2e452f10f41aaa054fa93b87ce6e0fe83d7259d",
+      "52260fe2987cf93c18c964e2d53a164c4dd04e8cb1770992789eaa566dad5267",
+      "d274aff63b56361a55c0913b1f58aefede3625d3264ed07e1206e0fbac130cf7",
+      "3614770518202363065a81546d9b72454123c61f6cd157788eedebd09b500b22",
+      "acad1a92c52f1951e56ea8eabc529ba759b31498e6f1c30e09074ac559943dbe",
+      "e2767385ae20757cf9027da0da6c18691d398f0acf64018439894fba4441b931",
+      "f802d9364cdbf85e532653027f395684cdc54f16ab11fbf989a0670845cc08f0",
+      "1c66480e7549b51944155fa07345ef2e13d8b3aeb727e86ad84b462f90ce8d66",
+      "3c778c7ead28906a2ff061a9414ec6a17516b9305d6d8f5b5554a447aec27e53",
+      "e1e5abe21029ad133bb762655b16daeda83dcf7ea817f454033a601a0bf88ae4"
+    ],
+    "second": [
+      "d57a1bcaa08036eb0ed8cdbbef8d9110fa226592fb4abd2955d54bf1e07c514a",
+      "72b90f08afc85bd41c1dc6d2da1303577f96f980d2f772cb5e52de97142544f2",
+      "2a7cd2d630d517724e584075031fafd50e0c5c4bf710a63ed70a7910ff07668c",
+      "f0b8b1553cddf570b1324db86d9b0fc8b093159351f46cebe46f5521af7b8352",
+      "30341423cd3c98f812fa875701f452e17c56ac001d7cab863ae39877792ef9ef",
+      "05b3e45721a891847aa16117c134ee4f1406ac7ac940ea3016fc810f4aecaca3",
+      "809748d023724b70f03bd0b24a9c9ebc31b6f869b0820b4a3be7ec573d9f61bd",
+      "26ac00f937c40f9f6e61d9096b424904b89b79b997a3c9ba2516a44abe416ec9",
+      "a9a3c7608b062b71716bbec78afcf40b0c6765238e5cb26593cd0dd3ea436247",
+      "c79e6b084c95fa363389312de624726993f66dcb97f11e9facb6c75bd9181e54",
+      "5dcde7ad45806250a11b1b1ceb9880628a088ac1b4c8baecf54a0c8ba4aad4d7",
+      "ae77fb6217cc015e050c32bb2620fe8634e08055e3c407a7d228dac7cd2c7160",
+      "73989a23655b7a8343c576004c16543a06b3279f424ec83a59e4ebccdcf1941d",
+      "d239682bc30ee1838d2235da4e4729d3f2251e482c3d3a7294d110673bb8cd95",
+      "e12701e295e58c400cae8022acafa07cdc2aabde77816d284aa2ef460b743f85",
+      "b87da74a74aa3bf672665bea4cc74ac0b4ac00b9023debadd6ffa1c3d94c16bf",
+      "6c492308db5e79023dbd761277eb6810154c6a079b5aeec261510da8282c8ae4",
+      "4e8570431eb1e4571b2dd5d3a82af8eddabe7ba4c9ce6c5161729d40e3125d82",
+      "9e38cacbd55859a66b26a6e20fbc03e856649a3f5422a31e18956a98b366caff",
+      "7b55c70a0978f3e171644f85769e488773497f2225d61e7dd47da9afeee4193c",
+      "e15272c23ff71d929553af20adb7ef011a8b964e8d7e9aae19b7f28284f2f80c",
+      "1a7d646e2808d843dec0bddddfc769a2fc1949cb9bf09b439a13e545538a0497",
+      "97482faa260164d5ce538e9aff64c0a08f541f4c621242800e6fbc758732e148",
+      "a1cc33aacf19e080720407e47ff6c5dd30801ee96e3482c6e9cf70ce0dd2a2d1",
+      "d4d8e575dfa5727a32cc0d8f0ca0cd6dfd9c0afd14ef1ab86ddf661d8361c9e9",
+      "a293d301bc17b457edf70c5ac32cc0ddbab40594e917d8f2a92b3719ac863f19",
+      "e29c5601e27a552eb7137a2664e2c1acb615e39370757ca8af572eeb3e559237",
+      "d8013fbc2b56f349955631819af41223ed2d9f6367d134a5f285f80184d30dd8",
+      "c7a5c09afe57941cf2330729bd03abdf57948a1cea1ef0a19423c8b591059c66",
+      "eb4c27f9d00f9b70eba930f18f6554c711de462d7fbfd3f63ae25af8307f8699",
+      "b6c05e9636ca9b17c4bf1debae4995fa7a1322db15af89a027ea38437340b224",
+      "632fb8f3efb73fd7c955889caa24a90777110f5d0cc51b1af9ddc921c8a6a254",
+      "aab6d0183207444da0256d8f3e365ec6c438f725326ae91ac0764b0f2043d86f",
+      "9ac89750c45590d7b714a5dc379f34f1c89549cbdae171742a64bfcd793f2884",
+      "49a2d488eeb0bd127b8e37ca819dcd68bafd0a3b1db238871de004d49441478a",
+      "d20b436a0267b62a1a41e5217a6e09b9ac975eccb5483d58c60c8d195255f2fc",
+      "ce95cefce1e95461a5234080d26cd5adebd0012ec285ea1ba02f05dbb3f76051",
+      "0609170d7b757d04cbb0cd32e8c672cd1940dc6b30a747691380e9d3f7de52c6",
+      "22d8964c8ac76e6d0ae3831a13071ddb40cbe4f9a1517e94cf15c31c9f2da0f9",
+      "e1bde086571ae3013141a446af1387e74ac95844d92d676aae9c6cf9dab64eea",
+      "9d542d1998976bd0d8f1576558cb05cadfd56c9e67427061f10dc04e8bc44bda",
+      "4654934630fd147800cbb303c684240a9df53daa0aa81739ea698e3d39a044b6",
+      "7994954996b4ee6b6a6b6532c36bdcf51ea5880798e8c7bb2ea777bb516ede76",
+      "f160a7bf25e9b03611b583ac54441ebf537e43e3ef000ee48fdcf558f163536f",
+      "1bf961f9cbac01989c1eb0e2b544dc3b4788f2df655dc1b99bd19fb85133de40",
+      "246cb6d769723a81aa8f4e0d756fc5f0d6630fb3d97751a5534577d6731b6f37",
+      "35eea9a39ef09ab82e5e458d4137d54c2353f68b93fbc8369fabe412fea2ccab",
+      "9bd6f9a79fc2be683e51ec7abaf35aeac5fa209366faa4d3e27f21be482517fa",
+      "f2b342e003059da48a17cd1b8ef44557ae07c9596f1b667c9806b590ff4c2f2e",
+      "66bdf7ed420bcb747b1145917a50d199a360af54df3cd2d3239ffecef596c7dd",
+      "dec60f3a7b47a6e7d5f4c078a83da051d7f711dfe7d2ae8bc9b2dd2c19859250",
+      "464f8a0a076108677a959a4cc2e452f10f41aaa054fa93b87ce6e0fe83d7259d",
+      "52260fe2987cf93c18c964e2d53a164c4dd04e8cb1770992789eaa566dad5267",
+      "d274aff63b56361a55c0913b1f58aefede3625d3264ed07e1206e0fbac130cf7",
+      "3614770518202363065a81546d9b72454123c61f6cd157788eedebd09b500b22",
+      "acad1a92c52f1951e56ea8eabc529ba759b31498e6f1c30e09074ac559943dbe",
+      "e2767385ae20757cf9027da0da6c18691d398f0acf64018439894fba4441b931",
+      "f802d9364cdbf85e532653027f395684cdc54f16ab11fbf989a0670845cc08f0",
+      "1c66480e7549b51944155fa07345ef2e13d8b3aeb727e86ad84b462f90ce8d66",
+      "3c778c7ead28906a2ff061a9414ec6a17516b9305d6d8f5b5554a447aec27e53",
+      "e1e5abe21029ad133bb762655b16daeda83dcf7ea817f454033a601a0bf88ae4"
+    ]
+  },
+  "trajectory": {
+    "saved_frames": 61,
+    "vertices_per_frame": 2353,
+    "maximum_vertex_difference_m": 0.0,
+    "all_saved_vertex_rms_difference_m": 0.0,
+    "maximum_frame_rms_difference_m": 0.0,
+    "final_vertex_rms_difference_m": 0.0,
+    "identical_coordinate_frames": 61,
+    "by_frame": [
+      {
+        "frame": 0,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 1,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 2,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 3,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 4,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 5,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 6,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 7,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 8,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 9,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 10,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 11,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 12,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 13,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 14,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 15,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 16,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 17,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 18,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 19,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 20,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 21,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 22,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 23,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 24,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 25,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 26,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 27,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 28,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 29,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 30,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 31,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 32,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 33,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 34,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 35,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 36,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 37,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 38,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 39,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 40,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 41,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 42,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 43,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 44,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 45,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 46,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 47,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 48,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 49,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 50,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 51,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 52,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 53,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 54,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 55,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 56,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 57,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 58,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 59,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      },
+      {
+        "frame": 60,
+        "maximum_vertex_difference_m": 0.0,
+        "vertex_rms_difference_m": 0.0
+      }
+    ],
+    "scope": "All saved vertex coordinates only; numerical equality is distinct from raw-byte equality. No tolerance or broad repeatability/physical acceptance is inferred."
+  },
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 96.30904542600001,
+    "remaining_children": 0
+  },
+  "limits": [
+    "One pair per requested environment on separate hosts does not isolate causal thread effects.",
+    "Nonzero differences are measured variation, not a population tolerance or material discrimination.",
+    "Endpoint collar/shirt threshold counts include stitched neighborhoods and do not reproduce native contact-policy filtering; final snapshots/secants do not establish continuous contact or instantaneous velocity.",
+    "No settling, seam-quality, physical fit or backend adoption acceptance."
+  ]
+}

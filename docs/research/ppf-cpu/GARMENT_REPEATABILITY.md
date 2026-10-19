@@ -43,4 +43,25 @@ python3 docs/research/ppf-cpu/garment_repeatability_audit.py docs/research/ppf-c
 python3 -m unittest discover -s docs/research/ppf-cpu -p 'test_garment_repeatability*.py'
 ```
 
-A separate [test-only mesh-order diagnostic](GARMENT_MESH_ORDER.md) tests the pinned source's unordered edge/hinge emission. It does not modify these baseline runs, prove their cause or authorize backend adoption. Next work is to establish the ordering behavior experimentally, then evaluate any declared research-only repair against the frozen baselines before broader garments/bodies or sustained settling.
+A separate [test-only mesh-order diagnostic](GARMENT_MESH_ORDER.md) tests the pinned source's unordered edge/hinge emission. It does not modify these baseline runs, prove their cause or authorize backend adoption. The declared repair experiment below establishes bounded saved-trajectory equality while preserving the original baselines.
+
+## Declared canonical mesh-order experiment
+
+The exact research patch passed the actual Rust RED→GREEN gate: both original ordering assertions fail, then all five repaired ordering/existing semantic tests pass. In [native run 39205289113](https://github.com/twangyal/projects-monorepo/actions/runs/39205289113), source `d56b1d61faa95b557fd61274db51c5d619ca367b`, both patched pairs complete with the same physical inputs/reference bytes and strict controls as the original experiment. The two archives retain another 244 real frames and 892 verified native files. Independent replay requires the exact patch receipt, original/patched source bytes, canonical diff, independently reconstructed upstream diff and recorded executable digest; the original-backend profiles refuse a declared research patch.
+
+| Declared repair environment | Byte-identical paired frames | Maximum saved-vertex difference | All-saved vertex RMS |
+| --- | ---: | ---: | ---: |
+| Requested one thread | 61 / 61 | 0 mm | 0 mm |
+| Requested four threads | 61 / 61 | 0 mm | 0 mm |
+
+All four saved trajectories also match byte for byte across the two hosts, at every saved frame. The [matrix report](results/garment-canonical-matrix-audit.json) records cross-profile coordinate metrics and both recorded executable digests (which match). This is four sessions of one prepared garment/material over one second, not broad determinism, a population tolerance, calibrated material response, sustained settling or physical-fit acceptance. The small final interval speed (0.891 mm/s RMS) and final maximum seam gap (1.422 mm) remain bounded diagnostics. No shipping solver changes or backend adoption follow.
+
+Frozen [canonical-one archive](results/garment-canonical-one.zip): 6,879,485 bytes, SHA-256 `694137f6ba4e64d4ef7412b9a114f41b753ea5c686555aae827b5b5b8ba5c23c`, artifact 12165876515. Frozen [canonical-four archive](results/garment-canonical-four.zip): 6,878,605 bytes, SHA-256 `becd330d2d7945a61f2c33fb680078d140699dc15818327f0480528ee9c7603b`, artifact 12166106392. Both match official GitHub artifact digests. Matching `*-audit.json` reports retain every raw-frame digest and endpoint/strain/seam metrics. Executable hashes are recorded CI digests; replay does not independently rebuild or retain those executables.
+
+```sh
+python3 docs/research/ppf-cpu/garment_repeatability_audit.py docs/research/ppf-cpu/results/garment-canonical-one.zip --profile canonical-one
+python3 docs/research/ppf-cpu/garment_repeatability_audit.py docs/research/ppf-cpu/results/garment-canonical-four.zip --profile canonical-four
+python3 docs/research/ppf-cpu/garment_repeatability_matrix.py
+```
+
+The matrix command re-audits both complete archives before comparing all four trajectories. The next gate is a controlled two-material comparison under the declared repair, followed by sustained settling/construction quality, representative garments/bodies and corresponding physical references. The unpatched material observations remain preserved and are not relabeled as patched evidence.
