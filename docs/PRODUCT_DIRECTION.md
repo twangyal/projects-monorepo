@@ -194,6 +194,12 @@ The research path now captures the actual fixed tee’s complete SI geometry/res
 
 Named top-body measurement profiles now provide explicit local Save, selection preview, deliberate Use, update/rename, confirmed delete and separate JSON backup/import. Body drafts and current garments are retained on refusal; using a profile follows actual worker/comparison/export geometry and retires old work. Reload/new concepts do not apply a profile automatically. This is a reuse workflow for the existing approximate body, not anatomical reconstruction or calibrated fit. [Workflow and verification](../apps/clothing-studio/docs/2026-10-17-top-body-profiles.md) records passing local production/source/main156-unit/195-browser gates; [the integration record](2026-10-17-clothing-body-profiles-integration.md) tracks canonical main acceptance. Clothing remains ACTIVE.
 
+### Native garment material and construction follow-through — 2026-10-19 (#290)
+
+The repaired native candidate now retains a controlled Young500/2000 one-second comparison with per-material61-frame identity across the observed requested environments. The [three-second serial-pair study](research/ppf-cpu/GARMENT_DURATION_STUDY.md) completes both cases on the requested-four host but times out at the unchanged300-second limit on the requested-one host (soft181/stiff168frames). This remains native failure. [Separate fixed-material sessions](research/ppf-cpu/GARMENT_FIXED_MATERIAL_STUDY.md) are an explicitly different pending execution protocol; no unexecuted outcome is accepted.
+
+[Construction localization](research/ppf-cpu/GARMENT_CONSTRUCTION_DIAGNOSTICS.md) traces the existing full pair's peak positive extension to a shared underarm edge, with per-part distributions, original triangle/edge provenance and seam gaps. This makes the next construction investigation specific without treating low residual motion as low strain or physical acceptance. Representative garment/body coverage, physical references, calibrated fit and shipping-engine adoption remain open; Clothing stays ACTIVE.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.

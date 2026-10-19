@@ -18,4 +18,12 @@ This stage does not establish calibrated fabrics, sustained settling, physical f
 
 ## Outcome
 
-Pending actual native execution. No result is claimed by the admission tests or source review.
+[Native run39283037590](https://github.com/twangyal/projects-monorepo/actions/runs/39283037590) is queued at exact protocol source `45b1e3f3d7ab594afb04f224a9b5e6d78d5dd540`. Its four jobs are requested4/stiff118161198306, requested1/stiff118161198420, requested4/soft118161198571 and requested1/soft118161198752. The probe SHA256 is `0e4adc0bafe8c3d5894973d164d162cedc68ae7f309526a39e11d7b202d67bd4`; the native exporter and pinned upstream/canonical patch remain those of the prior duration protocol. This source branch is left unchanged while the run is pending, preserving exact execution identity.
+
+No new native result or artifact is available yet. No result is claimed by admission tests, source review or the synthetic replay tests. Local native execution is unavailable because this workspace has neither Cargo nor CMake. A later run must collect the official artifacts and register/replay their actual digests and outcomes; the production registry currently remains empty.
+
+## Independent replay preparation
+
+`garment_fixed_material_audit.py` verifies a sole registered material/session, exact canonical patch and source digests, original/prepared blueprints, native input ABI, all181 finite frames and60Hz saved times, completed native logs/outcome, captured mass and the unchanged300-second supervisor with no remaining children. It reports byte comparisons against the prior full requested-four and available requested-one duration references. A finite trajectory difference remains reportable; the checker does not require identical trajectories to admit completed motion. Completion of a new session never completes the original timed-out serial pair.
+
+No fixed-material archive is registered before official artifacts are retained. The semantic tests construct an explicitly synthetic single-case envelope from the existing real pair and patch its registry only inside the test. That transformed envelope is not retained or described as new native evidence. Re-signed changes to material, pair flags, sources, rest, duration, final frame, timing, nonfinite data, session namespace, invocation, cleanup and timeout are refused. A separately re-signed finite output perturbation is reported as a difference when the test explicitly bypasses the official archive digest; the ordinary digest check refuses it. These tests establish checker behavior only. Pending native run39283037590 at source45b1e3f3d7ab594afb04f224a9b5e6d78d5dd540 remains the actual-execution gate.
