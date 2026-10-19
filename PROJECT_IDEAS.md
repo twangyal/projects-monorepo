@@ -121,6 +121,8 @@ Reusable body profiles #280 lets users save named applied top-body measurements,
 
 Native garment bridge #288 now captures the actual tee/rest/body and admits a geometry-derived detached collar sewing pose in the pinned CPU backend. Strict native input checks and complete independent replay verify38 frames/278 native files across two normalized Young coefficients; final seam gaps1.68/1.47mm and final shape difference17.31mm RMS are bounded0.3s motion, not settling/physical fit. [Actual results and complete evidence](docs/research/ppf-cpu/GARMENT_SEWING.md) preserve two earlier failures, high initial strain and native mass197.87g vs captured browser151.58g (+30.54%). Follow-up #289 tracks a provenance-preserving inertia adapter/native comparison. No engine adoption or physical material/fit acceptance is claimed; Clothing stays ACTIVE. [Integration evidence](docs/2026-10-18-clothing-native-garment-integration.md).
 
+Construction localization #290 now retains [part-level strain and seam provenance](docs/research/ppf-cpu/GARMENT_CONSTRUCTION_DIAGNOSTICS.md) from the existing complete three-second native pair. Both material peaks lie on shared underarm edge561/571, while torso p95 is substantially lower; exact indices, authored triangles and projections support the next construction investigation. This does not establish a causal defect, physical tolerances or fit. Clothing remains ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`

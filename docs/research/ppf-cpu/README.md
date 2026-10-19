@@ -40,3 +40,5 @@ Same-material native control: [frozen one/four-thread pairs, whole-trajectory re
 Repaired native material response: [controlled Young500/2000 cohort, full archives, source-derived geometry and independent replay](GARMENT_MATERIAL_COHORT.md).
 
 Longer native observation: [explicit three-second duration protocol and evidence](GARMENT_DURATION_STUDY.md).
+
+Native construction localization: [per-part signed strain, original triangle/edge and seam provenance, exact saved geometry](GARMENT_CONSTRUCTION_DIAGNOSTICS.md).
