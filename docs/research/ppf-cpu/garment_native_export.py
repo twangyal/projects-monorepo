@@ -8,10 +8,13 @@ from garment_native_inputs import OBJECT,SESSION
 def flat(rows):return [v for row in rows for v in row]
 
 
-def verify_export(read,inputs,young,object_parameters=None,body_contact_offset=0.,session_parameters=None):
+def verify_export(read,inputs,young,object_parameters=None,body_contact_offset=0.,session_parameters=None,half_step_study=False):
     object_parameters=OBJECT if object_parameters is None else object_parameters
     session_parameters=SESSION if session_parameters is None else session_parameters
-    require(set(session_parameters)==set(SESSION) and type(session_parameters["frames"]) is int and session_parameters["frames"] in [18,60,180] and all(session_parameters[k]==v for k,v in SESSION.items() if k!="frames"),"Undeclared session change.")
+    require(type(half_step_study) is bool,'Half-step admission must be explicit.')
+    admitted_session={**SESSION,'dt':1/240} if half_step_study else SESSION
+    admitted_frames=[180] if half_step_study else [18,60,180]
+    require(set(session_parameters)==set(SESSION) and type(session_parameters["frames"]) is int and session_parameters["frames"] in admitted_frames and all(session_parameters[k]==v for k,v in admitted_session.items() if k!="frames"),"Undeclared session change.")
     def get(path):
         try:return read(path)
         except (KeyError,OSError) as error:raise ValueError('Missing native input: '+path) from error
