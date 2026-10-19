@@ -44,7 +44,7 @@ An offline comparison applied the existing `separate_rib` after the same warm/ou
 
 ## Bounded one-second observation
 
-The dedicated `autonomous/clothing-ppf-garment-relaxation-290` branch passes `--frames 60`, requesting 61 saved frames including frame 0. The default remains 18 intervals/19 frames. Only the session frame limit changes; geometry, rest state, material, captured inertia, body contacts, collision checks and stitch stiffness remain identical. Export admission verifies the explicitly declared session and refuses other control drift. This is a bounded motion observation, not settling or physical-fit acceptance. Source `99eb1e9b` passed 111 research tests locally and 54 garment preflight checks in CI; native results are pending until the raw archive is retained and audited.
+The dedicated `autonomous/clothing-ppf-garment-relaxation-290` branch passes `--frames 60`, requesting 61 saved frames including frame 0. The default remains 18 intervals/19 frames. Only the session frame limit changes; geometry, rest state, material, captured inertia, body contacts, collision checks and stitch stiffness remain identical. Export admission verifies the explicitly declared session and refuses other control drift. This is a bounded motion observation, not settling or physical-fit acceptance. Source `99eb1e9b` passed 111 research tests locally and 54 garment preflight checks in CI; the native result and complete raw evidence are now retained and audited below.
 
 ## Final saved-snapshot and residual-motion diagnostics
 
@@ -55,4 +55,29 @@ The final 16.667 ms saved interval has maximum/RMS secant speeds of 0.1838/0.062
 ```sh
 python3 docs/research/ppf-cpu/garment_endpoint_diagnostics.py docs/research/ppf-cpu/results/garment-clearance-native.zip
 python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_endpoint_diagnostics.py
+```
+
+
+## Retained one-second observation and repeatability limit
+
+[Source99eb1e9b](https://github.com/twangyal/projects-monorepo/commit/99eb1e9bdb875484a9eee543ed81fde6a41bf852) and [native run39181033561](https://github.com/twangyal/projects-monorepo/actions/runs/39181033561) completed61 real saved frames per material (122 total,0–1 second). The [complete archive](results/garment-relaxation-native.zip), artifact12155759169, is6,864,529 bytes; SHA256 `34e09c388d09e2e76b4962da84042f6dc1fd78ec7382a50c9e4447045bda3cdb` matches GitHub's artifact digest. The supervisor completed in104.204 seconds without remaining children; cases took46.041/50.038 seconds. The [independent replay](results/garment-relaxation-native-audit.json) verifies446 native files, both61-frame namespaces and exact timing, all source/input/control/mass evidence, and native completion. All input binaries and scene metadata match the short run exactly; the only changed parsed session parameter is `frames`18→60. Within the material pair, only Young differs.
+
+| One-second saved endpoint | Soft (Young500) | Stiff (Young2000) |
+| --- | ---: | ---: |
+| RMS movement from initial |40.907mm |40.412mm |
+| Maximum absolute intrinsic-edge strain |31.165% |19.075% |
+| Maximum stitch gap |1.422mm |1.442mm |
+| Last-interval max secant speed |6.479mm/s |1.184mm/s |
+| Last-interval RMS secant speed |1.321mm/s |0.260mm/s |
+
+Final material vertex RMS difference is18.224mm. Both [endpoint surface checks](results/garment-relaxation-endpoint.json) find zero pairs below3.5mm cloth/body and0.5mm collar/shirt offsets. The earlier snapshot/query exclusions apply; small final-interval speeds alone do not establish sustained settling, construction quality, calibrated material or physical fit.
+
+**Repeatability is not established.** Despite identical exported input bytes and controls except duration, the common first19 saved frames differ by up to16.961mm (soft) and26.706mm (stiff) between runs. The cause is unestablished. This is a separate observation, not a deterministic continuation, and the material-pair difference is an observed pair rather than a proven repeatable garment-material signal. The next useful control is repeated same-material native runs under recorded host/thread settings, before stronger material inference or broader garment/body acceptance.
+
+The auditor admits only explicitly pinned `short` and `one-second` observations and preserves the original short replay output. Four focused regressions pass: complete actual evidence, unknown observation refusal, short-as-long transplantation refusal, and re-signed late-frame deletion/forged19-frame completion. Independent review reproduced the input comparison and prefix divergence with no blocking findings.
+
+```sh
+python3 docs/research/ppf-cpu/garment_clearance_audit.py docs/research/ppf-cpu/results/garment-relaxation-native.zip --observation one-second
+python3 docs/research/ppf-cpu/garment_endpoint_diagnostics.py docs/research/ppf-cpu/results/garment-relaxation-native.zip --observation one-second
+python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_relaxation_audit.py
 ```
