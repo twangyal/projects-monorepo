@@ -45,3 +45,14 @@ An offline comparison applied the existing `separate_rib` after the same warm/ou
 ## Bounded one-second observation
 
 The dedicated `autonomous/clothing-ppf-garment-relaxation-290` branch passes `--frames 60`, requesting 61 saved frames including frame 0. The default remains 18 intervals/19 frames. Only the session frame limit changes; geometry, rest state, material, captured inertia, body contacts, collision checks and stitch stiffness remain identical. Export admission verifies the explicitly declared session and refuses other control drift. This is a bounded motion observation, not settling or physical-fit acceptance. Source `99eb1e9b` passed 111 research tests locally and 54 garment preflight checks in CI; native results are pending until the raw archive is retained and audited.
+
+## Final saved-snapshot and residual-motion diagnostics
+
+The pinned archive's [endpoint replay](garment_endpoint_diagnostics.py) and [retained result](results/garment-clearance-endpoint.json) check every triangle pair within the declared offset thresholds in the final saved snapshot. Both materials have zero pairs below 3.5 mm cloth/body and 0.5 mm collar/shirt. These thresholds sum the declared contact offsets and exclude contact-gap padding. The collar/shirt query includes stitched seam neighborhoods; its geometric counts do not reproduce native contact-policy filtering. Surface distance alone does not establish inside/outside, full cloth self-contact, or continuous trajectory correctness.
+
+The final 16.667 ms saved interval has maximum/RMS secant speeds of 0.1838/0.0623 m/s for soft and 0.4167/0.1236 m/s for stiff. Secant speed is measured between two saved positions, not instantaneous native velocity. Residual movement remains visible, and neither these measurements nor a small seam gap establish settling. Analytic unequal-movement/stationary tests, incomplete/nonfinite-sample refusals and exact raw-archive replay pass; read-only review confirmed the thresholds and interpretation.
+
+```sh
+python3 docs/research/ppf-cpu/garment_endpoint_diagnostics.py docs/research/ppf-cpu/results/garment-clearance-native.zip
+python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_endpoint_diagnostics.py
+```
