@@ -1,0 +1,106 @@
+{
+  "archive_sha256": "b7f56acb8951be51fde54aa734c08ead3555fea83ebb0b6305f052b7cb1b255e",
+  "archive_bytes": 4539279,
+  "source_commit": "1e941a42cd8154558566f89ca537eca690da9952",
+  "run_url": "https://github.com/twangyal/projects-monorepo/actions/runs/39179647279",
+  "native_status": "passed_garment_motion_probe",
+  "stage": "completed",
+  "two_material_bounded_motion_complete": true,
+  "native_files_verified": 278,
+  "clearance_preparation": {
+    "method": "captured-analytic-body-gradient-outward-v1",
+    "outward_offset_m": 0.005,
+    "gradient_epsilon_m": 1e-05,
+    "required_mesh_clearance_m": 0.006,
+    "scope": "Explicit initial-geometry preconditioning only; rest, mass, seams and body unchanged.",
+    "surface_admission": {
+      "method": "float32-triangle-surface-distance-spatial-hash-v1",
+      "required_clearance_m": 0.006,
+      "violations": 0,
+      "minimum_separation_m": null,
+      "clearance_lower_bound_m": 0.006,
+      "tested_triangle_pairs": 28915,
+      "witness": null,
+      "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+    }
+  },
+  "initialization_parameters": {
+    "method": "cut-open-aabb-separated-collar-v1",
+    "collar_rise_m": 0.28371074655702505,
+    "cloth_pair_clearance_m": 0.0025,
+    "body_pair_clearance_m": 0.0055,
+    "numerical_margin_m": 1e-06,
+    "cut_half_gap_m": 0.002,
+    "cut_pair_gap_m": 0.004000000000000001,
+    "collar_vertices": 42,
+    "collar_triangles": 40,
+    "obstacle_cloth_triangles": 4440,
+    "obstacle_static_triangles": 39144,
+    "scope": "Conservative collar-to-shirt/body initial separation only. Native self-contact/export/solver admission and sewn pose remain unverified."
+  },
+  "cases": {
+    "soft": {
+      "raw_frames": 19,
+      "motion_frames": 18,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 19,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.3003953204638545,
+        "final_vertex_rms_displacement_m": 0.04191859440971938,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.34514985024195144,
+        "final_maximum_absolute_edge_strain": 0.3419417231070596,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014224659745332223,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      }
+    },
+    "stiff": {
+      "raw_frames": 19,
+      "motion_frames": 18,
+      "completed_case": true,
+      "mass_reduction": {
+        "accurate_face_mass_kg": 0.15157942372934485,
+        "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+      },
+      "reported_mass_kg": 0.15158243,
+      "metrics": {
+        "saved_frames": 19,
+        "vertices_per_frame": 2353,
+        "unique_intrinsic_edges": 6834,
+        "maximum_vertex_displacement_m": 0.28902053721676807,
+        "final_vertex_rms_displacement_m": 0.039762831287985696,
+        "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+        "maximum_saved_absolute_edge_strain": 0.3126823290899403,
+        "final_maximum_absolute_edge_strain": 0.2051667515274498,
+        "initial_maximum_stitch_gap_m": 0.28371782710466104,
+        "maximum_saved_stitch_gap_m": 0.28371782710466104,
+        "final_maximum_stitch_gap_m": 0.0014561764922843945,
+        "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+      }
+    }
+  },
+  "only_changed_material_bin": [
+    "param/tri-young-mod.bin"
+  ],
+  "final_material_vertex_rms_difference_m": 0.017242169786010047,
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 43.32370762000005,
+    "remaining_children": 0
+  },
+  "limits": [
+    "Initial cloth/body clearance only; self-contact/trajectory acceptance is separate.",
+    "Bounded saved motion is not settling, seam-quality, calibrated material, physical fit or engine adoption."
+  ]
+}
