@@ -1,0 +1,122 @@
+name: Clothing canonical-mesh native repeatability research
+on:
+  workflow_dispatch:
+  push:
+    branches: [autonomous/clothing-ppf-canonical-mesh-290]
+    paths:
+      - '.github/workflows/clothing-ppf-canonical-repeatability.yml'
+      - 'docs/research/ppf-cpu/**'
+permissions:
+  contents: read
+concurrency:
+  group: ppf-canonical-repeatability-research-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  contact-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        threads: [1, 4]
+    env:
+      INITIALIZATION: clear-warm-sewing
+      FRAME_COUNT: '60'
+      RAYON_NUM_THREADS: ${{ matrix.threads }}
+      OMP_NUM_THREADS: ${{ matrix.threads }}
+      OPENBLAS_NUM_THREADS: ${{ matrix.threads }}
+      MKL_NUM_THREADS: ${{ matrix.threads }}
+      NUMEXPR_NUM_THREADS: ${{ matrix.threads }}
+      PYTHONUNBUFFERED: '1'
+      CARGO_TARGET_DIR: ${{ github.workspace }}/upstream/target/cpu
+      REPORT: ${{ github.workspace }}/ppf-cpu-report
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: st-tech/ppf-contact-solver
+          ref: 6b30976f86e6b94d68d459e5237d59704c7d1384
+          path: upstream
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Record environment and exact source
+        run: |
+          set -euo pipefail
+          mkdir -p "$REPORT"
+          { date -u +%FT%TZ; uname -srmo; nproc; rustc -vV; cargo -V; python --version; g++ --version | head -1; } > "$REPORT/environment.txt"
+          git -C upstream rev-parse HEAD > "$REPORT/upstream-revision.txt"
+          git -C upstream status --porcelain > "$REPORT/upstream-initial-status.txt"
+          lscpu > "$REPORT/cpu.txt"
+          python - <<'PYMETA' > "$REPORT/thread-settings.json"
+          import json,os
+          names=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
+          print(json.dumps({'variables':{n:os.environ.get(n) for n in names},'logical_cpu_count':os.cpu_count(),'affinity':sorted(os.sched_getaffinity(0))},indent=2))
+          PYMETA
+          cp upstream/Cargo.lock "$REPORT/upstream-Cargo.lock"
+          cp upstream/LICENSE "$REPORT/upstream-LICENSE"
+      - name: Apply exact research-only canonical mesh patch
+        run: |
+          set -euo pipefail
+          [ ! -s "$REPORT/upstream-initial-status.txt" ]
+          [ "$(cat "$REPORT/upstream-revision.txt")" = 6b30976f86e6b94d68d459e5237d59704c7d1384 ]
+          python docs/research/ppf-cpu/garment_mesh_order_patch.py --upstream upstream --out "$REPORT"
+          git -C upstream diff --check
+          [ "$(git -C upstream diff --name-only)" = crates/ppf-cts-solver/src/mesh.rs ]
+          git -C upstream diff > "$REPORT/upstream-research.diff"
+      - name: Install documented upstream frontend dependencies
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          python - <<'PY' > "$REPORT/requirements.txt"
+          import runpy
+          ns = runpy.run_path('warmup.py')
+          print('\n'.join(ns['python_packages']() + ns['tetra_packages']()))
+          PY
+          python -m pip install --only-binary=:all: -r "$REPORT/requirements.txt" 2>&1 | tee "$REPORT/dependencies.log"
+          python -m pip freeze > "$REPORT/pip-freeze.txt"
+      - name: Build the real locked CPU backend
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          /usr/bin/time -v -o "$REPORT/build-resources.txt" cargo build --locked --release --features cpu 2>&1 | tee "$REPORT/build.log"
+      - name: Verify built research source and record actual executable digest
+        run: |
+          set -euo pipefail
+          [ "$(git -C upstream diff --name-only)" = crates/ppf-cts-solver/src/mesh.rs ]
+          python - <<'PYCODE'
+          import hashlib
+          from pathlib import Path
+          assert hashlib.sha256(Path('upstream/crates/ppf-cts-solver/src/mesh.rs').read_bytes()).hexdigest()=='29ba8fa8ef9e45a4ba8c323d644aed557939afab1f0d74bbb4bc8aa93f89be50'
+          PYCODE
+          sha256sum "$CARGO_TARGET_DIR/release/ppf-contact-solver" > "$REPORT/native-binary-sha256.txt"
+      - name: Check evidence collector
+        run: python -m unittest discover -s docs/research/ppf-cpu -p 'test_*.py'
+      - name: Run identical-material pair with strict native controls
+        id: fixture
+        run: |
+          set -euo pipefail
+          set +e
+          /usr/bin/time -v -o "$REPORT/fixture-resources.txt" python docs/research/ppf-cpu/supervise.py --seconds 300 --out "$REPORT" -- python docs/research/ppf-cpu/garment_native_probe.py --initialization "$INITIALIZATION" --same-material-control --mass-convention browser-inertia --frames "$FRAME_COUNT" --upstream upstream --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" 2>&1 | tee "$REPORT/fixture.log"
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          printf '%s\n' "${statuses[0]}" > "$REPORT/fixture-exit-code.txt"
+          [ "${statuses[0]}" -eq 0 ] && [ "${statuses[1]}" -eq 0 ] || exit 1
+          grep -Fq 'cpu actual garment motion probe: PASS' "$REPORT/fixture.log"
+      - name: Collect native logs and frames after success, failure or timeout
+        if: always()
+        env:
+          FIXTURE_OUTCOME: ${{ steps.fixture.outcome }}
+        run: python docs/research/ppf-cpu/collect.py --out "$REPORT" --cache "$GITHUB_WORKSPACE/ppf-native-cache" --outcome "${FIXTURE_OUTCOME:-skipped}"
+      - name: Retain complete evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ppf-canonical-material-threads-${{ matrix.threads }}-${{ github.sha }}
+          path: ppf-cpu-report/
+          if-no-files-found: error
+          retention-days: 14

@@ -2,10 +2,11 @@ name: Clothing pinned mesh-order diagnostic
 on:
   workflow_dispatch:
   push:
-    branches: [autonomous/clothing-ppf-mesh-order-290]
+    branches: [autonomous/clothing-ppf-mesh-order-290, autonomous/clothing-ppf-canonical-mesh-290]
     paths:
       - '.github/workflows/clothing-ppf-mesh-order.yml'
       - 'docs/research/ppf-cpu/patches/**'
+      - 'docs/research/ppf-cpu/garment_mesh_order_patch.py'
 permissions:
   contents: read
 concurrency:
@@ -75,11 +76,44 @@ jobs:
           assert 'test result: FAILED. 1 passed; 2 failed;' in log,'Unexpected test result; do not accept compilation/setup errors.'
           (root/'receipt.json').write_text(json.dumps({'status':'expected_original_ordering_assertions_failed','upstream_revision':'6b30976f86e6b94d68d459e5237d59704c7d1384','test_exit_code':code,'passed':1,'failed':2,'log_sha256':hashlib.sha256((root/'cargo-test.log').read_bytes()).hexdigest(),'scope':'Actual pinned mesh routines with test-only instrumentation. No sorting fix, native trajectory or physical-fit result.'},indent=2))
           PY
+      - name: Apply exact repair and restore identical test instrumentation
+        run: |
+          set -euo pipefail
+          python - <<'PYCODE'
+          from pathlib import Path
+          source=Path('upstream/crates/ppf-cts-solver/src/mesh.rs');extra=Path('docs/research/ppf-cpu/patches/mesh_order_regression.rs').read_bytes()
+          current=source.read_bytes();assert current.endswith(extra);source.write_bytes(current[:-len(extra)])
+          PYCODE
+          python docs/research/ppf-cpu/garment_mesh_order_patch.py --upstream upstream --out "$REPORT"
+          python - <<'PYCODE'
+          import hashlib,json,os
+          from pathlib import Path
+          source=Path('upstream/crates/ppf-cts-solver/src/mesh.rs');extra=Path('docs/research/ppf-cpu/patches/mesh_order_regression.rs').read_bytes();source.write_bytes(source.read_bytes()+extra)
+          report=Path(os.environ['REPORT']);original=json.loads((report/'source.json').read_text());assert hashlib.sha256(extra).hexdigest()==original['test_sha256']
+          (report/'instrumented-patched-sha256.txt').write_text(hashlib.sha256(source.read_bytes()).hexdigest()+'\n')
+          PYCODE
+          git -C upstream diff --check
+          [ "$(git -C upstream diff --name-only)" = crates/ppf-cts-solver/src/mesh.rs ]
+          git -C upstream diff > "$REPORT/repaired-test.diff"
+      - name: Require GREEN ordering and existing mesh semantic tests
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          /usr/bin/time -v -o "$REPORT/green-resources.txt" cargo test -p ppf-cts-solver --bin ppf-contact-solver --locked --release --features cpu mesh:: -- --nocapture 2>&1 | tee "$REPORT/green.log"
+          python - <<'PYCODE'
+          import hashlib,json,os,re
+          from pathlib import Path
+          root=Path(os.environ['REPORT']);log=(root/'green.log').read_text()
+          for name in ['canonical_edges_and_neighbors','canonical_hinges_and_neighbors','non_manifold_first_two_faces_and_hinge_exclusion_are_preserved']:
+              assert re.search(r'garment_order_regression::'+name+r' \.\.\. ok',log),'Missing GREEN test: '+name
+          assert 'test result: ok. 5 passed; 0 failed;' in log
+          (root/'red-green-receipt.json').write_text(json.dumps({'status':'original_red_repaired_green','original_passed':1,'original_failed':2,'repaired_passed':5,'repaired_failed':0,'green_log_sha256':hashlib.sha256((root/'green.log').read_bytes()).hexdigest(),'scope':'Local native mesh ordering and existing semantic controls only; no trajectory or physical-fit acceptance.'},indent=2))
+          PYCODE
       - name: Retain complete diagnostic after success or failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ppf-original-mesh-order-${{ github.sha }}
+          name: ppf-mesh-order-red-green-${{ github.sha }}
           path: mesh-order-report/
           if-no-files-found: error
           retention-days: 14
