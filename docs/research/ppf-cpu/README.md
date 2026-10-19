@@ -42,3 +42,5 @@ Repaired native material response: [controlled Young500/2000 cohort, full archiv
 Longer native observation: [explicit three-second duration protocol and evidence](GARMENT_DURATION_STUDY.md).
 
 Native construction localization: [per-part signed strain, original triangle/edge and seam provenance, exact saved geometry](GARMENT_CONSTRUCTION_DIAGNOSTICS.md).
+
+Separate bounded material sessions: [four completed three-second jobs, full official archives and exact prefix replay](GARMENT_FIXED_MATERIAL_STUDY.md).

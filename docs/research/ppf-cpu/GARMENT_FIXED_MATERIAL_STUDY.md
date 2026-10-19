@@ -16,14 +16,39 @@ Require actual181-frame native completion, finite full raw float32 frames, exact
 
 This stage does not establish calibrated fabrics, sustained settling, physical fit, continuous-time contact, broad determinism or engine adoption. Construction quality and representative garments/body settings remain subsequent research work. Project #8 remains skipped.
 
-## Outcome
+## Outcome: all four separately bounded sessions complete
 
-[Native run39283037590](https://github.com/twangyal/projects-monorepo/actions/runs/39283037590) is queued at exact protocol source `45b1e3f3d7ab594afb04f224a9b5e6d78d5dd540`. Its four jobs are requested4/stiff118161198306, requested1/stiff118161198420, requested4/soft118161198571 and requested1/soft118161198752. The probe SHA256 is `0e4adc0bafe8c3d5894973d164d162cedc68ae7f309526a39e11d7b202d67bd4`; the native exporter and pinned upstream/canonical patch remain those of the prior duration protocol. This source branch is left unchanged while the run is pending, preserving exact execution identity.
+[Native run39283037590](https://github.com/twangyal/projects-monorepo/actions/runs/39283037590) passes all four jobs at exact protocol source `45b1e3f3d7ab594afb04f224a9b5e6d78d5dd540`. The probe SHA256 is `0e4adc0bafe8c3d5894973d164d162cedc68ae7f309526a39e11d7b202d67bd4`; native exporter, upstream revision, canonical patch and all physical inputs remain unchanged. Each job retains181 actual saved frames and463 checksum-verified native files:724 new frames /1852 files in total. All native outcomes are completed, exit0, with zero remaining children and the unchanged300-second per-job supervisor.
 
-No new native result or artifact is available yet. No result is claimed by admission tests, source review or the synthetic replay tests. Local native execution is unavailable because this workspace has neither Cargo nor CMake. A later run must collect the official artifacts and register/replay their actual digests and outcomes; the production registry currently remains empty.
+| Profile | Native job | Official artifact | Original ZIP bytes | Supervisor wall (s) |
+| --- | ---: | ---: | ---: | ---: |
+| one-soft |118161198752|12203356627|7327400|158.026391|
+| one-stiff |118161198420|12202742689|7320722|162.855062|
+| four-soft |118161198571|12201778448|7320354|106.108386|
+| four-stiff |118161198306|12203270919|7319646|138.719982|
+
+The complete official ZIP archives are retained directly, without repacking:
+
+- [one-soft](results/garment-fixed-one-soft.zip): `17e59a70605c1abcec179be032021ef76431bfacc52240474878969d8a7adc1a`
+- [one-stiff](results/garment-fixed-one-stiff.zip): `1ea8c42c24277701aeb88289c5d67c81c4947e53e7926475f9b6fc8ff5c8c5d4`
+- [four-soft](results/garment-fixed-four-soft.zip): `fc2c0de508864f468b7a8669de0bcf2309db3c57611c02e6e46a280476a6bf70`
+- [four-stiff](results/garment-fixed-four-stiff.zip): `7253736fa219c7b95a92852fb063a0a1d8b131fffa082646c87ad17159eda591`
+
+All181 raw frames of each material match byte for byte across the observed requested environments. Every full prior-four reference matches181/181; prior-one soft matches181/181 and stiff matches its complete available168-frame prefix. Native input binaries and scene/session metadata match the prior duration cases exactly. [Comparison receipt](results/garment-fixed-comparison.json) and per-profile `garment-fixed-*-replay.json` retain complete raw-frame hashes, mass, endpoint, motion-window and source-located construction diagnostics.
+
+This supplies the previously missing requested-one stiff ending under a separately allocated budget. It does **not** make the original serial pair complete, establish faster execution, isolate causal thread effects or prove broad determinism. These four supervisor times are observations on separate hosts, including preparation/cleanup; they are not aggregate service latency or a controlled performance comparison. The source branch remains frozen at the protocol commit.
+
+The completed trajectories reproduce the previous full endpoint: peak absolute intrinsic-edge strain remains31.1955% /19.0122%, localized near the underarm as [already documented](GARMENT_CONSTRUCTION_DIAGNOSTICS.md). Low later saved motion does not resolve construction quality or establish physical fit. Representative garment/body coverage, physical references, sustained settling and engine adoption remain open. Local Cargo/CMake remain unavailable; actual native execution above is hosted, independently replayed evidence.
+
+Reproduce each retained replay (standard library only):
+
+```sh
+python3 docs/research/ppf-cpu/garment_fixed_material_audit.py docs/research/ppf-cpu/results/garment-fixed-one-stiff.zip --profile one-stiff
+python3 -m unittest discover -s docs/research/ppf-cpu -p 'test_garment_fixed_material*.py'
+```
 
 ## Independent replay preparation
 
 `garment_fixed_material_audit.py` verifies a sole registered material/session, exact canonical patch and source digests, original/prepared blueprints, native input ABI, all181 finite frames and60Hz saved times, completed native logs/outcome, captured mass and the unchanged300-second supervisor with no remaining children. It reports byte comparisons against the prior full requested-four and available requested-one duration references. A finite trajectory difference remains reportable; the checker does not require identical trajectories to admit completed motion. Completion of a new session never completes the original timed-out serial pair.
 
-No fixed-material archive is registered before official artifacts are retained. The semantic tests construct an explicitly synthetic single-case envelope from the existing real pair and patch its registry only inside the test. That transformed envelope is not retained or described as new native evidence. Re-signed changes to material, pair flags, sources, rest, duration, final frame, timing, nonfinite data, session namespace, invocation, cleanup and timeout are refused. A separately re-signed finite output perturbation is reported as a difference when the test explicitly bypasses the official archive digest; the ordinary digest check refuses it. These tests establish checker behavior only. Pending native run39283037590 at source45b1e3f3d7ab594afb04f224a9b5e6d78d5dd540 remains the actual-execution gate.
+The four production profiles now register only the official digests above. The semantic tests construct an explicitly synthetic single-case envelope from the existing real pair and patch its registry only inside the test. That transformed envelope is not retained or described as new native evidence. Re-signed changes to material, pair flags, sources, rest, duration, final frame, timing, nonfinite data, session namespace, invocation, cleanup and timeout are refused. A separately re-signed finite output perturbation is reported as a difference when the test explicitly bypasses the official archive digest; the ordinary digest check refuses it. These tests establish checker behavior only. Actual run39283037590 and its retained official artifacts now supply that execution gate, separately from these semantic tests.

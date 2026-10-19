@@ -1,8 +1,8 @@
 """Semantic tests using an explicitly synthetic single-case envelope.
 
 The source is a retained real pair, but this transformed envelope is never an
-accepted native run. Only test-scoped registry patches admit it; production has
-no registered fixed-material evidence until official artifacts are retained.
+accepted native run. Only test-scoped registry patches admit it; production
+profiles admit only the retained official fixed-material artifact digests.
 """
 import hashlib,io,json,math,struct,unittest,zipfile
 from unittest.mock import patch

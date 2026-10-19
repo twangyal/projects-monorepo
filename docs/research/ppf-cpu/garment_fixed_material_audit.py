@@ -14,7 +14,12 @@ from garment_endpoint_diagnostics import endpoint_diagnostics
 
 from garment_repeatability_audit import COMMAND,THREAD_VARIABLES,prepared_inputs
 # Registered only after official native artifacts are retained; no synthetic pass.
-PROFILES={}
+PROFILES={
+ 'one-soft':('17e59a70605c1abcec179be032021ef76431bfacc52240474878969d8a7adc1a',1,'soft',12203356627),
+ 'one-stiff':('1ea8c42c24277701aeb88289c5d67c81c4947e53e7926475f9b6fc8ff5c8c5d4',1,'stiff',12202742689),
+ 'four-soft':('fc2c0de508864f468b7a8669de0bcf2309db3c57611c02e6e46a280476a6bf70',4,'soft',12201778448),
+ 'four-stiff':('7253736fa219c7b95a92852fb063a0a1d8b131fffa082646c87ad17159eda591',4,'stiff',12203270919),
+}
 SOURCE_SHA256={**LONG_SOURCE_SHA256,'garment_native_probe.py':'0e4adc0bafe8c3d5894973d164d162cedc68ae7f309526a39e11d7b202d67bd4','garment_native_export.py':'b471efece350968ed8629dbadb635f50798615892ddde7572f6591558ba59209'}
 def audit(path,verify_archive_hash=True,profile=None):
  require(profile in PROFILES,'Unknown fixed-material profile.')

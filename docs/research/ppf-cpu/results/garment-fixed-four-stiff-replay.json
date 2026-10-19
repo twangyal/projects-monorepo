@@ -1,0 +1,1111 @@
+{
+  "archive_sha256": "7253736fa219c7b95a92852fb063a0a1d8b131fffa082646c87ad17159eda591",
+  "archive_bytes": 7319646,
+  "artifact_id": 12203270919,
+  "fixed_material": "stiff",
+  "normalized_young": 2000.0,
+  "native_outcome": "passed_garment_motion_probe",
+  "fixed_material_bounded_motion_complete": true,
+  "original_timed_out_serial_pair_completed": false,
+  "native_files_verified": 463,
+  "research_patch": {
+    "schema": 1,
+    "experiment": "canonical-derived-mesh-order-v1",
+    "upstream_revision": "6b30976f86e6b94d68d459e5237d59704c7d1384",
+    "source_path": "crates/ppf-cts-solver/src/mesh.rs",
+    "base_mesh_sha256": "17361cfee9af9f686b9c929fc59db4ec014412fccd3409a51b0298c1daef490f",
+    "patched_mesh_sha256": "29ba8fa8ef9e45a4ba8c323d644aed557939afab1f0d74bbb4bc8aa93f89be50",
+    "patch_sha256": "b816533c4ff05fda40f32ae9c223aa1212b184a691c0ea0244526f8bb1caaafa",
+    "scope": "Research-only ordered edge/hinge maps. Changes derived element/accumulation order; no physical equivalence, broad determinism or backend adoption acceptance.",
+    "recorded_native_executable_sha256": "1fc9623761c2e18792b8a98554a9332b209fa83b4cd6c0b48ca7f3e1d16257fd",
+    "scope_of_executable_digest": "Recorded CI executable digest; executable bytes are not retained or independently rebuilt by replay."
+  },
+  "requested_execution_settings": {
+    "requested_threads": 4,
+    "variables": {
+      "RAYON_NUM_THREADS": "4",
+      "OMP_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "NUMEXPR_NUM_THREADS": "4"
+    },
+    "scope": "Requested inherited environment, not a measurement of actual native worker counts."
+  },
+  "host": {
+    "variables": {
+      "RAYON_NUM_THREADS": "4",
+      "OMP_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4",
+      "MKL_NUM_THREADS": "4",
+      "NUMEXPR_NUM_THREADS": "4"
+    },
+    "logical_cpu_count": 4,
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "case": {
+    "raw_frames": 181,
+    "motion_frames": 180,
+    "completed_case": true,
+    "mass_reduction": {
+      "accurate_face_mass_kg": 0.15157942372934485,
+      "ordered_float32_diagnostic_mass_kg": 0.15158243477344513
+    },
+    "reported_mass_kg": 0.15158243,
+    "metrics": {
+      "saved_frames": 181,
+      "vertices_per_frame": 2353,
+      "unique_intrinsic_edges": 6834,
+      "maximum_vertex_displacement_m": 0.28883625504578786,
+      "final_vertex_rms_displacement_m": 0.04041409156844949,
+      "initial_maximum_absolute_edge_strain": 0.3126823290899403,
+      "maximum_saved_absolute_edge_strain": 0.3126823290899403,
+      "final_maximum_absolute_edge_strain": 0.19012169192438821,
+      "initial_maximum_stitch_gap_m": 0.28371782710466104,
+      "maximum_saved_stitch_gap_m": 0.28371782710466104,
+      "final_maximum_stitch_gap_m": 0.001442322820553216,
+      "scope": "Saved-frame vertex/edge/seam diagnostics only; no continuous-time collision, settling, physical-material or fit acceptance."
+    },
+    "saved_motion_windows": [
+      {
+        "start_seconds": 0.0,
+        "end_seconds": 1.0,
+        "saved_intervals": 60,
+        "maximum_secant_speed_m_s": 3.4417856778819162,
+        "rms_secant_speed_m_s": 0.16433182873417534
+      },
+      {
+        "start_seconds": 1.0,
+        "end_seconds": 2.0,
+        "saved_intervals": 60,
+        "maximum_secant_speed_m_s": 0.04817529044535916,
+        "rms_secant_speed_m_s": 0.00046176009268914393
+      },
+      {
+        "start_seconds": 2.0,
+        "end_seconds": 3.0,
+        "saved_intervals": 60,
+        "maximum_secant_speed_m_s": 0.0019155511569407934,
+        "rms_secant_speed_m_s": 2.340919699137684e-05
+      }
+    ],
+    "endpoint": {
+      "last_saved_interval_secant_speed": {
+        "maximum_m_s": 0.0010485010288539284,
+        "rms_m_s": 2.8684794960999777e-05
+      },
+      "cloth_body_surface": {
+        "method": "float32-triangle-surface-distance-spatial-hash-v1",
+        "required_clearance_m": 0.0034999999999999996,
+        "violations": 0,
+        "minimum_separation_m": null,
+        "clearance_lower_bound_m": 0.0034999999999999996,
+        "tested_triangle_pairs": 55078,
+        "witness": null,
+        "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+      },
+      "collar_shirt_surface": {
+        "method": "float32-triangle-surface-distance-spatial-hash-v1",
+        "required_clearance_m": 0.0005,
+        "violations": 0,
+        "minimum_separation_m": null,
+        "clearance_lower_bound_m": 0.0005,
+        "tested_triangle_pairs": 150,
+        "witness": null,
+        "scope": "Complete threshold cloth/body triangle-pair query including vertex-face, edge-edge and intersections; not cloth self-contact, inside/outside or trajectory acceptance."
+      }
+    },
+    "construction": {
+      "unique_intrinsic_edges": 6834,
+      "overall": {
+        "edge_count": 6834,
+        "maximum_extension": 0.19012169192438821,
+        "maximum_compression": 0.02164152628025162,
+        "maximum_absolute_strain": 0.19012169192438821,
+        "absolute_strain_p50": 0.0031636047609675533,
+        "absolute_strain_p95": 0.028255882439426783
+      },
+      "parts": {
+        "back": {
+          "edge_count": 3072,
+          "maximum_extension": 0.19012169192438821,
+          "maximum_compression": 0.02164152628025162,
+          "maximum_absolute_strain": 0.19012169192438821,
+          "absolute_strain_p50": 0.0029967986058772045,
+          "absolute_strain_p95": 0.018289127485920487
+        },
+        "front": {
+          "edge_count": 2965,
+          "maximum_extension": 0.19012169192438821,
+          "maximum_compression": 0.017522390088220874,
+          "maximum_absolute_strain": 0.19012169192438821,
+          "absolute_strain_p50": 0.002975361534230281,
+          "absolute_strain_p95": 0.019201027601140952
+        },
+        "neckband": {
+          "edge_count": 81,
+          "maximum_extension": 0.005326669876247303,
+          "maximum_compression": 0.003489132346432555,
+          "maximum_absolute_strain": 0.005326669876247303,
+          "absolute_strain_p50": 0.0008107103025296603,
+          "absolute_strain_p95": 0.003489132346432555
+        },
+        "sleeveLeft": {
+          "edge_count": 421,
+          "maximum_extension": 0.13792502194839362,
+          "maximum_compression": 0.011656353950698417,
+          "maximum_absolute_strain": 0.13792502194839362,
+          "absolute_strain_p50": 0.006916541077761074,
+          "absolute_strain_p95": 0.06257375256586406
+        },
+        "sleeveRight": {
+          "edge_count": 439,
+          "maximum_extension": 0.1640434381257594,
+          "maximum_compression": 0.013172625922544201,
+          "maximum_absolute_strain": 0.1640434381257594,
+          "absolute_strain_p50": 0.008946874011183104,
+          "absolute_strain_p95": 0.062239205916372775
+        }
+      },
+      "worst_edges": [
+        {
+          "vertices": [
+            561,
+            571
+          ],
+          "parts": [
+            "back",
+            "front"
+          ],
+          "source_triangles": [
+            {
+              "part": "back",
+              "render_triangle": 1029
+            },
+            {
+              "part": "front",
+              "render_triangle": 1039
+            }
+          ],
+          "rest_length_m": 0.014510345458984386,
+          "solved_length_m": 0.01726907688805386,
+          "signed_strain": 0.19012169192438821,
+          "absolute_strain": 0.19012169192438821
+        },
+        {
+          "vertices": [
+            643,
+            1639
+          ],
+          "parts": [
+            "back"
+          ],
+          "source_triangles": [
+            {
+              "part": "back",
+              "render_triangle": 1173
+            },
+            {
+              "part": "back",
+              "render_triangle": 1198
+            }
+          ],
+          "rest_length_m": 0.01471870902994377,
+          "solved_length_m": 0.017293901759888795,
+          "signed_strain": 0.17496050263009133,
+          "absolute_strain": 0.17496050263009133
+        },
+        {
+          "vertices": [
+            571,
+            1540
+          ],
+          "parts": [
+            "back"
+          ],
+          "source_triangles": [
+            {
+              "part": "back",
+              "render_triangle": 1029
+            },
+            {
+              "part": "back",
+              "render_triangle": 1030
+            }
+          ],
+          "rest_length_m": 0.01471870902994377,
+          "solved_length_m": 0.017179650455931672,
+          "signed_strain": 0.16719818436395184,
+          "absolute_strain": 0.16719818436395184
+        },
+        {
+          "vertices": [
+            571,
+            2309
+          ],
+          "parts": [
+            "sleeveRight"
+          ],
+          "source_triangles": [
+            {
+              "part": "sleeveRight",
+              "render_triangle": 268
+            },
+            {
+              "part": "sleeveRight",
+              "render_triangle": 269
+            }
+          ],
+          "rest_length_m": 0.011985694706486376,
+          "solved_length_m": 0.013951869274464115,
+          "signed_strain": 0.1640434381257594,
+          "absolute_strain": 0.1640434381257594
+        },
+        {
+          "vertices": [
+            492,
+            571
+          ],
+          "parts": [
+            "front"
+          ],
+          "source_triangles": [
+            {
+              "part": "front",
+              "render_triangle": 1039
+            },
+            {
+              "part": "front",
+              "render_triangle": 1040
+            }
+          ],
+          "rest_length_m": 0.01471870902994377,
+          "solved_length_m": 0.017114930440665428,
+          "signed_strain": 0.16280105856069182,
+          "absolute_strain": 0.16280105856069182
+        },
+        {
+          "vertices": [
+            642,
+            643
+          ],
+          "parts": [
+            "back",
+            "front"
+          ],
+          "source_triangles": [
+            {
+              "part": "back",
+              "render_triangle": 1198
+            },
+            {
+              "part": "front",
+              "render_triangle": 1206
+            }
+          ],
+          "rest_length_m": 0.014510345458984386,
+          "solved_length_m": 0.016780097890398738,
+          "signed_strain": 0.15642304573865173,
+          "absolute_strain": 0.15642304573865173
+        },
+        {
+          "vertices": [
+            614,
+            643
+          ],
+          "parts": [
+            "front"
+          ],
+          "source_triangles": [
+            {
+              "part": "front",
+              "render_triangle": 1179
+            },
+            {
+              "part": "front",
+              "render_triangle": 1206
+            }
+          ],
+          "rest_length_m": 0.01471870902994377,
+          "solved_length_m": 0.016941412110910894,
+          "signed_strain": 0.15101209463718956,
+          "absolute_strain": 0.15101209463718956
+        },
+        {
+          "vertices": [
+            529,
+            571
+          ],
+          "parts": [
+            "front",
+            "sleeveRight"
+          ],
+          "source_triangles": [
+            {
+              "part": "front",
+              "render_triangle": 1044
+            },
+            {
+              "part": "sleeveRight",
+              "render_triangle": 132
+            }
+          ],
+          "rest_length_m": 0.014482571988462152,
+          "solved_length_m": 0.01653446667465873,
+          "signed_strain": 0.14168026838266456,
+          "absolute_strain": 0.14168026838266456
+        },
+        {
+          "vertices": [
+            643,
+            1696
+          ],
+          "parts": [
+            "back",
+            "sleeveLeft"
+          ],
+          "source_triangles": [
+            {
+              "part": "back",
+              "render_triangle": 1229
+            },
+            {
+              "part": "sleeveLeft",
+              "render_triangle": 256
+            }
+          ],
+          "rest_length_m": 0.014482571988462152,
+          "solved_length_m": 0.016480081047839986,
+          "signed_strain": 0.13792502194839362,
+          "absolute_strain": 0.13792502194839362
+        },
+        {
+          "vertices": [
+            643,
+            1640
+          ],
+          "parts": [
+            "back"
+          ],
+          "source_triangles": [
+            {
+              "part": "back",
+              "render_triangle": 1173
+            },
+            {
+              "part": "back",
+              "render_triangle": 1229
+            }
+          ],
+          "rest_length_m": 0.01358821780390177,
+          "solved_length_m": 0.015457723164247254,
+          "signed_strain": 0.137582822657484,
+          "absolute_strain": 0.137582822657484
+        }
+      ],
+      "stitches": {
+        "rows": 22,
+        "maximum_gap_m": 0.001442322820553216,
+        "parts": {
+          "back": {
+            "stitch_rows": 12,
+            "maximum_gap_m": 0.001442322820553216
+          },
+          "front": {
+            "stitch_rows": 12,
+            "maximum_gap_m": 0.001442322820553216
+          },
+          "neckband": {
+            "stitch_rows": 22,
+            "maximum_gap_m": 0.001442322820553216
+          },
+          "sleeveLeft": {
+            "stitch_rows": 0,
+            "maximum_gap_m": 0.0
+          },
+          "sleeveRight": {
+            "stitch_rows": 0,
+            "maximum_gap_m": 0.0
+          }
+        },
+        "largest_gaps": [
+          {
+            "stitch_row": 10,
+            "vertices": [
+              2331,
+              915
+            ],
+            "parts": [
+              "back",
+              "front",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back",
+                "front"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1765
+              },
+              {
+                "part": "back",
+                "render_triangle": 1781
+              },
+              {
+                "part": "front",
+                "render_triangle": 1676
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 18
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 19
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 22
+              }
+            ],
+            "gap_m": 0.001442322820553216
+          },
+          {
+            "stitch_row": 9,
+            "vertices": [
+              2329,
+              777
+            ],
+            "parts": [
+              "front",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "front"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "front",
+                "render_triangle": 1423
+              },
+              {
+                "part": "front",
+                "render_triangle": 1436
+              },
+              {
+                "part": "front",
+                "render_triangle": 1458
+              },
+              {
+                "part": "front",
+                "render_triangle": 1536
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 16
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 17
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 18
+              }
+            ],
+            "gap_m": 0.0014299865389329697
+          },
+          {
+            "stitch_row": 1,
+            "vertices": [
+              2312,
+              736
+            ],
+            "parts": [
+              "front",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "front"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "front",
+                "render_triangle": 1351
+              },
+              {
+                "part": "front",
+                "render_triangle": 1424
+              },
+              {
+                "part": "front",
+                "render_triangle": 1451
+              },
+              {
+                "part": "front",
+                "render_triangle": 1500
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 0
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 1
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 2
+              }
+            ],
+            "gap_m": 0.0014262193744560123
+          },
+          {
+            "stitch_row": 16,
+            "vertices": [
+              2343,
+              1822
+            ],
+            "parts": [
+              "back",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1488
+              },
+              {
+                "part": "back",
+                "render_triangle": 1495
+              },
+              {
+                "part": "back",
+                "render_triangle": 1497
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 32
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 33
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 34
+              }
+            ],
+            "gap_m": 0.0014212740560449384
+          },
+          {
+            "stitch_row": 11,
+            "vertices": [
+              2333,
+              1922
+            ],
+            "parts": [
+              "back",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1675
+              },
+              {
+                "part": "back",
+                "render_triangle": 1676
+              },
+              {
+                "part": "back",
+                "render_triangle": 1709
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 22
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 23
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 24
+              }
+            ],
+            "gap_m": 0.001421107844706296
+          },
+          {
+            "stitch_row": 20,
+            "vertices": [
+              2351,
+              926
+            ],
+            "parts": [
+              "back",
+              "front",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back",
+                "front"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1761
+              },
+              {
+                "part": "back",
+                "render_triangle": 1763
+              },
+              {
+                "part": "front",
+                "render_triangle": 1690
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 40
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 41
+              }
+            ],
+            "gap_m": 0.0014209259408321192
+          },
+          {
+            "stitch_row": 0,
+            "vertices": [
+              2311,
+              926
+            ],
+            "parts": [
+              "back",
+              "front",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back",
+                "front"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1761
+              },
+              {
+                "part": "back",
+                "render_triangle": 1763
+              },
+              {
+                "part": "front",
+                "render_triangle": 1690
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 0
+              }
+            ],
+            "gap_m": 0.0014206530613342285
+          },
+          {
+            "stitch_row": 19,
+            "vertices": [
+              2349,
+              1890
+            ],
+            "parts": [
+              "back",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1610
+              },
+              {
+                "part": "back",
+                "render_triangle": 1667
+              },
+              {
+                "part": "back",
+                "render_triangle": 1710
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 38
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 39
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 40
+              }
+            ],
+            "gap_m": 0.001420069027876278
+          },
+          {
+            "stitch_row": 4,
+            "vertices": [
+              2319,
+              565
+            ],
+            "parts": [
+              "front",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "front"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "front",
+                "render_triangle": 1029
+              },
+              {
+                "part": "front",
+                "render_triangle": 1042
+              },
+              {
+                "part": "front",
+                "render_triangle": 1066
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 6
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 7
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 8
+              }
+            ],
+            "gap_m": 0.0014198185177482726
+          },
+          {
+            "stitch_row": 12,
+            "vertices": [
+              2335,
+              1881
+            ],
+            "parts": [
+              "back",
+              "neckband"
+            ],
+            "endpoint_parts": [
+              [
+                "neckband"
+              ],
+              [
+                "back"
+              ]
+            ],
+            "source_triangles": [
+              {
+                "part": "back",
+                "render_triangle": 1593
+              },
+              {
+                "part": "back",
+                "render_triangle": 1594
+              },
+              {
+                "part": "back",
+                "render_triangle": 1623
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 24
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 25
+              },
+              {
+                "part": "neckband",
+                "render_triangle": 26
+              }
+            ],
+            "gap_m": 0.0014197422294492423
+          }
+        ]
+      },
+      "scope": "One saved frame; nearest-rank unweighted edge percentiles. Shared edges appear in all incident parts. No strain tolerance, seam-quality, settling, continuous-contact, calibrated material or physical-fit acceptance."
+    }
+  },
+  "raw_frame_sha256": [
+    "d57a1bcaa08036eb0ed8cdbbef8d9110fa226592fb4abd2955d54bf1e07c514a",
+    "a91c5e7a644c35d0e57e1db859e6b89f0bfb99a4adebad535325fba02f5d28d8",
+    "24f8a9550f87f5bde4da59d3f598bb5c413cf234c64a8f6001850e984af7f93c",
+    "dcb443de2f3de21b67f8d9e8c781d75ef50bdb03d69ad633cb82e339a7204ad7",
+    "77c850c76641d5a5aca3e1cae3efa775ccf39769299c8e7063423a5f277ecfba",
+    "88d6dbc7001f3deccdf7e7e40a1493b9212ad9d42fac1662f8ae9bb1cee56f9f",
+    "535286927bf49b94f6275b95cf7d5c4d0d61d8b1e266d5897628130778c99f1a",
+    "5330af5c9f6872d8a7801ea04bc361d726c199a8265952fcec315e60b99a048f",
+    "fe3a280f5aad47c3a0d69a3dbeb203bf9bb8a0646c58053ea4b48f6105314397",
+    "720954ace5e84909a8887bdbc871e802363607f9f156455dbe3228661b255832",
+    "90f26065359860decbfcb59b5591b84cfc4552c957597d0daf51e1f107eecd8b",
+    "587dafd301c5ae9ffcf3d96137d8f645e66acb2925994c6607bd2f9e32a0f472",
+    "d8b96d81ef2118b930e4fbd69bf613c9336c6e07037f3ecb15efdbe7e6bd68b5",
+    "b614d6a806e563a8a766a268dc6bd6f761201fe4ce63b079fb48b59360c1cf7b",
+    "4097c717ef213814a3a86eda6da0f7d394d3781f197696e1d4a0b0ec2e453710",
+    "1ca31c5f15cec6ed5bfd131c9007a2ed8ecb87cb49c69c72a9bb245ecac86180",
+    "00f04e4de819fa8dd2a403832ff55e0c41cf5d0e191ff4eaf8c12629f7a240d3",
+    "e4f1ae16fa3bae6c2b50cc62d0eeec4c9a4ce2d6b728d45ed4234f4cd8d92e6e",
+    "d1f67ea302fc824898741e7b49bc60616e8ae4708e7176a2733c7f051ff1c22d",
+    "52875dcf1fe15ba128cf45446a4e85c2a16a5f870ac869e62cc7d324afe961c7",
+    "700eace7536ad02fab99cafe9d8d0567998eb99e71f57aab8914bc0a02c52f5f",
+    "07b6c43d2a6d75223c03c82bb51418f912750174e12c752b31c5c5f3c61eb6fb",
+    "6a36a6825483f848bda2eac83a4555aff05d61ae9fbe07b8389bec1995c948ad",
+    "d0538cd06bfc4cd62e4265e4568438853a2d36b87929ec50ebcefdd2ceda7d11",
+    "ba6ec62645b2976ee812fa178ff32e7821ebeb2f532fb5ac5b3c488b48301aeb",
+    "a91a8d56ebead89ff28657d2e3bb27123a3f3c60cd9b7fe287189d138f6b912f",
+    "663aac7ca214d3a599f2ea2d88a58c0330f4a6ba226a65186a479c4bef9b0309",
+    "7206bbc3692c80d329607f589607806d2261e5e85d0df20884b74de66b94948d",
+    "9bad69a15862f2dc6b6126144ecf069ddde88fc01756cc93f7396a95c01d358b",
+    "b3ecf6806db0607758ffec40e4b0bbfc9e1a954e14eefe134add0812bb27fa48",
+    "993a3b7cf4db847b663871d1f48617d6ae9d10f43b5dbddcef7ccb799751ef76",
+    "672e3f335094d149fdeaa18e2c4b1454b2ffa7e1a2ffe68c374a812ab469e5f9",
+    "f388d139b5e3f03a092a65fe07f21774a4b5770f617810d6006a2362aaf8c4f9",
+    "335d042997c536636dbf931604ad22668f8b1c84a16f9eb0fe778f3e0ebea276",
+    "2d8a0a9910f69b47f4547acc538a86fab2950211519eae57967e950d05550ebb",
+    "255f737cf2107ba2760a4d836ccb0cb73abe14bccf2a0c3800267a55ea3d3b96",
+    "4816c8159e7c70a7d91dd5041d8cf70b99b8385ebc0ac1c441537130b9762c98",
+    "1b6c73457e3c110d88da59dbe2b2cf4b681698174c29851bfc41299e55a4bc0a",
+    "c56f21fd16d62f69e534802d7bd4391d8b0bf233514f3e18403524024bde9a59",
+    "68ad866a5be128672a25408f0f990248e04ed95b5350f0b566d1cddce0d3668f",
+    "93e47dc39339ccd5bfff664dc98f5b53f757e3bc2f837225c29fc0b5daa1ea31",
+    "160c3eec2da8b9abb70847a1cbb9309cd5c7fe4a6139ba3a5891b61a067b38d7",
+    "1c1d78cf57f07760cbf48064c684bade69d708d191e850016b85eb680c800b29",
+    "7cd311318ff77e411a82621b45f610243af38ffc99083136394c4ba852e3c57b",
+    "d9e88e7fb94bc2db0d5b6e9b1457bdd39b827fb9d426feee029fdae664cfc32c",
+    "51352d693489991a573c3384a18e1abfa87491b4c7b089cff1d3d4fa220eb2d8",
+    "70a9dcdb3d270b4b85fb2720cb34f3e26532872263e1793ff8de90f0b10bf553",
+    "fe38ecb05d02044d4994404b8030647d2cf007bd17d0c16e6c438bd2b12d614b",
+    "56d0e8b316dd9b433cb1b2b0d3fc99f183bf02487e7e8ae1e444f34395160251",
+    "104dc056d86d55664d15d5aa51fbb2138d250ad560074fe0137cbd13913eff6a",
+    "890ac247acd54d621e79c07dd2e671a9916f3443031da3008227a02d40488ca4",
+    "4cce604bfc73d2c03fe23b33c3de940affdc267bf19ae377bf766b0d8ab4294a",
+    "525e952dc20ab9a0f2b4e20d80e4df525ab712a0ba009093c45956faeb2f6516",
+    "e631e0603181e8b24581623baee5e91a543f4ac57251e3147435153355ca233d",
+    "43f743d5814be5923666f7afe76602e386a7edc4698e35e46901eb9ab80a6505",
+    "97bf1533a0d49c65a477b07e365cd236da7fe5f55efc6478129c84b3335fdc30",
+    "ff5b6db9a020c58faaaa432cf7127eb1b354cd45f6bc848b8c0281fac61f62c2",
+    "fe158d44fb43f4665b280d42bf855ed09efe0d44ff13d8b79b29d2e30c591661",
+    "1d8a30cf783d785b5431be46662b73e74c13e5a6d9d6ebda7fe2e6f101dac154",
+    "c63758c433e239485685eeefc71c604f16087c9f25042ef5fe95f9278ef023de",
+    "d94279ae8a1cc5531b8369e73fbb69be64b7541c0df303b5abf1b7662ec9897b",
+    "3622006aef101094dc1bc6381a01bdc0691ee36d4e9e59f1c5436b8a2ba67fdf",
+    "d3b48bc9f9532bc9ca3b7065f2ccbf3734da3f0df3159a5fe9ff0263c6861f51",
+    "4863cd4625bbecc0b07c69fd4f151b98db7b3dea63889f473d2fda1d8d8bc1fa",
+    "154aa309f3418d758295add5f46e93ef82c27445ccdac429985b091bf57c860e",
+    "7b5ab25e285c4ea65308f248b10e8af95fef8f1abe3a606225596eaae9d7756d",
+    "d317450a01acc0532e6949ffd757f3da9e99a09e11ebe3325821c209700d26c1",
+    "dd4cf4fdeff9a832ad5695ddcc19ec6fc7cda0dac4479c3f524513065463725a",
+    "6142d482c4fc41e8f48f3d7f0a88faeb8064dad3b1c2f9f152ef1be10283ab5a",
+    "ca632e42eb109f1233bd0654500a6a2822ae8bd25eba3d2e2e1183504ff49018",
+    "8248006695d5837b3079f2cabde3fbd58b760b0302603fc04178d0feafafe2c6",
+    "732b4d7c8bdac37268fad7834fbc44214a7050c0c8edbf3a204cbfb7092e4042",
+    "3458d463fcc7e1f2d5952773cf62175075571d3d500690ff4d39b1f1a999bdc1",
+    "5d9a359ee3b7cddd5db18b6d69121d0db6c416282e3d1feb009d425b7cb80cd6",
+    "6052405b1477054e761383bba09532d8c54af5507b0bf5e30007ea2c82d2076b",
+    "cff2be330ca67530dcc649aedcb290835a7e5bcd1fec1ef646d393e9d4f3277f",
+    "a11e0236383bbf91b0480aaad987f006dc46b4f4c068a198039fd73e9b8aa3f0",
+    "fc1bd916513e4845acfd8adc9af1989eff6618b65e3ce73a7acd1d968cd18621",
+    "c97c2e1cbcaf96c3d767e5b26ee71e48b98cb353cc4211f7b6111c3ee300fcc8",
+    "62564141fe62a11c1153dd122e766df4db8e9d76b53e2b8fc71b9d533af22e2e",
+    "9e6cb7fc5dcebe18119b327bf9dccba17149c88dc3ee2b7d0ff078c481b03558",
+    "27c3ff078617af119f530d95153c3a3f77cc7d733a9f1618bafa0b78afd14ede",
+    "4c7ff6ae318ae301d3d1c727b5426600a43f27d7ccaf752fe129ef56dfad37d3",
+    "d37ce5d22b8d0095e6bc5ad68735c3e5c7c3abeca400a9a9c322d896de103e9e",
+    "2de207149bc5acca430d43db71ff530c0b226461da7c90d9fb72b3caaf52c97e",
+    "c7bb12a85bb314613a582ef6549f6e2e383359c94c4eacb9492c519cf78d21c1",
+    "7b83215f7489ec3c25730c213f3d44d0eab0f5b8fc4d4e3a0e6b9cce15b49976",
+    "f4265b97d067da736726e84ecd64345c58040590be1db49b90620a310bda952d",
+    "3070555484bef11ea364cd4aeb1dcd09d5da40d2418362a5e4e20d82f4097a5e",
+    "e5d0efc16ee82efce1357fcd611019cd85ac812b64fc157a03bdbbb9efc5d6e6",
+    "bd8f4e4449dbc750fd420e36d50809b833df98991a46f22198d0c75f96c5fc21",
+    "838cb6c53a8706e884af44db6fd8d7ad5316f7d0aeee6c22c49565730fcb66e9",
+    "772220ea8e266bc2de3c7275df885c797664d674f635e50c5efd299b44a43ed3",
+    "1c85486d0f7c22c5d3711a75b39a8cfd72e942e2285ecb748649ae21fc9f28b7",
+    "23194862ff1254ed020dd1fa42630a08994fa2eded0ec6a700b991e22e4411cc",
+    "d881544bc65b49b8257767582fd64f7c70c7f1ffc20dc46c208b7a4d945d76c3",
+    "2304c236cdbeaba556cbcb50dd37242e7b883fec5fd9ef79f9cec10ae16554c7",
+    "18895ff2244dc06be50dd10b893ba2657a867a337398cd5b41c0f8156f37f8c4",
+    "a3adbfa1fb13577480a1980905c85ffb29246b9026f81fc51718f9961780561d",
+    "28dfc717e03d734d0679efc8d9ac0a40f8a172d2c2b53e8d66d27ace63326c20",
+    "ec1d959b58d4694a5f1a703c9d711c67eca64f750d58e0f86faf3c5ff5e25cf6",
+    "be38264ce25f5ed0f518ba6249a3b4a1fa4839e971893025d69175e3dba0a8d2",
+    "bf34f980fd5f948a0c6a08b04a5af714695c163eb740670dc2b68f489fcb4f59",
+    "0be9268ebdc024fea9bf26f43426d81d2197fcaed7372b38ca3a9c9617896e07",
+    "7986e5fb41a4f1270eb58501b3afcb49f58dbffdeb7f8a22763d8a379b85fd27",
+    "5e61edc5e6eb379cc00a1fa214cf2888923306233d67a5a812a37e1f07709d69",
+    "c39f3c278bfc02246f50643ed295d3ad62fb6c1a0d4fd4577a9ce7277cf67cac",
+    "2dbc0638471dae027558a6cc26b1f30ec162d1998e7c32368d6a2503aea25686",
+    "6086f729f9f416e7c2166d31d62decb3152bc5d86bec0def6561fdd5ad714c87",
+    "cd85b88edbdbd8610369138f346d522ed4cae0eddc73a49ed378630871859f08",
+    "fa58cff4cc2740624259bacf8da2ef74ce8024efd18b8f723f71b3afc599a96c",
+    "e02f34943223ea984b525778c5ad426fea610bb3ed05fc913fd831a66986ed4c",
+    "63f9a45334b6c73320e7761d46213e23f68960f16599efa278a005254a964b8d",
+    "03e6030d598d85caf97e97685b06225a97053e98dd945a3919c928cdebc9f39b",
+    "e09c4dc57a00d923075f66f3cc85ff98eff4c6726833f085051e7f67f761bea9",
+    "ae22aaaa5b19752a0bfb0d14c63f1559ec42ab67f441caf84c0ac92fa9eaa03e",
+    "5e05adc9cbb68f239b817c3513cd8b2a11b0c23961fb924131eae89d0d9d5a8e",
+    "4aea47257ab58a3588d0b50a1291b4f7f402a2e76a3b976fffeadfb0bc9a4f0c",
+    "676cc9ea71ef4b566fa67d887768c797982f2861349f10395524559ffc4f1080",
+    "acec2ee04f948c457da3ad43250623548994917ee2bf27b4a6709dbd362e0101",
+    "4eb1f5557e95afe8e49d768092a9f4ff2ebe20b01df065a51bcfaa8cf41f00c8",
+    "103b09f98a096f424b962f6a34f01122ec35725132fa436246d84981dfbe7a21",
+    "b73166e2b5ae1059c1b4247a8ff66342ff4a1551353e1d81a6cf3630efb9e6cb",
+    "68f7218bc6c7b9c4718879914a63de8690858c9ac336188cea58d9e396a0dc48",
+    "e112304ef75d039c09a8e610f5253737ba555732dd3d405dd5594acd8e3c6947",
+    "dcc1978d0df3a24fe91f46c861e2d5cfbd6fcb7e22b4674a087826540d11bf72",
+    "453bb79c8050ee8cb2a97f9f44928fc2670bd049a34d741ee5345e73eddaf257",
+    "2e0b85cb725004cf321e4d9ab6f7e5cb3f84d592ebc5ed0a8a7ae0d342236937",
+    "017e320a504f5b47e6bec928c4243d240369a3d8af10d57df021616dd153da8c",
+    "34a58072aff54318ae8d12161ee708f662fd7dda1cbcaaa4216ad5f690215138",
+    "1b6a16105b4fe3647c7ff25a7a57511911837370c79410a2f20540eb3a2f43ba",
+    "24c03f0d28f78d901d73e2917ba944463777544f649eab1ea02ebde42399274c",
+    "3df669f41e7741948f5d6781ec24727866e8a42b28abcac137f5dea881bf81e4",
+    "31200e212e12c4bb781533c6fe5c04b5274ac530ac63fbd88b39181b4d84a894",
+    "ba958445579df845b7e563888270e62ca46e3d5c7bf2ebd29427defe0ac9bbff",
+    "734ddb87a8e3cd38ca616f46d660a6f7d61b5415ea77048d72272734006162e7",
+    "c5a8c44523dab72f656f68f024aab4ca2e7ef3a73adbb009ecdf8db41455bc56",
+    "bc65c0d44153a77bd55da84d06c6d714c846ccc96af62705c821d1e5e7355571",
+    "e0383b96296423632d17789e09c2307ee6cc66bda9ed9848dbec6787d37c06cc",
+    "ddc44dbf6b473fe99f8997c64f2f2f9446fb010932806b73e4a23d0fda24c56d",
+    "a1c90868462f5e0f7df5bf8fb7b1bc82480e8d118a87889719c39c32b4ccda19",
+    "3e4926fb80c33dd28d78c3c6e499c37aa0e70381e5eef390a0b5923c88d88bae",
+    "00734377200557ca263b3d365ef217213835810bebf4d2763d0e40b298452112",
+    "ffb81d1a1323c1e33db9e364884c2d8c496eb831b667e1108d82670e610f0fc4",
+    "7cf133f6005a6d87f73e9708552c01ce37ddebb0c1010eb2783fed2f642e4ccd",
+    "13ed62a17944e9158384e1e364c863d8c59247d640cfe1130725bc6de6e5b12a",
+    "6501f7b0d6309d5c5a7d0522d9e96b49cb637aecc1e6378553199859fc47ebee",
+    "676a69c0f183bb8011f5e8ae481eee295c8f2fd95baa09770249dc78c2fcba0e",
+    "8dd10d0fbef049cbfeac4125a51a9416092aa7e59b1109bd2d4cf534eac593a9",
+    "82564030a0983bda63260f705770f113b4ed80c15cc4cccb03b9e22352ccaba8",
+    "7476b45e8f59fb135392bd297a98a627cb366fc693ef4ab8980860e653811899",
+    "ef2a422781137908f900de64ce368ff363561423e20047d173ec5be013687edf",
+    "93bd0196cb014d1f835d50df6369eca9a60fe8507be000deb50afc04bc12864a",
+    "d128d0275916e38647fbb162e8cbd66f7bbf25f783ba0c50e3bbb8fa98773d34",
+    "b8fedf43d7b6c02c9e9f5bc9fce6351ab013b6ef3748d5a9802337b29fcc0def",
+    "83b50b877fc7b32f2e9b60bbcd898c5dc582875ec8d78a3ac6f81cbdd5c5f772",
+    "d5341475f992c7a2527e478e14ce2074e2da3a65bc92d707bac9e8de1dcead39",
+    "263a54234cbae1f1da33ba104ee7f458f065ed8f400db7e441f29d045ca5ea88",
+    "17bb8a068aa502fa53939bc522388eb13731e162ca470513699743ab409fa204",
+    "9f5ba09e909a3c1dbfb0333be9543337489f9ab4da9cd72d733f9c9584619ac7",
+    "6959a75729cd67edbfcaf32210c38fd8b73c0f470e586f2118f8b2dc9bcb8ce2",
+    "edbc3d74122bd687421697c9cb4d553b9acd84d978979894daa367c3b130b128",
+    "e6ce4eae69f22bcb144b66f19bf2092522b92e85fcab19e345d5c82a19d3e119",
+    "8eefd017b5c66f54f472bd70b331c2139b24477e278b11597b79bac94118a014",
+    "68a1a8b3f8f02ba31c5e5365c187011b7f209d1246c1f9399e962e64c4f9a87f",
+    "091f196ec02bc12237ee9b55a30e5065dcace000a6724eb934a1611526fb146c",
+    "8b1d18f7c6bbc451b5702ab454ccaaee4ac91c373dbaa6ed0b80738e79071021",
+    "7b1ae19b304771861257858a24a69a0aa9daf9418f597dcb6660c516697c5cd4",
+    "19a3ce2ded89a10b51040ed9695d608b7d70d5b1faf5ab81a2e847063ce7ab10",
+    "ba363db199407bd2cc12b10c3443a7e37b254cf2dd3be7a350bf4eea24f6f8f9",
+    "5f4a9f309c54a1f0b15617bbc59726d770d1b0885fd04bb6e561bf54126b2c99",
+    "622b3bf82134a98574b08831fce04107c0cbd6f9961b9a2e6ce0fe8610dd6fce",
+    "24e672712216af7721d69f07b081a9090cf26334567b4493bc79584445935d28",
+    "f9ac025edb1dd36dddb3eb6aaf6c15371242dff80690b0ef35338131e7442c4a",
+    "70b7c5d3f7d363ec48fc24d4b4a9c44ad9c446c8fbe1214a0b39fb1c8b9e0681",
+    "66b3f0a2801e8a3fb8fedc89742a4fe3ce4447206499d340433698e962ddf423",
+    "18632756a12fea47a3894c0f1aeda6e80208e42730271f31395e3bd2eb7104ee",
+    "cbe1cc95be190f26c25b1d59f5637c0c47a406afdefa4b900948d7f7f7519aa5",
+    "840ef8754c873d60cab7afbc6ed0c76596a240e5591535e5ec3663d323ae12d4",
+    "48fb05699640723e583f48c43d2c58709dc8d123a8e1beef7accb8703fbfceef",
+    "ec0218e3f19cbb13f4d59d889811a6deadc18b71ad498ce5dce005f20ef31cc5"
+  ],
+  "duration_reference_comparisons": {
+    "one": {
+      "available_reference_frames": 168,
+      "identical_raw_frames": 168,
+      "all_available_frames_identical": true
+    },
+    "four": {
+      "available_reference_frames": 181,
+      "identical_raw_frames": 181,
+      "all_available_frames_identical": true
+    }
+  },
+  "supervisor": {
+    "status": "completed",
+    "exit_code": 0,
+    "wall_limit_seconds": 300.0,
+    "wall_seconds_including_cleanup": 138.7199820940001,
+    "remaining_children": 0
+  },
+  "limits": [
+    "Separate300-second budget per fixed material, not completion within the original serial-pair budget.",
+    "One session per material/environment does not establish population determinism or causal thread effects.",
+    "Normalized coefficient is not calibrated physical fabric.",
+    "Saved endpoints/secants do not establish continuous-time contact, instantaneous velocity, sustained settling, physical fit or engine adoption."
+  ]
+}
