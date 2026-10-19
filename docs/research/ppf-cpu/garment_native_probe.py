@@ -28,6 +28,16 @@ def session_controls(frames):
     if type(frames) is not int or frames not in [18,60]:raise ValueError('Only 18 or 60 frames are admitted.')
     return {**SESSION,'frames':frames}
 
+def case_plan(same_material_control=False):
+    return {'first':CASES['soft'],'second':CASES['soft']} if same_material_control else dict(CASES)
+
+def repeatability_settings(initialization,frames,mass_convention,unsewn_control,environment):
+    if (initialization,frames,mass_convention,unsewn_control)!=('clear-warm-sewing',60,'browser-inertia',False):raise ValueError('Same-material control requires cleared pose, 60 intervals, captured inertia and normal stitches.')
+    names=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
+    values={name:environment.get(name) for name in names}
+    if len(set(values.values()))!=1 or values[names[0]] not in ['1','4']:raise ValueError('Require explicit consistent 1 or 4 requested thread settings.')
+    return {'requested_threads':int(values[names[0]]),'variables':values,'scope':'Requested inherited environment, not a measurement of actual native worker counts.'}
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ['upstream','out','cache']:parser.add_argument('--'+key,type=Path,required=True)
@@ -35,6 +45,7 @@ def main():
     parser.add_argument('--mass-convention',choices=['captured-density','browser-inertia'],default='captured-density')
     parser.add_argument('--unsewn-control',action='store_true',help='Research only: zero stitch forces in warm-sewing; never assembled-garment acceptance.')
     parser.add_argument('--frames',type=int,choices=[18,60],default=18)
+    parser.add_argument('--same-material-control',action='store_true',help='Research only: two independent Young 500 sessions with fixed preparation and declared thread settings.')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
@@ -42,6 +53,8 @@ def main():
     if revision!=REVISION:raise ValueError('Unpinned source.')
     if args.frames==60 and args.initialization!='clear-warm-sewing':raise ValueError('Longer observation requires the cleared warm pose.')
     session_parameters=session_controls(args.frames);frame_count=args.frames+1
+    cases=case_plan(args.same_material_control)
+    if args.same_material_control:execution_settings=repeatability_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,os.environ)
     inputs=load_inputs(Path(__file__).with_name('results'))
     original_inputs=inputs
     controls=experiment_controls(args.initialization,args.unsewn_control)
@@ -58,7 +71,9 @@ def main():
             clear_parameters['surface_admission']=surface_clearance(inputs,REQUIRED_CLEARANCE_M)
             if clear_parameters['surface_admission']['violations']:raise ValueError('Prepared cloth/body surface is not barrier-clear.')
     if args.mass_convention=='browser-inertia':inputs,mass_mapping=match_browser_inertia(original_inputs,inputs,Path(__file__).with_name('results'))
-    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':frame_count,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':session_parameters,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':session_parameters,'case_normalized_young':cases,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    if args.same_material_control:
+        receipt.update(experiment=receipt['experiment']+'-same-material-control',same_material_control=True,execution_settings=execution_settings,scope='Same-material repeated native motion only; not material discrimination, settling or physical fit acceptance.')
     if args.unsewn_control:
         receipt.update(experiment=receipt['experiment']+'-unsewn-control',unsewn_control=True,scope='Zero stitch-force diagnostic only. Same strict contacts and rest/mass/body/seam data; not assembled garment, material, settling or physical-fit acceptance.')
     started=time.perf_counter()
@@ -97,7 +112,7 @@ def main():
                 except ValidationError as error:
                     receipt['padding_only_admission']={'status':'refused_scene_build','error':str(error),'violations':json.loads(json.dumps(error.violations,default=lambda v:v.tolist() if hasattr(v,'tolist') else str(v)))}
                 save()
-            for name,young in CASES.items():
+            for name,young in cases.items():
                 receipt.update(stage='strict_scene_build' if args.initialization=='strict' else 'initialized_scene_build',current_case=name);save()
                 app,body,fixed=build_scene(name,inputs,young)
                 if not body.static:raise ValueError('Body did not become a genuine static collider.')
