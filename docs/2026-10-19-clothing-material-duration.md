@@ -30,6 +30,14 @@ The longer audit preserves the timeout as incomplete, freezes actual saved count
 
 Local Node24 reproduction confirms the decompressed cold packet and separate browser warm endpoint byte for byte, plus complete source/geometry admission. Installed package and lockfile bytes match exactly; no dependency or app-code changes are made. Actual native Rust execution occurs in the linked public CI jobs. Replay/tests use the Python standard library; optional geometry rendering uses NumPy/Matplotlib and is not a contact/fit test.
 
-The final full local gate passes150tests in263.279s. Fresh canonical-main CI is pending. Harness and garment-preflight outer limits increase5→8minutes for added replay coverage; the native300-second supervisor remains unchanged. Earlier136-test main CI took280.858s and preflight263.038s under5-minute outer limits.
+The final full local gate passes150tests in263.279s. Fresh canonical-main implementation `645fff44c065c4d46c56bab43b17792102cd74e3` passes all three gates on2026-10-19:
+
+| Main check | Actual verification |
+| --- | --- |
+| [Research harness39246966906](https://github.com/twangyal/projects-monorepo/actions/runs/39246966906) | 150tests pass in214.116s |
+| [Actual-garment preflight39246966960](https://github.com/twangyal/projects-monorepo/actions/runs/39246966960) | 93garment tests pass in308.051s; complete packet/warm/rest/body reproduction and source admission pass |
+| [Clothing Studio39246966992](https://github.com/twangyal/projects-monorepo/actions/runs/39246966992) | 161unit tests and195native browser cases pass, plus the app's lint/build gate |
+
+The published implementation tree is `a2c9d5bcea24c442d1daff7ec15f1d9847fcefe7`, identical to the reviewed/tested isolated worktree. This verification-only follow-up changes this document, not implementation or evidence bytes. The native duration run remains an overall failure; successful replay/software CI does not convert its timeout into native completion. Harness and garment-preflight outer limits increase5→8minutes for added replay coverage; the native300-second supervisor remains unchanged. Earlier136-test main CI took280.858s and preflight263.038s under5-minute outer limits.
 
 The next uncompleted gate is the recorded requested-one serial-pair runtime limit, followed by sustained settling/construction quality, representative garments/bodies/final exports and physical references. A new explicitly bounded fixed-material protocol can address the missing tail while retaining this original timeout. Pattern rest lengths and contact checks must not be changed to force acceptance. Issue #290 stays open.
