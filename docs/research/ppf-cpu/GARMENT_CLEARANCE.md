@@ -14,3 +14,7 @@ Meaningful RED/GREEN tests cover the original false-clear pose, actual candidate
 python3 -m unittest discover -s docs/research/ppf-cpu -p test_garment_clearance.py
 python3 docs/research/ppf-cpu/garment_native_probe.py --initialization clear-warm-sewing --mass-convention browser-inertia --upstream /path/to/pinned/upstream --out /new/report --cache /new/empty-cache
 ```
+
+## Bounded one-second observation
+
+Issue #290 next isolates duration from the successful0.3-second preparation. The dedicated `autonomous/clothing-ppf-garment-relaxation-290` branch passes `--frames60` (CLI spelling: `--frames 60`) and requests61 saved frames including frame0. The default remains18 intervals/19 frames. Only the session frame limit changes; geometry, rest state, material, captured inertia, body contacts, collision checks and stitch stiffness remain identical. Export admission verifies the explicitly declared session and refuses other control drift. This is a bounded motion observation, not settling or physical-fit acceptance. Native results remain pending until raw frames are retained and independently audited.

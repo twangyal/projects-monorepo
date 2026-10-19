@@ -24,17 +24,24 @@ def experiment_controls(initialization,unsewn_control=False):
     if unsewn_control:controls['stitch-stiffness']=0.
     return controls
 
+def session_controls(frames):
+    if type(frames) is not int or frames not in [18,60]:raise ValueError('Only 18 or 60 frames are admitted.')
+    return {**SESSION,'frames':frames}
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ['upstream','out','cache']:parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--initialization',choices=['strict','separated','sewing','warm-sewing','clear-warm-sewing'],default='strict')
     parser.add_argument('--mass-convention',choices=['captured-density','browser-inertia'],default='captured-density')
     parser.add_argument('--unsewn-control',action='store_true',help='Research only: zero stitch forces in warm-sewing; never assembled-garment acceptance.')
+    parser.add_argument('--frames',type=int,choices=[18,60],default=18)
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
     revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
     if revision!=REVISION:raise ValueError('Unpinned source.')
+    if args.frames==60 and args.initialization!='clear-warm-sewing':raise ValueError('Longer observation requires the cleared warm pose.')
+    session_parameters=session_controls(args.frames);frame_count=args.frames+1
     inputs=load_inputs(Path(__file__).with_name('results'))
     original_inputs=inputs
     controls=experiment_controls(args.initialization,args.unsewn_control)
@@ -51,7 +58,7 @@ def main():
             clear_parameters['surface_admission']=surface_clearance(inputs,REQUIRED_CLEARANCE_M)
             if clear_parameters['surface_admission']['violations']:raise ValueError('Prepared cloth/body surface is not barrier-clear.')
     if args.mass_convention=='browser-inertia':inputs,mass_mapping=match_browser_inertia(original_inputs,inputs,Path(__file__).with_name('results'))
-    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':frame_count,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':session_parameters,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
     if args.unsewn_control:
         receipt.update(experiment=receipt['experiment']+'-unsewn-control',unsewn_control=True,scope='Zero stitch-force diagnostic only. Same strict contacts and rest/mass/body/seam data; not assembled garment, material, settling or physical-fit acceptance.')
     started=time.perf_counter()
@@ -102,24 +109,24 @@ def main():
                 fixed._rest_vert_mask=np.ones(len(inputs['rest']),dtype=np.uint8)
                 fixed._tri_param['density']=inputs['face_density'][:]
                 session=app.session.create(fixed)
-                for key,value in SESSION.items():session.param.set(key,value)
+                for key,value in session_parameters.items():session.param.set(key,value)
                 receipt['stage']='native_session_build';save();session=session.build()
                 receipt['stage']='native_export_admission';save()
                 directory=Path(session.info.path)
-                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young,object_parameters=controls,body_contact_offset=body_offset)
+                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young,object_parameters=controls,body_contact_offset=body_offset,session_parameters=session_parameters)
                 save()
                 receipt['stage']='native_execution';save();case_start=time.perf_counter();session.start(blocking=True)
                 if not session.finished():raise ValueError('Native process did not finish.')
                 output=Path(session.output.path)
-                if {p.name for p in output.glob('vert_*.bin')}!={f'vert_{i}.bin' for i in range(19)}:raise ValueError('Incomplete actual frame set.')
+                if {p.name for p in output.glob('vert_*.bin')}!={f'vert_{i}.bin' for i in range(frame_count)}:raise ValueError('Incomplete actual frame set.')
                 frames=[]
-                for i in range(19):
+                for i in range(frame_count):
                     values=np.fromfile(output/f'vert_{i}.bin',dtype=np.float32)
                     if len(values)!=2353*3 or not np.isfinite(values).all():raise ValueError('Invalid solved vertex namespace/values.')
                     frames.append(values.reshape(-1,3))
                 movement=max(float(np.linalg.norm(frame-frames[0],axis=1).max()) for frame in frames[1:])
                 if movement<=1e-6:raise ValueError('Frozen/nonmoving output is not an execution result.')
-                receipt['cases'][name]={'frames':19,'vertices':2353,'maximum_displacement_m':movement,'native_wall_seconds':time.perf_counter()-case_start};save()
+                receipt['cases'][name]={'frames':frame_count,'vertices':2353,'maximum_displacement_m':movement,'native_wall_seconds':time.perf_counter()-case_start};save()
             receipt.update(status='passed_unsewn_diagnostic_motion' if args.unsewn_control else 'passed_garment_motion_probe',stage='completed');save();print('cpu unsewn diagnostic motion: PASS' if args.unsewn_control else 'cpu actual garment motion probe: PASS',flush=True)
         finally:App.get_data_dirpath=staticmethod(original)
     except BaseException as error:
