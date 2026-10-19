@@ -1,0 +1,14 @@
+.F...
+======================================================================
+FAIL: test_empty_mesh_is_refused_instead_of_reporting_clearance (test_garment_clearance.TriangleClearance.test_empty_mesh_is_refused_instead_of_reporting_clearance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/dea0b0842cca/clothing-barrier-clearance-290/docs/research/ppf-cpu/test_garment_clearance.py", line 28, in test_empty_mesh_is_refused_instead_of_reporting_clearance
+    with self.assertRaises(ValueError):surface_clearance({'initial':[],'faces':[],'body_vertices':[],'body_faces':[]},.006)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 5 tests in 16.469s
+
+FAILED (failures=1)

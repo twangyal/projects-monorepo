@@ -14,6 +14,7 @@ from garment_native_export import verify_export
 from garment_sewing_layout import sewing_layout
 from garment_mass import match_browser_inertia
 from garment_warm_start import prepare as prepare_warm_start,load_warm_start
+from garment_clearance import outward_preparation,surface_clearance,REQUIRED_CLEARANCE_M
 from garment_native_initialization import separate_rib,CLOTH_OFFSET_M,BODY_OFFSET_M,RIB_OFFSET_M,CUT_HALF_GAP_M
 
 
@@ -26,7 +27,7 @@ def experiment_controls(initialization,unsewn_control=False):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ['upstream','out','cache']:parser.add_argument('--'+key,type=Path,required=True)
-    parser.add_argument('--initialization',choices=['strict','separated','sewing','warm-sewing'],default='strict')
+    parser.add_argument('--initialization',choices=['strict','separated','sewing','warm-sewing','clear-warm-sewing'],default='strict')
     parser.add_argument('--mass-convention',choices=['captured-density','browser-inertia'],default='captured-density')
     parser.add_argument('--unsewn-control',action='store_true',help='Research only: zero stitch forces in warm-sewing; never assembled-garment acceptance.')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
@@ -40,18 +41,25 @@ def main():
     body_offset=0. if args.initialization=='strict' else BODY_OFFSET_M
     if args.initialization=='separated':inputs=separate_rib(original_inputs)
     if args.initialization=='sewing':inputs,layout=sewing_layout(original_inputs)
-    if args.initialization=='warm-sewing':
+    if args.initialization in ['warm-sewing','clear-warm-sewing']:
         inputs,warm_parameters=prepare_warm_start(original_inputs,load_warm_start(Path(__file__).with_name('results')),Path(__file__).with_name('results'))
+        if args.initialization=='clear-warm-sewing':
+            body=json.loads(gzip.decompress(Path(__file__).with_name('results').joinpath('garment-first.json.gz').read_bytes()))['packet']['body']
+            inputs,clear_parameters=outward_preparation(inputs,body)
         inputs,layout=sewing_layout(inputs)
+        if args.initialization=='clear-warm-sewing':
+            clear_parameters['surface_admission']=surface_clearance(inputs,REQUIRED_CLEARANCE_M)
+            if clear_parameters['surface_admission']['violations']:raise ValueError('Prepared cloth/body surface is not barrier-clear.')
     if args.mass_convention=='browser-inertia':inputs,mass_mapping=match_browser_inertia(original_inputs,inputs,Path(__file__).with_name('results'))
-    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':19,'case_names':list(CASES),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':SESSION,'case_normalized_young':CASES,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
     if args.unsewn_control:
         receipt.update(experiment=receipt['experiment']+'-unsewn-control',unsewn_control=True,scope='Zero stitch-force diagnostic only. Same strict contacts and rest/mass/body/seam data; not assembled garment, material, settling or physical-fit acceptance.')
     started=time.perf_counter()
     def save():(out/'receipt.json').write_text(json.dumps(receipt,indent=2,allow_nan=False)+'\n')
     if args.initialization=='separated':receipt['initialization_parameters']={'rib_normal_offset_m':RIB_OFFSET_M,'cut_half_gap_m':CUT_HALF_GAP_M,'combined_cloth_body_offset_m':CLOTH_OFFSET_M+BODY_OFFSET_M}
-    if args.initialization in ['sewing','warm-sewing']:receipt['initialization_parameters']=layout
-    if args.initialization=='warm-sewing':receipt['warm_start_parameters']=warm_parameters
+    if args.initialization in ['sewing','warm-sewing','clear-warm-sewing']:receipt['initialization_parameters']=layout
+    if args.initialization in ['warm-sewing','clear-warm-sewing']:receipt['warm_start_parameters']=warm_parameters
+    if args.initialization=='clear-warm-sewing':receipt['clearance_preparation']=clear_parameters
     receipt['mass_convention']=args.mass_convention
     if args.mass_convention=='browser-inertia':receipt['mass_parameters']=mass_mapping
     save()

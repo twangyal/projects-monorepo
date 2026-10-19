@@ -5,10 +5,10 @@ on:
       initialization:
         description: Native initial pose (warm-sewing is a known first-advance failure)
         type: choice
-        options: [sewing, warm-sewing]
+        options: [sewing, warm-sewing, clear-warm-sewing]
         default: sewing
   push:
-    branches: [autonomous/clothing-ppf-garment-native-288, autonomous/clothing-ppf-garment-initialized-288, autonomous/clothing-ppf-garment-sewing-288, autonomous/clothing-ppf-garment-mass-289, autonomous/clothing-ppf-garment-warm-290, autonomous/clothing-ppf-garment-unsewn-290]
+    branches: [autonomous/clothing-ppf-garment-native-288, autonomous/clothing-ppf-garment-initialized-288, autonomous/clothing-ppf-garment-sewing-288, autonomous/clothing-ppf-garment-mass-289, autonomous/clothing-ppf-garment-warm-290, autonomous/clothing-ppf-garment-unsewn-290, autonomous/clothing-ppf-garment-clearance-290]
     paths:
       - '.github/workflows/clothing-ppf-garment-native.yml'
       - 'docs/research/ppf-cpu/**'
@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 22
     env:
-      INITIALIZATION: ${{ github.event_name == 'push' && (github.ref_name == 'autonomous/clothing-ppf-garment-warm-290' || github.ref_name == 'autonomous/clothing-ppf-garment-unsewn-290') && 'warm-sewing' || inputs.initialization || 'sewing' }}
+      INITIALIZATION: ${{ github.event_name == 'push' && github.ref_name == 'autonomous/clothing-ppf-garment-clearance-290' && 'clear-warm-sewing' || github.event_name == 'push' && (github.ref_name == 'autonomous/clothing-ppf-garment-warm-290' || github.ref_name == 'autonomous/clothing-ppf-garment-unsewn-290') && 'warm-sewing' || inputs.initialization || 'sewing' }}
       UNSEWN_CONTROL: ${{ github.event_name == 'push' && github.ref_name == 'autonomous/clothing-ppf-garment-unsewn-290' && 'true' || 'false' }}
       PYTHONUNBUFFERED: '1'
       CARGO_TARGET_DIR: ${{ github.workspace }}/upstream/target/cpu

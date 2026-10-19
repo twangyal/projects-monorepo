@@ -265,3 +265,5 @@ Clothing research #290: separate provenance-checked45-frame browser growth endpo
 ### 2026-10-18 — Gaze binary ARIA state (#291)
 
 Explicit check/uncheck now supports binary custom checkbox/switch widgets through one website-owned click with deferred observed-state feedback, including assisted matching and stale-result retirement. Missing/mixed state remains refused. Software tests and verification are in `apps/gaze-navigator/docs/2026-10-18-aria-check-state.md`; physical speech/gaze acceptance remains separate. Project #1 stays ACTIVE.
+
+Clothing research #290 continues with an explicit5mm outward warm-pose preparation and complete float32 triangle-pair cloth/body clearance gate. The prior pose measures only1.49049mm minimum surface separation;4mm preparation is retained as rejected against the6mm target, while5mm preparation passes. Rest/mass/body/seams remain unchanged; actual pinned sewn CPU execution is pending. See `docs/research/ppf-cpu/GARMENT_CLEARANCE.md`. This is a research candidate, not a shipping solver or physical-fit result.
