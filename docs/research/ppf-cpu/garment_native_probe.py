@@ -40,6 +40,14 @@ def relaxation_settings(initialization,frames,mass_convention,unsewn_control,sam
     if type(frames) is not int or (initialization,frames,mass_convention,unsewn_control,same_material_control)!=('clear-warm-sewing',180,'browser-inertia',False,False):raise ValueError('Relaxation study requires cleared pose, 180 intervals, captured inertia, normal stitches and two materials.')
     return requested_thread_settings(environment)
 
+def fixed_material_cases(name):
+    if name not in CASES:raise ValueError('Require one declared soft or stiff material.')
+    return {name:CASES[name]}
+
+def fixed_material_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,environment):
+    if relaxation_study:raise ValueError('Fixed-material sessions are a separate protocol from serial pairs.')
+    return relaxation_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,environment)
+
 def requested_thread_settings(environment):
     names=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
     values={name:environment.get(name) for name in names}
@@ -55,14 +63,16 @@ def main():
     parser.add_argument('--frames',type=int,choices=[18,60,180],default=18)
     parser.add_argument('--same-material-control',action='store_true',help='Research only: two independent Young 500 sessions with fixed preparation and declared thread settings.')
     parser.add_argument('--relaxation-study',action='store_true',help='Research only: explicit three-second two-material observation; no settling acceptance.')
+    parser.add_argument('--fixed-material-study',choices=list(CASES),help='Research only: one fixed material in a separate bounded three-second session.')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
     revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
     if revision!=REVISION:raise ValueError('Unpinned source.')
     if args.frames>=60 and args.initialization!='clear-warm-sewing':raise ValueError('Longer observation requires the cleared warm pose.')
-    session_parameters=session_controls(args.frames,relaxation_study=args.relaxation_study);frame_count=args.frames+1
-    cases=case_plan(args.same_material_control)
+    session_parameters=session_controls(args.frames,relaxation_study=args.relaxation_study or args.fixed_material_study is not None);frame_count=args.frames+1
+    cases=fixed_material_cases(args.fixed_material_study) if args.fixed_material_study is not None else case_plan(args.same_material_control)
+    if args.fixed_material_study is not None:execution_settings=fixed_material_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,os.environ)
     if args.same_material_control:execution_settings=repeatability_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,os.environ)
     if args.relaxation_study:execution_settings=relaxation_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,os.environ)
     inputs=load_inputs(Path(__file__).with_name('results'))
@@ -82,6 +92,8 @@ def main():
             if clear_parameters['surface_admission']['violations']:raise ValueError('Prepared cloth/body surface is not barrier-clear.')
     if args.mass_convention=='browser-inertia':inputs,mass_mapping=match_browser_inertia(original_inputs,inputs,Path(__file__).with_name('results'))
     receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':session_parameters,'case_normalized_young':cases,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    if args.fixed_material_study is not None:
+        receipt.update(experiment=receipt['experiment']+'-fixed-material-study',fixed_material_study=args.fixed_material_study,execution_settings=execution_settings,scope='Separate bounded three-second fixed-material session; not completion of the original serial pair, sustained settling, calibrated fabric, physical fit or backend adoption acceptance.')
     if args.relaxation_study:
         receipt.update(experiment=receipt['experiment']+'-relaxation-study',relaxation_study=True,execution_settings=execution_settings,scope='Bounded three-second two-material observation; not sustained settling, calibrated fabric, physical fit or backend adoption acceptance.')
     if args.same_material_control:
