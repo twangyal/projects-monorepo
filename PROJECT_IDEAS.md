@@ -125,6 +125,8 @@ The [separate fixed-material three-second study](docs/research/ppf-cpu/GARMENT_F
 
 Construction localization #290 now retains [part-level strain and seam provenance](docs/research/ppf-cpu/GARMENT_CONSTRUCTION_DIAGNOSTICS.md) from the existing complete three-second native pair. Both material peaks lie on shared underarm edge561/571, while torso p95 is substantially lower; exact indices, authored triangles and projections support the next construction investigation. This does not establish a causal defect, physical tolerances or fit. Clothing remains ACTIVE.
 
+Triangle-wide [principal-stretch follow-through](docs/research/ppf-cpu/GARMENT_PRINCIPAL_STRAIN.md) evaluates all in-plane directions of the unchanged native rest metric, with rest-area-weighted distributions. The retained final Young500/2000 cases reach40.885/26.339% peak extension at underarm triangle3091, versus31.196/19.012% sampled-edge maxima. Independent SVD agrees across all4480faces/material. This strengthens the unresolved construction-quality finding; it does not establish physical thresholds, calibrated fit or engine adoption.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`

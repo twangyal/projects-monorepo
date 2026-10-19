@@ -44,3 +44,5 @@ Longer native observation: [explicit three-second duration protocol and evidence
 Native construction localization: [per-part signed strain, original triangle/edge and seam provenance, exact saved geometry](GARMENT_CONSTRUCTION_DIAGNOSTICS.md).
 
 Separate bounded material sessions: [four completed three-second jobs, full official archives and exact prefix replay](GARMENT_FIXED_MATERIAL_STUDY.md).
+
+Construction membrane deformation: [coordinate-invariant principal stretch, area-weighted distributions and exact-geometry views](GARMENT_PRINCIPAL_STRAIN.md).

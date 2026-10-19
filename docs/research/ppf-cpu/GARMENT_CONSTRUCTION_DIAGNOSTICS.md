@@ -26,3 +26,5 @@ python3 docs/research/ppf-cpu/render_garment_strain.py docs/research/ppf-cpu/res
 ```
 
 The numerical path uses only the standard library; rendering optionally needs NumPy and Matplotlib. Focused tests cover shared-edge provenance, overlapping per-part counts, signed compression/extension, nearest-rank percentiles, seam endpoint attribution, incomplete/nonfinite/degenerate inputs and exact frozen-pair reproduction. Physical fabric calibration, seam/construction acceptance, representative garment/body coverage and shipping-engine adoption remain open. The original requested-one serial timeout is unchanged; the separate fixed-material protocol is [tracked independently](GARMENT_FIXED_MATERIAL_STUDY.md). Clothing remains ACTIVE and project #8 remains skipped.
+
+Follow-through: [intrinsic triangle principal stretch](GARMENT_PRINCIPAL_STRAIN.md) measures all in-plane directions and rest-area-weighted distributions. It finds larger peak extension40.885/26.339% at another underarm triangle; the edge metrics above retain their original meaning and values.

@@ -200,6 +200,8 @@ The repaired native candidate now retains a controlled Young500/2000 one-second 
 
 [Construction localization](research/ppf-cpu/GARMENT_CONSTRUCTION_DIAGNOSTICS.md) traces the existing full pair's peak positive extension to a shared underarm edge, with per-part distributions, original triangle/edge provenance and seam gaps. This makes the next construction investigation specific without treating low residual motion as low strain or physical acceptance. Representative garment/body coverage, physical references, calibrated fit and shipping-engine adoption remain open; Clothing stays ACTIVE.
 
+Triangle-wide [principal-stretch analysis](research/ppf-cpu/GARMENT_PRINCIPAL_STRAIN.md) now measures all in-plane directions of the unchanged rest geometry, independently checked against SVD for all4480faces/material. Peak final extension is40.885/26.339% for Young500/2000, larger than sampled-edge maxima and localized at another underarm triangle. Rest-area-weighted distributions retain the concentration of distortion. Construction quality remains open; these metrics do not establish stress, physical tolerances or fit.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
