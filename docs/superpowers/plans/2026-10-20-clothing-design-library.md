@@ -32,11 +32,11 @@
 **Interfaces:** `mountDesignLibrary({current,guard,open,download})` mounts `#design-library`; main's async `open` uses `beginLoad`, `readDesign`, `adoptLoad` and `finishLoad`. The guard checks all existing draft groups and current load/gesture/export state.
 - [x] Write native complete-design Save/open/Undo/Redo/reload/download, held save/read retirement, raw draft and phone focus cases; observe RED before implementation.
 - [x] Implement mounted status/selection/name/actions; keep text via textContent and preserve independent captured operations. Add Saved designs to workspace modal panels.
-- [ ] Run focused gate, inspect desktop/phone, then complete project checks/browser suite. Preserve every observed failure and repair its cause.
-- [ ] Update README, portfolio direction/roadmap and actual verification receipt; commit.
+- [x] Run focused gate, inspect desktop/phone, then complete project checks/browser suite. Preserve every observed failure and repair its cause.
+- [x] Update README, portfolio direction/roadmap and actual verification receipt; commit.
 
 ### Task3: Review and canonical integration
-- [ ] Independent review of final source, fix important findings with regressions, run required source gate.
+- [x] Independent review of final source; no important findings. Reproduce/fix minor C1 admission gap;163units/lint/TypeScript pass. Final bundled hosted source gate passes.
 - [ ] Compare exact local/remote tree and integrate verified task history to main with a lease. Record verification limitations truthfully; no PR.
 - [ ] Close #295 only for the actually completed bounded milestone; report canonical CI and retain broader ACTIVE/physical gates.
 
@@ -47,3 +47,7 @@ Task1: complete — baseline161units; new pure admission2tests pass, then all163
 Task2 checkpoint: complete UI implemented. Native UI RED was missing Saved designs action after valid complete-project import. Focused GREEN: all9 storage/UI browser cases (19.6s); project163units/lint/TypeScript/build pass. Complete snapshot/selected JSON/Undo/Redo/autosave reload, canceled/confirmed deletion, blank raw draft refusal,390×740 containment/Escape focus, held native image decode during save and selected read all verified. Phone capture inspected; no overflow. Status belongs inside the mounted panel, so no unused `notice` injection is needed; main retains existing global guard notices. Full browser gate and independent review pending.
 
 Independent review: no Critical/Important findings. Minor printable-name gap reproduced with C1 code points U+0080–U+009F: pure admission failed with missing expected exception, then rejecting the entire32-character control range passes all163units/lint/TypeScript. This validation-only followup does not rebuild the dist directory while the broad native suite serves it. Hosted final-source CI will exercise the final bundled bytes.
+
+Integration decision: AGENTS.md explicitly authorizes verified main integration and forbids unrequested PRs; the autonomous noninteractive user instruction selects that path. No interactive branch menu is needed. Detached host worktree is retained. Desktop1280×900 and phone390×740 captures inspected; native browser gate remains in flight.
+
+Final source gate: `097931d64d6e10791661ab3753467d6b67e79e5b` / tree `e63649ed37b99e8ac0398f0cb88fdd500f6268c3`, hosted run39473196902 passes163units/lint/types/build and209nativebrowser cases. Complete local browser run passes209cases in8.8minutes on the pre-C1-fix bundle; post-review163unit/lint/type checks plus final build pass separately. No served-dist rebuild occurred during the broad run. Documentation-only completion checkpoint is ready for lease-protected main integration.

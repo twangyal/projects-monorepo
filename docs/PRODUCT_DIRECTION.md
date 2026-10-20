@@ -206,6 +206,10 @@ The repaired native candidate now retains a controlled Young500/2000 one-second 
 
 Triangle-wide [principal-stretch analysis](research/ppf-cpu/GARMENT_PRINCIPAL_STRAIN.md) now measures all in-plane directions of the unchanged rest geometry, independently checked against SVD for all4480faces/material. Peak final extension is40.885/26.339% for Young500/2000, larger than sampled-edge maxima and localized at another underarm triangle. Rest-area-weighted distributions retain the concentration of distortion. Construction quality remains open; these metrics do not establish stress, physical tolerances or fit.
 
+### Delivery note — 2026-10-20 (#295): named complete design copies
+
+Clothing now has a contextual **Saved designs** library for up to12 immutable named complete-project copies, explicit one-edit open, selected JSON backup and confirmed copy-only deletion. Private media and applied construction/grading/body data stay together; existing current-concept autosave, raw drafts and newer editing ownership remain protected. This advances reusable design exploration without cloud storage or a new schema. See `apps/clothing-studio/docs/2026-10-20-design-library-295.md` for executed checks and limits. Clothing remains ACTIVE; physical garment/material validation and broader professional product acceptance are separate outstanding gates. Project #8 remains skipped.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.
