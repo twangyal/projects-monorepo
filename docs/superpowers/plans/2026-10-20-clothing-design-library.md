@@ -37,8 +37,8 @@
 
 ### Task3: Review and canonical integration
 - [x] Independent review of final source; no important findings. Reproduce/fix minor C1 admission gap;163units/lint/TypeScript pass. Final bundled hosted source gate passes.
-- [ ] Compare exact local/remote tree and integrate verified task history to main with a lease. Record verification limitations truthfully; no PR.
-- [ ] Close #295 only for the actually completed bounded milestone; report canonical CI and retain broader ACTIVE/physical gates.
+- [x] Compare exact local/remote tree and integrate verified task history to main with a lease. Record verification limitations truthfully; no PR.
+- [x] Close #295 only for the actually completed bounded milestone; report canonical CI and retain broader ACTIVE/physical gates.
 
 ## Execution ledger
 
@@ -51,3 +51,7 @@ Independent review: no Critical/Important findings. Minor printable-name gap rep
 Integration decision: AGENTS.md explicitly authorizes verified main integration and forbids unrequested PRs; the autonomous noninteractive user instruction selects that path. No interactive branch menu is needed. Detached host worktree is retained. Desktop1280×900 and phone390×740 captures inspected; native browser gate remains in flight.
 
 Final source gate: `097931d64d6e10791661ab3753467d6b67e79e5b` / tree `e63649ed37b99e8ac0398f0cb88fdd500f6268c3`, hosted run39473196902 passes163units/lint/types/build and209nativebrowser cases. Complete local browser run passes209cases in8.8minutes on the pre-C1-fix bundle; post-review163unit/lint/type checks plus final build pass separately. No served-dist rebuild occurred during the broad run. Documentation-only completion checkpoint is ready for lease-protected main integration.
+
+Canonical integration: `f8c0a080468328efb045d3bcb797d1de2e9ac556` / tree `6db463aa921bf932e2bd169b9fe1ebd8f777b09e`, lease from main92b078. Main run39474212037 passes163unit/lint/types/build and all209native browser cases. Task source/test bytes are unchanged from the successful source run.
+
+Completion: issue295 closed after canonical-main CI39474212037 passed. This final plan receipt changes only root documentation; product/test/README bytes remain those verified atf8c0a080468328efb045d3bcb797d1de2e9ac556. Broader ACTIVE status, physical gates and skipped project8 remain unchanged.
