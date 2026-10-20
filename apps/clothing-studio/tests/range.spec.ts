@@ -37,6 +37,7 @@ test('colorways are saved, compared as renders, costed into a range plan, applie
   await editor(page).getByLabel('Units for Ecru and red').dispatchEvent('change');
   await editor(page).getByLabel('Units for Ecru and navy').fill('50');
   await editor(page).getByLabel('Units for Ecru and navy').dispatchEvent('change');
+  await editor(page).getByRole('button', { name: 'Apply colorway details', exact: true }).click();
   await editor(page).getByRole('combobox', { name: 'Currency' }).selectOption('EUR');
   await editor(page).getByLabel('Retail price').fill('40');
   await editor(page).getByLabel('Slub jersey per m').fill('10');

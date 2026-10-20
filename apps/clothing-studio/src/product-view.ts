@@ -115,6 +115,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
     <div class="range-save"><label class="field">Colorway name<input id="colorway-name" maxlength="${LIMITS.colorwayName}" autocomplete="off" placeholder="e.g. Navy and ecru"></label>
       <button id="save-colorway">Save as colorway</button></div></div>
     <div id="colorway-list" class="colorway-list" role="list" aria-label="Colorways"></div>
+    <div class="inline-actions"><button id="apply-colorway-details" disabled>Apply colorway details</button><button id="discard-colorway-details" class="quiet" disabled>Discard colorway details</button></div>
+    <p class="fine-print">Names and units are drafts until applied together. The range plan and exports use applied details.</p>
     <details class="costing" open><summary>Costing inputs</summary>
       <div class="costing-grid"><label class="field">Currency<select id="cost-currency">${CURRENCIES.map(c => `<option value="${c}">${c}</option>`).join('')}</select></label>
         <label class="field">Retail price<input id="cost-retail" type="number" min="0" max="${LIMITS.price[1]}" step="0.01"></label>
@@ -232,14 +234,15 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Validate the complete recoverable graph before invoking the parent commit or reporting success.
   const commit = (next: Project) => options.commit(validateProject(next));
-  type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name' | 'body';
+  type DraftGroup = 'measurements' | 'fit' | 'artwork' | 'spec' | 'costing' | 'name' | 'body' | 'colorways';
   const drafts = new Map<string, string>();
   const measurementIds = new Set(['product-chest', 'product-length', 'product-sleeve', 'product-neckline', ...LEG_FIELDS.map(([id]) => id)]);
   const groupOf = (id: string): DraftGroup | null => ['garment-drape-chest','garment-drape-waist','garment-drape-hip','garment-drape-depth'].includes(id) ? 'body' : measurementIds.has(id) ? 'measurements' : id.startsWith('fit-') ? 'fit'
-    : ['artwork-width', 'artwork-x', 'artwork-y', 'artwork-rotation'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : null;
+    : ['artwork-width', 'artwork-x', 'artwork-y', 'artwork-rotation'].includes(id) ? 'artwork' : id.startsWith('spec-') ? 'spec' : id.startsWith('cost-') ? 'costing' : id === 'product-name' ? 'name' : /^range-(name|units)-/.test(id) ? 'colorways' : null;
   const hasDrafts = (group?: DraftGroup) => [...drafts.keys()].some(id => !group || groupOf(id) === group);
   const draftState = () => {
     ($('discard-product-drafts') as HTMLButtonElement).disabled = !drafts.size;
+    for (const id of ['apply-colorway-details','discard-colorway-details']) ($<HTMLButtonElement>(id)).disabled = !hasDrafts('colorways');
     $('product-draft-state').textContent = drafts.size ? 'Unapplied product edits. Apply the relevant group, or discard all product drafts.' : '';
   };
   const captureDraft = (event: Event) => {
@@ -616,13 +619,23 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const id = button.dataset.colorway!, name = nameOf(id);
     if (button.dataset.colorwayAction === 'apply') update(draft => { draft.parts = structuredClone(draft.colorways!.find(c => c.id === id)!.parts); }, `The editor now shows the colorway “${name}”.`);
     if (button.dataset.colorwayAction === 'replace') update(draft => { draft.colorways!.find(c => c.id === id)!.parts = structuredClone(draft.parts); }, `Updated “${name}” from the current styling.`);
+    if (button.dataset.colorwayAction === 'delete' && hasDrafts('colorways')) { options.notice('Apply or discard colorway details before deleting a colorway. Your drafts are kept.', true); return; }
     if (button.dataset.colorwayAction === 'delete') update(draft => { draft.colorways = draft.colorways!.filter(c => c.id !== id); if (!draft.colorways.length) delete draft.colorways; }, `Deleted the colorway “${name}”. You can undo this.`);
   });
-  $('colorway-list').addEventListener('change', event => {
-    const input = (event.target as Element).closest<HTMLInputElement>('input[data-colorway-units]');
-    if (!input) return;
-    const id = input.dataset.colorwayUnits!;
-    update(draft => { draft.colorways!.find(c => c.id === id)!.units = Number(input.value); }, `Planned units for “${nameOf(id)}” updated.`);
+  $('apply-colorway-details').addEventListener('click', () => {
+    const changed = update(draft => {
+      for (const colorway of draft.colorways ?? []) {
+        const name=$<HTMLInputElement>(`range-name-${colorway.id}`),units=$<HTMLInputElement>(`range-units-${colorway.id}`);
+        if (!name.value.trim()) throw new Error('Name each colorway before applying the details.');
+        if (units.validity.badInput || !units.value.trim()) throw new Error('Fill in a whole planned quantity for every colorway.');
+        colorway.name=name.value; colorway.units=Number(units.value);
+      }
+    }, 'Colorway names and planned units applied together. You can undo this.', 'colorways');
+    if (changed) { shown=''; render(options.current()); }
+  });
+  $('discard-colorway-details').addEventListener('click', () => {
+    for (const id of drafts.keys()) if (groupOf(id)==='colorways') drafts.delete(id);
+    shown=''; render(options.current()); options.notice('Colorway details discarded. Applied collection unchanged.');
   });
   $('apply-costing').addEventListener('click', () => update(draft => {
     const number = (id: string) => { const value = ($(id) as HTMLInputElement).value; if (value.trim() === '') throw new Error('Fill in every costing value.'); return Number(value); };
@@ -675,14 +688,25 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
       ${design.colorways?.length ? '' : '<p class="notes">Save colorways to plan several at once; until then the current design is shown with no planned units.</p>'}`;
   }
   function renderRange(design: Product) {
+    // Keep draft inputs mounted across async image/drape redraws and styling edits.
+    const details=JSON.stringify((design.colorways??[]).map(c=>[c.id,c.name,c.units]));
+    if ($('colorway-list').dataset.details!==details) {
+    $('colorway-list').dataset.details=details;
     $('colorway-list').innerHTML = (design.colorways ?? []).map(c => `<div role="listitem" class="colorway-card">
       <img data-colorway-thumb="${c.id}" alt="Front render of ${escapeHtml(c.name)}" width="160" height="140">
       <strong>${escapeHtml(c.name)}</strong>
-      <label class="field">Units for ${escapeHtml(c.name)}<input type="number" min="0" max="${LIMITS.units[1]}" step="1" value="${c.units}" data-colorway-units="${c.id}"></label>
+      <label class="field">Saved name for ${escapeHtml(c.name)}<input id="range-name-${c.id}" maxlength="${LIMITS.colorwayName}" value="${escapeHtml(c.name)}" autocomplete="off"></label>
+      <label class="field">Units for ${escapeHtml(c.name)}<input type="number" min="0" max="${LIMITS.units[1]}" step="1" value="${c.units}" id="range-units-${c.id}" data-colorway-units="${c.id}"></label>
       <div class="inline-actions"><button data-colorway-action="apply" data-colorway="${c.id}" aria-label="Show ${escapeHtml(c.name)} in the editor">Show in editor</button>
         <button class="quiet" data-colorway-action="replace" data-colorway="${c.id}" aria-label="Update ${escapeHtml(c.name)} from the current styling">Update</button>
         <button class="quiet" data-colorway-action="delete" data-colorway="${c.id}" aria-label="Delete ${escapeHtml(c.name)}">Delete</button></div></div>`).join('')
       || '<p class="fine-print">No colorways yet. Style the garment, name it above and save it; then restyle and save the next.</p>';
+    }
+    for (const c of design.colorways??[]) {
+      for (const [id,value] of [[`range-name-${c.id}`,c.name],[`range-units-${c.id}`,String(c.units)]]) {
+        if (!drafts.has(id!)) $<HTMLInputElement>(id!).value=value!;
+      }
+    }
     if (!hasDrafts('costing')) {
     const inputs = costing(design);
     ($('cost-currency') as HTMLSelectElement).value = inputs.currency;
