@@ -614,8 +614,16 @@ The controls support keyboard use and narrow layouts. This is manual correction 
 
 ### Move every lyric line earlier or later (#272)
 
-Open **Shift all lyric timing**, enter a signed **Timing shift (seconds)**, then choose **Shift all lyric times**. Positive values move the current editor's cues later; negative values move them earlier. The same offset reaches every boundary, retaining literal words, cue lengths and instrumental gaps. It works with recognized, imported and manually timed cues. Unapplied pasted words are kept and are not included.
+Open **Shift lyric timing**, leave **Timing shift scope** at **All lines**, enter a signed **Timing shift (seconds)**, then choose **Shift all lyric times**. Positive values move the current editor's cues later; negative values move them earlier. The same offset reaches every boundary, retaining literal words, cue lengths and instrumental gaps. It works with recognized, imported and manually timed cues. Unapplied pasted words are kept and are not included.
 
 All current cue words and times must be valid, and the complete result must stay within the clip. Blank, zero, nonfinite, nondecimal or unrepresentably small offsets and out-of-clip results are refused without clipping, saving, changing history or cancelling pending review/listening. Invalid raw offset text remains available for correction. A successful shift retires obsolete audition, import review and timing capture, then makes one unsaved Undo/Redo edit. Undo recovers exact previous main-editor numeric spelling, title and pasted draft. Use **Save lyrics** separately, then export current SRT/video as usual. The utility offset resets when a different clip opens; it is not saved as project data.
 
 This is a deliberate manual synchronization adjustment, not a new alignment algorithm, playback-latency calibration or measured improvement in real-song quality. See [bulk timing verification](docs/2026-10-16-timing-shift-272.md).
+
+### Correct one passage’s timing (#294)
+
+Open **Shift lyric timing**, set **Timing shift scope** to **Selected passage**, and choose its first and last lyric lines. The numbered choices show the current words; a passage may contain one line. Enter a signed **Timing shift (seconds)** and choose **Shift selected lyric times**. Only that inclusive range moves. Other cues, their literal words and their raw numeric spellings stay unchanged; selected cue lengths and internal gaps move together. The complete result must remain ordered, nonoverlapping and inside the clip, including both untouched neighboring lines. Nothing is cropped.
+
+A successful shift makes one unsaved Undo/Redo edit and stops obsolete listening/import/timing work. Refusals preserve current edits, Redo, pending review and playback. Title and pasted drafts are kept; Save lyrics remains separate. Replacing, splitting, merging, removing, or Undo/Redo-ing cues clears the passage endpoints so you choose the intended lines again. An ordinary word or timing correction keeps the same line identities and refreshes their displayed words. Opening a different clip resets scope to All lines and clears the offset. Scope/endpoints are session utilities, not saved project data.
+
+This is manual passage correction, not automatic delay detection or an evaluated alignment-quality improvement. Real-song timing and correction-effort evaluation remains open in #241. [Verification and limits](docs/2026-10-20-passage-timing-294.md).

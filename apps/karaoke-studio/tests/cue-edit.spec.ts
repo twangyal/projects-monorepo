@@ -232,13 +232,13 @@ async function passageFixture(page: Page) {
   await open(page, 'Keep 🌓\nVerse A\nVerse B\nFinal 🎵');
   for (const [label, value] of [['Start line 1', '0.000'], ['End line 1', '0.500'], ['Start line 2', '1.000'], ['End line 2', '1.500'], ['Start line 3', '2.000'], ['End line 3', '2.500'], ['Start line 4', '4.000'], ['End line 4', '5.000']]) await page.getByLabel(label, { exact: true }).fill(value);
   await page.getByText('Shift lyric timing', { exact: true }).click();
-  await page.getByLabel('Timing shift scope', { exact: true }).selectOption('passage');
+  await page.getByRole('combobox', { name: 'Timing shift scope', exact: true }).selectOption('passage');
   await selectPassage(page, '1', '2');
   await page.getByLabel('Timing shift (seconds)', { exact: true }).fill('+.25');
 }
 async function selectPassage(page: Page, first: string, last: string) {
-  await page.getByLabel('First line in passage', { exact: true }).selectOption(first);
-  await page.getByLabel('Last line in passage', { exact: true }).selectOption(last);
+  await page.getByRole('combobox', { name: 'First line in passage', exact: true }).selectOption(first);
+  await page.getByRole('combobox', { name: 'Last line in passage', exact: true }).selectOption(last);
 }
 const passageApply = (page: Page) => page.getByRole('button', { name: 'Shift selected lyric times', exact: true });
 
@@ -253,14 +253,18 @@ test('selected passage preserves outside raw times drafts history saved reload a
   await expect(page.locator('#timing-shift-status')).toContainText('lines 2–3');
   expect(await (await page.request.get(`/api/projects/${id}`)).json()).toEqual(saved);
   await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click(); expect(await timingEditor(page)).toEqual(before);
-  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click(); await expect(page.getByLabel('Start line 4', { exact: true })).toHaveValue('4.000');
+  for (const name of ['First line in passage', 'Last line in passage']) await expect(page.getByRole('combobox', { name, exact: true })).toHaveValue('');
+  await selectPassage(page, '0', '1');
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  for (const name of ['First line in passage', 'Last line in passage']) await expect(page.getByRole('combobox', { name, exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Start line 4', { exact: true })).toHaveValue('4.000');
   await page.getByRole('button', { name: 'Discard pasted draft', exact: true }).click(); await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
   await expect(page.locator('#message')).toContainText('saved locally');
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export timed lyrics', exact: true }).click();
   const srt = await readFile((await (await download).path())!, 'utf8');
   for (const interval of ['00:00:00,000 --> 00:00:00,500', '00:00:01,250 --> 00:00:01,750', '00:00:02,250 --> 00:00:02,750', '00:00:04,000 --> 00:00:05,000']) expect(srt).toContain(interval);
   await page.reload(); await expect(page.getByLabel('Start line 2', { exact: true })).toHaveValue('1.25');
-  await page.getByText('Shift lyric timing', { exact: true }).click(); await expect(page.getByLabel('Timing shift scope', { exact: true })).toHaveValue('all');
+  await page.getByText('Shift lyric timing', { exact: true }).click(); await expect(page.getByRole('combobox', { name: 'Timing shift scope', exact: true })).toHaveValue('all');
 });
 
 test('passage refusals keep playback import editor and Redo until a valid application', async ({ page }) => {
@@ -285,7 +289,7 @@ test('passage refusals keep playback import editor and Redo until a valid applic
 
 test('changed cue structure requires passage reselection before shifting', async ({ page }) => {
   await passageFixture(page); await page.getByRole('button', { name: 'Merge with next line 1', exact: true }).click();
-  for (const label of ['First line in passage', 'Last line in passage']) await expect(page.getByLabel(label, { exact: true })).toHaveValue('');
+  for (const label of ['First line in passage', 'Last line in passage']) await expect(page.getByRole('combobox', { name: label, exact: true })).toHaveValue('');
   const before = await timingEditor(page); await passageApply(page).click(); expect(await timingEditor(page)).toEqual(before);
   await expect(page.locator('#timing-shift-status')).toContainText('Choose');
   await selectPassage(page, '1', '1'); await passageApply(page).click(); await expect(page.getByLabel('Start line 2', { exact: true })).toHaveValue('2.25');
@@ -296,5 +300,19 @@ test('phone keyboard shifts one passage line while preserving its neighbors', as
   await page.getByLabel('Timing shift (seconds)', { exact: true }).fill('-.5'); await passageApply(page).focus(); await passageApply(page).press('Enter');
   await expect(page.getByLabel('Start line 2', { exact: true })).toHaveValue('0.5'); await expect(page.getByLabel('Start line 3', { exact: true })).toHaveValue('2.000');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '/tmp/karaoke294-phone.png', fullPage: true });
+  await page.locator('.timing-shift').screenshot({ path: '/tmp/karaoke294-phone.png' });
+});
+
+
+test('same-length cue replacement cannot reuse a previous passage selection', async ({ page }) => {
+  await passageFixture(page);
+  const srt = '1\n00:00:00,000 --> 00:00:00,500\nReplacement one\n\n2\n00:00:01,000 --> 00:00:01,500\nReplacement two\n\n3\n00:00:02,000 --> 00:00:02,500\nReplacement three\n\n4\n00:00:04,000 --> 00:00:05,000\nReplacement four\n';
+  await page.getByLabel('Import timed lyrics (SRT)', { exact: true }).setInputFiles({ name: 'replacement.srt', mimeType: 'application/x-subrip', buffer: Buffer.from(srt) });
+  await expect(page.locator('#srt-review')).toBeVisible(); await page.getByRole('button', { name: 'Replace lyric cues', exact: true }).click();
+  await expect(page.locator('[data-cue]')).toHaveCount(4);
+  for (const name of ['First line in passage', 'Last line in passage']) await expect(page.getByRole('combobox', { name, exact: true })).toHaveValue('');
+  const before = await timingEditor(page); await passageApply(page).click(); expect(await timingEditor(page)).toEqual(before);
+  await selectPassage(page, '1', '1'); await passageApply(page).click();
+  await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveValue('Replacement two');
+  await expect(page.getByLabel('Start line 2', { exact: true })).toHaveValue('1.25');
 });
