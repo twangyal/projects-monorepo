@@ -5,7 +5,7 @@ import {validateDesignName,validateDesignReceipt} from '../src/design-library.ts
 test('design names trim outer whitespace while preserving literal Unicode and printable interior spaces',()=>{
  assert.equal(validateDesignName('  Navy 🌓  tee  '),'Navy 🌓  tee');
  assert.equal(validateDesignName('x'.repeat(80)).length,80);
- for(const value of ['', ' ', 'x'.repeat(81),'one\nother','bad\u0000','bad\u007f',42,null])assert.throws(()=>validateDesignName(value));
+ for(const value of ['', ' ', 'x'.repeat(81),'one\nother','bad\u0000','bad\u007f',...Array.from({length:32},(_,i)=>`bad${String.fromCharCode(128+i)}`),42,null])assert.throws(()=>validateDesignName(value));
 });
 test('saved-design metadata is detached and exact bounded without unsafe fields',()=>{
  const receipt={id:'00000000-0000-4000-8000-000000000001',name:'Navy',savedAt:'2026-10-20T18:00:00.000Z',bytes:6*1024*1024};

@@ -2,7 +2,7 @@ import {validateProjectImages} from './project-media.ts';
 import {MAX_PROJECT_BYTES,validateProject,serializeProject,parseProject,type Project} from './model.ts';
 export interface DesignReceipt {id:string;name:string;savedAt:string;bytes:number}
 export function validateDesignName(value:unknown):string {
- if(typeof value!=='string'||!value.trim()||value.trim().length>80||[...value].some(c=>{const n=c.codePointAt(0)!;return n<32||n===127||n>=0xd800&&n<=0xdfff;}))throw new Error('Use1–80 printable characters for the saved design name.');
+ if(typeof value!=='string'||!value.trim()||value.trim().length>80||[...value].some(c=>{const n=c.codePointAt(0)!;return n<32||n>=127&&n<=159||n>=0xd800&&n<=0xdfff;}))throw new Error('Use1–80 printable characters for the saved design name.');
  return value.trim();
 }
 export function validateDesignReceipt(value:unknown):DesignReceipt {
