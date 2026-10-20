@@ -39,3 +39,7 @@
 - [ ] Independent review of final source, fix important findings with regressions, run required source gate.
 - [ ] Compare exact local/remote tree and integrate verified task history to main with a lease. Record verification limitations truthfully; no PR.
 - [ ] Close #295 only for the actually completed bounded milestone; report canonical CI and retain broader ACTIVE/physical gates.
+
+## Execution ledger
+
+Task1: complete — baseline161units; new pure admission2tests pass, then all163project units/lint/build pass. Three native storage cases observed RED at unimplemented API, then all5 native cases pass (8.2s), covering real complete-copy/read/delete/reload, independent concurrent writes, case-insensitive duplicate/cap refusal, stale receipt/corrupt payload, native quota rollback and queued-transaction deadline/no late publication. Existing autosave remains untouched. Task2 consumes the declared persistence signatures without interface changes. Native harness is test-only through the existing build flag.
