@@ -218,6 +218,20 @@ export function scrollRegionAt(document, x, y, exclude) {
   return document.scrollingElement ?? document.documentElement;
 }
 
+// Native references stay inside this page context; model descriptions use explicit text fields.
+export function captureSelectSnapshot(element) {
+  const frames = [];
+  for (let document = element.ownerDocument; document.defaultView?.frameElement;) {
+    const frame = document.defaultView.frameElement; frames.push({ element: frame, document }); document = frame.ownerDocument;
+  }
+  return { frames, document: element.ownerDocument, name: accessibleName(element), role: element.getAttribute('role'),
+    multiple: element.multiple, selectedIndex: element.selectedIndex,
+    options: [...element.options].map(option => ({ element: option, parent: option.parentElement,
+      value: option.value, text: option.textContent, label: option.label, disabled: option.disabled, selected: option.selected,
+      groupDisabled: option.parentElement?.tagName === 'OPTGROUP' && option.parentElement.disabled,
+      groupLabel: option.parentElement?.tagName === 'OPTGROUP' ? option.parentElement.label : null })) };
+}
+
 function describe(element) {
   const role = roleOf(element);
   const form = element.form ?? element.closest('form');
@@ -232,8 +246,10 @@ function describe(element) {
     consequential: submits || CONSEQUENTIAL.test(name) || element.hasAttribute?.('download'),
   };
   if (element.tagName === 'SELECT') {
-    description.options = [...element.options].map(option => clean(option.textContent));
-    description.value = clean(element.selectedOptions?.[0]?.textContent);
+    description.selectSnapshot = captureSelectSnapshot(element);
+    description.options = description.selectSnapshot.options.map(option => clean(option.label));
+    description.consequentialOptions = description.options.map(label => CONSEQUENTIAL.test(label));
+    description.value = clean(element.selectedOptions?.[0]?.label);
   } else if (description.editable) {
     description.value = element.value ?? element.textContent ?? '';
   } else if (['checkbox', 'radio', 'switch'].includes(role)) {

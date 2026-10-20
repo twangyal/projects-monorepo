@@ -24,6 +24,7 @@ export function createController({ window, actions = pageActions, interpret = in
 
   function confirmable(action, element) {
     if (['activate', 'check'].includes(action.type)) return element.consequential;
+    if (action.type === 'select-option') return element.consequential || element.consequentialOptions?.[action.optionIndex];
     if (action.type === 'submit' || action.type === 'search') return element.role !== 'searchbox' && !/search/i.test(element.name);
     return false;
   }
@@ -43,7 +44,7 @@ export function createController({ window, actions = pageActions, interpret = in
       if (problem) return problem;
       if (confirmable(action, target)) {
         pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
-        const label = target.name || target.role;
+        const label = action.type === 'select-option' ? `${action.optionName} from ${target.name || target.role}` : target.name || target.role;
         return reply(`"${label}" may have consequences. Say confirm to continue, or cancel.`, 'question');
       }
     }
@@ -68,7 +69,7 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'submit': result = actions.submit(element); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
-      case 'select-option': result = actions.selectOption(element, action.optionIndex); break;
+      case 'select-option': result = actions.selectOption(element, action.optionIndex, target.selectSnapshot); break;
       case 'search': {
         remember(element);
         actions.writeValue(element, action.text);

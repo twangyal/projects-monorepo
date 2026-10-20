@@ -347,3 +347,25 @@ for (const cancel of [false, true]) test(`assisted check awaits final website st
  const done=await first.followUp;
  if(cancel)assert.equal(done,null);else{assert.equal(done.message,'Switch checked.');assert.equal(done.performed,'check');assert.equal(done.followUp,undefined);}
 });
+
+test('dropdown clarification forwards the original native option snapshot to execution', () => {
+  const page = fakePage(), snapshots = [{ options: ['first'] }, { options: ['second'] }];
+  const seen = [];
+  page.actions.selectOption = (element, index, snapshot) => { seen.push([element, index, snapshot]); return { ok: true, message: 'selected' }; };
+  const controller = createController({ window: {}, actions: page.actions });
+  const nodes = [page.node('Format'), page.node('Format')];
+  const context = { elements: nodes.map((element, i) => describe(i + 1, element, { role: 'combobox', options: ['Paperback', 'Hardcover'], selectSnapshot: snapshots[i] })) };
+  assert.equal(controller.handle('choose Hardcover from Format', context).pending.kind, 'clarify');
+  assert.equal(controller.handle('two', { elements: [] }).performed, 'select-option');
+  assert.equal(seen.length, 1); assert.equal(seen[0][0], nodes[1]); assert.equal(seen[0][1], 1); assert.equal(seen[0][2], snapshots[1]);
+});
+
+test('a consequential dropdown choice waits for deliberate confirmation', () => {
+  const page = fakePage(), controller = createController({ window: {}, actions: page.actions });
+  const context = { elements: [describe(1, page.node('Action'), { role: 'combobox', options: ['Keep', 'Delete account'], consequentialOptions: [false, true] })] };
+  const waiting = controller.handle('choose Delete account from Action', context);
+  assert.equal(waiting.pending?.kind, 'confirm'); assert.match(waiting.message, /Delete account/); assert.match(waiting.message, /Action/);
+  assert.deepEqual(page.log, []); controller.handle('cancel', context); controller.handle('confirm', context); assert.deepEqual(page.log, []);
+  controller.handle('choose Delete account from Action', context); assert.equal(controller.handle('confirm', { elements: [] }).performed, 'select-option');
+  assert.deepEqual(page.log, [['option', 1]]);
+});

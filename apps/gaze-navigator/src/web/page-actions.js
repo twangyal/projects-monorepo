@@ -1,7 +1,7 @@
 // Execution stage: performs one interpreted action on ordinary page elements.
 // Returns a short, user-facing result; throws only for programming errors.
 
-import { isEditable } from './page-context.js';
+import { isEditable, captureSelectSnapshot, accessibleName } from './page-context.js';
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'file:']);
 
@@ -215,16 +215,44 @@ export function activate(element, name, { preserveFocus = false } = {}) {
   return { ok: true, message: `${name || 'Control'} activated.` };
 }
 
-export function selectOption(element, optionIndex) {
-  if (element.tagName !== 'SELECT' || !element.options[optionIndex] || element.options[optionIndex].disabled) {
-    return { ok: false, message: 'That option is not available.' };
+export function selectOption(element, optionIndex, snapshot) {
+  const available = () => element.tagName === 'SELECT' && element.isConnected &&
+    !element.multiple && !element.readOnly && unlocked(element);
+  const refuse = message => ({ ok: false, message });
+  if (!available() || !snapshot || !Number.isInteger(optionIndex) || optionIndex < 0 || !snapshot.options?.[optionIndex]) {
+    return refuse('This command needs an available native single-choice dropdown. Multiple-selection controls are not supported.');
   }
+  const liveFrames = () => Array.isArray(snapshot.frames) && snapshot.frames.every(frame =>
+    frame.element.isConnected && frame.element.contentDocument === frame.document);
+  const unchanged = () => {
+    if (!liveFrames()) return false;
+    const current = captureSelectSnapshot(element);
+    return current.frames.length === snapshot.frames.length && current.frames.every((frame, i) =>
+      frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document) &&
+      ['document','name','role','multiple','selectedIndex'].every(key => current[key] === snapshot[key]) &&
+      current.options.length === snapshot.options.length && current.options.every((option, i) =>
+        Object.keys(option).every(key => option[key] === snapshot.options[i][key]));
+  };
+  const intended = snapshot.options[optionIndex];
+  if (!unchanged() || intended.disabled || intended.groupDisabled) return refuse('The dropdown or option changed or is unavailable. Look at it and choose again.');
+  if (intended.selected) return { ok: true, message: `${intended.label.trim()} is already selected.` };
   element.focus({ preventScroll: true });
-  element.selectedIndex = optionIndex;
+  if (!available() || !ownsFocus(element) || !unchanged()) return refuse('The dropdown changed while focusing it. Look at it and choose again.');
+  const retained = () => available() && liveFrames() && element.ownerDocument === snapshot.document && accessibleName(element) === snapshot.name &&
+    element.getAttribute('role') === snapshot.role && intended.element.parentElement === intended.parent &&
+    (intended.parent.tagName !== 'OPTGROUP' || intended.parent.label === intended.groupLabel) && intended.element.closest('select') === element &&
+    !intended.element.disabled && !intended.element.matches(':disabled') && intended.element.selected &&
+    intended.element.value === intended.value && intended.element.textContent === intended.text && intended.element.label === intended.label;
+  const changed = () => refuse('The website did not retain an available dropdown with the requested option. Check it before continuing.');
   const view = element.ownerDocument.defaultView;
-  element.dispatchEvent(new view.Event('input', { bubbles: true }));
+  Object.getOwnPropertyDescriptor(view.HTMLSelectElement.prototype, 'selectedIndex').set.call(element, optionIndex);
+  if (!retained()) return changed();
+  element.dispatchEvent(new view.Event('input', { bubbles: true, composed: true }));
+  if (!retained()) return changed();
   element.dispatchEvent(new view.Event('change', { bubbles: true }));
-  return { ok: true, message: `${element.options[optionIndex].textContent.trim()} selected.` };
+  // Site handlers and their microtasks own the final state. No retry or forced rollback.
+  return { message: 'Checking the requested dropdown selection…', followUp: new Promise(resolve => globalThis.setTimeout(resolve, 0)).then(() =>
+    retained() ? { ok: true, message: `${intended.label.trim()} selected.` } : changed()) };
 }
 
 export function submit(element) {
