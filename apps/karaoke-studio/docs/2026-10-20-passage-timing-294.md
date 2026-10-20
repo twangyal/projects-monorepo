@@ -20,3 +20,15 @@ Passage endpoints bind to the current cue object identities. Replacements (inclu
 - Independent code review found no critical/important issues; incremental test review found no blockers. Full final browser and hosted source/canonical outcomes are recorded below when available and in #294.
 
 Native tests use an injected deterministic separator/transcript fixture and real audio/service/SRT/export paths. They are software workflow evidence, not real-model inference, real-song alignment or physical-device/intended-user usability acceptance. Models, dataset timing/correction-effort evidence under #241 and the full Karaoke vision remain separate. No paid service, schema change or PR is introduced. Project #8 remains skipped.
+
+## Final local receipt
+
+Reviewed source `efaa04f4223b01a9e3d559de5301a18b93b2682e` has tree `51eca4f4e27d1ef62723c08a7dd8b3423a2709fa`, identical locally and remotely. The final complete local browser run passes **122/122 in 5.7m**, including the stronger Redo check (freshly select a passage before Redo), same-length replacement, actual saved/reloaded SRT and existing real MP4 cases. All 137 TypeScript tests, ESLint and typecheck pass again on the final tests; the production implementation/build is unchanged from the preceding passing check. The final 390px passage screenshot was inspected. Local Python remains 205/206 with the precise RSS/procfs failure above.
+
+Checkpoint run [39428125826](https://github.com/twangyal/projects-monorepo/actions/runs/39428125826) was cancelled by the normal branch update and is not an acceptance pass. The source branch is pinned to the reviewed follow-up while [39428728861](https://github.com/twangyal/projects-monorepo/actions/runs/39428728861) runs the complete hosted gate. Its actual outcome, followed by canonical main verification, is recorded in the issue and the integration receipt below.
+
+## Hosted source acceptance and integration
+
+[Source run 39428728861](https://github.com/twangyal/projects-monorepo/actions/runs/39428728861), job118647982040 at `efaa04f4223b01a9e3d559de5301a18b93b2682e`, succeeds: **206 Python tests (73.641s), 137 TypeScript tests and all 122 browser cases (5.4m)**, plus compileall, Ruff, ESLint, typecheck and production build. The unchanged RSS-enforcement test passes on hosted Linux; the local failure remains recorded above. No guard or assertion was relaxed.
+
+The canonical integration follow-up changes only this verification document. Product code, tests and other documentation retain the exact verified source bytes. Issue #294's bounded passage-correction milestone is complete; the issue records canonical-main follow-up when available. Karaoke remains ACTIVE, with real-song multilingual timing and correction-effort evaluation still open in #241. Project #8 remains skipped.
