@@ -210,6 +210,10 @@ Triangle-wide [principal-stretch analysis](research/ppf-cpu/GARMENT_PRINCIPAL_ST
 
 Clothing now has a contextual **Saved designs** library for up to12 immutable named complete-project copies, explicit one-edit open, selected JSON backup and confirmed copy-only deletion. Private media and applied construction/grading/body data stay together; existing current-concept autosave, raw drafts and newer editing ownership remain protected. This advances reusable design exploration without cloud storage or a new schema. See `apps/clothing-studio/docs/2026-10-20-design-library-295.md` for executed checks and limits. Clothing remains ACTIVE; physical garment/material validation and broader professional product acceptance are separate outstanding gates. Project #8 remains skipped.
 
+### Construction research note — 2026-10-20 (#290)
+
+The captured native tee now has a reproducible welded-vertex link/corner-budget audit. All vertex links are connected manifold fans; both underarm junctions carry about628° intrinsic corner sums already present in the original styling-surface coordinates. This narrows the construction investigation without treating saddle curvature as a defect or rewriting rest lengths. See `docs/research/ppf-cpu/GARMENT_JUNCTIONS.md`. No new native solve, causal strain diagnosis, physical acceptance or shipping-engine change is claimed. Clothing remains ACTIVE; representative construction/body and physical references remain open. Project#8 remains skipped.
+
 ## 6. Karaoke Studio
 
 Karaoke Studio should make the song-to-karaoke process as automatic as possible. After upload, the application separates vocals and backing, automatically transcribes the sung lyrics, synchronizes them with the music, and produces a usable preview with export available. Users can correct words, line breaks and timing mistakes.

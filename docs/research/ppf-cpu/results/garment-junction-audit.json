@@ -1,0 +1,1099 @@
+{
+  "schema": "clothing-native-rest-junction-audit-v1",
+  "source_archive_sha256": "fc2c0de508864f468b7a8669de0bcf2309db3c57611c02e6e46a280476a6bf70",
+  "source_artifact_id": 12201778448,
+  "source_profile": "four-soft",
+  "native_solver_executed_for_this_audit": false,
+  "topology": {
+    "connected_components": 2,
+    "boundary_loops": 5,
+    "vertex_count": 2353,
+    "edge_count": 6834,
+    "face_count": 4480,
+    "boundary_vertices": 228,
+    "interior_vertices": 2125,
+    "euler_characteristic": -1,
+    "gauss_bonnet_radians": -6.283185307179611,
+    "scope": "Native welded triangle complex only; stitches remain separate. Angle deficit is intrinsic curvature, not a causal strain diagnosis, flatness requirement, construction defect, physical threshold or fit acceptance."
+  },
+  "most_negative_interior_junctions": [
+    {
+      "vertex": 571,
+      "fan": "cycle",
+      "link_vertices": 10,
+      "incident_faces": [
+        1039,
+        1040,
+        1044,
+        2947,
+        2948,
+        2950,
+        4300,
+        4301,
+        4436,
+        4437
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1039
+        },
+        {
+          "part": "front",
+          "render_triangle": 1040
+        },
+        {
+          "part": "front",
+          "render_triangle": 1044
+        },
+        {
+          "part": "back",
+          "render_triangle": 1029
+        },
+        {
+          "part": "back",
+          "render_triangle": 1030
+        },
+        {
+          "part": "back",
+          "render_triangle": 1032
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 132
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 133
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 268
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 269
+        }
+      ],
+      "angle_sum_radians": 10.960396825342663,
+      "angle_deficit_radians": -4.677211518163077,
+      "part_angle_radians": {
+        "back": 3.0347483858957953,
+        "front": 3.0347483858957953,
+        "sleeveRight": 4.890900053551072
+      },
+      "authored_angle_sum_radians": 10.960395445743956,
+      "rest_minus_authored_radians": 1.379598707273999e-06,
+      "authored_part_angle_radians": {
+        "back": 3.034748003962475,
+        "front": 3.034748003962475,
+        "sleeveRight": 4.890899437819006
+      }
+    },
+    {
+      "vertex": 643,
+      "fan": "cycle",
+      "link_vertices": 10,
+      "incident_faces": [
+        1179,
+        1206,
+        1237,
+        3091,
+        3116,
+        3147,
+        4034,
+        4036,
+        4164,
+        4166
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1179
+        },
+        {
+          "part": "front",
+          "render_triangle": 1206
+        },
+        {
+          "part": "front",
+          "render_triangle": 1237
+        },
+        {
+          "part": "back",
+          "render_triangle": 1173
+        },
+        {
+          "part": "back",
+          "render_triangle": 1198
+        },
+        {
+          "part": "back",
+          "render_triangle": 1229
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 126
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 128
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 256
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 258
+        }
+      ],
+      "angle_sum_radians": 10.960396825342663,
+      "angle_deficit_radians": -4.677211518163077,
+      "part_angle_radians": {
+        "back": 3.0347483858957953,
+        "front": 3.0347483858957953,
+        "sleeveLeft": 4.890900053551072
+      },
+      "authored_angle_sum_radians": 10.960395445743954,
+      "rest_minus_authored_radians": 1.3795987090503559e-06,
+      "authored_part_angle_radians": {
+        "back": 3.0347480039624743,
+        "front": 3.0347480039624743,
+        "sleeveLeft": 4.890899437819005
+      }
+    },
+    {
+      "vertex": 2106,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        3988,
+        3995,
+        4004,
+        4118,
+        4125,
+        4134
+      ],
+      "source_triangles": [
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 80
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 87
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 96
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 210
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 217
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 226
+        }
+      ],
+      "angle_sum_radians": 6.283195573352127,
+      "angle_deficit_radians": -1.0266172540518426e-05,
+      "part_angle_radians": {
+        "sleeveLeft": 6.283195573352127
+      },
+      "authored_angle_sum_radians": 6.283185307179584,
+      "rest_minus_authored_radians": 1.0266172543182961e-05,
+      "authored_part_angle_radians": {
+        "sleeveLeft": 6.283185307179584
+      }
+    },
+    {
+      "vertex": 2119,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        4023,
+        4027,
+        4028,
+        4153,
+        4157,
+        4158
+      ],
+      "source_triangles": [
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 115
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 119
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 120
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 245
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 249
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 250
+        }
+      ],
+      "angle_sum_radians": 6.283195573352127,
+      "angle_deficit_radians": -1.0266172540518426e-05,
+      "part_angle_radians": {
+        "sleeveLeft": 6.283195573352127
+      },
+      "authored_angle_sum_radians": 6.283185307179587,
+      "rest_minus_authored_radians": 1.0266172539630247e-05,
+      "authored_part_angle_radians": {
+        "sleeveLeft": 6.283185307179587
+      }
+    },
+    {
+      "vertex": 2227,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        4232,
+        4252,
+        4265,
+        4368,
+        4388,
+        4401
+      ],
+      "source_triangles": [
+        {
+          "part": "sleeveRight",
+          "render_triangle": 64
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 84
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 97
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 200
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 220
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 233
+        }
+      ],
+      "angle_sum_radians": 6.283195573352127,
+      "angle_deficit_radians": -1.0266172540518426e-05,
+      "part_angle_radians": {
+        "sleeveRight": 6.283195573352127
+      },
+      "authored_angle_sum_radians": 6.28318530717959,
+      "rest_minus_authored_radians": 1.0266172536965712e-05,
+      "authored_part_angle_radians": {
+        "sleeveRight": 6.28318530717959
+      }
+    },
+    {
+      "vertex": 2247,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        4283,
+        4284,
+        4292,
+        4419,
+        4420,
+        4428
+      ],
+      "source_triangles": [
+        {
+          "part": "sleeveRight",
+          "render_triangle": 115
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 116
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 124
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 251
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 252
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 260
+        }
+      ],
+      "angle_sum_radians": 6.283195573352127,
+      "angle_deficit_radians": -1.0266172540518426e-05,
+      "part_angle_radians": {
+        "sleeveRight": 6.283195573352127
+      },
+      "authored_angle_sum_radians": 6.28318530717959,
+      "rest_minus_authored_radians": 1.0266172536965712e-05,
+      "authored_part_angle_radians": {
+        "sleeveRight": 6.28318530717959
+      }
+    },
+    {
+      "vertex": 890,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        1627,
+        1694,
+        1711,
+        3617,
+        3684,
+        3701
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1627
+        },
+        {
+          "part": "front",
+          "render_triangle": 1694
+        },
+        {
+          "part": "front",
+          "render_triangle": 1711
+        },
+        {
+          "part": "back",
+          "render_triangle": 1699
+        },
+        {
+          "part": "back",
+          "render_triangle": 1766
+        },
+        {
+          "part": "back",
+          "render_triangle": 1783
+        }
+      ],
+      "angle_sum_radians": 6.283194169799941,
+      "angle_deficit_radians": -8.86262035493246e-06,
+      "part_angle_radians": {
+        "back": 3.1415970848999706,
+        "front": 3.1415970848999706
+      },
+      "authored_angle_sum_radians": 6.283185307179586,
+      "rest_minus_authored_radians": 8.86262035493246e-06,
+      "authored_part_angle_radians": {
+        "back": 3.141592653589793,
+        "front": 3.141592653589793
+      }
+    },
+    {
+      "vertex": 954,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        1741,
+        1742,
+        1743,
+        3731,
+        3732,
+        3733
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1741
+        },
+        {
+          "part": "front",
+          "render_triangle": 1742
+        },
+        {
+          "part": "front",
+          "render_triangle": 1743
+        },
+        {
+          "part": "back",
+          "render_triangle": 1813
+        },
+        {
+          "part": "back",
+          "render_triangle": 1814
+        },
+        {
+          "part": "back",
+          "render_triangle": 1815
+        }
+      ],
+      "angle_sum_radians": 6.283194169799941,
+      "angle_deficit_radians": -8.86262035493246e-06,
+      "part_angle_radians": {
+        "back": 3.1415970848999706,
+        "front": 3.1415970848999706
+      },
+      "authored_angle_sum_radians": 6.28318530717959,
+      "rest_minus_authored_radians": 8.862620351379746e-06,
+      "authored_part_angle_radians": {
+        "back": 3.141592653589795,
+        "front": 3.141592653589795
+      }
+    },
+    {
+      "vertex": 953,
+      "fan": "cycle",
+      "link_vertices": 4,
+      "incident_faces": [
+        1738,
+        1745,
+        3728,
+        3735
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1738
+        },
+        {
+          "part": "front",
+          "render_triangle": 1745
+        },
+        {
+          "part": "back",
+          "render_triangle": 1810
+        },
+        {
+          "part": "back",
+          "render_triangle": 1817
+        }
+      ],
+      "angle_sum_radians": 6.2831941697999305,
+      "angle_deficit_radians": -8.862620344274319e-06,
+      "part_angle_radians": {
+        "back": 3.1415970848999653,
+        "front": 3.1415970848999653
+      },
+      "authored_angle_sum_radians": 6.28318530717959,
+      "rest_minus_authored_radians": 8.862620340721605e-06,
+      "authored_part_angle_radians": {
+        "back": 3.141592653589795,
+        "front": 3.141592653589795
+      }
+    },
+    {
+      "vertex": 974,
+      "fan": "cycle",
+      "link_vertices": 4,
+      "incident_faces": [
+        1783,
+        1794,
+        3773,
+        3784
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1783
+        },
+        {
+          "part": "front",
+          "render_triangle": 1794
+        },
+        {
+          "part": "back",
+          "render_triangle": 1855
+        },
+        {
+          "part": "back",
+          "render_triangle": 1866
+        }
+      ],
+      "angle_sum_radians": 6.2831941697999305,
+      "angle_deficit_radians": -8.862620344274319e-06,
+      "part_angle_radians": {
+        "back": 3.1415970848999653,
+        "front": 3.1415970848999653
+      },
+      "authored_angle_sum_radians": 6.283185307179585,
+      "rest_minus_authored_radians": 8.862620345162497e-06,
+      "authored_part_angle_radians": {
+        "back": 3.1415926535897927,
+        "front": 3.1415926535897927
+      }
+    }
+  ],
+  "three_or_more_part_junctions": [
+    {
+      "vertex": 571,
+      "fan": "cycle",
+      "link_vertices": 10,
+      "incident_faces": [
+        1039,
+        1040,
+        1044,
+        2947,
+        2948,
+        2950,
+        4300,
+        4301,
+        4436,
+        4437
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1039
+        },
+        {
+          "part": "front",
+          "render_triangle": 1040
+        },
+        {
+          "part": "front",
+          "render_triangle": 1044
+        },
+        {
+          "part": "back",
+          "render_triangle": 1029
+        },
+        {
+          "part": "back",
+          "render_triangle": 1030
+        },
+        {
+          "part": "back",
+          "render_triangle": 1032
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 132
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 133
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 268
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 269
+        }
+      ],
+      "angle_sum_radians": 10.960396825342663,
+      "angle_deficit_radians": -4.677211518163077,
+      "part_angle_radians": {
+        "back": 3.0347483858957953,
+        "front": 3.0347483858957953,
+        "sleeveRight": 4.890900053551072
+      },
+      "authored_angle_sum_radians": 10.960395445743956,
+      "rest_minus_authored_radians": 1.379598707273999e-06,
+      "authored_part_angle_radians": {
+        "back": 3.034748003962475,
+        "front": 3.034748003962475,
+        "sleeveRight": 4.890899437819006
+      }
+    },
+    {
+      "vertex": 643,
+      "fan": "cycle",
+      "link_vertices": 10,
+      "incident_faces": [
+        1179,
+        1206,
+        1237,
+        3091,
+        3116,
+        3147,
+        4034,
+        4036,
+        4164,
+        4166
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1179
+        },
+        {
+          "part": "front",
+          "render_triangle": 1206
+        },
+        {
+          "part": "front",
+          "render_triangle": 1237
+        },
+        {
+          "part": "back",
+          "render_triangle": 1173
+        },
+        {
+          "part": "back",
+          "render_triangle": 1198
+        },
+        {
+          "part": "back",
+          "render_triangle": 1229
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 126
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 128
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 256
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 258
+        }
+      ],
+      "angle_sum_radians": 10.960396825342663,
+      "angle_deficit_radians": -4.677211518163077,
+      "part_angle_radians": {
+        "back": 3.0347483858957953,
+        "front": 3.0347483858957953,
+        "sleeveLeft": 4.890900053551072
+      },
+      "authored_angle_sum_radians": 10.960395445743954,
+      "rest_minus_authored_radians": 1.3795987090503559e-06,
+      "authored_part_angle_radians": {
+        "back": 3.0347480039624743,
+        "front": 3.0347480039624743,
+        "sleeveLeft": 4.890899437819005
+      }
+    },
+    {
+      "vertex": 928,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        1693,
+        1745,
+        3682,
+        3735,
+        4298,
+        4434
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1693
+        },
+        {
+          "part": "front",
+          "render_triangle": 1745
+        },
+        {
+          "part": "back",
+          "render_triangle": 1764
+        },
+        {
+          "part": "back",
+          "render_triangle": 1817
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 130
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 266
+        }
+      ],
+      "angle_sum_radians": 5.801510516674689,
+      "angle_deficit_radians": 0.48167479050489703,
+      "part_angle_radians": {
+        "back": 2.1000272498590125,
+        "front": 2.1000272498590125,
+        "sleeveRight": 1.601456016956664
+      },
+      "authored_angle_sum_radians": 5.801508348558549,
+      "rest_minus_authored_radians": 2.1681161399556004e-06,
+      "authored_part_angle_radians": {
+        "back": 2.10002761286954,
+        "front": 2.10002761286954,
+        "sleeveRight": 1.601453122819469
+      }
+    },
+    {
+      "vertex": 982,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        1794,
+        1811,
+        3784,
+        3801,
+        4033,
+        4163
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1794
+        },
+        {
+          "part": "front",
+          "render_triangle": 1811
+        },
+        {
+          "part": "back",
+          "render_triangle": 1866
+        },
+        {
+          "part": "back",
+          "render_triangle": 1883
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 125
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 255
+        }
+      ],
+      "angle_sum_radians": 5.801510516674689,
+      "angle_deficit_radians": 0.48167479050489703,
+      "part_angle_radians": {
+        "back": 2.1000272498590125,
+        "front": 2.1000272498590125,
+        "sleeveLeft": 1.601456016956664
+      },
+      "authored_angle_sum_radians": 5.8015083485585475,
+      "rest_minus_authored_radians": 2.1681161417319572e-06,
+      "authored_part_angle_radians": {
+        "back": 2.10002761286954,
+        "front": 2.10002761286954,
+        "sleeveLeft": 1.6014531228194673
+      }
+    }
+  ],
+  "prior_strain_peak_neighborhood": [
+    {
+      "vertex": 561,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        1026,
+        1034,
+        1039,
+        2944,
+        2945,
+        2947
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1026
+        },
+        {
+          "part": "front",
+          "render_triangle": 1034
+        },
+        {
+          "part": "front",
+          "render_triangle": 1039
+        },
+        {
+          "part": "back",
+          "render_triangle": 1026
+        },
+        {
+          "part": "back",
+          "render_triangle": 1027
+        },
+        {
+          "part": "back",
+          "render_triangle": 1029
+        }
+      ],
+      "angle_sum_radians": 6.283185307179586,
+      "angle_deficit_radians": 0.0,
+      "part_angle_radians": {
+        "back": 3.141592653589793,
+        "front": 3.141592653589793
+      },
+      "authored_angle_sum_radians": 6.283185307179586,
+      "rest_minus_authored_radians": 0.0,
+      "authored_part_angle_radians": {
+        "back": 3.141592653589793,
+        "front": 3.141592653589793
+      }
+    },
+    {
+      "vertex": 571,
+      "fan": "cycle",
+      "link_vertices": 10,
+      "incident_faces": [
+        1039,
+        1040,
+        1044,
+        2947,
+        2948,
+        2950,
+        4300,
+        4301,
+        4436,
+        4437
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1039
+        },
+        {
+          "part": "front",
+          "render_triangle": 1040
+        },
+        {
+          "part": "front",
+          "render_triangle": 1044
+        },
+        {
+          "part": "back",
+          "render_triangle": 1029
+        },
+        {
+          "part": "back",
+          "render_triangle": 1030
+        },
+        {
+          "part": "back",
+          "render_triangle": 1032
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 132
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 133
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 268
+        },
+        {
+          "part": "sleeveRight",
+          "render_triangle": 269
+        }
+      ],
+      "angle_sum_radians": 10.960396825342663,
+      "angle_deficit_radians": -4.677211518163077,
+      "part_angle_radians": {
+        "back": 3.0347483858957953,
+        "front": 3.0347483858957953,
+        "sleeveRight": 4.890900053551072
+      },
+      "authored_angle_sum_radians": 10.960395445743956,
+      "rest_minus_authored_radians": 1.379598707273999e-06,
+      "authored_part_angle_radians": {
+        "back": 3.034748003962475,
+        "front": 3.034748003962475,
+        "sleeveRight": 4.890899437819006
+      }
+    },
+    {
+      "vertex": 643,
+      "fan": "cycle",
+      "link_vertices": 10,
+      "incident_faces": [
+        1179,
+        1206,
+        1237,
+        3091,
+        3116,
+        3147,
+        4034,
+        4036,
+        4164,
+        4166
+      ],
+      "source_triangles": [
+        {
+          "part": "front",
+          "render_triangle": 1179
+        },
+        {
+          "part": "front",
+          "render_triangle": 1206
+        },
+        {
+          "part": "front",
+          "render_triangle": 1237
+        },
+        {
+          "part": "back",
+          "render_triangle": 1173
+        },
+        {
+          "part": "back",
+          "render_triangle": 1198
+        },
+        {
+          "part": "back",
+          "render_triangle": 1229
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 126
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 128
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 256
+        },
+        {
+          "part": "sleeveLeft",
+          "render_triangle": 258
+        }
+      ],
+      "angle_sum_radians": 10.960396825342663,
+      "angle_deficit_radians": -4.677211518163077,
+      "part_angle_radians": {
+        "back": 3.0347483858957953,
+        "front": 3.0347483858957953,
+        "sleeveLeft": 4.890900053551072
+      },
+      "authored_angle_sum_radians": 10.960395445743954,
+      "rest_minus_authored_radians": 1.3795987090503559e-06,
+      "authored_part_angle_radians": {
+        "back": 3.0347480039624743,
+        "front": 3.0347480039624743,
+        "sleeveLeft": 4.890899437819005
+      }
+    },
+    {
+      "vertex": 1639,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        3015,
+        3045,
+        3081,
+        3090,
+        3091,
+        3116
+      ],
+      "source_triangles": [
+        {
+          "part": "back",
+          "render_triangle": 1097
+        },
+        {
+          "part": "back",
+          "render_triangle": 1127
+        },
+        {
+          "part": "back",
+          "render_triangle": 1163
+        },
+        {
+          "part": "back",
+          "render_triangle": 1172
+        },
+        {
+          "part": "back",
+          "render_triangle": 1173
+        },
+        {
+          "part": "back",
+          "render_triangle": 1198
+        }
+      ],
+      "angle_sum_radians": 6.283185307179586,
+      "angle_deficit_radians": 0.0,
+      "part_angle_radians": {
+        "back": 6.283185307179586
+      },
+      "authored_angle_sum_radians": 6.283185307179586,
+      "rest_minus_authored_radians": 0.0,
+      "authored_part_angle_radians": {
+        "back": 6.283185307179586
+      }
+    },
+    {
+      "vertex": 1640,
+      "fan": "cycle",
+      "link_vertices": 6,
+      "incident_faces": [
+        3016,
+        3081,
+        3091,
+        3104,
+        3147,
+        3153
+      ],
+      "source_triangles": [
+        {
+          "part": "back",
+          "render_triangle": 1098
+        },
+        {
+          "part": "back",
+          "render_triangle": 1163
+        },
+        {
+          "part": "back",
+          "render_triangle": 1173
+        },
+        {
+          "part": "back",
+          "render_triangle": 1186
+        },
+        {
+          "part": "back",
+          "render_triangle": 1229
+        },
+        {
+          "part": "back",
+          "render_triangle": 1235
+        }
+      ],
+      "angle_sum_radians": 6.283185307179586,
+      "angle_deficit_radians": 0.0,
+      "part_angle_radians": {
+        "back": 6.283185307179586
+      },
+      "authored_angle_sum_radians": 6.283185307179586,
+      "rest_minus_authored_radians": 0.0,
+      "authored_part_angle_radians": {
+        "back": 6.283185307179586
+      }
+    }
+  ],
+  "scope": "Rest-only analysis of the strictly replayed unchanged archive. Authored UVs are captured styling-surface coordinates, not an assertion of exported production-pattern equivalence. No new native trajectory, causal defect, solver improvement, physical calibration or fit acceptance."
+}
