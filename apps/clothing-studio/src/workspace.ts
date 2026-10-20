@@ -48,6 +48,7 @@ export function mountWorkspace(): void {
     if (section instanceof HTMLDialogElement) section.addEventListener('cancel', event => { event.preventDefault(); close(); });
   }
   const take = (selector: string) => document.querySelector<HTMLElement>(selector)!;
+  panel('designs', 'Saved designs', [take('#design-library')], true);
   panel('templates', 'Templates', [take('.product-templates'), take('.product-name')]);
   panel('materials', 'Materials & prints', [take('.product-library'), ...children.slice(0, measurements)]);
   panel('patterns', 'Patterns & measurements', [...children.slice(measurements, artwork), take('.pattern-strip')]);

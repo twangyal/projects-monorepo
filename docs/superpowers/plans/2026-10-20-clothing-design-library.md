@@ -23,15 +23,15 @@
 ### Task1: Atomic immutable library persistence
 **Files:** create `apps/clothing-studio/src/design-library.ts`; test `tests/design-library.test.ts` and native `tests/design-library.spec.ts`.
 **Interfaces:** `DesignReceipt={id,name,savedAt,bytes}`; `listDesigns():Promise<DesignReceipt[]>`; `saveDesign(name:string,project:Project):Promise<DesignReceipt>`; `readDesign(receipt:DesignReceipt):Promise<Project>`; `deleteDesign(receipt:DesignReceipt):Promise<void>`; pure `validateDesignName`/`validateDesignReceipt`.
-- [ ] Write pure name/receipt/size detachment cases and native real-IDB save/read/delete/duplicate/cap/concurrent/failure cases; observe RED.
-- [ ] Implement separate DB/stores, Project/media admission before writes, native atomic transactions and receipt/byte verification. Observe focused GREEN and project unit suite.
-- [ ] Commit durable implementation to issue task branch.
+- [x] Write pure name/receipt/size detachment cases and native real-IDB save/read/delete/duplicate/cap/concurrent/failure cases; observe RED.
+- [x] Implement separate DB/stores, Project/media admission before writes, native atomic transactions and receipt/byte verification. Observe focused GREEN and project unit suite.
+- [x] Commit durable implementation to issue task branch.
 
 ### Task2: Usable workspace library
 **Files:** create `src/design-library-view.ts`; modify `src/main.ts`, `src/workspace.ts`, `src/style.css` only if needed; extend native tests.
-**Interfaces:** `mountDesignLibrary({current,guard,open,download,notice})` mounts `#design-library`; main's async `open` uses `beginLoad`, `readDesign`, `adoptLoad` and `finishLoad`. The guard checks all existing draft groups and current load/gesture/export state.
-- [ ] Write native complete-design Save/open/Undo/Redo/reload/download, held save/read retirement, raw draft and phone focus cases; observe RED before implementation.
-- [ ] Implement mounted status/selection/name/actions; keep text via textContent and preserve independent captured operations. Add Saved designs to workspace modal panels.
+**Interfaces:** `mountDesignLibrary({current,guard,open,download})` mounts `#design-library`; main's async `open` uses `beginLoad`, `readDesign`, `adoptLoad` and `finishLoad`. The guard checks all existing draft groups and current load/gesture/export state.
+- [x] Write native complete-design Save/open/Undo/Redo/reload/download, held save/read retirement, raw draft and phone focus cases; observe RED before implementation.
+- [x] Implement mounted status/selection/name/actions; keep text via textContent and preserve independent captured operations. Add Saved designs to workspace modal panels.
 - [ ] Run focused gate, inspect desktop/phone, then complete project checks/browser suite. Preserve every observed failure and repair its cause.
 - [ ] Update README, portfolio direction/roadmap and actual verification receipt; commit.
 
@@ -43,3 +43,5 @@
 ## Execution ledger
 
 Task1: complete — baseline161units; new pure admission2tests pass, then all163project units/lint/build pass. Three native storage cases observed RED at unimplemented API, then all5 native cases pass (8.2s), covering real complete-copy/read/delete/reload, independent concurrent writes, case-insensitive duplicate/cap refusal, stale receipt/corrupt payload, native quota rollback and queued-transaction deadline/no late publication. Existing autosave remains untouched. Task2 consumes the declared persistence signatures without interface changes. Native harness is test-only through the existing build flag.
+
+Task2 checkpoint: complete UI implemented. Native UI RED was missing Saved designs action after valid complete-project import. Focused GREEN: all9 storage/UI browser cases (19.6s); project163units/lint/TypeScript/build pass. Complete snapshot/selected JSON/Undo/Redo/autosave reload, canceled/confirmed deletion, blank raw draft refusal,390×740 containment/Escape focus, held native image decode during save and selected read all verified. Phone capture inspected; no overflow. Status belongs inside the mounted panel, so no unused `notice` injection is needed; main retains existing global guard notices. Full browser gate and independent review pending.

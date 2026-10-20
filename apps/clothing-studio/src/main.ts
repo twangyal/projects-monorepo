@@ -1,3 +1,5 @@
+import {mountDesignLibrary} from './design-library-view.ts';
+import {readDesign,type DesignReceipt} from './design-library.ts';
 import {mountMembrane} from './membrane-view.ts';
 import {mountBending} from './bending-view.ts';
 import {mountTensile} from './tensile-view.ts';
@@ -387,6 +389,22 @@ const drapeView = mountDrape({current:()=>project,commit:next=>edit(()=>next),gu
 const gradingView = mountGrading({current:()=>project,commit:next=>edit(()=>next),guard:constructionGuard,baseDirty:constructionView.dirty,notice:message,download});
 bodyView=mountBody({current:()=>project,commit:next=>edit(()=>next),guard:()=>{if(!constructionGuard(true))return false;if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before editing body measurements. Your drafts are kept.',true);return false;}return true;},notice:message,view:()=>constructionView.render(project)});
 
+function libraryGuard():boolean{
+  if(saveProtection==='loading'){message('Wait for the current saved concept to finish loading before using the design library.',true);return false;}
+  if(!constructionGuard())return false;
+  if(loadBusy||constructionView.dirty()||gradingView.dirty()){message('Finish the import or apply/discard pattern and grading drafts before using saved designs. Your drafts are kept.',true);return false;}
+  return true;
+}
+async function openSavedDesign(receipt:DesignReceipt):Promise<boolean>{
+  if(!libraryGuard())return false;
+  const generation=beginLoad();
+  try{
+    const restored=await readDesign(receipt);
+    if(generation!==loadGeneration)return false;
+    adoptLoad(generation,()=>restored,'Saved design opened. Undo returns to the previous concept.',true);return true;
+  }finally{finishLoad(generation);}
+}
+mountDesignLibrary({current:()=>history.current,guard:libraryGuard,open:openSavedDesign,download});
 window.addEventListener('pagehide', retireLoad);
 mountWorkspace();
 mountTensile(element('workspace-body'));

@@ -1,6 +1,7 @@
 import { loadProject, saveProject, clearProject } from '../src/storage.ts';
+import {template} from '../src/product.ts';
 import { createProject } from '../src/model.ts';
-export const harness = { loadProject, saveProject, clearProject, createProject };
+export const harness = { loadProject, saveProject, clearProject, createProject,template };
 declare global { interface Window { clothingStorage: typeof harness } }
 window.clothingStorage = harness;
 import * as designLibrary from '../src/design-library.ts';
