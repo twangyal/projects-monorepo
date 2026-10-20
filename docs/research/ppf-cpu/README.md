@@ -46,3 +46,5 @@ Native construction localization: [per-part signed strain, original triangle/edg
 Separate bounded material sessions: [four completed three-second jobs, full official archives and exact prefix replay](GARMENT_FIXED_MATERIAL_STUDY.md).
 
 Construction membrane deformation: [coordinate-invariant principal stretch, area-weighted distributions and exact-geometry views](GARMENT_PRINCIPAL_STRAIN.md).
+
+Configured-step research #290 now retains [two complete native half-step sessions](GARMENT_HALF_STEP_STUDY.md) with362frames/926verified native files. Final principal peaks40.912/26.335% remain near the original40.885/26.339%, while early saved vertices differ by up to169.970/150.132mm. This is a bounded sensitivity observation, not timestep convergence or physical fit; construction, representative garments/bodies and physical references remain open.
