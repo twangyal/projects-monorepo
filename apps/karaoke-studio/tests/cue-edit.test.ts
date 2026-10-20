@@ -94,3 +94,27 @@ test('whole-clip shifts require the complete existing cue graph before proposing
   assert.throws(() => shiftCues([], 6, '.25'), /lyric line/);
   for (const cue of [{ start: NaN, end: 2, text: 'First' }, { start: 1, end: 2, text: '' }, { start: 3, end: 2, text: 'First' }]) assert.throws(() => shiftCues([cue], 6, '.25'));
 });
+
+test('passage offset preserves every outside cue and moves the inclusive range without mutation', async () => {
+  const { shiftCues } = await import('../src/cue-edit.ts');
+  const source = [{ start: 0, end: 1, text: 'Keep 🌓' }, { start: 2, end: 2.5, text: 'Verse\r\nA' }, { start: 3, end: 3.5, text: 'Verse B' }, { start: 5, end: 6, text: 'Keep end' }], before = structuredClone(source);
+  const result = shiftCues(source, 6, '.5', { firstIndex: 1, lastIndex: 2 });
+  assert.deepEqual(result, [before[0], { start: 2.5, end: 3, text: 'Verse\r\nA' }, { start: 3.5, end: 4, text: 'Verse B' }, before[3]]);
+  assert.deepEqual(source, before); result[0].text = 'detached'; assert.deepEqual(source, before);
+  assert.deepEqual(shiftCues(source, 6, '-1', { firstIndex: 1, lastIndex: 1 })[1], { start: 1, end: 1.5, text: 'Verse\r\nA' });
+});
+test('passage offsets refuse neighboring overlaps and incomplete reversed or stale ranges', async () => {
+  const { shiftCues } = await import('../src/cue-edit.ts');
+  const source = [{ start: 0, end: 1, text: 'Keep' }, { start: 2, end: 3, text: 'Move' }, { start: 4, end: 6, text: 'Keep' }], before = structuredClone(source);
+  for (const delta of ['-1.001', '1.001']) assert.throws(() => shiftCues(source, 6, delta, { firstIndex: 1, lastIndex: 1 }), /nonoverlapping/);
+  for (const range of [{ firstIndex: -1, lastIndex: 1 }, { firstIndex: 2, lastIndex: 1 }, { firstIndex: 0, lastIndex: 3 }, { firstIndex: .5, lastIndex: 1 }, { firstIndex: 0, lastIndex: NaN }]) assert.throws(() => shiftCues(source, 6, '.25', range), /range|passage/i);
+  assert.deepEqual(source, before);
+});
+test('passage admission checks sparse and invalid outside cues plus representability of moved boundaries', async () => {
+  const { shiftCues } = await import('../src/cue-edit.ts');
+  const source = [{ start: 0, end: 1, text: 'Outside' }, { start: 2, end: 3, text: 'Move' }, { start: 4, end: 5, text: 'Outside' }];
+  const invalid = structuredClone(source); invalid[0].end = NaN; assert.throws(() => shiftCues(invalid, 6, '.25', { firstIndex: 1, lastIndex: 1 }));
+  const sparse = structuredClone(source); delete sparse[0]; assert.throws(() => shiftCues(sparse, 6, '.25', { firstIndex: 1, lastIndex: 1 }), /every|complete|line/i);
+  assert.throws(() => shiftCues(source, 6, '1e-300', { firstIndex: 1, lastIndex: 1 }), /too small/);
+  assert.equal(shiftCues(source, 6, '.25', { firstIndex: 1, lastIndex: 1 })[0].start, 0);
+});

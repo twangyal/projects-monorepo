@@ -32,17 +32,27 @@ export function mergeCue(cues: Cue[], index: number, duration: number): Cue[] {
   return validateCues(next, duration);
 }
 
-/** Shift the complete valid graph; never clamp, crop, or mutate current cues. */
-export function shiftCues(cues: Cue[], duration: number, rawSeconds: string): Cue[] {
+export interface CuePassage { firstIndex: number; lastIndex: number }
+
+/** Shift all cues or one inclusive passage; validate the whole graph without cropping. */
+export function shiftCues(cues: Cue[], duration: number, rawSeconds: string, passage?: CuePassage): Cue[] {
   const raw = rawSeconds.trim();
   if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(raw) || !Number.isFinite(Number(raw)) || Number(raw) === 0) {
     throw new Error('Enter a nonzero finite timing shift in seconds. Positive moves later; negative moves earlier.');
   }
   const before = validateCues(cues, duration);
   if (!before.length) throw new Error('Create at least one valid lyric line before shifting timing.');
-  const delta = Number(raw);
-  const after = validateCues(before.map(cue => ({ ...cue, start: cue.start + delta, end: cue.end + delta })), duration);
-  if (after.some((cue, index) => cue.start === before[index].start || cue.end === before[index].end)) {
+  for (let index = 0; index < before.length; index++) {
+    if (!before[index]) throw new Error('Supply every lyric line before shifting timing.');
+  }
+  const first = passage === undefined ? 0 : passage.firstIndex, last = passage === undefined ? before.length - 1 : passage.lastIndex;
+  if (!Number.isInteger(first) || !Number.isInteger(last) || first < 0 || last < first || last >= before.length) {
+    throw new Error('Choose an ordered passage range of existing lyric lines.');
+  }
+  const delta = Number(raw), selected = (index: number) => index >= first && index <= last;
+  const after = validateCues(before.map((cue, index) => selected(index)
+    ? { ...cue, start: cue.start + delta, end: cue.end + delta } : cue), duration);
+  if (after.some((cue, index) => selected(index) && (cue.start === before[index].start || cue.end === before[index].end))) {
     throw new Error('The shift is too small to change every boundary. Choose a larger number of seconds.');
   }
   return after;
