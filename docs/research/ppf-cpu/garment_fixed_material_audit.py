@@ -26,13 +26,16 @@ HALF_STEP_PROFILES={
  'four-stiff':('03fc96f2c89c7d9fa6de056976ba919b3b2797a47c4cb2759037b04c5f183032',4,'stiff',12222529007),
 }
 HALF_STEP_SOURCE_SHA256={**LONG_SOURCE_SHA256,'garment_native_probe.py':'c94a54d879b552587912e1ee469b05a16946a5dacf1123362d9920af27701c8f','garment_native_export.py':'86a552a227f0cf030a57a4ab0bc823a46a7beedecf9de86dae322d73e2081cb9'}
+GRAVITY_PROFILES={} # Register only retained official native artifacts.
+GRAVITY_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '7495865e1e4426efb3c32bd1931559cb316472d00f680102b89196d8ae5bcc22', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}}
 def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
- require(protocol in ['fixed-material','half-step'],'Unknown study protocol.')
- half=protocol=='half-step';registry=HALF_STEP_PROFILES if half else PROFILES
+ require(protocol in ['fixed-material','half-step','gravity'],'Unknown study protocol.')
+ half=protocol=='half-step';gravity=protocol=='gravity';registry=GRAVITY_PROFILES if gravity else HALF_STEP_PROFILES if half else PROFILES
  require(profile in registry,'Unknown fixed-material profile.')
  archive_hash,threads,name,artifact_id=registry[profile]
  if half:require(threads==4,'Half-step requires requested-four environment.')
- sources=HALF_STEP_SOURCE_SHA256 if half else SOURCE_SHA256;frame_count=181;session={**SESSION,'frames':180,**({'dt':1/240} if half else {})};cases={name:CASES[name]}
+ if gravity:require(threads==4 and name=='soft' and profile in ('reference','zero'),'Gravity protocol requires declared fixed soft requested-four controls.')
+ sources=GRAVITY_SOURCE_SHA256 if gravity else HALF_STEP_SOURCE_SHA256 if half else SOURCE_SHA256;frame_count=181;session={**SESSION,'frames':180,**({'dt':1/240} if half else {}),**({'gravity':[0.,0.,0.]} if gravity and profile=='zero' else {})};cases={name:CASES[name]}
  outcome={'status':'passed_garment_motion_probe','counts':{name:181},'completed':[name]}
  variables={key:str(threads) for key in THREAD_VARIABLES}
  settings={'requested_threads':threads,'variables':variables,'scope':'Requested inherited environment, not a measurement of actual native worker counts.'}
@@ -43,6 +46,8 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   from garment_mesh_patch_evidence import verify_research_patch
   patch=verify_research_patch(z)
   r=json.loads(z.read('receipt.json'));paths=verify_manifest(z,r)
+  if gravity:require(r.get('gravity_study')==profile,'Changed explicit gravity mode.')
+  else:require('gravity_study' not in r,'Unexpected gravity flag.')
   if half:require(r.get('half_step_study') is True,'Missing explicit half-step flag.')
   else:require('half_step_study' not in r,'Unexpected half-step flag.')
   require(not any(k in r for k in ['same_material_control','unsewn_control','relaxation_study']),'Unexpected same-material/unsewn receipt controls.')
@@ -51,7 +56,7 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   require(json.loads(gzip.decompress(z.read('native-blueprint-original.json.gz')))==original,'Changed original blueprint.')
   require(json.loads(gzip.decompress(z.read('native-blueprint.json.gz')))==inputs,'Changed cleared blueprint.')
   controls={**OBJECT,'contact-offset':CLOTH_OFFSET_M}
-  expected={'experiment':'actual-garment-native-clear-warm-sewing-v1-fixed-material-study'+('-half-step-study' if half else ''),'upstream_revision':REVISION,'source_sha256':sources,'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':BODY_OFFSET_M,'initialization':'clear-warm-sewing','initialization_parameters':layout,'warm_start_parameters':wp,'clearance_preparation':cp,'mass_convention':'browser-inertia','mass_parameters':mass,'session_parameters':session,'case_normalized_young':cases,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-'}
+  expected={'experiment':'actual-garment-native-clear-warm-sewing-v1-fixed-material-study'+('-gravity-study' if gravity else '-half-step-study' if half else ''),'upstream_revision':REVISION,'source_sha256':sources,'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':BODY_OFFSET_M,'initialization':'clear-warm-sewing','initialization_parameters':layout,'warm_start_parameters':wp,'clearance_preparation':cp,'mass_convention':'browser-inertia','mass_parameters':mass,'session_parameters':session,'case_normalized_young':cases,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-'}
   for k,v in expected.items():require(r.get(k)==v,'Changed cleared receipt '+k)
   require(z.read('upstream-revision.txt').decode().strip()==REVISION and not z.read('upstream-initial-status.txt').strip(),'Changed/dirty upstream source.')
   require('Exit status: 0' in z.read('build-resources.txt').decode(),'Native build did not pass.')
@@ -71,7 +76,7 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
    command=z.read(prefix+'command.sh').decode()
    expected_command=COMMAND.replace('CASE_NAME',name)
    require(command==expected_command,'Changed native invocation.')
-   require(verify_export(lambda p:z.read(prefix+p),inputs,cases[name],object_parameters=controls,body_contact_offset=BODY_OFFSET_M,session_parameters=session,half_step_study=half)==admitted[name],'Native export admission differs.')
+   require(verify_export(lambda p:z.read(prefix+p),inputs,cases[name],object_parameters=controls,body_contact_offset=BODY_OFFSET_M,session_parameters=session,half_step_study=half,gravity_study=profile if gravity else None)==admitted[name],'Native export admission differs.')
    found={p for p in paths if p.startswith(prefix+'output/vert_') and p.endswith('.bin')}
    count=len(found);require(count==outcome['counts'][name] and found=={prefix+f'output/vert_{i}.bin' for i in range(count)},'Missing/extra/noncontiguous raw frames.')
    frames[name]=[]
@@ -108,6 +113,9 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
      if half and meta=='param.toml':
       require(expected_meta.count(b'dt = 0.008333333333333333')==1,'Unexpected reference dt metadata.')
       expected_meta=expected_meta.replace(b'dt = 0.008333333333333333',b'dt = 0.004166666666666667')
+     if gravity and profile=='zero' and meta=='param.toml':
+      require(expected_meta.count(b'-9.8')==1,'Unexpected reference gravity metadata.')
+      expected_meta=expected_meta.replace(b'-9.8',b'0.0')
      require(z.read(prefix+meta)==expected_meta,'Changed reference metadata.')
     if half and reference_profile=='four':
      reference_frames=[]
@@ -125,6 +133,11 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   diagnostics[name]['construction']=construction_diagnostics(inputs,frames[name][-1])
   result={'archive_sha256':digest,'archive_bytes':len(raw),'artifact_id':artifact_id,'fixed_material':name,'normalized_young':cases[name],'native_outcome':r['status'],'fixed_material_bounded_motion_complete':True,'original_timed_out_serial_pair_completed':False,'native_files_verified':len(paths),'research_patch':patch,'requested_execution_settings':settings,'host':host,'case':diagnostics[name],'raw_frame_sha256':raw_hashes,'duration_reference_comparisons':comparisons,'supervisor':supervisor,'limits':['Separate300-second budget per fixed material, not completion within the original serial-pair budget.','One session per material/environment does not establish population determinism or causal thread effects.','Normalized coefficient is not calibrated physical fabric.','Saved endpoints/secants do not establish continuous-time contact, instantaneous velocity, sustained settling, physical fit or engine adoption.']}
 
+  if gravity:
+   from garment_principal_strain import principal_strain
+   diagnostics[name]['principal_strain']=principal_strain(inputs,frames[name][-1])
+   result.update(protocol='gravity',gravity_study=profile,gravity_m_per_s2=session['gravity'])
+   result['limits'].append('Gravity-only diagnostic on one prepared fixture; does not isolate construction, bending, contact or initialization causes.')
   if half:
    from garment_principal_strain import principal_strain
    diagnostics[name]['principal_strain']=principal_strain(inputs,frames[name][-1])
@@ -133,4 +146,4 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   return result
 
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--protocol',choices=['fixed-material','half-step'],default='fixed-material');p.add_argument('--profile',choices=sorted(set(PROFILES)|set(HALF_STEP_PROFILES)),required=True);a=p.parse_args();print(json.dumps(audit(a.archive,profile=a.profile,protocol=a.protocol),indent=2,allow_nan=False))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--protocol',choices=['fixed-material','half-step','gravity'],default='fixed-material');p.add_argument('--profile',choices=sorted(set(PROFILES)|set(HALF_STEP_PROFILES)|set(GRAVITY_PROFILES)),required=True);a=p.parse_args();print(json.dumps(audit(a.archive,profile=a.profile,protocol=a.protocol),indent=2,allow_nan=False))

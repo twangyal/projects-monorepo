@@ -24,11 +24,12 @@ def experiment_controls(initialization,unsewn_control=False):
     if unsewn_control:controls['stitch-stiffness']=0.
     return controls
 
-def session_controls(frames,relaxation_study=False,half_step_study=False):
+def session_controls(frames,relaxation_study=False,half_step_study=False,gravity_study=None):
+    if gravity_study is not None and (gravity_study not in ("reference","zero") or relaxation_study or half_step_study):raise ValueError("Gravity study is a distinct explicit reference or zero protocol.")
     if type(half_step_study) is not bool or (half_step_study and relaxation_study):raise ValueError('Half-step study is a distinct explicit protocol.')
-    admitted=[180] if relaxation_study or half_step_study else [18,60]
+    admitted=[180] if relaxation_study or half_step_study or gravity_study is not None else [18,60]
     if type(frames) is not int or frames not in admitted:raise ValueError('Duration requires an explicitly admitted observation protocol.')
-    return {**SESSION,'frames':frames,**({'dt':1/240} if half_step_study else {})}
+    return {**SESSION,'frames':frames,**({'dt':1/240} if half_step_study else {}),**({'gravity':[0.,0.,0.]} if gravity_study=='zero' else {})}
 
 def case_plan(same_material_control=False):
     return {'first':CASES['soft'],'second':CASES['soft']} if same_material_control else dict(CASES)
@@ -55,6 +56,10 @@ def half_step_settings(initialization,frames,mass_convention,unsewn_control,same
     if settings['requested_threads']!=4:raise ValueError('Half-step protocol requires requested-four environment.')
     return settings
 
+def gravity_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,half_step_study,environment):
+    if fixed_material!='soft' or half_step_study:raise ValueError('Gravity study requires fixed soft material and original timestep.')
+    return half_step_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,environment)
+
 def requested_thread_settings(environment):
     names=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
     values={name:environment.get(name) for name in names}
@@ -72,18 +77,20 @@ def main():
     parser.add_argument('--relaxation-study',action='store_true',help='Research only: explicit three-second two-material observation; no settling acceptance.')
     parser.add_argument('--fixed-material-study',choices=list(CASES),help='Research only: one fixed material in a separate bounded three-second session.')
     parser.add_argument('--half-step-study',action='store_true',help='Research only: explicit fixed-material configured dt=1/240 sensitivity study.')
+    parser.add_argument('--gravity-study',choices=['reference','zero'],help='Research only: normal or zero gravity with otherwise fixed soft-material controls.')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
     revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
     if revision!=REVISION:raise ValueError('Unpinned source.')
     if args.frames>=60 and args.initialization!='clear-warm-sewing':raise ValueError('Longer observation requires the cleared warm pose.')
-    session_parameters=session_controls(args.frames,relaxation_study=args.relaxation_study or (args.fixed_material_study is not None and not args.half_step_study),half_step_study=args.half_step_study);frame_count=args.frames+1
+    session_parameters=session_controls(args.frames,relaxation_study=args.relaxation_study or (args.fixed_material_study is not None and not args.half_step_study and args.gravity_study is None),half_step_study=args.half_step_study,gravity_study=args.gravity_study);frame_count=args.frames+1
     cases=fixed_material_cases(args.fixed_material_study) if args.fixed_material_study is not None else case_plan(args.same_material_control)
     if args.fixed_material_study is not None:execution_settings=fixed_material_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,os.environ)
     if args.same_material_control:execution_settings=repeatability_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,os.environ)
     if args.relaxation_study:execution_settings=relaxation_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,os.environ)
     if args.half_step_study:execution_settings=half_step_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,os.environ)
+    if args.gravity_study is not None:execution_settings=gravity_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,args.half_step_study,os.environ)
     inputs=load_inputs(Path(__file__).with_name('results'))
     original_inputs=inputs
     controls=experiment_controls(args.initialization,args.unsewn_control)
@@ -105,6 +112,8 @@ def main():
         receipt.update(experiment=receipt['experiment']+'-fixed-material-study',fixed_material_study=args.fixed_material_study,execution_settings=execution_settings,scope='Separate bounded three-second fixed-material session; not completion of the original serial pair, sustained settling, calibrated fabric, physical fit or backend adoption acceptance.')
     if args.half_step_study:
         receipt.update(experiment=receipt['experiment']+'-half-step-study',half_step_study=True,scope='Configured dt1/240 fixed-material sensitivity only; not timestep/mesh convergence, stress, physical fit or backend adoption acceptance.')
+    if args.gravity_study is not None:
+        receipt.update(experiment=receipt['experiment']+'-gravity-study',gravity_study=args.gravity_study,scope='Gravity-only diagnostic with original rest geometry, mass, body contact and stitches; not construction causality, physical fit or backend adoption acceptance.')
     if args.relaxation_study:
         receipt.update(experiment=receipt['experiment']+'-relaxation-study',relaxation_study=True,execution_settings=execution_settings,scope='Bounded three-second two-material observation; not sustained settling, calibrated fabric, physical fit or backend adoption acceptance.')
     if args.same_material_control:
@@ -163,7 +172,7 @@ def main():
                 receipt['stage']='native_session_build';save();session=session.build()
                 receipt['stage']='native_export_admission';save()
                 directory=Path(session.info.path)
-                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young,object_parameters=controls,body_contact_offset=body_offset,session_parameters=session_parameters,half_step_study=args.half_step_study)
+                receipt.setdefault('native_input_admission',{})[name]=verify_export(lambda path:(directory/path).read_bytes(),inputs,young,object_parameters=controls,body_contact_offset=body_offset,session_parameters=session_parameters,half_step_study=args.half_step_study,gravity_study=args.gravity_study)
                 save()
                 receipt['stage']='native_execution';save();case_start=time.perf_counter();session.start(blocking=True)
                 if not session.finished():raise ValueError('Native process did not finish.')
