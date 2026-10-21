@@ -64,6 +64,14 @@ def preparation_settings(mode,initialization,frames,mass_convention,unsewn_contr
     if mode not in ('reference','smoothed') or gravity_study is not None:raise ValueError('Preparation study requires a distinct declared reference or smoothed protocol.')
     return gravity_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,half_step_study,environment)
 
+def bending_controls(mode,controls):
+    if mode not in ('reference','zero'):raise ValueError('Bending study requires an explicit reference or zero diagnostic.')
+    return {**controls,'bend':20. if mode=='reference' else 0.}
+
+def bending_settings(mode,initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,half_step_study,gravity_study,preparation_study,environment):
+    if mode not in ('reference','zero') or gravity_study is not None or preparation_study is not None:raise ValueError('Bending study is distinct from gravity and startup-preparation studies.')
+    return gravity_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,half_step_study,environment)
+
 def requested_thread_settings(environment):
     names=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
     values={name:environment.get(name) for name in names}
@@ -83,6 +91,7 @@ def main():
     parser.add_argument('--half-step-study',action='store_true',help='Research only: explicit fixed-material configured dt=1/240 sensitivity study.')
     parser.add_argument('--gravity-study',choices=['reference','zero'],help='Research only: normal or zero gravity with otherwise fixed soft-material controls.')
     parser.add_argument('--preparation-study',choices=['reference','smoothed'],help='Research only: original or fixed smoothed clearance preparation, with normal gravity and fixed soft material.')
+    parser.add_argument('--bending-study',choices=['reference','zero'],help='Research only: original bend20 or explicit zero-bending diagnostic, all other fixed-soft controls unchanged.')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
@@ -97,9 +106,11 @@ def main():
     if args.half_step_study:execution_settings=half_step_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,os.environ)
     if args.gravity_study is not None:execution_settings=gravity_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,args.half_step_study,os.environ)
     if args.preparation_study is not None:execution_settings=preparation_settings(args.preparation_study,args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,args.half_step_study,args.gravity_study,os.environ)
+    if args.bending_study is not None:execution_settings=bending_settings(args.bending_study,args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,args.half_step_study,args.gravity_study,args.preparation_study,os.environ)
     inputs=load_inputs(Path(__file__).with_name('results'))
     original_inputs=inputs
     controls=experiment_controls(args.initialization,args.unsewn_control)
+    if args.bending_study is not None:controls=bending_controls(args.bending_study,controls)
     body_offset=0. if args.initialization=='strict' else BODY_OFFSET_M
     if args.initialization=='separated':inputs=separate_rib(original_inputs)
     if args.initialization=='sewing':inputs,layout=sewing_layout(original_inputs)
@@ -121,6 +132,8 @@ def main():
         receipt['source_sha256']['garment_preparation.py']=hashlib.sha256(Path(__file__).with_name('garment_preparation.py').read_bytes()).hexdigest()
     if args.fixed_material_study is not None:
         receipt.update(experiment=receipt['experiment']+'-fixed-material-study',fixed_material_study=args.fixed_material_study,execution_settings=execution_settings,scope='Separate bounded three-second fixed-material session; not completion of the original serial pair, sustained settling, calibrated fabric, physical fit or backend adoption acceptance.')
+    if args.bending_study is not None:
+        receipt.update(experiment=receipt['experiment']+'-bending-study',bending_study=args.bending_study,scope='Bending-only fixed-garment diagnostic with original rest, inertia, prepared pose, body and contact; zero bending is not a calibrated fabric, construction fix or fit acceptance.')
     if args.preparation_study is not None:
         receipt.update(experiment=receipt['experiment']+'-preparation-study',preparation_study=args.preparation_study,scope='Declared startup-geometry control with original rest, captured inertia, body, contact and stitches; not settling, calibrated fabric or fit acceptance.')
     if args.half_step_study:
