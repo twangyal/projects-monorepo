@@ -92,12 +92,14 @@ export interface Measurements { chest: number; length: number; sleeve: number }
 /**
  * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), shoulder drop (U), neck width (F), front
  * neck drop (G), back neck drop (H), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
- * out keeps its default (chest-based proportions where applicable; back neck drop is 2 cm and shoulder drop is 4 cm).
+ * out keeps its default. Optional chest-pocket width/height/placement use P/Q/R/V. Defaults are chest-based where applicable; back neck drop is 2 cm and shoulder drop is 4 cm.
  */
-export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening'] as const;
+export const POCKET_FIT_KEYS = ['chestPocketWidth', 'chestPocketHeight', 'chestPocketX', 'chestPocketY'] as const;
+export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening', ...POCKET_FIT_KEYS] as const;
 export type FitKey = typeof FIT_KEYS[number];
 export type Fit = Partial<Record<FitKey, number>>;
 export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', shoulderDrop: 'Shoulder drop', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop',
+  chestPocketWidth: 'Chest pocket width', chestPocketHeight: 'Chest pocket height', chestPocketX: 'Pocket centre offset', chestPocketY: 'Pocket top placement',
   armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
 export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number }
@@ -131,7 +133,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30] } as Record<FitKey, readonly [number, number]>,
+  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30], chestPocketWidth: [6, 20], chestPocketHeight: [6, 24], chestPocketX: [-22, 22], chestPocketY: [8, 45] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -279,6 +281,7 @@ export function validateProduct(value: unknown): Product {
     fit = Object.fromEntries(Object.keys(f).map(key => [key, finite(f[key], LIMITS.fit[key as FitKey], `${FIT_NAMES[key as FitKey]} (cm)`)])) as Fit;
     checkFit({ base, measurements: measurements as Measurements, neckline: p.neckline as Product['neckline'], fit });
   }
+  checkChestPocket({ base, measurements, neckline: p.neckline as Product['neckline'], fit, options });
   const motifs = p.motifs !== undefined ? validateMotifs(p.motifs) : undefined;
   const uploaded = new Set((motifs ?? []).map(m => m.id));
   const parts = validateParts(p.parts, uploaded, ids);
@@ -369,7 +372,7 @@ export function teeDimensions(product: Product) {
     // A curved hem rises this far at the side seams; the body length is still measured at the centre.
     hemCurve: optionsOf(product).hem === 'curved' ? HEM_CURVE_CM : 0,
     // Chest pocket on the wearer's left (+x seen from the front): centre, top below the shoulder line, finished size.
-    chestPocketX: half * 0.45, chestPocketY: shoulderDrop + armDepth * 0.5, chestPocketWidth: 12, chestPocketHeight: 13.5,
+    chestPocketX: fit.chestPocketX ?? half * 0.45, chestPocketY: fit.chestPocketY ?? shoulderDrop + armDepth * 0.5, chestPocketWidth: fit.chestPocketWidth ?? 12, chestPocketHeight: fit.chestPocketHeight ?? 13.5,
   };
 }
 
@@ -385,6 +388,27 @@ function checkFit(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 
   if (d.shoulderDrop + d.armDepth + 12 > d.length - d.band) fail('The armhole must end at least 12 cm above the hem.');
   if (d.hemHalf < d.half * 0.7 || d.hemHalf > d.half * 1.6) fail(`Hem width (½) must be between ${(d.half * 1.4).toFixed(1)} and ${(d.half * 3.2).toFixed(1)} cm for this chest.`);
   if (d.cuffHalf * 2 > d.capWidth - 4) fail('The sleeve opening must be narrower than the sleeve at the armhole.');
+}
+
+/** Keep an enabled finished pocket's bounding rectangle at least 0.5 cm inside the actual front sewing outline. */
+function checkChestPocket(product: Pick<Product, 'base' | 'measurements' | 'neckline' | 'fit' | 'options'>) {
+  if (POCKET_FIT_KEYS.some(key => product.fit?.[key] !== undefined) && !chestPocketAllowed(product.base)) fail('Chest-pocket measurements apply only to tees and sweatshirts.');
+  if (!optionsOf(product).chestPocket) return;
+  const design = product as Product, d = teeDimensions(design), cx = flare(design) + d.half + d.chestPocketX;
+  const left = cx - d.chestPocketWidth / 2, right = cx + d.chestPocketWidth / 2, top = d.chestPocketY, bottom = top + d.chestPocketHeight;
+  const rectangle = [{ x: left, y: top }, { x: right, y: top }, { x: right, y: bottom }, { x: left, y: bottom }];
+  const outline = patternPieces(design).find(piece => piece.part === 'front')!.outline;
+  const cross = (a: Pt, b: Pt, c: Pt) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  const distance = (a: Pt, b: Pt, c: Pt, e: Pt) => {
+    const overlap = Math.max(Math.min(a.x, b.x), Math.min(c.x, e.x)) <= Math.min(Math.max(a.x, b.x), Math.max(c.x, e.x))
+      && Math.max(Math.min(a.y, b.y), Math.min(c.y, e.y)) <= Math.min(Math.max(a.y, b.y), Math.max(c.y, e.y));
+    if (overlap && cross(a, b, c) * cross(a, b, e) <= 0 && cross(c, e, a) * cross(c, e, b) <= 0) return 0;
+    return Math.min(segmentDistance(a, c, e), segmentDistance(b, c, e), segmentDistance(c, a, b), segmentDistance(e, a, b));
+  };
+  if (rectangle.some(point => !inside(point, outline)) || rectangle.some((a, i) => outline.some((b, j) =>
+    distance(a, rectangle[(i + 1) % rectangle.length], b, outline[(j + 1) % outline.length]) < 0.5 - 1e-9))) {
+    fail('Keep the finished chest pocket at least 0.5 cm inside the front panel sewing outline.');
+  }
 }
 
 export interface PatternPiece { part: PartId; outline: { x: number; y: number }[]; width: number; height: number; areaCm2: number; cutCount: number }

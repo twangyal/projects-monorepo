@@ -205,7 +205,7 @@ test('modules: a curved hem and a chest pocket follow through validation, 3D, pa
 
   // Tech pack: pocket fabric, measurements and construction; curved-hem side length and hem detail.
   const pack = buildTechPack(curved, '2026-10-13'), codes = pack.poms.map(p => p.code).join('');
-  assert.equal(codes, 'ABCDEFGHIJKSTUPQR');
+  assert.equal(codes, 'ABCDEFGHIJKSTUPQRV');
   assert.equal(buildTechPack(tee, '2026-10-13').poms.map(p => p.code).join(''), 'ABCDEFGHIJKU', 'no module rows without modules');
   const side = pack.poms.find(p => p.code === 'S')!.values.M;
   assert.equal(side, Math.round((dims.length - HEM_CURVE_CM - dims.shoulderDrop - dims.armDepth) * 2) / 2);

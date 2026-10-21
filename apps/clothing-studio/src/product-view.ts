@@ -8,7 +8,7 @@ import { decodeProductFile } from './media.ts';
 import { onMotifImage, motifImage, paintTile } from './fabric-texture.ts';
 import {
   LAYOUTS, LAYOUT_NAMES, LIMITS, MATERIALS, MOTIFS, MOTIF_NAMES, RIB_PARTS, TEMPLATES, partsOf, HEMS, HEM_NAMES, SLEEVE_PRESETS,
-  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
+  chestPocketAllowed, hemAllowed, optionsOf, withOptions, LEG_PRESETS, FIT_KEYS, POCKET_FIT_KEYS, FIT_NAMES, flare, teeDimensions, type FitKey, isBottoms, legMeasurements, partName, topMeasurements,
   CURRENCIES, SIZES, material, printName, patternPieces, template, validateProduct, type Artwork, type Costing, type PartId, type Print, type PrintMotif, type Product, type Size,
 } from './product.ts';
 import { validateProject, type Project } from './model.ts';
@@ -71,9 +71,10 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
-      <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder width & drop, neck, armhole, hem, sleeve opening</summary>
+      <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder, neck, armhole, hem, sleeve opening & pocket</summary>
         <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm; shoulder drop defaults to 4 cm.</p>
-        <div class="measure-grid">${FIT_KEYS.map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div>
+        <div class="measure-grid">${FIT_KEYS.filter(key => !POCKET_FIT_KEYS.some(pocket => pocket === key)).map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div>
+        <div id="pocket-fit-fields" hidden><p class="eyebrow">CHEST POCKET CONSTRUCTION</p><p class="fine-print">Finished size; top measured below the high-point shoulder line. Positive centre offset moves toward the wearer’s left, negative toward the right. Keep the pocket at least 0.5 cm inside the front sewing outline.</p><div class="measure-grid">${POCKET_FIT_KEYS.map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div></div>
         <div class="inline-actions"><button id="apply-fit">Apply fit</button><button id="reset-fit" class="quiet">Back to proportional</button></div>
       </details>
       <p class="eyebrow">MODULES</p>
@@ -474,16 +475,29 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Fit: a point of measure is stored only when it differs from its proportional value.
   const fitValues = (design: Product): Record<FitKey, number> => {
     const d = teeDimensions(design);
-    return { shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+    return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
   };
   $('apply-fit').addEventListener('click', () => update(draft => {
     const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
     for (const key of FIT_KEYS) {
+      if (POCKET_FIT_KEYS.some(pocket => pocket === key)) continue;
       const raw = ($(`fit-${key}`) as HTMLInputElement).value;
       if (raw.trim() === '') throw new Error(`Fill in ${FIT_NAMES[key].toLowerCase()}.`);
       const value = Number(raw);
       // Displayed values are rounded to 0.1 cm, so an untouched field differs by at most 0.05.
       if (Math.abs(value - proportional[key]) > 0.06) fit[key] = value;
+    }
+    // Untouched pocket fields retain exact authored values or remain derived from the new body fit.
+    const pocketDefaults = fitValues({ ...draft, fit });
+    for (const key of POCKET_FIT_KEYS) {
+      if (!optionsOf(draft).chestPocket || !drafts.has(`fit-${key}`)) {
+        if (draft.fit?.[key] !== undefined) fit[key] = draft.fit[key];
+        continue;
+      }
+      const raw = ($(`fit-${key}`) as HTMLInputElement).value;
+      if (raw.trim() === '') throw new Error(`Fill in ${FIT_NAMES[key].toLowerCase()}.`);
+      const value = Number(raw);
+      if (Math.abs(value - pocketDefaults[key]) > 0.06) fit[key] = value;
     }
     if (Object.keys(fit).length) draft.fit = fit; else delete draft.fit;
   }, 'Fit applied: the pattern pieces, 3D garment and tech pack follow it.', 'fit'));
@@ -538,6 +552,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
 
   // Modules: each switch is one undoable edit, and every view follows it.
   const setModules = (change: (current: ReturnType<typeof optionsOf>) => ReturnType<typeof optionsOf>, text: string) => {
+    if (hasDrafts('fit')) { options.notice('Apply or discard pending fit edits before changing modules. Your drafts are kept.', true); render(options.current()); return; }
     const current = product() ?? template('blank');
     try { commit({ ...options.current(), product: validateProduct(withOptions(current, change(optionsOf(current)))) }); options.notice(text); }
     catch (error) { options.notice(error instanceof Error ? error.message : 'That module is not available.', true); render(options.current()); }
@@ -839,6 +854,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const modules = optionsOf(design), pocket = $('product-chest-pocket') as HTMLInputElement;
     ($('product-hem') as HTMLSelectElement).value = modules.hem;
     ($('product-hem') as HTMLSelectElement).querySelector<HTMLOptionElement>('option[value=curved]')!.disabled = !hemAllowed(design.base, 'curved');
+    $('pocket-fit-fields').hidden = !modules.chestPocket;
     pocket.checked = modules.chestPocket; pocket.disabled = !chestPocketAllowed(design.base);
     $('module-help').textContent = design.base === 'tee' || isBottoms(design) ? '' : design.base === 'hoodie' ? 'The hoodie’s rib hem band keeps the hem straight, and its kangaroo pocket replaces a chest pocket.'
       : 'The rib hem band keeps the hem straight.';

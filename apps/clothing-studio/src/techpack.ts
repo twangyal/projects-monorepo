@@ -90,6 +90,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
       pom('P', 'Chest pocket width', 'Finished, across the top edge', dims.chestPocketWidth, 0.5, 0.3),
       pom('Q', 'Chest pocket height', 'Finished, top edge to bottom edge', dims.chestPocketHeight, 0.5, 0.3),
       pom('R', 'Chest pocket placement', 'High point shoulder line straight down to the pocket top', dims.chestPocketY, 0.5, 0.5),
+      pom('V', 'Chest pocket centre offset', 'Horizontal from centre front; positive toward wearer’s left, negative toward right', dims.chestPocketX, 0, 0.5),
     ] : []),
   ];
   const construction: ConstructionRow[] = [
@@ -107,8 +108,8 @@ export function buildTechPack(product: Product, date: string): TechPack {
       { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.band)} finished; cut about 15% shorter than the sleeve opening` },
       { area: 'Hem band', operation: 'Close into a loop, fold, then overlock to the body', detail: `${cm(dims.band)} finished; cut about 15% shorter than the hem` },
     ]),
-    ...(modules.chestPocket ? [{ area: 'Chest pocket', operation: `Turn the top ${cm(POCKET_FOLD_CM)} and coverstitch; press the edges under 1 cm and edgestitch to the left front`,
-      detail: `${cm(dims.chestPocketWidth)} × ${cm(dims.chestPocketHeight)} finished; top ${cm(dims.chestPocketY)} below the shoulder line, centred ${cm(dims.chestPocketX)} toward the wearer’s left; bar-tack both top corners` }] : []),
+    ...(modules.chestPocket ? [{ area: 'Chest pocket', operation: `Turn the top ${cm(POCKET_FOLD_CM)} and coverstitch; press the edges under 1 cm and edgestitch to the front`,
+      detail: `${cm(dims.chestPocketWidth)} × ${cm(dims.chestPocketHeight)} finished; top ${cm(dims.chestPocketY)} below the shoulder line, ${dims.chestPocketX === 0 ? 'centred on the front' : `centre ${cm(Math.abs(dims.chestPocketX))} toward the wearer’s ${dims.chestPocketX > 0 ? 'left' : 'right'}`}; bar-tack both top corners` }] : []),
     ...product.artwork.map(art => ({ area: `${art.part === 'front' ? 'Front' : 'Back'} artwork`, operation: 'Screen print or DTG after sewing', detail: `${cm(art.widthCm)} wide, ${cm(art.yCm)} below shoulder` })),
   ];
   return {
