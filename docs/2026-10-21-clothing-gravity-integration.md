@@ -14,4 +14,18 @@ Initial tooling is integrated at `a8de10382604dbf3ec4185a18d8d85dfff84111b`: [19
 
 [Native run 39542765732](https://github.com/twangyal/projects-monorepo/actions/runs/39542765732) succeeds at frozen source `5bc1ae3c3658b82449118a4c4e2474a50213c377`. Native solve times are 101.080s /79.063s (reference /zero); each unchanged 300-second supervisor completes with no remaining children. The full retained-pair regression passes locally in 12.647s and reproduces the complete derived receipt.
 
-Final expanded local/hosted verification is running. Research/preflight job budgets increase from 8 to 10 minutes to accommodate additional immutable raw-archive replay; native budgets remain 300 seconds. This receipt will record actual final checks without treating unrun or pending checks as passed.
+Evidence and replay are integrated on canonical main at `e4dfee6045f4d90bf3e49b6f158f7cf95bc15ccc`, tree `d8cf1aa07353cf3b7e85dae86b56d6b09182129e`. The complete final local research suite passes **197 tests in 328.588s**. Independent final review reproduces the entire comparison receipt, checks both archive digests and all reported observations, and finds no blockers.
+
+Final hosted checks on that exact source commit all pass:
+
+| Check | Verified result | Run |
+| --- | --- | --- |
+| Research evidence harness | 197 tests, 481.025s | [39544559544](https://github.com/twangyal/projects-monorepo/actions/runs/39544559544) |
+| Actual-garment preflight | 140 checks, 338.824s; complete packet/warm/rest/body/source reproduction | [39544559621](https://github.com/twangyal/projects-monorepo/actions/runs/39544559621) |
+| Application | 163 unit tests, lint/types/build; 209 browser cases (6.4m) | [39544559607](https://github.com/twangyal/projects-monorepo/actions/runs/39544559607) |
+
+Research/preflight job budgets increase from 8 to 10 minutes for additional immutable raw-archive replay; the final research command itself takes 481.025s on its hosted worker. Native solve budgets remain 300 seconds. This final receipt changes only documentation; the verified implementation, source capture and retained evidence remain unchanged.
+
+## Remaining work
+
+#290 remains open. A concrete next investigation is to localize the initial 47.891% strain through the original browser-warm and outward-clearance preparation stages, then choose a contact-preserving construction/pose control. Do not rewrite the rest pattern to erase strain or treat zero gravity as a wearable-assembly result. Representative garment/body coverage, sustained settling and independent physical fabric/fit references remain separate acceptance gates.
