@@ -8,7 +8,7 @@ function wav(bytes: Buffer): { channels: number; frames: number; sample: (frame:
   return { channels, frames: size / 2 / channels, sample: (frame, channel) => bytes.readInt16LE(44 + (frame * channels + channel) * 2) };
 }
 async function slide(page: Page, label: string, value: string): Promise<void> {
-  await page.getByLabel(label).evaluate((input, v) => {
+  await (label === 'Pan' ? page.getByRole('slider', {name: /^Pan /}) : page.getByLabel(label)).evaluate((input, v) => {
     const range = input as HTMLInputElement; range.value = v;
     range.dispatchEvent(new Event('input', { bubbles: true })); range.dispatchEvent(new Event('change', { bubbles: true }));
   }, value);
@@ -66,7 +66,7 @@ test('pan and reverb send turn the song into a stereo mix with a reverb tail, as
   await expect(page.locator('#save-status')).toContainText(/Saved/);
   await page.reload();
   await expect(page.getByLabel('Reverb send')).toHaveValue('0.5');
-  await expect(page.getByLabel('Pan')).toHaveValue('-1');
+  await expect(page.getByRole('slider', {name: /^Pan /})).toHaveValue('-1');
 });
 
 test('mix controls fit a phone screen and centring removes the field again', async ({ page }) => {

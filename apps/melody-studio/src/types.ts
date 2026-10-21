@@ -12,6 +12,8 @@ export interface SoundFilter { cutoff: number; resonance: number }
 export interface SoundEcho { beats: number; decay: number; repeats: number }
 export interface VolumeRamp { start: number; end: number; from: number; to: number }
 export type VolumeCurve = {beat:number;level:number}[];
+/** Each level is a stereo position: −1 left, 0 centre, +1 right. */
+export type PanCurve = VolumeCurve;
 export interface Track {
   id: string;
   name: string;
@@ -26,6 +28,8 @@ export interface Track {
   volumeCurve?: VolumeCurve;
   /** -1 (left) to +1 (right); absent means centred. */
   pan?: number;
+  /** Overrides static pan while present; follows absolute song time. */
+  panCurve?: PanCurve;
   /** 0–1 share of the track sent to the shared reverb bus; absent means none. */
   reverbSend?: number;
   notes: Note[];

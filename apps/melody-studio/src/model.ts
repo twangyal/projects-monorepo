@@ -1,3 +1,4 @@
+import {validatePanCurve} from './pan-curve.ts';
 import { validatePan, validateReverb, validateSend } from './mix-settings.ts';
 import {validateHarmonics} from './sound-harmonics.ts';
 import {validateVolumeCurve} from './volume-curve.ts';
@@ -87,6 +88,8 @@ export function validateComposition(value: unknown): Composition {
     const instrument = track.instrument;
     const harmonicDescriptor=Object.getOwnPropertyDescriptor(track,'harmonics');
     if(harmonicDescriptor&&(!harmonicDescriptor.enumerable||!('value'in harmonicDescriptor)))throw new Error('Harmonics must be an enumerable data field.');
+    const panCurveDescriptor=Object.getOwnPropertyDescriptor(track,'panCurve');
+    if(panCurveDescriptor&&(!panCurveDescriptor.enumerable||!('value' in panCurveDescriptor)))throw new Error('Pan curve must be an enumerable data field.');
     const curveDescriptor=Object.getOwnPropertyDescriptor(track,'volumeCurve');
     if(curveDescriptor && (!curveDescriptor.enumerable || !('value' in curveDescriptor)))throw new Error('Volume curve must be an enumerable data field.');
     const volume = number(track.volume, `${path} volume`, 0, 1);
@@ -103,7 +106,7 @@ export function validateComposition(value: unknown): Composition {
       const velocity = number(note.velocity, `${notePath} velocity`, 0, 1);
       return { id: noteId, pitch, start, duration, velocity };
     });
-    return { id: trackId, name, instrument, volume, muted: track.muted, notes, ...(harmonicDescriptor?{harmonics:validateHarmonics(harmonicDescriptor.value)}:{}), ...(Object.hasOwn(track, 'envelope') ? { envelope: validateEnvelope(track.envelope) } : {}), ...(Object.hasOwn(track, 'filter') ? { filter: validateFilter(track.filter) } : {}), ...(Object.hasOwn(track, 'echo') ? { echo: validateEcho(track.echo) } : {}), ...(Object.hasOwn(track, 'volumeRamp') ? { volumeRamp: validateVolumeRamp(track.volumeRamp) } : {}), ...(Object.hasOwn(track, 'volumeCurve') ? {volumeCurve:validateVolumeCurve(curveDescriptor!.value)} : {}), ...(Object.hasOwn(track, 'pan') ? { pan: validatePan(track.pan) } : {}), ...(Object.hasOwn(track, 'reverbSend') ? { reverbSend: validateSend(track.reverbSend) } : {}) };
+    return { id: trackId, name, instrument, volume, muted: track.muted, notes, ...(harmonicDescriptor?{harmonics:validateHarmonics(harmonicDescriptor.value)}:{}), ...(Object.hasOwn(track, 'envelope') ? { envelope: validateEnvelope(track.envelope) } : {}), ...(Object.hasOwn(track, 'filter') ? { filter: validateFilter(track.filter) } : {}), ...(Object.hasOwn(track, 'echo') ? { echo: validateEcho(track.echo) } : {}), ...(Object.hasOwn(track, 'volumeRamp') ? { volumeRamp: validateVolumeRamp(track.volumeRamp) } : {}), ...(Object.hasOwn(track, 'volumeCurve') ? {volumeCurve:validateVolumeCurve(curveDescriptor!.value)} : {}), ...(panCurveDescriptor ? {panCurve:validatePanCurve(panCurveDescriptor.value)} : {}), ...(Object.hasOwn(track, 'pan') ? { pan: validatePan(track.pan) } : {}), ...(Object.hasOwn(track, 'reverbSend') ? { reverbSend: validateSend(track.reverbSend) } : {}) };
   });
   return { version: 1, title, tempo, tracks, ...(Object.hasOwn(project, 'reverb') ? { reverb: validateReverb(project.reverb) } : {}) };
 }

@@ -55,6 +55,8 @@ Milestone #198 adds an optional sampled-expression MIDI export for committed vol
 
 Optional editable eight-harmonic tones (#215) now override the fixed waveform through shared synthesis, with Apply/Discard/bypass, strict complete-project recovery, independent normalized PCM checks and unchanged base-instrument MIDI. High-frequency partial omission is disclosed; synthesis and musical usefulness remain intermediate full-DAW work.
 
+Milestone #298 adds contextual per-track signed pan curves to Melody’s existing Sound and shared stereo-rendering workflow: explicit Apply/Discard, linear/held song-time positions, static-pan bypass, complete history/recovery and actual stereo WAV/section/stem output. Reverb remains a mono pre-pan send and both MIDI exports omit this automation. This advances creative mixing control; the full DAW destination and real musician evaluation remain unfinished. Melody stays ACTIVE. Verification: [integration record](docs/2026-10-21-melody-pan-automation.md).
+
 ## 4. Git blame agent
 
 Path: apps/git-history

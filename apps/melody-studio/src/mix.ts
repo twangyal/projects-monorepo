@@ -1,3 +1,4 @@
+import {validatePanCurve,panCurvePosition} from './pan-curve.ts';
 import { limitPeak, renderDry } from './audio.ts';
 import { DEFAULT_REVERB } from './mix-settings.ts';
 import type { Composition, ReverbBus, Track } from './types.ts';
@@ -24,7 +25,7 @@ function audible(track: Track): boolean { return !track.muted && track.volume > 
 
 /** True when any audible track is panned or sends to the reverb bus. */
 export function usesStereoMix(project: Composition): boolean {
-  return project.tracks.some(track => audible(track) && ((track.pan ?? 0) !== 0 || (track.reverbSend ?? 0) > 0));
+  return project.tracks.some(track => audible(track) && ((track.panCurve ? validatePanCurve(track.panCurve).some(point=>point.level!==0) : (track.pan ?? 0)!==0) || (track.reverbSend ?? 0) > 0));
 }
 
 /** Seconds of reverb tail added after the last sound. */
@@ -79,8 +80,15 @@ export function renderMix(project: Composition, sampleRate = 22050): Float32Arra
   for (const track of project.tracks) {
     if (!audible(track)) continue;
     const dry = renderDry(project, sampleRate, track.id, tail);
+    const curve=track.panCurve?validatePanCurve(track.panCurve):undefined;
     const [gainLeft, gainRight] = panGains(track.pan ?? 0), amount = track.reverbSend ?? 0;
-    for (let i = 0; i < length; i++) {
+    if(curve) {
+      for(let i=0;i<length;i++) {
+        const position=panCurvePosition(curve,i/sampleRate*project.tempo/60);
+        left[i]+=dry[i]!*(position>0?1-position:1);
+        right[i]+=dry[i]!*(position<0?1+position:1);
+      }
+    } else for (let i = 0; i < length; i++) {
       left[i] += dry[i]! * gainLeft;
       right[i] += dry[i]! * gainRight;
     }

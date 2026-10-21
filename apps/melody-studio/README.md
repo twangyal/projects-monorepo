@@ -123,6 +123,18 @@ Each slider release is one Undo/Redo edit and is kept in autosave, saved copies 
 
 This is the first mixing stage. Per-track insert chains, further buses and sends, stereo delay, effect automation and a mixer view remain part of the ACTIVE DAW destination. See [stereo mix verification](docs/2026-10-13-stereo-mix.md).
 
+### Move a part across the stereo field (#298)
+
+In **Sound → Pan automation**, enable **pan curve**, then enter one song beat and stereo position per line, for example `1 -1`, `5 1`, `9 0`. Beats run from 1–513; positions run from −1 (left) through 0 (centre) to +1 (right). Up to 64 strictly increasing points interpolate linearly and hold their first/last positions outside the range. The graph shows the committed curve, with centre at its horizontal guide. Choose **Apply pan curve** for one undoable edit or **Discard pan curve edits** to restore committed fields.
+
+While applied, the curve replaces the track’s static Pan; that slider is disabled and retained. Disable Enable and Apply to restore the static position. The existing balance law keeps a centred dry track at full level in each channel and attenuates the opposite side when panned. Automation acts at absolute song time, including sustained voices, release and echo tails. The shared reverb keeps its existing mono pre-pan send and independent stereo return; pan automation does not move the wet return or add tail length.
+
+Playback, solo, synthesized backing, edited-note comparison and WAV/stem/section exports share this mix. Section operations leave the curve anchored to song beats; continuation audition shifts it with the selected ending. A non-centred curve on an audible track selects stereo output. An all-centre curve overrides a retained static pan and can return output to legacy mono when nothing else needs stereo. Unapplied drafts do not affect playback/files. Both MIDI exports omit pan automation; use a complete project backup for exact recovery.
+
+Invalid, blank, nonfinite, unordered or duplicate points refuse the complete edit. Text uses ordinary decimal numbers (no exponents), with signed positions and a 65,536-character cap that retains even maximum curves with tiny fractional beats/positions. Per-track raw drafts survive navigation; unrelated drafts/gestures/suggestions must be resolved before Apply. Complete backups, saved copies, duplication, autosave, Undo/Redo and reload retain applied curves. Old absent settings retain exact PCM. This adds creative mix control; physical listening, musician-quality evaluation, audio-clip editing, broader effects/routing and full-DAW acceptance remain unfinished.
+
+Verification: [pan-automation integration](../../docs/2026-10-21-melody-pan-automation.md).
+
 ## Program drums
 
 Choose **Drum kit** as a track's instrument to turn it into a drum track. A **Drum pattern** step grid appears above the piano roll. It has rows for Kick, Snare, Clap, Closed hat, Open hat, Low tom, High tom and Crash, and sixteen sixteenth-note steps per bar.

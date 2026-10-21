@@ -50,9 +50,10 @@ function composition(value: unknown, normalize: boolean): Composition {
     const hasFilter = item !== null && typeof item === 'object' && Object.hasOwn(item, 'filter');
     const hasVolumeCurve = item !== null && typeof item === 'object' && Object.hasOwn(item, 'volumeCurve');
     const hasVolumeRamp = item !== null && typeof item === 'object' && Object.hasOwn(item, 'volumeRamp');
+    const hasPanCurve = item !== null && typeof item === 'object' && Object.hasOwn(item, 'panCurve');
     const hasPan = item !== null && typeof item === 'object' && Object.hasOwn(item, 'pan');
     const hasSend = item !== null && typeof item === 'object' && Object.hasOwn(item, 'reverbSend');
-    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasHarmonics ? ['harmonics'] : []), ...(hasEnvelope ? ['envelope'] : []), ...(hasFilter ? ['filter'] : []), ...(hasEcho ? ['echo'] : []), ...(hasVolumeRamp ? ['volumeRamp'] : []), ...(hasVolumeCurve ? ['volumeCurve'] : []), ...(hasPan ? ['pan'] : []), ...(hasSend ? ['reverbSend'] : [])], 'Track');
+    const track = record(item, ['id', 'name', 'instrument', 'volume', 'muted', 'notes', ...(hasHarmonics ? ['harmonics'] : []), ...(hasEnvelope ? ['envelope'] : []), ...(hasFilter ? ['filter'] : []), ...(hasEcho ? ['echo'] : []), ...(hasVolumeRamp ? ['volumeRamp'] : []), ...(hasVolumeCurve ? ['volumeCurve'] : []), ...(hasPanCurve ? ['panCurve'] : []), ...(hasPan ? ['pan'] : []), ...(hasSend ? ['reverbSend'] : [])], 'Track');
     for (const note of array(track.notes, 256, 'Notes')) record(note, ['id', 'pitch', 'start', 'duration', 'velocity'], 'Note');
   }
   const result = validateComposition(value);
