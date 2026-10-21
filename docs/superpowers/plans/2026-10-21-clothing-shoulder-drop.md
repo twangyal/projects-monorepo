@@ -28,20 +28,22 @@
 Files: product.ts, product-view.ts, techpack.ts; tests/shoulder-drop.test.ts and shoulder-drop.spec.ts.
 Consumes existing Fit, teeDimensions, patternPieces, teeMesh and buildTechPack.
 Produces optional shoulderDrop, numeric field and vertical handle; tech-pack U and diagram.
-- [ ] Write unit cases for shared actual geometry, strict/relative admission, legacy equality and portable data; run and observe unsupported-key failure.
-- [ ] Write browser cases for numeric/pattern/GLB/tech-pack/history/reload, pointer/keyboard/raw-draft protection, phone reset/invalid behavior and actual drape input. Observe missing field failure before UI implementation.
-- [ ] Implement shared dimension and UI; run focused tests and complete app check/browser suite.
+- [x] Write unit cases for shared actual geometry, strict/relative admission, legacy equality and portable data; run and observe unsupported-key failure.
+- [x] Write browser cases for numeric/pattern/GLB/tech-pack/history/reload, pointer/keyboard/raw-draft protection, phone reset/invalid behavior and actual drape input. Observe missing field failure before UI implementation.
+- [x] Implement shared dimension and UI; run focused tests and complete app check/browser suite.
 
 ### Task2: immutable native research continuity
 
 Files: .github/workflows/clothing-ppf-garment.yml, docs/research/ppf-cpu/garment_capture_equivalence.py and test_garment_capture_equivalence.py.
 Consumes retained cold/warm envelopes; produces strict current-source provenance and identical fixture/packet comparison.
-- [ ] Write rejection cases for changed geometry, fixture, missing/extra provenance, wrong current hash and malformed envelope. Observe missing helper failure.
-- [ ] Implement comparison with full current source hashes and canonical serialized packet equality; never claim current hash equals historical hash.
-- [ ] Pin separate sparse checkout to10db749c32d991d053a7d319cdf1f2d1c6764da2. Reproduce historical cold/warm envelopes exactly from it. Keep historical --app provenance/admission, all research replay gates; add both current captures and equivalence checks.
-- [ ] Run cold/warm reproduction and relevant Python checks locally; document evidence/limits.
+- [x] Write rejection cases for changed geometry, fixture, missing/extra provenance, wrong current hash and malformed envelope. Observe missing helper failure.
+- [x] Implement comparison with full current source hashes and canonical serialized packet equality; never claim current hash equals historical hash.
+- [x] Pin separate sparse checkout to10db749c32d991d053a7d319cdf1f2d1c6764da2. Reproduce historical cold/warm envelopes exactly from it. Keep historical --app provenance/admission, all research replay gates; add both current captures and equivalence checks.
+- [x] Run cold/warm reproduction and relevant Python checks locally; document evidence/limits.
 
 ### Finish
 
-- [ ] Independent read-only whole-branch review; fix material findings with regression tests.
+- [x] Independent read-only whole-branch review; fix material findings with regression tests.
 - [ ] Commit durable progress; README/roadmap and integration evidence; integrate source and verify CI before closure.
+
+Verification ledger:166 app units/check pass;4 focused native cases pass; source CI all213 native cases pass; local163-case garment preflight passes787.839s; frozen/current cold/warm checks pass; independent review has no findings. Source hosted preflight39660091324 passes163 cases in511.006s and every provenance/reproduction step. Source app39660091374 passes166 units/all213 browsers. Canonical-main verification remains pending.
