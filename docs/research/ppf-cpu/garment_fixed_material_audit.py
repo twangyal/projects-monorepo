@@ -30,7 +30,7 @@ GRAVITY_PROFILES={'reference':('e454159aa9cb944a89207779af62f4e1f94daeb345328c50
 GRAVITY_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '7495865e1e4426efb3c32bd1931559cb316472d00f680102b89196d8ae5bcc22', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}}
 PREPARATION_PROFILES={'reference':('d3fd9bc231e37c28d82c31010d6febeb5ae222c8947fd3d0cf2a6c6662675b51',4,'soft',12334591585),'smoothed':('f4f57d4305024e982d83eeca87fc0c5d2d5326db570345f35dde8547985aafe8',4,'soft',12334488202)} # Register official retained outcomes only.
 PREPARATION_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '6d07f481143a72dabdea744d6b2c27f348e5af2b2cc8512b766ca00235bcbc05', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc', 'garment_preparation.py': '108946f93504309692a2ff01e934cc9f9f1b3cee6a9547dae83016e86d3c7f7d'}}
-BENDING_PROFILES={} # Register complete official native outcomes only.
+BENDING_PROFILES={'reference':('c7edb7b9f76d2db02764bc441b383c4d9620aa24ee4cbde3578527afdca1962d',4,'soft',12353101645),'zero':('fce2e99016a84d7e1278296aa5eaa6b0f4a01af08da86f602baa6b83d99bd461',4,'soft',12351214805)} # Register complete official native outcomes only.
 BENDING_SOURCE_SHA256={**LONG_SOURCE_SHA256,'garment_native_probe.py':'37fc531536c7f001fb5920baddeea6f8881a49411cc5b302b533d3281992cf07','garment_native_export.py':'7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}
 def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
  require(protocol in ['fixed-material','half-step','gravity','preparation','bending'],'Unknown study protocol.')
