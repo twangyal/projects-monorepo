@@ -71,8 +71,8 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
         <label class="field">Neckline<select id="product-neckline"><option value="crew">Crew neck</option><option value="v">V-neck</option></select></label></div>
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
-      <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder, neck, armhole, hem, sleeve opening</summary>
-        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm.</p>
+      <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder width & drop, neck, armhole, hem, sleeve opening</summary>
+        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm; shoulder drop defaults to 4 cm.</p>
         <div class="measure-grid">${FIT_KEYS.map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div>
         <div class="inline-actions"><button id="apply-fit">Apply fit</button><button id="reset-fit" class="quiet">Back to proportional</button></div>
       </details>
@@ -474,7 +474,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Fit: a point of measure is stored only when it differs from its proportional value.
   const fitValues = (design: Product): Record<FitKey, number> => {
     const d = teeDimensions(design);
-    return { shoulderWidth: d.shoulderX * 2, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+    return { shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
   };
   $('apply-fit').addEventListener('click', () => update(draft => {
     const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
@@ -740,6 +740,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     const hemY = d.band ? d.length - d.band : d.length, ratio = full / (hemY - armY), inset = (d.half - d.hemHalf) / ratio;
     return [
       { key: 'shoulderWidth', axis: 'x', x: cx - d.shoulderX, y: d.shoulderDrop, label: 'Shoulder point', value: x => 2 * (cx - x), widens: true },
+      { key: 'shoulderDrop', axis: 'y', x: cx + d.shoulderX, y: d.shoulderDrop, label: 'Shoulder height', value: (_, y) => y, widens: false },
       { key: 'neckWidth', axis: 'x', x: cx - d.neckHalf, y: 0, label: 'Neck point', value: x => 2 * (cx - x), widens: true },
       { key: 'backNeckDrop', part: 'back', axis: 'y', x: cx, y: d.neckDepthBack, label: 'Back neck', value: (_, y) => y, widens: false },
       { key: 'frontNeckDrop', axis: 'y', x: cx, y: d.neckDepthFront, label: 'Front neck', value: (_, y) => y, widens: false },

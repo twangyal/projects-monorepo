@@ -146,7 +146,7 @@ test('sweatshirts and hoodies have their own parts, rib bands, hood and pocket i
   assert.equal(patternPieces(hoodie).find(piece => piece.part === 'hood')!.cutCount, 2);
 
   const packs = [buildTechPack(sweat, '2026-10-13'), buildTechPack(hoodie, '2026-10-13')];
-  assert.deepEqual(packs.map(pack => pack.poms.map(p => p.code).join('')), ['ABCDEFGHIJKLM', 'ABCDEFGHIJKLMNO']);
+  assert.deepEqual(packs.map(pack => pack.poms.map(p => p.code).join('')), ['ABCDEFGHIJKLMU', 'ABCDEFGHIJKLMNOU']);
   assert.deepEqual(packs.map(pack => pack.base), ['Crew sweatshirt', 'Pullover hoodie']);
   assert.ok(packs[1].construction.some(row => row.area === 'Hood') && packs[1].construction.some(row => row.area === 'Kangaroo pocket'));
   assert.ok(!packs[1].construction.some(row => row.area === 'Neck rib'));
@@ -205,8 +205,8 @@ test('modules: a curved hem and a chest pocket follow through validation, 3D, pa
 
   // Tech pack: pocket fabric, measurements and construction; curved-hem side length and hem detail.
   const pack = buildTechPack(curved, '2026-10-13'), codes = pack.poms.map(p => p.code).join('');
-  assert.equal(codes, 'ABCDEFGHIJKSTPQR');
-  assert.equal(buildTechPack(tee, '2026-10-13').poms.map(p => p.code).join(''), 'ABCDEFGHIJK', 'no module rows without modules');
+  assert.equal(codes, 'ABCDEFGHIJKSTUPQR');
+  assert.equal(buildTechPack(tee, '2026-10-13').poms.map(p => p.code).join(''), 'ABCDEFGHIJKU', 'no module rows without modules');
   const side = pack.poms.find(p => p.code === 'S')!.values.M;
   assert.equal(side, Math.round((dims.length - HEM_CURVE_CM - dims.shoulderDrop - dims.armDepth) * 2) / 2);
   assert.match(pack.construction.find(row => row.area === 'Body hem')!.detail, /Curved shirttail/);

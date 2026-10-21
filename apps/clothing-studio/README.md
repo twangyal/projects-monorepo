@@ -98,6 +98,12 @@ How the drape is made:
 **Limits.** Fabric values are approximate relative values, not measured fabric data. The body is a measurement proxy with assumed heights, depths and limbs, not a personalized anatomical avatar. There is no cloth-to-cloth contact, so a hoodie's hood falls back and lies over the back, kept one fabric layer from the body. Bottoms are not draped yet. See [the drape notes](docs/2026-10-13-garment-drape.md).
 
 
+### Shoulder slope in linked construction (#296)
+
+In **Patterns & measurements → Fit**, edit **Shoulder drop (cm)** from 1–8 cm, measured vertically from the high-point shoulder line to the armhole shoulder point. The separate vertical **Shoulder height** pattern handle sits at the right front shoulder; drag it or use Up/Down for half-centimetre steps. The left shoulder handle still controls width. Armhole depth remains measured below the shoulder point, so changing drop moves the underarm with it.
+
+Apply commits the complete Fit group as one undoable edit. Pending drafts, invalid-geometry refusal, reset, backups and reload follow the other fit controls. The actual front/back shoulder seams, styling mesh, drape input, captured GLB and tech-pack **U** share the value. Absent settings retain exactly the original 4 cm drop. U stays constant across the existing size grades. These are simplified finished dimensions with no seam allowance; this does not establish sleeve-cap matching, physical fit or production readiness.
+
 ### Compare fabrics on the same garment (#270)
 
 **Body & drape → Compare fabrics on this garment** runs two chosen fabrics on the same committed top and entered body, showing matched front/back draped views and numerical diagnostics. Comparison preserves the design; **Use [fabric]** applies the chosen fabric to non-rib parts as one undoable edit. Colors, prints, artwork, rib trims and saved colorways are retained. Download the complete captured numerical receipt, or cancel and retry without changing the project. This uses the current approximate garment physics, not calibrated fabric data or the independent swatch laws. See [workflow, ownership and limits](docs/2026-10-16-garment-fabric-comparison.md).
@@ -130,7 +136,7 @@ Below the 3D editor, **Factory-ready tech pack** is generated from the design an
 
 - **Details**: **Style number**, **Season** and **Sample size** (XS–XL). Use **Apply details** to save them with the design as one undoable edit.
 - **Bill of materials**: one line per distinct fabric, color and print. Each line gives the composition, weight, the parts it covers, and consumption. Consumption is estimated from the pattern-piece areas plus 15% for seam allowance and cutting waste, in m² and in linear metres at 150 cm wide. Then come trims (thread, neck label, care label) and each artwork, with its print size and placement.
-- **Points of measure A–K**: chest, body length, sleeve length, armhole depth, shoulder, neck width, front and back neck drop, hem, sleeve opening and rib height.
+- **Points of measure A–K and U**: chest, body length, sleeve length, armhole depth, shoulder, neck width, front and back neck drop, hem, sleeve opening, rib height and shoulder drop.
   - They come from the same dimensions as the 3D garment and pattern pieces.
   - Each has a tolerance and is graded XS–XL around the sample size.
   - A measurement diagram labels each point.

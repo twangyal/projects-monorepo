@@ -39,8 +39,8 @@ test('the tech pack is derived from the design: fabrics with consumption, trims,
   assert.ok(area(fabrics[0]) > 0.8 && area(fabrics[0]) < 1.1, fabrics[0].quantity);
   const bigger = buildTechPack({ ...product, measurements: { ...topMeasurements(product), chest: topMeasurements(product).chest + 20 } }, '2026-10-13');
   assert.ok(area(bigger.bom[0]) > area(fabrics[0]), 'consumption follows the measurements');
-  // Points of measure A–K; the sample size column equals the design; grading is monotonic.
-  assert.deepEqual(pack.poms.map(p => p.code), [...'ABCDEFGHIJK']);
+  // Points of measure A–K and U; the sample size column equals the design; grading is monotonic.
+  assert.deepEqual(pack.poms.map(p => p.code), [...'ABCDEFGHIJK', 'U']);
   const chest = pack.poms[0];
   assert.equal(chest.values.M, Math.round((topMeasurements(product).chest / 2 + 2) * 2) / 2);
   assert.ok(chest.values.XS < chest.values.S && chest.values.S < chest.values.M && chest.values.M < chest.values.L && chest.values.L < chest.values.XL);

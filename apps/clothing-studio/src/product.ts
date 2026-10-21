@@ -90,14 +90,14 @@ export interface PartStyle { material: string; color: string; print: Print | nul
 export interface Artwork { part: 'front' | 'back'; dataUrl: string; width: number; height: number; name: string; xCm: number; yCm: number; widthCm: number; /** Clockwise viewed from outside, about the existing centre; absent means zero. */ rotation?: number }
 export interface Measurements { chest: number; length: number; sleeve: number }
 /**
- * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), neck width (F), front
+ * A top's editable points of measure, in cm, as the tech pack states them: shoulder width (E), shoulder drop (U), neck width (F), front
  * neck drop (G), back neck drop (H), armhole depth (D), hem width ½ (I, side seam to side seam) and sleeve opening ½ (J). Each one left
- * out keeps its default (chest-based proportions where applicable; back neck drop is 2 cm).
+ * out keeps its default (chest-based proportions where applicable; back neck drop is 2 cm and shoulder drop is 4 cm).
  */
-export const FIT_KEYS = ['shoulderWidth', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening'] as const;
+export const FIT_KEYS = ['shoulderWidth', 'shoulderDrop', 'neckWidth', 'frontNeckDrop', 'backNeckDrop', 'armholeDepth', 'hemWidth', 'sleeveOpening'] as const;
 export type FitKey = typeof FIT_KEYS[number];
 export type Fit = Partial<Record<FitKey, number>>;
-export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop',
+export const FIT_NAMES: Record<FitKey, string> = { shoulderWidth: 'Shoulder width', shoulderDrop: 'Shoulder drop', neckWidth: 'Neck width', frontNeckDrop: 'Front neck drop', backNeckDrop: 'Back neck drop',
   armholeDepth: 'Armhole depth', hemWidth: 'Hem width (½)', sleeveOpening: 'Sleeve opening (½)' };
 /** Finished leg measurements in cm: relaxed elastic waist, hip, front rise, inseam and leg opening (circumference). */
 export interface LegMeasurements { waist: number; hip: number; rise: number; inseam: number; legOpening: number }
@@ -131,7 +131,7 @@ export interface Product {
 
 export const LIMITS = {
   chest: [80, 150], length: [55, 90], sleeve: [10, 65], waist: [56, 130], hip: [80, 150], rise: [18, 40], inseam: [8, 90], legOpening: [30, 80], scaleCm: [2, 40], artworkWidthCm: [3, 40], artworkBytes: 1_500_000, name: 80,
-  fit: { shoulderWidth: [30, 70], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30] } as Record<FitKey, readonly [number, number]>,
+  fit: { shoulderWidth: [30, 70], shoulderDrop: [1, 8], neckWidth: [12, 28], frontNeckDrop: [2, 25], backNeckDrop: [1, 12], armholeDepth: [15, 36], hemWidth: [35, 95], sleeveOpening: [8, 30] } as Record<FitKey, readonly [number, number]>,
   colorways: 8, colorwayName: 40, units: [0, 1_000_000], price: [0, 10_000], motifs: 6, motifBytes: 600_000,
 } as const;
 
@@ -354,7 +354,7 @@ export function neckSize(m: Measurements, neckline: Product['neckline'], fit: Fi
 export const HEM_CURVE_CM = 4, POCKET_FOLD_CM = 2.5, POCKET_CHAMFER_CM = 1.5;
 /** Every derived tee dimension, in cm, from one place: the 3D shell, pattern pieces and tech pack agree. */
 export function teeDimensions(product: Product) {
-  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, shoulderDrop = 4, fit = product.fit ?? {};
+  const m = topMeasurements(product), panel = panelSize(m), sleeve = sleeveSize(m), half = panel.width / 2, fit = product.fit ?? {}, shoulderDrop = fit.shoulderDrop ?? 4;
   const armDepth = fit.armholeDepth ?? m.chest * 0.23 + 2;
   return {
     panelWidth: panel.width, length: m.length, half, neckHalf: (fit.neckWidth ?? (m.chest * 0.08 + 7) * 2) / 2, shoulderX: (fit.shoulderWidth ?? (half * 0.86 + 1) * 2) / 2, shoulderDrop,

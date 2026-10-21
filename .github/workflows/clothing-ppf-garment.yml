@@ -32,6 +32,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      # Historical packets retain the source that actually produced their evidence.
+      - uses: actions/checkout@v4
+        with:
+          ref: 10db749c32d991d053a7d319cdf1f2d1c6764da2
+          path: frozen-source
+          sparse-checkout: apps/clothing-studio
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -41,11 +48,13 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci --prefix apps/clothing-studio
-      - name: Reproduce the entire actual garment packet
+      - name: Install the immutable source dependencies from its own lockfile
+        run: npm ci --prefix frozen-source/apps/clothing-studio
+      - name: Reproduce the entire historical actual garment packet
         run: |
           set -euo pipefail
           node --version
-          node --experimental-strip-types apps/clothing-studio/scripts/export-native-garment.ts "$RUNNER_TEMP/garment-reproduced.json.gz"
+          node --experimental-strip-types frozen-source/apps/clothing-studio/scripts/export-native-garment.ts "$RUNNER_TEMP/garment-reproduced.json.gz"
           python - <<'PY'
           import gzip, os
           from pathlib import Path
@@ -55,7 +64,7 @@ jobs:
           PY
       - name: Check actual source provenance and independent geometry report
         run: |
-          python docs/research/ppf-cpu/garment_admission.py docs/research/ppf-cpu/results/garment-first.json.gz --app apps/clothing-studio > "$RUNNER_TEMP/garment-admission.json"
+          python docs/research/ppf-cpu/garment_admission.py docs/research/ppf-cpu/results/garment-first.json.gz --app frozen-source/apps/clothing-studio > "$RUNNER_TEMP/garment-admission.json"
           python - <<'PYREPORT'
           import json, os
           from pathlib import Path
@@ -67,12 +76,19 @@ jobs:
           python -m unittest discover -s docs/research/ppf-cpu -p 'test_garment*.py'
       - name: Reproduce separate browser growth endpoint without replacing the cold capture
         run: |
-          node --experimental-strip-types apps/clothing-studio/scripts/export-native-warm-start.ts "$RUNNER_TEMP/garment-warm.json.gz"
+          node --experimental-strip-types frozen-source/apps/clothing-studio/scripts/export-native-warm-start.ts "$RUNNER_TEMP/garment-warm.json.gz"
           python - <<'PYWARM'
           import gzip,os
           from pathlib import Path
           assert gzip.decompress(Path(os.environ['RUNNER_TEMP']).joinpath('garment-warm.json.gz').read_bytes()) == gzip.decompress(Path('docs/research/ppf-cpu/results/garment-warm-start.json.gz').read_bytes())
           PYWARM
+      - name: Verify both entire current-app default packets and current source provenance
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types apps/clothing-studio/scripts/export-native-garment.ts "$RUNNER_TEMP/garment-current.json.gz"
+          python docs/research/ppf-cpu/garment_capture_equivalence.py docs/research/ppf-cpu/results/garment-first.json.gz "$RUNNER_TEMP/garment-current.json.gz" --app apps/clothing-studio
+          node --experimental-strip-types apps/clothing-studio/scripts/export-native-warm-start.ts "$RUNNER_TEMP/garment-current-warm.json.gz"
+          python docs/research/ppf-cpu/garment_capture_equivalence.py docs/research/ppf-cpu/results/garment-warm-start.json.gz "$RUNNER_TEMP/garment-current-warm.json.gz" --app apps/clothing-studio
       - name: Reproduce the reviewed cut-rib rest candidate
         run: |
           set -euo pipefail

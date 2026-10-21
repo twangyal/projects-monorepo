@@ -85,6 +85,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
       pom('S', 'Side length', 'Underarm straight down the side seam to the hem', dims.length - dims.hemCurve - dims.shoulderDrop - dims.armDepth, 1, 1),
       pom('T', 'Hem curve drop', 'Hem at the side seam to hem at centre front, measured straight down', dims.hemCurve, 0, 0.5),
     ] : []),
+    pom('U', 'Shoulder drop', 'High point shoulder line vertically down to the shoulder point at the armhole', dims.shoulderDrop, 0, 0.5),
     ...(modules.chestPocket ? [
       pom('P', 'Chest pocket width', 'Finished, across the top edge', dims.chestPocketWidth, 0.5, 0.3),
       pom('Q', 'Chest pocket height', 'Finished, top edge to bottom edge', dims.chestPocketHeight, 0.5, 0.3),
@@ -278,6 +279,7 @@ ${arrow(chest.left - flare(product), armY, chest.right - flare(product), armY, '
 ${arrow(half - d.shoulderX, d.shoulderDrop + 0.8, half + d.shoulderX, d.shoulderDrop + 0.8, 'E', half + d.shoulderX - 7, d.shoulderDrop + 4.5)}${arrow(half - d.neckHalf, -2, half + d.neckHalf, -2, 'F', half - 1.5, -3)}
 ${arrow(half + 1.5, 0, half + 1.5, d.neckDepthFront, 'G', half - 4.5, d.neckDepthFront + 4)}${arrow(half - d.hemHalf, d.length - d.hemCurve - 1.5, half + d.hemHalf, d.length - d.hemCurve - 1.5, 'I', half - 2, d.length - d.hemCurve - 3)}
 ${arrow(body + 2.5, d.shoulderDrop, body + 2.5, d.shoulderDrop + d.armDepth, 'D', body + 4, d.shoulderDrop + d.armDepth / 2)}
+${arrow(body + 2.5, 0, body + 2.5, d.shoulderDrop, 'U', body + 4, d.shoulderDrop / 2)}
 ${pocketMarks}${hemMarks}</g>
 ${arrow(sx + sleeve.width / 2, 2, sx + sleeve.width / 2, sleeve.height, 'C', sx + sleeve.width / 2 + 1.5, sleeve.height / 2)}${arrow(sx + (sleeve.width - d.cuffHalf * 2) / 2, sleeve.height + 2.5, sx + (sleeve.width + d.cuffHalf * 2) / 2, sleeve.height + 2.5, 'J', sx + sleeve.width / 2 - 1.5, sleeve.height + 6)}
 </svg>`;

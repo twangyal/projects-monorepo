@@ -10,6 +10,14 @@ The versioned packet retains every render part's original ordered triangles, loc
 
 `export-native-garment.ts` records hashes of all runtime source dependencies, itself and the pinned dependency lock. `garment_admission.py` independently reconstructs seam/topology membership, structural edge/rest metrics, triangle areas and vertex gaps to the captured analytic body. It can verify current source hashes with `--app`. CI also regenerates and compares the **entire decompressed packet**, then compares the recomputed report with the retained report. This prevents a self-consistent but altered packet or stale summary from passing as the fixed capture. Gzip bytes may depend on Node/zlib; decoded content must be identical. The retained archive has its own exact hash below.
 
+## Historical source versus current application (#296)
+
+The captures below are immutable research evidence. Their source manifests describe the source that produced them, not every later version of Clothing Studio. The preflight checks out `10db749c32d991d053a7d319cdf1f2d1c6764da2` in a separate sparse directory, installs that source's own dependency lock, reproduces both full cold/warm envelopes byte for byte after decompression, and verifies the original admission report against that checkout. No archived packet, input hash, report or native result is regenerated.
+
+The current application separately exports both fixed fixtures. `garment_capture_equivalence.py` verifies the exact expected manifest, every current source-file hash, the fixture identity and the entire canonical JSON packet against its immutable counterpart. Changed packet values, types, fields or ordering within arrays fail; provenance is neither forged nor silently ignored. This lets optional source-construction controls evolve while keeping the default research garment unchanged. Deliberately changing its actual geometry requires a separately versioned study and explicit review.
+
+For a current capture, use the existing export command below, then compare it with `garment_capture_equivalence.py <retained.json.gz> <new.json.gz> --app apps/clothing-studio`. To reproduce the retained envelope itself, run the exporter from the pinned historical checkout. Running admission on a new current capture verifies its current hashes; the old retained report should only be claimed reproduced against the historical source.
+
 ## Actual first capture
 
 [Complete packet](results/garment-first.json.gz),148675bytes, SHA-256 `9d42e001549f4dc8b4558b14b33a58404c02204a22a93b2c16fda31db17fc045`. [Independent admission report](results/garment-first-admission.json):
