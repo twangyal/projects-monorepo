@@ -17,3 +17,9 @@ The first focused browser suite then reported6passes/5failures. Actual Apply was
 Final-source `npm run check`:433unit tests pass, with lint, TypeScript and production build. The targeted native Chromium suite passes **all11cases in51.2seconds**:4new pan flows plus all existing volume-curve and stereo-mix cases. Checks include decoded actual two-channel WAV coefficients, exact absolute section crops/aligned stems, original MIDI bytes, actual playback/solo buffer parity, one-edit history, reference preservation, saved-copy/portable recovery, malformed import refusal, retained static-pan bypass and phone navigation/raw drafts. The rendered390px phone panel was visually inspected and the native layout check confirms no horizontal overflow. The final help-text spacing is a presentation-only follow-up; canonical checks below run the exact integrated source.
 
 No physical speaker/headphone comparison or musician acceptance is claimed. The earlier failed browser runs remain documented above.
+
+## Canonical acceptance
+
+Source is integrated in main commit`6cee5cfa91f5b9bee7998a18bce4b80d608819d5`, tree`4a71d275e66a29b4cb24c42843187dd135a178bf` identical to local verified source. Melody subtree`042c33afa3094f58b2f80c30d2b889b423e75e9d` is the accepted application identity.
+
+[Canonical Melody run39669537678](https://github.com/twangyal/projects-monorepo/actions/runs/39669537678), job119463430240, passes **433unit tests, all251browser cases (3.9minutes), lint, TypeScript and production build**. All required job steps conclude successfully; failure-artifact upload was correctly skipped. No source gate remains pending for #298. This acceptance update changes only the root receipt; subsequent chord work is separately tracked and verified as #299. The full-DAW/physical-listening limits above remain.
