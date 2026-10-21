@@ -1,0 +1,2761 @@
+{
+  "schema": 1,
+  "experiment": "startup-stage-strain-localization-v1",
+  "source_sha256": {
+    "garment_preparation_diagnostics.py": "75d552a32e85c72b3919a4f0bdc95fcd1cb3fbc862da01cbf89b5fa315c170a3",
+    "garment_preparation.py": "108946f93504309692a2ff01e934cc9f9f1b3cee6a9547dae83016e86d3c7f7d",
+    "garment_warm_start.py": "7666350062cc8a3a94a172d19247ea27f8185bc1822396ae0c2ba233cf2ac25b",
+    "garment_clearance.py": "ff815927bf8af70617cc5b74fffa8b7b135784998f1111f7f2bb180d42e0b7e1",
+    "garment_sewing_layout.py": "8ee248b675dc46cb6c0c141147100f99a6170dddbc9620ce11b6178cec0bf8a2",
+    "garment_principal_strain.py": "bb33df96c68ed73b5aaa33e1813b981928ef002e12c4e30ada1f5d40b092cdb5"
+  },
+  "source_artifact_sha256": {
+    "garment-first.json.gz": "9d42e001549f4dc8b4558b14b33a58404c02204a22a93b2c16fda31db17fc045",
+    "garment-rest-candidate.json.gz": "65b7803437d3c6cdddd81fe23118b222a2bd2ee5b6f3b428e5d50093ae14041e",
+    "garment-body-candidate.json.gz": "bd9ea2954855b0ba2db985c27feb0079af6eaac73806a581046ee0831e431965"
+  },
+  "warm_start_edge_admission": {
+    "capture_sha256": "4a099ec5510d177c16ec54cd3ed23ac4cdd0c9d85d56409840f307b6497f3504",
+    "source_sha256": {
+      "src/product.ts": "1f58f574e41ad3aaeaefb195bb48ecfe82c8e03cd9c0a28037be9026e8517508",
+      "src/media.ts": "b74f99fd99dd523c9d174ff8612ddea1cea6761a3983d07f4f51d5b836eb6144",
+      "src/garment-drape.ts": "2a2c0c68eb0d2ddfb6bb3b2cfcf21884ae5c9c918f96a2abdbedf65a8e7c624a",
+      "src/native-garment-snapshot.ts": "53bc0d5551f6a5f393d6c745f20a7869d04e156dbb421f3d63620a7611384e57",
+      "scripts/export-native-garment.ts": "f8db0bfabe00d619c7f010175cebd43b46b427be6595ef07bc28f170a9afcb38",
+      "package-lock.json": "12edcd288840b541b61524f2fce0a85f59af3621fb46d399484e9e5e342d5c60",
+      "src/native-garment-warm-start.ts": "2ded72f5b8482b31f3d264e2184e6d3b671922c78e11440beebf5f0cd13c79d8",
+      "scripts/export-native-warm-start.ts": "a4b40fe7426efa79ce5a2585f812bf1395e09612316bd6d83daaefbc040f5a00"
+    },
+    "growth_frames": 45,
+    "gravity_frames": 0,
+    "prepared_source_particles": 2331,
+    "maximum_absolute_edge_strain": 0.43851676639011217,
+    "reported_browser_metrics": {
+      "ease": 10,
+      "minClearance": 0.3499973201315463,
+      "contact": 0.19905619905619906,
+      "maxStrain": 0.4385167663901135,
+      "residualSpeed": 78.58163888922576
+    },
+    "velocity_handoff": "reset-to-zero-for-native-experiment",
+    "scope": "Browser geometric preconditioning, not settled/native-contact/physical-fit acceptance."
+  },
+  "tracked_native_triangles": [
+    1040,
+    1160,
+    3091
+  ],
+  "reference_native_frame0_sha256": "d57a1bcaa08036eb0ed8cdbbef8d9110fa226592fb4abd2955d54bf1e07c514a",
+  "stages": {
+    "captured": {
+      "initial_positions_sha256": "067b2aeb617af076790f1b3a1e7e61d1b3dc50bc5e84d4294081d41b42156fa3",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 1.0949390670497974,
+          "maximum_extension": 5.472379543007671,
+          "maximum_compression": 0.22895486624720207,
+          "maximum_absolute_principal_strain": 5.472379543007671,
+          "rest_area_weighted_absolute_strain_p50": 0.011052803967072089,
+          "rest_area_weighted_absolute_strain_p95": 2.2634732307888266,
+          "minimum_area_ratio": 0.9674372790790431,
+          "maximum_area_ratio": 6.472379543007671,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.4631808189189025,
+            "maximum_extension": 4.756291356196888,
+            "maximum_compression": 3.3306690738754696e-16,
+            "maximum_absolute_principal_strain": 4.756291356196888,
+            "rest_area_weighted_absolute_strain_p50": 0.0026110872144169406,
+            "rest_area_weighted_absolute_strain_p95": 1.0046145314093349,
+            "minimum_area_ratio": 0.9999999999999999,
+            "maximum_area_ratio": 5.756291356196888,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.4472078817828645,
+            "maximum_extension": 4.756291356196888,
+            "maximum_compression": 4.440892098500626e-16,
+            "maximum_absolute_principal_strain": 4.756291356196888,
+            "rest_area_weighted_absolute_strain_p50": 0.0012691140960665592,
+            "rest_area_weighted_absolute_strain_p95": 1.0046145314093349,
+            "minimum_area_ratio": 0.9999999999999998,
+            "maximum_area_ratio": 5.756291356196888,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.01989082423852792,
+            "maximum_extension": 2.017279238689669,
+            "maximum_compression": 0.22895486624720207,
+            "maximum_absolute_principal_strain": 2.017279238689669,
+            "rest_area_weighted_absolute_strain_p50": 0.18290069106039897,
+            "rest_area_weighted_absolute_strain_p95": 1.9313940735926303,
+            "minimum_area_ratio": 0.9674372790790431,
+            "maximum_area_ratio": 3.0058493525468517,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.08236300890858453,
+            "maximum_extension": 4.280295208750108,
+            "maximum_compression": 3.3306690738754696e-16,
+            "maximum_absolute_principal_strain": 4.280295208750108,
+            "rest_area_weighted_absolute_strain_p50": 0.3257230982501187,
+            "rest_area_weighted_absolute_strain_p95": 3.0485679433204416,
+            "minimum_area_ratio": 1.0030926739043997,
+            "maximum_area_ratio": 5.280295208750108,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.08229653320091791,
+            "maximum_extension": 5.472379543007671,
+            "maximum_compression": 4.440892098500626e-16,
+            "maximum_absolute_principal_strain": 5.472379543007671,
+            "rest_area_weighted_absolute_strain_p50": 0.33046328597007957,
+            "rest_area_weighted_absolute_strain_p95": 3.465924663923979,
+            "minimum_area_ratio": 1.0027220771788727,
+            "maximum_area_ratio": 6.472379543007671,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 4246,
+            "vertices": [
+              2218,
+              2228,
+              2225
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 78
+            },
+            "rest_area_m2": 4.7018817347270557e-05,
+            "maximum_stretch": 6.472379543007671,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 5.472379543007671,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 5.472379543007671,
+            "area_ratio": 6.472379543007671
+          },
+          {
+            "native_triangle": 4382,
+            "vertices": [
+              2218,
+              2290,
+              2228
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 214
+            },
+            "rest_area_m2": 4.7018817347270557e-05,
+            "maximum_stretch": 6.472379543007671,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 5.472379543007671,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 5.472379543007671,
+            "area_ratio": 6.472379543007671
+          },
+          {
+            "native_triangle": 1040,
+            "vertices": [
+              571,
+              492,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1040
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 5.756291356196888,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 4.756291356196888,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 4.756291356196888,
+            "area_ratio": 5.756291356196888
+          },
+          {
+            "native_triangle": 2948,
+            "vertices": [
+              571,
+              1546,
+              1540
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1030
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 5.756291356196888,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 4.756291356196888,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 4.756291356196888,
+            "area_ratio": 5.756291356196888
+          },
+          {
+            "native_triangle": 1179,
+            "vertices": [
+              614,
+              643,
+              615
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1179
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 5.756291356196887,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 4.756291356196887,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 4.756291356196887,
+            "area_ratio": 5.756291356196887
+          },
+          {
+            "native_triangle": 3091,
+            "vertices": [
+              1639,
+              1640,
+              643
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1173
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 5.756291356196887,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 4.756291356196887,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 4.756291356196887,
+            "area_ratio": 5.756291356196887
+          },
+          {
+            "native_triangle": 4209,
+            "vertices": [
+              2205,
+              2210,
+              2197
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 41
+            },
+            "rest_area_m2": 6.08246015188345e-05,
+            "maximum_stretch": 5.690634686473358,
+            "minimum_stretch": 0.9999999999999999,
+            "maximum_extension": 4.690634686473358,
+            "maximum_compression": 1.1102230246251565e-16,
+            "maximum_absolute_principal_strain": 4.690634686473358,
+            "area_ratio": 5.6906346864733575
+          },
+          {
+            "native_triangle": 4345,
+            "vertices": [
+              2274,
+              2197,
+              2210
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 177
+            },
+            "rest_area_m2": 6.08246015188345e-05,
+            "maximum_stretch": 5.690634686473358,
+            "minimum_stretch": 0.9999999999999999,
+            "maximum_extension": 4.690634686473358,
+            "maximum_compression": 1.1102230246251565e-16,
+            "maximum_absolute_principal_strain": 4.690634686473358,
+            "area_ratio": 5.6906346864733575
+          },
+          {
+            "native_triangle": 4216,
+            "vertices": [
+              2217,
+              2210,
+              2205
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 48
+            },
+            "rest_area_m2": 6.082460151883439e-05,
+            "maximum_stretch": 5.690634686473341,
+            "minimum_stretch": 1.0,
+            "maximum_extension": 4.690634686473341,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 4.690634686473341,
+            "area_ratio": 5.690634686473341
+          },
+          {
+            "native_triangle": 4352,
+            "vertices": [
+              2217,
+              2274,
+              2210
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 184
+            },
+            "rest_area_m2": 6.082460151883439e-05,
+            "maximum_stretch": 5.69063468647334,
+            "minimum_stretch": 1.0000000000000002,
+            "maximum_extension": 4.69063468647334,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 4.69063468647334,
+            "area_ratio": 5.690634686473341
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 5.756291356196888,
+          "minimum_stretch": 1.0,
+          "maximum_extension": 4.756291356196888,
+          "maximum_compression": 0.0,
+          "maximum_absolute_principal_strain": 4.756291356196888,
+          "area_ratio": 5.756291356196888
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.7788252583315736,
+          "minimum_stretch": 1.0,
+          "maximum_extension": 0.7788252583315736,
+          "maximum_compression": 0.0,
+          "maximum_absolute_principal_strain": 0.7788252583315736,
+          "area_ratio": 1.7788252583315736
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 5.756291356196887,
+          "minimum_stretch": 1.0,
+          "maximum_extension": 4.756291356196887,
+          "maximum_compression": 0.0,
+          "maximum_absolute_principal_strain": 4.756291356196887,
+          "area_ratio": 5.756291356196887
+        }
+      ],
+      "maximum_vertex_change_m": null
+    },
+    "browser_warm": {
+      "initial_positions_sha256": "10a325ed1e2d8acfe91bc3f977a244e1d6b73bfa35c31ef0e12f9c914f212b33",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8398832081706958,
+          "maximum_extension": 0.5404864463552119,
+          "maximum_compression": 0.30582242178948005,
+          "maximum_absolute_principal_strain": 0.5404864463552119,
+          "rest_area_weighted_absolute_strain_p50": 0.015861119326396,
+          "rest_area_weighted_absolute_strain_p95": 0.06738126751086426,
+          "minimum_area_ratio": 0.7693366865307252,
+          "maximum_area_ratio": 1.4746852616356831,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.37459690894533487,
+            "maximum_extension": 0.44665466374813856,
+            "maximum_compression": 0.17070586897496254,
+            "maximum_absolute_principal_strain": 0.44665466374813856,
+            "rest_area_weighted_absolute_strain_p50": 0.015217636421446468,
+            "rest_area_weighted_absolute_strain_p95": 0.053149282123993835,
+            "minimum_area_ratio": 0.923466267624009,
+            "maximum_area_ratio": 1.313177860494635,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.36026731047114474,
+            "maximum_extension": 0.5404864463552119,
+            "maximum_compression": 0.11132165199267907,
+            "maximum_absolute_principal_strain": 0.5404864463552119,
+            "rest_area_weighted_absolute_strain_p50": 0.015520082285758852,
+            "rest_area_weighted_absolute_strain_p95": 0.05213029878933306,
+            "minimum_area_ratio": 0.9045576342464329,
+            "maximum_area_ratio": 1.4746852616356831,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.01400723995621698,
+            "maximum_extension": 0.03481416519458702,
+            "maximum_compression": 0.021525516917337062,
+            "maximum_absolute_principal_strain": 0.03481416519458702,
+            "rest_area_weighted_absolute_strain_p50": 0.0067649238499247755,
+            "rest_area_weighted_absolute_strain_p95": 0.021525516917337062,
+            "minimum_area_ratio": 0.9924838565806683,
+            "maximum_area_ratio": 1.014481073890891,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.045264307093092024,
+            "maximum_extension": 0.22857656502576718,
+            "maximum_compression": 0.24043300068636497,
+            "maximum_absolute_principal_strain": 0.24043300068636497,
+            "rest_area_weighted_absolute_strain_p50": 0.03455921432673614,
+            "rest_area_weighted_absolute_strain_p95": 0.1311476884210382,
+            "minimum_area_ratio": 0.7693366865307252,
+            "maximum_area_ratio": 1.2263671845178308,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04574744170490724,
+            "maximum_extension": 0.28744809376118874,
+            "maximum_compression": 0.30582242178948005,
+            "maximum_absolute_principal_strain": 0.30582242178948005,
+            "rest_area_weighted_absolute_strain_p50": 0.03468844713726882,
+            "rest_area_weighted_absolute_strain_p95": 0.14404337575223414,
+            "minimum_area_ratio": 0.8499733417288629,
+            "maximum_area_ratio": 1.23488814871465,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1040,
+            "vertices": [
+              571,
+              492,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1040
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.540486446355212,
+            "minimum_stretch": 0.9419718174851649,
+            "maximum_extension": 0.5404864463552119,
+            "maximum_compression": 0.0580281825148351,
+            "maximum_absolute_principal_strain": 0.5404864463552119,
+            "area_ratio": 1.451094817684482
+          },
+          {
+            "native_triangle": 1179,
+            "vertices": [
+              614,
+              643,
+              615
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1179
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.4574674943395258,
+            "minimum_stretch": 0.9168136100601247,
+            "maximum_extension": 0.4574674943395258,
+            "maximum_compression": 0.08318638993987526,
+            "maximum_absolute_principal_strain": 0.4574674943395258,
+            "area_ratio": 1.3362260350307051
+          },
+          {
+            "native_triangle": 1039,
+            "vertices": [
+              571,
+              561,
+              492
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1039
+            },
+            "rest_area_m2": 7.255172729492199e-05,
+            "maximum_stretch": 1.4563711728979944,
+            "minimum_stretch": 1.0125751519107906,
+            "maximum_extension": 0.45637117289799445,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 0.45637117289799445,
+            "area_ratio": 1.4746852616356831
+          },
+          {
+            "native_triangle": 2947,
+            "vertices": [
+              571,
+              1540,
+              561
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1029
+            },
+            "rest_area_m2": 7.255172729492199e-05,
+            "maximum_stretch": 1.4466546637481386,
+            "minimum_stretch": 0.9077341631017326,
+            "maximum_extension": 0.44665466374813856,
+            "maximum_compression": 0.0922658368982674,
+            "maximum_absolute_principal_strain": 0.44665466374813856,
+            "area_ratio": 1.313177860494635
+          },
+          {
+            "native_triangle": 2948,
+            "vertices": [
+              571,
+              1546,
+              1540
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1030
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.4127122013540898,
+            "minimum_stretch": 0.9111169945263129,
+            "maximum_extension": 0.4127122013540898,
+            "maximum_compression": 0.0888830054736871,
+            "maximum_absolute_principal_strain": 0.4127122013540898,
+            "area_ratio": 1.2871460950283897
+          },
+          {
+            "native_triangle": 3091,
+            "vertices": [
+              1639,
+              1640,
+              643
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1173
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.4029914006826985,
+            "minimum_stretch": 0.9108166470518251,
+            "maximum_extension": 0.40299140068269845,
+            "maximum_compression": 0.08918335294817492,
+            "maximum_absolute_principal_strain": 0.40299140068269845,
+            "area_ratio": 1.277867923412359
+          },
+          {
+            "native_triangle": 3116,
+            "vertices": [
+              642,
+              1639,
+              643
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1198
+            },
+            "rest_area_m2": 7.255172729492199e-05,
+            "maximum_stretch": 1.378971004795486,
+            "minimum_stretch": 0.88651881605534,
+            "maximum_extension": 0.37897100479548596,
+            "maximum_compression": 0.11348118394466,
+            "maximum_absolute_principal_strain": 0.37897100479548596,
+            "area_ratio": 1.2224837425459367
+          },
+          {
+            "native_triangle": 1206,
+            "vertices": [
+              642,
+              643,
+              614
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1206
+            },
+            "rest_area_m2": 7.255172729492199e-05,
+            "maximum_stretch": 1.3598271097169645,
+            "minimum_stretch": 0.9209493559191609,
+            "maximum_extension": 0.3598271097169645,
+            "maximum_compression": 0.07905064408083906,
+            "maximum_absolute_principal_strain": 0.3598271097169645,
+            "area_ratio": 1.2523319008552527
+          },
+          {
+            "native_triangle": 4300,
+            "vertices": [
+              2250,
+              571,
+              529
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 132
+            },
+            "rest_area_m2": 6.241666208370614e-05,
+            "maximum_stretch": 1.2244321459070455,
+            "minimum_stretch": 0.69417757821052,
+            "maximum_extension": 0.22443214590704552,
+            "maximum_compression": 0.30582242178948005,
+            "maximum_absolute_principal_strain": 0.30582242178948005,
+            "area_ratio": 0.8499733417288629
+          },
+          {
+            "native_triangle": 1135,
+            "vertices": [
+              613,
+              614,
+              501
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1135
+            },
+            "rest_area_m2": 0.0001999999999999998,
+            "maximum_stretch": 1.2974783604342703,
+            "minimum_stretch": 0.9558736684533008,
+            "maximum_extension": 0.29747836043427034,
+            "maximum_compression": 0.044126331546699205,
+            "maximum_absolute_principal_strain": 0.29747836043427034,
+            "area_ratio": 1.24022540012708
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.540486446355212,
+          "minimum_stretch": 0.9419718174851649,
+          "maximum_extension": 0.5404864463552119,
+          "maximum_compression": 0.0580281825148351,
+          "maximum_absolute_principal_strain": 0.5404864463552119,
+          "area_ratio": 1.451094817684482
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0743641035002056,
+          "minimum_stretch": 0.9063022748465352,
+          "maximum_extension": 0.07436410350020561,
+          "maximum_compression": 0.09369772515346475,
+          "maximum_absolute_principal_strain": 0.09369772515346475,
+          "area_ratio": 0.9736986310156948
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.4029914006826985,
+          "minimum_stretch": 0.9108166470518251,
+          "maximum_extension": 0.40299140068269845,
+          "maximum_compression": 0.08918335294817492,
+          "maximum_absolute_principal_strain": 0.40299140068269845,
+          "area_ratio": 1.277867923412359
+        }
+      ],
+      "maximum_vertex_change_m": 0.09462123699597755
+    },
+    "reference_offset": {
+      "initial_positions_sha256": "863456f3144cca9052a07cfbfbe73a73ea099586562e2b3f28e529def3fd7b60",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8660991839265139,
+          "maximum_extension": 0.3438961645388676,
+          "maximum_compression": 0.4789073327990907,
+          "maximum_absolute_principal_strain": 0.4789073327990907,
+          "rest_area_weighted_absolute_strain_p50": 0.045097818749069374,
+          "rest_area_weighted_absolute_strain_p95": 0.16611483243962843,
+          "minimum_area_ratio": 0.5453581313675564,
+          "maximum_area_ratio": 1.386705082399385,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.383512836950321,
+            "maximum_extension": 0.24785587689053012,
+            "maximum_compression": 0.415052591530078,
+            "maximum_absolute_principal_strain": 0.415052591530078,
+            "rest_area_weighted_absolute_strain_p50": 0.04138282382890379,
+            "rest_area_weighted_absolute_strain_p95": 0.12046965674621779,
+            "minimum_area_ratio": 0.5808311761961072,
+            "maximum_area_ratio": 1.2803191990024958,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.36913680363278045,
+            "maximum_extension": 0.3438961645388676,
+            "maximum_compression": 0.4789073327990907,
+            "maximum_absolute_principal_strain": 0.4789073327990907,
+            "rest_area_weighted_absolute_strain_p50": 0.03976649719106895,
+            "rest_area_weighted_absolute_strain_p95": 0.11212669416361498,
+            "minimum_area_ratio": 0.5453581313675564,
+            "maximum_area_ratio": 1.386705082399385,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.014347143780274546,
+            "maximum_extension": 0.07620799723100191,
+            "maximum_compression": 0.25303866348224235,
+            "maximum_absolute_principal_strain": 0.25303866348224235,
+            "rest_area_weighted_absolute_strain_p50": 0.037978517434917425,
+            "rest_area_weighted_absolute_strain_p95": 0.07620799723100191,
+            "minimum_area_ratio": 0.7734383058361787,
+            "maximum_area_ratio": 1.08097984876019,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04933471314591263,
+            "maximum_extension": 0.32781705308536746,
+            "maximum_compression": 0.3121148444125502,
+            "maximum_absolute_principal_strain": 0.32781705308536746,
+            "rest_area_weighted_absolute_strain_p50": 0.11491270688733346,
+            "rest_area_weighted_absolute_strain_p95": 0.22593413067016077,
+            "minimum_area_ratio": 0.7266963944421768,
+            "maximum_area_ratio": 1.3437116361399117,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04976768641722524,
+            "maximum_extension": 0.3215333126236364,
+            "maximum_compression": 0.3763555996739968,
+            "maximum_absolute_principal_strain": 0.3763555996739968,
+            "rest_area_weighted_absolute_strain_p50": 0.11628415003893355,
+            "rest_area_weighted_absolute_strain_p95": 0.2160875287293933,
+            "minimum_area_ratio": 0.6800199971952345,
+            "maximum_area_ratio": 1.3195253336459725,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1160,
+            "vertices": [
+              614,
+              615,
+              502
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1160
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0465665047581478,
+            "minimum_stretch": 0.5210926672009093,
+            "maximum_extension": 0.04656650475814783,
+            "maximum_compression": 0.4789073327990907,
+            "maximum_absolute_principal_strain": 0.4789073327990907,
+            "area_ratio": 0.5453581313675564
+          },
+          {
+            "native_triangle": 914,
+            "vertices": [
+              492,
+              448,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0157756639020288,
+            "minimum_stretch": 0.565863983814834,
+            "maximum_extension": 0.01577566390202878,
+            "maximum_compression": 0.43413601618516595,
+            "maximum_absolute_principal_strain": 0.43413601618516595,
+            "area_ratio": 0.5747908638377599
+          },
+          {
+            "native_triangle": 2832,
+            "vertices": [
+              1540,
+              1546,
+              1497
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 0.992963072894738,
+            "minimum_stretch": 0.584947408469922,
+            "maximum_extension": 0.0,
+            "maximum_compression": 0.415052591530078,
+            "maximum_absolute_principal_strain": 0.415052591530078,
+            "area_ratio": 0.5808311761961072
+          },
+          {
+            "native_triangle": 2785,
+            "vertices": [
+              1523,
+              1446,
+              1502
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 867
+            },
+            "rest_area_m2": 0.00019999999999999952,
+            "maximum_stretch": 1.0263497929877152,
+            "minimum_stretch": 0.6178518481808432,
+            "maximum_extension": 0.026349792987715226,
+            "maximum_compression": 0.38214815181915684,
+            "maximum_absolute_principal_strain": 0.38214815181915684,
+            "area_ratio": 0.6341321164774856
+          },
+          {
+            "native_triangle": 3446,
+            "vertices": [
+              1823,
+              1780,
+              1847
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1528
+            },
+            "rest_area_m2": 5.9323206394219865e-05,
+            "maximum_stretch": 1.1101148364533533,
+            "minimum_stretch": 0.6226536613147787,
+            "maximum_extension": 0.1101148364533533,
+            "maximum_compression": 0.37734633868522127,
+            "maximum_absolute_principal_strain": 0.37734633868522127,
+            "area_ratio": 0.6912170673975372
+          },
+          {
+            "native_triangle": 4434,
+            "vertices": [
+              1947,
+              2246,
+              928
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 266
+            },
+            "rest_area_m2": 7.277568449790117e-05,
+            "maximum_stretch": 1.090397022469474,
+            "minimum_stretch": 0.6236444003260032,
+            "maximum_extension": 0.0903970224694739,
+            "maximum_compression": 0.3763555996739968,
+            "maximum_absolute_principal_strain": 0.3763555996739968,
+            "area_ratio": 0.6800199971952345
+          },
+          {
+            "native_triangle": 2975,
+            "vertices": [
+              1565,
+              1507,
+              1596
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1057
+            },
+            "rest_area_m2": 0.00019999999999999952,
+            "maximum_stretch": 1.0338544539814933,
+            "minimum_stretch": 0.6328338916056394,
+            "maximum_extension": 0.03385445398149334,
+            "maximum_compression": 0.3671661083943606,
+            "maximum_absolute_principal_strain": 0.3671661083943606,
+            "area_ratio": 0.6542581374669318
+          },
+          {
+            "native_triangle": 3081,
+            "vertices": [
+              1639,
+              1564,
+              1640
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1163
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 0.9914837876137693,
+            "minimum_stretch": 0.6338640809306525,
+            "maximum_extension": 0.0,
+            "maximum_compression": 0.3661359190693475,
+            "maximum_absolute_principal_strain": 0.3661359190693475,
+            "area_ratio": 0.6284659597934441
+          },
+          {
+            "native_triangle": 3468,
+            "vertices": [
+              1847,
+              1780,
+              1824
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1550
+            },
+            "rest_area_m2": 5.909613499334259e-05,
+            "maximum_stretch": 1.1044088685374454,
+            "minimum_stretch": 0.6351560181360133,
+            "maximum_extension": 0.10440886853744535,
+            "maximum_compression": 0.3648439818639867,
+            "maximum_absolute_principal_strain": 0.3648439818639867,
+            "area_ratio": 0.7014719393343436
+          },
+          {
+            "native_triangle": 3466,
+            "vertices": [
+              1855,
+              1796,
+              1842
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1548
+            },
+            "rest_area_m2": 5.9323206394219865e-05,
+            "maximum_stretch": 1.1011467553664893,
+            "minimum_stretch": 0.6413243398552437,
+            "maximum_extension": 0.10114675536648932,
+            "maximum_compression": 0.35867566014475627,
+            "maximum_absolute_principal_strain": 0.35867566014475627,
+            "area_ratio": 0.7061922159691574
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.3438961645388676,
+          "minimum_stretch": 0.8010830968944647,
+          "maximum_extension": 0.3438961645388676,
+          "maximum_compression": 0.19891690310553534,
+          "maximum_absolute_principal_strain": 0.3438961645388676,
+          "area_ratio": 1.0765725013933891
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0465665047581478,
+          "minimum_stretch": 0.5210926672009093,
+          "maximum_extension": 0.04656650475814783,
+          "maximum_compression": 0.4789073327990907,
+          "maximum_absolute_principal_strain": 0.4789073327990907,
+          "area_ratio": 0.5453581313675564
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.1744539922662436,
+          "minimum_stretch": 0.7453819955379308,
+          "maximum_extension": 0.17445399226624358,
+          "maximum_compression": 0.25461800446206917,
+          "maximum_absolute_principal_strain": 0.25461800446206917,
+          "area_ratio": 0.8754168604229022
+        }
+      ],
+      "maximum_vertex_change_m": 0.005000000000000052
+    },
+    "reference_sewn": {
+      "initial_positions_sha256": "0987c418e0df7f4000e8e77287f42baf9f3b57d14e5432f8821ffc505d19c34e",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8660245622379699,
+          "maximum_extension": 0.3438961645388676,
+          "maximum_compression": 0.4789073327990907,
+          "maximum_absolute_principal_strain": 0.4789073327990907,
+          "rest_area_weighted_absolute_strain_p50": 0.045097818749069374,
+          "rest_area_weighted_absolute_strain_p95": 0.16611483243962843,
+          "minimum_area_ratio": 0.5453581313675564,
+          "maximum_area_ratio": 1.386705082399385,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.383512836950321,
+            "maximum_extension": 0.24785587689053012,
+            "maximum_compression": 0.415052591530078,
+            "maximum_absolute_principal_strain": 0.415052591530078,
+            "rest_area_weighted_absolute_strain_p50": 0.04138282382890379,
+            "rest_area_weighted_absolute_strain_p95": 0.12046965674621779,
+            "minimum_area_ratio": 0.5808311761961072,
+            "maximum_area_ratio": 1.2803191990024958,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.36913680363278045,
+            "maximum_extension": 0.3438961645388676,
+            "maximum_compression": 0.4789073327990907,
+            "maximum_absolute_principal_strain": 0.4789073327990907,
+            "rest_area_weighted_absolute_strain_p50": 0.03976649719106895,
+            "rest_area_weighted_absolute_strain_p95": 0.11212669416361498,
+            "minimum_area_ratio": 0.5453581313675564,
+            "maximum_area_ratio": 1.386705082399385,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.014272522091730556,
+            "maximum_extension": 0.07620799723100191,
+            "maximum_compression": 0.2530386634822479,
+            "maximum_absolute_principal_strain": 0.2530386634822479,
+            "rest_area_weighted_absolute_strain_p50": 0.03721393236616599,
+            "rest_area_weighted_absolute_strain_p95": 0.07620799723100191,
+            "minimum_area_ratio": 0.7734383058361733,
+            "maximum_area_ratio": 1.0809798487601958,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04933471314591263,
+            "maximum_extension": 0.32781705308536746,
+            "maximum_compression": 0.3121148444125502,
+            "maximum_absolute_principal_strain": 0.32781705308536746,
+            "rest_area_weighted_absolute_strain_p50": 0.11491270688733346,
+            "rest_area_weighted_absolute_strain_p95": 0.22593413067016077,
+            "minimum_area_ratio": 0.7266963944421768,
+            "maximum_area_ratio": 1.3437116361399117,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04976768641722524,
+            "maximum_extension": 0.3215333126236364,
+            "maximum_compression": 0.3763555996739968,
+            "maximum_absolute_principal_strain": 0.3763555996739968,
+            "rest_area_weighted_absolute_strain_p50": 0.11628415003893355,
+            "rest_area_weighted_absolute_strain_p95": 0.2160875287293933,
+            "minimum_area_ratio": 0.6800199971952345,
+            "maximum_area_ratio": 1.3195253336459725,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1160,
+            "vertices": [
+              614,
+              615,
+              502
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1160
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0465665047581478,
+            "minimum_stretch": 0.5210926672009093,
+            "maximum_extension": 0.04656650475814783,
+            "maximum_compression": 0.4789073327990907,
+            "maximum_absolute_principal_strain": 0.4789073327990907,
+            "area_ratio": 0.5453581313675564
+          },
+          {
+            "native_triangle": 914,
+            "vertices": [
+              492,
+              448,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0157756639020288,
+            "minimum_stretch": 0.565863983814834,
+            "maximum_extension": 0.01577566390202878,
+            "maximum_compression": 0.43413601618516595,
+            "maximum_absolute_principal_strain": 0.43413601618516595,
+            "area_ratio": 0.5747908638377599
+          },
+          {
+            "native_triangle": 2832,
+            "vertices": [
+              1540,
+              1546,
+              1497
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 0.992963072894738,
+            "minimum_stretch": 0.584947408469922,
+            "maximum_extension": 0.0,
+            "maximum_compression": 0.415052591530078,
+            "maximum_absolute_principal_strain": 0.415052591530078,
+            "area_ratio": 0.5808311761961072
+          },
+          {
+            "native_triangle": 2785,
+            "vertices": [
+              1523,
+              1446,
+              1502
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 867
+            },
+            "rest_area_m2": 0.00019999999999999952,
+            "maximum_stretch": 1.0263497929877152,
+            "minimum_stretch": 0.6178518481808432,
+            "maximum_extension": 0.026349792987715226,
+            "maximum_compression": 0.38214815181915684,
+            "maximum_absolute_principal_strain": 0.38214815181915684,
+            "area_ratio": 0.6341321164774856
+          },
+          {
+            "native_triangle": 3446,
+            "vertices": [
+              1823,
+              1780,
+              1847
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1528
+            },
+            "rest_area_m2": 5.9323206394219865e-05,
+            "maximum_stretch": 1.1101148364533533,
+            "minimum_stretch": 0.6226536613147787,
+            "maximum_extension": 0.1101148364533533,
+            "maximum_compression": 0.37734633868522127,
+            "maximum_absolute_principal_strain": 0.37734633868522127,
+            "area_ratio": 0.6912170673975372
+          },
+          {
+            "native_triangle": 4434,
+            "vertices": [
+              1947,
+              2246,
+              928
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 266
+            },
+            "rest_area_m2": 7.277568449790117e-05,
+            "maximum_stretch": 1.090397022469474,
+            "minimum_stretch": 0.6236444003260032,
+            "maximum_extension": 0.0903970224694739,
+            "maximum_compression": 0.3763555996739968,
+            "maximum_absolute_principal_strain": 0.3763555996739968,
+            "area_ratio": 0.6800199971952345
+          },
+          {
+            "native_triangle": 2975,
+            "vertices": [
+              1565,
+              1507,
+              1596
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1057
+            },
+            "rest_area_m2": 0.00019999999999999952,
+            "maximum_stretch": 1.0338544539814933,
+            "minimum_stretch": 0.6328338916056394,
+            "maximum_extension": 0.03385445398149334,
+            "maximum_compression": 0.3671661083943606,
+            "maximum_absolute_principal_strain": 0.3671661083943606,
+            "area_ratio": 0.6542581374669318
+          },
+          {
+            "native_triangle": 3081,
+            "vertices": [
+              1639,
+              1564,
+              1640
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1163
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 0.9914837876137693,
+            "minimum_stretch": 0.6338640809306525,
+            "maximum_extension": 0.0,
+            "maximum_compression": 0.3661359190693475,
+            "maximum_absolute_principal_strain": 0.3661359190693475,
+            "area_ratio": 0.6284659597934441
+          },
+          {
+            "native_triangle": 3468,
+            "vertices": [
+              1847,
+              1780,
+              1824
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1550
+            },
+            "rest_area_m2": 5.909613499334259e-05,
+            "maximum_stretch": 1.1044088685374454,
+            "minimum_stretch": 0.6351560181360133,
+            "maximum_extension": 0.10440886853744535,
+            "maximum_compression": 0.3648439818639867,
+            "maximum_absolute_principal_strain": 0.3648439818639867,
+            "area_ratio": 0.7014719393343436
+          },
+          {
+            "native_triangle": 3466,
+            "vertices": [
+              1855,
+              1796,
+              1842
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1548
+            },
+            "rest_area_m2": 5.9323206394219865e-05,
+            "maximum_stretch": 1.1011467553664893,
+            "minimum_stretch": 0.6413243398552437,
+            "maximum_extension": 0.10114675536648932,
+            "maximum_compression": 0.35867566014475627,
+            "maximum_absolute_principal_strain": 0.35867566014475627,
+            "area_ratio": 0.7061922159691574
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.3438961645388676,
+          "minimum_stretch": 0.8010830968944647,
+          "maximum_extension": 0.3438961645388676,
+          "maximum_compression": 0.19891690310553534,
+          "maximum_absolute_principal_strain": 0.3438961645388676,
+          "area_ratio": 1.0765725013933891
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0465665047581478,
+          "minimum_stretch": 0.5210926672009093,
+          "maximum_extension": 0.04656650475814783,
+          "maximum_compression": 0.4789073327990907,
+          "maximum_absolute_principal_strain": 0.4789073327990907,
+          "area_ratio": 0.5453581313675564
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.1744539922662436,
+          "minimum_stretch": 0.7453819955379308,
+          "maximum_extension": 0.17445399226624358,
+          "maximum_compression": 0.25461800446206917,
+          "maximum_absolute_principal_strain": 0.25461800446206917,
+          "area_ratio": 0.8754168604229022
+        }
+      ],
+      "maximum_vertex_change_m": 0.28371779590280294
+    },
+    "reference_float32": {
+      "initial_positions_sha256": "e46b98a84762132476b0580c050dd8924c4691290b24a31a89e61e1aabdba8fb",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8660245606968653,
+          "maximum_extension": 0.3438964747025208,
+          "maximum_compression": 0.47890721046157636,
+          "maximum_absolute_principal_strain": 0.47890721046157636,
+          "rest_area_weighted_absolute_strain_p50": 0.04509768934116054,
+          "rest_area_weighted_absolute_strain_p95": 0.1661148837138402,
+          "minimum_area_ratio": 0.5453581045170776,
+          "maximum_area_ratio": 1.3867050252153454,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.38351283584744794,
+            "maximum_extension": 0.24785611194400103,
+            "maximum_compression": 0.4150524833287996,
+            "maximum_absolute_principal_strain": 0.4150524833287996,
+            "rest_area_weighted_absolute_strain_p50": 0.041382675539471725,
+            "rest_area_weighted_absolute_strain_p95": 0.12047049814223909,
+            "minimum_area_ratio": 0.5808315440709019,
+            "maximum_area_ratio": 1.2803191348662448,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.3691368027564563,
+            "maximum_extension": 0.3438964747025208,
+            "maximum_compression": 0.47890721046157636,
+            "maximum_absolute_principal_strain": 0.47890721046157636,
+            "rest_area_weighted_absolute_strain_p50": 0.03976660907029461,
+            "rest_area_weighted_absolute_strain_p95": 0.11212594676505638,
+            "minimum_area_ratio": 0.5453581045170776,
+            "maximum_area_ratio": 1.3867050252153454,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.0142725217383076,
+            "maximum_extension": 0.07620794086060556,
+            "maximum_compression": 0.2530403278011393,
+            "maximum_absolute_principal_strain": 0.2530403278011393,
+            "rest_area_weighted_absolute_strain_p50": 0.0372144476707672,
+            "rest_area_weighted_absolute_strain_p95": 0.07620794086060556,
+            "minimum_area_ratio": 0.7734365034049596,
+            "maximum_area_ratio": 1.0809786856603096,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04933471251486408,
+            "maximum_extension": 0.3278170466509822,
+            "maximum_compression": 0.3121141086020939,
+            "maximum_absolute_principal_strain": 0.3278170466509822,
+            "rest_area_weighted_absolute_strain_p50": 0.11491290712625601,
+            "rest_area_weighted_absolute_strain_p95": 0.2259345362107834,
+            "minimum_area_ratio": 0.7266973872800099,
+            "maximum_area_ratio": 1.3437106822596425,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04976768783978936,
+            "maximum_extension": 0.3215331125101888,
+            "maximum_compression": 0.3763545769484158,
+            "maximum_absolute_principal_strain": 0.3763545769484158,
+            "rest_area_weighted_absolute_strain_p50": 0.11628358177973874,
+            "rest_area_weighted_absolute_strain_p95": 0.2160870313037504,
+            "minimum_area_ratio": 0.6800213896687688,
+            "maximum_area_ratio": 1.3195242995682788,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1160,
+            "vertices": [
+              614,
+              615,
+              502
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1160
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0465662075273539,
+            "minimum_stretch": 0.5210927895384236,
+            "maximum_extension": 0.04656620752735385,
+            "maximum_compression": 0.47890721046157636,
+            "maximum_absolute_principal_strain": 0.47890721046157636,
+            "area_ratio": 0.5453581045170776
+          },
+          {
+            "native_triangle": 914,
+            "vertices": [
+              492,
+              448,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0157758111692314,
+            "minimum_stretch": 0.5658641004682382,
+            "maximum_extension": 0.015775811169231435,
+            "maximum_compression": 0.4341358995317618,
+            "maximum_absolute_principal_strain": 0.4341358995317618,
+            "area_ratio": 0.5747910656646721
+          },
+          {
+            "native_triangle": 2832,
+            "vertices": [
+              1540,
+              1546,
+              1497
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 0.9929635181225804,
+            "minimum_stretch": 0.5849475166712004,
+            "maximum_extension": 0.0,
+            "maximum_compression": 0.4150524833287996,
+            "maximum_absolute_principal_strain": 0.4150524833287996,
+            "area_ratio": 0.5808315440709019
+          },
+          {
+            "native_triangle": 2785,
+            "vertices": [
+              1523,
+              1446,
+              1502
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 867
+            },
+            "rest_area_m2": 0.00019999999999999952,
+            "maximum_stretch": 1.02634943312667,
+            "minimum_stretch": 0.6178519530994865,
+            "maximum_extension": 0.02634943312667004,
+            "maximum_compression": 0.3821480469005135,
+            "maximum_absolute_principal_strain": 0.3821480469005135,
+            "area_ratio": 0.6341320018198638
+          },
+          {
+            "native_triangle": 3446,
+            "vertices": [
+              1823,
+              1780,
+              1847
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1528
+            },
+            "rest_area_m2": 5.9323206394219865e-05,
+            "maximum_stretch": 1.1101150296449789,
+            "minimum_stretch": 0.6226528929681199,
+            "maximum_extension": 0.11011502964497888,
+            "maximum_compression": 0.3773471070318801,
+            "maximum_absolute_principal_strain": 0.3773471070318801,
+            "area_ratio": 0.6912163347358362
+          },
+          {
+            "native_triangle": 4434,
+            "vertices": [
+              1947,
+              2246,
+              928
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 266
+            },
+            "rest_area_m2": 7.277568449790117e-05,
+            "maximum_stretch": 1.0903974671077181,
+            "minimum_stretch": 0.6236454230515842,
+            "maximum_extension": 0.09039746710771812,
+            "maximum_compression": 0.3763545769484158,
+            "maximum_absolute_principal_strain": 0.3763545769484158,
+            "area_ratio": 0.6800213896687688
+          },
+          {
+            "native_triangle": 2975,
+            "vertices": [
+              1565,
+              1507,
+              1596
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1057
+            },
+            "rest_area_m2": 0.00019999999999999952,
+            "maximum_stretch": 1.0338545974147106,
+            "minimum_stretch": 0.6328340497118008,
+            "maximum_extension": 0.03385459741471064,
+            "maximum_compression": 0.3671659502881992,
+            "maximum_absolute_principal_strain": 0.3671659502881992,
+            "area_ratio": 0.6542583916951148
+          },
+          {
+            "native_triangle": 3081,
+            "vertices": [
+              1639,
+              1564,
+              1640
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1163
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 0.9914838435021142,
+            "minimum_stretch": 0.6338641376963534,
+            "maximum_extension": 0.0,
+            "maximum_compression": 0.3661358623036466,
+            "maximum_absolute_principal_strain": 0.3661358623036466,
+            "area_ratio": 0.6284660515013338
+          },
+          {
+            "native_triangle": 3468,
+            "vertices": [
+              1847,
+              1780,
+              1824
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1550
+            },
+            "rest_area_m2": 5.909613499334259e-05,
+            "maximum_stretch": 1.1044088034815096,
+            "minimum_stretch": 0.6351543581412328,
+            "maximum_extension": 0.1044088034815096,
+            "maximum_compression": 0.3648456418587672,
+            "maximum_absolute_principal_strain": 0.3648456418587672,
+            "area_ratio": 0.7014700647008252
+          },
+          {
+            "native_triangle": 3466,
+            "vertices": [
+              1855,
+              1796,
+              1842
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 1548
+            },
+            "rest_area_m2": 5.9323206394219865e-05,
+            "maximum_stretch": 1.101146873027812,
+            "minimum_stretch": 0.6413251546423354,
+            "maximum_extension": 0.101146873027812,
+            "maximum_compression": 0.3586748453576646,
+            "maximum_absolute_principal_strain": 0.3586748453576646,
+            "area_ratio": 0.7061931886284856
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.3438964747025208,
+          "minimum_stretch": 0.8010834186214091,
+          "maximum_extension": 0.3438964747025208,
+          "maximum_compression": 0.19891658137859092,
+          "maximum_absolute_principal_strain": 0.3438964747025208,
+          "area_ratio": 1.0765731822279554
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0465662075273539,
+          "minimum_stretch": 0.5210927895384236,
+          "maximum_extension": 0.04656620752735385,
+          "maximum_compression": 0.47890721046157636,
+          "maximum_absolute_principal_strain": 0.47890721046157636,
+          "area_ratio": 0.5453581045170776
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.174454842993345,
+          "minimum_stretch": 0.7453818021587594,
+          "maximum_extension": 0.17445484299334502,
+          "maximum_compression": 0.2546181978412406,
+          "maximum_absolute_principal_strain": 0.2546181978412406,
+          "area_ratio": 0.8754172674244624
+        }
+      ],
+      "maximum_vertex_change_m": 5.705486304288745e-08
+    },
+    "smoothed_offset": {
+      "initial_positions_sha256": "1642b44439f5fbd79cd41efcdae2ca9cf7e370d15db30976c866f98dc0f83ea6",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8657440108176403,
+          "maximum_extension": 0.393204259729792,
+          "maximum_compression": 0.42014539579543453,
+          "maximum_absolute_principal_strain": 0.42014539579543453,
+          "rest_area_weighted_absolute_strain_p50": 0.04055909862104978,
+          "rest_area_weighted_absolute_strain_p95": 0.15238377653668367,
+          "minimum_area_ratio": 0.6110250075271992,
+          "maximum_area_ratio": 1.3608805400910788,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.3836587429771461,
+            "maximum_extension": 0.2260254546443794,
+            "maximum_compression": 0.3361957877117422,
+            "maximum_absolute_principal_strain": 0.3361957877117422,
+            "rest_area_weighted_absolute_strain_p50": 0.03841493751751912,
+            "rest_area_weighted_absolute_strain_p95": 0.10603857491273039,
+            "minimum_area_ratio": 0.66560224411609,
+            "maximum_area_ratio": 1.2113319643407454,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.36922690172491807,
+            "maximum_extension": 0.393204259729792,
+            "maximum_compression": 0.42014539579543453,
+            "maximum_absolute_principal_strain": 0.42014539579543453,
+            "rest_area_weighted_absolute_strain_p50": 0.0364772911227369,
+            "rest_area_weighted_absolute_strain_p95": 0.1068568699577166,
+            "minimum_area_ratio": 0.6110250075271992,
+            "maximum_area_ratio": 1.2980671238896688,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.01430752308134845,
+            "maximum_extension": 0.06562036191155718,
+            "maximum_compression": 0.15011436684631574,
+            "maximum_absolute_principal_strain": 0.15011436684631574,
+            "rest_area_weighted_absolute_strain_p50": 0.031914724288225615,
+            "rest_area_weighted_absolute_strain_p95": 0.06562036191155718,
+            "minimum_area_ratio": 0.8732057349690046,
+            "maximum_area_ratio": 1.0708320659011117,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04903192621300252,
+            "maximum_extension": 0.34412462243167785,
+            "maximum_compression": 0.3551612439593209,
+            "maximum_absolute_principal_strain": 0.3551612439593209,
+            "rest_area_weighted_absolute_strain_p50": 0.11308812324519302,
+            "rest_area_weighted_absolute_strain_p95": 0.22759068934932403,
+            "minimum_area_ratio": 0.674462860708757,
+            "maximum_area_ratio": 1.3608805400910788,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.0495189168212252,
+            "maximum_extension": 0.3286938148484888,
+            "maximum_compression": 0.39498952748182736,
+            "maximum_absolute_principal_strain": 0.39498952748182736,
+            "rest_area_weighted_absolute_strain_p50": 0.11644457732353808,
+            "rest_area_weighted_absolute_strain_p95": 0.218037636659983,
+            "minimum_area_ratio": 0.7760075607506917,
+            "maximum_area_ratio": 1.3148242445027665,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1160,
+            "vertices": [
+              614,
+              615,
+              502
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1160
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0537555502648681,
+            "minimum_stretch": 0.5798546042045655,
+            "maximum_extension": 0.05375555026486811,
+            "maximum_compression": 0.42014539579543453,
+            "maximum_absolute_principal_strain": 0.42014539579543453,
+            "area_ratio": 0.6110250075271992
+          },
+          {
+            "native_triangle": 4300,
+            "vertices": [
+              2250,
+              571,
+              529
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 132
+            },
+            "rest_area_m2": 6.241666208370614e-05,
+            "maximum_stretch": 1.2826349228647158,
+            "minimum_stretch": 0.6050104725181726,
+            "maximum_extension": 0.2826349228647158,
+            "maximum_compression": 0.39498952748182736,
+            "maximum_absolute_principal_strain": 0.39498952748182736,
+            "area_ratio": 0.7760075607506917
+          },
+          {
+            "native_triangle": 1040,
+            "vertices": [
+              571,
+              492,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1040
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.393204259729792,
+            "minimum_stretch": 0.8190961307298181,
+            "maximum_extension": 0.393204259729792,
+            "maximum_compression": 0.18090386927018187,
+            "maximum_absolute_principal_strain": 0.393204259729792,
+            "area_ratio": 1.1411682184609733
+          },
+          {
+            "native_triangle": 1179,
+            "vertices": [
+              614,
+              643,
+              615
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1179
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.3762156201926008,
+            "minimum_stretch": 0.7411531227459289,
+            "maximum_extension": 0.3762156201926008,
+            "maximum_compression": 0.2588468772540711,
+            "maximum_absolute_principal_strain": 0.3762156201926008,
+            "area_ratio": 1.0199865044774714
+          },
+          {
+            "native_triangle": 914,
+            "vertices": [
+              492,
+              448,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0225283195883377,
+            "minimum_stretch": 0.6430379486117068,
+            "maximum_extension": 0.022528319588337675,
+            "maximum_compression": 0.3569620513882932,
+            "maximum_absolute_principal_strain": 0.3569620513882932,
+            "area_ratio": 0.6575245130254604
+          },
+          {
+            "native_triangle": 4024,
+            "vertices": [
+              616,
+              652,
+              2112
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 116
+            },
+            "rest_area_m2": 5.3833319769910445e-05,
+            "maximum_stretch": 1.045940329098658,
+            "minimum_stretch": 0.6448387560406791,
+            "maximum_extension": 0.04594032909865797,
+            "maximum_compression": 0.3551612439593209,
+            "maximum_absolute_principal_strain": 0.3551612439593209,
+            "area_ratio": 0.674462860708757
+          },
+          {
+            "native_triangle": 3981,
+            "vertices": [
+              2090,
+              2102,
+              2087
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 73
+            },
+            "rest_area_m2": 7.064542516018231e-05,
+            "maximum_stretch": 1.3441246224316779,
+            "minimum_stretch": 1.0124660447251443,
+            "maximum_extension": 0.34412462243167785,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 0.34412462243167785,
+            "area_ratio": 1.3608805400910788
+          },
+          {
+            "native_triangle": 2832,
+            "vertices": [
+              1540,
+              1546,
+              1497
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0027086779423018,
+            "minimum_stretch": 0.6638042122882578,
+            "maximum_extension": 0.002708677942301785,
+            "maximum_compression": 0.3361957877117422,
+            "maximum_absolute_principal_strain": 0.3361957877117422,
+            "area_ratio": 0.66560224411609
+          },
+          {
+            "native_triangle": 3980,
+            "vertices": [
+              2101,
+              2102,
+              2090
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 72
+            },
+            "rest_area_m2": 7.064533207667418e-05,
+            "maximum_stretch": 1.330134546527704,
+            "minimum_stretch": 0.8349497902778169,
+            "maximum_extension": 0.3301345465277039,
+            "maximum_compression": 0.1650502097221831,
+            "maximum_absolute_principal_strain": 0.3301345465277039,
+            "area_ratio": 1.1105955606645854
+          },
+          {
+            "native_triangle": 4246,
+            "vertices": [
+              2218,
+              2228,
+              2225
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 78
+            },
+            "rest_area_m2": 4.7018817347270557e-05,
+            "maximum_stretch": 1.3286938148484888,
+            "minimum_stretch": 0.9527645268241492,
+            "maximum_extension": 0.3286938148484888,
+            "maximum_compression": 0.04723547317585075,
+            "maximum_absolute_principal_strain": 0.3286938148484888,
+            "area_ratio": 1.2659323337982942
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.393204259729792,
+          "minimum_stretch": 0.8190961307298181,
+          "maximum_extension": 0.393204259729792,
+          "maximum_compression": 0.18090386927018187,
+          "maximum_absolute_principal_strain": 0.393204259729792,
+          "area_ratio": 1.1411682184609733
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0537555502648681,
+          "minimum_stretch": 0.5798546042045655,
+          "maximum_extension": 0.05375555026486811,
+          "maximum_compression": 0.42014539579543453,
+          "maximum_absolute_principal_strain": 0.42014539579543453,
+          "area_ratio": 0.6110250075271992
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.2260254546443794,
+          "minimum_stretch": 0.7822167203359164,
+          "maximum_extension": 0.2260254546443794,
+          "maximum_compression": 0.21778327966408362,
+          "maximum_absolute_principal_strain": 0.2260254546443794,
+          "area_ratio": 0.9590176101802773
+        }
+      ],
+      "maximum_vertex_change_m": 0.0050000000000000495
+    },
+    "smoothed_sewn": {
+      "initial_positions_sha256": "46a739cefc0211b911f281cdecbbb062db9021135e2510977101cb3b29ae83da",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8656695091212735,
+          "maximum_extension": 0.393204259729792,
+          "maximum_compression": 0.42014539579543453,
+          "maximum_absolute_principal_strain": 0.42014539579543453,
+          "rest_area_weighted_absolute_strain_p50": 0.04055232167150313,
+          "rest_area_weighted_absolute_strain_p95": 0.15238377653668367,
+          "minimum_area_ratio": 0.6110250075271992,
+          "maximum_area_ratio": 1.3608805400910788,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.3836587429771461,
+            "maximum_extension": 0.2260254546443794,
+            "maximum_compression": 0.3361957877117422,
+            "maximum_absolute_principal_strain": 0.3361957877117422,
+            "rest_area_weighted_absolute_strain_p50": 0.03841493751751912,
+            "rest_area_weighted_absolute_strain_p95": 0.10603857491273039,
+            "minimum_area_ratio": 0.66560224411609,
+            "maximum_area_ratio": 1.2113319643407454,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.36922690172491807,
+            "maximum_extension": 0.393204259729792,
+            "maximum_compression": 0.42014539579543453,
+            "maximum_absolute_principal_strain": 0.42014539579543453,
+            "rest_area_weighted_absolute_strain_p50": 0.0364772911227369,
+            "rest_area_weighted_absolute_strain_p95": 0.1068568699577166,
+            "minimum_area_ratio": 0.6110250075271992,
+            "maximum_area_ratio": 1.2980671238896688,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.014233021384981557,
+            "maximum_extension": 0.06562036191155785,
+            "maximum_compression": 0.1501143668463214,
+            "maximum_absolute_principal_strain": 0.1501143668463214,
+            "rest_area_weighted_absolute_strain_p50": 0.032158310729516915,
+            "rest_area_weighted_absolute_strain_p95": 0.06562036191155785,
+            "minimum_area_ratio": 0.873205734968999,
+            "maximum_area_ratio": 1.070832065901111,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04903192621300252,
+            "maximum_extension": 0.34412462243167785,
+            "maximum_compression": 0.3551612439593209,
+            "maximum_absolute_principal_strain": 0.3551612439593209,
+            "rest_area_weighted_absolute_strain_p50": 0.11308812324519302,
+            "rest_area_weighted_absolute_strain_p95": 0.22759068934932403,
+            "minimum_area_ratio": 0.674462860708757,
+            "maximum_area_ratio": 1.3608805400910788,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.0495189168212252,
+            "maximum_extension": 0.3286938148484888,
+            "maximum_compression": 0.39498952748182736,
+            "maximum_absolute_principal_strain": 0.39498952748182736,
+            "rest_area_weighted_absolute_strain_p50": 0.11644457732353808,
+            "rest_area_weighted_absolute_strain_p95": 0.218037636659983,
+            "minimum_area_ratio": 0.7760075607506917,
+            "maximum_area_ratio": 1.3148242445027665,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1160,
+            "vertices": [
+              614,
+              615,
+              502
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1160
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0537555502648681,
+            "minimum_stretch": 0.5798546042045655,
+            "maximum_extension": 0.05375555026486811,
+            "maximum_compression": 0.42014539579543453,
+            "maximum_absolute_principal_strain": 0.42014539579543453,
+            "area_ratio": 0.6110250075271992
+          },
+          {
+            "native_triangle": 4300,
+            "vertices": [
+              2250,
+              571,
+              529
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 132
+            },
+            "rest_area_m2": 6.241666208370614e-05,
+            "maximum_stretch": 1.2826349228647158,
+            "minimum_stretch": 0.6050104725181726,
+            "maximum_extension": 0.2826349228647158,
+            "maximum_compression": 0.39498952748182736,
+            "maximum_absolute_principal_strain": 0.39498952748182736,
+            "area_ratio": 0.7760075607506917
+          },
+          {
+            "native_triangle": 1040,
+            "vertices": [
+              571,
+              492,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1040
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.393204259729792,
+            "minimum_stretch": 0.8190961307298181,
+            "maximum_extension": 0.393204259729792,
+            "maximum_compression": 0.18090386927018187,
+            "maximum_absolute_principal_strain": 0.393204259729792,
+            "area_ratio": 1.1411682184609733
+          },
+          {
+            "native_triangle": 1179,
+            "vertices": [
+              614,
+              643,
+              615
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1179
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.3762156201926008,
+            "minimum_stretch": 0.7411531227459289,
+            "maximum_extension": 0.3762156201926008,
+            "maximum_compression": 0.2588468772540711,
+            "maximum_absolute_principal_strain": 0.3762156201926008,
+            "area_ratio": 1.0199865044774714
+          },
+          {
+            "native_triangle": 914,
+            "vertices": [
+              492,
+              448,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0225283195883377,
+            "minimum_stretch": 0.6430379486117068,
+            "maximum_extension": 0.022528319588337675,
+            "maximum_compression": 0.3569620513882932,
+            "maximum_absolute_principal_strain": 0.3569620513882932,
+            "area_ratio": 0.6575245130254604
+          },
+          {
+            "native_triangle": 4024,
+            "vertices": [
+              616,
+              652,
+              2112
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 116
+            },
+            "rest_area_m2": 5.3833319769910445e-05,
+            "maximum_stretch": 1.045940329098658,
+            "minimum_stretch": 0.6448387560406791,
+            "maximum_extension": 0.04594032909865797,
+            "maximum_compression": 0.3551612439593209,
+            "maximum_absolute_principal_strain": 0.3551612439593209,
+            "area_ratio": 0.674462860708757
+          },
+          {
+            "native_triangle": 3981,
+            "vertices": [
+              2090,
+              2102,
+              2087
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 73
+            },
+            "rest_area_m2": 7.064542516018231e-05,
+            "maximum_stretch": 1.3441246224316779,
+            "minimum_stretch": 1.0124660447251443,
+            "maximum_extension": 0.34412462243167785,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 0.34412462243167785,
+            "area_ratio": 1.3608805400910788
+          },
+          {
+            "native_triangle": 2832,
+            "vertices": [
+              1540,
+              1546,
+              1497
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0027086779423018,
+            "minimum_stretch": 0.6638042122882578,
+            "maximum_extension": 0.002708677942301785,
+            "maximum_compression": 0.3361957877117422,
+            "maximum_absolute_principal_strain": 0.3361957877117422,
+            "area_ratio": 0.66560224411609
+          },
+          {
+            "native_triangle": 3980,
+            "vertices": [
+              2101,
+              2102,
+              2090
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 72
+            },
+            "rest_area_m2": 7.064533207667418e-05,
+            "maximum_stretch": 1.330134546527704,
+            "minimum_stretch": 0.8349497902778169,
+            "maximum_extension": 0.3301345465277039,
+            "maximum_compression": 0.1650502097221831,
+            "maximum_absolute_principal_strain": 0.3301345465277039,
+            "area_ratio": 1.1105955606645854
+          },
+          {
+            "native_triangle": 4246,
+            "vertices": [
+              2218,
+              2228,
+              2225
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 78
+            },
+            "rest_area_m2": 4.7018817347270557e-05,
+            "maximum_stretch": 1.3286938148484888,
+            "minimum_stretch": 0.9527645268241492,
+            "maximum_extension": 0.3286938148484888,
+            "maximum_compression": 0.04723547317585075,
+            "maximum_absolute_principal_strain": 0.3286938148484888,
+            "area_ratio": 1.2659323337982942
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.393204259729792,
+          "minimum_stretch": 0.8190961307298181,
+          "maximum_extension": 0.393204259729792,
+          "maximum_compression": 0.18090386927018187,
+          "maximum_absolute_principal_strain": 0.393204259729792,
+          "area_ratio": 1.1411682184609733
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0537555502648681,
+          "minimum_stretch": 0.5798546042045655,
+          "maximum_extension": 0.05375555026486811,
+          "maximum_compression": 0.42014539579543453,
+          "maximum_absolute_principal_strain": 0.42014539579543453,
+          "area_ratio": 0.6110250075271992
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.2260254546443794,
+          "minimum_stretch": 0.7822167203359164,
+          "maximum_extension": 0.2260254546443794,
+          "maximum_compression": 0.21778327966408362,
+          "maximum_absolute_principal_strain": 0.2260254546443794,
+          "area_ratio": 0.9590176101802773
+        }
+      ],
+      "maximum_vertex_change_m": 0.28389734562836905
+    },
+    "smoothed_float32": {
+      "initial_positions_sha256": "0014b646c39d1b5c561f92bf881958c7b5e3fdaf8473b6626c20971fe5310209",
+      "principal_strain": {
+        "overall": {
+          "triangles": 4480,
+          "rest_area_m2": 0.8317973249825416,
+          "solved_area_m2": 0.8656695085595781,
+          "maximum_extension": 0.39320389095486585,
+          "maximum_compression": 0.4201461863392132,
+          "maximum_absolute_principal_strain": 0.4201461863392132,
+          "rest_area_weighted_absolute_strain_p50": 0.04055233998788421,
+          "rest_area_weighted_absolute_strain_p95": 0.15238427251675735,
+          "minimum_area_ratio": 0.611024189799216,
+          "maximum_area_ratio": 1.3608793555170364,
+          "zero_area_solved_triangles": 0
+        },
+        "parts": {
+          "back": {
+            "triangles": 1990,
+            "rest_area_m2": 0.371157479058841,
+            "solved_area_m2": 0.3836587424318979,
+            "maximum_extension": 0.22602540608349964,
+            "maximum_compression": 0.33619553840025906,
+            "maximum_absolute_principal_strain": 0.33619553840025906,
+            "rest_area_weighted_absolute_strain_p50": 0.03841480375601791,
+            "rest_area_weighted_absolute_strain_p95": 0.10603883539257275,
+            "minimum_area_ratio": 0.6656026396522903,
+            "maximum_area_ratio": 1.2113293121104067,
+            "zero_area_solved_triangles": 0
+          },
+          "front": {
+            "triangles": 1918,
+            "rest_area_m2": 0.35719920449889686,
+            "solved_area_m2": 0.3692268985913538,
+            "maximum_extension": 0.39320389095486585,
+            "maximum_compression": 0.4201461863392132,
+            "maximum_absolute_principal_strain": 0.4201461863392132,
+            "rest_area_weighted_absolute_strain_p50": 0.03647730066881327,
+            "rest_area_weighted_absolute_strain_p95": 0.10685488812765942,
+            "minimum_area_ratio": 0.611024189799216,
+            "maximum_area_ratio": 1.2980673347105298,
+            "zero_area_solved_triangles": 0
+          },
+          "neckband": {
+            "triangles": 40,
+            "rest_area_m2": 0.01400042330679735,
+            "solved_area_m2": 0.014233022586025724,
+            "maximum_extension": 0.06561967777113531,
+            "maximum_compression": 0.15011120850564297,
+            "maximum_absolute_principal_strain": 0.15011120850564297,
+            "rest_area_weighted_absolute_strain_p50": 0.03215841614658643,
+            "rest_area_weighted_absolute_strain_p95": 0.06561967777113531,
+            "minimum_area_ratio": 0.873209234123961,
+            "maximum_area_ratio": 1.0708297616114508,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveLeft": {
+            "triangles": 260,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.049031926533882865,
+            "maximum_extension": 0.344124351144671,
+            "maximum_compression": 0.3551612740890263,
+            "maximum_absolute_principal_strain": 0.3551612740890263,
+            "rest_area_weighted_absolute_strain_p50": 0.11308782785910232,
+            "rest_area_weighted_absolute_strain_p95": 0.22759003115836518,
+            "minimum_area_ratio": 0.6744628499728383,
+            "maximum_area_ratio": 1.3608793555170364,
+            "zero_area_solved_triangles": 0
+          },
+          "sleeveRight": {
+            "triangles": 272,
+            "rest_area_m2": 0.04472010905900315,
+            "solved_area_m2": 0.04951891841641785,
+            "maximum_extension": 0.328693825110701,
+            "maximum_compression": 0.3949887240878778,
+            "maximum_absolute_principal_strain": 0.3949887240878778,
+            "rest_area_weighted_absolute_strain_p50": 0.11644462228952723,
+            "rest_area_weighted_absolute_strain_p95": 0.21803803334050964,
+            "minimum_area_ratio": 0.7760090987143657,
+            "maximum_area_ratio": 1.3148219270647208,
+            "zero_area_solved_triangles": 0
+          }
+        },
+        "worst_triangles": [
+          {
+            "native_triangle": 1160,
+            "vertices": [
+              614,
+              615,
+              502
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1160
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0537555766713709,
+            "minimum_stretch": 0.5798538136607868,
+            "maximum_extension": 0.053755576671370875,
+            "maximum_compression": 0.4201461863392132,
+            "maximum_absolute_principal_strain": 0.4201461863392132,
+            "area_ratio": 0.611024189799216
+          },
+          {
+            "native_triangle": 4300,
+            "vertices": [
+              2250,
+              571,
+              529
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 132
+            },
+            "rest_area_m2": 6.241666208370614e-05,
+            "maximum_stretch": 1.2826357616962514,
+            "minimum_stretch": 0.6050112759121222,
+            "maximum_extension": 0.2826357616962514,
+            "maximum_compression": 0.3949887240878778,
+            "maximum_absolute_principal_strain": 0.3949887240878778,
+            "area_ratio": 0.7760090987143657
+          },
+          {
+            "native_triangle": 1040,
+            "vertices": [
+              571,
+              492,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1040
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.3932038909548659,
+            "minimum_stretch": 0.8190961832341579,
+            "maximum_extension": 0.39320389095486585,
+            "maximum_compression": 0.1809038167658421,
+            "maximum_absolute_principal_strain": 0.39320389095486585,
+            "area_ratio": 1.1411679895481086
+          },
+          {
+            "native_triangle": 1179,
+            "vertices": [
+              614,
+              643,
+              615
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 1179
+            },
+            "rest_area_m2": 0.00010000000000000018,
+            "maximum_stretch": 1.3762157404869984,
+            "minimum_stretch": 0.741152284372522,
+            "maximum_extension": 0.37621574048699835,
+            "maximum_compression": 0.258847715627478,
+            "maximum_absolute_principal_strain": 0.37621574048699835,
+            "area_ratio": 1.0199854398513608
+          },
+          {
+            "native_triangle": 914,
+            "vertices": [
+              492,
+              448,
+              498
+            ],
+            "source": {
+              "part": "front",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0225277426077426,
+            "minimum_stretch": 0.6430386478432591,
+            "maximum_extension": 0.022527742607742596,
+            "maximum_compression": 0.35696135215674085,
+            "maximum_absolute_principal_strain": 0.35696135215674085,
+            "area_ratio": 0.6575248569887029
+          },
+          {
+            "native_triangle": 4024,
+            "vertices": [
+              616,
+              652,
+              2112
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 116
+            },
+            "rest_area_m2": 5.3833319769910445e-05,
+            "maximum_stretch": 1.0459403613205986,
+            "minimum_stretch": 0.6448387259109737,
+            "maximum_extension": 0.045940361320598644,
+            "maximum_compression": 0.3551612740890263,
+            "maximum_absolute_principal_strain": 0.3551612740890263,
+            "area_ratio": 0.6744628499728383
+          },
+          {
+            "native_triangle": 3981,
+            "vertices": [
+              2090,
+              2102,
+              2087
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 73
+            },
+            "rest_area_m2": 7.064542516018231e-05,
+            "maximum_stretch": 1.344124351144671,
+            "minimum_stretch": 1.0124653677750104,
+            "maximum_extension": 0.344124351144671,
+            "maximum_compression": 0.0,
+            "maximum_absolute_principal_strain": 0.344124351144671,
+            "area_ratio": 1.3608793555170364
+          },
+          {
+            "native_triangle": 2832,
+            "vertices": [
+              1540,
+              1546,
+              1497
+            ],
+            "source": {
+              "part": "back",
+              "render_triangle": 914
+            },
+            "rest_area_m2": 0.00020000000000000036,
+            "maximum_stretch": 1.0027088972077949,
+            "minimum_stretch": 0.6638044615997409,
+            "maximum_extension": 0.0027088972077948803,
+            "maximum_compression": 0.33619553840025906,
+            "maximum_absolute_principal_strain": 0.33619553840025906,
+            "area_ratio": 0.6656026396522903
+          },
+          {
+            "native_triangle": 3980,
+            "vertices": [
+              2101,
+              2102,
+              2090
+            ],
+            "source": {
+              "part": "sleeveLeft",
+              "render_triangle": 72
+            },
+            "rest_area_m2": 7.064533207667418e-05,
+            "maximum_stretch": 1.3301342383936319,
+            "minimum_stretch": 0.8349505973879787,
+            "maximum_extension": 0.3301342383936319,
+            "maximum_compression": 0.16504940261202128,
+            "maximum_absolute_principal_strain": 0.3301342383936319,
+            "area_ratio": 1.110596376952967
+          },
+          {
+            "native_triangle": 4246,
+            "vertices": [
+              2218,
+              2228,
+              2225
+            ],
+            "source": {
+              "part": "sleeveRight",
+              "render_triangle": 78
+            },
+            "rest_area_m2": 4.7018817347270557e-05,
+            "maximum_stretch": 1.328693825110701,
+            "minimum_stretch": 0.9527642848820718,
+            "maximum_extension": 0.328693825110701,
+            "maximum_compression": 0.047235715117928234,
+            "maximum_absolute_principal_strain": 0.328693825110701,
+            "area_ratio": 1.2659320221088215
+          }
+        ],
+        "scope": "Saved-face principal engineering strains are singular-value stretches minus one; absolute strain includes compression. Percentiles weight original rest area, not face count. No stress, physical tolerance, inversion, settling, contact, mesh convergence or fit acceptance."
+      },
+      "tracked_triangles": [
+        {
+          "native_triangle": 1040,
+          "vertices": [
+            571,
+            492,
+            498
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1040
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.3932038909548659,
+          "minimum_stretch": 0.8190961832341579,
+          "maximum_extension": 0.39320389095486585,
+          "maximum_compression": 0.1809038167658421,
+          "maximum_absolute_principal_strain": 0.39320389095486585,
+          "area_ratio": 1.1411679895481086
+        },
+        {
+          "native_triangle": 1160,
+          "vertices": [
+            614,
+            615,
+            502
+          ],
+          "source": {
+            "part": "front",
+            "render_triangle": 1160
+          },
+          "rest_area_m2": 0.00020000000000000036,
+          "maximum_stretch": 1.0537555766713709,
+          "minimum_stretch": 0.5798538136607868,
+          "maximum_extension": 0.053755576671370875,
+          "maximum_compression": 0.4201461863392132,
+          "maximum_absolute_principal_strain": 0.4201461863392132,
+          "area_ratio": 0.611024189799216
+        },
+        {
+          "native_triangle": 3091,
+          "vertices": [
+            1639,
+            1640,
+            643
+          ],
+          "source": {
+            "part": "back",
+            "render_triangle": 1173
+          },
+          "rest_area_m2": 0.00010000000000000018,
+          "maximum_stretch": 1.2260254060834996,
+          "minimum_stretch": 0.7822163074859219,
+          "maximum_extension": 0.22602540608349964,
+          "maximum_compression": 0.21778369251407814,
+          "maximum_absolute_principal_strain": 0.22602540608349964,
+          "area_ratio": 0.9590170660305629
+        }
+      ],
+      "maximum_vertex_change_m": 4.7793334230631815e-08
+    }
+  },
+  "limits": [
+    "Stages are frozen geometric snapshots, not independent native trajectories or physical tolerances.",
+    "Edge-strain admission and principal face strain measure different quantities; the50% edge guard is not a principal-strain bound.",
+    "Clearance changes the peak location/type; stage differences do not isolate every final underarm-strain cause.",
+    "No rest geometry, body, mass source, stitch or shipping solver changes."
+  ]
+}
