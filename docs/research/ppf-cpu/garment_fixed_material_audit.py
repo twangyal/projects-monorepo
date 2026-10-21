@@ -28,7 +28,7 @@ HALF_STEP_PROFILES={
 HALF_STEP_SOURCE_SHA256={**LONG_SOURCE_SHA256,'garment_native_probe.py':'c94a54d879b552587912e1ee469b05a16946a5dacf1123362d9920af27701c8f','garment_native_export.py':'86a552a227f0cf030a57a4ab0bc823a46a7beedecf9de86dae322d73e2081cb9'}
 GRAVITY_PROFILES={'reference':('e454159aa9cb944a89207779af62f4e1f94daeb345328c50986c6b615e041b56',4,'soft',12320408685),'zero':('7e2a9222dd356d9a87f15ab450bd67a00cb0391b0ec43e24e048d69f4b8af381',4,'soft',12320089611)} # Retained official native artifacts only.
 GRAVITY_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '7495865e1e4426efb3c32bd1931559cb316472d00f680102b89196d8ae5bcc22', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}}
-PREPARATION_PROFILES={} # Register official retained outcomes only.
+PREPARATION_PROFILES={'reference':('d3fd9bc231e37c28d82c31010d6febeb5ae222c8947fd3d0cf2a6c6662675b51',4,'soft',12334591585),'smoothed':('f4f57d4305024e982d83eeca87fc0c5d2d5326db570345f35dde8547985aafe8',4,'soft',12334488202)} # Register official retained outcomes only.
 PREPARATION_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '6d07f481143a72dabdea744d6b2c27f348e5af2b2cc8512b766ca00235bcbc05', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc', 'garment_preparation.py': '108946f93504309692a2ff01e934cc9f9f1b3cee6a9547dae83016e86d3c7f7d'}}
 def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
  require(protocol in ['fixed-material','half-step','gravity','preparation'],'Unknown study protocol.')
