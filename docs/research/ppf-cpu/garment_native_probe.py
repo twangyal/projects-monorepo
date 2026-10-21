@@ -60,6 +60,10 @@ def gravity_settings(initialization,frames,mass_convention,unsewn_control,same_m
     if fixed_material!='soft' or half_step_study:raise ValueError('Gravity study requires fixed soft material and original timestep.')
     return half_step_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,environment)
 
+def preparation_settings(mode,initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,half_step_study,gravity_study,environment):
+    if mode not in ('reference','smoothed') or gravity_study is not None:raise ValueError('Preparation study requires a distinct declared reference or smoothed protocol.')
+    return gravity_settings(initialization,frames,mass_convention,unsewn_control,same_material_control,relaxation_study,fixed_material,half_step_study,environment)
+
 def requested_thread_settings(environment):
     names=['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','NUMEXPR_NUM_THREADS']
     values={name:environment.get(name) for name in names}
@@ -78,6 +82,7 @@ def main():
     parser.add_argument('--fixed-material-study',choices=list(CASES),help='Research only: one fixed material in a separate bounded three-second session.')
     parser.add_argument('--half-step-study',action='store_true',help='Research only: explicit fixed-material configured dt=1/240 sensitivity study.')
     parser.add_argument('--gravity-study',choices=['reference','zero'],help='Research only: normal or zero gravity with otherwise fixed soft-material controls.')
+    parser.add_argument('--preparation-study',choices=['reference','smoothed'],help='Research only: original or fixed smoothed clearance preparation, with normal gravity and fixed soft material.')
     args=parser.parse_args();upstream=args.upstream.resolve();out=args.out.resolve();cache=args.cache.resolve();out.mkdir(parents=True,exist_ok=True)
     if cache.exists() and any(cache.iterdir()):raise ValueError('Require an empty dedicated synthetic cache.')
     cache.mkdir(parents=True,exist_ok=True)
@@ -91,6 +96,7 @@ def main():
     if args.relaxation_study:execution_settings=relaxation_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,os.environ)
     if args.half_step_study:execution_settings=half_step_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,os.environ)
     if args.gravity_study is not None:execution_settings=gravity_settings(args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,args.half_step_study,os.environ)
+    if args.preparation_study is not None:execution_settings=preparation_settings(args.preparation_study,args.initialization,args.frames,args.mass_convention,args.unsewn_control,args.same_material_control,args.relaxation_study,args.fixed_material_study,args.half_step_study,args.gravity_study,os.environ)
     inputs=load_inputs(Path(__file__).with_name('results'))
     original_inputs=inputs
     controls=experiment_controls(args.initialization,args.unsewn_control)
@@ -101,15 +107,22 @@ def main():
         inputs,warm_parameters=prepare_warm_start(original_inputs,load_warm_start(Path(__file__).with_name('results')),Path(__file__).with_name('results'))
         if args.initialization=='clear-warm-sewing':
             body=json.loads(gzip.decompress(Path(__file__).with_name('results').joinpath('garment-first.json.gz').read_bytes()))['packet']['body']
-            inputs,clear_parameters=outward_preparation(inputs,body)
+            if args.preparation_study is not None:
+                from garment_preparation import outward
+                inputs,clear_parameters=outward(inputs,body,args.preparation_study)
+            else:inputs,clear_parameters=outward_preparation(inputs,body)
         inputs,layout=sewing_layout(inputs)
         if args.initialization=='clear-warm-sewing':
             clear_parameters['surface_admission']=surface_clearance(inputs,REQUIRED_CLEARANCE_M)
             if clear_parameters['surface_admission']['violations']:raise ValueError('Prepared cloth/body surface is not barrier-clear.')
     if args.mass_convention=='browser-inertia':inputs,mass_mapping=match_browser_inertia(original_inputs,inputs,Path(__file__).with_name('results'))
     receipt={'schema':1,'experiment':'actual-garment-native-'+args.initialization+'-v1','status':'started','stage':'prepared','upstream_revision':revision,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-','cases':{},'source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in ['garment_native_probe.py','garment_native_inputs.py','garment_native_export.py','garment_native_initialization.py','garment_sewing_layout.py','garment_mass.py','garment_warm_start.py','garment_clearance.py','garment_admission.py']},'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':body_offset,'initialization':args.initialization,'session_parameters':session_parameters,'case_normalized_young':cases,'scope':'Declared initialization experiment; no intersection allowances/contact disabling, no physical-material or settling acceptance.'}
+    if args.preparation_study is not None:
+        receipt['source_sha256']['garment_preparation.py']=hashlib.sha256(Path(__file__).with_name('garment_preparation.py').read_bytes()).hexdigest()
     if args.fixed_material_study is not None:
         receipt.update(experiment=receipt['experiment']+'-fixed-material-study',fixed_material_study=args.fixed_material_study,execution_settings=execution_settings,scope='Separate bounded three-second fixed-material session; not completion of the original serial pair, sustained settling, calibrated fabric, physical fit or backend adoption acceptance.')
+    if args.preparation_study is not None:
+        receipt.update(experiment=receipt['experiment']+'-preparation-study',preparation_study=args.preparation_study,scope='Declared startup-geometry control with original rest, captured inertia, body, contact and stitches; not settling, calibrated fabric or fit acceptance.')
     if args.half_step_study:
         receipt.update(experiment=receipt['experiment']+'-half-step-study',half_step_study=True,scope='Configured dt1/240 fixed-material sensitivity only; not timestep/mesh convergence, stress, physical fit or backend adoption acceptance.')
     if args.gravity_study is not None:
