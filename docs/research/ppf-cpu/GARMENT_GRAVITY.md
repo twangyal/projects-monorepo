@@ -6,4 +6,6 @@ The paired workflow retains all inputs, logs and frames after success, failure o
 
 Question: is gravity necessary for the observed underarm strain in this fixture/protocol? Persistence at zero gravity would show that weight is not necessary here; it would not distinguish construction, bending, contact or the prepared pose. One pair cannot establish physical accuracy, fit, settling, representative coverage or engine adoption. No shipping solver changes.
 
+Replay also evaluates principal strain at saved frames0,1,6,18,60,120,180 (0 through3seconds); these are discrete observations, not continuous-time extrema.
+
 Results: pending native evidence. Do not substitute a synthetic trajectory or count workflow success alone as native completion.

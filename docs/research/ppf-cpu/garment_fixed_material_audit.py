@@ -135,7 +135,8 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
 
   if gravity:
    from garment_principal_strain import principal_strain
-   diagnostics[name]['principal_strain']=principal_strain(inputs,frames[name][-1])
+   diagnostics[name]['principal_strain_checkpoints']=[{'frame':i,'time_seconds':i/60,'principal_strain':principal_strain(inputs,frames[name][i])} for i in [0,1,6,18,60,120,180]]
+   diagnostics[name]['principal_strain']=diagnostics[name]['principal_strain_checkpoints'][-1]['principal_strain']
    result.update(protocol='gravity',gravity_study=profile,gravity_m_per_s2=session['gravity'])
    result['limits'].append('Gravity-only diagnostic on one prepared fixture; does not isolate construction, bending, contact or initialization causes.')
   if half:

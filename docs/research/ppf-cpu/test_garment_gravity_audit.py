@@ -25,6 +25,10 @@ class GravityAdmission(unittest.TestCase):
    self.assertEqual(result['gravity_study'],mode)
    self.assertEqual(result['case']['raw_frames'],181)
    self.assertIn('principal_strain',result['case'])
+   checkpoints=result['case']['principal_strain_checkpoints']
+   self.assertEqual([r['frame'] for r in checkpoints],[0,1,6,18,60,120,180])
+   self.assertEqual(checkpoints[-1]['principal_strain'],result['case']['principal_strain'])
+   self.assertEqual([r['time_seconds'] for r in checkpoints],[i/60 for i in [0,1,6,18,60,120,180]])
  def test_resigned_mutations_refuse(self):
   for mutation in ['flag','gravity','dt','contact','source','export']:
    f,r=self.files('zero');r=json.loads(json.dumps(r))
