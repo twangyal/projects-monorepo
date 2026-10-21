@@ -28,6 +28,14 @@ Select a note and choose **Join next matching note**. It must have exactly one t
 
 The joined note has one attack, filter evolution and release, with one set of echo copies. This deliberately changes articulation. Apply or discard editor drafts first. One Undo restores both notes, and complete backups, autosave, MIDI and WAV retain the joined result ([#191](https://github.com/twangyal/projects-monorepo/issues/191)).
 
+## Build a chord from a melody note (#299)
+
+Select a melodic piano-roll note and open **Notes → Build a chord**. Choose **Major**, **Minor**, **Suspended 2** or **Suspended 4**, then **Add chord tones**. Two ordinary editable notes are added above the selected root, with the same exact start, duration and velocity. The root and all other voices, sound settings, automation and reference recordings remain unchanged. Edit the added notes individually to refine the voicing.
+
+Major uses a major third and perfect fifth; Minor a minor third and perfect fifth; the suspended choices use a second or fourth instead of the third. This is an explicit interval tool, without key detection, learned harmony, octave inversion or automatic voice leading. Drum tracks refuse. If a target tone already overlaps the root’s time interval, the chord exceeds C7, or the track has insufficient space below its 256-note limit, the whole action refuses. Existing tones are never silently doubled, removed or skipped.
+
+Finish unapplied editor drafts, gestures and suggestions first. The quality choice is a session-only parameter retained across navigation; choosing it does not edit notes. A successful chord is one Undo/Redo/autosave edit, retained in complete backups, saved compositions, MIDI and synthesized playback/WAV. Physical listening and musician-quality evaluation remain unverified. [Integration evidence](../../docs/2026-10-21-melody-chord-construction.md).
+
 ## Run locally
 
 Use Node.js **22.18 or newer** and npm:

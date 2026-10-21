@@ -57,6 +57,8 @@ Optional editable eight-harmonic tones (#215) now override the fixed waveform th
 
 Milestone #298 adds contextual per-track signed pan curves to Melody’s existing Sound and shared stereo-rendering workflow: explicit Apply/Discard, linear/held song-time positions, static-pan bypass, complete history/recovery and actual stereo WAV/section/stem output. Reverb remains a mono pre-pan send and both MIDI exports omit this automation. This advances creative mixing control; the full DAW destination and real musician evaluation remain unfinished. Melody stays ACTIVE. Verification: [integration record](docs/2026-10-21-melody-pan-automation.md).
 
+Milestone #299 adds explicit selected-note Major/Minor/Suspended 2/Suspended 4 chord construction in Melody’s contextual Notes tools. Two ordinary editable tones retain root timing/velocity and complete history/reference data; duplicate overlapping tones, range/capacity problems and unapplied drafts refuse atomically. Real MIDI/WAV and recovery verification are tracked in [the integration record](docs/2026-10-21-melody-chord-construction.md). This is authored interval composition, not learned harmony; Melody remains ACTIVE against the full DAW destination.
+
 ## 4. Git blame agent
 
 Path: apps/git-history
