@@ -10,6 +10,8 @@ Only `param/tri-bend.bin` may differ between paired native inputs. All other arr
 
 The source investigation found both4480cloth friction entries and39144static-body friction entries in the retained preparation reference are already0. A zero-friction study would duplicate that baseline; it is not being launched. `air_friction` in session metadata is a separate control, and session air density remains0.
 
+The pinned [hinge-stiffness kernel](https://github.com/st-tech/ppf-contact-solver/blob/6b30976f86e6b94d68d459e5237d59704c7d1384/crates/ppf-cts-solver/src/kernels/energy/model/shell_bend_stiffness.kernel.cpp) uses the scalar isotropic/directional coefficient in both the elastic block and its stiffness-proportional lagged Rayleigh damping block. With directional overrides already0, setting bend0 removes that shared stiffness scale; it does not independently isolate elastic stiffness from proportional damping. All exported damping controls remain unchanged. This is a normalized constitutive-block sensitivity experiment, not a measured flexural rigidity comparison.
+
 ## Admission and reporting
 
 Strict replay will verify official archive digests, complete manifests, pinned source/patch/environment, exact original/prepared blueprints, native parameters, all finite raw frames/times, completion and cleanup. It will report principal strain at saved frames0/1/6/18/60/120/180, final edge strain/seam gaps, saved-motion windows and endpoint surface queries, plus every saved-coordinate difference across the pair. A timeout or admission failure remains incomplete evidence rather than a completed garment experiment.

@@ -30,15 +30,18 @@ GRAVITY_PROFILES={'reference':('e454159aa9cb944a89207779af62f4e1f94daeb345328c50
 GRAVITY_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '7495865e1e4426efb3c32bd1931559cb316472d00f680102b89196d8ae5bcc22', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}}
 PREPARATION_PROFILES={'reference':('d3fd9bc231e37c28d82c31010d6febeb5ae222c8947fd3d0cf2a6c6662675b51',4,'soft',12334591585),'smoothed':('f4f57d4305024e982d83eeca87fc0c5d2d5326db570345f35dde8547985aafe8',4,'soft',12334488202)} # Register official retained outcomes only.
 PREPARATION_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '6d07f481143a72dabdea744d6b2c27f348e5af2b2cc8512b766ca00235bcbc05', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc', 'garment_preparation.py': '108946f93504309692a2ff01e934cc9f9f1b3cee6a9547dae83016e86d3c7f7d'}}
+BENDING_PROFILES={} # Register complete official native outcomes only.
+BENDING_SOURCE_SHA256={**LONG_SOURCE_SHA256,'garment_native_probe.py':'37fc531536c7f001fb5920baddeea6f8881a49411cc5b302b533d3281992cf07','garment_native_export.py':'7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}
 def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
- require(protocol in ['fixed-material','half-step','gravity','preparation'],'Unknown study protocol.')
- half=protocol=='half-step';gravity=protocol=='gravity';preparation=protocol=='preparation';registry=PREPARATION_PROFILES if preparation else GRAVITY_PROFILES if gravity else HALF_STEP_PROFILES if half else PROFILES
+ require(protocol in ['fixed-material','half-step','gravity','preparation','bending'],'Unknown study protocol.')
+ half=protocol=='half-step';gravity=protocol=='gravity';preparation=protocol=='preparation';bending=protocol=='bending';registry=BENDING_PROFILES if bending else PREPARATION_PROFILES if preparation else GRAVITY_PROFILES if gravity else HALF_STEP_PROFILES if half else PROFILES
  require(profile in registry,'Unknown fixed-material profile.')
  archive_hash,threads,name,artifact_id=registry[profile]
  if half:require(threads==4,'Half-step requires requested-four environment.')
  if gravity:require(threads==4 and name=='soft' and profile in ('reference','zero'),'Gravity protocol requires declared fixed soft requested-four controls.')
  if preparation:require(threads==4 and name=='soft' and profile in ('reference','smoothed'),'Preparation requires declared fixed soft requested-four controls.')
- sources=PREPARATION_SOURCE_SHA256 if preparation else GRAVITY_SOURCE_SHA256 if gravity else HALF_STEP_SOURCE_SHA256 if half else SOURCE_SHA256;frame_count=181;session={**SESSION,'frames':180,**({'dt':1/240} if half else {}),**({'gravity':[0.,0.,0.]} if gravity and profile=='zero' else {})};cases={name:CASES[name]}
+ if bending:require(threads==4 and name=='soft' and profile in ('reference','zero'),'Bending requires declared fixed soft requested-four controls.')
+ sources=BENDING_SOURCE_SHA256 if bending else PREPARATION_SOURCE_SHA256 if preparation else GRAVITY_SOURCE_SHA256 if gravity else HALF_STEP_SOURCE_SHA256 if half else SOURCE_SHA256;frame_count=181;session={**SESSION,'frames':180,**({'dt':1/240} if half else {}),**({'gravity':[0.,0.,0.]} if gravity and profile=='zero' else {})};cases={name:CASES[name]}
  outcome={'status':'passed_garment_motion_probe','counts':{name:181},'completed':[name]}
  variables={key:str(threads) for key in THREAD_VARIABLES}
  settings={'requested_threads':threads,'variables':variables,'scope':'Requested inherited environment, not a measurement of actual native worker counts.'}
@@ -52,6 +55,8 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   from garment_mesh_patch_evidence import verify_research_patch
   patch=verify_research_patch(z)
   r=json.loads(z.read('receipt.json'));paths=verify_manifest(z,r)
+  if bending:require(r.get('bending_study')==profile,'Changed explicit bending mode.')
+  else:require('bending_study' not in r,'Unexpected bending flag.')
   if preparation:require(r.get('preparation_study')==profile,'Changed explicit preparation mode.')
   else:require('preparation_study' not in r,'Unexpected preparation flag.')
   if gravity:require(r.get('gravity_study')==profile,'Changed explicit gravity mode.')
@@ -63,8 +68,8 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   require(r.get('fixed_material_study')==name and r.get('execution_settings')==settings,'Changed fixed-material settings.')
   require(json.loads(gzip.decompress(z.read('native-blueprint-original.json.gz')))==original,'Changed original blueprint.')
   require(json.loads(gzip.decompress(z.read('native-blueprint.json.gz')))==inputs,'Changed cleared blueprint.')
-  controls={**OBJECT,'contact-offset':CLOTH_OFFSET_M}
-  expected={'experiment':'actual-garment-native-clear-warm-sewing-v1-fixed-material-study'+('-preparation-study' if preparation else '-gravity-study' if gravity else '-half-step-study' if half else ''),'upstream_revision':REVISION,'source_sha256':sources,'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':BODY_OFFSET_M,'initialization':'clear-warm-sewing','initialization_parameters':layout,'warm_start_parameters':wp,'clearance_preparation':cp,'mass_convention':'browser-inertia','mass_parameters':mass,'session_parameters':session,'case_normalized_young':cases,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-'}
+  controls={**OBJECT,'contact-offset':CLOTH_OFFSET_M,**({'bend':0.} if bending and profile=='zero' else {})}
+  expected={'experiment':'actual-garment-native-clear-warm-sewing-v1-fixed-material-study'+('-bending-study' if bending else '-preparation-study' if preparation else '-gravity-study' if gravity else '-half-step-study' if half else ''),'upstream_revision':REVISION,'source_sha256':sources,'source_artifact_sha256':inputs['source_artifact_sha256'],'object_parameters':controls,'body_contact_offset_m':BODY_OFFSET_M,'initialization':'clear-warm-sewing','initialization_parameters':layout,'warm_start_parameters':wp,'clearance_preparation':cp,'mass_convention':'browser-inertia','mass_parameters':mass,'session_parameters':session,'case_normalized_young':cases,'frames_per_case':frame_count,'case_names':list(cases),'case_session_prefix':'cpu-garment-'}
   for k,v in expected.items():require(r.get(k)==v,'Changed cleared receipt '+k)
   require(z.read('upstream-revision.txt').decode().strip()==REVISION and not z.read('upstream-initial-status.txt').strip(),'Changed/dirty upstream source.')
   require('Exit status: 0' in z.read('build-resources.txt').decode(),'Native build did not pass.')
@@ -116,7 +121,10 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
    prefix=f'native-cache/sessions/cpu-garment-{name}/session/'
    with zipfile.ZipFile(io.BytesIO(reference_raw)) as ref:
     reference_bins={n[len(prefix+'bin/'):]:ref.read(n) for n in ref.namelist() if n.startswith(prefix+'bin/')}
-    if preparation and profile=='smoothed':
+    if bending and profile=='zero':
+     require(set(reference_bins)==set(bins[name]),'Changed bending binary namespace.')
+     require({k for k in bins[name] if bins[name][k]!=reference_bins[k]}=={'param/tri-bend.bin'},'Bending changed physical inputs beyond the declared coefficient.')
+    elif preparation and profile=='smoothed':
      require(set(reference_bins)==set(bins[name]),'Changed preparation binary namespace.')
      require({k for k in bins[name] if bins[name][k]!=reference_bins[k]}=={'vert.bin','param/tri-density.bin'},'Preparation changed physical inputs beyond initial geometry and captured-mass coefficients.')
     else:require(reference_bins==bins[name],'Fixed session changed native physical inputs.')
@@ -145,13 +153,14 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   diagnostics[name]['construction']=construction_diagnostics(inputs,frames[name][-1])
   result={'archive_sha256':digest,'archive_bytes':len(raw),'artifact_id':artifact_id,'fixed_material':name,'normalized_young':cases[name],'native_outcome':r['status'],'fixed_material_bounded_motion_complete':True,'original_timed_out_serial_pair_completed':False,'native_files_verified':len(paths),'research_patch':patch,'requested_execution_settings':settings,'host':host,'case':diagnostics[name],'raw_frame_sha256':raw_hashes,'duration_reference_comparisons':comparisons,'supervisor':supervisor,'limits':['Separate300-second budget per fixed material, not completion within the original serial-pair budget.','One session per material/environment does not establish population determinism or causal thread effects.','Normalized coefficient is not calibrated physical fabric.','Saved endpoints/secants do not establish continuous-time contact, instantaneous velocity, sustained settling, physical fit or engine adoption.']}
 
-  if preparation or gravity:
+  if preparation or gravity or bending:
    from garment_principal_strain import principal_strain
    diagnostics[name]['principal_strain_checkpoints']=[{'frame':i,'time_seconds':i/60,'principal_strain':principal_strain(inputs,frames[name][i])} for i in [0,1,6,18,60,120,180]]
    diagnostics[name]['principal_strain']=diagnostics[name]['principal_strain_checkpoints'][-1]['principal_strain']
-   if preparation:result.update(protocol='preparation',preparation_study=profile)
+   if bending:result.update(protocol='bending',bending_study=profile,normalized_bend=controls['bend'])
+   elif preparation:result.update(protocol='preparation',preparation_study=profile)
    else:result.update(protocol='gravity',gravity_study=profile,gravity_m_per_s2=session['gravity'])
-   result['limits'].append('Startup-preparation diagnostic only; no causal construction, calibrated fabric or physical-fit acceptance.' if preparation else 'Gravity-only diagnostic on one prepared fixture; does not isolate construction, bending, contact or initialization causes.')
+   result['limits'].append('Bending-only isolation control; zero bending is not calibrated fabric, a construction fix or physical-fit acceptance.' if bending else 'Startup-preparation diagnostic only; no causal construction, calibrated fabric or physical-fit acceptance.' if preparation else 'Gravity-only diagnostic on one prepared fixture; does not isolate construction, bending, contact or initialization causes.')
   if half:
    from garment_principal_strain import principal_strain
    diagnostics[name]['principal_strain']=principal_strain(inputs,frames[name][-1])
@@ -160,4 +169,4 @@ def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
   return result
 
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--protocol',choices=['fixed-material','half-step','gravity','preparation'],default='fixed-material');p.add_argument('--profile',choices=sorted(set(PROFILES)|set(HALF_STEP_PROFILES)|set(GRAVITY_PROFILES)|set(PREPARATION_PROFILES)),required=True);a=p.parse_args();print(json.dumps(audit(a.archive,profile=a.profile,protocol=a.protocol),indent=2,allow_nan=False))
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);p.add_argument('--protocol',choices=['fixed-material','half-step','gravity','preparation','bending'],default='fixed-material');p.add_argument('--profile',choices=sorted(set(PROFILES)|set(HALF_STEP_PROFILES)|set(GRAVITY_PROFILES)|set(PREPARATION_PROFILES)|set(BENDING_PROFILES)),required=True);a=p.parse_args();print(json.dumps(audit(a.archive,profile=a.profile,protocol=a.protocol),indent=2,allow_nan=False))
