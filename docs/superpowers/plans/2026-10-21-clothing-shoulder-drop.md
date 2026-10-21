@@ -44,6 +44,6 @@ Consumes retained cold/warm envelopes; produces strict current-source provenance
 ### Finish
 
 - [x] Independent read-only whole-branch review; fix material findings with regression tests.
-- [ ] Commit durable progress; README/roadmap and integration evidence; integrate source and verify CI before closure.
+- [x] Commit durable progress; README/roadmap and integration evidence; integrate source and verify CI before closure.
 
-Verification ledger:166 app units/check pass;4 focused native cases pass; source CI all213 native cases pass; local163-case garment preflight passes787.839s; frozen/current cold/warm checks pass; independent review has no findings. Source hosted preflight39660091324 passes163 cases in511.006s and every provenance/reproduction step. Source app39660091374 passes166 units/all213 browsers. Canonical-main verification remains pending.
+Verification ledger:166 app units/check pass;4 focused native cases pass; source CI all213 native cases pass; local163-case garment preflight passes787.839s; frozen/current cold/warm checks pass; independent review has no findings. Source hosted preflight39660091324 passes163 cases in511.006s and every provenance/reproduction step. Source app39660091374 passes166 units/all213 browsers. Canonical main268e1da passes166 units/all213 browsers,163 garment checks and220 research cases. The extra local full replay is211 passes/2 timeouts; both named cases pass unchanged in isolated replay. See the integration record for exact evidence; no failure is erased or called a green full local suite.
