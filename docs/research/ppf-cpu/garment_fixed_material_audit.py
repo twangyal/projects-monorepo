@@ -26,7 +26,7 @@ HALF_STEP_PROFILES={
  'four-stiff':('03fc96f2c89c7d9fa6de056976ba919b3b2797a47c4cb2759037b04c5f183032',4,'stiff',12222529007),
 }
 HALF_STEP_SOURCE_SHA256={**LONG_SOURCE_SHA256,'garment_native_probe.py':'c94a54d879b552587912e1ee469b05a16946a5dacf1123362d9920af27701c8f','garment_native_export.py':'86a552a227f0cf030a57a4ab0bc823a46a7beedecf9de86dae322d73e2081cb9'}
-GRAVITY_PROFILES={} # Register only retained official native artifacts.
+GRAVITY_PROFILES={'reference':('e454159aa9cb944a89207779af62f4e1f94daeb345328c50986c6b615e041b56',4,'soft',12320408685),'zero':('7e2a9222dd356d9a87f15ab450bd67a00cb0391b0ec43e24e048d69f4b8af381',4,'soft',12320089611)} # Retained official native artifacts only.
 GRAVITY_SOURCE_SHA256={**LONG_SOURCE_SHA256,**{'garment_native_probe.py': '7495865e1e4426efb3c32bd1931559cb316472d00f680102b89196d8ae5bcc22', 'garment_native_export.py': '7ba442a049ffda77eaa8f8e23dde0e356d2961d7d544621e2d575b4e5b76dccc'}}
 def audit(path,verify_archive_hash=True,profile=None,protocol='fixed-material'):
  require(protocol in ['fixed-material','half-step','gravity'],'Unknown study protocol.')
