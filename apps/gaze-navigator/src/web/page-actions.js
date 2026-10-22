@@ -255,6 +255,38 @@ export function selectOption(element, optionIndex, snapshot) {
     retained() ? { ok: true, message: `${intended.label.trim()} selected.` } : changed()) };
 }
 
+/** Change exactly one native multi-select choice against the captured selection graph. */
+export function setMultipleOption(element, optionIndex, selected, snapshot) {
+  const refuse = message => ({ ok: false, message });
+  const available = () => element.tagName === 'SELECT' && element.isConnected && element.multiple && !element.readOnly && unlocked(element);
+  if (!available() || typeof selected !== 'boolean' || !snapshot?.multiple || !Number.isInteger(optionIndex) || optionIndex < 0 || !snapshot.options?.[optionIndex]) {
+    return refuse('This command needs an available native multiple-selection list.');
+  }
+  const intended = snapshot.options[optionIndex];
+  const matches = (after = false) => {
+    if (!available() || !Array.isArray(snapshot.frames) || !snapshot.frames.every(frame => frame.element.isConnected && frame.element.contentDocument === frame.document)) return false;
+    const current = captureSelectSnapshot(element);
+    const expectedIndex = after ? snapshot.options.findIndex((option, index) => index === optionIndex ? selected : option.selected) : snapshot.selectedIndex;
+    return current.frames.length === snapshot.frames.length && current.frames.every((frame, i) => frame.element === snapshot.frames[i].element && frame.document === snapshot.frames[i].document) &&
+      ['document', 'name', 'role', 'multiple'].every(key => current[key] === snapshot[key]) && current.selectedIndex === expectedIndex &&
+      current.options.length === snapshot.options.length && current.options.every((option, index) =>
+        Object.keys(option).every(key => option[key] === (after && index === optionIndex && key === 'selected' ? selected : snapshot.options[index][key])));
+  };
+  if (!matches() || intended.disabled || intended.groupDisabled) return refuse('The list, option or selection changed or is unavailable. Look at it and choose again.');
+  if (intended.selected === selected) return { ok: true, message: `${intended.label.trim()} is already ${selected ? 'selected' : 'not selected'}.` };
+  element.focus({ preventScroll: true });
+  if (!ownsFocus(element) || !matches()) return refuse('The list changed while focusing it. Look at it and choose again.');
+  const changed = () => refuse('The website did not retain the requested selection and other choices. Check the list before continuing.');
+  const view = element.ownerDocument.defaultView;
+  Object.getOwnPropertyDescriptor(view.HTMLOptionElement.prototype, 'selected').set.call(intended.element, selected);
+  if (!matches(true)) return changed();
+  element.dispatchEvent(new view.Event('input', { bubbles: true, composed: true }));
+  if (!matches(true)) return changed();
+  element.dispatchEvent(new view.Event('change', { bubbles: true }));
+  return { message: 'Checking the requested list selection…', followUp: new Promise(resolve => globalThis.setTimeout(resolve, 0)).then(() =>
+    matches(true) ? { ok: true, message: `${intended.label.trim()} ${selected ? 'added to' : 'removed from'} the selection.` } : changed()) };
+}
+
 export function submit(element) {
   const form = element.form ?? element.closest('form');
   if (form) {

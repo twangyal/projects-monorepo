@@ -44,7 +44,7 @@ export function createController({ window, actions = pageActions, interpret = in
       if (problem) return problem;
       if (confirmable(action, target)) {
         pending = { kind: 'confirm', action, context, expiresAt: now() + confirmMs };
-        const label = action.type === 'select-option' ? `${action.optionName} from ${target.name || target.role}` : target.name || target.role;
+        const label = action.type === 'select-option' ? `${action.selected === true ? 'Add ' : action.selected === false ? 'Remove ' : ''}${action.optionName} ${action.selected === true ? 'to' : 'from'} ${target.name || target.role}` : target.name || target.role;
         return reply(`"${label}" may have consequences. Say confirm to continue, or cancel.`, 'question');
       }
     }
@@ -69,7 +69,9 @@ export function createController({ window, actions = pageActions, interpret = in
       case 'activate': result = actions.activate(element, target.name, { preserveFocus: Boolean(context.preserveFocus) }); break;
       case 'submit': result = actions.submit(element); break;
       case 'select-text': result = actions.selectText(element, action.position, { text: action.text, occurrence: action.occurrence }); break;
-      case 'select-option': result = actions.selectOption(element, action.optionIndex, target.selectSnapshot); break;
+      case 'select-option': result = typeof action.selected === 'boolean'
+        ? actions.setMultipleOption(element, action.optionIndex, action.selected, target.selectSnapshot)
+        : actions.selectOption(element, action.optionIndex, target.selectSnapshot); break;
       case 'search': {
         remember(element);
         actions.writeValue(element, action.text);

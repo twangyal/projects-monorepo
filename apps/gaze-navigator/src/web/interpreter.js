@@ -160,11 +160,11 @@ function ordinal(word, rest, elements, act) {
 }
 
 // A value from a dropdown in the circle: unique strong option names act, close ones ask.
-function selectOption(optionQuery, selects) {
+function selectOption(optionQuery, selects, selected) {
   const options = selects.flatMap(element => element.options.map((name, optionIndex) => ({ ...element, name, optionIndex, selectId: element.id })));
   const ranked = rank(optionQuery, options);
   if (!ranked.length) return null;
-  const pick = option => ({ type: 'select-option', targetId: option.selectId, optionIndex: option.optionIndex, optionName: option.name });
+  const pick = option => ({ type: 'select-option', targetId: option.selectId, optionIndex: option.optionIndex, optionName: option.name, ...(typeof selected === 'boolean' ? { selected } : {}) });
   const close = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN).map(entry => entry.element);
   if (close.length === 1 && ranked[0].score >= 0.9) return pick(close[0]);
   if (close.length > 1) {
@@ -222,6 +222,22 @@ export function interpret(utterance, context = { elements: [] }) {
     /^(?:scroll|go|jump) to (?:the )?(top|bottom)(?: of the page)?$/.exec(text);
   if (scroll) {
     return { type: 'scroll', direction: scroll[1] ?? 'down', amount: /bit|little|slightly/.test(scroll[2] ?? '') ? 'small' : 'page' };
+  }
+
+  // Explicit add/remove never replaces the other choices in a native multi-select.
+  const multiple = /^(add|remove) option\s+("[^"]+"|“[^”]+”|.+?)(?:\s+(to|from)\s+(?:the\s+)?(.+))?$/i.exec(command);
+  if (multiple) {
+    const [, verb, option, preposition, name] = multiple;
+    if (preposition && preposition.toLowerCase() !== (verb.toLowerCase() === 'add' ? 'to' : 'from')) {
+      return { type: 'unknown', message: 'Say “add option” with “to”, or “remove option” with “from”.' };
+    }
+    let lists = context.elements.filter(element => element.options?.length && element.selectSnapshot?.multiple === true);
+    if (name) {
+      const ranked = rank(unquote(name), lists);
+      lists = ranked.filter(entry => entry.score >= ranked[0].score - MARGIN).map(entry => entry.element);
+    }
+    return selectOption(unquote(option), lists, verb.toLowerCase() === 'add') ??
+      { type: 'unknown', message: 'No matching option in a native multiple-selection list is inside the gaze circle.' };
   }
 
   // Text editing keeps the user's original wording, capitalization and punctuation.

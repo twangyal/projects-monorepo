@@ -56,7 +56,13 @@ Discovery reaches controls inside open shadow roots (web components) and same-or
 
 ### Choosing native dropdown options (#293)
 
-“Choose Hardcover from Format” retains the captured native option through clarification and focus. Locked/disabled selects or optgroups, stale/reordered/replaced options and focus changes refuse. An already selected choice sends no events. A real change sends native selection plus input/change and checks the website’s retained state after handlers/microtasks; newer commands retire old feedback. Consequential control or choice labels require confirmation naming the option and dropdown. Multi-selects refuse without clearing existing selections; custom ARIA comboboxes remain unsupported by this command. [Verification and boundaries](docs/2026-10-20-native-dropdowns.md) distinguish software checks from physical speech/gaze acceptance.
+“Choose Hardcover from Format” retains the captured native option through clarification and focus. Locked/disabled selects or optgroups, stale/reordered/replaced options and focus changes refuse. An already selected choice sends no events. A real change sends native selection plus input/change and checks the website’s retained state after handlers/microtasks; newer commands retire old feedback. Consequential control or choice labels require confirmation naming the option and dropdown. Implicit multi-select choices refuse without clearing existing selections; use the explicit add/remove commands below. Custom ARIA comboboxes remain unsupported by this command. [Verification and boundaries](docs/2026-10-20-native-dropdowns.md) distinguish software checks from physical speech/gaze acceptance.
+
+### Add or remove one choice in a native multi-select (#304)
+
+Say **“add option Jazz to Genres”** or **“remove option Jazz from Genres”** while the list is in the gaze circle. You can omit the list name when the visible choice is unambiguous. The same commands work in the typed instruction box and with **Alt+Shift+G**. Duplicate options ask a numbered question; consequential list/option labels still require confirmation.
+
+Each command changes only that option and preserves the other selections. “Choose Jazz” keeps its single-choice meaning and refuses a multi-select. A repeated add/remove is a no-op. Captured list/option identities, labels, values, grouping and every selected state must still match after clarification and focus. Disabled/locked controls refuse; input/change handlers and their microtasks own the final state. If the site changes another choice, feedback asks you to check the list instead of claiming success or forcing rollback. Custom ARIA listboxes are not included. Physical gaze/speech-service quality remains unverified.
 
 ### Writable-field protection (#274)
 
