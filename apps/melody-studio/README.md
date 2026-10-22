@@ -28,6 +28,12 @@ Select a note and choose **Join next matching note**. It must have exactly one t
 
 The joined note has one attack, filter evolution and release, with one set of echo copies. This deliberately changes articulation. Apply or discard editor drafts first. One Undo restores both notes, and complete backups, autosave, MIDI and WAV retain the joined result ([#191](https://github.com/twangyal/projects-monorepo/issues/191)).
 
+## Roll chord attacks (#306)
+
+Select a note in a simultaneous melodic chord and open **Notes → Roll chord attacks**. Choose **Low to high** or **High to low** and attack spacing of **0.25**, **0.5** or **1 beat**, then **Roll chord notes**. All distinct pitches at the selected note's exact onset are ordered by pitch and delayed in sequence. Nearby attacks stay separate. The first voice retains the original onset; note IDs, pitches, durations and velocities are unchanged. Releases may overlap and the phrase may extend. This spreads the attacks once; it is not a repeating arpeggiator.
+
+The result is ordinary editable notes, retained in complete backups, autosave, MIDI and WAV, with one Undo/Redo step. Finish unapplied drafts and suggestions first. Single voices, duplicate pitches at the chord onset, drums, new overlaps with external same-pitch notes and results beyond the song boundary refuse atomically. Existing same-pitch intersections are preserved. Other tracks, sounds, automation and original reference recordings remain intact.
+
 ## Build a chord from a melody note (#299)
 
 Select a melodic piano-roll note and open **Notes → Build a chord**. Choose **Major**, **Minor**, **Suspended 2** or **Suspended 4**, then **Add chord tones**. Two ordinary editable notes are added above the selected root, with the same exact start, duration and velocity. The root and all other voices, sound settings, automation and reference recordings remain unchanged. Edit the added notes individually to refine the voicing.

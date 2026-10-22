@@ -10,7 +10,7 @@ const views = {
 } as const;
 export type WorkspaceView = keyof typeof views;
 const groups: Partial<Record<WorkspaceView, string>> = {
- capture: '.capture-card', sound: '.track-settings', notes: '#note-form, fieldset.note-editor',
+ capture: '.capture-card', sound: '.track-settings', notes: '#note-form, fieldset.note-editor, #chord-roll-panel',
  arrange: '.arrangement-tools, #continuation-panel, #track-timing, [aria-labelledby="section-heading"], [aria-labelledby="quantize-heading"], [aria-labelledby="phrase-pitch-heading"], [aria-labelledby="dynamics-heading"]',
  reference: '#reference-panel', project: '#composition-library, #midi-import, [aria-labelledby="save-heading"], footer',
 };
