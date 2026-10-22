@@ -1,0 +1,1146 @@
+{
+  "suites": [
+    {
+      "title": "backed-recording.spec.ts",
+      "file": "backed-recording.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11063,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:00:15.388Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-de47461b755450cb116d",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10867,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:00:26.947Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-3b29c5007d4419dc1c8e",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10717,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:00:38.390Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-3cfe2a3794043b100d05",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10878,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:00:49.616Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-30f119c50e67f2b09664",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10319,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:01:00.967Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-7103206b517da6888e6f",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8660,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m4\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m4\u001b[39m\n    at assertMicrophone (/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts:32:638)\n    at /workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording.spec.ts:28:1133",
+                    "location": {
+                      "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                      "column": 638,
+                      "line": 32
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mbacked-recording-fixtures.ts:32\n\n  30 | export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}\n  31 | export function assertBacking(samples:number[]){expect(samples).toHaveLength(66150);let largest=0;for(let i=0;i<samples.length;i++){let want=0;for(const [pitch,start]of[[48,0],[52,22050]]){const local=i-start;if(local<0||local>=23814)continue;const envelope=local<220.5?local/220.5:local<=22050?1:Math.max(0,1-(local-22050)/1764);want+=Math.sin(2*Math.PI*(440*2**((pitch-69)/12))*local/22050)*envelope*.25*.5*.4;}largest=Math.max(largest,Math.abs(samples[i]-want));}expect(largest).toBeLessThanOrEqual(5e-8);expect(samples.slice(45864).every(n=>n===0)).toBe(true);return largest;}\n> 32 | export function assertMicrophone(asset:OriginalAsset){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(asset.kind).toBe('microphone');expect(asset.captureTempo).toBe(240);expect(asset.frameCount).toBeGreaterThan(22050);expect(asset.frameCount).toBeLessThanOrEqual(441000);let power=0,crossings=0;const start=2205,end=Math.min(asset.frameCount-1,start+22050);for(let i=start;i<end;i++){const x=pcm.readInt16LE(i*2)/32768;power+=x*x;if(i>start&&pcm.readInt16LE((i-1)*2)<=0&&x>0)crossings++;}const rms=Math.sqrt(power/(end-start)),hz=crossings*22050/(end-start);expect(Math.abs(rms-.1768)).toBeLessThan(.015);expect(Math.abs(hz-440)).toBeLessThanOrEqual(2);return{rms,hz,frames:asset.frameCount,sha256:asset.sha256};}\n     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^\n  33 | export async function stored(page:Page){return page.evaluate(()=>new Promise<{row:unknown;assets:{id:string;sha256:string;bytes:number[]}[]}>((resolve,reject)=>{const req=indexedDB.open('melody-studio.projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction(['projects','assets'],'readonly'),row=tx.objectStore('projects').get('current'),assets=tx.objectStore('assets').getAll();tx.oncomplete=()=>{db.close();void Promise.all((assets.result as{id:string;sha256:string;pcm:Blob}[]).map(async asset=>({id:asset.id,sha256:asset.sha256,bytes:[...new Uint8Array(await asset.pcm.arrayBuffer())]}))).then(values=>resolve({row:row.result,assets:values}),reject);};tx.onabort=()=>{db.close();reject(tx.error);};};}));}\n  34 |\n  35 | export async function exportBytes(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native export unavailable');return readFile(path);}"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                        "column": 638,
+                        "line": 32
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m4\u001b[39m\n\n   at backed-recording-fixtures.ts:32\n\n  30 | export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}\n  31 | export function assertBacking(samples:number[]){expect(samples).toHaveLength(66150);let largest=0;for(let i=0;i<samples.length;i++){let want=0;for(const [pitch,start]of[[48,0],[52,22050]]){const local=i-start;if(local<0||local>=23814)continue;const envelope=local<220.5?local/220.5:local<=22050?1:Math.max(0,1-(local-22050)/1764);want+=Math.sin(2*Math.PI*(440*2**((pitch-69)/12))*local/22050)*envelope*.25*.5*.4;}largest=Math.max(largest,Math.abs(samples[i]-want));}expect(largest).toBeLessThanOrEqual(5e-8);expect(samples.slice(45864).every(n=>n===0)).toBe(true);return largest;}\n> 32 | export function assertMicrophone(asset:OriginalAsset){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(asset.kind).toBe('microphone');expect(asset.captureTempo).toBe(240);expect(asset.frameCount).toBeGreaterThan(22050);expect(asset.frameCount).toBeLessThanOrEqual(441000);let power=0,crossings=0;const start=2205,end=Math.min(asset.frameCount-1,start+22050);for(let i=start;i<end;i++){const x=pcm.readInt16LE(i*2)/32768;power+=x*x;if(i>start&&pcm.readInt16LE((i-1)*2)<=0&&x>0)crossings++;}const rms=Math.sqrt(power/(end-start)),hz=crossings*22050/(end-start);expect(Math.abs(rms-.1768)).toBeLessThan(.015);expect(Math.abs(hz-440)).toBeLessThanOrEqual(2);return{rms,hz,frames:asset.frameCount,sha256:asset.sha256};}\n     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^\n  33 | export async function stored(page:Page){return page.evaluate(()=>new Promise<{row:unknown;assets:{id:string;sha256:string;bytes:number[]}[]}>((resolve,reject)=>{const req=indexedDB.open('melody-studio.projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction(['projects','assets'],'readonly'),row=tx.objectStore('projects').get('current'),assets=tx.objectStore('assets').getAll();tx.oncomplete=()=>{db.close();void Promise.all((assets.result as{id:string;sha256:string;pcm:Blob}[]).map(async asset=>({id:asset.id,sha256:asset.sha256,bytes:[...new Uint8Array(await asset.pcm.arrayBuffer())]}))).then(values=>resolve({row:row.result,assets:values}),reject);};tx.onabort=()=>{db.close();reject(tx.error);};};}));}\n  34 |\n  35 | export async function exportBytes(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native export unavailable');return readFile(path);}\n    at assertMicrophone (/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts:32:638)\n    at /workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording.spec.ts:28:1133"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:01:11.774Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/test-results/backed-recording-selected--f49d4-s-all-other-reference-bytes-repeat5/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/test-results/backed-recording-selected--f49d4-s-all-other-reference-bytes-repeat5/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                    "column": 638,
+                    "line": 32
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-a17d2e6ada1f4b3eac03",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10513,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:01:21.481Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-bf76bc93308d4c78e186",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8502,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m4\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m4\u001b[39m\n    at assertMicrophone (/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts:32:638)\n    at /workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording.spec.ts:28:1133",
+                    "location": {
+                      "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                      "column": 638,
+                      "line": 32
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mbacked-recording-fixtures.ts:32\n\n  30 | export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}\n  31 | export function assertBacking(samples:number[]){expect(samples).toHaveLength(66150);let largest=0;for(let i=0;i<samples.length;i++){let want=0;for(const [pitch,start]of[[48,0],[52,22050]]){const local=i-start;if(local<0||local>=23814)continue;const envelope=local<220.5?local/220.5:local<=22050?1:Math.max(0,1-(local-22050)/1764);want+=Math.sin(2*Math.PI*(440*2**((pitch-69)/12))*local/22050)*envelope*.25*.5*.4;}largest=Math.max(largest,Math.abs(samples[i]-want));}expect(largest).toBeLessThanOrEqual(5e-8);expect(samples.slice(45864).every(n=>n===0)).toBe(true);return largest;}\n> 32 | export function assertMicrophone(asset:OriginalAsset){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(asset.kind).toBe('microphone');expect(asset.captureTempo).toBe(240);expect(asset.frameCount).toBeGreaterThan(22050);expect(asset.frameCount).toBeLessThanOrEqual(441000);let power=0,crossings=0;const start=2205,end=Math.min(asset.frameCount-1,start+22050);for(let i=start;i<end;i++){const x=pcm.readInt16LE(i*2)/32768;power+=x*x;if(i>start&&pcm.readInt16LE((i-1)*2)<=0&&x>0)crossings++;}const rms=Math.sqrt(power/(end-start)),hz=crossings*22050/(end-start);expect(Math.abs(rms-.1768)).toBeLessThan(.015);expect(Math.abs(hz-440)).toBeLessThanOrEqual(2);return{rms,hz,frames:asset.frameCount,sha256:asset.sha256};}\n     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^\n  33 | export async function stored(page:Page){return page.evaluate(()=>new Promise<{row:unknown;assets:{id:string;sha256:string;bytes:number[]}[]}>((resolve,reject)=>{const req=indexedDB.open('melody-studio.projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction(['projects','assets'],'readonly'),row=tx.objectStore('projects').get('current'),assets=tx.objectStore('assets').getAll();tx.oncomplete=()=>{db.close();void Promise.all((assets.result as{id:string;sha256:string;pcm:Blob}[]).map(async asset=>({id:asset.id,sha256:asset.sha256,bytes:[...new Uint8Array(await asset.pcm.arrayBuffer())]}))).then(values=>resolve({row:row.result,assets:values}),reject);};tx.onabort=()=>{db.close();reject(tx.error);};};}));}\n  34 |\n  35 | export async function exportBytes(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native export unavailable');return readFile(path);}"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                        "column": 638,
+                        "line": 32
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m4\u001b[39m\n\n   at backed-recording-fixtures.ts:32\n\n  30 | export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}\n  31 | export function assertBacking(samples:number[]){expect(samples).toHaveLength(66150);let largest=0;for(let i=0;i<samples.length;i++){let want=0;for(const [pitch,start]of[[48,0],[52,22050]]){const local=i-start;if(local<0||local>=23814)continue;const envelope=local<220.5?local/220.5:local<=22050?1:Math.max(0,1-(local-22050)/1764);want+=Math.sin(2*Math.PI*(440*2**((pitch-69)/12))*local/22050)*envelope*.25*.5*.4;}largest=Math.max(largest,Math.abs(samples[i]-want));}expect(largest).toBeLessThanOrEqual(5e-8);expect(samples.slice(45864).every(n=>n===0)).toBe(true);return largest;}\n> 32 | export function assertMicrophone(asset:OriginalAsset){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(asset.kind).toBe('microphone');expect(asset.captureTempo).toBe(240);expect(asset.frameCount).toBeGreaterThan(22050);expect(asset.frameCount).toBeLessThanOrEqual(441000);let power=0,crossings=0;const start=2205,end=Math.min(asset.frameCount-1,start+22050);for(let i=start;i<end;i++){const x=pcm.readInt16LE(i*2)/32768;power+=x*x;if(i>start&&pcm.readInt16LE((i-1)*2)<=0&&x>0)crossings++;}const rms=Math.sqrt(power/(end-start)),hz=crossings*22050/(end-start);expect(Math.abs(rms-.1768)).toBeLessThan(.015);expect(Math.abs(hz-440)).toBeLessThanOrEqual(2);return{rms,hz,frames:asset.frameCount,sha256:asset.sha256};}\n     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^\n  33 | export async function stored(page:Page){return page.evaluate(()=>new Promise<{row:unknown;assets:{id:string;sha256:string;bytes:number[]}[]}>((resolve,reject)=>{const req=indexedDB.open('melody-studio.projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction(['projects','assets'],'readonly'),row=tx.objectStore('projects').get('current'),assets=tx.objectStore('assets').getAll();tx.oncomplete=()=>{db.close();void Promise.all((assets.result as{id:string;sha256:string;pcm:Blob}[]).map(async asset=>({id:asset.id,sha256:asset.sha256,bytes:[...new Uint8Array(await asset.pcm.arrayBuffer())]}))).then(values=>resolve({row:row.result,assets:values}),reject);};tx.onabort=()=>{db.close();reject(tx.error);};};}));}\n  34 |\n  35 | export async function exportBytes(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native export unavailable');return readFile(path);}\n    at assertMicrophone (/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts:32:638)\n    at /workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording.spec.ts:28:1133"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:01:32.491Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/test-results/backed-recording-selected--f49d4-s-all-other-reference-bytes-repeat7/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/test-results/backed-recording-selected--f49d4-s-all-other-reference-bytes-repeat7/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                    "column": 638,
+                    "line": 32
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-c2e4ab828e02cc10601e",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10773,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:01:41.950Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-a89eaf3fa301ceaed866",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10981,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:01:53.203Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-c69ceb665b48593b06b1",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10026,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:02:04.656Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-d0ed621918b0bec9707f",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 11,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10584,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:02:15.223Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-86f26c642c1c64860e99",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 12,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10695,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:02:26.383Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-357425acf3c3296c24bc",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 13,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10065,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:02:37.600Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-85ce007e418c6d9bff9e",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10755,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:02:48.178Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-9df43928c00edc0b573f",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 15,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10826,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:02:59.419Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-69900a11fd73be66b276",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 16,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9817,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:03:10.712Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-c8b2f9b84eb123a9424e",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 17,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10437,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:03:21.106Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-05809bfb91a385927736",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 18,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10766,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:03:31.991Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-cdd2543aaf5ec74e2d0e",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 19,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10552,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:03:43.302Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-321fa573af46989d8572",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 20,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10493,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:03:54.440Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-3671f7932a01f953e8cf",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 21,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10329,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:04:05.410Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-6154ac6b0958023670c1",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 22,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 8653,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m5\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m5\u001b[39m\n    at assertMicrophone (/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts:32:638)\n    at /workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording.spec.ts:28:1133",
+                    "location": {
+                      "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                      "column": 638,
+                      "line": 32
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39mbacked-recording-fixtures.ts:32\n\n  30 | export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}\n  31 | export function assertBacking(samples:number[]){expect(samples).toHaveLength(66150);let largest=0;for(let i=0;i<samples.length;i++){let want=0;for(const [pitch,start]of[[48,0],[52,22050]]){const local=i-start;if(local<0||local>=23814)continue;const envelope=local<220.5?local/220.5:local<=22050?1:Math.max(0,1-(local-22050)/1764);want+=Math.sin(2*Math.PI*(440*2**((pitch-69)/12))*local/22050)*envelope*.25*.5*.4;}largest=Math.max(largest,Math.abs(samples[i]-want));}expect(largest).toBeLessThanOrEqual(5e-8);expect(samples.slice(45864).every(n=>n===0)).toBe(true);return largest;}\n> 32 | export function assertMicrophone(asset:OriginalAsset){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(asset.kind).toBe('microphone');expect(asset.captureTempo).toBe(240);expect(asset.frameCount).toBeGreaterThan(22050);expect(asset.frameCount).toBeLessThanOrEqual(441000);let power=0,crossings=0;const start=2205,end=Math.min(asset.frameCount-1,start+22050);for(let i=start;i<end;i++){const x=pcm.readInt16LE(i*2)/32768;power+=x*x;if(i>start&&pcm.readInt16LE((i-1)*2)<=0&&x>0)crossings++;}const rms=Math.sqrt(power/(end-start)),hz=crossings*22050/(end-start);expect(Math.abs(rms-.1768)).toBeLessThan(.015);expect(Math.abs(hz-440)).toBeLessThanOrEqual(2);return{rms,hz,frames:asset.frameCount,sha256:asset.sha256};}\n     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^\n  33 | export async function stored(page:Page){return page.evaluate(()=>new Promise<{row:unknown;assets:{id:string;sha256:string;bytes:number[]}[]}>((resolve,reject)=>{const req=indexedDB.open('melody-studio.projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction(['projects','assets'],'readonly'),row=tx.objectStore('projects').get('current'),assets=tx.objectStore('assets').getAll();tx.oncomplete=()=>{db.close();void Promise.all((assets.result as{id:string;sha256:string;pcm:Blob}[]).map(async asset=>({id:asset.id,sha256:asset.sha256,bytes:[...new Uint8Array(await asset.pcm.arrayBuffer())]}))).then(values=>resolve({row:row.result,assets:values}),reject);};tx.onabort=()=>{db.close();reject(tx.error);};};}));}\n  34 |\n  35 | export async function exportBytes(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native export unavailable');return readFile(path);}"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                        "column": 638,
+                        "line": 32
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m2\u001b[39m\nReceived:    \u001b[31m5\u001b[39m\n\n   at backed-recording-fixtures.ts:32\n\n  30 | export async function released(page:Page){await expect.poll(async()=>{const p=await probe(page);return p.stopped>0&&p.released;}).toBe(true);}\n  31 | export function assertBacking(samples:number[]){expect(samples).toHaveLength(66150);let largest=0;for(let i=0;i<samples.length;i++){let want=0;for(const [pitch,start]of[[48,0],[52,22050]]){const local=i-start;if(local<0||local>=23814)continue;const envelope=local<220.5?local/220.5:local<=22050?1:Math.max(0,1-(local-22050)/1764);want+=Math.sin(2*Math.PI*(440*2**((pitch-69)/12))*local/22050)*envelope*.25*.5*.4;}largest=Math.max(largest,Math.abs(samples[i]-want));}expect(largest).toBeLessThanOrEqual(5e-8);expect(samples.slice(45864).every(n=>n===0)).toBe(true);return largest;}\n> 32 | export function assertMicrophone(asset:OriginalAsset){const pcm=Buffer.from(asset.pcmBase64,'base64');expect(asset.kind).toBe('microphone');expect(asset.captureTempo).toBe(240);expect(asset.frameCount).toBeGreaterThan(22050);expect(asset.frameCount).toBeLessThanOrEqual(441000);let power=0,crossings=0;const start=2205,end=Math.min(asset.frameCount-1,start+22050);for(let i=start;i<end;i++){const x=pcm.readInt16LE(i*2)/32768;power+=x*x;if(i>start&&pcm.readInt16LE((i-1)*2)<=0&&x>0)crossings++;}const rms=Math.sqrt(power/(end-start)),hz=crossings*22050/(end-start);expect(Math.abs(rms-.1768)).toBeLessThan(.015);expect(Math.abs(hz-440)).toBeLessThanOrEqual(2);return{rms,hz,frames:asset.frameCount,sha256:asset.sha256};}\n     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ^\n  33 | export async function stored(page:Page){return page.evaluate(()=>new Promise<{row:unknown;assets:{id:string;sha256:string;bytes:number[]}[]}>((resolve,reject)=>{const req=indexedDB.open('melody-studio.projects');req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result,tx=db.transaction(['projects','assets'],'readonly'),row=tx.objectStore('projects').get('current'),assets=tx.objectStore('assets').getAll();tx.oncomplete=()=>{db.close();void Promise.all((assets.result as{id:string;sha256:string;pcm:Blob}[]).map(async asset=>({id:asset.id,sha256:asset.sha256,bytes:[...new Uint8Array(await asset.pcm.arrayBuffer())]}))).then(values=>resolve({row:row.result,assets:values}),reject);};tx.onabort=()=>{db.close();reject(tx.error);};};}));}\n  34 |\n  35 | export async function exportBytes(page:Page,name:string){const waiting=page.waitForEvent('download');await page.getByRole('button',{name,exact:true}).click();const path=await(await waiting).path();if(!path)throw Error('Native export unavailable');return readFile(path);}\n    at assertMicrophone (/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts:32:638)\n    at /workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording.spec.ts:28:1133"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:04:16.243Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/test-results/backed-recording-selected--f49d4-s-all-other-reference-bytes-repeat22/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/test-results/backed-recording-selected--f49d4-s-all-other-reference-bytes-repeat22/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/workspace/scratch/dea0b0842cca/melody-input-300/apps/melody-studio/tests/backed-recording-fixtures.ts",
+                    "column": 638,
+                    "line": 32
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-29e2caa0777022852f22",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 23,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10752,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:04:25.919Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-886b2cf2f484f2e1bfd8",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 24,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10727,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:04:37.191Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-f8295880e9060d6adcbb",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 25,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10401,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:04:48.441Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-53f2d214fe5f0ac714d0",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 26,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10281,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:04:59.338Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-f19e66ee0b5074e95d56",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 27,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10747,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:05:10.118Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-7178358d7a90ff97aa74",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 28,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10249,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:05:21.362Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-463d3c48df2c4753545c",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        },
+        {
+          "title": "selected-track backing uses actual frozen audible mix and one successful recording edit retains all other reference bytes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 45000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 29,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10572,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T11:05:32.128Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7f0008381aafc784e0df-1d9a29d718b407a3b8bb",
+          "file": "backed-recording.spec.ts",
+          "line": 11,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-22T11:00:09.956Z",
+    "duration": 332889.185,
+    "expected": 27,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}
