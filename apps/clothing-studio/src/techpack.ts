@@ -74,7 +74,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
     ...(product.base === 'hoodie' ? [pom('K', 'Hood height', 'Neck seam at centre back to top of hood', dims.hoodHeight, 0.5, 1)]
       : [pom('K', 'Neck rib height', 'Finished rib', dims.ribHeight, 0, 0.25)]),
     ...(product.base === 'tee' ? [] : [
-      pom('L', 'Cuff height', 'Finished rib cuff', dims.band, 0, 0.25),
+      pom('L', 'Cuff height', 'Finished rib cuff', dims.cuffHeight, 0, 0.25),
       pom('M', 'Hem band height', 'Finished rib hem band', dims.band, 0, 0.25),
     ]),
     ...(product.base === 'hoodie' ? [
@@ -105,7 +105,7 @@ export function buildTechPack(product: Product, date: string): TechPack {
       { area: 'Sleeve hems', operation: '2-needle coverstitch', detail: '2 cm turn-back' },
       { area: 'Body hem', operation: '2-needle coverstitch', detail: dims.hemCurve ? `Curved shirttail, ${cm(dims.hemCurve)} higher at the side seams; 1.5 cm turn-back to follow the curve` : '2.5 cm turn-back' },
     ] : [
-      { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.band)} finished; cut about 15% shorter than the sleeve opening` },
+      { area: 'Cuffs', operation: 'Close into a loop, fold, then overlock to the sleeve', detail: `${cm(dims.cuffHeight)} finished; cut about 15% shorter than the sleeve opening` },
       { area: 'Hem band', operation: 'Close into a loop, fold, then overlock to the body', detail: `${cm(dims.band)} finished; cut about 15% shorter than the hem` },
     ]),
     ...(modules.chestPocket ? [{ area: 'Chest pocket', operation: `Turn the top ${cm(POCKET_FOLD_CM)} and coverstitch; press the edges under 1 cm and edgestitch to the front`,

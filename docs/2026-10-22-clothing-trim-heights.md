@@ -1,0 +1,17 @@
+# Independent cuff and hem-band construction — #302
+
+## User outcome
+
+Sweatshirts and hoodies now expose independent **Cuff height (cm)** and **Hem band height (cm)** in **Patterns & measurements → Fit**, each2–12cm inclusive. Optional sparse `fit.cuffHeight`/`fit.hemBandHeight` retain exact6cm legacy pattern/mesh geometry when omitted. Complete Fit Apply/reset, raw drafts, Undo/Redo, backups, autosave, reload and named design storage use existing admission/history paths.
+
+Total sleeve/body lengths stay fixed. Fabric pieces end at their new trim seams and folded strips are2×finished height. Actual styled cuff/hem regions, existing cloth mesh/rest construction and GLB share those boundaries. Tech-pack L/M and construction details follow the independent values across sizes. The hoodie pocket stays anchored above its moved hem-band seam. Cuffs must leave at least2cm measured sleeve fabric; existing body/underarm clearance remains. Tees hide/disable these band-only fields and skip them on Apply; incompatible tee/bottom overrides refuse.
+
+These are linked construction controls, not a calibrated rib material, physical fit or sewing/manufacturing acceptance. Clothing remains ACTIVE; #290 remains separate. Project8 stays skipped and deferred projects are untouched.
+
+## Verification and first failures
+
+Three initial model cases first fail on unsupported Fit keys, then pass independent cut-strip/body/sleeve dimensions, actual trim meshes, changed finite cloth rest data, untouched independent trims/hood/neck meshes, hoodie pocket placement, all-size tech-pack points, complete round trips, exact omitted6cm geometry, inclusive bounds and incompatible/short-sleeve refusal. Complete local `npm run check` passes176unit tests, lint, types and production build. Final targeted model cases pass again after adding the pocket assertion.
+
+The first browser command cannot start during the incomplete typed Fit mapping; after that mapping, two native cases expose an expected missing tee-visibility guard and an over-specific new test expecting `4.0` where the established pack renders `4`. The guard is implemented and only that string expectation corrected; no product acceptance threshold is relaxed. Final combined invocation passes all4new-trim/existing-neck-rib native cases in21.4seconds (3.7/3.2seconds new cases), covering real SVG bounds, decoded GLB position bounds, rendered pack L/M, exact complete backup Undo/Redo/reload, raw invalid draft navigation, atomic refusal/reset, actual tee/hoodie replacement and390px no-overflow layout. Screenshot inspection confirms readable paired fields.
+
+Independent review found one Important geometry issue: sleeve14cm/cuff12cm passes the measured-length guard but exceeds its11.20085cm lower silhouette edge. A fourth regression first fails with a missing expected refusal, then passes after specified cuff overrides also require2cm along both actual sleeve edges. This preserves omitted/default legacy geometry and does not certify every legacy short-sleeve construction. After the review fix, all4trim/neck-rib native cases pass again in25.8seconds (4.2/3.6seconds new cases). The final complete local check passes177unit tests, lint, types and build; the four final trim model cases pass again with nearby actual-edge acceptance/refusal checks. Final canonical full application/native preflight acceptance is pending. No pending check is claimed passed.
