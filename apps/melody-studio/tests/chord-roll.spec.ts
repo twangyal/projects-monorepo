@@ -27,3 +27,10 @@ test('phone chord rolling keeps session settings and refuses a single voice and 
   await expect(page.locator('#workspace-feedback')).toContainText('Chord attacks rolled');const result=await savedProject(page);expect(result.tracks[0].notes.slice(2).map(n=>[n.pitch,n.start])).toEqual([[64,2.625],[68,2.375],[71,2.125]]);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+test('opening and closing chord roll tools preserves an unapplied title for pointer and keyboard navigation',async({page})=>{
+  await openRoll(page);await page.locator('[data-note="later-accent"]').press('Enter');
+  const before=await savedProject(page),title=page.getByLabel('Project title',{exact:true}),summary=page.getByText('Roll chord attacks',{exact:true});
+  await title.fill('Unapplied chord title');await summary.click();await expect(title).toHaveValue('Unapplied chord title');expect(await savedProject(page)).toEqual(before);
+  await summary.focus();await page.keyboard.press('Enter');await expect(page.getByRole('button',{name:'Roll chord notes',exact:true})).toBeHidden();await page.keyboard.press('Enter');await expect(page.getByRole('button',{name:'Roll chord notes',exact:true})).toBeVisible();expect(await savedProject(page)).toEqual(before);
+  await page.getByRole('button',{name:'Roll chord notes',exact:true}).click();await expect(page.locator('#notice')).toContainText('Apply or discard');expect(await savedProject(page)).toEqual(before);await expect(title).toHaveValue('Unapplied chord title');
+});
