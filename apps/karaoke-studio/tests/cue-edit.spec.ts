@@ -316,3 +316,59 @@ test('same-length cue replacement cannot reuse a previous passage selection', as
   await expect(page.getByLabel('Lyric line 2', { exact: true })).toHaveValue('Replacement two');
   await expect(page.getByLabel('Start line 2', { exact: true })).toHaveValue('1.25');
 });
+
+test('copy passage preserves raw outside timing and supports atomic refusals history save reopen and SRT', async ({ page }) => {
+  await passageFixture(page); await selectPassage(page, '1', '1');
+  const destination = page.getByLabel('Copy passage to (seconds)', { exact: true }), copy = page.getByRole('button', { name: 'Copy selected passage', exact: true });
+  const before = await timingEditor(page);
+  for (const value of ['', '1.25', '5.75', '-1']) {
+    await destination.fill(value); await copy.click();
+    expect(await timingEditor(page)).toEqual(before);
+    await expect(page.locator('#passage-copy-status')).toContainText('kept');
+  }
+  await page.getByLabel('Paste lyrics, one line per cue').fill('Unapplied 🌓');
+  const beforeCopy = await timingEditor(page);
+  await destination.fill('3'); await copy.click();
+  await expect(page.getByLabel('Lyric line 4', { exact: true })).toHaveValue('Verse A');
+  await expect(page.getByLabel('Start line 4', { exact: true })).toHaveValue('3');
+  await expect(page.getByLabel('End line 4', { exact: true })).toHaveValue('3.5');
+  await expect(page.getByLabel('Start line 1', { exact: true })).toHaveValue('0.000');
+  await expect(page.getByLabel('Start line 5', { exact: true })).toHaveValue('4.000');
+  await expect(page.getByLabel('Paste lyrics, one line per cue')).toHaveValue('Unapplied 🌓');
+  for (const name of ['First line in passage', 'Last line in passage']) await expect(page.getByRole('combobox', { name, exact: true })).toHaveValue('');
+  await page.getByRole('button', { name: 'Undo lyric edit', exact: true }).click();
+  expect(await timingEditor(page)).toEqual(beforeCopy);
+  await selectPassage(page, '1', '1'); await destination.fill('1'); await copy.click();
+  await expect(page.getByRole('button', { name: 'Redo lyric edit', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Redo lyric edit', exact: true }).click();
+  await expect(page.getByLabel('Lyric line 4', { exact: true })).toHaveValue('Verse A');
+  await page.getByRole('button', { name: 'Discard pasted draft', exact: true }).click();
+  await page.getByRole('button', { name: 'Save lyrics', exact: true }).click();
+  await expect(page.locator('#message')).toContainText('saved locally');
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export timed lyrics', exact: true }).click();
+  const srt = await readFile((await (await download).path())!, 'utf8');
+  expect(srt).toContain('00:00:03,000 --> 00:00:03,500\nVerse A');
+  expect(srt.match(/Verse A/g)).toHaveLength(2);
+  await page.reload(); await expect(page.getByLabel('Start line 4', { exact: true })).toHaveValue('3');
+  await expect(page.getByLabel('Lyric line 5', { exact: true })).toHaveValue('Final 🎵');
+});
+
+test('phone keyboard copies a multi-line chorus with internal gaps and only valid copy retires playback and import', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 740 }); await passageFixture(page);
+  await page.getByLabel('End line 4', { exact: true }).fill('6.000');
+  await page.getByLabel('Start line 4', { exact: true }).fill('5.000');
+  await page.getByLabel('Import timed lyrics (SRT)', { exact: true }).setInputFiles({ name: 'pending.srt', mimeType: 'application/x-subrip', buffer: Buffer.from('1\n00:00:00,500 --> 00:00:01,500\nPending words\n') });
+  await expect(page.locator('#srt-review')).toBeVisible();
+  await page.getByRole('button', { name: 'Repeat range', exact: true }).click();
+  const destination = page.getByLabel('Copy passage to (seconds)', { exact: true }), copy = page.getByRole('button', { name: 'Copy selected passage', exact: true }), before = await timingEditor(page);
+  await destination.fill('4'); await copy.click(); expect(await timingEditor(page)).toEqual(before);
+  await expect(page.locator('#srt-review')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pause practice', exact: true })).toBeEnabled();
+  await destination.fill('3'); await copy.focus(); await copy.press('Enter');
+  await expect(page.locator('#srt-review')).toBeHidden();
+  await expect.poll(() => page.locator('audio').evaluate(a => (a as HTMLAudioElement).paused)).toBe(true);
+  for (const [label, value] of [['Start line 4', '3'], ['End line 4', '3.5'], ['Start line 5', '4'], ['End line 5', '4.5'], ['Start line 6', '5.000'], ['End line 6', '6.000']]) await expect(page.getByLabel(label, { exact: true })).toHaveValue(value);
+  await expect(page.getByLabel('Lyric line 4', { exact: true })).toHaveValue('Verse A');
+  await expect(page.getByLabel('Lyric line 5', { exact: true })).toHaveValue('Verse B');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

@@ -627,3 +627,10 @@ Open **Shift lyric timing**, set **Timing shift scope** to **Selected passage**,
 A successful shift makes one unsaved Undo/Redo edit and stops obsolete listening/import/timing work. Refusals preserve current edits, Redo, pending review and playback. Title and pasted drafts are kept; Save lyrics remains separate. Replacing, splitting, merging, removing, or Undo/Redo-ing cues clears the passage endpoints so you choose the intended lines again. An ordinary word or timing correction keeps the same line identities and refreshes their displayed words. Opening a different clip resets scope to All lines and clears the offset. Scope/endpoints are session utilities, not saved project data.
 
 This is manual passage correction, not automatic delay detection or an evaluated alignment-quality improvement. Real-song timing and correction-effort evaluation remains open in #241. [Verification and limits](docs/2026-10-20-passage-timing-294.md).
+
+
+### Repeat a corrected chorus or verse
+
+Open **Shift lyric timing**, choose **Selected passage**, and select the first and last lines. Enter the new first-line start under **Copy passage to (seconds)** and choose **Copy selected passage**. This adds a literal copy while keeping the originals, line durations and internal gaps. The entire destination span must be empty and fit within the clip; existing 200-line/20,000-character limits still apply. Nothing is cropped or overwritten.
+
+The copy is one unsaved Undo/Redo edit. Untouched raw timing fields, title and unapplied pasted words stay intact. A successful copy stops practice and retires pending timing/import reviews; a refused copy leaves them alone. Structural changes and Undo/Redo clear passage selection so another copy requires a fresh range. Use **Save lyrics** before exporting timed lyrics or video. The utility destination resets on another clip; it is not saved song metadata. This supports manual correction reuse and does not establish automatic transcription/alignment quality (#241).

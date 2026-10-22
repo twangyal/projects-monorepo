@@ -57,3 +57,24 @@ export function shiftCues(cues: Cue[], duration: number, rawSeconds: string, pas
   }
   return after;
 }
+
+/** Copy an inclusive passage into an empty span; preserve its relative timing. */
+export function copyCues(cues: Cue[], duration: number, rawSeconds: string, passage: CuePassage): { cues: Cue[]; insertIndex: number } {
+  const raw = rawSeconds.trim();
+  if (!/^[+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(raw) || !Number.isFinite(Number(raw))) {
+    throw new Error('Enter a finite destination start time at or after zero.');
+  }
+  const before = validateCues(cues, duration);
+  for (let index = 0; index < before.length; index++) {
+    if (!before[index]) throw new Error('Supply every lyric line before copying a passage.');
+  }
+  validIndex(before, passage.firstIndex); validIndex(before, passage.lastIndex);
+  if (passage.lastIndex < passage.firstIndex) throw new Error('Choose an ordered passage of existing lyric lines.');
+  const source = before.slice(passage.firstIndex, passage.lastIndex + 1), start = Number(raw);
+  const copies = source.map(cue => ({ ...cue, start: start + (cue.start - source[0].start), end: start + (cue.end - source[0].start) }));
+  const end = copies[copies.length - 1].end;
+  if (before.some(cue => cue.start < end && cue.end > start)) throw new Error('The complete copied passage must fit in an empty span without overlapping existing lines.');
+  const nextIndex = before.findIndex(cue => cue.start >= end), insertIndex = nextIndex < 0 ? before.length : nextIndex;
+  before.splice(insertIndex, 0, ...copies);
+  return { cues: validateCues(before, duration), insertIndex };
+}
