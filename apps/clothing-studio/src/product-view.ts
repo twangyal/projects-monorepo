@@ -72,7 +72,7 @@ export const productMarkup = `<section class="panel product-panel" id="product-e
       <div class="measure-grid" id="leg-measures" hidden>${LEG_FIELDS.map(([id, label, key]) => `<label class="field">${label} (cm)<input id="${id}" type="number" min="${LIMITS[key][0]}" max="${LIMITS[key][1]}" step="1"></label>`).join('')}</div>
       <button id="apply-measurements">Apply measurements</button>
       <details class="fit-panel" id="fit-panel"><summary>Fit: shoulder, neck, armhole, hem, sleeve opening & pocket</summary>
-        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm; shoulder drop defaults to 4 cm.</p>
+        <p class="fine-print">Points of measure at the sample size, as in the tech pack. Untouched values keep their defaults; chest-based dimensions keep scaling. Back neck drop defaults to 2 cm; shoulder drop defaults to 4 cm. Finished neck rib height defaults to 2 cm; the cutting strip is twice that height.</p>
         <div class="measure-grid">${FIT_KEYS.filter(key => !POCKET_FIT_KEYS.some(pocket => pocket === key)).map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div>
         <div id="pocket-fit-fields" hidden><p class="eyebrow">CHEST POCKET CONSTRUCTION</p><p class="fine-print">Finished size; top measured below the high-point shoulder line. Positive centre offset moves toward the wearer’s left, negative toward the right. Keep the pocket at least 0.5 cm inside the front sewing outline.</p><div class="measure-grid">${POCKET_FIT_KEYS.map(key => `<label class="field">${FIT_NAMES[key]} (cm)<input id="fit-${key}" type="number" min="${LIMITS.fit[key][0]}" max="${LIMITS.fit[key][1]}" step="0.5"></label>`).join('')}</div></div>
         <div class="inline-actions"><button id="apply-fit">Apply fit</button><button id="reset-fit" class="quiet">Back to proportional</button></div>
@@ -475,12 +475,12 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
   // Fit: a point of measure is stored only when it differs from its proportional value.
   const fitValues = (design: Product): Record<FitKey, number> => {
     const d = teeDimensions(design);
-    return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
+    return { chestPocketWidth: d.chestPocketWidth, chestPocketHeight: d.chestPocketHeight, chestPocketX: d.chestPocketX, chestPocketY: d.chestPocketY, shoulderWidth: d.shoulderX * 2, shoulderDrop: d.shoulderDrop, neckWidth: d.neckHalf * 2, frontNeckDrop: d.neckDepthFront, backNeckDrop: d.neckDepthBack, neckRibHeight: d.ribHeight, armholeDepth: d.armDepth, hemWidth: d.hemHalf * 2, sleeveOpening: d.cuffHalf };
   };
   $('apply-fit').addEventListener('click', () => update(draft => {
     const proportional = fitValues({ ...draft, fit: undefined }), fit: Product['fit'] = {};
     for (const key of FIT_KEYS) {
-      if (POCKET_FIT_KEYS.some(pocket => pocket === key)) continue;
+      if (POCKET_FIT_KEYS.some(pocket => pocket === key) || key === 'neckRibHeight' && draft.base === 'hoodie') continue;
       const raw = ($(`fit-${key}`) as HTMLInputElement).value;
       if (raw.trim() === '') throw new Error(`Fill in ${FIT_NAMES[key].toLowerCase()}.`);
       const value = Number(raw);
@@ -876,6 +876,7 @@ export function mountProduct(options: { current: () => Project; commit: (next: P
     else {
       const m = topMeasurements(design);
       ($('product-chest') as HTMLInputElement).value = String(m.chest); ($('product-length') as HTMLInputElement).value = String(m.length); ($('product-sleeve') as HTMLInputElement).value = String(m.sleeve);
+      const ribInput = $('fit-neckRibHeight') as HTMLInputElement; ribInput.disabled = design.base === 'hoodie'; ribInput.closest('label')!.hidden = design.base === 'hoodie';
       const values = fitValues(design);
       for (const key of FIT_KEYS) ($(`fit-${key}`) as HTMLInputElement).value = String(Math.round(values[key] * 10) / 10);
       $('reset-fit').toggleAttribute('disabled', !design.fit);

@@ -137,6 +137,8 @@ Construction localization #290 now retains [part-level strain and seam provenanc
 
 Triangle-wide [principal-stretch follow-through](docs/research/ppf-cpu/GARMENT_PRINCIPAL_STRAIN.md) evaluates all in-plane directions of the unchanged native rest metric, with rest-area-weighted distributions. The retained final Young500/2000 cases reach40.885/26.339% peak extension at underarm triangle3091, versus31.196/19.012% sampled-edge maxima. Independent SVD agrees across all4480faces/material. This strengthens the unresolved construction-quality finding; it does not establish physical thresholds, calibrated fit or engine adoption.
 
+Milestone #301 adds editable1–4cm finished neck-rib height for tees and crew sweatshirts through the existing Fit workflow. Actual cutting strip, neckband mesh, cloth rest construction, GLB and tech-pack K share the value, with exact2cm omitted-default compatibility, guarded complete history/recovery and incompatible hoodie refusal. [Verification](docs/2026-10-22-clothing-neck-rib-height.md) records staged local gates and canonical status. This advances linked construction control; calibrated rib behavior and physical fit remain unverified. Clothing stays ACTIVE.
+
 ## 6. AI karaoke generator
 
 Path: `apps/karaoke-studio`
