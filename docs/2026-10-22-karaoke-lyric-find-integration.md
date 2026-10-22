@@ -28,4 +28,6 @@ These identify observed transient logs, not retained complete log byte streams. 
 
 The first canonical [run39856064293](https://github.com/twangyal/projects-monorepo/actions/runs/39856064293) on the earlier source was superseded/cancelled after the class fix. It is not final acceptance.
 
-Corrected-source [run39856845198](https://github.com/twangyal/projects-monorepo/actions/runs/39856845198) is running when this receipt is recorded. **Issue#305 remains OPEN pending its complete result.** Do not interpret targeted checks as a full canonical pass. The linked run and issue are the durable continuation points. No PR was opened.
+Corrected-source [run39856845198](https://github.com/twangyal/projects-monorepo/actions/runs/39856845198) was also superseded. Its video-tool bootstrap spent excessive time fetching optional display/VA packages. Commit `dec9a35d0229d47f7d144d9522b065ca593e6246` installs FFmpeg with `--no-install-recommends`, keeping the same required tools, job deadlines and tests.
+
+Final canonical [run39858233173](https://github.com/twangyal/projects-monorepo/actions/runs/39858233173), job`120102362524`, passes on `dec9a35`: **206 Python tests**, compileall/Ruff, **143 TypeScript units**, lint/types/build and **all127 native Chromium browser cases (5.3minutes)**. Logs were inspected on2026-10-22; the job and every required gate report success. This verifies the lyric finder with the unchanged original timing/archive workflows. Issue#305 is complete. Earlier failures and superseded runs above remain historical evidence. No PR was opened.
